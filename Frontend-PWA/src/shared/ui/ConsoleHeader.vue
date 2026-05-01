@@ -13,13 +13,13 @@ const props = defineProps<{
     nominal?: boolean;
   };
   showSearch?: boolean;
-  sheetUrl?: string;
+  dashboardUrl?: string;
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
   currentSort?: string;
   loading?: boolean;
   remoteInfo?: {
-    source: "SUPABASE" | "WORKER" | "GAS";
+    source: "SUPABASE";
     dataAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
@@ -52,10 +52,10 @@ const activeSortDescription = computed(() => {
   return opt?.desc || "";
 });
 
-const handleOpenSheet = () => {
-  if (props.sheetUrl) {
+const handleOpenDashboard = () => {
+  if (props.dashboardUrl) {
     haptics.tap();
-    window.open(props.sheetUrl, "_blank");
+    window.open(props.dashboardUrl, "_blank");
   }
 };
 </script>
@@ -71,9 +71,9 @@ const handleOpenSheet = () => {
           <div class="title-main">
             <h1
               class="view-title"
-              :class="{ 'is-link': props.sheetUrl }"
-              :title="props.sheetUrl ? 'Open Source Sheet' : undefined"
-              @click="handleOpenSheet"
+              :class="{ 'is-link': props.dashboardUrl }"
+              :title="props.dashboardUrl ? 'Open Supabase Dashboard' : undefined"
+              @click="handleOpenDashboard"
             >
               {{ props.title }}
             </h1>

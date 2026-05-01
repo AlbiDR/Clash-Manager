@@ -54,7 +54,7 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 | **View** | **Vue 3.5** | Reactive interface with Composition API and `<script setup>` |
 | **Logic** | **TypeScript** | Strict-mode type safety across the entire client kernel |
 | **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
-| **Transport** | **GasClient** | Hybrid bridge utilizing a Worker Hub Circuit Breaker (20s timeout) with an authoritative Google Apps Script fallback. Implements 'text/plain' requests to bypass CORS preflight and Matrix Inflation (decompressing row-based matrices) to reduce payload size by 70%. |
+| **Transport** | **Supabase SDK** | Native real-time bridge utilizing direct View access and Postgres RPCs for high-fidelity data orchestration. |
 | **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
 | **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
 | **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
@@ -68,10 +68,10 @@ The application kernel (@core) manages complex system-level behaviors through sp
 
 ### 1. Unified State & Sync (`useClashDataStore`)
 The authoritative Layer 1 central store for high-integrity clan datasets.
-- **Unified Sync Kernel**: Centralizes state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence across all hydration paths (local, worker, background).
-- **Hub Attribution Logic**: Tracks dataset provenance via `dataSource` and `hubTimestamp` to distinguish between direct GAS and optimized Worker Hub payloads.
+- **Unified Sync Kernel**: Centralizes state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence across all hydration paths (local, background).
+- **Direct View Access**: Utilizes authoritative Supabase feature views (`roster_view`, `headhunter_view`) to bypass legacy RPC bottlenecks.
 - **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) to ensure accurate data age calculations across distributed environments.
-- **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the remote backend in the background.
+- **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the Supabase backend in the background.
 - **Validation Boundary**: All inbound payloads are strictly validated against `WebAppDataSchema` to prevent "any" plague propagation into the application state.
 
 ### 2. Recruitment Blitz (`useBatchQueue`)
@@ -101,8 +101,7 @@ A resilient, global notification service with integrated hardware feedback.
 
 ### 6. Connectivity Singleton (`useApiState`)
 The authoritative Layer 1 arbiter of backend availability and handshake discovery (located in `@core/api/`).
-- **Handshake Discovery**: Orchestrates the initial 25,000ms handshake to detect server availability, cold-boot "waking" states, or configuration gaps.
-- **Worker Verification**: Proactively pings the high-performance Worker Hub to determine if the optimized data path is available.
+- **Handshake Discovery**: Orchestrates the initial handshake to detect Supabase availability and configuration status.
 
 ### 7. Connectivity Arbitrator (`useConnectionStatus`)
 Unifies physical network status and logical API availability into a single source of truth.
@@ -256,14 +255,10 @@ pnpm dev
 ```
 
 ### Environment Setup
-Create a .env file in the root directory to link to your backend:
-
 ```ini
-# URL of your Google Apps Script Web App execution
-VITE_GAS_URL=https://script.google.com/macros/s/.../exec
-
-# Worker Hub Opt-In (Enables 0ms latency Data Hub reads with fallback)
-VITE_USE_WORKER_HUB=true
+# Supabase Configuration
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
 ---

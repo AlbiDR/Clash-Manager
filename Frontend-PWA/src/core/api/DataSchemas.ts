@@ -124,7 +124,7 @@ const SafeNumberPipe = v.pipe(
     // schema is slightly out of sync or if optional columns are omitted.
     if (val === null || val === undefined) return 0;
     if (typeof val === "string") {
-      // Handle comma-separated or percentage-based strings from sheets
+      // Handle comma-separated or percentage-based strings from remote sources
       const cleaned = val.replace(/,/g, "").replace(/%/g, "").trim();
       if (cleaned === "") return 0;
       const n = parseFloat(cleaned);

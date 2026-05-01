@@ -12,7 +12,7 @@ vi.mock('@core/services/useClashData', () => ({
 
 vi.mock('@core/api/SupabaseClient', () => ({
   getPlayerProfile: vi.fn(),
-  lastHubDiagnosis: { value: null },
+
   lastSyncStatus: { value: null }
 }));
 

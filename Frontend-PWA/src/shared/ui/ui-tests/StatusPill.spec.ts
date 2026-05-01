@@ -67,4 +67,20 @@ describe("StatusPill", () => {
     expect(wrapper.find(".label-wrapper").exists()).toBe(true);
     expect(wrapper.text()).toContain("Syncing...");
   });
+
+  it("displays SUPABASE source when remoteInfo.source is SUPABASE", async () => {
+    const wrapper = mount(StatusPill, {
+      props: { 
+        type: "success", 
+        text: "Nominal", 
+        remoteInfo: { source: "SUPABASE", dataAge: "10m ago" } 
+      },
+    });
+    
+    // Expand
+    await wrapper.trigger("click");
+    
+    expect(wrapper.text()).toContain("DB");
+    expect(wrapper.text()).toContain("10m ago");
+  });
 });

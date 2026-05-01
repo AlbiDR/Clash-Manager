@@ -58,10 +58,8 @@ vi.mock("../useClashDataStore", async () => {
         syncError: ref(null),
         lastSyncTime: ref(0),
         currentSource: ref(null),
-        hubSyncTime: ref(null),
         lastCompiledTime: ref(null),
         lastFetchedTime: ref(null),
-        refreshWorker: vi.fn(),
     };
     return {
         useClashDataStore: vi.fn(() => mockStore),
@@ -144,8 +142,7 @@ describe("useConsoleController", () => {
         isRefreshing: ref(false),
         syncError: ref(null),
         lastSyncTime: ref(Date.now()),
-        currentSource: ref(null as "WORKER" | "GAS" | null),
-        hubSyncTime: ref(null as number | null),
+        currentSource: ref(null as "SUPABASE" | null),
         lastCompiledTime: ref(null as number | null),
         lastFetchedTime: ref(null as number | null),
         filterFn: (item: any) => [item.n],
@@ -471,22 +468,22 @@ describe("useConsoleController", () => {
     });
   });
 
-  describe("layoutProps and hubInfo", () => {
+  describe("layoutProps and remoteInfo", () => {
     it("maps remoteInfo correctly when source is present", () => {
       const options = createOptions();
-      options.currentSource.value = "WORKER";
+      options.currentSource.value = "SUPABASE";
       options.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
       const { layoutProps } = useConsoleController(options);
 
       expect(layoutProps.value.remoteInfo).toMatchObject({
-        source: "WORKER",
+        source: "SUPABASE",
       });
       expect(layoutProps.value.remoteInfo?.dataAge).toMatch(/1h ago/);
     });
 
     it("falls back to lastSyncTime for dataAge if lastCompiledTime is missing", () => {
       const options = createOptions();
-      options.currentSource.value = "WORKER";
+      options.currentSource.value = "SUPABASE";
       options.lastCompiledTime.value = null;
       options.lastSyncTime.value = Date.now() - 7200000; // 2h ago
       const { layoutProps } = useConsoleController(options);

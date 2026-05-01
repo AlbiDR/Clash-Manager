@@ -8,7 +8,7 @@ const props = withDefaults(defineProps<{
   nominal?: boolean;
   direction?: "left" | "right";
   remoteInfo?: {
-    source: "SUPABASE" | "WORKER";
+    source: "SUPABASE";
     dataAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
@@ -70,12 +70,7 @@ const handleToggle = () => {
                 </svg>
                 DB
               </template>
-              <template v-else-if="props.remoteInfo.source === 'WORKER'">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-                HUB
-              </template>
+
             </span>
             <span v-if="props.remoteInfo.dataAge" class="separator">|</span>
             <span v-if="props.remoteInfo.dataAge" class="hub-age">
@@ -211,10 +206,7 @@ const handleToggle = () => {
   background: var(--sys-primary-container);
 }
 
-.hub-source.worker {
-  color: var(--sys-primary);
-  background: var(--sys-primary-container);
-}
+
 
 
 
