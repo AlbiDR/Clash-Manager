@@ -94,10 +94,22 @@ export async function runProfiler(
         if (validRecruits.length > 0) {
             // Group recruits by their discovery source for accurate attribution
             const bySource = new Map<string, any[]>();
+            let maxRpos = -Infinity;
+            let minRpos = Infinity;
+            const sourceCounts: Record<string, number> = {};
+
             for (const recruit of validRecruits) {
                 const src = recruit.source || 'UNKNOWN';
                 if (!bySource.has(src)) bySource.set(src, []);
                 bySource.get(src)!.push(recruit);
+
+                // Track RPoS (Raw Potential Score)
+                const score = recruit.rawScore || 0;
+                if (score > maxRpos) maxRpos = score;
+                if (score < minRpos) minRpos = score;
+
+                // Track source counts
+                sourceCounts[src] = (sourceCounts[src] || 0) + 1;
             }
 
             console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into raw_scout_logs...`);
@@ -114,7 +126,11 @@ export async function runProfiler(
                     console.log(`[PROFILING] Successfully ingested ${batch.length} recruits from source ${source}`);
                 }
             }
+            
             stats.recruits_ingested = validRecruits.length;
+            stats.highest_rpos = maxRpos === -Infinity ? 0 : Math.round(maxRpos);
+            stats.lowest_rpos = minRpos === Infinity ? 0 : Math.round(minRpos);
+            stats.ingested_by_source = sourceCounts;
         }
         stats.profiles_scanned = tagsToProfile.length;
         logAudit('PROFILING', 'terminated', { scanned: tagsToProfile.length, ingested: validRecruits.length });
