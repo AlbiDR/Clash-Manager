@@ -284,7 +284,11 @@ export function useLaboratory() {
     syncError: fetchError.value || undefined,
     emptyMessage: !clashData.value?.playerTag ? 'Target Required' : 'No results found',
     emptyHint: !clashData.value?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
-    emptyIcon: 'flask'
+    emptyIcon: 'flask',
+    remoteInfo: currentSource.value ? {
+      source: currentSource.value,
+      dataAge: remoteSyncTime.value ? formatTimeAgo(remoteSyncTime.value) : null
+    } : undefined
   }));
 
   /**
