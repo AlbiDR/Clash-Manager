@@ -45,6 +45,7 @@ export async function runRescan(
         
         console.log(`[RESCAN] Validated ${stale.length} stale recruits to process.`);
 
+        const validRescans: any[] = [];
         const rescanTasks = stale.map((row: { player_tag: string }) => async () => {
             const tag = row.player_tag;
             try {
@@ -77,22 +78,20 @@ export async function runRescan(
                     return;
                 }
 
-                // Otherwise refresh their profile data in-place
-                const newStatus = (p.trophies || 0) >= requiredTrophies ? 'ACTIVE' : 'QUEUE';
-                await supabase.schema('drivers' as any).from('recruits')
-                    .update({
-                        trophies: p.trophies || 0,
-                        donations: p.totalDonations || 0,
-                        cards: p.challengeCardsWon || 0,
-                        war_wins: p.warDayWins || 0,
-                        status: newStatus,
-                        last_scan: new Date().toISOString()
-                    })
-                    .eq('player_tag', p.tag);
+                // Otherwise prepare their profile data for batch refresh
+                validRescans.push({
+                    player_tag: p.tag,
+                    player_name: p.name,
+                    trophies: p.trophies || 0,
+                    donations: p.totalDonations || 0,
+                    cards: p.challengeCardsWon || 0,
+                    war_wins: p.warDayWins || 0,
+                    source: 'TOURNAMENT', // Fallback
+                    status: (p.trophies || 0) >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
+                });
 
-                console.log(`[RESCAN] Player ${tag} refreshed. trophies=${p.trophies}, status=${newStatus}`);
+                console.log(`[RESCAN] Player ${tag} prepared for refresh. trophies=${p.trophies}`);
                 stats.profiles_scanned++;
-                stats.rescans_processed++;
             } catch (e: any) {
                 logAudit('RESCAN', 'error', { tag, message: e.message });
                 console.error(`[RESCAN] Exception while processing ${tag}: ${e.message}`);
@@ -101,6 +100,18 @@ export async function runRescan(
 
         console.log(`[RESCAN] Batch processing ${stale.length} rescan tasks...`);
         await processBatch(rescanTasks, 10);
+
+        if (validRescans.length > 0) {
+            console.log(`[RESCAN] Synchronizing ${validRescans.length} refreshed profiles via RPC...`);
+            const { error: syncErr } = await supabase.rpc('sync_recruits', { p_recruits: validRescans });
+            if (syncErr) {
+                console.error(`[RESCAN] Sync failure: ${syncErr.message}`);
+                logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: syncErr });
+            } else {
+                stats.rescans_processed = validRescans.length;
+                console.log(`[RESCAN] Successfully synchronized ${validRescans.length} profiles.`);
+            }
+        }
         logAudit('RESCAN', 'terminated', { candidates: stale.length, rescanned: stats.rescans_processed });
         console.log(`[RESCAN] Terminated smoothly. Processed ${stale.length} candidates, refreshed ${stats.rescans_processed} successfully.`);
     } catch (e: any) {

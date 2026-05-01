@@ -16,76 +16,73 @@ export async function runDiscovery(
     logAudit('S1_DISCOVERY', 'triggered');
     try {
         const keywords = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int"];
+        const globalNewRecruits = new Map<string, { name: string, trophies: number }>();
         
         const discoveryTasks = keywords.map(keyword => async () => {
-            logAudit('S1_DISCOVERY', 'called', { keyword });
             try {
                 const res = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
-                logAudit('S1_DISCOVERY', 'run', { keyword, status: res.status });
                 if (!res.ok) return;
                 
                 const data = await res.json();
-                const isValid = data && Array.isArray(data.items);
-                logAudit('S1_DISCOVERY', 'resulted_data', { keyword, items: data.items?.length });
-                logAudit('S1_DISCOVERY', 'integrity_checked', { 
-                    keyword, 
-                    passed: isValid, 
-                    details: isValid ? 'Data shape validated (Array)' : 'Unexpected data shape' 
-                });
-                
-                if (!isValid) return;
+                if (!data || !Array.isArray(data.items)) return;
 
-                const memberTasks = (data.items || []).map((t: any) => async () => {
+                const tournamentTasks = (data.items || []).map((t: any) => async () => {
                     if (t.capacity === t.maxCapacity) return; 
                     try {
                         const deRes = await fetchWithRotation(`/tournaments/${encodeURIComponent(t.tag)}`);
                         if (deRes.ok) {
                             const details = await deRes.json();
                             if (details.membersList && details.membersList.length > 0) {
-                                const newRecruits = details.membersList
+                                details.membersList
                                     .filter((m: any) => !m.clan?.tag)
-                                    .map((m: any) => ({
-                                        tag: m.tag, name: m.name, trophies: m.trophies || 0, status: 'ACTIVE'
-                                    }));
-                                    
-                                if (newRecruits.length > 0) {
-                                    const players = newRecruits.map(r => ({
-                                        player_tag: r.tag.startsWith('#') ? r.tag : `#${r.tag}`,
-                                        player_name: r.name
-                                    }));
-                                    
-                                    const recruits = newRecruits.map(r => ({
-                                        player_tag: r.tag.startsWith('#') ? r.tag : `#${r.tag}`,
-                                        player_name: r.name,
-                                        trophies: r.trophies,
-                                        source: 'TOURNAMENT_AUTO',
-                                        status: 'ACTIVE'
-                                    }));
-
-                                    // L2 Drivers: Sync to universal player registry first to satisfy FK
-                                    await supabase.schema('drivers').from('players').upsert(players, { onConflict: 'player_tag' });
-                                    
-                                    // L2 Drivers: Upsert to recruits queue
-                                    const { error: recruitError } = await supabase.schema('drivers').from('recruits').upsert(recruits, { onConflict: 'player_tag' });
-                                    
-                                    if (!recruitError) {
-                                        results.discovery.harvested += newRecruits.length;
-                                    } else {
-                                        logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Upsert Failure', details: recruitError });
-                                    }
-                                }
-                                await supabase.schema('substrate').from('discovery_cache').upsert({ player_tag: t.tag, type: 'TOURNAMENT' });
+                                    .forEach((m: any) => {
+                                        globalNewRecruits.set(m.tag, { 
+                                            name: m.name, 
+                                            trophies: m.trophies || 0 
+                                        });
+                                    });
+                                
+                                await supabase.rpc('report_discovery', { p_player_tag: t.tag, p_type: 'TOURNAMENT' });
                             }
                         }
-                    } catch (e) { /* Silent fail */ }
+                    } catch (e) { /* Silent fail for individual tournament */ }
                 });
-                await processBatch(memberTasks, 10);
+                
+                // Concurrency of 5 for tournament details per keyword
+                await processBatch(tournamentTasks, 5);
             } catch (e: any) { 
                 logAudit('S1_DISCOVERY', 'error', { keyword, message: e.message });
             }
         });
         
-        await processBatch(discoveryTasks, 5);
+        // Concurrency of 3 for keywords (total concurrency ~15)
+        await processBatch(discoveryTasks, 3);
+
+        // Batch synchronize all discovered recruits
+        if (globalNewRecruits.size > 0) {
+            const players = Array.from(globalNewRecruits.entries()).map(([tag, data]) => ({
+                player_tag: tag.startsWith('#') ? tag : `#${tag}`,
+                player_name: data.name
+            }));
+
+            const recruits = Array.from(globalNewRecruits.entries()).map(([tag, data]) => ({
+                player_tag: tag.startsWith('#') ? tag : `#${tag}`,
+                player_name: data.name,
+                trophies: data.trophies,
+                source: 'TOURNAMENT_AUTO',
+                status: 'ACTIVE'
+            }));
+
+            await supabase.rpc('sync_players', { p_players: players });
+            const { error: recruitError } = await supabase.rpc('sync_recruits', { p_recruits: recruits });
+            
+            if (!recruitError) {
+                results.discovery.harvested = globalNewRecruits.size;
+            } else {
+                logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Batch Upsert Failure', details: recruitError });
+            }
+        }
+
         logAudit('S1_DISCOVERY', 'terminated', { harvested: results.discovery.harvested });
     } catch (e: any) { 
         results.discovery.error = e.message;
@@ -94,3 +91,4 @@ export async function runDiscovery(
         throw e;
     }
 }
+

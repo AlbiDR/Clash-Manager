@@ -15,31 +15,28 @@ export async function runDeepDepth(
 ) {
     logAudit('S6_BATTLES', 'triggered');
     try {
-        const { data: hvt } = await supabase.schema('drivers').from('recruits').select('player_tag').eq('status', 'ACTIVE').limit(50);
-        const { data: members } = await supabase.schema('drivers').from('members').select('player_tag').eq('is_active', true);
+        const { data: targets } = await supabase.rpc('get_ingestion_targets');
         
         const allTags = [
-            ...(members?.map(m => m.player_tag) || []),
-            ...(hvt?.map(h => h.player_tag) || [])
+            ...(targets?.members || []),
+            ...(targets?.recruits || [])
         ];
 
         if (allTags.length > 0) {
             logAudit('S6_BATTLES', 'called', { tags_count: allTags.length });
+            
+            // Shared map to collect shadow leads across all concurrent tasks
+            const globalShadowLeads = new Map<string, string>();
+
             const battleTasks = allTags.map(tag => async () => {
-                logAudit('S6_BATTLES', 'run', { tag });
                 try {
                     const logRes = await fetchWithRotation(`/players/${encodeURIComponent(tag)}/battlelog`);
                     if (logRes.ok) {
                         const logData = await logRes.json();
                         const isValid = Array.isArray(logData);
-                        logAudit('S6_BATTLES', 'resulted_data', { tag, items: logData.length });
-                        logAudit('S6_BATTLES', 'integrity_checked', { 
-                            tag, 
-                            passed: isValid, 
-                            details: isValid ? 'Data shape validated (Array)' : 'Malformed battle log' 
-                        });
                         
-                        if (isValid) {
+                        if (isValid && logData.length > 0) {
+                            // Ingest battles
                             const { error: rpcErr } = await supabase.rpc('ingest_player_battles', { 
                                 p_tag: tag, 
                                 p_payload: logData 
@@ -49,52 +46,49 @@ export async function runDeepDepth(
                                 logAudit('S6_BATTLES', 'error', { tag, message: 'RPC Failure', details: rpcErr });
                             }
 
-                            const shadowLeads = new Map<string, string>();
+                            // Extract potential recruits (leads) from opponents
                             logData.forEach((b: any) => {
                                 b.opponent?.forEach((op: any) => {
                                     if (op.tag && !op.clan?.tag) {
-                                        shadowLeads.set(op.tag, op.name || 'Unknown Recruit');
+                                        globalShadowLeads.set(op.tag, op.name || 'Unknown Recruit');
                                     }
                                 });
                             });
-
-                            if (shadowLeads.size > 0) {
-                                const leads = Array.from(shadowLeads.entries()).map(([tag, name]) => ({
-                                    player_tag: tag.startsWith('#') ? tag : `#${tag}`,
-                                    player_name: name
-                                }));
-
-                                const recruits = leads.map(l => ({
-                                    ...l,
-                                    source: 'SHADOW',
-                                    status: 'ACTIVE'
-                                }));
-
-                                // L2 Drivers: Sync to universal player registry first to satisfy FK
-                                await supabase.schema('drivers').from('players').upsert(leads, { onConflict: 'player_tag' });
-
-                                // L2 Drivers: Upsert to shadow recruitment queue
-                                const { error: leadErr } = await supabase.schema('drivers').from('recruits').upsert(recruits, { onConflict: 'player_tag' });
-                                if (leadErr) {
-                                    logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Upsert Failure', details: leadErr });
-                                }
-                            }
                         }
-                    } else {
-                        if (logRes.status === 404) {
-                            await supabase.rpc('report_dead_recruit', { p_player_tag: tag });
-                            logAudit('S6_BATTLES', 'called', { tag, action: 'purged_ghost' });
-                        }
-                        logAudit('S6_BATTLES', 'integrity_checked', { passed: false, details: `HTTP_${logRes.status}` });
-                        logAudit('S6_BATTLES', 'error', { tag, status: logRes.status });
+                    } else if (logRes.status === 404) {
+                        await supabase.rpc('report_dead_recruit', { p_player_tag: tag });
+                        logAudit('S6_BATTLES', 'called', { tag, action: 'purged_ghost' });
                     }
                 } catch (e: any) { 
-                    logAudit('S6_BATTLES', 'integrity_checked', { passed: false, details: e.message });
                     logAudit('S6_BATTLES', 'error', { tag, message: e.message });
                 }
             });
             
-            await processBatch(battleTasks, 20);
+            // Reduce concurrency to prevent Error 546 (Worker Resource Limit)
+            await processBatch(battleTasks, 6);
+
+            // Batch synchronize collected shadow leads
+            if (globalShadowLeads.size > 0) {
+                const leads = Array.from(globalShadowLeads.entries()).map(([tag, name]) => ({
+                    player_tag: tag.startsWith('#') ? tag : `#${tag}`,
+                    player_name: name
+                }));
+
+                const recruits = leads.map(l => ({
+                    ...l,
+                    source: 'SHADOW',
+                    status: 'ACTIVE'
+                }));
+
+                // L2 Drivers: Sync to universal player registry first
+                await supabase.rpc('sync_players', { p_players: leads });
+
+                // L2 Drivers: Upsert to shadow recruitment queue
+                const { error: leadErr } = await supabase.rpc('sync_recruits', { p_recruits: recruits });
+                if (leadErr) {
+                    logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Batch Upsert Failure', details: leadErr });
+                }
+            }
         }
         results.battles.success = true;
         logAudit('S6_BATTLES', 'terminated', { tags: allTags.length, success: true });
@@ -105,3 +99,4 @@ export async function runDeepDepth(
         throw e;
     }
 }
+

@@ -46,15 +46,21 @@ export async function runClanSync(
                         data = { items: [data] };
                         }
                     }
-                    const insertPayload: any = { payload: data };
-                    if (stage.key === 'members') {
-                        insertPayload.clan_tag = clanTag;
-                    }
-                    const { error } = await supabase.schema('substrate').from(stage.table).insert(insertPayload);
+                    
+                    const rpcName = stage.key === 'profile' ? 'ingest_raw_clan_profile' :
+                                   stage.key === 'members' ? 'ingest_raw_clan_members' :
+                                   stage.key === 'race' ? 'ingest_raw_river_race' :
+                                   'ingest_raw_war_log';
+
+                    const { error } = await supabase.rpc(rpcName, {
+                        p_clan_tag: clanTag,
+                        p_payload: data
+                    });
+
                     (results as any)[stage.key].success = !error;
                     if (error) {
                         (results as any)[stage.key].error = error.message;
-                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure', details: error });
+                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure (RPC)', details: error });
                     }
                 }
             } else {

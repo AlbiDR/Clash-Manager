@@ -47,7 +47,10 @@ const {
           v-memo="getMemoKeys(item.id, [
             item.potentialScore,
             item.t,
-            item.d.ago
+            item.d.ago,
+            item.d.don,
+            item.d.cards,
+            item.d.war
           ])"
           :id="`recruit-${item.id}`"
           :recruit="item"
