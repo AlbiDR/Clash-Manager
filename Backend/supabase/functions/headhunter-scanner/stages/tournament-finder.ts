@@ -20,7 +20,7 @@ export async function runTournamentDiscovery(
     console.log(`[TOURNAMENT_DISCOVERY] Triggered. Candidates map size: ${candidates.size}, Exclusion set size: ${exclusionSet.size}, Required trophies: ${requiredTrophies}`);
     try {
         // 1. Fetch Autonomous Anchors
-        const { data: anchors, error: aErr } = await supabase.schema('substrate' as any).rpc('get_active_discovery_anchors', { p_limit: 15 });
+        const { data: anchors, error: aErr } = await supabase.schema('substrate' as any).rpc('get_active_discovery_anchors', { p_limit: 36 });
 
         if (aErr) {
             logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${aErr.message}` });
@@ -36,7 +36,7 @@ export async function runTournamentDiscovery(
 
         const { data: cached } = await supabase.schema('substrate').from('discovery_cache')
             .select('player_tag')
-            .gte('scanned_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
+            .gte('scanned_at', new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString());
         const blacklist = new Set(cached?.map(c => c.player_tag) || []);
         console.log(`[TOURNAMENT_DISCOVERY] Loaded ${blacklist.size} cached tournaments to blacklist`);
         let count = 0;
