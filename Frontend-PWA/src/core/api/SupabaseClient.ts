@@ -16,9 +16,29 @@ import { idb } from "../services/StorageService";
 import { ProfileInputSchema, SbRosterRowSchema, SbHeadhunterRowSchema } from "./DataSchemas";
 import * as v from "valibot";
 
+/**
+ * L1 Core: Supabase API Client
+ *
+ * @remarks
+ * Authoritative entry point for the Supabase Binary Stack. This client brokers all
+ * communication between the PWA and the Supabase backend (Edge Functions and Database Views).
+ * It enforces strict validation boundaries using Valibot and handles offline synchronization
+ * via an IndexedDB-backed operation queue.
+ */
+
+/**
+ * Reactive status of the last synchronization attempt.
+ */
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
+
+/**
+ * Key used for primary data persistence in IndexedDB.
+ */
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
 
+/**
+ * Custom error class for network-related failures.
+ */
 export class NetworkError extends Error {
   constructor(message: string) {
     super(message);
@@ -31,20 +51,37 @@ export class NetworkError extends Error {
 const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
 const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
+/**
+ * Factory for creating a scoped Supabase client.
+ * Defaults to the 'features' schema per ADR Section II.
+ */
 const createSupabaseClient = () => {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
         db: { schema: 'features' }
     });
 };
 
+/**
+ * Checks if the required Supabase environment variables are present.
+ * @returns True if configured, false otherwise.
+ */
 export function isConfigured(): boolean {
   return Boolean(getSupabaseUrl() && getSupabaseKey());
 }
 
+/**
+ * Returns the configured Supabase URL for diagnostic purposes.
+ * @returns The Supabase URL or a fallback string.
+ */
 export function getApiUrl(): string {
   return getSupabaseUrl() || "(not configured)";
 }
 
+/**
+ * Performs a connectivity check against the Supabase backend.
+ * @param options - Optional AbortSignal and force refresh flag.
+ * @returns A PingResponse indicating success or error.
+ */
 export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
   try {
     const supabase = createSupabaseClient();
@@ -56,10 +93,18 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
   }
 }
 
+/**
+ * Loads the application state from the local IndexedDB cache.
+ * @returns The cached WebAppData or null if not found.
+ */
 export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
+/**
+ * Persists the application state to the local IndexedDB cache.
+ * @param data - The WebAppData to save.
+ */
 export async function saveCache(data: WebAppData): Promise<void> {
   return idb.set(CACHE_KEY_MAIN, data);
 }
@@ -147,6 +192,17 @@ function mapSbHeadhunterRow(rawHeadhunterRow: unknown): Recruit {
   };
 }
 
+/**
+ * Orchestrates the retrieval of all high-fidelity datasets from the backend.
+ *
+ * @remarks
+ * Implements [ADR] Direct View Access, bypassing minimal RPCs to fetch directly
+ * from authoritative feature views (`roster_view`, `headhunter_view`).
+ *
+ * @param options - Configuration for the request including AbortSignal.
+ * @returns A fully inflated WebAppData object.
+ * @throws Error if Supabase is not configured or network request fails.
+ */
 export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
@@ -170,7 +226,9 @@ export async function fetchRemote(options?: {
   const lb: LeaderboardMember[] = (rosterRes.data || []).map(mapSbRosterRow);
   const hh: Recruit[] = (headhunterRes.data || []).map(mapSbHeadhunterRow);
   
-  // Rationale: Use the kernel's ingestion heartbeat as the authoritative data age.
+  // DECISION LOG: Authoritative Data Age
+  // Rationale: Use the kernel's ingestion heartbeat as the authoritative data age
+  // instead of the client's current time to ensure consistency across the monorepo.
   const timestamp = heartbeatRes.data?.last_success_at 
     ? new Date(heartbeatRes.data.last_success_at).getTime() 
     : Date.now();
@@ -192,6 +250,13 @@ export async function fetchRemote(options?: {
   return webAppData;
 }
 
+/**
+ * Retrieves a detailed player profile from the roster view.
+ *
+ * @param tag - The Clash Royale player tag (with or without #).
+ * @returns A validated ProfileInputSchema object.
+ * @throws Error if profile is not found or fails validation.
+ */
 export async function getPlayerProfile(
   tag: string,
 ): Promise<v.InferOutput<typeof ProfileInputSchema>> {
@@ -223,6 +288,17 @@ export async function getPlayerProfile(
   };
 }
 
+/**
+ * Dismisses recruits by updating their status in the backend.
+ *
+ * @remarks
+ * Implements a deferred operations pattern. Transient network errors trigger
+ * enqueuing into the offline_queue for eventual consistency.
+ *
+ * @param items - Array of dismissal payloads containing player tags and reasons.
+ * @returns ApiResponse with dismissal stats.
+ * @throws NetworkError on non-transient failures.
+ */
 export async function dismissRecruits(
   items: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
@@ -230,7 +306,8 @@ export async function dismissRecruits(
   const { data, error } = await supabase.rpc('dismiss_recruits', { items });
   
   if (error) {
-    // Check if we should enqueue for background retry
+    // DECISION LOG: Transient Error Recovery
+    // Check if we should enqueue for background retry (PGRST301 is usually a timeout/abort)
     const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
     if (isTransient) {
       const queue = (await idb.get<any[]>("offline_queue")) || [];
@@ -244,6 +321,12 @@ export async function dismissRecruits(
   return { success: true, data: data as DismissResponse };
 }
 
+/**
+ * Reverts recruit dismissals.
+ *
+ * @param ids - Array of player tags to undismiss.
+ * @returns ApiResponse with restoration stats.
+ */
 export async function undismissRecruits(
   ids: string[],
 ): Promise<ApiResponse<DismissResponse>> {
@@ -252,6 +335,7 @@ export async function undismissRecruits(
   const { data, error } = await supabase.rpc('undismiss_recruits', { player_tags });
   
   if (error) {
+    // DECISION LOG: Offline Resilience
     const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
     if (isTransient) {
       const queue = (await idb.get<any[]>("offline_queue")) || [];
@@ -265,6 +349,11 @@ export async function undismissRecruits(
   return { success: true, data: data as DismissResponse };
 }
 
+/**
+ * Triggers a background update of the ingestion pipeline.
+ * @param target - Optional target identifier for the update.
+ * @returns Status of the trigger request.
+ */
 export async function triggerBackendUpdate(
   target?: string,
 ): Promise<ApiResponse<{ success: boolean; message: string }>> {
@@ -275,6 +364,11 @@ export async function triggerBackendUpdate(
   return { success: true, data: data as any };
 }
 
+/**
+ * Fetches a limited set of recruits directly from the headhunter view.
+ * Useful for lightweight scans or diagnostic checks.
+ * @returns Array of Recruit objects or null on failure.
+ */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase.from('headhunter_view').select('*').limit(20);
@@ -282,6 +376,11 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   return data.map(mapSbHeadhunterRow);
 }
 
+/**
+ * Registers a PWA push subscription in the backend.
+ * @param subscription - The native PushSubscription object.
+ * @returns True if successfully registered.
+ */
 export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
   const supabase = createSupabaseClient();
   const { error } = await supabase.from('push_subscriptions').insert({
