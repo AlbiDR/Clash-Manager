@@ -13,7 +13,7 @@ import type {
   LeaderboardMember,
 } from "@core/types";
 import { idb } from "../services/StorageService";
-import { ProfileInputSchema } from "./DataSchemas";
+import { ProfileInputSchema, SbRosterRowSchema, SbHeadhunterRowSchema } from "./DataSchemas";
 import * as v from "valibot";
 
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
@@ -66,22 +66,45 @@ export async function saveCache(data: WebAppData): Promise<void> {
 
 /**
  * Transforms a Supabase roster row into a LeaderboardMember
+ *
+ * @remarks
+ * Implements a strict validation boundary (Target B [1]) to eliminate the 'any Plague'.
+ * Rationale: Ensures that malformed Supabase views do not corrupt the internal store.
  */
-function mapSbRosterRow(row: any): LeaderboardMember {
+function mapSbRosterRow(rawRosterRow: unknown): LeaderboardMember {
+  const result = v.safeParse(SbRosterRowSchema, rawRosterRow);
+
+  // THREAT: Malformed Supabase view data.
+  // Rationale: We fallback to safe defaults to prevent a full UI crash
+  // while still allowing partial data to be rendered.
+  const row = result.success ? result.output : {
+    player_tag: '',
+    player_name: 'Unknown',
+    trophies: 0,
+    performance_score: 0,
+    raw_performance_score: 0,
+    last_seen_at: null,
+    role: '',
+    tenure_days: 0,
+    last_seen_label: '-',
+    stability_index: 0,
+    week_fame: 0,
+  } as v.InferOutput<typeof SbRosterRowSchema>;
+
   return {
-    id: row.player_tag?.replace('#', '') || '',
-    n: row.player_name || '',
-    t: Number(row.trophies) || 0,
-    performanceScore: Number(row.pes || row.performance_score) || 0,
-    performanceRawScore: Number(row.rpes || row.raw_performance_score) || 0,
+    id: row.player_tag.replace('#', ''),
+    n: row.player_name,
+    t: row.trophies,
+    performanceScore: row.pes ?? row.performance_score,
+    performanceRawScore: row.rpes ?? row.raw_performance_score,
     dt: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
     d: {
-      role: row.role || '',
-      days: Number(row.tenure_days) || 0,
-      avg: Number(row.performance_score) || 0,
-      seen: row.last_seen_label || '-',
-      rate: row.stability_index ? `${Math.round(Number(row.stability_index) * 100)}%` : '-',
-      wfame: Number(row.week_fame) || 0,
+      role: row.role,
+      days: row.tenure_days,
+      avg: row.performance_score,
+      seen: row.last_seen_label,
+      rate: row.stability_index ? `${Math.round(row.stability_index * 100)}%` : '-',
+      wfame: row.week_fame,
       hist: '-',
     },
   };
@@ -89,19 +112,36 @@ function mapSbRosterRow(row: any): LeaderboardMember {
 
 /**
  * Transforms a Supabase headhunter row into a Recruit
+ *
+ * @remarks
+ * Implements a strict validation boundary (Target B [1]) to eliminate the 'any Plague'.
  */
-function mapSbHeadhunterRow(row: any): Recruit {
+function mapSbHeadhunterRow(rawHeadhunterRow: unknown): Recruit {
+  const result = v.safeParse(SbHeadhunterRowSchema, rawHeadhunterRow);
+
+  const row = result.success ? result.output : {
+    player_tag: '',
+    player_name: 'Unknown',
+    trophies: 0,
+    potential_score: 0,
+    raw_potential_score: 0,
+    last_seen_at: null,
+    donations: 0,
+    war_wins: 0,
+    longevity_label: '-',
+  } as v.InferOutput<typeof SbHeadhunterRowSchema>;
+
   return {
-    id: row.player_tag?.replace('#', '') || '',
-    n: row.player_name || '',
-    t: Number(row.trophies) || 0,
-    potentialScore: Number(row.pos || row.potential_score) || 0,
-    potentialRawScore: Number(row.rpos || row.raw_potential_score) || 0,
+    id: row.player_tag.replace('#', ''),
+    n: row.player_name,
+    t: row.trophies,
+    potentialScore: row.pos ?? row.potential_score,
+    potentialRawScore: row.rpos ?? row.raw_potential_score,
     lastScan: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
     d: {
-      don: Number(row.donations) || 0,
-      war: Number(row.war_wins) || 0,
-      ago: row.longevity_label || '-',
+      don: row.donations,
+      war: row.war_wins,
+      ago: row.longevity_label,
       cards: 0,
     },
   };
@@ -156,21 +196,31 @@ export async function getPlayerProfile(
   tag: string,
 ): Promise<v.InferOutput<typeof ProfileInputSchema>> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase.from('roster_view').select('*').eq('player_tag', tag.startsWith('#') ? tag : `#${tag}`).single();
+  const playerTag = tag.startsWith('#') ? tag : `#${tag}`;
+  const { data: rawProfileData, error } = await supabase.from('roster_view').select('*').eq('player_tag', playerTag).single();
   
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("Profile not found");
+  if (!rawProfileData) throw new Error("Profile not found");
+
+  // [GUARD] VALIDATION BOUNDARY: Target B [1]
+  // Rationale: Harden raw Supabase data before transforming to internal profile shape.
+  const result = v.safeParse(SbRosterRowSchema, rawProfileData);
+  if (!result.success) {
+    throw new Error(`Profile data validation failed: ${result.issues[0].message}`);
+  }
+
+  const profileRow = result.output;
   
   return {
     profile: {
-      name: data.player_name,
-      tag: data.player_tag,
-      kingLevel: data.exp_level || 1,
+      name: profileRow.player_name,
+      tag: profileRow.player_tag,
+      kingLevel: profileRow.exp_level,
       xpIntoLevel: 0
     },
     cards: [],
     inventory: { gold: 0, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } }
-  } as any;
+  };
 }
 
 export async function dismissRecruits(
