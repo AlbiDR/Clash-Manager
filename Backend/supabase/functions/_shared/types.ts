@@ -47,6 +47,9 @@ export interface ScannerStats {
     discovery_tournament?: number;
     profiles_scanned: number;
     recruits_ingested: number;
+    ingested_by_source?: Record<string, number>;
+    highest_rpos?: number;
+    lowest_rpos?: number;
     rescans_processed?: number;
     errors: string[];
 }
