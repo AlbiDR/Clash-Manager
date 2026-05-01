@@ -54,7 +54,7 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 | **View** | **Vue 3.5** | Reactive interface with Composition API and `<script setup>` |
 | **Logic** | **TypeScript** | Strict-mode type safety across the entire client kernel |
 | **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
-| **Transport** | **GasClient** | Hybrid bridge utilizing a Worker Hub Circuit Breaker (20s timeout) with an authoritative Google Apps Script fallback. Implements 'text/plain' requests to bypass CORS preflight and Matrix Inflation (decompressing row-based matrices) to reduce payload size by 70%. |
+| **Transport** | **SupabaseClient** | Direct Layer 1 interface for the Supabase Binary Stack. Leverages PostgREST for high-fidelity data retrieval from authoritative feature views, bypassing legacy matrix-inflation protocols for native relational performance. |
 | **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
 | **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
 | **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
@@ -68,9 +68,9 @@ The application kernel (@core) manages complex system-level behaviors through sp
 
 ### 1. Unified State & Sync (`useClashDataStore`)
 The authoritative Layer 1 central store for high-integrity clan datasets.
-- **Unified Sync Kernel**: Centralizes state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence across all hydration paths (local, worker, background).
-- **Hub Attribution Logic**: Tracks dataset provenance via `dataSource` and `hubTimestamp` to distinguish between direct GAS and optimized Worker Hub payloads.
-- **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) to ensure accurate data age calculations across distributed environments.
+- **Unified Sync Kernel**: Centralizes state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence across all hydration paths (local, background).
+- **Relational Ingestion**: Orchestrates data flow from Supabase `roster_view` and `headhunter_view` into the reactive state, ensuring atomic synchronization of clan and recruitment telemetry.
+- **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) and the authoritative ingestion heartbeat (`timestamp`) to ensure accurate data age calculations.
 - **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the remote backend in the background.
 - **Validation Boundary**: All inbound payloads are strictly validated against `WebAppDataSchema` to prevent "any" plague propagation into the application state.
 
@@ -101,8 +101,8 @@ A resilient, global notification service with integrated hardware feedback.
 
 ### 6. Connectivity Singleton (`useApiState`)
 The authoritative Layer 1 arbiter of backend availability and handshake discovery (located in `@core/api/`).
-- **Handshake Discovery**: Orchestrates the initial 25,000ms handshake to detect server availability, cold-boot "waking" states, or configuration gaps.
-- **Worker Verification**: Proactively pings the high-performance Worker Hub to determine if the optimized data path is available.
+- **Handshake Discovery**: Orchestrates the initial 25,000ms handshake to detect Supabase availability, connectivity gaps, or configuration omissions.
+- **Supabase Verification**: Proactively pings the database substrate to determine if the API surface is nominal and configured.
 
 ### 7. Connectivity Arbitrator (`useConnectionStatus`)
 Unifies physical network status and logical API availability into a single source of truth.
@@ -256,14 +256,11 @@ pnpm dev
 ```
 
 ### Environment Setup
-Create a .env file in the root directory to link to your backend:
+Create a `.env` file in the root directory to link to your Supabase project:
 
 ```ini
-# URL of your Google Apps Script Web App execution
-VITE_GAS_URL=https://script.google.com/macros/s/.../exec
-
-# Worker Hub Opt-In (Enables 0ms latency Data Hub reads with fallback)
-VITE_USE_WORKER_HUB=true
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
 ---
