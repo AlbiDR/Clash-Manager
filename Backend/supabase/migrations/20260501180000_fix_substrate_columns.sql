@@ -11,12 +11,15 @@ ALTER TABLE substrate.raw_war_log
 ADD COLUMN IF NOT EXISTS clan_tag TEXT;
 
 -- Add check constraints to ensure valid tags if they are provided
+ALTER TABLE substrate.raw_clan_profile DROP CONSTRAINT IF EXISTS check_clan_tag_format;
 ALTER TABLE substrate.raw_clan_profile 
 ADD CONSTRAINT check_clan_tag_format CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$');
 
+ALTER TABLE substrate.raw_river_race DROP CONSTRAINT IF EXISTS check_clan_tag_format;
 ALTER TABLE substrate.raw_river_race 
 ADD CONSTRAINT check_clan_tag_format CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$');
 
+ALTER TABLE substrate.raw_war_log DROP CONSTRAINT IF EXISTS check_clan_tag_format;
 ALTER TABLE substrate.raw_war_log 
 ADD CONSTRAINT check_clan_tag_format CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$');
 
