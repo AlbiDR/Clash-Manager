@@ -1,0 +1,90 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+name: Run Headhunter
+
+on:
+  workflow_dispatch:
+    inputs:
+      tournaments:
+        description: 'Tournaments to scan (comma-separated or "AUTO")'
+        required: true
+        default: 'AUTO'
+
+jobs:
+  scout:
+    name: "Manual Scouting Pipeline"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Headhunter Scanner
+        id: trigger
+        env:
+          SUPABASE_PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}
+          INTERNAL_BEARER_TOKEN: ${{ secrets.INTERNAL_BEARER_TOKEN }}
+        run: |
+          # 1. Prepare Payload
+          TOURNAMENTS_INPUT="${{ github.event.inputs.tournaments }}"
+          if [ "$TOURNAMENTS_INPUT" = "AUTO" ]; then
+            PAYLOAD="{\"tournaments\": [\"AUTO\"]}"
+          else
+            # Convert comma-separated string to JSON array
+            JSON_ARRAY=$(echo "$TOURNAMENTS_INPUT" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+            PAYLOAD="{\"tournaments\": $JSON_ARRAY}"
+          fi
+
+          # 2. Execute Request
+          echo "Triggering Headhunter Scanner for project: $SUPABASE_PROJECT_ID"
+          RESPONSE=$(curl -s -X POST "https://$SUPABASE_PROJECT_ID.supabase.co/functions/v1/headhunter-scanner" \
+            -H "Authorization: Bearer $INTERNAL_BEARER_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          # 3. Handle Errors
+          if echo "$RESPONSE" | grep -q '"error"'; then
+            echo "::error::Scanner reported an error: $(echo $RESPONSE | jq -r '.error')"
+            exit 1
+          fi
+
+          # 4. Save Response for Summary
+          echo "response_data=$RESPONSE" >> $GITHUB_OUTPUT
+
+      - name: Generate Clinical Report
+        if: success()
+        run: |
+          DATA='${{ steps.trigger.outputs.response_data }}'
+          
+          # Extract Stats
+          INGESTED=$(echo "$DATA" | jq -r '.data.recruits_ingested // 0')
+          SCANNED=$(echo "$DATA" | jq -r '.data.profiles_scanned // 0')
+          MAX_RPOS=$(echo "$DATA" | jq -r '.data.highest_rpos // 0')
+          MIN_RPOS=$(echo "$DATA" | jq -r '.data.lowest_rpos // 0')
+          DURATION=$(echo "$DATA" | jq -r '.duration_ms // 0')
+          DURATION_SEC=$(echo "scale=2; $DURATION / 1000" | bc)
+          
+          # Source Breakdown
+          SOURCES=$(echo "$DATA" | jq -r '.data.ingested_by_source // {}')
+          SOURCE_MARKDOWN=""
+          if [ "$SOURCES" != "{}" ]; then
+            SOURCE_MARKDOWN="### Ingestion by Source"$'\n'"| Source | Count |"$'\n'"| :--- | :--- |"
+            while IFS="=" read -r key value; do
+              SOURCE_MARKDOWN="$SOURCE_MARKDOWN"$'\n'"| $key | $value |"
+            done < <(echo "$SOURCES" | jq -r 'to_entries | .[] | "\(.key)=\(.value)"')
+          fi
+
+          # Generate Summary
+          {
+            echo "## 🏹 Headhunter Scouting Report"
+            echo "Execution completed successfully in **${DURATION_SEC}s**."
+            echo ""
+            echo "### Core Stats"
+            echo "| Metric | Value |"
+            echo "| :--- | :--- |"
+            echo "| **New Recruits Ingested** | \`$INGESTED\` |"
+            echo "| **Highest RPoS** | \`$MAX_RPOS\` |"
+            echo "| **Lowest RPoS** | \`$MIN_RPOS\` |"
+            echo "| **Total Profiles Scanned** | \`$SCANNED\` |"
+            echo ""
+            if [ -n "$SOURCE_MARKDOWN" ]; then
+              echo "$SOURCE_MARKDOWN"
+            fi
+          } >> $GITHUB_STEP_SUMMARY
