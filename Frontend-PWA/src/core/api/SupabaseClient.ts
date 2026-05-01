@@ -74,15 +74,15 @@ function mapSbRosterRow(row: any): LeaderboardMember {
     t: Number(row.trophies) || 0,
     performanceScore: Number(row.pes || row.performance_score) || 0,
     performanceRawScore: Number(row.rpes || row.raw_performance_score) || 0,
-    dt: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
+    dt: 0, // roster_view currently does not provide a score delta
     d: {
       role: row.role || '',
       days: Number(row.tenure_days) || 0,
-      avg: Number(row.performance_score) || 0,
-      seen: row.last_seen_label || '-',
+      avg: Number(row.donations) || 0,
+      seen: row.last_seen_at || '-',
       rate: row.stability_index ? `${Math.round(Number(row.stability_index) * 100)}%` : '-',
       wfame: Number(row.week_fame) || 0,
-      hist: '-',
+      hist: '-', // roster_view currently does not provide a war history string
     },
   };
 }
@@ -101,7 +101,7 @@ function mapSbHeadhunterRow(row: any): Recruit {
     d: {
       don: Number(row.donations) || 0,
       war: Number(row.war_wins) || 0,
-      ago: row.longevity_label || '-',
+      ago: row.found_date || '-',
       cards: 0,
     },
   };
