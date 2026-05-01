@@ -19,6 +19,7 @@ Core philosophies that prioritize technical purity and the elimination of noise.
 - **Single Responsibility Principle (SRP):** Each module, class, or function must have one, and only one, reason to change.
 - **Componentization:** Deconstruct monolithic views into atomic, reusable components. No view should own logic it cannot fully encapsulate.
 - **YAGNI (You Aren't Gonna Need It):** Reject speculative features and pre-emptive abstractions. No logic, layer, or interface is introduced until the current commit explicitly demands it. Pairs with Lean Pruning to enforce minimum viable evolution.
+- **Adaptive Pipeline Design (No Magic Numbers):** Scoring formulas, normalisation anchors, thresholds, and benchmarks must always be derived from the live data corpus. Hardcoded constants (magic numbers) are architectural failures — they produce brittle, time-decaying references that cease to reflect reality as the game's playerbase and score ranges evolve. Every formula must be self-calibrating: as real-world conditions shift, the system adapts automatically without requiring a code change. The only permitted numeric literals are mathematical identities (e.g., `1` as a zero-division guard, `100` as a percentage ceiling) that carry no business semantics. All business thresholds must be derived from or validated against live data.
 
 ---
 
@@ -289,6 +290,7 @@ To maintain a clinical, drift-free stack, the GitHub repository is the **Absolut
 - [ ] **Error Propagation:** All errors typed and routed to Layer 5.
 - [ ] **A11y:** Touch targets (48px minimum) and ARIA labels correct.
 - [ ] **Visual Purity:** Zero emojis.
+- [ ] **Adaptive Formulas:** No magic numbers or hardcoded business thresholds. All scoring anchors, benchmarks, and normalisation denominators are data-derived from the live corpus.
 - [ ] **Structural IQ:** `npx ast-grep scan` run for pattern compliance.
 - [ ] **Architectural IQ:** `npx depcruise` run to verify zero layer violations.
 - [ ] **Licensing:** Mandatory SPDX and Copyright headers at line 1.
