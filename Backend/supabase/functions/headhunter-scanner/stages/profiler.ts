@@ -62,7 +62,7 @@ export async function runProfiler(
                             war_wins: war,
                             raw_potential_score: rawScore,
                             source: candidates.get(tag) || 'UNKNOWN',
-                            status: 'QUEUE'
+                            status: 'ACTIVE'
                         });
                         validCount++;
                     } else {
