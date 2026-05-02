@@ -36,7 +36,7 @@ import type { Recruit } from "@core/types";
  */
 export function useRecruiter() {
   const clashDataStore = useClashDataStore();
-  const { data } = storeToRefs(clashDataStore);
+  const { data, isRefreshing } = storeToRefs(clashDataStore);
   const { refresh: refreshStore } = clashDataStore;
   const { dismissRecruitsAction } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
@@ -67,17 +67,17 @@ export function useRecruiter() {
     onDismiss: dismissBulk,
   });
 
-  // 🧹 CLEANUP: Extra Recruit Logic managed here
-  watch(
-    () => data.value?.hh,
-    (newRecruits) => {
-      if (newRecruits && newRecruits.length > 0) {
-        const currentIds = newRecruits.map((recruit) => recruit.id);
-        blacklist.prune(currentIds);
-      }
-    },
-    { deep: true, immediate: true },
-  );
+  // 🧹 CLEANUP: Prune tombstones ONLY after a real server refresh completes.
+  // Rationale: Pruning during optimistic local updates causes hidden recruits 
+  // to reappear if the local cache is reloaded before the server has 
+  // fully processed the dismissal. By waiting for isRefreshing to flip 
+  // from true -> false, we ensure we only prune against authoritative server data.
+  watch(isRefreshing, (refreshing) => {
+    if (!refreshing && data.value?.hh) {
+      const currentIds = data.value.hh.map((recruit) => recruit.id);
+      blacklist.prune(currentIds);
+    }
+  });
 
   /**
    * RECRUIT DISMISSAL ENGINE
@@ -160,6 +160,7 @@ export function useRecruiter() {
 
   return {
     ...controller,
+    isRefreshing,
     dismissBulk,
   };
 }
