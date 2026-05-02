@@ -177,16 +177,21 @@ export async function dismissRecruits(
   items: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase.rpc('dismiss_recruits', { items });
+  // [ADR] Normalize IDs: Ensure all tags have the # prefix to satisfy drivers.recruit_blacklist CHECK constraints.
+  const normalizedItems = items.map(item => ({
+    ...item,
+    id: item.id.startsWith('#') ? item.id : `#${item.id}`
+  }));
+  const { data, error } = await supabase.rpc('dismiss_recruits', { items: normalizedItems });
   
   if (error) {
     // Check if we should enqueue for background retry
     const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
     if (isTransient) {
       const queue = (await idb.get<any[]>("offline_queue")) || [];
-      queue.push({ type: 'RECRUIT_DISMISSAL', items, timestamp: Date.now() });
+      queue.push({ type: 'RECRUIT_DISMISSAL', items: normalizedItems, timestamp: Date.now() });
       await idb.set("offline_queue", queue);
-      return { success: true, data: { success: true, count: items.length, message: "Enqueued" } };
+      return { success: true, data: { success: true, count: normalizedItems.length, message: "Enqueued" } };
     }
     throw new NetworkError(error.message);
   }

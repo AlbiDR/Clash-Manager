@@ -103,8 +103,9 @@ export function useRecruiter() {
     // 🎯 DIRECT SCORE CAPTURE: Extract score at the point of dismissal
     const dismissalPayload = recruitsToRemove.map(recruit => ({
       id: recruit.id,
+      name: recruit.n,
       score: recruit.potentialRawScore || 0,
-      potentialRawScore: recruit.potentialRawScore || 0
+      raw_potential_score: recruit.potentialRawScore || 0
     }));
 
     console.log('[Dismissal] Captured scores:', dismissalPayload.map(dismissalItem => `${dismissalItem.id}: ${dismissalItem.score}`));
