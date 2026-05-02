@@ -26,7 +26,7 @@ const trendInfo = computed(() => {
   return calculateMomentum(dt, currentRaw);
 });
 
-const tooltipVal = computed(() => {
+const benchmarkTooltipContent = computed(() => {
   return getSafeBenchmark("lb", "momentum", trendInfo.value?.raw);
 });
 </script>
@@ -36,7 +36,7 @@ const tooltipVal = computed(() => {
     v-if="trendInfo"
     class="momentum-pill hit-target"
     :class="trendInfo.dir"
-    v-tooltip="tooltipVal"
+    v-tooltip="benchmarkTooltipContent"
   >
     <Icon
       :name="trendInfo.dir === 'up' ? 'trend_up' : 'trend_down'"

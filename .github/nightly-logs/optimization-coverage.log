@@ -113,3 +113,9 @@ Frontend-PWA/src/features/roster/composables/composables-tests/useLeaderboard.sp
 Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts
 Backend-Worker/src/services/RecruitmentService.ts
 Frontend-PWA/src/app/App.vue
+Frontend-PWA/src/shared/composables/useCardMechanics.ts
+Frontend-PWA/src/shared/ui/BaseCard.vue
+Frontend-PWA/src/shared/ui/StatisticItem.vue
+Frontend-PWA/src/shared/ui/ScoreBadge.vue
+Frontend-PWA/src/shared/ui/TrophyBadge.vue
+Frontend-PWA/src/shared/ui/MomentumPill.vue

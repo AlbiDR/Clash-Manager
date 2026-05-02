@@ -19,7 +19,7 @@ const props = defineProps<{
 
 const { getSafeBenchmark } = useBenchmarking();
 
-const tooltipVal = computed(() => {
+const benchmarkTooltipContent = computed(() => {
   return getSafeBenchmark(props.context, "trophies", props.value);
 });
 </script>
@@ -27,7 +27,7 @@ const tooltipVal = computed(() => {
 <template>
   <div
     class="trophy-meta hit-target"
-    v-tooltip="tooltipVal"
+    v-tooltip="benchmarkTooltipContent"
   >
     <Icon name="trophy" size="12" />
     <span class="trophy-val">{{ (props.value || 0).toLocaleString() }}</span>
