@@ -11,7 +11,7 @@ The Headhunter feature provides a real-time feed of candidates scanned from exte
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Strictly siloed. No imports from `Laboratory` or `Roster`.
 - **Dependencies**:
-  - `@core/api/GasClient`: Backend communication (Dismissal/Turbo Scan).
+  - `@core/api/SupabaseClient`: Layer 1 interface for the Supabase Binary Stack.
   - `@core/services/useBadge`: External notification badges.
   - `@core/services/useBroadcastChannel`: Cross-tab state synchronization.
   - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
@@ -20,14 +20,14 @@ The Headhunter feature provides a real-time feed of candidates scanned from exte
 
 ### Recruitment Orchestrator (useRecruiter.ts)
 The primary behavioral engine for the Headhunter interface.
-- **Dual-Phase Sync**: Orchestrates **Turbo Scan** (direct-to-worker fetch for discovery) and **GAS Sync** (consistency check with the backing spreadsheet).
-- **Hybrid Merge**: Injecting worker results directly into local reactive state to reduce perceived latency.
+- **Data Orchestration**: Synchronizes recruitment telemetry from the Layer 1 `useClashDataStore`, which handles the authoritative fetch from Supabase feature views.
+- **Active Window Management**: Implements a 50-recruit "Active Window" (top candidates) while maintaining an internal 100-item pre-compiled pool for seamless replacement during bulk dismissals.
 - **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Score, Trophies, Wins) and deep-linking.
 
 ### Dismissal Engine (useHeadhunter.ts)
 Handles the lifecycle of recruit rejection.
-- **Zero Latency Pattern**: Implements optimistic UI updates. Recruits are hidden instantly from the user's view while the network request is processed in the background.
-- **Undo Logic**: Provides a 5-second grace period via Toast notifications to reverse dismissals before they are finalized.
+- **Zero Latency Pattern**: Implements optimistic UI updates. Recruits are hidden instantly from the user's view while the network request is processed in the background via Supabase RPCs.
+- **Undo Logic**: Provides a 5-second grace period via Toast notifications to reverse dismissals before they are finalized in the backend.
 - **Broadcast Sync**: Dispatches "dismiss" events via `BroadcastChannel` to ensure recruits hidden in one tab are instantly removed from all other open instances of the PWA.
 
 ### Resilience & Persistence (useRecruitBlacklist.ts)
@@ -37,12 +37,13 @@ Manages the "tombstone" state for dismissed recruits.
 
 ## Key Constraints & Why Not X?
 
-- **Why Turbo Scan?**: Traditional GAS execution can take 5-10 seconds. Turbo Scan bypasses the GAS orchestration layer to query the Cloud Worker directly, delivering recruitment updates in <500ms.
-- **Why Tombstones?**: To ensure "Visual Purity". If a user dismisses a recruit, they should never see it again, even if a subsequent background refresh returns a stale payload from a Google Sheet that hasn't finished its write cycle yet.
-- **No Cross-Feature Imports**: Headhunter must remain context-agnostic. It knows about "Recruits" but nothing about "Clan Members". Evaluation against internal benchmarks is handled server-side in the `Scoring_Kernel`.
+- **Why Edge-Native Discovery?**: Recruitment scanning requires high concurrency and low latency. By utilizing **Supabase Edge Functions** (Deno) instead of legacy polling, the system can discover and profile elite recruits from global tournaments 24/7 with zero overhead on the client.
+- **Why Tombstones?**: To ensure "Visual Purity". If a user dismisses a recruit, they should never see it again, even if a subsequent background refresh returns a stale payload from a database view that hasn't finished its write cycle yet.
+- **No Cross-Feature Imports**: Headhunter must remain context-agnostic. It knows about "Recruits" but nothing about "Clan Members". Evaluation against internal benchmarks is handled server-side in the Supabase substrate.
 
 ## Data Flow
-1. **Ingestion**: `useRecruiter` triggers a sync.
-2. **Scoring**: Candidates are scored server-side using the **Hybrid Benchmark** (PeS/PoS logic).
-3. **Display**: Recruits are filtered against the local **Blacklist** (tombstones) and rendered via the `ConsoleLayout`.
-4. **Action**: User dismisses a recruit -> Tombstone injected -> GAS request dispatched -> Broadcast sent to other tabs.
+1. **Discovery**: Supabase Edge Functions scan global tournaments and ingest candidates into the `substrate`.
+2. **Scoring**: Candidates are scored and ranked within the database using the **Hybrid Benchmark** (PoS/RPoS logic).
+3. **Ingestion**: `useRecruiter` observes the `useClashDataStore`, which fetches the top 100 recruits from the `features.headhunter_view`.
+4. **Display**: Recruits are filtered against the local **Blacklist** (tombstones) and rendered via the `ConsoleLayout`.
+5. **Action**: User dismisses a recruit -> Tombstone injected -> Supabase RPC dispatched -> Broadcast sent to other tabs.
