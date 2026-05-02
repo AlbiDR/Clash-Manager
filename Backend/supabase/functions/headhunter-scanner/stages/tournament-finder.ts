@@ -20,7 +20,7 @@ export async function runTournamentDiscovery(
     console.log(`[TOURNAMENT_DISCOVERY] Triggered. Candidates map size: ${candidates.size}, Exclusion set size: ${exclusionSet.size}, Required trophies: ${requiredTrophies}`);
     try {
         // 1. Fetch Autonomous Anchors
-        const { data: anchors, error: aErr } = await supabase.schema('substrate' as any).rpc('get_active_discovery_anchors', { p_limit: 36 });
+        const { data: anchors, error: aErr } = await supabase.rpc('get_active_discovery_anchors', { p_limit: 36 });
 
         if (aErr) {
             logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${aErr.message}` });
@@ -34,7 +34,7 @@ export async function runTournamentDiscovery(
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
-        const { data: cached } = await supabase.schema('substrate').from('discovery_cache')
+        const { data: cached } = await supabase.from('discovery_cache')
             .select('player_tag')
             .gte('scanned_at', new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString());
         const blacklist = new Set(cached?.map(c => c.player_tag) || []);
@@ -109,7 +109,7 @@ export async function runTournamentDiscovery(
                             } else {
                                 console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag} had no membersList property`);
                             }
-                            await supabase.schema('substrate').from('discovery_cache').upsert({ player_tag: t.tag, type: 'TOURNAMENT' });
+                            await supabase.from('discovery_cache').upsert({ player_tag: t.tag, type: 'TOURNAMENT' });
                         } else {
                             console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${t.tag} failed with HTTP ${deRes.status}`);
                         }

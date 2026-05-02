@@ -116,7 +116,7 @@ export async function runProfiler(
 
             console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into raw_scout_logs...`);
             for (const [source, batch] of bySource) {
-                const { error: ingestErr } = await supabase.schema('substrate').from('raw_scout_logs').insert({
+                const { error: ingestErr } = await supabase.from('raw_scout_logs').insert({
                     payload: batch,
                     source
                 });
