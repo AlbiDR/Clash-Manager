@@ -41,7 +41,10 @@ interface CardProps {
  * @sideeffects
  * - Accesses the `useHaptics` service to trigger device vibration.
  */
-export function useCardMechanics(props: CardProps, callbacks: CardCallbacks) {
+export function useCardMechanics(
+  interactionProps: CardProps,
+  interactionCallbacks: CardCallbacks,
+) {
   const haptics = useHaptics();
 
   /**
@@ -49,10 +52,10 @@ export function useCardMechanics(props: CardProps, callbacks: CardCallbacks) {
    * If in selection mode, toggles selection. Otherwise, expands the card.
    */
   function handleTap() {
-    if (props.selectionMode) {
-      callbacks.onSelect();
+    if (interactionProps.selectionMode) {
+      interactionCallbacks.onSelect();
     } else {
-      callbacks.onExpand();
+      interactionCallbacks.onExpand();
     }
   }
 
@@ -61,35 +64,35 @@ export function useCardMechanics(props: CardProps, callbacks: CardCallbacks) {
    * Always triggers selection, acting as the primary entry point for batch mode.
    */
   function handleLongPress() {
-    callbacks.onSelect();
+    interactionCallbacks.onSelect();
   }
 
   /**
    * Specialized handler for clicks on the ScoreBadge.
    *
    * @remarks
-   * Utilizes `e.stopPropagation()` to isolate the event from the card's main
+   * Utilizes `interactionEvent.stopPropagation()` to isolate the event from the card's main
    * tap handler, ensuring that clicking the score ONLY selects the card
    * without triggering an unintentional expansion or collapse.
    */
-  function handleScoreClick(e: MouseEvent | TouchEvent) {
-    e.stopPropagation(); // Event Isolation: Prevent card-level handleTap
+  function handleScoreClick(interactionEvent: MouseEvent | TouchEvent) {
+    interactionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
     haptics.tap();
-    callbacks.onSelect();
+    interactionCallbacks.onSelect();
   }
 
   /**
    * Specialized handler for clicks on the Expansion Toggle (Chevron).
    *
    * @remarks
-   * Utilizes `e.stopPropagation()` to isolate the event from the card's main
+   * Utilizes `interactionEvent.stopPropagation()` to isolate the event from the card's main
    * tap handler. This is critical when the card is in selection mode,
    * allowing the user to expand details without unintentionally selecting the item.
    */
-  function handleExpandClick(e: MouseEvent | TouchEvent) {
-    e.stopPropagation(); // Event Isolation: Prevent card-level handleTap
+  function handleExpandClick(interactionEvent: MouseEvent | TouchEvent) {
+    interactionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
     haptics.tap();
-    callbacks.onExpand();
+    interactionCallbacks.onExpand();
   }
 
   return {
