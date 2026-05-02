@@ -4,6 +4,8 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation } from "../../_shared/muscle.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
+import * as v from "npm:valibot";
+import { RoyaleClanSchema, RoyaleFlexibleListSchema, RoyaleRiverRaceSchema } from "../../_shared/schemas.ts";
 
 /**
  * Stages 2-5: Native Clan Synchronization
@@ -12,61 +14,80 @@ import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
 export async function runClanSync(
     clanTag: string,
     results: IngestionResult, 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ) {
     const CLAN_PATH = `/clans/${encodeURIComponent(clanTag)}`;
+
     const clanTasks = [
-        { key: 'profile', path: CLAN_PATH, table: 'raw_clan_profile' },
-        { key: 'members', path: `${CLAN_PATH}/members`, table: 'raw_clan_members' },
-        { key: 'race', path: `${CLAN_PATH}/currentriverrace`, table: 'raw_river_race' },
-        { key: 'warlog', path: `${CLAN_PATH}/riverracelog`, table: 'raw_war_log' }
+        { key: 'profile', path: CLAN_PATH, table: 'raw_clan_profile', schema: RoyaleClanSchema },
+        { key: 'members', path: `${CLAN_PATH}/members`, table: 'raw_clan_members', schema: RoyaleFlexibleListSchema },
+        { key: 'race', path: `${CLAN_PATH}/currentriverrace`, table: 'raw_river_race', schema: RoyaleRiverRaceSchema },
+        { key: 'warlog', path: `${CLAN_PATH}/riverracelog`, table: 'raw_war_log', schema: RoyaleFlexibleListSchema }
     ] as const;
 
-    for (const stage of clanTasks) {
-        const stageName = `S2_S5_${stage.key.toUpperCase()}`;
+    for (const taskConfig of clanTasks) {
+        const stageName = `S2_S5_${taskConfig.key.toUpperCase()}`;
         logAudit(stageName, 'triggered');
+
         try {
-            logAudit(stageName, 'called', { path: stage.path });
-            const res = await fetchWithRotation(stage.path);
-            logAudit(stageName, 'run', { status: res.status });
-            if (res.ok) {
-                let data = await res.json();
-                const isValid = !!data && typeof data === 'object';
+            logAudit(stageName, 'called', { path: taskConfig.path });
+            const apiResponse = await fetchWithRotation(taskConfig.path);
+            logAudit(stageName, 'run', { status: apiResponse.status });
+
+            if (apiResponse.ok) {
+                const rawRoyaleData = await apiResponse.json().catch(() => null);
+
+                // [GUARD] VALIDATION BOUNDARY: Target B [1]
+                // Rationale: Harden raw Royale API data before ingesting into substrate.
+                // This prevents silent corruption of the raw tables by malformed API responses.
+                const parsed = v.safeParse(taskConfig.schema, rawRoyaleData);
+
                 logAudit(stageName, 'resulted_data');
                 logAudit(stageName, 'integrity_checked', { 
-                    passed: isValid, 
-                    details: isValid ? 'Data shape validated (Object)' : 'Malformed payload' 
+                    passed: parsed.success,
+                    details: parsed.success ? 'Data shape validated' : 'Malformed payload'
                 });
                 
-                if (isValid) {
-                    if (stage.key === 'members' || stage.key === 'warlog') {
-                        if (Array.isArray(data)) {
-                        data = { items: data };
-                        } else if (!data.items) {
-                        data = { items: [data] };
+                if (parsed.success) {
+                    let finalPayload = parsed.output;
+
+                    // Normalization for list-based endpoints
+                    if (taskConfig.key === 'members' || taskConfig.key === 'warlog') {
+                        if (Array.isArray(finalPayload)) {
+                            finalPayload = { items: finalPayload };
                         }
                     }
-                    const insertPayload: any = { payload: data };
-                    if (stage.key === 'members') {
-                        insertPayload.clan_tag = clanTag;
+
+                    const dbPayload: Record<string, unknown> = { payload: finalPayload };
+                    if (taskConfig.key === 'members') {
+                        dbPayload.clan_tag = clanTag;
                     }
-                    const { error } = await supabase.schema('substrate').from(stage.table).insert(insertPayload);
-                    (results as any)[stage.key].success = !error;
-                    if (error) {
-                        (results as any)[stage.key].error = error.message;
-                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure', details: error });
+
+                    const { error: dbError } = await supabase.schema('substrate').from(taskConfig.table).insert(dbPayload);
+
+                    const resultStage = results[taskConfig.key];
+                    resultStage.success = !dbError;
+
+                    if (dbError) {
+                        resultStage.error = dbError.message;
+                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure', details: dbError });
                     }
+                } else {
+                    results[taskConfig.key].error = 'Validation Failed';
                 }
             } else {
-                (results as any)[stage.key].error = `HTTP_${res.status}`;
-                logAudit(stageName, 'integrity_checked', { passed: false, details: `HTTP_${res.status}` });
-                logAudit(stageName, 'error', { status: res.status });
+                results[taskConfig.key].error = `HTTP_${apiResponse.status}`;
+                logAudit(stageName, 'integrity_checked', { passed: false, details: `HTTP_${apiResponse.status}` });
+                logAudit(stageName, 'error', { status: apiResponse.status });
             }
-            logAudit(stageName, 'terminated', { success: (results as any)[stage.key].success });
-        } catch (e: any) { 
-            logAudit(stageName, 'integrity_checked', { passed: false, details: e.message });
-            logAudit(stageName, 'error', { message: e.message });
-            (results as any)[stage.key].error = e.message;
+
+            logAudit(stageName, 'terminated', { success: results[taskConfig.key].success });
+
+        } catch (syncError: unknown) {
+            const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
+            logAudit(stageName, 'integrity_checked', { passed: false, details: errorMessage });
+            logAudit(stageName, 'error', { message: errorMessage });
+            results[taskConfig.key].error = errorMessage;
             logAudit(stageName, 'terminated', { error: true });
         }
     }
