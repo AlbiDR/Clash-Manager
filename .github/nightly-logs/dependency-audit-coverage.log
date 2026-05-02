@@ -44,6 +44,7 @@
 | @types/express | ^4.17.21 | ^4.17.25 | 2026-04-26 | PASS |
 | knip | ^6.3.0 | ^6.7.0 | 2026-06-05 | PASS |
 | @vue/test-utils | ^2.4.9 | ^2.4.10 | 2026-06-06 | PASS |
+| knip | ^6.7.0 | ^6.10.0 | 2026-06-07 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
