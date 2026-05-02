@@ -121,7 +121,7 @@ export async function fetchRemote(options?: {
   const [rosterRes, headhunterRes, heartbeatRes] = await Promise.all([
     supabase.from('roster_view').select('*').abortSignal(signal),
     supabase.from('headhunter_view').select('*').limit(100).abortSignal(signal),
-    supabase.from('pipeline_heartbeat').select('last_success_at').eq('component_id', 'ROYALE_DATA_INGESTOR').single().abortSignal(signal)
+    supabase.schema('substrate').from('pipeline_heartbeat').select('last_success_at').eq('component_id', 'ROYALE_DATA_INGESTOR').single().abortSignal(signal)
   ]);
 
   if (rosterRes.error) throw new Error(`Roster Fetch Error: ${rosterRes.error.message}`);
@@ -239,7 +239,7 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
 
 export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
   const supabase = createSupabaseClient();
-  const { error } = await supabase.from('push_subscriptions').insert({
+  const { error } = await supabase.schema('drivers').from('push_subscriptions').insert({
     subscription: JSON.parse(JSON.stringify(subscription))
   });
   
