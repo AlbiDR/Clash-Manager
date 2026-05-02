@@ -54,14 +54,15 @@ export async function runProfiler(
                         const rawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
 
                         validRecruits.push({
-                            tag: p.tag,
-                            name: p.name,
+                            player_tag: p.tag,
+                            player_name: p.name,
                             trophies,
                             donations,
                             cards,
-                            war,
-                            rawScore,
-                            source: candidates.get(tag) || 'UNKNOWN'
+                            war_wins: war,
+                            raw_potential_score: rawScore,
+                            source: candidates.get(tag) || 'UNKNOWN',
+                            status: 'QUEUE'
                         });
                         validCount++;
                     } else {
@@ -106,7 +107,7 @@ export async function runProfiler(
                 bySource.get(src)!.push(recruit);
 
                 // Track RPoS (Raw Potential Score)
-                const score = recruit.rawScore || 0;
+                const score = recruit.raw_potential_score || 0;
                 if (score > maxRpos) maxRpos = score;
                 if (score < minRpos) minRpos = score;
 
@@ -114,11 +115,10 @@ export async function runProfiler(
                 sourceCounts[src] = (sourceCounts[src] || 0) + 1;
             }
 
-            console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into raw_scout_logs...`);
+            console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into database...`);
             for (const [source, batch] of bySource) {
-                const { error: ingestErr } = await supabase.from('raw_scout_logs').insert({
-                    payload: batch,
-                    source
+                const { error: ingestErr } = await supabase.rpc('sync_recruits', {
+                    p_recruits: batch
                 });
                 if (ingestErr) {
                     stats.errors.push(`Ingest(${source}): ${ingestErr.message}`);
