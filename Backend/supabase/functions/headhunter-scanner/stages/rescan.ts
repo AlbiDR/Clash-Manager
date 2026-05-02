@@ -21,7 +21,7 @@ export async function runRescan(
     console.log(`[RESCAN] Triggered. Fetching stale recruits...`);
     try {
         const { data: stale, error: rpcErr } = await supabase
-            .rpc('get_stale_recruits', { p_limit: 30 });
+            .rpc('get_stale_recruits', { p_limit: 250 });
 
         logAudit('RESCAN', 'run', { count: stale?.length ?? 0, error: rpcErr?.message });
 
