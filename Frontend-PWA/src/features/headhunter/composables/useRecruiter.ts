@@ -77,7 +77,7 @@ export function useRecruiter() {
       const currentIds = data.value.hh.map((recruit) => recruit.id);
       blacklist.prune(currentIds);
     }
-  });
+  }, { immediate: true });
 
   /**
    * RECRUIT DISMISSAL ENGINE

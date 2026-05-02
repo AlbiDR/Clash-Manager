@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useRecruiter } from "../useRecruiter";
-import { ref } from "vue";
+import { ref, createApp } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
 import * as SupabaseClient from "@core/api/SupabaseClient";
 
@@ -175,6 +175,19 @@ vi.mock("vue-router", () => ({
   })),
 }));
 
+// Helper to run composables in a component context
+function withSetup<T>(composable: () => T): [T, ReturnType<typeof createApp>] {
+  let result: T;
+  const app = createApp({
+    setup() {
+      result = composable();
+      return () => {};
+    },
+  });
+  app.mount(document.createElement("div"));
+  return [result!, app];
+}
+
 describe("useRecruiter", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -193,7 +206,7 @@ describe("useRecruiter", () => {
 
 
   it("exposes layoutProps containing sortOptions with descriptions", () => {
-    const { layoutProps } = useRecruiter();
+    const [{ layoutProps }] = withSetup(() => useRecruiter());
     const sortOptions = layoutProps.value.sortOptions;
     expect(sortOptions!.length).toBeGreaterThan(0);
     expect(sortOptions![0]).toHaveProperty("label");
@@ -201,27 +214,27 @@ describe("useRecruiter", () => {
   });
 
   it("handles search updates", () => {
-    const { handleSearch, searchQuery } = useRecruiter();
+    const [{ handleSearch, searchQuery }] = withSetup(() => useRecruiter());
     handleSearch("Recruit A");
     expect(searchQuery.value).toBe("Recruit A");
   });
 
   it("filters recruits based on blacklist", () => {
     mockTombstones.value = new Set(["1"]);
-    const { filteredItems } = useRecruiter();
+    const [{ filteredItems }] = withSetup(() => useRecruiter());
     expect(filteredItems.value.length).toBe(1);
     expect(filteredItems.value[0].id).toBe("2");
   });
 
   it("prunes blacklist when new recruits are loaded", async () => {
-    useRecruiter();
+    withSetup(() => useRecruiter());
     // watch is immediate, so it should have called prune with initial hh
     expect(mockPrune).toHaveBeenCalledWith(["1", "2"]);
   });
 
   describe("handleRefresh", () => {
     it("calls refreshFromSupabase from the store", async () => {
-      const { refresh } = useRecruiter();
+      const [{ refresh }] = withSetup(() => useRecruiter());
       await refresh();
       expect(mockRefreshStore).toHaveBeenCalled();
     });
@@ -229,7 +242,7 @@ describe("useRecruiter", () => {
 
   describe("dismissBulk", () => {
     it("dismisses selected recruits with optimistic updates", async () => {
-      const { dismissBulk, selectedIds } = useRecruiter();
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
 
       selectedIds.value = ["1"];
       dismissBulk();
@@ -242,7 +255,7 @@ describe("useRecruiter", () => {
     });
 
     it("restores visibility if dismissal action fails", async () => {
-      const { dismissBulk, selectedIds } = useRecruiter();
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
 
       mockDismissRecruitsAction.mockRejectedValue(new Error("Fail"));
 
@@ -256,7 +269,7 @@ describe("useRecruiter", () => {
     });
 
     it("restores recruits when undo is clicked", async () => {
-      const { dismissBulk, selectedIds } = useRecruiter();
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
 
       selectedIds.value = ["1"];
       dismissBulk();

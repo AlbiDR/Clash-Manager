@@ -20,6 +20,7 @@ describe("BaseCard.vue", () => {
     id: "test-id",
     expanded: false,
     selected: false,
+    selectionMode: false,
   };
 
   beforeEach(() => {
