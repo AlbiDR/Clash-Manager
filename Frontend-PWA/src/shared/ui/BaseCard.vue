@@ -30,9 +30,9 @@ const {
   onSelect: () => emit("toggle-select"),
 });
 
-function handleScoreClick(e: MouseEvent | TouchEvent) {
-  internalScoreClick(e);
-  emit("score-click", e as Event);
+function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
+  internalScoreClick(scoreClickEvent);
+  emit("score-click", scoreClickEvent as Event);
 }
 </script>
 

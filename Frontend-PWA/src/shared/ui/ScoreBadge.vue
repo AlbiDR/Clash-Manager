@@ -24,7 +24,7 @@ const props = defineProps<{
 
 const { getSafeBenchmark } = useBenchmarking();
 
-const tooltipVal = computed(() => {
+const benchmarkTooltipContent = computed(() => {
   return getSafeBenchmark(props.context, "score", props.score);
 });
 </script>
@@ -33,7 +33,7 @@ const tooltipVal = computed(() => {
   <div class="score-badge-wrapper">
     <span
       class="stat-score"
-      v-tooltip="tooltipVal"
+      v-tooltip="benchmarkTooltipContent"
     >
       {{ Math.round(props.score || 0) }}
     </span>
