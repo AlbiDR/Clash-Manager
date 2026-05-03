@@ -18,7 +18,7 @@ The backend has transitioned from a distributed model (GAS/Node.js) into a strea
 ## II. Directory Structure
 | Path | Role | Description |
 | :--- | :--- | :--- |
-| `supabase/functions/` | **Edge Layer** | Deno-native business logic and ingestion gates. |
+| `supabase/functions/` | **Edge Layer** | Deno-native ingestion gates (`ingest-royale-data`) and discovery engines (`headhunter-scanner`). |
 | `supabase/migrations/` | **Substrate Layer** | Relational DNA, triggers, and clinical schema definitions. |
 | `supabase/config.toml` | **Orchestration** | Supabase project configuration and identity mapping. |
 
@@ -46,15 +46,18 @@ The project employs a strictly segmented schema strategy to maintain domain isol
     - `features.roster_view`: Deeply sorted roster with dynamic tenure labeling.
     - `features.war_activity_view`: Realtime participation tracking.
     - `features.war_loyalty_view`: **Career Fame Averaging** (Infinite lookback for PeS calculation).
+    - `features.headhunter_view`: Evaluated recruitment candidates with clinical tiering.
+    - `features.war_performance_analytics_view`: Historical clan performance trends and contributor analytics.
 
 ---
 
-## IV. The Clinical Ingestion Pipeline
-Ingestion is performed via a **Penta-Stage Pipe** (Profile, Members, War Activity, History, Battles).
+## IV. The Clinical Ingestion and Discovery Pipeline
+The backend orchestrates a dual-path pipeline for internal telemetry and external discovery.
 
-1. **Gatekeeper (`ingest-royale-data`)**: A single Deno Edge Function utilizing `proxy.royaleapi.dev` and Round-Robin token rotation.
-2. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
-3. **Janitor (`maintenance_janitor`)**: Weekly automated culling of volatile data while **Hard-Exempting** career history.
+1. **Ingestion Gate (`ingest-royale-data`)**: A Deno Edge Function utilizing a Penta-Stage Pipe (Profile, Members, War Activity, History, Battles) with Round-Robin token rotation.
+2. **Scout Gate (`headhunter-scanner`)**: A high-concurrency discovery engine that scans global tournaments to identify and profile elite recruits.
+3. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
+4. **Janitor (`maintenance_janitor`)**: Weekly automated culling of volatile data while Hard-Exempting career history.
 
 ---
 
@@ -112,10 +115,10 @@ supabase functions deploy ingest-royale-data --no-verify-jwt
 
 ## VIII. Current State — Roadmap (v1.8.0)
 - [x] **Phase 1-6**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor).
-- [ ] **Phase 7 [PENDING]**: Full PWA integration (migrating features to `features.*` views).
+- [x] **Phase 7**: Full PWA integration (migrating features to `features.*` views).
 
 ---
 
 > [!NOTE]
-> This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> ↴ *Compiled: 2026-04-05 by Antigravity*
+> This README is a live document reflecting the evolving state of the Clash-Manager backend.
+> Compiled: 2026-04-05 by Antigravity
