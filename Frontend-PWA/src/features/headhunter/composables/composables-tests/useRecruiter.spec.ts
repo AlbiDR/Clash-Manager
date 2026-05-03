@@ -58,6 +58,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
     hubSyncTime: ref(null),
     lastCompiledTime: ref(null),
     lastFetchedTime: ref(null),
+      syncStatus: ref(null),
     refresh: mockRefreshGas,
     refreshFromSupabase: mockRefreshGas,
     updateLocalData: mockUpdateLocalData,
@@ -95,6 +96,7 @@ vi.mock("@core", async (importOriginal) => {
       hubSyncTime: ref(null),
       lastCompiledTime: ref(null),
       lastFetchedTime: ref(null),
+      syncStatus: ref(null),
       refresh: mockRefreshGas,
       refreshFromSupabase: mockRefreshGas,
       updateLocalData: mockUpdateLocalData,
@@ -122,12 +124,15 @@ vi.mock("@core", async (importOriginal) => {
   };
 });
 
-vi.mock("@core/api/SupabaseClient", () => ({
-  isWorkerConfigured: vi.fn().mockReturnValue(false),
-  scanRecruitsDirect: vi.fn().mockResolvedValue([]),
-  lastHubDiagnosis: { value: null },
-  lastSyncStatus: { value: null },
-}));
+vi.mock("@core/api/SupabaseClient", () => {
+  const { ref } = require("vue");
+  return {
+    isWorkerConfigured: vi.fn().mockReturnValue(false),
+    scanRecruitsDirect: vi.fn().mockResolvedValue([]),
+    lastHubDiagnosis: ref(null),
+    lastSyncStatus: ref(null),
+  };
+});
 
 vi.mock("@shared", async (importOriginal) => {
   const actual = await importOriginal<any>();

@@ -41,15 +41,15 @@ import type { Recruit } from "@core/types";
  */
 export function useRecruiter() {
   const clashDataStore = useClashDataStore();
-  const { data } = storeToRefs(clashDataStore);
+  const { data: clashData } = storeToRefs(clashDataStore);
   const { refresh: refreshGas } = clashDataStore;
-  const { dismissRecruitsAction } = useHeadhunter();
+  const { dismissRecruitsAction, undismissRecruitsAction } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
   const { undo, success, info } = useToast();
 
   // 🛡️ PRE-FILTER: Exclude Tombstones and apply 50-recruit "Active Window"
   const recruits = computed(() => {
-    const activeRecruits = (data.value?.hh || []).filter(
+    const activeRecruits = (clashData.value?.hh || []).filter(
       (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
     // [ADR] Parity with Spreadsheet: Show only the top 50 active recruits.
@@ -74,7 +74,7 @@ export function useRecruiter() {
 
   // 🧹 CLEANUP: Extra Recruit Logic managed here
   watch(
-    () => data.value?.hh,
+    () => clashData.value?.hh,
     (newRecruits) => {
       if (newRecruits && newRecruits.length > 0) {
         const currentIds = newRecruits.map((recruit) => recruit.id);
@@ -108,13 +108,10 @@ export function useRecruiter() {
     // 🎯 DIRECT SCORE CAPTURE: Extract score at the point of dismissal
     const dismissalPayload = recruitsToRemove.map(recruit => ({
       id: recruit.id,
-      score: recruit.potentialRawScore || 0,
-      potentialRawScore: recruit.potentialRawScore || 0
+      score: recruit.potentialRawScore || 0
     }));
 
     console.log('[Dismissal] Captured scores:', dismissalPayload.map(dismissalItem => `${dismissalItem.id}: ${dismissalItem.score}`));
-
-    const { undismissRecruitsAction } = useHeadhunter();
 
     // ⚡ ZERO LATENCY: Visual hide (Tombstone injection)
     blacklist.hide(targetRecruitIds);
