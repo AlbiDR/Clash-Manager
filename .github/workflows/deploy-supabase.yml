@@ -79,7 +79,7 @@ jobs:
             ESCAPED_TOKEN=$(echo "$INTERNAL_BEARER_TOKEN" | sed "s/'/''/g")
             
             # Use a DO block to upsert the secret in the vault
-            supabase db execute --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --query "
+            supabase db query --linked "
               DO \$\$
               BEGIN
                 IF EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'INTERNAL_BEARER_TOKEN') THEN
