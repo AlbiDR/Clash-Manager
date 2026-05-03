@@ -76,6 +76,9 @@ export async function runRescan(
                     return;
                 }
 
+                // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
+                const rawScore = ((p.trophies || 0) * 1.0) + ((p.totalDonations || 0) * 0.1) + (((p.warDayWins || 0) + 500) * 20.0);
+
                 // Otherwise prepare their profile data for batch refresh
                 validRescans.push({
                     player_tag: p.tag,
@@ -84,6 +87,7 @@ export async function runRescan(
                     donations: p.totalDonations || 0,
                     cards: p.challengeCardsWon || 0,
                     war_wins: p.warDayWins || 0,
+                    raw_potential_score: rawScore,
                     source: 'TOURNAMENT', // Fallback
                     status: (p.trophies || 0) >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
                 });
