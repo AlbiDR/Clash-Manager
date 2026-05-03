@@ -145,27 +145,32 @@ export async function runProfiler(
             }
 
             // --- INGESTION FATE TELEMETRY ---
-            console.log(`[PROFILING] Post-ingestion fate check. New candidates count: ${newCount}`);
-            if (newCount > 0) {
+                console.error(`[PROFILING] Post-ingestion fate check. New candidates count: ${newCount}`);
                 const newTags = validRecruits
                     .filter(r => !existingTags.has(r.player_tag))
                     .map(r => r.player_tag);
                 
-                console.log(`[PROFILING] Found ${newTags.length} new tags to check fate for. Sample: ${newTags.slice(0, 3).join(', ')}`);
+                console.error(`[PROFILING] Tags to check: ${JSON.stringify(newTags)}`);
                 
                 if (newTags.length > 0) {
+                    // Small delay to allow triggers/indexes to settle
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
                     // 1. Fetch Status of New Recruits
                     const { data: fate, error: fateErr } = await supabase
                         .schema('drivers')
                         .from('recruits')
-                        .select('status, raw_potential_score')
+                        .select('player_tag, status, raw_potential_score')
                         .in('player_tag', newTags);
                     
                     if (fateErr) {
-                        console.error(`[PROFILING] Fate query error: ${fateErr.message}`);
+                        console.error(`[PROFILING] Fate query error: ${JSON.stringify(fateErr)}`);
                     }
                     
-                    console.log(`[PROFILING] Fate check found ${fate?.length || 0} records in DB.`);
+                    console.error(`[PROFILING] Fate check result count: ${fate?.length || 0}`);
+                    if (fate && fate.length > 0) {
+                        console.error(`[PROFILING] Sample fate record: ${JSON.stringify(fate[0])}`);
+                    }
                     
                     // 2. Fetch Top 50 Threshold
                     const { data: top50Row } = await supabase
@@ -190,7 +195,6 @@ export async function runProfiler(
                         console.warn(`[PROFILING] No records found in fate check for ${newTags.length} tags. This might indicate a race condition or ingestion failure.`);
                     }
                 }
-            }
             
             stats.recruits_ingested = (stats.recruits_ingested || 0) + validRecruits.length;
             stats.new_recruits = (stats.new_recruits || 0) + newCount;
