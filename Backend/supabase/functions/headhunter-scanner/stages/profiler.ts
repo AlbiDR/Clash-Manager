@@ -26,7 +26,8 @@ export async function runProfiler(
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
         const validRecruits: any[] = [];
-        let validCount = 0;
+        let newCount = 0;
+        let refreshCount = 0;
         let invalidCount = 0;
         
         const profileTasks = tagsToProfile.map(tag => async () => {
@@ -115,6 +116,19 @@ export async function runProfiler(
                 sourceCounts[src] = (sourceCounts[src] || 0) + 1;
             }
 
+            // Determine which recruits are truly new vs refreshed
+            const { data: existing } = await supabase
+                .schema('drivers')
+                .from('recruits')
+                .select('player_tag')
+                .in('player_tag', validRecruits.map(r => r.player_tag));
+            
+            const existingTags = new Set(existing?.map(e => e.player_tag) || []);
+            validRecruits.forEach(r => {
+                if (existingTags.has(r.player_tag)) refreshCount++;
+                else newCount++;
+            });
+
             console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into database...`);
             for (const [source, batch] of bySource) {
                 const { error: ingestErr } = await supabase.rpc('sync_recruits', {
@@ -129,7 +143,9 @@ export async function runProfiler(
                 }
             }
             
-            stats.recruits_ingested = validRecruits.length;
+            stats.recruits_ingested = (stats.recruits_ingested || 0) + validRecruits.length;
+            stats.new_recruits = (stats.new_recruits || 0) + newCount;
+            stats.refreshed_recruits = (stats.refreshed_recruits || 0) + refreshCount;
             stats.highest_rpos = maxRpos === -Infinity ? 0 : Math.round(maxRpos);
             stats.lowest_rpos = minRpos === Infinity ? 0 : Math.round(minRpos);
             stats.ingested_by_source = sourceCounts;
