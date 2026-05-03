@@ -57,6 +57,8 @@ jobs:
           
           # Extract Stats
           INGESTED=$(echo "$DATA" | jq -r '.data.recruits_ingested // 0')
+          NEW_LEADS=$(echo "$DATA" | jq -r '.data.new_recruits // 0')
+          REFRESHED=$(echo "$DATA" | jq -r '.data.refreshed_recruits // 0')
           SCANNED=$(echo "$DATA" | jq -r '.data.profiles_scanned // 0')
           MAX_RPOS=$(echo "$DATA" | jq -r '.data.highest_rpos // 0')
           MIN_RPOS=$(echo "$DATA" | jq -r '.data.lowest_rpos // 0')
@@ -81,7 +83,8 @@ jobs:
             echo "### Core Stats"
             echo "| Metric | Value |"
             echo "| :--- | :--- |"
-            echo "| **New Recruits Ingested** | \`$INGESTED\` |"
+            echo "| **Truly New Recruits** | \`$NEW_LEADS\` |"
+            echo "| **Refreshed Profiles** | \`$REFRESHED\` |"
             echo "| **Highest RPoS** | \`$MAX_RPOS\` |"
             echo "| **Lowest RPoS** | \`$MIN_RPOS\` |"
             echo "| **Total Profiles Scanned** | \`$SCANNED\` |"
