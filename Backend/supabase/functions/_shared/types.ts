@@ -56,6 +56,7 @@ export interface ScannerStats {
     highest_rpos?: number;
     lowest_rpos?: number;
     rescans_processed?: number;
+    ghosts_purged?: number;
     errors: string[];
 }
 
