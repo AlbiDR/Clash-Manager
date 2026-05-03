@@ -162,10 +162,7 @@ export async function runProfiler(
                     await new Promise(resolve => setTimeout(resolve, attempts * 1000));
 
                     const { data, error: fateErr } = await supabase
-                        .schema('drivers')
-                        .from('recruits')
-                        .select('player_tag, status, raw_potential_score')
-                        .in('player_tag', newTags);
+                        .rpc('get_recruits_fate', { tags: newTags });
                     
                     if (!fateErr && data && data.length > 0) {
                         fate = data;
@@ -182,16 +179,8 @@ export async function runProfiler(
 
                 if (fate.length > 0) {
                     // Fetch Top 50 Threshold (lowest score in active pool)
-                    const { data: top50Row } = await supabase
-                        .schema('drivers')
-                        .from('recruits')
-                        .select('raw_potential_score')
-                        .eq('status', 'ACTIVE')
-                        .order('raw_potential_score', { ascending: false })
-                        .range(49, 49)
-                        .maybeSingle();
-                    
-                    const threshold50 = top50Row?.raw_potential_score || 0;
+                    const { data: threshold50Data } = await supabase.rpc('get_top_50_threshold');
+                    const threshold50 = threshold50Data || 0;
                     
                     stats.new_recruits_active = fate.filter(f => f.status === 'ACTIVE').length;
                     stats.new_recruits_benched = fate.filter(f => f.status === 'BENCHED').length;

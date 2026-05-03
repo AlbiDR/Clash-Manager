@@ -17,7 +17,7 @@ import { ProfileInputSchema } from "./DataSchemas";
 import * as v from "valibot";
 
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
-const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
+const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V8";
 
 export class NetworkError extends Error {
   constructor(message: string) {
