@@ -12,7 +12,10 @@ import {
   ExternalProfileSchema,
   MemberSchema,
   RecruitSchema,
-  WebAppDataSchema
+  WebAppDataSchema,
+  SbRosterRowSchema,
+  SbHeadhunterRowSchema,
+  RecruitTombstoneSchema
 } from "../DataSchemas";
 
 describe("Core DataSchemas", () => {
@@ -393,5 +396,77 @@ describe("Core DataSchemas", () => {
     });
   });
 
+  describe("SbRosterRowSchema", () => {
+    it("should parse valid roster row", () => {
+      const input = {
+        player_tag: "#ABC",
+        player_name: "Hero",
+        trophies: 5000,
+        performance_score: 80,
+        role: "elder",
+        tenure_days: 100
+      };
+      const result = v.parse(SbRosterRowSchema, input);
+      expect(result.player_tag).toBe("#ABC");
+      expect(result.trophies).toBe(5000);
+    });
 
+    it("should handle missing fields with defaults", () => {
+      const result = v.parse(SbRosterRowSchema, {});
+      expect(result.player_name).toBe("Unknown");
+      expect(result.trophies).toBe(0);
+      expect(result.exp_level).toBe(1);
+    });
+
+    it("should handle null/undefined fields via pipes", () => {
+      const input = {
+        player_tag: null,
+        trophies: undefined,
+        last_seen_at: null
+      };
+      const result = v.parse(SbRosterRowSchema, input);
+      expect(result.player_tag).toBe("");
+      expect(result.trophies).toBe(0);
+      expect(result.last_seen_at).toBeNull();
+    });
+  });
+
+  describe("SbHeadhunterRowSchema", () => {
+    it("should parse valid headhunter row", () => {
+      const input = {
+        player_tag: "#XYZ",
+        player_name: "Recruit",
+        trophies: 4000,
+        potential_score: 90,
+        donations: 500
+      };
+      const result = v.parse(SbHeadhunterRowSchema, input);
+      expect(result.player_tag).toBe("#XYZ");
+      expect(result.potential_score).toBe(90);
+    });
+
+    it("should handle missing fields with defaults", () => {
+      const result = v.parse(SbHeadhunterRowSchema, {});
+      expect(result.player_name).toBe("Unknown");
+      expect(result.donations).toBe(0);
+    });
+  });
+
+  describe("RecruitTombstoneSchema", () => {
+    it("should parse valid tombstone array", () => {
+      const input = ["#ID1", "#ID2"];
+      const result = v.parse(RecruitTombstoneSchema, input);
+      expect(result).toEqual(input);
+    });
+
+    it("should fail for non-array input", () => {
+      const result = v.safeParse(RecruitTombstoneSchema, { not: "an array" });
+      expect(result.success).toBe(false);
+    });
+
+    it("should fail for array with non-string elements", () => {
+      const result = v.safeParse(RecruitTombstoneSchema, [123]);
+      expect(result.success).toBe(false);
+    });
+  });
 });
