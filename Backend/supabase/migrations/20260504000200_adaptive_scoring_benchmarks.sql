@@ -9,6 +9,7 @@ DROP VIEW IF EXISTS features.roster_view CASCADE;
 DROP VIEW IF EXISTS features.scoring_view CASCADE;
 
 -- 1. Redefine features.scoring_view with a benchmarking layer
+-- 1. Redefine features.scoring_view with a benchmarking layer
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH factual_logs AS (
           SELECT player_tag,
@@ -20,9 +21,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
          ), 
   benchmarking_context AS (
           SELECT 
-             -- We use the maximum history available to define the 1.0 stability mark
              COALESCE(NULLIF(MAX(recorded_weeks), 0), 12) as max_history_weeks,
-             -- We use the 25th percentile of tenure as the "new member" window for heritage
              COALESCE(percentile_cont(0.25) WITHIN GROUP (ORDER BY tenure_days), 14) as rookie_window_days
           FROM (
               SELECT count(DISTINCT week_id) as recorded_weeks FROM drivers.war_activity GROUP BY player_tag
@@ -51,29 +50,34 @@ CREATE OR REPLACE VIEW features.scoring_view AS
          ), 
   weighted_calculations AS (
           SELECT bs.*,
-             -- Adaptive Stability: Relative to the clan's historical depth
-             LEAST(1.0, (bs.recorded_weeks::numeric / (SELECT max_history_weeks FROM benchmarking_context))) AS stability_index,
-             -- Loyalty Multiplier: Standard monthly scaling remains, but we could cap it relatively
+             LEAST(1.0, (bs.recorded_weeks::numeric / bc.max_history_weeks::numeric)) AS stability_index,
              LEAST(1.10, (1.0 + ((bs.tenure_days / 30.0) * 0.01))) AS loyalty_multiplier,
-             -- Baseline Raw Score: Fixed weights for now as they represent policy, not thresholds
              round(((((((bs.current_fame)::numeric * 3.0) + (bs.avg_fame * 15.0)) + ((bs.donations)::numeric * 100.0)) + ((bs.trophies)::numeric * 0.1)) + (bs.war_rate * 150.0))) AS baseline_raw_score,
              ((((bs.trophies)::numeric * 1.0) + ((bs.donations)::numeric * 0.1)) + (((bs.war_wins + 500))::numeric * 20.0)) AS raw_potential_score,
-             -- Decay: Fixed 8% daily decay after 4-day grace period
-             power((1.0 - 0.08), GREATEST((0)::numeric, (bs.days_inactive - 4.0))) AS decay_multiplier
+             power((1.0 - 0.08), GREATEST((0)::numeric, (bs.days_inactive - 4.0))) AS decay_multiplier,
+             bc.rookie_window_days
             FROM base_stats bs
+            CROSS JOIN benchmarking_context bc
          ), 
   clinical_layer AS (
           SELECT wc.*,
              round(((wc.baseline_raw_score * wc.loyalty_multiplier) * wc.decay_multiplier)) AS raw_performance_score,
-             -- Adaptive Heritage Bonus: Grace window is now the bottom 25% of the clan's tenure distribution
              CASE
-                 WHEN (wc.tenure_days < (SELECT rookie_window_days FROM benchmarking_context)) THEN 
-                     ((wc.raw_potential_score * power((((SELECT rookie_window_days FROM benchmarking_context) - wc.tenure_days) / (SELECT rookie_window_days FROM benchmarking_context)), (2)::numeric)) / 5.0)
+                 WHEN (wc.tenure_days < wc.rookie_window_days) THEN 
+                     ((wc.raw_potential_score * power(((wc.rookie_window_days - wc.tenure_days) / wc.rookie_window_days), (2)::numeric)) / 5.0)
                  ELSE (0)::numeric
              END AS heritage_bonus
             FROM weighted_calculations wc
-         )
-  SELECT player_tag,
+         ),
+  final_scoring AS (
+      SELECT 
+        *,
+        (raw_performance_score + heritage_bonus) as total_combined_score,
+        max(raw_performance_score + heritage_bonus) OVER () as global_max_score
+      FROM clinical_layer
+  )
+  SELECT 
+     player_tag,
      name,
      trophies,
      donations,
@@ -94,40 +98,55 @@ CREATE OR REPLACE VIEW features.scoring_view AS
      raw_performance_score,
      heritage_bonus,
      CASE
-         WHEN (max((raw_performance_score + heritage_bonus)) OVER () > (0)::numeric) THEN 
-             round((((raw_performance_score + heritage_bonus) / max((raw_performance_score + heritage_bonus)) OVER ()) * 100.0))
+         WHEN (global_max_score > (0)::numeric) THEN 
+             round(((total_combined_score / global_max_score) * 100.0))
          ELSE (0)::numeric
      END AS performance_score
-    FROM clinical_layer;
+    FROM final_scoring;
 
--- 2. Restore features.roster_view with alignment to the new scoring_view
+-- 2. Restore features.roster_view with the "Gold Standard" CTE pattern
 CREATE OR REPLACE VIEW features.roster_view AS
- SELECT m.player_name,
-    m.role,
-    m.player_tag,
-    m.clan_rank,
-    m.trophies,
-    m.exp_level,
-    m.donations,
-    m.donations_received,
-    m.decks_used_today,
-    m.decks_used_weekly,
-    m.week_fame,
-    s.avg_fame,
-    COALESCE(s.war_rate, 0::numeric) AS war_participation,
-    s.raw_performance_score,
-    s.performance_score,
-    s.stability_index,
-    substrate.format_last_seen(s.days_inactive) AS last_seen_label,
-    substrate.format_tenure(s.tenure_days) AS tenure_label,
-    m.last_seen_at,
-    m.last_ingested_at,
-    s.tenure_days,
-    'https://link.clashroyale.com/en?player='::text || ltrim(m.player_tag, '#'::text) AS ingame_link,
-    'https://royaleapi.com/player/'::text || ltrim(m.player_tag, '#'::text) AS royaleapi_link
-   FROM drivers.members m
-     LEFT JOIN features.scoring_view s ON s.player_tag = m.player_tag
-  WHERE m.is_active = true AND m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text
-  ORDER BY s.raw_performance_score DESC NULLS LAST, s.performance_score DESC NULLS LAST;
+ WITH roster_source AS (
+    SELECT 
+        m.*,
+        s.avg_fame,
+        s.war_rate,
+        s.raw_performance_score,
+        s.performance_score,
+        s.stability_index,
+        s.days_inactive,
+        s.tenure_days,
+        ltrim(m.player_tag, '#'::text) as raw_tag
+    FROM drivers.members m
+    LEFT JOIN features.scoring_view s ON s.player_tag = m.player_tag
+    WHERE m.is_active = true 
+      AND m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text
+ )
+ SELECT 
+    player_name,
+    role,
+    player_tag,
+    clan_rank,
+    trophies,
+    exp_level,
+    donations,
+    donations_received,
+    decks_used_today,
+    decks_used_weekly,
+    week_fame,
+    avg_fame,
+    COALESCE(war_rate, 0::numeric) AS war_participation,
+    raw_performance_score,
+    performance_score,
+    stability_index,
+    substrate.format_last_seen(days_inactive) AS last_seen_label,
+    substrate.format_tenure(tenure_days) AS tenure_label,
+    last_seen_at,
+    last_ingested_at,
+    tenure_days,
+    'https://link.clashroyale.com/en?player='::text || raw_tag AS ingame_link,
+    'https://royaleapi.com/player/'::text || raw_tag AS royaleapi_link
+   FROM roster_source
+  ORDER BY raw_performance_score DESC NULLS LAST, performance_score DESC NULLS LAST;
 
 COMMIT;
