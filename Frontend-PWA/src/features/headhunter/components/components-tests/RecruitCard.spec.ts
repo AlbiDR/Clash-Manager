@@ -17,6 +17,8 @@ const mockRecruit: Recruit = {
   t: 6500,
   potentialScore: 92,
   potentialRawScore: 15000,
+  longevity: 2880,
+  longevityLabel: "Time ago: 2d",
   d: {
     don: 250,
     war: 12,
