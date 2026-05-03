@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-03] PR #538: chore(deps): bump knip from 6.10.0 to 6.11.0
+**Commit**: `35666ae1613f59318315f053f07c21dafec03492`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/538)
+
+### Description
+Bumped `knip` from `^6.10.0` to `^6.11.0` in the root `package.json` and synchronized the lockfile. Verified the change via the `Frontend-PWA` test suite (854 pass, 1 skipped) using a manual engine constraint bypass (`--no-engine-strict`). This update follows the Tier 1 automated bump protocol for safe minor versions. All other proposed changes (Vite major version update in watchlist, .npmrc modification) were excised to maintain atomic execution and environment integrity per the Dependency Auditor mandate.
+
+---
+*PR created automatically by Jules for task [12996606386453691370](https://jules.google.com/task/12996606386453691370) started by @AlbiDR*
+
+---
+
 ## [2026-05-03] PR #537: docs(tsdoc): enhance StatusPill.vue with contextual documentation
 **Commit**: `7d5f735f1a48c03ddbf6a244c381af66d83e354d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/537)
