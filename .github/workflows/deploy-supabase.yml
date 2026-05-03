@@ -70,42 +70,24 @@ jobs:
             supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
           fi
 
-          if [ -n "$INTERNAL_BEARER_TOKEN" ]; then
-            echo "Syncing INTERNAL_BEARER_TOKEN to Secrets..."
-            supabase secrets set --project-ref "$PROJECT_ID" INTERNAL_BEARER_TOKEN="$INTERNAL_BEARER_TOKEN"
-            
-            echo "Syncing INTERNAL_BEARER_TOKEN to Vault..."
-            # Escape single quotes for PostgreSQL safety
-            ESCAPED_TOKEN=$(echo "$INTERNAL_BEARER_TOKEN" | sed "s/'/''/g")
-            
-            # Use a DO block to upsert the secret in the vault
-            supabase db query --linked "
-              DO \$\$
-              BEGIN
-                IF EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'INTERNAL_BEARER_TOKEN') THEN
-                  PERFORM vault.update_secret((SELECT id FROM vault.secrets WHERE name = 'INTERNAL_BEARER_TOKEN'), '$ESCAPED_TOKEN');
-                ELSE
-                  PERFORM vault.insert_secret('INTERNAL_BEARER_TOKEN', '$ESCAPED_TOKEN');
-                END IF;
-              END \$\$;
-            "
-          else
-            echo "[WARNING] INTERNAL_BEARER_TOKEN secret not found. Pipeline will fail."
-          fi
-
-          # Sync CLAN_TAG and PLAYER_TAG to Vault for Database-level self-awareness
-          for KEY in "CLAN_TAG" "PLAYER_TAG"; do
+          # Sync Authoritative Secrets to Vault for Database-level self-awareness
+          for KEY in "INTERNAL_BEARER_TOKEN" "CLAN_TAG" "PLAYER_TAG"; do
             VAL="${!KEY}"
             if [ -n "$VAL" ]; then
               echo "Syncing $KEY to Vault..."
+              # Escape single quotes for PostgreSQL safety
               ESCAPED_VAL=$(echo "$VAL" | sed "s/'/''/g")
+              
               supabase db query --linked "
                 DO \$\$
+                DECLARE
+                  v_id uuid;
                 BEGIN
-                  IF EXISTS (SELECT 1 FROM vault.secrets WHERE name = '$KEY') THEN
-                    PERFORM vault.update_secret((SELECT id FROM vault.secrets WHERE name = '$KEY'), '$ESCAPED_VAL');
+                  SELECT id INTO v_id FROM vault.secrets WHERE name = '$KEY';
+                  IF v_id IS NOT NULL THEN
+                    PERFORM vault.update_secret(v_id, '$ESCAPED_VAL', '$KEY');
                   ELSE
-                    PERFORM vault.insert_secret('$KEY', '$ESCAPED_VAL');
+                    PERFORM vault.create_secret('$ESCAPED_VAL', '$KEY');
                   END IF;
                 END \$\$;
               "
