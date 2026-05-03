@@ -109,6 +109,7 @@ export async function runRescan(
                 logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: syncErr });
             } else {
                 stats.rescans_processed = validRescans.length;
+                stats.refreshed_recruits = (stats.refreshed_recruits || 0) + validRescans.length;
                 console.log(`[RESCAN] Successfully synchronized ${validRescans.length} profiles.`);
             }
         }
