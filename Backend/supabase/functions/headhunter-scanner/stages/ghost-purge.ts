@@ -3,7 +3,7 @@
 
 import { supabase } from "../client.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
-import { fetchPlayer } from "../../_shared/muscle.ts";
+import { fetchWithRotation } from "../../_shared/muscle.ts";
 
 /**
  * S0: Ghost Purge (Hot-Zone Audit)
@@ -46,7 +46,15 @@ export async function runGhostPurge(
 
         await Promise.all(batch.map(async (t: { player_tag: string }) => {
             try {
-                const p = await fetchPlayer(t.player_tag);
+                const res = await fetchWithRotation(`/players/${encodeURIComponent(t.player_tag)}`);
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        await supabase.rpc('purge_recruits', { p_tags: [t.player_tag] });
+                        ghostsEvicted++;
+                    }
+                    return;
+                }
+                const p = await res.json();
                 stats.profiles_scanned++;
 
                 if (p.clan?.tag && !exclusionSet.has(p.tag)) {
