@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<{
   nominal?: boolean;
   direction?: "left" | "right";
   hubInfo?: {
-    source: "WORKER" | "GAS";
+    source: "SUPABASE" | "WORKER" | "GAS";
     hubAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
@@ -71,6 +71,12 @@ const handleToggle = () => {
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
                 HUB
+              </template>
+              <template v-else-if="props.hubInfo.source === 'SUPABASE'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
+                  <path d="M4 6c0 1.66 3.58 3 8 3s8-1.34 8-3-3.58-3-8-3-8 1.34-8 3zm16 5c0 1.66-3.58 3-8 3s-8-1.34-8-3V8.67C5.33 9.47 8 10 12 10s6.67-.53 8-1.33V11zm0 5c0 1.66-3.58 3-8 3s-8-1.34-8-3v-2.33c1.33.8 4 1.33 8 1.33s6.67-.53 8-1.33V16z"/>
+                </svg>
+                DB
               </template>
               <template v-else>
                 GAS
@@ -208,6 +214,11 @@ const handleToggle = () => {
 }
 
 .hub-source.worker {
+  color: var(--sys-primary);
+  background: var(--sys-primary-container);
+}
+
+.hub-source.supabase {
   color: var(--sys-primary);
   background: var(--sys-primary-container);
 }
