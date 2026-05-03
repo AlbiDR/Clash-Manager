@@ -44,6 +44,8 @@ export interface Recruit {
   potentialRawScore: number; // Unbounded Calculation (e.g. 52102)
   longevity: number; // Minutes since discovery
   longevityLabel: string; // Human-readable duration (e.g. "2h 15m")
+  tenureDays?: number; // Previous heritage tenure
+  tenureLabel?: string; // Formatted heritage tenure (e.g. "1y 2mo")
 
   d: {
     don: number; // Donations
