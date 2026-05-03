@@ -42,6 +42,8 @@ export interface Recruit {
   // STRICT NOMENCLATURE
   potentialScore: number; // Normalized % (0-100)
   potentialRawScore: number; // Unbounded Calculation (e.g. 52102)
+  longevity: number; // Minutes since discovery
+  longevityLabel: string; // Human-readable duration (e.g. "2h 15m")
 
   d: {
     don: number; // Donations

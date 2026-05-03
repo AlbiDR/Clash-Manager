@@ -37,7 +37,8 @@ CREATE VIEW features.headhunter_view AS
                     WHEN COALESCE((h.is_fresh AND (h.max_pes >= 80)), false) THEN 1.05
                     ELSE 1.0
                 END) / ( SELECT corpus_benchmark.value
-                   FROM corpus_benchmark)) * (100)::numeric))) AS potential_score
+                   FROM corpus_benchmark)) * (100)::numeric))) AS potential_score,
+            ((EXTRACT(epoch FROM (now() - r.found_date)))::integer / 60) AS longevity_minutes
            FROM drivers.recruits r
            LEFT JOIN heritage_context h ON h.player_tag = r.player_tag
           WHERE r.status = 'ACTIVE'::drivers.recruit_status 
@@ -54,8 +55,8 @@ CREATE VIEW features.headhunter_view AS
     bc.war_wins,
     bc.raw_potential_score,
     bc.potential_score,
-    substrate.format_longevity(((EXTRACT(epoch FROM (now() - bc.found_date)))::integer / 60)) AS longevity_label,
-    ((EXTRACT(epoch FROM (now() - bc.found_date)))::integer / 60) AS longevity,
+    substrate.format_longevity(bc.longevity_minutes) AS longevity_label,
+    bc.longevity_minutes AS longevity,
     CASE
         -- Replaced absolute magic numbers (12000, 10500) with dynamic percentages
         WHEN (bc.potential_score >= 90::numeric) THEN 'ELITE'::text
