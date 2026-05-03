@@ -1,17 +1,45 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
+
 <script setup lang="ts">
+/**
+ * COMPONENT: StatusPill
+ *
+ * @remarks
+ * A Layer 2 Shared Driver (@shared) responsible for standardized system health
+ * visualization and data provenance reporting across the Clash-Manager stack.
+ *
+ * It implements a 4-tier status hierarchy (Success, Warning, Error, Loading)
+ * and provides interactive expansion to reveal deep metadata about the
+ * backend source (Supabase, Worker, or GAS) and data age.
+ */
 import { ref, watch } from "vue";
 import { useHaptics } from "@core";
 
 const props = withDefaults(defineProps<{
+  /**
+   * The system health category.
+   * - success: All systems nominal.
+   * - warning: Stale data or non-critical sync issues.
+   * - error: Network disconnects or fatal sync failures.
+   * - loading: Background refresh in progress.
+   */
   type: "success" | "warning" | "error" | "loading";
+  /** Descriptive status message (e.g., "Nominal", "Stale Data"). */
   text: string;
+  /** If true, pill renders in a minimalist style when nominal. */
   nominal?: boolean;
+  /** Direction in which the pill expands to show labels. */
   direction?: "left" | "right";
+  /**
+   * Standardized provenance metadata from the Layer 1 ClashDataStore.
+   */
   hubInfo?: {
+    /** The authoritative source of the current dataset. */
     source: "SUPABASE" | "WORKER" | "GAS";
+    /** Human-readable age of the data at the source. */
     hubAge: string | null;
+    /** Standardized diagnostic code for sync failures. */
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
 }>(), {
@@ -21,7 +49,10 @@ const props = withDefaults(defineProps<{
 const haptics = useHaptics();
 const isExpanded = ref(false);
 
-// Reset expansion when status changes significantly
+// [DECISION LOG] EXPANSION LIFECYCLE
+// Rationale: We force expansion during "loading" to ensure the user perceives
+// activity. When transitioning back to a static state, we reset expansion
+// (unless nominal) to maintain visual focus on the primary list content.
 watch(() => props.type, (newType) => {
   if (newType === "loading") isExpanded.value = true;
   else if (!props.nominal) isExpanded.value = false;
@@ -55,6 +86,10 @@ const handleToggle = () => {
           </svg>
         </template>
       </div>
+      <!-- [DECISION LOG] VISUAL FEEDBACK -->
+      <!-- Rationale: The halo-pulse provides a low-CPU, CSS-only ambient indicator
+           that the system is either in a degraded state (warning/error) or
+           successfully maintaining a network link. -->
       <div v-if="props.type !== 'loading'" class="dot-halo"></div>
     </div>
 
