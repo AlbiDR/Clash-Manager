@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-03] PR #536: docs(readme): reconcile backend technical specifications
+**Commit**: `c780743582a2425e0e23f157b6801ec62ce1cad7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/536)
+
+### Description
+Reconciled `Backend/README.md` to accurately reflect the current Supabase Binary Stack infrastructure. Key updates include documenting the `headhunter-scanner` discovery engine, synchronizing the Features Layer with active views (`headhunter_view`, `war_performance_analytics_view`), and incorporating the 'Scout Gate' into the ingestion pipeline. Phase 7 of the Roadmap is now marked as complete. Performed a 'No Fluff' sweep to remove emojis and corporate jargon, ensuring alignment with the CleanStack ADR stylistic purity. updated the coverage log accordingly.
+
+---
+*PR created automatically by Jules for task [12697121806795558773](https://jules.google.com/task/12697121806795558773) started by @AlbiDR*
+
+---
+
 ## [2026-05-03] PR #535: refactor(opt): standardize hub architecture and provenance reporting
 **Commit**: `302277c0c0db79233f85486f90b0e7e0a674116e`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/535)
