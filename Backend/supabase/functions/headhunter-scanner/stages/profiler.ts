@@ -143,6 +143,38 @@ export async function runProfiler(
                     console.log(`[PROFILING] Successfully ingested ${batch.length} recruits from source ${source}`);
                 }
             }
+
+            // --- INGESTION FATE TELEMETRY ---
+            if (newCount > 0) {
+                const newTags = validRecruits
+                    .filter(r => !existingTags.has(r.player_tag))
+                    .map(r => r.player_tag);
+                
+                // 1. Fetch Status of New Recruits
+                const { data: fate } = await supabase
+                    .schema('drivers')
+                    .from('recruits')
+                    .select('status, raw_potential_score')
+                    .in('player_tag', newTags);
+                
+                // 2. Fetch Top 50 Threshold
+                const { data: top50Row } = await supabase
+                    .schema('drivers')
+                    .from('recruits')
+                    .select('raw_potential_score')
+                    .eq('status', 'ACTIVE')
+                    .order('raw_potential_score', { ascending: false })
+                    .range(49, 49)
+                    .maybeSingle();
+                
+                const threshold50 = top50Row?.raw_potential_score || 0;
+
+                if (fate) {
+                    stats.new_recruits_active = fate.filter(f => f.status === 'ACTIVE').length;
+                    stats.new_recruits_benched = fate.filter(f => f.status === 'BENCHED').length;
+                    stats.new_recruits_top50 = fate.filter(f => f.status === 'ACTIVE' && f.raw_potential_score >= threshold50).length;
+                }
+            }
             
             stats.recruits_ingested = (stats.recruits_ingested || 0) + validRecruits.length;
             stats.new_recruits = (stats.new_recruits || 0) + newCount;
