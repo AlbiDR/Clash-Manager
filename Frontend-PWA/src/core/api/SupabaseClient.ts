@@ -72,8 +72,8 @@ function mapSbRosterRow(row: any): LeaderboardMember {
     id: row.player_tag?.replace('#', '') || '',
     n: row.player_name || '',
     t: Number(row.trophies) || 0,
-    performanceScore: Number(row.pes || row.performance_score) || 0,
-    performanceRawScore: Number(row.rpes || row.raw_performance_score) || 0,
+    performanceScore: Number(row.performance_score) || 0,
+    performanceRawScore: Number(row.raw_performance_score) || 0,
     dt: 0, // roster_view currently does not provide a score delta
     d: {
       role: row.role || '',
@@ -95,8 +95,8 @@ function mapSbHeadhunterRow(row: any): Recruit {
     id: row.player_tag?.replace('#', '') || '',
     n: row.player_name || '',
     t: Number(row.trophies) || 0,
-    potentialScore: Number(row.pos || row.potential_score) || 0,
-    potentialRawScore: Number(row.rpos || row.raw_potential_score) || 0,
+    potentialScore: Number(row.potential_score) || 0,
+    potentialRawScore: Number(row.raw_potential_score) || 0,
     lastScan: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
     d: {
       don: Number(row.donations) || 0,
