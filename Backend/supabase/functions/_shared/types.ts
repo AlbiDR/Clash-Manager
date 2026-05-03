@@ -48,6 +48,9 @@ export interface ScannerStats {
     profiles_scanned: number;
     recruits_ingested: number;
     new_recruits?: number;
+    new_recruits_active?: number;
+    new_recruits_benched?: number;
+    new_recruits_top50?: number;
     refreshed_recruits?: number;
     ingested_by_source?: Record<string, number>;
     highest_rpos?: number;
