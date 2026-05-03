@@ -3,6 +3,8 @@
  * Manages local "tombstones" for recruits who have been dismissed but might still appear in cached server payloads.
  */
 import { ref } from "vue";
+import * as v from "valibot";
+import { RecruitTombstoneSchema } from "@core/api/DataSchemas";
 
 const STORAGE_KEY = "cm_recruit_tombstones";
 
@@ -14,15 +16,23 @@ export function useRecruitBlacklist() {
   function init() {
     if (isInitialized.value) return;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          tombstones.value = new Set(parsed);
+      const rawTombstoneData = localStorage.getItem(STORAGE_KEY);
+      if (rawTombstoneData) {
+        const unvalidatedTombstones = JSON.parse(rawTombstoneData);
+
+        // [GUARD] VALIDATION BOUNDARY: Target B [1]
+        // THREAT: Corrupted or malicious LocalStorage data poisoning the recruitment filter.
+        const result = v.safeParse(RecruitTombstoneSchema, unvalidatedTombstones);
+
+        if (result.success) {
+          tombstones.value = new Set(result.output);
+        } else {
+          console.warn("[Blacklist] Storage validation failed", result.issues);
         }
       }
-    } catch (e) {
-      console.warn("Failed to load recruit blacklist", e);
+    } catch (hydrationError: unknown) {
+      // THREAT: Target B [4] - Eliminated anemic variable 'e'.
+      console.warn("[Blacklist] Failed to load recruit blacklist", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
     }
     isInitialized.value = true;
   }

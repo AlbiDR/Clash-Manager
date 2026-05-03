@@ -119,9 +119,6 @@ export function useRecruiter() {
     // ⚡ ZERO LATENCY: Visual hide (Tombstone injection)
     blacklist.hide(targetRecruitIds);
 
-    let isBackendContacted = false;
-
-    isBackendContacted = true;
     dismissRecruitsAction(dismissalPayload).catch(() => {
       // RECOVERY: The dismissRecruitsAction already handles rollback and 
       // error notification for non-transient errors. We just restore 
@@ -138,7 +135,7 @@ export function useRecruiter() {
       // to avoid waiting for a refresh or showing filtered out items.
       if (recruitsToRemove.length > 0) {
         undismissRecruitsAction(targetRecruitIds, recruitsToRemove);
-      } else if (isBackendContacted) {
+      } else {
         // Fallback if we don't have local data
         info("Restoring from server...");
         refreshGas();

@@ -245,6 +245,14 @@ export const SbHeadhunterRowSchema = v.object({
   longevity_label: v.optional(SafeStringPipe, "-"),
 });
 
+/**
+ * [GUARD] RECRUIT TOMBSTONE SCHEMA
+ * Validates the collection of dismissed recruit IDs stored in LocalStorage.
+ * Rationale: Ensures that corrupted persistence data does not poison the
+ * local recruitment filter.
+ */
+export const RecruitTombstoneSchema = v.array(v.string());
+
 export const WebAppDataSchema = v.object({
   lb: v.array(MemberSchema),
   hh: v.array(RecruitSchema),
