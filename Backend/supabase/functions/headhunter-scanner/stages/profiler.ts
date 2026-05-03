@@ -145,34 +145,43 @@ export async function runProfiler(
             }
 
             // --- INGESTION FATE TELEMETRY ---
-                console.error(`[PROFILING] Post-ingestion fate check. New candidates count: ${newCount}`);
-                const newTags = validRecruits
-                    .filter(r => !existingTags.has(r.player_tag))
-                    .map(r => r.player_tag);
+            const newTags = validRecruits
+                .filter(r => !existingTags.has(r.player_tag))
+                .map(r => r.player_tag);
+            
+            if (newTags.length > 0) {
+                console.error(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
                 
-                console.error(`[PROFILING] Tags to check: ${JSON.stringify(newTags)}`);
-                
-                if (newTags.length > 0) {
-                    // Small delay to allow triggers/indexes to settle
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                let fate: any[] = [];
+                let attempts = 0;
+                const maxAttempts = 4; // Total 10s potential delay
 
-                    // 1. Fetch Status of New Recruits
-                    const { data: fate, error: fateErr } = await supabase
+                while (attempts < maxAttempts) {
+                    attempts++;
+                    // Incremental backoff: 1s, 2s, 3s, 4s
+                    await new Promise(resolve => setTimeout(resolve, attempts * 1000));
+
+                    const { data, error: fateErr } = await supabase
                         .schema('drivers')
                         .from('recruits')
                         .select('player_tag, status, raw_potential_score')
                         .in('player_tag', newTags);
                     
-                    if (fateErr) {
-                        console.error(`[PROFILING] Fate query error: ${JSON.stringify(fateErr)}`);
+                    if (!fateErr && data && data.length > 0) {
+                        fate = data;
+                        const queuedCount = fate.filter(f => f.status === 'QUEUE').length;
+                        if (queuedCount === 0) {
+                            console.error(`[PROFILING] Fate check converged on attempt ${attempts}`);
+                            break;
+                        }
+                        console.error(`[PROFILING] Fate check attempt ${attempts}: ${fate.length} found, ${queuedCount} still QUEUED...`);
+                    } else if (fateErr) {
+                        console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(fateErr)}`);
                     }
-                    
-                    console.error(`[PROFILING] Fate check result count: ${fate?.length || 0}`);
-                    if (fate && fate.length > 0) {
-                        console.error(`[PROFILING] Sample fate record: ${JSON.stringify(fate[0])}`);
-                    }
-                    
-                    // 2. Fetch Top 50 Threshold
+                }
+
+                if (fate.length > 0) {
+                    // Fetch Top 50 Threshold (lowest score in active pool)
                     const { data: top50Row } = await supabase
                         .schema('drivers')
                         .from('recruits')
@@ -183,18 +192,16 @@ export async function runProfiler(
                         .maybeSingle();
                     
                     const threshold50 = top50Row?.raw_potential_score || 0;
-                    console.log(`[PROFILING] Top 50 RPoS Threshold: ${threshold50}`);
-
-                    if (fate && fate.length > 0) {
-                        stats.new_recruits_active = fate.filter(f => f.status === 'ACTIVE').length;
-                        stats.new_recruits_benched = fate.filter(f => f.status === 'BENCHED').length;
-                        stats.new_recruits_top50 = fate.filter(f => f.status === 'ACTIVE' && Number(f.raw_potential_score) >= threshold50).length;
-                        
-                        console.log(`[PROFILING] Fate Summary: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
-                    } else {
-                        console.warn(`[PROFILING] No records found in fate check for ${newTags.length} tags. This might indicate a race condition or ingestion failure.`);
-                    }
+                    
+                    stats.new_recruits_active = fate.filter(f => f.status === 'ACTIVE').length;
+                    stats.new_recruits_benched = fate.filter(f => f.status === 'BENCHED').length;
+                    stats.new_recruits_top50 = fate.filter(f => f.status === 'ACTIVE' && Number(f.raw_potential_score) >= threshold50).length;
+                    
+                    console.error(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
+                } else {
+                    console.warn(`[PROFILING] Fate check FAILED after ${maxAttempts} attempts for ${newTags.length} tags.`);
                 }
+            }
             
             stats.recruits_ingested = (stats.recruits_ingested || 0) + validRecruits.length;
             stats.new_recruits = (stats.new_recruits || 0) + newCount;
