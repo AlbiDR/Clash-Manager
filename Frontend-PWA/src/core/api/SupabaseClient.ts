@@ -99,6 +99,8 @@ function mapSbHeadhunterRow(row: any): Recruit {
     potentialRawScore: Number(row.raw_potential_score) || 0,
     longevity: Number(row.longevity) || 0,
     longevityLabel: row.longevity_label || '-',
+    tenureDays: row.tenure_days != null ? Number(row.tenure_days) : undefined,
+    tenureLabel: row.tenure_label || undefined,
     lastScan: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
     d: {
       don: Number(row.donations) || 0,
