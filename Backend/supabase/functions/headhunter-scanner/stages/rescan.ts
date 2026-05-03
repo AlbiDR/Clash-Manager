@@ -70,9 +70,7 @@ export async function runRescan(
 
                 // If player has joined a clan, remove them from the recruit pool
                 if (p.clan?.tag && !exclusionSet.has(p.tag)) {
-                    await supabase.schema('drivers').from('recruits')
-                        .delete()
-                        .eq('player_tag', p.tag);
+                    await supabase.rpc('purge_recruits', { p_tags: [p.tag] });
                     logAudit('RESCAN', 'called', { tag, action: 'purged_clanned' });
                     console.log(`[RESCAN] Player ${tag} joined clan ${p.clan.tag}. Purged from recruits.`);
                     return;

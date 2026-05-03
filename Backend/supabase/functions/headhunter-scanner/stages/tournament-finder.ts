@@ -34,10 +34,8 @@ export async function runTournamentDiscovery(
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
-        const { data: cached } = await supabase.from('discovery_cache')
-            .select('player_tag')
-            .gte('scanned_at', new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString());
-        const blacklist = new Set(cached?.map(c => c.player_tag) || []);
+        const { data: cached } = await supabase.rpc('get_discovery_cache', { p_hours: 1 });
+        const blacklist = new Set(cached?.map((c: any) => c.player_tag) || []);
         console.log(`[TOURNAMENT_DISCOVERY] Loaded ${blacklist.size} cached tournaments to blacklist`);
         let count = 0;
 
@@ -109,7 +107,7 @@ export async function runTournamentDiscovery(
                             } else {
                                 console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag} had no membersList property`);
                             }
-                            await supabase.from('discovery_cache').upsert({ player_tag: t.tag, type: 'TOURNAMENT' });
+                            await supabase.rpc('upsert_discovery_cache', { p_tag: t.tag, p_type: 'TOURNAMENT' });
                         } else {
                             console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${t.tag} failed with HTTP ${deRes.status}`);
                         }
@@ -120,7 +118,7 @@ export async function runTournamentDiscovery(
                 await processBatch(tTasks, 10);
 
                 // 2. Report yield for autonomy
-                await supabase.schema('substrate' as any).rpc('report_anchor_yield', { 
+                await supabase.rpc('report_anchor_yield', { 
                     p_keyword: keyword, 
                     p_yield: keywordYield 
                 });
