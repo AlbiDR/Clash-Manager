@@ -48,9 +48,9 @@ const emit = defineEmits<{
 
 /**
  * ACCESSIBILITY RESOLVER
- * Converts the raw 'ago' timestamp into a human-readable duration since last sighting.
+ * Uses the authoritative longevity label provided by the backend.
  */
-const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
+const timeAgo = computed(() => props.recruit.longevityLabel);
 </script>
 
 <template>

@@ -97,6 +97,8 @@ function mapSbHeadhunterRow(row: any): Recruit {
     t: Number(row.trophies) || 0,
     potentialScore: Number(row.potential_score) || 0,
     potentialRawScore: Number(row.raw_potential_score) || 0,
+    longevity: Number(row.longevity) || 0,
+    longevityLabel: row.longevity_label || '-',
     lastScan: row.last_seen_at ? new Date(row.last_seen_at).getTime() : Date.now(),
     d: {
       don: Number(row.donations) || 0,
