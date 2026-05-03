@@ -68,7 +68,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel);
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
       <TenureBadge v-if="props.recruit.tenureLabel" :days="props.recruit.tenureDays" />
-      <div class="badge time">{{ timeAgo }}</div>
+      <div v-if="timeAgo && timeAgo !== '-'" class="badge time">{{ timeAgo }}</div>
       <div class="badge tag">#{{ props.recruit.id.substring(0, 5) }}</div>
     </template>
 
@@ -101,6 +101,11 @@ const timeAgo = computed(() => props.recruit.longevityLabel);
           benchmark-type="hh"
           benchmark-metric="warWins"
           :benchmark-raw-value="props.recruit.d.war"
+        />
+        <StatisticItem
+          label="Last Seen"
+          :value="formatTimeAgo(props.recruit.lastScan ? new Date(props.recruit.lastScan).toISOString() : undefined)"
+          :loading="props.appIsRefreshing"
         />
         <StatisticItem
           label="Cards Won"
