@@ -26,6 +26,7 @@ export async function runProfiler(
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
         const validRecruits: any[] = [];
+        let validCount = 0;
         let newCount = 0;
         let refreshCount = 0;
         let invalidCount = 0;
