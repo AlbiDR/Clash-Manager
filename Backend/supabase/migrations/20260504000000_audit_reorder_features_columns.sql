@@ -138,19 +138,18 @@ CREATE OR REPLACE VIEW features.headhunter_view AS
             r.last_scan AS last_seen_at,
             (EXTRACT(epoch FROM (now() - r.found_date))::integer / 60) AS raw_longevity_mins,
             h.player_tag AS h_player_tag,
-            h.is_fresh,
-            h.max_pes,
-            LEAST(100::numeric, round((((r.raw_potential_score * 
-                CASE 
-                    WHEN COALESCE(h.is_fresh AND h.max_pes >= 80, false) THEN 1.05 
-                    ELSE 1.0 
-                END) / (SELECT value FROM corpus_benchmark)) * 100::numeric))) AS potential_score
+            COALESCE(h.is_fresh AND h.max_pes >= 80, false) AS has_blessing
            FROM drivers.recruits r
            LEFT JOIN heritage_context h ON h.player_tag = r.player_tag
           WHERE r.status = 'ACTIVE'::drivers.recruit_status 
             AND NOT EXISTS (SELECT 1 FROM drivers.recruit_blacklist bl WHERE bl.player_tag = r.player_tag)
             AND r.trophies > 0 
             AND r.raw_potential_score > 0::numeric
+        ), scoring_layer AS (
+          SELECT 
+            *,
+            LEAST(100::numeric, round((((raw_potential_score * (CASE WHEN has_blessing THEN 1.05 ELSE 1.0 END)) / (SELECT value FROM corpus_benchmark)) * 100::numeric))) AS potential_score
+          FROM base_calculations
         )
  SELECT 
     player_name,
@@ -169,16 +168,16 @@ CREATE OR REPLACE VIEW features.headhunter_view AS
         ELSE 'MID'::text
     END AS tier,
     CASE 
-        WHEN h_player_tag IS NOT NULL AND is_fresh THEN 'RETURNING_VETERAN'::text
+        WHEN h_player_tag IS NOT NULL AND has_blessing THEN 'RETURNING_VETERAN'::text
         WHEN h_player_tag IS NOT NULL THEN 'FORMER_MEMBER'::text
         ELSE 'NEW_CANDIDATE'::text
     END AS heritage_status,
-    COALESCE(is_fresh AND max_pes >= 80, false) AS has_heritage_blessing,
+    has_blessing AS has_heritage_blessing,
     last_seen_at,
     found_date,
     ('https://link.clashroyale.com/en?player='::text || ltrim(player_tag, '#'::text)) AS ingame_link,
     ('https://royaleapi.com/player/'::text || ltrim(player_tag, '#'::text)) AS royaleapi_link
-   FROM base_calculations
+   FROM scoring_layer
   ORDER BY raw_potential_score DESC;
 
 
