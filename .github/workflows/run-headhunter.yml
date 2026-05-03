@@ -58,6 +58,9 @@ jobs:
           # Extract Stats
           INGESTED=$(echo "$DATA" | jq -r '.data.recruits_ingested // 0')
           NEW_LEADS=$(echo "$DATA" | jq -r '.data.new_recruits // 0')
+          NEW_ACTIVE=$(echo "$DATA" | jq -r '.data.new_recruits_active // 0')
+          NEW_BENCHED=$(echo "$DATA" | jq -r '.data.new_recruits_benched // 0')
+          NEW_TOP50=$(echo "$DATA" | jq -r '.data.new_recruits_top50 // 0')
           REFRESHED=$(echo "$DATA" | jq -r '.data.refreshed_recruits // 0')
           SCANNED=$(echo "$DATA" | jq -r '.data.profiles_scanned // 0')
           MAX_RPOS=$(echo "$DATA" | jq -r '.data.highest_rpos // 0')
@@ -88,6 +91,13 @@ jobs:
             echo "| **Highest RPoS** | \`$MAX_RPOS\` |"
             echo "| **Lowest RPoS** | \`$MIN_RPOS\` |"
             echo "| **Total Profiles Scanned** | \`$SCANNED\` |"
+            echo ""
+            echo "### Ingestion Fate (New Leads)"
+            echo "| Status | Count |"
+            echo "| :--- | :--- |"
+            echo "| **Added to Headhunter View (Active)** | \`$NEW_ACTIVE\` |"
+            echo "| **Benched (Below Trophy Floor)** | \`$NEW_BENCHED\` |"
+            echo "| **Made it into Top 50** | \`$NEW_TOP50\` |"
             echo ""
             if [ -n "$SOURCE_MARKDOWN" ]; then
               echo "$SOURCE_MARKDOWN"
