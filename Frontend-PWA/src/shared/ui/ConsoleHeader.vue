@@ -21,7 +21,7 @@ const props = defineProps<{
   currentSort?: string;
   loading?: boolean;
   hubInfo?: {
-    source: "WORKER" | "GAS";
+    source: "SUPABASE" | "WORKER" | "GAS";
     hubAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };

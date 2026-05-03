@@ -267,7 +267,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       return { type: "loading", text: "Syncing..." } as const;
 
     // Priority 4: Warning States (Stale Data)
-    if (ageMinutes >= 15) {
+    // Rationale: Align with the 30-minute TTL defined in useClashDataStore.
+    if (ageMinutes >= 30) {
       return {
         type: "warning" as const,
         text: "Stale Data",
@@ -386,11 +387,12 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     totalCount: filteredItems.value.length,
     currentSort: sortBy.value,
     isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
-    remoteInfo: currentSource?.value ? {
+    hubInfo: currentSource?.value ? {
       source: currentSource.value,
-      dataAge: (lastCompiledTime?.value || lastSyncTime?.value) 
+      hubAge: (lastCompiledTime?.value || lastSyncTime?.value)
         ? formatTimeAgo(new Date(Number(lastCompiledTime?.value || lastSyncTime.value)).toISOString())
-        : null
+        : null,
+      diagnosis: clashStore.syncStatus.value
     } : undefined
   }));
 
