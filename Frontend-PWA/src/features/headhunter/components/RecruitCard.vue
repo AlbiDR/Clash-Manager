@@ -26,7 +26,8 @@ import {
   TrophyBadge,
   ScoreBadge,
   StatsGrid,
-  StatisticItem
+  StatisticItem,
+  TenureBadge
 } from "@shared";
 import { computed } from "vue";
 import type { Recruit, ConsoleCardMetadata } from "@core/types";
@@ -66,6 +67,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel);
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
+      <TenureBadge v-if="props.recruit.tenureLabel" :days="props.recruit.tenureDays" />
       <div class="badge time">{{ timeAgo }}</div>
       <div class="badge tag">#{{ props.recruit.id.substring(0, 5) }}</div>
     </template>
