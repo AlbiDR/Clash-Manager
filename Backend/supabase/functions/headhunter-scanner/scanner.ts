@@ -27,6 +27,9 @@ export async function executeScanner(
         rescans_processed: 0,
         highest_rpos: 0,
         lowest_rpos: 0,
+        new_recruits_active: 0,
+        new_recruits_benched: 0,
+        new_recruits_top50: 0,
         ingested_by_source: {},
         errors: []
     };
