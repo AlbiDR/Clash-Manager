@@ -55,14 +55,13 @@ jobs:
           # 0. Context: We work from the Backend root
           cd Backend
           
-          # 0.1 Secret Injection: Stamp placeholders with actual secrets from the vault
-          # We use '|' as sed delimiter to safely handle tokens containing '/'
-          echo "[AUTH] Injecting Bearer Token into migrations..."
-          if [ -n "$INTERNAL_BEARER_TOKEN" ]; then
-            sed -i "s|{{INTERNAL_BEARER_TOKEN}}|$INTERNAL_BEARER_TOKEN|g" supabase/migrations/*.sql
+          # 1. Authoritative Linking
+          if [ -n "$SUPABASE_DB_PASSWORD" ]; then
+            echo "[LINK] Establishing Authoritative Link..."
+            supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
           fi
 
-          # 1. Sync The Configuration and Key Farm
+          # 2. Sync The Configuration and Key Farm
           echo "Syncing Authoritative Repository Tags to Supabase..."
           supabase secrets set --project-ref "$PROJECT_ID" CLAN_TAG="$CLAN_TAG" PLAYER_TAG="$PLAYER_TAG"
 
@@ -72,17 +71,32 @@ jobs:
           fi
 
           if [ -n "$INTERNAL_BEARER_TOKEN" ]; then
-            echo "Syncing INTERNAL_BEARER_TOKEN..."
+            echo "Syncing INTERNAL_BEARER_TOKEN to Secrets..."
             supabase secrets set --project-ref "$PROJECT_ID" INTERNAL_BEARER_TOKEN="$INTERNAL_BEARER_TOKEN"
+            
+            echo "Syncing INTERNAL_BEARER_TOKEN to Vault..."
+            # Escape single quotes for PostgreSQL safety
+            ESCAPED_TOKEN=$(echo "$INTERNAL_BEARER_TOKEN" | sed "s/'/''/g")
+            
+            # Use a DO block to upsert the secret in the vault
+            supabase db execute --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --query "
+              DO \$\$
+              BEGIN
+                IF EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'INTERNAL_BEARER_TOKEN') THEN
+                  PERFORM vault.update_secret((SELECT id FROM vault.secrets WHERE name = 'INTERNAL_BEARER_TOKEN'), '$ESCAPED_TOKEN');
+                ELSE
+                  PERFORM vault.insert_secret('INTERNAL_BEARER_TOKEN', '$ESCAPED_TOKEN');
+                END IF;
+              END \$\$;
+            "
           else
-            echo "[WARNING] INTERNAL_BEARER_TOKEN secret not found. Function will fail runtime auth."
+            echo "[WARNING] INTERNAL_BEARER_TOKEN secret not found. Pipeline will fail."
           fi
 
-          # 2. Push Database DNA (The Migrations) - Resilient Skip
+          # 3. Push Database DNA (The Migrations) - Resilient Skip
           if [ -n "$SUPABASE_DB_PASSWORD" ]; then
             echo "[PUSH] Synchronizing Database DNA..."
-            # Note: Link is required for db push, but we use the environment variable for auth.
-            supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+            # Link is already established
             
             # --- CLINICAL SELF-HEALING ---
             echo "[SYNC] Running Clinical Migration Sync..."

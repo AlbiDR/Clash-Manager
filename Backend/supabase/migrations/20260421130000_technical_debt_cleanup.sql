@@ -105,7 +105,7 @@ SELECT cron.schedule(
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
             'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
-            'Authorization', 'Bearer {{INTERNAL_BEARER_TOKEN}}'
+            'Authorization', 'Bearer ' || substrate.get_vault_secret('INTERNAL_BEARER_TOKEN')
         ),
         body := '{"tournaments": ["AUTO"]}'::jsonb,
         timeout_milliseconds := 60000
@@ -123,7 +123,7 @@ SELECT cron.schedule(
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
             'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
-            'Authorization', 'Bearer {{INTERNAL_BEARER_TOKEN}}'
+            'Authorization', 'Bearer ' || substrate.get_vault_secret('INTERNAL_BEARER_TOKEN')
         ),
         timeout_milliseconds := 60000
     );
