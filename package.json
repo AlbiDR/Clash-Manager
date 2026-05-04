@@ -13,7 +13,7 @@
   "devDependencies": {
     "@ast-grep/cli": "^0.42.1",
     "@types/node": "catalog:",
-    "dependency-cruiser": "^17.3.10",
+    "dependency-cruiser": "^17.4.0",
     "knip": "^6.11.0",
     "typescript": "catalog:"
   },
