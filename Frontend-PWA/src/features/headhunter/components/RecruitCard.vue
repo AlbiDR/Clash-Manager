@@ -51,7 +51,7 @@ const emit = defineEmits<{
  * ACCESSIBILITY RESOLVER
  * Uses the authoritative longevity label provided by the backend.
  */
-const timeAgo = computed(() => props.recruit.longevityLabel);
+const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(props.recruit.d.ago));
 </script>
 
 <template>
@@ -68,7 +68,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel);
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
       <TenureBadge v-if="props.recruit.tenureLabel" :days="props.recruit.tenureDays" />
-      <div class="badge time">{{ timeAgo }}</div>
+      <div class="badge time longevity-badge">{{ timeAgo }}</div>
       <div class="badge tag">#{{ props.recruit.id.substring(0, 5) }}</div>
     </template>
 
@@ -137,6 +137,14 @@ const timeAgo = computed(() => props.recruit.longevityLabel);
 
 <style scoped>
 /* Content specific styles only */
+
+.longevity-badge {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 18px;
+  flex-shrink: 0;
+}
 
 .card-actions-margin {
   margin-top: 16px;
