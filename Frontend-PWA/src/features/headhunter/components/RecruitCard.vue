@@ -68,7 +68,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel);
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
       <TenureBadge v-if="props.recruit.tenureLabel" :days="props.recruit.tenureDays" />
-      <div v-if="timeAgo && timeAgo !== '-'" class="badge time">{{ timeAgo }}</div>
+      <div class="badge time">{{ timeAgo }}</div>
       <div class="badge tag">#{{ props.recruit.id.substring(0, 5) }}</div>
     </template>
 
