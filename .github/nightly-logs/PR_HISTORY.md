@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-04] PR #542: chore(deps): bump dependency-cruiser from ^17.3.10 to ^17.4.0
+**Commit**: `6c281331e0ecde2fbfaa1a4abea16ca2d0b70a3d`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/542)
+
+### Description
+This PR performs a Tier 1 automated minor version bump for `dependency-cruiser` from `^17.3.10` to `^17.4.0`. The change has been verified through the project's test suite and recorded in the dependency audit log. This action follows the Nightly Pipeline Step 7 (Dependency-Audit) protocol.
+
+---
+*PR created automatically by Jules for task [14728024660725136876](https://jules.google.com/task/14728024660725136876) started by @AlbiDR*
+
+---
+
 ## [2026-05-04] PR #541: docs(tsdoc): document L5 Control Clinical Protocol orchestrator
 **Commit**: `b6022facf8ee01c6de3d016c077fb85c01cde74c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/541)
