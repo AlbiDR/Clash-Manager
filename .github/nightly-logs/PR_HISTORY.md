@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-04] PR #539: fix(harden): secure L5 protocol boundary and eliminate any pathogens
+**Commit**: `5c6a420f35d284ad5d419a29ea0871f03ea38ab7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/539)
+
+### Description
+Harden L5 protocol boundary by replacing 'any' with 'unknown' and implementing safe error handling.
+
+---
+*PR created automatically by Jules for task [141816814622115455](https://jules.google.com/task/141816814622115455) started by @AlbiDR*
+
+---
+
 ## [2026-05-03] PR #538: chore(deps): bump knip from 6.10.0 to 6.11.0
 **Commit**: `35666ae1613f59318315f053f07c21dafec03492`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/538)
