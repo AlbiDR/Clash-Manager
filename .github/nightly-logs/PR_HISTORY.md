@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-04] PR #540: docs(readme): synchronize Settings feature with Supabase infrastructure
+**Commit**: `7b0d3e989b182edeccb83003ff250a03b8cda042`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/540)
+
+### Description
+Reconciles synchronization drift in `Frontend-PWA/src/features/settings/README.md` by updating legacy infrastructure references to align with the current Supabase Binary Stack implementation.
+
+---
+*PR created automatically by Jules for task [8879962691460229635](https://jules.google.com/task/8879962691460229635) started by @AlbiDR*
+
+---
+
 ## [2026-05-04] PR #539: fix(harden): secure L5 protocol boundary and eliminate any pathogens
 **Commit**: `5c6a420f35d284ad5d419a29ea0871f03ea38ab7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/539)
