@@ -10,7 +10,7 @@ export interface AuditEntry {
     timestamp: string;
     stage: string;
     action: 'triggered' | 'called' | 'run' | 'terminated' | 'resulted_data' | 'integrity_checked' | 'error';
-    details?: any;
+    details?: unknown;
 }
 
 export interface StageMetadata {
@@ -28,7 +28,7 @@ export interface TelemetryMetadata {
     stage: string;
     current_duration: number;
     audit_log: AuditEntry[];
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface IngestionResult {

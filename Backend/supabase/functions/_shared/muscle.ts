@@ -60,10 +60,11 @@ export async function fetchWithRotation(endpoint: string, maxRetries: number = 3
         }
         
         return res;
-      } catch (err: any) {
-        console.warn(`[Native-Muscle] Fetch failed for key [${targetIndex}]: ${err.message}`);
+      } catch (fetchError: unknown) {
+        const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        console.warn(`[Native-Muscle] Fetch failed for key [${targetIndex}]: ${errorMessage}`);
         if (attempt === maxRetries) {
-          if (i === keys.length - 1) throw err;
+          if (i === keys.length - 1) throw fetchError;
           break; // Break inner loop to rotate key
         }
         attempt++;
