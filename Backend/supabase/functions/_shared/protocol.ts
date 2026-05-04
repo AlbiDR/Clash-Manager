@@ -19,9 +19,9 @@ export interface ProtocolOptions<T> {
     schema: v.BaseSchema<any, T, any>;
     handler: (
         payload: T, 
-        logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void,
-        heartbeat: (stage: string, currentResults: any) => Promise<void>
-    ) => Promise<any>;
+        logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+        heartbeat: (stage: string, currentResults: unknown) => Promise<void>
+    ) => Promise<unknown>;
 }
 
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
@@ -29,7 +29,12 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     const startTime = Date.now();
     const audit_log: AuditEntry[] = [];
 
-    const logAudit = (stage: string, action: AuditEntry['action'], details?: any) => {
+    /**
+     * [DECISION LOG] Microscopic Telemetry
+     * Rationale: Standardizes audit logging across all pipeline stages,
+     * ensuring that details are captured as unknown to prevent pathogen spread.
+     */
+    const logAudit = (stage: string, action: AuditEntry['action'], details?: unknown) => {
         audit_log.push({ timestamp: new Date().toISOString(), stage, action, details });
     };
 
@@ -87,13 +92,20 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             last_message: `Protocol execution initiated for ${componentId}.`
         });
 
-        const heartbeat = async (stage: string, currentResults: any) => {
+        /**
+         * [DECISION LOG] Persistence Recovery & Health
+         * Rationale: Provides in-flight telemetry updates to the substrate.
+         * THREAT: Payload inflation or malformed results could corrupt telemetry.
+         * Type narrowing ensures only object-like results are spread.
+         */
+        const heartbeat = async (stage: string, currentResults: unknown) => {
             logAudit(stage, 'terminated', { status: 'IN_PROGRESS' });
             if (telemetry?.id) {
+                const resultsObject = typeof currentResults === 'object' && currentResults !== null ? currentResults : { results: currentResults };
                 await supabase.schema('substrate').from('governance_telemetry')
                     .update({ 
                         metadata: { 
-                            ...currentResults, 
+                            ...resultsObject,
                             stage, 
                             current_duration: Date.now() - startTime,
                             audit_log
@@ -115,20 +127,34 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }];
 
         const integrityChecks = audit_log_final.filter(a => a.action === 'integrity_checked');
-        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(c => c.details?.passed === true);
+
+        /**
+         * [GUARD] INTEGRITY AGGREGATION
+         * Rationale: Collects integrity state from all stages.
+         * Narrowing 'details' to ensure safe access to the 'passed' flag.
+         */
+        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(c => {
+            const d = c.details as Record<string, unknown> | undefined;
+            return d?.passed === true;
+        });
+
         const validationReport = {
             stages_called: audit_log_final.filter(a => a.action === 'called').map(a => a.stage),
             stages_run: audit_log_final.filter(a => a.action === 'run').map(a => a.stage),
-            integrity_checks: integrityChecks.map(c => ({ stage: c.stage, passed: c.details?.passed })),
+            integrity_checks: integrityChecks.map(c => {
+                const d = c.details as Record<string, unknown> | undefined;
+                return { stage: c.stage, passed: d?.passed };
+            }),
             total_duration: Date.now() - startTime
         };
         
         if (telemetry?.id) {
+            const resultsObject = typeof results === 'object' && results !== null ? results : { results };
             await supabase.schema('substrate').from('governance_telemetry')
                 .update({ 
                     status: 'SUCCESS', 
                     metadata: { 
-                        ...results, 
+                        ...resultsObject,
                         stage: 'COMPLETE', 
                         current_duration: Date.now() - startTime,
                         audit_log: audit_log_final,
@@ -158,24 +184,31 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
         });
 
-    } catch (err: any) {
-        console.error(`[CRITICAL] Protocol Violation in ${componentId}: ${err.message}`);
-        logAudit('FATAL_ERROR', 'error', { message: err.message });
+    } catch (protocolViolationError: unknown) {
+        /**
+         * [GUARD] FATAL PROTOCOL ERROR HANDLING
+         * THREAT: Silent failure or unhandled exceptions in Edge Functions.
+         * Rationale: Ensures that every failure is logged to both console and substrate,
+         * while returning a standardized error response to the client.
+         */
+        const errorMessage = protocolViolationError instanceof Error ? protocolViolationError.message : String(protocolViolationError);
+        console.error(`[CRITICAL] Protocol Violation in ${componentId}: ${errorMessage}`);
+        logAudit('FATAL_ERROR', 'error', { message: errorMessage });
         
         await supabase.schema('substrate').from('pipeline_heartbeat').upsert({
             component_id: componentId,
             status: 'FAILED',
             last_failure_at: new Date().toISOString(),
-            last_message: `Fatal protocol error: ${err.message}`,
+            last_message: `Fatal protocol error: ${errorMessage}`,
             is_data_perfect: false,
             last_validation_report: {
-                error: err.message,
+                error: errorMessage,
                 audit_log
             }
         });
 
         return new Response(JSON.stringify({ 
-            error: err.message, 
+            error: errorMessage,
             layer: 'L5_CONTROL',
             component_id: componentId
         }), { 
