@@ -46,6 +46,7 @@
 | @vue/test-utils | ^2.4.9 | ^2.4.10 | 2026-06-06 | PASS |
 | knip | ^6.7.0 | ^6.10.0 | 2026-06-07 | PASS |
 | knip | ^6.10.0 | ^6.11.0 | 2026-06-08 | PASS |
+| dependency-cruiser | ^17.3.10 | ^17.4.0 | 2026-05-04 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
