@@ -1,6 +1,48 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-05] PR #546: standardize hub provenance reporting
+**Commit**: `453b14c08b757fe48c82327b1901d0e34b381085`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/546)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** Significant structural inconsistency and redundancy in how system provenance (Hub information) was reported across the application, with `HubInfo` redefined in multiple places and legacy logic in `AppFooter.vue`.
+**[Refactoring Hypothesis]:** Centralizing the `HubInfo` interface and refactoring affected components/composables to use it reduces duplication (DRY) and ensures consistency across the stack.
+**[Rationale]:** Aligns with the "Clean Stack" ADR by establishing a Single Source of Truth for domain-wide metadata and ensuring type safety across layer boundaries.
+
+### Changes:
+- **[Frontend-PWA/src/core/types/index.ts]:** Added the authoritative `HubInfo` interface.
+- **[Frontend-PWA/src/shared/ui/AppFooter.vue]:** Refactored to use the standardized `hubInfo` prop, added support for the `SUPABASE` source, and included the mandatory GPL-3.0 licensing header.
+- **[Frontend-PWA/src/shared/ui/ConsoleLayout.vue]:** Updated to pass `hubInfo` to `AppFooter` and use the centralized type.
+- **[Frontend-PWA/src/shared/ui/StatusPill.vue]:** Updated to use the centralized `HubInfo` type.
+- **[Frontend-PWA/src/core/services/useConsoleController.ts]:** Refactored `layoutProps` to strictly conform to the `HubInfo` interface.
+- **[Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts]:** Refactored `layoutProps` to strictly conform to the `HubInfo` interface.
+
+### Verification:
+- **[Automated]:** Full `Frontend-PWA` test suite passed (861 pass, 1 skip).
+- **[Automated/Audit]:** Confirmed structural improvement via diff (eliminated duplication, standardized type usage).
+
+### Log Updates:
+- Updated `.github/nightly-logs/optimization-coverage.log`
+
+---
+*PR created automatically by Jules for task [17286103744387302583](https://jules.google.com/task/17286103744387302583) started by @AlbiDR*
+
+---
+
+## [2026-05-05] PR #545: docs(readme): reconcile backend maintenance routine drift
+**Commit**: `1a5db0b5f4cd13ce98ab955034f3140e0314a3f5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/545)
+
+### Description
+Synchronize technical blueprints with actual database implementation to ensure future agents and developers have an accurate understanding of the system's maintenance lifecycle.
+
+---
+*PR created automatically by Jules for task [16745668363100589711](https://jules.google.com/task/16745668363100589711) started by @AlbiDR*
+
+---
+
 ## [2026-05-05] PR #544: test(verify): extend SupabaseClient coverage for edge cases
 **Commit**: `b25d9d6a47932452297127983c12dbb2e407c5d7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/544)
