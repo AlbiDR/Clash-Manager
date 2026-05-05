@@ -15,6 +15,7 @@
  */
 import { ref, watch } from "vue";
 import { useHaptics } from "@core";
+import type { HubInfo } from "@core/types";
 
 const props = withDefaults(defineProps<{
   /**
@@ -34,14 +35,7 @@ const props = withDefaults(defineProps<{
   /**
    * Standardized provenance metadata from the Layer 1 ClashDataStore.
    */
-  hubInfo?: {
-    /** The authoritative source of the current dataset. */
-    source: "SUPABASE" | "WORKER" | "GAS";
-    /** Human-readable age of the data at the source. */
-    hubAge: string | null;
-    /** Standardized diagnostic code for sync failures. */
-    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
-  };
+  hubInfo?: HubInfo;
 }>(), {
   direction: "right"
 });

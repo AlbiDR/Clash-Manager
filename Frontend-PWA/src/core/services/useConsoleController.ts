@@ -15,7 +15,7 @@ import { useClashDataStore } from "./useClashDataStore";
 import { useHaptics } from "./useHaptics";
 import { storeToRefs } from "pinia";
 import { ref, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from "vue";
-import type { ConsoleCardMetadata } from "@core/types";
+import type { ConsoleCardMetadata, HubInfo } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 
@@ -392,7 +392,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       hubAge: (lastCompiledTime?.value || lastSyncTime?.value)
         ? formatTimeAgo(new Date(Number(lastCompiledTime?.value || lastSyncTime.value)).toISOString())
         : null,
-      diagnosis: clashStore.syncStatus.value
+      diagnosis: (clashStore.syncStatus.value as HubInfo["diagnosis"])
     } : undefined
   }));
 
