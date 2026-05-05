@@ -70,6 +70,15 @@ describe("SupabaseClient", () => {
     expect(SupabaseClient).toBeDefined();
   });
 
+  describe("Errors", () => {
+    it("NetworkError is an instance of Error", () => {
+      const err = new SupabaseClient.NetworkError("test");
+      expect(err).toBeInstanceOf(Error);
+      expect(err.name).toBe("NetworkError");
+      expect(err.message).toBe("test");
+    });
+  });
+
   describe("Configuration", () => {
     it("isConfigured returns true when both URL and Key are present", () => {
       expect(SupabaseClient.isConfigured()).toBe(true);
@@ -182,6 +191,24 @@ describe("SupabaseClient", () => {
       expect(result).toHaveLength(1);
       expect(result![0].n).toBe('Newbie');
     });
+
+    it("scanRecruitsDirect returns null if fetch fails", async () => {
+      vi.mocked(mockFrom.limit).mockResolvedValue({ data: null, error: { message: 'Fetch Failed' } } as any);
+      const result = await SupabaseClient.scanRecruitsDirect();
+      expect(result).toBeNull();
+    });
+
+    it("scanRecruitsDirect uses fallback for malformed rows", async () => {
+      vi.mocked(mockFrom.limit).mockResolvedValue({
+        data: [{ malformed: true }],
+        error: null
+      });
+
+      const result = await SupabaseClient.scanRecruitsDirect();
+      expect(result).toHaveLength(1);
+      expect(result![0].n).toBe('Unknown');
+      expect(result![0].t).toBe(0);
+    });
   });
 
   describe("Profile Retrieval", () => {
@@ -241,6 +268,22 @@ describe("SupabaseClient", () => {
       ]));
     });
 
+    it("dismissRecruits resets corrupted offline queue on transient error", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
+      vi.mocked(idb.get).mockResolvedValue([{ type: 'INVALID' }]); // Malformed
+
+      const items = [{ id: 'ABC', score: 80 }];
+      const result = await SupabaseClient.dismissRecruits(items);
+
+      expect(result.success).toBe(true);
+      const calls = vi.mocked(idb.set).mock.calls;
+      const lastCall = calls.find(call => call[0] === "offline_queue");
+      expect(lastCall).toBeDefined();
+      expect(lastCall![1]).toHaveLength(1); // Should have reset and added only the new one
+      expect(lastCall![1][0].type).toBe('RECRUIT_DISMISSAL');
+    });
+
     it("undismissRecruits normalizes tags and enqueues on fetch error", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'failed to fetch' } } as any);
@@ -256,6 +299,29 @@ describe("SupabaseClient", () => {
       ]));
     });
 
+    it("undismissRecruits resets corrupted offline queue on transient error", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
+      vi.mocked(idb.get).mockResolvedValue([{ type: 'INVALID' }]); // Malformed
+
+      const ids = ['ABC'];
+      const result = await SupabaseClient.undismissRecruits(ids);
+
+      expect(result.success).toBe(true);
+      const calls = vi.mocked(idb.set).mock.calls;
+      const lastCall = calls.filter(call => call[0] === "offline_queue").pop();
+      expect(lastCall).toBeDefined();
+      expect(lastCall![1]).toHaveLength(1);
+      expect(lastCall![1][0].type).toBe('RECRUIT_RESTORATION');
+    });
+
+    it("dismissRecruits throws NetworkError on non-transient error", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '400', message: 'Bad Request' } } as any);
+
+      await expect(SupabaseClient.dismissRecruits([])).rejects.toThrow(SupabaseClient.NetworkError);
+    });
+
     it("triggerBackendUpdate returns success/failure based on RPC", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
@@ -263,6 +329,15 @@ describe("SupabaseClient", () => {
       const result = await SupabaseClient.triggerBackendUpdate();
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
+    });
+
+    it("triggerBackendUpdate returns error if RPC fails", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'Trigger Failed' } } as any);
+
+      const result = await SupabaseClient.triggerBackendUpdate();
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toBe('Trigger Failed');
     });
 
     it("subscribeToPush inserts subscription", async () => {
