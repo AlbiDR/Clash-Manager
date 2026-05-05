@@ -13,7 +13,12 @@ import type {
   LeaderboardMember,
 } from "@core/types";
 import { idb } from "../services/StorageService";
-import { ProfileInputSchema, SbRosterRowSchema, SbHeadhunterRowSchema } from "./DataSchemas";
+import {
+  ProfileInputSchema,
+  SbRosterRowSchema,
+  SbHeadhunterRowSchema,
+  OfflineQueueSchema
+} from "./DataSchemas";
 import * as v from "valibot";
 
 /**
@@ -310,9 +315,21 @@ export async function dismissRecruits(
     // Check if we should enqueue for background retry (PGRST301 is usually a timeout/abort)
     const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
     if (isTransient) {
-      const queue = (await idb.get<any[]>("offline_queue")) || [];
-      queue.push({ type: 'RECRUIT_DISMISSAL', items, timestamp: Date.now() });
-      await idb.set("offline_queue", queue);
+      const unvalidatedOfflineQueue = (await idb.get<unknown[]>("offline_queue")) || [];
+      const validationResult = v.safeParse(OfflineQueueSchema, unvalidatedOfflineQueue);
+
+      // THREAT: Corrupted persistence layer poisoning the retry queue.
+      // Rationale: We reset the queue if it's malformed to prevent broken operations
+      // from being replayed indefinitely.
+      const offlineOperationQueue = validationResult.success ? validationResult.output : [];
+
+      offlineOperationQueue.push({
+        type: 'RECRUIT_DISMISSAL',
+        items: items.map(item => ({ id: item.id, score: item.score })),
+        timestamp: Date.now()
+      });
+
+      await idb.set("offline_queue", offlineOperationQueue);
       return { success: true, data: { success: true, count: items.length, message: "Enqueued" } };
     }
     throw new NetworkError(error.message);
@@ -338,9 +355,19 @@ export async function undismissRecruits(
     // DECISION LOG: Offline Resilience
     const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
     if (isTransient) {
-      const queue = (await idb.get<any[]>("offline_queue")) || [];
-      queue.push({ type: 'RECRUIT_RESTORATION', ids: player_tags, timestamp: Date.now() });
-      await idb.set("offline_queue", queue);
+      const unvalidatedOfflineQueue = (await idb.get<unknown[]>("offline_queue")) || [];
+      const validationResult = v.safeParse(OfflineQueueSchema, unvalidatedOfflineQueue);
+
+      // THREAT: Persistence corruption in recovery queue.
+      const offlineOperationQueue = validationResult.success ? validationResult.output : [];
+
+      offlineOperationQueue.push({
+        type: 'RECRUIT_RESTORATION',
+        ids: player_tags,
+        timestamp: Date.now()
+      });
+
+      await idb.set("offline_queue", offlineOperationQueue);
       return { success: true, data: { success: true, count: ids.length, message: "Enqueued" } };
     }
     throw new NetworkError(error.message);
@@ -361,7 +388,10 @@ export async function triggerBackendUpdate(
   const { data, error } = await supabase.rpc('trigger_backend_update');
   
   if (error) return { success: false, data: null, error: { code: error.code, message: error.message } };
-  return { success: true, data: data as any };
+
+  // THREAT: The "any Plague".
+  // Rationale: Casting to the explicit return type defined in the function signature.
+  return { success: true, data: data as { success: boolean; message: string } };
 }
 
 /**
