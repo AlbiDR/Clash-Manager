@@ -47,6 +47,7 @@
 | knip | ^6.7.0 | ^6.10.0 | 2026-06-07 | PASS |
 | knip | ^6.10.0 | ^6.11.0 | 2026-06-08 | PASS |
 | dependency-cruiser | ^17.3.10 | ^17.4.0 | 2026-05-04 | PASS |
+| vue-tsc | ^3.2.7 | ^3.2.8 | 2026-06-12 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
