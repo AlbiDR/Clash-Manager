@@ -226,13 +226,18 @@ describe("SupabaseClient", () => {
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
       vi.mocked(idb.get).mockResolvedValue([]);
 
-      const items = [{ tag: '#ABC', reason: 'inactive' }] as any;
+      const items = [{ id: 'ABC', score: 80 }];
       const result = await SupabaseClient.dismissRecruits(items);
 
       expect(result.success).toBe(true);
       expect(result.data?.message).toBe('Enqueued');
       expect(idb.set).toHaveBeenCalledWith("offline_queue", expect.arrayContaining([
-        expect.objectContaining({ type: 'RECRUIT_DISMISSAL', items })
+        expect.objectContaining({
+          type: 'RECRUIT_DISMISSAL',
+          items: [
+            { id: 'ABC', score: 80 }
+          ]
+        })
       ]));
     });
 
