@@ -57,7 +57,7 @@ The backend orchestrates a dual-path pipeline for internal telemetry and externa
 1. **Ingestion Gate (`ingest-royale-data`)**: A Deno Edge Function utilizing a Penta-Stage Pipe (Profile, Members, War Activity, History, Battles) with Round-Robin token rotation.
 2. **Scout Gate (`headhunter-scanner`)**: A high-concurrency discovery engine that scans global tournaments to identify and profile elite recruits.
 3. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
-4. **Janitor (`maintenance_janitor`)**: Weekly automated culling of volatile data while Hard-Exempting career history.
+4. **Janitor (`substrate.execute_nightly_maintenance`)**: Daily automated culling of volatile data while Hard-Exempting career history.
 
 ---
 
