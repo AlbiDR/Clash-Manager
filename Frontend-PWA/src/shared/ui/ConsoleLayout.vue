@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
+import type { HubInfo } from "@core/types";
 import {
   useHaptics,
   useUiCoordinator,
@@ -54,11 +55,7 @@ const props = defineProps<{
   skeletonCount?: number;
   totalCount?: number;
   /** Custom badge text for the footer (overrides default BLUEPRINT badge). */
-  hubInfo?: {
-    source: "SUPABASE" | "WORKER" | "GAS";
-    hubAge: string | null;
-    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
-  };
+  hubInfo?: HubInfo;
   footerBadge?: string;
 }>();
 
@@ -222,6 +219,7 @@ onUnmounted(() => {
       <AppFooter
         :version="appVersion"
         :badge="activeFooterBadge"
+        :hub-info="props.hubInfo"
       />
     </div>
   </div>

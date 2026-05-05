@@ -285,7 +285,7 @@ export function useLaboratory() {
     emptyHint: !clashData.value?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
     emptyIcon: 'flask',
     hubInfo: currentSource.value ? {
-      source: currentSource.value,
+      source: currentSource.value as "SUPABASE" | "WORKER" | "GAS",
       hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
     } : undefined
   }));

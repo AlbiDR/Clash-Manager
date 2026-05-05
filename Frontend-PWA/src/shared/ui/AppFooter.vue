@@ -1,13 +1,16 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
+
 <script setup lang="ts">
 import { vTactile } from "../directives/vTactile";
 import { useHaptics } from "@core";
 import { computed } from "vue";
+import type { HubInfo } from "@core/types";
 
 const props = defineProps<{
   version: string;
   badge?: string;
-  currentSource?: "WORKER" | "GAS" | null;
-  hubSyncTime?: number | null;
+  hubInfo?: HubInfo;
 }>();
 
 const haptics = useHaptics();
@@ -18,32 +21,26 @@ const handleReload = () => {
 };
 
 const statusLabel = computed(() => {
-  if (props.currentSource === "WORKER") return "Worker Hub (0ms)";
-  if (props.currentSource === "GAS") return "Legacy GAS (Fallback)";
+  if (props.hubInfo?.source === "SUPABASE") return "Supabase Cluster";
+  if (props.hubInfo?.source === "WORKER") return "Worker Hub";
+  if (props.hubInfo?.source === "GAS") return "Legacy GAS (Fallback)";
   return "Disconnected";
 });
 
 const statusColor = computed(() => {
-  if (props.currentSource === "WORKER") return "var(--sys-color-success)";
-  if (props.currentSource === "GAS") return "var(--sys-color-primary)";
+  if (props.hubInfo?.source === "SUPABASE") return "var(--sys-color-success)";
+  if (props.hubInfo?.source === "WORKER") return "var(--sys-color-success)";
+  if (props.hubInfo?.source === "GAS") return "var(--sys-color-primary)";
   return "var(--sys-color-error)";
-});
-
-const hubAge = computed(() => {
-  if (!props.hubSyncTime) return "";
-  const minutes = Math.floor((Date.now() - props.hubSyncTime) / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ago`;
-  return `${minutes}m ago`;
 });
 </script>
 
 <template>
   <div class="footer-info">
-    <div v-if="props.currentSource" class="hub-status">
+    <div v-if="props.hubInfo" class="hub-status">
       <span class="status-dot" :style="{ backgroundColor: statusColor }"></span>
       <span class="status-text">{{ statusLabel }}</span>
-      <span v-if="props.hubSyncTime" class="status-age">{{ hubAge }}</span>
+      <span v-if="props.hubInfo.hubAge" class="status-age">{{ props.hubInfo.hubAge }}</span>
     </div>
 
     <div

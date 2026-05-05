@@ -122,3 +122,15 @@ export interface ConsoleCardMetadata {
   /** UI State: Indicates if the card's data is being refreshed in the background. */
   appIsRefreshing?: boolean;
 }
+
+/**
+ * Standardized provenance metadata from the Layer 1 ClashDataStore.
+ */
+export interface HubInfo {
+  /** The authoritative source of the current dataset. */
+  source: "SUPABASE" | "WORKER" | "GAS";
+  /** Human-readable age of the data at the source. */
+  hubAge: string | null;
+  /** Standardized diagnostic code for sync failures. */
+  diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
+}
