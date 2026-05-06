@@ -167,12 +167,13 @@ Deploy the database schema and ingestion functions first.
 
   **Source**: `Backend/`
   **Requirements**:
-    - `ROYALE_API_KEYS`: The Key Farm (20+ Supercell JWTs).
+    - `ROYALE_API_KEYS`: The Key Farm (10 Supercell JWTs).
     - `CLAN_TAG`: Target resource identifier (SSOT).
   **Action**: 
     1. `supabase link --project-ref <id>`
     2. `supabase db push` (Sync Migrations)
     3. `supabase functions deploy ingest-royale-data`
+    4. `supabase functions deploy headhunter-scanner`
 
 </details>
 

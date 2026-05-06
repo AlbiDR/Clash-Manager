@@ -50,11 +50,12 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 ---
 
 ## IV. The Clinical Ingestion Pipeline
-Ingestion is performed via a **Penta-Stage Pipe** (Profile, Members, War Activity, History, Battles).
+Ingestion is performed via a **Dual-Engine Edge Architecture**, supported by automated database shredders and janitors.
 
-1. **Gatekeeper (`ingest-royale-data`)**: A single Deno Edge Function utilizing `proxy.royaleapi.dev` and Round-Robin token rotation.
-2. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
-3. **Janitor (`maintenance_janitor`)**: Weekly automated culling of volatile data while **Hard-Exempting** career history.
+1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for clan profiling, member syncs, and war logs. Utilizes `proxy.royaleapi.dev` with Round-Robin token rotation.
+2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (Ghost Purge, Shadow Scout, Tournament Discovery, Profiler, Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
+3. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
+4. **Janitor (`maintenance_janitor`)**: Weekly automated culling of volatile data while **Hard-Exempting** career history.
 
 ---
 
@@ -68,7 +69,7 @@ The `deploy-supabase.yml` workflow automates the following sequence:
     - `CLAN_TAG` and `PLAYER_TAG` repository variables are synced.
     - `ROYALE_API_KEYS` (The Key Farm) is injected into the Supabase environment.
 3. **Database DNA Sync**: SQL migrations are pushed if `SUPABASE_DB_PASSWORD` is present.
-4. **Edge Layer Deployment**: `ingest-royale-data` is bundled and deployed.
+4. **Edge Layer Deployment**: The dual engines (`ingest-royale-data` and `headhunter-scanner`) are bundled and deployed.
 
 ### Common CLI Operations
 ```bash
@@ -83,6 +84,7 @@ supabase functions serve ingest-royale-data --no-verify-jwt
 
 # Deploy Edge Functions
 supabase functions deploy ingest-royale-data --no-verify-jwt
+supabase functions deploy headhunter-scanner --no-verify-jwt
 ```
 
 ---
@@ -90,7 +92,7 @@ supabase functions deploy ingest-royale-data --no-verify-jwt
 ## VI. Environment & Secret Registry
 | Constant | Source | Scope | Role |
 | :--- | :--- | :--- | :--- |
-| `ROYALE_API_KEYS` | GitHub Secret | Edge Function | The Key Farm (20+ Supercell JWTs). |
+| `ROYALE_API_KEYS` | GitHub Secret | Edge Function | The Key Farm (10 Supercell JWTs). |
 | `CLAN_TAG` | GitHub Variable | Edge/Pipeline | The Targeted Clan Identifier (SSOT). |
 | `PLAYER_TAG` | GitHub Variable | Edge/Pipeline | The Targeted Player Identifier (SSOT). |
 
