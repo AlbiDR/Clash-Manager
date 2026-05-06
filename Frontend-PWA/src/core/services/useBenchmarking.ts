@@ -13,6 +13,7 @@ import { useClashDataStore } from "./useClashDataStore";
 import { storeToRefs } from "pinia";
 
 import { computed, type ComputedRef } from "vue";
+import type { LeaderboardMember, Recruit } from "../types";
 
 /**
  * Result object for a benchmarking comparison.
@@ -44,6 +45,49 @@ type StatsMap = Record<string, { avg: number; max: number; min: number }>;
 let lbStats: ComputedRef<StatsMap | null> | null = null;
 let hhStats: ComputedRef<StatsMap | null> | null = null;
 let sharedModules: ModuleState | null = null;
+
+/**
+ * [PERF] LB METRIC EXTRACTORS
+ * Rationale: Hoisted to module level to prevent allocation churn.
+ */
+const LB_EXTRACTORS: Record<string, (m: LeaderboardMember) => number> = {
+  trophies: (m) => m.t || 0,
+  warRate: (m) => parseFloat(m.d?.rate || "0"),
+  donations: (m) => m.d?.avg || 0,
+  score: (m) => m.performanceScore || 0,
+  tenure: (m) => m.d?.days || 0,
+  momentum: (m) => m.dt || 0,
+};
+
+/**
+ * [PERF] HH METRIC EXTRACTORS
+ * Rationale: Hoisted to module level to prevent allocation churn.
+ */
+const HH_EXTRACTORS: Record<string, (m: Recruit) => number> = {
+  trophies: (m) => m.t || 0,
+  donations: (m) => m.d?.don || 0,
+  warWins: (m) => m.d?.war || 0,
+  cardsWon: (m) => m.d?.cards || 0,
+  score: (m) => m.potentialScore || 0,
+};
+
+/**
+ * [PERF] BENCHMARK LABELS
+ * Rationale: Hoisted to module level to prevent allocation churn.
+ */
+const BENCHMARK_LABELS: Record<
+  string,
+  string | ((ctx: "lb" | "hh") => string)
+> = {
+  trophies: "Trophy Rank",
+  warRate: "War Reliability",
+  donations: (ctx) => (ctx === "lb" ? "Daily Average" : "Lifetime Donos"),
+  warWins: "Legacy War Wins",
+  cardsWon: "Cards Won",
+  score: (ctx) => (ctx === "lb" ? "Performance" : "Potential"),
+  tenure: "Clan Loyalty",
+  momentum: "Growth Pace",
+};
 
 /**
  * [PERF] SINGLE-PASS STATS CALCULATOR
@@ -135,16 +179,9 @@ function getBenchmark(
   const percent = Math.abs(Math.round((diff / (m.avg || 1)) * 100));
   const isBetter = diff >= 0;
 
-  const labels: Record<string, string> = {
-    trophies: "Trophy Rank",
-    warRate: "War Reliability",
-    donations: context === "lb" ? "Daily Average" : "Lifetime Donos",
-    warWins: "Legacy War Wins",
-    cardsWon: "Cards Won",
-    score: context === "lb" ? "Performance" : "Potential",
-    tenure: "Clan Loyalty",
-    momentum: "Growth Pace",
-  };
+  const labelRaw = BENCHMARK_LABELS[metric];
+  const label =
+    typeof labelRaw === "function" ? labelRaw(context) : labelRaw || metric;
 
   const tier =
     value >= m.max * 0.9
@@ -156,7 +193,7 @@ function getBenchmark(
           : "GROWING";
 
   return {
-    label: labels[metric] || metric,
+    label,
     tier: tier as BenchmarkData["tier"],
     value,
     avg: m.avg,
@@ -217,30 +254,13 @@ export function useBenchmarking() {
     lbStats = computed(() => {
       // Logic: Extract metrics for the Leaderboard (Internal Member) context
       const lb = data.value?.lb || [];
-      // [GUARD] HARDENING: Remove 'any' pathogens to ensure extractor type safety.
-      // Target B [4]: The 'any' Plague eliminated by allowing readonly arrays in calculateStats.
-      return calculateStats(lb, {
-        trophies: (m) => m.t || 0,
-        warRate: (m) => parseFloat(m.d?.rate || "0"),
-        donations: (m) => m.d?.avg || 0,
-        score: (m) => m.performanceScore || 0,
-        tenure: (m) => m.d?.days || 0,
-        momentum: (m) => m.dt || 0,
-      });
+      return calculateStats(lb, LB_EXTRACTORS);
     });
 
     hhStats = computed(() => {
       // Logic: Extract metrics for the Headhunter (Prospective Recruit) context
       const hh = data.value?.hh || [];
-      // [GUARD] HARDENING: Remove 'any' pathogens to ensure extractor type safety.
-      // Target B [4]: The 'any' Plague eliminated by allowing readonly arrays in calculateStats.
-      return calculateStats(hh, {
-        trophies: (m) => m.t || 0,
-        donations: (m) => m.d?.don || 0,
-        warWins: (m) => m.d?.war || 0,
-        cardsWon: (m) => m.d?.cards || 0,
-        score: (m) => m.potentialScore || 0,
-      });
+      return calculateStats(hh, HH_EXTRACTORS);
     });
   }
 
