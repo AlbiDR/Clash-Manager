@@ -84,7 +84,7 @@ Orchestrates the "Recruitment Pipeline" for the Headhunter feature through a mul
 The primary Layer 1 orchestrator for high-density list views (Roster, Headhunter).
 - **Layout Orchestration**: Centralizes the communication between infrastructure and the `ConsoleLayout` component via standardized `layoutProps` and `layoutEvents` interfaces, reducing boilerplate in feature views.
 - **Dependency Inversion**: Bridges domain-blind infrastructure (searching, sorting, pagination, selection) with feature-level requirements through a unified reactive interface.
-- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status (Invalid API URL, Offline, Sync Error, Waking Server..., Syncing..., Fallback, and Nominal).
+- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status (Invalid API URL, Offline, Sync Error, Syncing..., Stale Data, Nominal, and Empty).
 - **Performance Orchestration**: Centralizes item metadata resolution and `v-memo` key generation to ensure consistent rendering optimizations across feature views.
 - **Lifecycle Management**: Monitors document visibility and triggers automatic background refreshes after extended inactivity (30m+) to ensure data currency.
 
