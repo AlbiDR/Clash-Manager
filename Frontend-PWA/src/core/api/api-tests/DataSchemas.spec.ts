@@ -15,7 +15,10 @@ import {
   WebAppDataSchema,
   SbRosterRowSchema,
   SbHeadhunterRowSchema,
-  RecruitTombstoneSchema
+  RecruitTombstoneSchema,
+  DismissalRequestSchema,
+  OfflineActionSchema,
+  OfflineQueueSchema
 } from "../DataSchemas";
 
 describe("Core DataSchemas", () => {
@@ -466,6 +469,91 @@ describe("Core DataSchemas", () => {
 
     it("should fail for array with non-string elements", () => {
       const result = v.safeParse(RecruitTombstoneSchema, [123]);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("DismissalRequestSchema", () => {
+    it("should parse valid dismissal request", () => {
+      const input = { id: "TAG1", score: 80 };
+      const result = v.parse(DismissalRequestSchema, input);
+      expect(result).toEqual(input);
+    });
+
+    it("should coerce types via pipes", () => {
+      const input = { id: 12345, score: "95" };
+      const result = v.parse(DismissalRequestSchema, input);
+      expect(result).toEqual({ id: "12345", score: 95 });
+    });
+
+    it("should fail for missing fields", () => {
+      const result = v.safeParse(DismissalRequestSchema, { id: "TAG1" });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("OfflineActionSchema", () => {
+    it("should parse RECRUIT_DISMISSAL variant", () => {
+      const input = {
+        type: "RECRUIT_DISMISSAL",
+        items: [{ id: "T1", score: 50 }],
+        timestamp: 123456789
+      };
+      const result = v.parse(OfflineActionSchema, input);
+      expect(result).toEqual(input);
+    });
+
+    it("should parse RECRUIT_RESTORATION variant", () => {
+      const input = {
+        type: "RECRUIT_RESTORATION",
+        ids: ["T1", "T2"],
+        timestamp: "123456789" // Should be coerced to number
+      };
+      const result = v.parse(OfflineActionSchema, input);
+      expect(result.type).toBe("RECRUIT_RESTORATION");
+      expect(result.timestamp).toBe(123456789);
+    });
+
+    it("should fail for invalid variant type", () => {
+      const input = {
+        type: "INVALID_ACTION",
+        timestamp: Date.now()
+      };
+      const result = v.safeParse(OfflineActionSchema, input);
+      expect(result.success).toBe(false);
+    });
+
+    it("should fail for variant with missing required array", () => {
+      const input = {
+        type: "RECRUIT_DISMISSAL",
+        timestamp: Date.now()
+      };
+      const result = v.safeParse(OfflineActionSchema, input);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("OfflineQueueSchema", () => {
+    it("should parse valid array of actions", () => {
+      const input = [
+        {
+          type: "RECRUIT_DISMISSAL",
+          items: [{ id: "T1", score: 50 }],
+          timestamp: 123
+        },
+        {
+          type: "RECRUIT_RESTORATION",
+          ids: ["T2"],
+          timestamp: 456
+        }
+      ];
+      const result = v.parse(OfflineQueueSchema, input);
+      expect(result).toHaveLength(2);
+      expect(result[0].type).toBe("RECRUIT_DISMISSAL");
+    });
+
+    it("should fail for non-array input", () => {
+      const result = v.safeParse(OfflineQueueSchema, {});
       expect(result.success).toBe(false);
     });
   });

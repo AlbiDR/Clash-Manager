@@ -70,3 +70,4 @@ Backend-Worker/src/services/RoyaleApiService.ts
 Frontend-PWA/src/core/api/SupabaseClient.ts
 Frontend-PWA/src/core/api/DataSchemas.ts
 Frontend-PWA/src/core/api/SupabaseClient.ts
+Frontend-PWA/src/core/api/DataSchemas.ts
