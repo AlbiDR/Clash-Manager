@@ -9,8 +9,27 @@ import { runProfiler } from "./stages/profiler.ts";
 import { runRescan } from "./stages/rescan.ts";
 
 /**
- * L4 App: Headhunter Scanner Orchestrator
- * Orchestrates the tournament scan and deep profiling pipeline using modular stage handlers.
+ * @remarks
+ * [LAYER 4: APP ORCHESTRATOR]
+ * The Headhunter Scanner Orchestrator is the authoritative entry point for the
+ * multi-stage recruitment discovery engine. It manages the lifecycle of a scan
+ * operation, coordinating between discovery (Shadow, Tournament), profiling,
+ * and maintenance (Rescan) stages.
+ *
+ * It enforces a strict timeout protocol per stage to prevent zombie worker
+ * processes and provides real-time telemetry through audit logging and
+ * heartbeat mechanisms.
+ */
+
+/**
+ * Executes the full Headhunter scanning pipeline.
+ *
+ * @param tournaments - List of tournament tags to scan, or ['AUTO'] for keyword-based discovery.
+ * @param logAudit - Telemetry callback for recording stage-specific events and errors.
+ * @param heartbeat - Telemetry callback for updating the caller with progressive stats.
+ * @returns An aggregated stats object including discovery counts, scan counts, and duration.
+ *
+ * @throws {Error} If the core execution environment fails (telemetry or database connectivity).
  */
 export async function executeScanner(
     tournaments: string[], 
@@ -35,9 +54,13 @@ export async function executeScanner(
     const candidates = new Map<string, string>(); // tag -> source
 
     // --- TIMEOUT HELPER ---
+    // [DECISION LOG]: 10-minute timeout per stage prevents a single stalled API
+    // request from locking a worker process indefinitely, ensuring slot availability.
     const STAGE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
     const withTimeout = async (promise: Promise<void>, stageName: string) => {
         const timeout = new Promise<void>((_, reject) => 
+            // [THREAT:]: Stage timeouts block worker concurrency. We force rejection to
+            // allow the orchestrator to recover and report the failure.
             setTimeout(() => reject(new Error(`Stage ${stageName} timed out after 10m`)), STAGE_TIMEOUT)
         );
         return Promise.race([promise, timeout]);
@@ -47,11 +70,15 @@ export async function executeScanner(
     
     // 1. Shadow Scouting
     try {
+        // [DECISION LOG]: Pipeline continues even if an individual stage fails (Best-Effort).
+        // This ensures that a failure in Shadow Scouting doesn't block Tournament Discovery.
         await withTimeout(runShadowScout(candidates, exclusionSet, stats, logAudit), 'S1_SHADOW_SCOUT');
     } catch (e: any) {
         stats.errors.push(`S1_SHADOW_SCOUT: ${e.message}`);
         logAudit('SHADOW_SCOUT', 'error', { message: e.message });
     }
+    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level
+    // if the caller relies on progressive stats for UI hydration.
     await heartbeat('S1_SHADOW_SCOUT', stats);
 
     // 2. Tournament Discovery
@@ -63,6 +90,7 @@ export async function executeScanner(
         stats.errors.push(`S2_TOURNAMENT_DISCOVERY: ${e.message}`);
         logAudit('TOURNAMENT_DISCOVERY', 'error', { message: e.message });
     }
+    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S2_TOURNAMENT_DISCOVERY', stats);
 
     // 3. Profiling & Ingestion
@@ -72,6 +100,7 @@ export async function executeScanner(
         stats.errors.push(`S3_PROFILING: ${e.message}`);
         logAudit('PROFILING', 'error', { message: e.message });
     }
+    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S3_PROFILING', stats);
 
     // --- MAINTENANCE PHASE (S4) ---
@@ -83,6 +112,7 @@ export async function executeScanner(
         stats.errors.push(`S4_RESCAN: ${e.message}`);
         logAudit('RESCAN', 'error', { message: e.message });
     }
+    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S4_RESCAN', stats);
 
     return {
