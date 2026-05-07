@@ -42,3 +42,49 @@ export const RoyaleRiverRaceSchema = v.object({
         fame: v.optional(v.number())
     })
 });
+
+/** [GUARD] Royale Player Profile Schema. */
+export const RoyalePlayerSchema = v.object({
+    tag: v.string(),
+    name: v.string(),
+    trophies: v.optional(v.number(), 0),
+    totalDonations: v.optional(v.number(), 0),
+    warDayWins: v.optional(v.number(), 0),
+    clan: v.optional(v.nullable(v.object({
+        tag: v.string()
+    })))
+});
+
+/** [GUARD] Royale Tournament List Item Schema. */
+export const RoyaleTournamentListItemSchema = v.object({
+    tag: v.string(),
+    capacity: v.number(),
+    maxCapacity: v.number()
+});
+
+/** [GUARD] Royale Tournament List Schema. */
+export const RoyaleTournamentListSchema = v.object({
+    items: v.array(RoyaleTournamentListItemSchema)
+});
+
+/** [GUARD] Royale Tournament Details Schema. */
+export const RoyaleTournamentSchema = v.object({
+    tag: v.string(),
+    membersList: v.array(v.object({
+        tag: v.string(),
+        name: v.string(),
+        clan: v.optional(v.nullable(v.object({
+            tag: v.string()
+        })))
+    }))
+});
+
+/** [GUARD] Shadow Discovery Target Schema (RPC). */
+export const ShadowTargetSchema = v.object({
+    opponent_player_tag: v.string()
+});
+
+/** [GUARD] Stale Recruit Schema (RPC). */
+export const StaleRecruitSchema = v.object({
+    player_tag: v.string()
+});
