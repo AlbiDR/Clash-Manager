@@ -74,7 +74,7 @@ export function useLaboratory() {
   } = storeToRefs(store);
 
   const clashDataStore = useClashDataStore();
-  const { data: clashData, currentSource, hubSyncTime } = storeToRefs(clashDataStore);
+  const { data: clashData, currentSource, lastSyncTime } = storeToRefs(clashDataStore);
 
   let currentSimulation: Generator<SimulationState, SimulationState, void> | null = null;
 
@@ -286,7 +286,7 @@ export function useLaboratory() {
     emptyIcon: 'flask',
     hubInfo: currentSource.value ? {
       source: currentSource.value as "SUPABASE" | "WORKER" | "GAS",
-      hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
+      hubAge: lastSyncTime.value ? formatTimeAgo(new Date(lastSyncTime.value).toISOString()) : null
     } : undefined
   }));
 

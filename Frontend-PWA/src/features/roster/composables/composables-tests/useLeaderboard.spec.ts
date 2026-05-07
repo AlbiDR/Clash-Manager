@@ -29,7 +29,6 @@ vi.mock("@core/services/useClashDataStore", () => ({
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
     currentSource: ref("GAS"),
-    hubSyncTime: ref(null),
     lastCompiledTime: ref(null),
     lastFetchedTime: ref(null),
     refresh: vi.fn(),
