@@ -1,7 +1,6 @@
-/**
- * 🧹 USE RECRUIT BLACKLIST
- * Manages local "tombstones" for recruits who have been dismissed but might still appear in cached server payloads.
- */
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { ref } from "vue";
 import * as v from "valibot";
 import { RecruitTombstoneSchema } from "@core/api/DataSchemas";
@@ -12,6 +11,31 @@ const STORAGE_KEY = "cm_recruit_tombstones";
 const tombstones = ref<Set<string>>(new Set());
 const isInitialized = ref(false);
 
+/**
+ * COMPOSABLE: useRecruitBlacklist
+ *
+ * @remarks
+ * Manages local "tombstones" for recruits who have been dismissed but might
+ * still appear in cached server payloads. This acts as a Layer 3 feature-level
+ * persistence driver, bridging the gap between optimistic UI removals and
+ * eventual server-side consistency.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 (@features)
+ * - **Import Boundaries:** Imports from Layer 1 (@core).
+ *
+ * **Behavioral Logic:**
+ * - Hydrates tombstone state from LocalStorage on initialization.
+ * - Enforces a Valibot validation boundary for persisted data.
+ * - Implements a garbage collection (pruning) strategy to clear tombstones
+ *   once they are confirmed to be absent from the server payload.
+ *
+ * @returns
+ * - `tombstones`: Reactive Set of dismissed recruit IDs.
+ * - `hide`: Adds IDs to the blacklist and persists.
+ * - `restore`: Removes IDs from the blacklist (e.g., for Undo).
+ * - `prune`: Synchronizes the blacklist with the authoritative server state.
+ */
 export function useRecruitBlacklist() {
   function init() {
     if (isInitialized.value) return;
@@ -20,8 +44,9 @@ export function useRecruitBlacklist() {
       if (rawTombstoneData) {
         const unvalidatedTombstones = JSON.parse(rawTombstoneData);
 
-        // [GUARD] VALIDATION BOUNDARY: Target B [1]
-        // THREAT: Corrupted or malicious LocalStorage data poisoning the recruitment filter.
+        // [DECISION LOG] VALIDATION BOUNDARY
+        // Rationale: Corrupted or malicious LocalStorage data must be rejected
+        // at the entry point to prevent poisoning the recruitment filter logic.
         const result = v.safeParse(RecruitTombstoneSchema, unvalidatedTombstones);
 
         if (result.success) {
@@ -31,7 +56,7 @@ export function useRecruitBlacklist() {
         }
       }
     } catch (hydrationError: unknown) {
-      // THREAT: Target B [4] - Eliminated anemic variable 'e'.
+      // THREAT: Eliminated anemic variable 'e'. Using unknown for exception narrowing.
       console.warn("[Blacklist] Failed to load recruit blacklist", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
     }
     isInitialized.value = true;
@@ -41,6 +66,7 @@ export function useRecruitBlacklist() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([...tombstones.value]));
     } catch (e) {
+      // THREAT: Persistent write failure could lead to UI/Server desync on reload.
       console.error("Failed to save recruit blacklist", e);
     }
   }
@@ -56,11 +82,13 @@ export function useRecruitBlacklist() {
   }
 
   /**
-   * 🧹 GARBAGE COLLECTION
+   * GARBAGE COLLECTION
+   *
+   * @remarks
    * Removes IDs from local storage if they are NO LONGER in the server payload.
    * This implies the server has processed the delete, so we don't need to track it locally anymore.
    *
-   * @param currentServerIds List of IDs currently returned by the API
+   * @param currentServerIds - List of IDs currently returned by the API.
    */
   function prune(currentServerIds: string[]) {
     if (currentServerIds.length === 0) return; // Don't prune on empty/error states
@@ -68,9 +96,10 @@ export function useRecruitBlacklist() {
     const serverSet = new Set(currentServerIds);
     const toDelete: string[] = [];
 
+    // [DECISION LOG] PRUNING STRATEGY
+    // Rationale: If the server doesn't have it, it's gone for good. Remove tombstone.
+    // If the server STILL has it (stale cache), keep tombstone to hide it.
     tombstones.value.forEach((id) => {
-      // If the server doesn't have it, it's gone for good. Remove tombstone.
-      // If the server STILL has it (stale cache), keep tombstone to hide it.
       if (!serverSet.has(id)) {
         toDelete.push(id);
       }

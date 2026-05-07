@@ -47,3 +47,4 @@ Frontend-PWA/src/shared/ui/StatusPill.vue
 Backend/supabase/functions/_shared/protocol.ts
 Frontend-PWA/src/core/api/useApiState.ts
 Backend/supabase/functions/headhunter-scanner/scanner.ts
+Frontend-PWA/src/features/headhunter/composables/useRecruitBlacklist.ts
