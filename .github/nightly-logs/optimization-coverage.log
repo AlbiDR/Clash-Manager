@@ -127,3 +127,9 @@ Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
 Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
 Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts
 Frontend-PWA/src/core/services/useBenchmarking.ts
+Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
+Frontend-PWA/src/features/laboratory/composables/composables-tests/useLaboratory.spec.ts
+Frontend-PWA/src/core/services/useClashDataStore.ts
+Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
+Frontend-PWA/src/features/roster/composables/composables-tests/useLeaderboard.spec.ts
+Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts

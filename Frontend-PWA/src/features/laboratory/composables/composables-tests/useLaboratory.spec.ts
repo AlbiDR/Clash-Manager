@@ -12,7 +12,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
   useClashDataStore: () => ({
     data: mockClashData,
     currentSource: mockCurrentSource,
-    hubSyncTime: mockHubSyncTime
+    lastSyncTime: mockHubSyncTime
   })
 }));
 

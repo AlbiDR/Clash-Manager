@@ -118,7 +118,7 @@ export const useClashDataStore = defineStore("clashData", () => {
     // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
     // Rationale: Use payload's generation timestamp to calculate age,
     // preventing the "Just Now" reset on every hydration/refresh.
-    lastSync.value = new Date(payload.timestamp).getTime();
+    lastSync.value = payload.timestamp;
 
     // Metadata Sync
     dataSource.value = payload.dataSource || null;
