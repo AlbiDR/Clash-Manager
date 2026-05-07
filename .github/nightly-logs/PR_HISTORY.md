@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-07] PR #556: refactor(opt): standardize sync timestamp naming and align laboratory orchestration
+**Commit**: `7f2be71d6438a534ff929a282eba9619817245bd`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/556)
+
+### Description
+Standardize synchronization timestamp naming across the Frontend-PWA to resolve architectural drift and improve structural purity.
+
+---
+*PR created automatically by Jules for task [11144581517587366081](https://jules.google.com/task/11144581517587366081) started by @AlbiDR*
+
+---
+
 ## [2026-05-07] PR #555: test(verify): extend SupabaseClient sad path coverage
 **Commit**: `c2095b14ddf4be617136b2e0058abb78bfe1b839`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/555)
