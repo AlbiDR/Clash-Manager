@@ -129,6 +129,15 @@ describe("SupabaseClient", () => {
       expect(result).toEqual({ status: 'error', message: 'RPC Error' });
     });
 
+    it("ping catches and returns exceptions", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockRejectedValue(new Error("Unexpected Crash"));
+
+      const result = await SupabaseClient.ping();
+      expect(result.status).toBe('error');
+      expect(result.message).toContain('Unexpected Crash');
+    });
+
     it("loadCache calls idb.get", async () => {
       vi.mocked(idb.get).mockResolvedValue({ lb: [], hh: [] } as any);
       const result = await SupabaseClient.loadCache();
@@ -179,6 +188,32 @@ describe("SupabaseClient", () => {
         .mockResolvedValueOnce({ data: null, error: { message: 'Roster Fail' } } as any);
 
       await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Roster Fetch Error: Roster Fail');
+    });
+
+    it("fetchRemote defaults to Date.now() if heartbeat query fails", async () => {
+      const now = 123456789;
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [], error: null }) // Roster
+        .mockResolvedValueOnce({ data: [], error: null }) // Headhunter
+        .mockResolvedValueOnce({ data: null, error: { message: 'Heartbeat Error' } } as any); // Heartbeat FAIL
+
+      const result = await SupabaseClient.fetchRemote();
+      expect(result.timestamp).toBe(now);
+
+      vi.useRealTimers();
+    });
+
+    it("fetchRemote handles invalid date strings in heartbeat", async () => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: { last_success_at: 'not-a-date' }, error: null });
+
+      const result = await SupabaseClient.fetchRemote();
+      expect(result.timestamp).toBeNaN(); // Current behavior: new Date('invalid').getTime() is NaN
     });
 
     it("scanRecruitsDirect returns mapped recruits", async () => {
@@ -313,6 +348,17 @@ describe("SupabaseClient", () => {
       expect(lastCall).toBeDefined();
       expect(lastCall![1]).toHaveLength(1);
       expect(lastCall![1][0].type).toBe('RECRUIT_RESTORATION');
+    });
+
+    it("dismissRecruits handles IndexedDB read failure during transient error", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
+      vi.mocked(idb.get).mockRejectedValue(new Error("IDB Blocked"));
+
+      // Currently, the implementation doesn't try-catch the idb.get call itself,
+      // so we expect it to throw and not catch it.
+      await expect(SupabaseClient.dismissRecruits([{ id: 'ABC', score: 50 }]))
+        .rejects.toThrow("IDB Blocked");
     });
 
     it("dismissRecruits throws NetworkError on non-transient error", async () => {
