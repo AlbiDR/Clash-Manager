@@ -162,6 +162,9 @@ onUnmounted(() => {
         @update:sort="(val: string) => emit('update:sort', val)"
         @refresh="emit('refresh')"
       >
+        <template #filters>
+          <slot name="header-filters"></slot>
+        </template>
         <template #extra>
           <SelectionBar
             v-if="props.selectedCount !== undefined"

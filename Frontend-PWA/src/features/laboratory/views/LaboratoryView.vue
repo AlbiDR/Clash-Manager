@@ -15,7 +15,7 @@ import {
   SummaryCard,
   TrajectoryList,
   LaboratorySkeleton,
-  TargetCard
+  TargetPicker
 } from "../components";
 
 const {
@@ -46,15 +46,13 @@ const { data: globalData } = storeToRefs(clashDataStore);
     :skeleton-count="1"
     v-on="layoutEvents"
   >
-    <template #top>
-      <div class="laboratory-header">
-        <TargetCard
-          :model-value="trackedPlayerTag"
-          :player-name="observation?.profile.name"
-          :is-fetching="isFetching"
-          @lock-in="setTrackedPlayerTag"
-        />
-      </div>
+    <template #header-filters>
+      <TargetPicker
+        :model-value="trackedPlayerTag"
+        :player-name="observation?.profile.name"
+        :is-fetching="isFetching"
+        @lock-in="(tag: string | null) => { setTrackedPlayerTag(tag); refresh(); }"
+      />
     </template>
 
     <template #empty-action>

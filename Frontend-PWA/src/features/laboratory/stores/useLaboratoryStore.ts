@@ -51,7 +51,7 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     operation: null as OptimizationResult | null,
     isSimulating: false,
     isFetching: false,
-    fetchError: null as string | null,
+    syncError: null as string | null,
     settings: {
       strategy: "Level Projection" as const,
       allowGemSpending: false,
@@ -170,8 +170,8 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     state.value.isFetching = isFetching;
   }
 
-  function setFetchError(error: string | null) {
-    state.value.fetchError = error;
+  function setSyncError(error: string | null) {
+    state.value.syncError = error;
   }
   
   function setTrackedPlayerTag(tag: string | null) {
@@ -190,7 +190,7 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     operation: computed(() => state.value.operation),
     isSimulating: computed(() => state.value.isSimulating),
     isFetching: computed(() => state.value.isFetching),
-    fetchError: computed(() => state.value.fetchError),
+    syncError: computed(() => state.value.syncError),
     trackedPlayerTag: computed(() => state.value.trackedPlayerTag),
 
     // Actions
