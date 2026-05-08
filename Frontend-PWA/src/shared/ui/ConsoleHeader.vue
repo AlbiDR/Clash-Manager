@@ -96,8 +96,8 @@ const handleOpenDashboard = () => {
         </div>
       </div>
 
-      <div v-if="props.showSearch" class="search-sort-row">
-        <div class="search-bar">
+      <div v-if="props.showSearch || !!$slots.filters" class="search-sort-row">
+        <div v-if="props.showSearch" class="search-bar">
           <div class="search-box">
             <Icon name="search" size="18" class="search-icon" />
             <input
@@ -110,6 +110,9 @@ const handleOpenDashboard = () => {
             />
           </div>
         </div>
+
+        <!-- Custom Filters / Controls Slot -->
+        <slot name="filters"></slot>
 
         <div v-if="props.sortOptions" class="sort-box">
           <div class="sort-select-wrapper">

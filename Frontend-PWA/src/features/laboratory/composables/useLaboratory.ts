@@ -71,7 +71,7 @@ export function useLaboratory() {
     settings,
     isSimulating,
     isFetching,
-    fetchError,
+    syncError,
     trackedPlayerTag
   } = storeToRefs(store);
 
@@ -212,16 +212,17 @@ export function useLaboratory() {
     if (!tag) return;
 
     store.setFetching(true);
-    store.setFetchError(null);
+    store.setSyncError(null);
     try {
       const profile = await getPlayerProfile(tag);
       ingest(profile);
     } catch (err: unknown) {
       // THREAT: Network or API failure on profile retrieval.
       // Target B [4]: The 'any' plague eliminated; using unknown for error catch.
+      // Target B [4]: The 'any' plague eliminated; using unknown for error catch.
       const message = err instanceof Error ? err.message : String(err);
       console.error("[Laboratory] Fetch Failed:", message);
-      store.setFetchError(message);
+      store.setSyncError(message);
     } finally {
       store.setFetching(false);
     }
@@ -303,6 +304,21 @@ export function useLaboratory() {
     refresh: fetchTrackedPlayer
   }));
 
+  const layoutProps = computed(() => ({
+    status: {
+      type: isFetching.value ? "loading" : (syncError.value ? "error" : "success"),
+      text: isFetching.value ? "Syncing..." : (syncError.value ? "Fetch Error" : "Nominal"),
+      nominal: !isFetching.value && !syncError.value
+    },
+    loading: isFetching.value && !observation.value,
+    isRefreshing: isFetching.value,
+    syncError: syncError.value || undefined,
+    isEmpty: !isFetching.value && !observation.value,
+    emptyMessage: syncError.value || "Target Profile Not Found",
+    emptyHint: "Enter a valid player tag to begin analysis",
+    emptyIcon: "crosshair"
+  }));
+
   /**
    * UPDATES VAULT INVENTORY
    *
@@ -332,7 +348,7 @@ export function useLaboratory() {
     settings: computed(() => settings.value),
     isSimulating,
     isFetching,
-    fetchError,
+    syncError,
     layoutProps,
     layoutEvents,
 
