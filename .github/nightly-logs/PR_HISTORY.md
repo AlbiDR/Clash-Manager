@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-08] PR #564: chore(deps): bump @supabase/supabase-js from 2.105.1 to 2.105.3
+**Commit**: `ac881a55b16c469f4517eece5385398428578e76`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/564)
+
+### Description
+Bumped @supabase/supabase-js from ^2.105.1 to ^2.105.3 in Frontend-PWA/package.json. Verified the change by updating the lockfile and running the Vitest suite (876 pass). Recorded the update in the dependency audit coverage log.
+
+---
+*PR created automatically by Jules for task [10440971316228763845](https://jules.google.com/task/10440971316228763845) started by @AlbiDR*
+
+---
+
 ## [2026-05-08] PR #563: docs(tsdoc): document bezier utility
 **Commit**: `3723504bbbe78ed0b811ddc266ea35f59ab237c4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/563)
