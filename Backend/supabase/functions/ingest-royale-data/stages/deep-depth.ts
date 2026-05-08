@@ -4,6 +4,8 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
+import * as v from "npm:valibot";
+import { RoyaleBattleLogSchema } from "../../_shared/schemas.ts";
 
 /**
  * Stage 6: Native Deep Depth
@@ -11,97 +13,108 @@ import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
  */
 export async function runDeepDepth(
     results: IngestionResult, 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ) {
     logAudit('S6_BATTLES', 'triggered');
     try {
-        const { data: hvt } = await supabase.schema('drivers').from('recruits').select('player_tag').eq('status', 'ACTIVE').limit(50);
-        const { data: members } = await supabase.schema('drivers').from('members').select('player_tag').eq('is_active', true);
+        const { data: activeRecruits } = await supabase.schema('drivers').from('recruits').select('player_tag').eq('status', 'ACTIVE').limit(50);
+        const { data: activeMembers } = await supabase.schema('drivers').from('members').select('player_tag').eq('is_active', true);
         
-        const allTags = [
-            ...(members?.map(m => m.player_tag) || []),
-            ...(hvt?.map(h => h.player_tag) || [])
+        const targetPlayerTags = [
+            ...(activeMembers?.map(member => member.player_tag) || []),
+            ...(activeRecruits?.map(recruit => recruit.player_tag) || [])
         ];
 
-        if (allTags.length > 0) {
-            logAudit('S6_BATTLES', 'called', { tags_count: allTags.length });
-            const battleTasks = allTags.map(tag => async () => {
+        if (targetPlayerTags.length > 0) {
+            logAudit('S6_BATTLES', 'called', { tags_count: targetPlayerTags.length });
+            const battleTasks = targetPlayerTags.map(tag => async () => {
                 logAudit('S6_BATTLES', 'run', { tag });
                 try {
-                    const logRes = await fetchWithRotation(`/players/${encodeURIComponent(tag)}/battlelog`);
-                    if (logRes.ok) {
-                        const logData = await logRes.json();
-                        const isValid = Array.isArray(logData);
-                        logAudit('S6_BATTLES', 'resulted_data', { tag, items: logData.length });
+                    const battleLogResponse = await fetchWithRotation(`/players/${encodeURIComponent(tag)}/battlelog`);
+                    if (battleLogResponse.ok) {
+                        const rawBattleLog = await battleLogResponse.json().catch(() => null);
+
+                        // [GUARD] VALIDATION BOUNDARY: Target B [1]
+                        // THREAT: Malformed battle log structures from Royale API Proxy.
+                        // Rationale: Ensure granular battle telemetry is hardened before substrate ingestion.
+                        const parsedBattleLog = v.safeParse(RoyaleBattleLogSchema, rawBattleLog);
+
+                        const isBattleLogValid = parsedBattleLog.success;
+                        logAudit('S6_BATTLES', 'resulted_data', { tag, items: isBattleLogValid ? parsedBattleLog.output.length : 0 });
                         logAudit('S6_BATTLES', 'integrity_checked', { 
                             tag, 
-                            passed: isValid, 
-                            details: isValid ? 'Data shape validated (Array)' : 'Malformed battle log' 
+                            passed: isBattleLogValid,
+                            details: isBattleLogValid ? 'Data shape validated (Battle Log Array)' : 'Malformed battle log'
                         });
                         
-                        if (isValid) {
-                            const { error: rpcErr } = await supabase.rpc('ingest_player_battles', { 
+                        if (isBattleLogValid) {
+                            const validatedBattleLog = parsedBattleLog.output;
+                            const { error: ingestionError } = await supabase.rpc('ingest_player_battles', {
                                 p_tag: tag, 
-                                p_payload: logData 
+                                p_payload: validatedBattleLog
                             });
                             
-                            if (rpcErr) {
-                                logAudit('S6_BATTLES', 'error', { tag, message: 'RPC Failure', details: rpcErr });
+                            if (ingestionError) {
+                                logAudit('S6_BATTLES', 'error', { tag, message: 'RPC Failure', details: ingestionError });
                             }
 
-                            const shadowLeads = new Map<string, string>();
-                            logData.forEach((b: any) => {
-                                b.opponent?.forEach((op: any) => {
-                                    if (op.tag && !op.clan?.tag) {
-                                        shadowLeads.set(op.tag, op.name || 'Unknown Recruit');
+                            // [DECISION LOG] Shadow Scouting Discovery
+                            // Rationale: Discovers un-clanned opponents from recent battles to feed the recruitment pipeline.
+                            const shadowLeadsMap = new Map<string, string>();
+                            validatedBattleLog.forEach((battleEntry) => {
+                                battleEntry.opponent?.forEach((opponent) => {
+                                    if (opponent.tag && !opponent.clan?.tag) {
+                                        shadowLeadsMap.set(opponent.tag, opponent.name || 'Unknown Recruit');
                                     }
                                 });
                             });
 
-                            if (shadowLeads.size > 0) {
-                                const leads = Array.from(shadowLeads.entries()).map(([tag, name]) => ({
-                                    player_tag: tag.startsWith('#') ? tag : `#${tag}`,
-                                    player_name: name
+                            if (shadowLeadsMap.size > 0) {
+                                const discoveryLeads = Array.from(shadowLeadsMap.entries()).map(([player_tag, player_name]) => ({
+                                    player_tag: player_tag.startsWith('#') ? player_tag : `#${player_tag}`,
+                                    player_name
                                 }));
 
-                                const recruits = leads.map(l => ({
-                                    ...l,
+                                const recruitsPayload = discoveryLeads.map(lead => ({
+                                    ...lead,
                                     source: 'SHADOW',
                                     status: 'ACTIVE'
                                 }));
 
                                 // L2 Drivers: Sync to universal player registry first to satisfy FK
-                                await supabase.schema('drivers').from('players').upsert(leads, { onConflict: 'player_tag' });
+                                await supabase.schema('drivers').from('players').upsert(discoveryLeads, { onConflict: 'player_tag' });
 
                                 // L2 Drivers: Upsert to shadow recruitment queue
-                                const { error: leadErr } = await supabase.schema('drivers').from('recruits').upsert(recruits, { onConflict: 'player_tag' });
-                                if (leadErr) {
-                                    logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Upsert Failure', details: leadErr });
+                                const { error: discoveryIngestionError } = await supabase.schema('drivers').from('recruits').upsert(recruitsPayload, { onConflict: 'player_tag' });
+                                if (discoveryIngestionError) {
+                                    logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Upsert Failure', details: discoveryIngestionError });
                                 }
                             }
                         }
                     } else {
-                        if (logRes.status === 404) {
+                        if (battleLogResponse.status === 404) {
                             await supabase.rpc('report_dead_recruit', { p_player_tag: tag });
                             logAudit('S6_BATTLES', 'called', { tag, action: 'purged_ghost' });
                         }
-                        logAudit('S6_BATTLES', 'integrity_checked', { passed: false, details: `HTTP_${logRes.status}` });
-                        logAudit('S6_BATTLES', 'error', { tag, status: logRes.status });
+                        logAudit('S6_BATTLES', 'integrity_checked', { passed: false, details: `HTTP_${battleLogResponse.status}` });
+                        logAudit('S6_BATTLES', 'error', { tag, status: battleLogResponse.status });
                     }
-                } catch (e: any) { 
-                    logAudit('S6_BATTLES', 'integrity_checked', { passed: false, details: e.message });
-                    logAudit('S6_BATTLES', 'error', { tag, message: e.message });
+                } catch (fetchException: unknown) {
+                    const errorMessage = fetchException instanceof Error ? fetchException.message : String(fetchException);
+                    logAudit('S6_BATTLES', 'integrity_checked', { passed: false, details: errorMessage });
+                    logAudit('S6_BATTLES', 'error', { tag, message: errorMessage });
                 }
             });
             
             await processBatch(battleTasks, 20);
         }
         results.battles.success = true;
-        logAudit('S6_BATTLES', 'terminated', { tags: allTags.length, success: true });
-    } catch (e: any) { 
-        results.battles.error = e.message;
-        logAudit('S6_BATTLES', 'error', { message: e.message });
+        logAudit('S6_BATTLES', 'terminated', { tags: targetPlayerTags.length, success: true });
+    } catch (deepDepthException: unknown) {
+        const errorMessage = deepDepthException instanceof Error ? deepDepthException.message : String(deepDepthException);
+        results.battles.error = errorMessage;
+        logAudit('S6_BATTLES', 'error', { message: errorMessage });
         logAudit('S6_BATTLES', 'terminated', { error: true });
-        throw e;
+        throw deepDepthException;
     }
 }
