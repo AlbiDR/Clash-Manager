@@ -14,19 +14,23 @@ import {
   ParameterCard,
   SummaryCard,
   TrajectoryList,
-  LaboratorySkeleton
+  LaboratorySkeleton,
+  TargetCard
 } from "../components";
 
 const {
   observation,
   operation,
   isSimulating,
+  isFetching,
   settings,
   layoutProps,
   layoutEvents,
   setSettings,
   handleVaultUpdate,
   getTrajectoryMemoKeys,
+  setTrackedPlayerTag,
+  trackedPlayerTag
 } = useLaboratory();
 
 const clashDataStore = useClashDataStore();
@@ -42,6 +46,17 @@ const { data: globalData } = storeToRefs(clashDataStore);
     :skeleton-count="1"
     v-on="layoutEvents"
   >
+    <template #top>
+      <div class="laboratory-header">
+        <TargetCard
+          :model-value="trackedPlayerTag"
+          :player-name="observation?.profile.name"
+          :is-fetching="isFetching"
+          @lock-in="setTrackedPlayerTag"
+        />
+      </div>
+    </template>
+
     <template #empty-action>
       <router-link v-if="!globalData?.playerTag" to="/settings" class="btn-primary">
         <Icon name="settings" size="18" />
@@ -88,6 +103,11 @@ const { data: globalData } = storeToRefs(clashDataStore);
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding: 0 4px;
+}
+
+.laboratory-header {
+  margin-bottom: 20px;
   padding: 0 4px;
 }
 

@@ -17,6 +17,7 @@ import { asGold, asGems } from "@core/utils/economy";
 export const STORAGE_KEY_SETTINGS = "laboratory_settings";
 export const STORAGE_KEY_INVENTORY = "laboratory_inventory";
 export const STORAGE_KEY_OBSERVATION = "laboratory_observation";
+export const STORAGE_KEY_TRACKED_TAG = "laboratory_tracked_tag";
 
 /**
  * LABORATORY STORE - Feature State (Layer 3)
@@ -56,7 +57,8 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
       allowGemSpending: false,
       infiniteResources: false,
       targetLevel: undefined as number | undefined
-    } as OptimizationSettings
+    } as OptimizationSettings,
+    trackedPlayerTag: localStorage.getItem(STORAGE_KEY_TRACKED_TAG) || null as string | null
   });
 
   // [GUARD] VALIDATION BOUNDARY: Harden settings ingestion from LocalStorage.
@@ -171,6 +173,15 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
   function setFetchError(error: string | null) {
     state.value.fetchError = error;
   }
+  
+  function setTrackedPlayerTag(tag: string | null) {
+    state.value.trackedPlayerTag = tag;
+    if (tag) {
+      localStorage.setItem(STORAGE_KEY_TRACKED_TAG, tag);
+    } else {
+      localStorage.removeItem(STORAGE_KEY_TRACKED_TAG);
+    }
+  }
 
   return {
     // State (Exposed as individual refs for storeToRefs compatibility)
@@ -180,6 +191,7 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     isSimulating: computed(() => state.value.isSimulating),
     isFetching: computed(() => state.value.isFetching),
     fetchError: computed(() => state.value.fetchError),
+    trackedPlayerTag: computed(() => state.value.trackedPlayerTag),
 
     // Actions
     loadPersistedInventory,
@@ -189,6 +201,7 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     setOperation,
     setSimulating,
     setFetching,
-    setFetchError
+    setFetchError,
+    setTrackedPlayerTag
   };
 });
