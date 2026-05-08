@@ -88,3 +88,16 @@ export const ShadowTargetSchema = v.object({
 export const StaleRecruitSchema = v.object({
     player_tag: v.string()
 });
+
+/** [GUARD] Royale Battle Log Schema. */
+export const RoyaleBattleLogSchema = v.array(v.object({
+    type: v.string(),
+    battleTime: v.string(),
+    opponent: v.array(v.object({
+        tag: v.string(),
+        name: v.string(),
+        clan: v.optional(v.nullable(v.object({
+            tag: v.string()
+        })))
+    }))
+}));
