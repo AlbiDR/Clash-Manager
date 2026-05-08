@@ -133,6 +133,8 @@ export async function fetchRemote(options?: {
   
   const lb: LeaderboardMember[] = (rosterRes.data || []).map(mapSbRosterRow);
   const hh: Recruit[] = (headhunterRes.data || []).map(mapSbHeadhunterRow);
+  // SSOT: vars.PLAYER_TAG is injected by deploy-pwa.yml as VITE_PLAYER_TAG at build time.
+  const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
   // Rationale: Use the kernel's ingestion heartbeat as the authoritative data age.
   const timestamp = heartbeatRes.data?.last_success_at 
@@ -142,7 +144,7 @@ export async function fetchRemote(options?: {
   const webAppData: WebAppData = {
     lb,
     hh,
-    playerTag: "",
+    playerTag,
     timestamp,
     dataSource: "SUPABASE",
     remoteTimestamp: timestamp,
