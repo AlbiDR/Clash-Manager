@@ -13,25 +13,13 @@ import type {
 import * as v from "valibot";
 import { ProfileInputSchema } from "@core/api/DataSchemas";
 import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
-import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
-
-const normalizeLevel = (level: number, rarity: Rarity): number => {
-  const offset = (CARD_RARITY_START_LEVELS[rarity] || 1) - 1;
-  const absoluteLevel = level + offset;
-  return Math.max(1, Math.min(absoluteLevel, CARD_LEVEL_CAP));
-};
-
-const normalizeRarity = (raw: string): Rarity => {
-  const lower = raw.toLowerCase().trim();
-  const map: Record<string, Rarity> = {
-    "common": "Common",
-    "rare": "Rare",
-    "epic": "Epic",
-    "legendary": "Legendary",
-    "champion": "Champion"
-  };
-  return map[lower] || "Common";
-};
+import {
+  CARD_LEVEL_CAP,
+  calculateKingLevel,
+  normalizeLevel,
+  normalizeRarity,
+  getKingLevelBaseXp
+} from './Registry';
 
 const ProfileHydrator = {
   /**
@@ -119,9 +107,7 @@ const ProfileHydrator = {
    * Initial seed for the simulation loop.
    */
   createInitialState(data: PlayerData): SimulationState {
-    // PATHOGEN: Anemic variable 'k' replaced with 'kingLevelRow'.
-    const kingLevelRow = KING_XP_TABLE.find(kingLevelEntry => kingLevelEntry.level === data.profile.kingLevel) || KING_XP_TABLE[0];
-    const cumulativeXp = addXP(kingLevelRow.cumulative, data.profile.xpIntoLevel);
+    const cumulativeXp = addXP(getKingLevelBaseXp(data.profile.kingLevel), data.profile.xpIntoLevel);
 
     return {
       roster: data.cards,
