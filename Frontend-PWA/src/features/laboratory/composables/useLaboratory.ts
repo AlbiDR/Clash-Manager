@@ -71,7 +71,8 @@ export function useLaboratory() {
     settings,
     isSimulating,
     isFetching,
-    fetchError
+    fetchError,
+    trackedPlayerTag
   } = storeToRefs(store);
 
   const clashDataStore = useClashDataStore();
@@ -207,7 +208,7 @@ export function useLaboratory() {
    * Fetches the profile of the currently tracked player.
    */
   async function fetchTrackedPlayer() {
-    const tag = clashData.value?.playerTag;
+    const tag = trackedPlayerTag.value || clashData.value?.playerTag;
     if (!tag) return;
 
     store.setFetching(true);
@@ -232,8 +233,8 @@ export function useLaboratory() {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        const currentGlobalTag = clashData.value?.playerTag;
-        if (parsed && (!currentGlobalTag || parsed.profile.tag === currentGlobalTag)) {
+        const currentTag = trackedPlayerTag.value || clashData.value?.playerTag;
+        if (parsed && (!currentTag || parsed.profile.tag === currentTag)) {
           // Re-hydrate to ensure branded types and new structure
           // THREAT: Corrupted LocalStorage state causing silent boot failure.
           const hydrated = ProfileHydrator.hydrate(parsed);
@@ -248,7 +249,7 @@ export function useLaboratory() {
     }
   }
 
-  watch(() => clashData.value?.playerTag, (newTag, oldTag) => {
+  watch(() => trackedPlayerTag.value || clashData.value?.playerTag, (newTag, oldTag) => {
     if (newTag && newTag !== oldTag) {
       if (!observation.value || observation.value.profile.tag !== newTag) {
         fetchTrackedPlayer();
@@ -265,7 +266,8 @@ export function useLaboratory() {
     if (isFetching.value) return { type: "loading", text: "Scanning Vault..." } as const;
     if (isSimulating.value) return { type: "loading", text: "Computing Trajectory..." } as const;
     if (fetchError.value) return { type: "error", text: "Extraction Failed" } as const;
-    if (!clashData.value?.playerTag) return { type: "ready", text: "Target Required" } as const;
+    const tag = trackedPlayerTag.value || clashData.value?.playerTag;
+    if (!tag) return { type: "ready", text: "Target Required" } as const;
     return { type: "ready", text: "Engine Operational" } as const;
   });
 
@@ -282,8 +284,8 @@ export function useLaboratory() {
     loading: isFetching.value,
     isEmpty: isEmpty.value,
     syncError: fetchError.value || undefined,
-    emptyMessage: !clashData.value?.playerTag ? 'Target Required' : 'No results found',
-    emptyHint: !clashData.value?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
+    emptyMessage: !(trackedPlayerTag.value || clashData.value?.playerTag) ? 'Target Required' : 'No results found',
+    emptyHint: !(trackedPlayerTag.value || clashData.value?.playerTag) ? 'No PlayerTag configured. Please enter one above or in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
     emptyIcon: 'flask',
     remoteInfo: currentSource.value ? {
       source: currentSource.value,
@@ -340,6 +342,8 @@ export function useLaboratory() {
     setSettings: store.setSettings,
     handleVaultUpdate,
     refresh: fetchTrackedPlayer,
+    setTrackedPlayerTag: store.setTrackedPlayerTag,
+    trackedPlayerTag,
 
     /**
      * MEMOIZATION KEY GENERATOR

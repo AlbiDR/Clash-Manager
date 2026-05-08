@@ -178,6 +178,9 @@ onUnmounted(() => {
           <slot name="extra-header" v-else></slot>
         </template>
       </ConsoleHeader>
+      
+      <!-- Persistent Top Content -->
+      <slot name="top"></slot>
 
       <!-- Error State -->
       <ErrorState
