@@ -111,20 +111,3 @@ export class InventoryStrategy implements ScoringStrategy {
     return score;
   }
 }
-
-/**
- * Utility: Lookahead Wrapper (Legacy Compatibility)
- *
- * @remarks
- * Evaluates the NEXT potential step to avoid greedy local optima.
- * Note: The actual lookahead recursion logic is implemented in `Simulation.ts`
- * to leverage the central engine's state management.
- */
-export class LookaheadStrategy extends ProjectionStrategy {
-  /**
-   * @param lookaheadWeight - The weight applied to future steps (0.0 to 1.0).
-   */
-  constructor(private lookaheadWeight: number = 0.4) {
-    super();
-  }
-}
