@@ -12,6 +12,10 @@ import {
 import type { PlayerData, Inventory } from "../../logic/Types";
 import { asGold, asGems } from "@core/utils/economy";
 
+const MALFORMED_SETTINGS_JSON = "invalid-json";
+const INVALID_STRATEGY_SETTINGS = { strategy: "NonExistentStrategy" };
+const INVALID_INVENTORY_TYPES = { gold: "ten thousand", wildCards: { "GhostRarity": 10 } };
+
 describe("useLaboratoryStore", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -45,6 +49,25 @@ describe("useLaboratoryStore", () => {
       localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ strategy: "Maximize" }));
       const store = useLaboratoryStore();
       expect(store.settings.strategy).toBe("Resource Efficiency");
+    });
+
+    it("should handle malformed JSON in localStorage during initialization (getStoredSettings)", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      localStorage.setItem(STORAGE_KEY_SETTINGS, MALFORMED_SETTINGS_JSON);
+
+      const store = useLaboratoryStore();
+
+      expect(store.settings.strategy).toBe("Level Projection"); // Default
+      expect(warnSpy).toHaveBeenCalledWith("[LaboratoryStore] Failed to parse stored settings");
+      warnSpy.mockRestore();
+    });
+
+    it("should handle valid JSON that fails schema validation (getStoredSettings)", () => {
+      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(INVALID_STRATEGY_SETTINGS));
+
+      const store = useLaboratoryStore();
+
+      expect(store.settings.strategy).toBe("Level Projection"); // Default
     });
   });
 
@@ -143,6 +166,15 @@ describe("useLaboratoryStore", () => {
         expect(inventory).toEqual(mockProfile.inventory);
         expect(warnSpy).toHaveBeenCalled();
         warnSpy.mockRestore();
+      });
+
+      it("should handle valid JSON that fails schema validation (loadPersistedInventory)", () => {
+        localStorage.setItem(STORAGE_KEY_INVENTORY, JSON.stringify(INVALID_INVENTORY_TYPES));
+
+        const store = useLaboratoryStore();
+        const inventory = store.loadPersistedInventory(mockProfile);
+
+        expect(inventory).toEqual(mockProfile.inventory);
       });
     });
 
