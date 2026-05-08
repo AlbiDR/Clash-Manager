@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
-    "@supabase/supabase-js": "^2.105.1",
+    "@supabase/supabase-js": "^2.105.3",
     "pinia": "catalog:",
     "valibot": "catalog:",
     "vue": "catalog:",
