@@ -1,6 +1,24 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-08] PR #563: docs(tsdoc): document bezier utility
+**Commit**: `3723504bbbe78ed0b811ddc266ea35f59ab237c4`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/563)
+
+### Description
+This PR adds comprehensive TSDoc and inline documentation to the `bezier.ts` utility in `Frontend-PWA`. It includes:
+- Standard GPL-3.0 licensing header.
+- Module-level TSDoc explaining its role as a Layer 1 mathematical substrate.
+- Enhanced TSDoc for the `Point` interface and `generateLinearTrend` function, including `@remarks` about the Ordinary Least Squares (OLS) method.
+- Inline "Decision Log" comments explaining the coordinate space inversion for trend interpretation.
+- No logic changes were included to maintain role neutrality.
+- Verified with existing unit tests.
+
+---
+*PR created automatically by Jules for task [1129276473389222716](https://jules.google.com/task/1129276473389222716) started by @AlbiDR*
+
+---
+
 ## [2026-05-08] PR #562: test(verify): extend validation boundary coverage for LaboratoryStore
 **Commit**: `a9fb0dc3d0e038f96fdd42b6a3d0406a1b0c3ff2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/562)
