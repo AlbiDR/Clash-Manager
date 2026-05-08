@@ -71,7 +71,7 @@ export function useLaboratory() {
     settings,
     isSimulating,
     isFetching,
-    syncError,
+    fetchError,
     trackedPlayerTag
   } = storeToRefs(store);
 
@@ -212,17 +212,15 @@ export function useLaboratory() {
     if (!tag) return;
 
     store.setFetching(true);
-    store.setSyncError(null);
+    store.setFetchError(null);
     try {
       const profile = await getPlayerProfile(tag);
       ingest(profile);
     } catch (err: unknown) {
       // THREAT: Network or API failure on profile retrieval.
-      // Target B [4]: The 'any' plague eliminated; using unknown for error catch.
-      // Target B [4]: The 'any' plague eliminated; using unknown for error catch.
       const message = err instanceof Error ? err.message : String(err);
       console.error("[Laboratory] Fetch Failed:", message);
-      store.setSyncError(message);
+      store.setFetchError(message);
     } finally {
       store.setFetching(false);
     }
@@ -282,12 +280,17 @@ export function useLaboratory() {
    */
   const layoutProps = computed(() => ({
     status: status.value,
-    loading: isFetching.value,
-    isEmpty: isEmpty.value,
+    loading: isFetching.value && !observation.value,
+    isRefreshing: isFetching.value,
     syncError: fetchError.value || undefined,
-    emptyMessage: !(trackedPlayerTag.value || clashData.value?.playerTag) ? 'Target Required' : 'No results found',
-    emptyHint: !(trackedPlayerTag.value || clashData.value?.playerTag) ? 'No PlayerTag configured. Please enter one above or in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
-    emptyIcon: 'flask',
+    isEmpty: isEmpty.value,
+    emptyMessage: !(trackedPlayerTag.value || clashData.value?.playerTag) 
+      ? 'Target Required' 
+      : (fetchError.value || "Target Profile Not Found"),
+    emptyHint: !(trackedPlayerTag.value || clashData.value?.playerTag) 
+      ? 'No PlayerTag configured. Please enter one above or in Project Properties.' 
+      : 'Ensure your inventory is correctly entered in The Vault.',
+    emptyIcon: !(trackedPlayerTag.value || clashData.value?.playerTag) ? 'flask' : 'crosshair',
     remoteInfo: currentSource.value ? {
       source: currentSource.value,
       dataAge: remoteSyncTime.value ? formatTimeAgo(remoteSyncTime.value) : null
@@ -302,21 +305,6 @@ export function useLaboratory() {
    */
   const layoutEvents = computed(() => ({
     refresh: fetchTrackedPlayer
-  }));
-
-  const layoutProps = computed(() => ({
-    status: {
-      type: isFetching.value ? "loading" : (syncError.value ? "error" : "success"),
-      text: isFetching.value ? "Syncing..." : (syncError.value ? "Fetch Error" : "Nominal"),
-      nominal: !isFetching.value && !syncError.value
-    },
-    loading: isFetching.value && !observation.value,
-    isRefreshing: isFetching.value,
-    syncError: syncError.value || undefined,
-    isEmpty: !isFetching.value && !observation.value,
-    emptyMessage: syncError.value || "Target Profile Not Found",
-    emptyHint: "Enter a valid player tag to begin analysis",
-    emptyIcon: "crosshair"
   }));
 
   /**
@@ -348,7 +336,7 @@ export function useLaboratory() {
     settings: computed(() => settings.value),
     isSimulating,
     isFetching,
-    syncError,
+    fetchError,
     layoutProps,
     layoutEvents,
 
