@@ -4,9 +4,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateProgressionPath,
-  calculateKingLevel,
   mapStateToResult
 } from '../Simulation';
+import { calculateKingLevel } from '../Registry';
 import { asGold, asGems, asXP } from '@core/utils/economy';
 import type { SimulationState, OptimizationSettings, Card, PlayerProfile } from '../Types';
 
