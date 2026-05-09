@@ -51,10 +51,10 @@ describe('ProfileHydrator', () => {
         expLevel: 15,
         expPoints: 4120, // 2120 (base for lvl 15) + 2000 (into level)
         cards: [
-          { name: "Log", rarity: "Legendary", level: 5, count: 10 } // Relative level 5 for Legendary (9+4=13)
+          { name: "Log", rarity: "Legendary", level: 11, count: 10 } // Absolute level 11
         ],
         towerTroops: [
-          { name: "Tower Princess", rarity: "Common", level: 14, count: 0 } // Relative level 14
+          { name: "Tower Princess", rarity: "Common", level: 14, count: 0 } // Absolute level 14
         ]
       };
 
@@ -68,7 +68,7 @@ describe('ProfileHydrator', () => {
 
       const log = result.cards.find(c => c.name === "Log");
       expect(log?.rarity).toBe("Legendary");
-      expect(log?.level).toBe(13); // 9 + (5 - 1) = 13
+      expect(log?.level).toBe(11);
 
       const tp = result.cards.find(c => c.name === "Tower Princess");
       expect(tp?.isTowerTroop).toBe(true);
@@ -111,19 +111,19 @@ describe('ProfileHydrator', () => {
       expect(result.cards[2].rarity).toBe("Common"); // Default fallback
     });
 
-    it('should normalize levels across all rarities for RoyaleAPI format', () => {
+    it('should NOT add offsets for RoyaleAPI format (Modern API is Absolute)', () => {
         const rarities = [
-            { r: "Common", in: 1, out: 1 },
-            { r: "Rare", in: 1, out: 3 },
-            { r: "Epic", in: 1, out: 6 },
-            { r: "Legendary", in: 1, out: 9 },
-            { r: "Champion", in: 1, out: 11 }
+            { r: "Common", level: 1 },
+            { r: "Rare", level: 3 },
+            { r: "Epic", level: 6 },
+            { r: "Legendary", level: 9 },
+            { r: "Champion", level: 11 }
         ];
 
-        rarities.forEach(({ r, in: levelIn, out: levelOut }) => {
-            const raw = { cards: [{ name: "Test", rarity: r, level: levelIn }] };
+        rarities.forEach(({ r, level }) => {
+            const raw = { cards: [{ name: "Test", rarity: r, level: level }] };
             const result = ProfileHydrator.hydrate(raw);
-            expect(result.cards[0].level).toBe(levelOut);
+            expect(result.cards[0].level).toBe(level);
         });
     });
 
