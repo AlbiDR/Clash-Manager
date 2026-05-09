@@ -77,7 +77,7 @@ Recruitment is no longer passive. The **Headhunter Engine** continuously scans g
 
 ## Dictionary
 
-- **DeepNet**: The high-performance, offline-first PWA infrastructure (v7+) designed for administrative clan operations.
+- **DeepNet**: The high-performance, offline-first PWA infrastructure (v13+) designed for administrative clan operations.
 - **Headhunter**: The global discovery engine that autonomously scans tournaments to identify elite, clanless recruits.
 - **Nightly**: The automated, 7-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
 
@@ -173,6 +173,7 @@ Deploy the database schema and ingestion functions first.
     1. `supabase link --project-ref <id>`
     2. `supabase db push` (Sync Migrations)
     3. `supabase functions deploy ingest-royale-data`
+    4. `supabase functions deploy headhunter-scanner`
 
 </details>
 
