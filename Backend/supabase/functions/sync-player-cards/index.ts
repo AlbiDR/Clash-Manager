@@ -64,6 +64,9 @@ function normalizeRarity(raw: string): string {
   return map[raw?.toLowerCase()?.trim()] ?? "Common";
 }
 
+// How stale a snapshot must be before a fresh API fetch is triggered.
+const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORS_HEADERS });
@@ -85,7 +88,65 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Invalid JSON payload" }, 400);
   }
 
-  // --- Call Clash Royale API via proxy ---
+  // --- Supabase client (service role, used for cache read and upsert) ---
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { db: { schema: "features" } }
+  );
+
+  // --- Cache check: return stored snapshot if it is less than 12 hours old ---
+  const cutoff = new Date(Date.now() - CACHE_TTL_MS).toISOString();
+  const { data: cached } = await supabase
+    .from("player_card_snapshots")
+    .select("card_name, rarity, absolute_level, count, is_tower_troop, fetched_at")
+    .eq("player_tag", tag)
+    .gt("fetched_at", cutoff)
+    .limit(1);
+
+  if (cached && cached.length > 0) {
+    // Fetch ALL rows for this player (the limit(1) was just to check freshness).
+    const { data: allCached } = await supabase
+      .from("player_card_snapshots")
+      .select("card_name, rarity, absolute_level, count, is_tower_troop, fetched_at")
+      .eq("player_tag", tag);
+
+    const rows = allCached ?? [];
+    const fetchedAt = rows[0]?.fetched_at ?? new Date().toISOString();
+
+    console.log(`[sync-player-cards] Cache hit for ${tag} (${rows.length} cards, fetched ${fetchedAt})`);
+
+    return jsonResponse({
+      profile: { name: "Unknown", tag, kingLevel: 1, xpIntoLevel: 0 },
+      cards: rows
+        .filter((r: any) => !r.is_tower_troop)
+        .map((r: any) => ({
+          name: r.card_name,
+          rarity: r.rarity,
+          level: r.absolute_level,
+          count: r.count,
+          isTowerTroop: false,
+        })),
+      towerTroops: rows
+        .filter((r: any) => r.is_tower_troop)
+        .map((r: any) => ({
+          name: r.card_name,
+          rarity: r.rarity,
+          level: r.absolute_level,
+          count: r.count,
+          isTowerTroop: true,
+        })),
+      inventory: {
+        gold: 0,
+        gems: 0,
+        wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 },
+      },
+      meta: { total_cards: rows.length, fetched_at: fetchedAt, source: "cache" },
+    });
+  }
+
+  // --- Cache miss: call Clash Royale API via proxy ---
+  console.log(`[sync-player-cards] Cache miss for ${tag}. Fetching from API...`);
   const encodedTag = encodeURIComponent(tag);
   let royaleData: any;
   try {
@@ -105,9 +166,8 @@ Deno.serve(async (req) => {
   const rawCards: any[] = royaleData.cards ?? [];
   const rawTowerTroops: any[] = royaleData.towerTroops ?? [];
 
-  // Determine the highest maxLevel seen across all cards (should be 16 for Common).
-  const allCards = [...rawCards, ...rawTowerTroops];
-  const baseMaxLevel = allCards.reduce(
+  const allApiCards = [...rawCards, ...rawTowerTroops];
+  const baseMaxLevel = allApiCards.reduce(
     (max, c) => Math.max(max, c.maxLevel ?? 0),
     0
   ) || BASE_MAX_LEVEL;
@@ -126,7 +186,6 @@ Deno.serve(async (req) => {
   function processCard(card: any, isTowerTroop: boolean): NormalizedCard {
     const apiLevel = card.level ?? 1;
     const apiMaxLevel = card.maxLevel ?? BASE_MAX_LEVEL;
-    // Anchor to baseMaxLevel in case the collection's highest cap differs.
     const absoluteLevel = baseMaxLevel - (apiMaxLevel - apiLevel);
     return {
       card_id: card.id,
@@ -146,13 +205,7 @@ Deno.serve(async (req) => {
   ];
 
   // --- Upsert snapshot into Supabase ---
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { db: { schema: "features" } }
-  );
-
-  const rows = normalizedCards.map((card) => ({
+  const upsertRows = normalizedCards.map((card) => ({
     player_tag: tag,
     card_id: card.card_id,
     card_name: card.card_name,
@@ -165,57 +218,48 @@ Deno.serve(async (req) => {
     fetched_at: new Date().toISOString(),
   }));
 
-  if (rows.length > 0) {
+  if (upsertRows.length > 0) {
     const { error: upsertError } = await supabase
       .from("player_card_snapshots")
-      .upsert(rows, { onConflict: "player_tag,card_id" });
+      .upsert(upsertRows, { onConflict: "player_tag,card_id" });
 
     if (upsertError) {
       console.error(`[sync-player-cards] Upsert error: ${upsertError.message}`);
-      // Non-fatal: still return the data to the PWA even if persistence failed.
     }
   }
 
   // --- Build ProfileInputSchema-compatible response ---
-  const profile = {
-    name: royaleData.name ?? "Unknown",
-    tag: royaleData.tag ?? tag,
-    kingLevel: royaleData.expLevel ?? 1,
-    xpIntoLevel: royaleData.expPoints ?? 0,
-  };
-
-  const cards = normalizedCards
-    .filter((c) => !c.is_tower_troop)
-    .map((c) => ({
-      name: c.card_name,
-      rarity: c.rarity,
-      level: c.absolute_level,
-      count: c.count,
-      isTowerTroop: false,
-    }));
-
-  const towerTroops = normalizedCards
-    .filter((c) => c.is_tower_troop)
-    .map((c) => ({
-      name: c.card_name,
-      rarity: c.rarity,
-      level: c.absolute_level,
-      count: c.count,
-      isTowerTroop: true,
-    }));
-
+  const now = new Date().toISOString();
   return jsonResponse({
-    profile,
-    cards,
-    towerTroops,
+    profile: {
+      name: royaleData.name ?? "Unknown",
+      tag: royaleData.tag ?? tag,
+      kingLevel: royaleData.expLevel ?? 1,
+      xpIntoLevel: royaleData.expPoints ?? 0,
+    },
+    cards: normalizedCards
+      .filter((c) => !c.is_tower_troop)
+      .map((c) => ({
+        name: c.card_name,
+        rarity: c.rarity,
+        level: c.absolute_level,
+        count: c.count,
+        isTowerTroop: false,
+      })),
+    towerTroops: normalizedCards
+      .filter((c) => c.is_tower_troop)
+      .map((c) => ({
+        name: c.card_name,
+        rarity: c.rarity,
+        level: c.absolute_level,
+        count: c.count,
+        isTowerTroop: true,
+      })),
     inventory: {
       gold: 0,
       gems: 0,
       wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 },
     },
-    meta: {
-      total_cards: normalizedCards.length,
-      fetched_at: new Date().toISOString(),
-    },
+    meta: { total_cards: normalizedCards.length, fetched_at: now, source: "api" },
   });
 });
