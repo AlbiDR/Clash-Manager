@@ -5,7 +5,7 @@ import { computed } from "vue";
 const props = defineProps<{
   result: OptimizationResult;
   profile: PlayerProfile;
-  settings: OptimizationSettings;
+  settings?: OptimizationSettings;
 }>();
 
 const formatNumber = (valueToFormat: number) => {
@@ -13,6 +13,9 @@ const formatNumber = (valueToFormat: number) => {
 };
 
 const engineStatus = computed(() => {
+  if (!props.settings) {
+    return { class: 'reached', text: 'Engine Operational', icon: 'check-circle' };
+  }
   if (props.settings.strategy === 'Level Projection') {
     if (props.settings.targetLevel && props.result.projectedKingLevel < props.settings.targetLevel) {
       return { class: 'stalled', text: 'Progression Cap Hit', icon: 'warning' };

@@ -72,7 +72,8 @@ describe("SummaryCard.vue", () => {
         result: mockResult
       }
     });
-    expect(wrapper.find(".projection-badge .value").text()).toBe("2 Upgrades");
+    const badges = wrapper.findAll(".projection-badge .value");
+    expect(badges[badges.length - 1].text()).toBe("2 Upgrades");
 
     // 1 upgrade
     const resultOneAction = { ...mockResult, actions: [{}] };
@@ -82,7 +83,8 @@ describe("SummaryCard.vue", () => {
         result: resultOneAction
       }
     });
-    expect(wrapper.find(".projection-badge .value").text()).toBe("1 Upgrade");
+    const badgesOne = wrapper.findAll(".projection-badge .value");
+    expect(badgesOne[badgesOne.length - 1].text()).toBe("1 Upgrade");
   });
 
   it("displays king level progression correctly", () => {
