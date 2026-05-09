@@ -3,6 +3,8 @@
 
 import { supabase } from "./client.ts";
 import { ScannerStats, AuditEntry } from "../_shared/types.ts";
+import { HeadhunterContextSchema } from "../_shared/schemas.ts";
+import * as v from "npm:valibot";
 import { runShadowScout } from "./stages/shadow-scout.ts";
 import { runTournamentDiscovery } from "./stages/tournament-finder.ts";
 import { runProfiler } from "./stages/profiler.ts";
@@ -33,8 +35,8 @@ import { runRescan } from "./stages/rescan.ts";
  */
 export async function executeScanner(
     tournaments: string[], 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void,
-    heartbeat: (stage: string, currentResults: any) => Promise<void>
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    heartbeat: (stage: string, currentResults: unknown) => Promise<void>
 ) {
     const startTime = Date.now();
     const stats: ScannerStats = {
@@ -48,9 +50,19 @@ export async function executeScanner(
     };
 
     // --- CONTEXT BOOT: FETCH EXCLUSIONS AND THRESHOLDS ---
-    const { data: contextData } = await supabase.rpc('get_headhunter_context');
-    const requiredTrophies = contextData?.required_trophies || 0;
-    const exclusionSet = new Set<string>(contextData?.exclusion_tags || []);
+    const { data: contextDataRaw } = await supabase.rpc('get_headhunter_context');
+
+    // [GUARD] VALIDATION BOUNDARY: Target B [1]
+    // Rationale: Harden raw Supabase data before use to prevent silent failures.
+    const contextResult = v.safeParse(HeadhunterContextSchema, contextDataRaw);
+    const contextData = contextResult.success ? contextResult.output : { required_trophies: 0, exclusion_tags: [] };
+
+    if (!contextResult.success) {
+        logAudit('BOOT', 'error', { message: 'Context validation failed, using defaults', issues: contextResult.issues });
+    }
+
+    const requiredTrophies = contextData.required_trophies || 0;
+    const exclusionSet = new Set<string>(contextData.exclusion_tags || []);
     const candidates = new Map<string, string>(); // tag -> source
 
     // --- TIMEOUT HELPER ---
@@ -73,9 +85,10 @@ export async function executeScanner(
         // [DECISION LOG]: Pipeline continues even if an individual stage fails (Best-Effort).
         // This ensures that a failure in Shadow Scouting doesn't block Tournament Discovery.
         await withTimeout(runShadowScout(candidates, exclusionSet, stats, logAudit), 'S1_SHADOW_SCOUT');
-    } catch (e: any) {
-        stats.errors.push(`S1_SHADOW_SCOUT: ${e.message}`);
-        logAudit('SHADOW_SCOUT', 'error', { message: e.message });
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        stats.errors.push(`S1_SHADOW_SCOUT: ${errorMessage}`);
+        logAudit('SHADOW_SCOUT', 'error', { message: errorMessage });
     }
     // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level
     // if the caller relies on progressive stats for UI hydration.
@@ -86,9 +99,10 @@ export async function executeScanner(
         if (tournaments.includes("AUTO")) {
             await withTimeout(runTournamentDiscovery(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S2_TOURNAMENT_DISCOVERY');
         }
-    } catch (e: any) {
-        stats.errors.push(`S2_TOURNAMENT_DISCOVERY: ${e.message}`);
-        logAudit('TOURNAMENT_DISCOVERY', 'error', { message: e.message });
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        stats.errors.push(`S2_TOURNAMENT_DISCOVERY: ${errorMessage}`);
+        logAudit('TOURNAMENT_DISCOVERY', 'error', { message: errorMessage });
     }
     // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S2_TOURNAMENT_DISCOVERY', stats);
@@ -96,9 +110,10 @@ export async function executeScanner(
     // 3. Profiling & Ingestion
     try {
         await withTimeout(runProfiler(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S3_PROFILING');
-    } catch (e: any) {
-        stats.errors.push(`S3_PROFILING: ${e.message}`);
-        logAudit('PROFILING', 'error', { message: e.message });
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        stats.errors.push(`S3_PROFILING: ${errorMessage}`);
+        logAudit('PROFILING', 'error', { message: errorMessage });
     }
     // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S3_PROFILING', stats);
@@ -108,9 +123,10 @@ export async function executeScanner(
     // 4. Stale Recruit Re-scan (refresh existing ACTIVE pool, evict clanned players)
     try {
         await withTimeout(runRescan(exclusionSet, requiredTrophies, stats, logAudit), 'S4_RESCAN');
-    } catch (e: any) {
-        stats.errors.push(`S4_RESCAN: ${e.message}`);
-        logAudit('RESCAN', 'error', { message: e.message });
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        stats.errors.push(`S4_RESCAN: ${errorMessage}`);
+        logAudit('RESCAN', 'error', { message: errorMessage });
     }
     // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S4_RESCAN', stats);
