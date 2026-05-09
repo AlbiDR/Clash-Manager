@@ -154,8 +154,8 @@ describe('ProfileHydrator', () => {
       expect(state.totalGoldSpent).toBe(asGold(0));
       expect(state.history).toEqual([]);
 
-      // King Level 10 cumulative XP is 6000. Total = 6000 + 100 = 6100
-      expect(state.totalXp).toBe(asXP(6100));
+      // King Level 10 cumulative XP is 770. Total = 770 + 100 = 870
+      expect(state.totalXp).toBe(asXP(870));
     });
 
     it('should fallback to level 1 king if level is not in table', () => {
