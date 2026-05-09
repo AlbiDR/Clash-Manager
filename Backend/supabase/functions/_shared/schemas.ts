@@ -89,6 +89,12 @@ export const StaleRecruitSchema = v.object({
     player_tag: v.string()
 });
 
+/** [GUARD] Headhunter Context Schema (RPC). */
+export const HeadhunterContextSchema = v.object({
+    required_trophies: v.optional(v.number(), 0),
+    exclusion_tags: v.optional(v.array(v.string()), [])
+});
+
 /** [GUARD] Royale Battle Log Schema. */
 export const RoyaleBattleLogSchema = v.array(v.object({
     type: v.string(),
