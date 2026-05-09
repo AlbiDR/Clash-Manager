@@ -161,21 +161,49 @@ export async function fetchRemote(options?: {
 export async function getPlayerProfile(
   tag: string,
 ): Promise<v.InferOutput<typeof ProfileInputSchema>> {
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase.from('roster_view').select('*').eq('player_tag', tag.startsWith('#') ? tag : `#${tag}`).single();
-  
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Profile not found");
-  
+  // Call the sync-player-cards Edge Function, which:
+  //  1. Fetches the player profile from the Clash Royale API via the key-rotation proxy.
+  //  2. Normalizes rarity-relative card levels to the unified 1-16 absolute scale.
+  //  3. Upserts the snapshot into features.player_card_snapshots.
+  //  4. Returns the profile in ProfileInputSchema format.
+  const functionUrl = `${getSupabaseUrl()}/functions/v1/sync-player-cards`;
+  const res = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      // Use the publishable key so the Edge Function's JWT verification passes.
+      "Authorization": `Bearer ${getSupabaseKey()}`,
+    },
+    body: JSON.stringify({ tag }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(errBody.error ?? `sync-player-cards failed with status ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  // Merge cards and towerTroops into a single array for the simulation engine.
+  // isTowerTroop is already set correctly by the Edge Function.
+  const allCards = [
+    ...(data.cards ?? []),
+    ...(data.towerTroops ?? []),
+  ];
+
   return {
     profile: {
-      name: data.player_name,
-      tag: data.player_tag,
-      kingLevel: data.exp_level || 1,
-      xpIntoLevel: 0
+      name: data.profile?.name ?? "Unknown",
+      tag: data.profile?.tag ?? tag,
+      kingLevel: data.profile?.kingLevel ?? 1,
+      xpIntoLevel: data.profile?.xpIntoLevel ?? 0,
     },
-    cards: [],
-    inventory: { gold: 0, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } }
+    cards: allCards,
+    inventory: data.inventory ?? {
+      gold: 0,
+      gems: 0,
+      wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 },
+    },
   } as any;
 }
 
