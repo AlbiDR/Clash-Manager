@@ -76,11 +76,21 @@ const ProfileHydrator = {
       };
       cardsData = data.cards || [];
     } else {
+      const currentLevel = data.expLevel || 1;
+      const totalExp = data.expPoints || 0;
+      
+      // Target B [1]: Robust extraction of relative XP from cumulative API points.
+      // Rationale: The Clash Royale API provides total cumulative XP in 'expPoints'.
+      // To maintain internal consistency with our state-based engine, we must
+      // subtract the base XP for the current level.
+      const kingLevelRow = KING_XP_TABLE.find(row => row.level === currentLevel) || KING_XP_TABLE[0];
+      const xpIntoLevel = Math.max(0, totalExp - Number(kingLevelRow.cumulative));
+
       profile = {
         name: data.name || "Unknown",
         tag: data.tag || "0",
-        kingLevel: data.expLevel || 1,
-        xpIntoLevel: asXP(data.expPoints || 0)
+        kingLevel: currentLevel,
+        xpIntoLevel: asXP(xpIntoLevel)
       };
       cardsData = [...(data.cards || []), ...(data.towerTroops || [])];
     }
