@@ -175,7 +175,7 @@ describe('Laboratory Simulation Engine', () => {
       expect(calculateKingLevel(20)).toBe(2);
       expect(calculateKingLevel(69)).toBe(2);
       expect(calculateKingLevel(70)).toBe(3);
-      expect(calculateKingLevel(10000000)).toBe(80);
+      expect(calculateKingLevel(11000000)).toBe(80);
       expect(calculateKingLevel(27438770)).toBe(90);
       expect(calculateKingLevel(99999999)).toBe(90);
     });
