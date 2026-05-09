@@ -49,7 +49,7 @@ describe('ProfileHydrator', () => {
         name: "External User",
         tag: "XYZ987",
         expLevel: 15,
-        expPoints: 4120, // 2120 (base for lvl 15) + 2000 (into level)
+        expPoints: 52000, // 50000 (base for lvl 15) + 2000 (into level)
         cards: [
           { name: "Log", rarity: "Legendary", level: 5, count: 10 } // Relative level 5 for Legendary (9+4=13)
         ],
@@ -154,8 +154,8 @@ describe('ProfileHydrator', () => {
       expect(state.totalGoldSpent).toBe(asGold(0));
       expect(state.history).toEqual([]);
 
-      // King Level 10 cumulative XP is 770. Total = 770 + 100 = 870
-      expect(state.totalXp).toBe(asXP(870));
+      // King Level 10 cumulative XP is 6000. Total = 6000 + 100 = 6100
+      expect(state.totalXp).toBe(asXP(6100));
     });
 
     it('should fallback to level 1 king if level is not in table', () => {
