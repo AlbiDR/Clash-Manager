@@ -35,7 +35,7 @@ const toggleGemSpending = () => {
 const filteredLevels = computed(() => {
   return Array.from({ length: 90 }, (_, i) => i + 1).filter(level => {
     // Current and future levels are always shown
-    if (level > props.currentLevel) return true;
+    if (level >= props.currentLevel) return true;
     // Past levels only shown if they are milestones
     return IMPORTANT_KING_LEVELS.includes(level as any);
   });

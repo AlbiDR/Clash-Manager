@@ -436,5 +436,5 @@ export function mapStateToResult(
  */
 export function calculateDefaultTarget(currentLevel: number): number {
   const nextMilestone = IMPORTANT_KING_LEVELS.find(m => m > currentLevel);
-  return nextMilestone || (currentLevel + 1);
+  return Math.min(90, nextMilestone || (currentLevel + 1));
 }

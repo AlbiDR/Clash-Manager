@@ -173,10 +173,10 @@ describe('Laboratory Simulation Engine', () => {
       expect(calculateKingLevel(0)).toBe(1);
       expect(calculateKingLevel(19)).toBe(1);
       expect(calculateKingLevel(20)).toBe(2);
-      expect(calculateKingLevel(69)).toBe(2);
-      expect(calculateKingLevel(70)).toBe(3);
-      expect(calculateKingLevel(2120)).toBe(15);
-      expect(calculateKingLevel(27438770)).toBe(90);
+      expect(calculateKingLevel(49)).toBe(2);
+      expect(calculateKingLevel(50)).toBe(3);
+      expect(calculateKingLevel(50000)).toBe(15);
+      expect(calculateKingLevel(2580000)).toBe(90);
       expect(calculateKingLevel(99999999)).toBe(90);
     });
   });
@@ -192,7 +192,7 @@ describe('Laboratory Simulation Engine', () => {
 
       const finalState: SimulationState = {
         ...initialState,
-        totalXp: asXP(2120), // Level 15
+        totalXp: asXP(50000), // Level 15
         inventory: {
           ...initialState.inventory,
           gold: asGold(910000)
@@ -217,12 +217,12 @@ describe('Laboratory Simulation Engine', () => {
       const result = mapStateToResult(finalState, mockProfile, 0);
 
       expect(result.projectedKingLevel).toBe(15);
-      expect(result.totalXpGained).toBe(2120);
+      expect(result.totalXpGained).toBe(50000);
       expect(result.finalGold).toBe(910000);
       expect(result.totalGoldSpent).toBe(90000);
       expect(result.actions).toHaveLength(1);
       expect(result.finalProfile.kingLevel).toBe(15);
-      expect(result.finalProfile.xpIntoLevel).toBe(0); // 2120 - 2120
+      expect(result.finalProfile.xpIntoLevel).toBe(0); // 50000 - 50000
     });
   });
 });
