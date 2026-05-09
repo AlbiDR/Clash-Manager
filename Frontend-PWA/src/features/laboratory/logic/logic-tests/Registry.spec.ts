@@ -10,7 +10,14 @@ import {
   MATERIAL_REQUIREMENTS,
   GEM_CONVERSION_RATES,
   KING_XP_TABLE,
-  IMPORTANT_KING_LEVELS
+  IMPORTANT_KING_LEVELS,
+  calculateKingLevel,
+  calculateDefaultTarget,
+  normalizeLevel,
+  normalizeRarity,
+  getKingLevelBaseXp,
+  calculateGemCostForCards,
+  getUpgradeData
 } from '../Registry';
 
 describe('Laboratory Registry', () => {
@@ -59,7 +66,6 @@ describe('Laboratory Registry', () => {
         expect(MATERIAL_REQUIREMENTS).toHaveProperty(rarity);
         const startLevel = CARD_RARITY_START_LEVELS[rarity];
         // Requirements usually start from (startLevel + 1) or specific to the rarity
-        // Let's just check that there are entries and they are positive
         const levels = Object.keys(MATERIAL_REQUIREMENTS[rarity]).map(Number);
         expect(levels.length).toBeGreaterThan(0);
         levels.forEach(level => {
@@ -104,6 +110,130 @@ describe('Laboratory Registry', () => {
       IMPORTANT_KING_LEVELS.forEach(level => {
         expect(typeof level).toBe('number');
       });
+    });
+  });
+
+  describe('calculateKingLevel()', () => {
+    it('should return 1 for 0 XP', () => {
+      expect(calculateKingLevel(0)).toBe(1);
+    });
+
+    it('should return level 2 for 20 XP', () => {
+      expect(calculateKingLevel(20)).toBe(2);
+    });
+
+    it('should return level 2 for 69 XP', () => {
+      expect(calculateKingLevel(69)).toBe(2);
+    });
+
+    it('should return level 10 for 770 XP', () => {
+      expect(calculateKingLevel(770)).toBe(10);
+    });
+
+    it('should handle max level XP', () => {
+      const maxLevelEntry = KING_XP_TABLE[KING_XP_TABLE.length - 1];
+      expect(calculateKingLevel(Number(maxLevelEntry.cumulative))).toBe(maxLevelEntry.level);
+    });
+
+    it('should handle XP beyond max defined level', () => {
+      const maxLevelEntry = KING_XP_TABLE[KING_XP_TABLE.length - 1];
+      expect(calculateKingLevel(Number(maxLevelEntry.cumulative) + 1000000)).toBe(maxLevelEntry.level);
+    });
+  });
+
+  describe('calculateDefaultTarget()', () => {
+    it('should return the next milestone correctly', () => {
+      expect(calculateDefaultTarget(1)).toBe(2);
+      expect(calculateDefaultTarget(2)).toBe(3);
+      expect(calculateDefaultTarget(3)).toBe(5);
+      expect(calculateDefaultTarget(10)).toBe(14);
+    });
+
+    it('should return level + 1 if beyond last milestone', () => {
+      const lastMilestone = IMPORTANT_KING_LEVELS[IMPORTANT_KING_LEVELS.length - 1];
+      expect(calculateDefaultTarget(lastMilestone)).toBe(lastMilestone + 1);
+    });
+  });
+
+  describe('normalizeLevel()', () => {
+    it('should normalize relative levels to absolute levels', () => {
+      expect(normalizeLevel(1, "Common")).toBe(1);
+      expect(normalizeLevel(11, "Common")).toBe(11);
+      expect(normalizeLevel(1, "Rare")).toBe(3);
+      expect(normalizeLevel(14, "Rare")).toBe(16);
+      expect(normalizeLevel(1, "Epic")).toBe(6);
+      expect(normalizeLevel(1, "Legendary")).toBe(9);
+      expect(normalizeLevel(1, "Champion")).toBe(11);
+    });
+
+    it('should respect CARD_LEVEL_CAP', () => {
+      expect(normalizeLevel(20, "Common")).toBe(16);
+      expect(normalizeLevel(10, "Champion")).toBe(16);
+    });
+
+    it('should respect minimum level 1', () => {
+      expect(normalizeLevel(-10, "Common")).toBe(1);
+    });
+  });
+
+  describe('normalizeRarity()', () => {
+    it('should normalize valid rarity strings', () => {
+      expect(normalizeRarity("Common")).toBe("Common");
+      expect(normalizeRarity("rare")).toBe("Rare");
+      expect(normalizeRarity("  EPIC  ")).toBe("Epic");
+    });
+
+    it('should fallback to Common for unknown strings', () => {
+      expect(normalizeRarity("unknown")).toBe("Common");
+      expect(normalizeRarity("")).toBe("Common");
+    });
+  });
+
+  describe('getKingLevelBaseXp()', () => {
+    it('should return correct base XP for levels', () => {
+      expect(Number(getKingLevelBaseXp(1))).toBe(0);
+      expect(Number(getKingLevelBaseXp(2))).toBe(20);
+      expect(Number(getKingLevelBaseXp(50))).toBe(403770);
+    });
+
+    it('should return 0 for invalid levels', () => {
+      expect(Number(getKingLevelBaseXp(0))).toBe(0);
+      expect(Number(getKingLevelBaseXp(100))).toBe(0);
+    });
+  });
+
+  describe('calculateGemCostForCards()', () => {
+    it('should return 0 for non-positive deficit', () => {
+      expect(Number(calculateGemCostForCards("Common", 0))).toBe(0);
+      expect(Number(calculateGemCostForCards("Common", -10))).toBe(0);
+    });
+
+    it('should calculate gem cost and round up', () => {
+      // Common rate is 0.36. 10 * 0.36 = 3.6 -> 4
+      expect(Number(calculateGemCostForCards("Common", 10))).toBe(4);
+      // Rare rate is 2.14. 10 * 2.14 = 21.4 -> 22
+      expect(Number(calculateGemCostForCards("Rare", 10))).toBe(22);
+      // Legendary rate is 210. 1 * 210 = 210
+      expect(Number(calculateGemCostForCards("Legendary", 1))).toBe(210);
+    });
+  });
+
+  describe('getUpgradeData()', () => {
+    it('should return upgrade data for valid level and rarity', () => {
+      const data = getUpgradeData("Common", 14);
+      expect(data).not.toBeNull();
+      expect(data?.cardsRequired).toBe(3500);
+      expect(Number(data?.goldCost)).toBe(60000);
+      expect(Number(data?.xpGain)).toBe(2000);
+    });
+
+    it('should return null for invalid target level', () => {
+      expect(getUpgradeData("Common", 1)).toBeNull(); // Upgrades start at level 2
+      expect(getUpgradeData("Common", 17)).toBeNull(); // Above cap
+    });
+
+    it('should return null for target level not applicable to rarity', () => {
+      expect(getUpgradeData("Champion", 5)).toBeNull(); // Champions start at level 11, first upgrade is 12
     });
   });
 });
