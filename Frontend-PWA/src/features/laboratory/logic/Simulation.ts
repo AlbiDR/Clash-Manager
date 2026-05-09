@@ -306,7 +306,6 @@ export function* calculateProgressionPath(
     }
   }
 
-  yield currentState;
   return currentState;
 }
 
