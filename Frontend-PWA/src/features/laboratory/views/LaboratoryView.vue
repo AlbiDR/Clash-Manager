@@ -29,6 +29,7 @@ const {
   setSettings,
   handleVaultUpdate,
   getTrajectoryMemoKeys,
+  refresh,
   setTrackedPlayerTag,
   trackedPlayerTag
 } = useLaboratory();
