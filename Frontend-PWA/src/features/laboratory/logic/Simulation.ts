@@ -82,7 +82,7 @@ function buildCandidate(
   if (nextLevel > CARD_LEVEL_CAP) return null;
 
   const cardsRequired = MATERIAL_REQUIREMENTS[card.rarity][nextLevel];
-  const goldCost = GOLD_COST_TABLE[nextLevel];
+  const goldCost = GOLD_COST_TABLE[card.rarity]?.[nextLevel];
   const xpGain = CARD_XP_TABLE[nextLevel];
 
   if (cardsRequired === undefined || goldCost === undefined) return null;
