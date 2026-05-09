@@ -16,9 +16,9 @@ import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
 import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
 
 const normalizeLevel = (level: number, rarity: Rarity): number => {
-  const offset = (CARD_RARITY_START_LEVELS[rarity] || 1) - 1;
-  const absoluteLevel = level + offset;
-  return Math.max(1, Math.min(absoluteLevel, CARD_LEVEL_CAP));
+  // Rationale: Modern Clash Royale API returns absolute levels (1-15/16).
+  // Legacy relative offsets are no longer required and cause level inflation.
+  return Math.max(1, Math.min(level, CARD_LEVEL_CAP));
 };
 
 const normalizeRarity = (raw: string): Rarity => {
@@ -76,11 +76,21 @@ const ProfileHydrator = {
       };
       cardsData = data.cards || [];
     } else {
+      const currentLevel = data.expLevel || 1;
+      const totalExp = data.expPoints || 0;
+      
+      // Target B [1]: Robust extraction of relative XP from cumulative API points.
+      // Rationale: The Clash Royale API provides total cumulative XP in 'expPoints'.
+      // To maintain internal consistency with our state-based engine, we must
+      // subtract the base XP for the current level.
+      const kingLevelRow = KING_XP_TABLE.find(row => row.level === currentLevel) || KING_XP_TABLE[0];
+      const xpIntoLevel = Math.max(0, totalExp - Number(kingLevelRow.cumulative));
+
       profile = {
         name: data.name || "Unknown",
         tag: data.tag || "0",
-        kingLevel: data.expLevel || 1,
-        xpIntoLevel: asXP(data.expPoints || 0)
+        kingLevel: currentLevel,
+        xpIntoLevel: asXP(xpIntoLevel)
       };
       cardsData = [...(data.cards || []), ...(data.towerTroops || [])];
     }
