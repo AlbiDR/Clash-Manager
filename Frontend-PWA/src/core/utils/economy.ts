@@ -1,19 +1,22 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
- * ============================================================================
- * MODULE: ECONOMY (Layer 1)
+ * ECONOMY - Currency Branded Types (Layer 1)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Branded types and pure arithmetic functions for Clash Royale
- * currencies (Gold, Gems, XP).
+ * Rationale: Provides type-safe arithmetic for Clash Royale currencies.
+ * Features: Type Branding, Functional Purity, Clamped Subtraction.
+ * ----------------------------------------------------------------------------
  *
- * ARCHITECTURE:
- *    - Type Branding: Uses intersection types to prevent accidental currency
- *      mixing (e.g., adding Gold to Gems).
- *    - Functional Purity: All arithmetic operations are pure and do not
- *      mutate inputs.
+ * @remarks
+ * This module implements branded types for Gold, Gems, and XP to prevent
+ * accidental mixing of currencies at compile-time. It resides in Layer 1
+ * (@core) as a fundamental utility for all business features.
  *
- * ROLE: Core utility for managing economic transactions and progression
- * across all business features (Laboratory, Headhunter).
- * ============================================================================
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Import Boundaries:** Zero dependencies on higher layers.
+ * - **SSOT:** Authoritative source for all currency-related math.
  */
 
 /** Branded type for Gold currency. */
