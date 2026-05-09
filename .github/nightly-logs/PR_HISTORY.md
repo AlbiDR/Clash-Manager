@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-09] PR #569: docs(tsdoc): document economy utilities and branded types
+**Commit**: `d04c81451280a02c6fbca29e143a01714f7e4486`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/569)
+
+### Description
+Annotated `Frontend-PWA/src/core/utils/economy.ts` with TSDoc and architectural context. Enforced GPL-3.0 licensing header. Updated coverage log.
+
+---
+*PR created automatically by Jules for task [8260391008086721746](https://jules.google.com/task/8260391008086721746) started by @AlbiDR*
+
+---
+
 ## [2026-05-09] PR #568: Reconcile root README.md synchronization drift
 **Commit**: `97bfa523830bf6b69c4f26323faf5f32ba48f41b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/568)
