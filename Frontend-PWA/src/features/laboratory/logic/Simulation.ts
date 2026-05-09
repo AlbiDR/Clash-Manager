@@ -248,7 +248,8 @@ export function* calculateProgressionPath(
   // Pre-calculate target XP for Level Projection
   let targetXp = -1;
   if (settings.strategy === "Level Projection" && settings.targetLevel) {
-    const targetRow = KING_XP_TABLE.find(row => row.level === settings.targetLevel);
+    const targetLevelNum = Number(settings.targetLevel);
+    const targetRow = KING_XP_TABLE.find(row => row.level === targetLevelNum);
     if (targetRow) {
       targetXp = Number(targetRow.cumulative);
     }
