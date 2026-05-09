@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-09] PR #568: Reconcile root README.md synchronization drift
+**Commit**: `97bfa523830bf6b69c4f26323faf5f32ba48f41b`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/568)
+
+### Description
+Synchronized the root README.md with the current monorepo state by updating the DeepNet version and augmenting the deployment protocol with the headhunter-scanner Edge Function. Verified via Frontend-PWA Vitest suite (896 pass).
+
+---
+*PR created automatically by Jules for task [16654691013013852648](https://jules.google.com/task/16654691013013852648) started by @AlbiDR*
+
+---
+
 ## [2026-05-09] PR #567: refactor(opt): implement domain-descriptive naming in useBatchQueue.ts
 **Commit**: `f061fcb0b4b69e4c2b52cbbd17d424c2f34f110f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/567)
