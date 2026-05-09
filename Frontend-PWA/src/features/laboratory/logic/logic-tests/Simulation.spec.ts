@@ -173,10 +173,10 @@ describe('Laboratory Simulation Engine', () => {
       expect(calculateKingLevel(0)).toBe(1);
       expect(calculateKingLevel(19)).toBe(1);
       expect(calculateKingLevel(20)).toBe(2);
-      expect(calculateKingLevel(49)).toBe(2);
-      expect(calculateKingLevel(50)).toBe(3);
-      expect(calculateKingLevel(50000)).toBe(15);
-      expect(calculateKingLevel(2580000)).toBe(90);
+      expect(calculateKingLevel(69)).toBe(2);
+      expect(calculateKingLevel(70)).toBe(3);
+      expect(calculateKingLevel(10000000)).toBe(80);
+      expect(calculateKingLevel(27438770)).toBe(90);
       expect(calculateKingLevel(99999999)).toBe(90);
     });
   });
@@ -214,15 +214,18 @@ describe('Laboratory Simulation Engine', () => {
         }]
       };
 
+      // Gain 50k XP starting from Level 10 (770 cumulative)
+      // 770 + 50,000 = 50,770
+      // Table says Level 31 starts at 45,770, Level 32 at 53,770
       const result = mapStateToResult(finalState, mockProfile, 0);
 
-      expect(result.projectedKingLevel).toBe(15);
+      expect(result.projectedKingLevel).toBe(31);
       expect(result.totalXpGained).toBe(50000);
       expect(result.finalGold).toBe(910000);
       expect(result.totalGoldSpent).toBe(90000);
       expect(result.actions).toHaveLength(1);
-      expect(result.finalProfile.kingLevel).toBe(15);
-      expect(result.finalProfile.xpIntoLevel).toBe(0); // 50000 - 50000
+      expect(result.finalProfile.kingLevel).toBe(31);
+      expect(result.finalProfile.xpIntoLevel).toBe(4230); // 50000 - 45770 (Level 31 start)
     });
   });
 });
