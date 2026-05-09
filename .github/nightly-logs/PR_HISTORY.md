@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-09] PR #570: chore(deps): bump @supabase/supabase-js from ^2.105.3 to ^2.105.4
+**Commit**: `668c0cf827e565227f92d396eb32ae21f0f54bc8`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/570)
+
+### Description
+This PR performs an automated Tier 1 patch bump of `@supabase/supabase-js` from version `^2.105.3` to `^2.105.4` in the `Frontend-PWA` subsystem. It ensures dependency currency and structural hygiene by applying the latest patch bugfixes within the current major version. The change has been verified against the mandatory `pnpm test` gate in the PWA suite, with all 896 tests passing. The `pnpm-lock.yaml` and the persistent `dependency-audit-coverage.log` have been updated accordingly.
+
+---
+*PR created automatically by Jules for task [13415835175776691564](https://jules.google.com/task/13415835175776691564) started by @AlbiDR*
+
+---
+
 ## [2026-05-09] PR #569: docs(tsdoc): document economy utilities and branded types
 **Commit**: `d04c81451280a02c6fbca29e143a01714f7e4486`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/569)
