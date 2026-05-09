@@ -76,6 +76,7 @@ const { data: globalData } = storeToRefs(clashDataStore);
         <ParameterCard 
           :settings="settings"
           :current-level="observation.profile.kingLevel"
+          :operation="operation"
           @update="setSettings"
         />
       </div>
@@ -85,6 +86,7 @@ const { data: globalData } = storeToRefs(clashDataStore);
         v-if="operation"
         :result="operation"
         :profile="observation.profile"
+        :settings="settings"
       />
 
       <!-- 3. Trajectory (Upgrade List) -->
