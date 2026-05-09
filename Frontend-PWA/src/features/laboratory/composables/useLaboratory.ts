@@ -44,7 +44,6 @@ import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLabora
 
 // Performance Control Block
 let currentSimulationId = 0;
-let lastAnalyzedTag: string | null = null;
 
 /**
  * Primary composable for Laboratory operations.
@@ -90,10 +89,7 @@ export function useLaboratory() {
   function analyze() {
     if (!observation.value) return;
     
-    // Prevent redundant analysis if same target already processed
     const currentTag = observation.value.profile.tag;
-    if (isSimulating.value && lastAnalyzedTag === currentTag) return;
-    lastAnalyzedTag = currentTag;
 
     const simulationId = ++currentSimulationId;
     store.setSimulating(true);
@@ -256,7 +252,16 @@ export function useLaboratory() {
         analyze();
       }
     }
-  }, { immediate: false }); // Initial run handled by hydration block above
+  }, { immediate: false });
+
+  // REACTIVITY BRIDGE: Trigger analysis when parameters or inventory change.
+  watch(settings, () => {
+    analyze();
+  }, { deep: true });
+
+  watch(() => observation.value?.inventory, () => {
+    analyze();
+  }, { deep: true });
 
   /**
    * SYSTEM STATUS RESOLVER
