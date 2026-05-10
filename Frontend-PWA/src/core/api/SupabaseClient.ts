@@ -82,7 +82,7 @@ function mapSbRosterRow(row: any): LeaderboardMember {
       seen: row.last_seen_at || '-',
       rate: row.war_participation != null ? `${Math.round(Number(row.war_participation))}%` : '-',
       wfame: Math.round(Number(row.avg_fame || row.week_fame)) || 0,
-      hist: '-', // roster_view currently does not provide a war history string
+      hist: row.hist || '-', // roster_view currently does not provide a war history string
     },
   };
 }

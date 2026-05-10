@@ -94,8 +94,8 @@ export function parseHistoryString(
   // Return empty if no data or placeholder '-' found
   if (!historyStr || historyStr === "-") return [];
 
-  // Regex intent: Match 2 digits (Year), a literal 'W', and 2 digits (Week number)
-  const weekRegex = /^(\d{2})W(\d{2})$/;
+  // Regex intent: Match "YYWXX", "Season-Section", or "YYYY-WXX" formats
+  const weekRegex = /(\d+)[W-](?:W)?(\d+)/;
 
   return historyStr
     .split(/[|,]/) // Split by pipe or comma
@@ -107,7 +107,7 @@ export function parseHistoryString(
       const wStr = weekStr || "";
       const weekMatch = wStr.match(weekRegex);
 
-      // Transform "24W01" into "Week 1" for UI readability
+      // Transform "24W01", "131-3", or "2026-W15" into "Week X" for UI readability
       const readableWeek = weekMatch
         ? `Week ${parseInt(weekMatch[2], 10)}`
         : wStr || "?";

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Manager Portfolio Stage</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 60px;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .dark-theme-label .label {
+            color: white;
+        }
+        
+        .light-theme-label .label {
+            color: #1e293b;
+        }
+
+        .portfolio-container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .device-frame {
+            width: 390px;
+            height: 844px;
+            background: #000;
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .device-content {
+            width: 100%;
+            height: 100%;
+            border-radius: 30px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .label {
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="portfolio-container" id="portfolio-container">
+        <!-- Frames will be injected dynamically based on URL params -->
+    </div>
+
+    <script>
+        const VIEWS = [
+            { id: 'roster', path: '/', label: 'Roster View' },
+            { id: 'headhunter', path: '/headhunter', label: 'Headhunter View' },
+            { id: 'laboratory', path: '/laboratory', label: 'Laboratory View' }
+        ];
+
+        // Ensure both iframes have Synthetic Mode on and tag is injected
+        const setSynthetic = (frame, theme) => {
+            try {
+                frame.contentWindow.localStorage.setItem('clash_manager_synthetic_mode', 'true');
+                frame.contentWindow.localStorage.setItem('clash_manager_blueprint_mode', 'false');
+                frame.contentWindow.localStorage.setItem('cm_theme_preference', theme);
+                frame.contentWindow.localStorage.setItem('laboratory_tracked_tag', '#PP80QG99');
+                frame.contentWindow.localStorage.setItem('clash_manager_player_tag', '#PP80QG99');
+                
+                // Inject wealthy inventory so Laboratory trajectories are rich and long
+                frame.contentWindow.localStorage.setItem('laboratory_inventory', JSON.stringify({
+                    gold: 5000000,
+                    gems: 25000,
+                    wildCards: { Common: 5000, Rare: 2500, Epic: 1000, Legendary: 20, Champion: 10 }
+                }));
+
+                // Force layout update without reload to keep our injected state synchronous if possible,
+                // but reloading ensures the app boots with these values.
+                frame.contentWindow.location.reload();
+            } catch (e) {
+                console.error("Cross-origin or frame load error", e);
+            }
+        };
+
+        const resizeIframeToContent = (iframe, frameWrapper) => {
+            try {
+                const body = iframe.contentWindow.document.body;
+                const html = iframe.contentWindow.document.documentElement;
+                
+                // Calculate the max height of the content
+                const height = Math.max(
+                    body.scrollHeight, body.offsetHeight,
+                    html.clientHeight, html.scrollHeight, html.offsetHeight
+                );
+                
+                if (height > 844) {
+                    // Add some padding to the bottom so the dock isn't overlapping content tightly
+                    frameWrapper.style.height = `${height + 20}px`;
+                }
+            } catch (e) {
+                console.error("Could not resize iframe", e);
+            }
+        };
+
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const theme = urlParams.get('theme') || 'light';
+            const viewParam = urlParams.get('view');
+            const scaleParam = parseFloat(urlParams.get('scale')) || 1;
+            
+            const container = document.getElementById('portfolio-container');
+            container.classList.add(theme === 'dark' ? 'dark-theme-label' : 'light-theme-label');
+
+            if (scaleParam !== 1) {
+                container.style.transform = `scale(${scaleParam})`;
+                container.style.transformOrigin = 'top left';
+                // Adjust body padding so the scaled container fits
+                document.body.style.width = 'max-content';
+                document.body.style.height = 'max-content';
+            }
+
+            const viewsToRender = viewParam ? VIEWS.filter(v => v.id === viewParam) : VIEWS;
+
+            viewsToRender.forEach(view => {
+                const frameWrapper = document.createElement('div');
+                frameWrapper.className = 'device-frame';
+                frameWrapper.id = `wrapper-${view.id}`;
+                
+                const content = document.createElement('div');
+                content.className = 'device-content';
+                
+                const iframe = document.createElement('iframe');
+                iframe.id = `frame-${view.id}`;
+                iframe.src = `http://localhost:5173/Clash-Manager/#${view.path}`;
+                
+                content.appendChild(iframe);
+                
+                const label = document.createElement('div');
+                label.className = 'label';
+                label.innerText = view.label;
+                
+                frameWrapper.appendChild(content);
+                frameWrapper.appendChild(label);
+                
+                container.appendChild(frameWrapper);
+            });
+
+            // Set flags then wait for the app to render with data before resizing
+            setTimeout(() => {
+                viewsToRender.forEach(view => {
+                    const iframe = document.getElementById(`frame-${view.id}`);
+                    if (iframe) {
+                        setSynthetic(iframe, theme);
+                        
+                        // After reload, wait for the app to hydrate and fetch data before resizing
+                        iframe.onload = () => {
+                            setTimeout(() => {
+                                const wrapper = document.getElementById(`wrapper-${view.id}`);
+                                resizeIframeToContent(iframe, wrapper);
+                            }, 4000); // Give it plenty of time to fetch and render
+                        };
+                    }
+                });
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

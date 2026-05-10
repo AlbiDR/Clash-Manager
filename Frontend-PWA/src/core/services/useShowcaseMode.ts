@@ -24,7 +24,17 @@ import { ref, watch } from "vue";
 const SHOWCASE_KEY = "clash_manager_showcase_mode";
 
 // Global singleton state
-const isShowcaseMode = ref(localStorage.getItem(SHOWCASE_KEY) === "true");
+// Initialized from LocalStorage or URL param to maintain state across sessions or automation.
+const getParam = (name: string) => {
+  const search = new URLSearchParams(window.location.search);
+  if (search.has(name)) return search.get(name);
+  const hashSearch = new URLSearchParams(window.location.hash.split("?")[1] || "");
+  return hashSearch.get(name);
+};
+
+const isShowcaseMode = ref(
+  localStorage.getItem(SHOWCASE_KEY) === "true" || getParam("showcase") === "true"
+);
 
 export function useShowcaseMode() {
   const { isSyntheticMode, setSyntheticMode } = useSyntheticMode();

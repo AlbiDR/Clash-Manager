@@ -102,11 +102,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
           benchmark-metric="warWins"
           :benchmark-raw-value="props.recruit.d.war"
         />
-        <StatisticItem
-          label="Last Seen"
-          :value="formatTimeAgo(props.recruit.lastScan ? new Date(props.recruit.lastScan).toISOString() : undefined)"
-          :loading="props.appIsRefreshing"
-        />
+
         <StatisticItem
           label="Cards Won"
           :value="props.recruit.d.cards"
