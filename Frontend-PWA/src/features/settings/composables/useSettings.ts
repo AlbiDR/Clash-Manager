@@ -160,6 +160,9 @@ export function useSettings() {
           toast.remove(activeToastId);
           toast.success("Clash Manager is up to date");
         }
+      } else {
+        toast.remove(activeToastId);
+        toast.error("Service Worker not available");
       }
     } catch (swUpdateError) {
       console.error("Update check failed", swUpdateError);

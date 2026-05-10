@@ -106,16 +106,15 @@ describe("RecruitCard.vue", () => {
     expect(statsGrid.attributes("aria-busy")).toBe("false");
 
     const statItems = wrapper.findAllComponents({ name: "StatisticItem" });
-    expect(statItems).toHaveLength(5);
+    expect(statItems).toHaveLength(4);
     expect(statItems[0].props("label")).toBe("Donations");
     expect(statItems[0].props("value")).toBe(250);
     expect(statItems[1].props("label")).toBe("War Wins");
     expect(statItems[1].props("value")).toBe(12);
-    expect(statItems[2].props("label")).toBe("Last Seen");
-    expect(statItems[3].props("label")).toBe("Cards Won");
-    expect(statItems[3].props("value")).toBe(4500);
-    expect(statItems[4].props("label")).toBe("RPoS");
-    expect(statItems[4].props("value")).toBe("15,000");
+    expect(statItems[2].props("label")).toBe("Cards Won");
+    expect(statItems[2].props("value")).toBe(4500);
+    expect(statItems[3].props("label")).toBe("RPoS");
+    expect(statItems[3].props("value")).toBe("15,000");
 
     expect(wrapper.findComponent({ name: "CardActions" }).exists()).toBe(true);
   });
