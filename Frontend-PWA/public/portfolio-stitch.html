@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Manager Portfolio Stage</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 60px;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .dark-theme-label .label {
+            color: white;
+        }
+        
+        .light-theme-label .label {
+            color: #1e293b;
+        }
+
+        .portfolio-container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .device-frame {
+            width: 430px;
+            min-height: 844px;
+            background: #000;
+            border-radius: 48px;
+            padding: 12px;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .device-content {
+            width: 100%;
+            height: 100%;
+            border-radius: 36px;
+            overflow: hidden;
+            background: #fff;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .label {
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <style>
+        .capture-wrapper {
+            padding: 80px;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+    </style>
+    <div class="portfolio-container" id="portfolio-container">
+        <div class="capture-wrapper" id="wrapper-roster"><div class="device-frame"><div class="device-content"></div><div class="label">Roster View</div></div></div>
+        <div class="capture-wrapper" id="wrapper-headhunter"><div class="device-frame"><div class="device-content"></div><div class="label">Headhunter View</div></div></div>
+        <div class="capture-wrapper" id="wrapper-laboratory"><div class="device-frame"><div class="device-content"></div><div class="label">Laboratory View</div></div></div>
+        <div class="capture-wrapper" id="wrapper-settings"><div class="device-frame"><div class="device-content"></div><div class="label">Settings View</div></div></div>
+    </div>
+
+    <script>
+        const VIEWS = [
+            { id: 'roster', path: '/', label: 'Roster View' },
+            { id: 'headhunter', path: '/headhunter', label: 'Headhunter View' },
+            { id: 'laboratory', path: '/laboratory', label: 'Laboratory View' },
+            { id: 'settings', path: '/settings', label: 'Settings View' }
+        ];
+
+        // Ensure parent and iframes have consistent state (same origin)
+        const syncState = (theme) => {
+            localStorage.setItem('clash_manager_synthetic_mode', 'true');
+            localStorage.setItem('clash_manager_blueprint_mode', 'false');
+            localStorage.setItem('cm_theme_preference', theme);
+            localStorage.setItem('laboratory_tracked_tag', '#PP80QG99');
+            localStorage.setItem('clash_manager_player_tag', '#PP80QG99');
+            localStorage.setItem('laboratory_inventory', JSON.stringify({
+                gold: 5000000,
+                gems: 25000,
+                wildCards: { Common: 5000, Rare: 2500, Epic: 1000, Legendary: 20, Champion: 10 }
+            }));
+        };
+
+        const resizeIframeToContent = (iframe, wrapper) => {
+            try {
+                const body = iframe.contentWindow.document.body;
+                const html = iframe.contentWindow.document.documentElement;
+                const height = Math.max(
+                    body.scrollHeight, body.offsetHeight,
+                    html.clientHeight, html.scrollHeight, html.offsetHeight
+                );
+                const frame = wrapper.querySelector('.device-frame');
+                if (height > 844) {
+                    frame.style.height = `${height + 20}px`;
+                } else {
+                    frame.style.height = '844px';
+                }
+            } catch (e) {}
+        };
+
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const theme = urlParams.get('theme') || 'light';
+            const viewParam = urlParams.get('view');
+            const scaleParam = parseFloat(urlParams.get('scale')) || 1;
+            
+            // 1. Sync state before loading iframes
+            syncState(theme);
+
+            const container = document.getElementById('portfolio-container');
+            container.classList.add(theme === 'dark' ? 'dark-theme-label' : 'light-theme-label');
+
+            if (scaleParam !== 1) {
+                container.style.transform = `scale(${scaleParam})`;
+                container.style.transformOrigin = 'top left';
+                document.body.style.width = 'max-content';
+                document.body.style.height = 'max-content';
+            }
+
+            // Hide non-requested views
+            VIEWS.forEach(v => {
+                const wrapper = document.getElementById(`wrapper-${v.id}`);
+                if (viewParam && v.id !== viewParam) {
+                    wrapper.style.display = 'none';
+                } else {
+                    const content = wrapper.querySelector('.device-content');
+                    const iframe = document.createElement('iframe');
+                    iframe.id = `frame-${v.id}`;
+                    iframe.src = `${window.location.origin}/Clash-Manager/#${v.path}?showcase=true`;
+                    content.appendChild(iframe);
+
+                    // Handle post-load injection and adjustments
+                    iframe.onload = () => {
+                        setTimeout(() => {
+                            try {
+                                const style = iframe.contentWindow.document.createElement('style');
+                                style.innerHTML = `
+                                    ::-webkit-scrollbar { display: none !important; }
+                                    * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+                                    .trajectory-list > *:nth-child(n+11) { display: none !important; }
+                                    .dock-container { display: none !important; }
+                                `;
+                                iframe.contentWindow.document.head.appendChild(style);
+
+                                // 2. Expand first card for roster/headhunter (requested by USER)
+                                if (v.id === 'roster' || v.id === 'headhunter') {
+                                    const firstCard = iframe.contentWindow.document.querySelector('.base-card');
+                                    if (firstCard) firstCard.click();
+                                }
+
+                                // 3. Expand settings if applicable
+                                const closedHeaders = iframe.contentWindow.document.querySelectorAll('.settings-card.collapsed .card-header');
+                                closedHeaders.forEach(el => el.click());
+                                
+                                // Final resize
+                                setTimeout(() => {
+                                    resizeIframeToContent(iframe, wrapper);
+                                }, 500);
+                            } catch(e) {}
+                        }, 2000); 
+                    };
+                }
+            });
+        };
+    </script>
+</body>
+</html>

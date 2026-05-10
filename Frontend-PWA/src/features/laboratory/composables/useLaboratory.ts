@@ -241,6 +241,11 @@ export function useLaboratory() {
         // Target B [4]: The 'any' plague eliminated.
         console.warn("[Laboratory] Cache hydration failed:", err instanceof Error ? err.message : String(err));
       }
+    } else {
+      const initialTag = trackedPlayerTag.value || clashData.value?.playerTag;
+      if (initialTag) {
+        fetchTrackedPlayer();
+      }
     }
   }
 

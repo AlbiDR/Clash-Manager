@@ -19,7 +19,7 @@ export async function runClanSync(
         { key: 'profile', path: CLAN_PATH, table: 'raw_clan_profile' },
         { key: 'members', path: `${CLAN_PATH}/members`, table: 'raw_clan_members' },
         { key: 'race', path: `${CLAN_PATH}/currentriverrace`, table: 'raw_river_race' },
-        { key: 'warlog', path: `${CLAN_PATH}/riverracelog`, table: 'raw_war_log' }
+        { key: 'warlog', path: `${CLAN_PATH}/riverracelog?limit=12`, table: 'raw_war_log' }
     ] as const;
 
     for (const stage of clanTasks) {
