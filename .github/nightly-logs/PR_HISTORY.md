@@ -1,6 +1,39 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-10] PR #573: Centralize Navigation Metadata and Stabilize Substrate
+**Commit**: `535168b9f9d31725eea7d195514e41ace3141ce5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/573)
+
+### Description
+Refactored the application to centralize navigation metadata and stabilize the index.html substrate.
+
+### Reasoning:
+**[Bottleneck Identified]:** The `FloatingDock.vue` component contained a hardcoded `navItems` array, violating the DRY principle and creating tight coupling between the UI and the routing structure. Additionally, the `AppShell.ts` skeleton generator used `Math.random()` for element widths, causing non-deterministic changes to the `index.html` substrate during every build/synthesis.
+
+**[Refactoring Hypothesis]:** Moving the navigation metadata to a Layer 1 utility (`@core/utils/navigation.ts`) provides a Single Source of Truth that can be utilized by both the UI and potential future logic (like breadcrumbs or guards). Standardizing the skeleton widths in `AppShell.ts` ensures that the `index.html` file remains stable across environments.
+
+**[Rationale]:** This refactor adheres to the **Structural Unitary Architecture** and the **Lean Pruning** principles defined in the ADR. It moves domain-blind metadata to the appropriate infrastructure layer and enforces determinism in the Layer 0 substrate.
+
+### Changes:
+- **Frontend-PWA/src/core/utils/navigation.ts:** Created new utility for authoritative navigation metadata.
+- **Frontend-PWA/src/core/index.ts:** Exported `NAV_ITEMS` and `NavItem` via the core barrel.
+- **Frontend-PWA/src/shared/ui/FloatingDock.vue:** Refactored to consume centralized metadata.
+- **Frontend-PWA/src/core/theme/AppShell.ts:** Replaced `Math.random()` with a static width to stabilize the shell.
+- **Frontend-PWA/index.html:** Synchronized the substrate with the new deterministic template.
+
+### Verification:
+- **[Automated]:** Ran `pnpm test` (900 tests passed, 1 skipped).
+- **[Automated/Audit]:** Verified that `index.html` no longer produces random diffs on subsequent synthesis runs.
+
+### Log Updates:
+- Updated `.github/nightly-logs/optimization-coverage.log`
+
+---
+*PR created automatically by Jules for task [12721394671746225964](https://jules.google.com/task/12721394671746225964) started by @AlbiDR*
+
+---
+
 ## [2026-05-10] PR #572: test(verify): extend useAppSettings coverage for sync and robustness
 **Commit**: `162123b7cab3d07ce1e35f36c54f336742541f42`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/572)
