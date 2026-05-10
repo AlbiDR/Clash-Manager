@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
-import { useHaptics, useUiCoordinator } from "@core";
+import { useHaptics, useUiCoordinator, NAV_ITEMS } from "@core";
 
 const route = useRoute();
 const router = useRouter();
@@ -14,40 +14,6 @@ const isDesktop = ref(window.innerWidth > 1024);
 const onResize = () => { isDesktop.value = window.innerWidth > 1024; };
 onMounted(() => window.addEventListener("resize", onResize));
 onUnmounted(() => window.removeEventListener("resize", onResize));
-
-interface NavItem {
-  path: string;
-  name: string;
-  label: string;
-  icon: string;
-}
-
-const navItems: NavItem[] = [
-  {
-    path: "/roster",
-    name: "roster",
-    label: "Roster",
-    icon: "roster",
-  },
-  {
-    path: "/headhunter",
-    name: "headhunter",
-    label: "Headhunter",
-    icon: "headhunter",
-  },
-  {
-    path: "/laboratory",
-    name: "laboratory",
-    label: "Laboratory",
-    icon: "flask",
-  },
-  {
-    path: "/settings",
-    name: "settings",
-    label: "Settings",
-    icon: "settings",
-  },
-];
 
 function goTo(targetPath: string) {
   if (route.path === targetPath) return;
@@ -84,7 +50,7 @@ function handleFabDismiss() {
     <!-- Navigation Dock Mode -->
     <template v-if="dockVisible">
       <button
-        v-for="item in navItems"
+        v-for="item in NAV_ITEMS"
         :key="item.name"
         class="dock-item"
         :class="{ active: route.path === item.path }"
