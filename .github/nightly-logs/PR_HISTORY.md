@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-10] PR #575: docs(tsdoc): enhance discovery stage documentation
+**Commit**: `a899d0550e2ada72659ebea025c39df47b1ee559`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/575)
+
+### Description
+This PR enhances the inline documentation for the `runDiscovery` stage of the Royale data ingestion pipeline. It provides architectural context, documents side effects, and explains the rationale behind the discovery and batching strategies. This change is part of the autonomous Nightly cycle to maintain interface truth and contextual density.
+
+---
+*PR created automatically by Jules for task [8634389688253019808](https://jules.google.com/task/8634389688253019808) started by @AlbiDR*
+
+---
+
 ## [2026-05-10] PR #574: docs(readme): reconcile backend technical blueprints
 **Commit**: `90d3c5a35dfcd43a5e1c0f35827616eb270f3be1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/574)
