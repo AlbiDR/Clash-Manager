@@ -32,12 +32,12 @@ const { isShowcaseMode } = useShowcaseMode();
   >
     <div class="settings-content">
       <AppearanceSettings :initially-expanded="isShowcaseMode" />
-      <NotificationSettings />
+      <NotificationSettings :initially-expanded="isShowcaseMode" />
       <FeatureSettings :initially-expanded="isShowcaseMode" />
-      <ModeSettings />
+      <ModeSettings :initially-expanded="isShowcaseMode" />
       <NetworkSettings :initially-expanded="isShowcaseMode" />
-      <BackendRefresher v-if="modules.backendRefresher" />
-      <RecoverySettings />
+      <BackendRefresher v-if="modules.backendRefresher" :initially-expanded="isShowcaseMode" />
+      <RecoverySettings :initially-expanded="isShowcaseMode" />
     </div>
   </ConsoleLayout>
 </template>

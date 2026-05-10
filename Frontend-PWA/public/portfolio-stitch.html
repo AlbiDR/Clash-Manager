@@ -111,6 +111,28 @@
                 gems: 25000,
                 wildCards: { Common: 5000, Rare: 2500, Epic: 1000, Legendary: 20, Champion: 10 }
             }));
+            localStorage.setItem('laboratory_observation', JSON.stringify({
+                profile: { name: "Showcase Player", tag: "#PP80QG99", kingLevel: 54, xpIntoLevel: 12000 },
+                inventory: { gold: 5000000, gems: 25000, wildCards: { Common: 5000, Rare: 2500, Epic: 1000, Legendary: 20, Champion: 10 } },
+                cards: [
+                    { name: "Knight", rarity: "Common", level: 14, count: 5000, isTowerTroop: false },
+                    { name: "Archers", rarity: "Common", level: 14, count: 5000, isTowerTroop: false },
+                    { name: "Goblins", rarity: "Common", level: 14, count: 5000, isTowerTroop: false },
+                    { name: "Giant", rarity: "Rare", level: 13, count: 1000, isTowerTroop: false },
+                    { name: "Musketeer", rarity: "Rare", level: 13, count: 1000, isTowerTroop: false },
+                    { name: "Mini P.E.K.K.A", rarity: "Rare", level: 13, count: 1000, isTowerTroop: false },
+                    { name: "Baby Dragon", rarity: "Epic", level: 12, count: 200, isTowerTroop: false },
+                    { name: "Prince", rarity: "Epic", level: 12, count: 200, isTowerTroop: false },
+                    { name: "Skeleton Army", rarity: "Epic", level: 12, count: 200, isTowerTroop: false },
+                    { name: "Miner", rarity: "Legendary", level: 11, count: 10, isTowerTroop: false },
+                    { name: "Princess", rarity: "Legendary", level: 11, count: 10, isTowerTroop: false },
+                    { name: "Log", rarity: "Legendary", level: 11, count: 10, isTowerTroop: false },
+                    { name: "Archer Queen", rarity: "Champion", level: 11, count: 2, isTowerTroop: false },
+                    { name: "Mighty Miner", rarity: "Champion", level: 11, count: 2, isTowerTroop: false },
+                    { name: "Golden Knight", rarity: "Champion", level: 11, count: 2, isTowerTroop: false },
+                    { name: "Tower Princess", rarity: "Common", level: 14, count: 5000, isTowerTroop: true }
+                ]
+            }));
         };
 
         const resizeIframeToContent = (iframe, wrapper) => {
