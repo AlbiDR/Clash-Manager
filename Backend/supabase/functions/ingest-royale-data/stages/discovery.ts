@@ -8,8 +8,34 @@ import * as v from "npm:valibot";
 import { RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
 
 /**
- * Stage 1: Native Discovery
- * Harvests new recruits from open tournaments.
+ * STAGE 1: NATIVE DISCOVERY (Penta-Stage Protocol)
+ *
+ * @remarks
+ * Orchestrates the initial discovery of potential recruits by scanning open
+ * Clash Royale tournaments using a keyword-based rotation. This stage satisfies
+ * the "Native Discovery" requirement of the ingestion pipeline.
+ *
+ * [ARCHITECTURE]
+ * - Part of the Layer 4 App Orchestrator.
+ * - Enforces Valibot validation boundaries at the external API ingress.
+ * - Operates under a time-sliced batch processing model to respect rate limits.
+ *
+ * [DECISION LOG]
+ * - Keyword Rotation: Uses a predefined set of high-frequency tournament keywords
+ *   ("cla", "roy", etc.) to maximize discovery yield across different regions/timezones.
+ * - Batch Processing: Implements a 5-way parallel keyword search and a 10-way
+ *   parallel member hydration to balance discovery speed against Royale API rate limits.
+ *
+ * @param results - The shared ingestion result object to track harvested recruits.
+ * @param logAudit - Telemetry callback for recording stage progress and integrity checks.
+ *
+ * @sideeffects
+ * - READS from the Royale API via `fetchWithRotation`.
+ * - WRITES to `drivers.players` (Universal Player Registry) to satisfy FK constraints.
+ * - WRITES to `drivers.recruits` (Headhunter Queue) for newly discovered candidates.
+ * - WRITES to `substrate.discovery_cache` to prevent redundant scanning of the same tournaments.
+ *
+ * @throws {Error} Bubbles up critical ingestion failures to the orchestrator.
  */
 export async function runDiscovery(
     results: IngestionResult, 
