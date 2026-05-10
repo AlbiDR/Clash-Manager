@@ -201,20 +201,52 @@
 
                                 // 2. Expand first card for roster/headhunter (requested by USER)
                                 if (v.id === 'roster' || v.id === 'headhunter') {
-                                    const firstCard = iframe.contentWindow.document.querySelector('.base-card');
-                                    if (firstCard) firstCard.click();
+                                    const expandFirst = () => {
+                                        const cards = iframe.contentWindow.document.querySelectorAll('.base-card');
+                                        if (cards.length > 0) {
+                                            // Only click if not already expanded (checking for 'expanded' class on BaseCard)
+                                            if (!cards[0].classList.contains('expanded')) {
+                                                cards[0].click();
+                                            }
+                                            return true;
+                                        }
+                                        return false;
+                                    };
+                                    
+                                    if (!expandFirst()) {
+                                        const interval = setInterval(() => {
+                                            if (expandFirst()) clearInterval(interval);
+                                        }, 500);
+                                        setTimeout(() => clearInterval(interval), 10000); // safety timeout
+                                    }
                                 }
 
                                 // 3. Expand settings if applicable
-                                const closedHeaders = iframe.contentWindow.document.querySelectorAll('.settings-card.collapsed .card-header');
-                                closedHeaders.forEach(el => el.click());
+                                const expandSettings = () => {
+                                    const closedHeaders = iframe.contentWindow.document.querySelectorAll('.settings-card.collapsed .card-header');
+                                    if (closedHeaders.length > 0) {
+                                        closedHeaders.forEach(el => el.click());
+                                        return true;
+                                    }
+                                    return false;
+                                };
                                 
-                                // Final resize
-                                setTimeout(() => {
+                                if (v.id === 'settings') {
+                                    if (!expandSettings()) {
+                                        const interval = setInterval(() => {
+                                            if (expandSettings()) clearInterval(interval);
+                                        }, 500);
+                                        setTimeout(() => clearInterval(interval), 10000);
+                                    }
+                                }
+                                
+                                // Final resize tracking
+                                const resizeInterval = setInterval(() => {
                                     resizeIframeToContent(iframe, wrapper);
-                                }, 500);
+                                }, 1000);
+                                setTimeout(() => clearInterval(resizeInterval), 15000);
                             } catch(e) {}
-                        }, 2000); 
+                        }, 1000); 
                     };
                 }
             });
