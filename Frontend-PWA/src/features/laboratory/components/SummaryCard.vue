@@ -106,8 +106,8 @@ const baseUrl = import.meta.env.BASE_URL;
 <style scoped>
 .summary-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -129,6 +129,7 @@ const baseUrl = import.meta.env.BASE_URL;
 .header-badges {
   display: flex;
   gap: 8px;
+  width: 100%;
 }
 
 .projection-badge {
@@ -140,6 +141,7 @@ const baseUrl = import.meta.env.BASE_URL;
   align-items: center;
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
   background: var(--sys-color-surface-container);
+  flex: 1;
 }
 
 .projection-badge.status {
