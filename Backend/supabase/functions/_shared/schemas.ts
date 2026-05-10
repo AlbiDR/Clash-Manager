@@ -73,6 +73,7 @@ export const RoyaleTournamentSchema = v.object({
     membersList: v.array(v.object({
         tag: v.string(),
         name: v.string(),
+        trophies: v.optional(v.number(), 0),
         clan: v.optional(v.nullable(v.object({
             tag: v.string()
         })))
