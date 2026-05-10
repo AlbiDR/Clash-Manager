@@ -27,6 +27,7 @@ export * from "./utils/PriorityQueue";
 export * from "./utils/economy";
 export * from "./utils/formatters";
 export * from "./utils/bezier";
+export * from "./utils/navigation";
 export * from "./utils/sortOptions";
 export * from "./utils/sortStrategies";
 export * from "./utils/mockData";

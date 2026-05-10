@@ -152,7 +152,7 @@ export function getAppShellHtml(): string {
                 <div class="sh-badge"></div>
               </div>
               <div class="sh-c-info">
-                <div class="sh-name" style="width: ${Math.floor(Math.random() * 70 + 90)}px"></div>
+                <div class="sh-name" style="width: 120px"></div>
                 <div class="sh-sub"></div>
               </div>
             </div>
