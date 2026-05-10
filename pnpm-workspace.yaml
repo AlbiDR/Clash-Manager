@@ -36,7 +36,7 @@ catalogs:
     vue-router: "^4.6.4"
     vue-tsc: "^3.2.8"
     workbox-precaching: "^7.4.0"
-    workbox-window: "^7.4.0"
+    workbox-window: "^7.4.1"
 
 onlyBuiltDependencies:
   - esbuild
