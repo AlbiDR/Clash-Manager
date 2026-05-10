@@ -1,4 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { nextTick } from "vue";
+import { idb } from "../StorageService";
+
+// Mock the storage service to verify side-effects
+vi.mock("../StorageService", () => ({
+  idb: {
+    set: vi.fn(() => Promise.resolve()),
+    get: vi.fn(),
+  },
+}));
 
 /**
  * [TEST] useAppSettings
@@ -81,6 +91,76 @@ describe("useAppSettings", () => {
       expect(modules.blitzMode).toBe(true);
       expect(modules.notificationThreshold).toBe(75); // Default applied by Valibot
       expect(modules.sortExplanation).toBe(true); // Default applied by Valibot
+    });
+  });
+
+  describe("Side Effects & Synchronization", () => {
+    it("performs initial synchronization to IndexedDB on init", async () => {
+      const { useAppSettings } = await import("../useAppSettings");
+      const { init } = useAppSettings();
+      init();
+
+      expect(idb.set).toHaveBeenCalledWith("cm_notifications_enabled", expect.any(Boolean));
+      expect(idb.set).toHaveBeenCalledWith("cm_notification_threshold", expect.any(Number));
+    });
+
+    it("synchronizes to localStorage and idb when modules change (watch effect)", async () => {
+      const { useAppSettings } = await import("../useAppSettings");
+      const { modules } = useAppSettings();
+
+      // Trigger a change
+      modules.experimentalNotifications = true;
+      modules.notificationThreshold = 50;
+
+      await nextTick();
+
+      // Verify localStorage
+      const stored = JSON.parse(localStorage.getItem("cm_modules_v2") || "{}");
+      expect(stored.experimentalNotifications).toBe(true);
+      expect(stored.notificationThreshold).toBe(50);
+
+      // Verify idb sync
+      expect(idb.set).toHaveBeenCalledWith("cm_notifications_enabled", true);
+      expect(idb.set).toHaveBeenCalledWith("cm_notification_threshold", 50);
+    });
+
+    it("updates state when storage event is triggered (cross-tab sync)", async () => {
+      const { useAppSettings } = await import("../useAppSettings");
+      const { modules, init } = useAppSettings();
+      init();
+
+      const newData = {
+        blitzMode: true,
+        sortExplanation: false,
+      };
+
+      // Simulate storage event from another tab
+      const event = new StorageEvent("storage", {
+        key: "cm_modules_v2",
+        newValue: JSON.stringify(newData),
+      });
+      window.dispatchEvent(event);
+
+      expect(modules.blitzMode).toBe(true);
+      expect(modules.sortExplanation).toBe(false);
+    });
+  });
+
+  describe("Robustness", () => {
+    it("handles JSON parse errors in localStorage gracefully", async () => {
+      localStorage.setItem("cm_modules_v2", "invalid-json{");
+
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { useAppSettings } = await import("../useAppSettings");
+      const { modules, init } = useAppSettings();
+
+      // Should not throw
+      expect(() => init()).not.toThrow();
+
+      // Should remain with default state (or at least valid state)
+      expect(modules.sortExplanation).toBe(true);
+
+      consoleSpy.mockRestore();
     });
   });
 });
