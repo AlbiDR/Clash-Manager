@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-10] PR #574: docs(readme): reconcile backend technical blueprints
+**Commit**: `90d3c5a35dfcd43a5e1c0f35827616eb270f3be1`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/574)
+
+### Description
+This PR reconciles and deepens the `Backend/README.md` to align with the CleanStack architecture and Supabase Binary Stack implementation truth. 
+
+### Reasoning:
+- **[Priority Queue Item]:** [a] README Synchronization (Drift). The existing README was shallow and did not reflect the recent migration to Supabase Edge Functions and the Clinical Protocol.
+- **[Safety Checks]:** Confirmed ADR coherence and vocabulary compliance. Maped Supabase components to L0-L5 layers as defined in the ADR.
+- **[Rationale]:** Provides deep architectural context for future developers and agents, explaining the "Why" behind the Penta-Stage ingestion and 4-Stage discovery engines.
+
+### Changes:
+- **Backend/README.md**: Completely refactored to include CleanStack layer mapping, detailed pipeline stages (S1-S6), and technical substrate details (Clinical Protocol, Native Muscle).
+- **.github/nightly-logs/documentation-readme-coverage.log**: Recorded the update.
+
+### Verification:
+- **[Automated]:** Verified ADR alignment and stylistic purity (no emojis).
+- **[Automated/Audit]:** Verified every statement corresponds to existing code artifacts (pipeline.ts, scanner.ts, protocol.ts, muscle.ts, and migrations).
+- **[Testing]:** Ran the full PWA Vitest suite (900 passing).
+
+**Target Branch:** `Nightly`
+
+---
+*PR created automatically by Jules for task [9141028646834611972](https://jules.google.com/task/9141028646834611972) started by @AlbiDR*
+
+---
+
 ## [2026-05-10] PR #573: Centralize Navigation Metadata and Stabilize Substrate
 **Commit**: `535168b9f9d31725eea7d195514e41ace3141ce5`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/573)
