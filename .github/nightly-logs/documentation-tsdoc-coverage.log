@@ -51,3 +51,4 @@ Frontend-PWA/src/features/headhunter/composables/useRecruitBlacklist.ts
 Frontend-PWA/src/core/utils/bezier.ts
 Frontend-PWA/src/core/utils/economy.ts
 Backend/supabase/functions/ingest-royale-data/stages/discovery.ts
+Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
