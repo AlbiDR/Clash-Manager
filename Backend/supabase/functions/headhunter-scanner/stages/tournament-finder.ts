@@ -1,6 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+/**
+ * HEADHUNTER - Tournament Discovery Stage (Stage 2)
+ * ----------------------------------------------------------------------------
+ * Rationale: Autonomous discovery engine that scans the global tournament
+ * registry for un-clanned players.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * This stage coordinates with the 'substrate' schema via RPC to fetch
+ * high-yield discovery anchors (keywords) and identifies potential candidates
+ * for the Profiler stage.
+ *
+ * Architectural Context:
+ * - Layer: Layer 4 (@app)
+ * - Stage: 2 of 4 (Discovery Engine)
+ * - Import Boundaries: Restricted to Layer 1 (@core/shared) and native drivers.
+ */
+
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
@@ -8,8 +26,19 @@ import * as v from "npm:valibot";
 import { RoyaleTournamentListSchema, RoyaleTournamentSchema, DiscoveryAnchorSchema, DiscoveryCacheItemSchema } from "../../_shared/schemas.ts";
 
 /**
- * Stage: Tournament Discovery
- * Scans active tournaments for un-clanned players meeting the trophy threshold.
+ * Executes the Tournament Discovery protocol.
+ *
+ * @param candidates - Reactive map to populate with discovered player tags and sources.
+ * @param exclusionSet - Set of player tags to ignore (existing members/recruits).
+ * @param requiredTrophies - Threshold for candidate consideration (delegated to Profiler).
+ * @param stats - Operational telemetry object for tracking yield and errors.
+ * @param logAudit - Context-aware audit logger for persistent execution tracking.
+ *
+ * @sideeffects
+ * - Queries 'substrate.get_active_discovery_anchors' RPC.
+ * - Upserts to 'substrate.discovery_cache'.
+ * - Reports keyword yield via 'substrate.report_anchor_yield' RPC.
+ * - Mutates the 'candidates' map and 'stats' object.
  */
 export async function runTournamentDiscovery(
     candidates: Map<string, string>,
@@ -37,6 +66,9 @@ export async function runTournamentDiscovery(
             details: parsedAnchors.success ? 'Autonomous anchors validated' : 'Malformed anchor data'
         });
 
+        // [DECISION LOG] FALLBACK STRATEGY
+        // Rationale: If the autonomous anchor system fails or is empty, we use a static set of
+        // high-probability tournament keywords to ensure discovery continuity.
         const FALLBACK_KEYWORDS = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int", "open", "free", "all"];
         const keywords = parsedAnchors.success ? parsedAnchors.output.map(anchor => anchor.keyword) : FALLBACK_KEYWORDS;
         const isUsingFallback = !parsedAnchors.success || parsedAnchors.output.length === 0;
@@ -44,6 +76,9 @@ export async function runTournamentDiscovery(
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
+        // [DECISION LOG] DISCOVERY CACHE WINDOW
+        // Rationale: We ignore tournaments scanned in the last 4 hours to minimize redundant
+        // API calls and maximize discovery breadth across keywords.
         const { data: rawCached } = await supabase.schema('substrate').from('discovery_cache')
             .select('player_tag')
             .gte('scanned_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
@@ -115,9 +150,10 @@ export async function runTournamentDiscovery(
                                 let foundInTournament = 0;
                                 let skippedClanned = 0;
                                 parsedDetails.output.membersList.forEach((tournamentMember) => {
-                                    // NOTE: tournamentMember.trophies here is the player's tournament score,
-                                    // NOT their ladder trophy count. Trophy gating is delegated
-                                    // to the profiler stage which fetches the full player profile.
+                                    // [DECISION LOG] TROPHY GATING DELEGATION
+                                    // Rationale: tournamentMember.trophies here is the player's tournament score,
+                                    // NOT their ladder trophy count. Genuine trophy gating is delegated
+                                    // to the Profiler stage which fetches the authoritative player profile.
                                     if (!tournamentMember.clan?.tag && !exclusionSet.has(tournamentMember.tag)) {
                                         candidates.set(tournamentMember.tag, "TOURNAMENT");
                                         newCandidatesCount++;
