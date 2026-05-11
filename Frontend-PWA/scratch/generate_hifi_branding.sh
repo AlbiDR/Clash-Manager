@@ -1,5 +1,8 @@
 #!/bin/bash
-export PATH=$PATH:/opt/homebrew/bin:/Users/adr/Library/Python/3.9/bin
+# Support both local Mac and CI environments
+[ -d "/opt/homebrew/bin" ] && export PATH=$PATH:/opt/homebrew/bin
+[ -d "/Users/adr/Library/Python/3.9/bin" ] && export PATH=$PATH:/Users/adr/Library/Python/3.9/bin
+
 
 VIEWS=("roster" "headhunter" "laboratory" "settings")
 THEMES=("light" "dark")
