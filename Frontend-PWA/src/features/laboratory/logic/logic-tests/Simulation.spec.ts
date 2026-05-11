@@ -4,9 +4,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateProgressionPath,
-  calculateKingLevel,
   mapStateToResult
 } from '../Simulation';
+import { calculateKingLevel } from '../Registry';
 import { asGold, asGems, asXP } from '@core/utils/economy';
 import type { SimulationState, OptimizationSettings, Card, PlayerProfile } from '../Types';
 
@@ -175,7 +175,7 @@ describe('Laboratory Simulation Engine', () => {
       expect(calculateKingLevel(20)).toBe(2);
       expect(calculateKingLevel(69)).toBe(2);
       expect(calculateKingLevel(70)).toBe(3);
-      expect(calculateKingLevel(2120)).toBe(15);
+      expect(calculateKingLevel(11000000)).toBe(80);
       expect(calculateKingLevel(27438770)).toBe(90);
       expect(calculateKingLevel(99999999)).toBe(90);
     });
@@ -192,7 +192,7 @@ describe('Laboratory Simulation Engine', () => {
 
       const finalState: SimulationState = {
         ...initialState,
-        totalXp: asXP(2120), // Level 15
+        totalXp: asXP(50000), // Level 15
         inventory: {
           ...initialState.inventory,
           gold: asGold(910000)
@@ -214,15 +214,18 @@ describe('Laboratory Simulation Engine', () => {
         }]
       };
 
+      // Gain 50k XP starting from Level 10 (770 cumulative)
+      // 770 + 50,000 = 50,770
+      // Table says Level 31 starts at 45,770, Level 32 at 53,770
       const result = mapStateToResult(finalState, mockProfile, 0);
 
-      expect(result.projectedKingLevel).toBe(15);
-      expect(result.totalXpGained).toBe(2120);
+      expect(result.projectedKingLevel).toBe(31);
+      expect(result.totalXpGained).toBe(50000);
       expect(result.finalGold).toBe(910000);
       expect(result.totalGoldSpent).toBe(90000);
       expect(result.actions).toHaveLength(1);
-      expect(result.finalProfile.kingLevel).toBe(15);
-      expect(result.finalProfile.xpIntoLevel).toBe(0); // 2120 - 2120
+      expect(result.finalProfile.kingLevel).toBe(31);
+      expect(result.finalProfile.xpIntoLevel).toBe(4230); // 50000 - 45770 (Level 31 start)
     });
   });
 });

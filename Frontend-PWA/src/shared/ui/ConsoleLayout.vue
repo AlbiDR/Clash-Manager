@@ -1,5 +1,3 @@
-<!-- SPDX-License-Identifier: GPL-3.0-only -->
-<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import {
@@ -26,7 +24,6 @@ const props = defineProps<{
     nominal?: boolean;
   };
   showSearch?: boolean;
-  sheetUrl?: string;
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string }[];
   loading?: boolean;
@@ -53,10 +50,10 @@ const props = defineProps<{
   skeletonComponent?: any;
   skeletonCount?: number;
   totalCount?: number;
-  /** Custom badge text for the footer (overrides default BLUEPRINT badge). */
-  hubInfo?: {
-    source: "WORKER" | "GAS";
-    hubAge: string | null;
+  /** Consolidated info about the remote data source. */
+  remoteInfo?: {
+    source: "SUPABASE";
+    dataAge: string | null;
   };
   footerBadge?: string;
 }>();
@@ -155,17 +152,19 @@ onUnmounted(() => {
         :title="props.title"
         :status="props.status"
         :show-search="props.showSearch"
-        :sheet-url="props.sheetUrl"
         :stats="props.stats"
         :sort-options="props.sortOptions"
         :current-sort="props.currentSort"
         :loading="displayLoading"
-        :hub-info="props.hubInfo"
+        :remote-info="props.remoteInfo"
         reserve-extra-space
         @update:search="(val: string) => emit('update:search', val)"
         @update:sort="(val: string) => emit('update:sort', val)"
         @refresh="emit('refresh')"
       >
+        <template #filters>
+          <slot name="header-filters"></slot>
+        </template>
         <template #extra>
           <SelectionBar
             v-if="props.selectedCount !== undefined"
@@ -182,6 +181,9 @@ onUnmounted(() => {
           <slot name="extra-header" v-else></slot>
         </template>
       </ConsoleHeader>
+      
+      <!-- Persistent Top Content -->
+      <slot name="top"></slot>
 
       <!-- Error State -->
       <ErrorState
@@ -232,7 +234,7 @@ onUnmounted(() => {
   padding-bottom: calc(112px + env(safe-area-inset-bottom));
 }
 .view-content {
-  transition: transform 0.2s var(--sys-motion-spring);
+  transition: transform 0.2s var(--sys-motion-standard);
 }
 .view-content.is-pulling {
   transform: translateY(calc(var(--ptr-offset, 0px) / 2));

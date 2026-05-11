@@ -20,24 +20,22 @@ export async function runTournamentDiscovery(
     console.log(`[TOURNAMENT_DISCOVERY] Triggered. Candidates map size: ${candidates.size}, Exclusion set size: ${exclusionSet.size}, Required trophies: ${requiredTrophies}`);
     try {
         // 1. Fetch Autonomous Anchors
-        const { data: anchors, error: aErr } = await supabase.schema('substrate' as any).rpc('get_active_discovery_anchors', { p_limit: 15 });
+        const { data: anchors, error: aErr } = await supabase.rpc('get_active_discovery_anchors', { p_limit: 36 });
 
         if (aErr) {
             logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${aErr.message}` });
             console.error(`[TOURNAMENT_DISCOVERY] Anchor fetch error: ${aErr.message}. Falling back to hardcoded keywords.`);
         }
 
-        const FALLBACK_KEYWORDS = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int", "open", "free", "all"];
+        const FALLBACK_KEYWORDS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
         const keywords = anchors?.map((a: any) => a.keyword) || FALLBACK_KEYWORDS;
         const isUsingFallback = !anchors || anchors.length === 0;
 
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
-        const { data: cached } = await supabase.schema('substrate').from('discovery_cache')
-            .select('player_tag')
-            .gte('scanned_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
-        const blacklist = new Set(cached?.map(c => c.player_tag) || []);
+        const { data: cached } = await supabase.rpc('get_discovery_cache', { p_hours: 1 });
+        const blacklist = new Set(cached?.map((c: any) => c.player_tag) || []);
         console.log(`[TOURNAMENT_DISCOVERY] Loaded ${blacklist.size} cached tournaments to blacklist`);
         let count = 0;
 
@@ -95,15 +93,21 @@ export async function runTournamentDiscovery(
                                         count++;
                                         keywordYield++;
                                         foundInTournament++;
-                                    } else if (m.clan?.tag) {
+                                    } else {
                                         skippedClanned++;
+                                        // Log detailed skip reason periodically or in summary to avoid log bloat
                                     }
                                 });
-                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag}: ${foundInTournament} candidates added, ${skippedClanned} clanned players skipped`);
+                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag}: ${foundInTournament} candidates added, ${skippedClanned} players skipped (clanned or excluded)`);
+                                logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { 
+                                    tournament: t.tag, 
+                                    found: foundInTournament, 
+                                    skipped: skippedClanned 
+                                });
                             } else {
                                 console.log(`[TOURNAMENT_DISCOVERY] Tournament ${t.tag} had no membersList property`);
                             }
-                            await supabase.schema('substrate').from('discovery_cache').upsert({ player_tag: t.tag, type: 'TOURNAMENT' });
+                            await supabase.rpc('upsert_discovery_cache', { p_tag: t.tag, p_type: 'TOURNAMENT' });
                         } else {
                             console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${t.tag} failed with HTTP ${deRes.status}`);
                         }
@@ -114,7 +118,7 @@ export async function runTournamentDiscovery(
                 await processBatch(tTasks, 10);
 
                 // 2. Report yield for autonomy
-                await supabase.schema('substrate' as any).rpc('report_anchor_yield', { 
+                await supabase.rpc('report_anchor_yield', { 
                     p_keyword: keyword, 
                     p_yield: keywordYield 
                 });

@@ -14,19 +14,24 @@ import {
   ParameterCard,
   SummaryCard,
   TrajectoryList,
-  LaboratorySkeleton
+  LaboratorySkeleton,
+  TargetPicker
 } from "../components";
 
 const {
   observation,
   operation,
   isSimulating,
+  isFetching,
   settings,
   layoutProps,
   layoutEvents,
   setSettings,
   handleVaultUpdate,
   getTrajectoryMemoKeys,
+  refresh,
+  setTrackedPlayerTag,
+  trackedPlayerTag
 } = useLaboratory();
 
 const clashDataStore = useClashDataStore();
@@ -42,6 +47,15 @@ const { data: globalData } = storeToRefs(clashDataStore);
     :skeleton-count="1"
     v-on="layoutEvents"
   >
+    <template #header-filters>
+      <TargetPicker
+        :model-value="trackedPlayerTag"
+        :player-name="observation?.profile.name"
+        :is-fetching="isFetching"
+        @lock-in="(tag: string | null) => { setTrackedPlayerTag(tag); refresh(); }"
+      />
+    </template>
+
     <template #empty-action>
       <router-link v-if="!globalData?.playerTag" to="/settings" class="btn-primary">
         <Icon name="settings" size="18" />
@@ -62,6 +76,7 @@ const { data: globalData } = storeToRefs(clashDataStore);
         <ParameterCard 
           :settings="settings"
           :current-level="observation.profile.kingLevel"
+          :operation="operation"
           @update="setSettings"
         />
       </div>
@@ -71,6 +86,7 @@ const { data: globalData } = storeToRefs(clashDataStore);
         v-if="operation"
         :result="operation"
         :profile="observation.profile"
+        :settings="settings"
       />
 
       <!-- 3. Trajectory (Upgrade List) -->
@@ -88,6 +104,11 @@ const { data: globalData } = storeToRefs(clashDataStore);
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding: 0 4px;
+}
+
+.laboratory-header {
+  margin-bottom: 20px;
   padding: 0 4px;
 }
 

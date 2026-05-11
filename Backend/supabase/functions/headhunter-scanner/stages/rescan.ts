@@ -21,7 +21,7 @@ export async function runRescan(
     console.log(`[RESCAN] Triggered. Fetching stale recruits...`);
     try {
         const { data: stale, error: rpcErr } = await supabase
-            .rpc('get_stale_recruits', { p_limit: 30 });
+            .rpc('get_stale_recruits', { p_limit: 250 });
 
         logAudit('RESCAN', 'run', { count: stale?.length ?? 0, error: rpcErr?.message });
 
@@ -45,6 +45,7 @@ export async function runRescan(
         
         console.log(`[RESCAN] Validated ${stale.length} stale recruits to process.`);
 
+        const validRescans: any[] = [];
         const rescanTasks = stale.map((row: { player_tag: string }) => async () => {
             const tag = row.player_tag;
             try {
@@ -69,29 +70,30 @@ export async function runRescan(
 
                 // If player has joined a clan, remove them from the recruit pool
                 if (p.clan?.tag && !exclusionSet.has(p.tag)) {
-                    await supabase.schema('drivers' as any).from('recruits')
-                        .delete()
-                        .eq('player_tag', p.tag);
+                    await supabase.rpc('purge_recruits', { p_tags: [p.tag] });
                     logAudit('RESCAN', 'called', { tag, action: 'purged_clanned' });
                     console.log(`[RESCAN] Player ${tag} joined clan ${p.clan.tag}. Purged from recruits.`);
                     return;
                 }
 
-                // Otherwise refresh their profile data in-place
-                const newStatus = (p.trophies || 0) >= requiredTrophies ? 'ACTIVE' : 'QUEUE';
-                await supabase.schema('drivers' as any).from('recruits')
-                    .update({
-                        trophies: p.trophies || 0,
-                        donations: p.totalDonations || 0,
-                        war_wins: p.warDayWins || 0,
-                        status: newStatus,
-                        last_scan: new Date().toISOString()
-                    })
-                    .eq('player_tag', p.tag);
+                // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
+                const rawScore = ((p.trophies || 0) * 1.0) + ((p.totalDonations || 0) * 0.1) + (((p.warDayWins || 0) + 500) * 20.0);
 
-                console.log(`[RESCAN] Player ${tag} refreshed. trophies=${p.trophies}, status=${newStatus}`);
+                // Otherwise prepare their profile data for batch refresh
+                validRescans.push({
+                    player_tag: p.tag,
+                    player_name: p.name,
+                    trophies: p.trophies || 0,
+                    donations: p.totalDonations || 0,
+                    cards: p.challengeCardsWon || 0,
+                    war_wins: p.warDayWins || 0,
+                    raw_potential_score: rawScore,
+                    source: 'TOURNAMENT', // Fallback
+                    status: (p.trophies || 0) >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
+                });
+
+                console.log(`[RESCAN] Player ${tag} prepared for refresh. trophies=${p.trophies}`);
                 stats.profiles_scanned++;
-                stats.rescans_processed++;
             } catch (e: any) {
                 logAudit('RESCAN', 'error', { tag, message: e.message });
                 console.error(`[RESCAN] Exception while processing ${tag}: ${e.message}`);
@@ -100,6 +102,19 @@ export async function runRescan(
 
         console.log(`[RESCAN] Batch processing ${stale.length} rescan tasks...`);
         await processBatch(rescanTasks, 10);
+
+        if (validRescans.length > 0) {
+            console.log(`[RESCAN] Synchronizing ${validRescans.length} refreshed profiles via RPC...`);
+            const { error: syncErr } = await supabase.rpc('sync_recruits', { p_recruits: validRescans });
+            if (syncErr) {
+                console.error(`[RESCAN] Sync failure: ${syncErr.message}`);
+                logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: syncErr });
+            } else {
+                stats.rescans_processed = validRescans.length;
+                stats.refreshed_recruits = (stats.refreshed_recruits || 0) + validRescans.length;
+                console.log(`[RESCAN] Successfully synchronized ${validRescans.length} profiles.`);
+            }
+        }
         logAudit('RESCAN', 'terminated', { candidates: stale.length, rescanned: stats.rescans_processed });
         console.log(`[RESCAN] Terminated smoothly. Processed ${stale.length} candidates, refreshed ${stats.rescans_processed} successfully.`);
     } catch (e: any) {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ConsoleLayout } from "@shared";
 import { useSettings } from "../composables/useSettings";
+import { useShowcaseMode } from "@core/services/useShowcaseMode";
 
 // Settings Components
 import {
@@ -19,6 +20,8 @@ const {
   layoutProps,
   layoutEvents
 } = useSettings();
+
+const { isShowcaseMode } = useShowcaseMode();
 </script>
 
 <template>
@@ -28,13 +31,13 @@ const {
     v-on="layoutEvents"
   >
     <div class="settings-content">
-      <AppearanceSettings :initially-expanded="true" />
-      <NotificationSettings />
-      <FeatureSettings :initially-expanded="true" />
-      <ModeSettings />
-      <NetworkSettings />
-      <BackendRefresher v-if="modules.backendRefresher" />
-      <RecoverySettings />
+      <AppearanceSettings :initially-expanded="isShowcaseMode" />
+      <NotificationSettings :initially-expanded="isShowcaseMode" />
+      <FeatureSettings :initially-expanded="isShowcaseMode" />
+      <ModeSettings :initially-expanded="isShowcaseMode" />
+      <NetworkSettings :initially-expanded="isShowcaseMode" />
+      <BackendRefresher v-if="modules.backendRefresher" :initially-expanded="isShowcaseMode" />
+      <RecoverySettings :initially-expanded="isShowcaseMode" />
     </div>
   </ConsoleLayout>
 </template>

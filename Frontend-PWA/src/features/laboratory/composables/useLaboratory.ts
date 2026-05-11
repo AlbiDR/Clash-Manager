@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { getPlayerProfile } from "@core/api/GasClient";
+import { getPlayerProfile } from "@core/api/SupabaseClient";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import {
@@ -25,7 +25,8 @@ import {
   type SimulationState,
   type Inventory,
   type Rarity,
-  type OptimizationResult
+  type OptimizationResult,
+  type UpgradeAction
 } from '../logic';
 
 import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLaboratoryStore";
@@ -43,7 +44,6 @@ import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLabora
 
 // Performance Control Block
 let currentSimulationId = 0;
-let lastAnalyzedTag: string | null = null;
 
 /**
  * Primary composable for Laboratory operations.
@@ -60,7 +60,7 @@ let lastAnalyzedTag: string | null = null;
  *
  * **Behavioral Logic:**
  * - Triggers asynchronous simulation via `requestIdleCallback`.
- * - Fetches data from the GAS backend when `playerTag` changes.
+ * - Fetches data from the Supabase backend when `playerTag` changes.
  */
 export function useLaboratory() {
   const store = useLaboratoryStore();
@@ -70,11 +70,12 @@ export function useLaboratory() {
     settings,
     isSimulating,
     isFetching,
-    fetchError
+    fetchError,
+    trackedPlayerTag
   } = storeToRefs(store);
 
   const clashDataStore = useClashDataStore();
-  const { data: clashData, currentSource, hubSyncTime } = storeToRefs(clashDataStore);
+  const { data: clashData, currentSource, remoteSyncTime } = storeToRefs(clashDataStore);
 
   let currentSimulation: Generator<SimulationState, SimulationState, void> | null = null;
 
@@ -88,10 +89,7 @@ export function useLaboratory() {
   function analyze() {
     if (!observation.value) return;
     
-    // Prevent redundant analysis if same target already processed
     const currentTag = observation.value.profile.tag;
-    if (isSimulating.value && lastAnalyzedTag === currentTag) return;
-    lastAnalyzedTag = currentTag;
 
     const simulationId = ++currentSimulationId;
     store.setSimulating(true);
@@ -206,7 +204,7 @@ export function useLaboratory() {
    * Fetches the profile of the currently tracked player.
    */
   async function fetchTrackedPlayer() {
-    const tag = clashData.value?.playerTag;
+    const tag = trackedPlayerTag.value || clashData.value?.playerTag;
     if (!tag) return;
 
     store.setFetching(true);
@@ -216,7 +214,6 @@ export function useLaboratory() {
       ingest(profile);
     } catch (err: unknown) {
       // THREAT: Network or API failure on profile retrieval.
-      // Target B [4]: The 'any' plague eliminated; using unknown for error catch.
       const message = err instanceof Error ? err.message : String(err);
       console.error("[Laboratory] Fetch Failed:", message);
       store.setFetchError(message);
@@ -231,8 +228,8 @@ export function useLaboratory() {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        const currentGlobalTag = clashData.value?.playerTag;
-        if (parsed && (!currentGlobalTag || parsed.profile.tag === currentGlobalTag)) {
+        const currentTag = trackedPlayerTag.value || clashData.value?.playerTag;
+        if (parsed && (!currentTag || parsed.profile.tag === currentTag)) {
           // Re-hydrate to ensure branded types and new structure
           // THREAT: Corrupted LocalStorage state causing silent boot failure.
           const hydrated = ProfileHydrator.hydrate(parsed);
@@ -244,10 +241,15 @@ export function useLaboratory() {
         // Target B [4]: The 'any' plague eliminated.
         console.warn("[Laboratory] Cache hydration failed:", err instanceof Error ? err.message : String(err));
       }
+    } else {
+      const initialTag = trackedPlayerTag.value || clashData.value?.playerTag;
+      if (initialTag) {
+        fetchTrackedPlayer();
+      }
     }
   }
 
-  watch(() => clashData.value?.playerTag, (newTag, oldTag) => {
+  watch(() => trackedPlayerTag.value || clashData.value?.playerTag, (newTag, oldTag) => {
     if (newTag && newTag !== oldTag) {
       if (!observation.value || observation.value.profile.tag !== newTag) {
         fetchTrackedPlayer();
@@ -255,7 +257,16 @@ export function useLaboratory() {
         analyze();
       }
     }
-  }, { immediate: false }); // Initial run handled by hydration block above
+  }, { immediate: false });
+
+  // REACTIVITY BRIDGE: Trigger analysis when parameters or inventory change.
+  watch(settings, () => {
+    analyze();
+  }, { deep: true });
+
+  watch(() => observation.value?.inventory, () => {
+    analyze();
+  }, { deep: true });
 
   /**
    * SYSTEM STATUS RESOLVER
@@ -264,7 +275,8 @@ export function useLaboratory() {
     if (isFetching.value) return { type: "loading", text: "Scanning Vault..." } as const;
     if (isSimulating.value) return { type: "loading", text: "Computing Trajectory..." } as const;
     if (fetchError.value) return { type: "error", text: "Extraction Failed" } as const;
-    if (!clashData.value?.playerTag) return { type: "ready", text: "Target Required" } as const;
+    const tag = trackedPlayerTag.value || clashData.value?.playerTag;
+    if (!tag) return { type: "ready", text: "Target Required" } as const;
     return { type: "ready", text: "Engine Operational" } as const;
   });
 
@@ -278,15 +290,20 @@ export function useLaboratory() {
    */
   const layoutProps = computed(() => ({
     status: status.value,
-    loading: isFetching.value,
-    isEmpty: isEmpty.value,
+    loading: isFetching.value && !observation.value,
+    isRefreshing: isFetching.value,
     syncError: fetchError.value || undefined,
-    emptyMessage: !clashData.value?.playerTag ? 'Target Required' : 'No results found',
-    emptyHint: !clashData.value?.playerTag ? 'No PlayerTag configured in Project Properties.' : 'Ensure your inventory is correctly entered in The Vault.',
-    emptyIcon: 'flask',
-    hubInfo: currentSource.value ? {
+    isEmpty: isEmpty.value,
+    emptyMessage: !(trackedPlayerTag.value || clashData.value?.playerTag) 
+      ? 'Target Required' 
+      : (fetchError.value || "Target Profile Not Found"),
+    emptyHint: !(trackedPlayerTag.value || clashData.value?.playerTag) 
+      ? 'No PlayerTag configured. Please enter one above or in Project Properties.' 
+      : 'Ensure your inventory is correctly entered in The Vault.',
+    emptyIcon: !(trackedPlayerTag.value || clashData.value?.playerTag) ? 'flask' : 'crosshair',
+    remoteInfo: currentSource.value ? {
       source: currentSource.value,
-      hubAge: hubSyncTime.value ? formatTimeAgo(new Date(hubSyncTime.value).toISOString()) : null
+      dataAge: remoteSyncTime.value ? formatTimeAgo(remoteSyncTime.value) : null
     } : undefined
   }));
 
@@ -339,6 +356,8 @@ export function useLaboratory() {
     setSettings: store.setSettings,
     handleVaultUpdate,
     refresh: fetchTrackedPlayer,
+    setTrackedPlayerTag: store.setTrackedPlayerTag,
+    trackedPlayerTag,
 
     /**
      * MEMOIZATION KEY GENERATOR

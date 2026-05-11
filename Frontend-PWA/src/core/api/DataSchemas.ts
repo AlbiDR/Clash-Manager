@@ -42,7 +42,14 @@ export const RaritySchema = v.fallback(
 export const RawCardSchema = v.object({
   name: v.optional(v.string(), "Unknown Card"),
   rarity: v.optional(RaritySchema, "Common"),
+  // Absolute level on the unified 1-16 scale. For data returned by the
+  // sync-player-cards Edge Function this is already normalized; for any future
+  // raw-API path the ProfileHydrator clamps it via normalizeLevel.
   level: v.optional(v.number(), 1),
+  // Raw maxLevel as returned by the Clash Royale API (rarity-relative cap).
+  // Common=16, Rare=14, Epic=11, Legendary=8, Champion=6.
+  // Present only on data sourced directly from the API; absent on internal rows.
+  maxLevel: v.optional(v.number()),
   count: v.optional(v.number(), 0),
   isTowerTroop: v.optional(v.boolean(), false),
 });
@@ -124,7 +131,7 @@ const SafeNumberPipe = v.pipe(
     // schema is slightly out of sync or if optional columns are omitted.
     if (val === null || val === undefined) return 0;
     if (typeof val === "string") {
-      // Handle comma-separated or percentage-based strings from sheets
+      // Handle comma-separated or percentage-based strings from remote sources
       const cleaned = val.replace(/,/g, "").replace(/%/g, "").trim();
       if (cleaned === "") return 0;
       const n = parseFloat(cleaned);
@@ -138,8 +145,8 @@ const SafeNumberPipe = v.pipe(
 
 /**
  * [GUARD] LAX NUMBER PIPE: Metadata Resilience
- * Rationale: Metadata fields like timestamps must NEVER trigger a full 
- * validation failure, as it results in a silent fallback to GAS.
+ * Rationale: Metadata fields like timestamps must NEVER trigger a full
+ * validation failure, as missing metadata should not block UI hydration.
  */
 const LaxNumberPipe = v.pipe(
   v.unknown(),
@@ -204,32 +211,89 @@ export const RecruitSchema = v.object({
  * [GUARD] WEB APP DATA SCHEMA
  * Authoritative validation boundary for the full application state.
  */
+/**
+ * [GUARD] SUPABASE ROSTER ROW SCHEMA
+ * Validates the raw shape of a row from the roster_view.
+ * Rationale: Ensures Supabase data is hardened before mapping to domain objects.
+ */
+export const SbRosterRowSchema = v.object({
+  player_tag: v.optional(SafeStringPipe, ""),
+  player_name: v.optional(SafeStringPipe, "Unknown"),
+  trophies: v.optional(SafeNumberPipe, 0),
+  pes: v.optional(SafeNumberPipe),
+  performance_score: v.optional(SafeNumberPipe, 0),
+  rpes: v.optional(SafeNumberPipe),
+  raw_performance_score: v.optional(SafeNumberPipe, 0),
+  last_seen_at: v.optional(v.nullable(SafeStringPipe)),
+  role: v.optional(SafeStringPipe, ""),
+  tenure_days: v.optional(SafeNumberPipe, 0),
+  last_seen_label: v.optional(SafeStringPipe, "-"),
+  stability_index: v.optional(SafeNumberPipe, 0),
+  week_fame: v.optional(SafeNumberPipe, 0),
+  exp_level: v.optional(SafeNumberPipe, 1),
+});
+
+/**
+ * [GUARD] SUPABASE HEADHUNTER ROW SCHEMA
+ * Validates the raw shape of a row from the headhunter_view.
+ * Rationale: Protects recruitment discovery pipeline from malformed edge data.
+ */
+export const SbHeadhunterRowSchema = v.object({
+  player_tag: v.optional(SafeStringPipe, ""),
+  player_name: v.optional(SafeStringPipe, "Unknown"),
+  trophies: v.optional(SafeNumberPipe, 0),
+  pos: v.optional(SafeNumberPipe),
+  potential_score: v.optional(SafeNumberPipe, 0),
+  rpos: v.optional(SafeNumberPipe),
+  raw_potential_score: v.optional(SafeNumberPipe, 0),
+  last_seen_at: v.optional(v.nullable(SafeStringPipe)),
+  donations: v.optional(SafeNumberPipe, 0),
+  war_wins: v.optional(SafeNumberPipe, 0),
+  longevity_label: v.optional(SafeStringPipe, "-"),
+});
+
+/**
+ * [GUARD] RECRUIT TOMBSTONE SCHEMA
+ * Validates the collection of dismissed recruit IDs stored in LocalStorage.
+ * Rationale: Ensures that corrupted persistence data does not poison the
+ * local recruitment filter.
+ */
+export const RecruitTombstoneSchema = v.array(v.string());
+
+/**
+ * [GUARD] OFFLINE QUEUE SCHEMAS
+ * Rationale: Hardens the deferred operations queue in IndexedDB to prevent
+ * corrupted or malformed requests from being replayed to the backend.
+ */
+export const DismissalRequestSchema = v.object({
+  id: SafeStringPipe,
+  score: SafeNumberPipe,
+});
+
+export const OfflineActionSchema = v.variant("type", [
+  v.object({
+    type: v.literal("RECRUIT_DISMISSAL"),
+    items: v.array(DismissalRequestSchema),
+    timestamp: SafeNumberPipe,
+  }),
+  v.object({
+    type: v.literal("RECRUIT_RESTORATION"),
+    ids: v.array(SafeStringPipe),
+    timestamp: SafeNumberPipe,
+  }),
+]);
+
+export const OfflineQueueSchema = v.array(OfflineActionSchema);
+
 export const WebAppDataSchema = v.object({
   lb: v.array(MemberSchema),
   hh: v.array(RecruitSchema),
   playerTag: v.optional(SafeStringPipe),
   timestamp: SafeNumberPipe,
-  dataSource: v.optional(v.picklist(["WORKER", "GAS"])),
-  hubTimestamp: v.optional(LaxNumberPipe),
+  dataSource: v.optional(v.picklist(["SUPABASE"])),
+  remoteTimestamp: v.optional(LaxNumberPipe),
   lastCompiled: v.optional(LaxNumberPipe),
   lastFetched: v.optional(LaxNumberPipe),
 });
 
-/**
- * [GUARD] HUB STATE SCHEMA
- * Validates the raw matrix state returned by the Worker Hub.
- */
-export const HubStateSchema = v.object({
-  metadata: v.object({
-    timestamp: SafeStringPipe,
-    lastCompiled: SafeStringPipe, // Worker emits ISO-8601 strings, not epoch ms
-    lastFetched: SafeStringPipe,  // Worker emits ISO-8601 strings, not epoch ms
-    status: SafeStringPipe,
-    version: SafeStringPipe,
-    source: SafeStringPipe,
-  }),
-  data: v.object({
-    roster: v.array(v.array(v.unknown())),
-    headhunter: v.array(v.array(v.unknown())),
-  }),
-});
+

@@ -10,8 +10,8 @@ const { sharedState } = vi.hoisted(() => ({
     mockShowcaseMode: { value: false },
     mockPingData: { 
       value: {
-        spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
-        sheets: { Leaderboard: 456, Headhunter: 789 },
+        version: "1.0.0",
+        latency: 42,
       }
     },
     mockApiStatus: { value: "online" },
@@ -58,10 +58,8 @@ vi.mock("../useClashDataStore", async () => {
         syncError: ref(null),
         lastSyncTime: ref(0),
         currentSource: ref(null),
-        hubSyncTime: ref(null),
         lastCompiledTime: ref(null),
         lastFetchedTime: ref(null),
-        refreshWorker: vi.fn(),
     };
     return {
         useClashDataStore: vi.fn(() => mockStore),
@@ -144,8 +142,7 @@ describe("useConsoleController", () => {
         isRefreshing: ref(false),
         syncError: ref(null),
         lastSyncTime: ref(Date.now()),
-        currentSource: ref(null as "WORKER" | "GAS" | null),
-        hubSyncTime: ref(null as number | null),
+        currentSource: ref(null as "SUPABASE" | null),
         lastCompiledTime: ref(null as number | null),
         lastFetchedTime: ref(null as number | null),
         filterFn: (item: any) => [item.n],
@@ -154,7 +151,6 @@ describe("useConsoleController", () => {
         deepLinkPrefix: "test-",
         batchIdMapper: (item: any) => item.id,
         statsLabel: "Test",
-        sheetName: "Leaderboard"
       };
   }
 
@@ -207,24 +203,6 @@ describe("useConsoleController", () => {
     expect(showSkeletons.value).toBe(false);
   });
 
-  it("calculates sheetUrl correctly with string input", () => {
-    const options = {
-      ...createOptions(),
-      sheetName: "Leaderboard",
-    };
-    const { sheetUrl } = useConsoleController(options);
-    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=456");
-  });
-
-  it("calculates sheetUrl correctly with array input (first match)", () => {
-    const options = {
-      ...createOptions(),
-      sheetName: ["NonExistent", "Headhunter"],
-    };
-    const { sheetUrl } = useConsoleController(options);
-    expect(sheetUrl.value).toBe("https://docs.google.com/spreadsheets/d/123#gid=789");
-  });
-
   it("updates searchQuery via handleSearch", () => {
     const { handleSearch, searchQuery } = useConsoleController(createOptions());
     handleSearch("New Query");
@@ -268,11 +246,7 @@ describe("useConsoleController", () => {
       expect(status.value).toEqual({ type: "error", text: "Invalid API URL" });
     });
 
-    it("returns 'waking' when apiStatus is waking", () => {
-      sharedState.mockApiStatus.value = "waking";
-      const { status } = useConsoleController(createOptions());
-      expect(status.value).toEqual({ type: "loading", text: "Waking Server..." });
-    });
+
 
     it("returns 'offline' when connection status is offline", () => {
       sharedState.mockConnectionStatus.value = "offline";
@@ -320,20 +294,20 @@ describe("useConsoleController", () => {
       expect(status.value.text).toBe("Offline");
     });
 
-    it("returns 'Stale Data' when data is older than 15 minutes", () => {
+    it("returns 'Stale Data' when data is older than 30 minutes", () => {
       const options = createOptions();
       const now = Date.now();
-      options.lastSyncTime.value = now - 16 * 60000; // 16 minutes ago
+      options.lastSyncTime.value = now - 31 * 60000; // 31 minutes ago
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("warning");
       expect(status.value.text).toBe("Stale Data");
     });
 
-    it("returns 'Nominal' when data is exactly 14 minutes old", () => {
+    it("returns 'Nominal' when data is exactly 29 minutes old", () => {
       const options = createOptions();
       const now = Date.now();
-      options.lastSyncTime.value = now - 14 * 60000; // 14 minutes ago
+      options.lastSyncTime.value = now - 29 * 60000; // 29 minutes ago
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
@@ -341,24 +315,10 @@ describe("useConsoleController", () => {
       expect((status.value as any).nominal).toBe(true);
     });
 
-    it("uses lastFetchedTime for age calculation when source is WORKER", () => {
+    it("uses lastSyncTime for age calculation", () => {
       const options = createOptions();
       const now = Date.now();
-      options.currentSource.value = "WORKER";
-      options.lastFetchedTime.value = now - 16 * 60000; // 16m ago (STALE)
-      options.lastSyncTime.value = now - 1 * 60000;    // 1m ago (NOT STALE)
-      options.data.value = [{ id: "1", n: "Test" }];
-
-      const { status } = useConsoleController(options);
-      expect(status.value.text).toBe("Stale Data");
-    });
-
-    it("uses lastSyncTime for age calculation when source is GAS", () => {
-      const options = createOptions();
-      const now = Date.now();
-      options.currentSource.value = "GAS";
-      options.lastFetchedTime.value = now - 1 * 60000;  // 1m ago
-      options.lastSyncTime.value = now - 16 * 60000;   // 16m ago (STALE)
+      options.lastSyncTime.value = now - 31 * 60000;   // 31m ago (STALE)
       options.data.value = [{ id: "1", n: "Test" }];
 
       const { status } = useConsoleController(options);
@@ -511,19 +471,19 @@ describe("useConsoleController", () => {
   describe("layoutProps and hubInfo", () => {
     it("maps hubInfo correctly when source is present", () => {
       const options = createOptions();
-      options.currentSource.value = "WORKER";
+      options.currentSource.value = "SUPABASE";
       options.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
       const { layoutProps } = useConsoleController(options);
 
       expect(layoutProps.value.hubInfo).toMatchObject({
-        source: "WORKER",
+        source: "SUPABASE",
       });
       expect(layoutProps.value.hubInfo?.hubAge).toMatch(/1h ago/);
     });
 
     it("falls back to lastSyncTime for hubAge if lastCompiledTime is missing", () => {
       const options = createOptions();
-      options.currentSource.value = "WORKER";
+      options.currentSource.value = "SUPABASE";
       options.lastCompiledTime.value = null;
       options.lastSyncTime.value = Date.now() - 7200000; // 2h ago
       const { layoutProps } = useConsoleController(options);

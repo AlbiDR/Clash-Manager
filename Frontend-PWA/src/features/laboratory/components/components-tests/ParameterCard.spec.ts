@@ -98,7 +98,7 @@ describe("ParameterCard.vue", () => {
     const wrapper = createWrapper({ currentLevel });
     const options = wrapper.findAll("option");
 
-    // IMPORTANT_KING_LEVELS = [2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75]
+    // IMPORTANT_KING_LEVELS = [2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 75, 80, 85, 90]
     // For currentLevel 50:
     // level 14, 42: past milestone -> shown
     // level 51-90: future -> shown
@@ -111,7 +111,8 @@ describe("ParameterCard.vue", () => {
     expect(shownLevels).toContain(51); // Future level
     expect(shownLevels).toContain(90); // Max level
 
-    expect(shownLevels).not.toContain(50); // Not a milestone
+    expect(shownLevels).toContain(50); // Current level is now shown
+    expect(shownLevels).not.toContain(49); // Not a milestone and < 50
     expect(shownLevels).not.toContain(13); // Not a milestone and < 50
 
     // Check if past levels are disabled

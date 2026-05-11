@@ -6,7 +6,7 @@ import { setActivePinia, createPinia } from "pinia";
 import { useClashDataStore } from "../useClashDataStore";
 import { useConnectionStatus } from "../useConnectionStatus";
 import { useWakeLock } from "../useWakeLock";
-import { fetchRemote } from "../../api/GasClient";
+import { fetchRemote } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 
 // Mock dependencies
@@ -31,9 +31,10 @@ vi.mock("../useWakeLock", () => ({
   useWakeLock: vi.fn(() => mockWakeLock)
 }));
 
-vi.mock("../../api/GasClient", () => ({
+vi.mock("../../api/SupabaseClient", () => ({
   fetchRemote: vi.fn(),
-  lastHubDiagnosis: { value: null }
+
+  lastSyncStatus: { value: null }
 }));
 
 vi.mock("../StorageService", () => ({
@@ -272,41 +273,41 @@ describe("useClashDataStore", () => {
     });
   });
 
-  describe("refreshWorker", () => {
-    it("should sync data successfully from worker", async () => {
+  describe("refreshFromSupabase", () => {
+    it("should sync data successfully from Supabase", async () => {
       const mockRemoteData = {
         lb: [],
         hh: [],
         timestamp: Date.now(),
-        dataSource: "WORKER"
+        dataSource: "SUPABASE"
       };
       vi.mocked(fetchRemote).mockResolvedValue(mockRemoteData);
 
       const store = useClashDataStore();
-      await store.refreshWorker();
+      await store.refreshFromSupabase();
 
       expect(store.loading).toBe(false);
       expect(store.data).toEqual(mockRemoteData);
-      expect(store.dataSource).toBe("WORKER");
+      expect(store.dataSource).toBe("SUPABASE");
       expect(mockWakeLock.request).toHaveBeenCalled();
-      expect(fetchRemote).toHaveBeenCalledWith({ force: true, preferWorker: true });
+      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
       expect(saveCache).toHaveBeenCalledWith(mockRemoteData);
       expect(mockWakeLock.release).toHaveBeenCalled();
     });
 
     it("should attempt fallback to startBackgroundSync(true) if fetchRemote fails [CRACK: Guard Blocked]", async () => {
-      // [CRACK IDENTIFIED]: The current implementation of refreshWorker calls startBackgroundSync
+      // [CRACK IDENTIFIED]: The current implementation of refreshFromSupabase calls startBackgroundSync
       // while loading.value is still true. startBackgroundSync has a guard 'if (loading.value) return;'
       // which causes the fallback to exit immediately without performing the sync.
-      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Worker Down"));
+      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Supabase Down"));
 
       const store = useClashDataStore();
-      await store.refreshWorker();
+      await store.refreshFromSupabase();
 
       // [FIX VERIFIED]: Previously failed with 1 due to the loading guard deadlock.
       // Now correctly attempts the fallback (2nd call to fetchRemote).
       expect(fetchRemote).toHaveBeenCalledTimes(2);
-      expect(fetchRemote).toHaveBeenCalledWith({ force: true, preferWorker: true });
+      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
     });
 
     it("should attempt fallback to startBackgroundSync(true) if validation fails", async () => {
@@ -315,7 +316,7 @@ describe("useClashDataStore", () => {
       vi.mocked(fetchRemote).mockResolvedValueOnce({ invalid: "data" });
 
       const store = useClashDataStore();
-      await store.refreshWorker();
+      await store.refreshFromSupabase();
 
       expect(fetchRemote).toHaveBeenCalledTimes(2);
     });
@@ -324,7 +325,7 @@ describe("useClashDataStore", () => {
       mockConnectionStatus.isOnline.value = false;
 
       const store = useClashDataStore();
-      await store.refreshWorker();
+      await store.refreshFromSupabase();
 
       expect(fetchRemote).not.toHaveBeenCalled();
       mockConnectionStatus.isOnline.value = true;
@@ -334,7 +335,7 @@ describe("useClashDataStore", () => {
       const store = useClashDataStore();
       store.loading = true;
 
-      await store.refreshWorker();
+      await store.refreshFromSupabase();
 
       expect(fetchRemote).not.toHaveBeenCalled();
     });

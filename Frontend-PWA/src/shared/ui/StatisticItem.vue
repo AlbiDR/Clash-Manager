@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const { getSafeBenchmark } = useBenchmarking();
 
-const tooltipVal = computed(() => {
+const benchmarkTooltipContent = computed(() => {
   if (props.loading || !props.benchmarkType || !props.benchmarkMetric) {
     return null;
   }
@@ -26,10 +26,10 @@ const tooltipVal = computed(() => {
 
 <template>
   <div v-if="props.loading" class="stat-item skeleton-anim">
-    <div class="sk-label-box"></div>
-    <div class="sk-value-box"></div>
+    <div class="label"><div class="sk-label-box"></div></div>
+    <div class="value"><div class="sk-value-box"></div></div>
   </div>
-  <div v-else class="stat-item hit-target" v-tooltip="tooltipVal" :aria-label="tooltipVal ? `${props.label}: ${props.value}. ${tooltipVal}` : `${props.label}: ${props.value}`">
+  <div v-else class="stat-item hit-target" v-tooltip="benchmarkTooltipContent" :aria-label="benchmarkTooltipContent ? `${props.label}: ${props.value}. ${benchmarkTooltipContent}` : `${props.label}: ${props.value}`">
     <span class="label" :aria-hidden="'true'">{{ props.label }}</span>
     <span class="value" :aria-hidden="'true'">{{ props.value }}</span>
   </div>
@@ -64,7 +64,7 @@ const tooltipVal = computed(() => {
   font-weight: 850;
   color: var(--sys-color-secondary);
   letter-spacing: 0.06em;
-  opacity: 0.7;
+  opacity: 1;
   text-align: center;
   line-height: 1.1;
   min-height: 20px;

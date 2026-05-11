@@ -54,7 +54,6 @@ import { useConnectionStatus } from "../../../../core/services/useConnectionStat
 import { useHaptics } from "../../../../core/services/useHaptics";
 import { useWakeLock } from "../../../../core/services/useWakeLock";
 import { useSystemInfo } from "../../../../core/services/useSystemInfo";
-import { useRegisterSW } from "virtual:pwa-register/vue";
 import { useSettings } from "../useSettings";
 
 vi.mock("../../../../core/services/useSystemInfo", () => {
@@ -159,9 +158,10 @@ vi.mock("../../../../core/services/useBadge", () => ({
   })),
 }));
 
-vi.mock("../../../../core/api/GasClient", () => ({
-  isWorkerConfigured: mocks.mockIsWorkerConfigured,
+vi.mock("../../../../core/api/SupabaseClient", () => ({
+  isConfigured: mocks.mockIsWorkerConfigured,
   subscribeToPush: mocks.mockSubscribeToPush,
+  lastSyncStatus: ref("SUCCESS"),
 }));
 
 vi.mock("../../../../core/services/useWakeLock", () => ({
@@ -174,10 +174,8 @@ vi.mock("../../../../core/services/useWakeLock", () => ({
   })),
 }));
 
-vi.mock("virtual:pwa-register/vue", () => ({
-  useRegisterSW: vi.fn(() => ({
-    updateServiceWorker: mocks.mockUpdateServiceWorker,
-  })),
+vi.mock("virtual:pwa-register", () => ({
+  registerSW: vi.fn(() => mocks.mockUpdateServiceWorker),
 }));
 
 // Helper to run composable within a component context
@@ -331,6 +329,11 @@ describe("useSettings", () => {
     });
 
     it("updates and reloads if a waiting worker exists", async () => {
+      vi.useFakeTimers();
+      const originalProd = import.meta.env.PROD;
+      // @ts-ignore
+      import.meta.env.PROD = true;
+
       const mockReg = { waiting: {} };
       vi.stubGlobal("navigator", {
         serviceWorker: {
@@ -338,9 +341,16 @@ describe("useSettings", () => {
         },
       });
       const { result } = withSetup(useSettings);
+
+      await vi.advanceTimersByTimeAsync(1500);
+
       await result.forceUpdate();
       expect(mocks.mockToast.success).toHaveBeenCalledWith("Update ready! Reloading...");
       expect(mocks.mockUpdateServiceWorker).toHaveBeenCalledWith(true);
+
+      // @ts-ignore
+      import.meta.env.PROD = originalProd;
+      vi.useRealTimers();
     });
 
     it("triggers update if no waiting worker", async () => {
@@ -460,7 +470,7 @@ describe("useSettings", () => {
     it("updates API URL and reloads", () => {
       const { result } = withSetup(useSettings);
       result.updateApiUrl(" https://new-api.com ");
-      expect(localStorage.setItem).toHaveBeenCalledWith("cm_gas_url", "https://new-api.com");
+      expect(localStorage.setItem).toHaveBeenCalledWith("cm_supabase_url", "https://new-api.com");
       expect(mocks.mockReload).toHaveBeenCalled();
     });
 
@@ -474,7 +484,7 @@ describe("useSettings", () => {
       mocks.mockConfirm.mockReturnValue(true);
       const { result } = withSetup(useSettings);
       result.resetApiUrl();
-      expect(localStorage.removeItem).toHaveBeenCalledWith("cm_gas_url");
+      expect(localStorage.removeItem).toHaveBeenCalledWith("cm_supabase_url");
       expect(mocks.mockReload).toHaveBeenCalled();
     });
   });
@@ -489,63 +499,10 @@ describe("useSettings", () => {
     });
 
     describe("subscribePush", () => {
-      it("reports error if worker not configured", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(false);
+      it("shows info toast for pending Supabase integration", async () => {
         const { result } = withSetup(useSettings);
         await result.subscribePush();
-        expect(mocks.mockToast.error).toHaveBeenCalledWith("Cloud Worker not configured");
-      });
-
-      it("subscribes to push successfully", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(true);
-        const mockSubscribe = vi.fn().mockResolvedValue({ endpoint: "mock" });
-        vi.stubGlobal("navigator", {
-          serviceWorker: {
-            ready: Promise.resolve({
-              pushManager: { subscribe: mockSubscribe }
-            })
-          }
-        });
-
-        const { result } = withSetup(useSettings);
-        await result.subscribePush();
-
-        expect(mocks.mockHaptics.medium).toHaveBeenCalled();
-        expect(mockSubscribe).toHaveBeenCalled();
-        expect(mocks.mockSubscribeToPush).toHaveBeenCalledWith({ endpoint: "mock" });
-        expect(result.isPushSubscribed.value).toBe(true);
-        expect(mocks.mockToast.success).toHaveBeenCalledWith("Push Alerts Active");
-      });
-
-      it("handles push setup failure (navigator error)", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(true);
-        // Simulate navigator error by making ready a rejecting promise
-        vi.stubGlobal("navigator", {
-          serviceWorker: {
-            ready: Promise.reject(new Error("SW Failure"))
-          }
-        });
-
-        const { result } = withSetup(useSettings);
-        await result.subscribePush();
-        expect(mocks.mockToast.error).toHaveBeenCalledWith("Push setup failed");
-      });
-
-      it("handles server registration failure", async () => {
-        mocks.mockIsWorkerConfigured.mockReturnValue(true);
-        mocks.mockSubscribeToPush.mockResolvedValue(false);
-        const mockSubscribe = vi.fn().mockResolvedValue({ endpoint: "mock" });
-        vi.stubGlobal("navigator", {
-          serviceWorker: {
-            ready: Promise.resolve({
-              pushManager: { subscribe: mockSubscribe }
-            })
-          }
-        });
-
-        const { result } = withSetup(useSettings);
-        await result.subscribePush();
-        expect(mocks.mockToast.error).toHaveBeenCalledWith("Server registration failed");
+        expect(mocks.mockToast.info).toHaveBeenCalledWith("Push notifications coming soon for Supabase");
       });
     });
 

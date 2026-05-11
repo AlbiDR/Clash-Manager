@@ -116,7 +116,7 @@ const ariaLabel = computed(() => {
           :value="(props.member.d.wfame || 0).toLocaleString()"
         />
         <StatisticItem
-          label="Daily Donations"
+          label="Avg. Donations"
           :value="props.member.d.avg"
           :loading="props.appIsRefreshing"
           benchmark-type="lb"

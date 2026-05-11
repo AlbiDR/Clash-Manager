@@ -5,17 +5,9 @@
 
 // API Response Envelope
 export interface ApiResponse<T> {
-  status: "success" | "error";
-  data: T | null;
-  error: { code: string; message: string } | null;
-  timestamp: string;
-}
-
-// Legacy format from getWebAppData
-export interface LegacyApiResponse<T> {
   success: boolean;
   data: T | null;
-  error: { code: string; message: string } | null;
+  error?: { code: string; message: string };
 }
 
 
@@ -50,6 +42,10 @@ export interface Recruit {
   // STRICT NOMENCLATURE
   potentialScore: number; // Normalized % (0-100)
   potentialRawScore: number; // Unbounded Calculation (e.g. 52102)
+  longevity: number; // Minutes since discovery
+  longevityLabel: string; // Human-readable duration (e.g. "2h 15m")
+  tenureDays?: number; // Previous heritage tenure
+  tenureLabel?: string; // Formatted heritage tenure (e.g. "1y 2mo")
 
   d: {
     don: number; // Donations
@@ -66,8 +62,8 @@ export interface WebAppData {
   readonly hh: readonly Recruit[];
   readonly playerTag?: string; // Player tag without # to highlight
   readonly timestamp: number;
-  readonly dataSource?: "WORKER" | "GAS";
-  readonly hubTimestamp?: number;
+  readonly dataSource?: "SUPABASE";
+  readonly remoteTimestamp?: number;
   readonly lastCompiled?: number;
   readonly lastFetched?: number;
   readonly lastSync?: number;
@@ -85,12 +81,9 @@ export interface ClanMember {
 
 // Ping response
 export interface PingResponse {
-  version: string;
+  version?: string;
   status: string;
-  scriptId?: string;
-  spreadsheetUrl?: string;
-  sheets?: Record<string, number>;
-  modules: Record<string, string>;
+  message?: string;
   latency?: number;
 }
 
@@ -132,4 +125,16 @@ export interface ConsoleCardMetadata {
   isTagged?: boolean;
   /** UI State: Indicates if the card's data is being refreshed in the background. */
   appIsRefreshing?: boolean;
+}
+
+/**
+ * Standardized provenance metadata from the Layer 1 ClashDataStore.
+ */
+export interface HubInfo {
+  /** The authoritative source of the current dataset. */
+  source: "SUPABASE" | "WORKER" | "GAS";
+  /** Human-readable age of the data at the source. */
+  hubAge: string | null;
+  /** Standardized diagnostic code for sync failures. */
+  diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
 }

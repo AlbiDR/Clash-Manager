@@ -26,7 +26,8 @@ import {
   TrophyBadge,
   ScoreBadge,
   StatsGrid,
-  StatisticItem
+  StatisticItem,
+  TenureBadge
 } from "@shared";
 import { computed } from "vue";
 import type { Recruit, ConsoleCardMetadata } from "@core/types";
@@ -48,9 +49,9 @@ const emit = defineEmits<{
 
 /**
  * ACCESSIBILITY RESOLVER
- * Converts the raw 'ago' timestamp into a human-readable duration since last sighting.
+ * Uses the authoritative longevity label provided by the backend.
  */
-const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
+const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(props.recruit.d.ago));
 </script>
 
 <template>
@@ -66,7 +67,8 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
-      <div class="badge time">{{ timeAgo }}</div>
+      <TenureBadge v-if="props.recruit.tenureLabel" :days="props.recruit.tenureDays" />
+      <div class="badge time longevity-badge">{{ timeAgo }}</div>
       <div class="badge tag">#{{ props.recruit.id.substring(0, 5) }}</div>
     </template>
 
@@ -83,7 +85,7 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
 
     <!-- [SLOT] EXPANDED CONTENT: Detailed recruitment metrics and actions. -->
     <template #expanded-content>
-      <StatsGrid :columns="3" :loading="props.appIsRefreshing">
+      <StatsGrid :columns="2" :loading="props.appIsRefreshing">
         <StatisticItem
           label="Donations"
           :value="props.recruit.d.don"
@@ -100,13 +102,22 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
           benchmark-metric="warWins"
           :benchmark-raw-value="props.recruit.d.war"
         />
+
         <StatisticItem
           label="Cards Won"
-          :value="props.recruit.d.cards || '-'"
+          :value="props.recruit.d.cards"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
           benchmark-metric="cardsWon"
           :benchmark-raw-value="props.recruit.d.cards || 0"
+        />
+        <StatisticItem
+          label="RPoS"
+          :value="props.recruit.potentialRawScore.toLocaleString(undefined, { maximumFractionDigits: 0 })"
+          :loading="props.appIsRefreshing"
+          benchmark-type="hh"
+          benchmark-metric="score"
+          :benchmark-raw-value="props.recruit.potentialScore"
         />
       </StatsGrid>
 
@@ -123,7 +134,15 @@ const timeAgo = computed(() => formatTimeAgo(props.recruit.d.ago));
 <style scoped>
 /* Content specific styles only */
 
+.longevity-badge {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 18px;
+  flex-shrink: 0;
+}
+
 .card-actions-margin {
-  margin-top: 8px;
+  margin-top: 16px;
 }
 </style>

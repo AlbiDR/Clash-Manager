@@ -17,6 +17,8 @@ const mockRecruit: Recruit = {
   t: 6500,
   potentialScore: 92,
   potentialRawScore: 15000,
+  longevity: 2880,
+  longevityLabel: "Time ago: 2d",
   d: {
     don: 250,
     war: 12,
@@ -104,13 +106,15 @@ describe("RecruitCard.vue", () => {
     expect(statsGrid.attributes("aria-busy")).toBe("false");
 
     const statItems = wrapper.findAllComponents({ name: "StatisticItem" });
-    expect(statItems).toHaveLength(3);
+    expect(statItems).toHaveLength(4);
     expect(statItems[0].props("label")).toBe("Donations");
     expect(statItems[0].props("value")).toBe(250);
     expect(statItems[1].props("label")).toBe("War Wins");
     expect(statItems[1].props("value")).toBe(12);
     expect(statItems[2].props("label")).toBe("Cards Won");
     expect(statItems[2].props("value")).toBe(4500);
+    expect(statItems[3].props("label")).toBe("RPoS");
+    expect(statItems[3].props("value")).toBe("15,000");
 
     expect(wrapper.findComponent({ name: "CardActions" }).exists()).toBe(true);
   });

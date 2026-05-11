@@ -26,8 +26,17 @@ import { ref } from "vue";
 const BLUEPRINT_KEY = "clash_manager_blueprint_mode";
 
 // [PERF] Singleton State: Ensures all components share the same toggle status.
-// Initialized from LocalStorage to preserve user preference across reloads.
-const isBlueprintMode = ref(localStorage.getItem(BLUEPRINT_KEY) === "true");
+// Initialized from LocalStorage or URL param to preserve state across reloads or automation.
+const getParam = (name: string) => {
+  const search = new URLSearchParams(window.location.search);
+  if (search.has(name)) return search.get(name);
+  const hashSearch = new URLSearchParams(window.location.hash.split("?")[1] || "");
+  return hashSearch.get(name);
+};
+
+const isBlueprintMode = ref(
+  localStorage.getItem(BLUEPRINT_KEY) === "true" || getParam("blueprint") === "true"
+);
 
 /**
  * COMPOSABLE: useBlueprintMode

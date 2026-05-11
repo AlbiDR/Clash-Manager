@@ -77,10 +77,10 @@ function showFatalError(error: unknown) {
 async function bootstrap() {
   try {
     // Fix 11: Config Validation
-    const gasUrl = import.meta.env.VITE_GAS_URL;
-    if (!gasUrl && !localStorage.getItem("cm_gas_url")) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl && !localStorage.getItem("cm_supabase_url")) {
       throw new Error(
-        "Missing Configuration: VITE_GAS_URL is not defined in environment variables.",
+        "Missing Configuration: VITE_SUPABASE_URL is not defined in environment variables.",
       );
     }
 
@@ -133,23 +133,17 @@ async function bootstrap() {
     
     // CONCURRENCY FIX: Start API Handshake FIRST.
     // Do NOT start background sync (heavy data fetch) until handshake clears.
-    // This prevents GAS 'Too Many Requests' errors on cold boot.
+    // This prevents concurrent connection limits on cold boot.
     apiState.init();
 
-    // PERFORMANCE: High-Speed HUB Bypass
-    // Rationale: We no longer gate the full sync by the GAS handshake if the 
-    // high-speed Worker is already available. This allows the 'HUB' source
-    // to win the race and minimize LCP.
+    // PERFORMANCE: High-Speed SUPABASE Fetch
+    // Rationale: We proceed with sync once the Supabase client indicates online status.
     const unwatch = watch(
-      [() => apiState.apiStatus.value, () => apiState.workerStatus.value],
-      ([apiStatus, workerStatus]) => {
-        if (apiStatus === "online" || workerStatus === "online") {
-          // At least one authoritative source is awake; proceed with sync
+      () => apiState.apiStatus.value,
+      (apiStatus) => {
+        if (apiStatus === "online") {
           clashDataStore.startBackgroundSync();
           unwatch(); // Run once per session
-        } else if (apiStatus === "offline" && workerStatus === "offline") {
-          // Hard fail only if both pathways are unavailable
-          unwatch();
         }
       },
       { immediate: true }
@@ -162,12 +156,16 @@ async function bootstrap() {
       // PERSISTENCE: Request durable storage
       storagePersistence.requestPersistence();
 
-      // SYNC SETTINGS: Ensure SW has access to latest threshold
+      // SYNC SETTINGS: Ensure SW has access to latest configurations
       if (modules.notificationThreshold) {
         await idb.set(
           "cm_notification_threshold",
           modules.notificationThreshold,
         );
+      }
+      if (apiState.apiUrl.value) {
+        await idb.set("cm_supabase_url", apiState.apiUrl.value);
+        await idb.set("cm_supabase_key", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
       }
 
       // NATIVE: Register Periodic Sync for WebAPK

@@ -75,10 +75,8 @@ describe('StatisticItem.vue', () => {
     });
 
     expect(wrapper.find('.stat-item.skeleton-anim').exists()).toBe(true);
-    expect(wrapper.find('.sk-label-box').exists()).toBe(true);
-    expect(wrapper.find('.sk-value-box').exists()).toBe(true);
-    expect(wrapper.find('.label').exists()).toBe(false);
-    expect(wrapper.find('.value').exists()).toBe(false);
+    expect(wrapper.find('.label .sk-label-box').exists()).toBe(true);
+    expect(wrapper.find('.value .sk-value-box').exists()).toBe(true);
   });
 
   it('calls getSafeBenchmark when all benchmark props are provided', () => {
