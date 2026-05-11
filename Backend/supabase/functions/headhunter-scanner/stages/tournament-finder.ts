@@ -5,7 +5,7 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot";
-import { RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
+import { RoyaleTournamentListSchema, RoyaleTournamentSchema, DiscoveryAnchorSchema, DiscoveryCacheItemSchema } from "../../_shared/schemas.ts";
 
 /**
  * Stage: Tournament Discovery
@@ -22,42 +22,59 @@ export async function runTournamentDiscovery(
     console.log(`[TOURNAMENT_DISCOVERY] Triggered. Candidates map size: ${candidates.size}, Exclusion set size: ${exclusionSet.size}, Required trophies: ${requiredTrophies}`);
     try {
         // 1. Fetch Autonomous Anchors
-        const { data: anchors, error: anchorError } = await supabase.schema('substrate' as any).rpc('get_active_discovery_anchors', { p_limit: 15 });
+        const { data: rawAnchors, error: anchorError } = await supabase.schema('substrate').rpc('get_active_discovery_anchors', { p_limit: 15 });
 
         if (anchorError) {
             logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${anchorError.message}` });
             console.error(`[TOURNAMENT_DISCOVERY] Anchor fetch error: ${anchorError.message}. Falling back to hardcoded keywords.`);
         }
 
+        // [GUARD] VALIDATION BOUNDARY: Target B [1]
+        // Rationale: Harden autonomous anchors fetched from substrate to prevent corrupted keywords.
+        const parsedAnchors = v.safeParse(v.array(DiscoveryAnchorSchema), rawAnchors);
+        logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
+            passed: parsedAnchors.success,
+            details: parsedAnchors.success ? 'Autonomous anchors validated' : 'Malformed anchor data'
+        });
+
         const FALLBACK_KEYWORDS = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int", "open", "free", "all"];
-        const keywords = (anchors as any[])?.map((anchor: any) => anchor.keyword) || FALLBACK_KEYWORDS;
-        const isUsingFallback = !anchors || (anchors as any[]).length === 0;
+        const keywords = parsedAnchors.success ? parsedAnchors.output.map(anchor => anchor.keyword) : FALLBACK_KEYWORDS;
+        const isUsingFallback = !parsedAnchors.success || parsedAnchors.output.length === 0;
 
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
-        const { data: cached } = await supabase.schema('substrate').from('discovery_cache')
+        const { data: rawCached } = await supabase.schema('substrate').from('discovery_cache')
             .select('player_tag')
             .gte('scanned_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
-        const blacklist = new Set((cached as any[])?.map(c => c.player_tag) || []);
+
+        // [GUARD] VALIDATION BOUNDARY: Target B [1]
+        // Rationale: Harden discovery cache data to ensure the blacklist set is reliable.
+        const parsedCached = v.safeParse(v.array(DiscoveryCacheItemSchema), rawCached);
+        logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
+            passed: parsedCached.success,
+            details: parsedCached.success ? 'Discovery cache validated' : 'Malformed cache data'
+        });
+
+        const blacklist = new Set(parsedCached.success ? parsedCached.output.map(c => c.player_tag) : []);
         console.log(`[TOURNAMENT_DISCOVERY] Loaded ${blacklist.size} cached tournaments to blacklist`);
-        let count = 0;
+        let newCandidatesCount = 0;
 
         const discoveryTasks = keywords.map(keyword => async () => {
             logAudit('TOURNAMENT_DISCOVERY', 'called', { keyword });
             console.log(`[TOURNAMENT_DISCOVERY] Starting search for keyword: '${keyword}'`);
             let keywordYield = 0;
             try {
-                const res = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
-                logAudit('TOURNAMENT_DISCOVERY', 'run', { keyword, status: res.status });
-                console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' returned HTTP ${res.status}`);
-                if (!res.ok) {
-                    logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: `HTTP_${res.status}` });
-                    console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' failed due to HTTP ${res.status}`);
+                const tournamentListResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
+                logAudit('TOURNAMENT_DISCOVERY', 'run', { keyword, status: tournamentListResponse.status });
+                console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' returned HTTP ${tournamentListResponse.status}`);
+                if (!tournamentListResponse.ok) {
+                    logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: `HTTP_${tournamentListResponse.status}` });
+                    console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' failed due to HTTP ${tournamentListResponse.status}`);
                     return;
                 }
                 
-                const rawTournamentListData = await res.json();
+                const rawTournamentListData = await tournamentListResponse.json();
 
                 // [GUARD] VALIDATION BOUNDARY: Target B [1]
                 // THREAT: Malformed tournament list response could crash the batch loop.
@@ -86,9 +103,9 @@ export async function runTournamentDiscovery(
                         return;
                     }
                     try {
-                        const detailRes = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTarget.tag)}`);
-                        if (detailRes.ok) {
-                            const rawTournamentDetails = await detailRes.json();
+                        const tournamentDetailsResponse = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTarget.tag)}`);
+                        if (tournamentDetailsResponse.ok) {
+                            const rawTournamentDetails = await tournamentDetailsResponse.json();
 
                             // [GUARD] VALIDATION BOUNDARY: Target B [1]
                             // THREAT: Corrupted tournament details payload poisoning the discovery candidates map.
@@ -103,7 +120,7 @@ export async function runTournamentDiscovery(
                                     // to the profiler stage which fetches the full player profile.
                                     if (!tournamentMember.clan?.tag && !exclusionSet.has(tournamentMember.tag)) {
                                         candidates.set(tournamentMember.tag, "TOURNAMENT");
-                                        count++;
+                                        newCandidatesCount++;
                                         keywordYield++;
                                         foundInTournament++;
                                     } else if (tournamentMember.clan?.tag) {
@@ -116,7 +133,7 @@ export async function runTournamentDiscovery(
                                 console.error(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag} returned invalid details shape.`);
                             }
                         } else {
-                            console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${tournamentTarget.tag} failed with HTTP ${detailRes.status}`);
+                            console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${tournamentTarget.tag} failed with HTTP ${tournamentDetailsResponse.status}`);
                         }
                     } catch (tournamentDetailException: unknown) {
                         console.error(`[TOURNAMENT_DISCOVERY] Exception while fetching tournament ${tournamentTarget.tag}: ${tournamentDetailException instanceof Error ? tournamentDetailException.message : String(tournamentDetailException)}`);
@@ -125,7 +142,7 @@ export async function runTournamentDiscovery(
                 await processBatch(tournamentTasks, 10);
 
                 // 2. Report yield for autonomy
-                await supabase.schema('substrate' as any).rpc('report_anchor_yield', { 
+                await supabase.schema('substrate').rpc('report_anchor_yield', {
                     p_keyword: keyword, 
                     p_yield: keywordYield 
                 });
@@ -141,10 +158,10 @@ export async function runTournamentDiscovery(
         });
         
         await processBatch(discoveryTasks, 5);
-        console.log(`[TOURNAMENT_DISCOVERY] All keywords processed. Total new candidates discovered: ${count}`);
-        stats.discovery_targets += count;
-        if (stats.discovery_tournament !== undefined) stats.discovery_tournament += count;
-        logAudit('TOURNAMENT_DISCOVERY', 'terminated', { candidates: count });
+        console.log(`[TOURNAMENT_DISCOVERY] All keywords processed. Total new candidates discovered: ${newCandidatesCount}`);
+        stats.discovery_targets += newCandidatesCount;
+        if (stats.discovery_tournament !== undefined) stats.discovery_tournament += newCandidatesCount;
+        logAudit('TOURNAMENT_DISCOVERY', 'terminated', { candidates: newCandidatesCount });
     } catch (tournamentDiscoveryException: unknown) {
         const errorMessage = tournamentDiscoveryException instanceof Error ? tournamentDiscoveryException.message : String(tournamentDiscoveryException);
         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: errorMessage });
