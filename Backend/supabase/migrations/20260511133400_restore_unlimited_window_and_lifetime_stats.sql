@@ -1,9 +1,9 @@
--- Migration: Restore Unlimited Window and Implement Lifetime Average Donations
--- Rationale: 
--- 1. Restore the "Unlimited Window" scoring logic as requested by the user.
--- 2. Use all available historical data in the database for war performance.
--- 3. Replace current week donations with the lifetime average from member_snapshots.
--- 4. Ensure the 16.0 denominator for war participation is preserved.
+-- Migration: Apply Hybrid Linear-Decay to Lifetime Donations
+-- Rationale:
+-- 1. Aligns the donation average calculation with the war performance weighting.
+-- 2. Uses a time-based decay for member snapshots (100% -> 55% for the first 10 weeks, 50% floor thereafter).
+-- 3. Ensures that recent donations carry more weight than historical ones, while preserving long-term history.
+-- Bug Fix: Added NULLIF guards against division-by-zero in avg_war_rate and max_history_weeks.
 
 BEGIN;
 
@@ -12,14 +12,13 @@ DROP VIEW IF EXISTS features.scoring_view CASCADE;
 
 CREATE VIEW features.scoring_view AS
 WITH 
-  -- 1. Identify ALL available weeks in the database
+  -- 1. Identify ALL available weeks in the database for War
   global_weeks AS (
     SELECT DISTINCT week_id
     FROM drivers.war_activity
     ORDER BY week_id DESC
   ),
-  -- 2. Assign weights based on recency rank (1 = most recent)
-  -- Hybrid Linear-Decay: Weeks 1-10 scale 100% -> 55%. Week 11+ floor at 50%.
+  -- 2. War Weights: rank 1 = most recent (weight 1.0), rank 10 = 0.55, rank 11+ = 0.50
   week_weights AS (
     SELECT 
       week_id,
@@ -30,21 +29,20 @@ WITH
       END as weight
     FROM global_weeks
   ),
-  -- 3. Calculate the sum of weights for the entire window to use as a denominator
+  -- 3. Total weight sum and week count across ALL recorded war weeks
   window_stats AS (
     SELECT 
         COALESCE(SUM(weight), 1.0) as total_weight_sum,
         COUNT(*) as total_window_weeks
     FROM week_weights
   ),
-  -- 4. Calculate weighted stats for each player
+  -- 4. War Performance (Weighted) using ALL available history
   factual_logs AS (
     SELECT 
       m.player_tag,
       SUM(COALESCE(wa.fame, 0) * ww.weight) / ws.total_weight_sum AS weighted_fame,
-      ((SUM(COALESCE(wa.decks_used, 0))::numeric / (ws.total_window_weeks * 16.0)) * 100.0) AS avg_war_rate,
+      ((SUM(COALESCE(wa.decks_used, 0))::numeric / NULLIF(ws.total_window_weeks * 16.0, 0)) * 100.0) AS avg_war_rate,
       COUNT(wa.week_id) AS recorded_weeks,
-      -- Historical string for the sparkline (ALL weeks)
       ( SELECT string_agg(sub.fame::text || ' ' || sub.week_id, ' | ' ORDER BY sub.max_recorded DESC)
         FROM (
           SELECT wa2.week_id,
@@ -63,19 +61,43 @@ WITH
     WHERE m.is_active = true
     GROUP BY m.player_tag, ws.total_weight_sum, ws.total_window_weeks
   ),
-  -- 5. Calculate lifetime average donations from snapshots
+  -- 5. Weighted lifetime average donations from snapshots
+  -- Decay: week_index 0 = 1.0, week_index 9 = 0.55, week_index 10+ = 0.50
   donation_stats AS (
     SELECT 
       player_tag,
-      AVG(donations) as avg_lifetime_donations
-    FROM drivers.member_snapshots
+      SUM(weighted_donations) / NULLIF(SUM(weight), 0) as avg_lifetime_donations
+    FROM (
+      SELECT 
+        player_tag,
+        donations,
+        CASE 
+          WHEN floor(EXTRACT(DAY FROM (now() - snapshot_at)) / 7) <= 9 
+            THEN (1.0 - (floor(EXTRACT(DAY FROM (now() - snapshot_at)) / 7)) * 0.05)
+          ELSE 0.50
+        END as weight,
+        donations::numeric * (CASE 
+          WHEN floor(EXTRACT(DAY FROM (now() - snapshot_at)) / 7) <= 9 
+            THEN (1.0 - (floor(EXTRACT(DAY FROM (now() - snapshot_at)) / 7)) * 0.05)
+          ELSE 0.50
+        END) as weighted_donations
+      FROM drivers.member_snapshots
+    ) s
     GROUP BY player_tag
   ),
-  -- 6. Benchmarking context
+  -- 6. Benchmarking context (NULLIF guards prevent division-by-zero if war_activity is empty)
   benchmarking_context AS (
     SELECT 
-      (SELECT COALESCE(NULLIF(MAX(recorded_weeks), 0), (SELECT total_window_weeks FROM window_stats)) FROM (SELECT count(DISTINCT week_id) as recorded_weeks FROM drivers.war_activity GROUP BY player_tag) w) as max_history_weeks,
-      (SELECT COALESCE(percentile_cont(0.25) WITHIN GROUP (ORDER BY tenure_days), 14) FROM (SELECT GREATEST(0, EXTRACT(DAY FROM (now() - joined_at))) as tenure_days FROM drivers.members WHERE is_active = true) t) as rookie_window_days
+      COALESCE(
+        NULLIF((SELECT MAX(cnt) FROM (SELECT count(DISTINCT week_id) as cnt FROM drivers.war_activity GROUP BY player_tag) w), 0),
+        (SELECT NULLIF(total_window_weeks, 0) FROM window_stats),
+        1
+      ) as max_history_weeks,
+      COALESCE(
+        (SELECT percentile_cont(0.25) WITHIN GROUP (ORDER BY tenure_days)
+         FROM (SELECT GREATEST(0, EXTRACT(DAY FROM (now() - joined_at))) as tenure_days FROM drivers.members WHERE is_active = true) t),
+        14
+      ) as rookie_window_days
   ),
   -- 7. Aggregate base stats
   base_stats AS (
@@ -99,21 +121,21 @@ WITH
     LEFT JOIN donation_stats ds ON m.player_tag = ds.player_tag
     WHERE m.is_active = true
   ),
-  -- 8. Execute weighted scoring logic
+  -- 8. Weighted scoring
   weighted_calculations AS (
     SELECT 
       bs.*,
-      LEAST(1.0, (bs.recorded_weeks::numeric / bc.max_history_weeks::numeric)) AS stability_index,
-      LEAST(1.10, (1.0 + ((bs.tenure_days / 30.0) * 0.01))) AS loyalty_multiplier,
-      round((
+      LEAST(1.0, bs.recorded_weeks::numeric / bc.max_history_weeks::numeric) AS stability_index,
+      LEAST(1.10, 1.0 + ((bs.tenure_days / 30.0) * 0.01)) AS loyalty_multiplier,
+      round(
         (bs.current_fame::numeric * 3.0) + 
         (bs.avg_fame * 25.0) + 
         (bs.donations * 100.0) + 
         (bs.trophies::numeric * 0.1) + 
         (bs.war_rate * 50.0)
-      )) AS baseline_raw_score,
-      ((bs.trophies::numeric * 1.0) + (bs.donations * 0.1) + ((bs.war_wins + 500)::numeric * 20.0)) AS raw_potential_score,
-      power((1.0 - 0.08), GREATEST(0::numeric, (bs.days_inactive - 4.0))) AS decay_multiplier,
+      ) AS baseline_raw_score,
+      (bs.trophies::numeric * 1.0) + (bs.donations * 0.1) + ((bs.war_wins + 500)::numeric * 20.0) AS raw_potential_score,
+      power(1.0 - 0.08, GREATEST(0::numeric, bs.days_inactive - 4.0)) AS decay_multiplier,
       bc.rookie_window_days
     FROM base_stats bs
     CROSS JOIN benchmarking_context bc
@@ -121,10 +143,10 @@ WITH
   clinical_layer AS (
     SELECT 
       wc.*,
-      round(((wc.baseline_raw_score * wc.loyalty_multiplier) * wc.decay_multiplier)) AS raw_performance_score,
+      round((wc.baseline_raw_score * wc.loyalty_multiplier) * wc.decay_multiplier) AS raw_performance_score,
       CASE
-        WHEN (wc.tenure_days < wc.rookie_window_days) THEN 
-          ((wc.raw_potential_score * power(((wc.rookie_window_days - wc.tenure_days) / wc.rookie_window_days), 2::numeric)) / 5.0)
+        WHEN wc.tenure_days < wc.rookie_window_days THEN 
+          (wc.raw_potential_score * power((wc.rookie_window_days - wc.tenure_days) / wc.rookie_window_days, 2::numeric)) / 5.0
         ELSE 0::numeric
       END AS heritage_bonus
     FROM weighted_calculations wc
@@ -160,20 +182,18 @@ SELECT
   heritage_bonus,
   hist,
   CASE
-    WHEN (global_max_score > 0::numeric) THEN 
-      round(((total_combined_score / global_max_score) * 100.0))
+    WHEN global_max_score > 0::numeric THEN round((total_combined_score / global_max_score) * 100.0)
     ELSE 0::numeric
   END AS performance_score,
   CASE
-    WHEN (global_max_score > 0::numeric) THEN 
-      round(((total_combined_score / global_max_score) * 100.0))
+    WHEN global_max_score > 0::numeric THEN round((total_combined_score / global_max_score) * 100.0)
     ELSE 0::numeric
   END AS pes
 FROM final_scoring;
 
 GRANT SELECT ON features.scoring_view TO authenticated, anon, service_role;
 
--- 9. Restore features.roster_view with lifetime average donations
+-- 9. Restore features.roster_view
 CREATE VIEW features.roster_view AS
 SELECT
     m.player_tag,
@@ -183,7 +203,7 @@ SELECT
     ('https://royaleapi.com/player/'           || ltrim(m.player_tag, '#')) AS royaleapi_link,
     m.exp_level,
     m.trophies,
-    round(s.donations) AS donations, -- Lifetime average instead of current week
+    round(s.donations) AS donations,
     m.donations_received,
     m.clan_rank,
     m.decks_used_today,
