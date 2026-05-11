@@ -15,10 +15,10 @@ done
 for view in "${VIEWS[@]}"; do
   for theme in "${THEMES[@]}"; do
     echo "Capturing $view ($theme)..."
-    shot-scraper "http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=$theme&view=$view" \
-      --width 1200 --height 3000 \
+    shot-scraper shot "http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=$theme&view=$view" \
+      --width 1200 --height 4000 \
       --selector "#wrapper-$view" \
-      --scale-factor 2 \
+      --retina \
       --omit-background \
       --wait 12000 \
       -o "public/assets/branding/$view-$theme.png"
