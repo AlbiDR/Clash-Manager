@@ -53,6 +53,7 @@
 | @supabase/supabase-js | ^2.105.1 | ^2.105.3 | 2026-06-19 | PASS |
 | @supabase/supabase-js | ^2.105.3 | ^2.105.4 | 2026-06-23 | PASS |
 | workbox-window | ^7.4.0 | ^7.4.1 | 2026-05-10 | PASS |
+| workbox-precaching | ^7.4.0 | ^7.4.1 | 2026-06-27 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
