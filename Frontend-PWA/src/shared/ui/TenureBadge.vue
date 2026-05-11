@@ -22,6 +22,6 @@ const { days = 0 } = defineProps<{
 .badge.tenure {
   color: var(--sys-color-on-surface);
   background: var(--sys-color-surface-container-highest);
-  opacity: 0.8;
+  opacity: 1;
 }
 </style>

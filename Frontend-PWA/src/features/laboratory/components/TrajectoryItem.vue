@@ -88,11 +88,11 @@ const baseUrl = import.meta.env.BASE_URL;
 .trajectory-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--shape-corner-large);
-  padding: 14px 18px;
+  padding: 10px 14px;
   position: relative;
   animation: slide-in 0.4s cubic-bezier(0.2, 0, 0, 1) both;
   animation-delay: calc(min(var(--i), 10) * 0.05s);
@@ -264,7 +264,7 @@ const baseUrl = import.meta.env.BASE_URL;
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
-  min-width: 100px;
+  flex-shrink: 0;
 }
 
 .cost-item {
