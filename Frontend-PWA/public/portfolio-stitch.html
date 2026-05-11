@@ -204,21 +204,31 @@
                                     const expandFirst = () => {
                                         const cards = iframe.contentWindow.document.querySelectorAll('.base-card');
                                         if (cards.length > 0) {
-                                            // Only click if not already expanded (checking for 'expanded' class on BaseCard)
-                                            if (!cards[0].classList.contains('expanded')) {
-                                                cards[0].click();
+                                            const firstCard = cards[0];
+                                            if (!firstCard.classList.contains('expanded')) {
+                                                const header = firstCard.querySelector('.card-header');
+                                                if (header) {
+                                                    header.click();
+                                                    console.log(`[Stitch] Expanded first ${v.id} card`);
+                                                    return true;
+                                                }
+                                            } else {
+                                                return true; // Already expanded
                                             }
-                                            return true;
                                         }
                                         return false;
                                     };
                                     
-                                    if (!expandFirst()) {
-                                        const interval = setInterval(() => {
-                                            if (expandFirst()) clearInterval(interval);
-                                        }, 500);
-                                        setTimeout(() => clearInterval(interval), 10000); // safety timeout
-                                    }
+                                    // Poll for expansion
+                                    let attempts = 0;
+                                    const interval = setInterval(() => {
+                                        if (expandFirst() || attempts > 20) {
+                                            clearInterval(interval);
+                                            // Force one final resize after expansion animation
+                                            setTimeout(() => resizeIframeToContent(iframe, wrapper), 500);
+                                        }
+                                        attempts++;
+                                    }, 500);
                                 }
 
                                 // 3. Expand settings if applicable
@@ -232,21 +242,21 @@
                                 };
                                 
                                 if (v.id === 'settings') {
-                                    if (!expandSettings()) {
-                                        const interval = setInterval(() => {
-                                            if (expandSettings()) clearInterval(interval);
-                                        }, 500);
-                                        setTimeout(() => clearInterval(interval), 10000);
-                                    }
+                                    const interval = setInterval(() => {
+                                        if (expandSettings()) clearInterval(interval);
+                                    }, 500);
+                                    setTimeout(() => clearInterval(interval), 10000);
                                 }
                                 
-                                // Final resize tracking
+                                // Final resize tracking (Longer duration to handle animations)
                                 const resizeInterval = setInterval(() => {
                                     resizeIframeToContent(iframe, wrapper);
-                                }, 1000);
+                                }, 500);
                                 setTimeout(() => clearInterval(resizeInterval), 15000);
-                            } catch(e) {}
-                        }, 1000); 
+                            } catch(e) {
+                                console.error('[Stitch] Error in post-load adjustments:', e);
+                            }
+                        }, 1500); // Increased delay for hydration
                     };
                 }
             });

@@ -185,10 +185,10 @@ function handleKeydown(e: KeyboardEvent) {
   to { transform: rotate(360deg); }
 }
 
-/* Responsive adjustment */
-@media (max-width: 480px) {
+/* Responsive adjustment - disabled to ensure visibility in screenshots */
+/* @media (max-width: 480px) {
   .player-label {
     display: none;
   }
-}
+} */
 </style>

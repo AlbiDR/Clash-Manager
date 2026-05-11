@@ -35,7 +35,7 @@ const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
-  <div class="summary-card glass-panel">
+  <div class="summary-card glass-panel" style="overflow: hidden;">
     <div class="summary-header">
       <div class="player-info">
         <h2 class="player-name">{{ profile.name }}</h2>
@@ -134,14 +134,16 @@ const baseUrl = import.meta.env.BASE_URL;
 
 .projection-badge {
   color: var(--sys-color-on-primary-container);
-  padding: 8px 14px;
-  border-radius: var(--shape-corner-medium);
+  padding: 6px 10px;
+  border-radius: var(--shape-corner-small);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
+  border: 1px solid rgba(var(--sys-color-primary-rgb), 0.1);
   background: var(--sys-color-surface-container);
   flex: 1;
+  gap: 8px;
 }
 
 .projection-badge.status {
@@ -259,20 +261,29 @@ const baseUrl = import.meta.env.BASE_URL;
   grid-template-columns: repeat(3, 1fr);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 320px) {
   .resources-grid, .resources-grid.triple {
     grid-template-columns: 1fr;
     gap: 8px;
   }
 }
 
+@media (min-width: 321px) and (max-width: 640px) {
+  .resources-grid.triple {
+    grid-template-columns: 1fr;
+  }
+  .resources-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .res-slab {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   background: var(--sys-color-surface-container-low);
-  padding: 14px 18px;
-  border-radius: var(--shape-corner-large);
+  padding: 10px 14px;
+  border-radius: var(--shape-corner-medium);
   border: 1px solid var(--sys-color-outline-variant);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

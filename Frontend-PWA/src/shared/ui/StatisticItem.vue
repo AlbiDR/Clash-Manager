@@ -64,7 +64,7 @@ const tooltipVal = computed(() => {
   font-weight: 850;
   color: var(--sys-color-secondary);
   letter-spacing: 0.06em;
-  opacity: 0.7;
+  opacity: 1;
   text-align: center;
   line-height: 1.1;
   min-height: 20px;
