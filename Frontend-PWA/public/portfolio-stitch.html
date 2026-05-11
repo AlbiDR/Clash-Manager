@@ -31,7 +31,7 @@
             min-height: 844px;
             background: #000;
             border-radius: 48px;
-            padding: 12px;
+            padding: 10px;
             box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
             border: 2px solid rgba(255, 255, 255, 0.15);
             position: relative;
@@ -55,7 +55,7 @@
 
         .label {
             position: absolute;
-            bottom: 20px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
@@ -195,7 +195,14 @@
                                     ::-webkit-scrollbar { display: none !important; }
                                     * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
                                     .trajectory-list > *:nth-child(n+11) { display: none !important; }
-                                    .dock-container { display: none !important; }
+                                    
+                                    /* Reduce excessive bottom spacing for tighter screenshots */
+                                    .view-container { padding-bottom: 120px !important; }
+                                    .list-container { padding-bottom: 24px !important; }
+                                    .footer-info { padding: 24px 0 !important; }
+                                    
+                                    /* Ensure dock is visible and correctly themed */
+                                    .dock-container { opacity: 1 !important; transform: translateX(-50%) !important; pointer-events: auto !important; }
                                 `;
                                 iframe.contentWindow.document.head.appendChild(style);
 
