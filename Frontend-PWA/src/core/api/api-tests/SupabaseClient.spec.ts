@@ -28,6 +28,7 @@ vi.mock("@supabase/supabase-js", () => {
     rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
     from: vi.fn(() => mockFrom),
   };
+  (mockClient as any).schema = vi.fn(() => mockClient);
 
   return {
     createClient: vi.fn(() => mockClient),
@@ -141,14 +142,14 @@ describe("SupabaseClient", () => {
     it("loadCache calls idb.get", async () => {
       vi.mocked(idb.get).mockResolvedValue({ lb: [], hh: [] } as any);
       const result = await SupabaseClient.loadCache();
-      expect(idb.get).toHaveBeenCalledWith("CLAN_MANAGER_DATA_V7");
+      expect(idb.get).toHaveBeenCalledWith("CLAN_MANAGER_DATA_V8");
       expect(result).toEqual({ lb: [], hh: [] });
     });
 
     it("saveCache calls idb.set", async () => {
       const data = { lb: [], hh: [] } as any;
       await SupabaseClient.saveCache(data);
-      expect(idb.set).toHaveBeenCalledWith("CLAN_MANAGER_DATA_V7", data);
+      expect(idb.set).toHaveBeenCalledWith("CLAN_MANAGER_DATA_V8", data);
     });
   });
 
@@ -178,8 +179,8 @@ describe("SupabaseClient", () => {
 
       const result = await SupabaseClient.fetchRemote();
 
-      expect(result.lb[0].n).toBe('Unknown');
-      expect(result.hh[0].n).toBe('Unknown');
+      expect(result.lb[0].n).toBe('');
+      expect(result.hh[0].n).toBe('');
       expect(result.timestamp).toBeLessThanOrEqual(Date.now());
     });
 
@@ -241,17 +242,25 @@ describe("SupabaseClient", () => {
 
       const result = await SupabaseClient.scanRecruitsDirect();
       expect(result).toHaveLength(1);
-      expect(result![0].n).toBe('Unknown');
+      expect(result![0].n).toBe('');
       expect(result![0].t).toBe(0);
     });
   });
 
   describe("Profile Retrieval", () => {
+    beforeEach(() => {
+      global.fetch = vi.fn();
+    });
+
     it("getPlayerProfile normalizes tags and returns profile", async () => {
-      vi.mocked(mockFrom.single).mockResolvedValue({
-        data: { player_tag: '#MYTAG', player_name: 'Me', exp_level: 14 },
-        error: null
-      });
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          profile: { tag: '#MYTAG', name: 'Me', kingLevel: 14, xpIntoLevel: 0 },
+          cards: [],
+          inventory: { gold: 0, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
+        }),
+      } as any);
 
       const result = await SupabaseClient.getPlayerProfile('MYTAG');
       expect(result.profile.tag).toBe('#MYTAG');
@@ -260,23 +269,21 @@ describe("SupabaseClient", () => {
     });
 
     it("getPlayerProfile throws if profile not found", async () => {
-      vi.mocked(mockFrom.single).mockResolvedValue({ data: null, error: null });
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ error: 'Profile not found' }),
+      } as any);
 
       await expect(SupabaseClient.getPlayerProfile('MISSING')).rejects.toThrow('Profile not found');
     });
 
     it("getPlayerProfile throws if validation fails", async () => {
-      // exp_level should be a number, if we pass something that safeNumberPipe rejects (like a non-numeric string that isn't empty)
-      // but SbRosterRowSchema has v.optional(SafeNumberPipe) so it might not fail easily.
-      // Let's pass something that safeStringPipe might pass but a stricter check would fail,
-      // or just malform the object enough if there were required fields.
-      // Actually, all fields in SbRosterRowSchema are optional with defaults.
-      // Wait, SbRosterRowSchema uses SafeNumberPipe which has v.number() as the final gatekeeper.
-
-      vi.mocked(mockFrom.single).mockResolvedValue({
-        data: { player_tag: '#TAG', exp_level: 'invalid' },
-        error: null
-      });
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: 'Profile data validation failed' }),
+      } as any);
 
       await expect(SupabaseClient.getPlayerProfile('TAG')).rejects.toThrow('Profile data validation failed');
     });
@@ -297,7 +304,7 @@ describe("SupabaseClient", () => {
         expect.objectContaining({
           type: 'RECRUIT_DISMISSAL',
           items: [
-            { id: 'ABC', score: 80 }
+            { id: '#ABC', score: 80 }
           ]
         })
       ]));
