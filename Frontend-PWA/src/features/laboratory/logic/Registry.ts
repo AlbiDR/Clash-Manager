@@ -16,7 +16,7 @@
  */
 
 import type { Rarity } from './Types';
-import { asGold, asXP, type Gold, type XP } from '@core/utils/economy';
+import { asGold, asXP, asGems, addGems, type Gold, type XP, type Gems } from '@core/utils/economy';
 
 /**
  * The maximum level any card can achieve in the current game version.
@@ -52,13 +52,44 @@ export const LOOKAHEAD_WEIGHT = 0.4;
 export const LOOKAHEAD_PRECISION = 0.01;
 
 /**
- * Gold costs required for each level upgrade.
- * Key: Target Level.
- * Value: Gold amount.
+ * Gold costs required for each level upgrade, per rarity.
+ * Key: Rarity -> Target Level -> Gold amount.
+ *
+ * Rationale: Gold costs are NOT uniform across rarities at the same absolute
+ * level. A rarity's first upgrade costs less than what Common pays at that
+ * level because it reflects fewer cumulative upgrade steps. Discrepancies
+ * verified against the reference progression calculator (2026 update):
+ *   - Epic   L7: 400g  (not 1000g — it is Epic's first upgrade step)
+ *   - Legendary L10: 5000g (not 8000g — it is Legendary's first upgrade step)
  */
-export const GOLD_COST_TABLE: Readonly<Record<number, Gold>> = {
-  2: asGold(5), 3: asGold(20), 4: asGold(50), 5: asGold(150), 6: asGold(400), 7: asGold(1000), 8: asGold(2000),
-  9: asGold(4000), 10: asGold(8000), 11: asGold(15000), 12: asGold(25000), 13: asGold(40000), 14: asGold(60000), 15: asGold(90000), 16: asGold(120000)
+export const GOLD_COST_TABLE: Readonly<Record<Rarity, Readonly<Record<number, Gold>>>> = {
+  "Common": {
+    2: asGold(5),     3: asGold(20),    4: asGold(50),    5: asGold(150),
+    6: asGold(400),   7: asGold(1000),  8: asGold(2000),  9: asGold(4000),
+    10: asGold(8000), 11: asGold(15000),12: asGold(25000), 13: asGold(40000),
+    14: asGold(60000),15: asGold(90000),16: asGold(120000)
+  },
+  "Rare": {
+    4: asGold(50),    5: asGold(150),   6: asGold(400),   7: asGold(1000),
+    8: asGold(2000),  9: asGold(4000),  10: asGold(8000), 11: asGold(15000),
+    12: asGold(25000),13: asGold(40000),14: asGold(60000), 15: asGold(90000),
+    16: asGold(120000)
+  },
+  "Epic": {
+    // L7 is Epic's first upgrade step — costs 400g, not 1000g.
+    7: asGold(400),   8: asGold(2000),  9: asGold(4000),  10: asGold(8000),
+    11: asGold(15000),12: asGold(25000),13: asGold(40000), 14: asGold(60000),
+    15: asGold(90000),16: asGold(120000)
+  },
+  "Legendary": {
+    // L10 is Legendary's first upgrade step — costs 5000g, not 8000g.
+    10: asGold(5000), 11: asGold(15000),12: asGold(25000), 13: asGold(40000),
+    14: asGold(60000),15: asGold(90000),16: asGold(120000)
+  },
+  "Champion": {
+    12: asGold(25000),13: asGold(40000),14: asGold(60000),
+    15: asGold(90000),16: asGold(120000)
+  }
 };
 
 /**
@@ -111,7 +142,7 @@ export const GEM_CONVERSION_RATES: Readonly<Record<Rarity, number>> = {
  * Cumulative XP requirements for each King Level (Account Level).
  * Rationale: Used to project the player's account level after a series of upgrades.
  */
-export const KING_XP_TABLE = [
+export const KING_XP_TABLE: ReadonlyArray<KingXpRow> = [
   { level: 1, cumulative: asXP(0) },
   { level: 2, cumulative: asXP(20) },
   { level: 3, cumulative: asXP(70) },
@@ -201,7 +232,7 @@ export const KING_XP_TABLE = [
   { level: 87, cumulative: asXP(21438770) },
   { level: 88, cumulative: asXP(23338770) },
   { level: 89, cumulative: asXP(25338770) },
-  { level: 90, cumulative: asXP(27438770) }
+  { level: 90, cumulative: asXP(27438770) },
 ];
 
 /**
@@ -209,7 +240,7 @@ export const KING_XP_TABLE = [
  * Rationale: Represents levels where significant game features or rewards are unlocked.
  */
 export const IMPORTANT_KING_LEVELS: ReadonlyArray<number> = [
-  2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75
+  2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 75, 80, 85, 90
 ];
 
 /**
@@ -220,3 +251,122 @@ export const IMPORTANT_KING_LEVELS: ReadonlyArray<number> = [
 export const EFFICIENCY_OVERRIDES: Readonly<Record<string, number>> = {
   // Add specific card overrides here if necessary
 };
+
+/**
+ * Determines the King Level (Account Level) based on total XP earned.
+ *
+ * @param totalXp - The cumulative XP earned from card upgrades.
+ * @returns The corresponding King Level from the game tables.
+ */
+export function calculateKingLevel(totalXp: number): number {
+  let low = 0;
+  let high = KING_XP_TABLE.length - 1;
+  let level = 1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (totalXp >= Number(KING_XP_TABLE[mid].cumulative)) {
+      level = KING_XP_TABLE[mid].level;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return level;
+}
+
+/**
+ * Determines the next logical King Level milestone for target projection.
+ *
+ * @param currentLevel - Current King Level.
+ * @returns The next milestone level.
+ */
+export function calculateDefaultTarget(currentLevel: number): number {
+  const nextMilestone = IMPORTANT_KING_LEVELS.find((m) => m > currentLevel);
+  return nextMilestone || currentLevel + 1;
+}
+
+/**
+ * Normalizes a relative card level to its absolute game level.
+ *
+ * @param level - The relative level (1-14).
+ * @param rarity - The card's rarity.
+ * @returns The normalized absolute level (1-16).
+ */
+export function normalizeLevel(level: number, rarity: Rarity): number {
+  const offset = (CARD_RARITY_START_LEVELS[rarity] || 1) - 1;
+  const absoluteLevel = level + offset;
+  return Math.max(1, Math.min(absoluteLevel, CARD_LEVEL_CAP));
+}
+
+/**
+ * Normalizes a raw rarity string to the domain-compliant Rarity type.
+ *
+ * @param raw - The raw rarity string.
+ * @returns A validated Rarity.
+ */
+export function normalizeRarity(raw: string): Rarity {
+  const lower = raw.toLowerCase().trim();
+  const map: Record<string, Rarity> = {
+    common: "Common",
+    rare: "Rare",
+    epic: "Epic",
+    legendary: "Legendary",
+    champion: "Champion",
+  };
+  return map[lower] || "Common";
+}
+
+/**
+ * Retrieves the base cumulative XP for a specific King Level.
+ *
+ * @param level - The King Level.
+ * @returns The cumulative XP for that level.
+ * @complexity O(1) through direct lookup.
+ */
+export function getKingLevelBaseXp(level: number): XP {
+  const entry = KING_XP_TABLE[level - 1];
+  return entry ? entry.cumulative : asXP(0);
+}
+
+/**
+ * Calculates the Gem cost for a material (card) deficit.
+ *
+ * @param rarity - The card rarity.
+ * @param deficit - The number of cards missing.
+ * @returns The cost in Gems, rounded up.
+ */
+export function calculateGemCostForCards(rarity: Rarity, deficit: number): Gems {
+  if (deficit <= 0) return asGems(0);
+  const rate = GEM_CONVERSION_RATES[rarity] || 1;
+  return asGems(Math.ceil(deficit * rate));
+}
+
+/**
+ * Atomic data bundle for a specific card upgrade.
+ */
+export interface UpgradeData {
+  readonly cardsRequired: number;
+  readonly goldCost: Gold;
+  readonly xpGain: XP;
+}
+
+/**
+ * Retrieves costs and gains for a card upgrade.
+ *
+ * @param rarity - The card rarity.
+ * @param targetLevel - The level being upgraded to.
+ * @returns UpgradeData if level exists, otherwise null.
+ */
+export function getUpgradeData(rarity: Rarity, targetLevel: number): UpgradeData | null {
+  const cardsRequired = MATERIAL_REQUIREMENTS[rarity][targetLevel];
+  const goldCost = GOLD_COST_TABLE[rarity][targetLevel];
+  const xpGain = CARD_XP_TABLE[targetLevel];
+
+  if (cardsRequired === undefined || goldCost === undefined || xpGain === undefined) {
+    return null;
+  }
+
+  return { cardsRequired, goldCost, xpGain };
+}

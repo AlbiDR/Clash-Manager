@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ProjectionStrategy, InventoryStrategy, LookaheadStrategy } from '../ScoringStrategy';
+import { ProjectionStrategy, InventoryStrategy } from '../ScoringStrategy';
 import { GEM_TO_GOLD_FACTOR, asGold, asGems, asXP } from '@core/utils/economy';
 import type { UpgradeCandidate, OptimizationSettings } from '../Types';
 
@@ -116,15 +116,4 @@ describe('ScoringStrategy', () => {
     });
   });
 
-  describe('LookaheadStrategy', () => {
-    it('should behave exactly like ProjectionStrategy (inheritance check)', () => {
-      const projection = new ProjectionStrategy();
-      const lookahead = new LookaheadStrategy();
-
-      const candidate = mockCandidate({ toLevel: 15, goldCost: asGold(1000), xpGained: asXP(100) });
-
-      expect(lookahead.calculateScore(candidate, mockSettings))
-        .toBe(projection.calculateScore(candidate, mockSettings));
-    });
-  });
 });

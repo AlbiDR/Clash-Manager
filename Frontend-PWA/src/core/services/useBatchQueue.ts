@@ -34,19 +34,19 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
   const { throttleMs = 850 } = options;
 
   /** Reactive array of selected recruit tags. */
-  const selectedIds = ref<string[]>([]);
+  const selectedRecruitIds = ref<string[]>([]);
   /** Sequential queue of tags remaining to be opened. */
-  const queue = ref<string[]>([]);
+  const batchExecutionQueue = ref<string[]>([]);
   /** Timestamp of the last successful deep-link trigger. */
-  const lastActionTime = ref(0);
+  const lastDeepLinkTriggerTime = ref(0);
 
   // Blitz State
-  const isBlasting = ref(false);
-  const currentIndex = ref(0);
-  let blitzTimer: ReturnType<typeof setTimeout> | null = null;
+  const isBlitzActive = ref(false);
+  const blitzCurrentItemIndex = ref(0);
+  let blitzOperationTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Selection Mode State
-  const forceSelectionMode = ref(false);
+  const isManualSelectionModeForced = ref(false);
 
   const { error, info } = useToast();
   const { modules } = useAppSettings();
@@ -54,10 +54,10 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   /** Indicates if the UI should be in selection mode. */
   const isSelectionMode = computed(
-    () => selectedIds.value.length > 0 || forceSelectionMode.value,
+    () => selectedRecruitIds.value.length > 0 || isManualSelectionModeForced.value,
   );
   /** Indicates if a manual batch queue is currently being processed. */
-  const isProcessing = computed(() => queue.value.length > 0);
+  const isProcessing = computed(() => batchExecutionQueue.value.length > 0);
 
   /**
    * Environment Trust Verification.
@@ -87,35 +87,35 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
       };
     }
 
-    const total = selectedIds.value.length;
+    const totalSelectedCount = selectedRecruitIds.value.length;
     let label = "Open";
 
-    if (isBlasting.value) {
-      label = `${currentIndex.value + 1} / ${total}`;
-    } else if (total > 0) {
+    if (isBlitzActive.value) {
+      label = `${blitzCurrentItemIndex.value + 1} / ${totalSelectedCount}`;
+    } else if (totalSelectedCount > 0) {
       if (isProcessing.value) {
-        const current = total - queue.value.length + 1;
-        label = `Open (${current}/${total})`;
+        const currentlyOpeningItemNumber = totalSelectedCount - batchExecutionQueue.value.length + 1;
+        label = `Open (${currentlyOpeningItemNumber}/${totalSelectedCount})`;
       } else {
-        label = `Open (1/${total})`;
+        label = `Open (1/${totalSelectedCount})`;
       }
     } else {
       label = "Select";
     }
 
-    const targetId = isBlasting.value
-      ? selectedIds.value[currentIndex.value]
+    const targetId = isBlitzActive.value
+      ? selectedRecruitIds.value[blitzCurrentItemIndex.value]
       : isProcessing.value
-        ? queue.value[0]
-        : selectedIds.value[0];
+        ? batchExecutionQueue.value[0]
+        : selectedRecruitIds.value[0];
 
     const fabData = {
       visible: true,
       label,
       actionHref: targetId ? buildDeepLink(targetId) : undefined,
       isProcessing: isProcessing.value,
-      isBlasting: isBlasting.value,
-      selectionCount: total,
+      isBlasting: isBlitzActive.value,
+      selectionCount: totalSelectedCount,
       blitzEnabled: modules.blitzMode && isTrusted.value,
     };
 
@@ -124,29 +124,29 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   /**
    * Toggles the selection status of a recruit.
-   * @param id - The unique player tag.
+   * @param recruitId - The unique player tag.
    */
-  function toggleSelect(id: string) {
-    if (isProcessing.value || isBlasting.value) {
+  function toggleSelect(recruitId: string) {
+    if (isProcessing.value || isBlitzActive.value) {
       return;
     }
 
-    const index = selectedIds.value.indexOf(id);
-    if (index !== -1) {
-      selectedIds.value.splice(index, 1);
+    const existingIndex = selectedRecruitIds.value.indexOf(recruitId);
+    if (existingIndex !== -1) {
+      selectedRecruitIds.value.splice(existingIndex, 1);
     } else {
-      selectedIds.value.push(id);
+      selectedRecruitIds.value.push(recruitId);
     }
   }
 
   /**
    * Replaces the current selection with a new set of IDs.
-   * @param ids - The new set of player tags.
+   * @param recruitIds - The new set of player tags.
    */
-  function selectAll(ids: readonly string[]) {
-    if (isProcessing.value || isBlasting.value) return;
-    selectedIds.value = [...ids];
-    queue.value = [];
+  function selectAll(recruitIds: readonly string[]) {
+    if (isProcessing.value || isBlitzActive.value) return;
+    selectedRecruitIds.value = [...recruitIds];
+    batchExecutionQueue.value = [];
   }
 
   /**
@@ -158,20 +158,20 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    */
   function clearSelection() {
     stopBlitz();
-    selectedIds.value = [];
-    queue.value = [];
-    forceSelectionMode.value = false;
-    currentIndex.value = 0;
+    selectedRecruitIds.value = [];
+    batchExecutionQueue.value = [];
+    isManualSelectionModeForced.value = false;
+    blitzCurrentItemIndex.value = 0;
   }
 
   /**
    * Forcefully stops an active Blitz operation.
    */
   function stopBlitz() {
-    isBlasting.value = false;
-    if (blitzTimer) {
-      clearTimeout(blitzTimer);
-      blitzTimer = null;
+    isBlitzActive.value = false;
+    if (blitzOperationTimer) {
+      clearTimeout(blitzOperationTimer);
+      blitzOperationTimer = null;
     }
   }
 
@@ -180,39 +180,39 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    * Manages the timing and execution of sequential deep-link triggers.
    */
   function advanceBlitz() {
-    if (!isBlasting.value) return;
+    if (!isBlitzActive.value) return;
 
-    if (currentIndex.value >= selectedIds.value.length) {
+    if (blitzCurrentItemIndex.value >= selectedRecruitIds.value.length) {
       stopBlitz();
       info("Blitz complete");
       return;
     }
 
-    const id = selectedIds.value[currentIndex.value];
-    if (id) {
-      openInGame(id);
+    const activeRecruitId = selectedRecruitIds.value[blitzCurrentItemIndex.value];
+    if (activeRecruitId) {
+      openInGame(activeRecruitId);
 
       // COMPATIBILITY: Increased delay for split-screen multitasking.
       // On mobile devices, when Clash Royale is opened in split-screen or
       // picture-in-picture, the OS requires more time to cycle the intent
       // without dropping the background PWA state. 4000ms is the observed safety floor.
-      const delay = Math.max(throttleMs, 4000);
-      if (currentIndex.value < selectedIds.value.length - 1) {
+      const safetyDelay = Math.max(throttleMs, 4000);
+      if (blitzCurrentItemIndex.value < selectedRecruitIds.value.length - 1) {
         // [LOGIC] RECURSION: Schedules next item only after safety delay.
-        blitzTimer = setTimeout(() => {
-          currentIndex.value++;
+        blitzOperationTimer = setTimeout(() => {
+          blitzCurrentItemIndex.value++;
           advanceBlitz();
-        }, delay);
+        }, safetyDelay);
       } else {
-        blitzTimer = setTimeout(() => {
+        blitzOperationTimer = setTimeout(() => {
           stopBlitz();
           info("Blitz complete");
         }, 1500);
       }
     } else {
       // Handle skip if ID is missing for some reason
-      if (currentIndex.value < selectedIds.value.length - 1) {
-        currentIndex.value++;
+      if (blitzCurrentItemIndex.value < selectedRecruitIds.value.length - 1) {
+        blitzCurrentItemIndex.value++;
         advanceBlitz();
       } else {
         stopBlitz();
@@ -225,14 +225,14 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    * Verifies environmental trust before initiating.
    */
   function handleBlitz() {
-    if (isBlasting.value || selectedIds.value.length === 0) return;
+    if (isBlitzActive.value || selectedRecruitIds.value.length === 0) return;
     if (!isTrusted.value) {
       error("Environment verification failed");
       return;
     }
 
-    isBlasting.value = true;
-    currentIndex.value = 0;
+    isBlitzActive.value = true;
+    blitzCurrentItemIndex.value = 0;
     advanceBlitz();
   }
 
@@ -242,46 +242,46 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
    * @param event - The original click event.
    */
   function handleAction(event: MouseEvent) {
-    if (isBlasting.value) {
+    if (isBlitzActive.value) {
       event.preventDefault();
-      const id = selectedIds.value[currentIndex.value];
-      if (id) {
-        openInGame(id);
-        currentIndex.value++;
+      const activeRecruitId = selectedRecruitIds.value[blitzCurrentItemIndex.value];
+      if (activeRecruitId) {
+        openInGame(activeRecruitId);
+        blitzCurrentItemIndex.value++;
 
-        if (blitzTimer) {
-          clearTimeout(blitzTimer);
-          blitzTimer = setTimeout(advanceBlitz, Math.max(throttleMs, 2000));
+        if (blitzOperationTimer) {
+          clearTimeout(blitzOperationTimer);
+          blitzOperationTimer = setTimeout(advanceBlitz, Math.max(throttleMs, 2000));
         }
       }
       return;
     }
 
-    const now = Date.now();
-    if (now - lastActionTime.value < throttleMs) {
+    const currentTime = Date.now();
+    if (currentTime - lastDeepLinkTriggerTime.value < throttleMs) {
       event.preventDefault();
       return;
     }
-    lastActionTime.value = now;
+    lastDeepLinkTriggerTime.value = currentTime;
 
-    if (queue.value.length === 0) {
-      queue.value = [...selectedIds.value];
+    if (batchExecutionQueue.value.length === 0) {
+      batchExecutionQueue.value = [...selectedRecruitIds.value];
     }
 
     // ACTION IGNITION: Sequential Open
-    const id = queue.value[0];
-    if (id) {
-      openInGame(id);
+    const nextQueueId = batchExecutionQueue.value[0];
+    if (nextQueueId) {
+      openInGame(nextQueueId);
     }
 
     // [LOGIC] REFRESH CYCLE: Delay the queue shift to allow the UI to react to the
     // 'open' intent and prevent accidental double-triggers or race conditions
     // between the browser navigation and internal state updates.
     setTimeout(() => {
-      if (queue.value.length > 0) {
-        queue.value.shift();
+      if (batchExecutionQueue.value.length > 0) {
+        batchExecutionQueue.value.shift();
       }
-      if (queue.value.length === 0) {
+      if (batchExecutionQueue.value.length === 0) {
         info("Batch complete");
       }
     }, 150);
@@ -295,9 +295,9 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
 
   return {
     /** Reactive array of selected recruit tags. */
-    selectedIds,
+    selectedIds: selectedRecruitIds,
     /** Sequential queue of tags remaining to be opened. */
-    queue,
+    queue: batchExecutionQueue,
     /** Indicates if a manual batch queue is currently being processed. */
     isProcessing,
     /** Indicates if the UI should be in selection mode. */
@@ -315,8 +315,8 @@ export function useBatchQueue(options: BatchQueueOptions = {}) {
     /** Initiates the automated Blitz sequence. */
     handleBlitz,
     /** Manually overrides the selection mode state. */
-    setForceSelectionMode: (val: boolean) => {
-      forceSelectionMode.value = val;
+    setForceSelectionMode: (isForced: boolean) => {
+      isManualSelectionModeForced.value = isForced;
     },
   };
 }

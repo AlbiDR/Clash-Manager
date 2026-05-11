@@ -24,13 +24,6 @@ import path from 'path';
  */
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase/migrations');
-const PROJECT_REF = process.env.PROJECT_ID;
-const DB_PASSWORD = process.env.SUPABASE_DB_PASSWORD;
-
-if (!PROJECT_REF || !DB_PASSWORD) {
-  console.error('[ERROR] Missing PROJECT_ID or SUPABASE_DB_PASSWORD environment variables.');
-  process.exit(1);
-}
 
 // ---------------------------------------------------------------------------
 // 1. Build the authoritative local version set (timestamps only)

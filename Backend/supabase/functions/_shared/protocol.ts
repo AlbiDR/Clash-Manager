@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import * as v from "npm:valibot";
 import { AuditEntry } from "./types.ts";
 
@@ -72,34 +72,34 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }
 
         // 4. Governance: Initial Heartbeat & Telemetry Boot
-        const { data: telemetry } = await supabase.schema('substrate').from('governance_telemetry').insert({
-            event_type: eventType,
-            status: 'IN_PROGRESS',
-            metadata: { stage: 'BOOT', payload: parsed.output }
-        }).select('id').single();
+        const { data: telemetryData } = await supabase.rpc('report_telemetry', {
+            p_event_type: eventType,
+            p_status: 'IN_PROGRESS',
+            p_metadata: { stage: 'BOOT', payload: parsed.output }
+        });
+        const telemetry = telemetryData && Array.isArray(telemetryData) ? telemetryData[0] : telemetryData;
 
         logAudit('BOOT', 'triggered', { payload: parsed.output });
 
-        await supabase.schema('substrate').from('pipeline_heartbeat').upsert({
-            component_id: componentId,
-            status: 'RUNNING',
-            last_triggered_at: new Date().toISOString(),
-            last_message: `Protocol execution initiated for ${componentId}.`
+        await supabase.rpc('report_heartbeat', {
+            p_component_id: componentId,
+            p_status: 'RUNNING',
+            p_message: `Protocol execution initiated for ${componentId}.`
         });
 
         const heartbeat = async (stage: string, currentResults: any) => {
             logAudit(stage, 'terminated', { status: 'IN_PROGRESS' });
             if (telemetry?.id) {
-                await supabase.schema('substrate').from('governance_telemetry')
-                    .update({ 
-                        metadata: { 
-                            ...currentResults, 
-                            stage, 
-                            current_duration: Date.now() - startTime,
-                            audit_log
-                        } 
-                    })
-                    .eq('id', telemetry.id);
+                await supabase.rpc('update_telemetry', {
+                    p_id: telemetry.id,
+                    p_status: 'IN_PROGRESS',
+                    p_metadata: { 
+                        ...currentResults, 
+                        stage, 
+                        current_duration: Date.now() - startTime,
+                        audit_log
+                    }
+                });
             }
         };
 
@@ -124,28 +124,29 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         };
         
         if (telemetry?.id) {
-            await supabase.schema('substrate').from('governance_telemetry')
-                .update({ 
-                    status: 'SUCCESS', 
-                    metadata: { 
-                        ...results, 
-                        stage: 'COMPLETE', 
-                        current_duration: Date.now() - startTime,
-                        audit_log: audit_log_final,
-                        is_data_perfect: isDataPerfect,
-                        validation_report: validationReport
-                    } 
-                })
-                .eq('id', telemetry.id);
+            await supabase.rpc('update_telemetry', {
+                p_id: telemetry.id,
+                p_status: 'SUCCESS',
+                p_metadata: { 
+                    ...results, 
+                    stage: 'COMPLETE', 
+                    current_duration: Date.now() - startTime,
+                    audit_log: audit_log_final,
+                    is_data_perfect: isDataPerfect,
+                    validation_report: validationReport
+                }
+            });
         }
 
-        await supabase.schema('substrate').from('pipeline_heartbeat').upsert({
-            component_id: componentId,
-            status: 'COMPLETED',
-            last_success_at: new Date().toISOString(),
-            last_message: `Protocol execution completed. Data perfection: ${isDataPerfect}`,
-            last_validation_report: validationReport,
-            is_data_perfect: isDataPerfect
+        await supabase.rpc('report_heartbeat', {
+            p_component_id: componentId,
+            p_status: 'COMPLETED',
+            p_message: `Protocol execution completed. Data perfection: ${isDataPerfect}`,
+            p_metadata: {
+                last_success_at: new Date().toISOString(),
+                last_validation_report: validationReport,
+                is_data_perfect: isDataPerfect
+            }
         });
 
         return new Response(JSON.stringify({
@@ -162,15 +163,17 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         console.error(`[CRITICAL] Protocol Violation in ${componentId}: ${err.message}`);
         logAudit('FATAL_ERROR', 'error', { message: err.message });
         
-        await supabase.schema('substrate').from('pipeline_heartbeat').upsert({
-            component_id: componentId,
-            status: 'FAILED',
-            last_failure_at: new Date().toISOString(),
-            last_message: `Fatal protocol error: ${err.message}`,
-            is_data_perfect: false,
-            last_validation_report: {
-                error: err.message,
-                audit_log
+        await supabase.rpc('report_heartbeat', {
+            p_component_id: componentId,
+            p_status: 'FAILED',
+            p_message: `Fatal protocol error: ${err.message}`,
+            p_metadata: {
+                last_failure_at: new Date().toISOString(),
+                is_data_perfect: false,
+                last_validation_report: {
+                    error: err.message,
+                    audit_log
+                }
             }
         });
 

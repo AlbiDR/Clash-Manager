@@ -27,6 +27,8 @@ export async function runProfiler(
     try {
         const validRecruits: any[] = [];
         let validCount = 0;
+        let newCount = 0;
+        let refreshCount = 0;
         let invalidCount = 0;
         
         const profileTasks = tagsToProfile.map(tag => async () => {
@@ -48,18 +50,21 @@ export async function runProfiler(
                         const trophies = p.trophies || 0;
                         const donations = p.totalDonations || 0;
                         const war = p.warDayWins || 0;
+                        const cards = p.challengeCardsWon || 0;
                         
                         // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
                         const rawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
 
                         validRecruits.push({
-                            tag: p.tag,
-                            name: p.name,
+                            player_tag: p.tag,
+                            player_name: p.name,
                             trophies,
                             donations,
-                            war,
-                            rawScore,
-                            source: candidates.get(tag) || 'UNKNOWN'
+                            cards,
+                            war_wins: war,
+                            raw_potential_score: rawScore,
+                            source: candidates.get(tag) || 'UNKNOWN',
+                            status: 'ACTIVE'
                         });
                         validCount++;
                     } else {
@@ -94,17 +99,41 @@ export async function runProfiler(
         if (validRecruits.length > 0) {
             // Group recruits by their discovery source for accurate attribution
             const bySource = new Map<string, any[]>();
+            let maxRpos = -Infinity;
+            let minRpos = Infinity;
+            const sourceCounts: Record<string, number> = {};
+
             for (const recruit of validRecruits) {
                 const src = recruit.source || 'UNKNOWN';
                 if (!bySource.has(src)) bySource.set(src, []);
                 bySource.get(src)!.push(recruit);
+
+                // Track RPoS (Raw Potential Score)
+                const score = recruit.raw_potential_score || 0;
+                if (score > maxRpos) maxRpos = score;
+                if (score < minRpos) minRpos = score;
+
+                // Track source counts
+                sourceCounts[src] = (sourceCounts[src] || 0) + 1;
             }
 
-            console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into raw_scout_logs...`);
+            // Determine which recruits are truly new vs refreshed
+            const { data: existing } = await supabase
+                .schema('drivers')
+                .from('recruits')
+                .select('player_tag')
+                .in('player_tag', validRecruits.map(r => r.player_tag));
+            
+            const existingTags = new Set(existing?.map(e => e.player_tag) || []);
+            validRecruits.forEach(r => {
+                if (existingTags.has(r.player_tag)) refreshCount++;
+                else newCount++;
+            });
+
+            console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into database...`);
             for (const [source, batch] of bySource) {
-                const { error: ingestErr } = await supabase.schema('substrate').from('raw_scout_logs').insert({
-                    payload: batch,
-                    source
+                const { error: ingestErr } = await supabase.rpc('sync_recruits', {
+                    p_recruits: batch
                 });
                 if (ingestErr) {
                     stats.errors.push(`Ingest(${source}): ${ingestErr.message}`);
@@ -114,7 +143,61 @@ export async function runProfiler(
                     console.log(`[PROFILING] Successfully ingested ${batch.length} recruits from source ${source}`);
                 }
             }
-            stats.recruits_ingested = validRecruits.length;
+
+            // --- INGESTION FATE TELEMETRY ---
+            const newTags = validRecruits
+                .filter(r => !existingTags.has(r.player_tag))
+                .map(r => r.player_tag);
+            
+            if (newTags.length > 0) {
+                console.error(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
+                
+                let fate: any[] = [];
+                let attempts = 0;
+                const maxAttempts = 4; // Total 10s potential delay
+
+                while (attempts < maxAttempts) {
+                    attempts++;
+                    // Incremental backoff: 1s, 2s, 3s, 4s
+                    await new Promise(resolve => setTimeout(resolve, attempts * 1000));
+
+                    const { data, error: fateErr } = await supabase
+                        .rpc('get_recruits_fate', { tags: newTags });
+                    
+                    if (!fateErr && data && data.length > 0) {
+                        fate = data;
+                        const queuedCount = fate.filter(f => f.status === 'QUEUE').length;
+                        if (queuedCount === 0) {
+                            console.error(`[PROFILING] Fate check converged on attempt ${attempts}`);
+                            break;
+                        }
+                        console.error(`[PROFILING] Fate check attempt ${attempts}: ${fate.length} found, ${queuedCount} still QUEUED...`);
+                    } else if (fateErr) {
+                        console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(fateErr)}`);
+                    }
+                }
+
+                if (fate.length > 0) {
+                    // Fetch Top 50 Threshold (lowest score in active pool)
+                    const { data: threshold50Data } = await supabase.rpc('get_top_50_threshold');
+                    const threshold50 = threshold50Data || 0;
+                    
+                    stats.new_recruits_active = fate.filter(f => f.status === 'ACTIVE').length;
+                    stats.new_recruits_benched = fate.filter(f => f.status === 'BENCHED').length;
+                    stats.new_recruits_top50 = fate.filter(f => f.status === 'ACTIVE' && Number(f.raw_potential_score) >= threshold50).length;
+                    
+                    console.error(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
+                } else {
+                    console.warn(`[PROFILING] Fate check FAILED after ${maxAttempts} attempts for ${newTags.length} tags.`);
+                }
+            }
+            
+            stats.recruits_ingested = (stats.recruits_ingested || 0) + validRecruits.length;
+            stats.new_recruits = (stats.new_recruits || 0) + newCount;
+            stats.refreshed_recruits = (stats.refreshed_recruits || 0) + refreshCount;
+            stats.highest_rpos = maxRpos === -Infinity ? 0 : Math.round(maxRpos);
+            stats.lowest_rpos = minRpos === Infinity ? 0 : Math.round(minRpos);
+            stats.ingested_by_source = sourceCounts;
         }
         stats.profiles_scanned = tagsToProfile.length;
         logAudit('PROFILING', 'terminated', { scanned: tagsToProfile.length, ingested: validRecruits.length });

@@ -13,7 +13,12 @@ import {
   MemberSchema,
   RecruitSchema,
   WebAppDataSchema,
-  HubStateSchema
+  SbRosterRowSchema,
+  SbHeadhunterRowSchema,
+  RecruitTombstoneSchema,
+  DismissalRequestSchema,
+  OfflineActionSchema,
+  OfflineQueueSchema
 } from "../DataSchemas";
 
 describe("Core DataSchemas", () => {
@@ -317,8 +322,8 @@ describe("Core DataSchemas", () => {
   describe("LaxNumberPipe", () => {
     it("should accept numbers", () => {
       // Testing via WebAppDataSchema which uses LaxNumberPipe for its metadata fields
-      const input = { lb: [], hh: [], timestamp: 1, hubTimestamp: 123 };
-      expect(v.parse(WebAppDataSchema, input).hubTimestamp).toBe(123);
+      const input = { lb: [], hh: [], timestamp: 1, remoteTimestamp: 123 };
+      expect(v.parse(WebAppDataSchema, input).remoteTimestamp).toBe(123);
     });
 
     it("should coerce numeric strings", () => {
@@ -368,14 +373,14 @@ describe("Core DataSchemas", () => {
       ],
       playerTag: "MYTAG",
       timestamp: 123456789,
-      dataSource: "WORKER",
-      hubTimestamp: "invalid_date" // LaxNumberPipe will handle this
+      dataSource: "SUPABASE",
+      remoteTimestamp: "invalid_date" // LaxNumberPipe will handle this
     };
 
-    it("should parse valid WebAppData with worker attribution", () => {
+    it("should parse valid WebAppData with Supabase attribution", () => {
       const result = v.parse(WebAppDataSchema, validAppData);
-      expect(result.dataSource).toBe("WORKER");
-      expect(result.hubTimestamp).toBe(0); // Coerced to 0
+      expect(result.dataSource).toBe("SUPABASE");
+      expect(result.remoteTimestamp).toBe(0); // Coerced to 0
       expect(result.lb).toHaveLength(1);
     });
 
@@ -394,27 +399,162 @@ describe("Core DataSchemas", () => {
     });
   });
 
-  describe("HubStateSchema", () => {
-    const validHubState = {
-      metadata: {
-        timestamp: "2026-03-29T00:00:00.000Z",
-        lastCompiled: "2026-04-03T21:22:06.463Z", // Worker emits ISO-8601 strings
-        lastFetched: "2026-04-03T21:22:05.824Z",  // Worker emits ISO-8601 strings
-        status: "ok", // [BOSS] Verified resilience
-        version: "1.0",
-        source: "worker"
-      },
-      data: {
-        roster: [],
-        headhunter: []
-      }
-    };
+  describe("SbRosterRowSchema", () => {
+    it("should parse valid roster row", () => {
+      const input = {
+        player_tag: "#ABC",
+        player_name: "Hero",
+        trophies: 5000,
+        performance_score: 80,
+        role: "elder",
+        tenure_days: 100
+      };
+      const result = v.parse(SbRosterRowSchema, input);
+      expect(result.player_tag).toBe("#ABC");
+      expect(result.trophies).toBe(5000);
+    });
 
-    it("should parse valid hub state with non-standard status", () => {
-      const result = v.parse(HubStateSchema, validHubState);
-      expect(result.metadata.status).toBe("ok");
-      // lastFetched is an ISO-8601 string from the Worker; GasClient converts to epoch ms after validation
-      expect(result.metadata.lastFetched).toBe("2026-04-03T21:22:05.824Z");
+    it("should handle missing fields with defaults", () => {
+      const result = v.parse(SbRosterRowSchema, {});
+      expect(result.player_name).toBe("Unknown");
+      expect(result.trophies).toBe(0);
+      expect(result.exp_level).toBe(1);
+    });
+
+    it("should handle null/undefined fields via pipes", () => {
+      const input = {
+        player_tag: null,
+        trophies: undefined,
+        last_seen_at: null
+      };
+      const result = v.parse(SbRosterRowSchema, input);
+      expect(result.player_tag).toBe("");
+      expect(result.trophies).toBe(0);
+      expect(result.last_seen_at).toBeNull();
+    });
+  });
+
+  describe("SbHeadhunterRowSchema", () => {
+    it("should parse valid headhunter row", () => {
+      const input = {
+        player_tag: "#XYZ",
+        player_name: "Recruit",
+        trophies: 4000,
+        potential_score: 90,
+        donations: 500
+      };
+      const result = v.parse(SbHeadhunterRowSchema, input);
+      expect(result.player_tag).toBe("#XYZ");
+      expect(result.potential_score).toBe(90);
+    });
+
+    it("should handle missing fields with defaults", () => {
+      const result = v.parse(SbHeadhunterRowSchema, {});
+      expect(result.player_name).toBe("Unknown");
+      expect(result.donations).toBe(0);
+    });
+  });
+
+  describe("RecruitTombstoneSchema", () => {
+    it("should parse valid tombstone array", () => {
+      const input = ["#ID1", "#ID2"];
+      const result = v.parse(RecruitTombstoneSchema, input);
+      expect(result).toEqual(input);
+    });
+
+    it("should fail for non-array input", () => {
+      const result = v.safeParse(RecruitTombstoneSchema, { not: "an array" });
+      expect(result.success).toBe(false);
+    });
+
+    it("should fail for array with non-string elements", () => {
+      const result = v.safeParse(RecruitTombstoneSchema, [123]);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("DismissalRequestSchema", () => {
+    it("should parse valid dismissal request", () => {
+      const input = { id: "TAG1", score: 80 };
+      const result = v.parse(DismissalRequestSchema, input);
+      expect(result).toEqual(input);
+    });
+
+    it("should coerce types via pipes", () => {
+      const input = { id: 12345, score: "95" };
+      const result = v.parse(DismissalRequestSchema, input);
+      expect(result).toEqual({ id: "12345", score: 95 });
+    });
+
+    it("should fail for missing fields", () => {
+      const result = v.safeParse(DismissalRequestSchema, { id: "TAG1" });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("OfflineActionSchema", () => {
+    it("should parse RECRUIT_DISMISSAL variant", () => {
+      const input = {
+        type: "RECRUIT_DISMISSAL",
+        items: [{ id: "T1", score: 50 }],
+        timestamp: 123456789
+      };
+      const result = v.parse(OfflineActionSchema, input);
+      expect(result).toEqual(input);
+    });
+
+    it("should parse RECRUIT_RESTORATION variant", () => {
+      const input = {
+        type: "RECRUIT_RESTORATION",
+        ids: ["T1", "T2"],
+        timestamp: "123456789" // Should be coerced to number
+      };
+      const result = v.parse(OfflineActionSchema, input);
+      expect(result.type).toBe("RECRUIT_RESTORATION");
+      expect(result.timestamp).toBe(123456789);
+    });
+
+    it("should fail for invalid variant type", () => {
+      const input = {
+        type: "INVALID_ACTION",
+        timestamp: Date.now()
+      };
+      const result = v.safeParse(OfflineActionSchema, input);
+      expect(result.success).toBe(false);
+    });
+
+    it("should fail for variant with missing required array", () => {
+      const input = {
+        type: "RECRUIT_DISMISSAL",
+        timestamp: Date.now()
+      };
+      const result = v.safeParse(OfflineActionSchema, input);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("OfflineQueueSchema", () => {
+    it("should parse valid array of actions", () => {
+      const input = [
+        {
+          type: "RECRUIT_DISMISSAL",
+          items: [{ id: "T1", score: 50 }],
+          timestamp: 123
+        },
+        {
+          type: "RECRUIT_RESTORATION",
+          ids: ["T2"],
+          timestamp: 456
+        }
+      ];
+      const result = v.parse(OfflineQueueSchema, input);
+      expect(result).toHaveLength(2);
+      expect(result[0].type).toBe("RECRUIT_DISMISSAL");
+    });
+
+    it("should fail for non-array input", () => {
+      const result = v.safeParse(OfflineQueueSchema, {});
+      expect(result.success).toBe(false);
     });
   });
 });

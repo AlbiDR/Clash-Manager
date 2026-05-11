@@ -19,7 +19,7 @@ export async function runClanSync(
         { key: 'profile', path: CLAN_PATH, table: 'raw_clan_profile' },
         { key: 'members', path: `${CLAN_PATH}/members`, table: 'raw_clan_members' },
         { key: 'race', path: `${CLAN_PATH}/currentriverrace`, table: 'raw_river_race' },
-        { key: 'warlog', path: `${CLAN_PATH}/riverracelog`, table: 'raw_war_log' }
+        { key: 'warlog', path: `${CLAN_PATH}/riverracelog?limit=12`, table: 'raw_war_log' }
     ] as const;
 
     for (const stage of clanTasks) {
@@ -46,15 +46,21 @@ export async function runClanSync(
                         data = { items: [data] };
                         }
                     }
-                    const insertPayload: any = { payload: data };
-                    if (stage.key === 'members') {
-                        insertPayload.clan_tag = clanTag;
-                    }
-                    const { error } = await supabase.schema('substrate').from(stage.table).insert(insertPayload);
+                    
+                    const rpcName = stage.key === 'profile' ? 'ingest_raw_clan_profile' :
+                                   stage.key === 'members' ? 'ingest_raw_clan_members' :
+                                   stage.key === 'race' ? 'ingest_raw_river_race' :
+                                   'ingest_raw_war_log';
+
+                    const { error } = await supabase.rpc(rpcName, {
+                        p_clan_tag: clanTag,
+                        p_payload: data
+                    });
+
                     (results as any)[stage.key].success = !error;
                     if (error) {
                         (results as any)[stage.key].error = error.message;
-                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure', details: error });
+                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure (RPC)', details: error });
                     }
                 }
             } else {

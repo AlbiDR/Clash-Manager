@@ -33,11 +33,6 @@ jobs:
     name: Build & Verify
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      VITE_GAS_URL: ${{ vars.VITE_GAS_URL }}
-      VITE_USE_WORKER_HUB: ${{ secrets.VITE_USE_WORKER_HUB }}
-      VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL }}
-      VITE_WORKER_TOKEN: ${{ secrets.VITE_WORKER_TOKEN }}
     steps:
       - name: Suppress Git Advice
         run: git config --global advice.defaultBranchName false
@@ -69,14 +64,21 @@ jobs:
 
       - name: Install Dependencies
         working-directory: .
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Run Tests
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
         run: pnpm test
 
       - name: Build Project
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
         run: pnpm run build
-        # env: VITE_GAS_URL is now global to the job
 
       - name: Upload Pages Artifact
         if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')) || github.event_name == 'workflow_dispatch'

@@ -11,7 +11,7 @@
  * @remarks
  * This module provides a single source of truth for the application's connectivity
  * state. It monitors both the browser's physical connection (navigator.onLine)
- * and the application's ability to communicate with the GAS backend (apiStatus).
+ * and the application's ability to communicate with the Supabase backend (apiStatus).
  *
  * **Architectural Context:**
  * - **Layer:** Layer 1 (@core)

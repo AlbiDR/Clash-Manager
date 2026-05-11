@@ -11,7 +11,7 @@ export function generateHtmlEntry(version: string): string {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://*.google.com https://*.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googletagmanager.com https://*.google-analytics.com; connect-src 'self' https://*.google.com https://*.googleusercontent.com https://*.googleapis.com;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://*.google.com https://*.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googletagmanager.com https://*.google-analytics.com; connect-src 'self' https://*.google.com https://*.googleusercontent.com https://*.supabase.co https://*.googleapis.com;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders." />
     
@@ -48,11 +48,6 @@ export function generateHtmlEntry(version: string): string {
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="Clash Manager" />
     <meta name="msapplication-TileColor" content="#0b0e14" />
-    
-    <link rel="dns-prefetch" href="https://script.google.com" />
-    <link rel="dns-prefetch" href="https://sheets.googleapis.com" />
-    <link rel="preconnect" href="https://sheets.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://script.google.com" crossorigin />
     
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/branding/favicon.ico" sizes="any" />

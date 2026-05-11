@@ -10,7 +10,7 @@ export interface AuditEntry {
     timestamp: string;
     stage: string;
     action: 'triggered' | 'called' | 'run' | 'terminated' | 'resulted_data' | 'integrity_checked' | 'error';
-    details?: any;
+    details?: unknown;
 }
 
 export interface StageMetadata {
@@ -28,7 +28,7 @@ export interface TelemetryMetadata {
     stage: string;
     current_duration: number;
     audit_log: AuditEntry[];
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface IngestionResult {
@@ -47,7 +47,16 @@ export interface ScannerStats {
     discovery_tournament?: number;
     profiles_scanned: number;
     recruits_ingested: number;
+    new_recruits?: number;
+    new_recruits_active?: number;
+    new_recruits_benched?: number;
+    new_recruits_top50?: number;
+    refreshed_recruits?: number;
+    ingested_by_source?: Record<string, number>;
+    highest_rpos?: number;
+    lowest_rpos?: number;
     rescans_processed?: number;
+    ghosts_purged?: number;
     errors: string[];
 }
 

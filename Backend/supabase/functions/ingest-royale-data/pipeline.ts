@@ -3,13 +3,9 @@
 
 import { supabase, CONFIG } from "./client.ts";
 import { IngestionResult, AuditEntry } from "../_shared/types.ts";
+import { runDiscovery } from "./stages/discovery.ts";
 import { runClanSync } from "./stages/clan-sync.ts";
 import { runDeepDepth } from "./stages/deep-depth.ts";
-
-/**
- * L4 App: Ingestion Pipeline Orchestrator
- * Orchestrates the clinical Penta-Stage synchronization protocol using modular stage handlers.
- */
 
 /**
  * L4 App: Ingestion Pipeline Orchestrator
@@ -47,6 +43,14 @@ export async function executePipeline(
 
     // --- EXECUTION SEQUENCE ---
     
+    // Stage 1: Discovery
+    try {
+        await withTimeout(runDiscovery(results, logAudit), 'S1_DISCOVERY');
+    } catch (e: any) {
+        logAudit('S1_DISCOVERY', 'error', { message: e.message });
+    }
+    await heartbeat('S1_DISCOVERY', results);
+
     // Stages 2-5: Clan Synchronization
     try {
         await withTimeout(runClanSync(targetTag, results, logAudit), 'S2_S5_CLAN');
@@ -66,4 +70,5 @@ export async function executePipeline(
     results.diagnostics.duration_ms = Date.now() - startTime;
     return results;
 }
+
 

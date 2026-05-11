@@ -16,9 +16,9 @@ import { useWakeLock } from "@core/services/useWakeLock";
 import { useSystemInfo } from "@core/services/useSystemInfo";
 import { useApiState } from "@core/api/useApiState";
 import { useBadge } from "@core/services/useBadge";
-import { isWorkerConfigured, subscribeToPush } from "@core/api/GasClient";
+import { subscribeToPush } from "@core/api/SupabaseClient";
 import { computed, ref, onMounted } from "vue";
-import { useRegisterSW } from "virtual:pwa-register/vue";
+// import { registerSW } from "virtual:pwa-register";
 
 /**
  * COMPOSABLE: useSettings
@@ -54,7 +54,9 @@ export function useSettings() {
   const { isHydrated, isRefreshing, lastSyncTime } = storeToRefs(clashDataStore);
   const { refresh, startBackgroundSync } = clashDataStore;
   const { status: unifiedStatus } = useConnectionStatus();
-  const { updateServiceWorker } = useRegisterSW();
+  const updateServiceWorker = ref((reload?: boolean) => {
+    console.log('SW Update check initiated', reload);
+  });
   const toast = useToast();
   const { appVersion, activeBadge: footerBadgeText } = useSystemInfo();
   const { apiUrl, apiStatus, pingData } = useApiState();
@@ -64,18 +66,40 @@ export function useSettings() {
   const isPushSubscribed = ref(false);
   const currentTestCount = ref(1);
 
-  onMounted(async () => {
-    if (typeof Notification !== "undefined") {
-      notificationPermission.value = Notification.permission;
+  onMounted(() => {
+    // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent 
+    // headless browser crashes during branding asset generation.
+    if (!import.meta.env.PROD) return;
 
+    // Rationale: Delaying execution avoids clashing with initial render/font loading
+    // which frequently causes 'Target crashed' errors in headless browser pipelines.
+    setTimeout(async () => {
+      // Initialize Service Worker
       if ("serviceWorker" in navigator) {
-        const swRegistration = await navigator.serviceWorker.ready;
-        const pushSubscription = await swRegistration.pushManager.getSubscription();
-        if (pushSubscription) isPushSubscribed.value = true;
+        try {
+          const { registerSW } = await import("virtual:pwa-register");
+          updateServiceWorker.value = registerSW({
+            onNeedRefresh() {
+              console.log("[PWA] Update available");
+            },
+          });
+        } catch (e) {
+          console.warn("[PWA] SW Registration failed", e);
+        }
       }
-    } else {
-      notificationPermission.value = "unsupported";
-    }
+
+      if (typeof Notification !== "undefined") {
+        notificationPermission.value = Notification.permission;
+
+        if ("serviceWorker" in navigator) {
+          const swRegistration = await navigator.serviceWorker.ready;
+          const pushSubscription = await swRegistration.pushManager?.getSubscription();
+          if (pushSubscription) isPushSubscribed.value = true;
+        }
+      } else {
+        notificationPermission.value = "unsupported";
+      }
+    }, 1500);
   });
 
   const apiStatusObject = computed(() => {
@@ -107,38 +131,38 @@ export function useSettings() {
     haptics.heavy();
     const activeToastId = toast.info("Checking for updates...");
 
-    // THREAT: Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
-    if (!("serviceWorker" in navigator)) {
-      toast.remove(activeToastId);
-      toast.error("Service Worker not available");
-      return;
-    }
-
     try {
-      const swRegistration = await navigator.serviceWorker.getRegistration();
-      if (!swRegistration) {
-        // Rationale: No registration found usually means the app hasn't fully booted or is in a broken state.
-        toast.remove(activeToastId);
-        toast.error("No active session found");
-        return;
-      }
+      // THREAT: Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
+      if ("serviceWorker" in navigator) {
+        const swRegistration = await navigator.serviceWorker.getRegistration();
+        
+        if (!swRegistration) {
+          // Rationale: No registration found usually means the app hasn't fully booted or is in a broken state.
+          toast.remove(activeToastId);
+          toast.error("No active session found");
+          return;
+        }
 
-      if (swRegistration.waiting) {
-        // Rationale: An update was already downloaded and is ready to be applied.
-        toast.remove(activeToastId);
-        toast.success("Update ready! Reloading...");
-        updateServiceWorker(true);
-        return;
-      }
+        if (swRegistration.waiting) {
+          // Rationale: An update was already downloaded and is ready to be applied.
+          toast.remove(activeToastId);
+          toast.success("Update ready! Reloading...");
+          updateServiceWorker.value(true);
+          return;
+        }
 
-      await swRegistration.update();
+        await swRegistration.update();
 
-      if (swRegistration.installing || swRegistration.waiting) {
-        toast.remove(activeToastId);
-        toast.success("Update found! Downloading...");
+        if (swRegistration.installing || swRegistration.waiting) {
+          toast.remove(activeToastId);
+          toast.success("Update found! Downloading...");
+        } else {
+          toast.remove(activeToastId);
+          toast.success("Clash Manager is up to date");
+        }
       } else {
         toast.remove(activeToastId);
-        toast.success("Clash Manager is up to date");
+        toast.error("Service Worker not available");
       }
     } catch (swUpdateError) {
       console.error("Update check failed", swUpdateError);
@@ -187,7 +211,7 @@ export function useSettings() {
     haptics.heavy();
     if (
       confirm(
-        "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Data on the Google Sheet will NOT be affected.",
+        "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",
       )
     ) {
       localStorage.clear();
@@ -209,18 +233,16 @@ export function useSettings() {
     return syncDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   });
 
-  const hasWorker = computed(() => isWorkerConfigured());
-
   function updateApiUrl(newUrl: string) {
     if (newUrl.trim()) {
-      localStorage.setItem("cm_gas_url", newUrl.trim());
+      localStorage.setItem("cm_supabase_url", newUrl.trim());
       window.location.reload();
     }
   }
 
   function resetApiUrl() {
     if (confirm("Reset API URL to default?")) {
-      localStorage.removeItem("cm_gas_url");
+      localStorage.removeItem("cm_supabase_url");
       window.location.reload();
     }
   }
@@ -233,48 +255,8 @@ export function useSettings() {
   }
 
   async function subscribePush() {
-    if (!hasWorker.value) {
-      toast.error("Cloud Worker not configured");
-      return;
-    }
-
-    try {
-      haptics.medium();
-
-      if (!("serviceWorker" in navigator)) {
-        toast.error("Push setup failed");
-        return;
-      }
-
-      const swRegistration = await navigator.serviceWorker.ready;
-
-      let pushSubscription: PushSubscription | null = null;
-      try {
-        pushSubscription = await swRegistration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: "BMMA-EXAMPLE-KEY-REPLACE-WITH-REAL-VAPID-KEY-FROM-ENV",
-        });
-      } catch (pushError) {
-        console.warn("Push subscribe failed (likely missing VAPID)", pushError);
-        pushSubscription = {
-          endpoint: "https://fcm.googleapis.com/fcm/send/demo",
-        } as PushSubscription;
-      }
-
-      if (pushSubscription) {
-        const isRegistered = await subscribeToPush(pushSubscription);
-        if (isRegistered) {
-          isPushSubscribed.value = true;
-          toast.success("Push Alerts Active");
-        } else {
-          toast.error("Server registration failed");
-        }
-      }
-    } catch (pushSetupError) {
-      // DECISION LOG: Catching top-level setup failures (navigator or SW ready failures).
-      console.error(pushSetupError);
-      toast.error("Push setup failed");
-    }
+    // Rationale: Native Supabase Push integration pending Edge Function setup.
+    toast.info("Push notifications coming soon for Supabase");
   }
 
   async function sendTestNotification() {
@@ -307,7 +289,7 @@ export function useSettings() {
     status: apiStatusObject.value,
     loading: !isHydrated.value,
     isRefreshing: isRefreshing.value,
-    sheetUrl: "https://script.google.com/u/0/home/projects/1Filr0HnIaN3dJENeZ7KtU4enHaCNH1LqcztujRwFQ7_RTZVJ7VY5K9zH",
+    sheetUrl: "https://supabase.com/dashboard/project/clash-manager",
     footerBadge: footerBadgeText.value,
   }));
 
@@ -336,7 +318,6 @@ export function useSettings() {
     notificationPermission,
     isPushSubscribed,
     lastSyncFormatted,
-    hasWorker,
 
     // Methods
     toggle,
@@ -346,6 +327,7 @@ export function useSettings() {
     toggleBlueprintMode,
     toggleShowcaseMode,
     refresh,
+    updateServiceWorker: (reload?: boolean) => updateServiceWorker.value(reload),
     forceUpdate,
     clearCache,
     factoryReset,

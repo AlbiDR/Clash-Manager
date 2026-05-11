@@ -28,7 +28,7 @@ jobs:
             PAYLOAD="{\"tournaments\": [\"AUTO\"]}"
           else
             # Convert comma-separated string to JSON array
-            JSON_ARRAY=$(echo "$TOURNAMENTS_INPUT" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+            JSON_ARRAY=$(echo "$TOURNAMENTS_INPUT" | sed 's/,/\",\"/g' | sed 's/^/["/' | sed 's/$/"]/')
             PAYLOAD="{\"tournaments\": $JSON_ARRAY}"
           fi
 
@@ -54,15 +54,21 @@ jobs:
         if: success()
         run: |
           DATA='${{ steps.trigger.outputs.response_data }}'
-          
-          # Extract Stats
-          INGESTED=$(echo "$DATA" | jq -r '.data.recruits_ingested // 0')
+
+          # Extract Core Stats
+          NEW_LEADS=$(echo "$DATA" | jq -r '.data.new_recruits // 0')
+          NEW_ACTIVE=$(echo "$DATA" | jq -r '.data.new_recruits_active // 0')
+          NEW_BENCHED=$(echo "$DATA" | jq -r '.data.new_recruits_benched // 0')
+          NEW_TOP50=$(echo "$DATA" | jq -r '.data.new_recruits_top50 // 0')
+          REFRESHED=$(echo "$DATA" | jq -r '.data.refreshed_recruits // 0')
           SCANNED=$(echo "$DATA" | jq -r '.data.profiles_scanned // 0')
           MAX_RPOS=$(echo "$DATA" | jq -r '.data.highest_rpos // 0')
           MIN_RPOS=$(echo "$DATA" | jq -r '.data.lowest_rpos // 0')
+          RESCANNED=$(echo "$DATA" | jq -r '.data.rescans_processed // 0')
+          GHOSTS=$(echo "$DATA" | jq -r '.data.ghosts_purged // 0')
           DURATION=$(echo "$DATA" | jq -r '.duration_ms // 0')
           DURATION_SEC=$(echo "scale=2; $DURATION / 1000" | bc)
-          
+
           # Source Breakdown
           SOURCES=$(echo "$DATA" | jq -r '.data.ingested_by_source // {}')
           SOURCE_MARKDOWN=""
@@ -73,20 +79,42 @@ jobs:
             done < <(echo "$SOURCES" | jq -r 'to_entries | .[] | "\(.key)=\(.value)"')
           fi
 
+          # Error Summary
+          ERRORS=$(echo "$DATA" | jq -r '.data.errors // [] | length')
+
           # Generate Summary
           {
-            echo "## 🏹 Headhunter Scouting Report"
-            echo "Execution completed successfully in **${DURATION_SEC}s**."
+            echo "## Headhunter Scouting Report"
+            echo "Execution completed in **${DURATION_SEC}s**."
             echo ""
-            echo "### Core Stats"
+            echo "### S0 — Ghost Purge"
             echo "| Metric | Value |"
             echo "| :--- | :--- |"
-            echo "| **New Recruits Ingested** | \`$INGESTED\` |"
+            echo "| **Clanned Players Evicted** | \`$GHOSTS\` |"
+            echo "| **Stale Profiles Re-scanned (S4)** | \`$RESCANNED\` |"
+            echo ""
+            echo "### S1-S3 — Discovery & Ingestion"
+            echo "| Metric | Value |"
+            echo "| :--- | :--- |"
+            echo "| **Truly New Recruits** | \`$NEW_LEADS\` |"
+            echo "| **Refreshed Profiles** | \`$REFRESHED\` |"
+            echo "| **Total Profiles Scanned** | \`$SCANNED\` |"
             echo "| **Highest RPoS** | \`$MAX_RPOS\` |"
             echo "| **Lowest RPoS** | \`$MIN_RPOS\` |"
-            echo "| **Total Profiles Scanned** | \`$SCANNED\` |"
+            echo ""
+            echo "### Ingestion Fate (New Leads)"
+            echo "| Status | Count |"
+            echo "| :--- | :--- |"
+            echo "| **Added to Headhunter View (Active)** | \`$NEW_ACTIVE\` |"
+            echo "| **Benched (Below Trophy Floor)** | \`$NEW_BENCHED\` |"
+            echo "| **Made it into Top 50** | \`$NEW_TOP50\` |"
             echo ""
             if [ -n "$SOURCE_MARKDOWN" ]; then
               echo "$SOURCE_MARKDOWN"
+              echo ""
+            fi
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "### Pipeline Errors"
+              echo "**$ERRORS stage error(s) recorded.** Check the Edge Function logs for details."
             fi
           } >> $GITHUB_STEP_SUMMARY

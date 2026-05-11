@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import ConsoleLayout from "../ConsoleLayout.vue";
-import { defineComponent, h, nextTick } from "vue";
+import { defineComponent, h, nextTick, markRaw } from "vue";
 
 // Mock Core Services (Deep Imports per Mocking Rule)
 const mockSetFabVisible = vi.fn();
@@ -44,10 +44,12 @@ vi.mock("../../composables/usePullToRefresh", () => ({
 }));
 
 // Dummy components for testing
-const MockSkeleton = defineComponent({
-  name: "MockSkeleton",
-  render: () => h("div", { class: "mock-skeleton" }, "Loading..."),
-});
+const MockSkeleton = markRaw(
+  defineComponent({
+    name: "MockSkeleton",
+    render: () => h("div", { class: "mock-skeleton" }, "Loading..."),
+  })
+);
 
 describe("ConsoleLayout", () => {
   const defaultProps = {

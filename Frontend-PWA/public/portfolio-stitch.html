@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash Manager Portfolio Stage</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 60px;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Label color is now self-contained; theme classes no longer needed for it */
+
+        .portfolio-container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .device-frame {
+            width: 430px;
+            background: #000;
+            border-radius: 48px;
+            padding: 10px;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .device-content {
+            width: 100%;
+            height: 100%;
+            border-radius: 36px;
+            overflow: hidden;
+            background: #fff;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+    </style>
+</head>
+<body>
+    <style>
+        .capture-wrapper {
+            padding: 80px;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+    </style>
+    <div class="portfolio-container" id="portfolio-container">
+        <div class="capture-wrapper" id="wrapper-roster"><div class="device-frame"><div class="device-content"></div></div></div>
+        <div class="capture-wrapper" id="wrapper-headhunter"><div class="device-frame"><div class="device-content"></div></div></div>
+        <div class="capture-wrapper" id="wrapper-laboratory"><div class="device-frame"><div class="device-content"></div></div></div>
+        <div class="capture-wrapper" id="wrapper-settings"><div class="device-frame"><div class="device-content"></div></div></div>
+    </div>
+
+    <script>
+        const VIEWS = [
+            { id: 'roster', path: '/', label: 'Roster View' },
+            { id: 'headhunter', path: '/headhunter', label: 'Headhunter View' },
+            { id: 'laboratory', path: '/laboratory', label: 'Laboratory View' },
+            { id: 'settings', path: '/settings', label: 'Settings View' }
+        ];
+
+        // Ensure parent and iframes have consistent state (same origin)
+        const syncState = (theme) => {
+            localStorage.setItem('clash_manager_synthetic_mode', 'true');
+            localStorage.setItem('clash_manager_blueprint_mode', 'false');
+            localStorage.setItem('cm_theme_preference', theme);
+            localStorage.setItem('laboratory_tracked_tag', '#PP80QG99');
+            localStorage.setItem('clash_manager_player_tag', '#PP80QG99');
+            localStorage.setItem('laboratory_inventory', JSON.stringify({
+                gold: 5000000,
+                gems: 25000,
+                wildCards: { Common: 5000, Rare: 2500, Epic: 1000, Legendary: 20, Champion: 10 }
+            }));
+            localStorage.setItem('laboratory_observation', JSON.stringify({
+                profile: { name: "ADR", tag: "#PP80QG99", kingLevel: 54, xpIntoLevel: 12000 },
+                inventory: { gold: 5000000, gems: 25000, wildCards: { Common: 5000, Rare: 2500, Epic: 1000, Legendary: 20, Champion: 10 } },
+                cards: [
+                    { name: "Knight", rarity: "Common", level: 14, count: 5000, isTowerTroop: false },
+                    { name: "Archers", rarity: "Common", level: 14, count: 5000, isTowerTroop: false },
+                    { name: "Goblins", rarity: "Common", level: 14, count: 5000, isTowerTroop: false },
+                    { name: "Giant", rarity: "Rare", level: 13, count: 1000, isTowerTroop: false },
+                    { name: "Musketeer", rarity: "Rare", level: 13, count: 1000, isTowerTroop: false },
+                    { name: "Mini P.E.K.K.A", rarity: "Rare", level: 13, count: 1000, isTowerTroop: false },
+                    { name: "Baby Dragon", rarity: "Epic", level: 12, count: 200, isTowerTroop: false },
+                    { name: "Prince", rarity: "Epic", level: 12, count: 200, isTowerTroop: false },
+                    { name: "Skeleton Army", rarity: "Epic", level: 12, count: 200, isTowerTroop: false },
+                    { name: "Miner", rarity: "Legendary", level: 11, count: 10, isTowerTroop: false },
+                    { name: "Princess", rarity: "Legendary", level: 11, count: 10, isTowerTroop: false },
+                    { name: "Log", rarity: "Legendary", level: 11, count: 10, isTowerTroop: false },
+                    { name: "Archer Queen", rarity: "Champion", level: 11, count: 2, isTowerTroop: false },
+                    { name: "Mighty Miner", rarity: "Champion", level: 11, count: 2, isTowerTroop: false },
+                    { name: "Golden Knight", rarity: "Champion", level: 11, count: 2, isTowerTroop: false },
+                    { name: "Tower Princess", rarity: "Common", level: 14, count: 5000, isTowerTroop: true }
+                ]
+            }));
+        };
+
+        const resizeIframeToContent = (iframe, wrapper) => {
+            try {
+                const body = iframe.contentWindow.document.body;
+                const html = iframe.contentWindow.document.documentElement;
+                const height = Math.max(
+                    body.scrollHeight, body.offsetHeight,
+                    html.clientHeight, html.scrollHeight, html.offsetHeight
+                );
+                const frame = wrapper.querySelector('.device-frame');
+                frame.style.height = `${height}px`;
+            } catch (e) {}
+        };
+
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const theme = urlParams.get('theme') || 'light';
+            const viewParam = urlParams.get('view');
+            const scaleParam = parseFloat(urlParams.get('scale')) || 1;
+            
+            // 1. Sync state before loading iframes
+            syncState(theme);
+
+            const container = document.getElementById('portfolio-container');
+            container.classList.add(theme === 'dark' ? 'dark-theme-label' : 'light-theme-label');
+
+            if (scaleParam !== 1) {
+                container.style.transform = `scale(${scaleParam})`;
+                container.style.transformOrigin = 'top left';
+                document.body.style.width = 'max-content';
+                document.body.style.height = 'max-content';
+            }
+
+            // Hide non-requested views
+            VIEWS.forEach(v => {
+                const wrapper = document.getElementById(`wrapper-${v.id}`);
+                if (viewParam && v.id !== viewParam) {
+                    wrapper.style.display = 'none';
+                } else {
+                    const content = wrapper.querySelector('.device-content');
+                    const iframe = document.createElement('iframe');
+                    iframe.id = `frame-${v.id}`;
+                    iframe.src = `${window.location.origin}/Clash-Manager/#${v.path}?showcase=true`;
+                    content.appendChild(iframe);
+
+                    // Handle post-load injection and adjustments
+                    iframe.onload = () => {
+                        setTimeout(() => {
+                            try {
+                                const style = iframe.contentWindow.document.createElement('style');
+                                style.innerHTML = `
+                                    ::-webkit-scrollbar { display: none !important; }
+                                    * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+                                    .trajectory-list > *:nth-child(n+11) { display: none !important; }
+                                    
+                                    /* Reduce excessive bottom spacing for tighter screenshots */
+                                    .view-container { padding-bottom: 80px !important; }
+                                    .list-container { padding-bottom: 0px !important; }
+                                    .footer-info { padding: 16px 0 !important; }
+                                    
+                                    /* Ensure dock is visible and correctly themed */
+                                    .dock-container { opacity: 1 !important; transform: translateX(-50%) !important; pointer-events: auto !important; }
+                                `;
+                                iframe.contentWindow.document.head.appendChild(style);
+
+                                // 2. Expand first card for roster/headhunter (requested by USER)
+                                if (v.id === 'roster' || v.id === 'headhunter') {
+                                    const expandFirst = () => {
+                                        const cards = iframe.contentWindow.document.querySelectorAll('.card');
+                                        if (cards.length > 0) {
+                                            const firstCard = cards[0];
+                                            if (!firstCard.classList.contains('expanded')) {
+                                                const expandBtn = firstCard.querySelector('.expand-btn');
+                                                if (expandBtn) {
+                                                    expandBtn.click();
+                                                    console.log(`[Stitch] Expanded first ${v.id} card via button`);
+                                                    return true;
+                                                }
+                                                // Fallback to header click
+                                                const header = firstCard.querySelector('.card-header');
+                                                if (header) {
+                                                    header.click();
+                                                    console.log(`[Stitch] Expanded first ${v.id} card via header`);
+                                                    return true;
+                                                }
+                                            } else {
+                                                return true; // Already expanded
+                                            }
+                                        }
+                                        return false;
+                                    };
+                                    
+                                    // Poll for expansion
+                                    let attempts = 0;
+                                    const interval = setInterval(() => {
+                                        if (expandFirst() || attempts > 20) {
+                                            clearInterval(interval);
+                                            // Force one final resize after expansion animation
+                                            setTimeout(() => resizeIframeToContent(iframe, wrapper), 500);
+                                        }
+                                        attempts++;
+                                    }, 500);
+                                }
+
+                                // 3. Expand settings if applicable
+                                const expandSettings = () => {
+                                    const closedHeaders = iframe.contentWindow.document.querySelectorAll('.settings-card.collapsed .card-header');
+                                    if (closedHeaders.length > 0) {
+                                        closedHeaders.forEach(el => el.click());
+                                        return true;
+                                    }
+                                    return false;
+                                };
+                                
+                                if (v.id === 'settings') {
+                                    const interval = setInterval(() => {
+                                        if (expandSettings()) clearInterval(interval);
+                                    }, 500);
+                                    setTimeout(() => clearInterval(interval), 10000);
+                                }
+                                
+                                // Final resize tracking (Longer duration to handle animations)
+                                const resizeInterval = setInterval(() => {
+                                    resizeIframeToContent(iframe, wrapper);
+                                }, 500);
+                                setTimeout(() => clearInterval(resizeInterval), 15000);
+                            } catch(e) {
+                                console.error('[Stitch] Error in post-load adjustments:', e);
+                            }
+                        }, 1500); // Increased delay for hydration
+                    };
+                }
+            });
+        };
+    </script>
+</body>
+</html>

@@ -43,8 +43,8 @@ describe("useRecruitBlacklist", () => {
 
       expect(tombstones.value.size).toBe(0);
       expect(warnSpy).toHaveBeenCalledWith(
-        "Failed to load recruit blacklist",
-        expect.any(Error)
+        "[Blacklist] Failed to load recruit blacklist",
+        expect.any(String)
       );
       warnSpy.mockRestore();
     });

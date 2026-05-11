@@ -3,7 +3,7 @@
 
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useWakeLock } from "./useWakeLock";
-import { fetchRemote, lastHubDiagnosis } from "../api/GasClient";
+import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { MemberSchema, WebAppDataSchema } from "../api/DataSchemas";
@@ -23,12 +23,11 @@ import type { WebAppData, PlayerTag } from "../types";
  * The `useClashDataStore` serves as the authoritative source for clan-wide data,
  * including roster members, war history, and recruitment pools. It implements
  * a "Stale-While-Revalidate" strategy, loading from IndexedDB immediately on
- * boot and updating from the GAS backend in the background.
+ * boot and updating from the Supabase backend in the background.
  *
  * **Architectural Context:**
  * - **Layer:** Layer 1 (@core)
- * - **Data Flow:** Authoritative server-side data (GAS/Worker) -> Valibot Validation ->
- *   Reactive State -> Persistent Cache (IndexedDB).
+ * - **Data Flow:** Supabase Views -> Valibot Validation -> Reactive State -> Persistent Cache (IndexedDB).
  * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
  *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  */
@@ -50,14 +49,14 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** Fault tolerance tracker; triggers user-visible errors only after 3 consecutive failures. */
   const consecutiveSyncFailures = ref(0);
 
-  /** Indicates the provenance of the dataset (Backend-Worker vs. Backend-GAS) for diagnostic tracing. */
-  const dataSource = ref<"WORKER" | "GAS" | null>(null);
+  /** Indicates the provenance of the dataset (SUPABASE). */
+  const dataSource = ref<"SUPABASE" | null>(null);
 
-  /** Authoritative health state of the Worker Hub used to guide synchronization fallbacks. */
-  const hubDiagnosis = lastHubDiagnosis;
+  /** Authoritative diagnosis state from the last Supabase sync attempt. */
+  const syncStatus = lastSyncStatus;
 
-  /** Authoritative timestamp from the Worker Hub to detect drift against client/GAS state. */
-  const hubTimestamp = ref<number | null>(null);
+  /** Authoritative timestamp from the last successful Supabase fetch. */
+  const remoteTimestamp = ref<number | null>(null);
 
   /** Server-side compilation marker; indicates when the database last processed raw API data. */
   const lastCompiled = ref<number | null>(null);
@@ -84,8 +83,8 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** Final resolution of where data was fetched from; used for debug badges in the footer. */
   const currentSource = computed(() => data.value?.dataSource || dataSource.value);
 
-  /** Authoritative Hub generation time used to detect stale background worker cycles. */
-  const hubSyncTime = computed(() => data.value?.hubTimestamp || hubTimestamp.value);
+  /** Authoritative remote generation time used to detect stale background sync cycles. */
+  const remoteSyncTime = computed(() => data.value?.remoteTimestamp || remoteTimestamp.value);
 
   /** Logic boundary: Marks data as 'STALE' if older than 30 minutes to prompt background refresh. */
   const isStale = computed(() => {
@@ -119,11 +118,11 @@ export const useClashDataStore = defineStore("clashData", () => {
     // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
     // Rationale: Use payload's generation timestamp to calculate age,
     // preventing the "Just Now" reset on every hydration/refresh.
-    lastSync.value = new Date(payload.timestamp).getTime();
+    lastSync.value = payload.timestamp;
 
     // Metadata Sync
     dataSource.value = payload.dataSource || null;
-    hubTimestamp.value = payload.hubTimestamp || null;
+    remoteTimestamp.value = payload.remoteTimestamp || null;
     lastCompiled.value = payload.lastCompiled || null;
     lastFetched.value = payload.lastFetched || null;
 
@@ -161,7 +160,7 @@ export const useClashDataStore = defineStore("clashData", () => {
       // [GUARD] VALIDATION BOUNDARY: Target B [1]
       const result = v.safeParse(WebAppDataSchema, cached);
       if (result.success) {
-        console.debug(`💾 [Store] Hydrated from cache. Source: ${result.output.dataSource || "GAS"}`);
+        console.debug(`[Store] Hydrated from cache. Source: ${result.output.dataSource || "SUPABASE"}`);
         await commitSyncResult(result.output);
       } else {
         console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
@@ -178,7 +177,7 @@ export const useClashDataStore = defineStore("clashData", () => {
    *
    * @remarks
    * Implements a strict validation boundary (Target B [1]) to ensure that
-   * external payloads (e.g., from Turbo Scan) do not corrupt the store.
+   * external payloads (e.g., from Manual Ingest) do not corrupt the store.
    *
    * @param payload - The raw data object (usually WebAppData shape).
    */
@@ -194,42 +193,36 @@ export const useClashDataStore = defineStore("clashData", () => {
   }
 
   /**
-   * Orchestrates a direct synchronization with the Worker Hub.
+   * Triggers a forced, immediate synchronization with the Supabase backend.
    *
    * @remarks
-   * Provides instantaneous data updates by bypassing the GAS orchestration layer,
-   * primarily for recruitment and roster status updates (5-minute refresh vs 60-minute GAS cycle).
+   * Provides instantaneous data updates for recruitment and roster status.
    *
    * @sideeffects
    * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
-   * - FALLBACKS to `startBackgroundSync` on Worker failure.
+   * - FALLS BACK to `startBackgroundSync` on failure.
    */
-  async function refreshWorker() {
+  async function refreshFromSupabase() {
     if (loading.value) return;
     if (!isOnline.value) return;
 
     loading.value = true;
     try {
       await wakeLock.request();
-      const remoteData = await fetchRemote({ force: true, preferWorker: true });
+      const remoteData = await fetchRemote({ force: true });
       
       const result = v.safeParse(WebAppDataSchema, remoteData);
       if (!result.success) {
-        console.error("[Store] Worker Validation Failure Details:", JSON.stringify(result.issues, null, 2));
-        throw new Error("Worker data validation failed");
+        console.error("[Store] Data Validation Failure Details:", JSON.stringify(result.issues, null, 2));
+        throw new Error("Remote data validation failed");
       }
 
-      console.debug(`🌐 [Store] Refresh successful. Attribution: ${result.output.dataSource || "GAS"}`);
+      console.debug(`[Store] Refresh successful. Source: ${result.output.dataSource}`);
       await commitSyncResult(result.output);
-    } catch (workerRefreshError: unknown) {
-      // THREAT: Resource starvation or worker outage blocking data updates.
-      // Descriptively naming 'workerRefreshError' aids in failure-mode tracing.
-      console.warn("[Store] Worker-direct refresh failed:", workerRefreshError);
+    } catch (supabaseRefreshError: unknown) {
+      console.warn("[Store] Supabase refresh failed:", supabaseRefreshError);
 
-      // THREAT: Failure-mode deadlock during Worker outages.
-      // Target A [2]: The loading state MUST be cleared before calling the fallback
-      // sync, otherwise the guard in startBackgroundSync will trigger and
-      // silently abort the recovery attempt.
+      // Ensure loading guard is cleared before fallback sync to prevent deadlock.
       loading.value = false;
       await wakeLock.release();
 
@@ -244,10 +237,10 @@ export const useClashDataStore = defineStore("clashData", () => {
   }
 
   /**
-   * Orchestrates a background synchronization with the Google Apps Script backend.
+   * Orchestrates a background synchronization with the Supabase backend.
    *
    * @remarks
-   * Keeps the client in sync with the authoritative server-side database.
+   * Keeps the client in sync with the authoritative Supabase views.
    * Employs logical fault tolerance, only surfacing errors after 3 failed attempts
    * to mitigate noise from transient network fluctuations.
    *
@@ -378,15 +371,15 @@ export const useClashDataStore = defineStore("clashData", () => {
     lastSync,
     syncError,
     dataSource,
-    hubTimestamp,
-    hubDiagnosis,
+    remoteTimestamp,
+    syncStatus,
 
     // Getters
     members,
     recruits,
     lastUpdated,
     currentSource,
-    hubSyncTime,
+    remoteSyncTime,
     /** Computed Unix timestamp (ms) of the server's dataset compilation. */
     lastCompiledTime: computed(() => lastCompiled.value),
     /** Computed Unix timestamp (ms) of the server's last fetch from Supercell. */
@@ -400,8 +393,9 @@ export const useClashDataStore = defineStore("clashData", () => {
     loadLocal,
     updateLocalData,
     startBackgroundSync,
-    refresh: () => startBackgroundSync(true),
-    refreshWorker,
+    /** Alias for refreshFromSupabase to satisfy generic controller contracts. */
+    refresh: refreshFromSupabase,
+    refreshFromSupabase,
     updatePlayerLocally
   };
 });

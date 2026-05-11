@@ -15,7 +15,7 @@
  *   reactive state for API health and endpoint management.
  *
  * **Security & Validation:**
- * - Manual endpoint overrides are stored in `localStorage` ('cm_gas_url').
+ * - Manual endpoint overrides are stored in `localStorage` ('cm_supabase_url').
  * - Validation of the new URL is delegated to the `updateApiUrl` service method,
  *   which performs a handshake to verify backend compatibility.
  * ============================================================================
@@ -41,7 +41,7 @@ const {
 const newApiUrl = ref("");
 const isEditing = ref(false);
 
-const hasLocalOverride = computed(() => !!localStorage.getItem("cm_gas_url"));
+const hasLocalOverride = computed(() => !!localStorage.getItem("cm_supabase_url"));
 const isChecking = computed(() => apiStatus.value === "checking");
 
 watch(
@@ -56,7 +56,7 @@ watch(
 
 /**
  * Persists the manually entered API URL to local storage and triggers a health check.
- * Delegation to `updateApiUrl` ensures consistent handling of the 'cm_gas_url' key.
+ * Delegation to `updateApiUrl` ensures consistent handling of the 'cm_supabase_url' key.
  */
 function saveApiUrl() {
   updateApiUrl(newApiUrl.value);
@@ -125,7 +125,7 @@ function saveApiUrl() {
           <input
             v-model="newApiUrl"
             type="text"
-            placeholder="https://script.google.com/..."
+            placeholder="https://[project-id].supabase.co"
             class="glass-input"
           />
           <button class="save-btn" @click="saveApiUrl">

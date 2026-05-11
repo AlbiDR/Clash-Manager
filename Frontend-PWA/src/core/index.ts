@@ -1,5 +1,5 @@
 // Logic Engine
-export * from "./api/GasClient";
+export * from "./api/SupabaseClient";
 export * from "./api/useApiState";
 export * from "./services/StorageService";
 export * from "./services/useClashDataStore";
@@ -27,6 +27,7 @@ export * from "./utils/PriorityQueue";
 export * from "./utils/economy";
 export * from "./utils/formatters";
 export * from "./utils/bezier";
+export * from "./utils/navigation";
 export * from "./utils/sortOptions";
 export * from "./utils/sortStrategies";
 export * from "./utils/mockData";
