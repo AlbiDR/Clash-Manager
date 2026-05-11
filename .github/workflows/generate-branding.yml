@@ -53,7 +53,11 @@ jobs:
       - name: Run Branding Pipeline
         run: bash scratch/generate_hifi_branding.sh
 
+      - name: Pull latest changes
+        run: git pull --rebase origin ${{ github.ref_name }}
+
       - name: Commit and Push Changes
+
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(branding): automated regeneration of high-fidelity assets"
