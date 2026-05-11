@@ -4,8 +4,6 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
-import * as v from "npm:valibot";
-import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
 /**
  * Stage: Stale Recruit Re-scan
@@ -17,17 +15,17 @@ export async function runRescan(
     exclusionSet: Set<string>,
     requiredTrophies: number,
     stats: ScannerStats,
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void
 ) {
     logAudit('RESCAN', 'triggered');
     console.log(`[RESCAN] Triggered. Fetching stale recruits...`);
     try {
-        const { data: rawStale, error: rpcErr } = await supabase
-            .rpc('get_stale_recruits', { p_limit: 30 });
+        const { data: stale, error: rpcErr } = await supabase
+            .rpc('get_stale_recruits', { p_limit: 250 });
 
-        logAudit('RESCAN', 'run', { count: Array.isArray(rawStale) ? rawStale.length : 0, error: rpcErr?.message });
+        logAudit('RESCAN', 'run', { count: stale?.length ?? 0, error: rpcErr?.message });
 
-        if (rpcErr || !rawStale || (rawStale as any[]).length === 0) {
+        if (rpcErr || !stale || stale.length === 0) {
             if (rpcErr) {
                 logAudit('RESCAN', 'integrity_checked', { passed: false, details: rpcErr.message });
                 console.error(`[RESCAN] RPC error: ${rpcErr.message}`);
@@ -38,25 +36,18 @@ export async function runRescan(
             return;
         }
 
-        // [GUARD] VALIDATION BOUNDARY: Target B [1]
-        // Rationale: Harden stale recruit list from RPC.
-        const parsedStale = v.safeParse(v.array(StaleRecruitSchema), rawStale);
-
-        logAudit('RESCAN', 'resulted_data', { count: parsedStale.success ? parsedStale.output.length : 0 });
+        const isValid = Array.isArray(stale);
+        logAudit('RESCAN', 'resulted_data', { count: stale.length });
         logAudit('RESCAN', 'integrity_checked', {
-            passed: parsedStale.success,
-            details: parsedStale.success ? 'Stale target list validated' : 'Unexpected RPC data shape'
+            passed: isValid,
+            details: isValid ? 'Stale target list validated (Array)' : 'Unexpected data shape'
         });
         
-        if (!parsedStale.success) {
-            console.error(`[RESCAN] Stale target list validation failed.`);
-            return;
-        }
+        console.log(`[RESCAN] Validated ${stale.length} stale recruits to process.`);
 
-        console.log(`[RESCAN] Validated ${parsedStale.output.length} stale recruits to process.`);
-
-        const rescanTasks = parsedStale.output.map((staleRecruit) => async () => {
-            const tag = staleRecruit.player_tag;
+        const validRescans: any[] = [];
+        const rescanTasks = stale.map((row: { player_tag: string }) => async () => {
+            const tag = row.player_tag;
             try {
                 const res = await fetchWithRotation(`/players/${encodeURIComponent(tag)}`);
                 if (!res.ok) {
@@ -71,61 +62,66 @@ export async function runRescan(
                     return;
                 }
 
-                const rawPlayerProfile = await res.json();
-
-                // [GUARD] VALIDATION BOUNDARY: Target B [1]
-                // THREAT: Malformed player profile during rescan.
-                const parsedPlayer = v.safeParse(RoyalePlayerSchema, rawPlayerProfile);
-
-                if (!parsedPlayer.success) {
+                const p = await res.json();
+                if (!p?.tag) {
                     console.error(`[RESCAN] Player ${tag} returned invalid data shape.`);
                     return;
                 }
 
-                const playerProfile = parsedPlayer.output;
-
                 // If player has joined a clan, remove them from the recruit pool
-                if (playerProfile.clan?.tag && !exclusionSet.has(playerProfile.tag)) {
-                    await supabase.schema('drivers' as any).from('recruits')
-                        .delete()
-                        .eq('player_tag', playerProfile.tag);
+                if (p.clan?.tag && !exclusionSet.has(p.tag)) {
+                    await supabase.rpc('purge_recruits', { p_tags: [p.tag] });
                     logAudit('RESCAN', 'called', { tag, action: 'purged_clanned' });
-                    console.log(`[RESCAN] Player ${tag} joined clan ${playerProfile.clan.tag}. Purged from recruits.`);
+                    console.log(`[RESCAN] Player ${tag} joined clan ${p.clan.tag}. Purged from recruits.`);
                     return;
                 }
 
-                // Otherwise refresh their profile data in-place
-                const newStatus = (playerProfile.trophies || 0) >= requiredTrophies ? 'ACTIVE' : 'QUEUE';
-                await supabase.schema('drivers' as any).from('recruits')
-                    .update({
-                        trophies: playerProfile.trophies || 0,
-                        donations: playerProfile.totalDonations || 0,
-                        war_wins: playerProfile.warDayWins || 0,
-                        status: newStatus,
-                        last_scan: new Date().toISOString()
-                    })
-                    .eq('player_tag', playerProfile.tag);
+                // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
+                const rawScore = ((p.trophies || 0) * 1.0) + ((p.totalDonations || 0) * 0.1) + (((p.warDayWins || 0) + 500) * 20.0);
 
-                console.log(`[RESCAN] Player ${tag} refreshed. trophies=${playerProfile.trophies}, status=${newStatus}`);
+                // Otherwise prepare their profile data for batch refresh
+                validRescans.push({
+                    player_tag: p.tag,
+                    player_name: p.name,
+                    trophies: p.trophies || 0,
+                    donations: p.totalDonations || 0,
+                    cards: p.challengeCardsWon || 0,
+                    war_wins: p.warDayWins || 0,
+                    raw_potential_score: rawScore,
+                    source: 'TOURNAMENT', // Fallback
+                    status: (p.trophies || 0) >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
+                });
+
+                console.log(`[RESCAN] Player ${tag} prepared for refresh. trophies=${p.trophies}`);
                 stats.profiles_scanned++;
-                stats.rescans_processed++;
-            } catch (rescanException: unknown) {
-                const errorMessage = rescanException instanceof Error ? rescanException.message : String(rescanException);
-                logAudit('RESCAN', 'error', { tag, message: errorMessage });
-                console.error(`[RESCAN] Exception while processing ${tag}: ${errorMessage}`);
+            } catch (e: any) {
+                logAudit('RESCAN', 'error', { tag, message: e.message });
+                console.error(`[RESCAN] Exception while processing ${tag}: ${e.message}`);
             }
         });
 
-        console.log(`[RESCAN] Batch processing ${parsedStale.output.length} rescan tasks...`);
+        console.log(`[RESCAN] Batch processing ${stale.length} rescan tasks...`);
         await processBatch(rescanTasks, 10);
-        logAudit('RESCAN', 'terminated', { candidates: parsedStale.output.length, rescanned: stats.rescans_processed });
-        console.log(`[RESCAN] Terminated smoothly. Processed ${parsedStale.output.length} candidates, refreshed ${stats.rescans_processed} successfully.`);
-    } catch (rescanStageException: unknown) {
-        const errorMessage = rescanStageException instanceof Error ? rescanStageException.message : String(rescanStageException);
-        stats.errors.push(`Rescan: ${errorMessage}`);
-        logAudit('RESCAN', 'integrity_checked', { passed: false, details: errorMessage });
-        logAudit('RESCAN', 'error', { message: errorMessage });
+
+        if (validRescans.length > 0) {
+            console.log(`[RESCAN] Synchronizing ${validRescans.length} refreshed profiles via RPC...`);
+            const { error: syncErr } = await supabase.rpc('sync_recruits', { p_recruits: validRescans });
+            if (syncErr) {
+                console.error(`[RESCAN] Sync failure: ${syncErr.message}`);
+                logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: syncErr });
+            } else {
+                stats.rescans_processed = validRescans.length;
+                stats.refreshed_recruits = (stats.refreshed_recruits || 0) + validRescans.length;
+                console.log(`[RESCAN] Successfully synchronized ${validRescans.length} profiles.`);
+            }
+        }
+        logAudit('RESCAN', 'terminated', { candidates: stale.length, rescanned: stats.rescans_processed });
+        console.log(`[RESCAN] Terminated smoothly. Processed ${stale.length} candidates, refreshed ${stats.rescans_processed} successfully.`);
+    } catch (e: any) {
+        stats.errors.push(`Rescan: ${e.message}`);
+        logAudit('RESCAN', 'integrity_checked', { passed: false, details: e.message });
+        logAudit('RESCAN', 'error', { message: e.message });
         logAudit('RESCAN', 'terminated', { error: true });
-        console.error(`[RESCAN] Fatal exception: ${errorMessage}`);
+        console.error(`[RESCAN] Fatal exception: ${e.message}`);
     }
 }

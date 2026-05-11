@@ -177,7 +177,7 @@ export const useClashDataStore = defineStore("clashData", () => {
    *
    * @remarks
    * Implements a strict validation boundary (Target B [1]) to ensure that
-   * external payloads (e.g., from Turbo Scan) do not corrupt the store.
+   * external payloads (e.g., from Manual Ingest) do not corrupt the store.
    *
    * @param payload - The raw data object (usually WebAppData shape).
    */

@@ -54,7 +54,7 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 | **View** | **Vue 3.5** | Reactive interface with Composition API and `<script setup>` |
 | **Logic** | **TypeScript** | Strict-mode type safety across the entire client kernel |
 | **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
-| **Transport** | **SupabaseClient** | Direct Layer 1 interface for the Supabase Binary Stack. Leverages PostgREST for high-fidelity data retrieval from authoritative feature views, bypassing legacy matrix-inflation protocols for native relational performance. |
+| **Transport** | **Supabase SDK** | Native real-time bridge utilizing direct View access and Postgres RPCs for high-fidelity data orchestration. |
 | **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
 | **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
 | **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
@@ -69,9 +69,9 @@ The application kernel (@core) manages complex system-level behaviors through sp
 ### 1. Unified State & Sync (`useClashDataStore`)
 The authoritative Layer 1 central store for high-integrity clan datasets.
 - **Unified Sync Kernel**: Centralizes state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence across all hydration paths (local, background).
-- **Relational Ingestion**: Orchestrates data flow from Supabase `roster_view` and `headhunter_view` into the reactive state, ensuring atomic synchronization of clan and recruitment telemetry.
-- **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) and the authoritative ingestion heartbeat (`timestamp`) to ensure accurate data age calculations.
-- **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the remote backend in the background.
+- **Direct View Access**: Utilizes authoritative Supabase feature views (`roster_view`, `headhunter_view`) to bypass legacy RPC bottlenecks.
+- **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) to ensure accurate data age calculations across distributed environments.
+- **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the Supabase backend in the background.
 - **Validation Boundary**: All inbound payloads are strictly validated against `WebAppDataSchema` to prevent "any" plague propagation into the application state.
 
 ### 2. Recruitment Blitz (`useBatchQueue`)
@@ -84,7 +84,7 @@ Orchestrates the "Recruitment Pipeline" for the Headhunter feature through a mul
 The primary Layer 1 orchestrator for high-density list views (Roster, Headhunter).
 - **Layout Orchestration**: Centralizes the communication between infrastructure and the `ConsoleLayout` component via standardized `layoutProps` and `layoutEvents` interfaces, reducing boilerplate in feature views.
 - **Dependency Inversion**: Bridges domain-blind infrastructure (searching, sorting, pagination, selection) with feature-level requirements through a unified reactive interface.
-- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status (Invalid API URL, Offline, Sync Error, Syncing..., Stale Data, Nominal, and Empty).
+- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status (Invalid API URL, Offline, Sync Error, Waking Server..., Syncing..., Fallback, and Nominal).
 - **Performance Orchestration**: Centralizes item metadata resolution and `v-memo` key generation to ensure consistent rendering optimizations across feature views.
 - **Lifecycle Management**: Monitors document visibility and triggers automatic background refreshes after extended inactivity (30m+) to ensure data currency.
 
@@ -101,8 +101,7 @@ A resilient, global notification service with integrated hardware feedback.
 
 ### 6. Connectivity Singleton (`useApiState`)
 The authoritative Layer 1 arbiter of backend availability and handshake discovery (located in `@core/api/`).
-- **Handshake Discovery**: Orchestrates the initial 25,000ms handshake to detect Supabase availability, connectivity gaps, or configuration omissions.
-- **Supabase Verification**: Proactively pings the database substrate to determine if the API surface is nominal and configured.
+- **Handshake Discovery**: Orchestrates the initial handshake to detect Supabase availability and configuration status.
 
 ### 7. Connectivity Arbitrator (`useConnectionStatus`)
 Unifies physical network status and logical API availability into a single source of truth.
@@ -256,9 +255,8 @@ pnpm dev
 ```
 
 ### Environment Setup
-Create a `.env` file in the root directory to link to your Supabase project:
-
 ```ini
+# Supabase Configuration
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```

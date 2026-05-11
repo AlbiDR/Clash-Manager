@@ -8,7 +8,7 @@ vi.mock("../SupabaseClient", () => ({
   isConfigured: vi.fn(),
   ping: vi.fn(),
   getApiUrl: vi.fn(),
-  lastHubDiagnosis: { value: null },
+
   lastSyncStatus: { value: null },
 }));
 
@@ -21,7 +21,7 @@ describe("useApiState", () => {
     // Set default mock behaviors
     vi.mocked(isConfigured).mockReturnValue(true);
     vi.mocked(ping).mockResolvedValue({ status: "success", version: "1.0", modules: {} });
-    vi.mocked(getApiUrl).mockReturnValue("https://mock-gas-url.com");
+    vi.mocked(getApiUrl).mockReturnValue("https://mock-supabase-url.com");
     vi.stubGlobal("navigator", { onLine: true });
   });
 

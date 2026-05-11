@@ -1,41 +1,17 @@
-<!-- SPDX-License-Identifier: GPL-3.0-only -->
-<!-- Copyright (C) 2026 AlbiDR -->
-
 <script setup lang="ts">
-/**
- * COMPONENT: StatusPill
- *
- * @remarks
- * A Layer 2 Shared Driver (@shared) responsible for standardized system health
- * visualization and data provenance reporting across the Clash-Manager stack.
- *
- * It implements a 4-tier status hierarchy (Success, Warning, Error, Loading)
- * and provides interactive expansion to reveal deep metadata about the
- * backend source (Supabase, Worker, or GAS) and data age.
- */
 import { ref, watch } from "vue";
 import { useHaptics } from "@core";
-import type { HubInfo } from "@core/types";
 
 const props = withDefaults(defineProps<{
-  /**
-   * The system health category.
-   * - success: All systems nominal.
-   * - warning: Stale data or non-critical sync issues.
-   * - error: Network disconnects or fatal sync failures.
-   * - loading: Background refresh in progress.
-   */
   type: "success" | "warning" | "error" | "loading";
-  /** Descriptive status message (e.g., "Nominal", "Stale Data"). */
   text: string;
-  /** If true, pill renders in a minimalist style when nominal. */
   nominal?: boolean;
-  /** Direction in which the pill expands to show labels. */
   direction?: "left" | "right";
-  /**
-   * Standardized provenance metadata from the Layer 1 ClashDataStore.
-   */
-  hubInfo?: HubInfo;
+  remoteInfo?: {
+    source: "SUPABASE";
+    dataAge: string | null;
+    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
+  };
 }>(), {
   direction: "right"
 });
@@ -43,10 +19,7 @@ const props = withDefaults(defineProps<{
 const haptics = useHaptics();
 const isExpanded = ref(false);
 
-// [DECISION LOG] EXPANSION LIFECYCLE
-// Rationale: We force expansion during "loading" to ensure the user perceives
-// activity. When transitioning back to a static state, we reset expansion
-// (unless nominal) to maintain visual focus on the primary list content.
+// Reset expansion when status changes significantly
 watch(() => props.type, (newType) => {
   if (newType === "loading") isExpanded.value = true;
   else if (!props.nominal) isExpanded.value = false;
@@ -80,10 +53,6 @@ const handleToggle = () => {
           </svg>
         </template>
       </div>
-      <!-- [DECISION LOG] VISUAL FEEDBACK -->
-      <!-- Rationale: The halo-pulse provides a low-CPU, CSS-only ambient indicator
-           that the system is either in a degraded state (warning/error) or
-           successfully maintaining a network link. -->
       <div v-if="props.type !== 'loading'" class="dot-halo"></div>
     </div>
 
@@ -92,32 +61,22 @@ const handleToggle = () => {
         <template v-if="props.type === 'loading'">
           <span class="status-label">Syncing...</span>
         </template>
-        <template v-else-if="props.hubInfo && isExpanded">
+        <template v-else-if="props.remoteInfo && isExpanded">
           <div class="hub-meta">
-            <span class="hub-source" :class="props.hubInfo.source.toLowerCase()">
-              <template v-if="props.hubInfo.source === 'WORKER'">
+            <span class="hub-source" :class="props.remoteInfo.source.toLowerCase()">
+              <template v-if="props.remoteInfo.source === 'SUPABASE'">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-                HUB
-              </template>
-              <template v-else-if="props.hubInfo.source === 'SUPABASE'">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
-                  <path d="M4 6c0 1.66 3.58 3 8 3s8-1.34 8-3-3.58-3-8-3-8 1.34-8 3zm16 5c0 1.66-3.58 3-8 3s-8-1.34-8-3V8.67C5.33 9.47 8 10 12 10s6.67-.53 8-1.33V11zm0 5c0 1.66-3.58 3-8 3s-8-1.34-8-3v-2.33c1.33.8 4 1.33 8 1.33s6.67-.53 8-1.33V16z"/>
+                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
                 DB
               </template>
-              <template v-else>
-                GAS
-              </template>
+
             </span>
-            <span v-if="props.hubInfo.hubAge" class="separator">|</span>
-            <span v-if="props.hubInfo.hubAge" class="hub-age">
-              {{ props.hubInfo.hubAge }}
+            <span v-if="props.remoteInfo.dataAge" class="separator">|</span>
+            <span v-if="props.remoteInfo.dataAge" class="hub-age">
+              {{ props.remoteInfo.dataAge }}
             </span>
-            <span v-if="props.hubInfo.source !== 'WORKER' && props.hubInfo.diagnosis" class="diagnosis-tag">
-              ({{ props.hubInfo.diagnosis }})
-            </span>
+
           </div>
         </template>
         <template v-else>
@@ -242,20 +201,14 @@ const handleToggle = () => {
   background: var(--sys-surf-c);
 }
 
-.hub-source.worker {
-  color: var(--sys-primary);
-  background: var(--sys-primary-container);
-}
-
 .hub-source.supabase {
   color: var(--sys-primary);
   background: var(--sys-primary-container);
 }
 
-.hub-source.gas {
-  color: var(--sys-warning);
-  background: var(--sys-warning-container);
-}
+
+
+
 
 .hub-age {
   color: var(--sys-text-secondary);

@@ -25,8 +25,17 @@ import { ref } from "vue";
 const SYNTHETIC_KEY = "clash_manager_synthetic_mode";
 
 // [SINGLETON] Global reactive state
-// Initialized from LocalStorage to maintain state across sessions.
-const isSyntheticMode = ref(localStorage.getItem(SYNTHETIC_KEY) === "true");
+// Initialized from LocalStorage or URL param to maintain state across sessions or automation.
+const getParam = (name: string) => {
+  const search = new URLSearchParams(window.location.search);
+  if (search.has(name)) return search.get(name);
+  const hashSearch = new URLSearchParams(window.location.hash.split("?")[1] || "");
+  return hashSearch.get(name);
+};
+
+const isSyntheticMode = ref(
+  localStorage.getItem(SYNTHETIC_KEY) === "true" || getParam("synthetic") === "true"
+);
 
 /**
  * COMPOSABLE: useSyntheticMode

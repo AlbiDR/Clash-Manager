@@ -46,15 +46,15 @@ describe("ConsoleHeader", () => {
     expect(wrapper.findComponent({ name: "StatusPill" }).exists()).toBe(true);
   });
 
-  it("opens the spreadsheet URL when the title is clicked", async () => {
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/test";
+  it("opens the dashboard URL when the title is clicked", async () => {
+    const dashboardUrl = "https://supabase.com/dashboard/project/test";
     // @ts-ignore - Mocking window.open in JSDOM
     const windowSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
     const wrapper = mount(ConsoleHeader, {
       props: {
         title: "Test Feature",
-        sheetUrl,
+        dashboardUrl,
       },
     });
 
@@ -64,7 +64,7 @@ describe("ConsoleHeader", () => {
     await title.trigger("click");
 
     expect(mockTap).toHaveBeenCalled();
-    expect(windowSpy).toHaveBeenCalledWith(sheetUrl, "_blank");
+    expect(windowSpy).toHaveBeenCalledWith(dashboardUrl, "_blank");
     windowSpy.mockRestore();
   });
 

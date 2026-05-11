@@ -1,5 +1,3 @@
-<!-- SPDX-License-Identifier: GPL-3.0-only -->
-<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed, unref } from "vue";
 import { useHaptics } from "@core";
@@ -15,14 +13,14 @@ const props = defineProps<{
     nominal?: boolean;
   };
   showSearch?: boolean;
-  sheetUrl?: string;
+  dashboardUrl?: string;
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
   currentSort?: string;
   loading?: boolean;
-  hubInfo?: {
-    source: "SUPABASE" | "WORKER" | "GAS";
-    hubAge: string | null;
+  remoteInfo?: {
+    source: "SUPABASE";
+    dataAge: string | null;
     diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
   };
   reserveExtraSpace?: boolean;
@@ -54,10 +52,10 @@ const activeSortDescription = computed(() => {
   return opt?.desc || "";
 });
 
-const handleOpenSheet = () => {
-  if (props.sheetUrl) {
+const handleOpenDashboard = () => {
+  if (props.dashboardUrl) {
     haptics.tap();
-    window.open(props.sheetUrl, "_blank");
+    window.open(props.dashboardUrl, "_blank");
   }
 };
 </script>
@@ -73,9 +71,9 @@ const handleOpenSheet = () => {
           <div class="title-main">
             <h1
               class="view-title"
-              :class="{ 'is-link': props.sheetUrl }"
-              :title="props.sheetUrl ? 'Open Source Sheet' : undefined"
-              @click="handleOpenSheet"
+              :class="{ 'is-link': props.dashboardUrl }"
+              :title="props.dashboardUrl ? 'Open Supabase Dashboard' : undefined"
+              @click="handleOpenDashboard"
             >
               {{ props.title }}
             </h1>
@@ -92,14 +90,14 @@ const handleOpenSheet = () => {
             :type="props.status.type"
             :text="props.status.text"
             :nominal="props.status.nominal"
-            :hub-info="props.hubInfo"
+            :remote-info="props.remoteInfo"
             direction="left"
           />
         </div>
       </div>
 
-      <div v-if="props.showSearch" class="search-sort-row">
-        <div class="search-bar">
+      <div v-if="props.showSearch || !!$slots.filters" class="search-sort-row">
+        <div v-if="props.showSearch" class="search-bar">
           <div class="search-box">
             <Icon name="search" size="18" class="search-icon" />
             <input
@@ -112,6 +110,9 @@ const handleOpenSheet = () => {
             />
           </div>
         </div>
+
+        <!-- Custom Filters / Controls Slot -->
+        <slot name="filters"></slot>
 
         <div v-if="props.sortOptions" class="sort-box">
           <div class="sort-select-wrapper">

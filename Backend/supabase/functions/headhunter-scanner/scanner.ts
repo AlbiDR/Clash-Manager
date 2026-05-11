@@ -3,40 +3,27 @@
 
 import { supabase } from "./client.ts";
 import { ScannerStats, AuditEntry } from "../_shared/types.ts";
-import { HeadhunterContextSchema } from "../_shared/schemas.ts";
-import * as v from "npm:valibot";
 import { runShadowScout } from "./stages/shadow-scout.ts";
 import { runTournamentDiscovery } from "./stages/tournament-finder.ts";
 import { runProfiler } from "./stages/profiler.ts";
 import { runRescan } from "./stages/rescan.ts";
+import { runGhostPurge } from "./stages/ghost-purge.ts";
 
 /**
- * @remarks
- * [LAYER 4: APP ORCHESTRATOR]
- * The Headhunter Scanner Orchestrator is the authoritative entry point for the
- * multi-stage recruitment discovery engine. It manages the lifecycle of a scan
- * operation, coordinating between discovery (Shadow, Tournament), profiling,
- * and maintenance (Rescan) stages.
+ * L4 App: Headhunter Scanner Orchestrator
+ * Orchestrates the tournament scan and deep profiling pipeline using modular stage handlers.
  *
- * It enforces a strict timeout protocol per stage to prevent zombie worker
- * processes and provides real-time telemetry through audit logging and
- * heartbeat mechanisms.
- */
-
-/**
- * Executes the full Headhunter scanning pipeline.
- *
- * @param tournaments - List of tournament tags to scan, or ['AUTO'] for keyword-based discovery.
- * @param logAudit - Telemetry callback for recording stage-specific events and errors.
- * @param heartbeat - Telemetry callback for updating the caller with progressive stats.
- * @returns An aggregated stats object including discovery counts, scan counts, and duration.
- *
- * @throws {Error} If the core execution environment fails (telemetry or database connectivity).
+ * Stage order:
+ *   S0  Ghost Purge      — evict clanned players from the active top-50 before discovery
+ *   S1  Shadow Scout     — ingest leads from the clan's war/river race
+ *   S2  Tournament Finder— discover candidates from active tournaments
+ *   S3  Profiler         — deep-profile all discovered candidates and ingest
+ *   S4  Rescan           — refresh stale existing recruits; evict any newly-clanned ones
  */
 export async function executeScanner(
     tournaments: string[], 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
-    heartbeat: (stage: string, currentResults: unknown) => Promise<void>
+    logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void,
+    heartbeat: (stage: string, currentResults: any) => Promise<void>
 ) {
     const startTime = Date.now();
     const stats: ScannerStats = {
@@ -46,89 +33,84 @@ export async function executeScanner(
         profiles_scanned: 0,
         recruits_ingested: 0,
         rescans_processed: 0,
+        ghosts_purged: 0,
+        highest_rpos: 0,
+        lowest_rpos: 0,
+        new_recruits_active: 0,
+        new_recruits_benched: 0,
+        new_recruits_top50: 0,
+        ingested_by_source: {},
         errors: []
     };
 
     // --- CONTEXT BOOT: FETCH EXCLUSIONS AND THRESHOLDS ---
-    const { data: contextDataRaw } = await supabase.rpc('get_headhunter_context');
-
-    // [GUARD] VALIDATION BOUNDARY: Target B [1]
-    // Rationale: Harden raw Supabase data before use to prevent silent failures.
-    const contextResult = v.safeParse(HeadhunterContextSchema, contextDataRaw);
-    const contextData = contextResult.success ? contextResult.output : { required_trophies: 0, exclusion_tags: [] };
-
-    if (!contextResult.success) {
-        logAudit('BOOT', 'error', { message: 'Context validation failed, using defaults', issues: contextResult.issues });
-    }
-
-    const requiredTrophies = contextData.required_trophies || 0;
-    const exclusionSet = new Set<string>(contextData.exclusion_tags || []);
+    const { data: contextData } = await supabase.rpc('get_headhunter_context');
+    const requiredTrophies = contextData?.required_trophies || 0;
+    const exclusionSet = new Set<string>(contextData?.exclusion_tags || []);
     const candidates = new Map<string, string>(); // tag -> source
 
     // --- TIMEOUT HELPER ---
-    // [DECISION LOG]: 10-minute timeout per stage prevents a single stalled API
-    // request from locking a worker process indefinitely, ensuring slot availability.
     const STAGE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-    const withTimeout = async (promise: Promise<void>, stageName: string) => {
-        const timeout = new Promise<void>((_, reject) => 
-            // [THREAT:]: Stage timeouts block worker concurrency. We force rejection to
-            // allow the orchestrator to recover and report the failure.
+    const withTimeout = async (promise: Promise<any>, stageName: string) => {
+        const timeout = new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error(`Stage ${stageName} timed out after 10m`)), STAGE_TIMEOUT)
         );
         return Promise.race([promise, timeout]);
     };
 
-    // --- DISCOVERY PHASE (S1-S3) ---
-    
-    // 1. Shadow Scouting
+    // --- S0: GHOST PURGE (clean house before discovering new leads) ---
     try {
-        // [DECISION LOG]: Pipeline continues even if an individual stage fails (Best-Effort).
-        // This ensures that a failure in Shadow Scouting doesn't block Tournament Discovery.
-        await withTimeout(runShadowScout(candidates, exclusionSet, stats, logAudit), 'S1_SHADOW_SCOUT');
-    } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        stats.errors.push(`S1_SHADOW_SCOUT: ${errorMessage}`);
-        logAudit('SHADOW_SCOUT', 'error', { message: errorMessage });
+        const evicted = await withTimeout(
+            runGhostPurge(exclusionSet, stats, logAudit),
+            'S0_GHOST_PURGE'
+        );
+        stats.ghosts_purged = evicted as number;
+    } catch (e: any) {
+        stats.errors.push(`S0_GHOST_PURGE: ${e.message}`);
+        logAudit('GHOST_PURGE', 'error', { message: e.message });
     }
-    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level
-    // if the caller relies on progressive stats for UI hydration.
+    await heartbeat('S0_GHOST_PURGE', stats);
+
+    // --- DISCOVERY PHASE (S1-S3) ---
+
+    // S1: Shadow Scouting
+    try {
+        await withTimeout(runShadowScout(candidates, exclusionSet, stats, logAudit), 'S1_SHADOW_SCOUT');
+    } catch (e: any) {
+        stats.errors.push(`S1_SHADOW_SCOUT: ${e.message}`);
+        logAudit('SHADOW_SCOUT', 'error', { message: e.message });
+    }
     await heartbeat('S1_SHADOW_SCOUT', stats);
 
-    // 2. Tournament Discovery
+    // S2: Tournament Discovery
     try {
         if (tournaments.includes("AUTO")) {
             await withTimeout(runTournamentDiscovery(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S2_TOURNAMENT_DISCOVERY');
         }
-    } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        stats.errors.push(`S2_TOURNAMENT_DISCOVERY: ${errorMessage}`);
-        logAudit('TOURNAMENT_DISCOVERY', 'error', { message: errorMessage });
+    } catch (e: any) {
+        stats.errors.push(`S2_TOURNAMENT_DISCOVERY: ${e.message}`);
+        logAudit('TOURNAMENT_DISCOVERY', 'error', { message: e.message });
     }
-    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S2_TOURNAMENT_DISCOVERY', stats);
 
-    // 3. Profiling & Ingestion
+    // S3: Profiling & Ingestion
     try {
         await withTimeout(runProfiler(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S3_PROFILING');
-    } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        stats.errors.push(`S3_PROFILING: ${errorMessage}`);
-        logAudit('PROFILING', 'error', { message: errorMessage });
+    } catch (e: any) {
+        stats.errors.push(`S3_PROFILING: ${e.message}`);
+        logAudit('PROFILING', 'error', { message: e.message });
     }
-    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S3_PROFILING', stats);
 
     // --- MAINTENANCE PHASE (S4) ---
-    
-    // 4. Stale Recruit Re-scan (refresh existing ACTIVE pool, evict clanned players)
+
+    // S4: Stale Recruit Re-scan (refresh existing ACTIVE pool, evict newly-clanned players)
     try {
         await withTimeout(runRescan(exclusionSet, requiredTrophies, stats, logAudit), 'S4_RESCAN');
-    } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        stats.errors.push(`S4_RESCAN: ${errorMessage}`);
-        logAudit('RESCAN', 'error', { message: errorMessage });
+    } catch (e: any) {
+        stats.errors.push(`S4_RESCAN: ${e.message}`);
+        logAudit('RESCAN', 'error', { message: e.message });
     }
-    // [THREAT:]: Heartbeat failure can lead to data starvation at the UI level.
     await heartbeat('S4_RESCAN', stats);
 
     return {

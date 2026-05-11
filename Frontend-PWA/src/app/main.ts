@@ -133,7 +133,7 @@ async function bootstrap() {
     
     // CONCURRENCY FIX: Start API Handshake FIRST.
     // Do NOT start background sync (heavy data fetch) until handshake clears.
-    // This prevents GAS 'Too Many Requests' errors on cold boot.
+    // This prevents concurrent connection limits on cold boot.
     apiState.init();
 
     // PERFORMANCE: High-Speed SUPABASE Fetch

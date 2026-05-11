@@ -13,13 +13,28 @@ import type {
 import * as v from "valibot";
 import { ProfileInputSchema } from "@core/api/DataSchemas";
 import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
-import {
-  CARD_LEVEL_CAP,
-  calculateKingLevel,
-  normalizeLevel,
-  normalizeRarity,
-  getKingLevelBaseXp
-} from './Registry';
+import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
+
+const normalizeLevel = (level: number, rarity: Rarity): number => {
+  // Rationale: The Clash Royale API returns rarity-relative levels (e.g., a
+  // maxed Rare comes in as level 14, not 16). The sync-player-cards Edge
+  // Function normalizes all incoming data to the unified 1-16 absolute scale
+  // before it reaches this hydrator, so at this point a simple clamp is all
+  // that is needed to guard against any out-of-range values.
+  return Math.max(1, Math.min(level, CARD_LEVEL_CAP));
+};
+
+const normalizeRarity = (raw: string): Rarity => {
+  const lower = raw.toLowerCase().trim();
+  const map: Record<string, Rarity> = {
+    "common": "Common",
+    "rare": "Rare",
+    "epic": "Epic",
+    "legendary": "Legendary",
+    "champion": "Champion"
+  };
+  return map[lower] || "Common";
+};
 
 const ProfileHydrator = {
   /**
@@ -64,11 +79,21 @@ const ProfileHydrator = {
       };
       cardsData = data.cards || [];
     } else {
+      const currentLevel = data.expLevel || 1;
+      const totalExp = data.expPoints || 0;
+      
+      // Target B [1]: Robust extraction of relative XP from cumulative API points.
+      // Rationale: The Clash Royale API provides total cumulative XP in 'expPoints'.
+      // To maintain internal consistency with our state-based engine, we must
+      // subtract the base XP for the current level.
+      const kingLevelRow = KING_XP_TABLE.find(row => row.level === currentLevel) || KING_XP_TABLE[0];
+      const xpIntoLevel = Math.max(0, totalExp - Number(kingLevelRow.cumulative));
+
       profile = {
         name: data.name || "Unknown",
         tag: data.tag || "0",
-        kingLevel: data.expLevel || 1,
-        xpIntoLevel: asXP(data.expPoints || 0)
+        kingLevel: currentLevel,
+        xpIntoLevel: asXP(xpIntoLevel)
       };
       cardsData = [...(data.cards || []), ...(data.towerTroops || [])];
     }
@@ -107,7 +132,9 @@ const ProfileHydrator = {
    * Initial seed for the simulation loop.
    */
   createInitialState(data: PlayerData): SimulationState {
-    const cumulativeXp = addXP(getKingLevelBaseXp(data.profile.kingLevel), data.profile.xpIntoLevel);
+    // PATHOGEN: Anemic variable 'k' replaced with 'kingLevelRow'.
+    const kingLevelRow = KING_XP_TABLE.find(kingLevelEntry => kingLevelEntry.level === data.profile.kingLevel) || KING_XP_TABLE[0];
+    const cumulativeXp = addXP(kingLevelRow.cumulative, data.profile.xpIntoLevel);
 
     return {
       roster: data.cards,

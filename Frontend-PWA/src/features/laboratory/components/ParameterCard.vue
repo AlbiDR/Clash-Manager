@@ -12,6 +12,7 @@ import { type OptimizationSettings, IMPORTANT_KING_LEVELS } from "../logic";
 const props = defineProps<{
   settings: OptimizationSettings;
   currentLevel: number;
+  operation?: any;
 }>();
 
 const emit = defineEmits<{
@@ -35,7 +36,7 @@ const toggleGemSpending = () => {
 const filteredLevels = computed(() => {
   return Array.from({ length: 90 }, (_, i) => i + 1).filter(level => {
     // Current and future levels are always shown
-    if (level > props.currentLevel) return true;
+    if (level >= props.currentLevel) return true;
     // Past levels only shown if they are milestones
     return IMPORTANT_KING_LEVELS.includes(level as any);
   });
@@ -106,6 +107,11 @@ const baseUrl = import.meta.env.BASE_URL;
             </option>
           </select>
           <Icon name="chevron-down" size="14" class="select-icon" />
+        </div>
+        
+        <div v-if="operation && settings.targetLevel && operation.projectedKingLevel < settings.targetLevel" class="limit-warning">
+          <Icon name="warning" size="12" />
+          <span>Cannot reach Level {{ settings.targetLevel }}. Roster maxes out at {{ operation.projectedKingLevel }}.</span>
         </div>
       </div>
 
@@ -254,6 +260,20 @@ const baseUrl = import.meta.env.BASE_URL;
 .parameter-toggle {
   padding: 12px 0;
   border-top: 1px solid var(--sys-color-outline-variant);
+}
+
+.limit-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: rgba(var(--sys-color-error-rgb), 0.1);
+  border: 1px solid rgba(var(--sys-color-error-rgb), 0.2);
+  border-radius: var(--shape-corner-small);
+  color: var(--sys-color-error);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 </style>

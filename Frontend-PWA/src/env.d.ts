@@ -8,7 +8,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
-  readonly VITE_WORKER_URL: string;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string;
+  readonly VITE_PLAYER_TAG: string;
   readonly VITE_APP_VERSION: string;
   readonly TEST: boolean;
   BASE_URL: string;

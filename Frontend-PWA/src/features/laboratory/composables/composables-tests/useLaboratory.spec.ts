@@ -5,21 +5,21 @@ import { setActivePinia, createPinia } from 'pinia';
 // --- Mocks ---
 
 const mockClashData = ref({ playerTag: '#TAG123' });
-const mockCurrentSource = ref('GAS_BACKEND');
-const mockHubSyncTime = ref(Date.now());
+const mockCurrentSource = ref('SUPABASE');
+const mockRemoteSyncTime = ref(Date.now());
 
 vi.mock("@core/services/useClashDataStore", () => ({
   useClashDataStore: () => ({
     data: mockClashData,
     currentSource: mockCurrentSource,
-    lastSyncTime: mockHubSyncTime
+    remoteSyncTime: mockRemoteSyncTime
   })
 }));
 
 const mockGetPlayerProfile = vi.fn();
 vi.mock("@core/api/SupabaseClient", () => ({
   getPlayerProfile: (tag: string) => mockGetPlayerProfile(tag),
-  lastHubDiagnosis: { value: null },
+
   lastSyncStatus: { value: null },
   // Include other exports if needed to prevent breakage
   NetworkError: class extends Error { constructor(m:string){super(m); this.name="NetworkError";}}

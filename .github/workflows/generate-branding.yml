@@ -1,0 +1,60 @@
+name: Generate Branding Assets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: Frontend-PWA
+
+jobs:
+  branding:
+    name: Capture & Optimize
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Install Dependencies
+        working-directory: .
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webp
+
+      - name: Setup shot-scraper
+        run: |
+          pip install shot-scraper
+          shot-scraper install
+
+      - name: Start Dev Server
+        run: |
+          pnpm run dev &
+          # Wait for the dev server to be ready and the specific portfolio entry point
+          npx wait-on http://localhost:5173/Clash-Manager/portfolio-stitch.html --timeout 120000
+
+      - name: Run Branding Pipeline
+        run: bash scratch/generate_hifi_branding.sh
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(branding): automated regeneration of high-fidelity assets"
+          file_pattern: "Frontend-PWA/public/assets/branding/*.webp"

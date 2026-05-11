@@ -37,29 +37,24 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 
 # [3] **Constraint 1: Project Scope**
 
-### [A] Target A: GAS Version Manifest (Backend-GAS)
-`checkSystemHealth()` in `Orchestrator.ts` compares each module's `VER_` constant against `CONFIG.SYSTEM.MANIFEST` in `Configuration.ts`. This is the project's self-healing integrity check. Any drift causes it to report false failures and misleads every agent that subsequently reads it.
+### [A] Target A: Unitary Versioning (PNPM Catalog)
+The project utilizes PNPM's `catalog:` protocol to ensure monorepo-wide consistency for shared infrastructure dependencies (e.g., Vue, Vite, Vitest, Valibot). 
+* **[Rule A — Catalog Adherence]:** Read `Frontend-PWA/package.json` and `Backend/package.json`. If any shared dependency is declared with a discrete version string (e.g., `^3.4.0`) instead of `"catalog:"`, update it to use `"catalog:"`.
+* **[Rule B — Catalog Alignment]:** Ensure that any new dependencies added to the catalog in `pnpm-workspace.yaml` are consistently referenced across the monorepo.
 
-Read every `VER_` constant in `Backend-GAS/` and reconcile against `Configuration.ts` using the following rules without exception:
+### [B] Target B: Monorepo Package Version Consistency
+The monorepo uses a single version source of truth:
+* The `version` field in the root `package.json`.
+* The `version` field in `Frontend-PWA/package.json`.
+* The `version` field in `Backend/package.json`.
 
-* **[Rule A — Module Behind Manifest]:** If a module's `VER_` constant is **lower** than its manifest entry, update the `VER_` constant in the module file to match the manifest.
-* **[Rule B — Module Ahead of Manifest]:** If a module's `VER_` constant is **higher** than its manifest entry, update the manifest entry in `Configuration.ts` to match the module. This is the most common case — it means the module was updated but the manifest was not.
-* **[Rule C — Module Missing from Manifest]:** If a module has a `VER_` constant with no corresponding manifest entry, append the new entry to the `MANIFEST` object in `Configuration.ts`.
-* **[Rule D — Manifest Entry Missing Module Constant]:** If a manifest entry exists but the corresponding module has no `VER_` constant, add the constant to the module file using the manifest value.
-
-### [B] Target B: Worker Version String Consistency (Backend-Worker)
-The Worker declares its version in multiple locations that must agree:
-* `Backend-Worker/package.json` — the `version` field.
-* The `/capabilities` endpoint response in `src/index.ts` — the `version` string in the JSON response body.
-* Any other inline `version` constant declared in route handlers.
-
-Identify the highest declared version across all sources. That value is the ground truth. Update all other sources to match it. Do not change the ground truth value — only synchronize the lower declarations upward.
+Identify the highest declared version across these `package.json` files. That value is the ground truth. Update all other `package.json` files to match it. Do not change the ground truth value — only synchronize the lower declarations upward.
 
 ### [C] Exclusions
 * **[X] No Semantic Versioning Decisions:** Do not decide whether a change warrants a patch, minor, or major bump. Do not increment any version number beyond what is required for consistency reconciliation.
-* **[X] No External Dependencies:** Package dependency versions in `package.json` `dependencies` or `devDependencies` blocks are owned by **Dependency-Audit** (Step 7). Do not touch them.
+* **[X] No External Dependencies:** Upgrading package dependency versions in `package.json` or `pnpm-workspace.yaml` is owned by **Dependency-Audit** (Step 7). Do not bump versions, only enforce consistency and catalog usage.
 * **[X] No Feature Work:** Do not modify any logic, schema, or behavior. Only version string declarations are in scope.
-* **[X] GAS Service Firewall:** Do not modify calls to `SpreadsheetApp`, `UrlFetchApp`, `LockService`, `CacheService`, or `ScriptApp`.
+* **[X] Supabase SSOT Firewall:** Do not modify database schemas or triggers directly.
 
 ---
 
@@ -85,10 +80,10 @@ Identify the highest declared version across all sources. That value is the grou
 
 ### [A] Step 1: The Consistency Scan
 **[>] Action:** Scan both target areas for version inconsistency.
-**[i] Decision:** GAS manifest drift (Target A) takes priority over Worker version string drift (Target B). Fix one issue per run. If no inconsistency is found in either area, record a "No Drift Found" run.
+**[i] Decision:** Unitary Versioning (Target A) takes priority over package version drift (Target B). Fix one issue per run. If no inconsistency is found in either area, record a "No Drift Found" run.
 
-* **[1] GAS Scan:** Read every file in `Backend-GAS/` for `VER_` constants. Compare each against `CONFIG.SYSTEM.MANIFEST` in `Configuration.ts`. Apply Rules A through D.
-* **[2] Worker Scan:** Read `Backend-Worker/package.json` and every version string declared in `Backend-Worker/src/index.ts`. Identify any disagreement. Synchronize all sources to the highest declared value.
+* **[1] Catalog Scan:** Read `Frontend-PWA/package.json` and `Backend/package.json`. Identify any shared dependencies that are not using the `"catalog:"` protocol. Apply Rule A.
+* **[2] Package Version Scan:** Read `package.json` at the root, in `Frontend-PWA/`, and in `Backend/`. Identify any disagreement in the `version` field. Synchronize all to the highest declared value.
 
 ### [B] Step 2: Internal Analysis (Reconciliation Proof)
 **[i] Internal Goal:** Confirm the fix is mechanical and unambiguous before applying it.

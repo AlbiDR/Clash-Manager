@@ -216,5 +216,12 @@ export function generateCssVariables(tokens: ThemeTokens): Record<string, string
   vars['--sys-surface-glass-border'] = tokens.color.glassBorder;
   vars['--sys-surface-glass-blur'] = tokens.color.glassBlur;
 
+  // Add shared tokens (Layout, Motion, Font)
+  vars['--sys-layout-max-width'] = sharedTokens.layout.maxWidth;
+  vars['--sys-motion-spring'] = sharedTokens.motion.spring;
+  vars['--sys-font-family-body'] = sharedTokens.font.body;
+  vars['--sys-font-family-mono'] = sharedTokens.font.mono;
+  vars['--sys-shape-corner-l'] = sharedTokens.shape.cornerL;
+
   return vars;
 }

@@ -36,11 +36,11 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 
 # [3] **Constraint 1: Project Scope**
 
-### [A] Target A: Runtime & Security Risks (Backend-Worker / Backend-GAS)
-* **[1] Auth Boundary (Worker):** Every endpoint that proxies Clash Royale API keys or returns internal clan data is a privileged resource. Verify that `REMOTE_WORKER_SECRET` from the environment is validated on all non-public routes. The check must happen in a middleware function registered **before** any route handler — not inside the handler itself. If the header is absent or mismatched, the endpoint returns `401` immediately and halts. Public routes (`/health`, `/capabilities`, `/public/scan`, `/public/subscribe`) are intentionally exempt.
-* **[2] State Lifecycle (Worker):** Any module-level variable that accumulates state (e.g., a `Set`, `Map`, or array initialized at load time) must be evaluated for restart durability. Render restarts the Worker on every deploy and after inactivity. If accumulated state is user-facing or functional, flag it with an inline comment: either `// EPHEMERAL: intentionally resets on restart` or `// PERSISTENCE REQUIRED: see [issue description]`. Do not silently leave stateful features that appear functional but are not durable.
+### [A] Target A: Runtime & Security Risks (Backend / Supabase Edge Functions)
+* **[1] Auth Boundary (Edge Functions):** Every Edge Function that proxies Clash Royale API keys or returns internal clan data is a privileged resource. Verify that Supabase Auth checks or secrets are validated on all non-public routes. The check must happen **before** any functional logic execution. If auth is absent or mismatched, the endpoint returns `401` immediately and halts. Public routes (e.g., webhooks) are intentionally exempt but must still validate payloads.
+* **[2] State Lifecycle (Edge Functions):** Any module-level variable that accumulates state (e.g., a `Set`, `Map`, or array initialized at load time) must be evaluated for restart durability. Supabase isolates Edge Function memory per worker, and instances spin up and down dynamically. If accumulated state is user-facing or functional, flag it with an inline comment: either `// EPHEMERAL: intentionally resets on cold start` or `// PERSISTENCE REQUIRED: see [issue description]`. Do not silently leave stateful features that appear functional but are not durable.
 
-### [B] Target B: Data Integrity Risks (Frontend-PWA / Backend-Worker)
+### [B] Target B: Data Integrity Risks (Frontend-PWA / Backend)
 * **[1] Validation Boundary:** Per the CleanStack Architecture.md ADR (Section III), no data from an external source enters the Clean Stack without passing through a Valibot schema at the Layer 1 boundary. Identify Pinia Actions or functions that accept `any`-typed parameters and process them without a `v.parse()` or `v.safeParse()` call. On failure, set an error state and return early — downstream logic must never run on unvalidated input.
 * **[2] Validation Boundary (pattern):** Entry points for external API data into Pinia Stores or feature composables are the highest-risk locations. When an action or composable accepts a raw payload typed as `any`, define a Valibot schema for the expected shape and run `v.safeParse()` at the top of the function. This is the class of risk to scan for — not a standing order against any single file.
 * **[3] Dead Logic (pattern):** Code that executes but has no effect misleads future agents. A common instance: manual setup of a value (e.g., a request header) that is immediately overwritten by a called function's internal logic. When found, remove the dead block and add a short inline comment on the called function noting what it manages internally. This is the class of risk to scan for — not a standing order against any single file.
@@ -51,8 +51,8 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 
 ### [C] Exclusions
 * **[X] No Feature Work:** Do not implement new functionality. Every change must close a specific, named runtime risk.
-* **[X] No Version Reconciliation:** Version manifest drift and internal version string consistency are owned exclusively by **Version-Integrity** (Step 6). Do not flag or fix `VER_` constant mismatches — they are not your responsibility.
-* **[X] GAS Service Firewall:** Do not modify calls to `SpreadsheetApp`, `UrlFetchApp`, `LockService`, `CacheService`, or `ScriptApp`. These interact with GAS quotas and trigger infrastructure.
+* **[X] No Version Reconciliation:** Internal version string consistency and PNPM catalog checks are owned exclusively by **Version-Integrity** (Step 6). Do not flag or fix version constant mismatches — they are not your responsibility.
+* **[X] Supabase SSOT Constraints:** Do not modify database schemas, views, or triggers directly. Structural database changes must only be made via tracked migrations in `supabase/migrations/`.
 * **[X] No Cosmetic Changes:** Do not open PRs for formatting, renaming, or stylistic improvements. Those belong to **Optimize** and **Document-README**/**Document-TSDoc**.
 
 ---
@@ -86,7 +86,7 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 **[i] Decision:** Pick the single highest-severity, lowest-ambiguity issue. If no actionable threat is found across all four categories, do not invent low-value work — proceed to Step 4 and record a "No Threat Found" run.
 
 * **[1] Priority List (in order):**
-* **[a]** Unauthenticated privileged endpoints (Worker auth gap).
+* **[a]** Unauthenticated privileged endpoints (Edge Function auth gap).
 * **[b]** In-memory state with no persistence strategy or ephemeral annotation.
 * **[c]** Missing Valibot validation at an external data boundary.
 * **[d]** Dead or misleading code in a critical execution path.

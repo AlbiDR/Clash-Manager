@@ -38,17 +38,19 @@ import {
   addXP,
   addGold,
   addGems,
-  calculateGemCostForGold
+  GEM_TO_GOLD_FACTOR
 } from '@core/utils/economy';
 import { 
   CARD_LEVEL_CAP, 
+  GOLD_COST_TABLE, 
+  CARD_XP_TABLE, 
+  MATERIAL_REQUIREMENTS, 
+  GEM_CONVERSION_RATES, 
+  EFFICIENCY_OVERRIDES, 
+  KING_XP_TABLE,
   LOOKAHEAD_WEIGHT,
   LOOKAHEAD_PRECISION,
-  calculateKingLevel,
-  calculateDefaultTarget,
-  getUpgradeData,
-  calculateGemCostForCards,
-  getKingLevelBaseXp
+  IMPORTANT_KING_LEVELS
 } from './Registry';
 import { PriorityQueue } from '@core/utils/PriorityQueue';
 import type { 
@@ -79,40 +81,67 @@ function buildCandidate(
   const nextLevel = card.level + 1;
   if (nextLevel > CARD_LEVEL_CAP) return null;
 
-  const upgrade = getUpgradeData(card.rarity, nextLevel);
-  if (!upgrade) return null;
+  const cardsRequired = MATERIAL_REQUIREMENTS[card.rarity][nextLevel];
+  const goldCost = GOLD_COST_TABLE[card.rarity]?.[nextLevel];
+  const xpGain = CARD_XP_TABLE[nextLevel];
 
-  const { cardsRequired, goldCost, xpGain } = upgrade;
+  if (cardsRequired === undefined || goldCost === undefined) return null;
 
-  // 1. Material Calculation
   const cardsUsed = Math.min(card.count, cardsRequired);
-  const remainingNeeded = cardsRequired - cardsUsed;
-  const wildAvailable = card.isTowerTroop ? 0 : inventory.wildCards[card.rarity] || 0;
+  let remainingNeeded = cardsRequired - cardsUsed;
 
-  const finalWildUsed = settings.infiniteResources
-    ? remainingNeeded
-    : Math.min(remainingNeeded, wildAvailable);
-    
-  const materialDeficit = Math.max(0, remainingNeeded - finalWildUsed);
-
-  // 2. Cost Calculation (Gems)
+  const wildAvailable = card.isTowerTroop ? 0 : (inventory.wildCards[card.rarity] || 0);
   let gemsUsed = asGems(0);
+  let finalWildUsed = 0;
 
-  if (materialDeficit > 0) {
-    if (!settings.allowGemSpending) return null;
-    gemsUsed = addGems(gemsUsed, calculateGemCostForCards(card.rarity, materialDeficit));
+  if (settings.infiniteResources) {
+    // In infinite mode, we conceptually use what we need.
+    finalWildUsed = remainingNeeded;
+    
+    // Theoretical Gem calculation for material deficit
+    const deficit = Math.max(0, remainingNeeded - wildAvailable);
+    if (deficit > 0 && settings.allowGemSpending) {
+      const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
+      gemsUsed = addGems(gemsUsed, asGems(Math.ceil(deficit * rate)));
+    }
+
+    // Theoretical Gem calculation for gold deficit
+    if (goldCost > inventory.gold && settings.allowGemSpending) {
+      const goldDeficit = subGold(goldCost, inventory.gold);
+      const gemsForGold = asGems(Math.ceil(Number(goldDeficit) / 20)); // GEM_TO_GOLD_FACTOR = 20
+      gemsUsed = addGems(gemsUsed, gemsForGold);
+    }
+  } else {
+    // 2. Real resources mode
+    const wildToUse = Math.min(remainingNeeded, Math.max(0, wildAvailable));
+    finalWildUsed = wildToUse;
+    remainingNeeded -= wildToUse;
+
+    if (remainingNeeded > 0) {
+      if (settings.allowGemSpending) {
+        const rate = GEM_CONVERSION_RATES[card.rarity] || 1;
+        gemsUsed = addGems(gemsUsed, asGems(Math.ceil(remainingNeeded * rate)));
+      } else {
+        return null;
+      }
+    }
+
+    // Gold Deficit Gems (Real mode)
+    if (goldCost > inventory.gold) {
+      if (settings.allowGemSpending) {
+        const goldDeficit = subGold(goldCost, inventory.gold);
+        const gemsForGold = asGems(Math.ceil(Number(goldDeficit) / GEM_TO_GOLD_FACTOR)); // GEM_TO_GOLD_FACTOR = 20
+        gemsUsed = addGems(gemsUsed, gemsForGold);
+      } else {
+        return null;
+      }
+    }
+
+    // Check final budget
+    if (Number(gemsUsed) > Number(inventory.gems)) return null;
   }
 
-  if (goldCost > inventory.gold) {
-    if (!settings.allowGemSpending) return null;
-    gemsUsed = addGems(gemsUsed, calculateGemCostForGold(subGold(goldCost, inventory.gold)));
-  }
-
-  // 3. Budget Check
-  if (!settings.infiniteResources && Number(gemsUsed) > Number(inventory.gems)) {
-    return null;
-  }
-
+  // No default efficiency calculation here - delegated to Strategy
   return {
     index,
     card: { ...card },
@@ -216,6 +245,16 @@ export function* calculateProgressionPath(
   // Initialize Priority Queue
   const pq = new PriorityQueue<UpgradeCandidate>((a, b) => a.efficiencyIndex - b.efficiencyIndex);
 
+  // Pre-calculate target XP for Level Projection
+  let targetXp = -1;
+  if (settings.strategy === "Level Projection" && settings.targetLevel) {
+    const targetLevelNum = Number(settings.targetLevel);
+    const targetRow = KING_XP_TABLE.find(row => row.level === targetLevelNum);
+    if (targetRow) {
+      targetXp = Number(targetRow.cumulative);
+    }
+  }
+
   // Initial population of the queue
   for (let i = 0; i < currentState.roster.length; i++) {
     const candidate = buildCandidate(currentState.roster[i], i, currentState.inventory, settings);
@@ -229,9 +268,8 @@ export function* calculateProgressionPath(
     const bestCandidate = pq.pop()!;
 
     // Check target level for Projection strategy
-    if (settings.strategy === "Level Projection" && settings.targetLevel) {
-      const kingLevel = calculateKingLevel(currentState.totalXp);
-      if (kingLevel >= settings.targetLevel) break;
+    if (targetXp !== -1 && Number(currentState.totalXp) >= targetXp) {
+      break;
     }
 
     // Apply the upgrade
@@ -333,6 +371,24 @@ function calculateAdvancedScore(
 }
 
 /**
+ * Determines the King Level (Account Level) based on total XP earned.
+ *
+ * @param totalXp - The cumulative XP earned from card upgrades.
+ * @returns The corresponding King Level from the game tables.
+ */
+export function calculateKingLevel(totalXp: number): number {
+  let level = 1;
+  for (const row of KING_XP_TABLE) {
+    if (totalXp >= Number(row.cumulative)) {
+      level = row.level;
+    } else {
+      break;
+    }
+  }
+  return level;
+}
+
+/**
  * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
  *
  * @param state - The current state of the simulation.
@@ -346,7 +402,14 @@ export function mapStateToResult(
   initialXp: number
 ): OptimizationResult {
   const kingLevel = calculateKingLevel(state.totalXp);
-  const xpIntoLevel = Number(state.totalXp) - Number(getKingLevelBaseXp(kingLevel));
+  let xpIntoLevel = 0;
+
+  for (const row of KING_XP_TABLE) {
+    if (row.level === kingLevel) {
+      xpIntoLevel = Number(state.totalXp) - Number(row.cumulative);
+      break;
+    }
+  }
 
   return {
     actions: state.history as UpgradeAction[],
@@ -365,3 +428,13 @@ export function mapStateToResult(
   };
 }
 
+/**
+ * Determines the next logical King Level milestone for target projection.
+ *
+ * @param currentLevel - Current King Level.
+ * @returns The next milestone level.
+ */
+export function calculateDefaultTarget(currentLevel: number): number {
+  const nextMilestone = IMPORTANT_KING_LEVELS.find(m => m > currentLevel);
+  return Math.min(90, nextMilestone || (currentLevel + 1));
+}

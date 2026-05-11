@@ -58,11 +58,8 @@ vi.mock("../useClashDataStore", async () => {
         syncError: ref(null),
         lastSyncTime: ref(0),
         currentSource: ref(null),
-        lastSyncTime: ref(null),
         lastCompiledTime: ref(null),
         lastFetchedTime: ref(null),
-        syncStatus: ref(null),
-        refreshWorker: vi.fn(),
     };
     return {
         useClashDataStore: vi.fn(() => mockStore),
@@ -145,8 +142,7 @@ describe("useConsoleController", () => {
         isRefreshing: ref(false),
         syncError: ref(null),
         lastSyncTime: ref(Date.now()),
-        currentSource: ref(null as "WORKER" | "GAS" | null),
-        lastSyncTime: ref(null as number | null),
+        currentSource: ref(null as "SUPABASE" | null),
         lastCompiledTime: ref(null as number | null),
         lastFetchedTime: ref(null as number | null),
         filterFn: (item: any) => [item.n],
@@ -298,20 +294,20 @@ describe("useConsoleController", () => {
       expect(status.value.text).toBe("Offline");
     });
 
-    it("returns 'Stale Data' when data is older than 30 minutes", () => {
+    it("returns 'Stale Data' when data is older than 15 minutes", () => {
       const options = createOptions();
       const now = Date.now();
-      options.lastSyncTime.value = now - 31 * 60000; // 31 minutes ago
+      options.lastSyncTime.value = now - 16 * 60000; // 16 minutes ago
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("warning");
       expect(status.value.text).toBe("Stale Data");
     });
 
-    it("returns 'Nominal' when data is exactly 29 minutes old", () => {
+    it("returns 'Nominal' when data is exactly 14 minutes old", () => {
       const options = createOptions();
       const now = Date.now();
-      options.lastSyncTime.value = now - 29 * 60000; // 29 minutes ago
+      options.lastSyncTime.value = now - 14 * 60000; // 14 minutes ago
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
@@ -322,7 +318,7 @@ describe("useConsoleController", () => {
     it("uses lastSyncTime for age calculation", () => {
       const options = createOptions();
       const now = Date.now();
-      options.lastSyncTime.value = now - 31 * 60000;   // 31m ago (STALE)
+      options.lastSyncTime.value = now - 16 * 60000;   // 16m ago (STALE)
       options.data.value = [{ id: "1", n: "Test" }];
 
       const { status } = useConsoleController(options);
@@ -472,34 +468,34 @@ describe("useConsoleController", () => {
     });
   });
 
-  describe("layoutProps and hubInfo", () => {
-    it("maps hubInfo correctly when source is present", () => {
+  describe("layoutProps and remoteInfo", () => {
+    it("maps remoteInfo correctly when source is present", () => {
       const options = createOptions();
-      options.currentSource.value = "WORKER";
+      options.currentSource.value = "SUPABASE";
       options.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
       const { layoutProps } = useConsoleController(options);
 
-      expect(layoutProps.value.hubInfo).toMatchObject({
-        source: "WORKER",
+      expect(layoutProps.value.remoteInfo).toMatchObject({
+        source: "SUPABASE",
       });
-      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/1h ago/);
+      expect(layoutProps.value.remoteInfo?.dataAge).toMatch(/1h ago/);
     });
 
-    it("falls back to lastSyncTime for hubAge if lastCompiledTime is missing", () => {
+    it("falls back to lastSyncTime for dataAge if lastCompiledTime is missing", () => {
       const options = createOptions();
-      options.currentSource.value = "WORKER";
+      options.currentSource.value = "SUPABASE";
       options.lastCompiledTime.value = null;
       options.lastSyncTime.value = Date.now() - 7200000; // 2h ago
       const { layoutProps } = useConsoleController(options);
 
-      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/2h ago/);
+      expect(layoutProps.value.remoteInfo?.dataAge).toMatch(/2h ago/);
     });
 
-    it("leaves hubInfo undefined when source is null", () => {
+    it("leaves remoteInfo undefined when source is null", () => {
       const options = createOptions();
       options.currentSource.value = null;
       const { layoutProps } = useConsoleController(options);
-      expect(layoutProps.value.hubInfo).toBeUndefined();
+      expect(layoutProps.value.remoteInfo).toBeUndefined();
     });
 
     it("sets isEmpty correctly when data is empty and not loading", () => {

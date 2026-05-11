@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useRecruiter } from "../useRecruiter";
-import { ref } from "vue";
+import { ref, createApp } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
 import * as SupabaseClient from "@core/api/SupabaseClient";
 
 // --- Stable Mocks ---
 const mockUpdateLocalData = vi.fn();
-const mockRefreshGas = vi.fn();
-const mockRefreshWorker = vi.fn();
+const mockRefreshStore = vi.fn();
 const mockInjectRecruits = vi.fn().mockReturnValue(1);
 const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
 const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
@@ -25,8 +24,7 @@ const { mockPingData, mockClashData, mockIsShowcaseMode, mockIsSyntheticMode } =
   const { ref } = require("vue");
   return {
     mockPingData: ref({
-      spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
-      sheets: { Headhunter: 789 },
+      dashboardUrl: "https://supabase.com/dashboard/project/clash-manager",
     }),
     mockClashData: ref({
       hh: [
@@ -54,12 +52,11 @@ vi.mock("@core/services/useClashDataStore", () => ({
     isRefreshing: ref(false),
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
-    currentSource: ref("GAS"),
+    currentSource: ref("SUPABASE"),
     lastCompiledTime: ref(null),
     lastFetchedTime: ref(null),
-      syncStatus: ref(null),
-    refresh: mockRefreshGas,
-    refreshFromSupabase: mockRefreshGas,
+    refresh: mockRefreshStore,
+    refreshFromSupabase: mockRefreshStore,
     updateLocalData: mockUpdateLocalData,
   })),
 }));
@@ -91,12 +88,11 @@ vi.mock("@core", async (importOriginal) => {
       isRefreshing: ref(false),
       syncError: ref(null),
       lastSyncTime: ref(1700000000000),
-      currentSource: ref("GAS"),
+      currentSource: ref("SUPABASE"),
       lastCompiledTime: ref(null),
       lastFetchedTime: ref(null),
-      syncStatus: ref(null),
-      refresh: mockRefreshGas,
-      refreshFromSupabase: mockRefreshGas,
+      refresh: mockRefreshStore,
+      refreshFromSupabase: mockRefreshStore,
       updateLocalData: mockUpdateLocalData,
     })),
     useShowcaseMode: vi.fn(() => ({
@@ -122,15 +118,11 @@ vi.mock("@core", async (importOriginal) => {
   };
 });
 
-vi.mock("@core/api/SupabaseClient", () => {
-  const { ref } = require("vue");
-  return {
-    isWorkerConfigured: vi.fn().mockReturnValue(false),
-    scanRecruitsDirect: vi.fn().mockResolvedValue([]),
-    lastHubDiagnosis: ref(null),
-    lastSyncStatus: ref(null),
-  };
-});
+vi.mock("@core/api/SupabaseClient", () => ({
+  scanRecruitsDirect: vi.fn().mockResolvedValue([]),
+
+  lastSyncStatus: { value: null },
+}));
 
 vi.mock("@shared", async (importOriginal) => {
   const actual = await importOriginal<any>();
@@ -183,6 +175,19 @@ vi.mock("vue-router", () => ({
   })),
 }));
 
+// Helper to run composables in a component context
+function withSetup<T>(composable: () => T): [T, ReturnType<typeof createApp>] {
+  let result: T;
+  const app = createApp({
+    setup() {
+      result = composable();
+      return () => {};
+    },
+  });
+  app.mount(document.createElement("div"));
+  return [result!, app];
+}
+
 describe("useRecruiter", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -201,7 +206,7 @@ describe("useRecruiter", () => {
 
 
   it("exposes layoutProps containing sortOptions with descriptions", () => {
-    const { layoutProps } = useRecruiter();
+    const [{ layoutProps }] = withSetup(() => useRecruiter());
     const sortOptions = layoutProps.value.sortOptions;
     expect(sortOptions!.length).toBeGreaterThan(0);
     expect(sortOptions![0]).toHaveProperty("label");
@@ -209,35 +214,35 @@ describe("useRecruiter", () => {
   });
 
   it("handles search updates", () => {
-    const { handleSearch, searchQuery } = useRecruiter();
+    const [{ handleSearch, searchQuery }] = withSetup(() => useRecruiter());
     handleSearch("Recruit A");
     expect(searchQuery.value).toBe("Recruit A");
   });
 
   it("filters recruits based on blacklist", () => {
     mockTombstones.value = new Set(["1"]);
-    const { filteredItems } = useRecruiter();
+    const [{ filteredItems }] = withSetup(() => useRecruiter());
     expect(filteredItems.value.length).toBe(1);
     expect(filteredItems.value[0].id).toBe("2");
   });
 
   it("prunes blacklist when new recruits are loaded", async () => {
-    useRecruiter();
+    withSetup(() => useRecruiter());
     // watch is immediate, so it should have called prune with initial hh
     expect(mockPrune).toHaveBeenCalledWith(["1", "2"]);
   });
 
   describe("handleRefresh", () => {
     it("calls refreshFromSupabase from the store", async () => {
-      const { refresh } = useRecruiter();
+      const [{ refresh }] = withSetup(() => useRecruiter());
       await refresh();
-      expect(mockRefreshGas).toHaveBeenCalled();
+      expect(mockRefreshStore).toHaveBeenCalled();
     });
   });
 
   describe("dismissBulk", () => {
     it("dismisses selected recruits with optimistic updates", async () => {
-      const { dismissBulk, selectedIds } = useRecruiter();
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
 
       selectedIds.value = ["1"];
       dismissBulk();
@@ -250,7 +255,7 @@ describe("useRecruiter", () => {
     });
 
     it("restores visibility if dismissal action fails", async () => {
-      const { dismissBulk, selectedIds } = useRecruiter();
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
 
       mockDismissRecruitsAction.mockRejectedValue(new Error("Fail"));
 
@@ -264,7 +269,7 @@ describe("useRecruiter", () => {
     });
 
     it("restores recruits when undo is clicked", async () => {
-      const { dismissBulk, selectedIds } = useRecruiter();
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
 
       selectedIds.value = ["1"];
       dismissBulk();

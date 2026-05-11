@@ -43,7 +43,7 @@ export function getAppShellStyles(): string {
       display: block;
       max-width: 720px;
       margin: 0 auto;
-      padding: 0 16px;
+      padding: 0 12px;
       padding-top: calc(12px + env(safe-area-inset-top));
       padding-bottom: 120px;
       contain: content;

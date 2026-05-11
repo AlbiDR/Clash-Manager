@@ -14,7 +14,7 @@ import { triggerBackendUpdate } from "@core/api/SupabaseClient";
 // Mock SupabaseClient
 vi.mock("@core/api/SupabaseClient", () => ({
   triggerBackendUpdate: vi.fn(),
-  lastHubDiagnosis: ref(null),
+
   lastSyncStatus: ref(null),
 }));
 

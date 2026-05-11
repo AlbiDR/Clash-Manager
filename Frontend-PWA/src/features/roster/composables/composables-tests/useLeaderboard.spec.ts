@@ -14,8 +14,7 @@ const mockData = ref({
 vi.mock("@core/api/useApiState", () => ({
   useApiState: () => ({
     pingData: ref({
-      spreadsheetUrl: "https://docs.google.com/spreadsheets/d/123",
-      sheets: { Leaderboard: 456 },
+      dashboardUrl: "https://supabase.com/dashboard/project/clash-manager",
     }),
     apiStatus: ref("online"),
   }),
@@ -28,7 +27,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
     isRefreshing: ref(false),
     syncError: ref(null),
     lastSyncTime: ref(1700000000000),
-    currentSource: ref("GAS"),
+    currentSource: ref("SUPABASE"),
     lastCompiledTime: ref(null),
     lastFetchedTime: ref(null),
     refresh: vi.fn(),
