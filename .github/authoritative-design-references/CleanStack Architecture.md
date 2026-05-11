@@ -30,6 +30,32 @@ This project employs a **Strict Unitary Architecture** across six discrete layer
 - **Dependency Inversion Principle (DIP):** Higher layers must depend on abstractions (interfaces or types) of lower layers, not concrete implementations. This ensures that infrastructure shifts in Layer 1 do not oscillate into business logic in Layer 3.
 - **Framework as a Detail:** The selected technology stack (Vue, Vite, Supabase) is a replaceable implementation detail. Business logic in Layer 3 must never depend on framework-specific APIs. If the framework were swapped, Layer 3 logic should remain untouched.
 
+### Machine-Readable Constraints (The Execution Law)
+
+To ensure automated agents (like the Nightly `Harden` agent) can enforce architectural boundaries without ambiguity, dependency rules are defined in this machine-readable block:
+
+```yaml
+# @machine-readable: architecture-isolation
+layers:
+  - id: "@substrate"
+    level: 0
+    allowed_imports: []
+  - id: "@core"
+    level: 1
+    allowed_imports: ["@substrate"]
+  - id: "@shared"
+    level: 2
+    allowed_imports: ["@core", "@substrate"]
+  - id: "@features"
+    level: 3
+    allowed_imports: ["@shared", "@core"]
+    forbidden_imports: ["@features/*"] # Strict isolation: a feature cannot import another feature
+  - id: "@app"
+    level: 4
+    allowed_imports: ["@features", "@shared", "@core"]
+```
+
+
 ### Universal Dependency Cataloging (Unitary Versioning)
 
 To enforce monorepo-wide consistency and eliminate environmental fragmentation, all internal packages (Frontend, Backend) are bound to a strict versioning contract:
@@ -255,7 +281,19 @@ To maintain a clinical, drift-free stack, the GitHub repository is the **Absolut
 
 ---
 
-## IX. Execution Protocol
+## IX. Anti-Patterns (The "Forbidden Paths")
+
+Telling a developer or an agent what *to do* is insufficient; the ADR must explicitly forbid known failure vectors. Committing any of the following anti-patterns is a critical architectural violation:
+
+1.  **The "Feature-to-Feature" Bridge:** Feature A importing a composable or component directly from Feature B. Features are isolated silos. If logic must be shared, it must be extracted and pushed down to Layer 2 (`@shared`) or Layer 1 (`@core`).
+2.  **Bypassing the Pinia Firewall:** Mutating global state directly through `window` or utility side-effects instead of dispatching through an explicit Pinia action. State mutation must be traceable.
+3.  **Trusting the Payload:** Assuming that a JWT payload or client-side payload in a Supabase Edge Function is valid without running it through a strict `Valibot` schema first. The database trusts no one.
+4.  **"Magic Number" Hardcoding:** Hardcoding a scoring threshold or progression formula instead of deriving it dynamically from the data corpus.
+5.  **Unbrokered Hardware Access:** A Vue component calling `navigator.vibrate` or `wakeLock.request` directly. All hardware interactions must be brokered through a Layer 2 composable to ensure fallback safety.
+
+---
+
+## X. Execution Protocol
 
 1. **Analysis Phase:** Analyze existing repository structure. Never implement blindly.
 2. **Refactor First:** Propose architectural shifts before beginning implementation.
