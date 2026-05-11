@@ -1,0 +1,54 @@
+/*
+ * PORTFOLIO SCREENSHOT STYLING
+ * ----------------------------------------------------------------------------
+ * This CSS is injected via shot-scraper to create a premium, "framed" look
+ * for README and portfolio screenshots.
+ */
+
+:root {
+  --portfolio-bg: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --frame-radius: 12px;
+  --frame-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --frame-border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 
+ * We wrap the entire #app in a "stage" 
+ * This is done via JS injection before taking the shot.
+ */
+#portfolio-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  background: var(--portfolio-bg);
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+#app {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 450px; /* Mobile-first view for the PWA */
+  max-height: 900px;
+  border-radius: var(--frame-radius);
+  box-shadow: var(--frame-shadow);
+  border: var(--frame-border);
+  overflow: hidden;
+  position: relative;
+  background: #ffffff; /* Fallback for light mode */
+}
+
+/* Dark mode overrides if needed */
+@media (prefers-color-scheme: dark) {
+  #app {
+    background: #0d1117;
+  }
+}
+
+/* Hide UI noise that shouldn't be in a portfolio shot */
+.v-debug-badge, 
+#pwa-install-prompt {
+  display: none !important;
+}

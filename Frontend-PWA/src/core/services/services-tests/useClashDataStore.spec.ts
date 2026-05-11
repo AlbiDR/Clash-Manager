@@ -33,7 +33,7 @@ vi.mock("../useWakeLock", () => ({
 
 vi.mock("../../api/SupabaseClient", () => ({
   fetchRemote: vi.fn(),
-  lastHubDiagnosis: { value: null },
+
   lastSyncStatus: { value: null }
 }));
 

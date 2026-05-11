@@ -42,7 +42,14 @@ export const RaritySchema = v.fallback(
 export const RawCardSchema = v.object({
   name: v.optional(v.string(), "Unknown Card"),
   rarity: v.optional(RaritySchema, "Common"),
+  // Absolute level on the unified 1-16 scale. For data returned by the
+  // sync-player-cards Edge Function this is already normalized; for any future
+  // raw-API path the ProfileHydrator clamps it via normalizeLevel.
   level: v.optional(v.number(), 1),
+  // Raw maxLevel as returned by the Clash Royale API (rarity-relative cap).
+  // Common=16, Rare=14, Epic=11, Legendary=8, Champion=6.
+  // Present only on data sourced directly from the API; absent on internal rows.
+  maxLevel: v.optional(v.number()),
   count: v.optional(v.number(), 0),
   isTowerTroop: v.optional(v.boolean(), false),
 });
@@ -124,7 +131,7 @@ const SafeNumberPipe = v.pipe(
     // schema is slightly out of sync or if optional columns are omitted.
     if (val === null || val === undefined) return 0;
     if (typeof val === "string") {
-      // Handle comma-separated or percentage-based strings from sheets
+      // Handle comma-separated or percentage-based strings from remote sources
       const cleaned = val.replace(/,/g, "").replace(/%/g, "").trim();
       if (cleaned === "") return 0;
       const n = parseFloat(cleaned);

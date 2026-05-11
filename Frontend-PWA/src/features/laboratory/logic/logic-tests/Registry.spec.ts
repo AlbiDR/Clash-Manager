@@ -36,17 +36,43 @@ describe('Laboratory Registry', () => {
   });
 
   describe('GOLD_COST_TABLE', () => {
-    it('should have costs for levels 2 through 16', () => {
-      for (let level = 2; level <= CARD_LEVEL_CAP; level++) {
-        expect(GOLD_COST_TABLE).toHaveProperty(level.toString());
-        expect(Number(GOLD_COST_TABLE[level])).toBeGreaterThanOrEqual(0);
-      }
+    const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Champion'] as const;
+
+    it('should define costs for all rarities', () => {
+      rarities.forEach(rarity => {
+        expect(GOLD_COST_TABLE).toHaveProperty(rarity);
+        const levels = Object.keys(GOLD_COST_TABLE[rarity]).map(Number);
+        expect(levels.length).toBeGreaterThan(0);
+      });
     });
 
-    it('should have increasing costs', () => {
-        for (let level = 3; level <= CARD_LEVEL_CAP; level++) {
-            expect(Number(GOLD_COST_TABLE[level])).toBeGreaterThanOrEqual(Number(GOLD_COST_TABLE[level - 1]));
+    it('should have non-negative gold costs for every defined level', () => {
+      rarities.forEach(rarity => {
+        Object.values(GOLD_COST_TABLE[rarity]).forEach(cost => {
+          expect(Number(cost)).toBeGreaterThanOrEqual(0);
+        });
+      });
+    });
+
+    it('should have non-decreasing costs within each rarity', () => {
+      rarities.forEach(rarity => {
+        const levels = Object.keys(GOLD_COST_TABLE[rarity]).map(Number).sort((a, b) => a - b);
+        for (let i = 1; i < levels.length; i++) {
+          expect(Number(GOLD_COST_TABLE[rarity][levels[i]])).toBeGreaterThanOrEqual(
+            Number(GOLD_COST_TABLE[rarity][levels[i - 1]])
+          );
         }
+      });
+    });
+
+    it('should use reference-verified values for rarity-specific first-upgrade discounts', () => {
+      // Epic's first upgrade step (L6→L7) costs 400g, not 1000g.
+      expect(Number(GOLD_COST_TABLE['Epic'][7])).toBe(400);
+      // Legendary's first upgrade step (L9→L10) costs 5000g, not 8000g.
+      expect(Number(GOLD_COST_TABLE['Legendary'][10])).toBe(5000);
+      // All rarities share the same cost at the top levels.
+      expect(Number(GOLD_COST_TABLE['Common'][16])).toBe(120000);
+      expect(Number(GOLD_COST_TABLE['Champion'][16])).toBe(120000);
     });
   });
 

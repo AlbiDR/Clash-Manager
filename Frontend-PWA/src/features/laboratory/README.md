@@ -13,22 +13,22 @@ The Laboratory allows users to project their future King Level and resource cons
 - **Dependencies**:
   - `@core/utils/economy`: Branded currency arithmetic.
   - `@core/utils/PriorityQueue`: O(log N) candidate selection.
-  - `@core/api/SupabaseClient`: Profile fetching and authoritative feature view access.
+  - `@core/api/SupabaseClient`: Profile fetching.
 
 ## Logic Subsystems
 
 ### Validation Boundary (ProfileHydrator.ts)
-The Laboratory implements a strict validation boundary. Raw data from the Supabase backend (fetched via authoritative feature views) or external RoyaleAPI payloads is passed through `ProfileInputSchema` (Valibot) before being transformed into domain-specific types.
+The Laboratory implements a strict validation boundary. Raw data from the Supabase backend or external RoyaleAPI payloads is passed through `ProfileInputSchema` (Valibot) before being transformed into domain-specific types.
 
 ### Progression Engine (Simulation.ts)
 A non-blocking, generator-based engine that calculates the most efficient upgrade path.
-- **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness via `requestIdleCallback`.
-- **Recursive Chain Lookahead**: Evaluates the "character arc" of a card (determined by `LOOKAHEAD_PRECISION` and `LOOKAHEAD_WEIGHT`) to avoid greedy traps and local optima.
-- **Priority Queue**: Uses a Binary Heap (O(log N) selection) to always select the highest-efficiency candidate.
+- **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
+- **Recursive Lookahead**: Evaluates the "character arc" of a card (determined by `LOOKAHEAD_PRECISION`) to avoid greedy traps and local optima.
+- **Priority Queue**: Uses a Binary Heap to always select the highest-efficiency candidate.
 
 ### Trajectory Rendering (TrajectoryList.vue)
 Renders the recommended upgrade path using a high-performance rendering strategy.
-- **Progressive Rendering**: Utilizes `useProgressiveList` (@core/services) to time-slice the injection of trajectory items into the DOM. This maintains 60FPS even when a simulation results in hundreds of recommended actions, replacing the legacy "Show More" manual expansion with automated background hydration.
+- **Progressive Rendering**: Utilizes `useProgressiveList` (@core/services) to time-slice the injection of trajectory items into the DOM. This maintains 60FPS even when a simulation results in hundreds of recommended actions, replacing the legacy "Show More" manual expansion.
 
 ### Strategy Pattern (ScoringStrategy.ts)
 Upgrade priorities are defined by interchangeable strategies:

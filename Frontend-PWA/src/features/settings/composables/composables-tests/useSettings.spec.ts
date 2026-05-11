@@ -54,7 +54,6 @@ import { useConnectionStatus } from "../../../../core/services/useConnectionStat
 import { useHaptics } from "../../../../core/services/useHaptics";
 import { useWakeLock } from "../../../../core/services/useWakeLock";
 import { useSystemInfo } from "../../../../core/services/useSystemInfo";
-import { useRegisterSW } from "virtual:pwa-register/vue";
 import { useSettings } from "../useSettings";
 
 vi.mock("../../../../core/services/useSystemInfo", () => {
@@ -175,10 +174,8 @@ vi.mock("../../../../core/services/useWakeLock", () => ({
   })),
 }));
 
-vi.mock("virtual:pwa-register/vue", () => ({
-  useRegisterSW: vi.fn(() => ({
-    updateServiceWorker: mocks.mockUpdateServiceWorker,
-  })),
+vi.mock("virtual:pwa-register", () => ({
+  registerSW: vi.fn(() => mocks.mockUpdateServiceWorker),
 }));
 
 // Helper to run composable within a component context
@@ -332,6 +329,11 @@ describe("useSettings", () => {
     });
 
     it("updates and reloads if a waiting worker exists", async () => {
+      vi.useFakeTimers();
+      const originalProd = import.meta.env.PROD;
+      // @ts-ignore
+      import.meta.env.PROD = true;
+
       const mockReg = { waiting: {} };
       vi.stubGlobal("navigator", {
         serviceWorker: {
@@ -339,9 +341,16 @@ describe("useSettings", () => {
         },
       });
       const { result } = withSetup(useSettings);
+
+      await vi.advanceTimersByTimeAsync(1500);
+
       await result.forceUpdate();
       expect(mocks.mockToast.success).toHaveBeenCalledWith("Update ready! Reloading...");
       expect(mocks.mockUpdateServiceWorker).toHaveBeenCalledWith(true);
+
+      // @ts-ignore
+      import.meta.env.PROD = originalProd;
+      vi.useRealTimers();
     });
 
     it("triggers update if no waiting worker", async () => {

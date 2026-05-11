@@ -14,10 +14,10 @@ import {
   useUiCoordinator,
   useSystemInfo,
 } from "@core";
-import { onMounted, computed, watch } from "vue";
+import { onMounted, computed, watch, ref } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useHeadhunter } from "@features/headhunter";
-import { useRegisterSW } from "virtual:pwa-register/vue";
+// import { registerSW } from "virtual:pwa-register";
 
 const clashDataStore = useClashDataStore();
 const { refresh } = clashDataStore;
@@ -66,28 +66,30 @@ watch(isOnline, (online, wasOnline) => {
 });
 
 // SMART UPDATE: Automated PWA registration and update logic
-const { updateServiceWorker } = useRegisterSW({
-  immediate: false, // Fix: Defer registration until window.onload to prevent PSI crashes
-  /**
-   * Post-registration lifecycle hook.
-   * Rationale: Establishes a background polling mechanism to check for
-   * Service Worker updates every hour, ensuring clients don't stay stale.
-   *
-   * @param registration - The authoritative SW registration object.
-   */
-  onRegistered(registration: ServiceWorkerRegistration | undefined) {
-    // Check for updates every hour
-    registration &&
-      setInterval(
-        () => {
-          registration.update();
+const updateServiceWorker = ref(() => {});
+
+onMounted(() => {
+  // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent 
+  // headless browser crashes during branding asset generation.
+  if (!import.meta.env.PROD) return;
+
+  setTimeout(async () => {
+    try {
+      const { registerSW } = await import("virtual:pwa-register");
+      const update = registerSW({
+        immediate: true,
+        onRegistered(r: any) {
+          r && setInterval(() => r.update(), 60 * 60 * 1000);
         },
-        60 * 60 * 1000,
-      );
-  },
-  onNeedRefresh() {
-    console.log("[PWA] Update available");
-  },
+        onNeedRefresh() {
+          console.log("[PWA] Update available");
+        },
+      });
+      updateServiceWorker.value = update;
+    } catch (e) {
+      console.warn("[PWA] Registration failed", e);
+    }
+  }, 1000);
 });
 
 onMounted(() => {
@@ -102,7 +104,7 @@ onMounted(() => {
   localStorage.setItem("app_version", currentVersion);
 
   // AUTO-REFRESH: Listen for Service Worker activation to force a page reload.
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && !isShowcaseMode.value) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       console.log("[PWA] New version activated, refreshing...");
       window.location.reload();
@@ -157,7 +159,7 @@ onMounted(() => {
 .app-container {
   width: 100%;
   max-width: var(--sys-layout-max-width);
-  padding: 0 16px;
+  padding: 0 12px;
   transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;

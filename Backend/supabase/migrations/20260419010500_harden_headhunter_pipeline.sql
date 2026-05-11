@@ -123,7 +123,7 @@ SELECT cron.schedule(
         url := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/headhunter-scanner',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'Authorization', 'Bearer {{INTERNAL_BEARER_TOKEN}}'
+            'Authorization', 'Bearer ' || substrate.get_vault_secret('INTERNAL_BEARER_TOKEN')
         ),
         body := '{"tournaments": ["AUTO"]}'::jsonb
     );

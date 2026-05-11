@@ -42,7 +42,7 @@ The following are safe to apply autonomously. After applying, run `pnpm test`. I
 
 * **[1] Patch bumps:** Any dependency where a patch version is available within the current declared range (e.g., `^4.18.2` → `4.18.5`).
 * **[2] Minor bumps:** Any dependency where a minor version is available within the current major (e.g., `^4.18.2` → `4.19.x`).
-* **[3] `@types/node` alignment:** The monorepo currently declares `@types/node` at four different versions across root, Backend-Worker, Frontend-PWA, and Backend-GAS. Align all to the version consistent with the declared Node.js runtime in `engines` and `render.yaml`.
+* **[3] `@types/node` alignment:** The monorepo currently declares `@types/node` at different versions across root, Backend, and Frontend-PWA. Align all to the version consistent with the declared Node.js runtime in `engines` and `supabase/config.toml`.
 * **[4] devDependency misclassification:** Identify any package in `dependencies` that is only used in build, test, or development contexts and move it to `devDependencies`.
 * **[5] Redundant dependencies:** Identify any package that is no longer imported anywhere in the codebase (e.g., `node-fetch` after the Node v24 migration). Remove it along with its corresponding `@types` package if one exists.
 
@@ -53,7 +53,7 @@ Major version bumps are **never applied autonomously**. For each major version d
 * **[2]** Assess the breaking changes relevant to **this specific codebase**. Do not summarize the full changelog — identify only the changes that affect how this project uses the package.
 * **[3]** Open a PR containing only the watchlist update and the analysis. No code changes.
 
-Example assessment for Express 4→5: "Route matching changed — Worker routes do not use wildcards or regex patterns, migration surface is small. Async error propagation changed — Worker route handlers use explicit `try/catch`, behavior will change if removed. Recommend developer review before applying."
+Example assessment for Deno/Node upgrades: "Route matching changed — Edge Function routes do not use wildcards or regex patterns, migration surface is small. Async error propagation changed — Handlers use explicit `try/catch`, behavior will change if removed. Recommend developer review before applying."
 
 ### [C] The Persistent Watchlist
 **[>] Location:** `.github/nightly-logs/dependency-audit-coverage.log`
@@ -70,10 +70,10 @@ This log has two sections that are updated on every run:
 Entries are **never removed automatically**. A dependency leaves the watchlist only when the upgrade is confirmed applied and detected on the next run. If the watchlist grows stale (an entry's "current" version is no longer what is declared in `package.json`), update the entry to reflect the new declared version and recalculate whether a major is still pending.
 
 ### [D] Exclusions
-* **[X] No Internal Version Constants:** `VER_` constants, manifest entries, and Worker version strings are owned by **Version-Integrity** (Step 6). Do not touch them.
+* **[X] No Internal Version Constants:** Internal version strings and Unitary Versioning catalogs are owned by **Version-Integrity** (Step 6). Do not touch them.
 * **[X] No Major Bumps Autonomously:** Under no circumstances apply a major version bump to any dependency without explicit developer action. The analysis belongs in the watchlist; the execution belongs to the developer.
-* **[X] No Runtime Engine Bumps:** Node.js engine version changes in `engines`, `render.yaml`, and GitHub Actions workflows are developer decisions. Flag them in the watchlist if a new LTS is available, but do not modify them.
-* **[X] GAS Service Firewall:** Do not modify calls to `SpreadsheetApp`, `UrlFetchApp`, `LockService`, `CacheService`, or `ScriptApp`.
+* **[X] No Runtime Engine Bumps:** Node.js/Deno engine version changes in `engines`, `supabase/config.toml`, and GitHub Actions workflows are developer decisions. Flag them in the watchlist if a new LTS is available, but do not modify them.
+* **[X] Supabase SSOT Firewall:** Do not modify database schemas or triggers directly. Structural database changes must only be made via tracked migrations in `supabase/migrations/`.
 
 ---
 

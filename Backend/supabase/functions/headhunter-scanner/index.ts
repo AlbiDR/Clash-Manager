@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { supabase, CONFIG } from "./client.ts";
+import { supabase, CONFIG, syncVault } from "./client.ts";
 import { executeScanner } from "./scanner.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import * as v from "npm:valibot";
@@ -16,6 +16,9 @@ const PayloadSchema = v.object({
 });
 
 Deno.serve(async (req) => {
+    // Sync secrets from Vault before processing request
+    await syncVault();
+
     return await clinicalServe({
         req,
         supabase,

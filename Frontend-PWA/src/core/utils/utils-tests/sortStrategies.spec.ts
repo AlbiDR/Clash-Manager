@@ -162,6 +162,7 @@ describe("sortStrategies", () => {
       potentialRawScore: 1000,
       t: 5000,
       n: "Albi",
+      longevity: 60,
       d: { don: 100, ago: "new" } as any,
     };
     const recruitB: Partial<Recruit> = {
@@ -169,6 +170,7 @@ describe("sortStrategies", () => {
       potentialRawScore: 500,
       t: 4000,
       n: "Bobi",
+      longevity: 120,
       d: { don: 200, ago: "old" } as any,
     };
 

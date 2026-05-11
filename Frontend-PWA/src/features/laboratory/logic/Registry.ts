@@ -52,13 +52,44 @@ export const LOOKAHEAD_WEIGHT = 0.4;
 export const LOOKAHEAD_PRECISION = 0.01;
 
 /**
- * Gold costs required for each level upgrade.
- * Key: Target Level.
- * Value: Gold amount.
+ * Gold costs required for each level upgrade, per rarity.
+ * Key: Rarity -> Target Level -> Gold amount.
+ *
+ * Rationale: Gold costs are NOT uniform across rarities at the same absolute
+ * level. A rarity's first upgrade costs less than what Common pays at that
+ * level because it reflects fewer cumulative upgrade steps. Discrepancies
+ * verified against the reference progression calculator (2026 update):
+ *   - Epic   L7: 400g  (not 1000g — it is Epic's first upgrade step)
+ *   - Legendary L10: 5000g (not 8000g — it is Legendary's first upgrade step)
  */
-export const GOLD_COST_TABLE: Readonly<Record<number, Gold>> = {
-  2: asGold(5), 3: asGold(20), 4: asGold(50), 5: asGold(150), 6: asGold(400), 7: asGold(1000), 8: asGold(2000),
-  9: asGold(4000), 10: asGold(8000), 11: asGold(15000), 12: asGold(25000), 13: asGold(40000), 14: asGold(60000), 15: asGold(90000), 16: asGold(120000)
+export const GOLD_COST_TABLE: Readonly<Record<Rarity, Readonly<Record<number, Gold>>>> = {
+  "Common": {
+    2: asGold(5),     3: asGold(20),    4: asGold(50),    5: asGold(150),
+    6: asGold(400),   7: asGold(1000),  8: asGold(2000),  9: asGold(4000),
+    10: asGold(8000), 11: asGold(15000),12: asGold(25000), 13: asGold(40000),
+    14: asGold(60000),15: asGold(90000),16: asGold(120000)
+  },
+  "Rare": {
+    4: asGold(50),    5: asGold(150),   6: asGold(400),   7: asGold(1000),
+    8: asGold(2000),  9: asGold(4000),  10: asGold(8000), 11: asGold(15000),
+    12: asGold(25000),13: asGold(40000),14: asGold(60000), 15: asGold(90000),
+    16: asGold(120000)
+  },
+  "Epic": {
+    // L7 is Epic's first upgrade step — costs 400g, not 1000g.
+    7: asGold(400),   8: asGold(2000),  9: asGold(4000),  10: asGold(8000),
+    11: asGold(15000),12: asGold(25000),13: asGold(40000), 14: asGold(60000),
+    15: asGold(90000),16: asGold(120000)
+  },
+  "Legendary": {
+    // L10 is Legendary's first upgrade step — costs 5000g, not 8000g.
+    10: asGold(5000), 11: asGold(15000),12: asGold(25000), 13: asGold(40000),
+    14: asGold(60000),15: asGold(90000),16: asGold(120000)
+  },
+  "Champion": {
+    12: asGold(25000),13: asGold(40000),14: asGold(60000),
+    15: asGold(90000),16: asGold(120000)
+  }
 };
 
 /**
@@ -111,7 +142,7 @@ export const GEM_CONVERSION_RATES: Readonly<Record<Rarity, number>> = {
  * Cumulative XP requirements for each King Level (Account Level).
  * Rationale: Used to project the player's account level after a series of upgrades.
  */
-export const KING_XP_TABLE = [
+export const KING_XP_TABLE: ReadonlyArray<KingXpRow> = [
   { level: 1, cumulative: asXP(0) },
   { level: 2, cumulative: asXP(20) },
   { level: 3, cumulative: asXP(70) },
@@ -201,7 +232,7 @@ export const KING_XP_TABLE = [
   { level: 87, cumulative: asXP(21438770) },
   { level: 88, cumulative: asXP(23338770) },
   { level: 89, cumulative: asXP(25338770) },
-  { level: 90, cumulative: asXP(27438770) }
+  { level: 90, cumulative: asXP(27438770) },
 ];
 
 /**
@@ -209,7 +240,7 @@ export const KING_XP_TABLE = [
  * Rationale: Represents levels where significant game features or rewards are unlocked.
  */
 export const IMPORTANT_KING_LEVELS: ReadonlyArray<number> = [
-  2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 54, 75
+  2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 75, 80, 85, 90
 ];
 
 /**
