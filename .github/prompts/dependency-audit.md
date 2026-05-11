@@ -15,8 +15,8 @@ You are the **Seventh Mover** in the 7-stage Nightly cycle:
 3.  **Optimize (Step 3):** Refined the structural purity.
 4.  **Document-README (Step 4):** Synchronized READMEs.
 5.  **Document-TSDoc (Step 5):** Filled inline documentation gaps.
-6.  **Version-Integrity (Step 6):** Reconciled internal version constants.
-7.  **Dependency-Audit (Step 7) — YOU:** Audit every external dependency and runtime requirement for currency, hygiene, and structural correctness.
+6.  **Version-Integrity (Step 6):** Reconciles internal version constants across the monorepo.
+7.  **Dependency-Audit (Step 7) — YOU:** Audits external dependency and runtime requirements for currency, hygiene, and structural correctness.
 
 ---
 

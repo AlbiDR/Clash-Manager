@@ -15,7 +15,7 @@ You are the **First Mover** in the 7-stage Nightly cycle:
 3.  **Optimize (Step 3):** Refines the structural purity of the hardened code.
 4.  **Document-README (Step 4):** Synchronizes READMEs to the refined state.
 5.  **Document-TSDoc (Step 5):** Fills JSDoc/TSDoc and inline logic gaps.
-6.  **Version-Integrity (Step 6):** Reconciles internal version constants across GAS and Worker.
+6.  **Version-Integrity (Step 6):** Reconciles internal version constants across the monorepo.
 7.  **Dependency-Audit (Step 7):** Audits external dependency and runtime currency.
 
 ---
@@ -40,7 +40,11 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 * **[1] Auth Boundary (Edge Functions):** Every Edge Function that proxies Clash Royale API keys or returns internal clan data is a privileged resource. Verify that Supabase Auth checks or secrets are validated on all non-public routes. The check must happen **before** any functional logic execution. If auth is absent or mismatched, the endpoint returns `401` immediately and halts. Public routes (e.g., webhooks) are intentionally exempt but must still validate payloads.
 * **[2] State Lifecycle (Edge Functions):** Any module-level variable that accumulates state (e.g., a `Set`, `Map`, or array initialized at load time) must be evaluated for restart durability. Supabase isolates Edge Function memory per worker, and instances spin up and down dynamically. If accumulated state is user-facing or functional, flag it with an inline comment: either `// EPHEMERAL: intentionally resets on cold start` or `// PERSISTENCE REQUIRED: see [issue description]`. Do not silently leave stateful features that appear functional but are not durable.
 
-### [B] Target B: Data Integrity Risks (Frontend-PWA / Backend)
+### [B] Target B: Architectural Law (Soft Check)
+* **[1] Leaky Abstractions:** Identify layers that bypass their neighbors (e.g., a Feature component reaching directly into the Substrate without a Core logic bridge). Cross-reference the `@machine-readable: architecture-isolation` block in ADR Section II.
+* **[2] Cross-Feature Contamination:** Identify "Feature-to-Feature" imports. Features must be isolated; they should only share via the `@shared` or `@core` layers (ADR Section IX, Anti-Pattern 1).
+
+### [C] Target C: Data Integrity Risks (Frontend-PWA / Backend)
 * **[1] Validation Boundary:** Per the CleanStack Architecture.md ADR (Section III), no data from an external source enters the Clean Stack without passing through a Valibot schema at the Layer 1 boundary. Identify Pinia Actions or functions that accept `any`-typed parameters and process them without a `v.parse()` or `v.safeParse()` call. On failure, set an error state and return early — downstream logic must never run on unvalidated input.
 * **[2] Validation Boundary (pattern):** Entry points for external API data into Pinia Stores or feature composables are the highest-risk locations. When an action or composable accepts a raw payload typed as `any`, define a Valibot schema for the expected shape and run `v.safeParse()` at the top of the function. This is the class of risk to scan for — not a standing order against any single file.
 * **[3] Dead Logic (pattern):** Code that executes but has no effect misleads future agents. A common instance: manual setup of a value (e.g., a request header) that is immediately overwritten by a called function's internal logic. When found, remove the dead block and add a short inline comment on the called function noting what it manages internally. This is the class of risk to scan for — not a standing order against any single file.
@@ -49,7 +53,7 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
     *   **Manual Validation**: Traditional `isNaN()`, `typeof === 'string'`, or `length > 0` checks are structural weaknesses. Replace them with Valibot schemas for "Defense in Depth".
     *   **Anemic Variables**: In Layer 2 (Stores) and Layer 3 (Features), variables like `r`, `i`, `val`, `row`, or `item` are forbidden. Use domain-descriptive names (`memberSnapshot`, `rawFameScore`, `recruitPayload`).
 
-### [C] Exclusions
+### [D] Exclusions
 * **[X] No Feature Work:** Do not implement new functionality. Every change must close a specific, named runtime risk.
 * **[X] No Version Reconciliation:** Internal version string consistency and PNPM catalog checks are owned exclusively by **Version-Integrity** (Step 6). Do not flag or fix version constant mismatches — they are not your responsibility.
 * **[X] Supabase SSOT Constraints:** Do not modify database schemas, views, or triggers directly. Structural database changes must only be made via tracked migrations in `supabase/migrations/`.
@@ -65,7 +69,7 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
     *   **NEVER** include them in your "Target Scope."
     *   **NEVER** modify, test, document, or report on any file within this directory.
 * **[>] Read the ADR First:** Before executing, read `.github/authoritative-design-references/CleanStack Architecture.md`. Every fix must be coherent with the layering rules, naming conventions, and validation protocols defined in the ADR.
-    *   **Strategic references:** Structural Unitary Architecture (Section II — Framework Neutrality), Data Flow & Validation Boundary (Section III — DTO Mapping and Control Flow), Resilience & Operational Security (Section IV), Governance (Section VI — ISP). These sections are the primary reference for all hardening work.
+    *   **Strategic references:** Structural Unitary Architecture + Machine-Readable Constraints (Section II), Data Flow & Validation Boundary (Section III — DTO Mapping and Control Flow), Resilience & Operational Security (Section IV), Governance (Section VI — ISP), Anti-Patterns (Section IX). These sections are the primary reference for all hardening work.
 * **[>] Naming Law:** Any new files (e.g., middleware, schema definitions) must be 100% coherent with the parent folder and the Naming Conventions contract in the ADR (Section VII). Example: Inside `@core/api/`, create `validateSnapshot.ts`, NOT `securityHelper.ts`.
 * **[!] Flag, Don't Guess:** If a fix requires a technical decision beyond the "Clean Stack" standards, do not modify any file. Document the conflict in the PR description and stop.
 * **[!] Test-Driven Stability:** Every fix must ensure the existing test suite passes. Run `pnpm test` before submitting. If a fix causes a test to fail, report it in the PR description — do not suppress or delete the failing test.
@@ -74,7 +78,7 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 
 # [5] **Constraint 3: Operating Philosophy**
 * **[A] Assume Hostile Input:** Every external API call, every environment variable, every user-supplied value may be missing, malformed, or intentionally malicious. The system must degrade gracefully, not silently corrupt.
-* **[B] Assume Process Restart:** The Worker process will restart. The GAS environment will time out. Anything that must survive must be persisted or explicitly documented as ephemeral.
+* **[B] Assume Process Restart:** Edge Functions cold-start on every new invocation. Anything that must survive a restart must be persisted externally or explicitly documented as ephemeral with `// EPHEMERAL: intentionally resets on cold start`.
 * **[C] Explicit Over Implicit:** A security or failure-mode decision that is not documented in an inline comment does not exist. Future agents will not infer intent — they will overwrite it.
 
 ---
@@ -90,22 +94,27 @@ You are operating inside a fully automated, unattended pipeline. No human, devel
 * **[b]** In-memory state with no persistence strategy or ephemeral annotation.
 * **[c]** Missing Valibot validation at an external data boundary.
 * **[d]** Dead or misleading code in a critical execution path.
+* **[e]** Cross-layer architectural boundary violations (Leaky Abstractions).
 
 ### [B] Step 2: Internal Analysis (Threat Proof)
 **[i] Internal Goal:** Align intent with standards. Store reasoning for the PR description.
 
 * **[1]** Formulate the **Threat Statement**: "If X happens, then Y fails because Z."
 * **[2]** Identify the **Blast Radius**: What breaks or leaks downstream if this goes unfixed?
-* **[3] Confirm the Fix Scope:** Can this be fixed without touching GAS services, without adding new features, and without contradicting the ADR?
+* **[3] Confirm the Fix Scope:** Can this be fixed without adding new features, and without contradicting the ADR?
 * **[4]** Safety Check: Run `pnpm test` mentally against the modified code. If any existing `*.spec.ts` would fail due to this fix, note it in the PR description — do not delete or modify the failing test. This is a pass/fail check; do not surface it as a question.
 
-### [C] Step 3: Execute (Hardening)
-**[>] Action:** Apply the minimum change required to eliminate the risk.
+### [C] Step 3: Execute (Hardening Action)
+**[>] Action:** Apply hardening to the single selected file.
 
-* **[0] Licensing Header:** If creating a new `.ts` or `.vue` file, prepend the standard licensing header (`// SPDX-License-Identifier: GPL-3.0-only` / `// Copyright (C) 2026 AlbiDR`) with one blank line before the next line of code.
-* **[1]** Add an inline comment on every modified block explaining the **threat it closes**, not just what the code does.
-* **[2]** If adding middleware, register it on the `app` object **before** all route definitions it protects.
-* **[3]** Verify via `pnpm test` (existing tests must pass).
+* **[1] Boundary Defense:** If the target is a file in `@features`, ensure it does not import from another directory in `@features`.
+* **[2] Layer Compliance:** Ensure `@app` components do not directly call `substrate.execute_sql` or similar low-level DB drivers; they must use a `@core` or `@shared` provider.
+* **[3] Validation:** Ensure every entry point into a logic block from an external source (API, User Input) is guarded by a Valibot schema.
+* **[4] Logging:** Every change must be appended to `.github/nightly-logs/hardening-coverage.log` (create the file if it does not exist).
+* **[5] Licensing Header:** If creating a new `.ts` or `.vue` file, prepend the standard licensing header (`// SPDX-License-Identifier: GPL-3.0-only` / `// Copyright (C) 2026 AlbiDR`) with one blank line before the next line of code.
+* **[6] Documentation:** Add an inline comment on every modified block explaining the **threat it closes**, not just what the code does.
+* **[7] Middleware:** If adding middleware, register it on the `app` object **before** all route definitions it protects.
+* **[8] Test Verification:** Verify via `pnpm test` (existing tests must pass).
 
 ### [D] Step 4: Present (Conventional Commits)
 **[i] Output:** Create a Pull Request.
