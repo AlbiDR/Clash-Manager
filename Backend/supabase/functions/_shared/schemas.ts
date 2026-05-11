@@ -108,3 +108,13 @@ export const RoyaleBattleLogSchema = v.array(v.object({
         })))
     }))
 }));
+
+/** [GUARD] Discovery Anchor Schema (RPC). */
+export const DiscoveryAnchorSchema = v.object({
+    keyword: v.string()
+});
+
+/** [GUARD] Discovery Cache Item Schema. */
+export const DiscoveryCacheItemSchema = v.object({
+    player_tag: v.string()
+});
