@@ -16,11 +16,8 @@ import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
 import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
 
 const normalizeLevel = (level: number, rarity: Rarity): number => {
-  // Rationale: The Clash Royale API returns rarity-relative levels (e.g., a
-  // maxed Rare comes in as level 14, not 16). The sync-player-cards Edge
-  // Function normalizes all incoming data to the unified 1-16 absolute scale
-  // before it reaches this hydrator, so at this point a simple clamp is all
-  // that is needed to guard against any out-of-range values.
+  // Rationale: Modern Clash Royale API returns absolute levels (1-15/16).
+  // Legacy relative offsets are no longer required and cause level inflation.
   return Math.max(1, Math.min(level, CARD_LEVEL_CAP));
 };
 
