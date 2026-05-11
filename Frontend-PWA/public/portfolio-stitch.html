@@ -202,14 +202,21 @@
                                 // 2. Expand first card for roster/headhunter (requested by USER)
                                 if (v.id === 'roster' || v.id === 'headhunter') {
                                     const expandFirst = () => {
-                                        const cards = iframe.contentWindow.document.querySelectorAll('.base-card');
+                                        const cards = iframe.contentWindow.document.querySelectorAll('.card');
                                         if (cards.length > 0) {
                                             const firstCard = cards[0];
                                             if (!firstCard.classList.contains('expanded')) {
+                                                const expandBtn = firstCard.querySelector('.expand-btn');
+                                                if (expandBtn) {
+                                                    expandBtn.click();
+                                                    console.log(`[Stitch] Expanded first ${v.id} card via button`);
+                                                    return true;
+                                                }
+                                                // Fallback to header click
                                                 const header = firstCard.querySelector('.card-header');
                                                 if (header) {
                                                     header.click();
-                                                    console.log(`[Stitch] Expanded first ${v.id} card`);
+                                                    console.log(`[Stitch] Expanded first ${v.id} card via header`);
                                                     return true;
                                                 }
                                             } else {
