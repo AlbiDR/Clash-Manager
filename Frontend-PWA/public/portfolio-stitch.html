@@ -28,7 +28,6 @@
 
         .device-frame {
             width: 430px;
-            min-height: 844px;
             background: #000;
             border-radius: 48px;
             padding: 10px;
@@ -53,27 +52,6 @@
             border: none;
         }
 
-        .label {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2.5px;
-            white-space: nowrap;
-            background: rgba(0, 0, 0, 0.55);
-            color: #ffffff;
-            padding: 6px 16px;
-            border-radius: 99px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            pointer-events: none;
-            z-index: 10;
-        }
     </style>
 </head>
 <body>
@@ -88,10 +66,10 @@
         }
     </style>
     <div class="portfolio-container" id="portfolio-container">
-        <div class="capture-wrapper" id="wrapper-roster"><div class="device-frame"><div class="device-content"></div><div class="label">Roster View</div></div></div>
-        <div class="capture-wrapper" id="wrapper-headhunter"><div class="device-frame"><div class="device-content"></div><div class="label">Headhunter View</div></div></div>
-        <div class="capture-wrapper" id="wrapper-laboratory"><div class="device-frame"><div class="device-content"></div><div class="label">Laboratory View</div></div></div>
-        <div class="capture-wrapper" id="wrapper-settings"><div class="device-frame"><div class="device-content"></div><div class="label">Settings View</div></div></div>
+        <div class="capture-wrapper" id="wrapper-roster"><div class="device-frame"><div class="device-content"></div></div></div>
+        <div class="capture-wrapper" id="wrapper-headhunter"><div class="device-frame"><div class="device-content"></div></div></div>
+        <div class="capture-wrapper" id="wrapper-laboratory"><div class="device-frame"><div class="device-content"></div></div></div>
+        <div class="capture-wrapper" id="wrapper-settings"><div class="device-frame"><div class="device-content"></div></div></div>
     </div>
 
     <script>
@@ -147,11 +125,7 @@
                     html.clientHeight, html.scrollHeight, html.offsetHeight
                 );
                 const frame = wrapper.querySelector('.device-frame');
-                if (height > 844) {
-                    frame.style.height = `${height + 20}px`;
-                } else {
-                    frame.style.height = '844px';
-                }
+                frame.style.height = `${height}px`;
             } catch (e) {}
         };
 
@@ -197,9 +171,9 @@
                                     .trajectory-list > *:nth-child(n+11) { display: none !important; }
                                     
                                     /* Reduce excessive bottom spacing for tighter screenshots */
-                                    .view-container { padding-bottom: 120px !important; }
-                                    .list-container { padding-bottom: 24px !important; }
-                                    .footer-info { padding: 24px 0 !important; }
+                                    .view-container { padding-bottom: 80px !important; }
+                                    .list-container { padding-bottom: 0px !important; }
+                                    .footer-info { padding: 16px 0 !important; }
                                     
                                     /* Ensure dock is visible and correctly themed */
                                     .dock-container { opacity: 1 !important; transform: translateX(-50%) !important; pointer-events: auto !important; }
