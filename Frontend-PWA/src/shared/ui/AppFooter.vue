@@ -48,7 +48,7 @@ const handleReload = () => {
 .brand {
   font-size: 12px;
   font-weight: 950;
-  opacity: 0.3;
+  opacity: 0.8;
   letter-spacing: 0.1em;
   display: flex;
   align-items: center;
@@ -59,7 +59,7 @@ const handleReload = () => {
 }
 
 .brand:active {
-  opacity: 0.6;
+  opacity: 1;
 }
 
 .demo-tag {
@@ -74,6 +74,6 @@ const handleReload = () => {
 
 .copy {
   font-size: 10px;
-  opacity: 0.2;
+  opacity: 0.7;
 }
 </style>
