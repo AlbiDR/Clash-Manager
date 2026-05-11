@@ -361,7 +361,7 @@ export interface UpgradeData {
  */
 export function getUpgradeData(rarity: Rarity, targetLevel: number): UpgradeData | null {
   const cardsRequired = MATERIAL_REQUIREMENTS[rarity][targetLevel];
-  const goldCost = GOLD_COST_TABLE[targetLevel];
+  const goldCost = GOLD_COST_TABLE[rarity][targetLevel];
   const xpGain = CARD_XP_TABLE[targetLevel];
 
   if (cardsRequired === undefined || goldCost === undefined || xpGain === undefined) {

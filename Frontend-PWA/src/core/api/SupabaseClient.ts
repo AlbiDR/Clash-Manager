@@ -222,7 +222,9 @@ export async function dismissRecruits(
     // Check if we should enqueue for background retry
     const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
     if (isTransient) {
-      const queue = (await idb.get<any[]>("offline_queue")) || [];
+      let queue = (await idb.get<any[]>("offline_queue")) || [];
+      if (!Array.isArray(queue)) queue = [];
+      queue = queue.filter(q => q && typeof q === 'object' && typeof q.type === 'string' && ['RECRUIT_DISMISSAL', 'RECRUIT_RESTORATION'].includes(q.type));
       queue.push({ type: 'RECRUIT_DISMISSAL', items: normalizedItems, timestamp: Date.now() });
       await idb.set("offline_queue", queue);
       return { success: true, data: { success: true, count: normalizedItems.length, message: "Enqueued" } };
@@ -243,7 +245,9 @@ export async function undismissRecruits(
   if (error) {
     const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
     if (isTransient) {
-      const queue = (await idb.get<any[]>("offline_queue")) || [];
+      let queue = (await idb.get<any[]>("offline_queue")) || [];
+      if (!Array.isArray(queue)) queue = [];
+      queue = queue.filter(q => q && typeof q === 'object' && typeof q.type === 'string' && ['RECRUIT_DISMISSAL', 'RECRUIT_RESTORATION'].includes(q.type));
       queue.push({ type: 'RECRUIT_RESTORATION', ids: player_tags, timestamp: Date.now() });
       await idb.set("offline_queue", queue);
       return { success: true, data: { success: true, count: ids.length, message: "Enqueued" } };

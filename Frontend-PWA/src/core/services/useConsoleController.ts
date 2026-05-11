@@ -392,7 +392,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       hubAge: (lastCompiledTime?.value || lastSyncTime?.value)
         ? formatTimeAgo(new Date(Number(lastCompiledTime?.value || lastSyncTime.value)).toISOString())
         : null,
-      diagnosis: (clashStore.syncStatus.value as HubInfo["diagnosis"])
+      diagnosis: (clashStore.syncStatus as HubInfo["diagnosis"])
     } : undefined
   }));
 
