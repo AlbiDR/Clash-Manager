@@ -18,6 +18,7 @@ import { ref, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRe
 import type { ConsoleCardMetadata, HubInfo } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
+import { useConnectivityManager } from "./useConnectivityManager";
 
 /**
  * CONFIGURATION: ConsoleLogicOptions
@@ -234,58 +235,14 @@ export function useConsoleController<T extends { id: string; n?: string }>(
 
 
 
-  /**
-   * SYSTEM STATUS RESOLVER
-   *
-   * @remarks
-   * Implements a 6-tier priority hierarchy to ensure the most critical
-   * information is always visible to the user.
-   */
-  const status = computed(() => {
-    // [FIX] SOURCE-AUTHORITATIVE STALE LOGIC: Target A [1]
-    // Rationale: data age must be calculated relative to the original find/fetch 
-    // at the source (Supabase), not just the latest compilation.
-    const now = Date.now();
-    const effectiveSyncTime = lastSyncTime.value || 0;
+    // --- STATUS RESOLVER (Layer 1 Connectivity) ---
+    const { hubHealth, metadata, refresh: refreshHub } = useConnectivityManager();
 
-    const ageMs = now - effectiveSyncTime;
-    const ageMinutes = Math.floor(ageMs / 60000);
-
-    // Priority 0: Critical configuration missing (Action Required)
-    if (apiStatus.value === "unconfigured")
-      return { type: "error", text: "Invalid API URL" } as const;
-
-    // Priority 1: Physical network disconnect (Logical Offline)
-    if (connectionStatus.value === "offline")
-      return { type: "error", text: "Offline" } as const;
-
-    // Priority 2: Remote execution or fetch failure (Synchronous error)
-    if (syncError.value) return { type: "error", text: "Sync Error" } as const;
-
-    // Priority 3: Background fetch in progress
-    if (isRefreshing.value)
-      return { type: "loading", text: "Syncing..." } as const;
-
-    // Priority 4: Warning States (Stale Data)
-    // Rationale: Align with the 30-minute TTL defined in useClashDataStore.
-    if (ageMinutes >= 30) {
-      return {
-        type: "warning" as const,
-        text: "Stale Data",
-      };
-    }
-
-    // Priority 5: Nominal (Clinical Purity)
-    if (data.value && data.value.length > 0) {
-      return {
-        type: "success" as const,
-        text: "DB",
-        nominal: true,
-      };
-    }
-
-    return { type: "success" as const, text: "Empty", nominal: true };
-  });
+    const status = computed(() => ({
+      type: hubHealth.value.type,
+      text: hubHealth.value.label,
+      nominal: hubHealth.value.type === "success"
+    }));
 
   /**
    * STATISTICS BADGE
@@ -387,13 +344,12 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     totalCount: filteredItems.value.length,
     currentSort: sortBy.value,
     isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
-    hubInfo: currentSource?.value ? {
-      source: currentSource.value,
-      hubAge: (lastCompiledTime?.value || lastSyncTime?.value)
-        ? formatTimeAgo(new Date(Number(lastCompiledTime?.value || lastSyncTime.value)).toISOString())
-        : null,
-      diagnosis: (clashStore.syncStatus as HubInfo["diagnosis"])
-    } : undefined
+    remoteInfo: {
+      source: metadata.value.source,
+      dataAge: metadata.value.age,
+      diagnosis: hubHealth.value.diagnosis,
+      lastCompiled: metadata.value.lastCompiled
+    }
   }));
 
   /**

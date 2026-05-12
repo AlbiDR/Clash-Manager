@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useHaptics } from "@core";
+
+/**
+ * STATUS PILL / CONNECTIVITY HUB (Layer 2 - Shared UI)
+ * ----------------------------------------------------------------------------
+ * Rationale: Provides a "Command Center" view of application connectivity.
+ * Features: Actionable Expansion, Metadata HUD, Success Breath-Pulse.
+ * ----------------------------------------------------------------------------
+ */
 
 const props = withDefaults(defineProps<{
   type: "success" | "warning" | "error" | "loading";
@@ -8,28 +16,50 @@ const props = withDefaults(defineProps<{
   nominal?: boolean;
   direction?: "left" | "right";
   remoteInfo?: {
-    source: "SUPABASE";
+    source: string;
     dataAge: string | null;
-    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
+    diagnosis?: string | null;
+    lastCompiled?: string | null;
   };
 }>(), {
   direction: "right"
 });
 
+const emit = defineEmits<{
+  refresh: [];
+}>();
+
 const haptics = useHaptics();
 const isExpanded = ref(false);
+const isRefreshingLocally = ref(false);
 
-// Reset expansion when status changes significantly
+// Auto-expand on errors or loading to catch user attention
 watch(() => props.type, (newType) => {
-  if (newType === "loading") isExpanded.value = true;
-  else if (!props.nominal) isExpanded.value = false;
+  if (newType === "loading") {
+    isExpanded.value = true;
+    isRefreshingLocally.value = true;
+  } else {
+    isRefreshingLocally.value = false;
+    if (newType === "error") isExpanded.value = true;
+  }
 });
 
-const handleToggle = () => {
+const handleToggle = (e: Event) => {
+  // Prevent toggle if clicking the internal sync button
+  if ((e.target as HTMLElement).closest('.sync-action')) return;
+  
   if (props.type === "loading") return;
   haptics.tap();
   isExpanded.value = !isExpanded.value;
 };
+
+const handleRefresh = () => {
+  if (props.type === 'loading') return;
+  haptics.impact('light');
+  emit('refresh');
+};
+
+const isDB = computed(() => props.text === 'DB');
 </script>
 
 <template>
@@ -45,7 +75,11 @@ const handleToggle = () => {
     <div class="status-dot">
       <div 
         class="dot-nucleus" 
-        :class="{ pulse: props.type !== 'success', 'is-syncing': props.type === 'loading' }"
+        :class="{ 
+          'breath': props.type === 'success' && !isExpanded, 
+          'pulse': props.type !== 'success' && props.type !== 'loading',
+          'is-syncing': props.type === 'loading' 
+        }"
       >
         <template v-if="props.type === 'loading'">
           <svg class="spinner" viewBox="0 0 24 24">
@@ -58,40 +92,49 @@ const handleToggle = () => {
 
     <Transition :name="props.direction === 'left' ? 'slide-fade-left' : 'slide-fade'">
       <div v-if="isExpanded || props.type === 'loading'" class="label-wrapper">
+        <!-- LOADING STATE -->
         <template v-if="props.type === 'loading'">
-          <span class="status-label">Syncing...</span>
+          <span class="status-label technical">SYNCING...</span>
         </template>
-        <template v-else-if="props.remoteInfo && isExpanded">
-          <div class="hub-meta">
-            <span class="hub-source" :class="props.remoteInfo.source.toLowerCase()">
-              <template v-if="props.remoteInfo.source === 'SUPABASE'">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
+
+        <!-- EXPANDED HUB -->
+        <template v-else-if="isExpanded">
+          <div class="hub-dashboard">
+            <div class="hub-metadata">
+              <span class="source-tag technical" :class="props.remoteInfo?.source.toLowerCase()">
+                <svg v-if="props.remoteInfo?.source === 'SUPABASE'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                 </svg>
-                DB
-              </template>
+                {{ props.remoteInfo?.source || 'LOCAL' }}
+              </span>
+              
+              <span v-if="props.remoteInfo?.dataAge" class="age-info technical">
+                {{ props.remoteInfo.dataAge }}
+              </span>
 
-            </span>
-            <span v-if="props.remoteInfo.dataAge" class="separator">|</span>
-            <span v-if="props.remoteInfo.dataAge" class="hub-age">
-              {{ props.remoteInfo.dataAge }}
-            </span>
-
+              <button 
+                class="sync-action" 
+                :disabled="props.type === 'loading'"
+                title="Force Sync"
+                @click="handleRefresh"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                </svg>
+              </button>
+            </div>
           </div>
         </template>
+
+        <!-- COMPACT STATE -->
         <template v-else>
-          <span v-if="props.text" class="status-label">
-            <template v-if="props.text === 'DB'">
-              <span class="hub-source supabase" style="display: inline-flex; align-items: center; gap: 2px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke">
-                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-                DB
-              </span>
+          <span class="status-label technical" :class="{ 'is-db': isDB }">
+            <template v-if="isDB">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
             </template>
-            <template v-else>
-              {{ props.text }}
-            </template>
+            {{ props.text }}
           </span>
         </template>
       </div>
@@ -106,14 +149,14 @@ const handleToggle = () => {
   height: 32px;
   padding: 0 4px;
   border-radius: 16px;
-  background: var(--sys-surf-c);
-  border: 1px solid var(--sys-outline-v);
+  background: var(--sys-surface-container);
+  border: 1px solid var(--sys-outline);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.4s var(--sys-motion-standard);
+  transition: all 0.5s var(--sys-motion-spring);
   user-select: none;
   position: relative;
-  z-index: 10;
+  z-index: 50;
 }
 
 .status-pill.is-nominal {
@@ -122,21 +165,24 @@ const handleToggle = () => {
 }
 
 .status-pill.is-expanded {
-  padding: 0 10px 0 4px;
-  background: var(--sys-surf-l);
-  box-shadow: var(--sys-elev-1);
+  padding: 0 6px 0 4px;
+  background: var(--sys-surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: var(--sys-outline-variant);
+  box-shadow: var(--sys-elevation-level2);
 }
 
 .status-pill.expand-left.is-expanded {
   flex-direction: row-reverse;
-  padding: 0 4px 0 10px;
+  padding: 0 4px 0 6px;
 }
 
-/* Base Types */
-.status-pill.loading { border-color: var(--sys-primary); background: var(--sys-primary-container); }
+/* Color Tones */
 .status-pill.success { color: var(--sys-success); }
 .status-pill.warning { color: var(--sys-warning); border-color: var(--sys-warning); }
 .status-pill.error   { color: var(--sys-error); border-color: var(--sys-error); }
+.status-pill.loading { border-color: var(--sys-primary); color: var(--sys-primary); }
 
 .status-dot {
   position: relative;
@@ -149,16 +195,20 @@ const handleToggle = () => {
 }
 
 .dot-nucleus {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: currentColor;
   z-index: 2;
-  transition: all 0.3s ease;
+  transition: all 0.3s var(--sys-motion-standard);
 }
 
 .status-pill.loading .dot-nucleus {
   background: transparent;
+}
+
+.dot-nucleus.breath {
+  animation: breath 4s ease-in-out infinite;
 }
 
 .dot-nucleus.pulse {
@@ -171,112 +221,137 @@ const handleToggle = () => {
   height: 100%;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.15;
-  animation: halo-pulse 2s infinite;
+  opacity: 0.12;
+  animation: halo-pulse 2.5s infinite;
 }
 
 .label-wrapper {
   display: flex;
   align-items: center;
   white-space: nowrap;
-  margin-left: 6px;
+  margin-left: 4px;
   overflow: hidden;
 }
 
 .status-pill.expand-left .label-wrapper {
   margin-left: 0;
-  margin-right: 6px;
+  margin-right: 4px;
 }
 
-.status-label {
-  font-size: 11px;
+.technical {
+  font-family: var(--sys-font-mono);
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.hub-meta {
+.status-label.is-db {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: var(--sys-font-mono);
+  gap: 3px;
+  color: var(--sys-primary);
 }
 
-.hub-source {
+/* HUB DASHBOARD STYLES */
+.hub-dashboard {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  background: var(--sys-surf-c);
 }
 
-.hub-source.supabase {
+.hub-metadata {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--sys-surface-container-highest);
+  color: var(--sys-text-secondary);
+}
+
+.source-tag.supabase {
   color: var(--sys-primary);
   background: var(--sys-primary-container);
 }
 
-
-
-
-
-.hub-age {
-  color: var(--sys-text-secondary);
+.age-info {
+  color: var(--sys-text-tertiary);
 }
 
-.separator {
-  color: var(--sys-outline);
+.sync-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  background: var(--sys-surface-container-high);
+  color: var(--sys-primary);
+  cursor: pointer;
+  transition: all 0.2s var(--sys-motion-standard);
+}
+
+.sync-action:hover {
+  background: var(--sys-primary);
+  color: var(--sys-on-primary);
+  transform: scale(1.1);
+}
+
+.sync-action:active {
+  transform: scale(0.9);
+}
+
+.sync-action:disabled {
   opacity: 0.5;
-}
-
-.diagnosis-tag {
-  color: var(--sys-error);
-  font-size: 9px;
-  font-weight: 800;
+  cursor: not-allowed;
 }
 
 .spinner {
-  width: 16px;
-  height: 16px;
-  animation: rotate 2s linear infinite;
-  color: var(--sys-primary);
+  width: 14px;
+  height: 14px;
+  animation: rotate 1.5s linear infinite;
 }
 
 @keyframes rotate {
   100% { transform: rotate(360deg); }
 }
 
+@keyframes breath {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
 @keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.2); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
 }
 
 @keyframes halo-pulse {
-  0% { transform: scale(0.8); opacity: 0.3; }
-  100% { transform: scale(2.2); opacity: 0; }
+  0% { transform: scale(0.8); opacity: 0.25; }
+  100% { transform: scale(2.4); opacity: 0; }
 }
 
 /* Transitions */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.3s var(--sys-motion-standard);
+.slide-fade-enter-active, .slide-fade-leave-active {
+  transition: all 0.4s var(--sys-motion-spring);
 }
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  transform: translateX(-10px);
+.slide-fade-enter-from, .slide-fade-leave-to {
+  transform: translateX(-12px);
   opacity: 0;
 }
 
-.slide-fade-left-enter-active,
-.slide-fade-left-leave-active {
-  transition: all 0.3s var(--sys-motion-standard);
+.slide-fade-left-enter-active, .slide-fade-left-leave-active {
+  transition: all 0.4s var(--sys-motion-spring);
 }
-.slide-fade-left-enter-from,
-.slide-fade-left-leave-to {
-  transform: translateX(10px);
+.slide-fade-left-enter-from, .slide-fade-left-leave-to {
+  transform: translateX(12px);
   opacity: 0;
 }
 </style>
