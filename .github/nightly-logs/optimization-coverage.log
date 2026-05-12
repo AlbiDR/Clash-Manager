@@ -141,3 +141,8 @@ Frontend-PWA/src/features/laboratory/logic/logic-tests/Simulation.spec.ts
 Frontend-PWA/src/features/laboratory/logic/logic-tests/ProfileHydrator.spec.ts
 Frontend-PWA/src/features/laboratory/logic/logic-tests/ScoringStrategy.spec.ts
 Frontend-PWA/src/core/services/useBatchQueue.ts
+Frontend-PWA/src/shared/ui/BaseBadge.vue
+Frontend-PWA/src/shared/index.ts
+Frontend-PWA/src/shared/ui/RoleBadge.vue
+Frontend-PWA/src/shared/ui/TenureBadge.vue
+Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
