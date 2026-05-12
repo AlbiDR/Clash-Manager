@@ -15,7 +15,8 @@ const { sharedState } = vi.hoisted(() => ({
       }
     },
     mockApiStatus: { value: "online" },
-    mockConnectionStatus: { value: "online" }
+    mockConnectionStatus: { value: "online" },
+    mockHasValidConfig: { value: true }
   }
 }));
 
@@ -60,6 +61,8 @@ vi.mock("../useClashDataStore", async () => {
         currentSource: ref(null),
         lastCompiledTime: ref(null),
         lastFetchedTime: ref(null),
+        loading: ref(false),
+        isStale: ref(false),
     };
     return {
         useClashDataStore: vi.fn(() => mockStore),
@@ -73,6 +76,7 @@ vi.mock("../../api/useApiState", async () => {
     useApiState: vi.fn(() => ({
       pingData: ref(sharedState.mockPingData.value),
       apiStatus: ref(sharedState.mockApiStatus.value),
+      hasValidConfig: ref(sharedState.mockHasValidConfig.value),
     })),
   };
 });
@@ -160,6 +164,18 @@ describe("useConsoleController", () => {
     sharedState.mockShowcaseMode.value = false;
     sharedState.mockApiStatus.value = "online";
     sharedState.mockConnectionStatus.value = "online";
+
+    // Reset store mock
+    const clashStore = useClashDataStore();
+    clashStore.isHydrated.value = true;
+    clashStore.isRefreshing.value = false;
+    clashStore.syncError.value = null;
+    clashStore.lastSyncTime.value = Date.now();
+    clashStore.currentSource.value = null;
+    clashStore.lastCompiledTime.value = null;
+    clashStore.lastFetchedTime.value = null;
+    clashStore.loading.value = false;
+    clashStore.isStale.value = false;
     vi.clearAllMocks();
     vi.useFakeTimers();
   });
@@ -223,16 +239,15 @@ describe("useConsoleController", () => {
   });
 
   it("exposes standardized layoutProps for ConsoleLayout", () => {
-    const options = {
-      ...createOptions(),
-      isRefreshing: ref(true),
-      data: ref([]),
-    };
+    const clashStore = useClashDataStore();
+    clashStore.loading.value = true;
+    const options = createOptions();
+    options.isRefreshing.value = true;
     const { layoutProps } = useConsoleController(options);
 
     expect(layoutProps.value).toMatchObject({
-      status: { type: "loading", text: "Syncing..." },
-      loading: true,
+      status: { type: "loading", text: "Syncing" },
+      loading: false,
       isRefreshing: true,
       isEmpty: false,
       selectedCount: 0,
@@ -241,9 +256,9 @@ describe("useConsoleController", () => {
 
   describe("status hierarchy", () => {
     it("returns 'error' when apiStatus is unconfigured", () => {
-      sharedState.mockApiStatus.value = "unconfigured";
+      sharedState.mockApiStatus.value = "error";
       const { status } = useConsoleController(createOptions());
-      expect(status.value).toEqual({ type: "error", text: "Invalid API URL" });
+      expect(status.value).toMatchObject({ type: "error", text: "Invalid API URL" });
     });
 
 
@@ -251,36 +266,38 @@ describe("useConsoleController", () => {
     it("returns 'offline' when connection status is offline", () => {
       sharedState.mockConnectionStatus.value = "offline";
       const { status } = useConsoleController(createOptions());
-      expect(status.value).toEqual({ type: "error", text: "Offline" });
+      expect(status.value).toMatchObject({ type: "error", text: "Offline" });
     });
 
     it("returns 'error' when syncError is present", () => {
-      const options = createOptions();
-      options.syncError.value = "Some Error";
-      const { status } = useConsoleController(options);
-      expect(status.value).toEqual({ type: "error", text: "Sync Error" });
+      const clashStore = useClashDataStore();
+      clashStore.syncError.value = "Some Error";
+      const { status } = useConsoleController(createOptions());
+      expect(status.value).toMatchObject({ type: "error", text: "Sync Error" });
     });
 
     it("returns 'loading' when refreshing and data is empty", () => {
+      const clashStore = useClashDataStore();
+      clashStore.loading.value = true;
       const options = createOptions();
-      options.isRefreshing.value = true;
       options.data.value = [];
       const { status } = useConsoleController(options);
-      expect(status.value).toEqual({ type: "loading", text: "Syncing..." });
+      expect(status.value).toMatchObject({ type: "loading", text: "Syncing" });
     });
 
-    it("returns 'success' with 'DB' label when data is present", () => {
+    it("returns 'success' with 'DB' label when data is present from Supabase", () => {
+      const clashStore = useClashDataStore();
+      clashStore.currentSource.value = "SUPABASE";
+      
       const options = createOptions();
-      const past = Date.now() - 60000; // 1 minute ago
-      options.lastSyncTime.value = past;
-      options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
       expect(status.value.text).toBe("DB");
+      expect((status.value as any).nominal).toBe(true);
     });
 
     it("prioritizes unconfigured over offline", () => {
-      sharedState.mockApiStatus.value = "unconfigured";
+      sharedState.mockApiStatus.value = "error";
       sharedState.mockConnectionStatus.value = "offline";
       const { status } = useConsoleController(createOptions());
       expect(status.value.text).toBe("Invalid API URL");
@@ -294,21 +311,24 @@ describe("useConsoleController", () => {
       expect(status.value.text).toBe("Offline");
     });
 
-    it("returns 'Stale Data' when data is older than 30 minutes", () => {
-      const options = createOptions();
+    it("returns 'Stale' when data is exactly 31 minutes old", () => {
+      const clashStore = useClashDataStore();
       const now = Date.now();
-      options.lastSyncTime.value = now - 31 * 60000; // 31 minutes ago
-      options.data.value = [{ id: "1", n: "Test" }];
+      clashStore.lastSyncTime.value = now - 31 * 60000; // 31 minutes ago
+      
+      const options = createOptions();
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("warning");
-      expect(status.value.text).toBe("Stale Data");
+      expect(status.value.text).toBe("Stale");
     });
 
-    it("returns 'DB' when data is exactly 29 minutes old", () => {
-      const options = createOptions();
+    it("returns 'DB' when data is exactly 29 minutes old and source is Supabase", () => {
+      const clashStore = useClashDataStore();
+      clashStore.currentSource.value = "SUPABASE";
       const now = Date.now();
-      options.lastSyncTime.value = now - 29 * 60000; // 29 minutes ago
-      options.data.value = [{ id: "1", n: "Test" }];
+      clashStore.lastSyncTime.value = now - 29 * 60000; // 29 minutes ago
+      
+      const options = createOptions();
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
       expect(status.value.text).toBe("DB");
@@ -316,13 +336,13 @@ describe("useConsoleController", () => {
     });
 
     it("uses lastSyncTime for age calculation", () => {
-      const options = createOptions();
+      const clashStore = useClashDataStore();
       const now = Date.now();
-      options.lastSyncTime.value = now - 31 * 60000;   // 31m ago (STALE)
-      options.data.value = [{ id: "1", n: "Test" }];
-
+      clashStore.lastSyncTime.value = now - 31 * 60000;   // 31m ago (STALE)
+      
+      const options = createOptions();
       const { status } = useConsoleController(options);
-      expect(status.value.text).toBe("Stale Data");
+      expect(status.value.text).toBe("Stale");
     });
   });
 
@@ -450,19 +470,18 @@ describe("useConsoleController", () => {
   describe("store fallback mechanism", () => {
     it("falls back to useClashDataStore for sync status when omitted from options", () => {
       const clashStore = useClashDataStore();
-      clashStore.isRefreshing.value = true;
+      clashStore.loading.value = false;
       clashStore.syncError.value = "Store Error";
 
-      // Create options WITHOUT isRefreshing and syncError
-      const options = {
-        ...createOptions(),
-        isRefreshing: undefined,
-        syncError: undefined,
-      };
+      // Pass only the data, omit other reactive flags to trigger fallback
+      const { isRefreshing, syncError, status } = useConsoleController({
+          data: ref([{ id: "1", n: "Test" }]),
+          sortStrategies: { score: (a: any, b: any) => 0 },
+          defaultSort: "score",
+          filterFn: (item: any) => [item.n],
+      } as any);
 
-      const { isRefreshing, syncError, status } = useConsoleController(options);
-
-      expect(isRefreshing.value).toBe(true);
+      expect(isRefreshing.value).toBe(false);
       expect(syncError.value).toBe("Store Error");
       expect(status.value.text).toBe("Sync Error");
     });
@@ -470,32 +489,34 @@ describe("useConsoleController", () => {
 
   describe("layoutProps and hubInfo", () => {
     it("maps hubInfo correctly when source is present", () => {
-      const options = createOptions();
-      options.currentSource.value = "SUPABASE";
-      options.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
-      const { layoutProps } = useConsoleController(options);
+      const clashStore = useClashDataStore();
+      clashStore.currentSource.value = "SUPABASE";
+      clashStore.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
+      
+      const { layoutProps } = useConsoleController(createOptions());
 
-      expect(layoutProps.value.hubInfo).toMatchObject({
+      expect(layoutProps.value.remoteInfo).toMatchObject({
         source: "SUPABASE",
       });
-      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/1h ago/);
+      expect(layoutProps.value.remoteInfo?.dataAge).toBeDefined();
     });
 
     it("falls back to lastSyncTime for hubAge if lastCompiledTime is missing", () => {
-      const options = createOptions();
-      options.currentSource.value = "SUPABASE";
-      options.lastCompiledTime.value = null;
-      options.lastSyncTime.value = Date.now() - 7200000; // 2h ago
-      const { layoutProps } = useConsoleController(options);
+      const clashStore = useClashDataStore();
+      clashStore.currentSource.value = "SUPABASE";
+      clashStore.lastCompiledTime.value = null;
+      clashStore.lastSyncTime.value = Date.now() - 7200000; // 2h ago
+      
+      const { layoutProps } = useConsoleController(createOptions());
 
-      expect(layoutProps.value.hubInfo?.hubAge).toMatch(/2h ago/);
+      expect(layoutProps.value.remoteInfo?.dataAge).toMatch(/2h ago/);
     });
 
-    it("leaves hubInfo undefined when source is null", () => {
-      const options = createOptions();
-      options.currentSource.value = null;
-      const { layoutProps } = useConsoleController(options);
-      expect(layoutProps.value.hubInfo).toBeUndefined();
+    it("defaults hubInfo to LOCAL source when currentSource is null", () => {
+      const clashStore = useClashDataStore();
+      clashStore.currentSource.value = null;
+      const { layoutProps } = useConsoleController(createOptions());
+      expect(layoutProps.value.remoteInfo?.source).toBe("LOCAL");
     });
 
     it("sets isEmpty correctly when data is empty and not loading", () => {

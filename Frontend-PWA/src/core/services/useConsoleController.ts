@@ -14,7 +14,7 @@ import { useSyntheticMode } from "./useSyntheticMode";
 import { useClashDataStore } from "./useClashDataStore";
 import { useHaptics } from "./useHaptics";
 import { storeToRefs } from "pinia";
-import { ref, computed, watch, onMounted, onUnmounted, type Ref, type ComputedRef } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, toRef, type Ref, type ComputedRef } from "vue";
 import type { ConsoleCardMetadata, HubInfo } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
@@ -108,27 +108,22 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
   const clashStore = useClashDataStore();
   const {
-    data: storeRawData,
-    isHydrated: storeHydrated,
     isRefreshing: storeRefreshing,
     syncError: storeSyncError,
     lastSyncTime: storeLastSync,
-    currentSource: storeSource,
-    remoteSyncTime: storeRemoteSync,
     lastCompiledTime: storeLastCompiled,
     lastFetchedTime: storeLastFetched,
   } = storeToRefs(clashStore);
 
   const {
     data,
-    isHydrated = storeHydrated,
-    isRefreshing = storeRefreshing,
-    syncError = storeSyncError,
-    lastSyncTime = storeLastSync,
-    currentSource = storeSource,
-    remoteSyncTime = storeRemoteSync,
-    lastCompiledTime = storeLastCompiled,
-    lastFetchedTime = storeLastFetched,
+    isHydrated = toRef(clashStore, "isHydrated"),
+    isRefreshing = toRef(clashStore, "loading"),
+    syncError = toRef(clashStore, "syncError"),
+    lastSyncTime = toRef(clashStore, "lastSyncTime"),
+    currentSource = toRef(clashStore, "currentSource"),
+    lastCompiledTime = toRef(clashStore, "lastCompiledTime"),
+    lastFetchedTime = toRef(clashStore, "lastFetchedTime"),
     filterFn,
     sortStrategies,
     sortOptions,
@@ -391,8 +386,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     syncError,
     isHydrated,
     currentSource,
-    remoteSyncTime,
-    data: storeRawData,
+    data,
     layoutProps,
     layoutEvents,
 
@@ -422,7 +416,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       expanded: expandedIds.value.has(id),
       selected: selectedSet.value.has(id),
       selectionMode: isSelectionMode.value,
-      isTagged: storeRawData.value?.playerTag === id,
+      isTagged: data.value?.playerTag === id,
       // [PERF] SCOPED REFRESH: Only signal 'refreshing' to expanded cards
       // to prevent unnecessary re-renders of the entire collapsed list.
       appIsRefreshing: isRefreshing.value && expandedIds.value.has(id),
@@ -447,7 +441,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       expandedIds.value.has(id),
       selectedSet.value.has(id),
       isRefreshing.value && expandedIds.value.has(id),
-      storeRawData.value?.playerTag === id,
+      data.value?.playerTag === id,
       ...extraKeys,
     ],
   };
