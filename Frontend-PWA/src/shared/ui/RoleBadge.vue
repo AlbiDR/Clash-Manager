@@ -4,6 +4,7 @@
 <script setup lang="ts">
 import { formatRole } from "@core/utils/formatters";
 import { computed } from "vue";
+import BaseBadge from "./BaseBadge.vue";
 
 /**
  * [UI] ROLE BADGE
@@ -18,9 +19,9 @@ const roleInfo = computed(() => formatRole(role));
 </script>
 
 <template>
-  <div class="badge role" :class="roleInfo.class">
+  <BaseBadge class="role" :class="roleInfo.class">
     {{ roleInfo.label }}
-  </div>
+  </BaseBadge>
 </template>
 
 <style scoped>
