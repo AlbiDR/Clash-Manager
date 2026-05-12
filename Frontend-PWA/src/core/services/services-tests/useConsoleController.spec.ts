@@ -269,14 +269,14 @@ describe("useConsoleController", () => {
       expect(status.value).toEqual({ type: "loading", text: "Syncing..." });
     });
 
-    it("returns 'success' with 'Nominal' label when data is present", () => {
+    it("returns 'success' with 'DB' label when data is present", () => {
       const options = createOptions();
       const past = Date.now() - 60000; // 1 minute ago
       options.lastSyncTime.value = past;
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
-      expect(status.value.text).toBe("Nominal");
+      expect(status.value.text).toBe("DB");
     });
 
     it("prioritizes unconfigured over offline", () => {
@@ -304,14 +304,14 @@ describe("useConsoleController", () => {
       expect(status.value.text).toBe("Stale Data");
     });
 
-    it("returns 'Nominal' when data is exactly 29 minutes old", () => {
+    it("returns 'DB' when data is exactly 29 minutes old", () => {
       const options = createOptions();
       const now = Date.now();
       options.lastSyncTime.value = now - 29 * 60000; // 29 minutes ago
       options.data.value = [{ id: "1", n: "Test" }];
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("success");
-      expect(status.value.text).toBe("Nominal");
+      expect(status.value.text).toBe("DB");
       expect((status.value as any).nominal).toBe(true);
     });
 
