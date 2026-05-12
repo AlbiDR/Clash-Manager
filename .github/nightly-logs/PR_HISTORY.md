@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-12] PR #581: fix(harden): implement clinical protocol for sync-player-cards
+**Commit**: `46f029423c5d8406cdbe461f3169a8e0516b154e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/581)
+
+### Description
+Refactored the `sync-player-cards` Edge Function to implement the standardized 6-stage 'Clinical Protocol' for authorization, validation, and telemetry. Adheres to the "Clean Stack" ADR by establishing strict Valibot validation boundaries and hardens the authorization layer by requiring the `INTERNAL_BEARER_TOKEN`.
+
+---
+*PR created automatically by Jules for task [762118477845099476](https://jules.google.com/task/762118477845099476) started by @AlbiDR*
+
+---
+
 ## [2026-05-11] PR #580: chore(deps): bump workbox-precaching from ^7.4.0 to ^7.4.1
 **Commit**: `01cdd0a678d7a91d818a90c2e57764bb7dd2c99d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/580)
