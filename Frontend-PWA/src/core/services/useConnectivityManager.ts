@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { computed } from "vue";
+import { computed, unref, type ComputedRef, type Ref } from "vue";
 import { useClashDataStore } from "./useClashDataStore";
 import { useConnectionStatus } from "./useConnectionStatus";
+import { useApiState } from "../api/useApiState";
 import { formatTimeAgo } from "../utils/formatters";
 
 /**
@@ -42,23 +43,24 @@ export interface HubMetadata {
 export function useConnectivityManager() {
   const store = useClashDataStore();
   const { status: networkStatus } = useConnectionStatus();
+  const { apiStatus } = useApiState();
 
   /**
    * Authoritative metadata regarding data provenance and age.
    */
   const metadata = computed((): HubMetadata => {
     const now = Date.now();
-    const lastSyncTs = store.lastSyncTime;
+    const lastSyncTs = unref(store.lastSyncTime);
     const ageMs = lastSyncTs ? now - lastSyncTs : 0;
     const ageMins = Math.floor(ageMs / 60000);
 
     return {
-      source: store.currentSource || "LOCAL",
-      age: lastSyncTs ? formatTimeAgo(new Date(lastSyncTs).toISOString()) : null,
+      source: unref(store.currentSource) || "LOCAL",
+      age: lastSyncTs ? formatTimeAgo(lastSyncTs as any) : null,
       ageMinutes: ageMins,
-      lastCompiled: store.lastCompiledTime ? formatTimeAgo(new Date(store.lastCompiledTime).toISOString()) : null,
-      lastFetched: store.lastFetchedTime ? formatTimeAgo(new Date(store.lastFetchedTime).toISOString()) : null,
-      isStale: store.isStale
+      lastCompiled: unref(store.lastCompiledTime) ? formatTimeAgo(unref(store.lastCompiledTime) as any) : null,
+      lastFetched: unref(store.lastFetchedTime) ? formatTimeAgo(unref(store.lastFetchedTime) as any) : null,
+      isStale: unref(store.isStale)
     };
   });
 
@@ -67,19 +69,39 @@ export function useConnectivityManager() {
    */
   const hubHealth = computed((): HubHealth => {
     // 1. Loading / Syncing State
-    if (store.loading) {
+    if (unref(store.loading)) {
       return {
         type: "loading",
-        label: "SYNCING",
+        label: "Syncing",
         confidence: 50
       };
     }
 
-    // 2. Offline / Hard Failure
-    if (networkStatus.value === "offline") {
+    // 1.5 Sync Error State
+    if (unref(store.syncError)) {
       return {
         type: "error",
-        label: "OFFLINE",
+        label: "Sync Error",
+        confidence: 0,
+        diagnosis: unref(store.syncError)
+      };
+    }
+
+    // 1.7 API Configuration Error
+    if (unref(apiStatus) === "error") {
+      return {
+        type: "error",
+        label: "Invalid API URL",
+        confidence: 0,
+        diagnosis: "Backend Configuration Error"
+      };
+    }
+
+    // 2. Offline / Hard Failure
+    if (unref(networkStatus) === "offline") {
+      return {
+        type: "error",
+        label: "Offline",
         confidence: 0,
         diagnosis: "No Network Connection"
       };
@@ -89,14 +111,14 @@ export function useConnectivityManager() {
     if (metadata.value.ageMinutes >= 30) {
       return {
         type: "warning",
-        label: "STALE",
+        label: "Stale",
         confidence: 40,
         diagnosis: `Data is ${metadata.value.age} old`
       };
     }
 
     // 4. Nominal / Live (Supabase)
-    if (store.currentSource === "SUPABASE") {
+    if (unref(store.currentSource) === "SUPABASE") {
       return {
         type: "success",
         label: "DB",
@@ -105,10 +127,10 @@ export function useConnectivityManager() {
     }
 
     // 5. Nominal / Local
-    if (store.isHydrated) {
+    if (unref(store.isHydrated)) {
       return {
         type: "success",
-        label: "LOCAL",
+        label: "Local",
         confidence: 80
       };
     }
@@ -116,7 +138,7 @@ export function useConnectivityManager() {
     // Fallback
     return {
       type: "loading",
-      label: "INITIALIZING",
+      label: "Initializing",
       confidence: 10
     };
   });

@@ -77,7 +77,7 @@ const isDB = computed(() => props.text === 'DB');
         class="dot-nucleus" 
         :class="{ 
           'breath': props.type === 'success' && !isExpanded, 
-          'pulse': props.type !== 'success' && props.type !== 'loading',
+          'pulse': props.type !== 'success',
           'is-syncing': props.type === 'loading' 
         }"
       >
@@ -94,12 +94,21 @@ const isDB = computed(() => props.text === 'DB');
       <div v-if="isExpanded || props.type === 'loading'" class="label-wrapper">
         <!-- LOADING STATE -->
         <template v-if="props.type === 'loading'">
-          <span class="status-label technical">SYNCING...</span>
+          <span class="status-label technical">Syncing...</span>
         </template>
 
         <!-- EXPANDED HUB -->
         <template v-else-if="isExpanded">
           <div class="hub-dashboard">
+            <span class="status-label technical" :class="{ 'is-db': isDB }">
+              <template v-if="isDB">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </template>
+              {{ props.text }}
+            </span>
+
             <div class="hub-metadata">
               <span class="source-tag technical" :class="props.remoteInfo?.source.toLowerCase()">
                 <svg v-if="props.remoteInfo?.source === 'SUPABASE'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
