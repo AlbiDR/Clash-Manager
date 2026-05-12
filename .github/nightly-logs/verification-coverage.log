@@ -75,3 +75,4 @@ Frontend-PWA/src/core/api/SupabaseClient.ts
 Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts
 Frontend-PWA/src/features/laboratory/logic/Registry.ts
 Frontend-PWA/src/core/services/useAppSettings.ts
+Frontend-PWA/src/core/services/useListFilter.ts
