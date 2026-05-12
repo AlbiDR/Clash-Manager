@@ -5,8 +5,14 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadConfig } from "../_shared/vault.ts";
 
 /**
- * L1 Core: Client & Environment Broker for sync-player-cards
+ * L1 Core: Client & Environment Broker for sync-player-cards.
+ *
  * Authoritative source for function-specific configuration.
+ * Adheres to the CleanStack Architecture by centralizing environment awareness.
+ *
+ * @remarks
+ * This module follows the 'Clinical Protocol' by prioritizing secrets from the
+ * Supabase Vault via the `syncVault` mechanism.
  */
 
 export const CONFIG = {
@@ -22,7 +28,11 @@ export const supabase = createClient(
 );
 
 /**
- * Clinical Hardening: Sync secrets from Vault
+ * Clinical Hardening: Synchronizes secrets from the Supabase Vault.
+ *
+ * [THREAT:] Prevents plain-text environment variable exposure in Edge Function
+ * configuration by pulling sensitive tokens (like INTERNAL_BEARER_TOKEN)
+ * directly from the secure Vault at runtime.
  */
 export async function syncVault() {
   const vault = await loadConfig(supabase, ["INTERNAL_BEARER_TOKEN"]);
