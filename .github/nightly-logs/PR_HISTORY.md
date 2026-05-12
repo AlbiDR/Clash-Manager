@@ -1,6 +1,20 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-12] PR #586: chore(deps): bump knip from 6.11.0 to 6.12.2
+**Commit**: `66d9e5d03be3a7ebba30b20f12fe17d9d8e1bfba`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/586)
+
+### Description
+This PR performs an automated Tier 1 minor bump of `knip` from `^6.11.0` to `^6.12.2` in the root `package.json`. The change has been verified via the full monorepo test gate (910 pass, 1 skipped) using the `--no-engine-strict` bypass to maintain environment compatibility. All Tier 2 major version detections (Vite 8.0, TypeScript 6.0, etc.) have been deferred to maintain the atomic execution protocol.
+
+Target Branch: Nightly
+
+---
+*PR created automatically by Jules for task [14505966862301913941](https://jules.google.com/task/14505966862301913941) started by @AlbiDR*
+
+---
+
 ## [2026-05-12] PR #585: docs(tsdoc): document sync-player-cards edge function
 **Commit**: `1b6e0c45ab31b01234ba4075b87528bb08fd8ac3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/585)
