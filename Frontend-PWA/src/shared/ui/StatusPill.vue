@@ -60,6 +60,12 @@ const handleRefresh = () => {
 };
 
 const isDB = computed(() => props.text === 'DB');
+const displaySource = computed(() => {
+  if (!props.remoteInfo?.source) return null;
+  // If the status is 'DB', showing 'SUPABASE' is redundant
+  if (isDB.value && props.remoteInfo.source === 'SUPABASE') return null;
+  return props.remoteInfo.source;
+});
 </script>
 
 <template>
@@ -100,38 +106,39 @@ const isDB = computed(() => props.text === 'DB');
         <!-- EXPANDED HUB -->
         <template v-else-if="isExpanded">
           <div class="hub-dashboard">
-            <span class="status-label technical" :class="{ 'is-db': isDB }">
-              <template v-if="isDB">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-              </template>
-              {{ props.text }}
-            </span>
-
-            <div class="hub-metadata">
-              <span class="source-tag technical" :class="props.remoteInfo?.source.toLowerCase()">
-                <svg v-if="props.remoteInfo?.source === 'SUPABASE'" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-                {{ props.remoteInfo?.source || 'LOCAL' }}
+            <div class="hub-main-info">
+              <span class="status-label technical" :class="{ 'is-db': isDB }">
+                <template v-if="isDB">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  </svg>
+                </template>
+                {{ props.text }}
               </span>
               
-              <span v-if="props.remoteInfo?.dataAge" class="age-info technical">
-                {{ props.remoteInfo.dataAge }}
-              </span>
-
-              <button 
-                class="sync-action" 
-                :disabled="props.type === 'loading'"
-                title="Force Sync"
-                @click="handleRefresh"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                </svg>
-              </button>
+                <div v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis" class="hub-details">
+                <span v-if="displaySource" class="source-tag technical" :class="displaySource.toLowerCase()">
+                  {{ displaySource }}
+                </span>
+                <span v-if="props.remoteInfo?.diagnosis" class="diagnosis-info technical">
+                  {{ props.remoteInfo.diagnosis }}
+                </span>
+                <span v-else-if="props.remoteInfo?.dataAge" class="age-info technical">
+                  {{ props.remoteInfo.dataAge }}
+                </span>
+              </div>
             </div>
+
+            <button 
+              class="sync-action" 
+              :disabled="props.type === 'loading'"
+              title="Force Sync"
+              @click="handleRefresh"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+              </svg>
+            </button>
           </div>
         </template>
 
@@ -266,22 +273,39 @@ const isDB = computed(() => props.text === 'DB');
 .hub-dashboard {
   display: flex;
   align-items: center;
+  gap: 16px;
+  padding: 4px 8px;
 }
 
-.hub-metadata {
+.hub-main-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 80px;
+}
+
+.hub-details {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+.status-label {
+  line-height: 1.2;
 }
 
 .source-tag {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px;
-  border-radius: 6px;
+  padding: 1px 4px;
+  border-radius: 4px;
   background: var(--sys-surface-container-highest);
   color: var(--sys-text-secondary);
+  font-size: 8px;
+  font-weight: 800;
 }
 
 .source-tag.supabase {
@@ -289,8 +313,18 @@ const isDB = computed(() => props.text === 'DB');
   background: var(--sys-primary-container);
 }
 
-.age-info {
+.age-info,
+.diagnosis-info {
   color: var(--sys-text-tertiary);
+  font-size: 9px;
+}
+
+.diagnosis-info {
+  color: var(--sys-warning);
+}
+
+.status-pill.error .diagnosis-info {
+  color: var(--sys-error);
 }
 
 .sync-action {
