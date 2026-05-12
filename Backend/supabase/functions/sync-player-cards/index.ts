@@ -1,48 +1,51 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { createClient } from "npm:@supabase/supabase-js@2";
+import * as v from "npm:valibot";
 import { fetchWithRotation } from "../_shared/muscle.ts";
+import { clinicalServe } from "../_shared/protocol.ts";
+import { RoyaleFullPlayerSchema, PlayerSyncPayloadSchema } from "../_shared/schemas.ts";
+import { supabase, CONFIG, syncVault } from "./client.ts";
 
 /**
  * Edge Function: sync-player-cards
+ * L5 Control Layer: User-facing proxy for player profile synchronization.
  *
- * User-facing proxy that:
+ * Implements the Clinical Protocol for authorization, validation, and telemetry.
+ *
+ * Lifecycle:
  *  1. Checks features.player_card_snapshots for a fresh snapshot (<12h old).
  *     On a cache hit, returns immediately — no API call, no key rotation slot used.
  *  2. On a cache miss, fetches the player profile from the Clash Royale API via
  *     the key-rotation proxy (muscle.ts).
  *  3. Normalizes rarity-relative card levels to the unified 1-16 absolute scale.
  *  4. Upserts the full snapshot (cards + player metadata) into the table.
- *  5. Returns the profile in ProfileInputSchema (internal) format.
- *
- * Level normalization formula (from official progression calculators):
- *   absolute_level = BASE_MAX_LEVEL - (api_max_level - api_level)
- *   where BASE_MAX_LEVEL = 16 (the Common card cap).
- *
- * Rarity maxLevel mapping (post-Level 16 update):
- *   Common=16, Rare=14, Epic=11, Legendary=8, Champion=6
- *
- * All cards share the same max level (16). Rarities differ only in their
- * starting absolute level (Common=1, Rare=3, Epic=6, Legendary=9, Champion=11).
  */
 
 const BASE_MAX_LEVEL = 16;
-
-// API calls are made at most once per player per 12 hours.
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+interface CardRow {
+  card_name: string;
+  rarity: string;
+  absolute_level: number;
+  count: number;
+  is_tower_troop: boolean;
+  fetched_at: string;
+  player_name: string;
+  king_level: number;
+  xp_into_level: number;
+}
 
-function jsonResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-  });
+interface NormalizedCard {
+  card_id: number;
+  card_name: string;
+  rarity: string;
+  is_tower_troop: boolean;
+  absolute_level: number;
+  api_level: number;
+  api_max_level: number;
+  count: number;
 }
 
 function normalizeTag(tag: string): string {
@@ -61,47 +64,35 @@ function normalizeRarity(raw: string): string {
   return map[raw?.toLowerCase()?.trim()] ?? "Common";
 }
 
-type CardRow = {
-  card_name: string;
-  rarity: string;
-  absolute_level: number;
-  count: number;
-  is_tower_troop: boolean;
-  fetched_at: string;
-  player_name: string;
-  king_level: number;
-  xp_into_level: number;
-};
-
 function buildProfileResponse(
-  rows: CardRow[],
+  cardSnapshots: CardRow[],
   tag: string,
   source: "cache" | "api"
 ) {
-  const first = rows[0];
+  const firstSnapshot = cardSnapshots[0];
   return {
     profile: {
-      name: first.player_name,
+      name: firstSnapshot.player_name,
       tag,
-      kingLevel: first.king_level,
-      xpIntoLevel: first.xp_into_level,
+      kingLevel: firstSnapshot.king_level,
+      xpIntoLevel: firstSnapshot.xp_into_level,
     },
-    cards: rows
-      .filter((r) => !r.is_tower_troop)
-      .map((r) => ({
-        name: r.card_name,
-        rarity: r.rarity,
-        level: r.absolute_level,
-        count: r.count,
+    cards: cardSnapshots
+      .filter((snapshot) => !snapshot.is_tower_troop)
+      .map((snapshot) => ({
+        name: snapshot.card_name,
+        rarity: snapshot.rarity,
+        level: snapshot.absolute_level,
+        count: snapshot.count,
         isTowerTroop: false,
       })),
-    towerTroops: rows
-      .filter((r) => r.is_tower_troop)
-      .map((r) => ({
-        name: r.card_name,
-        rarity: r.rarity,
-        level: r.absolute_level,
-        count: r.count,
+    towerTroops: cardSnapshots
+      .filter((snapshot) => snapshot.is_tower_troop)
+      .map((snapshot) => ({
+        name: snapshot.card_name,
+        rarity: snapshot.rarity,
+        level: snapshot.absolute_level,
+        count: snapshot.count,
         isTowerTroop: true,
       })),
     inventory: {
@@ -110,178 +101,155 @@ function buildProfileResponse(
       wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 },
     },
     meta: {
-      total_cards: rows.length,
-      fetched_at: first.fetched_at,
+      total_cards: cardSnapshots.length,
+      fetched_at: firstSnapshot.fetched_at,
       source,
     },
   };
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: CORS_HEADERS });
-  }
+  await syncVault();
 
-  if (req.method !== "POST") {
-    return jsonResponse({ error: "Method Not Allowed" }, 405);
-  }
+  // [DEAD LOGIC REMOVAL] clinicalServe manages CORS, authorization (INTERNAL_BEARER_TOKEN),
+  // request validation (PlayerSyncPayloadSchema), and telemetry reporting internally.
+  return await clinicalServe({
+    req,
+    supabase,
+    bearerToken: CONFIG.INTERNAL_BEARER_TOKEN,
+    eventType: "PLAYER_SYNC",
+    componentId: "PLAYER_CARD_SYNC",
+    schema: PlayerSyncPayloadSchema,
+    handler: async (payload, logAudit, heartbeat) => {
+      const tag = normalizeTag(payload.tag);
 
-  // --- Parse payload ---
-  let tag: string;
-  try {
-    const body = await req.json();
-    if (!body?.tag || typeof body.tag !== "string") {
-      return jsonResponse({ error: "Missing required field: tag" }, 400);
-    }
-    tag = normalizeTag(body.tag);
-  } catch {
-    return jsonResponse({ error: "Invalid JSON payload" }, 400);
-  }
+      // 1. [CACHE CHECK]
+      const { data: stored, error: fetchError } = await supabase
+        .from("player_card_snapshots")
+        .select(
+          "card_name, rarity, absolute_level, count, is_tower_troop, fetched_at, player_name, king_level, xp_into_level"
+        )
+        .eq("player_tag", tag);
 
-  // --- Supabase client (service role — cache read + upsert) ---
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { db: { schema: "features" } }
-  );
+      if (fetchError) {
+        logAudit("CACHE_CHECK", "error", { message: fetchError.message });
+      }
 
-  // --- Single query: fetch all stored cards for this player ---
-  // Freshness is evaluated in-memory against CACHE_TTL_MS.
-  // This avoids the previous double-query pattern (limit(1) then full fetch).
-  const { data: stored } = await supabase
-    .from("player_card_snapshots")
-    .select(
-      "card_name, rarity, absolute_level, count, is_tower_troop, fetched_at, player_name, king_level, xp_into_level"
-    )
-    .eq("player_tag", tag);
+      const cardSnapshots = (stored ?? []) as CardRow[];
+      const cutoff = Date.now() - CACHE_TTL_MS;
+      const isFresh =
+        cardSnapshots.length > 0 &&
+        cardSnapshots.some((snapshot) => new Date(snapshot.fetched_at).getTime() > cutoff);
 
-  const rows = (stored ?? []) as CardRow[];
-  const cutoff = Date.now() - CACHE_TTL_MS;
-  const isFresh =
-    rows.length > 0 &&
-    rows.some((r) => new Date(r.fetched_at).getTime() > cutoff);
+      if (isFresh) {
+        logAudit("CACHE_CHECK", "terminated", { status: "HIT", count: cardSnapshots.length });
+        return buildProfileResponse(cardSnapshots, tag, "cache");
+      }
 
-  if (isFresh) {
-    console.log(
-      `[sync-player-cards] Cache hit for ${tag} (${rows.length} cards, fetched ${rows[0].fetched_at})`
-    );
-    return jsonResponse(buildProfileResponse(rows, tag, "cache"));
-  }
+      logAudit("CACHE_CHECK", "run", { status: "MISS" });
 
-  // --- Cache miss: call Clash Royale API via proxy ---
-  console.log(
-    `[sync-player-cards] Cache miss for ${tag}. Fetching from API...`
-  );
-  const encodedTag = encodeURIComponent(tag);
-  let royaleData: any;
-  try {
-    const res = await fetchWithRotation(`/players/${encodedTag}`);
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      console.error(
-        `[sync-player-cards] API error ${res.status} for tag ${tag}: ${errBody}`
-      );
-      return jsonResponse(
-        { error: `Clash Royale API error: ${res.status}` },
-        res.status === 404 ? 404 : 502
-      );
-    }
-    royaleData = await res.json();
-  } catch (err: any) {
-    console.error(`[sync-player-cards] Fetch failure: ${err.message}`);
-    return jsonResponse({ error: "Failed to reach Clash Royale API" }, 503);
-  }
+      // 2. [API FETCH]
+      logAudit("API_FETCH", "called", { tag });
+      const encodedTag = encodeURIComponent(tag);
+      const res = await fetchWithRotation(`/players/${encodedTag}`);
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        logAudit("API_FETCH", "error", { status: res.status, body: errBody });
+        throw new Error(`Clash Royale API error: ${res.status}`);
+      }
 
-  // --- Normalize card data ---
-  const rawCards: any[] = royaleData.cards ?? [];
-  const rawTowerTroops: any[] = royaleData.towerTroops ?? [];
-  const allApiCards = [...rawCards, ...rawTowerTroops];
+      const rawRoyaleData = await res.json();
+      const validation = v.safeParse(RoyaleFullPlayerSchema, rawRoyaleData);
 
-  const baseMaxLevel =
-    allApiCards.reduce((max, c) => Math.max(max, c.maxLevel ?? 0), 0) ||
-    BASE_MAX_LEVEL;
+      if (!validation.success) {
+        logAudit("API_FETCH", "error", { message: "Validation failed", issues: validation.issues });
+        throw new Error("Invalid response from Clash Royale API");
+      }
 
-  // Player profile metadata — stored on every card row so cache hits can return
-  // accurate King Level and name without a separate profile table.
-  const playerName: string = royaleData.name ?? "Unknown";
-  const kingLevel: number = royaleData.expLevel ?? 1;
-  const xpIntoLevel: number = royaleData.expPoints ?? 0;
-  const fetchedAt = new Date().toISOString();
+      const royaleData = validation.output;
+      logAudit("API_FETCH", "run", { status: "SUCCESS" });
 
-  type NormalizedCard = {
-    card_id: number;
-    card_name: string;
-    rarity: string;
-    is_tower_troop: boolean;
-    absolute_level: number;
-    api_level: number;
-    api_max_level: number;
-    count: number;
-  };
+      // 3. [NORMALIZATION]
+      logAudit("NORMALIZATION", "called");
+      const rawCards = royaleData.cards;
+      const rawTowerTroops = royaleData.towerTroops ?? [];
+      const allApiCards = [...rawCards, ...rawTowerTroops];
 
-  function processCard(card: any, isTowerTroop: boolean): NormalizedCard {
-    const apiLevel = card.level ?? 1;
-    const apiMaxLevel = card.maxLevel ?? BASE_MAX_LEVEL;
-    const absoluteLevel = baseMaxLevel - (apiMaxLevel - apiLevel);
-    return {
-      card_id: card.id,
-      card_name: card.name ?? "Unknown",
-      rarity: normalizeRarity(card.rarity ?? "common"),
-      is_tower_troop: isTowerTroop,
-      absolute_level: Math.max(1, Math.min(absoluteLevel, BASE_MAX_LEVEL)),
-      api_level: apiLevel,
-      api_max_level: apiMaxLevel,
-      count: card.count ?? 0,
-    };
-  }
+      const baseMaxLevel =
+        allApiCards.reduce((max, card) => Math.max(max, card.maxLevel), 0) ||
+        BASE_MAX_LEVEL;
 
-  const normalizedCards: NormalizedCard[] = [
-    ...rawCards.map((c) => processCard(c, false)),
-    ...rawTowerTroops.map((c) => processCard(c, true)),
-  ];
+      const playerName = royaleData.name;
+      const kingLevel = royaleData.expLevel;
+      const xpIntoLevel = royaleData.expPoints;
+      const fetchedAt = new Date().toISOString();
 
-  // --- Upsert snapshot including player profile metadata ---
-  if (normalizedCards.length > 0) {
-    const upsertRows = normalizedCards.map((card) => ({
-      player_tag: tag,
-      card_id: card.card_id,
-      card_name: card.card_name,
-      rarity: card.rarity,
-      is_tower_troop: card.is_tower_troop,
-      absolute_level: card.absolute_level,
-      api_level: card.api_level,
-      api_max_level: card.api_max_level,
-      count: card.count,
-      player_name: playerName,
-      king_level: kingLevel,
-      xp_into_level: xpIntoLevel,
-      fetched_at: fetchedAt,
-    }));
+      function processCard(card: v.InferOutput<typeof RoyaleFullPlayerSchema>["cards"][0], isTowerTroop: boolean): NormalizedCard {
+        const apiLevel = card.level;
+        const apiMaxLevel = card.maxLevel;
+        const absoluteLevel = baseMaxLevel - (apiMaxLevel - apiLevel);
+        return {
+          card_id: card.id,
+          card_name: card.name,
+          rarity: normalizeRarity(card.rarity),
+          is_tower_troop: isTowerTroop,
+          absolute_level: Math.max(1, Math.min(absoluteLevel, BASE_MAX_LEVEL)),
+          api_level: apiLevel,
+          api_max_level: apiMaxLevel,
+          count: card.count ?? 0,
+        };
+      }
 
-    const { error: upsertError } = await supabase
-      .from("player_card_snapshots")
-      .upsert(upsertRows, { onConflict: "player_tag,card_id" });
+      const normalizedCards: NormalizedCard[] = [
+        ...rawCards.map((card) => processCard(card, false)),
+        ...rawTowerTroops.map((card) => processCard(card, true)),
+      ];
+      logAudit("NORMALIZATION", "run", { cardCount: normalizedCards.length });
 
-    if (upsertError) {
-      console.error(
-        `[sync-player-cards] Upsert error: ${upsertError.message}`
-      );
-      // Non-fatal: still return the data to the PWA even if persistence failed.
-    }
-  }
+      // 4. [UPSERT]
+      if (normalizedCards.length > 0) {
+        logAudit("UPSERT", "called");
+        const upsertRows = normalizedCards.map((card) => ({
+          player_tag: tag,
+          card_id: card.card_id,
+          card_name: card.card_name,
+          rarity: card.rarity,
+          is_tower_troop: card.is_tower_troop,
+          absolute_level: card.absolute_level,
+          api_level: card.api_level,
+          api_max_level: card.api_max_level,
+          count: card.count,
+          player_name: playerName,
+          king_level: kingLevel,
+          xp_into_level: xpIntoLevel,
+          fetched_at: fetchedAt,
+        }));
 
-  // --- Build and return the response ---
-  const freshRows: CardRow[] = normalizedCards.map((card) => ({
-    card_name: card.card_name,
-    rarity: card.rarity,
-    absolute_level: card.absolute_level,
-    count: card.count,
-    is_tower_troop: card.is_tower_troop,
-    fetched_at: fetchedAt,
-    player_name: playerName,
-    king_level: kingLevel,
-    xp_into_level: xpIntoLevel,
-  }));
+        const { error: upsertError } = await supabase
+          .from("player_card_snapshots")
+          .upsert(upsertRows, { onConflict: "player_tag,card_id" });
 
-  return jsonResponse(buildProfileResponse(freshRows, tag, "api"));
+        if (upsertError) {
+          logAudit("UPSERT", "error", { message: upsertError.message });
+          // Non-fatal: still return the data even if persistence failed.
+        } else {
+          logAudit("UPSERT", "run", { status: "SUCCESS" });
+        }
+      }
+
+      const freshRows: CardRow[] = normalizedCards.map((card) => ({
+        card_name: card.card_name,
+        rarity: card.rarity,
+        absolute_level: card.absolute_level,
+        count: card.count,
+        is_tower_troop: card.is_tower_troop,
+        fetched_at: fetchedAt,
+        player_name: playerName,
+        king_level: kingLevel,
+        xp_into_level: xpIntoLevel,
+      }));
+
+      return buildProfileResponse(freshRows, tag, "api");
+    },
+  });
 });
