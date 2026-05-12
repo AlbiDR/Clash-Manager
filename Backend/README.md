@@ -50,12 +50,19 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 ---
 
 ## IV. The Clinical Ingestion Pipeline
-Ingestion is performed via a **Dual-Engine Edge Architecture**, supported by automated database shredders and janitors.
+Ingestion is performed via a **Tri-Engine Edge Architecture**, supported by automated database shredders and the authoritative maintenance orchestrator.
 
-1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for clan profiling, member syncs, and war logs. Utilizes `proxy.royaleapi.dev` with Round-Robin token rotation.
+1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the 6-stage clinical synchronization protocol:
+    - **S1 (Discovery)**: Harvests new recruits from high-fidelity tournament anchors.
+    - **S2 (Profile)**: Synchronizes core clan metadata and settings.
+    - **S3 (Members)**: Hydrates the active roster with realtime telemetry.
+    - **S4 (Race)**: Captures current river race standing and deck availability.
+    - **S5 (WarLog)**: Archives war performance into the infinite career ledger.
+    - **S6 (Deep Depth)**: Extracts 100-sample battle logs for high-precision scoring.
 2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (Ghost Purge, Shadow Scout, Tournament Discovery, Profiler, Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
-3. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
-4. **Janitor (`maintenance_janitor`)**: Weekly automated culling of volatile data while **Hard-Exempting** career history.
+3. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Implements rarity-relative normalization to the unified 1-16 absolute scale.
+4. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
+5. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative system janitor responsible for pruning volatile state and maintaining substrate health.
 
 ---
 
@@ -69,7 +76,7 @@ The `deploy-supabase.yml` workflow automates the following sequence:
     - `CLAN_TAG` and `PLAYER_TAG` repository variables are synced.
     - `ROYALE_API_KEYS` (The Key Farm) is injected into the Supabase environment.
 3. **Database DNA Sync**: SQL migrations are pushed if `SUPABASE_DB_PASSWORD` is present.
-4. **Edge Layer Deployment**: The dual engines (`ingest-royale-data` and `headhunter-scanner`) are bundled and deployed.
+4. **Edge Layer Deployment**: The tri-engine cluster (`ingest-royale-data`, `headhunter-scanner`, and `sync-player-cards`) is bundled and deployed.
 
 ### Common CLI Operations
 ```bash
@@ -85,6 +92,7 @@ supabase functions serve ingest-royale-data --no-verify-jwt
 # Deploy Edge Functions
 supabase functions deploy ingest-royale-data --no-verify-jwt
 supabase functions deploy headhunter-scanner --no-verify-jwt
+supabase functions deploy sync-player-cards --no-verify-jwt
 ```
 
 ---
@@ -120,4 +128,4 @@ supabase functions deploy headhunter-scanner --no-verify-jwt
 
 > [!NOTE]
 > This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> ↴ *Compiled: 2026-04-05 by Antigravity*
+> ↴ *Compiled: 2026-06-28 by Antigravity*

@@ -24,7 +24,9 @@ import {
   MATERIAL_REQUIREMENTS,
   KING_XP_TABLE,
   LOOKAHEAD_WEIGHT,
-  LOOKAHEAD_PRECISION
+  LOOKAHEAD_PRECISION,
+  IMPORTANT_KING_LEVELS,
+  calculateKingLevel as registryCalculateKingLevel
 } from './Registry';
 import { asGold, asXP, addGold, addXP, type Gold, type XP } from '@core/utils/economy';
 
@@ -194,4 +196,105 @@ export function* calculateProgressionPath(
   // yield the final state before returning to ensure the consumer sees the terminal result.
   yield currentState;
   return currentState;
+}
+
+/**
+ * Calculates a multidimensional efficiency score using Recursive Chain Lookahead.
+ *
+ * @remarks
+ * This function evaluates the "character arc" of a card by simulating future
+ * upgrade steps. This prevents "greedy" local optima traps where a cheap but
+ * low-value upgrade is picked over a more expensive but higher-impact chain.
+ *
+ * Formula: Score = Sum(StepScore[i] * 0.4^i)
+ *
+ * @param candidate - The immediate upgrade candidate being scored.
+ * @param state - The current simulation state.
+ * @param settings - Optimization settings.
+ * @param strategy - The scoring strategy to use.
+ * @param depth - Current recursion depth for lookahead.
+ * @returns A weighted efficiency score.
+ */
+function calculateAdvancedScore(
+  candidate: UpgradeCandidate, 
+  state: SimulationState, 
+  settings: OptimizationSettings,
+  strategy: ScoringStrategy,
+  depth: number = 0
+): number {
+  const currentScore = strategy.calculateScore(candidate, settings);
+  
+  // Principled Convergence: Stop if the future weight is statistically insignificant
+  const currentWeightFactor = Math.pow(LOOKAHEAD_WEIGHT, depth);
+  if (currentWeightFactor < LOOKAHEAD_PRECISION) {
+    return currentScore;
+  }
+
+  // Domain Boundary: Stop if we've reached the theoretical game limit
+  if (candidate.toLevel >= CARD_LEVEL_CAP) {
+    return currentScore;
+  }
+
+  // We simulate what happens if we upgrade this specific card to its NEXT level.
+  const virtualCard = { ...candidate.card, level: candidate.toLevel };
+  const virtualInventory = { ...state.inventory };
+  
+  virtualInventory.gold = subGold(virtualInventory.gold, candidate.goldCost);
+  virtualInventory.gems = subGems(virtualInventory.gems, candidate.gemsUsed);
+
+  const nextPotential = buildCandidate(virtualCard, candidate.index, virtualInventory, settings);
+  
+  if (nextPotential) {
+    const nextScore = calculateAdvancedScore(
+      nextPotential, 
+      state, 
+      settings,
+      strategy,
+      depth + 1
+    );
+    // Weighted chain avoids local optima by incorporating downstream benefits.
+    return currentScore + (nextScore * LOOKAHEAD_WEIGHT);
+  }
+
+  return currentScore;
+}
+
+/**
+ * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
+ *
+ * @param state - The current state of the simulation.
+ * @param originalProfile - The original player profile before simulation.
+ * @param initialXp - The initial XP of the player.
+ * @returns A formatted result compatible with existing UI components.
+ */
+export function mapStateToResult(
+  state: SimulationState,
+  originalProfile: PlayerProfile,
+  initialXp: number
+): OptimizationResult {
+  const kingLevel = registryCalculateKingLevel(Number(state.totalXp));
+  let xpIntoLevel = 0;
+
+  for (const row of KING_XP_TABLE) {
+    if (row.level === kingLevel) {
+      xpIntoLevel = Number(state.totalXp) - Number(row.cumulative);
+      break;
+    }
+  }
+
+  return {
+    actions: state.history as UpgradeAction[],
+    totalXpGained: Number(state.totalXp) - initialXp,
+    projectedKingLevel: kingLevel,
+    finalProfile: {
+      ...originalProfile,
+      kingLevel,
+      xpIntoLevel
+    },
+    finalGold: Number(state.inventory.gold),
+    finalGems: Number(state.inventory.gems),
+    totalGoldSpent: Number(state.totalGoldSpent),
+    totalGemsSpent: Number(state.totalGemsSpent),
+    totalWildCardsUsed: state.totalWildCardsUsed as Record<Rarity, number>
+  };
 }
