@@ -72,7 +72,7 @@ describe("StatusPill", () => {
     const wrapper = mount(StatusPill, {
       props: { 
         type: "success", 
-        text: "Nominal", 
+        text: "DB", 
         remoteInfo: { source: "SUPABASE", dataAge: "10m ago" } 
       },
     });
