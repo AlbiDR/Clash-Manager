@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/Clash-Manager/dev-sw.js?dev-sw', { scope: '/Clash-Manager/', type: 'module' })
