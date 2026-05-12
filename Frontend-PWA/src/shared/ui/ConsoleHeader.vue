@@ -92,6 +92,7 @@ const handleOpenDashboard = () => {
             :nominal="props.status.nominal"
             :remote-info="props.remoteInfo"
             direction="left"
+            @refresh="emit('refresh')"
           />
         </div>
       </div>
