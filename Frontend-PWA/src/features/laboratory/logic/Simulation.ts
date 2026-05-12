@@ -50,7 +50,8 @@ import {
   KING_XP_TABLE,
   LOOKAHEAD_WEIGHT,
   LOOKAHEAD_PRECISION,
-  IMPORTANT_KING_LEVELS
+  IMPORTANT_KING_LEVELS,
+  calculateKingLevel as registryCalculateKingLevel
 } from './Registry';
 import { PriorityQueue } from '@core/utils/PriorityQueue';
 import type { 
@@ -371,24 +372,6 @@ function calculateAdvancedScore(
 }
 
 /**
- * Determines the King Level (Account Level) based on total XP earned.
- *
- * @param totalXp - The cumulative XP earned from card upgrades.
- * @returns The corresponding King Level from the game tables.
- */
-export function calculateKingLevel(totalXp: number): number {
-  let level = 1;
-  for (const row of KING_XP_TABLE) {
-    if (totalXp >= Number(row.cumulative)) {
-      level = row.level;
-    } else {
-      break;
-    }
-  }
-  return level;
-}
-
-/**
  * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
  *
  * @param state - The current state of the simulation.
@@ -401,7 +384,7 @@ export function mapStateToResult(
   originalProfile: PlayerProfile,
   initialXp: number
 ): OptimizationResult {
-  const kingLevel = calculateKingLevel(state.totalXp);
+  const kingLevel = registryCalculateKingLevel(Number(state.totalXp));
   let xpIntoLevel = 0;
 
   for (const row of KING_XP_TABLE) {
@@ -426,15 +409,4 @@ export function mapStateToResult(
     totalGemsSpent: Number(state.totalGemsSpent),
     totalWildCardsUsed: state.totalWildCardsUsed as Record<Rarity, number>
   };
-}
-
-/**
- * Determines the next logical King Level milestone for target projection.
- *
- * @param currentLevel - Current King Level.
- * @returns The next milestone level.
- */
-export function calculateDefaultTarget(currentLevel: number): number {
-  const nextMilestone = IMPORTANT_KING_LEVELS.find(m => m > currentLevel);
-  return Math.min(90, nextMilestone || (currentLevel + 1));
 }
