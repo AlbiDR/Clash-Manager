@@ -203,10 +203,10 @@ const handleOpenDashboard = () => {
 .view-title {
   margin: 0;
   font-size: 24px;
-  line-height: 1.1; /* Consistent vertical presence */
+  line-height: 1; 
   font-weight: 900;
   color: var(--sys-text-primary);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em; /* Tighter tracking for premium feel */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

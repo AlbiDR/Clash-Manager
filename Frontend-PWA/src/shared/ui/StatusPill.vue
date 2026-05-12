@@ -162,14 +162,14 @@ const displaySource = computed(() => {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  height: 32px;
+  height: 28px; /* Slightly shorter for tighter look */
   padding: 0 4px;
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--sys-surface-container);
   border: 1px solid var(--sys-outline);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.5s var(--sys-motion-spring);
+  transition: all 0.4s var(--sys-motion-spring);
   user-select: none;
   position: relative;
   z-index: 50;
@@ -257,9 +257,10 @@ const displaySource = computed(() => {
 .technical {
   font-family: var(--sys-font-mono);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  line-height: 1;
 }
 
 .status-label.is-db {
@@ -273,39 +274,52 @@ const displaySource = computed(() => {
 .hub-dashboard {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 4px 8px;
+  gap: 12px;
+  padding: 2px 4px;
 }
 
 .hub-main-info {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-width: 80px;
+  min-width: 60px;
+}
+
+/* Anchor text towards the dot based on expansion direction */
+.expand-left .hub-main-info {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.expand-right .hub-main-info {
+  align-items: flex-start;
+  text-align: left;
 }
 
 .hub-details {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 2px;
-  opacity: 0.8;
+  margin-top: 3px;
+  opacity: 0.6;
 }
 
 .status-label {
-  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .source-tag {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   padding: 1px 4px;
   border-radius: 4px;
   background: var(--sys-surface-container-highest);
   color: var(--sys-text-secondary);
-  font-size: 8px;
-  font-weight: 800;
+  font-size: 7px;
+  font-weight: 900;
 }
 
 .source-tag.supabase {
@@ -331,9 +345,9 @@ const displaySource = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   border: none;
   background: var(--sys-surface-container-high);
   color: var(--sys-primary);
