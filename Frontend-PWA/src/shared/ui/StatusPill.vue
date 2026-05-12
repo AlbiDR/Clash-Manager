@@ -106,17 +106,17 @@ const displaySource = computed(() => {
         <!-- EXPANDED HUB -->
         <template v-else-if="isExpanded">
           <div class="hub-dashboard">
-            <div class="hub-main-info">
-              <span class="status-label technical" :class="{ 'is-db': isDB }">
+            <div class="hub-main-info animate-stagger">
+              <span class="status-label technical stagger-1" :class="{ 'is-db': isDB }">
                 <template v-if="isDB">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <svg class="icon-bolt" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                   </svg>
                 </template>
                 {{ props.text }}
               </span>
               
-                <div v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis" class="hub-details">
+                <div v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis" class="hub-details stagger-2">
                 <span v-if="displaySource" class="source-tag technical" :class="displaySource.toLowerCase()">
                   {{ displaySource }}
                 </span>
@@ -130,12 +130,12 @@ const displaySource = computed(() => {
             </div>
 
             <button 
-              class="sync-action" 
+              class="sync-action stagger-3" 
               :disabled="props.type === 'loading'"
               title="Force Sync"
               @click="handleRefresh"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <svg :class="{ 'is-spinning': props.type === 'loading' }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
               </svg>
             </button>
@@ -376,39 +376,68 @@ const displaySource = computed(() => {
   animation: rotate 1.5s linear infinite;
 }
 
+/* Transitions */
+.slide-fade-enter-active, .slide-fade-leave-active,
+.slide-fade-left-enter-active, .slide-fade-left-leave-active {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-fade-enter-from, .slide-fade-leave-to {
+  transform: translateX(-16px) scale(0.95);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+.slide-fade-left-enter-from, .slide-fade-left-leave-to {
+  transform: translateX(16px) scale(0.95);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+/* Stagger Effects */
+.animate-stagger > * {
+  animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.15s; }
+.stagger-3 { animation-delay: 0.2s; }
+
+.icon-bolt {
+  animation: bolt-flicker 3s infinite;
+}
+
+.is-spinning {
+  animation: rotate 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(4px); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes bolt-flicker {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--sys-primary)); }
+  50% { opacity: 0.7; filter: drop-shadow(0 0 0px var(--sys-primary)); }
+}
+
 @keyframes rotate {
-  100% { transform: rotate(360deg); }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes breath {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 1; }
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.3); }
+  0% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px transparent; }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
 }
 
 @keyframes halo-pulse {
-  0% { transform: scale(0.8); opacity: 0.25; }
-  100% { transform: scale(2.4); opacity: 0; }
+  0% { transform: scale(0.6); opacity: 0.4; }
+  100% { transform: scale(2.8); opacity: 0; }
 }
-
-/* Transitions */
-.slide-fade-enter-active, .slide-fade-leave-active {
-  transition: all 0.4s var(--sys-motion-spring);
-}
-.slide-fade-enter-from, .slide-fade-leave-to {
-  transform: translateX(-12px);
-  opacity: 0;
-}
-
-.slide-fade-left-enter-active, .slide-fade-left-leave-active {
-  transition: all 0.4s var(--sys-motion-spring);
-}
-.slide-fade-left-enter-from, .slide-fade-left-leave-to {
-  transform: translateX(12px);
-  opacity: 0;
-}
-</style>
