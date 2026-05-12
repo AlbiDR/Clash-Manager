@@ -14,7 +14,7 @@
     "@ast-grep/cli": "^0.42.1",
     "@types/node": "catalog:",
     "dependency-cruiser": "^17.4.0",
-    "knip": "^6.11.0",
+    "knip": "^6.12.2",
     "typescript": "catalog:"
   },
   "engines": {

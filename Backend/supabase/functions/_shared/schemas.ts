@@ -55,6 +55,32 @@ export const RoyalePlayerSchema = v.object({
     })))
 });
 
+/** [GUARD] Royale Card Schema. */
+export const RoyaleCardSchema = v.object({
+    name: v.string(),
+    id: v.number(),
+    level: v.number(),
+    maxLevel: v.number(),
+    count: v.optional(v.number(), 0),
+    rarity: v.string()
+});
+
+/** [GUARD] Royale Full Player Profile Schema (for /players endpoint). */
+export const RoyaleFullPlayerSchema = v.intersect([
+    RoyalePlayerSchema,
+    v.object({
+        expLevel: v.number(),
+        expPoints: v.number(),
+        cards: v.array(RoyaleCardSchema),
+        towerTroops: v.optional(v.array(RoyaleCardSchema), [])
+    })
+]);
+
+/** [GUARD] Player Sync Payload Schema. */
+export const PlayerSyncPayloadSchema = v.object({
+    tag: v.string()
+});
+
 /** [GUARD] Royale Tournament List Item Schema. */
 export const RoyaleTournamentListItemSchema = v.object({
     tag: v.string(),

@@ -51,8 +51,7 @@ import {
   LOOKAHEAD_WEIGHT,
   LOOKAHEAD_PRECISION,
   IMPORTANT_KING_LEVELS,
-  calculateKingLevel,
-  calculateDefaultTarget
+  calculateKingLevel as registryCalculateKingLevel
 } from './Registry';
 import { PriorityQueue } from '@core/utils/PriorityQueue';
 import type { 
@@ -372,7 +371,6 @@ function calculateAdvancedScore(
   return currentScore;
 }
 
-
 /**
  * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
  *
@@ -386,7 +384,7 @@ export function mapStateToResult(
   originalProfile: PlayerProfile,
   initialXp: number
 ): OptimizationResult {
-  const kingLevel = calculateKingLevel(state.totalXp);
+  const kingLevel = registryCalculateKingLevel(Number(state.totalXp));
   let xpIntoLevel = 0;
 
   for (const row of KING_XP_TABLE) {
@@ -412,4 +410,3 @@ export function mapStateToResult(
     totalWildCardsUsed: state.totalWildCardsUsed as Record<Rarity, number>
   };
 }
-
