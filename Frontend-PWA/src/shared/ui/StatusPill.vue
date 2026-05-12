@@ -441,3 +441,4 @@ const displaySource = computed(() => {
   0% { transform: scale(0.6); opacity: 0.4; }
   100% { transform: scale(2.8); opacity: 0; }
 }
+</style>
