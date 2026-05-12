@@ -1,6 +1,36 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-12] PR #583: Standardize Badge UI System and Resolve Logic Duplication
+**Commit**: `75b18f8e910477f65713c347ec5c63988f3a42b5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/583)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** Duplication of badge UI logic across multiple components and redundant game logic definitions causing import conflicts.
+**[Refactoring Hypothesis]:** Introducing a `BaseBadge` primitive reduces template duplication. Moving shared logic to `Registry.ts` enforces SSOT and fixes build-blocking ambiguous exports.
+**[Rationale]:** Aligns with CleanStack Architecture (Section II & VII) for deduplication and technical purity.
+
+### Changes:
+- **[Frontend-PWA/src/shared/ui/BaseBadge.vue]:** New atomic primitive for badges.
+- **[Frontend-PWA/src/shared/ui/RoleBadge.vue]:** Refactored to use BaseBadge.
+- **[Frontend-PWA/src/shared/ui/TenureBadge.vue]:** Refactored to use BaseBadge.
+- **[Frontend-PWA/src/features/headhunter/components/RecruitCard.vue]:** Refactored to use BaseBadge.
+- **[Frontend-PWA/src/features/laboratory/logic/Simulation.ts]:** Excised redundant logic.
+- **[Frontend-PWA/src/shared/index.ts]:** Exported BaseBadge.
+
+### Verification:
+- **[Automated]:** Full Vitest suite (910 pass, 1 skipped).
+- **[Automated/Audit]:** Verified Vite dev server starts without ambiguous import errors.
+
+### Log Updates:
+- Updated .github/nightly-logs/optimization-coverage.log
+
+---
+*PR created automatically by Jules for task [15781775522697737584](https://jules.google.com/task/15781775522697737584) started by @AlbiDR*
+
+---
+
 ## [2026-05-12] PR #582: test(verify): extend useListFilter defensive coverage
 **Commit**: `0237b3933c66a1f3d40b7bc3b9e5b58b8930af53`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/582)
