@@ -122,6 +122,10 @@ export function useHaptics() {
     tap: () => vibrate(12),
     medium: () => vibrate(25),
     heavy: () => vibrate(35),
+    impact: (style: "light" | "medium" | "heavy") => {
+      const styles = { light: 12, medium: 25, heavy: 35 };
+      vibrate(styles[style] || 25);
+    },
     longPress: () => vibrate(65),
 
     success: () => vibrate([10, 30, 10]),

@@ -187,7 +187,7 @@ const handleOpenDashboard = () => {
 
 .title-group {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   flex: 1;
   min-width: 0;
@@ -203,6 +203,7 @@ const handleOpenDashboard = () => {
 .view-title {
   margin: 0;
   font-size: 24px;
+  line-height: 1.1; /* Consistent vertical presence */
   font-weight: 900;
   color: var(--sys-text-primary);
   letter-spacing: -0.03em;
