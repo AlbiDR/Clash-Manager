@@ -8,6 +8,7 @@ export { default as TrophyBadge } from "./ui/TrophyBadge.vue";
 export { default as ScoreBadge } from "./ui/ScoreBadge.vue";
 export { default as RoleBadge } from "./ui/RoleBadge.vue";
 export { default as TenureBadge } from "./ui/TenureBadge.vue";
+export { default as BaseBadge } from "./ui/BaseBadge.vue";
 export { default as StatsGrid } from "./ui/StatsGrid.vue";
 export { default as StatisticItem } from "./ui/StatisticItem.vue";
 export { default as ErrorState } from "./ui/ErrorState.vue";
