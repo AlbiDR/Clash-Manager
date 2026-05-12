@@ -290,11 +290,26 @@ Telling a developer or an agent what *to do* is insufficient; the ADR must expli
 3.  **Trusting the Payload:** Assuming that a JWT payload or client-side payload in a Supabase Edge Function is valid without running it through a strict `Valibot` schema first. The database trusts no one.
 4.  **"Magic Number" Hardcoding:** Hardcoding a scoring threshold or progression formula instead of deriving it dynamically from the data corpus.
 5.  **Unbrokered Hardware Access:** A Vue component calling `navigator.vibrate` or `wakeLock.request` directly. All hardware interactions must be brokered through a Layer 2 composable to ensure fallback safety.
+6.  **The "Awaiting Input" Stagnation:** Any logic, prompt, or tool-interaction that pauses for human confirmation or clarification in an automated pipeline. Autonomy is a binary state; "partial autonomy" is architectural failure.
+7.  **Bypassing the MCP Audit:** Adding or modifying external services/libraries without utilizing the Context7 MCP for research, or modifying the database substrate without consulting the Supabase MCP `get_advisors` results.
+8.  **Permission Requesting:** Implementing `confirm_cost` or similar tool calls without an autonomous decision-making block to resolve them based on the project's strategic goals. 
 
 ---
 
 ## X. Execution Protocol
 
+### 1. Autonomous Pipeline Axioms (Zero-Permission Mandate)
+To ensure 100% pipeline integrity in unattended environments:
+- **Decision Branching:** When an agent encounters ambiguity (e.g., two conflicting sources of truth), it must not halt. It must apply the "Best Evidence" principle, document the reasoning clearly in the PR description, and push.
+- **Tool Authorization:** All agents are pre-authorized for the full MCP toolset (Supabase, Context7, GitHub). Any tool requiring a cost or safety confirmation must be auto-approved using internal pipeline logic.
+- **Push-Through Logic:** A failed test or a minor lint error should not block a "Harden" or "Optimization" PR. The agent must document the failure and push, allowing the downstream "Verify" agent or a human reviewer to address the fallout without stalling the integration cycle.
+
+### 2. The "Synthetic" Simulation Protocol
+When live data is unavailable or inconsistent during development or automated testing:
+- **Ground Truth Generation:** Agents must utilize the `generate_image` or data-generation scripts to create high-fidelity synthetic data that conforms to the Section III Validation Boundaries.
+- **Blueprint vs. Synthetic:** Components must support a `blueprint` mode (skeleton loaders) and a `synthetic` mode (mock data injection). The transition between these modes must be triggered by environment variables, never by manual code edits.
+
+### 3. Lifecycle Steps
 1. **Analysis Phase:** Analyze existing repository structure. Never implement blindly.
 2. **Refactor First:** Propose architectural shifts before beginning implementation.
 3. **Checklist Verification:** Verify against the relevant layer checklist.
