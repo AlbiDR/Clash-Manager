@@ -48,11 +48,19 @@ interface NormalizedCard {
   count: number;
 }
 
+/**
+ * Normalizes a player tag to a standard uppercase format with a hash prefix.
+ * @param tag - The raw player tag from the request.
+ */
 function normalizeTag(tag: string): string {
   const clean = tag.trim().toUpperCase();
   return clean.startsWith("#") ? clean : `#${clean}`;
 }
 
+/**
+ * Maps raw rarity strings from the Royale API to standardized title-case names.
+ * @param raw - The raw rarity string (e.g., "common").
+ */
 function normalizeRarity(raw: string): string {
   const map: Record<string, string> = {
     common: "Common",
@@ -64,6 +72,13 @@ function normalizeRarity(raw: string): string {
   return map[raw?.toLowerCase()?.trim()] ?? "Common";
 }
 
+/**
+ * Constructs the final standardized profile response from database snapshots.
+ *
+ * @param cardSnapshots - List of card snapshots from the database or fresh API fetch.
+ * @param tag - The normalized player tag.
+ * @param source - Indicates if the data originated from the "cache" (DB) or "api".
+ */
 function buildProfileResponse(
   cardSnapshots: CardRow[],
   tag: string,
@@ -121,9 +136,12 @@ Deno.serve(async (req) => {
     componentId: "PLAYER_CARD_SYNC",
     schema: PlayerSyncPayloadSchema,
     handler: async (payload, logAudit, heartbeat) => {
+      // [DECISION LOG] Tags are normalized to ensure cache hits regardless of user input casing/prefix.
       const tag = normalizeTag(payload.tag);
 
       // 1. [CACHE CHECK]
+      // [DECISION LOG] The features.player_card_snapshots table acts as a Layer 2 cache.
+      // We check for existing data to minimize Royale API quota consumption and improve response speed.
       const { data: stored, error: fetchError } = await supabase
         .from("player_card_snapshots")
         .select(
@@ -137,6 +155,7 @@ Deno.serve(async (req) => {
 
       const cardSnapshots = (stored ?? []) as CardRow[];
       const cutoff = Date.now() - CACHE_TTL_MS;
+      // [DECISION LOG] Data is considered fresh if at least one card was fetched within the 12h TTL.
       const isFresh =
         cardSnapshots.length > 0 &&
         cardSnapshots.some((snapshot) => new Date(snapshot.fetched_at).getTime() > cutoff);
@@ -151,6 +170,7 @@ Deno.serve(async (req) => {
       // 2. [API FETCH]
       logAudit("API_FETCH", "called", { tag });
       const encodedTag = encodeURIComponent(tag);
+      // [THREAT:] fetchWithRotation handles API key rotation to prevent IP/Token banning.
       const res = await fetchWithRotation(`/players/${encodedTag}`);
       if (!res.ok) {
         const errBody = await res.text().catch(() => "");
@@ -159,6 +179,8 @@ Deno.serve(async (req) => {
       }
 
       const rawRoyaleData = await res.json();
+      // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
+      // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes.
       const validation = v.safeParse(RoyaleFullPlayerSchema, rawRoyaleData);
 
       if (!validation.success) {
@@ -184,6 +206,11 @@ Deno.serve(async (req) => {
       const xpIntoLevel = royaleData.expPoints;
       const fetchedAt = new Date().toISOString();
 
+      /**
+       * Normalizes a single card's level from the relative Royale API scale to our absolute scale.
+       * [DECISION LOG] The Royale API uses relative levels (e.g. Rare 11). We convert these to
+       * an absolute 1-16 scale based on the distance from the card's maximum level.
+       */
       function processCard(card: v.InferOutput<typeof RoyaleFullPlayerSchema>["cards"][0], isTowerTroop: boolean): NormalizedCard {
         const apiLevel = card.level;
         const apiMaxLevel = card.maxLevel;
