@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-13] PR #593: Structural Alignment of Core List Services
+**Commit**: `4d65bda89cdfe60eb2aaf75d49b3a72be3eee5ed`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/593)
+
+### Description
+Aligns the core list orchestration services in Frontend-PWA with Layer 1 domain-agnostic principles. Excises "Recruit" and "Member" terminology from useBatchQueue and useConsoleController, generalizes mock data handling, and extracts card metadata logic into a specialized useConsoleMetadata service.
+
+---
+*PR created automatically by Jules for task [12752053216510246447](https://jules.google.com/task/12752053216510246447) started by @AlbiDR*
+
+---
+
 ## [2026-05-13] PR #592: fix(version): reconcile version drift in Backend
 **Commit**: `7b0db519934c00c15ea1046dce3c1537cfc6c576`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/592)
