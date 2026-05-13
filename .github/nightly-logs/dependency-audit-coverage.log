@@ -55,6 +55,7 @@
 | workbox-window | ^7.4.0 | ^7.4.1 | 2026-05-10 | PASS |
 | workbox-precaching | ^7.4.0 | ^7.4.1 | 2026-06-27 | PASS |
 | knip | ^6.11.0 | ^6.12.2 | 2026-05-12 | PASS |
+| knip | ^6.12.2 | ^6.13.1 | 2026-05-13 | PASS |
 
 ## Section 2 — Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
