@@ -1,7 +1,7 @@
 ---
 title: Supabase Binary Stack Migration Plan
 status: Live
-version: 1.8.0
+version: 13.3.0
 license: GPL-3.0-only
 copyright: Copyright (C) 2026 AlbiDR
 ---
@@ -41,7 +41,7 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 
 ---
 
-## IV. The Clinical Ingestion Strategy (v1.9.0)
+## IV. The Clinical Ingestion Strategy (v13.3.0)
 
 ### 1. Ingestion Gate (substrate. Layer)
 - **The Hunter**: A single Edge Function (`ingest-royale-data`) fetches all endpoints.

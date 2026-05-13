@@ -1,3 +1,12 @@
+## [2026-06-27]
+### Reconciled:
+- **Backend (Roadmap)**: Synchronized roadmap version from `v1.8.0` to `v13.3.0` in `Backend/README.md` and `.github/supabase-plan.md` to match the monorepo ground truth.
+- **Backend (Protocol)**: Synchronized protocol bridge version from `v2.4.0-clinical` to `13.3.0-clinical` in `protocol.ts`.
+- **Root README**: Updated Backend badge to `v13.3.0`.
+
+### Logged Drift (Unresolved):
+- **None**.
+
 ## [2026-06-05]
 ### Reconciled:
 - **GAS - VALIDATION**: Updated manifest from `1.0.0` to `1.2.0` in `Configuration.ts` to match `Validation.ts` (Rule B).
