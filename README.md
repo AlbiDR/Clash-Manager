@@ -1,6 +1,6 @@
 # Clash Manager
 
-[![Backend](https://img.shields.io/badge/Backend-v1.8.0-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
+[![Backend](https://img.shields.io/badge/Backend-v13.3.0-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
 [![Client](https://img.shields.io/badge/Client-v13.3.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
 [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](.github/authoritative-design-references/CleanStack%20Architecture.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)

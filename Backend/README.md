@@ -120,7 +120,7 @@ supabase functions deploy sync-player-cards --no-verify-jwt
 
 ---
 
-## VIII. Current State — Roadmap (v1.8.0)
+## VIII. Current State — Roadmap (v13.3.0)
 - [x] **Phase 1-6**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor).
 - [ ] **Phase 7 [PENDING]**: Full PWA integration (migrating features to `features.*` views).
 
