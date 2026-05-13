@@ -79,7 +79,7 @@ Recruitment is no longer passive. The **Headhunter Engine** continuously scans g
 
 - **DeepNet**: The high-performance, offline-first PWA infrastructure (v13+) designed for administrative clan operations.
 - **Headhunter**: The global discovery engine that autonomously scans tournaments to identify elite, clanless recruits.
-- **Nightly**: The automated, 7-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
+- **Nightly**: The automated, 8-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
 
 ---
 <br />
@@ -143,7 +143,7 @@ flowchart TD
 
 ## Nightly Pipeline
 
-The ecosystem is maintained by a 7-agent autonomous pipeline that executes nightly to ensure structural purity, security, and documentation synchronization. This pipeline operates directly on the `Nightly` branch and follows a strictly sequenced maintenance cycle:
+The ecosystem is maintained by an 8-agent autonomous pipeline that executes nightly to ensure structural purity, security, and documentation synchronization. This pipeline operates directly on the `Nightly` branch and follows a strictly sequenced maintenance cycle:
 
 1.  **Harden**: Secures validation boundaries and eliminates the "any" plague across the stack.
 2.  **Verify**: Proves system integrity through automated test suite execution and ADR checks.
@@ -152,6 +152,7 @@ The ecosystem is maintained by a 7-agent autonomous pipeline that executes night
 5.  **Document (TSDoc)**: The Technical Writer. Hardens interface contracts and architectural remarks.
 6.  **Version Integrity**: The Release Engineer. Enforces strict semantic versioning.
 7.  **Dependency Audit**: The Watchkeeper. Monitors external dependency health and security.
+8.  **Refactor**: The Structural Architect. Orchestrates large-scale structural improvements and architectural migrations.
 
 ---
 <br />
