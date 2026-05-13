@@ -108,97 +108,102 @@ Unifies physical network status and logical API availability into a single sourc
 - **Priority Resolution**: Implements a 6-tier priority queue (Physical Offline -> Logical Offline -> Success -> Syncing -> Slow -> Online) to ensure the most critical status is always visible.
 - **Reactive Deltas**: Automatically manages window listeners and provides reactive feedback for network transitions and speed degradation.
 
-### 8. Hardware Brokerage (`useWakeLock`)
+### 8. Connectivity Hub Orchestrator (`useConnectivityManager`)
+Orchestrates data provenance, synchronization health, and UI-level connectivity indicators.
+- **Confidence Scoring**: Calculates a health score based on network status, sync activity, and data age.
+- **Metadata Normalization**: Bridges the gap between raw store metadata and human-readable temporal indicators (e.g., "10m ago").
+
+### 9. Hardware Brokerage (`useWakeLock`)
 Prevents device sleep during resource-intensive operations (Batch Blitz, Sync).
 - **Visibility Resilience**: Automatically re-acquires the wake lock when the application returns to the foreground if user intent is still active.
 - **System Synchronization**: Integrated into the synchronization engine to ensure data integrity during long-running background fetches.
 
-### 9. Statistical Benchmarking (`useBenchmarking`)
+### 10. Statistical Benchmarking (`useBenchmarking`)
 A high-performance O(N) engine for comparing individual metrics against clan-wide averages.
 - **Single-Pass Optimization**: Aggregates mean, min, and max values across all metrics in a single traversal of the dataset to minimize CPU cycles.
 - **Tier Resolution**: Dynamically classifies performance into 4 tiers (Elite, Top Tier, Growing, Under) based on statistical deviations from the mean.
 - **Singleton Pattern**: Shares pre-calculated statistical models across all component instances via a module-level cache.
 
-### 10. UI Coordination (`useUiCoordinator`)
+### 11. UI Coordination (`useUiCoordinator`)
 The master arbiter of layout spacing and element visibility.
 - **Occlusion Prevention**: Dynamically calculates bottom offsets for the `FabIsland` and `ToastContainer` to ensure interactive elements never overlap.
 - **Singleton Control**: Manages a global FAB state, allowing different feature views to register actions and labels in a unified UI layer.
 
-### 11. Redundant Persistence (`useAppSettings`)
+### 12. Redundant Persistence (`useAppSettings`)
 A multi-tier strategy for application configuration and feature flags.
 - **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access). This ensures the Service Worker can access user preferences (like notification thresholds) even when the main thread is inactive.
 - **Tab Synchronization**: Listens for the global `storage` event to ensure configuration remains atomic and consistent across multiple open browser tabs.
 - **Validation Boundary**: Enforces strict Valibot schema validation (`ModuleStateSchema`) on all data retrieved from storage to prevent UI instability.
 
-### 12. Deep Link Navigation (`useDeepLinkHandler`)
+### 13. Deep Link Navigation (`useDeepLinkHandler`)
 Manages item expansion and auto-scroll based on URL query parameters.
 - **Navigation Safety**: Implements a 'run-once' guard to prevent layout jumps during background data refreshes.
 - **Context Awareness**: Constructively scrolls specific roster or headhunter items into view upon landing via 'pin' parameters.
 
-### 13. Metadata Centralization (`useSystemInfo`)
+### 14. Metadata Centralization (`useSystemInfo`)
 Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic). Implements a priority queue for display badges (Showcase > Blueprint > Synthetic).
 
-### 14. Audit Mode Orchestration (`useShowcaseMode`)
+### 15. Audit Mode Orchestration (`useShowcaseMode`)
 Acts as the master arbiter for the application's demonstration and auditing states.
 - **Master-Child Sync**: Implements a MASTER -> CHILD propagation pattern, ensuring that toggling Showcase Mode automatically synchronizes both Blueprint and Synthetic child modes.
 - **Reactive Resolution**: Utilizes a child-to-master watcher to automatically activate the Showcase status if both constituent modes are manually enabled.
 
-### 15. Geometric Skeletons (`useBlueprintMode`)
+### 16. Geometric Skeletons (`useBlueprintMode`)
 Allows for layout stability auditing by forcing the application into a structural-only state.
 - **Visual Pruning**: Strips decorative elements from components, leaving only geometric skeletons to facilitate interaction design debugging.
 - **Singleton Persistence**: Ensures all components share a unified toggle status, persisted to `localStorage` for cross-session consistency.
 
-### 16. Synthetic Data Engine (`useSyntheticMode`)
+### 17. Synthetic Data Engine (`useSyntheticMode`)
 Decouples the UI from live backend dependencies for demonstration and testing.
 - **High-Fidelity Mocks**: Enables a global toggle that redirects data ingestion to high-fidelity synthetic payloads.
 - **Isolation**: Acts as a Layer 1 singleton to ensure data consistency across the entire application shell.
 
-### 17. Storage Protection (`useStoragePersistence`)
+### 18. Storage Protection (`useStoragePersistence`)
 Brokered access to the Storage Manager API to prevent silent data eviction.
 - **Origin Persistence**: Explicitly requests the browser to grant "persisted" status to the application's origin, ensuring IndexedDB and localStorage remain intact under device storage pressure.
 - **Status Monitoring**: Provides reactive signals for `isSupported` and `isPersisted` states.
 
-### 18. Hardware Navigation (`useBackHandler`)
+### 19. Hardware Navigation (`useBackHandler`)
 Orchestrates hardware back button interception for modal and overlay management.
 - **History Shimming**: Implements a "synthetic state" strategy by pushing temporary entries to the browser history stack, allowing 'popstate' events to close UI components rather than navigating away.
 - **Android Optimization**: Specifically designed to provide a native-feeling "back to close" experience on mobile devices.
 
-### 19. Share Intent Processor (`useShareTarget`)
+### 20. Share Intent Processor (`useShareTarget`)
 Infrastructure kernel for handling incoming Web Share Target API intents.
 - **Tag Extraction**: Utilizes specialized regex to identify player tags (#XXXX) from shared OS text, titles, or URLs.
 - **Intent Redirection**: Automatically cleans the history state and redirects to the Recruiter view with extracted tags applied as active filters.
 
-### 20. Adaptive Haptics Engine (`useHaptics`)
+### 21. Adaptive Haptics Engine (`useHaptics`)
 Brokered access to device vibration hardware for tactical physical feedback.
 - **Battery Awareness**: Implements power-aware scaling, automatically reducing vibration intensity when the device is in low-power mode or below 20% battery.
 - **Interaction Security**: Enforces a strict user-gesture requirement before allowing hardware access to comply with browser security models.
 
-### 21. Cross-Platform Badging (`useBadge`)
+### 22. Cross-Platform Badging (`useBadge`)
 Orchestrates application-level notification badges across inconsistent platform APIs.
 - **Dual-Path Strategy**: Utilizes the native W3C Badge API for iOS/Desktop and a persistent notification fallback for Android.
 - **Flood Protection**: Implements a 1500ms debounce and exponential backoff retry mechanism to prevent API exhaustion and Service Worker instability.
 
-### 22. Intent Orchestration (`useExternalLink`)
+### 23. Intent Orchestration (`useExternalLink`)
 Specialized broker for deep-linking into external applications and the Clash Royale client.
 - **Hidden Anchor Pattern**: Employs a temporary DOM element with a 100ms cleanup lifecycle to trigger OS Intents without dropping PWA execution context.
 - **Android Intent Protocol**: Uses direct `intent://` schemes to ensure reliability when launching from sandboxed WebViews or Chrome Custom Tabs.
 
-### 23. Native Share Broker (`useShare`)
+### 24. Native Share Broker (`useShare`)
 Provides a unified interface for the Web Share API with defensive error management.
 - **Cancellation Handling**: Automatically silences `AbortError` exceptions to treat user cancellation as a successful termination of the UI flow.
 - **Capability Guard**: Proactively detects hardware sharing support before exposing interactive elements.
 
-### 24. Cross-Tab Synchronization (`useBroadcastChannel`)
+### 25. Cross-Tab Synchronization (`useBroadcastChannel`)
 Ensures atomic state consistency across multiple open browser tabs/windows.
 - **Real-Time Events**: Dispatches high-priority messages for data synchronization success and recruit dismissal to prevent UI desynchronization.
 - **Memory Safety**: Implements deterministic cleanup of the communication channel on component unmount.
 
-### 25. Advanced Network Telemetry (`useNetworkInfo`)
+### 26. Advanced Network Telemetry (`useNetworkInfo`)
 Layer 1 hardware broker for the Network Information API.
 - **Degradation Detection**: Proactively identifies "Slow" connection states based on high latency (>500ms RTT) or low bandwidth (<1Mbps downlink).
 - **Singleton Persistence**: Maintains a module-level state to ensure consistent connection metrics across all application call sites.
 
-### 26. Optimized List Logic (`useListFilter`)
+### 27. Optimized List Logic (`useListFilter`)
 A domain-blind engine for high-performance searching and sorting of large datasets.
 - **WeakMap Caching**: Utilizes a module-level `WeakMap` to cache normalized search fields, achieving O(1) amortized lookup performance and maintaining 60FPS during active filtering.
 - **Stability Support**: Implements stable tie-breaking logic (Name -> ID) to ensure deterministic rendering order across sort transitions.
@@ -275,7 +280,7 @@ pnpm type-check    # Verify TypeScript types
 ```
 
 ### Nightly Pipeline
-In addition to local testing, the codebase is autonomously maintained by a **7-agent Nightly Pipeline**. This system executes every 24 hours to enforce structural purity, synchronize README documentation, and audit dependency health via the `Nightly` branch.
+In addition to local testing, the codebase is autonomously maintained by an **8-agent Nightly Pipeline**. This system executes every 24 hours to enforce structural purity, synchronize README documentation, and audit dependency health via the `Nightly` branch.
 
 ---
 <br />
