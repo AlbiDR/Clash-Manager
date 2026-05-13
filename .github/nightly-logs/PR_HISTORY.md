@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-13] PR #591: chore(deps): bump knip from 6.12.2 to 6.13.1
+**Commit**: `df5484d7ef36a518f9709f643e1e88780700e474`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/591)
+
+### Description
+Bump knip from 6.12.2 to 6.13.1 in the root package.json and update the audit log. Verified via pnpm test gate.
+
+---
+*PR created automatically by Jules for task [12017031015556279298](https://jules.google.com/task/12017031015556279298) started by @AlbiDR*
+
+---
+
 ## [2026-05-13] PR #590: docs(tsdoc): document useHeadhunter internal logic
 **Commit**: `9fe3e1f95160e44896c50c091868a9d4024d4b63`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/590)
