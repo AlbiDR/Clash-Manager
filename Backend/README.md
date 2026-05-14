@@ -121,11 +121,10 @@ supabase functions deploy sync-player-cards --no-verify-jwt
 ---
 
 ## VIII. Current State — Roadmap (v13.3.0)
-- [x] **Phase 1-6**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor).
-- [ ] **Phase 7 [PENDING]**: Full PWA integration (migrating features to `features.*` views).
+- [x] **Phase 1-7**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor, Full PWA integration).
 
 ---
 
 > [!NOTE]
 > This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> ↴ *Compiled: 2026-06-28 by Antigravity*
+> ↴ *Compiled: 2026-08-04 by Antigravity*
