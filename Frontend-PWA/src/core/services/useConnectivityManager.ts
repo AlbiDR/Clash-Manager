@@ -72,7 +72,7 @@ export function useConnectivityManager() {
     if (unref(store.loading)) {
       return {
         type: "loading",
-        label: "Syncing",
+        label: "SYNCING",
         confidence: 50
       };
     }
@@ -101,7 +101,7 @@ export function useConnectivityManager() {
     if (unref(networkStatus) === "offline") {
       return {
         type: "error",
-        label: "Offline",
+        label: "OFFLINE",
         confidence: 0,
         diagnosis: "No Network Connection"
       };
@@ -111,7 +111,7 @@ export function useConnectivityManager() {
     if (metadata.value.ageMinutes >= 30) {
       return {
         type: "warning",
-        label: "Stale",
+        label: "STALE",
         confidence: 40,
         diagnosis: `Data is ${metadata.value.age} old`
       };
@@ -130,7 +130,7 @@ export function useConnectivityManager() {
     if (unref(store.isHydrated)) {
       return {
         type: "success",
-        label: "Local",
+        label: "LOCAL",
         confidence: 80
       };
     }
@@ -138,7 +138,7 @@ export function useConnectivityManager() {
     // Fallback
     return {
       type: "loading",
-      label: "Initializing",
+      label: "INITIALIZING",
       confidence: 10
     };
   });

@@ -246,7 +246,7 @@ describe("useConsoleController", () => {
     const { layoutProps } = useConsoleController(options);
 
     expect(layoutProps.value).toMatchObject({
-      status: { type: "loading", text: "Syncing" },
+      status: { type: "loading", text: "SYNCING" },
       loading: false,
       isRefreshing: true,
       isEmpty: false,
@@ -266,7 +266,7 @@ describe("useConsoleController", () => {
     it("returns 'offline' when connection status is offline", () => {
       sharedState.mockConnectionStatus.value = "offline";
       const { status } = useConsoleController(createOptions());
-      expect(status.value).toMatchObject({ type: "error", text: "Offline" });
+      expect(status.value).toMatchObject({ type: "error", text: "OFFLINE" });
     });
 
     it("returns 'error' when syncError is present", () => {
@@ -282,7 +282,7 @@ describe("useConsoleController", () => {
       const options = createOptions();
       options.data.value = [];
       const { status } = useConsoleController(options);
-      expect(status.value).toMatchObject({ type: "loading", text: "Syncing" });
+      expect(status.value).toMatchObject({ type: "loading", text: "SYNCING" });
     });
 
     it("returns 'success' with 'DB' label when data is present from Supabase", () => {
@@ -308,7 +308,7 @@ describe("useConsoleController", () => {
       const options = createOptions();
       options.syncError.value = "Error";
       const { status } = useConsoleController(options);
-      expect(status.value.text).toBe("Offline");
+      expect(status.value.text).toBe("OFFLINE");
     });
 
     it("returns 'Stale' when data is exactly 31 minutes old", () => {
@@ -319,7 +319,7 @@ describe("useConsoleController", () => {
       const options = createOptions();
       const { status } = useConsoleController(options);
       expect(status.value.type).toBe("warning");
-      expect(status.value.text).toBe("Stale");
+      expect(status.value.text).toBe("STALE");
     });
 
     it("returns 'DB' when data is exactly 29 minutes old and source is Supabase", () => {
@@ -342,7 +342,7 @@ describe("useConsoleController", () => {
       
       const options = createOptions();
       const { status } = useConsoleController(options);
-      expect(status.value.text).toBe("Stale");
+      expect(status.value.text).toBe("STALE");
     });
   });
 
