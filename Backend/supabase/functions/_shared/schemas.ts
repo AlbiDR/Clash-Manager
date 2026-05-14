@@ -27,12 +27,20 @@ export const RoyaleClanSchema = v.intersect([
 ]);
 
 /** [GUARD] Flexible schema for endpoints that might return an array or a wrapped object. */
-export const RoyaleFlexibleListSchema = v.union([
-    v.array(v.record(v.string(), v.unknown())),
-    v.object({
-        items: v.array(v.record(v.string(), v.unknown()))
+export const RoyaleFlexibleListSchema = v.pipe(
+    v.union([
+        v.array(v.record(v.string(), v.unknown())),
+        v.object({
+            items: v.array(v.record(v.string(), v.unknown()))
+        })
+    ]),
+    v.transform((input) => {
+        if (Array.isArray(input)) {
+            return { items: input };
+        }
+        return input;
     })
-]);
+);
 
 /** [GUARD] River Race Schema. */
 export const RoyaleRiverRaceSchema = v.object({

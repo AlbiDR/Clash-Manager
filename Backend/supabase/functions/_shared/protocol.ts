@@ -151,7 +151,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         return new Response(JSON.stringify({
             success: true,
-            version: '2.4.0-clinical',
+            version: '13.3.0-clinical',
             data: results,
             duration_ms: Date.now() - startTime,
             timestamp: new Date().toISOString()

@@ -33,20 +33,6 @@ import type { ScoringStrategy } from './ScoringStrategy';
 import { ProjectionStrategy, InventoryStrategy } from './ScoringStrategy';
 import { asGold, asGems, addGold, addXP, addGems, type Gold, type XP, type Gems } from '@core/utils/economy';
 
-/**
- * Calculates the current King Level based on cumulative XP.
- */
-export const calculateKingLevel = (totalXp: XP): number => {
-  const xpValue = Number(totalXp);
-  // Find the highest level where cumulative XP is less than or equal to current XP
-  for (let i = KING_XP_TABLE.length - 1; i >= 0; i--) {
-    if (xpValue >= Number(KING_XP_TABLE[i].cumulative)) {
-      return KING_XP_TABLE[i].level;
-    }
-  }
-  return 1;
-};
-
 /** Internal candidate with resolved upgrade type. */
 type ResolvedCandidate = UpgradeCandidate & { upgradeType: UpgradeAction['upgradeType'] };
 
@@ -246,7 +232,7 @@ export function* calculateProgressionPath(
     iterations++;
 
     // 1. Termination Check — return (not yield) so done=true on this call.
-    const currentKingLevel = calculateKingLevel(currentState.totalXp);
+    const currentKingLevel = registryCalculateKingLevel(Number(currentState.totalXp));
     if (currentKingLevel >= targetLevel || Number(currentState.totalXp) >= targetXp) {
       return currentState;
     }
