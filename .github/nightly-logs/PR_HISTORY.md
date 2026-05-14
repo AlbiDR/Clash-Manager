@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-14] PR #600: Structural Surgery: Core Game Domain Centralization
+**Commit**: `422101824e72638ff5eb2ed606a3998a5865cc08`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/600)
+
+### Description
+This refactor aligns the project's logic substrate with the Authoritative Design Reference (ADR) by relocating generic Clash Royale domain logic and constants from the Laboratory feature to the core utility layer. This ensures that fundamental game mechanics are treated as agnostic infrastructure (Layer 1) rather than feature-specific logic (Layer 3). The change eliminates duplication, improves maintainability, and strengthens the architectural boundaries of the monorepo.
+
+---
+*PR created automatically by Jules for task [6859743197081010126](https://jules.google.com/task/6859743197081010126) started by @AlbiDR*
+
+---
+
 ## [2026-05-14] PR #599: chore(deps): bump vitest from 4.1.5 to 4.1.6
 **Commit**: `7c4ab6a72a56331237d0e75324c31f7d65c26745`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/599)
