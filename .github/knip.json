@@ -1,18 +1,27 @@
 {
-  "$schema": "https://unpkg.com/knip@5/schema-json-lines.json",
-  "ignore": [
-    ".agent/**",
-    ".github/**",
-    "dist/**",
-    "public/**"
-  ],
-  "entry": [
-    "Frontend-PWA/src/main.ts",
-    "Backend/supabase/functions/*/index.ts"
-  ],
-  "project": [
-    "Frontend-PWA/src/**/*.ts",
-    "Frontend-PWA/src/**/*.vue",
-    "Backend/supabase/functions/**/*.ts"
-  ]
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "Frontend-PWA": {
+      "entry": "src/app/main.ts",
+      "project": "src/**/*.{ts,vue}",
+      "ignoreDependencies": [
+        "virtual:pwa-register/vue"
+      ]
+    },
+    ".": {
+      "entry": [
+        "Backend/supabase/functions/*/index.ts",
+        ".github/scripts/*.ts"
+      ],
+      "project": [
+        "Backend/supabase/functions/**/*.ts",
+        ".github/scripts/*.ts"
+      ],
+      "ignoreDependencies": ["npm"],
+      "ignoreBinaries": ["tsx", "wait-on"]
+    }
+  },
+  "compilers": {
+    "vue": "npx @vue/compiler-sfc"
+  }
 }

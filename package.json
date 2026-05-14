@@ -8,7 +8,8 @@
     "dev:pwa": "pnpm -F clash-manager-pwa dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "fix:gitignore": "git rm -r --cached . && git add ."
+    "fix:gitignore": "git rm -r --cached . && git add .",
+    "knip": "knip --config .github/knip.json"
   },
   "devDependencies": {
     "@ast-grep/cli": "^0.42.1",

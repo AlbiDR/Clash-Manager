@@ -46,6 +46,20 @@ jobs:
         run: |
           npx depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src
 
+      - name: Dead Code Scan (knip)
+        continue-on-error: true
+        run: |
+          pnpm knip --reporter compact 2>&1 | tee knip-report.txt
+          echo "--- Knip scan complete (non-blocking) ---"
+
+      - name: Upload Knip Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knip-report
+          path: knip-report.txt
+          retention-days: 14
+
   backend-suite:
     name: Backend Validation
     runs-on: ubuntu-latest
