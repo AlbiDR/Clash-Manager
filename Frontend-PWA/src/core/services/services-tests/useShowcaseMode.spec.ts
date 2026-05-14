@@ -34,16 +34,17 @@ describe("useShowcaseMode", () => {
     expect(isShowcaseMode.value).toBe(true);
   });
 
-  it("initializes from localStorage but becomes false if children are false", async () => {
+  it("initializes from localStorage and forces children to true if they were false", async () => {
     localStorage.setItem("clash_manager_showcase_mode", "true");
     isSyntheticMode.value = false;
     isBlueprintMode.value = false;
     const { useShowcaseMode } = await import("../useShowcaseMode");
     const { isShowcaseMode } = useShowcaseMode();
 
-    // The immediate watch runs and sees children are false, so it sets showcase to false
-    expect(isShowcaseMode.value).toBe(false);
-    expect(localStorage.getItem("clash_manager_showcase_mode")).toBe("false");
+    // Rationale: Master toggle wins during initialization to ensure consistency.
+    expect(isShowcaseMode.value).toBe(true);
+    expect(isSyntheticMode.value).toBe(true);
+    expect(isBlueprintMode.value).toBe(true);
   });
 
   it("syncs to master toggle when both child toggles are on", async () => {
