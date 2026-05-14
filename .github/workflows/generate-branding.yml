@@ -45,6 +45,9 @@ jobs:
           shot-scraper install
 
       - name: Start Dev Server
+        env:
+          VITE_SUPABASE_URL: "https://placeholder.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "placeholder"
         run: |
           pnpm run dev &
           # Wait for the dev server to be ready and the specific portfolio entry point
