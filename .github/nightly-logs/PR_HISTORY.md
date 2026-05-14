@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-14] PR #597: docs(readme): reconcile backend roadmap and provenance truth
+**Commit**: `54bca4c6353f680439968c02dcb6b431049e8b41`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/597)
+
+### Description
+Reconciled `Backend/README.md` to reflect the current architectural reality where Phase 7 (Full PWA integration via `features.*` views) is now complete. Verified implementation in `SupabaseClient.ts` and updated the audit log.
+
+---
+*PR created automatically by Jules for task [3541980091660469382](https://jules.google.com/task/3541980091660469382) started by @AlbiDR*
+
+---
+
 ## [2026-05-14] PR #596: perf(opt): excise redundant calculateKingLevel in Simulation.ts
 **Commit**: `34b39410dae463a0eb64f54ca0b80e7ecffd37e4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/596)
