@@ -1,9 +1,12 @@
-import type { Gold, Gems, XP, Rarity } from '@core/utils/economy';
+import type { Gold, Gems, XP } from '@core/utils/economy';
+import type { Rarity } from '@core/utils/game';
 
-export type Rarity = "Common" | "Rare" | "Epic" | "Legendary" | "Champion";
+export type { Rarity };
+
+export type CardName = string & { readonly __brand: "CardName" };
 
 export interface Card {
-  readonly name: string;
+  readonly name: CardName;
   readonly rarity: Rarity;
   readonly level: number;
   readonly count: number;
