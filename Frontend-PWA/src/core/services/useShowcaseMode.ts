@@ -40,6 +40,24 @@ export function useShowcaseMode() {
   const { isSyntheticMode, setSyntheticMode } = useSyntheticMode();
   const { isBlueprintMode, setBlueprintMode } = useBlueprintMode();
 
+  // --- INITIALIZATION ---
+  // Rationale: If showcase mode was initialized from URL/Storage, we must ensure 
+  // children modes are synchronized immediately before the first render.
+  if (isShowcaseMode.value) {
+    isSyntheticMode.value = true;
+    
+    // [FLEXIBILITY] Only force blueprint if not explicitly disabled.
+    // This allows branding pipelines (like portfolio-stitch.html) to request 
+    // Showcase orchestration without skeleton overlays.
+    if (localStorage.getItem("clash_manager_blueprint_mode") !== "false") {
+      isBlueprintMode.value = true;
+    }
+  } else if (localStorage.getItem("clash_manager_showcase_mode") === "false") {
+    // Only force off if explicitly saved as false, otherwise respect individual settings
+    isSyntheticMode.value = false;
+    isBlueprintMode.value = false;
+  }
+
   // [REACTIVE SYNC] CHILD -> MASTER
   // Intent: If a user manually toggles Synthetic or Blueprint modes elsewhere,
   // we must update the master "Showcase" status to reflect reality.

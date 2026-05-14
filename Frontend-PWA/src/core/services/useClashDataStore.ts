@@ -6,6 +6,8 @@ import { useWakeLock } from "./useWakeLock";
 import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
+import { useSyntheticMode } from "./useSyntheticMode";
+import { generateMockData } from "../utils/mockData";
 import { MemberSchema, WebAppDataSchema } from "../api/DataSchemas";
 import * as v from "valibot";
 import { defineStore } from "pinia";
@@ -65,6 +67,7 @@ export const useClashDataStore = defineStore("clashData", () => {
   const lastFetched = ref<number | null>(null);
 
   // --- DEPENDENCIES ---
+  const { isSyntheticMode } = useSyntheticMode();
   const { isOnline } = useConnectionStatus();
   const wakeLock = useWakeLock();
   const blueprint = useBlueprintMode();
@@ -155,6 +158,16 @@ export const useClashDataStore = defineStore("clashData", () => {
   async function loadLocal() {
     try {
       const cached = await loadCache();
+      
+      // [SYNTHETIC OVERRIDE] Target B [2]
+      // Rationale: If synthetic mode is active and cache is empty or invalid, 
+      // seed the store immediately to ensure zero-latency high-fidelity render.
+      if (!cached && isSyntheticMode.value) {
+        console.debug("[Store] Synthetic Mode active: Seeding initial mock data");
+        await commitSyncResult(generateMockData());
+        return;
+      }
+
       if (!cached) return;
 
       // [GUARD] VALIDATION BOUNDARY: Target B [1]
@@ -204,6 +217,16 @@ export const useClashDataStore = defineStore("clashData", () => {
    */
   async function refreshFromSupabase() {
     if (loading.value) return;
+
+    // [SYNTHETIC BYPASS] Target B [2]
+    // Rationale: In synthetic mode, we bypass remote network calls entirely 
+    // to provide deterministic, high-fidelity mock data.
+    if (isSyntheticMode.value) {
+      console.debug("[Store] Synthetic Mode active: Refreshing mock data");
+      await commitSyncResult(generateMockData());
+      return;
+    }
+
     if (!isOnline.value) return;
 
     loading.value = true;

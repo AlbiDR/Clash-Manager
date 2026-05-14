@@ -1,6 +1,9 @@
 name: Generate Branding Assets
 
 on:
+  push:
+    branches:
+      - Beta
   workflow_dispatch:
 
 permissions:
