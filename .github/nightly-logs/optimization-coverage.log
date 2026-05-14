@@ -147,3 +147,4 @@ Frontend-PWA/src/shared/ui/RoleBadge.vue
 Frontend-PWA/src/shared/ui/TenureBadge.vue
 Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
 Frontend-PWA/src/core/theme/icons.ts
+Frontend-PWA/src/features/laboratory/logic/Simulation.ts
