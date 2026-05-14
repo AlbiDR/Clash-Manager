@@ -24,6 +24,9 @@ let previousData: WebAppData | null = null;
  * bridging the gap between global data stores (@core) and UI-specific
  * behaviors.
  *
+ * Satisfies ADR Section III: Validation Boundaries by ensuring all state
+ * mutations go through the authoritative clashDataStore.
+ *
  * **Side Effects:**
  * - Dispatches network requests to Supabase via `dismissRecruits`/`undismissRecruits`.
  * - Updates the application badge via `useBadge`.
@@ -45,7 +48,13 @@ export function useHeadhunter() {
   const { error: toastError } = useToast();
 
   /**
-   * 🧹 LOCAL REMOVAL HELPER
+   * OPTIMISTIC DISMISSAL HANDLER
+   *
+   * @remarks
+   * Performs an immediate, optimistic removal of recruits from the local state.
+   * This ensures the UI remains responsive while the network request is in flight.
+   *
+   * @param ids - The array of recruit IDs to be removed from the local store.
    */
   function applyLocalDismissal(ids: string[]) {
     if (!clashData.value) return;
@@ -99,6 +108,16 @@ export function useHeadhunter() {
     }
   });
 
+  /**
+   * BADGE SYNCHRONIZATION
+   *
+   * @remarks
+   * Synchronizes the application-level badge count with the current recruit pool.
+   * Depending on user settings, it either counts all recruits or only those
+   * exceeding the "high potential" threshold.
+   *
+   * @param data - The current state of the WebAppData.
+   */
   function updateHeadhunterBadge(data: WebAppData | null) {
     if (data?.hh) {
       const threshold = modules.notificationThreshold || 75;
@@ -110,6 +129,17 @@ export function useHeadhunter() {
     }
   }
 
+  /**
+   * RECRUIT CHANGE PROCESSOR
+   *
+   * @remarks
+   * Evaluates the delta between data snapshots to identify newly discovered
+   * elite recruits. If settings permit, it triggers a system-level local
+   * notification to alert the user.
+   *
+   * @param oldData - The previous state of the WebAppData.
+   * @param newData - The incoming, authoritative state of the WebAppData.
+   */
   function processRecruitChanges(oldData: WebAppData | null, newData: WebAppData) {
     if (!newData?.hh || !modules.experimentalNotifications) return;
     const threshold = modules.notificationThreshold || 75;
@@ -149,6 +179,9 @@ export function useHeadhunter() {
    * @remarks
    * Implements a "Zero Latency" pattern for UI responsiveness. It optimistically
    * removes recruits from the local state before the network request completes.
+   *
+   * Satisfies ADR Section IV: Resilience by implementing transient error
+   * suppression and automated rollback for non-transient failures.
    *
    * @throws {Error} Re-throws non-transient errors after rolling back local state.
    */

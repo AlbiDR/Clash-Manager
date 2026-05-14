@@ -7,31 +7,17 @@ import type {
   PlayerData, 
   PlayerProfile, 
   SimulationState, 
-  Rarity,
   CardName
 } from './Types';
+import {
+  type Rarity,
+  CARD_LEVEL_CAP,
+  KING_XP_TABLE,
+  normalizeRarity
+} from '@core/utils/game';
 import * as v from "valibot";
 import { ProfileInputSchema } from "@core/api/DataSchemas";
 import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
-import { CARD_LEVEL_CAP, CARD_RARITY_START_LEVELS, KING_XP_TABLE } from './Registry';
-
-const normalizeLevel = (level: number, rarity: Rarity): number => {
-  // Rationale: Modern Clash Royale API returns absolute levels (1-15/16).
-  // Legacy relative offsets are no longer required and cause level inflation.
-  return Math.max(1, Math.min(level, CARD_LEVEL_CAP));
-};
-
-const normalizeRarity = (raw: string): Rarity => {
-  const lower = raw.toLowerCase().trim();
-  const map: Record<string, Rarity> = {
-    "common": "Common",
-    "rare": "Rare",
-    "epic": "Epic",
-    "legendary": "Legendary",
-    "champion": "Champion"
-  };
-  return map[lower] || "Common";
-};
 
 const ProfileHydrator = {
   /**
@@ -98,12 +84,17 @@ const ProfileHydrator = {
     const cards: Card[] = cardsData.map((cardSnapshot) => {
       // PATHOGEN: Anemic variable 'c' replaced with 'cardSnapshot'.
       const rarity = normalizeRarity(cardSnapshot.rarity || "Common");
-      const level = isInternal ? (cardSnapshot.level || 1) : normalizeLevel(cardSnapshot.level || 1, rarity);
+
+      // Rationale: Modern Clash Royale API returns absolute levels (1-15/16).
+      // We must only clamp to the level cap, without applying relative offsets
+      // which would cause level inflation.
+      const rawLevel = cardSnapshot.level || 1;
+      const level = Math.max(1, Math.min(rawLevel, CARD_LEVEL_CAP));
       
       return {
         name: (cardSnapshot.name || "Unknown Card") as CardName,
         rarity: rarity,
-        level: Math.max(1, Math.min(level, CARD_LEVEL_CAP)),
+        level: level,
         count: cardSnapshot.count || 0,
         // BUGFIX: Ensure boolean coercion is explicit to avoid 'undefined' leaks in domain models.
         isTowerTroop: Boolean(cardSnapshot.isTowerTroop) || ( !isInternal && "towerTroops" in data && Array.isArray(data.towerTroops) && data.towerTroops.some((towerTroopSnapshot) => towerTroopSnapshot.name === cardSnapshot.name) ) || false
