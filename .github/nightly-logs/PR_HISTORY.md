@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-14] PR #594: fix(harden): secure Royale discovery boundary in discovery.ts
+**Commit**: `94167482cf699c9ee88907cec2cae87935a635c9`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/594)
+
+### Description
+This PR hardens the Royale API discovery stage in the Backend Edge Functions. It introduces Valibot validation boundaries for external data ingress, eliminates the 'any' type plague, and improves code clarity by renaming anemic variables. It also documents the threat surface and state lifecycle as required by the Antigen role.
+
+---
+*PR created automatically by Jules for task [4576189948108507999](https://jules.google.com/task/4576189948108507999) started by @AlbiDR*
+
+---
+
 ## [2026-05-13] PR #593: Structural Alignment of Core List Services
 **Commit**: `4d65bda89cdfe60eb2aaf75d49b3a72be3eee5ed`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/593)
