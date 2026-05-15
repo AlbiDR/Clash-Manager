@@ -1,5 +1,5 @@
 import type { Directive } from "vue";
-import type { BenchmarkData } from "../composables/useBenchmarking";
+import type { BenchmarkData } from "../../core/services/useBenchmarking";
 
 // Singleton Tooltip State
 let tooltipEl: HTMLDivElement | null = null;
