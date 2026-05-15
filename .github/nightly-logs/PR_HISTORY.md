@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-15] PR #607: refactor: resolve stale layering violation in vTooltip.ts
+**Commit**: `061e293115c5bb64b8183b9f217236be44308496`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/607)
+
+### Description
+This PR resolves a stale layering violation in `Frontend-PWA/src/shared/directives/vTooltip.ts`. The `BenchmarkData` type was incorrectly being imported from `../composables/useBenchmarking`, which does not exist. The authoritative location for benchmarking logic and types is `@core/services/useBenchmarking`.
+
+This fix aligns the directive with the CleanStack Architecture ADR, which mandates that Layer 2 (@shared) can import from Layer 1 (@core), but must point to the correct authoritative source.
+
+Impact:
+- [Coupling]: Corrected Layer 2 -> Layer 1 alignment.
+- [Integrity]: Fixed a broken import that would prevent clean builds or type checking.
+
+Verified via full Vitest suite (952 passed) and dependency-cruiser scan.
+
+---
+*PR created automatically by Jules for task [11895952250887923234](https://jules.google.com/task/11895952250887923234) started by @AlbiDR*
+
+---
+
 ## [2026-05-15] PR #606: chore(deps): bump tsx from ^4.21.0 to ^4.22.0
 **Commit**: `72c7a971a6fe1908467a74a4d0ca8771664bfcf0`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/606)
