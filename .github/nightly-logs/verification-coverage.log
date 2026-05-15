@@ -77,3 +77,4 @@ Frontend-PWA/src/features/laboratory/logic/Registry.ts
 Frontend-PWA/src/core/services/useAppSettings.ts
 Frontend-PWA/src/core/services/useListFilter.ts
 Frontend-PWA/src/core/services/useConnectivityManager.ts
+Frontend-PWA/src/core/utils/game.ts
