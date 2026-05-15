@@ -44,20 +44,6 @@ export {
 // --- Logic Calibration (Engine 2.3) ---
 
 /**
- * The weight factor applied to future steps during Recursive Chain Lookahead.
- * Higher values make the engine more "farsighted" but increase sensitivity to
- * deep-chain local optima.
- */
-export const LOOKAHEAD_WEIGHT = 0.4;
-
-/**
- * The threshold at which the Recursive Chain Lookahead stops.
- * Rationale: Principled convergence ensures the engine doesn't waste cycles on
- * statistically insignificant future weights.
- */
-export const LOOKAHEAD_PRECISION = 0.01;
-
-/**
  * Specific efficiency overrides for individual cards.
  * Rationale: Allows manual calibration for cards that provide abnormal value
  * relative to their level (e.g., Champions or recently buffed cards).
