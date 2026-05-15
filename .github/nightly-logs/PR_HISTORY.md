@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-15] PR #606: chore(deps): bump tsx from ^4.21.0 to ^4.22.0
+**Commit**: `72c7a971a6fe1908467a74a4d0ca8771664bfcf0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/606)
+
+### Description
+This PR performs a Tier 1 (Safe Maintenance) minor bump of the `tsx` dependency from `^4.21.0` to `^4.22.0`. The change includes a synchronized `pnpm-lock.yaml` and an update to the `dependency-audit-coverage.log` to maintain the Nightly pipeline's clinical audit trail. All tests passed, preserving the 952/953 success baseline.
+
+---
+*PR created automatically by Jules for task [8644111670113270936](https://jules.google.com/task/8644111670113270936) started by @AlbiDR*
+
+---
+
 ## [2026-05-15] PR #605: docs(tsdoc): document SupabaseClient interface contract
 **Commit**: `4d2efa9d4705b26ec265f6555b8282e4aea8ba10`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/605)
