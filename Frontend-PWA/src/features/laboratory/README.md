@@ -23,7 +23,6 @@ The Laboratory implements a strict validation boundary. Raw data from the Supaba
 ### Progression Engine (Simulation.ts)
 A non-blocking, generator-based engine that calculates the most efficient upgrade path.
 - **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
-- **Recursive Lookahead**: Evaluates the "character arc" of a card (determined by `LOOKAHEAD_PRECISION`) to avoid greedy traps and local optima.
 - **Priority Queue**: Uses a Binary Heap to always select the highest-efficiency candidate.
 
 ### Trajectory Rendering (TrajectoryList.vue)
