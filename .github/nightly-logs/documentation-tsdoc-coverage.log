@@ -55,3 +55,4 @@ Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
 Backend/supabase/functions/sync-player-cards/index.ts
 Backend/supabase/functions/sync-player-cards/client.ts
 Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts
+Frontend-PWA/src/core/api/SupabaseClient.ts

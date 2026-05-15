@@ -16,9 +16,28 @@ import { idb } from "../services/StorageService";
 import { ProfileInputSchema, SbRosterRowSchema, SbHeadhunterRowSchema } from "./DataSchemas";
 import * as v from "valibot";
 
+/**
+ * SUPABASE CLIENT (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: Authoritative transport layer for the Supabase binary stack.
+ * Features: Validation Boundaries, Error Normalization, Cache Brokering.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * This module serves as the primary gateway for all remote data operations.
+ * It enforces strict validation boundaries (Valibot) at the entry point to
+ * ensure Layer 1 domain integrity.
+ *
+ * Architectural Context:
+ * - Layer: Layer 1 (@core)
+ */
+
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V8";
 
+/**
+ * Specialized error class for network-level failures.
+ */
 export class NetworkError extends Error {
   constructor(message: string) {
     super(message);
@@ -31,20 +50,38 @@ export class NetworkError extends Error {
 const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
 const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
+/**
+ * Internal factory to create a scoped Supabase client.
+ * Configured to target the 'features' schema by default.
+ */
 const createSupabaseClient = () => {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
         db: { schema: 'features' }
     });
 };
 
+/**
+ * Checks if the Supabase environment variables are present.
+ * @returns True if both URL and Key are defined.
+ */
 export function isConfigured(): boolean {
   return Boolean(getSupabaseUrl() && getSupabaseKey());
 }
 
+/**
+ * Retrieves the current Supabase endpoint URL.
+ * @returns The URL string or a placeholder if unconfigured.
+ */
 export function getApiUrl(): string {
   return getSupabaseUrl() || "(not configured)";
 }
 
+/**
+ * Performs a connectivity handshake with the Supabase backend.
+ *
+ * @param options - Optional configuration including AbortSignal.
+ * @returns A PingResponse indicating success or error.
+ */
 export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
   try {
     const supabase = createSupabaseClient();
@@ -56,17 +93,31 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
   }
 }
 
+/**
+ * Loads the main application dataset from persistent local storage.
+ * @returns The cached WebAppData or null if empty.
+ */
 export async function loadCache(): Promise<WebAppData | null> {
   return idb.get<WebAppData>(CACHE_KEY_MAIN);
 }
 
+/**
+ * Persists the main application dataset to local storage.
+ * @param data - The WebAppData to cache.
+ */
 export async function saveCache(data: WebAppData): Promise<void> {
   return idb.set(CACHE_KEY_MAIN, data);
 }
 
 /**
  * Transforms a Supabase roster row into a LeaderboardMember.
- * [THREAT:] Processes validated data from roster_view to ensure L1 Core types.
+ *
+ * @remarks
+ * [GUARD] DATA NORMALIZATION: Resolves schema-specific projections to
+ * unified L1 Core types.
+ *
+ * @param rosterRow - Validated row from roster_view.
+ * @returns A domain-compliant LeaderboardMember object.
  */
 function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema>): LeaderboardMember {
   return {
@@ -90,7 +141,13 @@ function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema>): Lea
 
 /**
  * Transforms a Supabase headhunter row into a Recruit.
- * [THREAT:] Processes validated data from headhunter_view to ensure L1 Core types.
+ *
+ * @remarks
+ * [GUARD] DATA NORMALIZATION: Resolves schema-specific projections to
+ * unified L1 Core types.
+ *
+ * @param headhunterRow - Validated row from headhunter_view.
+ * @returns A domain-compliant Recruit object.
  */
 function mapSbHeadhunterRow(headhunterRow: v.InferOutput<typeof SbHeadhunterRowSchema>): Recruit {
   return {
@@ -113,6 +170,22 @@ function mapSbHeadhunterRow(headhunterRow: v.InferOutput<typeof SbHeadhunterRowS
   };
 }
 
+/**
+ * Fetches high-fidelity datasets from authoritative Supabase views.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * This function bypasses legacy RPCs to query views directly, enforcing
+ * Valibot schema validation on all inbound data.
+ *
+ * @param options - Fetch configuration including AbortSignal.
+ * @returns A Promise resolving to a fully populated WebAppData object.
+ * @throws Error if any fetch fails or data validation fails.
+ *
+ * @sideeffects
+ * - WRITES to persistent cache via `saveCache`.
+ * - MUTATES `lastSyncStatus`.
+ */
 export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
@@ -164,6 +237,18 @@ export async function fetchRemote(options?: {
   return webAppData;
 }
 
+/**
+ * Synchronizes and retrieves a specific player profile via the User Proxy.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Triggers the `sync-player-cards` Edge Function to perform normalization
+ * and persistence on the backend before returning a validated profile.
+ *
+ * @param tag - The unique player tag.
+ * @returns A Promise resolving to a validated ProfileInput dataset.
+ * @throws Error if the Edge Function call fails.
+ */
 export async function getPlayerProfile(
   tag: string,
 ): Promise<v.InferOutput<typeof ProfileInputSchema>> {
@@ -214,6 +299,19 @@ export async function getPlayerProfile(
   });
 }
 
+/**
+ * Dismisses one or more recruits from the recruitment pool.
+ *
+ * @remarks
+ * Implements a "Deferred Operation" pattern: if the network is unavailable,
+ * the request is enqueued for background synchronization.
+ *
+ * @param items - Array of dismissal requests containing player IDs.
+ * @returns A Promise resolving to an ApiResponse.
+ *
+ * @sideeffects
+ * - ENQUEUES to `offline_queue` in IndexedDB if offline.
+ */
 export async function dismissRecruits(
   items: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
@@ -242,6 +340,19 @@ export async function dismissRecruits(
   return { success: true, data: data as DismissResponse };
 }
 
+/**
+ * Restores one or more dismissed recruits to the active pool.
+ *
+ * @remarks
+ * Implements a "Deferred Operation" pattern: if the network is unavailable,
+ * the request is enqueued for background synchronization.
+ *
+ * @param ids - Array of player tags to restore.
+ * @returns A Promise resolving to an ApiResponse.
+ *
+ * @sideeffects
+ * - ENQUEUES to `offline_queue` in IndexedDB if offline.
+ */
 export async function undismissRecruits(
   ids: string[],
 ): Promise<ApiResponse<DismissResponse>> {
@@ -265,6 +376,10 @@ export async function undismissRecruits(
   return { success: true, data: data as DismissResponse };
 }
 
+/**
+ * Manually triggers the backend data ingestion pipeline.
+ * @returns A Promise resolving to an ApiResponse.
+ */
 export async function triggerBackendUpdate(
   target?: string,
 ): Promise<ApiResponse<{ success: boolean; message: string }>> {
@@ -275,6 +390,10 @@ export async function triggerBackendUpdate(
   return { success: true, data: data as { success: boolean; message: string } };
 }
 
+/**
+ * [DIAGNOSTIC] Performs a direct query of the headhunter pool.
+ * @returns A Promise resolving to an array of Recruits or null on failure.
+ */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase.from('headhunter_view').select('*').limit(20);
@@ -282,6 +401,11 @@ export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   return data.map(mapSbHeadhunterRow);
 }
 
+/**
+ * Registers a PushSubscription for server-side notifications.
+ * @param subscription - The browser's PushSubscription object.
+ * @returns A Promise resolving to true if successful.
+ */
 export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
   const supabase = createSupabaseClient();
   const { error } = await supabase.schema('drivers').from('push_subscriptions').insert({
