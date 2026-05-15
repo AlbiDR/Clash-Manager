@@ -26,10 +26,11 @@ Standardized containers that manage view-level states like loading, errors, and 
 
 ### UI Primitives
 Atomic elements that form the basis of the design system.
+- **BaseBadge.vue**: Low-level atomic component for all badge-like UI elements. Standardizes the 'badge' class styling and provides a consistent interface for metadata display.
 - **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling for metrics based on performance scores.
 - **BaseCardSkeleton.vue**: Placeholder variant of the card for loading states.
 - **Icon.vue**: The authoritative SVG renderer. Centralizes vector path definitions in `@core/theme/icons` and ensures CSS variable consistency with `non-scaling-stroke` vector effects.
-- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `hubInfo` metadata, including backend source (Supabase, Worker, GAS) and data age.
+- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `hubInfo` metadata, including backend source (Supabase) and data age.
 - **MomentumPill.vue**: Specialized indicator for performance trends and momentum metrics.
 - **StatisticItem.vue**: Labeled data point with standardized typography and spacing.
 - **StatsGrid.vue**: Responsive layout component for displaying player statistics in 2 or 3 columns.
@@ -68,7 +69,7 @@ Components responsible for system stability and user notifications.
 - `emptyIcon`: The name of the icon to display (must correspond to a valid key in `icons.ts`).
 
 ### Provenance Orchestration (hubInfo)
-The Molecule Layer centralizes backend provenance reporting. `ConsoleLayout.vue` accepts a `hubInfo` prop (Standardized in Layer 1 `@core/types`) and propagates it to both the `ConsoleHeader` (via `StatusPill`) and `AppFooter`. This ensures that users always have visibility into the data source (Supabase, Worker, or GAS) and its authoritative age across all feature consoles.
+The Molecule Layer centralizes backend provenance reporting. `ConsoleLayout.vue` accepts a `hubInfo` prop (Standardized in Layer 1 `@core/types`) and propagates it to both the `ConsoleHeader` (via `StatusPill`) and `AppFooter`. This ensures that users always have visibility into the data source (Supabase) and its authoritative age across all feature consoles.
 
 ## Integration Standards
 Components in this layer must adhere to the **Visual Purity** protocol:
