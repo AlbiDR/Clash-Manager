@@ -32,7 +32,11 @@ export function generateMockData(options?: {
 }): WebAppData {
   // [UI] BRANDING RANDOMIZATION: Generate a single random count (1-50) if not specified
   // to ensure screenshots show varied clan sizes but remain symmetrically aligned between views.
-  const randomCount = Math.floor(Math.random() * 50) + 1;
+  const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const hashParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.hash.split("?")[1] || "" : '');
+  const countParam = urlParams.get('count') || hashParams.get('count');
+  const randomCount = countParam ? parseInt(countParam, 10) : (Math.floor(Math.random() * 50) + 1);
+  
   const memberCount = options?.memberCount ?? randomCount;
   const recruitCount = options?.recruitCount ?? randomCount;
   const lb: LeaderboardMember[] = [];
