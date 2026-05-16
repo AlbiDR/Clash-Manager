@@ -14,6 +14,8 @@ import {
   RecoverySettings,
   SkeletonSettingsCard
 } from "../components";
+import { EventManagement } from "../../voyage/components";
+
 
 const {
   modules,
@@ -31,6 +33,7 @@ const { isShowcaseMode } = useShowcaseMode();
     v-on="layoutEvents"
   >
     <div class="settings-content">
+      <EventManagement :initially-expanded="isShowcaseMode" />
       <AppearanceSettings :initially-expanded="isShowcaseMode" />
       <NotificationSettings :initially-expanded="isShowcaseMode" />
       <FeatureSettings :initially-expanded="isShowcaseMode" />

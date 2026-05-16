@@ -199,3 +199,66 @@ EXCEPTION WHEN OTHERS THEN
     RAISE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 5. RPC: initialize_voyage
+-- Enables the PWA to trigger a new event.
+CREATE OR REPLACE FUNCTION drivers.initialize_voyage(
+    target_crowns INTEGER,
+    start_at TIMESTAMPTZ,
+    end_at TIMESTAMPTZ
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_id BIGINT;
+BEGIN
+    -- 1. Finalize any existing ACTIVE voyage
+    UPDATE drivers.clan_voyage 
+    SET status = 'COMPLETED', updated_at = now()
+    WHERE status = 'ACTIVE';
+
+    -- 2. Insert new voyage
+    INSERT INTO drivers.clan_voyage (target_crowns, start_at, end_at, status)
+    VALUES (target_crowns, start_at, end_at, 'ACTIVE')
+    RETURNING id INTO v_id;
+
+    RETURN jsonb_build_object('success', true, 'voyage_id', v_id);
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('success', false, 'error', SQLERRM);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 6. VIEWS: voyage_summary & voyage_contributions
+-- SSOT for the PWA dashboard.
+CREATE OR REPLACE VIEW features.voyage_contributions AS
+SELECT 
+    c.player_tag,
+    c.crowns,
+    s.performance_score
+FROM drivers.clan_voyage_contributions c
+JOIN features.scoring_view s ON s.player_tag = c.player_tag
+WHERE c.voyage_id = (SELECT id FROM drivers.clan_voyage WHERE status = 'ACTIVE' LIMIT 1);
+
+CREATE OR REPLACE VIEW features.voyage_summary AS
+WITH active_voyage AS (
+    SELECT * FROM drivers.clan_voyage WHERE status = 'ACTIVE' LIMIT 1
+), total_stats AS (
+    SELECT 
+        v.id AS voyage_id,
+        COALESCE(SUM(c.crowns), 0) AS total_crowns
+    FROM active_voyage v
+    LEFT JOIN drivers.clan_voyage_contributions c ON c.voyage_id = v.id
+    GROUP BY v.id
+)
+SELECT 
+    jsonb_build_object(
+        'id', v.id,
+        'status', v.status,
+        'target_crowns', v.target_crowns,
+        'start_at', v.start_at,
+        'end_at', v.end_at,
+        'is_victory', (ts.total_crowns >= v.target_crowns)
+    ) AS event,
+    ts.total_crowns,
+    (ts.total_crowns::numeric / v.target_crowns::numeric) AS progress_ratio
+FROM active_voyage v
+JOIN total_stats ts ON ts.voyage_id = v.id;
