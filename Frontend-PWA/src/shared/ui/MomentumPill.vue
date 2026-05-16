@@ -34,7 +34,7 @@ const benchmarkTooltipContent = computed(() => {
 <template>
   <div
     v-if="trendInfo"
-    class="momentum-pill hit-target"
+    class="momentum-pill"
     :class="trendInfo.dir"
     v-tooltip="benchmarkTooltipContent"
   >
@@ -48,10 +48,6 @@ const benchmarkTooltipContent = computed(() => {
 
 <style scoped>
 .momentum-pill {
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
   height: 18px;
   padding: 0 6px;
   background: var(--sys-color-surface-container-highest);
@@ -59,12 +55,13 @@ const benchmarkTooltipContent = computed(() => {
   display: flex;
   align-items: center;
   gap: 2px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
-  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  z-index: 2;
   border: 1px solid var(--sys-color-outline-variant);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
+  flex-shrink: 0;
 }
 
 :root.dark .momentum-pill {

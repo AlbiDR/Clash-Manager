@@ -246,7 +246,10 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   const statsBadge = computed(() => {
     let count = 0;
     if (isShowcase.value) {
-      count = 1;
+      // [UI] BRANDING RANDOMIZATION: Ensure screenshots show varied clan sizes (1-50)
+      // to avoid the "lonely clan" look in branding assets.
+      const randomSeed = Math.floor(Math.random() * 50) + 1;
+      count = randomSeed;
     } else if (isBlueprintMode.value) {
       // PERFORMANCE: Avoid calling generateMockData() just to get length.
       // Use static counts that match mockData defaults.

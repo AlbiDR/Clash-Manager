@@ -51,7 +51,8 @@ const benchmarkTooltipContent = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
+  justify-content: center;
+  gap: 2px;
 }
 
 .stat-score {

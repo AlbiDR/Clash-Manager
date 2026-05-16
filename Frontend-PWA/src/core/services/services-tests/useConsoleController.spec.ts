@@ -442,12 +442,21 @@ describe("useConsoleController", () => {
       expect(statsBadge.value).toEqual({ label: "Tests", value: "2" });
     });
 
-    it("returns count of 1 in Showcase mode", () => {
+    it("returns a randomized count (1-50) in Showcase mode", () => {
       sharedState.mockShowcaseMode.value = true;
       const options = createOptions();
-      options.data.value = [{ id: "1" }, { id: "2" }];
+      options.statsLabel = "Test";
       const { statsBadge } = useConsoleController(options);
-      expect(statsBadge.value).toEqual({ label: "Test", value: "1" });
+      
+      const val = parseInt(statsBadge.value.value);
+      expect(val).toBeGreaterThanOrEqual(1);
+      expect(val).toBeLessThanOrEqual(50);
+      
+      if (val === 1) {
+        expect(statsBadge.value.label).toBe("Test");
+      } else {
+        expect(statsBadge.value.label).toBe("Tests");
+      }
     });
 
     it("returns mock counts in Blueprint mode", () => {
