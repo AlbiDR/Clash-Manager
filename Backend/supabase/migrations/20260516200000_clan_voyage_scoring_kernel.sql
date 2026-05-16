@@ -210,15 +210,23 @@ CREATE OR REPLACE FUNCTION drivers.initialize_voyage(
 RETURNS JSONB AS $$
 DECLARE
     v_id BIGINT;
+    v_clan_tag TEXT;
 BEGIN
+    -- Fetch the authoritative clan tag
+    SELECT clan_tag INTO v_clan_tag FROM drivers.clans LIMIT 1;
+
+    IF v_clan_tag IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'error', 'No clan found in drivers.clans');
+    END IF;
+
     -- 1. Finalize any existing ACTIVE voyage
     UPDATE drivers.clan_voyage 
     SET status = 'COMPLETED', updated_at = now()
     WHERE status = 'ACTIVE';
 
-    -- 2. Insert new voyage
-    INSERT INTO drivers.clan_voyage (target_crowns, start_at, end_at, status)
-    VALUES (target_crowns, start_at, end_at, 'ACTIVE')
+    -- 2. Insert new voyage with the fetched clan_tag
+    INSERT INTO drivers.clan_voyage (clan_tag, target_crowns, start_at, end_at, status)
+    VALUES (v_clan_tag, target_crowns, start_at, end_at, 'ACTIVE')
     RETURNING id INTO v_id;
 
     RETURN jsonb_build_object('success', true, 'voyage_id', v_id);
