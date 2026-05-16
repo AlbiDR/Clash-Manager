@@ -1,6 +1,36 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-16] PR #614: Standardize Domain Badges in @shared/ui
+**Commit**: `a78ffd7c9e13ce8d050922439ed1633c862ff0c2`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/614)
+
+### Description
+### Debt Resolved:
+UI logic and styling for "Longevity" and "Player Tag" badges were trapped locally in the Headhunter feature's `RecruitCard.vue`, violating the "Component Generalization" rule and preventing reuse.
+
+### Refactor Applied:
+- Created `TagBadge.vue` in `@shared/ui` to encapsulate player tag truncation and '#' prefixing.
+- Created `LongevityBadge.vue` in `@shared/ui` to encapsulate discovery duration display and layout constraints (preserving existing `!important` flex behavior).
+- Updated the `@shared` barrel file to export these new primitives.
+- Refactored `RecruitCard.vue` to replace its local `BaseBadge` implementation with the new components.
+- Excised redundant local CSS from `RecruitCard.vue`.
+
+### Impact:
+- **[Coupling]:** Reduced Headhunter feature coupling to low-level presentation logic.
+- **[Layering]:** Corrected Layer 3 -> Layer 2 alignment for domain-agnostic UI elements.
+- **[Standardization]:** Enabled consistent player identification and activity tracking across all console-based list views (e.g., Roster and Headhunter).
+
+### Verification:
+- **Tests:** `pnpm test` passed with 961 passing tests.
+- **Architecture:** `npx depcruise` confirmed no layer violations in `@features/headhunter` or `@shared`.
+- **Review:** Code review rated #Correct#.
+
+---
+*PR created automatically by Jules for task [4978175020104148271](https://jules.google.com/task/4978175020104148271) started by @AlbiDR*
+
+---
+
 ## [2026-05-16] PR #613: chore(deps): bump knip and update major version watchlist
 **Commit**: `7fa87f2132004cfdf4fa31ab062875bab583f952`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/613)
