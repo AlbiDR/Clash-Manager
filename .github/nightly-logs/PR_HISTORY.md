@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-16] PR #612: Version Consistency Audit - No Drift Found
+**Commit**: `6106bfffab47e874215aad98f9b1244c29991356`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/612)
+
+### Description
+Full version consistency audit completed. The monorepo is perfectly synchronized at ground truth v13.3.0 and adheres to the PNPM catalog protocol. No drift detected. Verified via pnpm test (961 pass, 1 skipped). Working tree is clean.
+
+---
+*PR created automatically by Jules for task [2996971128091426122](https://jules.google.com/task/2996971128091426122) started by @AlbiDR*
+
+---
+
 ## [2026-05-16] PR #611: docs(tsdoc): document executePipeline orchestrator
 **Commit**: `4e7fc38788fc469a856ae5072ccaf0929b49b950`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/611)
