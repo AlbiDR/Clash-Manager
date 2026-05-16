@@ -23,6 +23,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+workflow_logs.txt
 *.log
 !.github/nightly-logs/*.log
 
