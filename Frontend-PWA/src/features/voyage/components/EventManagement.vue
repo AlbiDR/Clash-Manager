@@ -31,8 +31,36 @@ const props = defineProps<{
 
 const store = useVoyageStore();
 
+// --- LIVE COUNTDOWN TIMER ---
+const timeRemaining = ref("");
+
+function formatCountdown(end: Date): string {
+  const diff = end.getTime() - Date.now();
+  if (diff <= 0) return "Ended";
+  const d = Math.floor(diff / 86_400_000);
+  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  const s = Math.floor((diff % 60_000) / 1_000);
+  if (d > 0) return `${d}d ${String(h).padStart(2, "0")}h`;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+let timer: ReturnType<typeof setInterval> | null = null;
+
 onMounted(() => {
   store.refresh();
+  timer = setInterval(() => {
+    if (store.endsAt) {
+      timeRemaining.value = formatCountdown(store.endsAt);
+    } else {
+      timeRemaining.value = "";
+    }
+  }, 1000);
+  if (store.endsAt) timeRemaining.value = formatCountdown(store.endsAt);
+});
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer);
 });
 
 // --- FORM STATE ---
@@ -147,6 +175,12 @@ async function handleActivate() {
         <span class="summary-label">Status</span>
         <span class="summary-value" :class="{ 'victory': store.isVictory }">
           {{ store.isVictory ? "Goal Achieved" : "Underway" }}
+        </span>
+      </div>
+      <div class="summary-row" v-if="timeRemaining">
+        <span class="summary-label">Ends In</span>
+        <span class="summary-value timer" :class="{ 'ended': timeRemaining === 'Ended' }">
+          {{ timeRemaining }}
         </span>
       </div>
       <div class="section-divider" />
@@ -298,6 +332,8 @@ async function handleActivate() {
 
 .summary-value.primary { color: var(--sys-color-primary); }
 .summary-value.victory { color: #fbbf24; }
+.summary-value.timer { color: var(--sys-color-outline); }
+.summary-value.timer.ended { color: var(--sys-color-error); }
 
 .section-divider {
   height: 1px;
