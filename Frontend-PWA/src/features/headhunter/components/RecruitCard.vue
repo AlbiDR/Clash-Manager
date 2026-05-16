@@ -28,7 +28,8 @@ import {
   StatsGrid,
   StatisticItem,
   TenureBadge,
-  BaseBadge
+  TagBadge,
+  LongevityBadge
 } from "@shared";
 import { computed } from "vue";
 import type { Recruit, ConsoleCardMetadata } from "@core/types";
@@ -69,8 +70,8 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
       <TenureBadge v-if="props.recruit.tenureLabel" :days="props.recruit.tenureDays" />
-      <BaseBadge class="time longevity-badge">{{ timeAgo }}</BaseBadge>
-      <BaseBadge class="tag">#{{ props.recruit.id.substring(0, 5) }}</BaseBadge>
+      <LongevityBadge :time="timeAgo" />
+      <TagBadge :id="props.recruit.id" />
     </template>
 
     <!-- [SLOT] IDENTITY NAME: Primary player identification and trophy count. -->
@@ -134,14 +135,6 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
 
 <style scoped>
 /* Content specific styles only */
-
-.longevity-badge {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  min-height: 18px;
-  flex-shrink: 0;
-}
 
 .card-actions-margin {
   margin-top: 16px;
