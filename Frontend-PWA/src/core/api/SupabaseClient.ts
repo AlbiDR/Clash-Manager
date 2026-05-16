@@ -54,7 +54,7 @@ const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || ""
  * Internal factory to create a scoped Supabase client.
  * Configured to target the 'features' schema by default.
  */
-const createSupabaseClient = () => {
+export const createSupabaseClient = () => {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
         db: { schema: 'features' }
     });
