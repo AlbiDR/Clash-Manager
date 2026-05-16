@@ -124,15 +124,15 @@ export const useVoyageStore = defineStore("voyage", () => {
         apiFetchVoyageContributions()
       ]);
 
-      if (summaryData) {
+      if (summaryData && summaryData.event) {
         summary.value = {
           event: {
-            id: summaryData.id,
-            clan_tag: summaryData.clan_tag,
-            status: summaryData.status,
-            target_crowns: summaryData.target_crowns,
-            start_at: summaryData.start_at,
-            end_at: summaryData.end_at,
+            id: summaryData.event.id,
+            clan_tag: summaryData.event.clan_tag,
+            status: summaryData.event.status,
+            target_crowns: summaryData.event.target_crowns,
+            start_at: summaryData.event.start_at,
+            end_at: summaryData.event.end_at,
             activated_by: null, // Optional for now
             is_victory: summaryData.progress_ratio >= 1.0,
           },
