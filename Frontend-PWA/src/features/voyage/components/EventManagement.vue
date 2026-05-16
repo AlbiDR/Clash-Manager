@@ -98,17 +98,14 @@ const validationHint = computed(() => {
 
 // --- ACTIONS ---
 async function handleActivate() {
-  console.log('[EventManagement] handleActivate triggered');
-  console.log('[EventManagement] Form values:', {
-    target: targetCrowns.value,
-    safeTarget: safeTargetCrowns.value,
-    startsIn: startsIn.value,
-    endsIn: endsIn.value,
-    valid: isFormValid.value
-  });
-
+  console.log('[EventManagement] handleActivate clicked');
+  console.log('[EventManagement] Form Valid:', isFormValid.value);
+  
+  if (store.loading) return;
+  
   if (!isFormValid.value) {
     console.warn('[EventManagement] Form is invalid, skipping activation');
+    alert(`Form Invalid:\nTarget: ${safeTargetCrowns.value}\nStart: ${totalStartSeconds.value}\nEnd: ${totalEndSeconds.value}`);
     return;
   }
   
@@ -258,9 +255,9 @@ async function handleActivate() {
       <button
         class="activate-btn"
         :class="{ disabled: !isFormValid, loading: store.loading }"
-        :disabled="!isFormValid || store.loading"
         @click="handleActivate"
       >
+        <div class="btn-glow" />
         <span v-if="store.loading">Activating...</span>
         <span v-else-if="store.isActive">Update Event</span>
         <span v-else>Activate Mirror</span>
