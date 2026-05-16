@@ -4,6 +4,20 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
+import * as v from "npm:valibot";
+import { RoyalePlayerSchema } from "../../_shared/schemas.ts";
+
+interface ValidRecruit {
+    player_tag: string;
+    player_name: string;
+    trophies: number;
+    donations: number;
+    cards: number;
+    war_wins: number;
+    raw_potential_score: number;
+    source: string;
+    status: string;
+}
 
 /**
  * Stage: Profiling & Ingestion
@@ -14,7 +28,7 @@ export async function runProfiler(
     exclusionSet: Set<string>,
     requiredTrophies: number,
     stats: ScannerStats,
-    logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ) {
     const tagsToProfile = [...candidates.keys()].slice(0, 500);
     if (tagsToProfile.length === 0) {
@@ -25,7 +39,7 @@ export async function runProfiler(
     logAudit('PROFILING', 'triggered', { count: tagsToProfile.length });
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
-        const validRecruits: any[] = [];
+        const validRecruits: ValidRecruit[] = [];
         let validCount = 0;
         let newCount = 0;
         let refreshCount = 0;
@@ -34,60 +48,72 @@ export async function runProfiler(
         const profileTasks = tagsToProfile.map(tag => async () => {
             logAudit('PROFILING', 'called', { tag });
             try {
-                const res = await fetchWithRotation(`/players/${encodeURIComponent(tag)}`);
-                logAudit('PROFILING', 'run', { tag, status: res.status });
-                if (res.ok) {
-                    const p = await res.json();
-                    const isValid = !!p && typeof p === 'object' && !!p.tag;
+                const profileResponse = await fetchWithRotation(`/players/${encodeURIComponent(tag)}`);
+                logAudit('PROFILING', 'run', { tag, status: profileResponse.status });
+                if (profileResponse.ok) {
+                    const rawProfilePayload: unknown = await profileResponse.json();
+
+                    // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
+                    // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes.
+                    const validation = v.safeParse(RoyalePlayerSchema, rawProfilePayload);
+
                     logAudit('PROFILING', 'resulted_data', { tag });
                     logAudit('PROFILING', 'integrity_checked', { 
                         tag, 
-                        passed: isValid, 
-                        details: isValid ? 'Data shape validated (Player Object)' : 'Malformed profile data' 
+                        passed: validation.success,
+                        details: validation.success ? 'Data shape validated via Valibot' : 'Malformed profile data'
                     });
                     
-                    if (isValid && !p.clan?.tag && !exclusionSet.has(p.tag) && (p.trophies || 0) >= requiredTrophies) {
-                        const trophies = p.trophies || 0;
-                        const donations = p.totalDonations || 0;
-                        const war = p.warDayWins || 0;
-                        const cards = p.challengeCardsWon || 0;
-                        
-                        // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
-                        const rawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
+                    if (validation.success) {
+                        const playerProfile = validation.output;
 
-                        validRecruits.push({
-                            player_tag: p.tag,
-                            player_name: p.name,
-                            trophies,
-                            donations,
-                            cards,
-                            war_wins: war,
-                            raw_potential_score: rawScore,
-                            source: candidates.get(tag) || 'UNKNOWN',
-                            status: 'ACTIVE'
-                        });
-                        validCount++;
+                        if (!playerProfile.clan?.tag && !exclusionSet.has(playerProfile.tag) && (playerProfile.trophies || 0) >= requiredTrophies) {
+                            const trophies = playerProfile.trophies || 0;
+                            const donations = playerProfile.totalDonations || 0;
+                            const war = playerProfile.warDayWins || 0;
+                            const cards = playerProfile.challengeCardsWon || 0;
+
+                            // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
+                            // [DECISION LOG] This formula is the authoritative scoring engine for recruitment potential.
+                            const potentialRawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
+
+                            validRecruits.push({
+                                player_tag: playerProfile.tag,
+                                player_name: playerProfile.name,
+                                trophies,
+                                donations,
+                                cards,
+                                war_wins: war,
+                                raw_potential_score: potentialRawScore,
+                                source: candidates.get(tag) || 'UNKNOWN',
+                                status: 'ACTIVE'
+                            });
+                            validCount++;
+                        } else {
+                            invalidCount++;
+                        }
                     } else {
                         invalidCount++;
                     }
                 } else {
-                    if (res.status === 404) {
+                    if (profileResponse.status === 404) {
                         await supabase.rpc('report_dead_recruit', { p_player_tag: tag });
                         logAudit('PROFILING', 'called', { tag, action: 'blacklisted_ghost' });
                         console.log(`[PROFILING] Player ${tag} is a ghost (404). Blacklisted.`);
                     } else {
-                        console.error(`[PROFILING] Player ${tag} fetch failed with HTTP ${res.status}`);
+                        console.error(`[PROFILING] Player ${tag} fetch failed with HTTP ${profileResponse.status}`);
                     }
-                    stats.errors.push(`Profile(${tag}): ${res.status}`);
-                    logAudit('PROFILING', 'integrity_checked', { passed: false, details: `HTTP_${res.status}` });
-                    logAudit('PROFILING', 'error', { tag, status: res.status });
+                    stats.errors.push(`Profile(${tag}): ${profileResponse.status}`);
+                    logAudit('PROFILING', 'integrity_checked', { passed: false, details: `HTTP_${profileResponse.status}` });
+                    logAudit('PROFILING', 'error', { tag, status: profileResponse.status });
                     invalidCount++;
                 }
-            } catch (e: any) { 
-                stats.errors.push(`Profile(${tag}): ${e.message}`); 
-                logAudit('PROFILING', 'integrity_checked', { passed: false, details: e.message });
-                logAudit('PROFILING', 'error', { tag, message: e.message });
-                console.error(`[PROFILING] Exception while profiling ${tag}: ${e.message}`);
+            } catch (profilingError: unknown) {
+                const errorMessage = profilingError instanceof Error ? profilingError.message : String(profilingError);
+                stats.errors.push(`Profile(${tag}): ${errorMessage}`);
+                logAudit('PROFILING', 'integrity_checked', { passed: false, details: errorMessage });
+                logAudit('PROFILING', 'error', { tag, message: errorMessage });
+                console.error(`[PROFILING] Exception while profiling ${tag}: ${errorMessage}`);
                 invalidCount++;
             }
         });
@@ -98,7 +124,7 @@ export async function runProfiler(
 
         if (validRecruits.length > 0) {
             // Group recruits by their discovery source for accurate attribution
-            const bySource = new Map<string, any[]>();
+            const bySource = new Map<string, ValidRecruit[]>();
             let maxRpos = -Infinity;
             let minRpos = Infinity;
             const sourceCounts: Record<string, number> = {};
@@ -152,7 +178,7 @@ export async function runProfiler(
             if (newTags.length > 0) {
                 console.error(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
                 
-                let fate: any[] = [];
+                let fate: { status: string; raw_potential_score: number }[] = [];
                 let attempts = 0;
                 const maxAttempts = 4; // Total 10s potential delay
 
@@ -161,19 +187,24 @@ export async function runProfiler(
                     // Incremental backoff: 1s, 2s, 3s, 4s
                     await new Promise(resolve => setTimeout(resolve, attempts * 1000));
 
-                    const { data, error: fateErr } = await supabase
-                        .rpc('get_recruits_fate', { tags: newTags });
-                    
-                    if (!fateErr && data && data.length > 0) {
-                        fate = data;
-                        const queuedCount = fate.filter(f => f.status === 'QUEUE').length;
-                        if (queuedCount === 0) {
-                            console.error(`[PROFILING] Fate check converged on attempt ${attempts}`);
-                            break;
+                    try {
+                        const { data, error: fateErr } = await supabase
+                            .rpc('get_recruits_fate', { tags: newTags });
+
+                        if (!fateErr && data && data.length > 0) {
+                            fate = data as { status: string; raw_potential_score: number }[];
+                            const queuedCount = fate.filter(f => f.status === 'QUEUE').length;
+                            if (queuedCount === 0) {
+                                console.error(`[PROFILING] Fate check converged on attempt ${attempts}`);
+                                break;
+                            }
+                            console.error(`[PROFILING] Fate check attempt ${attempts}: ${fate.length} found, ${queuedCount} still QUEUED...`);
+                        } else if (fateErr) {
+                            console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(fateErr)}`);
                         }
-                        console.error(`[PROFILING] Fate check attempt ${attempts}: ${fate.length} found, ${queuedCount} still QUEUED...`);
-                    } else if (fateErr) {
-                        console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(fateErr)}`);
+                    } catch (fateCheckError: unknown) {
+                        const errorMessage = fateCheckError instanceof Error ? fateCheckError.message : String(fateCheckError);
+                        console.error(`[PROFILING] Fate check attempt ${attempts} exception: ${errorMessage}`);
                     }
                 }
 
@@ -202,11 +233,12 @@ export async function runProfiler(
         stats.profiles_scanned = tagsToProfile.length;
         logAudit('PROFILING', 'terminated', { scanned: tagsToProfile.length, ingested: validRecruits.length });
         console.log(`[PROFILING] Terminated smoothly.`);
-    } catch (e: any) {
-        logAudit('PROFILING', 'integrity_checked', { passed: false, details: e.message });
-        logAudit('PROFILING', 'error', { message: e.message });
+    } catch (profilerException: unknown) {
+        const errorMessage = profilerException instanceof Error ? profilerException.message : String(profilerException);
+        logAudit('PROFILING', 'integrity_checked', { passed: false, details: errorMessage });
+        logAudit('PROFILING', 'error', { message: errorMessage });
         logAudit('PROFILING', 'terminated', { error: true });
-        console.error(`[PROFILING] Fatal exception: ${e.message}`);
-        throw e;
+        console.error(`[PROFILING] Fatal exception: ${errorMessage}`);
+        throw profilerException;
     }
 }
