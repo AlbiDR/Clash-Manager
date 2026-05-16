@@ -42,23 +42,35 @@ const benchmarkTooltipContent = computed(() => {
       v-if="props.context === 'lb' && props.dt !== undefined"
       :dt="props.dt"
       :performance-raw-score="props.performanceRawScore"
+      class="momentum-overlay"
     />
   </div>
 </template>
 
 <style scoped>
 .score-badge-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .stat-score {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   font-size: 18px;
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
   line-height: 1;
+}
+
+.momentum-overlay {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Ensure the pill doesn't interfere with score interactions */
+  pointer-events: auto;
 }
 </style>

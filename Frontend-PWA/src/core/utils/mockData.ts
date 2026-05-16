@@ -30,8 +30,10 @@ export function generateMockData(options?: {
   memberCount?: number;
   recruitCount?: number;
 }): WebAppData {
-  const memberCount = options?.memberCount ?? DEFAULT_MOCK_MEMBER_COUNT;
-  const recruitCount = options?.recruitCount ?? DEFAULT_MOCK_RECRUIT_COUNT;
+  // [UI] BRANDING RANDOMIZATION: Generate a random count (1-50) if not specified
+  // to ensure screenshots show varied clan sizes in branding assets.
+  const memberCount = options?.memberCount ?? (Math.floor(Math.random() * 50) + 1);
+  const recruitCount = options?.recruitCount ?? (Math.floor(Math.random() * 30) + 1);
   const lb: LeaderboardMember[] = [];
   const names = [
     "Arthur",
