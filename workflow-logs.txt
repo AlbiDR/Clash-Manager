@@ -1,0 +1,589 @@
+Capture & Optimize	Set up job	﻿2026-05-14T21:30:52.6579524Z Current runner version: '2.334.0'
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6614288Z ##[group]Runner Image Provisioner
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6615607Z Hosted Compute Agent
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6616488Z Version: 20260213.493
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6617321Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6618452Z Build Date: 2026-02-13T00:28:41Z
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6619554Z Worker ID: {54356aee-9a3f-4b30-aa72-c583930d72d2}
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6620536Z Azure Region: northcentralus
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6621482Z ##[endgroup]
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6623289Z ##[group]Operating System
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6624210Z Ubuntu
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6624812Z 24.04.4
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6625573Z LTS
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6625966Z ##[endgroup]
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6626410Z ##[group]Runner Image
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6626997Z Image: ubuntu-24.04
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6627420Z Version: 20260413.86.1
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6628272Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260413.86/images/ubuntu/Ubuntu2404-Readme.md
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6629713Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260413.86
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6630455Z ##[endgroup]
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6631381Z ##[group]GITHUB_TOKEN Permissions
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6633247Z Contents: write
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6633796Z Metadata: read
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6634209Z ##[endgroup]
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6636282Z Secret source: Actions
+Capture & Optimize	Set up job	2026-05-14T21:30:52.6637026Z Prepare workflow directory
+Capture & Optimize	Set up job	2026-05-14T21:30:52.7071349Z Prepare all required actions
+Capture & Optimize	Set up job	2026-05-14T21:30:52.7126829Z Getting action download info
+Capture & Optimize	Set up job	2026-05-14T21:30:53.0716049Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+Capture & Optimize	Set up job	2026-05-14T21:30:53.1851804Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Capture & Optimize	Set up job	2026-05-14T21:30:53.2571892Z Download action repository 'pnpm/action-setup@v5' (SHA:fc06bc1257f339d1d5d8b3a19a8cae5388b55320)
+Capture & Optimize	Set up job	2026-05-14T21:30:53.8748117Z Complete job name: Capture & Optimize
+Capture & Optimize	Checkout Code	﻿2026-05-14T21:30:53.9516271Z ##[group]Run actions/checkout@v4
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9517264Z with:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9517789Z   repository: AlbiDR/Clash-Manager
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9518718Z   token: ***
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9519168Z   ssh-strict: true
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9519672Z   ssh-user: git
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9520165Z   persist-credentials: true
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9520732Z   clean: true
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9521210Z   sparse-checkout-cone-mode: true
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9521820Z   fetch-depth: 1
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9522320Z   fetch-tags: false
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9522795Z   show-progress: true
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9523307Z   lfs: false
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9523808Z   submodules: false
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9524343Z   set-safe-directory: true
+Capture & Optimize	Checkout Code	2026-05-14T21:30:53.9525255Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.0596074Z Syncing repository: AlbiDR/Clash-Manager
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.0598127Z ##[group]Getting Git version info
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.0598932Z Working directory is '/home/runner/work/Clash-Manager/Clash-Manager'
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.0600110Z [command]/usr/bin/git version
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1404249Z git version 2.53.0
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1427934Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1441688Z Temporarily overriding HOME='/home/runner/work/_temp/b3196718-a060-4621-846a-1f9d5d37af10' before making global git config changes
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1443107Z Adding repository directory to the temporary git global config as a safe directory
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1455200Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Clash-Manager/Clash-Manager
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1483482Z Deleting the contents of '/home/runner/work/Clash-Manager/Clash-Manager'
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1487027Z ##[group]Initializing the repository
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1492083Z [command]/usr/bin/git init /home/runner/work/Clash-Manager/Clash-Manager
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1577935Z hint: Using 'master' as the name for the initial branch. This default branch name
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1579882Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1582053Z hint: to use in all of your new repositories, which will suppress this warning,
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1583432Z hint: call:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1584177Z hint:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1585202Z hint: 	git config --global init.defaultBranch <name>
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1586264Z hint:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1587332Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1589109Z hint: 'development'. The just-created branch can be renamed via this command:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1590378Z hint:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1591114Z hint: 	git branch -m <name>
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1591938Z hint:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1593125Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1595276Z Initialized empty Git repository in /home/runner/work/Clash-Manager/Clash-Manager/.git/
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1598448Z [command]/usr/bin/git remote add origin https://github.com/AlbiDR/Clash-Manager
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1618849Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1620325Z ##[group]Disabling automatic garbage collection
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1623218Z [command]/usr/bin/git config --local gc.auto 0
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1646688Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1654225Z ##[group]Setting up auth
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1655721Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1680899Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1969913Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.1992857Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.2160937Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.2189505Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.2363992Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.2391843Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.2393282Z ##[group]Fetching the repository
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.2401813Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +4e7608f234f40cc60e40d35b1166e0ab0caa7779:refs/remotes/origin/Beta
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8567073Z From https://github.com/AlbiDR/Clash-Manager
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8569057Z  * [new ref]         4e7608f234f40cc60e40d35b1166e0ab0caa7779 -> origin/Beta
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8590450Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8592545Z ##[group]Determining the checkout info
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8595397Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8598600Z [command]/usr/bin/git sparse-checkout disable
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8629752Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8651513Z ##[group]Checking out the ref
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8653866Z [command]/usr/bin/git checkout --progress --force -B Beta refs/remotes/origin/Beta
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8966775Z Switched to a new branch 'Beta'
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.8969108Z branch 'Beta' set up to track 'origin/Beta'.
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.9004267Z ##[endgroup]
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.9008059Z [command]/usr/bin/git log -1 --format=%H
+Capture & Optimize	Checkout Code	2026-05-14T21:30:54.9026909Z 4e7608f234f40cc60e40d35b1166e0ab0caa7779
+Capture & Optimize	Setup Node.js	﻿2026-05-14T21:30:54.9322663Z ##[group]Run actions/setup-node@v4
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:54.9323756Z with:
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:54.9324523Z   node-version: 24
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:54.9325492Z   always-auth: false
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:54.9326383Z   check-latest: false
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:54.9327586Z   token: ***
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:54.9328388Z ##[endgroup]
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:55.0997413Z Found in cache @ /opt/hostedtoolcache/node/24.14.1/x64
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:55.1003095Z ##[group]Environment details
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:55.4006724Z node: v24.14.1
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:55.4008427Z npm: 11.11.0
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:55.4009519Z yarn: 1.22.22
+Capture & Optimize	Setup Node.js	2026-05-14T21:30:55.4011750Z ##[endgroup]
+Capture & Optimize	Setup pnpm	﻿2026-05-14T21:30:55.4172039Z ##[group]Run pnpm/action-setup@v5
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4172967Z with:
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4173606Z   run_install: false
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4174345Z   dest: ~/setup-pnpm
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4175282Z   cache: false
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4176043Z   cache_dependency_path: pnpm-lock.yaml
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4177041Z   package_json_file: package.json
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4177938Z   standalone: false
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.4178652Z ##[endgroup]
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.5600904Z ##[group]Running self-installer...
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:55.9315390Z (node:2247) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.0572414Z (Use `node --trace-deprecation ...` to show where the warning was created)
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.0575668Z Progress: resolved 1, reused 0, downloaded 0, added 0
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.0655290Z Packages: +1
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.0656932Z +
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4350362Z Progress: resolved 1, reused 0, downloaded 1, added 1, done
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4582804Z 
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4583633Z dependencies:
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4584463Z + pnpm 10.32.1 (11.1.2 is available)
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4584815Z 
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4603985Z Done in 733ms
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4718375Z ##[endgroup]
+Capture & Optimize	Setup pnpm	2026-05-14T21:30:56.4718976Z Installation Completed!
+Capture & Optimize	Install Dependencies	﻿2026-05-14T21:30:56.4822893Z ##[group]Run pnpm install --no-frozen-lockfile
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.4823404Z ^[[36;1mpnpm install --no-frozen-lockfile^[[0m
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.4847675Z shell: /usr/bin/bash -e {0}
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.4847994Z env:
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.4848274Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.4848586Z ##[endgroup]
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.8606421Z Scope: all 2 workspace projects
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.9190424Z Lockfile is up to date, resolution step is skipped
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:56.9831506Z Progress: resolved 1, reused 0, downloaded 0, added 0
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:57.0736473Z Packages: +604
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:57.0766712Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:57.9856029Z Progress: resolved 604, reused 0, downloaded 179, added 169
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:58.9854348Z Progress: resolved 604, reused 0, downloaded 602, added 603
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:59.2116099Z Progress: resolved 604, reused 0, downloaded 603, added 604, done
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:59.5956761Z .../esbuild@0.27.4/node_modules/esbuild postinstall$ node install.js
+Capture & Optimize	Install Dependencies	2026-05-14T21:30:59.6818293Z .../esbuild@0.27.4/node_modules/esbuild postinstall: Done
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1327167Z 
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1327885Z devDependencies:
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1328648Z + @ast-grep/cli 0.42.1
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1329228Z + @types/node 24.12.0
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1329808Z + dependency-cruiser 17.4.0
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1330397Z + knip 6.13.1
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1330891Z + typescript 5.9.3
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1331235Z 
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1508053Z ╭ Warning ─────────────────────────────────────────────────────────────────────╮
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1509671Z │                                                                              │
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1510930Z │   Ignored build scripts: @ast-grep/cli@0.42.1, sharp@0.33.5.                 │
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1513354Z │   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1514662Z │   to run scripts.                                                            │
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1516044Z │                                                                              │
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1517295Z ╰──────────────────────────────────────────────────────────────────────────────╯
+Capture & Optimize	Install Dependencies	2026-05-14T21:31:00.1660229Z Done in 3.6s using pnpm v10.32.1
+Capture & Optimize	Install System Dependencies	﻿2026-05-14T21:31:00.2871579Z ##[group]Run sudo apt-get update
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:00.2872094Z ^[[36;1msudo apt-get update^[[0m
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:00.2872525Z ^[[36;1msudo apt-get install -y webp^[[0m
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:00.2892771Z shell: /usr/bin/bash -e {0}
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:00.2893172Z env:
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:00.2893566Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:00.2894090Z ##[endgroup]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:00.9826257Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.0026718Z Get:3 https://packages.microsoft.com/repos/azure-cli noble InRelease [3564 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.0363318Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.0371506Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.0373385Z Get:8 https://dl.google.com/linux/chrome-stable/deb stable InRelease [1825 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.0380743Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.0419483Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.0478932Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.1331212Z Get:9 https://packages.microsoft.com/repos/azure-cli noble/main amd64 Packages [2192 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.1681278Z Get:10 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [147 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.1728201Z Get:11 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [120 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.1743208Z Get:12 https://packages.microsoft.com/ubuntu/24.04/prod noble/main armhf Packages [11.6 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2246575Z Get:13 https://dl.google.com/linux/chrome-stable/deb stable/main amd64 Packages [1205 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2428182Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1997 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2554805Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [354 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2582259Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [177 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2605231Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 c-n-f Metadata [17.1 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2616979Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1689 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2723477Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [328 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2753722Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [386 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2780127Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 c-n-f Metadata [34.5 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2791493Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [3177 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.2965855Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [735 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3470123Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Components [212 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3485394Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 c-n-f Metadata [480 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3487155Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [44.4 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3497341Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [10.7 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3505076Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3512930Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 c-n-f Metadata [656 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3522556Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [40.6 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3534313Z Get:31 http://azure.archive.ubuntu.com/ubuntu noble-backports/main Translation-en [9172 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3542930Z Get:32 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5764 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3550596Z Get:33 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 c-n-f Metadata [368 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3575993Z Get:34 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [31.0 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3581340Z Get:35 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe Translation-en [18.6 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3586120Z Get:36 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [10.5 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.3595912Z Get:37 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 c-n-f Metadata [1484 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4069280Z Get:38 http://azure.archive.ubuntu.com/ubuntu noble-backports/restricted amd64 Components [212 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4078093Z Get:39 http://azure.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [748 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4088222Z Get:40 http://azure.archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Components [212 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4099732Z Get:41 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1668 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4208739Z Get:42 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [264 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4214305Z Get:43 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [21.9 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4226780Z Get:44 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 c-n-f Metadata [11.0 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4237981Z Get:45 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1187 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4299899Z Get:46 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [229 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4322896Z Get:47 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [74.3 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4338282Z Get:48 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 c-n-f Metadata [23.1 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4349850Z Get:49 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [2943 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4504673Z Get:50 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [685 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4539683Z Get:51 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Components [212 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4548228Z Get:52 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [28.8 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4989667Z Get:53 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse Translation-en [7656 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:01.4997573Z Get:54 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Components [208 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:09.5970919Z Fetched 16.9 MB in 2s (8194 kB/s)
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.4697727Z Reading package lists...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.5010910Z Reading package lists...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.6847904Z Building dependency tree...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.6852396Z Reading state information...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8411996Z The following additional packages will be installed:
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8417610Z   libgif7 libglut3.12 libopengl0
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8582461Z The following NEW packages will be installed:
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8588438Z   libgif7 libglut3.12 libopengl0 webp
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8740711Z 0 upgraded, 4 newly installed, 0 to remove and 76 not upgraded.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8741126Z Need to get 268 kB of archives.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8741510Z After this operation, 1032 kB of additional disk space will be used.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.8742109Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.9192006Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgif7 amd64 5.2.2-1ubuntu1 [35.2 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.9441635Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libglut3.12 amd64 3.4.0-1build1 [98.0 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.9726319Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libopengl0 amd64 1.7.0-1build1 [32.8 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:10.9984591Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 webp amd64 1.3.2-0.4build3 [103 kB]
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2386573Z Fetched 268 kB in 0s (1896 kB/s)
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2603030Z Selecting previously unselected package libgif7:amd64.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2845888Z (Reading database ... 
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2846237Z (Reading database ... 5%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2846659Z (Reading database ... 10%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2846886Z (Reading database ... 15%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2847106Z (Reading database ... 20%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2847306Z (Reading database ... 25%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2847519Z (Reading database ... 30%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2847719Z (Reading database ... 35%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2847934Z (Reading database ... 40%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2848151Z (Reading database ... 45%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2848385Z (Reading database ... 50%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.2945660Z (Reading database ... 55%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.4411999Z (Reading database ... 60%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.5794269Z (Reading database ... 65%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.7830086Z (Reading database ... 70%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:11.9838211Z (Reading database ... 75%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.1324335Z (Reading database ... 80%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.3799365Z (Reading database ... 85%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.5748171Z (Reading database ... 90%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.6955595Z (Reading database ... 95%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.6956204Z (Reading database ... 100%
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.6956925Z (Reading database ... 220764 files and directories currently installed.)
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7003208Z Preparing to unpack .../libgif7_5.2.2-1ubuntu1_amd64.deb ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7031035Z Unpacking libgif7:amd64 (5.2.2-1ubuntu1) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7195984Z Selecting previously unselected package libglut3.12:amd64.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7313971Z Preparing to unpack .../libglut3.12_3.4.0-1build1_amd64.deb ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7323428Z Unpacking libglut3.12:amd64 (3.4.0-1build1) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7497437Z Selecting previously unselected package libopengl0:amd64.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7614061Z Preparing to unpack .../libopengl0_1.7.0-1build1_amd64.deb ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7620394Z Unpacking libopengl0:amd64 (1.7.0-1build1) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7772123Z Selecting previously unselected package webp.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7891903Z Preparing to unpack .../webp_1.3.2-0.4build3_amd64.deb ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.7899575Z Unpacking webp (1.3.2-0.4build3) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.8333303Z Setting up libopengl0:amd64 (1.7.0-1build1) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.8350047Z Setting up libglut3.12:amd64 (3.4.0-1build1) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.8367762Z Setting up libgif7:amd64 (5.2.2-1ubuntu1) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.8384059Z Setting up webp (1.3.2-0.4build3) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.8402728Z Processing triggers for man-db (2.12.0-4build2) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.8421827Z Not building database; man-db/auto-update is not 'true'.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:12.8432179Z Processing triggers for libc-bin (2.39-0ubuntu8.7) ...
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4087789Z 
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4088368Z Running kernel seems to be up-to-date.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4088780Z 
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4089002Z No services need to be restarted.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4089281Z 
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4089519Z No containers need to be restarted.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4089792Z 
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4090070Z No user sessions are running outdated binaries.
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4090358Z 
+Capture & Optimize	Install System Dependencies	2026-05-14T21:31:13.4090603Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+Capture & Optimize	Setup shot-scraper	﻿2026-05-14T21:31:14.2533434Z ##[group]Run pip install shot-scraper
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:14.2533760Z ^[[36;1mpip install shot-scraper^[[0m
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:14.2533991Z ^[[36;1mshot-scraper install^[[0m
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:14.2547342Z shell: /usr/bin/bash -e {0}
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:14.2547572Z env:
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:14.2547786Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:14.2548064Z ##[endgroup]
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:14.6761569Z Defaulting to user installation because normal site-packages is not writeable
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.0069399Z Collecting shot-scraper
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.0525268Z   Downloading shot_scraper-1.9.1-py3-none-any.whl.metadata (4.3 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.0710874Z Requirement already satisfied: click in /usr/lib/python3/dist-packages (from shot-scraper) (8.1.6)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.0717029Z Requirement already satisfied: pyyaml in /usr/lib/python3/dist-packages (from shot-scraper) (6.0.1)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.1202387Z Collecting playwright (from shot-scraper)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.1238414Z   Downloading playwright-1.59.0-py3-none-manylinux1_x86_64.whl.metadata (3.5 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.1382387Z Collecting click-default-group (from shot-scraper)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.1429317Z   Downloading click_default_group-1.2.4-py2.py3-none-any.whl.metadata (2.8 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.1678621Z Collecting pyee<14,>=13 (from playwright->shot-scraper)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.1717678Z   Downloading pyee-13.0.1-py3-none-any.whl.metadata (3.0 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.3079618Z Collecting greenlet<4.0.0,>=3.1.1 (from playwright->shot-scraper)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.3121665Z   Downloading greenlet-3.5.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (3.7 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.3311856Z Requirement already satisfied: typing-extensions in /usr/lib/python3/dist-packages (from pyee<14,>=13->playwright->shot-scraper) (4.10.0)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.3385167Z Downloading shot_scraper-1.9.1-py3-none-any.whl (15 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.3439818Z Downloading click_default_group-1.2.4-py2.py3-none-any.whl (4.1 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.3498394Z Downloading playwright-1.59.0-py3-none-manylinux1_x86_64.whl (47.2 MB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.5472497Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.2/47.2 MB 143.6 MB/s eta 0:00:00
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.5586422Z Downloading greenlet-3.5.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (611 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.5643411Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 611.4/611.4 kB 161.1 MB/s eta 0:00:00
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.5687207Z Downloading pyee-13.0.1-py3-none-any.whl (15 kB)
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:15.8741260Z Installing collected packages: pyee, greenlet, click-default-group, playwright, shot-scraper
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:16.7163251Z Successfully installed click-default-group-1.2.4 greenlet-3.5.0 playwright-1.59.0 pyee-13.0.1 shot-scraper-1.9.1
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:17.1337369Z Downloading Chrome for Testing 147.0.7727.15 (playwright chromium v1217) from https://cdn.playwright.dev/builds/cft/147.0.7727.15/linux64/chrome-linux64.zip
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:17.9192816Z |                                                                                |   0% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.0485146Z |■■■■■■■■                                                                        |  10% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.1468953Z |■■■■■■■■■■■■■■■■                                                                |  20% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.2350914Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.3146995Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.4014413Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.4893438Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.5991194Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.6866222Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.7897411Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:18.8749569Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 170.4 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:21.2508322Z Chrome for Testing 147.0.7727.15 (playwright chromium v1217) downloaded to /home/runner/.cache/ms-playwright/chromium-1217
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:21.2509615Z Downloading FFmpeg (playwright ffmpeg v1011) from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0162279Z |                                                                                |   0% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0198433Z |■■■■■■■■                                                                        |  10% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0227868Z |■■■■■■■■■■■■■■■■                                                                |  20% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0253846Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0563761Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0714109Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0934306Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.0982761Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.1006865Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.1040982Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.1093606Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 2.3 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.1568515Z FFmpeg (playwright ffmpeg v1011) downloaded to /home/runner/.cache/ms-playwright/ffmpeg-1011
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.1571170Z Downloading Chrome Headless Shell 147.0.7727.15 (playwright chromium-headless-shell v1217) from https://cdn.playwright.dev/builds/cft/147.0.7727.15/linux64/chrome-headless-shell-linux64.zip
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:22.9369174Z |                                                                                |   0% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.0721371Z |■■■■■■■■                                                                        |  10% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.1433306Z |■■■■■■■■■■■■■■■■                                                                |  20% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.2162329Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.2835028Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.3501019Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.4291246Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.4984682Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.5601720Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.6389106Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:23.6893668Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 112 MiB
+Capture & Optimize	Setup shot-scraper	2026-05-14T21:31:25.4172164Z Chrome Headless Shell 147.0.7727.15 (playwright chromium-headless-shell v1217) downloaded to /home/runner/.cache/ms-playwright/chromium_headless_shell-1217
+Capture & Optimize	Start Dev Server	﻿2026-05-14T21:31:25.4479167Z ##[group]Run pnpm run dev &
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4479452Z ^[[36;1mpnpm run dev &^[[0m
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4479774Z ^[[36;1m# Wait for the dev server to be ready and the specific portfolio entry point^[[0m
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4480344Z ^[[36;1mnpx wait-on http://localhost:5173/Clash-Manager/portfolio-stitch.html --timeout 120000^[[0m
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4493226Z shell: /usr/bin/bash -e {0}
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4493450Z env:
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4493676Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4494013Z   VITE_SUPABASE_URL: https://placeholder.supabase.co
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4494350Z   VITE_SUPABASE_PUBLISHABLE_KEY: placeholder
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.4494600Z ##[endgroup]
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.7270776Z 
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.7271701Z > clash-manager-pwa@13.3.0 dev /home/runner/work/Clash-Manager/Clash-Manager/Frontend-PWA
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.7272595Z > pnpm run synthesize && vite
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.7272812Z 
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.9982392Z 
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.9985079Z > clash-manager-pwa@13.3.0 synthesize /home/runner/work/Clash-Manager/Clash-Manager/Frontend-PWA
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.9985659Z > tsx scripts/synthesize_entry.ts
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:25.9985827Z 
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:26.2206115Z ⚡ [Purity] Generated physical index.html from TypeScript substrate.
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:26.5530879Z 
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:26.5531840Z   ^[[32m^[[1mVITE^[[22m v7.3.1^[[39m  ^[[2mready in ^[[0m^[[1m287^[[22m^[[2m^[[0m ms^[[22m
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:26.5532133Z 
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:26.5534536Z   ^[[32m➜^[[39m  ^[[1mLocal^[[22m:   ^[[36mhttp://localhost:^[[1m5173^[[22m/Clash-Manager/^[[39m
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:26.5535799Z ^[[2m  ^[[32m➜^[[39m  ^[[1mNetwork^[[22m^[[2m: use ^[[22m^[[1m--host^[[22m^[[2m to expose^[[22m
+Capture & Optimize	Start Dev Server	2026-05-14T21:31:28.5981677Z npm warn exec The following package was not found and will be installed: wait-on@9.0.10
+Capture & Optimize	Run Branding Pipeline	﻿2026-05-14T21:31:35.6330671Z ##[group]Run bash scratch/generate_hifi_branding.sh
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:35.6331051Z ^[[36;1mbash scratch/generate_hifi_branding.sh^[[0m
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:35.6344326Z shell: /usr/bin/bash -e {0}
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:35.6344548Z env:
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:35.6344788Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:35.6345157Z ##[endgroup]
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:35.6551034Z Capturing roster (light)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.0103558Z Screenshot of '#wrapper-roster' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=light&view=roster' written to 'public/assets/branding/roster-light.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.1003250Z Saving file 'public/assets/branding/roster-light.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6436632Z File:      public/assets/branding/roster-light.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6437294Z Dimension: 1228 x 1556
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6438237Z Output:    76426 bytes (0.32 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6438783Z Lossless-ARGB compressed size: 76426 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6439293Z   * Header size: 2660 bytes, image data size: 73740
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6440015Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6440655Z   * Precision Bits: histogram=5 transform=5 cache=8
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6460361Z   -> Converted to roster-light.webp
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:31:49.6460892Z Capturing roster (dark)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:02.9135482Z Screenshot of '#wrapper-roster' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=dark&view=roster' written to 'public/assets/branding/roster-dark.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:02.9990853Z Saving file 'public/assets/branding/roster-dark.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5276598Z File:      public/assets/branding/roster-dark.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5277313Z Dimension: 1228 x 1556
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5278255Z Output:    77154 bytes (0.32 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5278798Z Lossless-ARGB compressed size: 77154 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5279381Z   * Header size: 1917 bytes, image data size: 75211
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5280125Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5280759Z   * Precision Bits: histogram=5 transform=5 cache=7
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5299683Z   -> Converted to roster-dark.webp
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:03.5300434Z Capturing headhunter (light)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:16.8765953Z Screenshot of '#wrapper-headhunter' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=light&view=headhunter' written to 'public/assets/branding/headhunter-light.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:16.9597706Z Saving file 'public/assets/branding/headhunter-light.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5651225Z File:      public/assets/branding/headhunter-light.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5651972Z Dimension: 1228 x 1716
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5652546Z Output:    85880 bytes (0.33 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5653095Z Lossless-ARGB compressed size: 85880 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5653675Z   * Header size: 2674 bytes, image data size: 83180
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5753893Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5755292Z   * Precision Bits: histogram=5 transform=5 cache=8
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5755700Z   -> Converted to headhunter-light.webp
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:17.5756228Z Capturing headhunter (dark)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:30.8104156Z Screenshot of '#wrapper-headhunter' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=dark&view=headhunter' written to 'public/assets/branding/headhunter-dark.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:30.8927789Z Saving file 'public/assets/branding/headhunter-dark.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4679787Z File:      public/assets/branding/headhunter-dark.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4680386Z Dimension: 1228 x 1716
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4680779Z Output:    86040 bytes (0.33 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4681207Z Lossless-ARGB compressed size: 86040 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4681687Z   * Header size: 2199 bytes, image data size: 83815
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4682749Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4683367Z   * Precision Bits: histogram=5 transform=5 cache=7
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4703055Z   -> Converted to headhunter-dark.webp
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:31.4703865Z Capturing laboratory (light)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:45.1758662Z Screenshot of '#wrapper-laboratory' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=light&view=laboratory' written to 'public/assets/branding/laboratory-light.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:45.3306311Z Saving file 'public/assets/branding/laboratory-light.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4711126Z File:      public/assets/branding/laboratory-light.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4711712Z Dimension: 1228 x 5836
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4712093Z Output:    273138 bytes (0.30 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4712606Z Lossless-ARGB compressed size: 273138 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4713208Z   * Header size: 6288 bytes, image data size: 266825
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4713996Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4714725Z   * Precision Bits: histogram=6 transform=5 cache=10
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4738004Z   -> Converted to laboratory-light.webp
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:32:47.4738668Z Capturing laboratory (dark)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:01.2208504Z Screenshot of '#wrapper-laboratory' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=dark&view=laboratory' written to 'public/assets/branding/laboratory-dark.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:01.3706372Z Saving file 'public/assets/branding/laboratory-dark.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4599364Z File:      public/assets/branding/laboratory-dark.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4599977Z Dimension: 1228 x 5836
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4600374Z Output:    269872 bytes (0.30 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4600895Z Lossless-ARGB compressed size: 269872 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4601457Z   * Header size: 6151 bytes, image data size: 263696
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4602182Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4602857Z   * Precision Bits: histogram=6 transform=5 cache=10
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4625312Z   -> Converted to laboratory-dark.webp
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:03.4626150Z Capturing settings (light)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:16.9929543Z Screenshot of '#wrapper-settings' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=light&view=settings' written to 'public/assets/branding/settings-light.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:17.1174149Z Saving file 'public/assets/branding/settings-light.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4406963Z File:      public/assets/branding/settings-light.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4407488Z Dimension: 1228 x 4420
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4407834Z Output:    76916 bytes (0.11 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4408285Z Lossless-ARGB compressed size: 76916 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4408758Z   * Header size: 3065 bytes, image data size: 73826
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4409388Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4410013Z   * Precision Bits: histogram=6 transform=5 cache=8
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4431437Z   -> Converted to settings-light.webp
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:18.4431845Z Capturing settings (dark)...
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:31.9114530Z Screenshot of '#wrapper-settings' on 'http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=dark&view=settings' written to 'public/assets/branding/settings-dark.png'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:32.0351740Z Saving file 'public/assets/branding/settings-dark.webp'
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3388411Z File:      public/assets/branding/settings-dark.png
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3388966Z Dimension: 1228 x 4420
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3389241Z Output:    75084 bytes (0.11 bpp)
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3389521Z Lossless-ARGB compressed size: 75084 bytes
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3390021Z   * Header size: 2779 bytes, image data size: 72280
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3390738Z   * Lossless features used: PREDICTION CROSS-COLOR-TRANSFORM SUBTRACT-GREEN
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3391372Z   * Precision Bits: histogram=6 transform=5 cache=7
+Capture & Optimize	Run Branding Pipeline	2026-05-14T21:33:33.3415964Z   -> Converted to settings-dark.webp
+Capture & Optimize	Commit and Push Changes	﻿2026-05-14T21:33:33.3464596Z ##[group]Run git config --global user.name "github-actions[bot]"
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3465154Z ^[[36;1mgit config --global user.name "github-actions[bot]"^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3465611Z ^[[36;1mgit config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3465995Z ^[[36;1m^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3466183Z ^[[36;1m# Stage the generated assets^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3466437Z ^[[36;1mgit add public/assets/branding/*.webp^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3466683Z ^[[36;1m^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3466871Z ^[[36;1m# Check if there are changes to commit^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3467154Z ^[[36;1mif ! git diff --cached --exit-code; then^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3467486Z ^[[36;1m  echo "Changes detected, stashing and pulling latest..."^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3467769Z ^[[36;1m  git stash^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3467967Z ^[[36;1m  git pull --rebase origin Beta^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3468193Z ^[[36;1m  git stash pop^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3468380Z ^[[36;1m  ^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3468557Z ^[[36;1m  # Re-stage and commit^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3468839Z ^[[36;1m  git add public/assets/branding/*.webp^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3469229Z ^[[36;1m  git commit -m "chore(branding): automated regeneration of high-fidelity assets"^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3469598Z ^[[36;1m  git push origin Beta^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3469815Z ^[[36;1melse^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3470044Z ^[[36;1m  echo "No changes detected in branding assets."^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3470296Z ^[[36;1mfi^[[0m
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3482945Z shell: /usr/bin/bash -e {0}
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3483171Z env:
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3483386Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.3483660Z ##[endgroup]
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4070094Z diff --git a/Frontend-PWA/public/assets/branding/headhunter-dark.webp b/Frontend-PWA/public/assets/branding/headhunter-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4072002Z index efe39f9..51c506b 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4073164Z Binary files a/Frontend-PWA/public/assets/branding/headhunter-dark.webp and b/Frontend-PWA/public/assets/branding/headhunter-dark.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4074460Z diff --git a/Frontend-PWA/public/assets/branding/headhunter-light.webp b/Frontend-PWA/public/assets/branding/headhunter-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4075336Z index efe39f9..41e0611 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4076467Z Binary files a/Frontend-PWA/public/assets/branding/headhunter-light.webp and b/Frontend-PWA/public/assets/branding/headhunter-light.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4077705Z diff --git a/Frontend-PWA/public/assets/branding/laboratory-dark.webp b/Frontend-PWA/public/assets/branding/laboratory-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4078317Z index efe39f9..b30c138 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4079357Z Binary files a/Frontend-PWA/public/assets/branding/laboratory-dark.webp and b/Frontend-PWA/public/assets/branding/laboratory-dark.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4080521Z diff --git a/Frontend-PWA/public/assets/branding/laboratory-light.webp b/Frontend-PWA/public/assets/branding/laboratory-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4081138Z index efe39f9..2987a89 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4082339Z Binary files a/Frontend-PWA/public/assets/branding/laboratory-light.webp and b/Frontend-PWA/public/assets/branding/laboratory-light.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4083493Z diff --git a/Frontend-PWA/public/assets/branding/roster-dark.webp b/Frontend-PWA/public/assets/branding/roster-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4084063Z index efe39f9..fcd8715 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4085219Z Binary files a/Frontend-PWA/public/assets/branding/roster-dark.webp and b/Frontend-PWA/public/assets/branding/roster-dark.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4086402Z diff --git a/Frontend-PWA/public/assets/branding/roster-light.webp b/Frontend-PWA/public/assets/branding/roster-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4086972Z index 4184de9..3f0cf25 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4088077Z Binary files a/Frontend-PWA/public/assets/branding/roster-light.webp and b/Frontend-PWA/public/assets/branding/roster-light.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4089185Z diff --git a/Frontend-PWA/public/assets/branding/settings-dark.webp b/Frontend-PWA/public/assets/branding/settings-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4090087Z index efe39f9..e4c9628 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4091272Z Binary files a/Frontend-PWA/public/assets/branding/settings-dark.webp and b/Frontend-PWA/public/assets/branding/settings-dark.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4092422Z diff --git a/Frontend-PWA/public/assets/branding/settings-light.webp b/Frontend-PWA/public/assets/branding/settings-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4093007Z index efe39f9..5eb311c 100644
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4094126Z Binary files a/Frontend-PWA/public/assets/branding/settings-light.webp and b/Frontend-PWA/public/assets/branding/settings-light.webp differ
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4094855Z Changes detected, stashing and pulling latest...
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.4150212Z Saved working directory and index state WIP on Beta: 4e7608f fix(ci): inject placeholder supabase config for branding generation
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7007495Z From https://github.com/AlbiDR/Clash-Manager
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7015198Z  * branch            Beta       -> FETCH_HEAD
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7063781Z Already up to date.
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7221047Z On branch Beta
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7221600Z Your branch is up to date with 'origin/Beta'.
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7221958Z 
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7222170Z Changes not staged for commit:
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7222724Z   (use "git add <file>..." to update what will be committed)
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7223437Z   (use "git restore <file>..." to discard changes in working directory)
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7224184Z 	modified:   public/assets/branding/headhunter-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7224846Z 	modified:   public/assets/branding/headhunter-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7225613Z 	modified:   public/assets/branding/laboratory-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7226284Z 	modified:   public/assets/branding/laboratory-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7226939Z 	modified:   public/assets/branding/roster-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7227564Z 	modified:   public/assets/branding/roster-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7228201Z 	modified:   public/assets/branding/settings-dark.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7228851Z 	modified:   public/assets/branding/settings-light.webp
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7229218Z 
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7229667Z no changes added to commit (use "git add" and/or "git commit -a")
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7230358Z Dropped refs/stash@{0} (9e68bd59d399e8f87fd5451f22db40750ac05285)
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7369343Z [Beta 0e271f4] chore(branding): automated regeneration of high-fidelity assets
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:33.7369880Z  8 files changed, 0 insertions(+), 0 deletions(-)
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:35.1494338Z To https://github.com/AlbiDR/Clash-Manager
+Capture & Optimize	Commit and Push Changes	2026-05-14T21:33:35.1495159Z    4e7608f..0e271f4  Beta -> Beta
+Capture & Optimize	Post Setup pnpm	﻿2026-05-14T21:33:35.1579378Z Post job cleanup.
+Capture & Optimize	Post Setup pnpm	2026-05-14T21:33:35.2941160Z Pruning is unnecessary.
+Capture & Optimize	Post Setup Node.js	﻿2026-05-14T21:33:35.3050366Z Post job cleanup.
+Capture & Optimize	Post Checkout Code	﻿2026-05-14T21:33:35.4618392Z Post job cleanup.
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5519154Z [command]/usr/bin/git version
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5552356Z git version 2.53.0
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5585818Z Copying '/home/runner/.gitconfig' to '/home/runner/work/_temp/25cd7583-08a3-4a4e-b70d-e9dfbc15ddad/.gitconfig'
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5595145Z Temporarily overriding HOME='/home/runner/work/_temp/25cd7583-08a3-4a4e-b70d-e9dfbc15ddad' before making global git config changes
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5596066Z Adding repository directory to the temporary git global config as a safe directory
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5608057Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Clash-Manager/Clash-Manager
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5637048Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5664155Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5838200Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5855094Z http.https://github.com/.extraheader
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5867417Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.5892399Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.6060105Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Capture & Optimize	Post Checkout Code	2026-05-14T21:33:35.6086099Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Capture & Optimize	Complete job	﻿2026-05-14T21:33:35.6353408Z Cleaning up orphan processes
+Capture & Optimize	Complete job	2026-05-14T21:33:35.6597604Z Terminate orphan process: pid (2909) (MainThread)
+Capture & Optimize	Complete job	2026-05-14T21:33:35.6621578Z Terminate orphan process: pid (2937) (sh)
+Capture & Optimize	Complete job	2026-05-14T21:33:35.6651970Z Terminate orphan process: pid (2992) (MainThread)
+Capture & Optimize	Complete job	2026-05-14T21:33:35.6676761Z Terminate orphan process: pid (3005) (esbuild)
+Capture & Optimize	Complete job	2026-05-14T21:33:35.6694607Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
