@@ -15,10 +15,13 @@ for view in "${VIEWS[@]}"; do
   done
 done
 
+# Generate a single synchronized random count (1-50) for this entire run
+COUNT=$(( ( RANDOM % 50 ) + 1 ))
+
 for view in "${VIEWS[@]}"; do
   for theme in "${THEMES[@]}"; do
-    echo "Capturing $view ($theme)..."
-    shot-scraper shot "http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=$theme&view=$view" \
+    echo "Capturing $view ($theme) with count $COUNT..."
+    shot-scraper shot "http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=$theme&view=$view&count=$COUNT" \
       --width 1200 --height 4000 \
       --selector "#wrapper-$view" \
       --retina \
