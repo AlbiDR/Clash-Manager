@@ -134,6 +134,7 @@
             const theme = urlParams.get('theme') || 'light';
             const viewParam = urlParams.get('view');
             const scaleParam = parseFloat(urlParams.get('scale')) || 1;
+            const countParam = urlParams.get('count');
             
             // 1. Sync state before loading iframes
             syncState(theme);
@@ -157,7 +158,10 @@
                     const content = wrapper.querySelector('.device-content');
                     const iframe = document.createElement('iframe');
                     iframe.id = `frame-${v.id}`;
-                    iframe.src = `${window.location.origin}/Clash-Manager/#${v.path}?showcase=true`;
+                    
+                    const countQuery = countParam ? `&count=${countParam}` : '';
+                    iframe.src = `${window.location.origin}/Clash-Manager/#${v.path}?showcase=true${countQuery}`;
+                    
                     content.appendChild(iframe);
 
                     // Handle post-load injection and adjustments
