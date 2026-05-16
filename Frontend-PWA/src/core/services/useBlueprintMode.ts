@@ -35,7 +35,9 @@ const getParam = (name: string) => {
 };
 
 const isBlueprintMode = ref(
-  localStorage.getItem(BLUEPRINT_KEY) === "true" || getParam("blueprint") === "true"
+  localStorage.getItem(BLUEPRINT_KEY) === "true" || 
+  getParam("blueprint") === "true" ||
+  (getParam("showcase") === "true" && localStorage.getItem(BLUEPRINT_KEY) !== "false")
 );
 
 /**
