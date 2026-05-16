@@ -270,3 +270,24 @@ SELECT
     (ts.total_crowns::numeric / v.target_crowns::numeric) AS progress_ratio
 FROM active_voyage v
 JOIN total_stats ts ON ts.voyage_id = v.id;
+
+-- 7. SECURITY: RLS Policies for Public Access
+-- Allow the PWA (anon) to read active voyage data.
+ALTER TABLE drivers.clan_voyage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE drivers.clan_voyage_contributions ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing if they exist (to avoid duplicates if re-run)
+DROP POLICY IF EXISTS "Public Voyage Read Access" ON drivers.clan_voyage;
+DROP POLICY IF EXISTS "Public Voyage Contribution Read Access" ON drivers.clan_voyage_contributions;
+
+CREATE POLICY "Public Voyage Read Access"
+ON drivers.clan_voyage
+FOR SELECT
+TO anon, authenticated
+USING (true);
+
+CREATE POLICY "Public Voyage Contribution Read Access"
+ON drivers.clan_voyage_contributions
+FOR SELECT
+TO anon, authenticated
+USING (true);
