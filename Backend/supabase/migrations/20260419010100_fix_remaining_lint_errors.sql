@@ -3,7 +3,7 @@
 
 /*
 ============================================================================
-LINT CORRECTION — ROUND 2
+LINT CORRECTION - ROUND 2
 ----------------------------------------------------------------------------
   1. public.ingest_clan_profile
        ON CONFLICT (tag) → ON CONFLICT (tag, snapshot_date)
@@ -16,7 +16,7 @@ LINT CORRECTION — ROUND 2
 */
 
 -- ==========================================================================
--- 1. FIX: public.ingest_clan_profile — correct ON CONFLICT columns
+-- 1. FIX: public.ingest_clan_profile - correct ON CONFLICT columns
 -- ==========================================================================
 CREATE OR REPLACE FUNCTION public.ingest_clan_profile(p_payload JSONB)
  RETURNS void

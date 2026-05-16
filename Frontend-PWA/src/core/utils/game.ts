@@ -46,8 +46,8 @@ export const CARD_RARITY_START_LEVELS: Readonly<Record<Rarity, number>> = {
  * level. A rarity's first upgrade costs less than what Common pays at that
  * level because it reflects fewer cumulative upgrade steps. Discrepancies
  * verified against the reference progression calculator (2026 update):
- *   - Epic   L7: 400g  (not 1000g — it is Epic's first upgrade step)
- *   - Legendary L10: 5000g (not 8000g — it is Legendary's first upgrade step)
+ *   - Epic   L7: 400g  (not 1000g - it is Epic's first upgrade step)
+ *   - Legendary L10: 5000g (not 8000g - it is Legendary's first upgrade step)
  */
 export const GOLD_COST_TABLE: Readonly<Record<Rarity, Readonly<Record<number, Gold>>>> = {
   "Common": {
@@ -63,13 +63,13 @@ export const GOLD_COST_TABLE: Readonly<Record<Rarity, Readonly<Record<number, Go
     16: asGold(120000)
   },
   "Epic": {
-    // L7 is Epic's first upgrade step — costs 400g, not 1000g.
+    // L7 is Epic's first upgrade step - costs 400g, not 1000g.
     7: asGold(400),   8: asGold(2000),  9: asGold(4000),  10: asGold(8000),
     11: asGold(15000),12: asGold(25000),13: asGold(40000), 14: asGold(60000),
     15: asGold(90000),16: asGold(120000)
   },
   "Legendary": {
-    // L10 is Legendary's first upgrade step — costs 5000g, not 8000g.
+    // L10 is Legendary's first upgrade step - costs 5000g, not 8000g.
     10: asGold(5000), 11: asGold(15000),12: asGold(25000), 13: asGold(40000),
     14: asGold(60000),15: asGold(90000),16: asGold(120000)
   },

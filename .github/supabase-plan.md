@@ -6,13 +6,13 @@ license: GPL-3.0-only
 copyright: Copyright (C) 2026 AlbiDR
 ---
 
-# Supabase Migration Plan — Binary Unitary Architecture (CleanStack)
+# Supabase Migration Plan - Binary Unitary Architecture (CleanStack)
 
 This document is the **Single Source of Truth** for the transition of the `Clash-Manager` stack from Google Apps Script (GAS) to a **Supabase**-native environment. It follows the **CleanStack Authoritative Design Reference (ADR)** by strictly mapping database domains to project layers.
 
 ---
 
-## I. The Vision: "Clash Manager — Redux"
+## I. The Vision: "Clash Manager - Redux"
 The project is moving from a distributed 3-platform model to a streamlined **Binary Stack**.
 - **Structural Coherence**: The database organization mirrors the project layers (L0-L5) for perfect technical purity.
 - **Edge-Native Ingestion**: Supabase Edge Functions (Deno) replace the legacy Node.js worker.
@@ -54,7 +54,7 @@ The project is moving from a distributed 3-platform model to a streamlined **Bin
 - **Battle Depth**: `drivers.player_battles` maintains a **100-sample rolling window** per resident for high-fidelity PeS/Inertia scoring.
 - **Single Source of Truth**: `drivers.members` accumulates every daily heartbeat (L2 Archive/Database).
 
-### 3. Feature Presentation (features. Layer) — Minimalist UI
+### 3. Feature Presentation (features. Layer) - Minimalist UI
 - **Roster View**: `features.roster_view` (Custom sorting + Dynamic Labeling: `5m`, `2h`, `3d`).
 - **War Analytics**: `features.war_activity_view` (Whos missing battles?).
 - **War Loyalty**: `features.war_loyalty_view` (Historical fame averaging over years).

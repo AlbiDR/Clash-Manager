@@ -14,11 +14,11 @@ import { runGhostPurge } from "./stages/ghost-purge.ts";
  * Orchestrates the tournament scan and deep profiling pipeline using modular stage handlers.
  *
  * Stage order:
- *   S0  Ghost Purge      — evict clanned players from the active top-50 before discovery
- *   S1  Shadow Scout     — ingest leads from the clan's war/river race
- *   S2  Tournament Finder— discover candidates from active tournaments
- *   S3  Profiler         — deep-profile all discovered candidates and ingest
- *   S4  Rescan           — refresh stale existing recruits; evict any newly-clanned ones
+ *   S0  Ghost Purge      - evict clanned players from the active top-50 before discovery
+ *   S1  Shadow Scout     - ingest leads from the clan's war/river race
+ *   S2  Tournament Finder- discover candidates from active tournaments
+ *   S3  Profiler         - deep-profile all discovered candidates and ingest
+ *   S4  Rescan           - refresh stale existing recruits; evict any newly-clanned ones
  */
 export async function executeScanner(
     tournaments: string[], 

@@ -1,4 +1,4 @@
-# Clan Voyage — Master Reference Document
+# Clan Voyage - Master Reference Document
 
 > **Project**: Clash Manager (CM)
 > **Date**: May 2026
@@ -7,11 +7,11 @@
 
 ---
 
-## Part I — Event Nature & Mechanics
+## Part I - Event Nature & Mechanics
 
 ### Overview
 
-Clan Voyage is a cooperative, milestone-driven in-game event that tracks collective clan activity through crown accumulation. Unlike standard ladder rankings, it prioritizes consistent participation across the entire roster — making active members in lower trophy brackets technically as valuable as top-tier players for the purpose of completing the event.
+Clan Voyage is a cooperative, milestone-driven in-game event that tracks collective clan activity through crown accumulation. Unlike standard ladder rankings, it prioritizes consistent participation across the entire roster - making active members in lower trophy brackets technically as valuable as top-tier players for the purpose of completing the event.
 
 Critically, **there is no dedicated Clan Voyage endpoint in the official Clash Royale API**. This makes it a "phantom" event: it exists in-game but must be tracked entirely through aggregation of individual member battle logs.
 
@@ -35,7 +35,7 @@ Critically, **there is no dedicated Clan Voyage endpoint in the official Clash R
 
 ### 3. Rewards and Completion
 
-The event features a segmented progression bar. Reaching specific milestones instantly unlocks rewards (Gold Crates, Lucky Drops, Tower Troop Chests, etc.) for all eligible members, regardless of individual contribution level — provided the minimum contribution threshold is met.
+The event features a segmented progression bar. Reaching specific milestones instantly unlocks rewards (Gold Crates, Lucky Drops, Tower Troop Chests, etc.) for all eligible members, regardless of individual contribution level - provided the minimum contribution threshold is met.
 
 ---
 
@@ -56,7 +56,7 @@ The event features a segmented progression bar. Reaching specific milestones ins
 
 ---
 
-## Part II — Technical Data Strategy
+## Part II - Technical Data Strategy
 
 ### 1. Data Capture Strategy ("Individual Aggregation")
 
@@ -73,14 +73,14 @@ Since no direct endpoint exists, the system must derive Clan Voyage data by aggr
 
 ---
 
-### 2. Frontend Trigger Mechanism — Manual Activation via Countdown
+### 2. Frontend Trigger Mechanism - Manual Activation via Countdown
 
 Since neither the event start time nor the end time are available through the API, the user inputs both countdowns as displayed in-game.
 
 **Inputs required at activation**:
-1. **"Starts in HH:MM:SS"** — e.g., `"Starts in 04:20:00"`
-2. **"Ends in HH:MM:SS"** — e.g., `"Ends in 72:00:00"`
-3. **Crown Target** — the milestone total displayed in-game
+1. **"Starts in HH:MM:SS"** - e.g., `"Starts in 04:20:00"`
+2. **"Ends in HH:MM:SS"** - e.g., `"Ends in 72:00:00"`
+3. **Crown Target** - the milestone total displayed in-game
 
 **Parsing Logic (Mirror Activation)**:
 1. **Starts in (HH:MM:SS)**: `start_at = now() + (H*3600 + M*60 + S)`
@@ -97,7 +97,7 @@ Since neither the event start time nor the end time are available through the AP
 - The official API returns a maximum of **25 battles** per player per request.
 - A standard Clash Royale match lasts approximately **3–7 minutes** (absolute floor ~1–3 minutes under ideal conditions).
 - At a realistic average of ~5 minutes per match, 25 matches would take a minimum of **~125 minutes** to complete.
-- A 25-match session completing in under 60 minutes would require every single match to finish in under 2.5 minutes — an extremely rare edge case.
+- A 25-match session completing in under 60 minutes would require every single match to finish in under 2.5 minutes - an extremely rare edge case.
 
 **Decision**: Polling interval during an `ACTIVE` voyage is set to **60 minutes**.
 
@@ -117,13 +117,13 @@ Two-layer deduplication strategy to guarantee 100% fidelity:
 
 ---
 
-## Part III — Scoring Integration (RPeS)
+## Part III - Scoring Integration (RPeS)
 
 ### Rolling Voyage Performance (RVP) Score
 
 To provide scoring stability and natural decay of performance across events (consistent with the War Week model), a **Rolling Voyage Performance (RVP)** score is used.
 
-**Step 1 — Single Event Score (SES)**:
+**Step 1 - Single Event Score (SES)**:
 
 ```
 SES = (1 - (Rank - 1) / (Eligible_Members - 1)) × 100
@@ -133,7 +133,7 @@ SES = (1 - (Rank - 1) / (Eligible_Members - 1)) × 100
 - Bottom contributor → SES = 0
 - Non-participants are classified and penalized separately (not included in rank denominator)
 
-**Step 2 — Rolling Average (RVP)**:
+**Step 2 - Rolling Average (RVP)**:
 
 ```
 RVP = AVG(SES) over last 3 Voyages
@@ -166,7 +166,7 @@ baseline_raw_score = [existing components] + (RVP × 50)
 
 ---
 
-## Part IV — Implementation Plan
+## Part IV - Implementation Plan
 
 ### Database (Supabase)
 
@@ -214,9 +214,9 @@ The `voyage` feature is integrated into `useShowcaseMode`, allowing simulation o
 
 ### Backend (Edge Functions / Cron)
 
-#### [NEW] `20260515000100_setup_voyage_cron.sql` — `voyage-high-fidelity-cron`
+#### [NEW] `20260515000100_setup_voyage_cron.sql` - `voyage-high-fidelity-cron`
 - Set up a staggered cron job at a **60-minute interval**.
-- Cron only triggers `ingest-royale-data` if a voyage is currently in `ACTIVE` status — no unnecessary execution otherwise.
+- Cron only triggers `ingest-royale-data` if a voyage is currently in `ACTIVE` status - no unnecessary execution otherwise.
 
 #### [MODIFY] `ingest-player-battles` RPC (`20260421200000_player_registry_unification.sql`)
 - Add logic to check if an ingested battle's `battle_time` falls within an active voyage window.
@@ -224,7 +224,7 @@ The `voyage` feature is integrated into `useShowcaseMode`, allowing simulation o
 
 ---
 
-### Frontend (PWA) — Hybrid Architecture
+### Frontend (PWA) - Hybrid Architecture
 
 #### 1. Setup & Activation (`Settings` Feature)
 | Component | Purpose |
@@ -261,7 +261,7 @@ The `voyage` feature is integrated into `useShowcaseMode`, allowing simulation o
 
 ---
 
-## Part V — Open Questions & Future Work
+## Part V - Open Questions & Future Work
 
 | Topic | Status | Notes |
 |---|---|---|

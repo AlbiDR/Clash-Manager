@@ -6,15 +6,15 @@
 --
 -- ROOT CAUSE (3 compounding gaps):
 --
---   1. substrate.shred_scout_logs — the jsonb_to_recordset typelist did not
+--   1. substrate.shred_scout_logs - the jsonb_to_recordset typelist did not
 --      include a `cards` column, so the field was silently discarded even when
 --      the profiler payload contained it.  The INSERT/UPDATE also omitted the
 --      column, leaving drivers.recruits.cards perpetually at its DEFAULT (0).
 --
---   2. features.headhunter_view — the SELECT never projected r.cards, so even
+--   2. features.headhunter_view - the SELECT never projected r.cards, so even
 --      if the column were populated it would never reach the API layer.
 --
---   3. SupabaseClient.ts (frontend) — mapSbHeadhunterRow hardcoded `cards: 0`.
+--   3. SupabaseClient.ts (frontend) - mapSbHeadhunterRow hardcoded `cards: 0`.
 --      That is fixed in the TypeScript layer independently.
 --
 -- This migration resolves gaps 1 and 2.  The TypeScript fix is a companion
@@ -145,9 +145,9 @@ WITH corpus_benchmark AS (
     -- Priority cascade (all data-driven, no hardcoded values):
     --   1. Max raw_potential_score of current ACTIVE recruits.
     --   2. Max raw_potential_score of recently dismissed recruits (blacklist,
-    --      expires_at > now() — the 30-day persistence window).
+    --      expires_at > now() - the 30-day persistence window).
     --   3. Max raw_potential_score across the entire corpus (all statuses).
-    --   4. 1 — zero-division mathematical guard only.
+    --   4. 1 - zero-division mathematical guard only.
     SELECT GREATEST(
         COALESCE(
             (SELECT MAX(raw_potential_score) FROM drivers.recruits WHERE status = 'ACTIVE'),

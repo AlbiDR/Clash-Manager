@@ -5,9 +5,9 @@
 -- MIGRATION: Fix Roster Nomenclature Integrity
 -- =============================================================================
 -- Changes:
---   1. substrate.format_tenure    — New helper for longevity labels.
---   2. substrate.format_last_seen — New helper for inactivity labels.
---   3. features.roster_view       — Accurate labeling of Tenure vs Last Seen.
+--   1. substrate.format_tenure    - New helper for longevity labels.
+--   2. substrate.format_last_seen - New helper for inactivity labels.
+--   3. features.roster_view       - Accurate labeling of Tenure vs Last Seen.
 --                                   Restores clan_tag for scoped filtering.
 -- =============================================================================
 

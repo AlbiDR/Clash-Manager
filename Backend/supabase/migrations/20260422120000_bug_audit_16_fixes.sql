@@ -49,7 +49,7 @@ DROP FUNCTION IF EXISTS drivers.handle_recruit_event() CASCADE;
 
 -- ============================================================
 -- BUG 4: shred_war_log stores clan tag + name into
--- war_history.player_tag / player_name — semantically wrong.
+-- war_history.player_tag / player_name - semantically wrong.
 -- war_history is a clan standings log; column names are correct
 -- but the INSERT source fields were mislabelled.
 -- Fix: extract clan tag and clan name correctly.

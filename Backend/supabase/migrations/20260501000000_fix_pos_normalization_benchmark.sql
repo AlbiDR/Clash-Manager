@@ -2,7 +2,7 @@
 -- Copyright (C) 2026 AlbiDR
 
 -- =============================================================================
--- FIX: PoS Normalization Benchmark — corpus_benchmark replaces elite_benchmark
+-- FIX: PoS Normalization Benchmark - corpus_benchmark replaces elite_benchmark
 --
 -- ROOT CAUSE:
 --   The previous headhunter_view used `elite_benchmark` anchored to the AVG of
@@ -39,7 +39,7 @@ WITH (security_invoker = true)
 AS
 WITH corpus_benchmark AS (
     -- Anchor: the highest raw_potential_score seen across the full observable
-    -- recruit corpus — ACTIVE pool plus any blacklisted recruit whose entry
+    -- recruit corpus - ACTIVE pool plus any blacklisted recruit whose entry
     -- has not yet expired (30-day persistence window).
     --
     -- This ensures the PoS scale is:

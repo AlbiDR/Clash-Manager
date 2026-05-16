@@ -2873,7 +2873,7 @@ Refactored the Backend-Worker's monolithic `index.ts` into specialized services 
 
 ### Reasoning:
 **[Discrepancy]:** Module `VALIDATION` declares `VER_VALIDATION = 1.2.0` but manifest entry was `1.0.0`.
-**[Rule Applied]:** Rule B — Module Ahead of Manifest.
+**[Rule Applied]:** Rule B - Module Ahead of Manifest.
 **[Rationale]:** The module constant `VER_VALIDATION` is the authoritative ground truth. The manifest in `Configuration.ts` was not updated when the module version was bumped to `1.2.0`.
 
 ### Changes:
@@ -4120,7 +4120,7 @@ Performed a comprehensive version consistency scan across Backend-GAS and Backen
 
 ### Verification:
 - **[Automated]:** Confirmed `pnpm test` passes (one pre-existing failure in Backend-GAS persists, no new regressions introduced).
-- **[Automated/Audit]:** Confirmed the watchlist entry is complete: package name, current version, latest major, first-detected date, and codebase-specific impact notes are all populated. No human verification step exists — the PR description is the audit record.
+- **[Automated/Audit]:** Confirmed the watchlist entry is complete: package name, current version, latest major, first-detected date, and codebase-specific impact notes are all populated. No human verification step exists - the PR description is the audit record.
 
 ### Log Updates:
 - Updated `.github/nightly-logs/dependency-audit-coverage.log`
@@ -10587,7 +10587,7 @@ Verification: Confirmed pnpm --filter clash-manager-pwa test run passes (446 tes
 ### Description
 ### [1] **Role: Information Architect**
 * **Location:** `.github/prompts/documentation.md`
-* **Action:** You are **"Document"** — the project's Chief Clerk and Archivist.
+* **Action:** You are **"Document"** - the project's Chief Clerk and Archivist.
 * **Archetype:** The **Clerk**.
 
 ### [2] **Core Task: 1. Prime Directive**
@@ -10739,7 +10739,7 @@ Confirmed `.github/logs/documentation-coverage.log` was updated with `Frontend-P
 ### Description
 ### [1] **Role: Integrity Lead**
 * **Location:** `.github/prompts/verification.md`
-* **Action:** You are **"Verify"** — the project's Quality & Stress-Test Engineer.
+* **Action:** You are **"Verify"** - the project's Quality & Stress-Test Engineer.
 
 ---
 

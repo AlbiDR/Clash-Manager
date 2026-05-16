@@ -17,7 +17,7 @@ WHERE is_active = TRUE
   );
 
 -- ============================================================================
--- PART 2: STRUCTURAL FIX — Replace shred_clan_members trigger function
+-- PART 2: STRUCTURAL FIX - Replace shred_clan_members trigger function
 -- The previous trigger deactivated leavers scoped only by clan_tag, which
 -- meant multiple separate ingestion inserts would each only see their own
 -- slice and never cleanly deactivate the full prior roster.
@@ -80,7 +80,7 @@ BEGIN
     FROM jsonb_array_elements(NEW.payload->'items') AS elem
     ON CONFLICT (member_tag, snapshot_date) DO NOTHING;
 
-    -- C. SCOPED DEACTIVATION — retire members absent from ALL recent payloads
+    -- C. SCOPED DEACTIVATION - retire members absent from ALL recent payloads
     -- "Recent" = any payload for this clan ingested in the last 2 hours.
     -- This tolerates chunked/multi-insert syncs while still correctly retiring
     -- members who have left after the sync window closes.

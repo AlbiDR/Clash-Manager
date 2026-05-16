@@ -28,7 +28,7 @@ AS $$
 BEGIN
     RETURN QUERY
     (
-        -- Priority 1: High Yield — top performers by total yield
+        -- Priority 1: High Yield - top performers by total yield
         SELECT da.keyword
         FROM substrate.discovery_anchors da
         WHERE da.status = 'ACTIVE'
@@ -37,7 +37,7 @@ BEGIN
     )
     UNION
     (
-        -- Priority 2: Exploration — least recently scanned to ensure full rotation
+        -- Priority 2: Exploration - least recently scanned to ensure full rotation
         SELECT da.keyword
         FROM substrate.discovery_anchors da
         WHERE da.status = 'ACTIVE'

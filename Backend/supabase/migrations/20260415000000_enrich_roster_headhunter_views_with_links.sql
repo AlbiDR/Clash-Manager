@@ -5,12 +5,12 @@
 -- MIGRATION: Enrich Roster & Headhunter Views with Deep Links
 -- =============================================================================
 -- Changes:
---   1. features.roster_view    — Add ingame_link, royaleapi_link columns.
---   2. features.headhunter_view — Add ingame_link, royaleapi_link columns;
+--   1. features.roster_view    - Add ingame_link, royaleapi_link columns.
+--   2. features.headhunter_view - Add ingame_link, royaleapi_link columns;
 --                                  rename pos → potential_score,
 --                                  rename rpos → raw_potential_score;
 --                                  cap potential_score at 100 (0-100 contract).
---   3. drivers.top_recruits_view — Rebuilt to propagate link columns and
+--   3. drivers.top_recruits_view - Rebuilt to propagate link columns and
 --                                  ADR-compliant score names from headhunter_view.
 -- =============================================================================
 
