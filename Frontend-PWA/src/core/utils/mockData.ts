@@ -35,10 +35,10 @@ export function generateMockData(options?: {
   const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const hashParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.hash.split("?")[1] || "" : '');
   const countParam = urlParams.get('count') || hashParams.get('count');
-  const randomCount = countParam ? parseInt(countParam, 10) : (Math.floor(Math.random() * 50) + 1);
+  const randomCount = countParam ? parseInt(countParam, 10) : undefined;
   
-  const memberCount = options?.memberCount ?? randomCount;
-  const recruitCount = options?.recruitCount ?? randomCount;
+  const memberCount = options?.memberCount ?? randomCount ?? DEFAULT_MOCK_MEMBER_COUNT;
+  const recruitCount = options?.recruitCount ?? randomCount ?? DEFAULT_MOCK_RECRUIT_COUNT;
   const lb: LeaderboardMember[] = [];
   const names = [
     "Arthur",

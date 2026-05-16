@@ -106,28 +106,27 @@ export const useClashDataStore = defineStore("clashData", () => {
 
   // --- ACTIONS ---
 
-  /**
-   * [INTERNAL] Authoritative state commitment for WebAppData.
-   *
-   * @remarks
-   * Rationale: Centralizes the success path for all sync operations to ensure
-   * metadata, persistence, and error-resets are handled identically.
-   * This facilitates the "Structural Integrity" goal by eliminating duplication
-   * and providing a clinical success boundary.
-   */
-  async function commitSyncResult(payload: WebAppData) {
+  async function commitSyncResult(payload: WebAppData | null) {
     data.value = payload;
 
-    // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
-    // Rationale: Use payload's generation timestamp to calculate age,
-    // preventing the "Just Now" reset on every hydration/refresh.
-    lastSync.value = payload.timestamp;
+    if (payload) {
+      // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
+      // Rationale: Use payload's generation timestamp to calculate age,
+      // preventing the "Just Now" reset on every hydration/refresh.
+      lastSync.value = payload.timestamp;
 
-    // Metadata Sync
-    dataSource.value = payload.dataSource || null;
-    remoteTimestamp.value = payload.remoteTimestamp || null;
-    lastCompiled.value = payload.lastCompiled || null;
-    lastFetched.value = payload.lastFetched || null;
+      // Metadata Sync
+      dataSource.value = payload.dataSource || null;
+      remoteTimestamp.value = payload.remoteTimestamp || null;
+      lastCompiled.value = payload.lastCompiled || null;
+      lastFetched.value = payload.lastFetched || null;
+    } else {
+      lastSync.value = 0;
+      dataSource.value = null;
+      remoteTimestamp.value = null;
+      lastCompiled.value = null;
+      lastFetched.value = null;
+    }
 
     // Status Reset
     consecutiveSyncFailures.value = 0;
@@ -135,7 +134,9 @@ export const useClashDataStore = defineStore("clashData", () => {
 
     // PERSISTENCE DURABILITY: Target A [2]
     try {
-      await saveCache(payload);
+      if (payload) {
+        await saveCache(payload);
+      }
     } catch (persistenceError: unknown) {
       // THREAT: Silent persistence failure leads to data loss on session restart.
       // Descriptively naming 'persistenceError' ensures failure modes are explicit.

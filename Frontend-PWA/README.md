@@ -15,10 +15,10 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3.5 ap
       <strong>Light Mode</strong>
     </summary>
     <div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background-color: #ffffff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-      <img src="public/assets/branding/roster-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/headhunter-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/laboratory-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/settings-light.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/roster-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/headhunter-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/laboratory-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/settings-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
     </div>
   </details>
 
@@ -27,10 +27,10 @@ The **Operational Command Center**. A high-performance, offline-first Vue 3.5 ap
       <strong>Dark Mode</strong>
     </summary>
     <div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 10px; background-color: #0d1117; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-      <img src="public/assets/branding/roster-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/headhunter-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/laboratory-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="public/assets/branding/settings-dark.webp" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/roster-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/headhunter-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/laboratory-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
+      <img src="public/assets/branding/settings-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
     </div>
   </details>
 </div>
