@@ -35,11 +35,26 @@ defineSlots<{
 </script>
 
 <template>
-  <slot
-    v-for="(item, index) in items"
-    :key="item.id"
-    name="item"
-    :item="item"
-    :index="index"
-  ></slot>
+  <template v-if="isShowcaseMode">
+    <!-- Showcase Mode: Render only the first item (if any) -->
+    <slot
+      v-if="items.length > 0"
+      name="item"
+      :item="items[0]"
+      :index="0"
+    ></slot>
+    <!-- Showcase Mode: Render 7 skeletons -->
+    <BaseCardSkeleton v-for="i in 7" :key="'skeleton-' + i" />
+  </template>
+
+  <template v-else>
+    <!-- Standard Mode: Render all items -->
+    <slot
+      v-for="(item, index) in items"
+      :key="item.id"
+      name="item"
+      :item="item"
+      :index="index"
+    ></slot>
+  </template>
 </template>

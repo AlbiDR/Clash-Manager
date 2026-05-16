@@ -159,9 +159,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   );
   
   const visibleItems = computed(() => {
-    // [UI] BRANDING: In Showcase mode, we previously limited to 1 card.
-    // The user now requests randomized counts (1-50), so we allow the progressive
-    // list to handle rendering (defaulting to 8 items per page).
+    // [UI] BRANDING: In Showcase mode only the first card is shown so the
+    // ConsoleList skeleton overlay carries the visual weight.
+    if (isShowcase.value) return allVisibleItems.value.slice(0, 1);
     return allVisibleItems.value;
   });
 
@@ -242,9 +242,23 @@ export function useConsoleController<T extends { id: string; n?: string }>(
    * Displays the count of active items, adjusted for special UI modes.
    */
   const statsBadge = computed(() => {
-    // [UI] BRANDING: Derive count from actual data length to ensure
-    // consistency between the badge and the rendered list.
-    const count = data.value ? data.value.length : 0;
+    let count: number;
+
+    if (isShowcase.value) {
+      // [UI] BRANDING: Randomised count (1-50) for visual variety in the
+      // Showcase overlay without leaking real data.
+      count = Math.floor(Math.random() * 50) + 1;
+    } else if (isBlueprintMode.value) {
+      // [UI] BRANDING: Use deterministic mock counts in Blueprint mode so
+      // the badge always matches the synthetic dataset size.
+      count =
+        statsLabel === "Recruit"
+          ? DEFAULT_MOCK_RECRUIT_COUNT
+          : DEFAULT_MOCK_MEMBER_COUNT;
+    } else {
+      count = data.value ? data.value.length : 0;
+    }
+
     const displayLabel = count === 1 ? statsLabel : `${statsLabel}s`;
 
     return {
