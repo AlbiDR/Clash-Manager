@@ -64,14 +64,17 @@ export function useShowcaseMode() {
   watch(
     [isSyntheticMode, isBlueprintMode],
     ([synthetic, blueprint]) => {
-      // The master Showcase state is defined as BOTH sub-modes being active.
-      const bothOn = synthetic && blueprint;
-      if (isShowcaseMode.value !== bothOn) {
-        isShowcaseMode.value = bothOn;
-        localStorage.setItem(SHOWCASE_KEY, String(bothOn));
+      // MASTER RULE: Showcase mode requires Synthetic data.
+      // Skeletons (Blueprint) are optional to allow for high-fidelity captures.
+      if (!synthetic && isShowcaseMode.value) {
+        isShowcaseMode.value = false;
+        localStorage.setItem(SHOWCASE_KEY, "false");
+      } else if (synthetic && blueprint && !isShowcaseMode.value) {
+        // If both are turned on manually, reflect that in the master toggle
+        isShowcaseMode.value = true;
+        localStorage.setItem(SHOWCASE_KEY, "true");
       }
-    },
-    { immediate: true },
+    }
   );
 
   /**

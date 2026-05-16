@@ -157,31 +157,37 @@ export const useClashDataStore = defineStore("clashData", () => {
    */
   async function loadLocal() {
     try {
-      const cached = await loadCache();
-      
       // [SYNTHETIC OVERRIDE] Target B [2]
-      // Rationale: If synthetic mode is active and cache is empty or invalid, 
-      // seed the store immediately to ensure zero-latency high-fidelity render.
-      if (!cached && isSyntheticMode.value) {
+      // Rationale: If synthetic mode is active, seed the store immediately 
+      // with mock data to ensure zero-latency high-fidelity render, 
+      // bypassing potentially slow or invalid IndexedDB cache.
+      if (isSyntheticMode.value) {
         console.debug("[Store] Synthetic Mode active: Seeding initial mock data");
         await commitSyncResult(generateMockData());
         return;
       }
 
-      if (!cached) return;
+      const cached = await loadCache();
+      
+      if (!cached) {
+        console.debug("[Store] No local cache found, starting fresh.");
+        await commitSyncResult(null);
+        return;
+      }
 
-      // [GUARD] VALIDATION BOUNDARY: Target B [1]
-      const result = v.safeParse(WebAppDataSchema, cached);
-      if (result.success) {
-        console.debug(`[Store] Hydrated from cache. Source: ${result.output.dataSource || "SUPABASE"}`);
-        await commitSyncResult(result.output);
+      const validation = v.safeParse(WebAppDataSchema, cached);
+      if (validation.success) {
+        console.debug("[Store] Local cache hydrated successfully.");
+        await commitSyncResult(validation.output);
       } else {
-        console.warn("[Store] Local cache validation failed, skipping hydration:", result.issues);
+        console.warn("[Store] Local cache validation failed:", validation.issues);
+        await commitSyncResult(null);
       }
     } catch (hydrationError: unknown) {
       // THREAT: Corrupt disk state causing app boot failure.
       // desriptively naming 'hydrationError' distinguishes it from network-driven sync failures.
       console.error("[Store] Cache hydration failed:", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
+      await commitSyncResult(null);
     }
   }
 
