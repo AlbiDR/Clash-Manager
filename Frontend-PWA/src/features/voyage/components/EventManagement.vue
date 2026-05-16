@@ -172,6 +172,12 @@ async function handleActivate() {
         </span>
       </div>
       <div class="summary-row">
+        <span class="summary-label">Completion</span>
+        <span class="summary-value primary">
+          {{ Math.round(store.progressRatio * 100) }}%
+        </span>
+      </div>
+      <div class="summary-row">
         <span class="summary-label">Status</span>
         <span class="summary-value" :class="{ 'victory': store.isVictory }">
           {{ store.isVictory ? "Goal Achieved" : "Underway" }}
