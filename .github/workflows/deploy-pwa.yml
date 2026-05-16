@@ -7,7 +7,6 @@ on:
     paths:
       - "Frontend-PWA/**"
       - ".github/workflows/deploy-pwa.yml"
-      - "Backend/supabase/migrations/**"
   pull_request:
     branches: ["Stable"]
     types: [opened, synchronize, reopened]
