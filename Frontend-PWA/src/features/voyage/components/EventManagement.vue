@@ -51,7 +51,11 @@ onMounted(() => {
   store.refresh();
   timer = setInterval(() => {
     if (store.endsAt) {
+      const wasEnded = timeRemaining.value === "Ended";
       timeRemaining.value = formatCountdown(store.endsAt);
+      if (!wasEnded && timeRemaining.value === "Ended") {
+        store.refresh();
+      }
     } else {
       timeRemaining.value = "";
     }
