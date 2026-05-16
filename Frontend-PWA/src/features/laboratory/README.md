@@ -23,7 +23,6 @@ The Laboratory implements a strict validation boundary. Raw data from the Supaba
 ### Progression Engine (Simulation.ts)
 A non-blocking, generator-based engine that calculates the most efficient upgrade path.
 - **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
-- **Recursive Lookahead**: Evaluates the "character arc" of a card (determined by `LOOKAHEAD_PRECISION`) to avoid greedy traps and local optima.
 - **Priority Queue**: Uses a Binary Heap to always select the highest-efficiency candidate.
 
 ### Trajectory Rendering (TrajectoryList.vue)
@@ -36,10 +35,9 @@ Upgrade priorities are defined by interchangeable strategies:
 - **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
 ### Constants Registry (Registry.ts)
-Centralized source of truth for game-specific data:
-- `GOLD_COST_TABLE`: Gold required per level.
-- `CARD_XP_TABLE`: XP gained per level.
-- `MATERIAL_REQUIREMENTS`: Cards/Wild Cards required per rarity and level.
+Acts as a local feature-level proxy for game-specific data, re-exporting authoritative constants from the Layer 1 core substrate (`@core/utils/game.ts`) and providing feature-specific calibrations.
+- **Authoritative Substrate**: Re-exports `GOLD_COST_TABLE`, `CARD_XP_TABLE`, and `MATERIAL_REQUIREMENTS` from `@core`.
+- **Feature Calibration**: Houses specific overrides and logic calibrations required exclusively by the Laboratory simulation engine.
 
 ## State Management
 Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.

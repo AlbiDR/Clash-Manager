@@ -179,8 +179,8 @@ describe("SupabaseClient", () => {
 
       const result = await SupabaseClient.fetchRemote();
 
-      expect(result.lb[0].n).toBe('');
-      expect(result.hh[0].n).toBe('');
+      expect(result.lb[0].n).toBe('Unknown');
+      expect(result.hh[0].n).toBe('Unknown');
       expect(result.timestamp).toBeLessThanOrEqual(Date.now());
     });
 
