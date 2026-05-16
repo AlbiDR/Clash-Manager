@@ -27,8 +27,8 @@ import {
   ConsoleList
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
-
 import { MemberCard } from "../components";
+import { VoyageBanner } from "../../voyage/components";
 
 
 const {
@@ -50,6 +50,9 @@ const {
     v-bind="layoutProps"
     v-on="layoutEvents"
   >
+    <!-- Voyage Progress Banner (ACTIVE events only) -->
+    <VoyageBanner />
+
     <!-- Default Slot: The List -->
     <ConsoleList
       :items="visibleItems"

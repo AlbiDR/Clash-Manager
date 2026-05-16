@@ -414,3 +414,59 @@ export async function subscribeToPush(subscription: PushSubscription): Promise<b
   
   return !error;
 }
+
+/**
+ * [VOYAGE] Activates a new Clan Voyage event via the features proxy.
+ */
+export async function initializeVoyage(target: number, start: string, end: string) {
+    const supabase = createSupabaseClient();
+    const { data, error } = await supabase
+        .rpc('initialize_voyage', {
+            target_crowns: target,
+            start_at: start,
+            end_at: end
+        });
+
+    if (error) {
+        console.error('[Voyage] Initialization error:', error);
+        return { success: false, error };
+    }
+
+    return { success: true, data };
+}
+
+/**
+ * Fetches the voyage summary from the SSOT view.
+ */
+export async function fetchVoyageSummary(): Promise<any | null> {
+    const supabase = createSupabaseClient();
+    const { data, error } = await supabase
+        .from('voyage_summary')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        console.error('[Voyage] Summary fetch error:', error);
+        return null;
+    }
+
+    return data;
+}
+
+/**
+ * Fetches contribution aggregates from the high-resolution ledger view.
+ */
+export async function fetchVoyageContributions(): Promise<VoyageContribution[]> {
+    const supabase = createSupabaseClient();
+    const { data, error } = await supabase
+        .from('voyage_contributions')
+        .select('*');
+
+    if (error) {
+        console.error('[Voyage] Contributions fetch error:', error);
+        return [];
+    }
+
+    return (data || []) as VoyageContribution[];
+}
