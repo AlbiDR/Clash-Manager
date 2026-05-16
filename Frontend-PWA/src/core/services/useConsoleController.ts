@@ -159,11 +159,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   );
   
   const visibleItems = computed(() => {
-    // CONSTRAINT: In Showcase mode, we only show a single card
-    // to keep the visual demo clean and focused for presentations.
-    if (isShowcase.value) {
-      return filteredItems.value.length > 0 ? filteredItems.value.slice(0, 1) : [];
-    }
+    // [UI] BRANDING: In Showcase mode, we previously limited to 1 card.
+    // The user now requests randomized counts (1-50), so we allow the progressive
+    // list to handle rendering (defaulting to 8 items per page).
     return allVisibleItems.value;
   });
 
@@ -244,20 +242,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
    * Displays the count of active items, adjusted for special UI modes.
    */
   const statsBadge = computed(() => {
-    let count = 0;
-    if (isShowcase.value) {
-      // [UI] BRANDING RANDOMIZATION: Ensure screenshots show varied clan sizes (1-50)
-      // to avoid the "lonely clan" look in branding assets.
-      const randomSeed = Math.floor(Math.random() * 50) + 1;
-      count = randomSeed;
-    } else if (isBlueprintMode.value) {
-      // PERFORMANCE: Avoid calling generateMockData() just to get length.
-      // Use static counts that match mockData defaults.
-      count = statsLabel === "Member" ? DEFAULT_MOCK_MEMBER_COUNT : DEFAULT_MOCK_RECRUIT_COUNT;
-    } else {
-      count = data.value ? data.value.length : 0;
-    }
-
+    // [UI] BRANDING: Derive count from actual data length to ensure
+    // consistency between the badge and the rendered list.
+    const count = data.value ? data.value.length : 0;
     const displayLabel = count === 1 ? statsLabel : `${statsLabel}s`;
 
     return {

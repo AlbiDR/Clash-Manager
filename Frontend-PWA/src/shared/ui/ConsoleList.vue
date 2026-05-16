@@ -35,32 +35,11 @@ defineSlots<{
 </script>
 
 <template>
-  <!-- 1. SHOWCASE MODE (Exhibition Row) -->
-  <template v-if="isShowcaseMode">
-    <slot
-      v-if="items.length > 0"
-      name="item"
-      :item="items[0]"
-      :index="0"
-    ></slot>
-
-    <!-- Constant skeleton count for consistent layout in showcase -->
-    <BaseCardSkeleton
-      v-for="i in 7"
-      :key="'ex-' + i"
-      :index="i + 1"
-      :style="{ '--i': i + 1 }"
-    />
-  </template>
-
-  <!-- 2. STANDARD MODE (Full Progressive List) -->
-  <template v-else>
-    <slot
-      v-for="(item, index) in items"
-      :key="item.id"
-      name="item"
-      :item="item"
-      :index="index"
-    ></slot>
-  </template>
+  <slot
+    v-for="(item, index) in items"
+    :key="item.id"
+    name="item"
+    :item="item"
+    :index="index"
+  ></slot>
 </template>
