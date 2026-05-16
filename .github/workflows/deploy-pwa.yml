@@ -3,7 +3,7 @@ name: Deploy PWA
 
 on:
   push:
-    branches: ["Stable", "Beta"]
+    branches: ["Stable", "Beta", "Clan-Voyage"]
     paths:
       - "Frontend-PWA/**"
       - ".github/workflows/deploy-pwa.yml"
@@ -81,7 +81,7 @@ jobs:
         run: pnpm run build
 
       - name: Upload Pages Artifact
-        if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')) || github.event_name == 'workflow_dispatch'
+        if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta' || github.ref == 'refs/heads/Clan-Voyage')) || github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./Frontend-PWA/dist"
@@ -89,7 +89,7 @@ jobs:
   deploy:
     name: Deploy
     needs: build
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta')) || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta' || github.ref == 'refs/heads/Clan-Voyage')) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
