@@ -276,18 +276,16 @@ WITH active_voyage AS (
     GROUP BY v.id
 )
 SELECT 
-    jsonb_build_object(
+    (SELECT jsonb_build_object(
         'id', v.id,
         'status', v.status,
         'target_crowns', v.target_crowns,
         'start_at', v.start_at,
         'end_at', v.end_at,
         'is_victory', (ts.total_crowns >= v.target_crowns)
-    ) AS event,
-    ts.total_crowns,
-    (ts.total_crowns::numeric / v.target_crowns::numeric) AS progress_ratio
-FROM active_voyage v
-JOIN total_stats ts ON ts.voyage_id = v.id;
+    ) FROM active_voyage v JOIN total_stats ts ON ts.voyage_id = v.id) AS event,
+    COALESCE((SELECT ts.total_crowns FROM total_stats ts), 0) AS total_crowns,
+    COALESCE((SELECT (ts.total_crowns::numeric / v.target_crowns::numeric) FROM active_voyage v JOIN total_stats ts ON ts.voyage_id = v.id), 0) AS progress_ratio;
 
 -- 7. SECURITY: RLS Policies for Public Access
 -- Allow the PWA (anon) to read active voyage data.
