@@ -15,7 +15,7 @@ import { supabase, CONFIG, syncVault } from "./client.ts";
  *
  * Lifecycle:
  *  1. Checks features.player_card_snapshots for a fresh snapshot (<12h old).
- *     On a cache hit, returns immediately — no API call, no key rotation slot used.
+ *     On a cache hit, returns immediately - no API call, no key rotation slot used.
  *  2. On a cache miss, fetches the player profile from the Clash Royale API via
  *     the key-rotation proxy (muscle.ts).
  *  3. Normalizes rarity-relative card levels to the unified 1-16 absolute scale.

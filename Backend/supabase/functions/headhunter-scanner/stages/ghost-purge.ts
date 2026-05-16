@@ -9,7 +9,7 @@ import { fetchWithRotation } from "../../_shared/muscle.ts";
  * S0: Ghost Purge (Hot-Zone Audit)
  * Aggressively audits the Top 50 ACTIVE recruits to ensure the headhunter view
  * stays free of players who have since joined a clan. Any clanned player in the
- * top 50 is wasting a visible slot — purge first, discover second.
+ * top 50 is wasting a visible slot - purge first, discover second.
  *
  * Returns the number of ghosts evicted.
  */
@@ -66,9 +66,9 @@ export async function runGhostPurge(
                         clan: p.clan.tag,
                         action: 'evicted_clanned_ghost'
                     });
-                    console.log(`[GHOST_PURGE] Evicted ${p.tag} — joined clan ${p.clan.tag}`);
+                    console.log(`[GHOST_PURGE] Evicted ${p.tag} - joined clan ${p.clan.tag}`);
                 } else {
-                    // Player is still clanless — refresh their last_scan timestamp so
+                    // Player is still clanless - refresh their last_scan timestamp so
                     // the stale-rescan (S4) does not redundantly re-check them this cycle
                     touchedTags.push(p.tag);
                 }
@@ -87,7 +87,7 @@ export async function runGhostPurge(
         }
     }
 
-    console.log(`[GHOST_PURGE] Audit complete — ${ghostsEvicted} ghost(s) evicted, ${touchedTags.length} recruit(s) refreshed.`);
+    console.log(`[GHOST_PURGE] Audit complete - ${ghostsEvicted} ghost(s) evicted, ${touchedTags.length} recruit(s) refreshed.`);
     logAudit('GHOST_PURGE', 'resulted_data', {
         evicted: ghostsEvicted,
         refreshed: touchedTags.length,

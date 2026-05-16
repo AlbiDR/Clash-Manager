@@ -9,7 +9,7 @@
 -- Re-links features.roster_view to scoring_view via LEFT JOIN so that
 -- raw_performance_score, performance_score, and stability_index are exposed.
 --
--- Formula lineage: clinical_unification (v4) — the authoritative implementation.
+-- Formula lineage: clinical_unification (v4) - the authoritative implementation.
 -- Both views use SECURITY INVOKER (no SECURITY DEFINER).
 -- =============================================================================
 

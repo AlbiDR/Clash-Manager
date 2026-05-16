@@ -58,7 +58,7 @@ const getUpgradeCandidate = (
   // 1. Check Level Cap
   if (nextLevel > CARD_LEVEL_CAP) return null;
 
-  // 2. Resource Requirements — look up by rarity, not flat by level.
+  // 2. Resource Requirements - look up by rarity, not flat by level.
   const goldCost = GOLD_COST_TABLE[card.rarity]?.[nextLevel];
   const cardsRequired = MATERIAL_REQUIREMENTS[card.rarity]?.[nextLevel];
   const xpGained = CARD_XP_TABLE[nextLevel];
@@ -231,7 +231,7 @@ export function* calculateProgressionPath(
   while (iterations < MAX_ITERATIONS) {
     iterations++;
 
-    // 1. Termination Check — return (not yield) so done=true on this call.
+    // 1. Termination Check - return (not yield) so done=true on this call.
     const currentKingLevel = registryCalculateKingLevel(Number(currentState.totalXp));
     if (currentKingLevel >= targetLevel || Number(currentState.totalXp) >= targetXp) {
       return currentState;
@@ -244,7 +244,7 @@ export function* calculateProgressionPath(
       if (candidate) candidates.push(candidate);
     });
 
-    // 3. Termination: no viable upgrades — return so done=true on this call.
+    // 3. Termination: no viable upgrades - return so done=true on this call.
     if (candidates.length === 0) {
       return currentState;
     }

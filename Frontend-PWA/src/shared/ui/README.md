@@ -1,4 +1,4 @@
-# Shared UI — Molecule Layer
+# Shared UI - Molecule Layer
 
 The **Atomic Foundry**. A collection of domain-blind UI building blocks and layout orchestrators that define the visual language of the Clash Manager ecosystem.
 

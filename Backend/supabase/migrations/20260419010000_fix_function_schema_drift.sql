@@ -22,7 +22,7 @@ Resolves all 6 errors reported by `supabase db lint --linked`:
 
   4. public.ingest_clan_members
        No unique constraint matching ON CONFLICT (tag, snapshot_date).
-       Fix: conflict on (tag) — the sole unique constraint on members.
+       Fix: conflict on (tag) - the sole unique constraint on members.
 
   5. public.ingest_war_log
        Column 'clan_tag'/'season_id'/'section_index' do not exist in
@@ -195,7 +195,7 @@ BEGIN
             v_joined_at := NOW();
         END IF;
 
-        -- UPSERT — conflict on tag (the sole unique key on members)
+        -- UPSERT - conflict on tag (the sole unique key on members)
         INSERT INTO drivers.members (
             tag, name, role, exp_level,
             trophies, donations, donations_received,

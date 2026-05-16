@@ -11,7 +11,7 @@ import path from 'path';
  *
  * Strategy:
  *   Uses `supabase migration repair --status reverted` (Management API, no direct
- *   DB connection required) to remove remote ghost versions — versions present in
+ *   DB connection required) to remove remote ghost versions - versions present in
  *   the remote migration history table but absent from the local migrations directory.
  *
  *   Version (timestamp) is the SSOT key. Name is intentionally ignored; the Supabase
@@ -96,7 +96,7 @@ ghosts.forEach(v => console.log(`  Ghost: ${v}`));
 
 // ---------------------------------------------------------------------------
 // 4. Repair ghosts via `supabase migration repair --status reverted`
-//    This uses the Management API — no direct DB connection required.
+//    This uses the Management API - no direct DB connection required.
 // ---------------------------------------------------------------------------
 try {
   execSync(

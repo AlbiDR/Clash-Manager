@@ -1,6 +1,6 @@
 # Dependency Audit Coverage Log
 
-## Section 1 — Automated Fixes
+## Section 1 - Automated Fixes
 | Package | Previous | New | Date Applied | Test Outcome |
 |---------|----------|-----|--------------|--------------|
 | vue     | 3.5.27   | 3.5.30 | 2026-03-14   | PASS         |
@@ -60,7 +60,7 @@
 | tsx | ^4.21.0 | ^4.22.0 | 2026-05-15 | PASS |
 | knip | ^6.13.1 | ^6.14.0 | 2026-08-04 | PASS |
 
-## Section 2 — Major Version Watchlist
+## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
 | vite | ^7.3.1 | 8.0.13 | 2026-05-17 | Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. Verify manualChunks. |

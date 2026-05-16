@@ -2,15 +2,15 @@
 -- Copyright (C) 2026 AlbiDR
 
 -- =============================================================================
--- Bug Audit Batch 2 — 13 Fixes
+-- Bug Audit Batch 2 - 13 Fixes
 -- Bugs 17-29: search_path pins, dead-code drops, and semantic corrections.
 -- =============================================================================
 
 -- ============================================================
--- CLUSTER A — BUGS 17-23: Pin search_path on all unpinned functions
+-- CLUSTER A - BUGS 17-23: Pin search_path on all unpinned functions
 -- ============================================================
 
--- BUG 17: public.get_headhunter_context — SECURITY DEFINER, no search_path
+-- BUG 17: public.get_headhunter_context - SECURITY DEFINER, no search_path
 CREATE OR REPLACE FUNCTION public.get_headhunter_context()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'drivers', 'substrate' AS $$
 DECLARE
@@ -39,7 +39,7 @@ BEGIN
     );
 END; $$;
 
--- BUG 18: public.get_shadow_discovery_targets — no search_path
+-- BUG 18: public.get_shadow_discovery_targets - no search_path
 CREATE OR REPLACE FUNCTION public.get_shadow_discovery_targets(p_limit integer DEFAULT 50)
 RETURNS TABLE(opponent_player_tag text) LANGUAGE plpgsql SET search_path TO 'public', 'drivers' AS $$
 BEGIN
@@ -55,7 +55,7 @@ BEGIN
     LIMIT p_limit;
 END; $$;
 
--- BUG 19: public.ingest_player_battles — no search_path
+-- BUG 19: public.ingest_player_battles - no search_path
 CREATE OR REPLACE FUNCTION public.ingest_player_battles(p_tag text, p_payload jsonb)
 RETURNS void LANGUAGE plpgsql SET search_path TO 'public', 'drivers' AS $$
 DECLARE
@@ -122,7 +122,7 @@ BEGIN
     );
 END; $$;
 
--- BUG 20: public.maintenance_janitor — SECURITY DEFINER, no search_path, + wrong column name
+-- BUG 20: public.maintenance_janitor - SECURITY DEFINER, no search_path, + wrong column name
 -- Fixed: members.tag -> members.player_tag (leaver-defense subquery)
 CREATE OR REPLACE FUNCTION public.maintenance_janitor()
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'drivers', 'substrate' AS $$
@@ -138,7 +138,7 @@ BEGIN
     -- B. Combat Intel (Opponents) - 7 Day Retention
     DELETE FROM drivers.war_opponents WHERE updated_at < NOW() - INTERVAL '7 days';
 
-    -- C. LEAVER DEFENSE — corrected: tag -> player_tag (Bug 20 / Bug 29 fix)
+    -- C. LEAVER DEFENSE - corrected: tag -> player_tag (Bug 20 / Bug 29 fix)
     DELETE FROM drivers.player_battles
     WHERE player_tag NOT IN (
         SELECT DISTINCT player_tag FROM drivers.members
@@ -159,7 +159,7 @@ BEGIN
     ANALYZE;
 END; $$;
 
--- BUG 21: public.report_dead_recruit — SECURITY DEFINER, no search_path
+-- BUG 21: public.report_dead_recruit - SECURITY DEFINER, no search_path
 CREATE OR REPLACE FUNCTION public.report_dead_recruit(p_player_tag text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'drivers', 'substrate' AS $$
 DECLARE
@@ -202,7 +202,7 @@ BEGIN
     VALUES ('GHOST_EVICTION', 'INFO', 'Universal eviction of ghost player: ' || p_player_tag);
 END; $$;
 
--- BUG 22: substrate.execute_nightly_maintenance — SECURITY DEFINER, no search_path
+-- BUG 22: substrate.execute_nightly_maintenance - SECURITY DEFINER, no search_path
 CREATE OR REPLACE FUNCTION substrate.execute_nightly_maintenance()
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'substrate', 'drivers', 'public' AS $$
 DECLARE v_start_time TIMESTAMPTZ := NOW();
@@ -244,7 +244,7 @@ EXCEPTION WHEN OTHERS THEN
     RAISE;
 END; $$;
 
--- BUG 23: substrate.pipeline_watchdog — SECURITY DEFINER, no search_path
+-- BUG 23: substrate.pipeline_watchdog - SECURITY DEFINER, no search_path
 CREATE OR REPLACE FUNCTION substrate.pipeline_watchdog()
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'substrate', 'public' AS $$
 DECLARE v_reset_count INTEGER;
@@ -269,7 +269,7 @@ BEGIN
 END; $$;
 
 -- ============================================================
--- CLUSTER B — BUGS 24-26: Drop dead-code legacy ingestion functions
+-- CLUSTER B - BUGS 24-26: Drop dead-code legacy ingestion functions
 -- Superseded by shredder trigger pattern (substrate.raw_* → trigger → drivers.*)
 -- Confirmed zero references in any edge function source.
 -- ============================================================
@@ -279,10 +279,10 @@ DROP FUNCTION IF EXISTS public.ingest_river_race(jsonb)    CASCADE;
 DROP FUNCTION IF EXISTS public.ingest_war_log(jsonb)       CASCADE;
 
 -- ============================================================
--- CLUSTER C — BUGS 27-29: Semantic & logic corrections
+-- CLUSTER C - BUGS 27-29: Semantic & logic corrections
 -- ============================================================
 
--- BUG 27: public.ingest_clan_profile — ON CONFLICT (tag, snapshot_date)
+-- BUG 27: public.ingest_clan_profile - ON CONFLICT (tag, snapshot_date)
 -- Column is `clan_tag`, not `tag`. Also `name` -> `clan_name`.
 -- Every upsert silently became a duplicate insert.
 CREATE OR REPLACE FUNCTION public.ingest_clan_profile(p_payload jsonb)
@@ -316,7 +316,7 @@ BEGIN
         updated_at        = NOW();
 END; $$;
 
--- BUG 28: substrate.report_anchor_yield — rate-limited scans (yield=0) are
+-- BUG 28: substrate.report_anchor_yield - rate-limited scans (yield=0) are
 -- indistinguishable from dead anchors, causing valid keywords to be marked STALE.
 -- Add rate_limited_scans column to discovery_anchors and gate staleness on it.
 ALTER TABLE substrate.discovery_anchors
@@ -347,4 +347,4 @@ END; $$;
 -- BUG 29: public.maintenance_janitor leaver-defense column bug is fixed in Bug 20 above.
 -- The substrate.execute_nightly_maintenance path is the authoritative maintenance entry point.
 -- maintenance_janitor (public) is a vestigial duplicate. Pin its search_path (done in Bug 20)
--- and add a deprecation notice comment — it will be dropped in the next cleanup cycle.
+-- and add a deprecation notice comment - it will be dropped in the next cleanup cycle.

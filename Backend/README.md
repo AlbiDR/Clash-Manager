@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Clash Manager — Backend (Supabase Binary Stack)
+# Clash Manager - Backend (Supabase Binary Stack)
 
 This directory serves as the **Single Source of Truth** for the `Clash-Manager` backend infrastructure, leveraging a **Binary Unitary Architecture** to consolidate ingestion and scoring logic into a clinical, high-performance substrate.
 
@@ -27,12 +27,12 @@ The backend has transitioned from a distributed model (GAS/Node.js) into a strea
 ## III. Database Substrate (CleanStack Mapping)
 The project employs a strictly segmented schema strategy to maintain domain isolation:
 
-### 1. `substrate` (L0 — Raw Data)
+### 1. `substrate` (L0 - Raw Data)
 - **Role**: Ingestion gatekeeper.
 - **Logic**: Receives volatile raw state from Edge Functions. No processing logic.
 - **Privacy**: Service-role internal only; strictly isolated from public access.
 
-### 2. `drivers` (L2 — Domain Storage)
+### 2. `drivers` (L2 - Domain Storage)
 - **Role**: Persistence-ignorant domain objects and historical archives.
 - **Core Models**:
     - `drivers.members`: The single authoritative source for active player telemetry.
@@ -40,7 +40,7 @@ The project employs a strictly segmented schema strategy to maintain domain isol
     - `drivers.player_battles`: **100-Sample Rolling Window** per resident for deep performance scoring.
     - `drivers.war_activity`: Daily deck usage and participation logs.
 
-### 3. `features` (L3 — Business Presentation)
+### 3. `features` (L3 - Business Presentation)
 - **Role**: Materialized views and API-ready logic for frontend consumption.
 - **Interfaces**:
     - `features.roster_view`: Deeply sorted roster with dynamic tenure labeling.
@@ -120,7 +120,7 @@ supabase functions deploy sync-player-cards --no-verify-jwt
 
 ---
 
-## VIII. Current State — Roadmap (v13.3.0)
+## VIII. Current State - Roadmap (v13.3.0)
 - [x] **Phase 1-7**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor, Full PWA integration).
 
 ---

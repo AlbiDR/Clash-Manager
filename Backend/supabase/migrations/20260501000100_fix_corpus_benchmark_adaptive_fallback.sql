@@ -6,7 +6,7 @@
 --
 -- ROOT CAUSE:
 --   The previous corpus_benchmark CTE in headhunter_view used a hardcoded
---   `75000::numeric` as the cold-start guard. This is a magic number — it
+--   `75000::numeric` as the cold-start guard. This is a magic number - it
 --   will become stale as the game's playerbase evolves and score ceilings
 --   rise (or fall). Magic numbers are explicitly prohibited by the ADR.
 --
@@ -15,9 +15,9 @@
 --     1. PRIMARY:   MAX(raw_potential_score) WHERE status = 'ACTIVE'
 --     2. SECONDARY: MAX(raw_potential_score) from non-expired blacklist entries
 --     3. TERTIARY:  MAX(raw_potential_score) across ALL statuses (full corpus)
---                   — reached only when ACTIVE pool and blacklist are both empty
+--                   - reached only when ACTIVE pool and blacklist are both empty
 --                   (e.g. pipeline initialisation or a full flush)
---     4. GUARD:     1 — a mathematical identity to prevent division by zero.
+--     4. GUARD:     1 - a mathematical identity to prevent division by zero.
 --                   Only reached when drivers.recruits is completely empty.
 --                   This is not a business value; it is a zero-division fence.
 --
@@ -36,10 +36,10 @@ WITH corpus_benchmark AS (
     -- Priority cascade (all data-driven, no hardcoded values):
     --   1. Max raw_potential_score of current ACTIVE recruits.
     --   2. Max raw_potential_score of recently dismissed recruits (blacklist,
-    --      expires_at > now() — the 30-day persistence window).
-    --   3. Max raw_potential_score across the entire corpus (all statuses) —
+    --      expires_at > now() - the 30-day persistence window).
+    --   3. Max raw_potential_score across the entire corpus (all statuses) -
     --      adaptive cold-start: as scores evolve, this value evolves too.
-    --   4. 1 — zero-division mathematical guard only; unreachable under normal
+    --   4. 1 - zero-division mathematical guard only; unreachable under normal
     --      operation (requires a completely empty drivers.recruits table).
     SELECT GREATEST(
         COALESCE(

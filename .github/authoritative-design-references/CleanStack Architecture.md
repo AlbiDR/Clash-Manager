@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# CleanStack Architecture — Authoritative Design Reference (ADR)
+# CleanStack Architecture - Authoritative Design Reference (ADR)
 
 This document is the **Single Source of Truth** for the architectural principles, structural rules, and behavioral standards governing the entire `Clash-Manager` stack (Frontend/PWA, Backend/Supabase). All secondary architecture documents are subordinate to this ADR.
 
@@ -19,7 +19,7 @@ Core philosophies that prioritize technical purity and the elimination of noise.
 - **Single Responsibility Principle (SRP):** Each module, class, or function must have one, and only one, reason to change.
 - **Componentization:** Deconstruct monolithic views into atomic, reusable components. No view should own logic it cannot fully encapsulate.
 - **YAGNI (You Aren't Gonna Need It):** Reject speculative features and pre-emptive abstractions. No logic, layer, or interface is introduced until the current commit explicitly demands it. Pairs with Lean Pruning to enforce minimum viable evolution.
-- **Adaptive Pipeline Design (No Magic Numbers):** Scoring formulas, normalisation anchors, thresholds, and benchmarks must always be derived from the live data corpus. Hardcoded constants (magic numbers) are architectural failures — they produce brittle, time-decaying references that cease to reflect reality as the game's playerbase and score ranges evolve. Every formula must be self-calibrating: as real-world conditions shift, the system adapts automatically without requiring a code change. The only permitted numeric literals are mathematical identities (e.g., `1` as a zero-division guard, `100` as a percentage ceiling) that carry no business semantics. All business thresholds must be derived from or validated against live data.
+- **Adaptive Pipeline Design (No Magic Numbers):** Scoring formulas, normalisation anchors, thresholds, and benchmarks must always be derived from the live data corpus. Hardcoded constants (magic numbers) are architectural failures - they produce brittle, time-decaying references that cease to reflect reality as the game's playerbase and score ranges evolve. Every formula must be self-calibrating: as real-world conditions shift, the system adapts automatically without requiring a code change. The only permitted numeric literals are mathematical identities (e.g., `1` as a zero-division guard, `100` as a percentage ceiling) that carry no business semantics. All business thresholds must be derived from or validated against live data.
 
 ---
 
@@ -143,8 +143,8 @@ Guards for software stability, hardware interaction, and resource management.
 
 Repeated lookups must exploit the cache hierarchy before touching persistent storage:
 
-- **L1 — In-Memory/Store (Frontend):** Reactive state in Pinia or local refs for immediate access.
-- **L2 — IndexedDB (StorageService):** Persistent, local-first cache for high-fidelity datasets to guarantee offline operation.
+- **L1 - In-Memory/Store (Frontend):** Reactive state in Pinia or local refs for immediate access.
+- **L2 - IndexedDB (StorageService):** Persistent, local-first cache for high-fidelity datasets to guarantee offline operation.
 
 ### PWA Caching Topologies
 
@@ -201,7 +201,7 @@ Metadata standards for long-term project health and maintainability.
 
 ## VII. Naming Conventions (Strict Contract)
 
-Naming is not stylistic preference — it is a structural contract. Every file, variable, function, and asset must be identifiable by its name alone.
+Naming is not stylistic preference - it is a structural contract. Every file, variable, function, and asset must be identifiable by its name alone.
 
 **One convention, two expressions.** The universal pattern across the entire stack is `Domain_Role`:
 
@@ -318,7 +318,7 @@ When live data is unavailable or inconsistent during development or automated te
 
 | Layer | Scope | Strategy |
 | :--- | :--- | :--- |
-| L0 · Substrate | Static assets, shell | None — Lighthouse CI only |
+| L0 · Substrate | Static assets, shell | None - Lighthouse CI only |
 | L1 · Kernel | Utils, services, pure functions | Unit (Vitest) · 100% coverage |
 | L2 · Shared | Composables, UI primitives | Unit + shallow mount |
 | L3 · Features | Feature composables, modules | Integration (Vitest + `@vue/test-utils`) |
