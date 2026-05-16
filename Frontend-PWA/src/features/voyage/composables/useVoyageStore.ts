@@ -178,11 +178,23 @@ export const useVoyageStore = defineStore("voyage", () => {
       const response = await apiInitializeVoyage(target, start_at, end_at);
       
       if (response.success) {
-        // Immediate refresh to sync state
-        await refresh();
+        // Business logic check (the JSONB returned by the SQL)
+        const result = response.data as { success: boolean; error?: string };
+        
+        if (result.success) {
+          console.log('[Voyage] Activation successful:', result);
+          await refresh();
+        } else {
+          console.error('[Voyage] Activation failed (logic):', result.error);
+          throw new Error(result.error ?? "Activation failed");
+        }
       } else {
-        throw new Error(response.error?.message ?? "Activation failed");
+        console.error('[Voyage] Activation failed (network/auth):', response.error);
+        throw new Error(String(response.error) ?? "Activation failed");
       }
+    } catch (err: any) {
+      console.error('[Voyage] Action error:', err);
+      throw err;
     } finally {
       loading.value = false;
     }

@@ -428,10 +428,16 @@ export async function initializeVoyage(target: number, start: string, end: strin
         });
 
     if (error) {
-        console.error('[Voyage] Initialization error:', error);
-        return { success: false, error };
+        console.error('[Voyage] RPC Execution Error:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+        });
+        return { success: false, error: error.message };
     }
 
+    // data is the JSONB object returned by the function
     return { success: true, data };
 }
 
