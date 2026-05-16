@@ -34,7 +34,9 @@ const getParam = (name: string) => {
 };
 
 const isSyntheticMode = ref(
-  localStorage.getItem(SYNTHETIC_KEY) === "true" || getParam("synthetic") === "true"
+  localStorage.getItem(SYNTHETIC_KEY) === "true" || 
+  getParam("synthetic") === "true" || 
+  (getParam("showcase") === "true" && localStorage.getItem(SYNTHETIC_KEY) !== "false")
 );
 
 /**
