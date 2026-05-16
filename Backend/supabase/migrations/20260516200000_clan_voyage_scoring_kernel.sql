@@ -235,6 +235,24 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- 5b. Proxy RPC for PWA access
+CREATE OR REPLACE FUNCTION features.initialize_voyage(
+    target_crowns INTEGER,
+    start_at TIMESTAMPTZ,
+    end_at TIMESTAMPTZ
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = drivers, public
+AS $$
+BEGIN
+    RETURN drivers.initialize_voyage(target_crowns, start_at, end_at);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION features.initialize_voyage TO anon, authenticated;
+
 -- 6. VIEWS: voyage_summary & voyage_contributions
 -- SSOT for the PWA dashboard.
 CREATE OR REPLACE VIEW features.voyage_contributions AS

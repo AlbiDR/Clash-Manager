@@ -98,8 +98,27 @@ const validationHint = computed(() => {
 
 // --- ACTIONS ---
 async function handleActivate() {
-  if (!isFormValid.value) return;
-  await store.activateVoyage(targetCrowns.value, startsIn.value, endsIn.value);
+  console.log('[EventManagement] handleActivate triggered');
+  console.log('[EventManagement] Form values:', {
+    target: targetCrowns.value,
+    safeTarget: safeTargetCrowns.value,
+    startsIn: startsIn.value,
+    endsIn: endsIn.value,
+    valid: isFormValid.value
+  });
+
+  if (!isFormValid.value) {
+    console.warn('[EventManagement] Form is invalid, skipping activation');
+    return;
+  }
+  
+  try {
+    await store.activateVoyage(targetCrowns.value, startsIn.value, endsIn.value);
+    console.log('[EventManagement] activateVoyage finished');
+  } catch (err) {
+    console.error('[EventManagement] handleActivate error:', err);
+    // You could add a toast notification here if available
+  }
 }
 </script>
 
