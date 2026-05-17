@@ -26,7 +26,7 @@ export async function runDeepDepth(
             logAudit('S6_BATTLES', 'called', { tags_count: allTags.length });
             
             // Shared map to collect shadow leads across all concurrent tasks
-            const globalShadowLeads = new Map<string, string>();
+            const globalShadowLeads = new Map<string, { name: string, trophies: number }>();
 
             const battleTasks = allTags.map(tag => async () => {
                 try {
@@ -49,8 +49,11 @@ export async function runDeepDepth(
                             // Extract potential recruits (leads) from opponents
                             logData.forEach((b: any) => {
                                 b.opponent?.forEach((op: any) => {
-                                    if (op.tag && !op.clan?.tag) {
-                                        globalShadowLeads.set(op.tag, op.name || 'Unknown Recruit');
+                                    if (op.tag && !op.clan?.tag && op.startingTrophies) {
+                                        globalShadowLeads.set(op.tag, { 
+                                            name: op.name || 'Unknown Recruit', 
+                                            trophies: op.startingTrophies 
+                                        });
                                     }
                                 });
                             });
@@ -69,15 +72,15 @@ export async function runDeepDepth(
 
             // Batch synchronize collected shadow leads
             if (globalShadowLeads.size > 0) {
-                const leads = Array.from(globalShadowLeads.entries()).map(([tag, name]) => ({
+                const leads = Array.from(globalShadowLeads.entries()).map(([tag, data]) => ({
                     player_tag: tag.startsWith('#') ? tag : `#${tag}`,
-                    player_name: name
+                    player_name: data.name,
+                    trophies: data.trophies
                 }));
 
                 const recruits = leads.map(l => ({
                     ...l,
-                    source: 'SHADOW',
-                    status: 'ACTIVE'
+                    source: 'SHADOW'
                 }));
 
                 // L2 Drivers: Sync to universal player registry first
