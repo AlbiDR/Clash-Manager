@@ -57,3 +57,4 @@ Backend/supabase/functions/sync-player-cards/client.ts
 Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts
 Frontend-PWA/src/core/api/SupabaseClient.ts
 Backend/supabase/functions/ingest-royale-data/pipeline.ts
+Frontend-PWA/src/features/laboratory/logic/Simulation.ts
