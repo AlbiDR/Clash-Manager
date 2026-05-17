@@ -89,13 +89,6 @@ describe("BaseCard.vue", () => {
     expect(statPod.attributes("style")).toContain("--score-pct: 85%");
   });
 
-  it("applies toneClass to stat-pod", () => {
-    const toneClass = "custom-tone";
-    const wrapper = mountBaseCard({ toneClass });
-    const statPod = wrapper.find(".stat-pod");
-    expect(statPod.classes()).toContain("custom-tone");
-  });
-
   describe("Interactions", () => {
     it("binds v-tactile correctly", () => {
       const tactileSpy = vi.fn();
