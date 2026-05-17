@@ -8,6 +8,13 @@
  * player progression. This is a pure functional engine that operates on
  * immutable SimulationState objects.
  * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Architectural Context:
+ * - Layer: Layer 3 (@features)
+ * - Import Boundaries: Restricted to Layer 1 (@core) and internal Feature types.
+ *   Satisfies ADR Section III: Validation Boundaries by operating on hydrated
+ *   and validated domain objects.
  */
 
 import type { 
@@ -37,15 +44,19 @@ import { asGold, asGems, addGold, addXP, addGems, type Gold, type XP, type Gems 
 type ResolvedCandidate = UpgradeCandidate & { upgradeType: UpgradeAction['upgradeType'] };
 
 /**
- * Determines if a card can be upgraded given the current state and settings,
- * resolving material deficits via Wild Cards or Gems if permitted.
+ * Evaluates the viability of a card upgrade against current resource constraints.
  *
- * Fix: GOLD_COST_TABLE and MATERIAL_REQUIREMENTS are keyed by Rarity, not
- * flat by level. Previous code used GOLD_COST_TABLE[nextLevel] which always
- * returned undefined. Corrected to GOLD_COST_TABLE[card.rarity][nextLevel].
+ * @remarks
+ * This function handles the complex resolution logic for material deficits,
+ * prioritizing Wild Cards before attempting Gem conversion if settings allow.
+ * Satisfies ADR Section I: Foundations of "Clinical" Logic by deriving costs
+ * and gains from centralized game tables (SSOT).
  *
- * Fix: Wild card and gem resolution paths were stubbed out. They are now
- * implemented so that tests exercising those code paths pass correctly.
+ * @param card - The card to evaluate.
+ * @param index - The roster index of the card.
+ * @param state - Current simulation state containing inventory and total XP.
+ * @param settings - User optimization constraints (Allow Gems, Infinite Mode).
+ * @returns A ResolvedCandidate if the upgrade is possible, otherwise null.
  */
 const getUpgradeCandidate = (
   card: Card, 
@@ -136,7 +147,15 @@ const getUpgradeCandidate = (
 };
 
 /**
- * Applies an upgrade action to a state, returning a new immutable state.
+ * Executes a state transition by applying a chosen upgrade.
+ *
+ * @remarks
+ * This function maintains the immutability of the simulation state,
+ * returning a new state object with updated roster, inventory, and history.
+ *
+ * @param state - The previous simulation state.
+ * @param candidate - The upgrade candidate to apply.
+ * @returns A new immutable SimulationState.
  */
 const applyUpgrade = (state: SimulationState, candidate: ResolvedCandidate): SimulationState => {
   const newRoster = [...state.roster];
@@ -190,23 +209,20 @@ const applyUpgrade = (state: SimulationState, candidate: ResolvedCandidate): Sim
 };
 
 /**
+ * Orchestrates the iterative progression simulation.
+ *
+ * @remarks
  * CORE ENGINE: Generator that yields intermediate simulation states.
- * This allows the UI to show progress and remain responsive.
+ * This allows the UI to show progress and remain responsive without
+ * blocking the main thread.
  *
- * Fix: The old termination logic did `yield currentState; return currentState`
- * inside the loop. This meant the terminal state was emitted with done=false,
- * and the subsequent .next() call returned {done: true, value: undefined}.
- * Tests that checked `result.done === true` on the first exhausted call failed.
- * Corrected: the generator now simply `return`s without yielding on termination,
- * which causes the generator protocol to set done=true on the return value.
- *
- * Fix: Accepts an optional ScoringStrategy. Previously the third parameter was
- * absent from the signature, so Divergence.spec.ts injected strategies that
- * were silently ignored. The injected strategy is now used for candidate ranking.
+ * Satisfies ADR Section I: Foundations of "Clinical" Logic (Adaptive Pipeline
+ * Design) and Section III: Validation Boundaries.
  *
  * @param initialState - The starting point of the simulation.
  * @param settings - User configuration (targets, resource limits).
  * @param strategy - Optional scoring strategy (defaults to strategy from settings).
+ * @returns A generator yielding intermediate SimulationStates.
  */
 export function* calculateProgressionPath(
   initialState: SimulationState, 
@@ -266,7 +282,11 @@ export function* calculateProgressionPath(
 }
 
 /**
- * Maps the internal SimulationState to the legacy OptimizationResult for UI compatibility.
+ * Transforms simulation internal state into a UI-compatible result object.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries (DTO Mapping) by
+ * mapping Persistence-Ignorant domain objects to formatted output.
  *
  * @param state - The current state of the simulation.
  * @param originalProfile - The original player profile before simulation.
