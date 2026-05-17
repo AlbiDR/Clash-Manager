@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-17] PR #621: Refactor: Extract Data Mappers from SupabaseClient
+**Commit**: `c771e417a8211abe76c2377f8b340b78cefedda1`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/621)
+
+### Description
+This refactor addresses structural debt in the Layer 1 API layer by decoupling data transformation logic from the transport client. By extracting the mappers into a dedicated module, we satisfy the Single Responsibility Principle and bring the SupabaseClient below the 400-line threshold required by the Refactor mandate. Verified via unit tests (78 passing).
+
+---
+*PR created automatically by Jules for task [6740823251613593552](https://jules.google.com/task/6740823251613593552) started by @AlbiDR*
+
+---
+
 ## [2026-05-17] PR #620: chore(deps): bump knip from ^6.14.0 to ^6.14.1
 **Commit**: `bb8fa20b6190a44c67aa6f6d97befa51058bf1a2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/620)
