@@ -20,7 +20,7 @@
  * - Hours: max 23, Minutes: max 59.
  * ============================================================================
  */
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import SettingsCard from "../../settings/components/SettingsCard.vue";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import type { T2TInput } from "../types";
@@ -68,35 +68,72 @@ onUnmounted(() => {
 });
 
 // --- FORM STATE ---
-const targetCrowns = ref(1600);
-const startsIn = ref<T2TInput>({ days: 0, hours: 0, minutes: 0 });
-const endsIn   = ref<T2TInput>({ days: 1, hours: 0, minutes: 0 });
+interface FormT2T {
+  days: number | '';
+  hours: number | '';
+  minutes: number | '';
+}
+
+const targetCrowns = ref<number | ''>(1600);
+const startsIn = ref<FormT2T>({ days: 0, hours: 0, minutes: 0 });
+const endsIn   = ref<FormT2T>({ days: 1, hours: 0, minutes: 0 });
+
+watch(
+  () => [store.isActive, store.targetCrowns, store.summary?.event?.end_at] as const,
+  ([isActive, target, endAt]) => {
+    if (isActive) {
+      if (target > 0) targetCrowns.value = target;
+      if (endAt) {
+        const end = new Date(endAt).getTime();
+        const now = new Date().getTime();
+        const diff = end - now;
+        if (diff > 0) {
+          endsIn.value = {
+            days: Math.floor(diff / 86400000),
+            hours: Math.floor((diff % 86400000) / 3600000),
+            minutes: Math.floor((diff % 3600000) / 60000)
+          };
+        } else {
+          endsIn.value = { days: 0, hours: 0, minutes: 0 };
+        }
+      }
+    }
+  },
+  { immediate: true }
+);
 
 // --- VALIDATION ---
 
 /** Normalises a potentially NaN value from an empty number input to 0. */
-function sanitize(val: number): number {
-  return isNaN(val) || val < 0 ? 0 : val;
+function sanitize(val: number | '' | null): number {
+  if (val === '' || val === null || isNaN(Number(val))) return 0;
+  return Number(val) < 0 ? 0 : Number(val);
 }
 
-function clampField(obj: T2TInput, key: keyof T2TInput, max: number) {
+function clampField(obj: FormT2T, key: keyof FormT2T, max: number) {
+  if (obj[key] === '') return;
   const sanitized = sanitize(obj[key]);
-  obj[key] = Math.min(sanitized, max);
+  if (sanitized > max) {
+    obj[key] = max;
+  } else if (sanitized < 0) {
+    obj[key] = 0;
+  }
 }
 
-function onStartsInInput(key: keyof T2TInput) {
+function onStartsInInput(key: keyof FormT2T) {
   const max = key === "days" ? 7 : key === "hours" ? 23 : 59;
   clampField(startsIn.value, key, max);
 }
 
-function onEndsInInput(key: keyof T2TInput) {
+function onEndsInInput(key: keyof FormT2T) {
   const max = key === "days" ? 7 : key === "hours" ? 23 : 59;
   clampField(endsIn.value, key, max);
 }
 
 function onTargetInput() {
-  if (targetCrowns.value < 0) targetCrowns.value = 0;
-  if (targetCrowns.value > 9999) targetCrowns.value = 9999;
+  if (targetCrowns.value === '') return;
+  if (Number(targetCrowns.value) < 0) targetCrowns.value = 0;
+  if (Number(targetCrowns.value) > 9999) targetCrowns.value = 9999;
 }
 
 const totalStartSeconds = computed(() => {
@@ -115,14 +152,18 @@ const totalEndSeconds = computed(() => {
 
 const safeTargetCrowns = computed(() => sanitize(targetCrowns.value));
 
-const isFormValid = computed(() =>
-  safeTargetCrowns.value > 0 &&
-  totalEndSeconds.value > 0 &&
-  totalEndSeconds.value > totalStartSeconds.value
-);
+const isFormValid = computed(() => {
+  if (store.isActive) {
+    return safeTargetCrowns.value > 0 && totalEndSeconds.value > 0;
+  }
+  return safeTargetCrowns.value > 0 &&
+         totalEndSeconds.value > 0 &&
+         totalEndSeconds.value > totalStartSeconds.value;
+});
 
 const validationHint = computed(() => {
   if (safeTargetCrowns.value <= 0) return "Set a crown target above 0.";
+  if (store.isActive) return null;
   if (totalEndSeconds.value === 0) return "Set an 'Ends In' duration.";
   if (totalEndSeconds.value <= totalStartSeconds.value) return "'Ends In' must be after 'Starts In'.";
   return null;
@@ -142,7 +183,17 @@ async function handleActivate() {
   }
   
   try {
-    await store.activateVoyage(targetCrowns.value, startsIn.value, endsIn.value);
+    const strictStartsIn: T2TInput = {
+      days: sanitize(startsIn.value.days),
+      hours: sanitize(startsIn.value.hours),
+      minutes: sanitize(startsIn.value.minutes),
+    };
+    const strictEndsIn: T2TInput = {
+      days: sanitize(endsIn.value.days),
+      hours: sanitize(endsIn.value.hours),
+      minutes: sanitize(endsIn.value.minutes),
+    };
+    await store.activateVoyage(sanitize(targetCrowns.value), strictStartsIn, strictEndsIn);
     console.log('[EventManagement] activateVoyage finished');
   } catch (err) {
     console.error('[EventManagement] handleActivate error:', err);
@@ -216,8 +267,8 @@ async function handleActivate() {
         </div>
       </div>
 
-      <!-- Starts In -->
-      <div class="field-group">
+      <!-- Starts In (Hidden if active to prevent overwriting pipeline dates) -->
+      <div v-if="!store.isActive" class="field-group">
         <label class="field-label">Starts In</label>
         <div class="t2t-group">
           <div class="t2t-unit">
