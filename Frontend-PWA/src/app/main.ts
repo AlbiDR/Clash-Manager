@@ -128,16 +128,15 @@ async function bootstrap() {
     const wakeLock = useWakeLock();
     const storagePersistence = useStoragePersistence();
 
-    // INSTANT BOOT: Load local cache immediately for LCP
-    await clashDataStore.loadLocal();
+    // INSTANT BOOT & LIVE DATA FIRST: Load local cache and trigger remote hydration in parallel
+    // removing ping-latency delays on boot.
+    clashDataStore.loadLocal();
+    clashDataStore.refreshFromSupabase();
     
-    // CONCURRENCY FIX: Start API Handshake FIRST.
-    // Do NOT start background sync (heavy data fetch) until handshake clears.
-    // This prevents concurrent connection limits on cold boot.
     apiState.init();
 
-    // PERFORMANCE: High-Speed SUPABASE Fetch
-    // Rationale: We proceed with sync once the Supabase client indicates online status.
+    // PERFORMANCE: High-Speed SUPABASE Fetch fallback
+    // Rationale: If the initial refresh failed or was delayed, ensure background sync proceeds once online.
     const unwatch = watch(
       () => apiState.apiStatus.value,
       (apiStatus) => {
@@ -148,6 +147,15 @@ async function bootstrap() {
       },
       { immediate: true }
     );
+
+    // LIVE DATA FIRST: App Focus Revalidation
+    // Trigger immediate data revalidation when the app regains focus.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        console.debug("[App] Visibility changed to visible: Triggering live data revalidation");
+        clashDataStore.refreshFromSupabase();
+      }
+    });
 
     // Defer only truly heavy background tasks
     setTimeout(async () => {
