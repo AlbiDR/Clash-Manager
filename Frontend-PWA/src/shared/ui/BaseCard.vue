@@ -9,8 +9,6 @@ const props = defineProps<{
   selectionMode: boolean;
   isTagged?: boolean;
   score?: number;
-  toneClass?: string;
-  headerLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -63,7 +61,6 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
         <div class="score-section" @click.stop="handleScoreClick">
           <div
             class="stat-pod hit-target"
-            :class="props.toneClass"
             :style="props.score !== undefined ? { '--score-pct': `${props.score}%` } : {}"
           >
             <slot name="score-section"></slot>
