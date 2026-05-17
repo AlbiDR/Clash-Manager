@@ -178,11 +178,17 @@ export const useClashDataStore = defineStore("clashData", () => {
 
       const validation = v.safeParse(WebAppDataSchema, cached);
       if (validation.success) {
+        // [GUARD] LIVE DATA FIRST: Prevent stale local cache from overwriting fresh network data
+        // if refreshFromSupabase() completed before loadLocal() finished.
+        if (data.value && data.value.timestamp >= validation.output.timestamp) {
+          console.debug("[Store] Local cache is older than already hydrated live data, skipping.");
+          return;
+        }
         console.debug("[Store] Local cache hydrated successfully.");
         await commitSyncResult(validation.output);
       } else {
         console.warn("[Store] Local cache validation failed:", validation.issues);
-        await commitSyncResult(null);
+        if (!data.value) await commitSyncResult(null);
       }
     } catch (hydrationError: unknown) {
       // THREAT: Corrupt disk state causing app boot failure.

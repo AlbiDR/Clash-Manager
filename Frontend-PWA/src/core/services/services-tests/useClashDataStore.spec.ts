@@ -95,7 +95,8 @@ describe("useClashDataStore", () => {
       const validPayload = {
         lb: [],
         hh: [],
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        blacklist: []
       };
 
       await store.updateLocalData(validPayload);
@@ -125,7 +126,8 @@ describe("useClashDataStore", () => {
       const mockCachedData = {
         lb: [{ id: "TAG1", n: "Player 1", t: 5000, performanceScore: 90, performanceRawScore: 1000, d: { role: "member", days: 10, avg: 100, hist: "" } }],
         hh: [],
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        blacklist: []
       };
       vi.mocked(loadCache).mockResolvedValue(mockCachedData);
 
@@ -157,7 +159,8 @@ describe("useClashDataStore", () => {
       const mockRemoteData = {
         lb: [],
         hh: [],
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        blacklist: []
       };
       vi.mocked(fetchRemote).mockResolvedValue(mockRemoteData);
 
@@ -184,7 +187,7 @@ describe("useClashDataStore", () => {
 
     it("should override offline guard if force is true", async () => {
       mockConnectionStatus.isOnline.value = false;
-      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now() });
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now(), blacklist: [] });
 
       const store = useClashDataStore();
       await store.startBackgroundSync(true);
@@ -216,7 +219,7 @@ describe("useClashDataStore", () => {
 
     it("should tolerate up to 2 consecutive failures if data exists", async () => {
       const store = useClashDataStore();
-      store.data = { lb: [], hh: [], timestamp: Date.now() }; // Mock existing data
+      store.data = { lb: [], hh: [], timestamp: Date.now(), blacklist: [] }; // Mock existing data
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Transient Error"));
 
       // 1st failure
@@ -234,14 +237,14 @@ describe("useClashDataStore", () => {
 
     it("should reset consecutive failures on success", async () => {
       const store = useClashDataStore();
-      store.data = { lb: [], hh: [], timestamp: Date.now() };
+      store.data = { lb: [], hh: [], timestamp: Date.now(), blacklist: [] };
       vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Error 1"));
       
       // 1st failure
       await store.startBackgroundSync();
       
       // Success
-      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now() });
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now(), blacklist: [] });
       await store.startBackgroundSync();
       
       // Another failure (should be considered the new 1st failure)
@@ -254,7 +257,7 @@ describe("useClashDataStore", () => {
     it("should clear syncError on successful sync", async () => {
       const store = useClashDataStore();
       store.syncError = "Previous Error";
-      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now() });
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now(), blacklist: [] });
 
       await store.startBackgroundSync();
 
@@ -262,7 +265,7 @@ describe("useClashDataStore", () => {
     });
 
     it("should provide refresh() as a wrapper for startBackgroundSync(true)", async () => {
-      const mockRemoteData = { lb: [], hh: [], timestamp: Date.now() };
+      const mockRemoteData = { lb: [], hh: [], timestamp: Date.now(), blacklist: [] };
       vi.mocked(fetchRemote).mockResolvedValue(mockRemoteData);
       
       const store = useClashDataStore();
@@ -279,7 +282,8 @@ describe("useClashDataStore", () => {
         lb: [],
         hh: [],
         timestamp: Date.now(),
-        dataSource: "SUPABASE"
+        dataSource: "SUPABASE",
+        blacklist: []
       };
       vi.mocked(fetchRemote).mockResolvedValue(mockRemoteData);
 

@@ -74,9 +74,14 @@ export function useRecruiter() {
   // fully processed the dismissal. By waiting for isRefreshing to flip 
   // from true -> false, we ensure we only prune against authoritative server data.
   watch(isRefreshing, (refreshing) => {
-    if (!refreshing && data.value?.hh) {
-      const currentIds = data.value.hh.map((recruit) => recruit.id);
-      blacklist.prune(currentIds);
+    if (!refreshing && data.value) {
+      if (data.value.blacklist) {
+        blacklist.syncRemote(data.value.blacklist);
+      }
+      if (data.value.hh) {
+        const currentIds = data.value.hh.map((recruit) => recruit.id);
+        blacklist.prune(currentIds);
+      }
     }
   }, { immediate: true });
 
