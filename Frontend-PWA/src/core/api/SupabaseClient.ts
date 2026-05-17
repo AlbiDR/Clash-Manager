@@ -199,7 +199,7 @@ export async function fetchRemote(options?: {
   // to fetch high-fidelity datasets directly from the authoritative feature views.
   const [rosterResponse, headhunterResponse, heartbeatResponse] = await Promise.all([
     supabase.from('roster_view').select('*').abortSignal(signal),
-    supabase.from('headhunter_view').select('*').limit(100).abortSignal(signal),
+    supabase.from('headhunter_view').select('*').limit(250).abortSignal(signal),
     supabase.schema('substrate').from('pipeline_heartbeat').select('last_success_at').eq('component_id', 'ROYALE_DATA_INGESTOR').single().abortSignal(signal)
   ]);
 

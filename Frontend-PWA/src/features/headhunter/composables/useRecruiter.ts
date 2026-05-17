@@ -42,16 +42,17 @@ export function useRecruiter() {
   const blacklist = useRecruitBlacklist();
   const { undo, success, info } = useToast();
 
-  // 🛡️ PRE-FILTER: Exclude Tombstones and apply 50-recruit "Active Window"
+  // PRE-FILTER: Exclude Tombstones and apply 100-recruit "Active Window"
   const recruits = computed(() => {
     const activeRecruits = (data.value?.hh || []).filter(
       (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
-    // [ADR] Parity with Source: Show only the top 50 active recruits.
+    console.debug(`[Recruiter] Data pipeline: ${data.value?.hh?.length || 0} fetched -> ${activeRecruits.length} active (post-blacklist)`);
+    // [ADR] Parity with Source: Show only the top 100 active recruits.
     // The "infinite scroll" strategy is implemented via automatic replacement:
-    // as items are dismissed, the next best results from the 100-item pre-compiled
-    // pool slide in from the "backup" 50, maintaining the 50-recruit window.
-    return activeRecruits.slice(0, 50);
+    // as items are dismissed, the next best results from the 250-item pre-compiled
+    // pool slide in from the "backup" 150, maintaining the 100-recruit window.
+    return activeRecruits.slice(0, 100);
   });
 
   const controller = useConsoleController({
