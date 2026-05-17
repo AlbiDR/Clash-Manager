@@ -67,6 +67,7 @@ export interface WebAppData {
   readonly lastCompiled?: number;
   readonly lastFetched?: number;
   readonly lastSync?: number;
+  readonly blacklist?: readonly string[];
 }
 
 // Real-time clan member

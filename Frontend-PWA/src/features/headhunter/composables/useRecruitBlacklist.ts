@@ -81,6 +81,20 @@ export function useRecruitBlacklist() {
     save();
   }
 
+  function syncRemote(remoteBlacklist: readonly string[]) {
+    if (!remoteBlacklist || remoteBlacklist.length === 0) return;
+    let added = false;
+    remoteBlacklist.forEach((id) => {
+      if (!tombstones.value.has(id)) {
+        tombstones.value.add(id);
+        added = true;
+      }
+    });
+    if (added) {
+      save();
+    }
+  }
+
   /**
    * GARBAGE COLLECTION
    *
@@ -119,5 +133,6 @@ export function useRecruitBlacklist() {
     hide,
     restore,
     prune,
+    syncRemote,
   };
 }

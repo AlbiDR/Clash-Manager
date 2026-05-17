@@ -314,6 +314,7 @@ export const WebAppDataSchema = v.object({
   remoteTimestamp: v.optional(LaxNumberPipe),
   lastCompiled: v.optional(LaxNumberPipe),
   lastFetched: v.optional(LaxNumberPipe),
+  blacklist: v.optional(v.array(v.string()), []),
 });
 
 
