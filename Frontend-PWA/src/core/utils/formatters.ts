@@ -45,19 +45,6 @@ const RE_DESC_LIST = /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li c
 const RE_NEWLINE = /\n/g;
 
 /**
- * Determines the CSS tone class based on a numeric score.
- *
- * @param score - The numeric performance or potential score.
- * @returns A string representing the CSS class for coloring (high/mid/low).
- */
-export function getScoreTone(score: number | undefined): string {
-  const s = score || 0;
-  if (s >= 80) return "tone-high";
-  if (s >= 50) return "tone-mid";
-  return "tone-low";
-}
-
-/**
  * Internal utility to calculate relative time difference.
  *
  * @param dateStr - The source date string.

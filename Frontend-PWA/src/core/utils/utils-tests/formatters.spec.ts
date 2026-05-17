@@ -2,7 +2,6 @@ import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import {
   formatTimeAgo,
   formatTimeAgoShort,
-  getScoreTone,
   parseTimeAgoValue,
   formatRole,
   cleanTag,
@@ -106,27 +105,6 @@ describe("formatters", () => {
       vi.setSystemTime(now);
       const secondsAgo = new Date("2026-01-01T11:59:30Z").toISOString();
       expect(formatTimeAgoShort(secondsAgo)).toBe("New");
-    });
-  });
-
-  describe("getScoreTone", () => {
-    it('returns "tone-high" for scores >= 80', () => {
-      expect(getScoreTone(80)).toBe("tone-high");
-      expect(getScoreTone(100)).toBe("tone-high");
-    });
-
-    it('returns "tone-mid" for scores between 50 and 79', () => {
-      expect(getScoreTone(50)).toBe("tone-mid");
-      expect(getScoreTone(79)).toBe("tone-mid");
-    });
-
-    it('returns "tone-low" for scores < 50', () => {
-      expect(getScoreTone(49)).toBe("tone-low");
-      expect(getScoreTone(0)).toBe("tone-low");
-    });
-
-    it("handles undefined by defaulting to 0", () => {
-      expect(getScoreTone(undefined)).toBe("tone-low");
     });
   });
 
