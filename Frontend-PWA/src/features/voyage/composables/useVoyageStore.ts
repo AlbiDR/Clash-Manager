@@ -138,8 +138,10 @@ export const useVoyageStore = defineStore("voyage", () => {
           },
           contributions: contributionsData.map(c => ({
             player_tag: c.player_tag,
+            player_name: c.player_name,
             crowns: c.crowns,
-            voyage_crown_pct: Number(c.voyage_crown_pct)
+            voyage_crown_pct: Number(c.voyage_crown_pct),
+            performance_score: c.performance_score ? Number(c.performance_score) : undefined
           })),
           total_crowns: summaryData.total_crowns,
           progress_ratio: summaryData.progress_ratio,

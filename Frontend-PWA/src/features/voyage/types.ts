@@ -21,8 +21,10 @@ export interface VoyageEvent {
 
 export interface VoyageContribution {
   player_tag: string;
+  player_name?: string;
   crowns: number;
   voyage_crown_pct: number;
+  performance_score?: number;
 }
 
 export interface VoyageSummary {
