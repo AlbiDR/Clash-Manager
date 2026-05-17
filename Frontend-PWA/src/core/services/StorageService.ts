@@ -121,6 +121,9 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
       // If the old store doesn't exist, nothing to migrate
       if (!oldDb.objectStoreNames.contains(LEGACY_STORE_NAME)) {
         oldDb.close();
+        try {
+          indexedDB.deleteDatabase(LEGACY_DB_NAME);
+        } catch (err) {}
         return resolve();
       }
 
@@ -144,7 +147,13 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
           
           newTx.oncomplete = () => {
             oldDb.close();
-            // We keep the old DB for one session to be safe, then let the system handle cleanup
+            // Delete the legacy database to prevent ghost migrations on future sessions
+            try {
+              indexedDB.deleteDatabase(LEGACY_DB_NAME);
+              console.info("[Storage] Legacy database cleaned up successfully.");
+            } catch (err) {
+              console.warn("[Storage] Failed to delete legacy database", err);
+            }
             console.info("[Storage] Migration successful.");
             resolve();
           };
@@ -154,6 +163,9 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
           };
         } else {
           oldDb.close();
+          try {
+            indexedDB.deleteDatabase(LEGACY_DB_NAME);
+          } catch (err) {}
           resolve();
         }
       };
@@ -284,7 +296,14 @@ export const idb = {
           const transaction = db.transaction(STORE_NAME, "readwrite");
           const store = transaction.objectStore(STORE_NAME);
           const request = store.clear();
-          request.onsuccess = () => resolve();
+          request.onsuccess = () => {
+            try {
+              indexedDB.deleteDatabase(LEGACY_DB_NAME);
+            } catch (err) {
+              console.warn("[Storage] Failed to delete legacy database during clear", err);
+            }
+            resolve();
+          };
           request.onerror = () => reject(request.error);
         } catch (e) {
           reject(e);
@@ -297,7 +316,7 @@ export const idb = {
   },
 };
 
-const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V7";
+const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V8";
 
 /**
  * Specific utility to load the main application dataset from cache.
