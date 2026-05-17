@@ -32,6 +32,59 @@ const DB_VERSION = 1;
 const LEGACY_DB_NAME = "clash_manager_db";
 const LEGACY_STORE_NAME = "key_val_store";
 
+const DEPRECATED_DB_NAMES = [
+  "clash_manager_db",
+  "clash_manager",
+  "clash-manager",
+  "clash_manager_v1",
+  "clash_manager_v2",
+  "clash_manager_v3",
+  "clash_manager_v4",
+  "clash_manager_v5",
+  "clash_manager_v6",
+  "clash_manager_v7",
+  "clash_manager_v8",
+  "clash_manager_v9",
+  "clash_manager_v10"
+];
+
+/**
+ * Robust helper to delete an IndexedDB database with full Promise wrapping.
+ * Handles onsuccess, onerror, and onblocked events to prevent race conditions.
+ */
+function deleteDatabasePromise(dbName: string): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.deleteDatabase(dbName);
+      req.onsuccess = () => {
+        console.info(`[Storage] Successfully deleted database: ${dbName}`);
+        resolve();
+      };
+      req.onerror = () => {
+        console.warn(`[Storage] Failed to delete database: ${dbName}`, req.error);
+        resolve();
+      };
+      req.onblocked = () => {
+        console.warn(`[Storage] Delete blocked for database: ${dbName}. Waiting for connections to close...`);
+        setTimeout(resolve, 1500);
+      };
+    } catch (e) {
+      console.warn(`[Storage] Exception deleting database: ${dbName}`, e);
+      resolve();
+    }
+  });
+}
+
+/**
+ * Purges all known deprecated databases from disk.
+ */
+async function purgeDeprecatedDatabases(): Promise<void> {
+  for (const dbName of DEPRECATED_DB_NAMES) {
+    if (dbName !== LEGACY_DB_NAME) {
+      await deleteDatabasePromise(dbName);
+    }
+  }
+}
 
 // 🛡️ MEMORY FALLBACK
 // Used when IndexedDB is unavailable (Private Browsing, Tests, etc)
@@ -121,10 +174,10 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
       // If the old store doesn't exist, nothing to migrate
       if (!oldDb.objectStoreNames.contains(LEGACY_STORE_NAME)) {
         oldDb.close();
-        try {
-          indexedDB.deleteDatabase(LEGACY_DB_NAME);
-        } catch (err) {}
-        return resolve();
+        deleteDatabasePromise(LEGACY_DB_NAME)
+          .then(() => purgeDeprecatedDatabases())
+          .then(resolve);
+        return;
       }
 
       const tx = oldDb.transaction(LEGACY_STORE_NAME, "readonly");
@@ -145,38 +198,39 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
             newStore.put(values[i], keys[i]);
           }
           
-          newTx.oncomplete = () => {
+          newTx.oncomplete = async () => {
             oldDb.close();
-            // Delete the legacy database to prevent ghost migrations on future sessions
-            try {
-              indexedDB.deleteDatabase(LEGACY_DB_NAME);
-              console.info("[Storage] Legacy database cleaned up successfully.");
-            } catch (err) {
-              console.warn("[Storage] Failed to delete legacy database", err);
-            }
-            console.info("[Storage] Migration successful.");
+            await deleteDatabasePromise(LEGACY_DB_NAME);
+            await purgeDeprecatedDatabases();
+            console.info("[Storage] Migration and legacy cleanup successful.");
             resolve();
           };
-          newTx.onerror = () => {
+          newTx.onerror = async () => {
             oldDb.close();
+            await deleteDatabasePromise(LEGACY_DB_NAME);
+            await purgeDeprecatedDatabases();
             resolve();
           };
         } else {
           oldDb.close();
-          try {
-            indexedDB.deleteDatabase(LEGACY_DB_NAME);
-          } catch (err) {}
+          await deleteDatabasePromise(LEGACY_DB_NAME);
+          await purgeDeprecatedDatabases();
           resolve();
         }
       };
       
-      tx.onerror = () => {
+      tx.onerror = async () => {
         oldDb.close();
+        await deleteDatabasePromise(LEGACY_DB_NAME);
+        await purgeDeprecatedDatabases();
         resolve();
       };
     };
     
-    checkRequest.onerror = () => resolve();
+    checkRequest.onerror = async () => {
+      await purgeDeprecatedDatabases();
+      resolve();
+    };
   });
 }
 
@@ -296,12 +350,9 @@ export const idb = {
           const transaction = db.transaction(STORE_NAME, "readwrite");
           const store = transaction.objectStore(STORE_NAME);
           const request = store.clear();
-          request.onsuccess = () => {
-            try {
-              indexedDB.deleteDatabase(LEGACY_DB_NAME);
-            } catch (err) {
-              console.warn("[Storage] Failed to delete legacy database during clear", err);
-            }
+          request.onsuccess = async () => {
+            await deleteDatabasePromise(LEGACY_DB_NAME);
+            await purgeDeprecatedDatabases();
             resolve();
           };
           request.onerror = () => reject(request.error);
@@ -314,6 +365,33 @@ export const idb = {
       memoryStore.clear();
     }
   },
+
+  /**
+   * Destroys the active database connection and purges all active and legacy databases.
+   * Used during Factory Reset for complete state invalidation.
+   */
+  async destroyAll(): Promise<void> {
+    if (useMemoryStore) {
+      memoryStore.clear();
+      return;
+    }
+
+    try {
+      if (dbPromise) {
+        const db = await dbPromise;
+        db.close();
+        dbPromise = null;
+      }
+      await deleteDatabasePromise(DB_NAME);
+      await deleteDatabasePromise(LEGACY_DB_NAME);
+      await purgeDeprecatedDatabases();
+    } catch (e) {
+      console.warn("[Storage] Exception during destroyAll", e);
+      useMemoryStore = true;
+      memoryStore.clear();
+    }
+  },
+};},
 };
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V8";

@@ -214,15 +214,42 @@ export function useSettings() {
         "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",
       )
     ) {
+      // 1. Unregister Workers: Forces the browser to discard the current control logic and release IDB locks.
+      if ("serviceWorker" in navigator) {
+        try {
+          const swRegistrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of swRegistrations) {
+            await registration.unregister();
+          }
+        } catch (swError) {
+          console.warn("SW unregister failed during reset", swError);
+        }
+      }
+
+      // 2. Delete Caches: Clears the 'Stale' or corrupted assets stored via CacheStorage.
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+      } catch (cacheError) {
+        console.warn("Cache delete failed during reset", cacheError);
+      }
+
+      // 3. Clear Storage: Purge LocalStorage and SessionStorage.
       localStorage.clear();
       sessionStorage.clear();
+
+      // 4. Destroy IndexedDB: Purge active and legacy databases completely.
       try {
-        // Rationale: idb.clear() is the most critical step as it contains the unified sync kernel state.
-        await idb.clear();
+        if (typeof idb.destroyAll === "function") {
+          await idb.destroyAll();
+        } else {
+          await idb.clear();
+        }
       } catch (resetError) {
-        // Target B [4]: Any plague eliminated.
-        console.warn("IDB clear failed", resetError);
+        console.warn("IDB destroyAll/clear failed", resetError);
       }
+
+      clearManifestCache();
       window.location.reload();
     }
   }
