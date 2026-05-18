@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-18] PR #625: docs(readme): synchronize root version badges
+**Commit**: `ec30c0f26066d9f62bfc8f928a24a4a76a5330cd`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/625)
+
+### Description
+Reconciled root `README.md` version badges to `v14.0.0` to align with the monorepo ground truth declared in root `package.json`. Verified via monorepo test gate (967 pass, 1 skipped). Adhered to 'One atomic change per run' protocol by isolating the synchronization to root level. Recorded in `documentation-readme-coverage.log`.
+
+---
+*PR created automatically by Jules for task [17865540844843561769](https://jules.google.com/task/17865540844843561769) started by @AlbiDR*
+
+---
+
 ## [2026-05-18] PR #624: Substrate Hygiene: Prune Dead CSS and Consolidate Trophy Styles
 **Commit**: `c5aa9b882b3627d5fa76f9e97941294d591e1923`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/624)
