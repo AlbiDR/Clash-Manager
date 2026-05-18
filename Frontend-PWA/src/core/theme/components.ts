@@ -67,7 +67,7 @@ a { text-decoration: underline; color: inherit; }
 .squish-interaction:active { transform: scale(0.96) translateY(1px); }
 .card:active, button:active { transform: scale(0.98); }
 
-.card, .hit-target, button, a, input, select, .tier-badge, .icon-button {
+.card, .hit-target, button, a, input, select, .icon-button {
   touch-action: manipulation;
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15), opacity 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -107,16 +107,16 @@ a { text-decoration: underline; color: inherit; }
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #854d0e;
+  color: var(--sys-color-on-surface-variant);
   margin-top: 2px;
   width: fit-content;
+  font-size: 11px;
+  font-weight: 700;
 }
-:root.dark .trophy-meta { color: #fbbf24; }
 
 .trophy-val {
-  font-size: 13px;
-  font-weight: 700;
   font-family: var(--sys-font-family-mono);
+  font-weight: 700;
 }
 
 .badge {
