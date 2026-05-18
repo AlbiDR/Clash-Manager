@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-18] PR #624: Substrate Hygiene: Prune Dead CSS and Consolidate Trophy Styles
+**Commit**: `c5aa9b882b3627d5fa76f9e97941294d591e1923`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/624)
+
+### Description
+Performed substrate hygiene by pruning dead CSS and consolidating component styles into the core theme. This reduces component-level bloat and ensures theme-aware consistency for trophy displays across the PWA. Verified via unit tests.
+
+---
+*PR created automatically by Jules for task [12137611404707192325](https://jules.google.com/task/12137611404707192325) started by @AlbiDR*
+
+---
+
 ## [2026-05-18] PR #623: test(verify): establish coverage for LongevityBadge.vue
 **Commit**: `32dfaa89b441ec8bf83c1777a2feaaedf10783c2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/623)
