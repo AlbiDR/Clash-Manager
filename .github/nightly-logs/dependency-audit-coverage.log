@@ -60,6 +60,7 @@
 | tsx | ^4.21.0 | ^4.22.0 | 2026-05-15 | PASS |
 | knip | ^6.13.1 | ^6.14.0 | 2026-08-04 | PASS |
 | knip | ^6.14.0 | ^6.14.1 | 2026-05-17 | PASS |
+| @ast-grep/cli | ^0.42.1 | ^0.42.2 | 2026-05-18 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
