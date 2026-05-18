@@ -43,7 +43,11 @@ describe("StorageService", () => {
           }
           return req;
         },
-        deleteDatabase: vi.fn(() => ({}))
+        deleteDatabase: vi.fn(() => {
+          const req = createMockRequest();
+          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          return req;
+        })
       });
 
       const { idb } = await import("../StorageService");
@@ -147,7 +151,11 @@ describe("StorageService", () => {
           }, 0);
           return req;
         },
-        deleteDatabase: vi.fn(() => ({}))
+        deleteDatabase: vi.fn(() => {
+          const req = createMockRequest();
+          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          return req;
+        })
       });
 
       const { idb } = await import("../StorageService");
