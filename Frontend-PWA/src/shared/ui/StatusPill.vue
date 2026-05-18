@@ -6,7 +6,7 @@ import { useHaptics } from "@core";
  * STATUS PILL / CONNECTIVITY HUB (Layer 2 - Shared UI)
  * ----------------------------------------------------------------------------
  * Rationale: Provides a "Command Center" view of application connectivity.
- * Features: Actionable Expansion, Metadata HUD, Success Breath-Pulse.
+ * Features: Smooth grid-based expansion, horizontal alignment, zero-overlap.
  * ----------------------------------------------------------------------------
  */
 
@@ -96,65 +96,50 @@ const displaySource = computed(() => {
       <div v-if="props.type !== 'loading'" class="dot-halo"></div>
     </div>
 
-    <Transition :name="props.direction === 'left' ? 'slide-fade-left' : 'slide-fade'">
-      <div v-if="isExpanded || props.type === 'loading'" class="label-wrapper">
-        <!-- LOADING STATE -->
-        <template v-if="props.type === 'loading'">
-          <span class="status-label technical">Syncing...</span>
-        </template>
+    <div class="pill-content-wrapper">
+      <div class="pill-content">
+        <!-- BASE LABEL -->
+        <span v-if="props.type === 'loading'" class="status-label technical base-label">Syncing...</span>
+        <span v-else class="status-label technical base-label" :class="{ 'is-db': isDB }">
+          <template v-if="isDB">
+            <svg class="icon-bolt" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </template>
+          {{ props.text }}
+        </span>
 
-        <!-- EXPANDED HUB -->
-        <template v-else-if="isExpanded">
-          <div class="hub-dashboard">
-            <div class="hub-main-info animate-stagger">
-              <span class="status-label technical stagger-1" :class="{ 'is-db': isDB }">
-                <template v-if="isDB">
-                  <svg class="icon-bolt" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                  </svg>
-                </template>
-                {{ props.text }}
+        <!-- EXPANDED CONTENT (Grid Transition) -->
+        <div class="expanded-section" :class="{ 'is-open': isExpanded && props.type !== 'loading' }">
+          <div class="expanded-inner">
+            <div class="divider"></div>
+            
+            <div v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis" class="hub-details">
+              <span v-if="displaySource" class="source-tag technical" :class="displaySource.toLowerCase()">
+                {{ displaySource }}
               </span>
-              
-                <div v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis" class="hub-details stagger-2">
-                <span v-if="displaySource" class="source-tag technical" :class="displaySource.toLowerCase()">
-                  {{ displaySource }}
-                </span>
-                <span v-if="props.remoteInfo?.diagnosis" class="diagnosis-info technical">
-                  {{ props.remoteInfo.diagnosis }}
-                </span>
-                <span v-else-if="props.remoteInfo?.dataAge" class="age-info technical">
-                  {{ props.remoteInfo.dataAge }}
-                </span>
-              </div>
+              <span v-if="props.remoteInfo?.diagnosis" class="diagnosis-info technical">
+                {{ props.remoteInfo.diagnosis }}
+              </span>
+              <span v-else-if="props.remoteInfo?.dataAge" class="age-info technical">
+                {{ props.remoteInfo.dataAge }}
+              </span>
             </div>
 
             <button 
-              class="sync-action stagger-3" 
+              class="sync-action" 
               :disabled="props.type === 'loading'"
               title="Force Sync"
-              @click="handleRefresh"
+              @click.stop="handleRefresh"
             >
               <svg :class="{ 'is-spinning': props.type === 'loading' }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
               </svg>
             </button>
           </div>
-        </template>
-
-        <!-- COMPACT STATE -->
-        <template v-else>
-          <span class="status-label technical" :class="{ 'is-db': isDB }">
-            <template v-if="isDB">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </template>
-            {{ props.text }}
-          </span>
-        </template>
+        </div>
       </div>
-    </Transition>
+    </div>
   </div>
 </template>
 
@@ -162,17 +147,17 @@ const displaySource = computed(() => {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  height: 28px; /* Slightly shorter for tighter look */
+  min-height: 28px;
   padding: 0 4px;
   border-radius: 14px;
   background: var(--sys-surface-container);
   border: 1px solid var(--sys-outline);
-  overflow: hidden;
   cursor: pointer;
-  transition: all 0.4s var(--sys-motion-spring);
+  transition: all 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
   user-select: none;
   position: relative;
   z-index: 50;
+  box-shadow: 0 2px 8px rgba(0,0,0,0);
 }
 
 .status-pill.is-nominal {
@@ -181,7 +166,6 @@ const displaySource = computed(() => {
 }
 
 .status-pill.is-expanded {
-  padding: 0 6px 0 4px;
   background: var(--sys-surface-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -189,9 +173,12 @@ const displaySource = computed(() => {
   box-shadow: var(--sys-elevation-level2);
 }
 
-.status-pill.expand-left.is-expanded {
-  flex-direction: row-reverse;
-  padding: 0 4px 0 6px;
+/* Ensure symmetric padding so width animation is flawless */
+.status-pill.is-expanded.expand-right {
+  padding-right: 6px;
+}
+.status-pill.is-expanded.expand-left {
+  padding-left: 6px;
 }
 
 /* Color Tones */
@@ -216,7 +203,7 @@ const displaySource = computed(() => {
   border-radius: 50%;
   background: currentColor;
   z-index: 2;
-  transition: all 0.3s var(--sys-motion-standard);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
 }
 
 .status-pill.loading .dot-nucleus {
@@ -241,17 +228,28 @@ const displaySource = computed(() => {
   animation: halo-pulse 2.5s infinite;
 }
 
-.label-wrapper {
+.pill-content-wrapper {
   display: flex;
   align-items: center;
-  white-space: nowrap;
-  margin-left: 4px;
-  overflow: hidden;
+  margin-left: 2px;
+  margin-right: 4px;
 }
 
-.status-pill.expand-left .label-wrapper {
-  margin-left: 0;
-  margin-right: 4px;
+.status-pill.expand-left .pill-content-wrapper {
+  margin-left: 4px;
+  margin-right: 2px;
+  flex-direction: row-reverse;
+}
+
+.pill-content {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.status-pill.expand-left .pill-content {
+  flex-direction: row-reverse;
 }
 
 .technical {
@@ -263,62 +261,69 @@ const displaySource = computed(() => {
   line-height: 1;
 }
 
-.status-label.is-db {
+.base-label {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  transition: opacity 0.3s ease;
+}
+
+.status-label.is-db {
   color: var(--sys-primary);
 }
 
-/* HUB DASHBOARD STYLES */
-.hub-dashboard {
+.icon-bolt {
+  animation: bolt-flicker 3s infinite;
+}
+
+/* EXPANDED SECTION GRID TRANSITION */
+.expanded-section {
+  display: grid;
+  grid-template-columns: 0fr;
+  opacity: 0;
+  transition: grid-template-columns 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)), 
+              opacity 0.4s ease;
+}
+
+.expanded-section.is-open {
+  grid-template-columns: 1fr;
+  opacity: 1;
+}
+
+.expanded-inner {
+  overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 2px 4px;
+  gap: 8px;
 }
 
-.hub-main-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 60px;
+.status-pill.expand-left .expanded-inner {
+  flex-direction: row-reverse;
 }
 
-/* Anchor text towards the dot based on expansion direction */
-.expand-left .hub-main-info {
-  align-items: flex-end;
-  text-align: right;
-}
-
-.expand-right .hub-main-info {
-  align-items: flex-start;
-  text-align: left;
+.divider {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sys-outline-variant);
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .hub-details {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 3px;
-  opacity: 0.6;
-}
-
-.status-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .source-tag {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 1px 4px;
-  border-radius: 4px;
+  padding: 2px 5px;
+  border-radius: 5px;
   background: var(--sys-surface-container-highest);
   color: var(--sys-text-secondary);
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 900;
 }
 
@@ -345,29 +350,31 @@ const displaySource = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   border: none;
   background: var(--sys-surface-container-high);
   color: var(--sys-primary);
   cursor: pointer;
-  transition: all 0.2s var(--sys-motion-standard);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
+  flex-shrink: 0;
 }
 
 .sync-action:hover {
   background: var(--sys-primary);
   color: var(--sys-on-primary);
-  transform: scale(1.1);
+  transform: scale(1.1) rotate(15deg);
 }
 
 .sync-action:active {
-  transform: scale(0.9);
+  transform: scale(0.9) rotate(-15deg);
 }
 
 .sync-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .spinner {
@@ -376,49 +383,13 @@ const displaySource = computed(() => {
   animation: rotate 1.5s linear infinite;
 }
 
-/* Transitions */
-.slide-fade-enter-active, .slide-fade-leave-active,
-.slide-fade-left-enter-active, .slide-fade-left-leave-active {
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.slide-fade-enter-from, .slide-fade-leave-to {
-  transform: translateX(-16px) scale(0.95);
-  opacity: 0;
-  filter: blur(4px);
-}
-
-.slide-fade-left-enter-from, .slide-fade-left-leave-to {
-  transform: translateX(16px) scale(0.95);
-  opacity: 0;
-  filter: blur(4px);
-}
-
-/* Stagger Effects */
-.animate-stagger > * {
-  animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.15s; }
-.stagger-3 { animation-delay: 0.2s; }
-
-.icon-bolt {
-  animation: bolt-flicker 3s infinite;
-}
-
 .is-spinning {
   animation: rotate 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-@keyframes slide-in {
-  from { opacity: 0; transform: translateY(4px); filter: blur(2px); }
-  to { opacity: 1; transform: translateY(0); filter: blur(0); }
-}
-
 @keyframes bolt-flicker {
   0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--sys-primary)); }
-  50% { opacity: 0.7; filter: drop-shadow(0 0 0px var(--sys-primary)); }
+  50% { opacity: 0.7; filter: drop-shadow(0 0 0px transparent); }
 }
 
 @keyframes rotate {
