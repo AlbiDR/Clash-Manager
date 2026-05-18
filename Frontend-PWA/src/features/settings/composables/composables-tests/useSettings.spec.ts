@@ -83,6 +83,7 @@ vi.mock("../../../../shared/composables/useTheme", () => ({
 vi.mock("../../../../core/services/StorageService", () => ({
   idb: {
     clear: vi.fn().mockResolvedValue(undefined),
+    destroyAll: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -206,7 +207,7 @@ describe("useSettings", () => {
     vi.stubGlobal("navigator", {
       serviceWorker: {
         getRegistration: vi.fn(),
-        getRegistrations: vi.fn(),
+        getRegistrations: vi.fn().mockResolvedValue([]),
       },
     });
     vi.stubGlobal("caches", {
@@ -446,20 +447,20 @@ describe("useSettings", () => {
       expect(mocks.mockHaptics.heavy).toHaveBeenCalled();
       expect(localStorage.clear).toHaveBeenCalled();
       expect(sessionStorage.clear).toHaveBeenCalled();
-      expect(idb.clear).toHaveBeenCalled();
+      expect(idb.destroyAll).toHaveBeenCalled();
       expect(mocks.mockReload).toHaveBeenCalled();
     });
 
     it("handles IDB clear failure gracefully", async () => {
       mocks.mockConfirm.mockReturnValue(true);
-      vi.mocked(idb.clear).mockRejectedValue(new Error("IDB Error"));
+      vi.mocked(idb.destroyAll).mockRejectedValue(new Error("IDB Error"));
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       const { result } = withSetup(useSettings);
       await result.factoryReset();
 
-      expect(idb.clear).toHaveBeenCalled();
-      expect(consoleWarnSpy).toHaveBeenCalledWith("IDB clear failed", expect.any(Error));
+      expect(idb.destroyAll).toHaveBeenCalled();
+      expect(consoleWarnSpy).toHaveBeenCalledWith("IDB destroyAll/clear failed", expect.any(Error));
       expect(mocks.mockReload).toHaveBeenCalled();
 
       consoleWarnSpy.mockRestore();
