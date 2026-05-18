@@ -36,17 +36,17 @@ const {
 
     <div class="trouble-grid">
       <button class="trouble-btn" @click="forceUpdate" v-tactile>
-        <Icon name="download_done" size="18" />
+        <Icon name="download_done" size="24" />
         <span>Force Update</span>
       </button>
 
       <button class="trouble-btn" @click="clearCache" v-tactile>
-        <Icon name="layers_clear" size="18" />
+        <Icon name="layers_clear" size="24" />
         <span>Purge Assets</span>
       </button>
 
       <button class="trouble-btn danger" @click="factoryReset" v-tactile>
-        <Icon name="restore" size="18" />
+        <Icon name="restore" size="24" />
         <span>Factory Reset</span>
       </button>
     </div>
@@ -77,28 +77,33 @@ const {
 }
 
 .trouble-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 .trouble-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  height: 44px;
+  gap: 8px;
+  height: 84px;
+  padding: 8px 4px;
   background: var(--sys-color-surface-container-high);
   border: none;
-  border-radius: 12px;
+  border-radius: 16px;
   color: var(--sys-color-primary);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s, background-color 0.2s;
 }
 .trouble-btn:active {
-  transform: scale(0.98);
-  opacity: 0.8;
+  transform: scale(0.92);
+  opacity: 0.85;
+  background: var(--sys-color-surface-container-highest);
 }
 .trouble-btn.danger {
   color: var(--sys-color-error);
