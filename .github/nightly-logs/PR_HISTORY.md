@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-18] PR #628: chore(deps): bump @ast-grep/cli from ^0.42.1 to ^0.42.2
+**Commit**: `b0b19abec9854aa74c6a76c439f6cc8d078f8bda`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/628)
+
+### Description
+Bumped @ast-grep/cli from ^0.42.1 to ^0.42.2 in the root package.json. This is a Tier 1 (Automated Patch/Minor) update as part of the Nightly dependency audit. Verified stability via the full monorepo test gate (967 pass, 1 skipped). Updated the audit log accordingly.
+
+---
+*PR created automatically by Jules for task [515032254558367761](https://jules.google.com/task/515032254558367761) started by @AlbiDR*
+
+---
+
 ## [2026-05-18] PR #627: chore(version): flag version drift conflict in monorepo ground truth
 **Commit**: `e6dab59d41b627d5dbbbe73b7bc491db5034f861`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/627)
