@@ -391,7 +391,6 @@ export const idb = {
       memoryStore.clear();
     }
   },
-};},
 };
 
 const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V8";
