@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-18] PR #627: chore(version): flag version drift conflict in monorepo ground truth
+**Commit**: `e6dab59d41b627d5dbbbe73b7bc491db5034f861`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/627)
+
+### Description
+This PR flags a fundamental version drift conflict between the Root manifest (v14.0.0) and the authoritative Backend protocol constant (v13.3.0). In accordance with Rule 4[!] of the Version-Integrity protocol ("Flag, Don't Guess"), no code changes were applied to avoid non-deterministic reconciliation that would violate either the Constant-Authority (Rule 2[B]) or the Zero-Bump Mandate (Rule 2[C]). The conflict has been documented in the version integrity coverage log. Verified system stability via full test suite (967 passed).
+
+---
+*PR created automatically by Jules for task [3599399953973204202](https://jules.google.com/task/3599399953973204202) started by @AlbiDR*
+
+---
+
 ## [2026-05-18] PR #626: docs(tsdoc): document laboratory store actions and architectural roles
 **Commit**: `c421529b93f9564062f773482cf85f634c6571b2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/626)
