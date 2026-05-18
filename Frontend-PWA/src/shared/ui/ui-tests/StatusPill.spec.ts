@@ -51,12 +51,12 @@ describe("StatusPill", () => {
       props: { type: "success", text: "Ready", nominal: true },
     });
     
-    expect(wrapper.find(".label-wrapper").exists()).toBe(false);
+    expect(wrapper.classes()).not.toContain("is-expanded");
     
     await wrapper.trigger("click");
     
     expect(wrapper.classes()).toContain("is-expanded");
-    expect(wrapper.find(".label-wrapper").exists()).toBe(true);
+    expect(wrapper.find(".expanded-section").classes()).toContain("is-open");
     expect(tapMock).toHaveBeenCalled();
   });
 
@@ -64,7 +64,7 @@ describe("StatusPill", () => {
     const wrapper = mount(StatusPill, {
       props: { type: "loading", text: "Loading", nominal: true },
     });
-    expect(wrapper.find(".label-wrapper").exists()).toBe(true);
+    expect(wrapper.find(".base-label").exists()).toBe(true);
     expect(wrapper.text()).toContain("Syncing...");
   });
 
