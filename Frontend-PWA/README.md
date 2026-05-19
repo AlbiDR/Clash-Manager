@@ -1,6 +1,6 @@
 # Clash Manager --- Client Core (PWA)
 
-[![Client](https://img.shields.io/badge/Client-v13.3.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Client](https://img.shields.io/badge/Client-v14.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **Operational Command Center**. A high-performance, offline-first Vue 3.5 application that serves as the primary interface for clan management.
 
@@ -88,13 +88,14 @@ Orchestrates the "Recruitment Pipeline" for the Headhunter feature through a mul
 The primary Layer 1 orchestrator for high-density list views (Roster, Headhunter).
 - **Layout Orchestration**: Centralizes the communication between infrastructure and the `ConsoleLayout` component via standardized `layoutProps` and `layoutEvents` interfaces, reducing boilerplate in feature views.
 - **Dependency Inversion**: Bridges domain-blind infrastructure (searching, sorting, pagination, selection) with feature-level requirements through a unified reactive interface.
-- **Status Resolver**: Implements a 7-tier priority hierarchy to resolve the most critical system status (Invalid API URL, Offline, Sync Error, Waking Server..., Syncing..., Fallback, and Nominal).
+- **Status Resolver**: Delegates status resolution to the `useConnectivityManager` orchestrator to provide consistent system health feedback across all feature consoles.
 - **Performance Orchestration**: Centralizes item metadata resolution and `v-memo` key generation to ensure consistent rendering optimizations across feature views.
 - **Lifecycle Management**: Monitors document visibility and triggers automatic background refreshes after extended inactivity (30m+) to ensure data currency.
 
 ### 4. Progressive Rendering Engine (`useProgressiveList`)
 Maintains 60FPS UI performance when handling large datasets via a time-sliced rendering strategy.
 - **Idle Budgeting**: Utilizes `requestIdleCallback`'s `IdleDeadline` to process multiple items per frame without blocking the main interaction thread.
+- **Adaptive Chunking**: Implements a dynamic sizing strategy (10 vs 20 items per chunk depending on total list size) to balance rendering speed with frame stability.
 - **Churn Prevention**: Implements an incremental update strategy for minor dataset changes (< 5 items) to prevent jarring layout shifts and scroll jumps.
 - **Memory Safety**: Uses `shallowRef` to minimize reactive overhead and ensures deterministic cleanup via `onScopeDispose`.
 
@@ -115,6 +116,7 @@ Unifies physical network status and logical API availability into a single sourc
 ### 8. Connectivity Hub Orchestrator (`useConnectivityManager`)
 Orchestrates data provenance, synchronization health, and UI-level connectivity indicators.
 - **Confidence Scoring**: Calculates a health score based on network status, sync activity, and data age.
+- **8-Tier Health Hierarchy**: Implements a strict priority-based status resolver (SYNCING > Sync Error > Invalid API URL > OFFLINE > STALE > DB > LOCAL > INITIALIZING) to ensure the most critical system state is always prioritized in the UI.
 - **Metadata Normalization**: Bridges the gap between raw store metadata and human-readable temporal indicators (e.g., "10m ago").
 
 ### 9. Hardware Brokerage (`useWakeLock`)

@@ -19,10 +19,10 @@ The Shared UI directory (Layer 2) contains reusable components that are agnostic
 
 ### Layout Orchestration
 Standardized containers that manage view-level states like loading, errors, and empty results.
-- **ConsoleLayout.vue**: The primary structural shell for feature views. Manages the `ConsoleHeader`, FAB synchronization, pull-to-refresh logic, and `hubInfo` orchestration to the footer/header.
+- **ConsoleLayout.vue**: The primary structural shell for feature views. Manages the `ConsoleHeader`, FAB synchronization, pull-to-refresh logic, and `remoteInfo` orchestration.
 - **ConsoleHeader.vue**: Standardized view header. Handles search debouncing, sorting controls, and visual status indicators (StatusPill).
 - **ConsoleList.vue**: Specialized list container with Showcase Mode support and `v-auto-animate` integration.
-- **AppFooter.vue**: Global navigation anchor and legal/version information container. Supports `hubInfo` for displaying backend provenance (e.g., Supabase Cluster).
+- **AppFooter.vue**: Global navigation anchor and legal/version information container.
 
 ### UI Primitives
 Atomic elements that form the basis of the design system.
@@ -30,7 +30,7 @@ Atomic elements that form the basis of the design system.
 - **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling for metrics based on performance scores.
 - **BaseCardSkeleton.vue**: Placeholder variant of the card for loading states.
 - **Icon.vue**: The authoritative SVG renderer. Centralizes vector path definitions in `@core/theme/icons` and ensures CSS variable consistency with `non-scaling-stroke` vector effects.
-- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `hubInfo` metadata, including backend source (Supabase) and data age.
+- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata, including backend source (Supabase) and data age.
 - **MomentumPill.vue**: Specialized indicator for performance trends and momentum metrics.
 - **StatisticItem.vue**: Labeled data point with standardized typography and spacing.
 - **StatsGrid.vue**: Responsive layout component for displaying player statistics in 2 or 3 columns.
@@ -42,6 +42,8 @@ Standardized molecules for rendering player-specific metrics and metadata with i
 - **ScoreBadge.vue**: Renders PeS (Performance Score) / PoS (Potential Score) with integrated benchmarking and optional `MomentumPill` support.
 - **RoleBadge.vue**: Semantic-colored indicator for clan roles (Leader, Co-Leader, Elder, Member).
 - **TenureBadge.vue**: High-density display for "Days in Clan" tracking.
+- **LongevityBadge.vue**: Displays discovery or activity duration (e.g., '2h 15m').
+- **TagBadge.vue**: Standardized component for displaying player tags with consistent truncation (#ABC12).
 
 ### Interactive Molecules
 Components that facilitate user interaction and state management.
@@ -68,8 +70,8 @@ Components responsible for system stability and user notifications.
 - `emptyHint`: Supporting text or action guidance (e.g., "Try adjusting your filters").
 - `emptyIcon`: The name of the icon to display (must correspond to a valid key in `icons.ts`).
 
-### Provenance Orchestration (hubInfo)
-The Molecule Layer centralizes backend provenance reporting. `ConsoleLayout.vue` accepts a `hubInfo` prop (Standardized in Layer 1 `@core/types`) and propagates it to both the `ConsoleHeader` (via `StatusPill`) and `AppFooter`. This ensures that users always have visibility into the data source (Supabase) and its authoritative age across all feature consoles.
+### Provenance Orchestration (remoteInfo)
+The Molecule Layer centralizes backend provenance reporting. `ConsoleLayout.vue` accepts a `remoteInfo` prop (Standardized in Layer 1 `@core/types`) and propagates it to the `ConsoleHeader` (via `StatusPill`). This ensures that users always have visibility into the data source (Supabase) and its authoritative age across all feature consoles.
 
 ## Integration Standards
 Components in this layer must adhere to the **Visual Purity** protocol:

@@ -33,18 +33,3 @@ const benchmarkTooltipContent = computed(() => {
     <span class="trophy-val">{{ (props.value || 0).toLocaleString() }}</span>
   </div>
 </template>
-
-<style scoped>
-.trophy-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--sys-color-on-surface-variant);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.trophy-val {
-  font-family: var(--sys-font-family-mono);
-}
-</style>

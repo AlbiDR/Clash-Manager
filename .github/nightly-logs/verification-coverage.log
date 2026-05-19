@@ -79,3 +79,7 @@ Frontend-PWA/src/core/services/useListFilter.ts
 Frontend-PWA/src/core/services/useConnectivityManager.ts
 Frontend-PWA/src/core/utils/game.ts
 Frontend-PWA/src/core/utils/mockData.ts
+Frontend-PWA/src/shared/ui/TagBadge.vue
+Frontend-PWA/src/shared/ui/LongevityBadge.vue
+2026-08-04 | Frontend-PWA/src/core/api/DataMappers.ts | Saturating coverage for roster/headhunter mapping edge cases
+2026-08-04 | Frontend-PWA/src/core/api/SupabaseClient.ts | Hardened validation boundary stress-testing and mutation normalization

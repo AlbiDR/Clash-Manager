@@ -3,6 +3,7 @@
 
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useWakeLock } from "./useWakeLock";
+import { DATA_STALENESS_THRESHOLD } from "../config";
 import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
@@ -92,7 +93,7 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** Logic boundary: Marks data as 'STALE' if older than 30 minutes to prompt background refresh. */
   const isStale = computed(() => {
     if (!lastSync.value) return true;
-    return Date.now() - lastSync.value > 1000 * 60 * 30; // 30 min TTL
+    return Date.now() - lastSync.value > DATA_STALENESS_THRESHOLD;
   });
 
   /** Indicates the store is ready for consumption. Guards components from accessing null `data`. */

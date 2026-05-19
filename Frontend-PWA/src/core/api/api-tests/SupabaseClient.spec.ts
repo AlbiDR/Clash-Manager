@@ -184,6 +184,15 @@ describe("SupabaseClient", () => {
       expect(result.timestamp).toBeLessThanOrEqual(Date.now());
     });
 
+    it("fetchRemote throws Valibot error if view returns an object instead of an array", async () => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: { not: "an array" }, error: null }) // Malformed roster
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: null, error: null });
+
+      await expect(SupabaseClient.fetchRemote()).rejects.toThrow();
+    });
+
     it("fetchRemote throws error if roster fetch fails", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: null, error: { message: 'Roster Fail' } } as any);
@@ -287,10 +296,48 @@ describe("SupabaseClient", () => {
 
       await expect(SupabaseClient.getPlayerProfile('TAG')).rejects.toThrow('Profile data validation failed');
     });
+
+    it("getPlayerProfile throws Valibot error if Edge Function returns malformed card data", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          cards: [{ level: "not-a-number" }]
+        }),
+      } as any);
+
+      await expect(SupabaseClient.getPlayerProfile('TAG')).rejects.toThrow();
+    });
   });
 
-  describe("Mutations & Online-Only Dismissal", () => {
-    it("dismissRecruits throws NetworkError on any RPC error", async () => {
+  describe("Mutations & Offline Queue", () => {
+    it("dismissRecruits normalizes player tags idempotently", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
+      const items = [{ id: '#ABC', score: 80 }, { id: 'XYZ', score: 90 }];
+
+      await SupabaseClient.dismissRecruits(items);
+
+      expect(mockClient.rpc).toHaveBeenCalledWith('dismiss_recruits', {
+        items: [
+          { id: '#ABC', score: 80 },
+          { id: '#XYZ', score: 90 }
+        ]
+      });
+    });
+
+    it("undismissRecruits normalizes player tags idempotently", async () => {
+      const mockClient = vi.mocked(createClient)();
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
+      const ids = ['#ABC', 'XYZ'];
+
+      await SupabaseClient.undismissRecruits(ids);
+
+      expect(mockClient.rpc).toHaveBeenCalledWith('undismiss_recruits', {
+        player_tags: ['#ABC', '#XYZ']
+      });
+    });
+
+    it("dismissRecruits enqueues on transient error (PGRST301)", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
 

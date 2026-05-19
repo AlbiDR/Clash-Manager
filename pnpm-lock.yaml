@@ -69,8 +69,8 @@ importers:
   .:
     devDependencies:
       '@ast-grep/cli':
-        specifier: ^0.42.1
-        version: 0.42.1
+        specifier: ^0.42.2
+        version: 0.42.2
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.0
@@ -78,7 +78,7 @@ importers:
         specifier: ^17.4.0
         version: 17.4.0
       knip:
-        specifier: ^6.14.0
+        specifier: ^6.14.1
         version: 6.14.1(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)
       typescript:
         specifier: 'catalog:'
@@ -90,8 +90,8 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0
       '@supabase/supabase-js':
-        specifier: ^2.105.4
-        version: 2.105.4
+        specifier: ^2.106.0
+        version: 2.106.0
       pinia:
         specifier: 'catalog:'
         version: 3.0.4(typescript@5.9.3)(vue@3.5.34(typescript@5.9.3))
@@ -162,52 +162,52 @@ packages:
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
 
-  '@ast-grep/cli-darwin-arm64@0.42.1':
-    resolution: {integrity: sha512-G9rk0NAN10mybxi611CVNqwPtPO+yF0rFqPzpdgHBa4roeCq5FYsg2q/WqxM95st3jilNS9UIfZFD0i3BDfKEw==}
+  '@ast-grep/cli-darwin-arm64@0.42.2':
+    resolution: {integrity: sha512-li1RsB2fO5/qchdZHny+meg1I03xD+A5rug8axxOdqull8hdFUqxymZ5hg/tKh+/C04gyccEBgqcuJAsghuPXw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@ast-grep/cli-darwin-x64@0.42.1':
-    resolution: {integrity: sha512-IZ1HY69zj6sj4QnHKPR71FjtuCDImhLW5v5QhTGq6Fl0T9fjhQP/g9aEk7PrJB1puOk4HhTw/J/u0wZOPmp4bA==}
+  '@ast-grep/cli-darwin-x64@0.42.2':
+    resolution: {integrity: sha512-oKR1bRYsmc0G287q9Xj29m3SrxohEXhArKt647MswDYbG751LHG3aaEf6TtYjcxq+jKB4XaVJ5+q1jlIgKbVWQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@ast-grep/cli-linux-arm64-gnu@0.42.1':
-    resolution: {integrity: sha512-eirVmtAciL1cXwvODYkqKEFtWgxxYyhNLTTNchdKynktFixuAmAvn0OUX0bcQnhXH5DgsdT4+1+CtvjuPc5uGQ==}
+  '@ast-grep/cli-linux-arm64-gnu@0.42.2':
+    resolution: {integrity: sha512-dfgQcTR2SI47J1yz/MMQuA3cFu/pzsum07aLgv+QcouCJY+AJcgjZTNUd26vZ/352wTXfJ/wpfziwbbI/Z4EEA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@ast-grep/cli-linux-x64-gnu@0.42.1':
-    resolution: {integrity: sha512-DrsV3+LkzwcaCw2AkLqM5o9ISaS4ZfJIL96RIdFRD+ydp5Mirsdw3aZdDmBqpa6nxt2NjMsFWgOivvzPiKzGAw==}
+  '@ast-grep/cli-linux-x64-gnu@0.42.2':
+    resolution: {integrity: sha512-ygkLM/RLEKw8btFgFIl/BrU2ji2sH79YnxIzjVIC5np9NMWWvqZ/jy2++s0YYI8Y9XLmfa1+Pi8F5zFK+3qDww==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@ast-grep/cli-win32-arm64-msvc@0.42.1':
-    resolution: {integrity: sha512-9DabeCAtOQEUTiCVB6fpoJ0mI21brEAa5oY2jjOzaz1SBwYuh9TPLnKBn8F+PYbUU/4Umyy26YwVg+xw4+J/Ug==}
+  '@ast-grep/cli-win32-arm64-msvc@0.42.2':
+    resolution: {integrity: sha512-fThbaAvwUFfW1kAYw7xAzX/VvWMcyfeyyKyHfwQWHbkT5bjqdbnb5yFPLu0Q2Qo3bHUudYYP4WLakegkRyHSkQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@ast-grep/cli-win32-ia32-msvc@0.42.1':
-    resolution: {integrity: sha512-xQlxTwaqiCzOUZc5lB6rp/glS0DmQd67ID6MliRZ3TH1PvX+a3oiP+QEdSgcvfcArObuKxtRGNKlOfgwMe+J8Q==}
+  '@ast-grep/cli-win32-ia32-msvc@0.42.2':
+    resolution: {integrity: sha512-W7S+Hao/FMsXc8ZZny7YqA16J5C9O9b6UvT+0xpiWda6nNhOv0ebQHzjhtuSC/+SlV7S29uwjr+jT/T6+XmV0Q==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
 
-  '@ast-grep/cli-win32-x64-msvc@0.42.1':
-    resolution: {integrity: sha512-bOMSGeTKGfYBB1m+S0WLiA2GUkNVBaHOy+mKw27mf/kd6W2KNG3DJwAWry35qargLL0WP9PBcCaOkdnzeNyZ3A==}
+  '@ast-grep/cli-win32-x64-msvc@0.42.2':
+    resolution: {integrity: sha512-EPMQyUIvl4P3wqOAs9V+2LIUaLZNUQyHkLXqP+PKtGT+tS/c+IBv+/FiQ2psMHs2u4PM8tg2rnQBQ8sU0Nr+Gw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
 
-  '@ast-grep/cli@0.42.1':
-    resolution: {integrity: sha512-L1D7JX7p/RohtvE4IViKelWCtEYjQDvmlZ85aP4LmJVoQth/iC/+z/fCXmg6qSK8zr9IjC9okpxDZX7x1arKbQ==}
+  '@ast-grep/cli@0.42.2':
+    resolution: {integrity: sha512-TojScwpaM40UQyvV5n5oa8PfOPFfHSD8Xf0WppPXn1+lq73u/jwvDmP8M2Oxj5YgebIpgkDUPoMixThtqwpNBA==}
     engines: {node: '>= 12.0.0'}
     hasBin: true
 
@@ -1664,31 +1664,31 @@ packages:
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
-  '@supabase/auth-js@2.105.4':
-    resolution: {integrity: sha512-Ejfa37M5xoIwoxVebxRahnwubPo8g22qkXQ4p50+N9MIvU9UZoN+A8dwVPtczzGf8oV/YXN80ZPxK4aWXuSN/A==}
+  '@supabase/auth-js@2.106.0':
+    resolution: {integrity: sha512-JY7602OvjK2l3BjsQkpePpxR+6P0iG37gCrZNWAMhAuNh1iFnhGRwj/y5EshUG0INMPGFrj0UA9MErQ/kOEKFg==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/functions-js@2.105.4':
-    resolution: {integrity: sha512-JVNKbBft3Qkja+WlGaE026AJ2AH9K0UTsxsfvEIHgd4zFrBor4BYRCrYFrv9IDsvVqkF72wKDsODJl5GY/C4tA==}
+  '@supabase/functions-js@2.106.0':
+    resolution: {integrity: sha512-ADIkJYH5w7HbnGVAAlCbyKoLF5QdfyezBLfYXpUqhxZOacK6YepOvnP/8p4p+50bhTPWp6VhDxu19KO7e/qU2g==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/phoenix@0.4.2':
     resolution: {integrity: sha512-YSAGnmDAfuleFCVt3CeurQZAhxRfXWeZIIkwp7NhYzQ1UwW6ePSnzsFAiUm/mbCkfoCf70QQHKW/K6RKh52a4A==}
 
-  '@supabase/postgrest-js@2.105.4':
-    resolution: {integrity: sha512-SppIyLo/kTwIlz1qpv2HN1EQqBg0GVktrDDFsXygYROha3MgVn4rT7p5EjFHFqXQm2rdRGb/BI7bc+jr10m91w==}
+  '@supabase/postgrest-js@2.106.0':
+    resolution: {integrity: sha512-vNKFAXQrtmUn7J3LbN+uMlt0jciAwRIBpdy6Do4DKrpf1xj0kJhbqXTX4y8ziewWUEEx8G5GPnDmprXXaO9f3w==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/realtime-js@2.105.4':
-    resolution: {integrity: sha512-6ov6c59+8D9h7q4M4Gy/uDJlC0Akxl9/714Y+6vJ+Sijuc16TS/p5DwhfRCLNcIhNiej1gEt+CQUwsjiPt4PxQ==}
+  '@supabase/realtime-js@2.106.0':
+    resolution: {integrity: sha512-mYZoaYpkyjlecixbvxCu0h3jw12uHfEcUqNdaRATNI8zQVI5arels+VJzAGcHwNiD+/Juv0OXIuk+M7SHsdI4A==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/storage-js@2.105.4':
-    resolution: {integrity: sha512-Jx+pzMP1Whjof2PWHoVBUA75/p7PQE9CqKBzn1oXVyJDOggMLSH2OzVWwsXYaxEpdC1K/KltwmOX44nL3LHl9g==}
+  '@supabase/storage-js@2.106.0':
+    resolution: {integrity: sha512-BHc3nIjD3zfdDxBenphXrLJSoQ+qwo24VD96cVzmjBFbQVk5krvwRNUXrA5ozPplA3Vhlst2d/hy9R9ViqH2lg==}
     engines: {node: '>=20.0.0'}
 
-  '@supabase/supabase-js@2.105.4':
-    resolution: {integrity: sha512-cEnx+k49knU+qdIP7rXwR6fqEXPHZs+74xFK1R0S8MgQ7v9tbePVdGxvO03n3bPympMdJWVLadARBfU4TgNHCQ==}
+  '@supabase/supabase-js@2.106.0':
+    resolution: {integrity: sha512-OOoo3sLj9iVXNp6b+fkyOfFeQrvvNy7nQbaONNf72dOaictUeS39hFDS9argIRTag6M3ZxIypNWcrDAwLgUihQ==}
     engines: {node: '>=20.0.0'}
 
   '@surma/rollup-plugin-off-main-thread@2.2.3':
@@ -3674,38 +3674,38 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 10.4.3
 
-  '@ast-grep/cli-darwin-arm64@0.42.1':
+  '@ast-grep/cli-darwin-arm64@0.42.2':
     optional: true
 
-  '@ast-grep/cli-darwin-x64@0.42.1':
+  '@ast-grep/cli-darwin-x64@0.42.2':
     optional: true
 
-  '@ast-grep/cli-linux-arm64-gnu@0.42.1':
+  '@ast-grep/cli-linux-arm64-gnu@0.42.2':
     optional: true
 
-  '@ast-grep/cli-linux-x64-gnu@0.42.1':
+  '@ast-grep/cli-linux-x64-gnu@0.42.2':
     optional: true
 
-  '@ast-grep/cli-win32-arm64-msvc@0.42.1':
+  '@ast-grep/cli-win32-arm64-msvc@0.42.2':
     optional: true
 
-  '@ast-grep/cli-win32-ia32-msvc@0.42.1':
+  '@ast-grep/cli-win32-ia32-msvc@0.42.2':
     optional: true
 
-  '@ast-grep/cli-win32-x64-msvc@0.42.1':
+  '@ast-grep/cli-win32-x64-msvc@0.42.2':
     optional: true
 
-  '@ast-grep/cli@0.42.1':
+  '@ast-grep/cli@0.42.2':
     dependencies:
       detect-libc: 2.1.2
     optionalDependencies:
-      '@ast-grep/cli-darwin-arm64': 0.42.1
-      '@ast-grep/cli-darwin-x64': 0.42.1
-      '@ast-grep/cli-linux-arm64-gnu': 0.42.1
-      '@ast-grep/cli-linux-x64-gnu': 0.42.1
-      '@ast-grep/cli-win32-arm64-msvc': 0.42.1
-      '@ast-grep/cli-win32-ia32-msvc': 0.42.1
-      '@ast-grep/cli-win32-x64-msvc': 0.42.1
+      '@ast-grep/cli-darwin-arm64': 0.42.2
+      '@ast-grep/cli-darwin-x64': 0.42.2
+      '@ast-grep/cli-linux-arm64-gnu': 0.42.2
+      '@ast-grep/cli-linux-x64-gnu': 0.42.2
+      '@ast-grep/cli-win32-arm64-msvc': 0.42.2
+      '@ast-grep/cli-win32-ia32-msvc': 0.42.2
+      '@ast-grep/cli-win32-x64-msvc': 0.42.2
 
   '@babel/code-frame@7.28.6':
     dependencies:
@@ -4954,37 +4954,37 @@ snapshots:
 
   '@standard-schema/spec@1.1.0': {}
 
-  '@supabase/auth-js@2.105.4':
+  '@supabase/auth-js@2.106.0':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/functions-js@2.105.4':
+  '@supabase/functions-js@2.106.0':
     dependencies:
       tslib: 2.8.1
 
   '@supabase/phoenix@0.4.2': {}
 
-  '@supabase/postgrest-js@2.105.4':
+  '@supabase/postgrest-js@2.106.0':
     dependencies:
       tslib: 2.8.1
 
-  '@supabase/realtime-js@2.105.4':
+  '@supabase/realtime-js@2.106.0':
     dependencies:
       '@supabase/phoenix': 0.4.2
       tslib: 2.8.1
 
-  '@supabase/storage-js@2.105.4':
+  '@supabase/storage-js@2.106.0':
     dependencies:
       iceberg-js: 0.8.1
       tslib: 2.8.1
 
-  '@supabase/supabase-js@2.105.4':
+  '@supabase/supabase-js@2.106.0':
     dependencies:
-      '@supabase/auth-js': 2.105.4
-      '@supabase/functions-js': 2.105.4
-      '@supabase/postgrest-js': 2.105.4
-      '@supabase/realtime-js': 2.105.4
-      '@supabase/storage-js': 2.105.4
+      '@supabase/auth-js': 2.106.0
+      '@supabase/functions-js': 2.106.0
+      '@supabase/postgrest-js': 2.106.0
+      '@supabase/realtime-js': 2.106.0
+      '@supabase/storage-js': 2.106.0
 
   '@surma/rollup-plugin-off-main-thread@2.2.3':
     dependencies:

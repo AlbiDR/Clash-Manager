@@ -65,3 +65,6 @@ Frontend-PWA/README.md
 Backend/README.md
 2026-08-04 | Frontend-PWA/src/shared/ui/README.md | Reconciled BaseBadge and backend drift
 2026-05-16 | Frontend-PWA/src/features/laboratory/README.md | Reconciled Registry.ts substrate drift
+2026-08-04 | Frontend-PWA/src/shared/ui/README.md | Reconciled remoteInfo nomenclature and missing badges
+2026-05-18 | README.md | Reconciled version badges to v14.0.0
+2026-08-04 | Frontend-PWA/README.md | Reconciled Layer 1 service descriptions (Status Resolver, 8-Tier Health, Adaptive Chunking) and version badge.

@@ -86,6 +86,16 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
 
   // --- ACTIONS ---
 
+  /**
+   * Persists the current player observation to LocalStorage.
+   *
+   * @remarks
+   * Satisfies ADR Section IV: Resilience & Operational Security. Ensures the
+   * "Clinical" simulation state survives session restarts or accidental
+   * navigation by caching the authoritative PlayerData in LocalStorage.
+   *
+   * @param data - The player data to persist, or null to clear the cache.
+   */
   function persistObservation(data: PlayerData | null) {
     if (data) {
       localStorage.setItem(STORAGE_KEY_OBSERVATION, JSON.stringify(data));
@@ -94,6 +104,18 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     }
   }
 
+  /**
+   * Loads inventory overrides from LocalStorage and merges them with a profile.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Validation Boundaries. This action implements
+   * the "Inventory Override" pattern, allowing users to simulate scenarios
+   * with hypothetical resources while ensuring the resulting Inventory
+   * remains structurally valid via Valibot schema enforcement.
+   *
+   * @param profileData - The base player data containing the default inventory.
+   * @returns The merged inventory with overrides applied.
+   */
   function loadPersistedInventory(profileData: PlayerData): Inventory {
     const stored = localStorage.getItem(STORAGE_KEY_INVENTORY);
     if (stored) {
@@ -121,15 +143,39 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     return profileData.inventory;
   }
 
+  /**
+   * Updates simulation settings and persists them to LocalStorage.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Control Flow. This action enforces the
+   * project's "Simulation Logic" constraints where certain strategies
+   * (like Level Projection) strictly require infinite resource parameters
+   * for roadmap generation.
+   *
+   * @param newSettings - Partial settings object to merge.
+   */
   function setSettings(newSettings: Partial<OptimizationSettings>) {
     const nextSettings = { ...state.value.settings, ...newSettings };
     if (newSettings.strategy) {
+      // Rationale: 'Level Projection' is a roadmap simulation where resources are
+      // assumed to be infinite to find the ultimate goal. 'Resource Efficiency'
+      // is a constrained simulation based on current inventory.
       nextSettings.infiniteResources = (newSettings.strategy === "Level Projection");
     }
     state.value.settings = nextSettings;
     localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(state.value.settings));
   }
 
+  /**
+   * Updates the current inventory and persists it to LocalStorage.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Validation Boundaries. Performs an atomic
+   * update to the reactive inventory state and immediately synchronizes
+   * the delta with LocalStorage to ensure session persistence.
+   *
+   * @param partialInventory - Partial inventory object to merge.
+   */
   function updateInventory(partialInventory: Partial<Inventory>) {
     if (!state.value.observation) return;
 
@@ -153,27 +199,71 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
     persistObservation(state.value.observation);
   }
 
+  /**
+   * Sets the active player observation and persists it.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Data Flow. Establishes the authoritative
+   * "Source of Truth" for the simulation engine by injecting validated
+   * PlayerData into the feature state.
+   *
+   * @param data - The player data to set.
+   */
   function setObservation(data: PlayerData | null) {
     state.value.observation = data;
     persistObservation(data);
   }
 
+  /**
+   * Sets the result of the optimization simulation.
+   *
+   * @remarks
+   * Maps the output of the Layer 3 Simulation Engine back to the
+   * reactive state container for UI projection.
+   *
+   * @param result - The optimization result.
+   */
   function setOperation(result: OptimizationResult | null) {
     state.value.operation = result;
   }
 
+  /**
+   * Updates the simulation active state.
+   *
+   * @param isSimulating - True if a simulation is running.
+   */
   function setSimulating(isSimulating: boolean) {
     state.value.isSimulating = isSimulating;
   }
 
+  /**
+   * Updates the data fetching state.
+   *
+   * @param isFetching - True if data is being fetched.
+   */
   function setFetching(isFetching: boolean) {
     state.value.isFetching = isFetching;
   }
 
+  /**
+   * Sets the error message if a data fetch fails.
+   *
+   * @param error - The error message or null to clear.
+   */
   function setFetchError(error: string | null) {
     state.value.fetchError = error;
   }
   
+  /**
+   * Updates the tracked player tag and persists it to LocalStorage.
+   *
+   * @remarks
+   * Satisfies ADR Section VII: Naming Conventions (Identifiers).
+   * Maintains the "Tracked Tag" context to enable seamless synchronization
+   * across browser sessions.
+   *
+   * @param tag - The player tag to track.
+   */
   function setTrackedPlayerTag(tag: string | null) {
     state.value.trackedPlayerTag = tag;
     if (tag) {
