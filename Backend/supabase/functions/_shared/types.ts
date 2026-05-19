@@ -13,24 +13,6 @@ export interface AuditEntry {
     details?: unknown;
 }
 
-export interface StageMetadata {
-    status: PipelineStatus;
-    duration_ms: number;
-    audit_log: AuditEntry[];
-    integrity?: {
-        checked: boolean;
-        passed: boolean;
-        details?: string;
-    };
-}
-
-export interface TelemetryMetadata {
-    stage: string;
-    current_duration: number;
-    audit_log: AuditEntry[];
-    [key: string]: unknown;
-}
-
 export interface IngestionResult {
     discovery: { harvested: number; duplicates: number; error?: string };
     profile: { success: boolean; error?: string };
@@ -60,4 +42,3 @@ export interface ScannerStats {
     errors: string[];
 }
 
-export type PipelineStatus = 'IN_PROGRESS' | 'SUCCESS' | 'FAILURE' | 'DEGRADED' | 'COMPLETE';

@@ -65,7 +65,7 @@ export const RoyalePlayerSchema = v.object({
 });
 
 /** [GUARD] Royale Card Schema. */
-export const RoyaleCardSchema = v.object({
+const RoyaleCardSchema = v.object({
     name: v.string(),
     id: v.number(),
     level: v.number(),
@@ -91,7 +91,7 @@ export const PlayerSyncPayloadSchema = v.object({
 });
 
 /** [GUARD] Royale Tournament List Item Schema. */
-export const RoyaleTournamentListItemSchema = v.object({
+const RoyaleTournamentListItemSchema = v.object({
     tag: v.string(),
     capacity: v.number(),
     maxCapacity: v.number()
@@ -125,12 +125,6 @@ export const StaleRecruitSchema = v.object({
     player_tag: v.string()
 });
 
-/** [GUARD] Headhunter Context Schema (RPC). */
-export const HeadhunterContextSchema = v.object({
-    required_trophies: v.optional(v.number(), 0),
-    exclusion_tags: v.optional(v.array(v.string()), [])
-});
-
 /** [GUARD] Royale Battle Log Schema. */
 export const RoyaleBattleLogSchema = v.array(v.object({
     type: v.string(),
@@ -143,13 +137,3 @@ export const RoyaleBattleLogSchema = v.array(v.object({
         })))
     }))
 }));
-
-/** [GUARD] Discovery Anchor Schema (RPC). */
-export const DiscoveryAnchorSchema = v.object({
-    keyword: v.string()
-});
-
-/** [GUARD] Discovery Cache Item Schema. */
-export const DiscoveryCacheItemSchema = v.object({
-    player_tag: v.string()
-});

@@ -114,8 +114,6 @@ export const ProfileInputSchema = v.union([
   ExternalProfileSchema
 ]);
 
-export type RawProfileInput = v.InferOutput<typeof ProfileInputSchema>;
-
 /**
  * [GUARD] CORE COERCION PIPES
  * Rationale: Matrix data is often heterogeneous (e.g., numbers for tags).

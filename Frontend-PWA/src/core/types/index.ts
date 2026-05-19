@@ -72,15 +72,6 @@ export interface WebAppData {
   readonly blacklist?: readonly string[];
 }
 
-// Real-time clan member
-export interface ClanMember {
-  tag: string;
-  name: string;
-  role: string;
-  kingLevel: number;
-  donations: number;
-  donationsReceived: number;
-}
 
 // Ping response
 export interface PingResponse {

@@ -48,7 +48,7 @@ export {
  * Rationale: Allows manual calibration for cards that provide abnormal value
  * relative to their level (e.g., Champions or recently buffed cards).
  */
-export const EFFICIENCY_OVERRIDES: Readonly<Record<string, number>> = {
+const EFFICIENCY_OVERRIDES: Readonly<Record<string, number>> = {
   // Add specific card overrides here if necessary
 };
 
