@@ -4,7 +4,7 @@
 import * as v from "valibot";
 
 /**
- * 🛡️ VALIDATION BOUNDARY: Laboratory Input
+ * [GUARD] VALIDATION BOUNDARY: Laboratory Input
  * Enforces structural integrity for raw data entering the Laboratory engine.
  * Rationale: Laboratory accepts data from both internal cache and external API.
  * This schema ensures that malformed input is caught before it reaches the simulation loop.

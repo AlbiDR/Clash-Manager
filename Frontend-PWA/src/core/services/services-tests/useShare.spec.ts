@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useShare } from "../useShare";
 
 /**
- * 🧪 USE SHARE TEST
+ * [TEST] USE SHARE TEST
  * Verifies the Web Share API wrapper, ensuring it correctly detects
  * browser support and handles share results and errors.
  */

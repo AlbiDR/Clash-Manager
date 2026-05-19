@@ -121,7 +121,7 @@ export function useRecruiter() {
     if (controller.selectedIds.value.length === 0) return;
     const targetRecruitIds = [...controller.selectedIds.value];
     
-    // 🎯 CAPTURE FULL RECRUITS: Get the complete objects before any state changes
+    // [FOCUS] CAPTURE FULL RECRUITS: Get the complete objects before any state changes
     const recruitsToRemove = recruits.value.filter(recruit => targetRecruitIds.includes(recruit.id));
     
     controller.clearSelection();

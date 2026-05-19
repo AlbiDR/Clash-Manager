@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: War Fame Rework
 -- Rationale:
 -- 1. Replace deck-based war participation with fame-based contribution as the primary driver.

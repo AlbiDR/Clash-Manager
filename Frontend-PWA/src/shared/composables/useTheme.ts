@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { ref } from "vue";
 import { darkTokens, generateCssVariables, lightTokens } from "../../core/theme/tokens";
 
@@ -84,7 +86,7 @@ export function useTheme() {
       theme.value = cached;
     }
 
-    // 🛡️ Logic: Memory-safe singleton listener for system changes (Memory #10)
+    // [GUARD] Logic: Memory-safe singleton listener for system changes (Memory #10)
     if (mediaQuery) {
       mediaQuery.addEventListener("change", () => {
         if (theme.value === "auto") applyTheme();
@@ -96,7 +98,7 @@ export function useTheme() {
     isInitialized.value = true;
   }
 
-  // 🧠 Cache Storage
+  // [CACHE] Cache Storage
   let baseManifestCache: any = null;
   const manifestBlobCache: Record<string, string> = {};
 
@@ -134,7 +136,7 @@ export function useTheme() {
     const isDark = document.documentElement.classList.contains("dark");
     const suffix = isDark ? "dark" : "light";
 
-    // ⚡ OPTIMIZATION: Return cached Blob URI if already generated
+    // [PERF] OPTIMIZATION: Return cached Blob URI if already generated
     if (manifestBlobCache[suffix]) {
       const link = document.querySelector(
         'link[rel="manifest"]',

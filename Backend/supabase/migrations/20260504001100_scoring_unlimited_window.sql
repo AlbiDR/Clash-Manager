@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Unlimited War Fame Window with 50% Floor
 -- Rationale:
 -- 1. Remove the 12-week limit from the scoring window to capture ALL historical data.

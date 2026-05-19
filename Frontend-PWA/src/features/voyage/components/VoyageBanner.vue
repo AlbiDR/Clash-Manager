@@ -22,6 +22,7 @@
  */
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useVoyageStore } from "../composables/useVoyageStore";
+import { Icon } from "@shared";
 
 const store = useVoyageStore();
 
@@ -102,7 +103,7 @@ const progressLabel = computed(() =>
             <span class="crown-value">{{ store.totalCrowns.toLocaleString() }}</span>
             <span class="crown-sep">/</span>
             <span class="crown-target">{{ store.targetCrowns.toLocaleString() }}</span>
-            <span class="crown-icon">♛</span>
+            <span class="crown-icon"><Icon name="crown" size="14" /></span>
           </div>
           <div class="countdown" :class="{ 'ended': timeRemaining === 'Ended' }">
             {{ timeRemaining }}

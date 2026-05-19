@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: player_card_snapshot_table
 -- Purpose: Persistent store for player card progression fetched from the Clash Royale API.
 -- This table drives the Laboratory simulation engine with real card level/count data.

@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Switch from a blocklist to an allowlist for competitive battle types.
 -- Only PvP, pathOfLegend, riverRacePvP, and riverRaceDuel count toward Clan Voyage crowns.
 -- This removes boatBattle (Builder Base) and trail (Goblin Map) which were previously

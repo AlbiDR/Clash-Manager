@@ -29,6 +29,7 @@ import { componentStyles } from "@core/theme/components";
 import App from "./App.vue";
 
 import router from "./router";
+import { VoyageBanner, EventManagement } from "../features/voyage/components";
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 function showFatalError(error: unknown) {
@@ -98,6 +99,8 @@ async function bootstrap() {
     app.use(pinia);
     app.use(router);
     app.component("Icon", Icon);
+    app.component("VoyageBanner", VoyageBanner);
+    app.component("EventManagement", EventManagement);
 
     // PERFORMANCE: Register directives before mount
     app.directive("tooltip", vTooltip);

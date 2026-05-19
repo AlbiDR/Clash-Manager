@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { resetConnectionState, useConnectionStatus } from "../useConnectionStatus";
 import { useNetworkInfo } from "../useNetworkInfo";
 import { useApiState } from "@core";

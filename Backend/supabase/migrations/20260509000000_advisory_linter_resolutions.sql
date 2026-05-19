@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Advisory Center Linter Resolutions
 -- This migration hardens the database by fixing all search path vulnerabilities,
 -- restrictive execution permissions, and consolidating overlapping/permissive RLS policies.

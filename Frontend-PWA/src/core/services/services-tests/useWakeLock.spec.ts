@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
- * 🧪 USE WAKE LOCK TEST
+ * [TEST] USE WAKE LOCK TEST
  * Tests the wake lock service for browser support, requesting, releasing,
  * and auto-reacquisition logic.
  */

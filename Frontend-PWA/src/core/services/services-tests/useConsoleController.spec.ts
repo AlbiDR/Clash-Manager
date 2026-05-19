@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { useConsoleController } from "@core";
 import { useClashDataStore } from "../useClashDataStore";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";

@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Update refresh function to exclude non-competitive battle types
 CREATE OR REPLACE FUNCTION drivers.refresh_voyage_contributions()
  RETURNS void

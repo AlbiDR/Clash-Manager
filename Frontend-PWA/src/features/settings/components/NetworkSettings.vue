@@ -21,10 +21,9 @@
  * ============================================================================
  */
 <script setup lang="ts">
-import { Icon } from "@shared";
+import { Icon, SettingsCard } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { ref, computed, watch } from "vue";
-import SettingsCard from "./SettingsCard.vue";
 
 const props = defineProps<{
   initiallyExpanded?: boolean;

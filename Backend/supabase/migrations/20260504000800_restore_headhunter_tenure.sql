@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Restore Headhunter Heritage Tenure
 -- Rationale: Restores the missing tenure reporting for former members/veterans in the headhunter view.
 -- This ensures the PWA can correctly report the heritage "Tenure" alongside discovery "Longevity".

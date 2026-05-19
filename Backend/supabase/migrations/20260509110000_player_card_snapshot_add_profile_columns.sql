@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: player_card_snapshot_add_profile_columns
 -- Purpose: Adds player profile metadata to the card snapshot table so the
 -- Laboratory simulation engine receives the correct King Level on cache hits.

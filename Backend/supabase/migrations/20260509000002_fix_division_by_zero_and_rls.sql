@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Fix division by zero caused by empty war_activity (either genuinely empty or hidden by RLS)
 -- and grant Public Read Access to drivers.war_activity so anon users can view the roster.
 

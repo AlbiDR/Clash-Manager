@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { createRouter, createWebHashHistory } from "vue-router";
 
 
@@ -68,7 +70,7 @@ const router = createRouter({
   ],
 });
 
-// ⚡ FIX: View Transitions Support with Safety Timeout
+// [PERF] FIX: View Transitions Support with Safety Timeout
 let isInitialNavigation = true;
 
 router.beforeResolve(async (_to, _from) => {

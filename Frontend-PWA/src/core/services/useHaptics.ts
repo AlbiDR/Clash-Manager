@@ -4,7 +4,7 @@
 import { ref, readonly } from "vue";
 
 /**
- * ⚡ ADAPTIVE HAPTICS ENGINE
+ * [PERF] ADAPTIVE HAPTICS ENGINE
  * Optimization #48: Adjusts feedback intensity based on battery status and power mode.
  * Optimization #49: Specialized patterns for high-value recruits.
  */

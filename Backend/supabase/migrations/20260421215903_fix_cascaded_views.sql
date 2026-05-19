@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Rebuild features.tactical_awareness_view without current_clan_tag
 
 CREATE OR REPLACE VIEW features.tactical_awareness_view AS

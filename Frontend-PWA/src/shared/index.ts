@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 // [UI] UI Components
 export { default as Icon } from "./ui/Icon.vue";
 export { default as BaseCard } from "./ui/BaseCard.vue";
 export { default as BaseCardSkeleton } from "./ui/BaseCardSkeleton.vue";
+export { default as SettingsCard } from "./ui/SettingsCard.vue";
+export { default as SkeletonSettingsCard } from "./ui/SkeletonSettingsCard.vue";
 export { default as StatusPill } from "./ui/StatusPill.vue";
 export { default as MomentumPill } from "./ui/MomentumPill.vue";
 export { default as TrophyBadge } from "./ui/TrophyBadge.vue";

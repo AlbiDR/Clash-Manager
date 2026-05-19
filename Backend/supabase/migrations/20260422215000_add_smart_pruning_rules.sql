@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- 1. Create purge_stale_battles
 CREATE OR REPLACE FUNCTION substrate.purge_stale_battles()
 RETURNS INTEGER

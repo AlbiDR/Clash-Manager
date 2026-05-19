@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import type { Gold, Gems, XP } from '@core/utils/economy';
 import type { Rarity } from '@core/utils/game';
 

@@ -4,7 +4,7 @@
 import { ref, readonly } from "vue";
 
 /**
- * 💡 USE WAKE LOCK
+ * [TIP] USE WAKE LOCK
  * Prevents device sleep during heavy tasks (Batch Blitz, Sync).
  * Stability #15: Re-acquires lock automatically on visibility change.
  */

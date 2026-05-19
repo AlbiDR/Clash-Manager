@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration to set security_invoker = true on all views flagged as SECURITY DEFINER
 -- This ensures views enforce Postgres permissions and RLS of the querying user.
 

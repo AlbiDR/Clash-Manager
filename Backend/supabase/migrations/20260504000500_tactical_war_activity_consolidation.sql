@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Tactical & War Activity Pipeline Hardening
 -- Implements the 10/10 Enriched pattern for reporting views.
 -- Refines features.tactical_awareness_view and features.war_activity_view.

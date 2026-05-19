@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Adaptive Tiering Thresholds
 -- Eliminates magic numbers (e.g., 12000, 10500, 10000) from features.headhunter_view
 -- Transitions to a dynamic, relative percentage-based tiering system.

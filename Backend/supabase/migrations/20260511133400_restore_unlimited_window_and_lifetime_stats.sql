@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Apply Hybrid Linear-Decay to Lifetime Donations
 -- Rationale:
 -- 1. Aligns the donation average calculation with the war performance weighting.

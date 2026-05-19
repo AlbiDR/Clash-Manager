@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Fix missing clan_tag columns in substrate tables to support the new RPC bridge
 -- This ensures consistency across all raw ingestion buffers.
 

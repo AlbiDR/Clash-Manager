@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { WAR_CONSTANTS, calculatePrediction, parseHistoryString } from "@core";
 import { describe, it, expect } from "vitest";
 

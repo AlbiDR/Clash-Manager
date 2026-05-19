@@ -8,5 +8,4 @@ export { default as ModeSettings } from "./ModeSettings.vue";
 export { default as NetworkSettings } from "./NetworkSettings.vue";
 export { default as NotificationSettings } from "./NotificationSettings.vue";
 export { default as RecoverySettings } from "./RecoverySettings.vue";
-export { default as SettingsCard } from "./SettingsCard.vue";
-export { default as SkeletonSettingsCard } from "./SkeletonSettingsCard.vue";
+

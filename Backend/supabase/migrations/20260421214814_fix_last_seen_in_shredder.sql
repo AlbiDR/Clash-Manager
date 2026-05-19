@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Fix shred_clan_members to correctly extract lastSeen instead of lastSeenAt
 
 CREATE OR REPLACE FUNCTION substrate.shred_clan_members()

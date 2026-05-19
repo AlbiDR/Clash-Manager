@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Allow initialize_voyage to gracefully UPDATE the active voyage's target crowns and end_at
 CREATE OR REPLACE FUNCTION drivers.initialize_voyage(target_crowns integer, start_at timestamp with time zone, end_at timestamp with time zone)
  RETURNS jsonb

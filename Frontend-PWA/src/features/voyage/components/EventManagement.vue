@@ -21,7 +21,7 @@
  * ============================================================================
  */
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import SettingsCard from "../../settings/components/SettingsCard.vue";
+import { SettingsCard, Icon } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import type { T2TInput } from "../types";
 
@@ -223,7 +223,7 @@ async function handleActivate() {
       <div class="summary-row">
         <span class="summary-label">Progress</span>
         <span class="summary-value primary">
-          {{ store.totalCrowns.toLocaleString() }} / {{ store.targetCrowns.toLocaleString() }} ♛
+          {{ store.totalCrowns.toLocaleString() }} / {{ store.targetCrowns.toLocaleString() }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
         </span>
       </div>
       <div class="summary-row">
@@ -263,7 +263,7 @@ async function handleActivate() {
             placeholder="1600"
             @input="onTargetInput"
           />
-          <span class="input-suffix">♛</span>
+          <span class="input-suffix"><Icon name="crown" size="14" /></span>
         </div>
       </div>
 

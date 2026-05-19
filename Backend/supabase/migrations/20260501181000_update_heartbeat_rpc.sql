@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Update report_heartbeat RPC to support metadata and validation reporting
 -- This aligns the SQL bridge with the clinical protocol requirements.
 

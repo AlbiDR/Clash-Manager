@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 import Icon from "./Icon.vue";
 <script setup lang="ts">
 import { watch } from "vue";

@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useDeepLinkHandler } from "../useDeepLinkHandler";
 import { nextTick } from "vue";
 
 /**
- * 🛡️ VERIFICATION: useDeepLinkHandler
+ * [GUARD] VERIFICATION: useDeepLinkHandler
  * Target B [1]: Logic and regression prevention for deep linking and auto-scroll.
  */
 

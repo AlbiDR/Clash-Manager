@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Fix shred_clan_members to ensure players registry is satisfied
 CREATE OR REPLACE FUNCTION substrate.shred_clan_members()
  RETURNS trigger

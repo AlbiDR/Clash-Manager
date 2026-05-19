@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 /**
  * CLASH MANAGER - Neo-Material Design System (Consolidated v6.7)
  * DESIGN TOKENS (TypeScript Source of Truth)
@@ -191,7 +193,7 @@ export const sharedTokens = {
 };
 
 /**
- * ⚡ UTILITY: Programmatically transform tokens into CSS Variable strings
+ * [PERF] UTILITY: Programmatically transform tokens into CSS Variable strings
  */
 export function generateCssVariables(tokens: ThemeTokens): Record<string, string> {
   const vars: Record<string, string> = {};

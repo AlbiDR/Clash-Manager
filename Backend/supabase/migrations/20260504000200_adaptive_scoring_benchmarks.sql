@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Adaptive Scoring Benchmarks
 -- Transitioning scoring logic from absolute thresholds to relative corpus benchmarks.
 -- Eliminates technical debt (12-week stability, 14-day heritage window) in favor of self-healing benchmarks.

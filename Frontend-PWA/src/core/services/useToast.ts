@@ -66,7 +66,7 @@ export function useToast() {
    * @returns The generated UUID or timestamp-based ID for the toast.
    */
   function add(options: Omit<ToastOptions, "id">) {
-    // ⚡ OPTIMIZATION: Use crypto-secure IDs (Optimization #42)
+    // [PERF] OPTIMIZATION: Use crypto-secure IDs (Optimization #42)
     // Rationale: Ensures uniqueness across the application lifecycle.
     const id = typeof crypto !== "undefined" && crypto.randomUUID 
       ? crypto.randomUUID() 
@@ -93,13 +93,13 @@ export function useToast() {
 
     toasts.value.push(toast);
 
-    // 🛡️ Logic: Semantic Haptics
+    // [GUARD] Logic: Semantic Haptics
     // Rationale: Provides physical confirmation aligned with the notification type.
     if (options.type === "error") haptics.error();
     else if (options.type === "success") haptics.success();
     else haptics.tap();
 
-    // 🛡️ Logic: Memory-safe auto-dismiss (Memory #9)
+    // [GUARD] Logic: Memory-safe auto-dismiss (Memory #9)
     // Rationale: Automatically cleans up DOM elements and timer references.
     if (toast.duration !== 0) {
       toast.timer = setTimeout(() => {

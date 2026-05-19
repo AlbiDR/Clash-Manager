@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
- * 🧪 USE SYNTHETIC MODE TEST
+ * [TEST] USE SYNTHETIC MODE TEST
  * Verifies the singleton state management for Synthetic Mode, including
  * persistence to localStorage and reactive toggling.
  */

@@ -44,6 +44,10 @@ vi.mock("@shared", () => ({
     template: "<div class='setting-row' @click=\"$emit('click')\">{{ label }}</div>",
     props: ["active", "label", "description", "loading", "disabled"],
   },
+  SettingsCard: {
+    template: "<div class='settings-card' :aria-busy=\"loading ? 'true' : 'false'\"><slot /></div>",
+    props: ["title", "icon", "initiallyExpanded", "loading", "bodyClass"],
+  }
 }));
 
 describe("NotificationSettings.vue", () => {

@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Fix shred_clan_members to deactivate leavers based ONLY on the current payload
 -- Rationale: The previous logic checked 2 hours of history, preventing leavers from being deactivated if they appeared in any recent sync.
 CREATE OR REPLACE FUNCTION substrate.shred_clan_members()

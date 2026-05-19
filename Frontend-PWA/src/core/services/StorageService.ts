@@ -86,7 +86,7 @@ async function purgeDeprecatedDatabases(): Promise<void> {
   }
 }
 
-// 🛡️ MEMORY FALLBACK
+// [GUARD] MEMORY FALLBACK
 // Used when IndexedDB is unavailable (Private Browsing, Tests, etc)
 const memoryStore = new Map<string, unknown>();
 let useMemoryStore = false;
