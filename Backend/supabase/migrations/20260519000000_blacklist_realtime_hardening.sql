@@ -23,6 +23,7 @@ ALTER TABLE drivers.recruit_blacklist REPLICA IDENTITY FULL;
 -- Replace the authenticated-only read policy with one that also permits anon access.
 -- The publishable key connects as anon; write operations remain gated by separate policies.
 DROP POLICY IF EXISTS "Authenticated Read Access" ON drivers.recruit_blacklist;
+DROP POLICY IF EXISTS "Anon and Authenticated Read Access" ON drivers.recruit_blacklist;
 
 CREATE POLICY "Anon and Authenticated Read Access" ON drivers.recruit_blacklist
     FOR SELECT
