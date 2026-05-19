@@ -52,6 +52,33 @@ describe("DataMappers", () => {
       expect(result.d.rate).toBe("-");
       expect(result.d.seen).toBe("-");
     });
+
+    it("floors tenure_days and cleans player_tag", () => {
+      const row = {
+        player_tag: "#ABC",
+        tenure_days: 100.9,
+      };
+      const result = mapSbRosterRow(row as any);
+      expect(result.id).toBe("ABC");
+      expect(result.d.days).toBe(100);
+    });
+
+    it("renders war_participation as 0% correctly", () => {
+      const row = {
+        war_participation: 0,
+      };
+      const result = mapSbRosterRow(row as any);
+      expect(result.d.rate).toBe("0%");
+    });
+
+    it("falls back to week_fame if avg_fame is missing", () => {
+      const row = {
+        avg_fame: 0,
+        week_fame: 1500,
+      };
+      const result = mapSbRosterRow(row as any);
+      expect(result.d.wfame).toBe(1500);
+    });
   });
 
   describe("mapSbHeadhunterRow", () => {
@@ -105,6 +132,22 @@ describe("DataMappers", () => {
       expect(result.t).toBe(0);
       expect(result.lastScan).toBeGreaterThanOrEqual(now);
       expect(result.d.ago).toBe("-");
+    });
+
+    it("preserves 0 for tenure_days", () => {
+      const row = {
+        tenure_days: 0,
+      };
+      const result = mapSbHeadhunterRow(row as any);
+      expect(result.tenureDays).toBe(0);
+    });
+
+    it("returns NaN for invalid last_seen_at date string", () => {
+      const row = {
+        last_seen_at: "not-a-date",
+      };
+      const result = mapSbHeadhunterRow(row as any);
+      expect(result.lastScan).toBeNaN();
     });
   });
 });
