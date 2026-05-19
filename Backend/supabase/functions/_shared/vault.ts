@@ -7,7 +7,7 @@ import { SupabaseClient } from "npm:@supabase/supabase-js@2";
  * L1 Core: Vault Secret Broker
  * Fetches decrypted secrets from Supabase Vault via the substrate.get_vault_secret RPC.
  */
-export async function getVaultSecret(supabase: SupabaseClient, name: string): Promise<string> {
+async function getVaultSecret(supabase: SupabaseClient, name: string): Promise<string> {
     const { data, error } = await supabase.rpc('get_vault_secret', { p_name: name });
     
     if (error) {

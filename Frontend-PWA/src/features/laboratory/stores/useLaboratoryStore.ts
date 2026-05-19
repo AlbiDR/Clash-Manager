@@ -17,7 +17,7 @@ import { asGold, asGems } from "@core/utils/economy";
 export const STORAGE_KEY_SETTINGS = "laboratory_settings";
 export const STORAGE_KEY_INVENTORY = "laboratory_inventory";
 export const STORAGE_KEY_OBSERVATION = "laboratory_observation";
-export const STORAGE_KEY_TRACKED_TAG = "laboratory_tracked_tag";
+const STORAGE_KEY_TRACKED_TAG = "laboratory_tracked_tag";
 
 /**
  * LABORATORY STORE - Feature State (Layer 3)
