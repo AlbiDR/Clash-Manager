@@ -105,7 +105,10 @@ onMounted(() => {
 
   // AUTO-REFRESH: Listen for Service Worker activation to force a page reload.
   if ('serviceWorker' in navigator && !isShowcaseMode.value) {
+    let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
       console.log("[PWA] New version activated, refreshing...");
       window.location.reload();
     });
