@@ -64,6 +64,7 @@ vi.mock("@core/services/useToast", () => ({
 vi.mock("@core/api/SupabaseClient", () => ({
   dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
   undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
+  subscribeToBlacklist: vi.fn().mockReturnValue(vi.fn()),
 
   lastSyncStatus: { value: null },
   NetworkError: class extends Error {
@@ -212,25 +213,7 @@ describe("useHeadhunter", () => {
     expect(mockUpdateLocalData).toHaveBeenLastCalledWith(sampleData);
   });
 
-  it("should NOT rollback on NetworkError (background sync expected)", async () => {
-    const { useHeadhunter } = await import("../useHeadhunter");
-    const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits, NetworkError } = await import("@core/api/SupabaseClient");
 
-    vi.mocked(dismissRecruits).mockRejectedValueOnce(new NetworkError("Timeout"));
-
-    mockClashData.value = sampleData;
-    await nextTick();
-    mockUpdateLocalData.mockClear();
-
-    await dismissRecruitsAction([{ id: "R1", score: 40000 }]);
-
-    // Should only update once (optimistic)
-    expect(mockUpdateLocalData).toHaveBeenCalledTimes(1);
-    expect(mockUpdateLocalData).toHaveBeenCalledWith(expect.objectContaining({
-      hh: [sampleRecruit2]
-    }));
-  });
 
   it("should bypass network calls in synthetic mode", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");

@@ -1,136 +1,77 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 describe("useRecruitBlacklist", () => {
   let useRecruitBlacklist: any;
 
   beforeEach(async () => {
-    // Reset module state between tests to handle singleton refs
+    // Reset module state between tests to clear the singleton tombstone ref.
     vi.resetModules();
-    localStorage.clear();
     vi.clearAllMocks();
 
-    // Dynamically import to ensure fresh singleton state
     const module = await import("../useRecruitBlacklist");
     useRecruitBlacklist = module.useRecruitBlacklist;
   });
 
   describe("Initialization", () => {
-    it("should initialize with an empty set when localStorage is empty", () => {
+    it("should initialize with an empty in-memory set", () => {
       const { tombstones } = useRecruitBlacklist();
       expect(tombstones.value).toBeInstanceOf(Set);
       expect(tombstones.value.size).toBe(0);
     });
 
-    it("should load existing tombstones from localStorage", async () => {
-      const initialData = ["id1", "id2"];
-      localStorage.setItem("cm_recruit_tombstones", JSON.stringify(initialData));
-
-      // Need to re-import or re-call to trigger init logic if it's already initialized
-      // Since we use resetModules, the next call to useRecruitBlacklist in this test
-      // will be on a fresh module instance.
-      const { tombstones } = useRecruitBlacklist();
-
-      expect(tombstones.value.has("id1")).toBe(true);
-      expect(tombstones.value.has("id2")).toBe(true);
-      expect(tombstones.value.size).toBe(2);
-    });
-
-    it("should handle malformed JSON in localStorage gracefully", () => {
-      localStorage.setItem("cm_recruit_tombstones", "invalid-json");
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      const { tombstones } = useRecruitBlacklist();
-
-      expect(tombstones.value.size).toBe(0);
-      expect(warnSpy).toHaveBeenCalledWith(
-        "[Blacklist] Failed to load recruit blacklist",
-        expect.any(String)
-      );
-      warnSpy.mockRestore();
-    });
-
-    it("should handle non-array JSON in localStorage gracefully", () => {
-      localStorage.setItem("cm_recruit_tombstones", JSON.stringify({ not: "an array" }));
-
-      const { tombstones } = useRecruitBlacklist();
-
-      expect(tombstones.value.size).toBe(0);
+    it("should NOT persist tombstones to localStorage", () => {
+      const { hide } = useRecruitBlacklist();
+      hide(["test-id"]);
+      // Tombstones are ephemeral — they must not appear in persistent storage.
+      expect(localStorage.getItem("cm_recruit_tombstones")).toBeNull();
     });
   });
 
-  describe("Functionality", () => {
-    it("should add IDs to the blacklist via hide()", () => {
+  describe("hide()", () => {
+    it("should add IDs to the in-memory tombstone set", () => {
       const { tombstones, hide } = useRecruitBlacklist();
-      hide(["new-id"]);
-
-      expect(tombstones.value.has("new-id")).toBe(true);
-      expect(localStorage.getItem("cm_recruit_tombstones")).toContain("new-id");
+      hide(["recruit-1", "recruit-2"]);
+      expect(tombstones.value.has("recruit-1")).toBe(true);
+      expect(tombstones.value.has("recruit-2")).toBe(true);
     });
 
-    it("should remove IDs from the blacklist via restore()", () => {
-      localStorage.setItem("cm_recruit_tombstones", JSON.stringify(["id1", "id2"]));
-      const { tombstones, restore } = useRecruitBlacklist();
-
-      restore(["id1"]);
-
-      expect(tombstones.value.has("id1")).toBe(false);
-      expect(tombstones.value.has("id2")).toBe(true);
-      expect(localStorage.getItem("cm_recruit_tombstones")).not.toContain("id1");
-    });
-  });
-
-  describe("Pruning (Garbage Collection)", () => {
-    it("should not prune if the server returns an empty list", () => {
-      localStorage.setItem("cm_recruit_tombstones", JSON.stringify(["id1"]));
-      const { tombstones, prune } = useRecruitBlacklist();
-
-      prune([]); // Empty server response
-
-      expect(tombstones.value.has("id1")).toBe(true);
+    it("should be idempotent for duplicate IDs", () => {
+      const { tombstones, hide } = useRecruitBlacklist();
+      hide(["recruit-1"]);
+      hide(["recruit-1"]);
       expect(tombstones.value.size).toBe(1);
     });
 
-    it("should remove IDs that are no longer in the server payload", () => {
-      localStorage.setItem("cm_recruit_tombstones", JSON.stringify(["stale-id", "active-id"]));
-      const { tombstones, prune } = useRecruitBlacklist();
-
-      // Server only returns active-id and some-other-id
-      prune(["active-id", "some-other-id"]);
-
-      expect(tombstones.value.has("stale-id")).toBe(false);
-      expect(tombstones.value.has("active-id")).toBe(true);
-      expect(JSON.parse(localStorage.getItem("cm_recruit_tombstones")!)).toEqual(["active-id"]);
-    });
-
-    it("should keep IDs that are still in the server payload", () => {
-      localStorage.setItem("cm_recruit_tombstones", JSON.stringify(["id1"]));
-      const { tombstones, prune } = useRecruitBlacklist();
-
-      prune(["id1", "id2"]);
-
-      expect(tombstones.value.has("id1")).toBe(true);
+    it("should be a no-op for an empty array", () => {
+      const { tombstones, hide } = useRecruitBlacklist();
+      hide([]);
+      expect(tombstones.value.size).toBe(0);
     });
   });
 
-  describe("Error Handling", () => {
-    it("should log an error if saving to localStorage fails", () => {
-      const { hide } = useRecruitBlacklist();
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  describe("restore()", () => {
+    it("should remove IDs from the tombstone set", () => {
+      const { tombstones, hide, restore } = useRecruitBlacklist();
+      hide(["recruit-1", "recruit-2"]);
+      restore(["recruit-1"]);
+      expect(tombstones.value.has("recruit-1")).toBe(false);
+      expect(tombstones.value.has("recruit-2")).toBe(true);
+    });
 
-      // Spy on the mocked localStorage from vitest.setup.ts
-      const setItemSpy = vi.spyOn(localStorage, "setItem").mockImplementation(() => {
-        throw new Error("Quota exceeded");
-      });
+    it("should be a no-op for IDs not in the set", () => {
+      const { tombstones, restore } = useRecruitBlacklist();
+      restore(["non-existent"]);
+      expect(tombstones.value.size).toBe(0);
+    });
 
-      hide(["any-id"]);
-
-      expect(errorSpy).toHaveBeenCalledWith(
-        "Failed to save recruit blacklist",
-        expect.any(Error)
-      );
-
-      errorSpy.mockRestore();
-      setItemSpy.mockRestore();
+    it("should be a no-op for an empty array", () => {
+      const { tombstones, hide, restore } = useRecruitBlacklist();
+      hide(["recruit-1"]);
+      restore([]);
+      expect(tombstones.value.size).toBe(1);
     });
   });
 
@@ -142,6 +83,16 @@ describe("useRecruitBlacklist", () => {
       instance1.hide(["shared-id"]);
 
       expect(instance2.tombstones.value.has("shared-id")).toBe(true);
+    });
+
+    it("should reflect restore() across all instances", () => {
+      const instance1 = useRecruitBlacklist();
+      const instance2 = useRecruitBlacklist();
+
+      instance1.hide(["shared-id"]);
+      instance2.restore(["shared-id"]);
+
+      expect(instance1.tombstones.value.has("shared-id")).toBe(false);
     });
   });
 });

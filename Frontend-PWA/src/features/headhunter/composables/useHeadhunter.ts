@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { NetworkError, dismissRecruits, undismissRecruits } from "@core/api/SupabaseClient";
+import { NetworkError, dismissRecruits, subscribeToBlacklist, undismissRecruits } from "@core/api/SupabaseClient";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBadge } from "@core/services/useBadge";
 import { useBroadcastChannel } from "@core/services/useBroadcastChannel";
@@ -9,7 +9,7 @@ import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 import { useSyntheticMode } from "@core/services/useSyntheticMode";
 import { useToast } from "@core/services/useToast";
-import { watch } from "vue";
+import { onUnmounted, watch } from "vue";
 import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
 
 // Module-level state/references
@@ -108,6 +108,21 @@ export function useHeadhunter() {
     }
   });
 
+  // REALTIME SYNCHRONIZATION
+  // Subscribe to server-authoritative INSERT/DELETE events on drivers.recruit_blacklist.
+  // INSERT: a recruit was dismissed (on this or another device) — apply local removal.
+  // DELETE: a recruit was undismissed — trigger a full pool refresh to restore their data.
+  // The returned cleanup function removes the Supabase channel on component unmount.
+  const stopBlacklistSync = subscribeToBlacklist(
+    (playerTag) => {
+      // Normalize: Realtime sends #ABC123; store recruit IDs are ABC123 (without prefix).
+      const id = playerTag.startsWith('#') ? playerTag.slice(1) : playerTag;
+      applyLocalDismissal([id]);
+    },
+    () => { clashDataStore.refreshFromSupabase(); },
+  );
+  onUnmounted(stopBlacklistSync);
+
   /**
    * BADGE SYNCHRONIZATION
    *
@@ -198,34 +213,18 @@ export function useHeadhunter() {
       await dismissRecruits(items);
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
     } catch (syncError: unknown) {
-      // THREAT: The "any Plague" hidden behind variable 'e'. Harden to 'unknown' with narrowing [Target B 4].
       const errorName = syncError instanceof Error ? syncError.name : "Error";
       const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
-      
-      // TRANSIENT ERROR SUPPRESSION
-      // Rationale: Network blips or lock timeouts in Supabase should not trigger
-      // noisy error toasts, as they will be resolved by the next background sync.
-      const isTransient = 
-        errorName === "NetworkError" ||
-        errorName === "AbortError" ||
-        errorName === "TypeError" ||
-        errorMessage.includes("Lock timeout") ||
-        errorMessage.includes("System is busy") ||
-        errorMessage.includes("HTML Response") ||
-        errorMessage.includes("Malformed JSON") ||
-        errorMessage.includes("Empty Response") ||
-        errorMessage.includes("HTTP 500") ||
-        errorMessage.includes("HTTP 502") ||
-        errorMessage.includes("HTTP 503") ||
-        errorMessage.includes("HTTP 504") ||
-        errorMessage.includes("HTTP 408") ||
-        errorMessage.includes("HTTP 429");
-      
-      if (isTransient) {
-        console.warn(`[Sync] Transient failure suppressed. Enqueued for background retry: ${errorName}: ${errorMessage}`);
+
+      // AbortError: the user navigated away mid-request. Roll back local hh state silently.
+      // The in-memory tombstone resets on component remount; server state is authoritative on next load.
+      if (errorName === "AbortError") {
+        updateLocalData(oldData);
         return;
       }
 
+      // All other failures (NetworkError, server errors, etc.) are surfaced to the user.
+      // The caller (useRecruiter) is responsible for rolling back the optimistic tombstone.
       toastError(`Sync Failed: ${errorMessage}`);
       updateLocalData(oldData);
       throw syncError;

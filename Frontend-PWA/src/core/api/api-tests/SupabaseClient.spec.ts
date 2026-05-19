@@ -289,90 +289,24 @@ describe("SupabaseClient", () => {
     });
   });
 
-  describe("Mutations & Offline Queue", () => {
-    it("dismissRecruits enqueues on transient error (PGRST301)", async () => {
+  describe("Mutations & Online-Only Dismissal", () => {
+    it("dismissRecruits throws NetworkError on any RPC error", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
-      vi.mocked(idb.get).mockResolvedValue([]);
 
       const items = [{ id: 'ABC', score: 80 }];
-      const result = await SupabaseClient.dismissRecruits(items);
-
-      expect(result.success).toBe(true);
-      expect(result.data?.message).toBe('Enqueued');
-      expect(idb.set).toHaveBeenCalledWith("offline_queue", expect.arrayContaining([
-        expect.objectContaining({
-          type: 'RECRUIT_DISMISSAL',
-          items: [
-            { id: '#ABC', score: 80 }
-          ]
-        })
-      ]));
+      await expect(SupabaseClient.dismissRecruits(items)).rejects.toThrow(SupabaseClient.NetworkError);
     });
 
-    it("dismissRecruits resets corrupted offline queue on transient error", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
-      vi.mocked(idb.get).mockResolvedValue([{ type: 'INVALID' }]); // Malformed
-
-      const items = [{ id: 'ABC', score: 80 }];
-      const result = await SupabaseClient.dismissRecruits(items);
-
-      expect(result.success).toBe(true);
-      const calls = vi.mocked(idb.set).mock.calls;
-      const lastCall = calls.find(call => call[0] === "offline_queue");
-      expect(lastCall).toBeDefined();
-      expect(lastCall![1]).toHaveLength(1); // Should have reset and added only the new one
-      expect(lastCall![1][0].type).toBe('RECRUIT_DISMISSAL');
-    });
-
-    it("undismissRecruits normalizes tags and enqueues on fetch error", async () => {
+    it("undismissRecruits normalizes tags and throws NetworkError on any RPC error", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'failed to fetch' } } as any);
-      vi.mocked(idb.get).mockResolvedValue([]);
 
       const ids = ['ABC'];
-      const result = await SupabaseClient.undismissRecruits(ids);
-
-      expect(result.success).toBe(true);
-      expect(result.data?.message).toBe('Enqueued');
-      expect(idb.set).toHaveBeenCalledWith("offline_queue", expect.arrayContaining([
-        expect.objectContaining({ type: 'RECRUIT_RESTORATION', ids: ['#ABC'] })
-      ]));
-    });
-
-    it("undismissRecruits resets corrupted offline queue on transient error", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
-      vi.mocked(idb.get).mockResolvedValue([{ type: 'INVALID' }]); // Malformed
-
-      const ids = ['ABC'];
-      const result = await SupabaseClient.undismissRecruits(ids);
-
-      expect(result.success).toBe(true);
-      const calls = vi.mocked(idb.set).mock.calls;
-      const lastCall = calls.filter(call => call[0] === "offline_queue").pop();
-      expect(lastCall).toBeDefined();
-      expect(lastCall![1]).toHaveLength(1);
-      expect(lastCall![1][0].type).toBe('RECRUIT_RESTORATION');
-    });
-
-    it("dismissRecruits handles IndexedDB read failure during transient error", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
-      vi.mocked(idb.get).mockRejectedValue(new Error("IDB Blocked"));
-
-      // Currently, the implementation doesn't try-catch the idb.get call itself,
-      // so we expect it to throw and not catch it.
-      await expect(SupabaseClient.dismissRecruits([{ id: 'ABC', score: 50 }]))
-        .rejects.toThrow("IDB Blocked");
-    });
-
-    it("dismissRecruits throws NetworkError on non-transient error", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '400', message: 'Bad Request' } } as any);
-
-      await expect(SupabaseClient.dismissRecruits([])).rejects.toThrow(SupabaseClient.NetworkError);
+      await expect(SupabaseClient.undismissRecruits(ids)).rejects.toThrow(SupabaseClient.NetworkError);
+      
+      // Verify tags are normalized
+      expect(mockClient.rpc).toHaveBeenCalledWith('undismiss_recruits', { player_tags: ['#ABC'] });
     });
 
     it("triggerBackendUpdate returns success/failure based on RPC", async () => {
