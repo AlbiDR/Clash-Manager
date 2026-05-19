@@ -226,10 +226,11 @@ describe("useRecruiter", () => {
     expect(filteredItems.value[0].id).toBe("2");
   });
 
-  it("prunes blacklist when new recruits are loaded", async () => {
+  it("does not prune blacklist on mount (watch is not immediate)", () => {
     withSetup(() => useRecruiter());
-    // watch is immediate, so it should have called prune with initial hh
-    expect(mockPrune).toHaveBeenCalledWith(["1", "2"]);
+    // The isRefreshing watch uses { immediate: false }, so prune must NOT
+    // be called during initial setup - it only fires after a true->false transition.
+    expect(mockPrune).not.toHaveBeenCalled();
   });
 
   describe("handleRefresh", () => {
