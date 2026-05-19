@@ -42,7 +42,6 @@ export default defineConfig({
     outDir: "dist",
     sourcemap: false,
     cssCodeSplit: true,
-    target: "chrome100",
     rollupOptions: {
       output: {
         manualChunks(id) {
