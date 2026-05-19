@@ -5,7 +5,7 @@ import { NetworkError, dismissRecruits, undismissRecruits } from "@core/api/Supa
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBadge } from "@core/services/useBadge";
 import { useBroadcastChannel } from "@core/services/useBroadcastChannel";
-import { useClashDataStore } from "@core";
+import { useClashDataStore, DEFAULT_SCORE_THRESHOLD } from "@core";
 import { storeToRefs } from "pinia";
 import { useSyntheticMode } from "@core/services/useSyntheticMode";
 import { useToast } from "@core/services/useToast";
@@ -120,7 +120,7 @@ export function useHeadhunter() {
    */
   function updateHeadhunterBadge(data: WebAppData | null) {
     if (data?.hh) {
-      const threshold = modules.notificationThreshold || 75;
+      const threshold = modules.notificationThreshold || DEFAULT_SCORE_THRESHOLD;
       const count = modules.notificationBadgeHighPotential
         // THREAT: Anemic variable 'r' hid intent. Using domain-descriptive 'recruit' [Target B 4].
         ? data.hh.filter((recruit) => recruit.potentialScore >= threshold).length
@@ -142,7 +142,7 @@ export function useHeadhunter() {
    */
   function processRecruitChanges(oldData: WebAppData | null, newData: WebAppData) {
     if (!newData?.hh || !modules.experimentalNotifications) return;
-    const threshold = modules.notificationThreshold || 75;
+    const threshold = modules.notificationThreshold || DEFAULT_SCORE_THRESHOLD;
     // THREAT: Anemic variable 'r' hid intent. Using domain-descriptive 'recruit' [Target B 4].
     const oldIds = new Set(oldData?.hh?.map((recruit) => recruit.id) || []);
     const newEliteRecruits = newData.hh.filter((recruit) => recruit.potentialScore >= threshold && !oldIds.has(recruit.id));
