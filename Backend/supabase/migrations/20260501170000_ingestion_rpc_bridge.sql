@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- 1. CREATE CLINICAL INGESTION BRIDGE
 -- This RPC allows the Edge Function to ingest raw data into the substrate schema
 -- without requiring the substrate schema to be exposed via PostgREST.

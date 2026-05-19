@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Fix War Activity RoyaleAPI Link
 -- Corrects the URL pattern for player war analytics to the valid RoyaleAPI 'war-history' path.
 

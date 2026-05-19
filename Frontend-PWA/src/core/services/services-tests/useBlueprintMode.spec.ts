@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /**
- * 🧪 USE BLUEPRINT MODE TEST
+ * [TEST] USE BLUEPRINT MODE TEST
  * Verifies the singleton state management for Blueprint Mode, including
  * persistence to localStorage and reactive toggling.
  */

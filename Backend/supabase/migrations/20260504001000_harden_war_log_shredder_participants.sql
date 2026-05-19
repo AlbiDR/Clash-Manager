@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Harden War Log Shredder for Participant History
 -- Rationale:
 -- 1. Extend shred_war_log to extract player participants from historical river race logs.

@@ -4,7 +4,7 @@
 import * as v from "valibot";
 
 /**
- * 🛡️ VALIDATION BOUNDARY: Core Data Schemas
+ * [GUARD] VALIDATION BOUNDARY: Core Data Schemas
  * Enforces structural integrity for raw data across the application.
  * Rationale: Centralizing schemas prevents "any Plague" and ensures
  * consistency between API boundaries and domain logic.

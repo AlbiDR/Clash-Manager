@@ -1,92 +1,74 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon } from "@shared";
+import { Icon, SettingsCard } from "@shared";
 import { useBackendRefresher } from "../composables/useBackendRefresher";
+
+defineProps<{
+  initiallyExpanded?: boolean;
+}>();
 
 const { targets, isRefreshing, refresh } = useBackendRefresher();
 </script>
 
 <template>
-  <div class="settings-card" :aria-busy="isRefreshing ? 'true' : 'false'">
-    <div class="card-header">
-      <Icon name="refresh" size="20" class="header-icon" />
-      <h3>Backend Refresh</h3>
-    </div>
-    <div class="card-body">
-      <div class="rows-container">
-        <div v-for="target in targets" :key="target.key" class="refresh-row">
-          <div class="row-info">
-            <template v-if="isRefreshing">
-              <div class="sk-text-line-m" style="width: 100px"></div>
-              <div class="sk-text-line-s" style="width: 150px"></div>
-            </template>
-            <template v-else>
-              <div class="row-label">{{ target.label }}</div>
-              <div class="row-desc">{{ target.desc }}</div>
-            </template>
-          </div>
-
-          <button
-            class="action-btn"
-            @click="refresh(target.key)"
-            :disabled="target.status === 'loading' || target.cooldown > 0"
-            :class="{
-              'is-loading': target.status === 'loading',
-              'skeleton-anim sk-button-m': isRefreshing,
-            }"
-          >
-            <!-- Normal State -->
-            <template v-if="isRefreshing">
-              <!-- Skeleton button covers button, not text -->
-            </template>
-            <template
-              v-else-if="target.status === 'idle' || target.status === 'error'"
-            >
-              <span>REFRESH</span>
-            </template>
-
-            <!-- Loading State -->
-            <template v-else-if="target.status === 'loading'">
-              <div class="spinner"></div>
-            </template>
-
-            <!-- Cooldown State -->
-            <template v-else-if="target.status === 'cooldown'">
-              <span class="cooldown-text">{{ target.cooldown }}s</span>
-            </template>
-          </button>
+  <SettingsCard
+    title="Backend Refresh"
+    icon="refresh"
+    :loading="isRefreshing"
+    :initially-expanded="initiallyExpanded"
+    body-class="no-padding"
+  >
+    <div class="rows-container">
+      <div v-for="target in targets" :key="target.key" class="refresh-row">
+        <div class="row-info">
+          <template v-if="isRefreshing">
+            <div class="sk-text-line-m" style="width: 100px"></div>
+            <div class="sk-text-line-s" style="width: 150px"></div>
+          </template>
+          <template v-else>
+            <div class="row-label">{{ target.label }}</div>
+            <div class="row-desc">{{ target.desc }}</div>
+          </template>
         </div>
+
+        <button
+          class="action-btn"
+          @click="refresh(target.key)"
+          :disabled="target.status === 'loading' || target.cooldown > 0"
+          :class="{
+            'is-loading': target.status === 'loading',
+            'skeleton-anim sk-button-m': isRefreshing,
+          }"
+        >
+          <!-- Normal State -->
+          <template v-if="isRefreshing">
+            <!-- Skeleton button covers button, not text -->
+          </template>
+          <template
+            v-else-if="target.status === 'idle' || target.status === 'error'"
+          >
+            <span>REFRESH</span>
+          </template>
+
+          <!-- Loading State -->
+          <template v-else-if="target.status === 'loading'">
+            <div class="spinner"></div>
+          </template>
+
+          <!-- Cooldown State -->
+          <template v-else-if="target.status === 'cooldown'">
+            <span class="cooldown-text">{{ target.cooldown }}s</span>
+          </template>
+        </button>
       </div>
     </div>
-  </div>
+  </SettingsCard>
 </template>
 
 <style scoped>
-.settings-card {
-  background: var(--sys-color-surface-container);
-  border-radius: 24px;
-  border: 1px solid var(--sys-surface-glass-border);
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-.card-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 850;
-  color: var(--sys-color-on-surface);
-}
-.header-icon {
-  color: var(--sys-color-primary);
-}
-
-.card-body {
-  padding: 0;
+.no-padding {
+  padding: 0 !important;
 }
 
 .refresh-row {

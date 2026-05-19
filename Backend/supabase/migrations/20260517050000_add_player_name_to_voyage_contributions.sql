@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration to add player_name to clan_voyage_contributions
 
 ALTER TABLE drivers.clan_voyage_contributions ADD COLUMN player_name text;

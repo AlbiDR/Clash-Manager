@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Remove War Analytics Link from War Activity View
 -- Removes the 'war_analytics_link' column as requested to keep the view clean.
 

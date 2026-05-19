@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 /**
  * CLASH MANAGER - Global Animations
  * Ported to TypeScript for Technical Purity.

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { Icon } from "@shared";
 import { ref } from "vue";

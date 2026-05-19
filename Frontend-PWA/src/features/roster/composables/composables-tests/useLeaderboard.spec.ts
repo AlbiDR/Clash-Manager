@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useLeaderboard } from "../useLeaderboard";
 import { ref } from "vue";

@@ -26,6 +26,10 @@ vi.mock('@shared', () => ({
     name: 'Icon',
     render: () => null,
     props: ['name', 'size']
+  },
+  SettingsCard: {
+    template: "<div class='settings-card' :aria-busy=\"loading ? 'true' : 'false'\"><slot /></div>",
+    props: ["title", "icon", "initiallyExpanded", "loading", "bodyClass"],
   }
 }));
 

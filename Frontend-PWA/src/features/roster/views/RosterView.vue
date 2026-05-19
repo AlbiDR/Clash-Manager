@@ -1,7 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-// SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2026 AlbiDR
-
 /**
  * ============================================================================
  * [FEATURE] ROSTER VIEW
@@ -28,8 +27,6 @@ import {
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
 import { MemberCard } from "../components";
-import { VoyageBanner } from "../../voyage/components";
-
 
 const {
   isShowcaseMode,
@@ -51,7 +48,7 @@ const {
     v-on="layoutEvents"
   >
     <!-- Voyage Progress Banner (ACTIVE events only) -->
-    <VoyageBanner />
+    <component :is="'VoyageBanner'" />
 
     <!-- Default Slot: The List -->
     <ConsoleList

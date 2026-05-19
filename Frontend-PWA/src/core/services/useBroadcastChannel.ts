@@ -82,7 +82,7 @@ export function useBroadcastChannel(
    * memory leaks and ensures the browser can efficiently garbage collect
    * the execution context when the component unmounts.
    *
-   * 🛡️ Logic: Safe lifecycle management.
+   * [GUARD] Logic: Safe lifecycle management.
    * Rationale: Composables used in Pinia or services may not have a component instance.
    */
   const instance = getCurrentInstance();

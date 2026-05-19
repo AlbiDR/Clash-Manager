@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 
 -- 1. HARDEN STATE SCHEMA: drivers.members
 -- Ensure drivers.members is a PURE CURRENT STATE table.

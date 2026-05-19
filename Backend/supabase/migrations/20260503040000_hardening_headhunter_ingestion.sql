@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Hardening Headhunter Ingestion Pipeline
 -- Enforces aggressive data integrity by rejecting incomplete discovery payloads.
 -- Only fully profiled candidates with a valid raw_potential_score will be persisted or updated.

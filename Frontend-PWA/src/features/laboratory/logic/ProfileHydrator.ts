@@ -24,7 +24,7 @@ const ProfileHydrator = {
    * Transforms raw API data into strongly typed domain models.
    *
    * @remarks
-   * 🛡️ VALIDATION BOUNDARY: Implements Target B [1] hardening.
+   * [GUARD] VALIDATION BOUNDARY: Implements Target B [1] hardening.
    * This function enforces strict schema validation for all incoming data
    * from both internal cache and external API. Downstream logic is
    * guaranteed to operate on validated structural input.

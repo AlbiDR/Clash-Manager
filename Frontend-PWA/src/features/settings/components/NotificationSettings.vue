@@ -1,8 +1,9 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon, SettingRow } from "@shared";
+import { Icon, SettingRow, SettingsCard } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { computed } from "vue";
-import SettingsCard from "./SettingsCard.vue";
 
 const props = defineProps<{
   initiallyExpanded?: boolean;

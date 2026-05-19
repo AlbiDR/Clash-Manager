@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Clinical DRY View Consolidation
 -- Final hardening of the data pipeline to 10/10 DRY standards.
 -- Resolves the CROSS JOIN bug in benchmarking_context and consolidates scoring layers.

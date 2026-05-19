@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useBackHandler } from "../useBackHandler";
 
 /**
- * 🧪 USE BACK HANDLER TEST
+ * [TEST] USE BACK HANDLER TEST
  * Verifies that the back handler service correctly interacts with the
  * Browser History API and window events to intercept back navigation.
  */

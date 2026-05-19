@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Remove current_clan_tag from drivers.members and update dependent views/triggers
 
 -- 1. Drop features.roster_view so we can drop the column

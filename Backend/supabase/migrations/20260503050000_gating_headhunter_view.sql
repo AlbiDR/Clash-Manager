@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Gating Headhunter View
 -- Excludes zero-stat "ghost" candidates from surfacing in the recruitment UI.
 -- Adds r.trophies > 0 and r.raw_potential_score > 0 to the view's WHERE clause.

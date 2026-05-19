@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { describe, it, expect } from 'vitest';
 import { ProjectionStrategy, InventoryStrategy } from '../ScoringStrategy';
 import { GEM_TO_GOLD_FACTOR, asGold, asGems, asXP } from '@core/utils/economy';

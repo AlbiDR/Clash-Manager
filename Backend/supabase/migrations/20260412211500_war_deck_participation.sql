@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- 1. NOMENCLATURE ALIGNMENT: Rename active_decks to decks_used_today in members
 ALTER TABLE drivers.members RENAME COLUMN active_decks TO decks_used_today;
 

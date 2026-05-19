@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { useBenchmarking } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";

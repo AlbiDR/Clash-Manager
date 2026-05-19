@@ -4,7 +4,7 @@
 import { ref, readonly, onMounted, onUnmounted, computed } from "vue";
 
 /**
- * 📡 NETWORK INFORMATION API
+ * [NETWORK] NETWORK INFORMATION API
  * Provides detailed network status beyond simple online/offline.
  */
 

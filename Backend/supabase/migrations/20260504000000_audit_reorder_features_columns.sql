@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Audit & Reorder Features Views Columns
 -- Reorders columns in features.tables by logical and importance order,
 -- pushing infrastructure data (heritage, tier) and wide columns (ingame_link, royaleapi_link)

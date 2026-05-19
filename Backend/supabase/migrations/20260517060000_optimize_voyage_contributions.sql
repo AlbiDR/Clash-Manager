@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Add manual_crowns column to support custom adjustments
 ALTER TABLE drivers.clan_voyage_contributions ADD COLUMN manual_crowns integer DEFAULT 0;
 

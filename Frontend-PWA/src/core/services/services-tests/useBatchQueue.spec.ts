@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { useBatchQueue } from "@core";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 const mockOpenInGame = vi.fn();

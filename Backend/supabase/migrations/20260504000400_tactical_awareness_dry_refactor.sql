@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Tactical Awareness DRY Refactor
 -- Refactors features.tactical_awareness_view to achieve 10/10 DRY compliance.
 -- Implements layered CTEs, centralized thresholds, and integrates performance weighting.

@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Enforce Supabase Realtime tracking for the Headhunter recruiting layers
 -- Converts the database into a reactive WebSocket feed for the Vue frontend
 

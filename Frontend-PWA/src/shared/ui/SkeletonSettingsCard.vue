@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed } from "vue";
 
@@ -14,12 +16,6 @@ const titleWidth = computed(() => {
 const descWidth = computed(() => {
   if (props.index === undefined) return "200px";
   const widths = ["200px", "180px", "220px", "190px"];
-  return widths[props.index % widths.length];
-});
-
-const toggleWidth = computed(() => {
-  if (props.index === undefined) return "44px";
-  const widths = ["44px", "50px"]; // For button-like elements
   return widths[props.index % widths.length];
 });
 </script>
@@ -106,16 +102,6 @@ const toggleWidth = computed(() => {
   flex-direction: column;
   gap: 4px;
   flex: 1;
-}
-.sk-line-m-w {
-  height: 14px;
-  background: var(--sh-sk);
-  border-radius: 4px;
-}
-.sk-line-s-w {
-  height: 10px;
-  background: var(--sh-sk-secondary);
-  border-radius: 4px;
 }
 .sk-badge-s {
   height: 24px;

@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 -- Migration: Advisory Center Linter Resolutions Part 2
 -- This migration applies the search_path lock to all remaining SECURITY INVOKER functions.
 -- Supabase lints require search_path to be explicitly set on all functions, not just SECURITY DEFINER ones.

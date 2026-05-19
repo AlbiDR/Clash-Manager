@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { ref, computed, type Ref } from "vue";
 import { useHaptics } from "../../core/services/useHaptics";
 
@@ -54,7 +56,7 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
 
   /**
    * Initializes the pull sequence.
-   * 🛡️ GUARD: Prevents PTR if already scrolled or refreshing.
+   * [GUARD] GUARD: Prevents PTR if already scrolled or refreshing.
    */
   function onTouchStart(e: TouchEvent) {
     if (window.scrollY > 0 || isRefreshing.value) return;
@@ -75,7 +77,7 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
     const rawDiff = Math.max(0, currentY - touchStartY.value);
     const xDiff = Math.abs(currentX - touchStartX.value);
 
-    // 🛡️ PTR PROTECTION: Ignore if moving sideways more than down.
+    // [GUARD] PTR PROTECTION: Ignore if moving sideways more than down.
     if (xDiff > rawDiff * 0.5) {
       pullOffset.value = 0;
       isPulling.value = false;
@@ -83,7 +85,7 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
     }
 
     // Apply resistance (clamped logarithmic-like curve).
-    // ⚡ ANDROID OPTIMIZATION: More sensitive curve (0.85 -> 0.9) for better UX.
+    // [PERF] ANDROID OPTIMIZATION: More sensitive curve (0.85 -> 0.9) for better UX.
     pullOffset.value = Math.pow(rawDiff, 0.9) * 2;
 
     // Haptic feedback logic.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 import { ref, computed, type Ref, type ComputedRef } from "vue";
 
 /**
@@ -70,7 +72,7 @@ export function useListFilter<T extends { id: string; n?: string }>(
       result.sort((a, b) => {
         const comparisonResult = comparator(a, b);
         if (comparisonResult !== 0) return comparisonResult;
-        // 🛡️ Tie-breaker: Ensure stable sorting by Name, then ID
+        // [GUARD] Tie-breaker: Ensure stable sorting by Name, then ID
         // Target B [2]: Removed 'any' pathogens by enforcing T extends { id, n }.
         const nameA = a.n || "";
         const nameB = b.n || "";

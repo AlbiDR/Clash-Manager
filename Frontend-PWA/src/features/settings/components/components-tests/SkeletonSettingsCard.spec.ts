@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
-import SkeletonSettingsCard from "../SkeletonSettingsCard.vue";
+import { SkeletonSettingsCard } from "@shared";
 
 describe("SkeletonSettingsCard.vue", () => {
   it("renders with default widths when no index is provided", () => {

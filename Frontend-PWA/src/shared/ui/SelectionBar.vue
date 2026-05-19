@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { useHaptics, DEFAULT_SCORE_THRESHOLD, SCORE_SELECTION_STEPS } from "@core";

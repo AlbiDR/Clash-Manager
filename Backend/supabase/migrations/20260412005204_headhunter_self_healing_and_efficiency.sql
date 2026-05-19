@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
 
 -- =============================================================================
 -- MIGRATION: headhunter_self_healing_and_efficiency

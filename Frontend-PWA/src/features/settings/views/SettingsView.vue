@@ -1,6 +1,8 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ConsoleLayout } from "@shared";
-import { useSettings } from "../composables/useSettings";
+import { ConsoleLayout, SkeletonSettingsCard } from "@shared";
+import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 
 // Settings Components
@@ -12,10 +14,7 @@ import {
   NetworkSettings,
   BackendRefresher,
   RecoverySettings,
-  SkeletonSettingsCard
 } from "../components";
-import { EventManagement } from "../../voyage/components";
-
 
 const {
   modules,
@@ -33,7 +32,7 @@ const { isShowcaseMode } = useShowcaseMode();
     v-on="layoutEvents"
   >
     <div class="settings-content">
-      <EventManagement :initially-expanded="isShowcaseMode" />
+      <component :is="'EventManagement'" :initially-expanded="isShowcaseMode" />
       <AppearanceSettings :initially-expanded="isShowcaseMode" />
       <NotificationSettings :initially-expanded="isShowcaseMode" />
       <FeatureSettings :initially-expanded="isShowcaseMode" />
