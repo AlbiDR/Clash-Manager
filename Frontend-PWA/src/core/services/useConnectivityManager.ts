@@ -56,10 +56,10 @@ export function useConnectivityManager() {
 
     return {
       source: unref(store.currentSource) || "LOCAL",
-      age: lastSyncTs ? formatTimeAgo(lastSyncTs as any) : null,
+      age: lastSyncTs ? formatTimeAgo(lastSyncTs) : null,
       ageMinutes: ageMins,
-      lastCompiled: unref(store.lastCompiledTime) ? formatTimeAgo(unref(store.lastCompiledTime) as any) : null,
-      lastFetched: unref(store.lastFetchedTime) ? formatTimeAgo(unref(store.lastFetchedTime) as any) : null,
+      lastCompiled: unref(store.lastCompiledTime) ? formatTimeAgo(unref(store.lastCompiledTime)) : null,
+      lastFetched: unref(store.lastFetchedTime) ? formatTimeAgo(unref(store.lastFetchedTime)) : null,
       isStale: unref(store.isStale)
     };
   });
