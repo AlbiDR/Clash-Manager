@@ -12,12 +12,12 @@ const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
 const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
 const mockHide = vi.fn();
 const mockRestore = vi.fn();
-const mockPrune = vi.fn();
 const mockUndo = vi.fn();
 const mockSuccess = vi.fn();
 const mockInfo = vi.fn();
 const mockError = vi.fn();
 const mockTombstones = ref(new Set<string>());
+const mockIsOnline = ref(true);
 
 // Define the core mock state globally so it can be used across multiple mocks
 const { mockPingData, mockClashData, mockIsShowcaseMode, mockIsSyntheticMode } = vi.hoisted(() => {
@@ -108,6 +108,7 @@ vi.mock("@core", async (importOriginal) => {
       info: mockInfo,
     })),
     useConnectionStatus: vi.fn(() => ({
+      isOnline: mockIsOnline,
       status: ref("online"),
     })),
     useHaptics: vi.fn(() => ({
@@ -153,9 +154,15 @@ vi.mock("../useHeadhunter", () => ({
 vi.mock("../useRecruitBlacklist", () => ({
   useRecruitBlacklist: vi.fn(() => ({
     tombstones: mockTombstones,
-    prune: mockPrune,
     hide: mockHide,
     restore: mockRestore,
+  })),
+}));
+
+vi.mock("@core/services/useConnectionStatus", () => ({
+  useConnectionStatus: vi.fn(() => ({
+    isOnline: mockIsOnline,
+    status: ref("online"),
   })),
 }));
 
@@ -194,6 +201,7 @@ describe("useRecruiter", () => {
     vi.clearAllMocks();
     mockIsShowcaseMode.value = false;
     mockIsSyntheticMode.value = false;
+    mockIsOnline.value = true;
     mockTombstones.value = new Set();
     mockClashData.value = {
       hh: [
@@ -226,11 +234,16 @@ describe("useRecruiter", () => {
     expect(filteredItems.value[0].id).toBe("2");
   });
 
-  it("does not prune blacklist on mount (watch is not immediate)", () => {
-    withSetup(() => useRecruiter());
-    // The isRefreshing watch uses { immediate: false }, so prune must NOT
-    // be called during initial setup - it only fires after a true->false transition.
-    expect(mockPrune).not.toHaveBeenCalled();
+  it("does not dismiss when offline (connectivity guard)", () => {
+    mockIsOnline.value = false;
+    const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
+
+    selectedIds.value = ["1"];
+    dismissBulk();
+
+    expect(mockHide).not.toHaveBeenCalled();
+    expect(mockDismissRecruitsAction).not.toHaveBeenCalled();
+    expect(mockInfo).toHaveBeenCalledWith("Connection required to dismiss recruits.");
   });
 
   describe("handleRefresh", () => {

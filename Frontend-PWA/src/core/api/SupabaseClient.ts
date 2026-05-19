@@ -326,19 +326,10 @@ export async function dismissRecruits(
   }));
   const { data, error } = await supabase.rpc('dismiss_recruits', { items: normalizedItems });
   
-  if (error) {
-    // Check if we should enqueue for background retry
-    const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
-    if (isTransient) {
-      let queue = (await idb.get<any[]>("offline_queue")) || [];
-      if (!Array.isArray(queue)) queue = [];
-      queue = queue.filter(queuedAction => queuedAction && typeof queuedAction === 'object' && typeof queuedAction.type === 'string' && ['RECRUIT_DISMISSAL', 'RECRUIT_RESTORATION'].includes(queuedAction.type));
-      queue.push({ type: 'RECRUIT_DISMISSAL', items: normalizedItems, timestamp: Date.now() });
-      await idb.set("offline_queue", queue);
-      return { success: true, data: { success: true, count: normalizedItems.length, message: "Enqueued" } };
-    }
-    throw new NetworkError(error.message);
-  }
+  // [DESIGN] CONNECTION REQUIRED: Dismissal requires an active connection.
+  // The offline queue has been removed. On any failure, throw immediately so
+  // the caller can roll back the optimistic tombstone and inform the user.
+  if (error) throw new NetworkError(error.message);
   
   return { success: true, data: data as DismissResponse };
 }
@@ -363,20 +354,55 @@ export async function undismissRecruits(
   const player_tags = ids.map(id => id.startsWith('#') ? id : `#${id}`);
   const { data, error } = await supabase.rpc('undismiss_recruits', { player_tags });
   
-  if (error) {
-    const isTransient = error.message.includes("fetch") || error.code === "PGRST301";
-    if (isTransient) {
-      let queue = (await idb.get<any[]>("offline_queue")) || [];
-      if (!Array.isArray(queue)) queue = [];
-      queue = queue.filter(queuedAction => queuedAction && typeof queuedAction === 'object' && typeof queuedAction.type === 'string' && ['RECRUIT_DISMISSAL', 'RECRUIT_RESTORATION'].includes(queuedAction.type));
-      queue.push({ type: 'RECRUIT_RESTORATION', ids: player_tags, timestamp: Date.now() });
-      await idb.set("offline_queue", queue);
-      return { success: true, data: { success: true, count: ids.length, message: "Enqueued" } };
-    }
-    throw new NetworkError(error.message);
-  }
+  // [DESIGN] CONNECTION REQUIRED: Undismissal requires an active connection.
+  if (error) throw new NetworkError(error.message);
   
   return { success: true, data: data as DismissResponse };
+}
+
+/**
+ * Establishes a Realtime subscription on `drivers.recruit_blacklist`.
+ *
+ * @remarks
+ * Listens for INSERT (cross-device dismissals) and DELETE (undismissals) events.
+ * Requires `REPLICA IDENTITY FULL` on the table for DELETE payloads to carry
+ * the old row data. Returns a cleanup function that removes the channel.
+ *
+ * **Architectural Context:**
+ * - Layer: Layer 1 (@core) — transport factory only, no business logic.
+ * - Callers in Layer 3 (@features) supply the event handlers.
+ *
+ * @param onInsert - Called with the player_tag when a blacklist row is inserted.
+ * @param onDelete - Called with the player_tag when a blacklist row is deleted.
+ * @returns Cleanup function; call on component unmount.
+ */
+export function subscribeToBlacklist(
+  onInsert: (playerTag: string) => void,
+  onDelete: (playerTag: string) => void,
+): () => void {
+  const supabase = createSupabaseClient();
+
+  const channel = supabase
+    .channel('cm-blacklist-sync')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'drivers', table: 'recruit_blacklist' },
+      (payload) => {
+        const playerTag = (payload.new as { player_tag?: string }).player_tag;
+        if (playerTag) onInsert(playerTag);
+      },
+    )
+    .on(
+      'postgres_changes',
+      { event: 'DELETE', schema: 'drivers', table: 'recruit_blacklist' },
+      (payload) => {
+        const playerTag = (payload.old as { player_tag?: string }).player_tag;
+        if (playerTag) onDelete(playerTag);
+      },
+    )
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
 }
 
 /**
