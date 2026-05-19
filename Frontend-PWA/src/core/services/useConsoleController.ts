@@ -18,6 +18,7 @@ import { ref, computed, watch, onMounted, onUnmounted, toRef, type Ref, type Com
 import type { ConsoleCardMetadata, HubInfo } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
+import { VISIBILITY_REFRESH_THRESHOLD } from "../config";
 import { useConnectivityManager } from "./useConnectivityManager";
 
 /**
@@ -208,7 +209,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       const hiddenDuration = now - lastVisibilityTime;
       
       // If hidden for > 30 minutes, trigger a background refresh
-      if (hiddenDuration > 30 * 60 * 1000 && !isRefreshing.value && refreshFn) {
+      if (hiddenDuration > VISIBILITY_REFRESH_THRESHOLD && !isRefreshing.value && refreshFn) {
         refreshFn();
       }
       lastVisibilityTime = now;

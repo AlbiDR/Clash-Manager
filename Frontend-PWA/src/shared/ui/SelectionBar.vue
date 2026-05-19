@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useHaptics } from "../../core/services/useHaptics";
+import { useHaptics, DEFAULT_SCORE_THRESHOLD, SCORE_SELECTION_STEPS } from "@core";
 import { ref, computed } from "vue";
 const props = defineProps<{
   count: number;
@@ -24,10 +24,10 @@ const valuePicker = ref<HTMLElement | null>(null);
 
 // Dynamic Filter State
 const filterMode = ref<"ge" | "le">("ge");
-const filterValue = ref(75);
+const filterValue = ref(DEFAULT_SCORE_THRESHOLD);
 
 // Pre-calculated options for selection
-const thresholds = [15, 30, 45, 60, 75, 90, 100];
+const thresholds = SCORE_SELECTION_STEPS;
 
 function toggleMode() {
   filterMode.value = filterMode.value === "ge" ? "le" : "ge";
