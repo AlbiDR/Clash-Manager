@@ -321,27 +321,49 @@ async function processOfflineQueue(): Promise<void> {
   try {
     const db = await openDB();
     const queue = ((await getValue(db, "offline_queue")) || []) as unknown[];
-    const supabaseUrl = await getValue(db, "cm_supabase_url");
+    const supabaseUrl = await getValue(db, "cm_supabase_url") as string | null;
+    const supabaseKey = await getValue(db, "cm_supabase_key") as string | null;
 
-    const supabaseKey = await getValue(db, "cm_supabase_key");
     if (!queue.length || !supabaseUrl || !supabaseKey) return;
 
     const remaining: unknown[] = [];
 
-    for (const req of queue) {
+    for (const action of queue) {
+      if (!action || typeof action !== "object") continue;
+
+      const typedAction = action as { type?: string; items?: unknown[]; ids?: string[] };
+
       try {
-        // Rationale: Process offline recruitment actions via Supabase RPC.
-        await fetch(`${supabaseUrl}/rest/v1/rpc/process_queue`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "apikey": supabaseKey as string,
-            "Content-Profile": "features"
-          },
-          body: JSON.stringify({ req }),
-        });
-      } catch (e) {
-        if (remaining.length < 50) remaining.push(req);
+        // [FIX] OFFLINE QUEUE: Call the correct RPCs directly.
+        // Rationale: The previous `process_queue` RPC does not exist in the backend.
+        // Each queued action must be dispatched to its correct endpoint.
+        if (typedAction.type === "RECRUIT_DISMISSAL" && Array.isArray(typedAction.items)) {
+          const response = await fetch(`${supabaseUrl}/rest/v1/rpc/dismiss_recruits`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Content-Profile": "features",
+            },
+            body: JSON.stringify({ items: typedAction.items }),
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        } else if (typedAction.type === "RECRUIT_RESTORATION" && Array.isArray(typedAction.ids)) {
+          const response = await fetch(`${supabaseUrl}/rest/v1/rpc/undismiss_recruits`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Content-Profile": "features",
+            },
+            body: JSON.stringify({ player_tags: typedAction.ids }),
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        }
+        // Action processed successfully; do not add to remaining.
+      } catch {
+        // Preserve unprocessed items for the next sync attempt.
+        if (remaining.length < 50) remaining.push(action);
       }
     }
 

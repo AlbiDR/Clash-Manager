@@ -81,8 +81,40 @@ export function useRecruitBlacklist() {
     save();
   }
 
-  function syncRemote(remoteBlacklist: readonly string[]) {
-    if (!remoteBlacklist || remoteBlacklist.length === 0) return;
+  /**
+   * SERVER-AUTHORITATIVE SYNC
+   *
+   * @remarks
+   * Merges the server's blacklist into the local tombstone set.
+   * When `forceReplace` is true (boot-time path), the local set is completely
+   * rebuilt from the server payload, making `drivers.recruit_blacklist` the SSOT.
+   * This prevents cross-device desync where a device cleared its local storage
+   * but the server-side blacklist still holds the dismissed state.
+   *
+   * @param remoteBlacklist - The authoritative list of dismissed player tags.
+   * @param forceReplace - If true, replaces the local tombstone set entirely.
+   */
+  function syncRemote(remoteBlacklist: readonly string[], forceReplace = false) {
+    // [FIX] GUARD RELAXED FOR FORCE-REPLACE:
+    // A forceReplace with an empty array is valid — it means the server has no
+    // blacklisted players and the local tombstone set should be cleared.
+    // Only skip if this is a non-authoritative merge with nothing to add.
+    if (!forceReplace && (!remoteBlacklist || remoteBlacklist.length === 0)) return;
+
+    if (forceReplace) {
+      // [FIX] AUTHORITATIVE REPLACEMENT: Rebuild tombstone set from server SSOT.
+      // Rationale: Resolves cross-device desync. A factory-reset device has an
+      // empty localStorage, but the server's recruit_blacklist is the ground truth.
+      // Merging would be incomplete; only a full replacement guarantees parity.
+      const incomingSet = new Set(remoteBlacklist);
+      if (incomingSet.size === tombstones.value.size && [...incomingSet].every(id => tombstones.value.has(id))) {
+        return; // Already in sync, no write needed.
+      }
+      tombstones.value = incomingSet;
+      save();
+      return;
+    }
+
     let added = false;
     remoteBlacklist.forEach((id) => {
       if (!tombstones.value.has(id)) {

@@ -68,22 +68,40 @@ export function useRecruiter() {
     onDismiss: dismissBulk,
   });
 
-  // 🧹 CLEANUP: Prune tombstones ONLY after a real server refresh completes.
-  // Rationale: Pruning during optimistic local updates causes hidden recruits 
-  // to reappear if the local cache is reloaded before the server has 
-  // fully processed the dismissal. By waiting for isRefreshing to flip 
-  // from true -> false, we ensure we only prune against authoritative server data.
-  watch(isRefreshing, (refreshing) => {
-    if (!refreshing && data.value) {
-      if (data.value.blacklist) {
-        blacklist.syncRemote(data.value.blacklist);
-      }
-      if (data.value.hh) {
+  // BLACKLIST RECONCILIATION: Sync tombstones from server on every confirmed refresh.
+  //
+  // [FIX] CROSS-DEVICE DESYNC:
+  // The previous strategy merged server blacklist state into the local tombstone set.
+  // This was insufficient for the factory-reset scenario: a device with no local
+  // tombstones would see all recruits as visible even if the server had blacklisted them.
+  //
+  // The fix uses forceReplace=true after every confirmed network refresh (isRefreshing
+  // transitions from true -> false). This rebuilds the tombstone set from the
+  // authoritative `drivers.recruit_blacklist` table, making the server the SSOT.
+  //
+  // `prune()` is only called when `hh` is non-empty to prevent the guard in prune()
+  // from short-circuiting on error/empty states and incorrectly clearing tombstones.
+  watch(isRefreshing, (nowRefreshing, wasRefreshing) => {
+    // Only act when a refresh cycle COMPLETES (was refreshing, now done).
+    const refreshCycleCompleted = wasRefreshing === true && nowRefreshing === false;
+
+    if (refreshCycleCompleted && data.value) {
+      // AUTHORITATIVE REPLACEMENT: Rebuild tombstone set from server SSOT.
+      // forceReplace=true guarantees the local set mirrors the server's blacklist exactly,
+      // correcting any drift caused by local-only adds on this device or dismissals
+      // made on other devices that never reached this client's localStorage.
+      blacklist.syncRemote(data.value.blacklist ?? [], true);
+
+      // GARBAGE COLLECTION: Only prune against a non-empty active recruit list.
+      // Rationale: An empty `hh` array may indicate a fetch error or a genuinely
+      // empty pool. prune() already guards against empty arrays, but this explicit
+      // check is a defensive second layer to prevent inadvertent tombstone removal.
+      if (data.value.hh && data.value.hh.length > 0) {
         const currentIds = data.value.hh.map((recruit) => recruit.id);
         blacklist.prune(currentIds);
       }
     }
-  }, { immediate: true });
+  }, { immediate: false });
 
   /**
    * RECRUIT DISMISSAL ENGINE
