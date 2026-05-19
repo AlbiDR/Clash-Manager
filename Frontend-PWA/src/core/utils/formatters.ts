@@ -53,7 +53,7 @@ const RE_NEWLINE = /\n/g;
  * @internal
  */
 const formatTime = (
-  dateStr: string | null | undefined,
+  dateStr: string | number | null | undefined,
   shortMode: boolean,
 ): string => {
   if (!dateStr) return "-";
@@ -80,20 +80,20 @@ const formatTime = (
 /**
  * Formats a date string into a human-readable relative time (e.g., '2d ago').
  *
- * @param dateStr - The date string to format.
+ * @param dateStr - The date string or timestamp to format.
  * @returns A full relative time string.
  */
-export const formatTimeAgo = (dateStr: string | null | undefined): string =>
+export const formatTimeAgo = (dateStr: string | number | null | undefined): string =>
   formatTime(dateStr, false);
 
 /**
  * Formats a date string into a compact relative time (e.g., '2d').
  *
- * @param dateStr - The date string to format.
+ * @param dateStr - The date string or timestamp to format.
  * @returns A short relative time string.
  */
 export const formatTimeAgoShort = (
-  dateStr: string | null | undefined,
+  dateStr: string | number | null | undefined,
 ): string => formatTime(dateStr, true);
 
 /** Regex for legacy 'X units ago' strings. */
