@@ -57,3 +57,6 @@ Backend/supabase/functions/sync-player-cards/client.ts
 Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts
 Frontend-PWA/src/core/api/SupabaseClient.ts
 Backend/supabase/functions/ingest-royale-data/pipeline.ts
+Frontend-PWA/src/features/laboratory/logic/Simulation.ts
+2026-05-18 | Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts | Documented Pinia store actions and added inline decision logs for strategy coupling.
+2026-05-19 | Frontend-PWA/src/core/services/useConnectivityManager.ts | Fully documented Layer 1 orchestrator, including interfaces and health hierarchy logic.

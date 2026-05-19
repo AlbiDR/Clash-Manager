@@ -150,3 +150,10 @@ Frontend-PWA/src/core/theme/icons.ts
 Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 Frontend-PWA/src/features/laboratory/logic/Registry.ts
 Frontend-PWA/src/features/laboratory/README.md
+Frontend-PWA/src/core/utils/formatters.ts
+Frontend-PWA/src/core/utils/utils-tests/formatters.spec.ts
+Frontend-PWA/src/shared/ui/BaseCard.vue
+Frontend-PWA/src/shared/ui/ui-tests/BaseCard.spec.ts
+2026-05-19 | Frontend-PWA/src/core/utils/formatters.ts | Refined time formatting to support numeric timestamps.
+2026-05-19 | Frontend-PWA/src/core/services/useConnectivityManager.ts | Excised 'any' assertions and hardened metadata normalization.
+2026-05-19 | Frontend-PWA/src/core/config/index.ts | Centralized business thresholds and operational constants to eliminate magic number drift.
