@@ -1,4 +1,5 @@
 // Logic Engine
+export * from "./config";
 export * from "./api/SupabaseClient";
 export * from "./api/DataMappers";
 export * from "./api/useApiState";
