@@ -139,12 +139,12 @@ const ariaLabel = computed(() => {
         <button 
           class="toggle-btn" 
           :class="{ active: activeChart === 'war' }"
-          @click="activeChart = 'war'"
+          @click.stop="activeChart = 'war'"
         >War</button>
         <button 
           class="toggle-btn" 
           :class="{ active: activeChart === 'voyage' }"
-          @click="activeChart = 'voyage'"
+          @click.stop="activeChart = 'voyage'"
         >Voyage</button>
       </div>
 
