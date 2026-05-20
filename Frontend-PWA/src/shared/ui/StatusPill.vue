@@ -182,20 +182,6 @@ const displaySource = computed(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 4px;
-  border-radius: 14px;
-  background: var(--sys-surface-container);
-  border: 1px solid var(--sys-outline);
-  cursor: pointer;
-  transition: all 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
-  user-select: none;
-  position: relative;
-  z-index: 50;
-  box-shadow: 0 2px 8px rgba(0,0,0,0);
-}
 
 .status-pill.is-nominal {
   border-color: transparent;

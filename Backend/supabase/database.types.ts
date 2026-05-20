@@ -857,6 +857,7 @@ export type Database = {
           donations_received: number | null
           exp_level: number | null
           hist: string | null
+          v_hist: string | null
           ingame_link: string | null
           last_ingested_at: string | null
           last_seen_at: string | null
@@ -888,6 +889,7 @@ export type Database = {
           donations: number | null
           heritage_bonus: number | null
           hist: string | null
+          v_hist: string | null
           joined_at: string | null
           last_seen_at: string | null
           loyalty_multiplier: number | null
