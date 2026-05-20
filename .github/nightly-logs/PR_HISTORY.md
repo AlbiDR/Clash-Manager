@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-20] PR #639: refactor(opt): de-export internal sharedTokens in theme kernel
+**Commit**: `ea18ebaedd947818c94e9f85c0557a52f7bba29f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/639)
+
+### Description
+De-exported `sharedTokens` in `Frontend-PWA/src/core/theme/tokens.ts` as it was only used internally within the file. This reduces the public API surface of the core theme module and aligns with the project's hygiene standards. Verified via full test suite (980 pass).
+
+---
+*PR created automatically by Jules for task [8260957379051392898](https://jules.google.com/task/8260957379051392898) started by @AlbiDR*
+
+---
+
 ## [2026-05-20] PR #638: Establish full coverage for useVoyageStore
 **Commit**: `2064bb1ca7cc5effddef64a1a315ebd79260a61a`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/638)
