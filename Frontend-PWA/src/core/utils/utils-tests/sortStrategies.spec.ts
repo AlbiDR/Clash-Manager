@@ -191,8 +191,10 @@ describe("sortStrategies", () => {
       expect(res).toBeLessThan(0);
     });
 
-    it("sorts by time_found", () => {
-      const res = RecruiterSort.time_found(recruitA as any, recruitB as any);
+    it("sorts by time_found using parseTimeAgoValue of ago field, ignoring longevity", () => {
+      const a = { longevity: 200, d: { ago: "new" } } as any;
+      const b = { longevity: 50, d: { ago: "old" } } as any;
+      const res = RecruiterSort.time_found(a, b);
       expect(res).toBeLessThan(0);
     });
 
