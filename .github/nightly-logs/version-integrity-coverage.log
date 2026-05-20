@@ -1,3 +1,12 @@
+## [2026-08-05]
+### Reconciled:
+- **Monorepo Version**: Synchronized all manifestations of the monorepo version to the ground truth `v14.0.0` (Rule 3[B]).
+- **PWA Manifest**: Updated `version` in `Frontend-PWA/package.json` and `softwareVersion` in `index.html`.
+- **Runtime Protocol**: Synchronized `protocol.ts` constant to `14.0.0-clinical` (Rule 2[B]).
+
+### Logged Drift (Unresolved):
+- **None**.
+
 ## [2026-05-19]
 ### Reconciled:
 - **None**: Detected a fundamental conflict between Root package.json (v14.0.0) and authoritative module constant protocol.ts (v13.3.0). Performed "Flag, Don't Guess" protocol.

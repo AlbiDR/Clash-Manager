@@ -24,6 +24,38 @@ interface SyncRecruitRow {
  * Re-profiles ACTIVE recruits not scanned in the last 48 hours to keep
  * trophy counts, donation stats, and clan status fresh. Automatically
  * removes candidates who have since joined a clan (no longer valid targets).
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 4 (@app / Edge Function Stage)
+ * - **Import Boundaries:** Consumes `@shared` schemas and utilities. Forbidden from importing `@core` (PWA-only).
+ * - **Satisfies ADR Section III:** Validation Boundaries (via Valibot schemas).
+ * - **Satisfies ADR Section IV:** Resilience & Operational Security (via `processBatch` throttling).
+ *
+ * **Logic Intent:**
+ * This stage prevents recruitment of players who are already in a clan or
+ * whose trophy counts no longer meet the current recruitment standards.
+ *
+ * **Permissions:**
+ * Requires `service_role` or specific RLS bypass to execute RPCs:
+ * - `get_stale_recruits`
+ * - `report_dead_recruit`
+ * - `purge_recruits`
+ * - `sync_recruits`
+ *
+ * @param exclusionSet - Set of player tags (e.g., family clan members) to ignore.
+ * @param requiredTrophies - Minimum trophies required for 'ACTIVE' status.
+ * @param stats - Shared scanner statistics for tracking throughput.
+ * @param logAudit - Function to record execution milestones in the audit log.
+ *
+ * @sideeffects
+ * - **Network:** Fetches player data from the Royale API via `fetchWithRotation`.
+ * - **Database (RPC):** `get_stale_recruits`: Retrieves candidates for re-scanning.
+ * - **Database (RPC):** `report_dead_recruit`: Removes 404 targets from the database.
+ * - **Database (RPC):** `purge_recruits`: Evicts targets who have joined other clans.
+ * - **Database (RPC):** `sync_recruits`: Synchronizes refreshed profile data.
+ *
+ * @throws Never - Catch-all block ensures stage completion and error logging.
  */
 export async function runRescan(
     exclusionSet: Set<string>,

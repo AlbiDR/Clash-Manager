@@ -1,7 +1,7 @@
 {
   "name": "clash-manager-pwa",
   "private": true,
-  "version": "13.3.0",
+  "version": "14.0.0",
   "license": "GPL-3.0-only",
   "description": "A modern, material design PWA for managing Clash Royale clans.",
   "author": "AlbiDR",

@@ -44,8 +44,10 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 - **Role**: Materialized views and API-ready logic for frontend consumption.
 - **Interfaces**:
     - `features.roster_view`: Deeply sorted roster with dynamic tenure labeling.
-    - `features.war_activity_view`: Realtime participation tracking.
-    - `features.war_loyalty_view`: **Career Fame Averaging** (Infinite lookback for PeS calculation).
+    - `features.voyage_summary`: SSOT for active Clan Voyage status and progress.
+    - `features.voyage_contributions`: High-resolution ledger of individual voyage performance.
+    - `features.tactical_awareness_view`: Realtime clan activity and presence tracking.
+    - `features.governance_report`: Consolidated system audit trail and pipeline health logs.
 
 ---
 
@@ -61,8 +63,9 @@ Ingestion is performed via a **Tri-Engine Edge Architecture**, supported by auto
     - **S6 (Deep Depth)**: Extracts 100-sample battle logs for high-precision scoring.
 2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (Ghost Purge, Shadow Scout, Tournament Discovery, Profiler, Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
 3. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Implements rarity-relative normalization to the unified 1-16 absolute scale.
-4. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
-5. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative system janitor responsible for pruning volatile state and maintaining substrate health.
+4. **Voyage Orchestrator (`initialize_voyage`)**: L5 Control Layer responsible for activating and configuring Clan Voyage events.
+5. **Shredder (`drivers` layer)**: Automated SQL triggers and functions decompose raw JSON payloads into relational telemetry.
+6. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative system janitor responsible for pruning volatile state and maintaining substrate health.
 
 ---
 
@@ -120,11 +123,11 @@ supabase functions deploy sync-player-cards --no-verify-jwt
 
 ---
 
-## VIII. Current State - Roadmap (v13.3.0)
+## VIII. Current State - Roadmap (v14.0.0)
 - [x] **Phase 1-7**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor, Full PWA integration).
 
 ---
 
 > [!NOTE]
 > This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> ↴ *Compiled: 2026-08-04 by Antigravity*
+> *Compiled: 2026-08-05 by Antigravity*
