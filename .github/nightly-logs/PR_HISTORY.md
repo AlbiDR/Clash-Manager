@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-20] PR #641: docs(tsdoc): document runRescan stage in headhunter-scanner
+**Commit**: `d49f3ba8346c2fe11505450cea6f22f3bf4b8c13`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/641)
+
+### Description
+This PR adds comprehensive TSDoc to the `runRescan` function within the `headhunter-scanner` Edge Function stage. It details the architectural role of the module (Layer 4), its import/export boundaries, specific ADR satisfaction (Sections III and IV), required database permissions, and explicit side effects including RPC calls and external API fetches.
+
+---
+*PR created automatically by Jules for task [11302229635336180386](https://jules.google.com/task/11302229635336180386) started by @AlbiDR*
+
+---
+
 ## [2026-05-20] PR #640: docs(readme): reconcile Backend with v14.0.0 and Voyage substrate
 **Commit**: `385834c711c8d38927dff60a85f7cc031e638fb4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/640)
