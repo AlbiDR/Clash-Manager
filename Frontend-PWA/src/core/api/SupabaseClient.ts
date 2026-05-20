@@ -322,27 +322,36 @@ export function subscribeToBlacklist(
 ): () => void {
   const supabase = createSupabaseClient();
 
-  const channel = supabase
-    .channel('cm-blacklist-sync')
-    .on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'drivers', table: 'recruit_blacklist' },
-      (payload) => {
-        const playerTag = (payload.new as { player_tag?: string }).player_tag;
-        if (playerTag) onInsert(playerTag);
-      },
-    )
-    .on(
-      'postgres_changes',
-      { event: 'DELETE', schema: 'drivers', table: 'recruit_blacklist' },
-      (payload) => {
-        const playerTag = (payload.old as { player_tag?: string }).player_tag;
-        if (playerTag) onDelete(playerTag);
-      },
-    )
-    .subscribe();
+  try {
+    const channel = supabase
+      .channel('cm-blacklist-sync')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'drivers', table: 'recruit_blacklist' },
+        (payload) => {
+          const playerTag = (payload.new as { player_tag?: string }).player_tag;
+          if (playerTag) onInsert(playerTag);
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'drivers', table: 'recruit_blacklist' },
+        (payload) => {
+          const playerTag = (payload.old as { player_tag?: string }).player_tag;
+          if (playerTag) onDelete(playerTag);
+        },
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.warn("[Realtime] Subscription error:", err);
+        }
+      });
 
-  return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(channel); };
+  } catch (e) {
+    console.warn("[Realtime] Failed to initialize subscription:", e);
+    return () => {};
+  }
 }
 
 /**
