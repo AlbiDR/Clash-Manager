@@ -78,7 +78,7 @@ const displaySource = computed(() => {
   if (!props.remoteInfo?.source) return null;
   // If the status is 'DB', showing 'SUPABASE' is redundant
   if (isDB.value && props.remoteInfo.source === 'SUPABASE') return null;
-  return props.remoteInfo.source;
+  return props.remoteInfo.source === 'SUPABASE' ? 'DB' : props.remoteInfo.source;
 });
 </script>
 
@@ -129,7 +129,7 @@ const displaySource = computed(() => {
             <div class="divider"></div>
             
             <div v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis" class="hub-details">
-              <span v-if="displaySource" class="source-tag technical" :class="displaySource.toLowerCase()">
+              <span v-if="displaySource" class="source-tag technical" :class="(props.remoteInfo?.source || '').toLowerCase()">
                 {{ displaySource }}
               </span>
               <span v-if="props.remoteInfo?.diagnosis" class="diagnosis-info technical">

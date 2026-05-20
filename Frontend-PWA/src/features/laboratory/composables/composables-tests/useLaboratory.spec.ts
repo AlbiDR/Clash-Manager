@@ -228,8 +228,33 @@ describe('useLaboratory', () => {
       const { useLaboratory } = await import('../useLaboratory');
       const { layoutProps } = useLaboratory();
 
-      expect(layoutProps.value.status.type).toBe('ready');
+      expect(layoutProps.value.status.type).toBe('warning');
       expect(layoutProps.value.status.text).toBe('Target Required');
+    });
+
+    it('should reflect "Operational" when a valid tag is present and ready', async () => {
+      mockGetPlayerProfile.mockResolvedValue({ name: 'User', tag: '#PLAYER', expLevel: 14, expPoints: 0, cards: [] });
+      mockClashData.value.playerTag = '#PLAYER';
+      const cachedData = {
+        profile: { name: 'Cached User', tag: '#PLAYER', kingLevel: 10, xpIntoLevel: 0 },
+        inventory: { gold: 100, gems: 10, wildCards: {} },
+        cards: []
+      };
+      localStorageMock.setItem('laboratory_observation', JSON.stringify(cachedData));
+      mockHydrate.mockReturnValue(cachedData);
+
+      const { useLaboratory } = await import('../useLaboratory');
+      const { useLaboratoryStore } = await import('../../stores/useLaboratoryStore');
+      const { layoutProps } = useLaboratory();
+      const store = useLaboratoryStore();
+      
+      const { flushPromises } = await import('@vue/test-utils');
+      await flushPromises();
+      
+      store.$patch({ isFetching: false, isSimulating: false, fetchError: null });
+      
+      expect(layoutProps.value.status.type).toBe('success');
+      expect(layoutProps.value.status.text).toBe('Operational');
     });
   });
 });
