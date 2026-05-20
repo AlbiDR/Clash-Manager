@@ -62,14 +62,15 @@
 | knip | ^6.14.0 | ^6.14.1 | 2026-05-17 | PASS |
 | @ast-grep/cli | ^0.42.1 | ^0.42.2 | 2026-05-18 | PASS |
 | @supabase/supabase-js | ^2.105.4 | ^2.106.0 | 2026-05-19 | PASS |
+| tsx | ^4.22.0 | ^4.22.3 | 2026-08-05 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
 | vite | ^7.3.1 | 8.0.13 | 2026-05-17 | Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. Verify manualChunks. |
 | typescript | ~5.9.3 | 6.0.3 | 2026-05-21 | Breaking: Several compiler defaults changed (module: esnext, target: es2025). |
-| @types/node | ^24.12.0 | 25.8.0 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
-| @vitejs/plugin-vue | ^6.0.5 | 6.0.6 | 2026-04-13 | [Updated] Tier 1 patch bump previously failed test gate. |
+| @types/node | ^24.12.0 | 25.9.1 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
+| @vitejs/plugin-vue | ^6.0.5 | 6.0.7 | 2026-04-13 | [Updated] Tier 1 patch/minor bump previously failed test gate. |
 | vue-router | ^4.6.4 | 5.0.7 | 2026-06-05 | Breaking: Transition release. No breaking changes for manual routes. |
 | jsdom | ^24.1.3 | 29.1.1 | 2026-08-04 | Breaking: Internal refactor, performance gains. |
 | rollup-plugin-visualizer | ^6.0.5 | 7.0.1 | 2026-08-04 | Breaking: Config schema changes for vite 6/7/8 compatibility. |
