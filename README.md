@@ -1,5 +1,5 @@
 <div align="center">
-  <img src=".github/assets/logo.svg" alt="Clash Manager Logo" width="120" />
+  <img src=".github/assets/logo.png" alt="Clash Manager Logo" width="120" />
 </div>
 
 # Clash Manager
