@@ -173,6 +173,7 @@ const displaySource = computed(() => {
   z-index: 50;
   box-shadow: 0 2px 8px rgba(0,0,0,0);
   max-width: 100%;
+  flex-shrink: 0;
 }
 
 /* Ensure label text truncates when space is limited */
