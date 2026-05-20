@@ -83,3 +83,4 @@ Frontend-PWA/src/shared/ui/TagBadge.vue
 Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-08-04 | Frontend-PWA/src/core/api/DataMappers.ts | Saturating coverage for roster/headhunter mapping edge cases
 2026-08-04 | Frontend-PWA/src/core/api/SupabaseClient.ts | Hardened validation boundary stress-testing and mutation normalization
+2026-05-20 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
