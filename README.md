@@ -1,3 +1,7 @@
+<div align="center">
+  <img src=".github/assets/logo.svg" alt="Clash Manager Logo" width="120" />
+</div>
+
 # Clash Manager
 
 [![Backend](https://img.shields.io/badge/Backend-v14.0.0-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
