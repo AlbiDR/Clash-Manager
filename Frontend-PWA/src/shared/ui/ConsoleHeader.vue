@@ -199,7 +199,9 @@ const handleOpenDashboard = () => {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .view-title {
@@ -213,6 +215,8 @@ const handleOpenDashboard = () => {
   overflow: hidden;
   text-overflow: ellipsis;
   transition: all 0.2s var(--sys-motion-standard);
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .view-title.is-link {
@@ -236,6 +240,7 @@ const handleOpenDashboard = () => {
   background: var(--sys-surf-c);
   border-radius: 8px;
   font-family: var(--sys-font-mono);
+  flex-shrink: 0;
 }
 
 .count-value {

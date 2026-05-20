@@ -109,6 +109,6 @@ export const RecruiterSort = {
     ),
   trophies: sortByTrophies,
   name: sortByName,
-  time_found: (a: Recruit, b: Recruit) => (a.longevity || 0) - (b.longevity || 0),
+  time_found: (a: Recruit, b: Recruit) => parseTimeAgoValue(a.d.ago) - parseTimeAgoValue(b.d.ago),
   donations: (a: Recruit, b: Recruit) => (b.d.don || 0) - (a.d.don || 0),
 };

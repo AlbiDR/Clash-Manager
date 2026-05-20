@@ -175,6 +175,10 @@ const displaySource = computed(() => {
   box-shadow: var(--sys-elevation-level2);
 }
 
+.status-pill.expand-left {
+  flex-direction: row-reverse;
+}
+
 /* Ensure symmetric padding so width animation is flawless */
 .status-pill.is-expanded.expand-right {
   padding-right: 6px;
