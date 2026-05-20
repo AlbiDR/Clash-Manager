@@ -276,8 +276,8 @@ export function useLaboratory() {
     if (isSimulating.value) return { type: "loading", text: "Computing Trajectory..." } as const;
     if (fetchError.value) return { type: "error", text: "Extraction Failed" } as const;
     const tag = trackedPlayerTag.value || clashData.value?.playerTag;
-    if (!tag) return { type: "ready", text: "Target Required" } as const;
-    return { type: "ready", text: "Engine Operational" } as const;
+    if (!tag) return { type: "warning", text: "Target Required" } as const;
+    return { type: "success", text: "Operational", nominal: true } as const;
   });
 
   const isEmpty = computed(() => !observation.value && !isFetching.value);
