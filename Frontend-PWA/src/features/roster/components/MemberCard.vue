@@ -135,7 +135,7 @@ const ariaLabel = computed(() => {
         />
       </StatsGrid>
 
-      <div class="chart-toggle-container">
+      <div class="chart-toggle-container hit-target">
         <button 
           class="toggle-btn" 
           :class="{ active: activeChart === 'war' }"
