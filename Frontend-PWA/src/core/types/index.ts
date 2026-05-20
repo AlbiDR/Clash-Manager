@@ -32,6 +32,7 @@ export interface LeaderboardMember {
     rate?: string | null; // Made optional
     wfame?: number;
     hist: string;
+    v_hist?: string;
   };
 }
 
