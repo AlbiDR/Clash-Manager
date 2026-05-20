@@ -135,14 +135,14 @@ const ariaLabel = computed(() => {
         />
       </StatsGrid>
 
-      <div class="chart-toggle-container hit-target">
+      <div class="chart-toggle-container">
         <button 
-          class="toggle-btn" 
+          class="toggle-btn hit-target" 
           :class="{ active: activeChart === 'war' }"
           @click.stop="activeChart = 'war'"
         >War</button>
         <button 
-          class="toggle-btn" 
+          class="toggle-btn hit-target" 
           :class="{ active: activeChart === 'voyage' }"
           @click.stop="activeChart = 'voyage'"
         >Voyage</button>
