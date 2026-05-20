@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import { useHaptics } from "@core";
+import { onMounted, onBeforeUnmount } from "vue";
 
 /**
  * STATUS PILL / CONNECTIVITY HUB (Layer 2 - Shared UI)
@@ -62,6 +63,17 @@ const handleRefresh = () => {
 };
 
 const isDB = computed(() => props.text === 'DB');
+
+// Responsive label truncation: on very narrow screens, show only the last word (e.g., "Operational")
+const displayText = computed(() => {
+  // Use window.innerWidth for simple responsive check; fallback to full text on larger screens.
+  if (typeof window !== 'undefined' && window.innerWidth < 360) {
+    const parts = props.text.split(' ');
+    return parts.length > 1 ? parts[parts.length - 1] : props.text;
+  }
+  return props.text;
+});
+
 const displaySource = computed(() => {
   if (!props.remoteInfo?.source) return null;
   // If the status is 'DB', showing 'SUPABASE' is redundant
@@ -108,7 +120,7 @@ const displaySource = computed(() => {
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>
           </template>
-          {{ props.text }}
+          {{ displayText }}
         </span>
 
         <!-- EXPANDED CONTENT (Grid Transition) -->
@@ -147,6 +159,29 @@ const displaySource = computed(() => {
 
 <style scoped>
 .status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 4px;
+  border-radius: 14px;
+  background: var(--sys-surface-container);
+  border: 1px solid var(--sys-outline);
+  cursor: pointer;
+  transition: all 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
+  user-select: none;
+  position: relative;
+  z-index: 50;
+  box-shadow: 0 2px 8px rgba(0,0,0,0);
+  max-width: 100%;
+}
+
+/* Ensure label text truncates when space is limited */
+.pill-content .status-label {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
   display: inline-flex;
   align-items: center;
   min-height: 28px;
