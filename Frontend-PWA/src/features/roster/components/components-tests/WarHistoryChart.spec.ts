@@ -17,8 +17,8 @@ describe("WarHistoryChart", () => {
         },
       },
     });
-    expect(wrapper.find(".war-chart").exists()).toBe(false);
-    expect(wrapper.find(".war-chart-empty").exists()).toBe(true);
+    expect(wrapper.find(".base-chart").exists()).toBe(false);
+    expect(wrapper.find(".chart-empty").exists()).toBe(true);
   });
 
   it("renders correct number of bars including projection", () => {
@@ -46,9 +46,9 @@ describe("WarHistoryChart", () => {
       },
     });
     const bars = wrapper.findAll(".bar");
-    expect(bars[0].classes()).toContain("bar-miss");
-    expect(bars[1].classes()).toContain("bar-hit");
-    expect(bars[2].classes()).toContain("bar-win");
+    expect(bars[0].classes()).toContain("bar-miss"); // 0
+    expect(bars[1].classes()).toContain("bar-hit");  // 1500
+    expect(bars[2].classes()).toContain("bar-hit");  // 3000 (no more win threshold)
     expect(bars[3].classes()).toContain("bar-projected");
   });
 });
