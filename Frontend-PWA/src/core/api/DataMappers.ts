@@ -38,7 +38,9 @@ export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema
       seen: rosterRow.last_seen_at || '-',
       rate: rosterRow.war_participation != null ? `${Math.round(Number(rosterRow.war_participation))}%` : '-',
       wfame: Math.round(Number(rosterRow.avg_fame || rosterRow.week_fame)) || 0,
-      hist: rosterRow.hist || '-', // roster_view currently does not provide a war history string
+      hist: rosterRow.hist || '-', // existing war history string
+        // NEW: Voyage history string – optional, defaults to undefined if absent
+        v_hist: rosterRow.v_hist || undefined,
     },
   };
 }
