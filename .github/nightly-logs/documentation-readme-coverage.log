@@ -69,3 +69,4 @@ Backend/README.md
 2026-05-18 | README.md | Reconciled version badges to v14.0.0
 2026-08-04 | Frontend-PWA/README.md | Reconciled Layer 1 service descriptions (Status Resolver, 8-Tier Health, Adaptive Chunking) and version badge.
 2026-08-05 | Backend/README.md | Reconciled version v14.0.0, Voyage views, and tactical awareness substrate
+2026-05-21 | Frontend-PWA/src/features/voyage/README.md | Created voyage feature documentation
