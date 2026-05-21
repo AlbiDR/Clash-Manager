@@ -28,39 +28,28 @@ const props = withDefaults(defineProps<{
   direction: "right"
 });
 
-const emit = defineEmits<{
-  refresh: [];
-}>();
+const emit = defineEmits<{}>();
 
 const haptics = useHaptics();
 const isExpanded = ref(false);
-const isRefreshingLocally = ref(false);
 
 // Auto-expand on errors or loading to catch user attention
 watch(() => props.type, (newType) => {
   if (newType === "loading") {
     isExpanded.value = true;
-    isRefreshingLocally.value = true;
   } else {
-    isRefreshingLocally.value = false;
     if (newType === "error") isExpanded.value = true;
   }
 });
 
 const handleToggle = (e: Event) => {
-  // Prevent toggle if clicking the internal sync button
-  if ((e.target as HTMLElement).closest('.sync-action')) return;
   
   if (props.type === "loading") return;
   haptics.tap();
   isExpanded.value = !isExpanded.value;
 };
 
-const handleRefresh = () => {
-  if (props.type === 'loading') return;
-  haptics.impact('light');
-  emit('refresh');
-};
+
 
 const isDB = computed(() => props.text === 'DB');
 
@@ -139,17 +128,6 @@ const displaySource = computed(() => {
                 {{ props.remoteInfo.dataAge }}
               </span>
             </div>
-
-            <button 
-              class="sync-action" 
-              :disabled="props.type === 'loading'"
-              title="Force Sync"
-              @click.stop="handleRefresh"
-            >
-              <svg :class="{ 'is-spinning': props.type === 'loading' }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
