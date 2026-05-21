@@ -317,4 +317,41 @@ export const WebAppDataSchema = v.object({
   blacklist: v.optional(v.array(v.string()), []),
 });
 
+/**
+ * [GUARD] VOYAGE EVENT SCHEMA
+ * Validates the shape of a Clan Voyage event.
+ */
+export const VoyageEventSchema = v.object({
+  id: SafeNumberPipe,
+  clan_tag: SafeStringPipe,
+  status: v.picklist(["IDLE", "PENDING", "ACTIVE", "COMPLETED"]),
+  target_crowns: SafeNumberPipe,
+  start_at: SafeStringPipe,
+  end_at: SafeStringPipe,
+  activated_by: v.optional(v.nullable(SafeStringPipe)),
+  is_victory: v.optional(v.nullable(v.boolean())),
+});
+
+/**
+ * [GUARD] VOYAGE CONTRIBUTION SCHEMA
+ * Validates player performance within a voyage.
+ */
+export const VoyageContributionSchema = v.object({
+  player_tag: SafeStringPipe,
+  player_name: v.optional(SafeStringPipe),
+  crowns: SafeNumberPipe,
+  voyage_crown_pct: SafeNumberPipe,
+  performance_score: v.optional(SafeNumberPipe),
+});
+
+/**
+ * [GUARD] VOYAGE SUMMARY SCHEMA
+ * Aggregates event state and all participant contributions.
+ */
+export const VoyageSummarySchema = v.object({
+  event: VoyageEventSchema,
+  contributions: v.array(VoyageContributionSchema),
+  total_crowns: SafeNumberPipe,
+  progress_ratio: SafeNumberPipe,
+});
 

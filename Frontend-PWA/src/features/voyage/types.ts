@@ -3,40 +3,19 @@
 
 /**
  * Authoritative type definitions for the Clan Voyage feature.
- * All components and composables in this module MUST use these types.
+ *
+ * @remarks
+ * **Architectural Context:**
+ * Following the structural unitary architecture (ADR Section II), core domain
+ * types are housed in @core/types to eliminate cross-layer coupling.
+ * This module re-exports those types to provide a stable interface for
+ * Voyage feature components.
  */
 
-export type VoyageStatus = "IDLE" | "PENDING" | "ACTIVE" | "COMPLETED";
-
-export interface VoyageEvent {
-  id: number;
-  clan_tag: string;
-  status: VoyageStatus;
-  target_crowns: number;
-  start_at: string;  // ISO-8601
-  end_at: string;    // ISO-8601
-  activated_by: string | null;
-  is_victory: boolean | null;
-}
-
-export interface VoyageContribution {
-  player_tag: string;
-  player_name?: string;
-  crowns: number;
-  voyage_crown_pct: number;
-  performance_score?: number;
-}
-
-export interface VoyageSummary {
-  event: VoyageEvent;
-  contributions: VoyageContribution[];
-  total_crowns: number;
-  progress_ratio: number; // 0.0 – 1.0
-}
-
-/** T2T (Time-to-Timestamp) input structure from the activation form. */
-export interface T2TInput {
-  days: number;
-  hours: number;
-  minutes: number;
-}
+export type {
+  VoyageStatus,
+  VoyageEvent,
+  VoyageContribution,
+  VoyageSummary,
+  T2TInput
+} from "@core/types";

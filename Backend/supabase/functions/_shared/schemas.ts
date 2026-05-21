@@ -137,3 +137,9 @@ export const RoyaleBattleLogSchema = v.array(v.object({
         })))
     }))
 }));
+
+/** [GUARD] Headhunter Context Schema (RPC). */
+export const HeadhunterContextSchema = v.object({
+    required_trophies: v.number(),
+    exclusion_tags: v.array(v.string())
+});

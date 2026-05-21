@@ -11,9 +11,17 @@ import type {
   DismissalRequest,
   Recruit,
   LeaderboardMember,
+  VoyageContribution,
+  VoyageSummary,
 } from "@core/types";
 import { idb } from "../services/StorageService";
-import { ProfileInputSchema, SbRosterRowSchema, SbHeadhunterRowSchema } from "./DataSchemas";
+import {
+  ProfileInputSchema,
+  SbRosterRowSchema,
+  SbHeadhunterRowSchema,
+  VoyageContributionSchema,
+  VoyageSummarySchema
+} from "./DataSchemas";
 import { mapSbRosterRow, mapSbHeadhunterRow } from "./DataMappers";
 import * as v from "valibot";
 
@@ -421,8 +429,11 @@ export async function initializeVoyage(target: number, start: string, end: strin
 
 /**
  * Fetches the voyage summary from the SSOT view.
+ *
+ * @remarks
+ * [GUARD] VALIDATION BOUNDARY: Harden external view data before domain use.
  */
-export async function fetchVoyageSummary(): Promise<any | null> {
+export async function fetchVoyageSummary(): Promise<VoyageSummary | null> {
     const supabase = createSupabaseClient();
     const { data, error } = await supabase
         .from('voyage_summary')
@@ -435,11 +446,16 @@ export async function fetchVoyageSummary(): Promise<any | null> {
         return null;
     }
 
-    return data;
+    if (!data) return null;
+
+    return v.parse(VoyageSummarySchema, data);
 }
 
 /**
  * Fetches contribution aggregates from the high-resolution ledger view.
+ *
+ * @remarks
+ * [GUARD] VALIDATION BOUNDARY: Harden external view data before domain use.
  */
 export async function fetchVoyageContributions(): Promise<VoyageContribution[]> {
     const supabase = createSupabaseClient();
@@ -452,5 +468,5 @@ export async function fetchVoyageContributions(): Promise<VoyageContribution[]> 
         return [];
     }
 
-    return (data || []) as VoyageContribution[];
+    return v.parse(v.array(VoyageContributionSchema), data || []);
 }
