@@ -32,44 +32,72 @@ import {
 } from "@core/api/SupabaseClient";
 
 export const useVoyageStore = defineStore("voyage", () => {
+  /**
+   * @remarks
+   * Satisfies ADR Section III: State Management Hierarchy.
+   * Encapsulates feature-specific state for the Clan Voyage silo.
+   */
+
   // --- STATE ---
+
+  /** The authoritative summary of the active Voyage, including participant contributions. */
   const summary = ref<VoyageSummary | null>(null);
+
+  /** Indicates if a refresh or activation operation is currently in progress. */
   const loading = ref(false);
+
+  /** Unix timestamp (ms) of the last successful state refresh. */
   const lastUpdated = ref<number>(0);
+
+  /** Realtime channel instance for listening to Postgres changes in the voyage tables. */
   let realtimeChannel: RealtimeChannel | null = null;
 
   // --- GETTERS ---
 
+  /** The current status of the Voyage event (IDLE, PENDING, ACTIVE, COMPLETED). */
   const status = computed<VoyageStatus>(() =>
     summary.value?.event.status ?? "IDLE"
   );
 
+  /** Returns true if the Voyage is currently in the ACTIVE state. */
   const isActive = computed(() => status.value === "ACTIVE");
 
+  /** Returns true if the progress ratio has reached or exceeded 1.0 (100%). */
   const isVictory = computed(() =>
     (summary.value?.progress_ratio ?? 0) >= 1.0
   );
 
+  /** The normalized completion ratio (0.0 to 1.0) for the current crown target. */
   const progressRatio = computed(() =>
     Math.min(summary.value?.progress_ratio ?? 0, 1.0)
   );
 
+  /** The aggregate sum of crowns contributed by all participants. */
   const totalCrowns = computed(() => summary.value?.total_crowns ?? 0);
 
+  /** The crown requirement for the current Voyage event. */
   const targetCrowns = computed(() =>
     summary.value?.event.target_crowns ?? 0
   );
 
+  /** The projected end date/time of the event as a JavaScript Date object. */
   const endsAt = computed(() =>
     summary.value?.event.end_at ? new Date(summary.value.event.end_at) : null
   );
 
+  /** List of all participant contributions, including names, crowns, and performance scores. */
   const contributions = computed(
     () => summary.value?.contributions ?? []
   );
 
   // --- T2T UTILITY ---
 
+  /**
+   * Converts a relative Time-to-Timestamp input into an absolute ISO-8601 string.
+   *
+   * @param input - The duration in days, hours, and minutes.
+   * @returns An ISO-8601 timestamp string relative to the current time.
+   */
   function t2tToTimestamp(input: T2TInput): string {
     const totalMs =
       input.days * 86_400_000 +
@@ -80,6 +108,14 @@ export const useVoyageStore = defineStore("voyage", () => {
 
   // --- REALTIME ---
 
+  /**
+   * Establishes Postgres realtime listeners for the voyage tables.
+   *
+   * @remarks
+   * Side Effects:
+   * - Initializes `realtimeChannel`.
+   * - Triggers `refresh()` on any change to `drivers.clan_voyage` or `drivers.clan_voyage_contributions`.
+   */
   function setupRealtimeListeners() {
     if (realtimeChannel) return;
 
@@ -100,6 +136,9 @@ export const useVoyageStore = defineStore("voyage", () => {
       .subscribe();
   }
 
+  /**
+   * Unsubscribes from the realtime channel and clears the local reference.
+   */
   function cleanupListeners() {
     if (realtimeChannel) {
       realtimeChannel.unsubscribe();
@@ -115,6 +154,14 @@ export const useVoyageStore = defineStore("voyage", () => {
 
   /**
    * Authoritative fetch of the voyage state and performance aggregates.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Validation Boundaries.
+   * Uses Layer 1 SupabaseClient which enforces Valibot schemas on all inbound data.
+   *
+   * Side Effects:
+   * - Updates `summary`, `loading`, and `lastUpdated`.
+   * - Automatically manages realtime listener lifecycle based on event status.
    */
   async function refresh() {
     loading.value = true;
@@ -166,6 +213,20 @@ export const useVoyageStore = defineStore("voyage", () => {
 
   /**
    * Activates a new Voyage event via Supabase RPC.
+   *
+   * @param target - The crown goal for the new Voyage.
+   * @param startsIn - Relative duration until the event begins.
+   * @param endsIn - Relative duration until the event concludes.
+   *
+   * @remarks
+   * Satisfies ADR Section IV: Resilience & Operational Security.
+   * Delegates event initialization to a secured backend RPC.
+   *
+   * Side Effects:
+   * - Triggers `refresh()` upon successful activation.
+   * - Writes to the Supabase backend via `apiInitializeVoyage`.
+   *
+   * @throws Error if the activation fails (logic error or network/auth failure).
    */
   async function activateVoyage(
     target: number,
