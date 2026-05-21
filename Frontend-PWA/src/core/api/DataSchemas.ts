@@ -185,6 +185,7 @@ export const MemberSchema = v.object({
     rate: v.optional(v.nullable(SafeStringPipe)),
     wfame: v.optional(SafeNumberPipe),
     hist: SafeStringPipe,
+    v_hist: v.optional(SafeStringPipe),
   }),
 });
 
