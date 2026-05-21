@@ -61,3 +61,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-05-18 | Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts | Documented Pinia store actions and added inline decision logs for strategy coupling.
 2026-05-19 | Frontend-PWA/src/core/services/useConnectivityManager.ts | Fully documented Layer 1 orchestrator, including interfaces and health hierarchy logic.
 2026-05-20 | Backend/supabase/functions/headhunter-scanner/stages/rescan.ts | Annotated runRescan with detailed TSDoc, including ADR section links and side effects.
+2026-05-21 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Documented reactive state, computed getters, and actions with ADR Section III/IV mappings and side-effect annotations.
