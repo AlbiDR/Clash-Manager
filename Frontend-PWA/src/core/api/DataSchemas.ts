@@ -240,6 +240,7 @@ export const SbRosterRowSchema = v.object({
   tenure_label: v.optional(SafeStringPipe, "-"),
   tenure_days: v.optional(SafeNumberPipe, 0),
   hist: v.optional(SafeStringPipe, ""),
+  v_hist: v.optional(v.nullable(SafeStringPipe)),
   war_participation: v.optional(SafeNumberPipe, 0),
 });
 
