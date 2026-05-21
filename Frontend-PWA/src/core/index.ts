@@ -26,7 +26,7 @@ export * from "./services/useExternalLink";
 export * from "./services/useSystemInfo";
 
 // Math & Utils
-export * from "./utils/warMath";
+export * from "./utils/predictionMath";
 export * from "./utils/PriorityQueue";
 export * from "./utils/economy";
 export * from "./utils/formatters";
