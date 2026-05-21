@@ -109,7 +109,7 @@ const ariaLabel = computed(() => {
       >
         <StatisticItem
           label="War Rate"
-          :value="props.member.d.rate != null ? `${props.member.d.rate}%` : '0%'"
+          :value="props.member.d.rate != null ? props.member.d.rate : '0%'"
           :loading="props.appIsRefreshing"
           benchmark-type="lb"
           benchmark-metric="warRate"
