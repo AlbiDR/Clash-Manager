@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-21] PR #650: Refactor: Split EventManagement Component
+**Commit**: `1a9d668bc18856385cf66587aa2588d911ec30ea`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/650)
+
+### Description
+Refactored `EventManagement.vue` in the Voyage feature to adhere to the ADR module size threshold (> 400 lines). Action: (1) Extracted setup form template, logic (state, validation, `handleActivate`), and styles into `VoyageSetupForm.vue`. (2) Updated `EventManagement.vue` to integrate the sub-component and focus on active event orchestration. (3) Verified via monorepo test gate (988 pass, 1 skipped) and `dependency-cruiser` (0 violations). Logged remaining technical debt: `formatCountdown` logic is duplicated across `VoyageBanner.vue` and `EventManagement.vue`.
+
+---
+*PR created automatically by Jules for task [7077748652055757157](https://jules.google.com/task/7077748652055757157) started by @AlbiDR*
+
+---
+
 ## [2026-05-21] PR #649: chore(deps): bump vitest from ^4.1.6 to ^4.1.7
 **Commit**: `1af78d8d1dd302babaa66dec93407de3ec2c3be1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/649)
