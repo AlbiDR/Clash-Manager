@@ -32,6 +32,7 @@ export { default as ConsoleList } from "./ui/ConsoleList.vue";
 export { default as FloatingDock } from "./ui/FloatingDock.vue";
 export { default as AppFooter } from "./ui/AppFooter.vue";
 export { default as HeaderInfoOverlay } from "./ui/HeaderInfoOverlay.vue";
+export { default as DurationInput } from "./ui/DurationInput.vue";
 
 // Directives
 export { vTactile } from "./directives/vTactile";

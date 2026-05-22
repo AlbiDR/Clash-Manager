@@ -6,6 +6,7 @@ import { useClashDataStore } from "./useClashDataStore";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
 import { formatTimeAgo } from "../utils/formatters";
+import { DATA_STALENESS_MINUTES } from "../config";
 
 /**
  * CONNECTIVITY MANAGER (Layer 1)
@@ -152,9 +153,10 @@ export function useConnectivityManager() {
     }
 
     // 3. Stale Data Warning
-    // Rationale: Data older than 30 minutes is considered STALE according to
-    // the adaptive pipeline design, signaling that a refresh is recommended.
-    if (metadata.value.ageMinutes >= 30) {
+    // Rationale: Data older than DATA_STALENESS_MINUTES is considered STALE
+    // according to the adaptive pipeline design, signaling that a refresh
+    // is recommended.
+    if (metadata.value.ageMinutes >= DATA_STALENESS_MINUTES) {
       return {
         type: "warning",
         label: "STALE",
