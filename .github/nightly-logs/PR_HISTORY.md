@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-22] PR #657: Refactor: Voyage Duration Extraction & Constant Centralization
+**Commit**: `09aac25b5e1e38a47da0ea1cf3c5c08120c07f0b`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/657)
+
+### Description
+Refactored the Voyage feature by extracting the generic duration input logic into a new shared component `@shared/ui/DurationInput.vue`. This reduced the size of `VoyageSetupForm.vue` from 476 to 350 lines, bringing it into compliance with the project's 400-line SRP threshold. Additionally, centralized hardcoded business thresholds (crown targets) and operational constants (data staleness) into `@core/config` to adhere to the "Adaptive Pipeline Design" principle. Verified all changes with unit tests and architectural dependency analysis.
+
+---
+*PR created automatically by Jules for task [3238979562361500990](https://jules.google.com/task/3238979562361500990) started by @AlbiDR*
+
+---
+
 ## [2026-05-22] PR #656: chore(deps): bump @supabase/supabase-js from ^2.106.0 to ^2.106.1
 **Commit**: `a7dbe92f2c3855062471ae483625ae2bd0c08dd5`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/656)
