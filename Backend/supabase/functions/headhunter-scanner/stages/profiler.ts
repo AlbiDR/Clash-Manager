@@ -75,20 +75,23 @@ export async function runProfiler(
 
                             // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
                             // [DECISION LOG] This formula is the authoritative scoring engine for recruitment potential.
-                            const potentialRawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
+                            // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
+// [DECISION LOG] This formula is the authoritative scoring engine for recruitment potential.
+const potentialRawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
 
-                            validRecruits.push({
-                                player_tag: playerProfile.tag,
-                                player_name: playerProfile.name,
-                                trophies,
-                                donations,
-                                cards,
-                                war_wins: war,
-                                raw_potential_score: potentialRawScore,
-                                source: candidates.get(tag) || 'UNKNOWN',
-                                status: 'ACTIVE'
-                            });
-                            validCount++;
+validRecruits.push({
+    player_tag: playerProfile.tag,
+    player_name: playerProfile.name,
+    trophies,
+    donations,
+    cards,
+    war_wins: war,
+    raw_potential_score: potentialRawScore,
+    source: candidates.get(tag) || 'UNKNOWN',
+    status: 'ACTIVE'
+});
+console.log(`[PROFILER] Added recruit ${playerProfile.tag} with raw score ${potentialRawScore}`);
+validCount++;
                         } else {
                             invalidCount++;
                         }
