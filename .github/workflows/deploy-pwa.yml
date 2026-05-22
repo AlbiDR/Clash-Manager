@@ -80,11 +80,14 @@ jobs:
           VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
         run: pnpm run build
 
+      - name: List Dist Contents
+        run: ls -R ./dist
+
       - name: Upload Pages Artifact
         if: (github.event_name == 'push' && (github.ref == 'refs/heads/Stable' || github.ref == 'refs/heads/Beta' || github.ref == 'refs/heads/Clan-Voyage')) || github.event_name == 'workflow_dispatch'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./Frontend-PWA/dist"
+          path: "${{ github.workspace }}/Frontend-PWA/dist"
 
   deploy:
     name: Deploy
