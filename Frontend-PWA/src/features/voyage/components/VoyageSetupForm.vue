@@ -19,9 +19,10 @@
  * ============================================================================
  */
 import { ref, computed, watch } from "vue";
-import { Icon } from "@shared";
+import { Icon, DurationInput } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import { getDurationUnits } from "@core/utils/formatters";
+import { VOYAGE_DEFAULT_TARGET, VOYAGE_MAX_TARGET } from "@core/config";
 import type { T2TInput } from "../types";
 
 const store = useVoyageStore();
@@ -39,7 +40,7 @@ interface FormT2T {
 }
 
 /** The primary crown goal for the Voyage event. Clamped between 1-9999. */
-const targetCrowns = ref<number | ''>(1600);
+const targetCrowns = ref<number | ''>(VOYAGE_DEFAULT_TARGET);
 
 /** Relative delay until the event begins. Zero indicates immediate start. */
 const startsIn = ref<FormT2T>({ days: 0, hours: 0, minutes: 0 });
@@ -89,46 +90,15 @@ function sanitize(val: number | '' | null): number {
 }
 
 /**
- * Clamps a T2T unit field to its logical maximum.
- *
- * @param obj - The T2T object containing the field.
- * @param key - The specific unit key (days, hours, minutes).
- * @param max - The upper bound for the unit.
- */
-function clampField(obj: FormT2T, key: keyof FormT2T, max: number) {
-  if (obj[key] === '') return;
-  const sanitized = sanitize(obj[key]);
-  if (sanitized > max) {
-    obj[key] = max;
-  } else if (sanitized < 0) {
-    obj[key] = 0;
-  }
-}
-
-/**
- * Event handler for 'Starts In' unit inputs.
- */
-function onStartsInInput(key: keyof FormT2T) {
-  const max = key === "days" ? 7 : key === "hours" ? 23 : 59;
-  clampField(startsIn.value, key, max);
-}
-
-/**
- * Event handler for 'Ends In' unit inputs.
- */
-function onEndsInInput(key: keyof FormT2T) {
-  const max = key === "days" ? 7 : key === "hours" ? 23 : 59;
-  clampField(endsIn.value, key, max);
-}
-
-/**
  * Event handler for the primary crown target input.
- * Enforces a hard boundary of [0, 9999].
+ * Enforces a hard boundary of [0, VOYAGE_MAX_TARGET].
  */
 function onTargetInput() {
   if (targetCrowns.value === '') return;
   if (Number(targetCrowns.value) < 0) targetCrowns.value = 0;
-  if (Number(targetCrowns.value) > 9999) targetCrowns.value = 9999;
+  if (Number(targetCrowns.value) > VOYAGE_MAX_TARGET) {
+    targetCrowns.value = VOYAGE_MAX_TARGET;
+  }
 }
 
 /** Total 'Starts In' duration expressed in seconds for comparison. */
@@ -220,9 +190,9 @@ async function handleActivate() {
           v-model.number="targetCrowns"
           type="number"
           min="1"
-          max="9999"
+          :max="VOYAGE_MAX_TARGET"
           class="glass-input target-input"
-          placeholder="1600"
+          :placeholder="String(VOYAGE_DEFAULT_TARGET)"
           @input="onTargetInput"
         />
         <span class="input-suffix"><Icon name="crown" size="14" /></span>
@@ -230,76 +200,17 @@ async function handleActivate() {
     </div>
 
     <!-- Starts In (Hidden if active to prevent overwriting pipeline dates) -->
-    <div v-if="!store.isActive" class="field-group">
-      <label class="field-label">Starts In</label>
-      <div class="t2t-group">
-        <div class="t2t-unit">
-          <input
-            v-model.number="startsIn.days"
-            type="number" min="0" max="7"
-            class="glass-input t2t-input"
-            @input="onStartsInInput('days')"
-          />
-          <span class="t2t-label">D</span>
-        </div>
-        <span class="t2t-sep">:</span>
-        <div class="t2t-unit">
-          <input
-            v-model.number="startsIn.hours"
-            type="number" min="0" max="23"
-            class="glass-input t2t-input"
-            @input="onStartsInInput('hours')"
-          />
-          <span class="t2t-label">H</span>
-        </div>
-        <span class="t2t-sep">:</span>
-        <div class="t2t-unit">
-          <input
-            v-model.number="startsIn.minutes"
-            type="number" min="0" max="59"
-            class="glass-input t2t-input"
-            @input="onStartsInInput('minutes')"
-          />
-          <span class="t2t-label">M</span>
-        </div>
-      </div>
-    </div>
+    <DurationInput
+      v-if="!store.isActive"
+      v-model="startsIn"
+      label="Starts In"
+    />
 
     <!-- Ends In -->
-    <div class="field-group">
-      <label class="field-label">Ends In</label>
-      <div class="t2t-group">
-        <div class="t2t-unit">
-          <input
-            v-model.number="endsIn.days"
-            type="number" min="0" max="7"
-            class="glass-input t2t-input"
-            @input="onEndsInInput('days')"
-          />
-          <span class="t2t-label">D</span>
-        </div>
-        <span class="t2t-sep">:</span>
-        <div class="t2t-unit">
-          <input
-            v-model.number="endsIn.hours"
-            type="number" min="0" max="23"
-            class="glass-input t2t-input"
-            @input="onEndsInInput('hours')"
-          />
-          <span class="t2t-label">H</span>
-        </div>
-        <span class="t2t-sep">:</span>
-        <div class="t2t-unit">
-          <input
-            v-model.number="endsIn.minutes"
-            type="number" min="0" max="59"
-            class="glass-input t2t-input"
-            @input="onEndsInInput('minutes')"
-          />
-          <span class="t2t-label">M</span>
-        </div>
-      </div>
-    </div>
+    <DurationInput
+      v-model="endsIn"
+      label="Ends In"
+    />
 
     <!-- Validation Hint -->
     <Transition name="hint-fade">
@@ -380,43 +291,6 @@ async function handleActivate() {
   opacity: 0.5;
 }
 
-/* --- T2T Group --- */
-.t2t-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.t2t-unit {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.t2t-input {
-  width: 100%;
-  height: 48px;
-  font-size: 20px;
-  text-align: center;
-  padding: 0;
-}
-
-.t2t-label {
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.35;
-}
-
-.t2t-sep {
-  font-size: 22px;
-  font-weight: 900;
-  opacity: 0.2;
-  padding-bottom: 16px; /* Align with number, above label */
-}
 
 /* --- Validation Hint --- */
 .validation-hint {
