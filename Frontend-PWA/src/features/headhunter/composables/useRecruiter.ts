@@ -46,16 +46,15 @@ export function useRecruiter() {
 
   // PRE-FILTER: Exclude Tombstones and apply 50-recruit "Active Window"
   const recruits = computed(() => {
-    const activeRecruits = (data.value?.hh || []).filter(
-      (recruit) => !blacklist.tombstones.value.has(recruit.id),
-    );
-    console.debug(`[Recruiter] Data pipeline: ${data.value?.hh?.length || 0} fetched -> ${activeRecruits.length} active (post-blacklist)`);
-    // [ADR] Parity with Source: Show only the top 50 active recruits.
-    // The "infinite scroll" strategy is implemented via automatic replacement:
-    // as items are dismissed, the next best results from the 250-item pre-compiled
-    // pool slide in from the "backup" 200, maintaining the 50-recruit window.
-    return activeRecruits.slice(0, 50);
-  });
+  // Filter active recruits (exclude tombstones)
+  const filtered = (data.value?.hh || []).filter(
+    (recruit) => !blacklist.tombstones.value.has(recruit.id),
+  );
+  // Sort descending by potentialScore to prioritize highest scores
+  const sorted = filtered.sort((a, b) => (b.potentialScore || 0) - (a.potentialScore || 0));
+  // Return top 50 active recruits
+  return sorted.slice(0, 50);
+});
 
   const controller = useConsoleController({
     data: recruits,
