@@ -162,3 +162,7 @@ Frontend-PWA/src/core/theme/tokens.ts
 2026-08-05 | Frontend-PWA/src/core/api/DataSchemas.ts | Added Valibot validation boundaries for Voyage domain models.
 2026-08-05 | Frontend-PWA/src/core/api/SupabaseClient.ts | Hardened Voyage data ingress with strict schema validation.
 2026-08-05 | Frontend-PWA/src/features/voyage/types.ts | Re-exported Voyage types from core to satisfy SRP.
+Frontend-PWA/src/core/utils/formatters.ts
+Frontend-PWA/src/features/voyage/components/VoyageBanner.vue
+Frontend-PWA/src/features/voyage/components/EventManagement.vue
+Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue

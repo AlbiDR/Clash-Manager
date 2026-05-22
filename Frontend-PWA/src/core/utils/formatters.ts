@@ -45,6 +45,71 @@ const RE_DESC_LIST = /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li c
 const RE_NEWLINE = /\n/g;
 
 /**
+ * DURATION UNITS (Internal/Utility)
+ * ----------------------------------------------------------------------------
+ */
+export interface DurationUnits {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+/**
+ * Options for countdown formatting.
+ */
+export interface CountdownOptions {
+  /** If true, returns "Dd Hh" if days > 0. Default: false. */
+  showDays?: boolean;
+}
+
+/**
+ * Calculates duration units (days, hours, minutes, seconds) from a millisecond delta.
+ *
+ * @param ms - The duration in milliseconds.
+ * @returns Object containing the calculated units.
+ */
+export function getDurationUnits(ms: number): DurationUnits {
+  const absMs = Math.max(0, ms);
+  return {
+    days: Math.floor(absMs / 86_400_000),
+    hours: Math.floor((absMs % 86_400_000) / 3_600_000),
+    minutes: Math.floor((absMs % 3_600_000) / 60_000),
+    seconds: Math.floor((absMs % 60_000) / 1_000),
+  };
+}
+
+/**
+ * Formats a date into a countdown string (e.g., 'hh:mm:ss' or '2d 05h').
+ *
+ * @param end - The target date (Date, string, or timestamp).
+ * @param options - Formatting options.
+ * @returns A formatted countdown string.
+ */
+export function formatCountdown(
+  end: Date | string | number | null | undefined,
+  options: CountdownOptions = {},
+): string {
+  if (!end) return "";
+  const endDate = new Date(end);
+  if (isNaN(endDate.getTime())) return "";
+
+  const diff = endDate.getTime() - Date.now();
+  if (diff <= 0) return "Ended";
+
+  const { days, hours, minutes, seconds } = getDurationUnits(diff);
+
+  if (options.showDays && days > 0) {
+    return `${days}d ${String(hours).padStart(2, "0")}h`;
+  }
+
+  // If not showing days explicitly, we accumulate days into hours for standard hh:mm:ss
+  const totalHours = options.showDays ? hours : days * 24 + hours;
+
+  return `${String(totalHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+/**
  * Internal utility to calculate relative time difference.
  *
  * @param dateStr - The source date string.
