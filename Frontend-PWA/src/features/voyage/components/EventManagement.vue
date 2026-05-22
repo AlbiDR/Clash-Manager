@@ -23,6 +23,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { SettingsCard, Icon } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import VoyageSetupForm from "./VoyageSetupForm.vue";
+import { formatCountdown } from "@core/utils/formatters";
 
 const props = defineProps<{
   initiallyExpanded?: boolean;
@@ -33,17 +34,6 @@ const store = useVoyageStore();
 // --- LIVE COUNTDOWN TIMER ---
 const timeRemaining = ref("");
 
-function formatCountdown(end: Date): string {
-  const diff = end.getTime() - Date.now();
-  if (diff <= 0) return "Ended";
-  const d = Math.floor(diff / 86_400_000);
-  const h = Math.floor((diff % 86_400_000) / 3_600_000);
-  const m = Math.floor((diff % 3_600_000) / 60_000);
-  const s = Math.floor((diff % 60_000) / 1_000);
-  if (d > 0) return `${d}d ${String(h).padStart(2, "0")}h`;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
 let timer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
@@ -51,7 +41,7 @@ onMounted(() => {
   timer = setInterval(() => {
     if (store.endsAt) {
       const wasEnded = timeRemaining.value === "Ended";
-      timeRemaining.value = formatCountdown(store.endsAt);
+      timeRemaining.value = formatCountdown(store.endsAt, { showDays: true });
       if (!wasEnded && timeRemaining.value === "Ended") {
         store.refresh();
       }
@@ -59,7 +49,9 @@ onMounted(() => {
       timeRemaining.value = "";
     }
   }, 1000);
-  if (store.endsAt) timeRemaining.value = formatCountdown(store.endsAt);
+  if (store.endsAt) {
+    timeRemaining.value = formatCountdown(store.endsAt, { showDays: true });
+  }
 });
 
 onUnmounted(() => {

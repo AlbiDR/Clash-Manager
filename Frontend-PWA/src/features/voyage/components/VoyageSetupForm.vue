@@ -18,6 +18,7 @@
 import { ref, computed, watch } from "vue";
 import { Icon } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
+import { getDurationUnits } from "@core/utils/formatters";
 import type { T2TInput } from "../types";
 
 const store = useVoyageStore();
@@ -43,10 +44,11 @@ watch(
         const now = new Date().getTime();
         const diff = end - now;
         if (diff > 0) {
+          const units = getDurationUnits(diff);
           endsIn.value = {
-            days: Math.floor(diff / 86400000),
-            hours: Math.floor((diff % 86400000) / 3600000),
-            minutes: Math.floor((diff % 3600000) / 60000)
+            days: units.days,
+            hours: units.hours,
+            minutes: units.minutes
           };
         } else {
           endsIn.value = { days: 0, hours: 0, minutes: 0 };
