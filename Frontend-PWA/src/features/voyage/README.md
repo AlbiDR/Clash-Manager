@@ -24,11 +24,16 @@ The authoritative reactive manager for the Voyage state.
 - **T2T (Time-to-Timestamp) Utility**: Converts relative user inputs (Days/Hours/Minutes) into absolute ISO-8601 timestamps for backend compatibility.
 - **Progress Normalization**: Calculates `progressRatio` (0.0 - 1.0) and `isVictory` status to drive visual feedback across the application.
 
-### Event Orchestration (EventManagement.vue)
+### Event Management (EventManagement.vue)
 The "Mirror Activation Cockpit" located in the Settings feature.
-- **Dynamic Configuration**: Allows leaders to set crown targets and event durations.
+- **Status Monitoring**: Provides real-time feedback on active event progress, including crown counts, completion percentages, and time remaining.
+- **Modular Composition**: Acts as a high-level container that delegates configuration logic to `VoyageSetupForm.vue` to maintain SRP and architectural isolation.
+
+### Event Configuration (VoyageSetupForm.vue)
+The primary setup and validation interface for Clan Voyage events.
+- **Dynamic Configuration**: Allows leaders to set crown targets and relative event durations using specialized T2T (Time-to-Timestamp) inputs (Days/Hours/Minutes).
 - **Validation Boundary**: Enforces strict logical constraints (e.g., target > 0, end date > start date) before triggering the `initialize_voyage` RPC.
-- **Automatic Hydration**: Synchronizes its form state with the active event when expanded to facilitate updates.
+- **Automatic Hydration**: Synchronizes its form state with the active event upon detection to facilitate rapid updates.
 
 ### Visual Feedback (VoyageBanner.vue)
 A high-visibility glassmorphism surface injected into the Roster view.
@@ -37,7 +42,7 @@ A high-visibility glassmorphism surface injected into the Roster view.
 - **Performance Optimized**: Leverages CSS transitions and SVG filters for fluid, 60FPS progress animations.
 
 ## Data Flow
-1. **Activation**: User triggers activation in `EventManagement` -> RPC `initialize_voyage` executed on Supabase.
+1. **Activation**: User triggers activation in `VoyageSetupForm` -> `useVoyageStore` -> RPC `initialize_voyage` executed on Supabase.
 2. **Ingestion**: In-game crown data is ingested via the backend `ingest-royale-data` pipeline.
 3. **Broadcasting**: Database triggers update the `voyage_summary` and `voyage_contributions` views.
 4. **Reactivity**: `useVoyageStore` receives a Realtime event -> Triggers a `refresh()` -> UI updates via `VoyageBanner`.
