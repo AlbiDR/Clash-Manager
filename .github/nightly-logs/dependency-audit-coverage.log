@@ -64,6 +64,7 @@
 | @supabase/supabase-js | ^2.105.4 | ^2.106.0 | 2026-05-19 | PASS |
 | tsx | ^4.22.0 | ^4.22.3 | 2026-08-05 | PASS |
 | vitest | ^4.1.6 | ^4.1.7 | 2026-08-06 | PASS |
+| @supabase/supabase-js | ^2.106.0 | ^2.106.1 | 2026-05-22 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
