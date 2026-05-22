@@ -9,6 +9,8 @@ import {
   cleanTag,
   formatHeaderDescription,
   calculateMomentum,
+  getDurationUnits,
+  formatCountdown,
 } from "@core/utils/formatters";
 
 describe("formatters", () => {
@@ -286,6 +288,63 @@ describe("formatters", () => {
       const output = formatHeaderDescription(input);
       // FIXED: Regex now handles trailing spaces and wraps the title correctly.
       expect(output).toBe('<div class="desc-section-title">Section Title:</div>');
+    });
+  });
+
+  describe("getDurationUnits", () => {
+    it("calculates units correctly for positive ms", () => {
+      const ms = 1 * 86400000 + 5 * 3600000 + 10 * 60000 + 15 * 1000;
+      expect(getDurationUnits(ms)).toEqual({
+        days: 1,
+        hours: 5,
+        minutes: 10,
+        seconds: 15,
+      });
+    });
+
+    it("clamps negative ms to 0", () => {
+      expect(getDurationUnits(-1000)).toEqual({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+      });
+    });
+  });
+
+  describe("formatCountdown", () => {
+    beforeEach(() => {
+      vi.setSystemTime(new Date("2026-01-01T12:00:00Z"));
+    });
+
+    it("returns empty string for null/undefined", () => {
+      expect(formatCountdown(null)).toBe("");
+      expect(formatCountdown(undefined)).toBe("");
+    });
+
+    it("returns 'Ended' for past dates", () => {
+      const past = new Date("2026-01-01T11:00:00Z");
+      expect(formatCountdown(past)).toBe("Ended");
+    });
+
+    it("formats hh:mm:ss by default", () => {
+      const future = new Date("2026-01-01T13:05:10Z"); // 01:05:10
+      expect(formatCountdown(future)).toBe("01:05:10");
+    });
+
+    it("accumulates days into hours by default", () => {
+      const future = new Date("2026-01-02T13:05:10Z");
+      expect(formatCountdown(future)).toBe("25:05:10"); // 1d 1h = 24+1 = 25
+    });
+
+    it("formats 'Dd Hh' when showDays is true", () => {
+      const future = new Date("2026-01-02T13:05:10Z");
+      expect(formatCountdown(future, { showDays: true })).toBe("1d 01h");
+    });
+
+    it("uses hh:mm:ss even if showDays is true but days < 1", () => {
+      const future = new Date("2026-01-01T13:05:10Z");
+      expect(formatCountdown(future, { showDays: true })).toBe("01:05:10");
     });
   });
 

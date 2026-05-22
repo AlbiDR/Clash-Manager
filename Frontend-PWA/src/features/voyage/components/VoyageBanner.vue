@@ -23,20 +23,12 @@
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import { Icon } from "@shared";
+import { formatCountdown } from "@core/utils/formatters";
 
 const store = useVoyageStore();
 
 // --- LIVE COUNTDOWN TIMER ---
 const timeRemaining = ref("");
-
-function formatCountdown(end: Date): string {
-  const diff = end.getTime() - Date.now();
-  if (diff <= 0) return "Ended";
-  const h = Math.floor(diff / 3_600_000);
-  const m = Math.floor((diff % 3_600_000) / 60_000);
-  const s = Math.floor((diff % 60_000) / 1_000);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
