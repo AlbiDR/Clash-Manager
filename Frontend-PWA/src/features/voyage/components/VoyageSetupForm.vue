@@ -13,6 +13,9 @@
  * **Architectural Context:**
  * - **Layer:** Layer 3 Feature Component (@features)
  * - **Role:** Event setup interface within the Voyage feature.
+ * - **Validation Boundary:** Satisfies ADR Section III: Validation Boundaries.
+ *   Enforces domain-specific constraints on crown targets and event durations
+ *   before backend activation.
  * ============================================================================
  */
 import { ref, computed, watch } from "vue";
@@ -24,16 +27,29 @@ import type { T2TInput } from "../types";
 const store = useVoyageStore();
 
 // --- FORM STATE ---
+
+/**
+ * Representation of relative Time-to-Timestamp (T2T) input units.
+ * Supports numeric input or empty string for UI state.
+ */
 interface FormT2T {
   days: number | '';
   hours: number | '';
   minutes: number | '';
 }
 
+/** The primary crown goal for the Voyage event. Clamped between 1-9999. */
 const targetCrowns = ref<number | ''>(1600);
+
+/** Relative delay until the event begins. Zero indicates immediate start. */
 const startsIn = ref<FormT2T>({ days: 0, hours: 0, minutes: 0 });
+
+/** Relative duration until the event concludes. Must be greater than startsIn. */
 const endsIn   = ref<FormT2T>({ days: 1, hours: 0, minutes: 0 });
 
+// [DECISION LOG] STATE SYNCHRONIZATION
+// Rationale: When an event is active, we populate the form from the store state
+// to provide context and allow for "Update Event" workflows.
 watch(
   () => [store.isActive, store.targetCrowns, store.summary?.event?.end_at] as const,
   ([isActive, target, endAt]) => {
@@ -61,12 +77,24 @@ watch(
 
 // --- VALIDATION ---
 
-/** Normalises a potentially NaN value from an empty number input to 0. */
+/**
+ * Normalises a potentially NaN value from an empty number input to 0.
+ *
+ * @param val - The raw input value.
+ * @returns A safe numeric representation.
+ */
 function sanitize(val: number | '' | null): number {
   if (val === '' || val === null || isNaN(Number(val))) return 0;
   return Number(val) < 0 ? 0 : Number(val);
 }
 
+/**
+ * Clamps a T2T unit field to its logical maximum.
+ *
+ * @param obj - The T2T object containing the field.
+ * @param key - The specific unit key (days, hours, minutes).
+ * @param max - The upper bound for the unit.
+ */
 function clampField(obj: FormT2T, key: keyof FormT2T, max: number) {
   if (obj[key] === '') return;
   const sanitized = sanitize(obj[key]);
@@ -77,22 +105,33 @@ function clampField(obj: FormT2T, key: keyof FormT2T, max: number) {
   }
 }
 
+/**
+ * Event handler for 'Starts In' unit inputs.
+ */
 function onStartsInInput(key: keyof FormT2T) {
   const max = key === "days" ? 7 : key === "hours" ? 23 : 59;
   clampField(startsIn.value, key, max);
 }
 
+/**
+ * Event handler for 'Ends In' unit inputs.
+ */
 function onEndsInInput(key: keyof FormT2T) {
   const max = key === "days" ? 7 : key === "hours" ? 23 : 59;
   clampField(endsIn.value, key, max);
 }
 
+/**
+ * Event handler for the primary crown target input.
+ * Enforces a hard boundary of [0, 9999].
+ */
 function onTargetInput() {
   if (targetCrowns.value === '') return;
   if (Number(targetCrowns.value) < 0) targetCrowns.value = 0;
   if (Number(targetCrowns.value) > 9999) targetCrowns.value = 9999;
 }
 
+/** Total 'Starts In' duration expressed in seconds for comparison. */
 const totalStartSeconds = computed(() => {
   const d = sanitize(startsIn.value.days);
   const h = sanitize(startsIn.value.hours);
@@ -100,6 +139,7 @@ const totalStartSeconds = computed(() => {
   return d * 86400 + h * 3600 + m * 60;
 });
 
+/** Total 'Ends In' duration expressed in seconds for comparison. */
 const totalEndSeconds = computed(() => {
   const d = sanitize(endsIn.value.days);
   const h = sanitize(endsIn.value.hours);
@@ -107,8 +147,13 @@ const totalEndSeconds = computed(() => {
   return d * 86400 + h * 3600 + m * 60;
 });
 
+/** Validated numeric crown target. */
 const safeTargetCrowns = computed(() => sanitize(targetCrowns.value));
 
+/**
+ * Comprehensive form validity state.
+ * Rationale: Ensures event concludes after it starts and has a non-zero goal.
+ */
 const isFormValid = computed(() => {
   if (store.isActive) {
     return safeTargetCrowns.value > 0 && totalEndSeconds.value > 0;
@@ -118,6 +163,9 @@ const isFormValid = computed(() => {
          totalEndSeconds.value > totalStartSeconds.value;
 });
 
+/**
+ * User-facing validation feedback string.
+ */
 const validationHint = computed(() => {
   if (safeTargetCrowns.value <= 0) return "Set a crown target above 0.";
   if (store.isActive) return null;
@@ -127,6 +175,15 @@ const validationHint = computed(() => {
 });
 
 // --- ACTIONS ---
+
+/**
+ * Orchestrates the activation or update of a Clan Voyage.
+ *
+ * @remarks
+ * Side Effects:
+ * - Triggers `store.activateVoyage` which writes to the backend.
+ * - Displays errors to the console on failure.
+ */
 async function handleActivate() {
   if (store.loading) return;
 
