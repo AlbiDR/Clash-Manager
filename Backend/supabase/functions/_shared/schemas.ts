@@ -125,6 +125,19 @@ export const StaleRecruitSchema = v.object({
     player_tag: v.string()
 });
 
+/** [GUARD] Player Card Snapshot Schema (Database Row). */
+export const PlayerCardSnapshotSchema = v.object({
+    card_name: v.string(),
+    rarity: v.string(),
+    absolute_level: v.number(),
+    count: v.number(),
+    is_tower_troop: v.boolean(),
+    fetched_at: v.string(),
+    player_name: v.string(),
+    king_level: v.number(),
+    xp_into_level: v.number()
+});
+
 /** [GUARD] Royale Battle Log Schema. */
 export const RoyaleBattleLogSchema = v.array(v.object({
     type: v.string(),
