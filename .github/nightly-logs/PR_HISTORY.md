@@ -1,6 +1,20 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-22] PR #656: chore(deps): bump @supabase/supabase-js from ^2.106.0 to ^2.106.1
+**Commit**: `a7dbe92f2c3855062471ae483625ae2bd0c08dd5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/656)
+
+### Description
+This PR applies a Tier 1 dependency bump for `@supabase/supabase-js` in the `Frontend-PWA` module, moving from `^2.106.0` to `^2.106.1`. The change has been verified through the full monorepo test gate (996 pass, 1 skipped) and the persistent audit log has been updated to reflect the maintenance.
+
+Target branch: `Nightly`
+
+---
+*PR created automatically by Jules for task [14886085138050775457](https://jules.google.com/task/14886085138050775457) started by @AlbiDR*
+
+---
+
 ## [2026-05-22] PR #655: docs(tsdoc): annotate voyage setup form logic contracts
 **Commit**: `89a85310916ce82e27c2bfd9abe727d9de05e0e9`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/655)
