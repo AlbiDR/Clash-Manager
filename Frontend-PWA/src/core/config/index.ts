@@ -17,6 +17,11 @@
 export const DATA_STALENESS_THRESHOLD = 1000 * 60 * 30; // 30 minutes
 
 /**
+ * Logical representation of staleness in minutes for UI and status resolution.
+ */
+export const DATA_STALENESS_MINUTES = 30;
+
+/**
  * Threshold for triggering a background refresh on app visibility change.
  * If the app has been hidden for more than 30 minutes, a fresh sync is initiated.
  */
@@ -31,3 +36,13 @@ export const DEFAULT_SCORE_THRESHOLD = 75;
  * Standardized score increments for the UI Selection Bar.
  */
 export const SCORE_SELECTION_STEPS = [15, 30, 45, 60, 75, 90, 100];
+
+/**
+ * Default crown target for new Clan Voyage events.
+ */
+export const VOYAGE_DEFAULT_TARGET = 1600;
+
+/**
+ * Hard upper bound for Clan Voyage crown targets.
+ */
+export const VOYAGE_MAX_TARGET = 9999;

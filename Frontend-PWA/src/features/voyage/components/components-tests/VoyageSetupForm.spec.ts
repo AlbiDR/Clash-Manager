@@ -7,14 +7,18 @@ import { createPinia, setActivePinia } from "pinia";
 import VoyageSetupForm from "../VoyageSetupForm.vue";
 import { useVoyageStore } from "../../composables/useVoyageStore";
 
-// Mock Icon component from @shared
-vi.mock("@shared", () => ({
-  Icon: {
-    name: "Icon",
-    template: '<div class="icon-mock" />',
-    props: ["name", "size"]
-  }
-}));
+// Mock @shared to provide Icon and use real DurationInput
+vi.mock("@shared", async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    Icon: {
+      name: "Icon",
+      template: '<div class="icon-mock" />',
+      props: ["name", "size"]
+    }
+  };
+});
 
 // Mock SupabaseClient because useVoyageStore uses it
 vi.mock("@core/api/SupabaseClient", () => ({
