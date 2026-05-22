@@ -143,3 +143,13 @@ export const HeadhunterContextSchema = v.object({
     required_trophies: v.number(),
     exclusion_tags: v.array(v.string())
 });
+
+/** [GUARD] Discovery Anchor Schema (RPC). */
+export const DiscoveryAnchorSchema = v.object({
+    keyword: v.string()
+});
+
+/** [GUARD] Discovery Cache Item Schema. */
+export const DiscoveryCacheItemSchema = v.object({
+    player_tag: v.string()
+});
