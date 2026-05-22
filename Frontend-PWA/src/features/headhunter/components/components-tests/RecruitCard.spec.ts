@@ -116,7 +116,7 @@ describe("RecruitCard.vue", () => {
     expect(statItems[2].props("label")).toBe("Cards Won");
     expect(statItems[2].props("value")).toBe(4500);
     expect(statItems[3].props("label")).toBe("RPoS");
-    expect(statItems[3].props("value")).toBe("15,000");
+    expect(statItems[3].props("value")).toBe("92");
 
     expect(wrapper.findComponent({ name: "CardActions" }).exists()).toBe(true);
   });
