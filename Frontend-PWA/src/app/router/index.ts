@@ -73,25 +73,32 @@ const router = createRouter({
 // [PERF] FIX: View Transitions Support with Safety Timeout
 let isInitialNavigation = true;
 
-router.beforeResolve(async (_to, _from) => {
+router.beforeResolve(async (to, from) => {
   if (isInitialNavigation) {
     isInitialNavigation = false;
     return;
   }
-
+  
+  if (to.path === from.path) return;
   if (!document.startViewTransition) return;
   if (document.visibilityState !== "visible") return;
 
   try {
-    return await Promise.race<boolean | void>([
-      new Promise((resolve) => {
-        document.startViewTransition(async () => {
-          resolve(true);
-        });
-      }),
-      // Safety timeout: 500ms
-      new Promise((resolve) => setTimeout(() => resolve(true), 500)),
-    ]);
+    return await new Promise((resolve) => {
+      let resolved = false;
+      const transition = document.startViewTransition(() => {
+        // Resolve the navigation, which triggers the DOM update
+        resolve(true);
+        resolved = true;
+        // Wait for DOM to actually update before finishing the transition screenshot
+        return new Promise((r) => setTimeout(r, 50));
+      });
+      
+      // Fallback in case transition fails to start or callback isn't called
+      setTimeout(() => {
+        if (!resolved) resolve(true);
+      }, 500);
+    });
   } catch (e) {
     console.warn("View transition failed:", e);
     return true;
@@ -108,6 +115,21 @@ router.afterEach((to) => {
   document.title = to.meta.title
     ? `${to.meta.title} | ${baseTitle}`
     : baseTitle;
+});
+
+// RESILIENCE: Handle chunk loading errors during navigation
+router.onError((error, to) => {
+  const errString = String(error).toLowerCase();
+  if (
+    errString.includes("failed to fetch dynamically imported module") ||
+    errString.includes("importing a module script failed") ||
+    errString.includes("chunkloaderror")
+  ) {
+    console.warn("Chunk load error detected, reloading page...", error);
+    window.location.href = to.fullPath || "/";
+  } else {
+    console.error("Unhandled router error:", error);
+  }
 });
 
 export default router;
