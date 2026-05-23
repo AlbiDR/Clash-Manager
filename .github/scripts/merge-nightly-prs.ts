@@ -77,10 +77,12 @@ async function githubApi(
     ? "https://api.github.com/graphql"
     : `https://api.github.com${path}`;
 
+  log(`Request: ${method} ${url}`, "info");
+
   const response = await fetch(url, {
     method,
     headers: {
-      Authorization: `token ${CONFIG.token}`,
+      Authorization: `Bearer ${CONFIG.token}`,
       "User-Agent": "Clash-Manager-Automation",
       Accept: isGraphQL ? "application/json" : "application/vnd.github.v3+json",
       "Content-Type": "application/json",
