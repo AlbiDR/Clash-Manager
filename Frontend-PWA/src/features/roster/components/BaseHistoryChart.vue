@@ -310,6 +310,17 @@ const chartData = computed(() => {
   position: relative;
 }
 
+/* Expand touch bounds vertically so even 4px bars are easy to hit on mobile */
+.bar::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  height: 60px; /* Covers the full visual height of the 48px chart */
+  left: -2px;
+  right: -2px;
+  z-index: 10;
+}
+
 .bar:hover {
   transform: scaleY(1.1);
   opacity: 1;
