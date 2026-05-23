@@ -157,8 +157,12 @@ export const HeadhunterContextSchema = v.object({
     exclusion_tags: v.array(v.string())
 });
 
-/** [GUARD] Ingestion Targets Schema (RPC). */
-export const IngestionTargetsSchema = v.object({
-    members: v.optional(v.array(v.string()), []),
-    recruits: v.optional(v.array(v.string()), [])
+/** [GUARD] Discovery Anchor Schema (RPC). */
+export const DiscoveryAnchorSchema = v.object({
+    keyword: v.string()
+});
+
+/** [GUARD] Discovery Cache Item Schema. */
+export const DiscoveryCacheItemSchema = v.object({
+    player_tag: v.string()
 });

@@ -55,13 +55,18 @@ export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema
  * @param headhunterRow - Validated row from headhunter_view.
  * @returns A domain-compliant Recruit object.
  */
+// Transforms a Supabase headhunter row into a Recruit.
 export function mapSbHeadhunterRow(headhunterRow: v.InferOutput<typeof SbHeadhunterRowSchema>): Recruit {
+  const potentialScore = Number(headhunterRow.potential_score);
+  const rawPotentialScore = Number(headhunterRow.raw_potential_score);
+  // If the processed potential_score is zero but raw data exists, fallback to raw score.
+  const finalPotentialScore = potentialScore || rawPotentialScore;
   return {
     id: headhunterRow.player_tag?.replace('#', '') || '',
     n: headhunterRow.player_name || '',
     t: Number(headhunterRow.trophies) || 0,
-    potentialScore: Number(headhunterRow.potential_score) || 0,
-    potentialRawScore: Number(headhunterRow.raw_potential_score) || 0,
+    potentialScore: finalPotentialScore,
+    potentialRawScore: rawPotentialScore,
     longevity: Number(headhunterRow.longevity) || 0,
     longevityLabel: headhunterRow.longevity_label || '-',
     tenureDays: headhunterRow.tenure_days != null ? Number(headhunterRow.tenure_days) : undefined,

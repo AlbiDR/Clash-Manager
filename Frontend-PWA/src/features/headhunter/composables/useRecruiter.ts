@@ -32,11 +32,15 @@ export function useRecruiter() {
 
   // PRE-FILTER: Exclude Tombstones and apply 50-recruit "Active Window"
   const recruits = computed(() => {
-    const activeRecruits = (data.value?.hh || []).filter(
-      (recruit) => !blacklist.tombstones.value.has(recruit.id),
-    );
-    return activeRecruits.slice(0, 50);
-  });
+  // Filter active recruits (exclude tombstones)
+  const filtered = (data.value?.hh || []).filter(
+    (recruit) => !blacklist.tombstones.value.has(recruit.id),
+  );
+  // Sort descending by potentialScore to prioritize highest scores
+  const sorted = filtered.sort((a, b) => (b.potentialScore || 0) - (a.potentialScore || 0));
+  // Return top 50 active recruits
+  return sorted.slice(0, 50);
+});
 
   // [REFACTOR] ARCHITECTURAL ALIGNMENT: Decouple Headhunter-specific selection
   // and blitz orchestration from the generic console controller.

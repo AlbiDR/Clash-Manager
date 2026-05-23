@@ -88,8 +88,10 @@ export async function runProfiler(
                                 source: candidates.get(tag) || 'UNKNOWN',
                                 status: 'ACTIVE'
                             });
+                            console.log(`[PROFILER] Admitted ${playerProfile.tag} | trophies=${trophies} war=${war} donations=${donations} rawScore=${potentialRawScore}`);
                             validCount++;
                         } else {
+                            console.log(`[PROFILER] Rejected ${playerProfile.tag} | hasClan=${!!playerProfile.clan?.tag} inExclusion=${exclusionSet.has(playerProfile.tag)} trophies=${playerProfile.trophies || 0} required=${requiredTrophies}`);
                             invalidCount++;
                         }
                     } else {
