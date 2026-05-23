@@ -1,6 +1,30 @@
-<!-- SPDX-License-Identifier: GPL-3.0-only -->
-<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+/**
+ * ============================================================================
+ * [SHARED] SELECTION ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A contextual bar for managing bulk selection, score filtering, and
+ * primary actions. Morphs between selection and management states.
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared Component (@shared)
+ * - **Role:** Horizontal orchestrator for list item management.
+ * - **Side Effects:** Triggers haptic feedback on user interaction.
+ *
+ * **State Management:**
+ * - Managed locally for UI expansion and filter thresholds.
+ * - Emits selection events to parent feature containers.
+ *
+ * @remarks
+ * Satisfies ADR Section II: Structural Unitary Architecture.
+ * Satisfies ADR Section VII: Naming Conventions (Domain-descriptive emitters).
+ * ============================================================================
+ */
+
 import Icon from "./Icon.vue";
 import { useHaptics, DEFAULT_SCORE_THRESHOLD, SCORE_SELECTION_STEPS } from "@core";
 import { ref, computed } from "vue";
@@ -34,7 +58,8 @@ const thresholds = SCORE_SELECTION_STEPS;
 function toggleMode() {
   filterMode.value = filterMode.value === "ge" ? "le" : "ge";
   haptics.tap();
-  // [PERF] AUTO-APPLY: Immediately trigger selection when mode is toggled
+  // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when mode is toggled
+  // to ensure UI state remains synchronized with the active list filter.
   emit("select-score", filterValue.value, filterMode.value);
 }
 
@@ -42,7 +67,8 @@ function selectValue(val: number) {
   if (filterValue.value === val) return;
   filterValue.value = val;
   haptics.medium();
-  // [PERF] AUTO-APPLY: Immediately trigger selection when a threshold is clicked
+  // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when a threshold is clicked.
+  // This reduces interaction friction compared to a two-step "select then apply" pattern.
   emit("select-score", filterValue.value, filterMode.value);
 }
 
@@ -50,7 +76,9 @@ function toggleExpand() {
   isScoreExpanded.value = !isScoreExpanded.value;
   haptics.tap();
   if (isScoreExpanded.value) {
-    // Scroll to end logic
+    // [DECISION LOG] DEFERRED SCROLL
+    // We use a timeout to wait for the DOM to render the expanded value-picker
+    // before attempting to scroll to the end of the threshold list.
     setTimeout(() => {
       if (valuePicker.value && typeof valuePicker.value.scrollTo === "function") {
         valuePicker.value.scrollTo({
