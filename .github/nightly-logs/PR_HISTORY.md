@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-23] PR #663: chore(version): no drift found
+**Commit**: `3953809d32446747cf4a8fefc769d3da51fab65a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/663)
+
+### Description
+Comprehensive version integrity and catalog adherence audit completed for the monorepo. No drift was found across root manifests, Frontend-PWA, or Backend protocol constants. All shared dependencies are correctly using the PNPM catalog protocol. Updated the version integrity coverage log to reflect the healthy state of the repository.
+
+---
+*PR created automatically by Jules for task [8697837552186070046](https://jules.google.com/task/8697837552186070046) started by @AlbiDR*
+
+---
+
 ## [2026-05-23] PR #662: docs(tsdoc): document selection bar orchestrator and adr mappings
 **Commit**: `5e95d10b99122f832f5aba81663b3022437f6d34`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/662)
