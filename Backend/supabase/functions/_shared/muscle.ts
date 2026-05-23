@@ -19,6 +19,25 @@ const HTTP_SERVER_ERROR_MAX = 599;
 const ARRAY_LAST_INDEX_OFFSET = 1;
 const INITIAL_INDEX = 0;
 
+let activeKeys: string[] = [];
+
+/**
+ * Explicitly sets the API keys. Accepting string or string[] allows calling with
+ * parsed arrays or raw Vault strings.
+ */
+export function setKeys(keys: string | string[]): void {
+  if (Array.isArray(keys)) {
+    activeKeys = keys;
+  } else {
+    try {
+      const parsed = JSON.parse(keys);
+      activeKeys = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      activeKeys = keys.split(",").map((k: string) => k.trim()).filter(Boolean);
+    }
+  }
+}
+
 /**
  * Lazily resolves API keys on every invocation so that keys loaded from the
  * Vault after cold-start are always picked up. The top-level IIFE approach
@@ -30,6 +49,9 @@ const INITIAL_INDEX = 0;
  * post-Vault value is always used.
  */
 function getKeys(): string[] {
+  if (activeKeys.length > INITIAL_INDEX) {
+    return activeKeys;
+  }
   const rawArgs = Deno.env.get("ROYALE_API_KEYS") || "";
   try {
     const parsed = JSON.parse(rawArgs);

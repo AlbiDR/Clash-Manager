@@ -3,6 +3,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadConfig } from "../_shared/vault.ts";
+import { setKeys } from "../_shared/muscle.ts";
 
 /**
  * L1 Core: Client & Environment Broker
@@ -28,11 +29,10 @@ export async function syncVault() {
   const vault = await loadConfig(supabase, ["ROYALE_API_KEYS", "INTERNAL_BEARER_TOKEN"]);
   if (vault.ROYALE_API_KEYS) {
     CONFIG.ROYALE_API_KEYS = vault.ROYALE_API_KEYS;
-    Deno.env.set("ROYALE_API_KEYS", vault.ROYALE_API_KEYS);
+    setKeys(vault.ROYALE_API_KEYS);
   }
   if (vault.INTERNAL_BEARER_TOKEN) {
     CONFIG.INTERNAL_BEARER_TOKEN = vault.INTERNAL_BEARER_TOKEN;
-    Deno.env.set("INTERNAL_BEARER_TOKEN", vault.INTERNAL_BEARER_TOKEN);
   }
 }
 
