@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-23] PR #658: Harden Deep-Depth Ingestion & Fix Lead Pathogens
+**Commit**: `22996f839299e50a3b5ff5b8ae5c6bcd74de5385`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/658)
+
+### Description
+Secure Stage 6 (Deep Depth) ingestion by enforcing validation boundaries on RPC and API ingress points. Fix a critical logic bug in the shadow lead collection mechanism that caused undefined data to be persisted. Rename anemic variables and add architectural annotations.
+
+---
+*PR created automatically by Jules for task [11580998751400601530](https://jules.google.com/task/11580998751400601530) started by @AlbiDR*
+
+---
+
 ## [2026-05-22] PR #657: Refactor: Voyage Duration Extraction & Constant Centralization
 **Commit**: `09aac25b5e1e38a47da0ea1cf3c5c08120c07f0b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/657)
