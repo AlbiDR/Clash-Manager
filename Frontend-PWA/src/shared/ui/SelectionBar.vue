@@ -390,21 +390,10 @@ function toggleExpand() {
 
 /* Transitions */
 .status-pop-enter-active {
-  animation: popIn 0.4s var(--sys-motion-spring);
+  animation: pop-in 0.4s var(--sys-motion-spring);
 }
 .status-pop-leave-active {
-  animation: popIn 0.3s var(--sys-motion-spring) reverse;
-}
-
-@keyframes popIn {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  animation: pop-in 0.3s var(--sys-motion-spring) reverse;
 }
 
 .text-morph-enter-active,

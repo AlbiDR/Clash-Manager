@@ -243,16 +243,6 @@ function handleFabDismiss() {
   box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
-@keyframes pop-in {
-  from {
-    transform: scale(0.6);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
 
 .dock-label {
   transition: opacity 0.3s;
