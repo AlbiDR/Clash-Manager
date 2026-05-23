@@ -23,18 +23,15 @@ const { sharedState } = vi.hoisted(() => ({
 }));
 
 // Mock leaf dependencies first
-vi.mock("../useBatchQueue", async () => {
+vi.mock("../useSelectionStore", async () => {
     const { ref } = await import("vue");
     return {
-        useBatchQueue: vi.fn(() => ({
+        useSelectionStore: vi.fn(() => ({
             selectedIds: ref([]),
-            fabState: ref({ visible: false }),
             isSelectionMode: ref(false),
             toggleSelect: vi.fn(),
             selectAll: vi.fn(),
             clearSelection: vi.fn(),
-            handleAction: vi.fn(),
-            handleBlitz: vi.fn(),
             setForceSelectionMode: vi.fn(),
         })),
     };
