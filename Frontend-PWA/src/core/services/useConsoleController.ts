@@ -6,7 +6,7 @@ import { useProgressiveList } from "./useProgressiveList";
 import { useUiCoordinator } from "./useUiCoordinator";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
-import { useBatchQueue } from "./useBatchQueue";
+import { useSelectionStore } from "./useSelectionStore";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
@@ -19,112 +19,55 @@ import type { ConsoleCardMetadata, HubInfo } from "@core/types";
 import { formatTimeAgo } from "@core/utils/formatters";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 import { VISIBILITY_REFRESH_THRESHOLD } from "../config";
-import { useConnectivityManager } from "./useConnectivityManager";
+import { useConsoleMetadata } from "./useConsoleMetadata";
 
 /**
  * CONFIGURATION: ConsoleLogicOptions
  *
  * @remarks
  * Defines the configuration contract for the useConsoleController.
- * This ensures that various list-based features (Roster, Headhunter)
- * can be orchestrated through a unified interface.
  */
 interface ConsoleLogicOptions<T> {
-  /** The authoritative reactive source of items to be displayed. */
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
-  /** Indicates if the initial local storage hydration has finished. */
   isHydrated?: Ref<boolean> | ComputedRef<boolean>;
-  /** The identified backend source that provided the current dataset. */
   currentSource?: Ref<"SUPABASE" | null> | ComputedRef<"SUPABASE" | null>;
-  /** Epoch timestamp of when the remote Supabase view was last generated. */
   remoteSyncTime?: Ref<number | null> | ComputedRef<number | null>;
-  /** Epoch timestamp of when the server last compiled the current dataset. */
   lastCompiledTime?: Ref<number | null> | ComputedRef<number | null>;
-  /** Epoch timestamp of when the server last fetched raw data from the API. */
   lastFetchedTime?: Ref<number | null> | ComputedRef<number | null>;
-  /** Returns an array of strings per item used for search filtering. */
   filterFn: (item: T) => string[];
-  /** A dictionary of sorting strategies keyed by their UI identifier. */
   sortStrategies: Record<string, (a: T, b: T) => number>;
-  /** Available sorting options for the UI. */
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
-  /** Whether to show the search input in the header. */
   showSearch?: boolean;
-  /** The UI identifier of the default sorting strategy. */
   defaultSort: string;
-  /** Prefix used for URL hash deep linking (e.g., 'member-'). */
   deepLinkPrefix: string;
-  /** Maps an item to its unique identifier for batch selection operations. */
   batchIdMapper: (item: T) => string;
-  /** Singular display label for the item type (e.g., 'Member'). */
   statsLabel: string;
-  /** Optional function to extract a numeric score for threshold-based selection. */
   scoreGetter?: (item: T) => number;
-  /** Trigger function to initiate a fresh data sync from the remote backend. */
   refresh?: () => void | Promise<void>;
-  /** Optional handler for the FAB dismissal event (defaults to clearSelection). */
   onDismiss?: () => void;
+  /** Optional FAB state override for feature-specific actions. */
+  fabState?: ComputedRef<any> | Ref<any>;
+  /** Optional layout events override. */
+  layoutEvents?: ComputedRef<Record<string, any>> | Record<string, any>;
+  /** Optional selection store override. */
+  selectionStore?: ReturnType<typeof useSelectionStore>;
 }
 
 /**
  * COMPOSABLE: useConsoleController
  *
  * @remarks
- * The primary orchestrator for complex list views (Leaderboard and Recruit Hub).
- * It coordinates multiple specialized composables to provide a unified "Console"
- * experience including searching, sorting, selection, and deep-linking.
- *
- * **Architecture:**
- * - **Structural Unitary Architecture:** Acts as a Layer 1 orchestrator,
- *   bridging domain-blind infrastructure with feature-level requirements.
- * - **Dependency Inversion:** Higher layers (Features) depend on this
- *   controller's abstraction rather than individual infra services.
- *
- * **Side Effects:**
- * - **UI Coordination:** Mutates `useUiCoordinator` state to manage the visibility
- *   of the batch action Floating Action Button (FAB).
- * - **Deep Linking:** Auto-processes URL hashes on hydration to expand items.
- * - **Lifecycle Management:** Cleans up global UI states on unmount.
- *
- * @param options - Configuration payload adhering to the ConsoleLogicOptions contract.
- * @returns
- * - `searchQuery`: Reactive search string.
- * - `sortBy`: Current active sorting key.
- * - `visibleItems`: Paginated subset of filtered and sorted items.
- * - `expandedIds`: IDs of items currently expanded in the UI.
- * - `selectedIds`: IDs of items in the batch selection queue.
- * - `selectedSet`: Computed Set of selected IDs for O(1) membership checks.
- * - `fabState`: UI state for the batch action FAB.
- * - `isSelectionMode`: Boolean flag for active selection state.
- * - `status`: Tiered system health status (text/type).
- * - `statsBadge`: Item counter for the header.
- * - `showSkeletons`: Shimmer visibility flag.
- * - `layoutProps`: Consolidated object for direct injection into `ConsoleLayout`.
+ * The primary orchestrator for complex list views.
  */
-
-
 export function useConsoleController<T extends { id: string; n?: string }>(
   options: ConsoleLogicOptions<T>,
 ) {
-  // [PERF] SINGLETON HOOKS: Hoisted to the top for consistent initialization and better readability.
   const clashStore = useClashDataStore();
-  const {
-    isRefreshing: storeRefreshing,
-    syncError: storeSyncError,
-    lastSyncTime: storeLastSync,
-    lastCompiledTime: storeLastCompiled,
-    lastFetchedTime: storeLastFetched,
-  } = storeToRefs(clashStore);
-
   const {
     data,
     isHydrated = toRef(clashStore, "isHydrated"),
     isRefreshing = toRef(clashStore, "loading"),
     syncError = toRef(clashStore, "syncError"),
-    lastSyncTime = toRef(clashStore, "lastSyncTime"),
-    currentSource = toRef(clashStore, "currentSource"),
-    lastCompiledTime = toRef(clashStore, "lastCompiledTime"),
-    lastFetchedTime = toRef(clashStore, "lastFetchedTime"),
     filterFn,
     sortStrategies,
     sortOptions,
@@ -136,13 +79,14 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     scoreGetter,
     refresh: refreshFn = () => clashStore.refreshFromSupabase(),
     onDismiss: onDismissFn,
+    fabState: fabOverride,
+    layoutEvents: eventsOverride,
+    selectionStore: selectionOverride,
   } = options;
 
   const { isShowcaseMode: isShowcase } = useShowcaseMode();
   const { isSyntheticMode } = useSyntheticMode();
   const { isBlueprintMode } = useBlueprintMode();
-  const { status: connectionStatus } = useConnectionStatus();
-  const { apiStatus, pingData } = useApiState();
   const { setFabVisible } = useUiCoordinator();
 
   // STEP 1: Search and Filter logic
@@ -154,14 +98,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   );
 
   // STEP 2: Pagination/Virtualization logic
-  const { visibleItems: allVisibleItems } = useProgressiveList(
-    filteredItems,
-    8,
-  );
-  
+  const { visibleItems: allVisibleItems } = useProgressiveList(filteredItems, 8);
   const visibleItems = computed(() => {
-    // [UI] BRANDING: In Showcase mode only the first card is shown so the
-    // ConsoleList skeleton overlay carries the visual weight.
     if (isShowcase.value) return allVisibleItems.value.slice(0, 1);
     return allVisibleItems.value;
   });
@@ -169,26 +107,40 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   // STEP 3: Batch Selection logic
   const {
     selectedIds,
-    fabState,
     isSelectionMode,
     toggleSelect,
     selectAll,
     clearSelection,
-    handleAction,
-    handleBlitz,
     setForceSelectionMode,
-  } = useBatchQueue();
+  } = selectionOverride || useSelectionStore();
 
-  // STEP 4: Deep Linking and Expansion logic
-  const { expandedIds, toggleExpand, processDeepLink } =
-    useDeepLinkHandler(deepLinkPrefix);
+  // STEP 4: Metadata (Status & Stats)
+  const { status, statsBadge, metadata, hubHealth } = useConsoleMetadata(
+    statsLabel,
+    computed(() => data.value.length),
+  );
 
-  // COORDINATION: Sync FAB visibility with global UI state
+  // STEP 5: Deep Linking and Expansion logic
+  const { expandedIds, toggleExpand, processDeepLink } = useDeepLinkHandler(deepLinkPrefix);
+
+  // FAB Synchronization
+  const fabState = computed(() => {
+    if (fabOverride) return fabOverride.value;
+    return {
+      visible: isSelectionMode.value,
+      label: "Done",
+      isProcessing: false,
+      isBlasting: false,
+      selectionCount: selectedIds.value.length,
+      blitzEnabled: false,
+    };
+  });
+
   watch(
-    () => fabState.value.visible,
+    () => fabState.value?.visible,
     (visible) => setFabVisible(!!visible),
   );
-  // INITIALIZATION: Auto-process deep links when data first hydrates
+
   watch(
     data,
     (newVal) => {
@@ -197,18 +149,11 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     { immediate: true },
   );
 
-  /**
-   * VISIBILITY LIFECYCLE
-   * Rationale: If the user returns to the app after a long period, we trigger
-   * a silent refresh to ensure the "Nominal" status is actually accurate.
-   */
   let lastVisibilityTime = Date.now();
   const handleVisibilityChange = () => {
     if (document.visibilityState === "visible") {
       const now = Date.now();
       const hiddenDuration = now - lastVisibilityTime;
-      
-      // If hidden for > 30 minutes, trigger a background refresh
       if (hiddenDuration > VISIBILITY_REFRESH_THRESHOLD && !isRefreshing.value && refreshFn) {
         refreshFn();
       }
@@ -227,64 +172,13 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     setFabVisible(false);
   });
 
-
-
-    // --- STATUS RESOLVER (Layer 1 Connectivity) ---
-    const { hubHealth, metadata, refresh: refreshHub } = useConnectivityManager();
-
-    const status = computed(() => ({
-      type: hubHealth.value.type,
-      text: hubHealth.value.label,
-      nominal: hubHealth.value.type === "success"
-    }));
-
-  /**
-   * STATISTICS BADGE
-   * Displays the count of active items, adjusted for special UI modes.
-   */
-  const statsBadge = computed(() => {
-    let count: number;
-
-    if (isShowcase.value) {
-      // [UI] BRANDING: Randomised count (1-50) for visual variety in the
-      // Showcase overlay without leaking real data.
-      count = Math.floor(Math.random() * 50) + 1;
-    } else if (isBlueprintMode.value) {
-      // [UI] BRANDING: Use deterministic mock counts in Blueprint mode so
-      // the badge always matches the synthetic dataset size.
-      count =
-        statsLabel === "Recruit"
-          ? DEFAULT_MOCK_RECRUIT_COUNT
-          : DEFAULT_MOCK_MEMBER_COUNT;
-    } else {
-      count = data.value ? data.value.length : 0;
-    }
-
-    const displayLabel = count === 1 ? statsLabel : `${statsLabel}s`;
-
-    return {
-      label: displayLabel,
-      value: count.toString(),
-    };
-  });
-
-  /**
-   * SKELETON VISIBILITY
-   * Controls when to show the shimmer loading states.
-   */
   const showSkeletons = computed(() => {
-    // MODE GUARDS: Demo modes handle their own skeleton logic to maintain visual consistency.
     if (isShowcase.value) return false;
     if (isBlueprintMode.value) return true;
-
-    // DEFAULT LOGIC:
-    // Show skeletons if not in synthetic mode, no errors, AND
-    // either hydration is pending OR a fresh sync is happening on empty data.
     return (
       !isSyntheticMode.value &&
       !syncError.value &&
-      (!isHydrated.value ||
-        (isRefreshing.value && (!data.value || data.value.length === 0)))
+      (!isHydrated.value || (isRefreshing.value && (!data.value || data.value.length === 0)))
     );
   });
 
@@ -296,22 +190,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     selectAll(ids);
   }
 
-  function handleSearch(query: string) {
-    searchQuery.value = query;
-  }
-
-  /**
-   * BULK SELECTION BY SCORE
-   * Allows selecting all items above or below a specific score threshold.
-   */
-  function handleSelectScore(
-    threshold: number,
-    mode: "ge" | "le",
-    customScoreGetter?: (item: T) => number,
-  ) {
+  function handleSelectScore(threshold: number, mode: "ge" | "le", customScoreGetter?: (item: T) => number) {
     const scoreExtractor = customScoreGetter || scoreGetter;
     if (!scoreExtractor) return;
-
     const ids = filteredItems.value
       .filter((item: T) => {
         const score = scoreExtractor(item);
@@ -322,14 +203,6 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     selectAll(ids);
   }
 
-  /**
-   * LAYOUT PROPS (Standardized Interface)
-   *
-   * @remarks
-   * Groups all reactive properties intended for ConsoleLayout into a
-   * single object to minimize boilerplate in the view layer.
-   * This facilitates the "Structural Purity" goal of the Optimize agent.
-   */
   const layoutProps = computed(() => ({
     status: status.value,
     loading: showSkeletons.value,
@@ -348,32 +221,28 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       source: metadata.value.source,
       dataAge: metadata.value.age,
       diagnosis: hubHealth.value.diagnosis,
-      lastCompiled: metadata.value.lastCompiled
-    }
+      lastCompiled: metadata.value.lastCompiled,
+    },
   }));
 
-  /**
-   * LAYOUT EVENTS (Standardized Interface)
-   *
-   * @remarks
-   * Maps UI events from ConsoleLayout directly to controller methods.
-   * This facilitates the "Structural Purity" goal by allowing
-   * bulk event binding in the view: <ConsoleLayout v-on="layoutEvents" />
-   */
-  const layoutEvents = computed(() => ({
-    refresh: refreshFn,
-    "update:search": (query: string) => (searchQuery.value = query),
-    "update:sort": updateSort,
-    "select-all": handleSelectAll,
-    "clear-selection": clearSelection,
-    "select-score": handleSelectScore,
-    "fab-action": handleAction,
-    "fab-blitz": handleBlitz,
-    "fab-dismiss": onDismissFn || clearSelection,
-  }));
+  const layoutEvents = computed(() => {
+    const baseEvents = {
+      refresh: refreshFn,
+      "update:search": (query: string) => (searchQuery.value = query),
+      "update:sort": updateSort,
+      "select-all": handleSelectAll,
+      "clear-selection": clearSelection,
+      "select-score": handleSelectScore,
+      "fab-dismiss": onDismissFn || clearSelection,
+    };
+    if (eventsOverride) {
+      const overrides = computed(() => (typeof eventsOverride === "function" ? eventsOverride : (eventsOverride as any).value || eventsOverride));
+      return { ...baseEvents, ...overrides.value };
+    }
+    return baseEvents;
+  });
 
   return {
-    // State & Computed
     searchQuery,
     sortBy,
     visibleItems,
@@ -390,56 +259,26 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     isRefreshing,
     syncError,
     isHydrated,
-    currentSource,
     data,
     layoutProps,
     layoutEvents,
-
-    // Actions
     refresh: refreshFn,
     updateSort,
     toggleSelect,
     toggleExpand,
     clearSelection,
-    handleAction,
-    handleBlitz,
     handleSelectAll,
     handleSelectScore,
-    handleSearch,
+    handleSearch: (query: string) => (searchQuery.value = query),
     setForceSelectionMode,
     processDeepLink,
-
-    /**
-     * ITEM METADATA RESOLVER
-     *
-     * @remarks
-     * Extracts UI-specific state flags for a given item ID.
-     * Centralizing this logic ensures that performance optimizations (like v-memo)
-     * are applied consistently across Roster and Headhunter views.
-     */
     getCardMetadata: (id: string): ConsoleCardMetadata => ({
       expanded: expandedIds.value.has(id),
       selected: selectedSet.value.has(id),
       selectionMode: isSelectionMode.value,
       isTagged: data.value?.playerTag === id,
-      // [PERF] SCOPED REFRESH: Only signal 'refreshing' to expanded cards
-      // to prevent unnecessary re-renders of the entire collapsed list.
       appIsRefreshing: isRefreshing.value && expandedIds.value.has(id),
     }),
-
-    /**
-     * MEMOIZATION KEY GENERATOR
-     *
-     * @remarks
-     * Centralizes the dependency list for Vue's `v-memo` directive.
-     * This ensures that performance-critical re-render optimizations are
-     * applied consistently across different feature views (Roster, Headhunter)
-     * without duplicating complex dependency logic in templates.
-     *
-     * @param id - The unique item identifier.
-     * @param extraKeys - Optional feature-specific reactive dependencies.
-     * @returns A stable array of dependencies for `v-memo`.
-     */
     getMemoKeys: (id: string, extraKeys: unknown[] = []) => [
       id,
       isSelectionMode.value,
