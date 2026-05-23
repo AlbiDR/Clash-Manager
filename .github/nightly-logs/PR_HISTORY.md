@@ -1,6 +1,28 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-23] PR #665: Decouple Console Selection & Split Monolithic Controller
+**Commit**: `7b232e62af9f1fd82c4e529522f30c02722ed4a2`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/665)
+
+### Description
+This refactor addresses structural debt in the console orchestration layer by excising feature-specific logic from Layer 1. 
+
+**Key Changes:**
+1. **Surgical Decoupling:** `useBatchQueue` was renamed to `useSelectionStore` and stripped of its Headhunter dependencies ("Open in Game", "Blitz"). This logic now resides in the `headhunter` feature as `useBlitzMode`.
+2. **Controller Splitting:** `useConsoleController` was split to adhere to the 400-line SRP threshold. Connectivity and statistics logic were moved to `useConsoleMetadata`.
+3. **Injection Pattern:** Introduced an override pattern in `useConsoleController` allowing features like Headhunter to inject their specialized FAB state and handlers while keeping the core logic generic and domain-blind.
+
+**Verification:**
+- **Unit Tests:** 1007 passing tests in the monorepo.
+- **Architectural Audit:** `npx depcruise` confirms zero layer violations.
+- **Pre-commit Checks:** Completed all mandatory verification steps.
+
+---
+*PR created automatically by Jules for task [10202609020993607461](https://jules.google.com/task/10202609020993607461) started by @AlbiDR*
+
+---
+
 ## [2026-05-23] PR #664: chore(deps): bump knip from 6.14.1 to 6.14.2
 **Commit**: `0d916f9dc6e15c94d394f7e7cd96665b0359565b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/664)
