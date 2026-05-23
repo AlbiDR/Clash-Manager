@@ -12,6 +12,8 @@ import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { RECRUITER_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { RecruiterSort } from "@core/utils/sortStrategies";
 import type { Recruit } from "@core/types";
+import { useBlitzMode } from "./useBlitzMode";
+import { useSelectionStore } from "@core/services/useSelectionStore";
 
 /**
  * COMPOSABLE: useRecruiter
@@ -19,26 +21,10 @@ import type { Recruit } from "@core/types";
  * @remarks
  * Specialized logic for the Recruiter view (Headhunter). Orchestrates Manual Scouting 
  * and background synchronization with the Supabase backend.
- *
- * @returns
- * - All state and methods from `useConsoleController` (search, sort, selection).
- * - `isHydrated`: Indicates if initial data has been loaded from IndexedDB.
- * - `isShowcaseMode`: Boolean flag for demo/showcase state.
- * - `isRefreshing`: Indicates if a background sync is in progress.
- * - `isTurboScanning`: Indicates if a manual scouting trigger is active.
- * - `onSelectScore`: Selection helper for score-based filtering.
- * - `handleSearchUpdate`: Proxy for controller search updates.
- *
- * @sideeffects
- * - Updates local state and IndexedDB via `updateLocalData`.
- * - Triggers asynchronous dismissals on the Supabase backend.
- * - Interacts with `useRecruitBlacklist` to manage dismissal tombstones.
- * - Dispatches toast notifications for user feedback.
  */
 export function useRecruiter() {
   const clashDataStore = useClashDataStore();
   const { data, isRefreshing } = storeToRefs(clashDataStore);
-  const { refresh: refreshStore } = clashDataStore;
   const { dismissRecruitsAction } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
   const { undo, success, info } = useToast();
@@ -49,13 +35,13 @@ export function useRecruiter() {
     const activeRecruits = (data.value?.hh || []).filter(
       (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
-    console.debug(`[Recruiter] Data pipeline: ${data.value?.hh?.length || 0} fetched -> ${activeRecruits.length} active (post-blacklist)`);
-    // [ADR] Parity with Source: Show only the top 50 active recruits.
-    // The "infinite scroll" strategy is implemented via automatic replacement:
-    // as items are dismissed, the next best results from the 250-item pre-compiled
-    // pool slide in from the "backup" 200, maintaining the 50-recruit window.
     return activeRecruits.slice(0, 50);
   });
+
+  // [REFACTOR] ARCHITECTURAL ALIGNMENT: Decouple Headhunter-specific selection
+  // and blitz orchestration from the generic console controller.
+  const selectionStore = useSelectionStore();
+  const blitz = useBlitzMode(selectionStore);
 
   const controller = useConsoleController({
     data: recruits,
@@ -68,21 +54,17 @@ export function useRecruiter() {
     statsLabel: "Recruit",
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
     onDismiss: dismissBulk,
+    selectionStore,
+    fabState: blitz.fabState,
+    layoutEvents: computed(() => ({
+      "fab-action": blitz.handleAction,
+      "fab-blitz": blitz.handleBlitz,
+      "clear-selection": blitz.clearSelection,
+      "fab-dismiss": blitz.clearSelection,
+    }))
   });
 
-
-  /**
-   * RECRUIT DISMISSAL ENGINE
-   *
-   * @remarks
-   * Implements a "Zero Latency" pattern for UI responsiveness.
-   *
-   * @param recruitsToRemove - The set of recruits to be dismissed.
-   */
   function executeDismiss(recruitsToRemove: Recruit[]) {
-    // CONNECTIVITY GUARD: Dismissal requires an active connection.
-    // With no offline queue, an offline dismiss would apply a tombstone that can
-    // never be confirmed server-side, leaving the UI in a phantom dismissed state.
     if (!isOnline.value) {
       info("Connection required to dismiss recruits.");
       return;
@@ -97,12 +79,8 @@ export function useRecruiter() {
     }));
 
     const { undismissRecruitsAction } = useHeadhunter();
-
-    // ZERO LATENCY: Visual hide via in-memory tombstone.
     blacklist.hide(targetRecruitIds);
 
-    // Dispatch RPC; on failure the action surfaces the error and rolls back hh state.
-    // This catch restores the tombstone so the recruit reappears in the list.
     dismissRecruitsAction(dismissalPayload).catch(() => {
       blacklist.restore(targetRecruitIds);
     });
@@ -114,17 +92,12 @@ export function useRecruiter() {
     });
   }
 
-  /**
-   * Triggers the dismissal process for all currently selected recruits in the controller.
-   */
   function dismissBulk() {
     if (controller.selectedIds.value.length === 0) return;
     const targetRecruitIds = [...controller.selectedIds.value];
-    
-    // [FOCUS] CAPTURE FULL RECRUITS: Get the complete objects before any state changes
     const recruitsToRemove = recruits.value.filter(recruit => targetRecruitIds.includes(recruit.id));
     
-    controller.clearSelection();
+    blitz.clearSelection();
     executeDismiss(recruitsToRemove);
   }
 
