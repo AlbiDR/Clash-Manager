@@ -34,8 +34,14 @@ export const supabase = createClient(
  * directly from the secure Vault at runtime.
  */
 export async function syncVault() {
-  const vault = await loadConfig(supabase, ["INTERNAL_BEARER_TOKEN"]);
-  if (vault.INTERNAL_BEARER_TOKEN) CONFIG.INTERNAL_BEARER_TOKEN = vault.INTERNAL_BEARER_TOKEN;
+  const vault = await loadConfig(supabase, ["INTERNAL_BEARER_TOKEN", "ROYALE_API_KEYS"]);
+  if (vault.INTERNAL_BEARER_TOKEN) {
+    CONFIG.INTERNAL_BEARER_TOKEN = vault.INTERNAL_BEARER_TOKEN;
+    Deno.env.set("INTERNAL_BEARER_TOKEN", vault.INTERNAL_BEARER_TOKEN);
+  }
+  if (vault.ROYALE_API_KEYS) {
+    Deno.env.set("ROYALE_API_KEYS", vault.ROYALE_API_KEYS);
+  }
 }
 
 if (!CONFIG.INTERNAL_BEARER_TOKEN && !Deno.env.get("INTERNAL_BEARER_TOKEN")) {
