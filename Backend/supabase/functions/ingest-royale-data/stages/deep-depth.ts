@@ -5,7 +5,7 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot";
-import { RoyaleBattleLogSchema } from "../../_shared/schemas.ts";
+import { RoyaleBattleLogSchema, IngestionTargetsSchema } from "../../_shared/schemas.ts";
 
 /**
  * Stage 6: Native Deep Depth
@@ -17,32 +17,48 @@ export async function runDeepDepth(
 ) {
     logAudit('S6_BATTLES', 'triggered');
     try {
-        const { data: targets } = await supabase.rpc('get_ingestion_targets');
+        const { data: rawTargets, error: targetsError } = await supabase.rpc('get_ingestion_targets');
+
+        // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
+        // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists.
+        const targetsValidation = v.safeParse(IngestionTargetsSchema, rawTargets ?? {});
         
-        const allTags = [
-            ...(targets?.members || []),
-            ...(targets?.recruits || [])
+        logAudit('S6_BATTLES', 'integrity_checked', {
+            stage: 'TARGET_FETCH',
+            passed: targetsValidation.success && !targetsError,
+            details: targetsError ? targetsError.message : (targetsValidation.success ? 'Targets validated' : 'Malformed targets payload')
+        });
+
+        if (!targetsValidation.success || targetsError) {
+            throw new Error(`Failed to fetch ingestion targets: ${targetsError?.message || 'Validation failed'}`);
+        }
+
+        const targets = targetsValidation.output;
+        const ingestionTargets = [
+            ...targets.members,
+            ...targets.recruits
         ];
 
-        if (allTags.length > 0) {
-            logAudit('S6_BATTLES', 'called', { tags_count: allTags.length });
+        if (ingestionTargets.length > 0) {
+            logAudit('S6_BATTLES', 'called', { tags_count: ingestionTargets.length });
             
             // Shared map to collect shadow leads across all concurrent tasks
             // EPHEMERAL: intentionally resets on cold start
-            const globalShadowLeads = new Map<string, string>();
+            // [DECISION LOG] Using Map<string, { name: string }> to fix type mismatch pathogen.
+            const globalShadowLeads = new Map<string, { name: string }>();
 
-            const battleTasks = allTags.map(tag => async () => {
+            const battleTasks = ingestionTargets.map(targetTag => async () => {
                 try {
-                    const logRes = await fetchWithRotation(`/players/${encodeURIComponent(tag)}/battlelog`);
-                    if (logRes.ok) {
-                        const rawLogData: unknown = await logRes.json();
+                    const battleLogResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetTag)}/battlelog`);
+                    if (battleLogResponse.ok) {
+                        const rawBattleLogPayload: unknown = await battleLogResponse.json();
                         
                         // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
                         // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes in battle logs.
-                        const validation = v.safeParse(RoyaleBattleLogSchema, rawLogData);
+                        const validation = v.safeParse(RoyaleBattleLogSchema, rawBattleLogPayload);
 
                         logAudit('S6_BATTLES', 'integrity_checked', {
-                            tag,
+                            tag: targetTag,
                             passed: validation.success,
                             details: validation.success ? 'Battle log validated via Valibot' : 'Malformed battle log payload'
                         });
@@ -51,12 +67,12 @@ export async function runDeepDepth(
                             const battleLog = validation.output;
                             // Ingest battles
                             const { error: rpcErr } = await supabase.rpc('ingest_player_battles', { 
-                                p_tag: tag, 
+                                p_tag: targetTag,
                                 p_payload: battleLog
                             });
                             
                             if (rpcErr) {
-                                logAudit('S6_BATTLES', 'error', { tag, message: 'RPC Failure', details: rpcErr });
+                                logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'RPC Failure', details: rpcErr });
                             }
 
                             // Extract potential recruits (leads) from opponents
@@ -64,18 +80,18 @@ export async function runDeepDepth(
                             battleLog.forEach((battle) => {
                                 battle.opponent?.forEach((opponent) => {
                                     if (opponent.tag && !opponent.clan?.tag) {
-                                        globalShadowLeads.set(opponent.tag, opponent.name || 'Unknown Recruit');
+                                        globalShadowLeads.set(opponent.tag, { name: opponent.name || 'Unknown Recruit' });
                                     }
                                 });
                             });
                         }
-                    } else if (logRes.status === 404) {
-                        await supabase.rpc('report_dead_recruit', { p_player_tag: tag });
-                        logAudit('S6_BATTLES', 'called', { tag, action: 'purged_ghost' });
+                    } else if (battleLogResponse.status === 404) {
+                        await supabase.rpc('report_dead_recruit', { p_player_tag: targetTag });
+                        logAudit('S6_BATTLES', 'called', { tag: targetTag, action: 'purged_ghost' });
                     }
-                } catch (error: unknown) {
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-                    logAudit('S6_BATTLES', 'error', { tag, message: errorMessage });
+                } catch (battleLogError: unknown) {
+                    const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
+                    logAudit('S6_BATTLES', 'error', { tag: targetTag, message: errorMessage });
                 }
             });
             
@@ -85,20 +101,21 @@ export async function runDeepDepth(
 
             // Batch synchronize collected shadow leads
             if (globalShadowLeads.size > 0) {
-                const leads = Array.from(globalShadowLeads.entries()).map(([tag, data]) => ({
+                // [THREAT:] Standardizing leads payload to prevent 'undefined' pathogens in ingestion.
+                const validLeads = Array.from(globalShadowLeads.entries()).map(([tag, data]) => ({
                     player_tag: tag.startsWith('#') ? tag : `#${tag}`,
                     player_name: data.name,
-                    trophies: data.trophies
+                    trophies: 0 // Battle logs do not provide ladder metrics.
                 }));
 
-                const recruits = leads.map(lead => ({
+                const recruits = validLeads.map(lead => ({
                     ...lead,
                     source: 'SHADOW',
                     status: 'ACTIVE'
                 }));
 
                 // L2 Drivers: Sync to universal player registry first
-                await supabase.rpc('sync_players', { p_players: leads });
+                await supabase.rpc('sync_players', { p_players: validLeads });
 
                 // L2 Drivers: Upsert to shadow recruitment queue
                 const { error: leadErr } = await supabase.rpc('sync_recruits', { p_recruits: recruits });
@@ -108,12 +125,12 @@ export async function runDeepDepth(
             }
         }
         results.battles.success = true;
-        logAudit('S6_BATTLES', 'terminated', { tags: allTags.length, success: true });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        logAudit('S6_BATTLES', 'terminated', { tags: ingestionTargets.length, success: true });
+    } catch (battleLogError: unknown) {
+        const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
         results.battles.error = errorMessage;
         logAudit('S6_BATTLES', 'error', { message: errorMessage });
         logAudit('S6_BATTLES', 'terminated', { error: true });
-        throw error;
+        throw battleLogError;
     }
 }
