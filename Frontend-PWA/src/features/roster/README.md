@@ -11,7 +11,7 @@ The Roster feature provides an authoritative view of the clan's internal health.
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Strictly siloed. Never imports from `Laboratory`, `Headhunter`, or `Settings`.
 - **Dependencies**:
-  - `@core/utils/warMath`: Historical parsing and predictive algorithms.
+  - `@core/utils/predictionMath`: Historical parsing and predictive algorithms.
   - `@core/utils/bezier`: Geometric calculations for trend visualization.
   - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
   - `@shared/ui/BaseCard`: The foundational UI molecule for member profiles.
@@ -33,7 +33,7 @@ The Roster feature utilizes a dual-metric model to distinguish between historica
 A high-precision visualization engine for war performance.
 - **Historical Parsing**: Decompresses 52-week war history logs into chronological data points.
 - **Trend Analysis**: Uses a Linear Best Fit algorithm (`generateLinearTrend`) to calculate performance trajectories (Positive/Negative).
-- **Predictive Projection**: Implements a weighted average engine to project next-week performance based on the last 4 active weeks.
+- **Predictive Projection**: Implements a 10-week linear decay weighted average engine to project next-week performance.
 - **Hardware Acceleration**: Utilizes SVG overlays and CSS transforms for fluid, 60FPS interactions.
 
 ## Component Registry
