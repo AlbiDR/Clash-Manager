@@ -65,6 +65,7 @@
 | tsx | ^4.22.0 | ^4.22.3 | 2026-08-05 | PASS |
 | vitest | ^4.1.6 | ^4.1.7 | 2026-08-06 | PASS |
 | @supabase/supabase-js | ^2.106.0 | ^2.106.1 | 2026-05-22 | PASS |
+| knip | ^6.14.1 | ^6.14.2 | 2026-08-07 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
