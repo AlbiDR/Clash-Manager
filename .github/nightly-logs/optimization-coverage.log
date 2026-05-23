@@ -166,3 +166,6 @@ Frontend-PWA/src/core/utils/formatters.ts
 Frontend-PWA/src/features/voyage/components/VoyageBanner.vue
 Frontend-PWA/src/features/voyage/components/EventManagement.vue
 Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue
+Frontend-PWA/src/core/theme/animations.ts
+Frontend-PWA/src/shared/ui/SelectionBar.vue
+Frontend-PWA/src/shared/ui/FloatingDock.vue
