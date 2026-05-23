@@ -46,3 +46,11 @@ Hardening (Validation Boundary/Pathogens): Eliminated anemic variable pathogens 
 2026-05-20 | Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts | Deep hardening: Valibot validation boundaries for RPC and Royale API, renamed anemic variables, excised any assertions, added threat documentation.
 2026-05-21 | Backend/supabase/functions/headhunter-scanner/scanner.ts | Hardened scanner orchestrator: implemented Valibot boundary for context boot, excised 'any' pathogens, and renamed anemic variables.
 2026-08-06 | Backend/supabase/functions/sync-player-cards/index.ts | Fully secured the sync-player-cards Edge Function. Action: (1) Implemented strict v.safeParse() validation boundary for database ingress (player_card_snapshots) using the new PlayerCardSnapshotSchema in _shared/schemas.ts. (2) Excised the 'any Plague' and renamed anemic variable pathogens (tag, stored, res, rawRoyaleData, validation, royaleData). (3) Added mandatory // [THREAT:] and // [DECISION LOG] annotations. Verified via monorepo test gate.
+
+### [2026-05-22] Hardening (Royale Data Ingestion - Deep Depth)
+**Action:** Enhanced security and corrected logic in the `deep-depth.ts` ingestion stage.
+1. **Validation Boundaries:** Introduced `IngestionTargetsSchema` in `_shared/schemas.ts` and implemented `v.safeParse()` for the `get_ingestion_targets` RPC result in `deep-depth.ts`.
+2. **Logic Fix:** Resolved a critical type mismatch bug in "Shadow Lead" collection where `globalShadowLeads` (Map<string, string>) was being used to store/retrieve objects, causing `undefined` data ingestion. Refactored to `Map<string, { name: string }>`.
+3. **Variable Hygiene:** Excised the 'any Plague' and renamed anemic pathogens (`allTags` -> `ingestionTargets`, `logRes` -> `battleLogResponse`, `rawLogData` -> `rawBattleLogPayload`, `tag` -> `targetTag`, `error` -> `battleLogError`, `leads` -> `validLeads`).
+4. **Documentation:** Added mandatory `// [THREAT:]` and `// [DECISION LOG]` annotations to document security boundaries and logic intent.
+**Verification:** Full monorepo test gate (996 pass, 1 skipped) using `pnpm -r --no-engine-strict test`.

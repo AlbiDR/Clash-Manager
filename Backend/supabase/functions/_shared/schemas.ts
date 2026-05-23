@@ -156,3 +156,9 @@ export const HeadhunterContextSchema = v.object({
     required_trophies: v.number(),
     exclusion_tags: v.array(v.string())
 });
+
+/** [GUARD] Ingestion Targets Schema (RPC). */
+export const IngestionTargetsSchema = v.object({
+    members: v.optional(v.array(v.string()), []),
+    recruits: v.optional(v.array(v.string()), [])
+});
