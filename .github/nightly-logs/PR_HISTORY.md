@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-23] PR #664: chore(deps): bump knip from 6.14.1 to 6.14.2
+**Commit**: `0d916f9dc6e15c94d394f7e7cd96665b0359565b`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/664)
+
+### Description
+Bumped knip from 6.14.1 to 6.14.2 in the root package.json. This is a Tier 1 patch update for dev infrastructure. The lockfile was synchronized and the monorepo test gate passed successfully (1006 pass, 1 skipped). The audit log has been updated to reflect this change.
+
+---
+*PR created automatically by Jules for task [16882765554485259507](https://jules.google.com/task/16882765554485259507) started by @AlbiDR*
+
+---
+
 ## [2026-05-23] PR #663: chore(version): no drift found
 **Commit**: `3953809d32446747cf4a8fefc769d3da51fab65a`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/663)
