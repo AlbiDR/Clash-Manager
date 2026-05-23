@@ -7,6 +7,12 @@ import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
 import { DiscoveryAnchorSchema, DiscoveryCacheItemSchema, RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
 
+const ANCHOR_LIMIT = 36;
+const CACHE_HOURS = 1;
+const TOURNAMENT_SEARCH_LIMIT = 10;
+const BATCH_TOURNAMENTS = 10;
+const BATCH_KEYWORDS = 5;
+
 /**
  * Stage: Tournament Discovery
  * Scans active tournaments for un-clanned players meeting the trophy threshold.
@@ -23,7 +29,7 @@ export async function runTournamentDiscovery(
     try {
         // 1. Fetch Autonomous Anchors
         // [DECISION LOG] Anchors are keywords stored in the database to guide the discovery engine autonomously.
-        const { data: rawAnchors, error: anchorError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: 36 });
+        const { data: rawAnchors, error: anchorError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT });
 
         if (anchorError) {
             logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${anchorError.message}` });
@@ -47,7 +53,7 @@ export async function runTournamentDiscovery(
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
-        const { data: rawCached, error: cacheError } = await supabase.rpc('get_discovery_cache', { p_hours: 1 });
+        const { data: rawCached, error: cacheError } = await supabase.rpc('get_discovery_cache', { p_hours: CACHE_HOURS });
         if (cacheError) {
             logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Cache fetch failed: ${cacheError.message}` });
         }
@@ -72,7 +78,7 @@ export async function runTournamentDiscovery(
             let keywordYield = 0;
             try {
                 // [THREAT:] fetchWithRotation handles API key rotation to prevent IP/Token banning.
-                const tournamentListResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
+                const tournamentListResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=${TOURNAMENT_SEARCH_LIMIT}`);
                 logAudit('TOURNAMENT_DISCOVERY', 'run', { keyword, status: tournamentListResponse.status });
                 console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' returned HTTP ${tournamentListResponse.status}`);
                 if (!tournamentListResponse.ok) {
@@ -99,14 +105,11 @@ export async function runTournamentDiscovery(
                     return;
                 }
 
-                const tournamentList = listValidation.output.items;
+                const tournamentList = [...listValidation.output.items].sort(
+                    (firstTournament, secondTournament) => secondTournament.capacity - firstTournament.capacity
+                );
 
                 const tournamentDetailTasks = tournamentList.map((tournamentTarget) => async () => {
-                    // [DECISION LOG] Skip full tournaments and recently scanned tournaments to minimize API quota usage.
-                    if (tournamentTarget.capacity === tournamentTarget.maxCapacity) {
-                        console.log(`[TOURNAMENT_DISCOVERY] Skipping tournament ${tournamentTarget.tag}: full capacity`);
-                        return;
-                    }
                     if (blacklist.has(tournamentTarget.tag)) {
                         console.log(`[TOURNAMENT_DISCOVERY] Skipping tournament ${tournamentTarget.tag}: blacklisted/cached`);
                         return;
@@ -161,7 +164,7 @@ export async function runTournamentDiscovery(
                         console.error(`[TOURNAMENT_DISCOVERY] Exception while fetching tournament ${tournamentTarget.tag}: ${errorMessage}`);
                     }
                 });
-                await processBatch(tournamentDetailTasks, 10);
+                await processBatch(tournamentDetailTasks, BATCH_TOURNAMENTS);
 
                 // 2. Report yield for autonomy
                 // [DECISION LOG] Reporting yield allows the system to prioritize keywords that produce more recruits.
@@ -180,7 +183,7 @@ export async function runTournamentDiscovery(
             }
         });
         
-        await processBatch(discoveryTasks, 5);
+        await processBatch(discoveryTasks, BATCH_KEYWORDS);
         console.log(`[TOURNAMENT_DISCOVERY] All keywords processed. Total new candidates discovered: ${discoveryCount}`);
         stats.discovery_targets += discoveryCount;
         if (stats.discovery_tournament !== undefined) stats.discovery_tournament += discoveryCount;

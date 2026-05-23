@@ -131,7 +131,6 @@ Deno.serve(async (req) => {
   return await clinicalServe({
     req,
     supabase,
-    bearerToken: CONFIG.INTERNAL_BEARER_TOKEN,
     eventType: "PLAYER_SYNC",
     componentId: "PLAYER_CARD_SYNC",
     schema: PlayerSyncPayloadSchema,
@@ -143,6 +142,7 @@ Deno.serve(async (req) => {
       // [DECISION LOG] The features.player_card_snapshots table acts as a Layer 2 cache.
       // We check for existing data to minimize Royale API quota consumption and improve response speed.
       const { data: rawStoredSnapshots, error: fetchError } = await supabase
+        .schema("features")
         .from("player_card_snapshots")
         .select(
           "card_name, rarity, absolute_level, count, is_tower_troop, fetched_at, player_name, king_level, xp_into_level"
@@ -261,10 +261,12 @@ Deno.serve(async (req) => {
         }));
 
         const { error: upsertError } = await supabase
+          .schema("features")
           .from("player_card_snapshots")
           .upsert(upsertRows, { onConflict: "player_tag,card_id" });
 
         if (upsertError) {
+          console.error("UPSERT ERROR EXPOSED:", upsertError);
           logAudit("UPSERT", "error", { message: upsertError.message });
           // Non-fatal: still return the data even if persistence failed.
         } else {

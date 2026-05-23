@@ -23,8 +23,7 @@ export const CONFIG = {
 
 export const supabase = createClient(
   CONFIG.SUPABASE_URL,
-  CONFIG.SUPABASE_SERVICE_ROLE_KEY,
-  { db: { schema: "features" } }
+  CONFIG.SUPABASE_SERVICE_ROLE_KEY
 );
 
 /**
