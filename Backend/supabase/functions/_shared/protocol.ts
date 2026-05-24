@@ -6,17 +6,36 @@ import * as v from "npm:valibot";
 import { AuditEntry } from "./types.ts";
 
 /**
- * L5 Control: Clinical Protocol Handler
- * Standardizes authorization, validation, and microscopic telemetry across all Edge Functions.
+ * CONFIGURATION: ProtocolOptions
+ *
+ * @remarks
+ * Defines the configuration contract for the clinical protocol handler.
+ * Ensures that all Edge Functions adhere to the same execution and
+ * telemetry standards.
+ *
+ * @typeParam T - The expected shape of the inbound request payload.
  */
-
 export interface ProtocolOptions<T> {
+    /** The raw inbound Request object from the Edge Function entry point. */
     req: Request;
+    /** An authenticated Supabase client for performing telemetry and DB operations. */
     supabase: SupabaseClient;
+    /** The expected shared internal bearer token for service-to-service auth. */
     bearerToken: string;
+    /** The classification key for the telemetry event (e.g., 'INGESTION', 'SCAN'). */
     eventType: string;
+    /** The unique identifier of the component triggering the protocol (e.g., 'headhunter-scanner'). */
     componentId: string;
+    /** The Valibot schema used to enforce the validation boundary on the inbound payload. */
     schema: v.BaseSchema<unknown, T, unknown>;
+    /**
+     * The core business logic handler to be executed within the clinical wrapper.
+     *
+     * @param payload - The validated and typed request body.
+     * @param logAudit - A telemetry sink for recording clinical audit entries.
+     * @param heartbeat - A persistence hook for updating intermediate pipeline state.
+     * @returns A promise resolving to the final execution results.
+     */
     handler: (
         payload: T, 
         logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
@@ -24,6 +43,34 @@ export interface ProtocolOptions<T> {
     ) => Promise<unknown>;
 }
 
+/**
+ * L5 CONTROL: Clinical Protocol Handler (Layer 1 Core)
+ *
+ * @remarks
+ * Standardizes authorization, validation, and microscopic telemetry across all
+ * Supabase Edge Functions. Enforces a clinical execution environment with
+ * multi-stage governance.
+ *
+ * **Execution Sequence:**
+ * 1. CORS Preflight - Handles cross-origin OPTIONS requests.
+ * 2. Authorization Guard - Validates the internal service bearer token.
+ * 3. Method & Payload Validation - Rejects non-POST methods and malformed JSON.
+ * 4. Governance: Initial Heartbeat - Boots telemetry and reports RUNNING status.
+ * 5. Logic Execution - Executes the provided business logic handler.
+ * 6. Governance: Completion - Closes telemetry with success/failure reports.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 5 (Control) implementing Layer 1 (Core) patterns.
+ * - **Satisfaction:** ADR Section III: Validation Boundaries and ADR Section IV: Resilience.
+ *
+ * @param options - The protocol configuration and handler.
+ * @returns A Response object containing the clinical result or error metadata.
+ *
+ * @sideeffects
+ * - CALLS `report_telemetry` RPC to initialize tracking.
+ * - CALLS `report_heartbeat` RPC to signal component health.
+ * - CALLS `update_telemetry` RPC to persist audit logs and results.
+ */
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     const { req, supabase, bearerToken, eventType, componentId, schema, handler } = options;
     const startTime = Date.now();
@@ -58,7 +105,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }
 
         // 3. Method & Payload Validation
-        // [THREAT:] Rejects malformed or malicious payloads at the L5 boundary.
+        // [THREAT:] Rejects malformed, malicious, or non-POST payloads at the L5 boundary.
+        // [DECISION LOG] Strictly enforces POST to simplify the protocol's state machine.
         if (req.method !== 'POST') {
             return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { 
                 status: 405, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
@@ -66,6 +114,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }
 
         const rawBody = await req.json().catch(() => ({}));
+        // [GUARD] VALIDATION BOUNDARY: Satisfies ADR Section III.
+        // Rejects malformed or hostile payloads before they reach business logic.
         const parsed = v.safeParse(schema, rawBody);
         if (!parsed.success) {
             console.warn(`[Protocol] Validation rejected for ${componentId}: malformed payload.`);
@@ -75,6 +125,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }
 
         // 4. Governance: Initial Heartbeat & Telemetry Boot
+        // [DECISION LOG] Telemetry is initiated at the BOOT stage to track the full
+        // lifecycle of the request, including duration and audit logs.
         const { data: telemetryData } = await supabase.rpc('report_telemetry', {
             p_event_type: eventType,
             p_status: 'IN_PROGRESS',
@@ -84,12 +136,19 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         logAudit('BOOT', 'triggered', { payload: parsed.output });
 
+        // [DECISION LOG] Initial heartbeat signals to the global supervisor that
+        // the Edge Function has started and is nominally healthy.
         await supabase.rpc('report_heartbeat', {
             p_component_id: componentId,
             p_status: 'RUNNING',
             p_message: `Protocol execution initiated for ${componentId}.`
         });
 
+        /**
+         * Heartbeat closure for the handler.
+         * [DECISION LOG] Provides a mechanism for long-running handlers to persist
+         * intermediate results, ensuring partial progress is not lost on timeout.
+         */
         const heartbeat = async (stage: string, currentResults: unknown) => {
             logAudit(stage, 'terminated', { status: 'IN_PROGRESS' });
             if (telemetry?.id) {
@@ -111,6 +170,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         const results = await handler(parsed.output, logAudit, heartbeat);
 
         // 6. Governance: Completion & Telemetry Closure
+        // [DECISION LOG] Final telemetry update aggregates all audit entries and
+        // calculates total execution duration for performance monitoring.
         const audit_log_final = [...audit_log, { 
             timestamp: new Date().toISOString(), 
             stage: 'COMPLETE', 
@@ -171,6 +232,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         });
 
     } catch (protocolError: unknown) {
+        // [THREAT:] Unhandled exceptions within the handler or protocol lifecycle
+        // are trapped here to prevent raw runtime leaks and ensure failed status reporting.
         const errorMessage = protocolError instanceof Error ? protocolError.message : String(protocolError);
         console.error(`[CRITICAL] Protocol Violation in ${componentId}: ${errorMessage}`);
         logAudit('FATAL_ERROR', 'error', { message: errorMessage });
