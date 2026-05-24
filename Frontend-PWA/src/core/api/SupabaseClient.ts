@@ -4,23 +4,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { ref } from "vue";
 import type {
-  ApiResponse,
   WebAppData,
   PingResponse,
-  DismissResponse,
-  DismissalRequest,
   Recruit,
   LeaderboardMember,
-  VoyageContribution,
-  VoyageSummary,
 } from "@core/types";
-import { idb } from "../services/StorageService";
+import { loadCache, saveCache } from "../services/StorageService";
 import {
-  ProfileInputSchema,
   SbRosterRowSchema,
-  SbHeadhunterRowSchema,
-  VoyageContributionSchema,
-  VoyageSummarySchema
+  SbHeadhunterRowSchema
 } from "./DataSchemas";
 import { mapSbRosterRow, mapSbHeadhunterRow } from "./DataMappers";
 import * as v from "valibot";
@@ -42,7 +34,6 @@ import * as v from "valibot";
  */
 
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
-const CACHE_KEY_MAIN = "CLAN_MANAGER_DATA_V8";
 
 /**
  * Specialized error class for network-level failures.
@@ -56,8 +47,8 @@ export class NetworkError extends Error {
 }
 
 // Supabase Configuration
-const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
-const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+export const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
+export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 /**
  * Internal factory to create a scoped Supabase client.
@@ -100,22 +91,6 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
   } catch (err) {
     return { status: 'error', message: String(err) };
   }
-}
-
-/**
- * Loads the main application dataset from persistent local storage.
- * @returns The cached WebAppData or null if empty.
- */
-export async function loadCache(): Promise<WebAppData | null> {
-  return idb.get<WebAppData>(CACHE_KEY_MAIN);
-}
-
-/**
- * Persists the main application dataset to local storage.
- * @param data - The WebAppData to cache.
- */
-export async function saveCache(data: WebAppData): Promise<void> {
-  return idb.set(CACHE_KEY_MAIN, data);
 }
 
 /**
@@ -186,287 +161,4 @@ export async function fetchRemote(options?: {
   
   await saveCache(webAppData);
   return webAppData;
-}
-
-/**
- * Synchronizes and retrieves a specific player profile via the User Proxy.
- *
- * @remarks
- * Satisfies ADR Section III: Validation Boundaries.
- * Triggers the `sync-player-cards` Edge Function to perform normalization
- * and persistence on the backend before returning a validated profile.
- *
- * @param tag - The unique player tag.
- * @returns A Promise resolving to a validated ProfileInput dataset.
- * @throws Error if the Edge Function call fails.
- */
-export async function getPlayerProfile(
-  tag: string,
-): Promise<v.InferOutput<typeof ProfileInputSchema>> {
-  // Call the sync-player-cards Edge Function, which:
-  //  1. Fetches the player profile from the Clash Royale API via the key-rotation proxy.
-  //  2. Normalizes rarity-relative card levels to the unified 1-16 absolute scale.
-  //  3. Upserts the snapshot into features.player_card_snapshots.
-  //  4. Returns the profile in ProfileInputSchema format.
-  const functionUrl = `${getSupabaseUrl()}/functions/v1/sync-player-cards`;
-  const profileResponse = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // Use the publishable key so the Edge Function's JWT verification passes.
-      "Authorization": `Bearer ${getSupabaseKey()}`,
-    },
-    body: JSON.stringify({ tag }),
-  });
-
-  if (!profileResponse.ok) {
-    const errorBody = await profileResponse.json().catch(() => ({ error: `HTTP ${profileResponse.status}` }));
-    throw new Error(errorBody.error ?? `sync-player-cards failed with status ${profileResponse.status}`);
-  }
-
-  const rawProfileData = await profileResponse.json();
-
-  // Merge cards and towerTroops into a single array for the simulation engine.
-  // isTowerTroop is already set correctly by the Edge Function.
-  const normalizedCards = [
-    ...(rawProfileData.cards ?? []),
-    ...(rawProfileData.towerTroops ?? []),
-  ];
-
-  // [GUARD] VALIDATION BOUNDARY: Enforce schema on Edge Function response before domain use.
-  return v.parse(ProfileInputSchema, {
-    profile: {
-      name: rawProfileData.profile?.name ?? "Unknown",
-      tag: rawProfileData.profile?.tag ?? tag,
-      kingLevel: rawProfileData.profile?.kingLevel ?? 1,
-      xpIntoLevel: rawProfileData.profile?.xpIntoLevel ?? 0,
-    },
-    cards: normalizedCards,
-    inventory: rawProfileData.inventory ?? {
-      gold: 0,
-      gems: 0,
-      wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 },
-    },
-  });
-}
-
-/**
- * Dismisses one or more recruits from the recruitment pool.
- *
- * @remarks
- * Implements a "Deferred Operation" pattern: if the network is unavailable,
- * the request is enqueued for background synchronization.
- *
- * @param items - Array of dismissal requests containing player IDs.
- * @returns A Promise resolving to an ApiResponse.
- *
- * @sideeffects
- * - ENQUEUES to `offline_queue` in IndexedDB if offline.
- */
-export async function dismissRecruits(
-  items: DismissalRequest[],
-): Promise<ApiResponse<DismissResponse>> {
-  const supabase = createSupabaseClient();
-  // [ADR] Normalize IDs: Ensure all tags have the # prefix to satisfy drivers.recruit_blacklist CHECK constraints.
-  const normalizedItems = items.map(item => ({
-    ...item,
-    id: item.id.startsWith('#') ? item.id : `#${item.id}`
-  }));
-  const { data, error } = await supabase.rpc('dismiss_recruits', { items: normalizedItems });
-  
-  // [DESIGN] CONNECTION REQUIRED: Dismissal requires an active connection.
-  // The offline queue has been removed. On any failure, throw immediately so
-  // the caller can roll back the optimistic tombstone and inform the user.
-  if (error) throw new NetworkError(error.message);
-  
-  return { success: true, data: data as DismissResponse };
-}
-
-/**
- * Restores one or more dismissed recruits to the active pool.
- *
- * @remarks
- * Implements a "Deferred Operation" pattern: if the network is unavailable,
- * the request is enqueued for background synchronization.
- *
- * @param ids - Array of player tags to restore.
- * @returns A Promise resolving to an ApiResponse.
- *
- * @sideeffects
- * - ENQUEUES to `offline_queue` in IndexedDB if offline.
- */
-export async function undismissRecruits(
-  ids: string[],
-): Promise<ApiResponse<DismissResponse>> {
-  const supabase = createSupabaseClient();
-  const player_tags = ids.map(id => id.startsWith('#') ? id : `#${id}`);
-  const { data, error } = await supabase.rpc('undismiss_recruits', { player_tags });
-  
-  // [DESIGN] CONNECTION REQUIRED: Undismissal requires an active connection.
-  if (error) throw new NetworkError(error.message);
-  
-  return { success: true, data: data as DismissResponse };
-}
-
-/**
- * Establishes a Realtime subscription on `drivers.recruit_blacklist`.
- *
- * @remarks
- * Listens for INSERT (cross-device dismissals) and DELETE (undismissals) events.
- * Requires `REPLICA IDENTITY FULL` on the table for DELETE payloads to carry
- * the old row data. Returns a cleanup function that removes the channel.
- *
- * **Architectural Context:**
- * - Layer: Layer 1 (@core) — transport factory only, no business logic.
- * - Callers in Layer 3 (@features) supply the event handlers.
- *
- * @param onInsert - Called with the player_tag when a blacklist row is inserted.
- * @param onDelete - Called with the player_tag when a blacklist row is deleted.
- * @returns Cleanup function; call on component unmount.
- */
-export function subscribeToBlacklist(
-  onInsert: (playerTag: string) => void,
-  onDelete: (playerTag: string) => void,
-): () => void {
-  const supabase = createSupabaseClient();
-
-  try {
-    const channel = supabase
-      .channel('cm-blacklist-sync')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'drivers', table: 'recruit_blacklist' },
-        (payload) => {
-          const playerTag = (payload.new as { player_tag?: string }).player_tag;
-          if (playerTag) onInsert(playerTag);
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'drivers', table: 'recruit_blacklist' },
-        (payload) => {
-          const playerTag = (payload.old as { player_tag?: string }).player_tag;
-          if (playerTag) onDelete(playerTag);
-        },
-      )
-      .subscribe((status, err) => {
-        if (err) {
-          console.warn("[Realtime] Subscription error:", err);
-        }
-      });
-
-    return () => { supabase.removeChannel(channel); };
-  } catch (e) {
-    console.warn("[Realtime] Failed to initialize subscription:", e);
-    return () => {};
-  }
-}
-
-/**
- * Manually triggers the backend data ingestion pipeline.
- * @returns A Promise resolving to an ApiResponse.
- */
-export async function triggerBackendUpdate(
-  target?: string,
-): Promise<ApiResponse<{ success: boolean; message: string }>> {
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase.rpc('trigger_backend_update');
-  
-  if (error) return { success: false, data: null, error: { code: error.code, message: error.message } };
-  return { success: true, data: data as { success: boolean; message: string } };
-}
-
-/**
- * [DIAGNOSTIC] Performs a direct query of the headhunter pool.
- * @returns A Promise resolving to an array of Recruits or null on failure.
- */
-export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase.from('headhunter_view').select('*').limit(20);
-  if (error || !data) return null;
-  return data.map(mapSbHeadhunterRow);
-}
-
-/**
- * Registers a PushSubscription for server-side notifications.
- * @param subscription - The browser's PushSubscription object.
- * @returns A Promise resolving to true if successful.
- */
-export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
-  const supabase = createSupabaseClient();
-  const { error } = await supabase.schema('drivers').from('push_subscriptions').insert({
-    subscription: JSON.parse(JSON.stringify(subscription))
-  });
-  
-  return !error;
-}
-
-/**
- * [VOYAGE] Activates a new Clan Voyage event via the features proxy.
- */
-export async function initializeVoyage(target: number, start: string, end: string) {
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase
-        .rpc('initialize_voyage', {
-            target_crowns: target,
-            start_at: start,
-            end_at: end
-        });
-
-    if (error) {
-        console.error('[Voyage] RPC Execution Error:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-        });
-        return { success: false, error: error.message };
-    }
-
-    // data is the JSONB object returned by the function
-    return { success: true, data };
-}
-
-/**
- * Fetches the voyage summary from the SSOT view.
- *
- * @remarks
- * [GUARD] VALIDATION BOUNDARY: Harden external view data before domain use.
- */
-export async function fetchVoyageSummary(): Promise<VoyageSummary | null> {
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase
-        .from('voyage_summary')
-        .select('*')
-        .limit(1)
-        .maybeSingle();
-
-    if (error) {
-        console.error('[Voyage] Summary fetch error:', error);
-        return null;
-    }
-
-    if (!data) return null;
-
-    return v.parse(VoyageSummarySchema, data);
-}
-
-/**
- * Fetches contribution aggregates from the high-resolution ledger view.
- *
- * @remarks
- * [GUARD] VALIDATION BOUNDARY: Harden external view data before domain use.
- */
-export async function fetchVoyageContributions(): Promise<VoyageContribution[]> {
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase
-        .from('voyage_contributions')
-        .select('*');
-
-    if (error) {
-        console.error('[Voyage] Contributions fetch error:', error);
-        return [];
-    }
-
-    return v.parse(v.array(VoyageContributionSchema), data || []);
 }

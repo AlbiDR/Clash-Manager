@@ -64,10 +64,6 @@ vi.mock("@core/services/useToast", () => ({
 
 // Mock API specifically
 vi.mock("@core/api/SupabaseClient", () => ({
-  dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
-  undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
-  subscribeToBlacklist: vi.fn().mockReturnValue(vi.fn()),
-
   lastSyncStatus: { value: null },
   NetworkError: class extends Error {
     constructor(m: string) {
@@ -75,6 +71,12 @@ vi.mock("@core/api/SupabaseClient", () => ({
       this.name = "NetworkError";
     }
   },
+}));
+
+vi.mock("@core/api/RecruitClient", () => ({
+  dismissRecruits: vi.fn().mockResolvedValue({ success: true }),
+  undismissRecruits: vi.fn().mockResolvedValue({ success: true }),
+  subscribeToBlacklist: vi.fn().mockReturnValue(vi.fn()),
 }));
 
 // --- Test Implementation ---
@@ -177,7 +179,7 @@ describe("useHeadhunter", () => {
   it("should dismiss recruits optimistically", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core/api/SupabaseClient");
+    const { dismissRecruits } = await import("@core/api/RecruitClient");
 
     mockClashData.value = sampleData;
     await nextTick();
@@ -200,7 +202,7 @@ describe("useHeadhunter", () => {
   it("should rollback on logic failure during dismissal", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core/api/SupabaseClient");
+    const { dismissRecruits } = await import("@core/api/RecruitClient");
 
     vi.mocked(dismissRecruits).mockRejectedValueOnce(new Error("Server Error"));
 
@@ -220,7 +222,7 @@ describe("useHeadhunter", () => {
   it("should bypass network calls in synthetic mode", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core/api/SupabaseClient");
+    const { dismissRecruits } = await import("@core/api/RecruitClient");
 
     mockIsSyntheticMode.value = true;
     mockClashData.value = sampleData;
@@ -254,7 +256,7 @@ describe("useHeadhunter", () => {
   it("should restore recruits during undo action", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     const { undismissRecruitsAction } = useHeadhunter();
-    const { undismissRecruits } = await import("@core/api/SupabaseClient");
+    const { undismissRecruits } = await import("@core/api/RecruitClient");
 
     // Start with only R2
     mockClashData.value = { ...sampleData, hh: [sampleRecruit2] };

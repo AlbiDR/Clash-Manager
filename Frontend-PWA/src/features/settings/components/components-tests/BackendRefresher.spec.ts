@@ -10,13 +10,16 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref, nextTick } from 'vue';
 import BackendRefresher from '../BackendRefresher.vue';
-import { triggerBackendUpdate } from '@core/api/SupabaseClient';
+import { triggerBackendUpdate } from '@core/api/MaintenanceClient';
 import { useClashDataStore } from '@core';
+
+// Mock MaintenanceClient
+vi.mock('@core/api/MaintenanceClient', () => ({
+  triggerBackendUpdate: vi.fn()
+}));
 
 // Mock SupabaseClient
 vi.mock('@core/api/SupabaseClient', () => ({
-  triggerBackendUpdate: vi.fn(),
-
   lastSyncStatus: ref(null)
 }));
 

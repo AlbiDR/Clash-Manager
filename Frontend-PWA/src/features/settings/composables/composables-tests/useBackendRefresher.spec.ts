@@ -9,12 +9,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { effectScope, nextTick, ref } from "vue";
 import { useBackendRefresher } from "../useBackendRefresher";
-import { triggerBackendUpdate } from "@core/api/SupabaseClient";
+import { triggerBackendUpdate } from "@core/api/MaintenanceClient";
+
+// Mock MaintenanceClient
+vi.mock("@core/api/MaintenanceClient", () => ({
+  triggerBackendUpdate: vi.fn()
+}));
 
 // Mock SupabaseClient
 vi.mock("@core/api/SupabaseClient", () => ({
-  triggerBackendUpdate: vi.fn(),
-
   lastSyncStatus: ref(null),
 }));
 
