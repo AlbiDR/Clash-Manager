@@ -64,7 +64,7 @@ export function useRecruiter() {
       "fab-action": blitz.handleAction,
       "fab-blitz": blitz.handleBlitz,
       "clear-selection": blitz.clearSelection,
-      "fab-dismiss": blitz.clearSelection,
+      "fab-dismiss": dismissBulk,
     }))
   });
 
@@ -97,7 +97,10 @@ export function useRecruiter() {
   }
 
   function dismissBulk() {
-    if (controller.selectedIds.value.length === 0) return;
+    if (controller.selectedIds.value.length === 0) {
+      blitz.clearSelection();
+      return;
+    }
     const targetRecruitIds = [...controller.selectedIds.value];
     const recruitsToRemove = recruits.value.filter(recruit => targetRecruitIds.includes(recruit.id));
     

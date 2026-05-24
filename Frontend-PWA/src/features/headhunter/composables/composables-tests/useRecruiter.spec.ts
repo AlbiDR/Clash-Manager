@@ -223,6 +223,13 @@ describe("useRecruiter", () => {
     expect(sortOptions![0]).toHaveProperty("desc");
   });
 
+  it("maps fab-dismiss layout event to dismissBulk", () => {
+    const [{ layoutEvents, selectedIds }] = withSetup(() => useRecruiter());
+    selectedIds.value = ["1"];
+    layoutEvents.value["fab-dismiss"]();
+    expect(mockHide).toHaveBeenCalledWith(["1"]);
+  });
+
   it("handles search updates", () => {
     const [{ handleSearch, searchQuery }] = withSetup(() => useRecruiter());
     handleSearch("Recruit A");
