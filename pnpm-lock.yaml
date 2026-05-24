@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@supabase/supabase-js':
+      specifier: ^2.106.1
+      version: 2.106.1
     '@types/node':
       specifier: ^24.12.0
       version: 24.12.0
@@ -90,7 +93,7 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0
       '@supabase/supabase-js':
-        specifier: ^2.106.1
+        specifier: 'catalog:'
         version: 2.106.1
       pinia:
         specifier: 'catalog:'
