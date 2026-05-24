@@ -13,9 +13,11 @@ vi.mock('@core/services/useClashData', () => ({
 }));
 
 vi.mock('@core/api/SupabaseClient', () => ({
-  getPlayerProfile: vi.fn(),
-
   lastSyncStatus: { value: null }
+}));
+
+vi.mock('@core/api/ProfileClient', () => ({
+  getPlayerProfile: vi.fn(),
 }));
 
 // Mock the logic module

@@ -22,9 +22,6 @@ vi.mock("@shared", async (importOriginal) => {
 
 // Mock SupabaseClient because useVoyageStore uses it
 vi.mock("@core/api/SupabaseClient", () => ({
-  initializeVoyage: vi.fn(),
-  fetchVoyageSummary: vi.fn(),
-  fetchVoyageContributions: vi.fn(),
   createSupabaseClient: vi.fn(() => ({
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
@@ -32,6 +29,12 @@ vi.mock("@core/api/SupabaseClient", () => ({
       unsubscribe: vi.fn()
     }))
   }))
+}));
+
+vi.mock("@core/api/VoyageClient", () => ({
+  initializeVoyage: vi.fn(),
+  fetchVoyageSummary: vi.fn(),
+  fetchVoyageContributions: vi.fn(),
 }));
 
 describe("VoyageSetupForm.vue", () => {

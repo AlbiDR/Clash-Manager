@@ -24,8 +24,8 @@ import { runDeepDepth } from "./stages/deep-depth.ts";
  */
 export async function executePipeline(
     targetTag: string, 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void,
-    heartbeat: (stage: string, currentResults: any) => Promise<void>
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    heartbeat: (stage: string, currentResults: unknown) => Promise<void>
 ): Promise<IngestionResult> {
     const startTime = Date.now();
     
@@ -66,8 +66,9 @@ export async function executePipeline(
     // before syncing the primary clan target.
     try {
         await withTimeout(runDiscovery(results, logAudit), 'S1_DISCOVERY');
-    } catch (e: any) {
-        logAudit('S1_DISCOVERY', 'error', { message: e.message });
+    } catch (stageError: unknown) {
+        const errorMessage = stageError instanceof Error ? stageError.message : String(stageError);
+        logAudit('S1_DISCOVERY', 'error', { message: errorMessage });
     }
     await heartbeat('S1_DISCOVERY', results);
 
@@ -75,8 +76,9 @@ export async function executePipeline(
     // [DECISION LOG] Unified stage for clan-specific domain synchronization.
     try {
         await withTimeout(runClanSync(targetTag, results, logAudit), 'S2_S5_CLAN');
-    } catch (e: any) {
-        logAudit('CLAN_SYNC', 'error', { message: e.message });
+    } catch (stageError: unknown) {
+        const errorMessage = stageError instanceof Error ? stageError.message : String(stageError);
+        logAudit('CLAN_SYNC', 'error', { message: errorMessage });
     }
     await heartbeat('S2_S5_CLAN', results);
 
@@ -84,13 +86,12 @@ export async function executePipeline(
     // [DECISION LOG] Final enrichment stage for competitive battle history.
     try {
         await withTimeout(runDeepDepth(results, logAudit), 'S6_BATTLES');
-    } catch (e: any) {
-        logAudit('DEEP_DEPTH', 'error', { message: e.message });
+    } catch (stageError: unknown) {
+        const errorMessage = stageError instanceof Error ? stageError.message : String(stageError);
+        logAudit('DEEP_DEPTH', 'error', { message: errorMessage });
     }
     await heartbeat('S6_BATTLES', results);
 
     results.diagnostics.duration_ms = Date.now() - startTime;
     return results;
 }
-
-
