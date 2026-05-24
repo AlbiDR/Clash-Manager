@@ -16,12 +16,12 @@ export interface ProtocolOptions<T> {
     bearerToken: string;
     eventType: string;
     componentId: string;
-    schema: v.BaseSchema<any, T, any>;
+    schema: v.BaseSchema<unknown, T, unknown>;
     handler: (
         payload: T, 
-        logAudit: (stage: string, action: AuditEntry['action'], details?: any) => void,
-        heartbeat: (stage: string, currentResults: any) => Promise<void>
-    ) => Promise<any>;
+        logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+        heartbeat: (stage: string, currentResults: unknown) => Promise<void>
+    ) => Promise<unknown>;
 }
 
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
@@ -29,7 +29,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     const startTime = Date.now();
     const audit_log: AuditEntry[] = [];
 
-    const logAudit = (stage: string, action: AuditEntry['action'], details?: any) => {
+    const logAudit = (stage: string, action: AuditEntry['action'], details?: unknown) => {
         audit_log.push({ timestamp: new Date().toISOString(), stage, action, details });
     };
 
@@ -46,6 +46,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
     try {
         // 2. Authorization Guard
+        // [THREAT:] Prevents unauthorized access to privileged Edge Functions.
+        // [DECISION LOG] Uses a shared internal bearer token for service-to-service auth.
         const authHeader = req.headers.get("Authorization");
         const expectedToken = `Bearer ${bearerToken}`;
         if (!bearerToken || authHeader !== expectedToken) {
@@ -56,6 +58,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }
 
         // 3. Method & Payload Validation
+        // [THREAT:] Rejects malformed or malicious payloads at the L5 boundary.
         if (req.method !== 'POST') {
             return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { 
                 status: 405, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
@@ -87,14 +90,14 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             p_message: `Protocol execution initiated for ${componentId}.`
         });
 
-        const heartbeat = async (stage: string, currentResults: any) => {
+        const heartbeat = async (stage: string, currentResults: unknown) => {
             logAudit(stage, 'terminated', { status: 'IN_PROGRESS' });
             if (telemetry?.id) {
                 await supabase.rpc('update_telemetry', {
                     p_id: telemetry.id,
                     p_status: 'IN_PROGRESS',
                     p_metadata: { 
-                        ...currentResults, 
+                        ...(typeof currentResults === 'object' && currentResults !== null ? currentResults : { results: currentResults }),
                         stage, 
                         current_duration: Date.now() - startTime,
                         audit_log
@@ -104,6 +107,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         };
 
         // 5. Logic Execution
+        // [THREAT:] Unhandled exceptions in the handler are caught by the global protocol block.
         const results = await handler(parsed.output, logAudit, heartbeat);
 
         // 6. Governance: Completion & Telemetry Closure
@@ -114,12 +118,19 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             details: { status: 'SUCCESS' } 
         }];
 
-        const integrityChecks = audit_log_final.filter(a => a.action === 'integrity_checked');
-        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(c => c.details?.passed === true);
+        const integrityChecks = audit_log_final.filter(entry => entry.action === 'integrity_checked');
+        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(check => {
+            const details = check.details as Record<string, unknown> | undefined;
+            return typeof details === 'object' && details !== null && details.passed === true;
+        });
+
         const validationReport = {
-            stages_called: audit_log_final.filter(a => a.action === 'called').map(a => a.stage),
-            stages_run: audit_log_final.filter(a => a.action === 'run').map(a => a.stage),
-            integrity_checks: integrityChecks.map(c => ({ stage: c.stage, passed: c.details?.passed })),
+            stages_called: audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage),
+            stages_run: audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage),
+            integrity_checks: integrityChecks.map(check => {
+                const details = check.details as Record<string, unknown> | undefined;
+                return { stage: check.stage, passed: details?.passed === true };
+            }),
             total_duration: Date.now() - startTime
         };
         
@@ -128,7 +139,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                 p_id: telemetry.id,
                 p_status: 'SUCCESS',
                 p_metadata: { 
-                    ...results, 
+                    ...(typeof results === 'object' && results !== null ? results : { results }),
                     stage: 'COMPLETE', 
                     current_duration: Date.now() - startTime,
                     audit_log: audit_log_final,
@@ -159,26 +170,27 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
         });
 
-    } catch (err: any) {
-        console.error(`[CRITICAL] Protocol Violation in ${componentId}: ${err.message}`);
-        logAudit('FATAL_ERROR', 'error', { message: err.message });
+    } catch (protocolError: unknown) {
+        const errorMessage = protocolError instanceof Error ? protocolError.message : String(protocolError);
+        console.error(`[CRITICAL] Protocol Violation in ${componentId}: ${errorMessage}`);
+        logAudit('FATAL_ERROR', 'error', { message: errorMessage });
         
         await supabase.rpc('report_heartbeat', {
             p_component_id: componentId,
             p_status: 'FAILED',
-            p_message: `Fatal protocol error: ${err.message}`,
+            p_message: `Fatal protocol error: ${errorMessage}`,
             p_metadata: {
                 last_failure_at: new Date().toISOString(),
                 is_data_perfect: false,
                 last_validation_report: {
-                    error: err.message,
+                    error: errorMessage,
                     audit_log
                 }
             }
         });
 
         return new Response(JSON.stringify({ 
-            error: err.message, 
+            error: errorMessage,
             layer: 'L5_CONTROL',
             component_id: componentId
         }), { 
