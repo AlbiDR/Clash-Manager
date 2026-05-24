@@ -3,6 +3,10 @@
 // Logic Engine
 export * from "./config";
 export * from "./api/SupabaseClient";
+export * from "./api/VoyageClient";
+export * from "./api/RecruitClient";
+export * from "./api/ProfileClient";
+export * from "./api/MaintenanceClient";
 export * from "./api/DataMappers";
 export * from "./api/useApiState";
 export * from "./services/StorageService";

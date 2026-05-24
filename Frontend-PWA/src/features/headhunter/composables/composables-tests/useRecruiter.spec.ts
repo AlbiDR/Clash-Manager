@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useRecruiter } from "../useRecruiter";
 import { ref, createApp } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
-import * as SupabaseClient from "@core/api/SupabaseClient";
 
 // --- Stable Mocks ---
 const mockUpdateLocalData = vi.fn();
@@ -122,9 +121,11 @@ vi.mock("@core", async (importOriginal) => {
 });
 
 vi.mock("@core/api/SupabaseClient", () => ({
-  scanRecruitsDirect: vi.fn().mockResolvedValue([]),
-
   lastSyncStatus: { value: null },
+}));
+
+vi.mock("@core/api/RecruitClient", () => ({
+  scanRecruitsDirect: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@shared", async (importOriginal) => {
