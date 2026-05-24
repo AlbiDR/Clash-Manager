@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-24] PR #671: fix(version): reconcile version drift in Frontend-PWA
+**Commit**: `7d2e6d97147ef79ec9768c79f3e0dcca251ac347`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/671)
+
+### Description
+This PR reconciles version drift by migrating `@supabase/supabase-js` to the PNPM catalog protocol. It ensures monorepo-wide consistency and adheres to the "Sync Axiom" by centralizing shared dependency management. All tests passed, and the version integrity coverage log has been updated to reflect the reconciliation.
+
+---
+*PR created automatically by Jules for task [5167580971194180632](https://jules.google.com/task/5167580971194180632) started by @AlbiDR*
+
+---
+
 ## [2026-05-24] PR #670: docs(tsdoc): perfect clinical protocol interface contract
 **Commit**: `2030ffb6acda5899bc7e061c85048d947e0288c2`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/670)
