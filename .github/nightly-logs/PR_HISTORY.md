@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-24] PR #673: Structural Surgery: API Client Decomposition
+**Commit**: `6cc3cc969bbe5c1a351ff6bfd6a3b430dd006dd3`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/673)
+
+### Description
+Surgical decomposition of monolithic SupabaseClient into specialized client modules in @core/api. Resolved architectural debt, improved SRP, and centralized cache logic in StorageService. All feature callers and test suites updated and verified.
+
+---
+*PR created automatically by Jules for task [3362238001156016901](https://jules.google.com/task/3362238001156016901) started by @AlbiDR*
+
+---
+
 ## [2026-05-24] PR #672: chore(deps): bump knip from 6.14.1 to 6.14.2
 **Commit**: `51fe0f6e98f54ebc23c28dc041fe828575c20bde`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/672)
