@@ -163,8 +163,11 @@ vi.mock("../../../../core/services/useBadge", () => ({
 
 vi.mock("../../../../core/api/SupabaseClient", () => ({
   isConfigured: mocks.mockIsWorkerConfigured,
-  subscribeToPush: mocks.mockSubscribeToPush,
   lastSyncStatus: ref("SUCCESS"),
+}));
+
+vi.mock("../../../../core/api/MaintenanceClient", () => ({
+  subscribeToPush: mocks.mockSubscribeToPush,
 }));
 
 vi.mock("../../../../core/services/useWakeLock", () => ({
@@ -263,7 +266,7 @@ describe("useSettings", () => {
       expect(result.footerBadgeText.value).toBe("SYNTHETIC");
     });
 
-    it("returns empty string when no modes are active", () => {
+    it("returns empty string when no Library modes are active", () => {
       const { result } = withSetup(useSettings);
       expect(result.footerBadgeText.value).toBe("");
     });

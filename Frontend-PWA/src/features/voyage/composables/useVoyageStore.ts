@@ -25,11 +25,13 @@ import { ref, computed, onUnmounted } from "vue";
 import type { VoyageSummary, VoyageStatus, T2TInput } from "../types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { 
+  createSupabaseClient
+} from "@core/api/SupabaseClient";
+import {
   initializeVoyage as apiInitializeVoyage, 
   fetchVoyageSummary as apiFetchVoyageSummary,
   fetchVoyageContributions as apiFetchVoyageContributions,
-  createSupabaseClient 
-} from "@core/api/SupabaseClient";
+} from "@core/api/VoyageClient";
 
 export const useVoyageStore = defineStore("voyage", () => {
   /**

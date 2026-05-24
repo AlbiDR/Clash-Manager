@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { reactive, onScopeDispose } from "vue";
-import { triggerBackendUpdate } from "@core/api/SupabaseClient";
+import { triggerBackendUpdate } from "@core/api/MaintenanceClient";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
 

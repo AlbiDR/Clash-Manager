@@ -5,11 +5,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useVoyageStore } from "../useVoyageStore";
 import * as SupabaseClient from "@core/api/SupabaseClient";
+import * as VoyageClient from "@core/api/VoyageClient";
 
 vi.mock("@core/api/SupabaseClient", () => ({
-  initializeVoyage: vi.fn(),
-  fetchVoyageSummary: vi.fn(),
-  fetchVoyageContributions: vi.fn(),
   createSupabaseClient: vi.fn(() => ({
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
@@ -17,6 +15,12 @@ vi.mock("@core/api/SupabaseClient", () => ({
       unsubscribe: vi.fn()
     }))
   }))
+}));
+
+vi.mock("@core/api/VoyageClient", () => ({
+  initializeVoyage: vi.fn(),
+  fetchVoyageSummary: vi.fn(),
+  fetchVoyageContributions: vi.fn()
 }));
 
 describe("useVoyageStore", () => {
@@ -67,8 +71,8 @@ describe("useVoyageStore", () => {
         { player_tag: "#P1", player_name: "Player 1", crowns: 100, voyage_crown_pct: "20", performance_score: 85 }
       ];
 
-      vi.mocked(SupabaseClient.fetchVoyageSummary).mockResolvedValue(mockSummary);
-      vi.mocked(SupabaseClient.fetchVoyageContributions).mockResolvedValue(mockContributions as any);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue(mockContributions as any);
 
       const store = useVoyageStore();
       await store.refresh();
@@ -86,8 +90,8 @@ describe("useVoyageStore", () => {
     });
 
     it("should handle null summary from API", async () => {
-      vi.mocked(SupabaseClient.fetchVoyageSummary).mockResolvedValue(null);
-      vi.mocked(SupabaseClient.fetchVoyageContributions).mockResolvedValue([]);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(null);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
 
       const store = useVoyageStore();
       await store.refresh();
@@ -98,7 +102,7 @@ describe("useVoyageStore", () => {
 
     it("should handle API rejection gracefully", async () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      vi.mocked(SupabaseClient.fetchVoyageSummary).mockRejectedValue(new Error("API Error"));
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockRejectedValue(new Error("API Error"));
 
       const store = useVoyageStore();
       await store.refresh();
@@ -113,8 +117,8 @@ describe("useVoyageStore", () => {
         total_crowns: 1200,
         progress_ratio: 1.2
       };
-      vi.mocked(SupabaseClient.fetchVoyageSummary).mockResolvedValue(mockSummary);
-      vi.mocked(SupabaseClient.fetchVoyageContributions).mockResolvedValue([]);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
 
       const store = useVoyageStore();
       await store.refresh();
@@ -129,8 +133,8 @@ describe("useVoyageStore", () => {
         total_crowns: 0,
         progress_ratio: 0
       };
-      vi.mocked(SupabaseClient.fetchVoyageSummary).mockResolvedValue(mockSummary);
-      vi.mocked(SupabaseClient.fetchVoyageContributions).mockResolvedValue([]);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
 
       const store = useVoyageStore();
       await store.refresh();
@@ -145,27 +149,27 @@ describe("useVoyageStore", () => {
     const endsIn = { days: 7, hours: 0, minutes: 0 };
 
     it("should call initializeVoyage and refresh on success", async () => {
-      vi.mocked(SupabaseClient.initializeVoyage).mockResolvedValue({
+      vi.mocked(VoyageClient.initializeVoyage).mockResolvedValue({
         success: true,
         data: { success: true }
       } as any);
-      vi.mocked(SupabaseClient.fetchVoyageSummary).mockResolvedValue(null);
-      vi.mocked(SupabaseClient.fetchVoyageContributions).mockResolvedValue([]);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(null);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
 
       const store = useVoyageStore();
       await store.activateVoyage(target, startsIn, endsIn);
 
-      expect(SupabaseClient.initializeVoyage).toHaveBeenCalledWith(
+      expect(VoyageClient.initializeVoyage).toHaveBeenCalledWith(
         target,
         "2026-01-01T00:00:00.000Z",
         "2026-01-08T00:00:00.000Z"
       );
       // Verify refresh was called by checking its dependencies
-      expect(SupabaseClient.fetchVoyageSummary).toHaveBeenCalled();
+      expect(VoyageClient.fetchVoyageSummary).toHaveBeenCalled();
     });
 
     it("should throw error on logic failure", async () => {
-      vi.mocked(SupabaseClient.initializeVoyage).mockResolvedValue({
+      vi.mocked(VoyageClient.initializeVoyage).mockResolvedValue({
         success: true,
         data: { success: false, error: "Already active" }
       } as any);
@@ -175,7 +179,7 @@ describe("useVoyageStore", () => {
     });
 
     it("should throw error on network/auth failure", async () => {
-      vi.mocked(SupabaseClient.initializeVoyage).mockResolvedValue({
+      vi.mocked(VoyageClient.initializeVoyage).mockResolvedValue({
         success: false,
         error: "Unauthorized"
       } as any);
