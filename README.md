@@ -153,7 +153,7 @@ flowchart TD
 
 ## Nightly Pipeline
 
-The ecosystem is maintained by an 8-agent autonomous pipeline that executes nightly to ensure structural purity, security, and documentation synchronization. This pipeline operates directly on the `Nightly` branch and follows a strictly sequenced maintenance cycle:
+The Nightly pipeline is an automated maintenance and optimization engine designed to enforce structural purity, optimize performance, and synchronize system documentation. Running nightly on the `Nightly` branch, this sequenced multi-agent pipeline executes key phases to keep the monorepo pristine:
 
 1.  **Harden**: Secures validation boundaries and eliminates the "any" plague across the stack.
 2.  **Verify**: Proves system integrity through automated test suite execution and ADR checks.
@@ -163,58 +163,6 @@ The ecosystem is maintained by an 8-agent autonomous pipeline that executes nigh
 6.  **Version Integrity**: The Release Engineer. Enforces strict semantic versioning.
 7.  **Dependency Audit**: The Watchkeeper. Monitors external dependency health and security.
 8.  **Refactor**: The Structural Architect. Orchestrates large-scale structural improvements and architectural migrations.
-
----
-<br />
-
-## Deployment Protocol
-
-The system requires a synchronized deployment across the Supabase and PWA environments.
-
-<details>
-<summary><strong>Phase 1: Backend Layer (Supabase)</strong></summary>
-
-Deploy the database schema and ingestion functions first.
-
-  **Source**: `Backend/`
-  **Requirements**:
-    - `ROYALE_API_KEYS`: The Key Farm (10 Supercell JWTs).
-    - `CLAN_TAG`: Target resource identifier (SSOT).
-  **Action**: 
-    1. `supabase link --project-ref <id>`
-    2. `supabase db push` (Sync Migrations)
-    3. `supabase functions deploy ingest-royale-data`
-    4. `supabase functions deploy headhunter-scanner`
-
-</details>
-
-<details>
-<summary><strong>Phase 2: Operational Interface (PWA)</strong></summary>
-
-The Client consumes the features exposed by Supabase.
-
-  **Source**: `Frontend-PWA/`
-  **Environment**: Static Web Host
-  **Configuration**:
-    - `VITE_SUPABASE_URL`: Your project endpoint.
-    - `VITE_SUPABASE_PUBLISHABLE_KEY`: The `anon` key.
-  **Action**: 
-    1. `pnpm build`
-    2. Upload the `dist/` directory contents to your host.
-
-</details>
-
----
-<br />
-
-## Development Standards
-
-The system adheres to a strict "Clean Stack" philosophy to maintain long-term stability and code purity.
-
-- **Pristine Logic**: Business logic is isolated in pure functions or Supabase SQL triggers.
-- **Zero-Drift**: All modules must maintain synchronicity with their respective README specifications.
-- **Semantic Versioning**: Strict adherence to `Major.Minor.Patch` protocols across the monorepo.
-- **Visual Integrity**: The interfaces must strictly follow the Sovereign Design System (No utility-class pollution).
 
 ---
 <br />
