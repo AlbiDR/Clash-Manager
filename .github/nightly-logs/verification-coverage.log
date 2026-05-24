@@ -87,3 +87,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-05-21 | Frontend-PWA/src/core/theme/tokens.ts | Saturating coverage for CSS variable transformation and shared token integration
 2026-05-22 | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Saturating coverage for Voyage activation and validation boundary
 2026-05-23 | Frontend-PWA/src/shared/ui/DurationInput.vue | Saturating logic coverage for T2T input, clamping, and sanitization; identified negative-clamping bug.
+2026-05-24 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Zero Coverage gap closed; saturating tests for status and statsBadge logic.
