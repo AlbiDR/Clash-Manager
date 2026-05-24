@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Exclude developer portfolio scripts and assets from language statistics
+Frontend-PWA/scripts/* linguist-documentation
+Frontend-PWA/public/portfolio-stitch.html linguist-documentation
+
+# Exclude scratch asset generators from language statistics
+Frontend-PWA/scratch/* linguist-documentation
+
+# Exclude local dev-only service worker files from language statistics
+Frontend-PWA/dev-dist/* linguist-generated
