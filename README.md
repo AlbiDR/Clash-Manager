@@ -77,19 +77,19 @@ The system replaces intuition with a **Complex Valuation Metric** that sorts pla
 </details>
 
 ### The Headhunter Protocol
-Recruitment is no longer passive. The **Headhunter Engine** continuously scans global tournament brackets via Supabase Edge Functions to identify elite, clanless recruits.
-- **Edge-Native Discovery**: High-concurrency Deno functions scan tournaments 24/7.
+Recruitment is no longer passive. The **Headhunter Engine** continuously scans global tournament brackets and active members' battle logs via Supabase Edge Functions to identify elite, clanless recruits.
+- **Edge-Native Discovery**: High-concurrency Deno functions scan tournaments and active member battles around the clock.
 - **Smart Filtering**: Valibot-enforced validation ensures only top-tier candidates reach the UI.
-- **Batch Operations**: Sequence-driven blitzing allows leaders to invite dozens of recruits in minutes.
+- **Batch Operations**: Sequence-driven blitzing allows leaders to invite recruits in minutes.
 
 ---
 <br />
 
 ## Dictionary
 
-- **DeepNet**: The high-performance, offline-first PWA infrastructure (v13+) designed for administrative clan operations.
-- **Headhunter**: The global discovery engine that autonomously scans tournaments to identify elite, clanless recruits.
-- **Nightly**: The automated, 8-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
+- **DeepNet**: The high-performance, sovereign offline-first PWA infrastructure designed for administrative clan operations.
+- **Headhunter**: The global discovery engine that autonomously scans tournaments and active members' battles to identify elite, clanless recruits.
+- **Nightly**: The automated, multi-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
 
 ---
 <br />
