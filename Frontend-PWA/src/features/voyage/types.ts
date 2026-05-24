@@ -14,8 +14,6 @@
 
 export type {
   VoyageStatus,
-  VoyageEvent,
-  VoyageContribution,
   VoyageSummary,
   T2TInput
 } from "@core/types";
