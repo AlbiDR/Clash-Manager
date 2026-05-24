@@ -45,7 +45,6 @@ function handleFabDismiss() {
     class="dock-container"
     :class="{
       'fab-mode': !dockVisible,
-      hidden: !dockVisible && !fabState.selectionCount && !fabState.isBlasting,
       'is-desktop': isDesktop
     }"
   >
@@ -166,18 +165,6 @@ function handleFabDismiss() {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
-.dock-container.hidden:not(.is-desktop) {
-  transform: translate(-50%, 150%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* On Desktop, we prevent the dock from fully disappearing to maintain layout stability */
-.dock-container.hidden.is-desktop {
-  opacity: 0.15;
-  pointer-events: none;
-  transform: translate(-50%, 0) scale(0.95);
-}
 
 /* FAB Mode Styling */
 .dock-container.fab-mode {
