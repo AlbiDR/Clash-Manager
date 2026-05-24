@@ -41,11 +41,11 @@ vi.mock("../../services/StorageService", () => ({
     get: vi.fn(),
     set: vi.fn().mockResolvedValue(undefined),
   },
+  loadCache: vi.fn(),
+  saveCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe("SupabaseClient", () => {
-  const mockSupabase = vi.mocked(createClient)().rpc.bind(null) as any; // Helper to get the client instance later if needed
-
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -138,19 +138,6 @@ describe("SupabaseClient", () => {
       expect(result.status).toBe('error');
       expect(result.message).toContain('Unexpected Crash');
     });
-
-    it("loadCache calls idb.get", async () => {
-      vi.mocked(idb.get).mockResolvedValue({ lb: [], hh: [] } as any);
-      const result = await SupabaseClient.loadCache();
-      expect(idb.get).toHaveBeenCalledWith("CLAN_MANAGER_DATA_V8");
-      expect(result).toEqual({ lb: [], hh: [] });
-    });
-
-    it("saveCache calls idb.set", async () => {
-      const data = { lb: [], hh: [] } as any;
-      await SupabaseClient.saveCache(data);
-      expect(idb.set).toHaveBeenCalledWith("CLAN_MANAGER_DATA_V8", data);
-    });
   });
 
   describe("Data Fetching", () => {
@@ -158,7 +145,8 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', player_name: 'Hero', trophies: 5000 }], error: null }) // Roster
         .mockResolvedValueOnce({ data: [{ player_tag: '#XYZ', player_name: 'Recruit', trophies: 4000 }], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: { last_success_at: '2026-01-01T00:00:00Z' }, error: null }); // Heartbeat
+        .mockResolvedValueOnce({ data: { last_success_at: '2026-01-01T00:00:00Z' }, error: null }) // Heartbeat
+        .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();
 
@@ -168,14 +156,16 @@ describe("SupabaseClient", () => {
       expect(result.hh[0].id).toBe('XYZ');
       expect(result.timestamp).toBe(new Date('2026-01-01T00:00:00Z').getTime());
       expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
-      expect(idb.set).toHaveBeenCalled();
+      const { saveCache } = await import("../../services/StorageService");
+      expect(saveCache).toHaveBeenCalled();
     });
 
     it("fetchRemote uses fallback defaults for malformed data", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ invalid: 'data' }], error: null }) // Roster
         .mockResolvedValueOnce({ data: [{ invalid: 'data' }], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: null, error: null }); // Heartbeat
+        .mockResolvedValueOnce({ data: null, error: null }) // Heartbeat
+        .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();
 
@@ -208,7 +198,8 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null }) // Roster
         .mockResolvedValueOnce({ data: [], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: null, error: { message: 'Heartbeat Error' } } as any); // Heartbeat FAIL
+        .mockResolvedValueOnce({ data: null, error: { message: 'Heartbeat Error' } } as any) // Heartbeat FAIL
+        .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();
       expect(result.timestamp).toBe(now);
@@ -220,167 +211,11 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: { last_success_at: 'not-a-date' }, error: null });
+        .mockResolvedValueOnce({ data: { last_success_at: 'not-a-date' }, error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
 
       const result = await SupabaseClient.fetchRemote();
       expect(result.timestamp).toBeNaN(); // Current behavior: new Date('invalid').getTime() is NaN
-    });
-
-    it("scanRecruitsDirect returns mapped recruits", async () => {
-      vi.mocked(mockFrom.limit).mockResolvedValue({
-        data: [{ player_tag: '#NEW', player_name: 'Newbie', trophies: 3000 }],
-        error: null
-      });
-
-      const result = await SupabaseClient.scanRecruitsDirect();
-      expect(result).toHaveLength(1);
-      expect(result![0].n).toBe('Newbie');
-    });
-
-    it("scanRecruitsDirect returns null if fetch fails", async () => {
-      vi.mocked(mockFrom.limit).mockResolvedValue({ data: null, error: { message: 'Fetch Failed' } } as any);
-      const result = await SupabaseClient.scanRecruitsDirect();
-      expect(result).toBeNull();
-    });
-
-    it("scanRecruitsDirect uses fallback for malformed rows", async () => {
-      vi.mocked(mockFrom.limit).mockResolvedValue({
-        data: [{ malformed: true }],
-        error: null
-      });
-
-      const result = await SupabaseClient.scanRecruitsDirect();
-      expect(result).toHaveLength(1);
-      expect(result![0].n).toBe('');
-      expect(result![0].t).toBe(0);
-    });
-  });
-
-  describe("Profile Retrieval", () => {
-    beforeEach(() => {
-      global.fetch = vi.fn();
-    });
-
-    it("getPlayerProfile normalizes tags and returns profile", async () => {
-      vi.mocked(global.fetch).mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          profile: { tag: '#MYTAG', name: 'Me', kingLevel: 14, xpIntoLevel: 0 },
-          cards: [],
-          inventory: { gold: 0, gems: 0, wildCards: { Common: 0, Rare: 0, Epic: 0, Legendary: 0, Champion: 0 } },
-        }),
-      } as any);
-
-      const result = await SupabaseClient.getPlayerProfile('MYTAG');
-      expect(result.profile.tag).toBe('#MYTAG');
-      expect(result.profile.name).toBe('Me');
-      expect(result.profile.kingLevel).toBe(14);
-    });
-
-    it("getPlayerProfile throws if profile not found", async () => {
-      vi.mocked(global.fetch).mockResolvedValue({
-        ok: false,
-        status: 404,
-        json: async () => ({ error: 'Profile not found' }),
-      } as any);
-
-      await expect(SupabaseClient.getPlayerProfile('MISSING')).rejects.toThrow('Profile not found');
-    });
-
-    it("getPlayerProfile throws if validation fails", async () => {
-      vi.mocked(global.fetch).mockResolvedValue({
-        ok: false,
-        status: 400,
-        json: async () => ({ error: 'Profile data validation failed' }),
-      } as any);
-
-      await expect(SupabaseClient.getPlayerProfile('TAG')).rejects.toThrow('Profile data validation failed');
-    });
-
-    it("getPlayerProfile throws Valibot error if Edge Function returns malformed card data", async () => {
-      vi.mocked(global.fetch).mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          cards: [{ level: "not-a-number" }]
-        }),
-      } as any);
-
-      await expect(SupabaseClient.getPlayerProfile('TAG')).rejects.toThrow();
-    });
-  });
-
-  describe("Mutations & Offline Queue", () => {
-    it("dismissRecruits normalizes player tags idempotently", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
-      const items = [{ id: '#ABC', score: 80 }, { id: 'XYZ', score: 90 }];
-
-      await SupabaseClient.dismissRecruits(items);
-
-      expect(mockClient.rpc).toHaveBeenCalledWith('dismiss_recruits', {
-        items: [
-          { id: '#ABC', score: 80 },
-          { id: '#XYZ', score: 90 }
-        ]
-      });
-    });
-
-    it("undismissRecruits normalizes player tags idempotently", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
-      const ids = ['#ABC', 'XYZ'];
-
-      await SupabaseClient.undismissRecruits(ids);
-
-      expect(mockClient.rpc).toHaveBeenCalledWith('undismiss_recruits', {
-        player_tags: ['#ABC', '#XYZ']
-      });
-    });
-
-    it("dismissRecruits enqueues on transient error (PGRST301)", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
-
-      const items = [{ id: 'ABC', score: 80 }];
-      await expect(SupabaseClient.dismissRecruits(items)).rejects.toThrow(SupabaseClient.NetworkError);
-    });
-
-    it("undismissRecruits normalizes tags and throws NetworkError on any RPC error", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'failed to fetch' } } as any);
-
-      const ids = ['ABC'];
-      await expect(SupabaseClient.undismissRecruits(ids)).rejects.toThrow(SupabaseClient.NetworkError);
-      
-      // Verify tags are normalized
-      expect(mockClient.rpc).toHaveBeenCalledWith('undismiss_recruits', { player_tags: ['#ABC'] });
-    });
-
-    it("triggerBackendUpdate returns success/failure based on RPC", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
-
-      const result = await SupabaseClient.triggerBackendUpdate();
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual({ success: true });
-    });
-
-    it("triggerBackendUpdate returns error if RPC fails", async () => {
-      const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'Trigger Failed' } } as any);
-
-      const result = await SupabaseClient.triggerBackendUpdate();
-      expect(result.success).toBe(false);
-      expect(result.error?.message).toBe('Trigger Failed');
-    });
-
-    it("subscribeToPush inserts subscription", async () => {
-      vi.mocked(mockFrom.insert).mockResolvedValue({ error: null } as any);
-
-      const sub = { endpoint: 'https://push.com' } as any;
-      const result = await SupabaseClient.subscribeToPush(sub);
-      expect(result).toBe(true);
-      expect(mockFrom.insert).toHaveBeenCalled();
     });
   });
 });
