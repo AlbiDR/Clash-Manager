@@ -92,4 +92,13 @@ describe("FloatingDock.vue", () => {
     const dismissBtn = wrapper.find(".fab-btn.danger");
     expect(dismissBtn.classes()).not.toContain("compact");
   });
+
+  it("does not contain the hidden class when selection mode is active with 0 selected items", () => {
+    mockDockVisible.value = false;
+    mockFabState.value.selectionCount = 0;
+    mockFabState.value.isBlasting = false;
+
+    const wrapper = mountDock();
+    expect(wrapper.classes()).not.toContain("hidden");
+  });
 });
