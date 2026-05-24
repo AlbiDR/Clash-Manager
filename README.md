@@ -13,7 +13,7 @@
 
 **An engineered ecosystem for high-precision clan leadership.**
 
-Clash Manager is a production-grade, distributed architecture designed to automate the administrative complexities of competitive Clash Royale clans. It orchestrates a synchronized **Supabase Binary Stack** comprising an edge-native ingestion engine and an offline-first progressive web application.
+Clash Manager is a production-grade, distributed architecture designed to automate the administrative complexities of competitive Clash Royale clans. It orchestrates a synchronized **Supabase Binary Stack** comprising an edge-native ingestion engine and a live-synchronized, persistence-backed progressive web application.
 
 ---
 <br />
@@ -87,7 +87,7 @@ Recruitment is no longer passive. The **Headhunter Engine** continuously scans g
 
 ## Dictionary
 
-- **DeepNet**: The high-performance, sovereign offline-first PWA infrastructure designed for administrative clan operations.
+- **DeepNet**: The high-performance, sovereign PWA infrastructure featuring intelligent local caching and live synchronization for administrative clan operations.
 - **Headhunter**: The global discovery engine that autonomously scans tournaments and active members' battles to identify elite, clanless recruits.
 - **Nightly**: The automated, multi-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
 
@@ -111,7 +111,7 @@ The central nervous system. A high-performance infrastructure hosted on **Supaba
 
 The command center. A **Vue 3.5 Progressive Web Application** designed for administrative operations.
 - **Role**: Provides a fluid, low-latency interface for data visualization and deeper analytics.
-- **Features**: Sovereign Design System, Offline-First (IndexedDB), and Hardware Haptics.
+- **Features**: Sovereign Design System, Persistent Caching (IndexedDB), and Hardware Haptics.
 - **Documentation**: [Read Technical Specifications](Frontend-PWA/README.md)
 
 </details>
