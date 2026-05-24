@@ -141,7 +141,7 @@ export interface HubInfo {
 
 export type VoyageStatus = "IDLE" | "PENDING" | "ACTIVE" | "COMPLETED";
 
-export interface VoyageEvent {
+interface VoyageEvent {
   id: number;
   clan_tag: string;
   status: VoyageStatus;
