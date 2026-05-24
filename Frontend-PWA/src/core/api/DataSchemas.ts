@@ -321,7 +321,7 @@ export const WebAppDataSchema = v.object({
  * [GUARD] VOYAGE EVENT SCHEMA
  * Validates the shape of a Clan Voyage event.
  */
-export const VoyageEventSchema = v.object({
+const VoyageEventSchema = v.object({
   id: SafeNumberPipe,
   clan_tag: SafeStringPipe,
   status: v.picklist(["IDLE", "PENDING", "ACTIVE", "COMPLETED"]),
