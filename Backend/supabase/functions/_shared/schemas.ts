@@ -166,3 +166,10 @@ export const DiscoveryAnchorSchema = v.object({
 export const DiscoveryCacheItemSchema = v.object({
     player_tag: v.string()
 });
+
+/** [GUARD] Ingestion Targets Schema. */
+export const IngestionTargetsSchema = v.object({
+    members: v.array(v.string()),
+    recruits: v.array(v.string())
+});
+
