@@ -54,3 +54,4 @@ Hardening (Validation Boundary/Pathogens): Eliminated anemic variable pathogens 
 3. **Variable Hygiene:** Excised the 'any Plague' and renamed anemic pathogens (`allTags` -> `ingestionTargets`, `logRes` -> `battleLogResponse`, `rawLogData` -> `rawBattleLogPayload`, `tag` -> `targetTag`, `error` -> `battleLogError`, `leads` -> `validLeads`).
 4. **Documentation:** Added mandatory `// [THREAT:]` and `// [DECISION LOG]` annotations to document security boundaries and logic intent.
 **Verification:** Full monorepo test gate (996 pass, 1 skipped) using `pnpm -r --no-engine-strict test`.
+2026-05-25 | Backend/supabase/functions/sync-player-cards/index.ts | Hardened authorization boundary (bearerToken), renamed anemic variable pathogens (errBody, tag), implemented defensive guard for empty snapshots, and enforced strict type integrity via v.InferOutput.
