@@ -88,3 +88,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-05-22 | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Saturating coverage for Voyage activation and validation boundary
 2026-05-23 | Frontend-PWA/src/shared/ui/DurationInput.vue | Saturating logic coverage for T2T input, clamping, and sanitization; identified negative-clamping bug.
 2026-05-24 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Zero Coverage gap closed; saturating tests for status and statsBadge logic.
+2026-05-25 | Frontend-PWA/src/features/voyage/components/EventManagement.vue | Zero Coverage gap closed; saturating tests for state-driven UI and live countdown logic.
