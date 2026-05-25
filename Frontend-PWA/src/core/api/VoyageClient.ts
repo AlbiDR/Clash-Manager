@@ -22,10 +22,22 @@ import * as v from "valibot";
  * @remarks
  * Architectural Context:
  * - Layer: Layer 1 (@core)
+ * - Import Boundaries: This module is a terminal leaf for API transport.
+ *   May import from Layer 1 (@core) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  */
 
 /**
  * [VOYAGE] Activates a new Clan Voyage event via the features proxy.
+ *
+ * @remarks
+ * Satisfies ADR Section IV: Deep Delegation Strategy.
+ * Triggers the `initialize_voyage` RPC to transition the clan state on the backend.
+ *
+ * @param target - The goal crown count for the event.
+ * @param start - ISO timestamp for event commencement.
+ * @param end - ISO timestamp for event conclusion.
+ * @returns A Promise resolving to an object indicating success or error details.
  */
 export async function initializeVoyage(target: number, start: string, end: string) {
   const supabase = createSupabaseClient();
@@ -54,7 +66,11 @@ export async function initializeVoyage(target: number, start: string, end: strin
  * Fetches the voyage summary from the SSOT view.
  *
  * @remarks
- * [GUARD] VALIDATION BOUNDARY: Harden external view data before domain use.
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Hardens raw view data from `voyage_summary` against the `VoyageSummarySchema`
+ * before permitting entry into the domain logic layer.
+ *
+ * @returns A Promise resolving to a validated VoyageSummary or null if no active event exists.
  */
 export async function fetchVoyageSummary(): Promise<VoyageSummary | null> {
   const supabase = createSupabaseClient();
@@ -78,7 +94,11 @@ export async function fetchVoyageSummary(): Promise<VoyageSummary | null> {
  * Fetches contribution aggregates from the high-resolution ledger view.
  *
  * @remarks
- * [GUARD] VALIDATION BOUNDARY: Harden external view data before domain use.
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Hardens raw view data from `voyage_contributions` against the `VoyageContributionSchema`
+ * to ensure participant tallies are domain-compliant.
+ *
+ * @returns A Promise resolving to an array of validated VoyageContribution objects.
  */
 export async function fetchVoyageContributions(): Promise<VoyageContribution[]> {
   const supabase = createSupabaseClient();
