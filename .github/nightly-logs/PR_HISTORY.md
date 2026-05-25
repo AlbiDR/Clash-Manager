@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-25] PR #676: perf(opt): centralize inline SVGs and harden icon substrate
+**Commit**: `4aef922455545262d02a39fcac08aa99770c3850`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/676)
+
+### Description
+This PR optimizes the icon management substrate by centralizing redundant inline SVGs from the Voyage and Shared modules into the core theme registry. It also enhances the Icon primitive to support complex style overrides (e.g., linear gradients) without violating encapsulation, ensuring absolute compliance with the Visual Purity protocols defined in the CleanStack Architecture ADR.
+
+---
+*PR created automatically by Jules for task [10285673563158991998](https://jules.google.com/task/10285673563158991998) started by @AlbiDR*
+
+---
+
 ## [2026-05-25] PR #675: test(verify): saturating logic coverage for EventManagement.vue
 **Commit**: `dc2f063176fb9ebf87573d7531674b7eae0ca552`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/675)
