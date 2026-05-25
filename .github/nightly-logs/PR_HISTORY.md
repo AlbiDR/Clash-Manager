@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-25] PR #679: fix(version): reconcile catalog adherence for shared infrastructure
+**Commit**: `94f4bff2f740a87215932522d3fb6ee7278cd464`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/679)
+
+### Description
+Reconciled shared infrastructure and UI dependencies by migrating them to the PNPM catalog system. This ensures monorepo-wide version consistency for @ast-grep/cli, dependency-cruiser, knip, and @formkit/auto-animate, adhering to the project's 'Unitary Versioning' mandate (Rule 3[A]). Verified monorepo integrity via full test gate (1026 pass).
+
+---
+*PR created automatically by Jules for task [13903370767872182048](https://jules.google.com/task/13903370767872182048) started by @AlbiDR*
+
+---
+
 ## [2026-05-25] PR #678: docs(readme): reconcile pwa infrastructure drift
 **Commit**: `2b6e93c2e6141fef370751dd9eeeba303768abfd`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/678)
