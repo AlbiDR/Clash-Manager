@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-25] PR #681: refactor: promote BaseHistoryChart to @shared/ui
+**Commit**: `75ee15a6671a59d2e08030de65c878050f6a38f5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/681)
+
+### Description
+Promoted the generic visualization component `BaseHistoryChart.vue` from the `roster` feature to the `@shared/ui` layer. This alignment resolves a Layer 2/3 violation where domain-blind logic was trapped in a feature silo. Updated feature callers to consume the centralized component. Verified via unit tests and visual inspection.
+
+---
+*PR created automatically by Jules for task [3897851286770791861](https://jules.google.com/task/3897851286770791861) started by @AlbiDR*
+
+---
+
 ## [2026-05-25] PR #680: chore(deps): bump valibot from 1.4.0 to 1.4.1
 **Commit**: `1549bd77535f592560dd87651af38d837eb3b2dd`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/680)
