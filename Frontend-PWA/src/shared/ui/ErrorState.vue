@@ -6,6 +6,7 @@
  * Resilience #45: Handles non-standard error displays with a premium, manifesto-compliant UI.
  */
 import { ref } from "vue";
+import Icon from "./Icon.vue";
 
 const props = defineProps<{
   message: string;
@@ -22,18 +23,14 @@ const isActive = ref(false);
   <div class="error-state animate-pulse-glow" @mousedown="isActive = true" @mouseup="isActive = false">
     <div class="error-icon-box">
       <!-- Custom Crafted Warning SVG -->
-      <svg viewBox="0 0 24 24" width="48" height="48" class="svg-warning">
+      <Icon name="warning" size="48" class="svg-warning" />
+      <svg width="0" height="0" style="position: absolute;">
         <defs>
           <linearGradient id="warning-grad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style="stop-color: var(--sys-color-error); stop-opacity: 1" />
             <stop offset="100%" style="stop-color: #ff8e8e; stop-opacity: 1" />
           </linearGradient>
         </defs>
-        <path 
-          fill="url(#warning-grad)" 
-          d="M12 2L1 21h22L12 2zm0 3.45L20.53 19H3.47L12 5.45zM11 16h2v2h-2v-2zm0-6h2v4h-2v-4z" 
-          :vector-effect="'non-scaling-stroke'"
-        />
       </svg>
     </div>
     
@@ -44,13 +41,7 @@ const isActive = ref(false);
       :class="{ active: isActive }"
       @click="$emit('retry')"
     >
-      <svg viewBox="0 0 24 24" width="18" height="18" class="svg-refresh">
-        <path 
-          fill="currentColor" 
-          d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" 
-          :vector-effect="'non-scaling-stroke'"
-        />
-      </svg>
+      <Icon name="refresh" size="18" class="svg-refresh" />
       <span>Re-Synchronize</span>
     </button>
   </div>
@@ -86,6 +77,10 @@ const isActive = ref(false);
 
 .svg-warning {
   opacity: 0.9;
+}
+
+.svg-warning :deep(.icon-path) {
+  fill: url(#warning-grad);
 }
 
 .error-message {

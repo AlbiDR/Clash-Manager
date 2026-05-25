@@ -81,8 +81,8 @@ const progressLabel = computed(() =>
       <div class="banner-header">
         <div class="banner-title-group">
           <span class="banner-icon">
-            <svg v-if="store.isVictory" viewBox="0 0 24 24" fill="currentColor" width="1em" height="1em"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="12" cy="5" r="3"></circle><line x1="12" y1="22" x2="12" y2="8"></line><path d="M5 12H2a10 10 0 0 0 20 0h-3"></path></svg>
+            <Icon v-if="store.isVictory" name="victory" size="20" />
+            <Icon v-else name="voyage" size="20" />
           </span>
           <div class="banner-labels">
             <span class="banner-title">Clan Voyage</span>

@@ -50,10 +50,10 @@ interface NormalizedCard {
 
 /**
  * Normalizes a player tag to a standard uppercase format with a hash prefix.
- * @param tag - The raw player tag from the request.
+ * @param playerTag - The raw player tag from the request.
  */
-function normalizeTag(tag: string): string {
-  const clean = tag.trim().toUpperCase();
+function normalizeTag(playerTag: string): string {
+  const clean = playerTag.trim().toUpperCase();
   return clean.startsWith("#") ? clean : `#${clean}`;
 }
 
@@ -76,19 +76,25 @@ function normalizeRarity(raw: string): string {
  * Constructs the final standardized profile response from database snapshots.
  *
  * @param cardSnapshots - List of card snapshots from the database or fresh API fetch.
- * @param tag - The normalized player tag.
+ * @param playerTag - The normalized player tag.
  * @param source - Indicates if the data originated from the "cache" (DB) or "api".
  */
 function buildProfileResponse(
   cardSnapshots: CardRow[],
-  tag: string,
+  playerTag: string,
   source: "cache" | "api"
 ) {
+  // [THREAT:] Accessing the first element of an empty array triggers a runtime crash.
+  // [DECISION LOG] Defensive guard ensures the system fails loudly but safely if data is missing.
+  if (cardSnapshots.length === 0) {
+    throw new Error(`Standardized profile builder failed: Zero card snapshots found for ${playerTag}`);
+  }
+
   const firstSnapshot = cardSnapshots[0];
   return {
     profile: {
       name: firstSnapshot.player_name,
-      tag,
+      tag: playerTag,
       kingLevel: firstSnapshot.king_level,
       xpIntoLevel: firstSnapshot.xp_into_level,
     },
@@ -131,6 +137,7 @@ Deno.serve(async (req) => {
   return await clinicalServe({
     req,
     supabase,
+    bearerToken: CONFIG.INTERNAL_BEARER_TOKEN,
     eventType: "PLAYER_SYNC",
     componentId: "PLAYER_CARD_SYNC",
     schema: PlayerSyncPayloadSchema,
@@ -161,7 +168,7 @@ Deno.serve(async (req) => {
         // Fail-safe: treat validation failure as a cache miss to allow re-fetching fresh data.
       }
 
-      const cardSnapshots = (snapshotValidation.success ? snapshotValidation.output : []) as CardRow[];
+      const cardSnapshots = (snapshotValidation.success ? snapshotValidation.output : []) as v.InferOutput<typeof PlayerCardSnapshotSchema>[];
       const cutoff = Date.now() - CACHE_TTL_MS;
       // [DECISION LOG] Data is considered fresh if at least one card was fetched within the 12h TTL.
       const isFresh =
@@ -181,8 +188,8 @@ Deno.serve(async (req) => {
       // [THREAT:] fetchWithRotation handles API key rotation to prevent IP/Token banning.
       const royaleApiResponse = await fetchWithRotation(`/players/${encodedTag}`);
       if (!royaleApiResponse.ok) {
-        const errBody = await royaleApiResponse.text().catch(() => "");
-        logAudit("API_FETCH", "error", { status: royaleApiResponse.status, body: errBody });
+        const errorBody = await royaleApiResponse.text().catch(() => "");
+        logAudit("API_FETCH", "error", { status: royaleApiResponse.status, body: errorBody });
         throw new Error(`Clash Royale API error: ${royaleApiResponse.status}`);
       }
 
