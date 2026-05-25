@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-25] PR #677: docs(tsdoc): perfect interface contracts for VoyageClient
+**Commit**: `e8a117e103384f820e48200485f8c70d14b836e4`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/677)
+
+### Description
+This PR perfects the interface contracts for the `VoyageClient.ts` transport layer in Layer 1 (@core). It adds comprehensive TSDoc for RPC activation and view hardening functions, ensuring alignment with ADR Section III (Validation Boundaries) and Section IV (Deep Delegation Strategy). It also defines explicit module-level architectural context and import boundaries to prevent future layer violations.
+
+---
+*PR created automatically by Jules for task [10081453467323151863](https://jules.google.com/task/10081453467323151863) started by @AlbiDR*
+
+---
+
 ## [2026-05-25] PR #676: perf(opt): centralize inline SVGs and harden icon substrate
 **Commit**: `4aef922455545262d02a39fcac08aa99770c3850`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/676)
