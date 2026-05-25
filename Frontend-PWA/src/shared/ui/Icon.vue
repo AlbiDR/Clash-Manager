@@ -28,8 +28,8 @@ const sizePx = computed(() => {
   >
     <title>{{ name }} icon</title>
     <path
+      class="icon-path"
       :d="ICONS[name] || ''"
-      fill="currentColor"
       v-bind="{ 'vector-effect': 'non-scaling-stroke' }"
     />
   </svg>
@@ -42,5 +42,9 @@ const sizePx = computed(() => {
   flex-shrink: 0;
   transition: all var(--md-sys-motion-duration-short4)
     var(--md-sys-motion-easing-standard);
+}
+
+.icon-path {
+  fill: currentColor;
 }
 </style>
