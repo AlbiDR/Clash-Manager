@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
 
 -- 3. Populate exclusion cache initially
 INSERT INTO drivers.exclusion_cache (player_tag)
-SELECT tag FROM drivers.recruit_blacklist WHERE tag IS NOT NULL
+SELECT player_tag FROM drivers.recruit_blacklist WHERE player_tag IS NOT NULL
 UNION
-SELECT tag FROM drivers.members WHERE tag IS NOT NULL
+SELECT player_tag FROM drivers.members WHERE player_tag IS NOT NULL
 ON CONFLICT (player_tag) DO NOTHING;
 
 -- 4. Create trigger function to sync exclusion cache
@@ -23,16 +23,16 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
         INSERT INTO drivers.exclusion_cache (player_tag)
-        VALUES (NEW.tag)
+        VALUES (NEW.player_tag)
         ON CONFLICT (player_tag) DO NOTHING;
     ELSIF TG_OP = 'DELETE' THEN
         IF TG_TABLE_NAME = 'members' THEN
-            IF NOT EXISTS (SELECT 1 FROM drivers.recruit_blacklist WHERE tag = OLD.tag) THEN
-                DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.tag;
+            IF NOT EXISTS (SELECT 1 FROM drivers.recruit_blacklist WHERE player_tag = OLD.player_tag) THEN
+                DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.player_tag;
             END IF;
         ELSIF TG_TABLE_NAME = 'recruit_blacklist' THEN
-            IF NOT EXISTS (SELECT 1 FROM drivers.members WHERE tag = OLD.tag) THEN
-                DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.tag;
+            IF NOT EXISTS (SELECT 1 FROM drivers.members WHERE player_tag = OLD.player_tag) THEN
+                DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.player_tag;
             END IF;
         END IF;
     END IF;
