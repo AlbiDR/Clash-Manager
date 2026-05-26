@@ -127,7 +127,7 @@ const baseUrl = import.meta.env.BASE_URL;
 .res-input {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--shape-corner-medium);
+  border-radius: var(--sys-shape-corner-medium);
   padding: 12px 14px;
   font-family: var(--sys-font-family-mono);
   font-size: 16px;
@@ -195,7 +195,7 @@ const baseUrl = import.meta.env.BASE_URL;
 .wc-input {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--shape-corner-small);
+  border-radius: var(--sys-shape-corner-small);
   padding: 6px;
   font-family: var(--sys-font-family-mono);
   font-size: 12px;

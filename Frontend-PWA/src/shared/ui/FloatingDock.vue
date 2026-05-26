@@ -147,7 +147,7 @@ function handleFabDismiss() {
 
   border: 1px solid var(--sys-surface-glass-border);
   padding: 6px;
-  border-radius: var(--shape-corner-full);
+  border-radius: var(--sys-shape-corner-full);
   display: flex;
   gap: 6px;
   box-shadow: 
@@ -181,7 +181,7 @@ function handleFabDismiss() {
   flex: 1;
   min-width: 64px;
   padding: 0 12px;
-  border-radius: var(--shape-corner-full);
+  border-radius: var(--sys-shape-corner-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,7 +224,7 @@ function handleFabDismiss() {
     var(--sys-color-primary),
     var(--sys-color-primary-variant, var(--sys-color-primary))
   );
-  border-radius: var(--shape-corner-full);
+  border-radius: var(--sys-shape-corner-full);
   z-index: -1;
   animation: pop-in 0.3s cubic-bezier(0.2, 0, 0, 1.2);
   box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
@@ -242,7 +242,7 @@ function handleFabDismiss() {
   height: 56px;
   padding: 0 24px;
   min-height: 56px;
-  border-radius: var(--shape-corner-full);
+  border-radius: var(--sys-shape-corner-full);
   font-weight: 900;
   font-size: 15px;
   text-decoration: none;

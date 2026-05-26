@@ -137,7 +137,7 @@ const baseUrl = import.meta.env.BASE_URL;
 .projection-badge {
   color: var(--sys-color-on-primary-container);
   padding: 6px 10px;
-  border-radius: var(--shape-corner-small);
+  border-radius: var(--sys-shape-corner-small);
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -213,7 +213,7 @@ const baseUrl = import.meta.env.BASE_URL;
   gap: 8px;
   background: var(--sys-color-surface-container-high);
   padding: 8px 16px;
-  border-radius: var(--shape-corner-large);
+  border-radius: var(--sys-shape-corner-large);
   border: 1px solid var(--sys-color-outline-variant);
   min-width: 80px;
   justify-content: center;
@@ -285,7 +285,7 @@ const baseUrl = import.meta.env.BASE_URL;
   gap: 12px;
   background: var(--sys-color-surface-container-low);
   padding: 10px 14px;
-  border-radius: var(--shape-corner-medium);
+  border-radius: var(--sys-shape-corner-medium);
   border: 1px solid var(--sys-color-outline-variant);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -336,7 +336,7 @@ const baseUrl = import.meta.env.BASE_URL;
   margin-top: 32px;
   background: var(--sys-color-surface-container-highest);
   padding: 16px;
-  border-radius: var(--shape-corner-large);
+  border-radius: var(--sys-shape-corner-large);
   border: 1px solid var(--sys-color-outline-variant);
 }
 
