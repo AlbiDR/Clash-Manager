@@ -39,13 +39,26 @@ export async function runProfiler(
     logAudit('PROFILING', 'triggered', { count: tagsToProfile.length });
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        const { data: recentScans } = await supabase
+            .schema('drivers')
+            .from('recruits')
+            .select('player_tag')
+            .in('player_tag', tagsToProfile)
+            .gt('last_scan', thirtyMinutesAgo);
+
+        const recentlyScannedTags = new Set(recentScans?.map(r => r.player_tag) || []);
+        const tagsToFetch = tagsToProfile.filter(tag => !recentlyScannedTags.has(tag));
+
+        console.log(`[PROFILING] Pre-filtered: ${recentlyScannedTags.size} tags scanned in the last 30 minutes skipped. Remaining tags to fetch: ${tagsToFetch.length}`);
+
         const validRecruits: ValidRecruit[] = [];
         let validCount = 0;
         let newCount = 0;
         let refreshCount = 0;
         let invalidCount = 0;
         
-        const profileTasks = tagsToProfile.map(tag => async () => {
+        const profileTasks = tagsToFetch.map(tag => async () => {
             logAudit('PROFILING', 'called', { tag });
             try {
                 const profileResponse = await fetchWithRotation(`/players/${encodeURIComponent(tag)}`);
@@ -120,8 +133,8 @@ export async function runProfiler(
             }
         });
         
-        console.log(`[PROFILING] Batch processing ${tagsToProfile.length} profiles...`);
-        await processBatch(profileTasks, 20);
+        console.log(`[PROFILING] Batch processing ${tagsToFetch.length} profiles...`);
+        await processBatch(profileTasks, 40);
         console.log(`[PROFILING] Batch processing complete. Valid: ${validCount}, Invalid/Filtered: ${invalidCount}`);
 
         if (validRecruits.length > 0) {
@@ -232,8 +245,8 @@ export async function runProfiler(
             stats.lowest_rpos = minRpos === Infinity ? 0 : Math.round(minRpos);
             stats.ingested_by_source = sourceCounts;
         }
-        stats.profiles_scanned = tagsToProfile.length;
-        logAudit('PROFILING', 'terminated', { scanned: tagsToProfile.length, ingested: validRecruits.length });
+        stats.profiles_scanned = tagsToFetch.length;
+        logAudit('PROFILING', 'terminated', { scanned: tagsToFetch.length, ingested: validRecruits.length });
         console.log(`[PROFILING] Terminated smoothly.`);
     } catch (profilerException: unknown) {
         const errorMessage = profilerException instanceof Error ? profilerException.message : String(profilerException);
