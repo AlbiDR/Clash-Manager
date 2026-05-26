@@ -23,6 +23,12 @@ Standardized containers that manage view-level states like loading, errors, and 
 - **ConsoleHeader.vue**: Standardized view header. Handles search debouncing, sorting controls, and visual status indicators (StatusPill).
 - **ConsoleList.vue**: Specialized list container with Showcase Mode support and `v-auto-animate` integration.
 - **AppFooter.vue**: Global navigation anchor and legal/version information container.
+- **SettingsCard.vue**: Collapsible container for feature settings and configurations. Supports header slots, loading states, and smooth "spring" transition animations.
+- **SkeletonSettingsCard.vue**: Placeholder variant for settings cards with staggered skeleton animations to prevent layout shifts.
+
+### Data Visualization
+Generic, high-performance visualization components.
+- **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories, projected next values, and theme-specific color palettes (War/Voyage).
 
 ### UI Primitives
 Atomic elements that form the basis of the design system.
@@ -47,6 +53,7 @@ Standardized molecules for rendering player-specific metrics and metadata with i
 
 ### Interactive Molecules
 Components that facilitate user interaction and state management.
+- **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
 - **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes.
 - **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers.

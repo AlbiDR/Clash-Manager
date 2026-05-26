@@ -74,3 +74,4 @@ Frontend-PWA/src/features/voyage/README.md
 Frontend-PWA/src/features/roster/README.md
 2026-08-05 | Frontend-PWA/README.md | Reconciled useBatchQueue drift and added useConsoleMetadata
 Frontend-PWA/README.md
+2026-05-26 04:57:10 UTC | Frontend-PWA/src/shared/ui/README.md | Reconciled architectural drift (BaseHistoryChart, DurationInput, SettingsCard, LongevityBadge)
