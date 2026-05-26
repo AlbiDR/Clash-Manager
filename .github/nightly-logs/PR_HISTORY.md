@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-26] PR #682: Hardening: Secure Shadow Scout Discovery & Validation Boundary
+**Commit**: `9246698a4fa242297dc850c41f702558ed4a710e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/682)
+
+### Description
+Fully secured the Shadow Scouting stage in the Headhunter Scanner. Implemented strict validation boundaries, renamed anemic variables, and added required architectural annotations. Verified via full monorepo test gate.
+
+---
+*PR created automatically by Jules for task [13679197610194363473](https://jules.google.com/task/13679197610194363473) started by @AlbiDR*
+
+---
+
 ## [2026-05-25] PR #681: refactor: promote BaseHistoryChart to @shared/ui
 **Commit**: `75ee15a6671a59d2e08030de65c878050f6a38f5`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/681)
