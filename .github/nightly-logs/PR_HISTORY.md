@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-26] PR #687: chore(deps): bump dependency-cruiser from 17.4.0 to 17.4.2
+**Commit**: `05d6f136c4780ad4e9263565ec873d4f4b005942`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/687)
+
+### Description
+This PR performs a Tier 1 automated patch bump for `dependency-cruiser` (17.4.0 -> 17.4.2). The change was verified through the full monorepo test gate (1031 tests passing) and is documented in the dependency audit log.
+
+---
+*PR created automatically by Jules for task [284013199997376323](https://jules.google.com/task/284013199997376323) started by @AlbiDR*
+
+---
+
 ## [2026-05-26] PR #686: docs(tsdoc): reconcile RecruitClient contracts with connection-required architecture
 **Commit**: `476f78e6d0a677607b4a49b92a44df58394298b7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/686)
