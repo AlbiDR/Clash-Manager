@@ -44,7 +44,7 @@ export const componentStyles = `
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
-  border-radius: var(--shape-corner-full);
+  border-radius: var(--sys-shape-corner-full);
   font-weight: 850;
   text-decoration: none;
   cursor: pointer;
@@ -175,7 +175,7 @@ a { text-decoration: underline; color: inherit; }
 .glass-panel {
   background: var(--sys-surface-glass);
   border: 1px solid var(--sys-surface-glass-border);
-  border-radius: var(--shape-corner-l);
+  border-radius: var(--sys-shape-corner-l);
   padding: 20px;
   box-shadow: var(--sys-elevation-2);
   transition: opacity 0.3s ease, transform 0.2s ease;

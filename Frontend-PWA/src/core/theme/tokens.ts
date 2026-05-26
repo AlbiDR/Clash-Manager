@@ -187,8 +187,14 @@ const sharedTokens = {
     mono: '"JetBrains Mono", monospace',
   },
   shape: {
-    cornerL: '24px',
-    cornerFull: '9999px',
+    extraSmall: '4px',
+    small: '8px',
+    medium: '12px',
+    m: '20px',
+    large: '16px',
+    l: '24px',
+    extraLarge: '28px',
+    full: '9999px',
   },
 };
 
@@ -223,7 +229,12 @@ export function generateCssVariables(tokens: ThemeTokens): Record<string, string
   vars['--sys-motion-spring'] = sharedTokens.motion.spring;
   vars['--sys-font-family-body'] = sharedTokens.font.body;
   vars['--sys-font-family-mono'] = sharedTokens.font.mono;
-  vars['--sys-shape-corner-l'] = sharedTokens.shape.cornerL;
+
+  // Add all shape tokens dynamically
+  Object.entries(sharedTokens.shape).forEach(([key, value]) => {
+    const cssKey = `--sys-shape-corner-${key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`;
+    vars[cssKey] = value;
+  });
 
   return vars;
 }

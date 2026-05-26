@@ -155,17 +155,4 @@ input, textarea, [contenteditable], .selectable {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: auto;
 }
-  /* =========================================
-     SHAPE SYSTEM
-     ========================================= */
-  :root {
-    --shape-corner-extra-small: 4px;
-    --shape-corner-small: 8px;
-    --shape-corner-medium: 12px;
-    --shape-corner-m: 20px;
-    --shape-corner-large: 16px;
-    --shape-corner-l: 24px;
-    --shape-corner-extra-large: 28px;
-    --shape-corner-full: 9999px;
-  }
 `;
