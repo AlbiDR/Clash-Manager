@@ -32,6 +32,8 @@ catalogs:
 
     # Unified Modern Testing Stack
     vitest: "^4.1.7"
+    "@vitest/coverage-v8": "^4.1.7"
+
 
     # Core Shared Dependencies (Consolidated)
     vue: "^3.5.34"
