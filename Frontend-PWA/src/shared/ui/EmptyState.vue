@@ -29,7 +29,7 @@ const props = defineProps<{
   padding: 4rem 2rem;
   text-align: center;
   background: var(--sys-color-surface-container);
-  border-radius: var(--shape-corner-l);
+  border-radius: var(--sys-shape-corner-l);
   border: 1px dashed var(--sys-color-outline-variant);
 }
 

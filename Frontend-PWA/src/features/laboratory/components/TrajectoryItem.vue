@@ -91,7 +91,7 @@ const baseUrl = import.meta.env.BASE_URL;
   gap: 12px;
   background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--shape-corner-large);
+  border-radius: var(--sys-shape-corner-large);
   padding: 10px 14px;
   position: relative;
   animation: slide-in 0.4s cubic-bezier(0.2, 0, 0, 1) both;
