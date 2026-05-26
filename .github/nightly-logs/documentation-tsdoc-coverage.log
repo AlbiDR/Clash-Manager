@@ -66,3 +66,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-08-07 | Frontend-PWA/src/shared/ui/SelectionBar.vue | Documented selection orchestrator, added ADR mappings, and implemented decision logs for deferred UI side-effects.
 2026-08-09 | Backend/supabase/functions/_shared/protocol.ts | Perfected clinical protocol interface contract and enhanced lifecycle decision logs.
 2026-08-11 | Frontend-PWA/src/core/api/VoyageClient.ts | Perfected interface contracts for the Layer 1 transport layer, including RPC activation and view hardening.
+2026-08-30 | Frontend-PWA/src/core/api/RecruitClient.ts | Reconciled interface contracts with connection-required architecture and added ADR Section III/IV mappings.

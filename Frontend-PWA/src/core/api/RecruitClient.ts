@@ -26,14 +26,12 @@ import { mapSbHeadhunterRow } from "./DataMappers";
  * Dismisses one or more recruits from the recruitment pool.
  *
  * @remarks
- * Implements a "Deferred Operation" pattern: if the network is unavailable,
- * the request is enqueued for background synchronization.
+ * Requires an active network connection. Normalizes player tags before execution
+ * (satisfies ADR Section III: Validation Boundaries).
  *
  * @param items - Array of dismissal requests containing player IDs.
  * @returns A Promise resolving to an ApiResponse.
- *
- * @sideeffects
- * - ENQUEUES to `offline_queue` in IndexedDB if offline.
+ * @throws {NetworkError} If the network is unavailable or the RPC fails.
  */
 export async function dismissRecruits(
   items: DismissalRequest[],
@@ -58,14 +56,12 @@ export async function dismissRecruits(
  * Restores one or more dismissed recruits to the active pool.
  *
  * @remarks
- * Implements a "Deferred Operation" pattern: if the network is unavailable,
- * the request is enqueued for background synchronization.
+ * Requires an active network connection. Normalizes player tags before execution
+ * (satisfies ADR Section III: Validation Boundaries).
  *
  * @param ids - Array of player tags to restore.
  * @returns A Promise resolving to an ApiResponse.
- *
- * @sideeffects
- * - ENQUEUES to `offline_queue` in IndexedDB if offline.
+ * @throws {NetworkError} If the network is unavailable or the RPC fails.
  */
 export async function undismissRecruits(
   ids: string[],
@@ -89,8 +85,9 @@ export async function undismissRecruits(
  * the old row data. Returns a cleanup function that removes the channel.
  *
  * **Architectural Context:**
- * - Layer: Layer 1 (@core) — transport factory only, no business logic.
- * - Callers in Layer 3 (@features) supply the event handlers.
+ * - Layer: Layer 1 (@core). Acts as a transport factory only, providing the
+ *   subscription infrastructure. No business logic is implemented here.
+ * - Callers in Layer 3 (@features) supply the specific event handlers and logic.
  *
  * @param onInsert - Called with the player_tag when a blacklist row is inserted.
  * @param onDelete - Called with the player_tag when a blacklist row is deleted.
