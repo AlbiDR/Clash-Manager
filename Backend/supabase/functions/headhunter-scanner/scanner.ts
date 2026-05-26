@@ -65,6 +65,9 @@ export async function executeScanner(
     const contextData = validation.output;
     const requiredTrophies = contextData.required_trophies;
     const exclusionSet = new Set<string>(contextData.exclusion_tags);
+
+    // [DECISION LOG] Candidates map tracks potential recruits discovered across different stages.
+    // EPHEMERAL: intentionally resets on cold start
     const candidates = new Map<string, string>(); // tag -> source
 
     // --- TIMEOUT HELPER ---

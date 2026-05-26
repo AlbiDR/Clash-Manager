@@ -21,35 +21,43 @@ export async function runShadowScout(
     try {
         logAudit('SHADOW_SCOUT', 'called');
         console.log(`[SHADOW_SCOUT] Fetching shadow discovery targets via RPC...`);
-        const { data: rawShadows, error: shadowError } = await supabase
+        const { data: rawShadowTargets, error: shadowError } = await supabase
             .rpc('get_shadow_discovery_targets', { p_limit: 50 });
         
-        logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(rawShadows) ? rawShadows.length : 0, error: shadowError });
-        if (!shadowError && rawShadows) {
-            console.log(`[SHADOW_SCOUT] Found ${Array.isArray(rawShadows) ? rawShadows.length : 0} potential shadow targets. Validating...`);
+        logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(rawShadowTargets) ? rawShadowTargets.length : 0, error: shadowError });
+        if (!shadowError && rawShadowTargets) {
+            console.log(`[SHADOW_SCOUT] Found ${Array.isArray(rawShadowTargets) ? rawShadowTargets.length : 0} potential shadow targets. Validating...`);
 
             // [GUARD] VALIDATION BOUNDARY: Target B [1]
             // Rationale: Ensure RPC results match the expected domain shape before processing.
             // THREAT: Malformed database view or RPC return could cause runtime errors in the loop.
-            const parsed = v.safeParse(v.array(ShadowTargetSchema), rawShadows);
+            const shadowValidation = v.safeParse(v.array(ShadowTargetSchema), rawShadowTargets);
             
-            logAudit('SHADOW_SCOUT', 'resulted_data', { count: parsed.success ? parsed.output.length : 0 });
+            logAudit('SHADOW_SCOUT', 'resulted_data', {
+                count: shadowValidation.success ? shadowValidation.output.length : 0,
+                issues: shadowValidation.success ? null : shadowValidation.issues
+            });
             logAudit('SHADOW_SCOUT', 'integrity_checked', { 
-                passed: parsed.success,
-                details: parsed.success ? 'Data shape validated (ShadowTarget array)' : 'Unexpected RPC data shape'
+                passed: shadowValidation.success,
+                details: shadowValidation.success ? 'Data shape validated (ShadowTarget array)' : 'Unexpected RPC data shape',
+                issues: shadowValidation.success ? null : shadowValidation.issues
             });
 
-            if (parsed.success) {
-                let validShadows = 0;
-                parsed.output.forEach((shadowTarget) => {
+            if (shadowValidation.success) {
+                let addedCount = 0;
+                shadowValidation.output.forEach((shadowTarget) => {
+                    // [DECISION LOG] Candidates are only added if they are not in the exclusion set
+                    // (e.g., family clan members or already clanned players tracked by the system).
+                    // [THREAT:] Processing excluded tags would waste discovery quota and result
+                    // in redundant API calls in the Profiler stage.
                     if (!exclusionSet.has(shadowTarget.opponent_player_tag)) {
                         candidates.set(shadowTarget.opponent_player_tag, "SHADOW");
                         stats.discovery_targets++;
                         if (stats.discovery_shadow !== undefined) stats.discovery_shadow++;
-                        validShadows++;
+                        addedCount++;
                     }
                 });
-                console.log(`[SHADOW_SCOUT] Added ${validShadows} new shadow candidates (filtered out ${parsed.output.length - validShadows} via exclusion set)`);
+                console.log(`[SHADOW_SCOUT] Added ${addedCount} new shadow candidates (filtered out ${shadowValidation.output.length - addedCount} via exclusion set)`);
             }
         } else {
             console.error(`[SHADOW_SCOUT] RPC error or no data: ${shadowError?.message || 'Unknown RPC error'}`);
