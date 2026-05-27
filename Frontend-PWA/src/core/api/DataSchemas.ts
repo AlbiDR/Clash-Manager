@@ -13,7 +13,11 @@ import * as v from "valibot";
 /**
  * [GUARD] RARITY SCHEMA
  * Normalizes and validates rarity strings.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
  * Supports loose input (lowercase, spaces) but transforms to authoritative PascalCase.
+ * Defaults to "Common" on failure.
  */
 export const RaritySchema = v.fallback(
   v.pipe(
@@ -38,6 +42,10 @@ export const RaritySchema = v.fallback(
 /**
  * [GUARD] RAW CARD SCHEMA
  * Validates card objects from various external sources.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Normalizes card levels to the unified 1-16 absolute scale.
  */
 export const RawCardSchema = v.object({
   name: v.optional(v.string(), "Unknown Card"),
@@ -57,6 +65,10 @@ export const RawCardSchema = v.object({
 /**
  * [GUARD] INVENTORY SCHEMA
  * Strictly validates currency and wildcard counts.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Ensures all currency fields are initialized to at least 0.
  */
 export const RawInventorySchema = v.object({
   gold: v.optional(v.number(), 0),
@@ -76,6 +88,10 @@ export const RawInventorySchema = v.object({
 /**
  * [GUARD] INTERNAL PROFILE SCHEMA
  * Validates the player profile format used internally by the system.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Authoritative schema for profile data stored in the features.player_card_snapshots table.
  */
 export const InternalProfileSchema = v.object({
   profile: v.object({
@@ -95,6 +111,10 @@ export const InternalProfileSchema = v.object({
 /**
  * [GUARD] EXTERNAL PROFILE SCHEMA
  * Validates the player profile format returned by external Royale APIs.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Bridges the gap between Supercell's API response and the internal domain model.
  */
 export const ExternalProfileSchema = v.object({
   name: v.optional(v.string(), "Unknown"),
@@ -108,6 +128,10 @@ export const ExternalProfileSchema = v.object({
 /**
  * [GUARD] PROFILE INPUT SCHEMA
  * Unified entry point for profile data, supporting both internal and external formats.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Used by the ProfileHydrator to accept data from any upstream source.
  */
 export const ProfileInputSchema = v.union([
   InternalProfileSchema,
@@ -170,6 +194,14 @@ const SafeStringPipe = v.pipe(
   v.string() // The final gatekeeper
 );
 
+/**
+ * [GUARD] MEMBER SCHEMA
+ * Domain-compliant schema for clan roster members.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Enforces strict typing on performance scores and tenure data.
+ */
 export const MemberSchema = v.object({
   id: SafeStringPipe,
   n: SafeStringPipe,
@@ -189,6 +221,14 @@ export const MemberSchema = v.object({
   }),
 });
 
+/**
+ * [GUARD] RECRUIT SCHEMA
+ * Domain-compliant schema for potential recruits.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Validates potential scores and discovery metadata for the Headhunter feature.
+ */
 export const RecruitSchema = v.object({
   id: SafeStringPipe,
   n: SafeStringPipe,
@@ -207,12 +247,11 @@ export const RecruitSchema = v.object({
 });
 
 /**
- * [GUARD] WEB APP DATA SCHEMA
- * Authoritative validation boundary for the full application state.
- */
-/**
  * [GUARD] SUPABASE ROSTER ROW SCHEMA
  * Validates the raw shape of a row from the roster_view.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
  * Rationale: Ensures Supabase data is hardened before mapping to domain objects.
  */
 export const SbRosterRowSchema = v.object({
@@ -248,6 +287,9 @@ export const SbRosterRowSchema = v.object({
 /**
  * [GUARD] SUPABASE HEADHUNTER ROW SCHEMA
  * Validates the raw shape of a row from the headhunter_view.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
  * Rationale: Protects recruitment discovery pipeline from malformed edge data.
  */
 export const SbHeadhunterRowSchema = v.object({
@@ -305,6 +347,14 @@ export const OfflineActionSchema = v.variant("type", [
 
 export const OfflineQueueSchema = v.array(OfflineActionSchema);
 
+/**
+ * [GUARD] WEB APP DATA SCHEMA
+ * Authoritative validation boundary for the full application state.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * This is the primary gatekeeper for the global store hydration and background sync.
+ */
 export const WebAppDataSchema = v.object({
   lb: v.array(MemberSchema),
   hh: v.array(RecruitSchema),
@@ -320,6 +370,10 @@ export const WebAppDataSchema = v.object({
 /**
  * [GUARD] VOYAGE EVENT SCHEMA
  * Validates the shape of a Clan Voyage event.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Enforces status transitions and crown targets for active events.
  */
 const VoyageEventSchema = v.object({
   id: SafeNumberPipe,
@@ -335,6 +389,10 @@ const VoyageEventSchema = v.object({
 /**
  * [GUARD] VOYAGE CONTRIBUTION SCHEMA
  * Validates player performance within a voyage.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Hardens participant contribution data before ledger aggregation.
  */
 export const VoyageContributionSchema = v.object({
   player_tag: SafeStringPipe,
@@ -347,6 +405,10 @@ export const VoyageContributionSchema = v.object({
 /**
  * [GUARD] VOYAGE SUMMARY SCHEMA
  * Aggregates event state and all participant contributions.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Authoritative schema for the voyage_summary view.
  */
 export const VoyageSummarySchema = v.object({
   event: VoyageEventSchema,
@@ -354,4 +416,3 @@ export const VoyageSummarySchema = v.object({
   total_crowns: SafeNumberPipe,
   progress_ratio: SafeNumberPipe,
 });
-

@@ -393,7 +393,7 @@ export const useClashDataStore = defineStore("clashData", () => {
    * - COMMUNICATES with the Service Worker via `postMessage`.
    */
   async function triggerUpdate() {
-    if (!('serviceWorker' in navigator)) return;
+    if (typeof navigator === 'undefined' || !navigator.serviceWorker) return;
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration?.waiting) {
       console.debug("[Store] Sending SKIP_WAITING to waiting worker...");
@@ -433,6 +433,7 @@ export const useClashDataStore = defineStore("clashData", () => {
     /** Alias for refreshFromSupabase to satisfy generic controller contracts. */
     refresh: refreshFromSupabase,
     refreshFromSupabase,
-    updatePlayerLocally
+    updatePlayerLocally,
+    triggerUpdate
   };
 });
