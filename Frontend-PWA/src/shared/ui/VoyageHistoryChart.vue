@@ -4,7 +4,7 @@
 
 import { VOYAGE_CONSTANTS, calculatePrediction, parseHistoryString } from "@core/utils/predictionMath";
 import { computed } from "vue";
-import { BaseHistoryChart } from "@shared";
+import BaseHistoryChart from "./BaseHistoryChart.vue";
 
 const props = defineProps<{
   history?: string;

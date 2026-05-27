@@ -27,19 +27,13 @@ import {
   RoleBadge,
   TenureBadge,
   StatsGrid,
-  StatisticItem
+  StatisticItem,
+  WarHistoryChart,
+  VoyageHistoryChart
 } from "@shared";
-import { computed, defineAsyncComponent, ref } from "vue";
+import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
 import { formatRole, formatTimeAgo } from "@core/utils/formatters";
-
-// [PERF] ASYNC COMPONENT: Deferred loading of the heavy ECharts-based history visualization.
-const WarHistoryChart = defineAsyncComponent(
-  () => import("./WarHistoryChart.vue"),
-);
-const VoyageHistoryChart = defineAsyncComponent(
-  () => import("./VoyageHistoryChart.vue"),
-);
 
 const activeChart = ref<'war' | 'voyage'>('war');
 
