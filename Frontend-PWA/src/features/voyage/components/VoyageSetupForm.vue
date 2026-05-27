@@ -23,9 +23,11 @@ import { Icon, DurationInput } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import { getDurationUnits } from "@core/utils/formatters";
 import { VOYAGE_DEFAULT_TARGET, VOYAGE_MAX_TARGET } from "@core/config";
+import { useToast } from "@core/services/useToast";
 import type { T2TInput } from "../types";
 
 const store = useVoyageStore();
+const toast = useToast();
 
 // --- FORM STATE ---
 
@@ -204,18 +206,23 @@ async function handleActivate() {
     if (store.isAwaitingEnd) {
       // Promoting a PENDING voyage whose start time has already passed
       await store.activateScheduledVoyage(safeTargetCrowns.value, strictEndsIn);
+      toast.success("Clan Voyage activated successfully.");
     } else if (isScheduleOnlyMode.value) {
       // Scheduling a pre-event with start time only
       await store.scheduleVoyage(safeTargetCrowns.value, strictStartsIn);
+      toast.success("Pre-event scheduled successfully.");
     } else if (store.isActive) {
       // Modifying active target/ends duration
       await store.activateVoyage(safeTargetCrowns.value, strictStartsIn, strictEndsIn);
+      toast.success("Voyage event updated successfully.");
     } else {
       // Normal direct activation (both set immediately or immediate activation)
       await store.activateVoyage(safeTargetCrowns.value, strictStartsIn, strictEndsIn);
+      toast.success("Clan Voyage activated successfully.");
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('[VoyageSetupForm] handleActivate error:', err);
+    toast.error(err?.message ?? "Operation failed.");
   }
 }
 
@@ -225,8 +232,10 @@ async function handleCancel() {
   if (confirm("Are you sure you want to cancel the scheduled Clan Voyage?")) {
     try {
       await store.cancelSchedule();
-    } catch (err) {
+      toast.success("Scheduled Clan Voyage cancelled.");
+    } catch (err: any) {
       console.error('[VoyageSetupForm] handleCancel error:', err);
+      toast.error(err?.message ?? "Cancellation failed.");
     }
   }
 }
