@@ -12,7 +12,6 @@ The Roster feature provides an authoritative view of the clan's internal health.
 - **Isolation**: Strictly siloed. Never imports from `Laboratory`, `Headhunter`, or `Settings`.
 - **Dependencies**:
   - `@core/utils/predictionMath`: Historical parsing and predictive algorithms.
-  - `@core/utils/bezier`: Geometric calculations for trend visualization.
   - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
   - `@shared/ui/BaseCard`: The foundational UI molecule for member profiles.
 
@@ -29,9 +28,9 @@ The Roster feature utilizes a dual-metric model to distinguish between historica
 - **RPeS (Raw Performance Score)**: The absolute sum of weighted performance vectors (Fame, Donations, Trophies, and Participation Rate). It represents a member's total value accumulated in the system.
 - **PeS (Performance Score)**: A relative normalization of the RPeS against the current clan benchmark. The top member defines the 100% curve, ensuring the leaderboard remains a relative benchmark regardless of meta shifts.
 
-### Visualization & Predictive Trends (WarHistoryChart.vue)
-A high-precision visualization engine for war performance.
-- **Historical Parsing**: Decompresses 52-week war history logs into chronological data points.
+### Visualization & Predictive Trends
+High-precision visualization engines for performance tracking, utilized from the `@shared` layer.
+- **Historical Parsing**: Decompresses history logs (War Fame or Voyage Crowns) into chronological data points.
 - **Trend Analysis**: Uses a Linear Best Fit algorithm (`generateLinearTrend`) to calculate performance trajectories (Positive/Negative).
 - **Predictive Projection**: Implements a 10-week linear decay weighted average engine to project next-week performance.
 - **Hardware Acceleration**: Utilizes SVG overlays and CSS transforms for fluid, 60FPS interactions.
@@ -43,17 +42,12 @@ The primary entry for member data. Implements high-density information layout, i
 - **Identity Stack**: Name, Tag, Role, and Tenure (Days in clan).
 - **Metric Pods**: Integrated tooltips for benchmarking individual stats against clan averages.
 - **Interactive Slots**: Leverages `BaseCard` for unified selection and expansion behavior.
-
-### WarHistoryChart.vue
-A domain-specific molecule for war fame visualization.
-- **Geometric Dot Mapping**: Maps discrete fame values to an SVG coordinate space (0-100).
-- **Dynamic Styling**: Color-coded bars based on win thresholds and activity status.
-- **Skeleton Support**: Integrated loading states using the `sk-chart-area` design pattern.
+- **Promoted Charts**: Integrates `WarHistoryChart` and `VoyageHistoryChart` from `@shared` for comprehensive performance auditing.
 
 ## Data Flow
 1. **Ingestion**: `useLeaderboard` observes the Layer 1 `members` store.
 2. **Analysis**: Stats are passed through `@core/utils` formatters for display normalization.
-3. **Visualization**: `WarHistoryChart` parses raw logs and generates geometric trend paths.
+3. **Visualization**: The MemberCard delegates performance visualization to shared domain-aware molecules.
 4. **Interaction**: User selection/search updates the `useConsoleController` state -> Filters the visible list with `v-auto-animate` transitions.
 
 ## Key Constraints & Silo Isolation

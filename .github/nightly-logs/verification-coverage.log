@@ -90,3 +90,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-05-24 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Zero Coverage gap closed; saturating tests for status and statsBadge logic.
 2026-05-25 | Frontend-PWA/src/features/voyage/components/EventManagement.vue | Zero Coverage gap closed; saturating tests for state-driven UI and live countdown logic.
 2026-05-26 | Frontend-PWA/src/features/voyage/components/VoyageBanner.vue | Zero Coverage gap closed; saturating tests for live progress and countdown logic.
+2026-05-27 | Frontend-PWA/src/shared/ui/BaseHistoryChart.vue | Saturating logic coverage for bar scaling, trend generation, and thematic rendering
