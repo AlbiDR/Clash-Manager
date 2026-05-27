@@ -5,6 +5,7 @@ import { createSupabaseClient } from "./SupabaseClient";
 import type {
   VoyageContribution,
   VoyageSummary,
+  VoyageViewSummary,
 } from "@core/types";
 import {
   VoyageContributionSchema,
@@ -63,16 +64,87 @@ export async function initializeVoyage(target: number, start: string, end: strin
 }
 
 /**
+ * [VOYAGE] Schedules a new Clan Voyage pre-event via features.schedule_voyage RPC.
+ *
+ * @param target - The goal crown count for the event.
+ * @param start - ISO timestamp for event commencement (future).
+ * @returns A Promise resolving to an object indicating success or error details.
+ */
+export async function scheduleVoyageEvent(target: number, start: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .rpc('schedule_voyage', {
+      target_crowns: target,
+      start_at: start
+    });
+
+  if (error) {
+    console.error('[Voyage] RPC schedule_voyage Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data };
+}
+
+/**
+ * [VOYAGE] Promotes a scheduled PENDING voyage to ACTIVE with an end time.
+ *
+ * @param voyageId - The ID of the PENDING voyage.
+ * @param target - The target crowns (allowing update on activation).
+ * @param end - ISO timestamp for event conclusion.
+ * @returns A Promise resolving to an object indicating success or error details.
+ */
+export async function activateScheduledVoyageEvent(voyageId: number, target: number, end: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .rpc('activate_scheduled_voyage', {
+      voyage_id: voyageId,
+      target_crowns: target,
+      end_at: end
+    });
+
+  if (error) {
+    console.error('[Voyage] RPC activate_scheduled_voyage Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data };
+}
+
+/**
+ * [VOYAGE] Cancels a scheduled PENDING voyage.
+ *
+ * @param voyageId - The ID of the PENDING voyage.
+ * @returns A Promise resolving to an object indicating success or error details.
+ */
+export async function cancelScheduledVoyageEvent(voyageId: number) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .rpc('cancel_voyage', {
+      voyage_id: voyageId
+    });
+
+  if (error) {
+    console.error('[Voyage] RPC cancel_voyage Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data };
+}
+
+/**
  * Fetches the voyage summary from the SSOT view.
  *
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
  * Hardens raw view data from `voyage_summary` against the `VoyageSummarySchema`
- * before permitting entry into the domain logic layer.
+ * before permitting entry into the domain logic layer. Note that the view does
+ * not include per-player contributions; those are fetched separately via
+ * {@link fetchVoyageContributions} and merged by the store.
  *
- * @returns A Promise resolving to a validated VoyageSummary or null if no active event exists.
+ * @returns A Promise resolving to a validated VoyageViewSummary or null if no active/pending event exists.
  */
-export async function fetchVoyageSummary(): Promise<VoyageSummary | null> {
+export async function fetchVoyageSummary(): Promise<VoyageViewSummary | null> {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from('voyage_summary')
