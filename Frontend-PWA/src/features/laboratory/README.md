@@ -12,8 +12,7 @@ The Laboratory allows users to project their future King Level and resource cons
 - **Isolation**: Strictly decoupled. Never imports from other Features (Headhunter, Roster, Settings).
 - **Dependencies**:
   - `@core/utils/economy`: Branded currency arithmetic.
-  - `@core/utils/PriorityQueue`: O(log N) candidate selection.
-  - `@core/api/SupabaseClient`: Profile fetching.
+  - `@core/api/ProfileClient`: Profile fetching.
 
 ## Logic Subsystems
 
@@ -23,7 +22,7 @@ The Laboratory implements a strict validation boundary. Raw data from the Supaba
 ### Progression Engine (Simulation.ts)
 A non-blocking, generator-based engine that calculates the most efficient upgrade path.
 - **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
-- **Priority Queue**: Uses a Binary Heap to always select the highest-efficiency candidate.
+- **Greedy Optimization**: Employs an iterative selection logic that identifies and executes the optimal upgrade step based on the active scoring strategy.
 
 ### Trajectory Rendering (TrajectoryList.vue)
 Renders the recommended upgrade path using a high-performance rendering strategy.

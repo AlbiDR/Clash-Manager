@@ -12,7 +12,6 @@ The Roster feature provides an authoritative view of the clan's internal health.
 - **Isolation**: Strictly siloed. Never imports from `Laboratory`, `Headhunter`, or `Settings`.
 - **Dependencies**:
   - `@core/utils/predictionMath`: Historical parsing and predictive algorithms.
-  - `@core/utils/bezier`: Geometric calculations for trend visualization.
   - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
   - `@shared/ui/BaseCard`: The foundational UI molecule for member profiles.
 
