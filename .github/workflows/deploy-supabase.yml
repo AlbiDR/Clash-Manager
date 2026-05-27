@@ -117,3 +117,4 @@ jobs:
           echo "[DEPLOY] Launching The Hunter (Edge Function)..."
           supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID" --no-verify-jwt
           supabase functions deploy headhunter-scanner --project-ref "$PROJECT_ID" --no-verify-jwt
+          supabase functions deploy sync-player-cards --project-ref "$PROJECT_ID" --no-verify-jwt
