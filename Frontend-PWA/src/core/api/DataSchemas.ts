@@ -377,7 +377,9 @@ export const WebAppDataSchema = v.object({
  */
 const VoyageEventSchema = v.object({
   id: SafeNumberPipe,
-  clan_tag: SafeStringPipe,
+  // clan_tag is audit metadata included by some views but not all; treated as
+  // optional here to avoid a parse failure when the summary view omits it.
+  clan_tag: v.optional(SafeStringPipe, ""),
   status: v.picklist(["IDLE", "PENDING", "ACTIVE", "COMPLETED"]),
   target_crowns: SafeNumberPipe,
   start_at: SafeStringPipe,
