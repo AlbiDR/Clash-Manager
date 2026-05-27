@@ -55,7 +55,6 @@ describe("VoyageClient", () => {
     it("fetchVoyageSummary returns validated summary", async () => {
       const mockData = {
         event: { id: 1, clan_tag: "TAG", status: "ACTIVE", target_crowns: 1000, start_at: "...", end_at: "..." },
-        contributions: [],
         total_crowns: 500,
         progress_ratio: 0.5
       };
