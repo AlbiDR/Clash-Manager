@@ -132,12 +132,12 @@ function buildProfileResponse(
 Deno.serve(async (req) => {
   await syncVault();
 
-  // [DEAD LOGIC REMOVAL] clinicalServe manages CORS, authorization (INTERNAL_BEARER_TOKEN),
+  // [DEAD LOGIC REMOVAL] clinicalServe manages CORS, authorization (INTERNAL_BEARER_TOKEN / SUPABASE_ANON_KEY),
   // request validation (PlayerSyncPayloadSchema), and telemetry reporting internally.
   return await clinicalServe({
     req,
     supabase,
-    bearerToken: CONFIG.INTERNAL_BEARER_TOKEN,
+    bearerToken: [CONFIG.INTERNAL_BEARER_TOKEN, CONFIG.SUPABASE_ANON_KEY],
     eventType: "PLAYER_SYNC",
     componentId: "PLAYER_CARD_SYNC",
     schema: PlayerSyncPayloadSchema,

@@ -20,6 +20,7 @@ export const CONFIG = {
   SUPABASE_URL: Deno.env.get("SUPABASE_URL") || "",
   SUPABASE_SERVICE_ROLE_KEY: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "",
   INTERNAL_BEARER_TOKEN: Deno.env.get("INTERNAL_BEARER_TOKEN") || "",
+  SUPABASE_ANON_KEY: Deno.env.get("SUPABASE_ANON_KEY") || "",
 };
 
 export const supabase = createClient(

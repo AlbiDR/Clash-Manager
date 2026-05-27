@@ -20,8 +20,8 @@ export interface ProtocolOptions<T> {
     req: Request;
     /** An authenticated Supabase client for performing telemetry and DB operations. */
     supabase: SupabaseClient;
-    /** The expected shared internal bearer token for service-to-service auth. */
-    bearerToken: string;
+    /** The expected shared internal bearer token(s) for service-to-service auth. */
+    bearerToken: string | string[];
     /** The classification key for the telemetry event (e.g., 'INGESTION', 'SCAN'). */
     eventType: string;
     /** The unique identifier of the component triggering the protocol (e.g., 'headhunter-scanner'). */
@@ -96,8 +96,9 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // [THREAT:] Prevents unauthorized access to privileged Edge Functions.
         // [DECISION LOG] Uses a shared internal bearer token for service-to-service auth.
         const authHeader = req.headers.get("Authorization");
-        const expectedToken = `Bearer ${bearerToken}`;
-        if (!bearerToken || authHeader !== expectedToken) {
+        const tokens = Array.isArray(bearerToken) ? bearerToken : [bearerToken];
+        const isAuthorized = tokens.some((token) => token && authHeader === `Bearer ${token}`);
+        if (!isAuthorized) {
             console.error(`[Protocol] Unauthorized access attempt blocked for ${componentId}.`);
             return new Response(JSON.stringify({ error: "Unauthorized" }), { 
                 status: 401, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
