@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-27] PR #692: Document authoritative validation boundaries in DataSchemas.ts
+**Commit**: `aac45c6fdd0f4c47f5cf6a760589ee867526f966`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/692)
+
+### Description
+Enhanced `Frontend-PWA/src/core/api/DataSchemas.ts` with comprehensive TSDoc for major exported schemas, explicitly documenting their role as validation boundaries per ADR Section III. Verified the changes with a full monorepo test run.
+
+---
+*PR created automatically by Jules for task [820450414348587312](https://jules.google.com/task/820450414348587312) started by @AlbiDR*
+
+---
+
 ## [2026-05-27] PR #691: docs(readme): reconcile laboratory and roster drift
 **Commit**: `6d8c7eab14fea420951d63cbd7683af70c526113`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/691)
