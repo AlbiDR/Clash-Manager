@@ -53,7 +53,8 @@ export async function getPlayerProfile(
     throw new Error(errorBody.error ?? `sync-player-cards failed with status ${profileResponse.status}`);
   }
 
-  const rawProfileData = await profileResponse.json();
+  const responseJson = await profileResponse.json();
+  const rawProfileData = responseJson.data ?? responseJson;
 
   // Merge cards and towerTroops into a single array for the simulation engine.
   // isTowerTroop is already set correctly by the Edge Function.
