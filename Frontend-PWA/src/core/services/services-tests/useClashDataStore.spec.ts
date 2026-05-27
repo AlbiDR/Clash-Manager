@@ -404,4 +404,65 @@ describe("useClashDataStore", () => {
       expect(store.data).toBeNull();
     });
   });
+
+  describe("triggerUpdate", () => {
+    it("should send SKIP_WAITING message if a waiting worker is found", async () => {
+      const mockPostMessage = vi.fn();
+      const mockRegistration = {
+        waiting: {
+          postMessage: mockPostMessage
+        }
+      };
+
+      // Mock navigator.serviceWorker
+      const mockServiceWorker = {
+        getRegistration: vi.fn().mockResolvedValue(mockRegistration)
+      };
+
+      Object.defineProperty(global.navigator, "serviceWorker", {
+        value: mockServiceWorker,
+        configurable: true,
+        writable: true
+      });
+
+      const store = useClashDataStore();
+      await store.triggerUpdate();
+
+      expect(mockServiceWorker.getRegistration).toHaveBeenCalled();
+      expect(mockPostMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    });
+
+    it("should do nothing if no waiting worker is found", async () => {
+      const mockRegistration = {
+        waiting: null
+      };
+
+      const mockServiceWorker = {
+        getRegistration: vi.fn().mockResolvedValue(mockRegistration)
+      };
+
+      Object.defineProperty(global.navigator, "serviceWorker", {
+        value: mockServiceWorker,
+        configurable: true,
+        writable: true
+      });
+
+      const store = useClashDataStore();
+      await store.triggerUpdate();
+
+      expect(mockServiceWorker.getRegistration).toHaveBeenCalled();
+    });
+
+    it("should do nothing if serviceWorker is not supported", async () => {
+      Object.defineProperty(global.navigator, "serviceWorker", {
+        value: undefined,
+        configurable: true,
+        writable: true
+      });
+
+      const store = useClashDataStore();
+      await store.triggerUpdate();
+      // Should not throw
+    });
+  });
 });

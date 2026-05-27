@@ -176,3 +176,4 @@ Frontend-PWA/src/features/roster/components/BaseHistoryChart.vue
 Frontend-PWA/src/features/voyage/types.ts
 2026-08-29 | Frontend-PWA/src/core/theme/tokens.ts | Centralized shape tokens and standardized sys-prefixing.
 2026-08-29 | Frontend-PWA/src/core/theme/base.ts | Excised redundant hardcoded shape variables.
+2026-08-31 | Frontend-PWA/src/core/services/useClashDataStore.ts | Exported and verified triggerUpdate action for PWA update orchestration.
