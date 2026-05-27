@@ -27,6 +27,7 @@ import {
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
 import { MemberCard } from "../components";
+import { VoyageBanner } from "@features/voyage/components";
 
 const {
   isShowcaseMode,
@@ -47,8 +48,10 @@ const {
     v-bind="layoutProps"
     v-on="layoutEvents"
   >
-    <!-- Voyage Progress Banner (ACTIVE events only) -->
-    <component :is="'VoyageBanner'" />
+    <template #top>
+      <!-- Voyage Progress Banner (ACTIVE, PENDING, or AWAITING events) -->
+      <VoyageBanner />
+    </template>
 
     <!-- Default Slot: The List -->
     <ConsoleList
