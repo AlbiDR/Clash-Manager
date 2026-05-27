@@ -151,7 +151,7 @@ describe("VoyageSetupForm.vue", () => {
     const wrapper = createWrapper();
 
     expect(wrapper.find(".activate-btn").classes()).toContain("loading");
-    expect(wrapper.find(".activate-btn").text()).toBe("Activating...");
+    expect(wrapper.find(".activate-btn").text()).toBe("Processing...");
   });
 
   it("updates form when store.isActive becomes true", async () => {
