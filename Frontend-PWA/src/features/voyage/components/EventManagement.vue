@@ -19,7 +19,7 @@
  *   to the 400-line SRP threshold (ADR Section III).
  * ============================================================================
  */
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { SettingsCard, Icon } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import VoyageSetupForm from "./VoyageSetupForm.vue";
@@ -33,12 +33,14 @@ const store = useVoyageStore();
 
 // --- LIVE COUNTDOWN TIMER ---
 const timeRemaining = ref("");
+const startsInCountdown = ref("");
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
   store.refresh();
   timer = setInterval(() => {
+    // Handle active endsAt countdown
     if (store.endsAt) {
       const wasEnded = timeRemaining.value === "Ended";
       timeRemaining.value = formatCountdown(store.endsAt, { showDays: true });
@@ -48,14 +50,41 @@ onMounted(() => {
     } else {
       timeRemaining.value = "";
     }
+
+    // Handle scheduled startsAt countdown
+    if (store.startsAt) {
+      const wasStarted = startsInCountdown.value === "Ended";
+      startsInCountdown.value = formatCountdown(store.startsAt, { showDays: true });
+      if (!wasStarted && startsInCountdown.value === "Ended") {
+        store.refresh();
+      }
+    } else {
+      startsInCountdown.value = "";
+    }
   }, 1000);
+
   if (store.endsAt) {
     timeRemaining.value = formatCountdown(store.endsAt, { showDays: true });
+  }
+  if (store.startsAt) {
+    startsInCountdown.value = formatCountdown(store.startsAt, { showDays: true });
   }
 });
 
 onUnmounted(() => {
   if (timer) clearInterval(timer);
+});
+
+const pillLabel = computed(() => {
+  if (store.isPending) return "Pending";
+  if (store.isAwaitingEnd) return "Awaiting Promotion";
+  return store.status;
+});
+
+const pillClass = computed(() => {
+  if (store.isPending) return "pending";
+  if (store.isAwaitingEnd) return "awaiting";
+  return store.status.toLowerCase();
 });
 </script>
 
@@ -69,11 +98,34 @@ onUnmounted(() => {
     <template #header-extra>
       <div
         class="status-pill"
-        :class="store.status.toLowerCase()"
+        :class="pillClass"
       >
-        {{ store.status }}
+        {{ pillLabel }}
       </div>
     </template>
+
+    <!-- Pre-Event Summary (read-only) -->
+    <div v-if="store.isPending || store.isAwaitingEnd" class="active-summary pre-event-summary">
+      <div class="summary-row">
+        <span class="summary-label">Crown Target</span>
+        <span class="summary-value primary">
+          {{ store.targetCrowns.toLocaleString() }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
+        </span>
+      </div>
+      <div class="summary-row" v-if="store.isPending && startsInCountdown">
+        <span class="summary-label">Starts In</span>
+        <span class="summary-value timer pending-timer">
+          {{ startsInCountdown }}
+        </span>
+      </div>
+      <div class="summary-row" v-if="store.isAwaitingEnd">
+        <span class="summary-label">Status</span>
+        <span class="summary-value awaiting-text">
+          Awaiting End Time Promotion
+        </span>
+      </div>
+      <div class="section-divider" />
+    </div>
 
     <!-- Active Event Summary (read-only) -->
     <div v-if="store.isActive" class="active-summary">
@@ -118,6 +170,10 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
+.pre-event-summary {
+  background: rgba(245, 158, 11, 0.06);
+}
+
 .summary-row {
   display: flex;
   align-items: center;
@@ -143,6 +199,8 @@ onUnmounted(() => {
 .summary-value.victory { color: #fbbf24; }
 .summary-value.timer { color: var(--sys-color-outline); }
 .summary-value.timer.ended { color: var(--sys-color-error); }
+.summary-value.pending-timer { color: #f59e0b; }
+.summary-value.awaiting-text { color: #f97316; }
 
 .section-divider {
   height: 1px;
@@ -163,6 +221,7 @@ onUnmounted(() => {
 
 .status-pill.idle        { color: var(--sys-color-outline); }
 .status-pill.pending     { color: #f59e0b; }
+.status-pill.awaiting    { color: #f97316; animation: pulse-pill 2s infinite; }
 .status-pill.active      { color: #22c55e; animation: pulse-pill 2s infinite; }
 .status-pill.completed   { color: var(--sys-color-primary); }
 

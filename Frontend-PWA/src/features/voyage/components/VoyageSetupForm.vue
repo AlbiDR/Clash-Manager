@@ -49,12 +49,18 @@ const startsIn = ref<FormT2T>({ days: 0, hours: 0, minutes: 0 });
 const endsIn   = ref<FormT2T>({ days: 1, hours: 0, minutes: 0 });
 
 // [DECISION LOG] STATE SYNCHRONIZATION
-// Rationale: When an event is active, we populate the form from the store state
-// to provide context and allow for "Update Event" workflows.
+// Rationale: When an event is active or pending, we populate the form from the store state
+// to provide context and allow for "Update Event" or promotion/cancellation workflows.
 watch(
-  () => [store.isActive, store.targetCrowns, store.summary?.event?.end_at] as const,
-  ([isActive, target, endAt]) => {
-    if (isActive) {
+  () => [
+    store.isActive,
+    store.isPending,
+    store.isAwaitingEnd,
+    store.targetCrowns,
+    store.summary?.event?.end_at
+  ] as const,
+  ([isActive, isPending, isAwaitingEnd, target, endAt]) => {
+    if (isActive || isPending || isAwaitingEnd) {
       if (target > 0) targetCrowns.value = target;
       if (endAt) {
         const end = new Date(endAt).getTime();
@@ -120,17 +126,35 @@ const totalEndSeconds = computed(() => {
 /** Validated numeric crown target. */
 const safeTargetCrowns = computed(() => sanitize(targetCrowns.value));
 
+/** Form mode helper */
+const isScheduleOnlyMode = computed(() => {
+  // If we are idle, startsIn is set but endsIn is not.
+  return store.status === 'IDLE' && totalStartSeconds.value > 0 && totalEndSeconds.value === 0;
+});
+
 /**
  * Comprehensive form validity state.
- * Rationale: Ensures event concludes after it starts and has a non-zero goal.
+ * Rationale:
+ * - In Active Update mode: crowns > 0 && endsIn > 0.
+ * - In Awaiting End mode (promoting PENDING): crowns > 0 && endsIn > 0.
+ * - In Schedule-Only mode: crowns > 0 && startsIn > 0 && endsIn == 0.
+ * - In Normal direct activation mode: crowns > 0 && endsIn > startsIn.
  */
 const isFormValid = computed(() => {
+  if (safeTargetCrowns.value <= 0) return false;
+
   if (store.isActive) {
-    return safeTargetCrowns.value > 0 && totalEndSeconds.value > 0;
+    return totalEndSeconds.value > 0;
   }
-  return safeTargetCrowns.value > 0 &&
-         totalEndSeconds.value > 0 &&
-         totalEndSeconds.value > totalStartSeconds.value;
+  if (store.isAwaitingEnd) {
+    return totalEndSeconds.value > 0;
+  }
+  if (isScheduleOnlyMode.value) {
+    return totalStartSeconds.value > 0;
+  }
+
+  // Normal mode direct activation: endsIn must be filled and greater than startsIn
+  return totalEndSeconds.value > 0 && totalEndSeconds.value > totalStartSeconds.value;
 });
 
 /**
@@ -138,21 +162,25 @@ const isFormValid = computed(() => {
  */
 const validationHint = computed(() => {
   if (safeTargetCrowns.value <= 0) return "Set a crown target above 0.";
-  if (store.isActive) return null;
-  if (totalEndSeconds.value === 0) return "Set an 'Ends In' duration.";
-  if (totalEndSeconds.value <= totalStartSeconds.value) return "'Ends In' must be after 'Starts In'.";
+  if (store.isActive || store.isAwaitingEnd) {
+    if (totalEndSeconds.value === 0) return "Set an 'Ends In' duration.";
+    return null;
+  }
+  if (isScheduleOnlyMode.value) return null;
+
+  if (totalEndSeconds.value === 0 && totalStartSeconds.value === 0) {
+    return "Set an 'Ends In' duration or a 'Starts In' scheduling delay.";
+  }
+  if (totalEndSeconds.value > 0 && totalEndSeconds.value <= totalStartSeconds.value) {
+    return "'Ends In' must be after 'Starts In'.";
+  }
   return null;
 });
 
 // --- ACTIONS ---
 
 /**
- * Orchestrates the activation or update of a Clan Voyage.
- *
- * @remarks
- * Side Effects:
- * - Triggers `store.activateVoyage` which writes to the backend.
- * - Displays errors to the console on failure.
+ * Orchestrates the activation, scheduling, promotion, or update of a Clan Voyage.
  */
 async function handleActivate() {
   if (store.loading) return;
@@ -172,9 +200,34 @@ async function handleActivate() {
       hours: sanitize(endsIn.value.hours),
       minutes: sanitize(endsIn.value.minutes),
     };
-    await store.activateVoyage(sanitize(targetCrowns.value), strictStartsIn, strictEndsIn);
+
+    if (store.isAwaitingEnd) {
+      // Promoting a PENDING voyage whose start time has already passed
+      await store.activateScheduledVoyage(safeTargetCrowns.value, strictEndsIn);
+    } else if (isScheduleOnlyMode.value) {
+      // Scheduling a pre-event with start time only
+      await store.scheduleVoyage(safeTargetCrowns.value, strictStartsIn);
+    } else if (store.isActive) {
+      // Modifying active target/ends duration
+      await store.activateVoyage(safeTargetCrowns.value, strictStartsIn, strictEndsIn);
+    } else {
+      // Normal direct activation (both set immediately or immediate activation)
+      await store.activateVoyage(safeTargetCrowns.value, strictStartsIn, strictEndsIn);
+    }
   } catch (err) {
     console.error('[VoyageSetupForm] handleActivate error:', err);
+  }
+}
+
+/** Cancels a scheduled pre-event */
+async function handleCancel() {
+  if (store.loading) return;
+  if (confirm("Are you sure you want to cancel the scheduled Clan Voyage?")) {
+    try {
+      await store.cancelSchedule();
+    } catch (err) {
+      console.error('[VoyageSetupForm] handleCancel error:', err);
+    }
   }
 }
 </script>
@@ -194,20 +247,22 @@ async function handleActivate() {
           class="glass-input target-input"
           :placeholder="String(VOYAGE_DEFAULT_TARGET)"
           @input="onTargetInput"
+          :disabled="store.isPending"
         />
         <span class="input-suffix"><Icon name="crown" size="14" /></span>
       </div>
     </div>
 
-    <!-- Starts In (Hidden if active to prevent overwriting pipeline dates) -->
+    <!-- Starts In (Hidden if active or promoting scheduled, since startsIn is locked) -->
     <DurationInput
-      v-if="!store.isActive"
+      v-if="!store.isActive && !store.isAwaitingEnd && !store.isPending"
       v-model="startsIn"
       label="Starts In"
     />
 
-    <!-- Ends In -->
+    <!-- Ends In (Hidden if we are only scheduling a pre-event with startsIn) -->
     <DurationInput
+      v-if="!store.isPending"
       v-model="endsIn"
       label="Ends In"
     />
@@ -224,11 +279,25 @@ async function handleActivate() {
       class="activate-btn"
       :class="{ disabled: !isFormValid, loading: store.loading }"
       @click="handleActivate"
+      :disabled="store.isPending"
     >
       <div class="btn-glow" />
-      <span v-if="store.loading">Activating...</span>
+      <span v-if="store.loading">Processing...</span>
+      <span v-else-if="store.isPending">Scheduled</span>
+      <span v-else-if="store.isAwaitingEnd">Activate Scheduled Event</span>
       <span v-else-if="store.isActive">Update Event</span>
+      <span v-else-if="isScheduleOnlyMode">Schedule Pre-Event</span>
       <span v-else>Activate Mirror</span>
+    </button>
+
+    <!-- Cancel Schedule Link -->
+    <button
+      v-if="store.isPending || store.isAwaitingEnd"
+      class="cancel-btn"
+      :class="{ disabled: store.loading }"
+      @click="handleCancel"
+    >
+      Cancel Schedule
     </button>
   </div>
 </template>
@@ -270,6 +339,11 @@ async function handleActivate() {
 .glass-input:focus {
   border-color: var(--sys-color-primary);
   box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.12);
+}
+
+.glass-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .input-row {
@@ -346,5 +420,28 @@ async function handleActivate() {
 .activate-btn.loading {
   opacity: 0.7;
   cursor: wait;
+}
+
+/* --- Cancel Button --- */
+.cancel-btn {
+  background: none;
+  border: none;
+  color: var(--sys-color-error, #ef4444);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: opacity 0.2s ease;
+  align-self: center;
+}
+
+.cancel-btn:hover:not(.disabled) {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.cancel-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 </style>

@@ -147,7 +147,7 @@ interface VoyageEvent {
   status: VoyageStatus;
   target_crowns: number;
   start_at: string; // ISO-8601
-  end_at: string;   // ISO-8601
+  end_at: string | null;   // ISO-8601, null when scheduled and PENDING
   activated_by: string | null;
   is_victory: boolean | null;
 }
@@ -166,6 +166,16 @@ export interface VoyageSummary {
   total_crowns: number;
   progress_ratio: number; // 0.0 – 1.0
 }
+
+/**
+ * Raw output shape of the `features.voyage_summary` view.
+ *
+ * @remarks
+ * The view deliberately omits per-player contributions (those are fetched
+ * from the separate `voyage_contributions` view). The store assembles the
+ * full {@link VoyageSummary} by merging both sources.
+ */
+export type VoyageViewSummary = Omit<VoyageSummary, "contributions">;
 
 /** T2T (Time-to-Timestamp) input structure from the activation form. */
 export interface T2TInput {

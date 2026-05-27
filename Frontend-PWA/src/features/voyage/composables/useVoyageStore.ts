@@ -31,6 +31,9 @@ import {
   initializeVoyage as apiInitializeVoyage, 
   fetchVoyageSummary as apiFetchVoyageSummary,
   fetchVoyageContributions as apiFetchVoyageContributions,
+  scheduleVoyageEvent as apiScheduleVoyageEvent,
+  activateScheduledVoyageEvent as apiActivateScheduledVoyageEvent,
+  cancelScheduledVoyageEvent as apiCancelScheduledVoyageEvent
 } from "@core/api/VoyageClient";
 
 export const useVoyageStore = defineStore("voyage", () => {
@@ -63,6 +66,25 @@ export const useVoyageStore = defineStore("voyage", () => {
 
   /** Returns true if the Voyage is currently in the ACTIVE state. */
   const isActive = computed(() => status.value === "ACTIVE");
+
+  /** The scheduled start date/time of the event as a JavaScript Date object. */
+  const startsAt = computed(() =>
+    summary.value?.event.start_at ? new Date(summary.value.event.start_at) : null
+  );
+
+  /** Returns true if the Voyage status is PENDING and the start time is in the future. */
+  const isPending = computed(() => {
+    if (status.value !== "PENDING") return false;
+    const start = startsAt.value;
+    return start ? start.getTime() > Date.now() : false;
+  });
+
+  /** Returns true if the Voyage status is PENDING and the start time has already passed, meaning we await promotion. */
+  const isAwaitingEnd = computed(() => {
+    if (status.value !== "PENDING") return false;
+    const start = startsAt.value;
+    return start ? start.getTime() <= Date.now() : false;
+  });
 
   /** Returns true if the progress ratio has reached or exceeded 1.0 (100%). */
   const isVictory = computed(() =>
@@ -197,7 +219,8 @@ export const useVoyageStore = defineStore("voyage", () => {
         };
         lastUpdated.value = Date.now();
 
-        if (summary.value.event.status === 'ACTIVE') {
+        // Listen for realtime updates if the event is pending or active
+        if (['ACTIVE', 'PENDING'].includes(summary.value.event.status)) {
           setupRealtimeListeners();
         } else {
           cleanupListeners();
@@ -214,7 +237,99 @@ export const useVoyageStore = defineStore("voyage", () => {
   }
 
   /**
-   * Activates a new Voyage event via Supabase RPC.
+   * Schedules a new PENDING Voyage event in the future.
+   *
+   * @param target - The crown goal.
+   * @param startsIn - Relative time when it starts.
+   */
+  async function scheduleVoyage(target: number, startsIn: T2TInput) {
+    loading.value = true;
+    try {
+      const start_at = t2tToTimestamp(startsIn);
+      const response = await apiScheduleVoyageEvent(target, start_at);
+
+      if (response.success) {
+        const result = response.data as { success: boolean; error?: string };
+        if (result.success) {
+          await refresh();
+        } else {
+          throw new Error(result.error ?? "Scheduling failed");
+        }
+      } else {
+        throw new Error(String(response.error) ?? "Scheduling failed");
+      }
+    } catch (err: any) {
+      console.error('[Voyage] Schedule action error:', err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * Promotes a scheduled Voyage to ACTIVE with a specific end time.
+   *
+   * @param target - The goal crowns (updated on promo if desired).
+   * @param endsIn - Relative time when the promoted voyage ends.
+   */
+  async function activateScheduledVoyage(target: number, endsIn: T2TInput) {
+    const voyageId = summary.value?.event.id;
+    if (!voyageId) throw new Error("No scheduled voyage is active.");
+
+    loading.value = true;
+    try {
+      const end_at = t2tToTimestamp(endsIn);
+      const response = await apiActivateScheduledVoyageEvent(voyageId, target, end_at);
+
+      if (response.success) {
+        const result = response.data as { success: boolean; error?: string };
+        if (result.success) {
+          await refresh();
+        } else {
+          throw new Error(result.error ?? "Activation of scheduled voyage failed");
+        }
+      } else {
+        throw new Error(String(response.error) ?? "Activation of scheduled voyage failed");
+      }
+    } catch (err: any) {
+      console.error('[Voyage] Promo action error:', err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * Cancels the currently scheduled PENDING Voyage event.
+   */
+  async function cancelSchedule() {
+    const voyageId = summary.value?.event.id;
+    if (!voyageId) throw new Error("No scheduled voyage is active.");
+
+    loading.value = true;
+    try {
+      const response = await apiCancelScheduledVoyageEvent(voyageId);
+
+      if (response.success) {
+        const result = response.data as { success: boolean; error?: string };
+        if (result.success) {
+          await refresh();
+        } else {
+          throw new Error(result.error ?? "Cancellation failed");
+        }
+      } else {
+        throw new Error(String(response.error) ?? "Cancellation failed");
+      }
+    } catch (err: any) {
+      console.error('[Voyage] Cancel schedule action error:', err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  /**
+   * Activates a new Voyage event via Supabase RPC (Direct IMMEDIATE ACTIVE).
    *
    * @param target - The crown goal for the new Voyage.
    * @param startsIn - Relative duration until the event begins.
@@ -271,6 +386,9 @@ export const useVoyageStore = defineStore("voyage", () => {
     lastUpdated,
     status,
     isActive,
+    startsAt,
+    isPending,
+    isAwaitingEnd,
     isVictory,
     progressRatio,
     totalCrowns,
@@ -279,6 +397,9 @@ export const useVoyageStore = defineStore("voyage", () => {
     contributions,
     t2tToTimestamp,
     refresh,
+    scheduleVoyage,
+    activateScheduledVoyage,
+    cancelSchedule,
     activateVoyage,
   };
 });

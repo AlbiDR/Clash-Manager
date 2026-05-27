@@ -381,7 +381,7 @@ const VoyageEventSchema = v.object({
   status: v.picklist(["IDLE", "PENDING", "ACTIVE", "COMPLETED"]),
   target_crowns: SafeNumberPipe,
   start_at: SafeStringPipe,
-  end_at: SafeStringPipe,
+  end_at: v.nullable(SafeStringPipe),
   activated_by: v.optional(v.nullable(SafeStringPipe)),
   is_victory: v.optional(v.nullable(v.boolean())),
 });
@@ -404,15 +404,16 @@ export const VoyageContributionSchema = v.object({
 
 /**
  * [GUARD] VOYAGE SUMMARY SCHEMA
- * Aggregates event state and all participant contributions.
+ * Validates the raw output of the `features.voyage_summary` view.
  *
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
- * Authoritative schema for the voyage_summary view.
+ * The view returns event metadata, aggregate crown totals, and the progress
+ * ratio. Per-player contributions are fetched separately via the
+ * `voyage_contributions` view and merged by the store layer.
  */
 export const VoyageSummarySchema = v.object({
   event: VoyageEventSchema,
-  contributions: v.array(VoyageContributionSchema),
   total_crowns: SafeNumberPipe,
   progress_ratio: SafeNumberPipe,
 });

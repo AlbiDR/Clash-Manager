@@ -7,17 +7,12 @@
  * [FEATURE] VOYAGE BANNER COMPONENT
  * ----------------------------------------------------------------------------
  * A high-visibility, glassmorphism-styled progress banner displayed in the
- * Roster header when a Clan Voyage event is ACTIVE.
+ * Roster header when a Clan Voyage event is ACTIVE, PENDING, or AWAITING promotion.
  *
  * @remarks
  * **Architectural Context:**
  * - **Layer:** Layer 3 Feature Component (@features)
- * - **Role:** Live feedback surface for the active Voyage event.
- * - **Visibility:** Only rendered when `isActive` is true.
- *
- * **States:**
- * - `ACTIVE (underway)`: Blue glassmorphism with animated progress bar.
- * - `ACTIVE (victory)`: Gold/emerald vibrant gradient with pulse animation.
+ * - **Role:** Live feedback surface for the active or upcoming Voyage event.
  * ============================================================================
  */
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
@@ -29,6 +24,7 @@ const store = useVoyageStore();
 
 // --- LIVE COUNTDOWN TIMER ---
 const timeRemaining = ref("");
+const startsInCountdown = ref("");
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -42,8 +38,17 @@ onMounted(() => {
         store.refresh();
       }
     }
+    if (store.startsAt) {
+      const wasStarted = startsInCountdown.value === "Ended";
+      startsInCountdown.value = formatCountdown(store.startsAt);
+      if (!wasStarted && startsInCountdown.value === "Ended") {
+        store.refresh();
+      }
+    }
   }, 1000);
+
   if (store.endsAt) timeRemaining.value = formatCountdown(store.endsAt);
+  if (store.startsAt) startsInCountdown.value = formatCountdown(store.startsAt);
 });
 
 onUnmounted(() => {
@@ -59,52 +64,74 @@ watch(() => store.endsAt, (newVal) => {
   }
 }, { immediate: true });
 
+watch(() => store.startsAt, (newVal) => {
+  if (newVal) {
+    startsInCountdown.value = formatCountdown(newVal);
+  } else {
+    startsInCountdown.value = "";
+  }
+}, { immediate: true });
+
 const progressPercent = computed(() =>
   Math.round(store.progressRatio * 100)
 );
 
-const progressLabel = computed(() =>
-  `${store.totalCrowns.toLocaleString()} / ${store.targetCrowns.toLocaleString()}`
-);
+const shouldShowBanner = computed(() => {
+  return store.isActive || store.isPending || store.isAwaitingEnd;
+});
 </script>
 
 <template>
   <Transition name="banner-slide">
     <div
-      v-if="store.isActive"
+      v-if="shouldShowBanner"
       class="voyage-banner"
-      :class="{ 'is-victory': store.isVictory }"
+      :class="{
+        'is-victory': store.isVictory,
+        'is-pre-event': store.isPending || store.isAwaitingEnd
+      }"
       role="status"
-      aria-label="Clan Voyage Progress"
+      aria-label="Clan Voyage Status"
     >
       <!-- Header Row -->
-      <div class="banner-header">
+      <div class="banner-header" :class="{ 'no-margin': store.isPending || store.isAwaitingEnd }">
         <div class="banner-title-group">
           <span class="banner-icon">
             <Icon v-if="store.isVictory" name="victory" size="20" />
+            <Icon v-else-if="store.isPending" name="schedule" size="20" />
+            <Icon v-else-if="store.isAwaitingEnd" name="warning" size="20" />
             <Icon v-else name="voyage" size="20" />
           </span>
           <div class="banner-labels">
             <span class="banner-title">Clan Voyage</span>
             <span v-if="store.isVictory" class="victory-label">Goal Achieved</span>
+            <span v-else-if="store.isPending" class="pre-event-label">Pre-Event Scheduled</span>
+            <span v-else-if="store.isAwaitingEnd" class="awaiting-label">Awaiting Promotion</span>
             <span v-else class="banner-subtitle">Active Event</span>
           </div>
         </div>
         <div class="banner-meta">
           <div class="crown-count">
             <span class="crown-value">{{ store.totalCrowns.toLocaleString() }}</span>
-            <span class="crown-sep">/</span>
-            <span class="crown-target">{{ store.targetCrowns.toLocaleString() }}</span>
+            <span class="crown-sep" v-if="store.isActive">/</span>
+            <span class="crown-target" v-if="store.isActive">{{ store.targetCrowns.toLocaleString() }}</span>
+            <span class="crown-target-single" v-else>Target: {{ store.targetCrowns.toLocaleString() }}</span>
             <span class="crown-icon"><Icon name="crown" size="14" /></span>
           </div>
-          <div class="countdown" :class="{ 'ended': timeRemaining === 'Ended' }">
+          <div class="countdown" v-if="store.isActive" :class="{ 'ended': timeRemaining === 'Ended' }">
             {{ timeRemaining }}
+          </div>
+          <div class="countdown pending" v-else-if="store.isPending" :class="{ 'ended': startsInCountdown === 'Ended' }">
+            Starts in: {{ startsInCountdown }}
+          </div>
+          <div class="countdown awaiting" v-else-if="store.isAwaitingEnd">
+            Set End Time
           </div>
         </div>
       </div>
 
-      <!-- Progress Bar -->
-      <div class="progress-track" aria-hidden="true">
+      <!-- Progress Bar (Only for active events) -->
+      <div class="progress-track" aria-hidden="true" v-if="store.isActive">
         <div
           class="progress-fill"
           :style="{ width: `${progressPercent}%` }"
@@ -131,6 +158,19 @@ const progressLabel = computed(() =>
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;
   position: relative;
+}
+
+/* --- Pre-event Banner Styles --- */
+.voyage-banner.is-pre-event {
+  background: rgba(245, 158, 11, 0.07);
+  border-color: rgba(245, 158, 11, 0.25);
+  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+  animation: pre-event-pulse 3s ease-in-out infinite;
+}
+
+@keyframes pre-event-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.99); }
 }
 
 /* --- Victory State --- */
@@ -161,6 +201,10 @@ const progressLabel = computed(() =>
   gap: 8px;
 }
 
+.banner-header.no-margin {
+  margin-bottom: 0;
+}
+
 .banner-title-group {
   display: flex;
   align-items: center;
@@ -178,6 +222,10 @@ const progressLabel = computed(() =>
 .is-victory .banner-icon {
   filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
   animation: icon-spin 0.4s ease;
+}
+
+.is-pre-event .banner-icon {
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
 }
 
 @keyframes icon-spin {
@@ -215,6 +263,22 @@ const progressLabel = computed(() =>
   letter-spacing: 0.06em;
 }
 
+.pre-event-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.awaiting-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: #f97316;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 /* --- Meta (Crowns + Countdown) --- */
 .banner-meta {
   display: flex;
@@ -240,6 +304,10 @@ const progressLabel = computed(() =>
   color: #fbbf24;
 }
 
+.is-pre-event .crown-value {
+  color: #f59e0b;
+}
+
 .crown-sep {
   font-size: 12px;
   opacity: 0.3;
@@ -251,6 +319,13 @@ const progressLabel = computed(() =>
   font-weight: 700;
   font-family: var(--sys-font-family-mono);
   opacity: 0.5;
+}
+
+.crown-target-single {
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--sys-font-family-mono);
+  color: #f59e0b;
 }
 
 .crown-icon {
@@ -269,6 +344,21 @@ const progressLabel = computed(() =>
 
 .countdown.ended {
   color: var(--sys-color-error);
+}
+
+.countdown.pending {
+  color: #f59e0b;
+}
+
+.countdown.awaiting {
+  color: #f97316;
+  font-weight: 900;
+  animation: pulse-pill 2s infinite;
+}
+
+@keyframes pulse-pill {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
 }
 
 /* --- Progress Bar --- */
