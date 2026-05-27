@@ -5,7 +5,7 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot";
-import { RoyalePlayerSchema } from "../../_shared/schemas.ts";
+import { RoyalePlayerSchema, RecruitFateSchema } from "../../_shared/schemas.ts";
 
 interface ValidRecruit {
     player_tag: string;
@@ -45,27 +45,27 @@ export async function runProfiler(
         let refreshCount = 0;
         let invalidCount = 0;
         
-        const profileTasks = tagsToProfile.map(tag => async () => {
-            logAudit('PROFILING', 'called', { tag });
+        const profileTasks = tagsToProfile.map(playerTag => async () => {
+            logAudit('PROFILING', 'called', { tag: playerTag });
             try {
-                const profileResponse = await fetchWithRotation(`/players/${encodeURIComponent(tag)}`);
-                logAudit('PROFILING', 'run', { tag, status: profileResponse.status });
+                const profileResponse = await fetchWithRotation(`/players/${encodeURIComponent(playerTag)}`);
+                logAudit('PROFILING', 'run', { tag: playerTag, status: profileResponse.status });
                 if (profileResponse.ok) {
                     const rawProfilePayload: unknown = await profileResponse.json();
 
                     // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
                     // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes.
-                    const validation = v.safeParse(RoyalePlayerSchema, rawProfilePayload);
+                    const profileValidation = v.safeParse(RoyalePlayerSchema, rawProfilePayload);
 
-                    logAudit('PROFILING', 'resulted_data', { tag });
+                    logAudit('PROFILING', 'resulted_data', { tag: playerTag });
                     logAudit('PROFILING', 'integrity_checked', { 
-                        tag, 
-                        passed: validation.success,
-                        details: validation.success ? 'Data shape validated via Valibot' : 'Malformed profile data'
+                        tag: playerTag,
+                        passed: profileValidation.success,
+                        details: profileValidation.success ? 'Data shape validated via Valibot' : 'Malformed profile data'
                     });
                     
-                    if (validation.success) {
-                        const playerProfile = validation.output;
+                    if (profileValidation.success) {
+                        const playerProfile = profileValidation.output;
 
                         if (!playerProfile.clan?.tag && !exclusionSet.has(playerProfile.tag) && (playerProfile.trophies || 0) >= requiredTrophies) {
                             const trophies = playerProfile.trophies || 0;
@@ -85,7 +85,7 @@ export async function runProfiler(
                                 cards,
                                 war_wins: war,
                                 raw_potential_score: potentialRawScore,
-                                source: candidates.get(tag) || 'UNKNOWN',
+                                source: candidates.get(playerTag) || 'UNKNOWN',
                                 status: 'ACTIVE'
                             });
                             console.log(`[PROFILER] Admitted ${playerProfile.tag} | trophies=${trophies} war=${war} donations=${donations} rawScore=${potentialRawScore}`);
@@ -99,23 +99,23 @@ export async function runProfiler(
                     }
                 } else {
                     if (profileResponse.status === 404) {
-                        await supabase.rpc('report_dead_recruit', { p_player_tag: tag });
-                        logAudit('PROFILING', 'called', { tag, action: 'blacklisted_ghost' });
-                        console.log(`[PROFILING] Player ${tag} is a ghost (404). Blacklisted.`);
+                        await supabase.rpc('report_dead_recruit', { p_player_tag: playerTag });
+                        logAudit('PROFILING', 'called', { tag: playerTag, action: 'blacklisted_ghost' });
+                        console.log(`[PROFILING] Player ${playerTag} is a ghost (404). Blacklisted.`);
                     } else {
-                        console.error(`[PROFILING] Player ${tag} fetch failed with HTTP ${profileResponse.status}`);
+                        console.error(`[PROFILING] Player ${playerTag} fetch failed with HTTP ${profileResponse.status}`);
                     }
-                    stats.errors.push(`Profile(${tag}): ${profileResponse.status}`);
+                    stats.errors.push(`Profile(${playerTag}): ${profileResponse.status}`);
                     logAudit('PROFILING', 'integrity_checked', { passed: false, details: `HTTP_${profileResponse.status}` });
-                    logAudit('PROFILING', 'error', { tag, status: profileResponse.status });
+                    logAudit('PROFILING', 'error', { tag: playerTag, status: profileResponse.status });
                     invalidCount++;
                 }
             } catch (profilingError: unknown) {
                 const errorMessage = profilingError instanceof Error ? profilingError.message : String(profilingError);
-                stats.errors.push(`Profile(${tag}): ${errorMessage}`);
+                stats.errors.push(`Profile(${playerTag}): ${errorMessage}`);
                 logAudit('PROFILING', 'integrity_checked', { passed: false, details: errorMessage });
-                logAudit('PROFILING', 'error', { tag, message: errorMessage });
-                console.error(`[PROFILING] Exception while profiling ${tag}: ${errorMessage}`);
+                logAudit('PROFILING', 'error', { tag: playerTag, message: errorMessage });
+                console.error(`[PROFILING] Exception while profiling ${playerTag}: ${errorMessage}`);
                 invalidCount++;
             }
         });
@@ -131,56 +131,57 @@ export async function runProfiler(
             let minRpos = Infinity;
             const sourceCounts: Record<string, number> = {};
 
-            for (const recruit of validRecruits) {
-                const src = recruit.source || 'UNKNOWN';
-                if (!bySource.has(src)) bySource.set(src, []);
-                bySource.get(src)!.push(recruit);
+            for (const recruitRow of validRecruits) {
+                const recruitSource = recruitRow.source || 'UNKNOWN';
+                if (!bySource.has(recruitSource)) bySource.set(recruitSource, []);
+                bySource.get(recruitSource)!.push(recruitRow);
 
                 // Track RPoS (Raw Potential Score)
-                const score = recruit.raw_potential_score || 0;
+                const score = recruitRow.raw_potential_score || 0;
                 if (score > maxRpos) maxRpos = score;
                 if (score < minRpos) minRpos = score;
 
                 // Track source counts
-                sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+                sourceCounts[recruitSource] = (sourceCounts[recruitSource] || 0) + 1;
             }
 
             // Determine which recruits are truly new vs refreshed
-            const { data: existing } = await supabase
+            const { data: rawExistingData } = await supabase
                 .schema('drivers')
                 .from('recruits')
                 .select('player_tag')
-                .in('player_tag', validRecruits.map(r => r.player_tag));
+                .in('player_tag', validRecruits.map(recruitItem => recruitItem.player_tag));
             
-            const existingTags = new Set(existing?.map(e => e.player_tag) || []);
-            validRecruits.forEach(r => {
-                if (existingTags.has(r.player_tag)) refreshCount++;
+            const existingTags = new Set(rawExistingData?.map(existingRecruit => existingRecruit.player_tag) || []);
+            validRecruits.forEach(recruitItem => {
+                if (existingTags.has(recruitItem.player_tag)) refreshCount++;
                 else newCount++;
             });
 
             console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into database...`);
-            for (const [source, batch] of bySource) {
-                const { error: ingestErr } = await supabase.rpc('sync_recruits', {
-                    p_recruits: batch
+            for (const [recruitSource, recruitBatch] of bySource) {
+                const { error: ingestionError } = await supabase.rpc('sync_recruits', {
+                    p_recruits: recruitBatch
                 });
-                if (ingestErr) {
-                    stats.errors.push(`Ingest(${source}): ${ingestErr.message}`);
-                    logAudit('PROFILING', 'error', { message: `DB Ingestion Failure (${source})`, details: ingestErr });
-                    console.error(`[PROFILING] DB Ingestion Failure (${source}): ${ingestErr.message}`);
+                if (ingestionError) {
+                    stats.errors.push(`Ingest(${recruitSource}): ${ingestionError.message}`);
+                    logAudit('PROFILING', 'error', { message: `DB Ingestion Failure (${recruitSource})`, details: ingestionError });
+                    console.error(`[PROFILING] DB Ingestion Failure (${recruitSource}): ${ingestionError.message}`);
                 } else {
-                    console.log(`[PROFILING] Successfully ingested ${batch.length} recruits from source ${source}`);
+                    console.log(`[PROFILING] Successfully ingested ${recruitBatch.length} recruits from source ${recruitSource}`);
                 }
             }
 
             // --- INGESTION FATE TELEMETRY ---
+            // [DECISION LOG] Newly ingested recruits are tracked to verify their promotion from QUEUE to ACTIVE/BENCHED.
             const newTags = validRecruits
-                .filter(r => !existingTags.has(r.player_tag))
-                .map(r => r.player_tag);
+                .filter(recruitItem => !existingTags.has(recruitItem.player_tag))
+                .map(recruitItem => recruitItem.player_tag);
             
             if (newTags.length > 0) {
                 console.error(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
                 
-                let fate: { status: string; raw_potential_score: number }[] = [];
+                let fateResults: v.InferOutput<typeof RecruitFateSchema>[] = [];
                 let attempts = 0;
                 const maxAttempts = 4; // Total 10s potential delay
 
@@ -190,19 +191,27 @@ export async function runProfiler(
                     await new Promise(resolve => setTimeout(resolve, attempts * 1000));
 
                     try {
-                        const { data, error: fateErr } = await supabase
+                        const { data: rawFateData, error: fateError } = await supabase
                             .rpc('get_recruits_fate', { tags: newTags });
 
-                        if (!fateErr && data && data.length > 0) {
-                            fate = data as { status: string; raw_potential_score: number }[];
-                            const queuedCount = fate.filter(f => f.status === 'QUEUE').length;
-                            if (queuedCount === 0) {
-                                console.error(`[PROFILING] Fate check converged on attempt ${attempts}`);
-                                break;
+                        if (!fateError && rawFateData && Array.isArray(rawFateData) && rawFateData.length > 0) {
+                            // [GUARD] VALIDATION BOUNDARY: Target C [1]
+                            // [THREAT:] Unsafe type assertions bypass runtime integrity. Malformed RPC data would crash telemetry logic.
+                            const fateValidation = v.safeParse(v.array(RecruitFateSchema), rawFateData);
+
+                            if (fateValidation.success) {
+                                fateResults = fateValidation.output;
+                                const queuedCount = fateResults.filter(fateEntry => fateEntry.status === 'QUEUE').length;
+                                if (queuedCount === 0) {
+                                    console.error(`[PROFILING] Fate check converged on attempt ${attempts}`);
+                                    break;
+                                }
+                                console.error(`[PROFILING] Fate check attempt ${attempts}: ${fateResults.length} found, ${queuedCount} still QUEUED...`);
+                            } else {
+                                console.error(`[PROFILING] Fate validation failed on attempt ${attempts}: ${JSON.stringify(fateValidation.issues)}`);
                             }
-                            console.error(`[PROFILING] Fate check attempt ${attempts}: ${fate.length} found, ${queuedCount} still QUEUED...`);
-                        } else if (fateErr) {
-                            console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(fateErr)}`);
+                        } else if (fateError) {
+                            console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(fateError)}`);
                         }
                     } catch (fateCheckError: unknown) {
                         const errorMessage = fateCheckError instanceof Error ? fateCheckError.message : String(fateCheckError);
@@ -210,14 +219,17 @@ export async function runProfiler(
                     }
                 }
 
-                if (fate.length > 0) {
+                if (fateResults.length > 0) {
                     // Fetch Top 50 Threshold (lowest score in active pool)
-                    const { data: threshold50Data } = await supabase.rpc('get_top_50_threshold');
-                    const threshold50 = threshold50Data || 0;
+                    const { data: rawThresholdData } = await supabase.rpc('get_top_50_threshold');
                     
-                    stats.new_recruits_active = fate.filter(f => f.status === 'ACTIVE').length;
-                    stats.new_recruits_benched = fate.filter(f => f.status === 'BENCHED').length;
-                    stats.new_recruits_top50 = fate.filter(f => f.status === 'ACTIVE' && Number(f.raw_potential_score) >= threshold50).length;
+                    // [GUARD] VALIDATION BOUNDARY: Database RPC results must be validated.
+                    // [THREAT:] Missing or malformed threshold would corrupt Top 50 telemetry reporting.
+                    const threshold50 = typeof rawThresholdData === 'number' ? rawThresholdData : 0;
+
+                    stats.new_recruits_active = fateResults.filter(fateEntry => fateEntry.status === 'ACTIVE').length;
+                    stats.new_recruits_benched = fateResults.filter(fateEntry => fateEntry.status === 'BENCHED').length;
+                    stats.new_recruits_top50 = fateResults.filter(fateEntry => fateEntry.status === 'ACTIVE' && Number(fateEntry.raw_potential_score) >= threshold50).length;
                     
                     console.error(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
                 } else {
