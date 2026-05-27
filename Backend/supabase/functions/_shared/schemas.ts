@@ -173,3 +173,8 @@ export const IngestionTargetsSchema = v.object({
     recruits: v.array(v.string())
 });
 
+/** [GUARD] Recruit Fate Schema (RPC). */
+export const RecruitFateSchema = v.object({
+    status: v.string(),
+    raw_potential_score: v.union([v.number(), v.string()])
+});
