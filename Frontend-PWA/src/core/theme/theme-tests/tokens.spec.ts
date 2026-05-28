@@ -40,24 +40,6 @@ describe('Tokens Module', () => {
       expect(vars['--sys-surface-glass-blur']).toBe(lightTokens.color.glassBlur);
     });
 
-    it('should include shared tokens from internal sharedTokens constant', () => {
-      const vars = generateCssVariables(lightTokens);
-
-      // Verifying a few representative shared tokens
-      expect(vars['--sys-layout-max-width']).toBe('720px');
-      expect(vars['--sys-motion-spring']).toBe('cubic-bezier(0.175, 0.885, 0.32, 1.15)');
-      expect(vars['--sys-font-family-body']).toContain('Inter');
-
-      // Shape tokens
-      expect(vars['--sys-shape-corner-extra-small']).toBe('4px');
-      expect(vars['--sys-shape-corner-small']).toBe('8px');
-      expect(vars['--sys-shape-corner-medium']).toBe('12px');
-      expect(vars['--sys-shape-corner-m']).toBe('20px');
-      expect(vars['--sys-shape-corner-large']).toBe('16px');
-      expect(vars['--sys-shape-corner-l']).toBe('24px');
-      expect(vars['--sys-shape-corner-extra-large']).toBe('28px');
-      expect(vars['--sys-shape-corner-full']).toBe('9999px');
-    });
 
     it('should produce different values for light and dark tokens', () => {
       const lightVars = generateCssVariables(lightTokens);

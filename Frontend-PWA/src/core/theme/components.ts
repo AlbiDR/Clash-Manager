@@ -29,7 +29,7 @@ export const componentStyles = `
 .view-title {
   margin: 0; font-size: 24px; font-weight: 900; color: var(--sys-color-on-surface);
   letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--sys-font-family-body);
 }
 
 /* =========================================
