@@ -6,6 +6,25 @@
  */
 export const baseStyles = `
 /* =========================================
+   DESIGN TOKENS (Static Substrate)
+   ========================================= */
+:root {
+  --sys-layout-max-width: 720px;
+  --sys-motion-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+  --sys-font-family-body: "Inter", system-ui, sans-serif;
+  --sys-font-family-mono: "JetBrains Mono", monospace;
+
+  --sys-shape-corner-extra-small: 4px;
+  --sys-shape-corner-small: 8px;
+  --sys-shape-corner-medium: 12px;
+  --sys-shape-corner-m: 20px;
+  --sys-shape-corner-large: 16px;
+  --sys-shape-corner-l: 24px;
+  --sys-shape-corner-extra-large: 28px;
+  --sys-shape-corner-full: 9999px;
+}
+
+/* =========================================
    MINIMAL RESET
    ========================================= */
 *, ::before, ::after {

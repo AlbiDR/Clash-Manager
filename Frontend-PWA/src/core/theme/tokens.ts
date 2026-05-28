@@ -175,31 +175,9 @@ export const darkTokens: ThemeTokens = {
   },
 };
 
-const sharedTokens = {
-  motion: {
-    spring: 'cubic-bezier(0.175, 0.885, 0.32, 1.15)',
-  },
-  layout: {
-    maxWidth: '720px',
-  },
-  font: {
-    body: '"Inter", system-ui, sans-serif',
-    mono: '"JetBrains Mono", monospace',
-  },
-  shape: {
-    extraSmall: '4px',
-    small: '8px',
-    medium: '12px',
-    m: '20px',
-    large: '16px',
-    l: '24px',
-    extraLarge: '28px',
-    full: '9999px',
-  },
-};
-
 /**
- * [PERF] UTILITY: Programmatically transform tokens into CSS Variable strings
+ * [PERF] UTILITY: Programmatically transform tokens into CSS Variable strings.
+ * Static tokens (shapes, fonts, motion) are managed in base.ts to reduce runtime overhead.
  */
 export function generateCssVariables(tokens: ThemeTokens): Record<string, string> {
   const vars: Record<string, string> = {};
@@ -223,18 +201,6 @@ export function generateCssVariables(tokens: ThemeTokens): Record<string, string
   vars['--sys-surface-glass'] = tokens.color.glass;
   vars['--sys-surface-glass-border'] = tokens.color.glassBorder;
   vars['--sys-surface-glass-blur'] = tokens.color.glassBlur;
-
-  // Add shared tokens (Layout, Motion, Font)
-  vars['--sys-layout-max-width'] = sharedTokens.layout.maxWidth;
-  vars['--sys-motion-spring'] = sharedTokens.motion.spring;
-  vars['--sys-font-family-body'] = sharedTokens.font.body;
-  vars['--sys-font-family-mono'] = sharedTokens.font.mono;
-
-  // Add all shape tokens dynamically
-  Object.entries(sharedTokens.shape).forEach(([key, value]) => {
-    const cssKey = `--sys-shape-corner-${key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`;
-    vars[cssKey] = value;
-  });
 
   return vars;
 }
