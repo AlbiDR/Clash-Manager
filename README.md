@@ -62,7 +62,7 @@ The system replaces intuition with a **Complex Valuation Metric** that sorts pla
 <details>
 <summary><strong>Internal Metrics: Clan Roster (RPeS & PeS)</strong></summary>
 
-- **RPeS (Raw Performance Score)**: The absolute value derived from lifetime stats (donations, war fame, trophies).
+- **RPeS (Raw Performance Score)**: The absolute value derived from a member's contributions while being part of the clan (donations, war fame, war participation, trophies, tenure Clan Voyage participation).
 - **PeS (Performance Score)**: A relative percentage (0-100%) normalized against the current clan benchmark.
 - **Inertia & Heritage**: Logic that applies inactivity decay to stagnant players while providing momentum bonuses to new recruits.
 
@@ -71,8 +71,8 @@ The system replaces intuition with a **Complex Valuation Metric** that sorts pla
 <details>
 <summary><strong>External Metrics: Headhunter Scouting (RPoS & PoS)</strong></summary>
 
-- **RPoS (Raw Potential Score)**: Calculated from a recruit's external battle logs and war consistency.
-- **PoS (Potential Score)**: Normalized potential compared against internal clan performance.
+- **RPoS (Raw Potential Score)**: Calculated from a recruit's lifetime external battle logs, donations and war consistency.
+- **PoS (Potential Score)**: A relative percentage (0-100%) normalized against the last month of scouted recruits and compared against the current internal clan performance for coherency.
 
 </details>
 
