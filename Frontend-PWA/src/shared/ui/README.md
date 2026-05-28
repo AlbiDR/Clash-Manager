@@ -30,6 +30,11 @@ Standardized containers that manage view-level states like loading, errors, and 
 Generic, high-performance visualization components.
 - **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories, projected next values, and theme-specific color palettes (War/Voyage).
 
+### Domain-Aware Molecules (Promoted)
+Specialized components promoted to the shared layer to facilitate cross-feature performance auditing while maintaining domain-specific logic.
+- **WarHistoryChart.vue**: Visualizes clan war performance. Processes up to 52 weeks of fame history and utilizes a 10-week linear decay algorithm to project the next week's performance.
+- **VoyageHistoryChart.vue**: Visualizes Clan Voyage contributions. Tracks the last 15 voyage events, calculates victory-weighted projections, and implements a standard success threshold (100 crowns).
+
 ### UI Primitives
 Atomic elements that form the basis of the design system.
 - **BaseBadge.vue**: Low-level atomic component for all badge-like UI elements. Standardizes the 'badge' class styling and provides a consistent interface for metadata display.
