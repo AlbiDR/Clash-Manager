@@ -16,7 +16,6 @@ import * as v from "valibot";
 import {
   calculateProgressionPath,
   mapStateToResult,
-  calculateDefaultTarget,
   ProfileHydrator,
   RawInventorySchema,
   type PlayerData,
@@ -24,10 +23,14 @@ import {
   type OptimizationSettings,
   type SimulationState,
   type Inventory,
-  type Rarity,
   type OptimizationResult,
   type UpgradeAction
 } from '../logic';
+
+import {
+  calculateDefaultTarget,
+  type Rarity
+} from '@core';
 
 import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLaboratoryStore";
 

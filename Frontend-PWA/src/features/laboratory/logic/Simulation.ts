@@ -35,7 +35,7 @@ import {
   CARD_LEVEL_CAP,
   calculateKingLevel as registryCalculateKingLevel,
   calculateGemCostForCards
-} from './Registry';
+} from '@core/utils/game';
 import type { ScoringStrategy } from './ScoringStrategy';
 import { ProjectionStrategy, InventoryStrategy } from './ScoringStrategy';
 import { asGold, asGems, addGold, addXP, addGems, type Gold, type XP, type Gems } from '@core/utils/economy';

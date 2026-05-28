@@ -77,3 +77,4 @@ Frontend-PWA/README.md
 2026-05-26 04:57:10 UTC | Frontend-PWA/src/shared/ui/README.md | Reconciled architectural drift (BaseHistoryChart, DurationInput, SettingsCard, LongevityBadge)
 2026-05-27 | Frontend-PWA/src/features/laboratory/README.md | Reconciled client drift and removed PriorityQueue
 2026-05-27 | Frontend-PWA/src/features/roster/README.md | Reconciled bezier dependency drift
+2026-05-28 | Frontend-PWA/src/shared/ui/README.md | Documented promoted history chart molecules
