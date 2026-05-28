@@ -69,7 +69,7 @@ The system replaces intuition with a **Complex Valuation Metric** that sorts pla
 </details>
 
 <details>
-<summary><strong>External Metrics: Headhunter Discovery (RPoS & PoS)</strong></summary>
+<summary><strong>External Metrics: Headhunter Scouting (RPoS & PoS)</strong></summary>
 
 - **RPoS (Raw Potential Score)**: Calculated from a recruit's external battle logs and war consistency.
 - **PoS (Potential Score)**: Normalized potential compared against internal clan performance.
