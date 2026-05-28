@@ -10,7 +10,8 @@
  */
 import { Icon, SettingRow } from "@shared";
 import { computed } from "vue";
-import { type OptimizationSettings, IMPORTANT_KING_LEVELS } from "../logic";
+import { type OptimizationSettings } from "../logic";
+import { IMPORTANT_KING_LEVELS } from "@core";
 const props = defineProps<{
   settings: OptimizationSettings;
   currentLevel: number;
