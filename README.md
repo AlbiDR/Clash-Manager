@@ -56,7 +56,7 @@ Most clan tools rely on ephemeral API fetches-displaying a snapshot of the prese
 ### Persistence vs. Ephemerality
 The system builds a **Persistent Clan Database** in Supabase. By archiving every war, every donation cycle, and every member interaction, the system constructs a rich historical tapestry. This allows for deep trend analysis, "heritage" tracking for long-term members, and the ability to spot performance decay before it becomes a problem.
 
-### The Valuation Engine
+### The Scoring Engine
 The system replaces intuition with a **Complex Valuation Metric** that sorts players by their true worth across two distinct dimensions.
 
 <details>
