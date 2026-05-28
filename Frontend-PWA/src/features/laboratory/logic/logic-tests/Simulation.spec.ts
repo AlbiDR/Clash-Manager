@@ -6,7 +6,7 @@ import {
   calculateProgressionPath,
   mapStateToResult
 } from '../Simulation';
-import { calculateKingLevel } from '../Registry';
+import { calculateKingLevel } from '@core/utils/game';
 import { asGold, asGems, asXP } from '@core/utils/economy';
 import type { SimulationState, OptimizationSettings, Card, PlayerProfile } from '../Types';
 

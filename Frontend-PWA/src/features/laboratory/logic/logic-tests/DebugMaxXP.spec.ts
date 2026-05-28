@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { describe, it } from 'vitest';
-import { CARD_XP_TABLE } from "../Registry";
+import { CARD_XP_TABLE } from "@core/utils/game";
 import { asXP } from "@core/utils/economy";
 
 describe("Calculate XP", () => {
