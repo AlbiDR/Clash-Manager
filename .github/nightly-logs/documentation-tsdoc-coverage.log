@@ -68,3 +68,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-08-11 | Frontend-PWA/src/core/api/VoyageClient.ts | Perfected interface contracts for the Layer 1 transport layer, including RPC activation and view hardening.
 2026-08-30 | Frontend-PWA/src/core/api/RecruitClient.ts | Reconciled interface contracts with connection-required architecture and added ADR Section III/IV mappings.
 2026-05-27 | Frontend-PWA/src/core/api/DataSchemas.ts | Documented authoritative validation boundaries and major exported schemas with TSDoc.
+2026-05-28 | Frontend-PWA/src/core/theme/tokens.ts | Documented theme token substrate and transformation logic with ADR Section I/II mappings and decision logs.
