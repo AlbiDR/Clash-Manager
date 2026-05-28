@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-28] PR #701: refactor: excise redundant re-exports in laboratory logic
+**Commit**: `c9c1dc81986f74726bd2779937c87e5b16a83e7d`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/701)
+
+### Description
+Refactor of the Laboratory feature logic to align with CleanStack Architectural standards. Excised redundant re-exports of `@core` utilities from `Registry.ts` and `index.ts`, and updated all internal callers and test suites to import directly from the authoritative core layer. Verified via monorepo test gate (1054 pass) and dependency-cruiser.
+
+---
+*PR created automatically by Jules for task [3343895545280331350](https://jules.google.com/task/3343895545280331350) started by @AlbiDR*
+
+---
+
 ## [2026-05-28] PR #700: chore(deps): bump vue from 3.5.34 to 3.5.35
 **Commit**: `7a69f97c8931902f9f9092570ff5af86b7e0dae9`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/700)
