@@ -23,24 +23,6 @@ import {
   CARD_XP_TABLE
 } from '@core/utils/game';
 
-export {
-  type Rarity,
-  CARD_LEVEL_CAP,
-  CARD_RARITY_START_LEVELS,
-  GOLD_COST_TABLE,
-  CARD_XP_TABLE,
-  MATERIAL_REQUIREMENTS,
-  GEM_CONVERSION_RATES,
-  KING_XP_TABLE,
-  IMPORTANT_KING_LEVELS,
-  calculateKingLevel,
-  calculateDefaultTarget,
-  normalizeLevel,
-  normalizeRarity,
-  getKingLevelBaseXp,
-  calculateGemCostForCards
-} from '@core/utils/game';
-
 // --- Logic Calibration (Engine 2.3) ---
 
 /**

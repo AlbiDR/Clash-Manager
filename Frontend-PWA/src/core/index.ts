@@ -34,6 +34,7 @@ export * from "./services/useSystemInfo";
 export * from "./utils/predictionMath";
 export * from "./utils/PriorityQueue";
 export * from "./utils/economy";
+export * from "./utils/game";
 export * from "./utils/formatters";
 export * from "./utils/bezier";
 export * from "./utils/navigation";

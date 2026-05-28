@@ -16,9 +16,9 @@ import {
   normalizeLevel,
   normalizeRarity,
   getKingLevelBaseXp,
-  calculateGemCostForCards,
-  getUpgradeData
-} from '../Registry';
+  calculateGemCostForCards
+} from '@core/utils/game';
+import { getUpgradeData } from '../Registry';
 
 describe('Laboratory Registry', () => {
   it('should have a consistent CARD_LEVEL_CAP', () => {

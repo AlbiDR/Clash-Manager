@@ -6,6 +6,10 @@
  * Standards: technical purity, zero runtime bloat, static extraction potential.
  */
 
+/**
+ * Authoritative substrate for theme derivation in the \@core layer.
+ * Defines the required color, elevation, and skeleton tokens for the design system.
+ */
 export interface ThemeTokens {
   color: {
     primary: string;
@@ -62,6 +66,9 @@ export interface ThemeTokens {
   };
 }
 
+/**
+ * Authoritative light theme substrate.
+ */
 export const lightTokens: ThemeTokens = {
   color: {
     primary: '#0061a4',
@@ -118,6 +125,9 @@ export const lightTokens: ThemeTokens = {
   },
 };
 
+/**
+ * Authoritative dark theme substrate.
+ */
 export const darkTokens: ThemeTokens = {
   color: {
     primary: '#a8c7fa',
@@ -175,36 +185,22 @@ export const darkTokens: ThemeTokens = {
   },
 };
 
-const sharedTokens = {
-  motion: {
-    spring: 'cubic-bezier(0.175, 0.885, 0.32, 1.15)',
-  },
-  layout: {
-    maxWidth: '720px',
-  },
-  font: {
-    body: '"Inter", system-ui, sans-serif',
-    mono: '"JetBrains Mono", monospace',
-  },
-  shape: {
-    extraSmall: '4px',
-    small: '8px',
-    medium: '12px',
-    m: '20px',
-    large: '16px',
-    l: '24px',
-    extraLarge: '28px',
-    full: '9999px',
-  },
-};
-
 /**
- * [PERF] UTILITY: Programmatically transform tokens into CSS Variable strings
+ * Programmatically transforms a token set into a flat CSS Variable registry.
+ *
+ * @param tokens - The authoritative ThemeTokens substrate to transform.
+ * @returns A flat record of CSS variable keys and their corresponding values.
+ *
+ * @remarks
+ * Satisfies ADR Section I: Visual Purity and Section II: Structural Unitary Architecture.
+ * Static tokens (shapes, fonts, motion) are managed in base.ts to minimize runtime
+ * derivation overhead and ensure 100/100 performance scores.
  */
 export function generateCssVariables(tokens: ThemeTokens): Record<string, string> {
   const vars: Record<string, string> = {};
   
-  // Format based on standard --sys- prefixing
+  // [DECISION LOG] Automated camelCase to kebab-case transformation to ensure
+  // alignment with standard --sys- prefixing and CSS naming conventions.
   Object.entries(tokens.color).forEach(([key, value]) => {
     const cssKey = `--sys-color-${key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`;
     vars[cssKey] = value!;
@@ -223,18 +219,6 @@ export function generateCssVariables(tokens: ThemeTokens): Record<string, string
   vars['--sys-surface-glass'] = tokens.color.glass;
   vars['--sys-surface-glass-border'] = tokens.color.glassBorder;
   vars['--sys-surface-glass-blur'] = tokens.color.glassBlur;
-
-  // Add shared tokens (Layout, Motion, Font)
-  vars['--sys-layout-max-width'] = sharedTokens.layout.maxWidth;
-  vars['--sys-motion-spring'] = sharedTokens.motion.spring;
-  vars['--sys-font-family-body'] = sharedTokens.font.body;
-  vars['--sys-font-family-mono'] = sharedTokens.font.mono;
-
-  // Add all shape tokens dynamically
-  Object.entries(sharedTokens.shape).forEach(([key, value]) => {
-    const cssKey = `--sys-shape-corner-${key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`;
-    vars[cssKey] = value;
-  });
 
   return vars;
 }
