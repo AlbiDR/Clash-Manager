@@ -32,8 +32,8 @@ import {
   fetchVoyageSummary as apiFetchVoyageSummary,
   fetchVoyageContributions as apiFetchVoyageContributions,
   scheduleVoyageEvent as apiScheduleVoyageEvent,
-  activateScheduledVoyageEvent as apiActivateScheduledVoyageEvent,
-  cancelScheduledVoyageEvent as apiCancelScheduledVoyageEvent
+  cancelScheduledVoyageEvent as apiCancelScheduledVoyageEvent,
+  setVoyageEnd as apiSetVoyageEnd
 } from "@core/api/VoyageClient";
 
 export const useVoyageStore = defineStore("voyage", () => {
@@ -77,13 +77,6 @@ export const useVoyageStore = defineStore("voyage", () => {
     if (status.value !== "PENDING") return false;
     const start = startsAt.value;
     return start ? start.getTime() > Date.now() : false;
-  });
-
-  /** Returns true if the Voyage status is PENDING and the start time has already passed, meaning we await promotion. */
-  const isAwaitingEnd = computed(() => {
-    if (status.value !== "PENDING") return false;
-    const start = startsAt.value;
-    return start ? start.getTime() <= Date.now() : false;
   });
 
   /** Returns true if the progress ratio has reached or exceeded 1.0 (100%). */
@@ -219,8 +212,11 @@ export const useVoyageStore = defineStore("voyage", () => {
         };
         lastUpdated.value = Date.now();
 
-        // Listen for realtime updates if the event is pending or active
-        if (['ACTIVE', 'PENDING'].includes(summary.value.event.status)) {
+        // Listen for realtime updates whenever an event is in progress
+        if (summary.value.event.status === 'ACTIVE') {
+          setupRealtimeListeners();
+        } else if (summary.value.event.status === 'PENDING') {
+          // Realtime on clan_voyage keeps clients notified when the cron promotes to ACTIVE
           setupRealtimeListeners();
         } else {
           cleanupListeners();
@@ -267,32 +263,38 @@ export const useVoyageStore = defineStore("voyage", () => {
   }
 
   /**
-   * Promotes a scheduled Voyage to ACTIVE with a specific end time.
+   * Sets the end time on an already-ACTIVE Voyage event.
    *
-   * @param target - The goal crowns (updated on promo if desired).
-   * @param endsIn - Relative time when the promoted voyage ends.
+   * @param endsIn - Relative duration from now until the event concludes.
+   *
+   * @remarks
+   * Called after the pg_cron job auto-activates the voyage and the official
+   * in-game duration is publicly announced. The backend guards against calling
+   * this on a non-ACTIVE voyage.
+   *
+   * @throws Error if the operation fails (logic error or network/auth failure).
    */
-  async function activateScheduledVoyage(target: number, endsIn: T2TInput) {
+  async function setVoyageEnd(endsIn: T2TInput) {
     const voyageId = summary.value?.event.id;
-    if (!voyageId) throw new Error("No scheduled voyage is active.");
+    if (!voyageId) throw new Error("No active voyage found.");
 
     loading.value = true;
     try {
       const end_at = t2tToTimestamp(endsIn);
-      const response = await apiActivateScheduledVoyageEvent(voyageId, target, end_at);
+      const response = await apiSetVoyageEnd(voyageId, end_at);
 
       if (response.success) {
         const result = response.data as { success: boolean; error?: string };
         if (result.success) {
           await refresh();
         } else {
-          throw new Error(result.error ?? "Activation of scheduled voyage failed");
+          throw new Error(result.error ?? "Setting end time failed");
         }
       } else {
-        throw new Error(String(response.error) ?? "Activation of scheduled voyage failed");
+        throw new Error(String(response.error) ?? "Setting end time failed");
       }
     } catch (err: any) {
-      console.error('[Voyage] Promo action error:', err);
+      console.error('[Voyage] Set end time error:', err);
       throw err;
     } finally {
       loading.value = false;
@@ -388,7 +390,6 @@ export const useVoyageStore = defineStore("voyage", () => {
     isActive,
     startsAt,
     isPending,
-    isAwaitingEnd,
     isVictory,
     progressRatio,
     totalCrowns,
@@ -398,7 +399,7 @@ export const useVoyageStore = defineStore("voyage", () => {
     t2tToTimestamp,
     refresh,
     scheduleVoyage,
-    activateScheduledVoyage,
+    setVoyageEnd,
     cancelSchedule,
     activateVoyage,
   };

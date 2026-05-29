@@ -87,24 +87,27 @@ export async function scheduleVoyageEvent(target: number, start: string) {
 }
 
 /**
- * [VOYAGE] Promotes a scheduled PENDING voyage to ACTIVE with an end time.
+ * [VOYAGE] Sets the end time on an already-ACTIVE voyage.
  *
- * @param voyageId - The ID of the PENDING voyage.
- * @param target - The target crowns (allowing update on activation).
+ * @remarks
+ * Called after auto-activation fires and the official in-game duration is
+ * publicly known. The voyage must already be ACTIVE; the backend enforces
+ * this guard.
+ *
+ * @param voyageId - The ID of the ACTIVE voyage.
  * @param end - ISO timestamp for event conclusion.
  * @returns A Promise resolving to an object indicating success or error details.
  */
-export async function activateScheduledVoyageEvent(voyageId: number, target: number, end: string) {
+export async function setVoyageEnd(voyageId: number, end: string) {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
-    .rpc('activate_scheduled_voyage', {
+    .rpc('set_voyage_end', {
       voyage_id: voyageId,
-      target_crowns: target,
       end_at: end
     });
 
   if (error) {
-    console.error('[Voyage] RPC activate_scheduled_voyage Error:', error);
+    console.error('[Voyage] RPC set_voyage_end Error:', error);
     return { success: false, error: error.message };
   }
 

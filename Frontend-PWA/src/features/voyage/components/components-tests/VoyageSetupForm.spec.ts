@@ -35,6 +35,9 @@ vi.mock("@core/api/VoyageClient", () => ({
   initializeVoyage: vi.fn(),
   fetchVoyageSummary: vi.fn(),
   fetchVoyageContributions: vi.fn(),
+  scheduleVoyageEvent: vi.fn(),
+  cancelScheduledVoyageEvent: vi.fn(),
+  setVoyageEnd: vi.fn()
 }));
 
 describe("VoyageSetupForm.vue", () => {
@@ -134,14 +137,46 @@ describe("VoyageSetupForm.vue", () => {
     const store = useVoyageStore();
     // @ts-ignore
     store.summary = {
-      event: { status: "ACTIVE", target_crowns: 1000 }
+      event: { status: "ACTIVE", target_crowns: 1000, end_at: new Date(Date.now() + 86400000).toISOString() }
     };
 
     const wrapper = createWrapper();
 
     // Should only have one .t2t-group (Ends In)
     expect(wrapper.findAll(".t2t-group")).toHaveLength(1);
-    expect(wrapper.find(".activate-btn").text()).toBe("Update Event");
+    expect(wrapper.find("#voyage-activate-btn").text()).toBe("Update Event");
+  });
+
+  it("shows Set End Time button when voyage is active with no end_at", async () => {
+    const store = useVoyageStore();
+    // @ts-ignore
+    store.summary = {
+      event: { status: "ACTIVE", target_crowns: 1000, end_at: null }
+    };
+
+    const wrapper = createWrapper();
+
+    expect(wrapper.find("#voyage-set-end-btn").exists()).toBe(true);
+    expect(wrapper.find("#voyage-activate-btn").exists()).toBe(false);
+  });
+
+  it("calls store.setVoyageEnd when Set End Time button is clicked", async () => {
+    const store = useVoyageStore();
+    // @ts-ignore
+    store.summary = {
+      event: { status: "ACTIVE", target_crowns: 1000, end_at: null }
+    };
+
+    const wrapper = createWrapper();
+    const setEndSpy = vi.spyOn(store, "setVoyageEnd").mockResolvedValue(undefined as any);
+
+    // Set a valid endsIn duration
+    const endsInInputs = wrapper.find(".t2t-group").findAll("input");
+    await endsInInputs.at(0)?.setValue(2);
+
+    await wrapper.find("#voyage-set-end-btn").trigger("click");
+
+    expect(setEndSpy).toHaveBeenCalledWith({ days: 2, hours: 0, minutes: 0 });
   });
 
   it("reflects loading state on button", async () => {

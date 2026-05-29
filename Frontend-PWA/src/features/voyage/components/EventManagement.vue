@@ -77,13 +77,11 @@ onUnmounted(() => {
 
 const pillLabel = computed(() => {
   if (store.isPending) return "Pending";
-  if (store.isAwaitingEnd) return "Awaiting Promotion";
   return store.status;
 });
 
 const pillClass = computed(() => {
   if (store.isPending) return "pending";
-  if (store.isAwaitingEnd) return "awaiting";
   return store.status.toLowerCase();
 });
 </script>
@@ -105,23 +103,17 @@ const pillClass = computed(() => {
     </template>
 
     <!-- Pre-Event Summary (read-only) -->
-    <div v-if="store.isPending || store.isAwaitingEnd" class="active-summary pre-event-summary">
+    <div v-if="store.isPending" class="active-summary pre-event-summary">
       <div class="summary-row">
         <span class="summary-label">Crown Target</span>
         <span class="summary-value primary">
           {{ store.targetCrowns.toLocaleString() }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
         </span>
       </div>
-      <div class="summary-row" v-if="store.isPending && startsInCountdown">
+      <div class="summary-row" v-if="startsInCountdown">
         <span class="summary-label">Starts In</span>
         <span class="summary-value timer pending-timer">
           {{ startsInCountdown }}
-        </span>
-      </div>
-      <div class="summary-row" v-if="store.isAwaitingEnd">
-        <span class="summary-label">Status</span>
-        <span class="summary-value awaiting-text">
-          Awaiting End Time Promotion
         </span>
       </div>
       <div class="section-divider" />
@@ -152,6 +144,11 @@ const pillClass = computed(() => {
         <span class="summary-value timer" :class="{ 'ended': timeRemaining === 'Ended' }">
           {{ timeRemaining }}
         </span>
+      </div>
+      <!-- Nudge: end_at not yet set -->
+      <div class="summary-row" v-if="!store.endsAt">
+        <span class="summary-label">Ends In</span>
+        <span class="summary-value awaiting-text">Not yet set</span>
       </div>
       <div class="section-divider" />
     </div>
@@ -221,7 +218,6 @@ const pillClass = computed(() => {
 
 .status-pill.idle        { color: var(--sys-color-outline); }
 .status-pill.pending     { color: #f59e0b; }
-.status-pill.awaiting    { color: #f97316; animation: pulse-pill 2s infinite; }
 .status-pill.active      { color: #22c55e; animation: pulse-pill 2s infinite; }
 .status-pill.completed   { color: var(--sys-color-primary); }
 
