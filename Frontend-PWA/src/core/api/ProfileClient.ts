@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { getSupabaseUrl, getSupabaseKey } from "./SupabaseClient";
-import { ProfileInputSchema } from "./DataSchemas";
+import { ProfileInputSchema, RawCardSchema, RawInventorySchema } from "./DataSchemas";
 import * as v from "valibot";
 
 /**
@@ -53,8 +53,30 @@ export async function getPlayerProfile(
     throw new Error(errorBody.error ?? `sync-player-cards failed with status ${profileResponse.status}`);
   }
 
-  const responseJson = await profileResponse.json();
-  const rawProfileData = responseJson.data ?? responseJson;
+  const responseJson = (await profileResponse.json()) as unknown;
+
+  // [GUARD] Validate Edge Function response envelope structure to prevent raw 'any' processing.
+  const SyncPlayerCardsResponseSchema = v.object({
+    profile: v.optional(v.object({
+      name: v.optional(v.string()),
+      tag: v.optional(v.string()),
+      kingLevel: v.optional(v.number()),
+      xpIntoLevel: v.optional(v.number()),
+    })),
+    cards: v.optional(v.array(RawCardSchema)),
+    towerTroops: v.optional(v.array(RawCardSchema)),
+    inventory: v.optional(RawInventorySchema),
+  });
+
+  const envelope = v.parse(
+    v.union([
+      v.object({ data: SyncPlayerCardsResponseSchema }),
+      SyncPlayerCardsResponseSchema,
+    ]),
+    responseJson
+  );
+
+  const rawProfileData = "data" in envelope && envelope.data ? envelope.data : envelope;
 
   // Merge cards and towerTroops into a single array for the simulation engine.
   // isTowerTroop is already set correctly by the Edge Function.

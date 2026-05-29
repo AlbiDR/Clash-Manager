@@ -217,5 +217,27 @@ describe("SupabaseClient", () => {
       const result = await SupabaseClient.fetchRemote();
       expect(result.timestamp).toBeNaN(); // Current behavior: new Date('invalid').getTime() is NaN
     });
+
+    it("fetchRemote throws Valibot error if blacklist player_tag is not a string", async () => {
+      const MOCK_INVALID_TAG_NUM = 12345;
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [], error: null }) // Roster
+        .mockResolvedValueOnce({ data: [], error: null }) // Headhunter
+        .mockResolvedValueOnce({ data: null, error: null }) // Heartbeat
+        .mockResolvedValueOnce({ data: [{ player_tag: MOCK_INVALID_TAG_NUM }], error: null }); // Blacklist with number instead of string
+
+      await expect(SupabaseClient.fetchRemote()).rejects.toThrow();
+    });
+
+    it("fetchRemote throws Valibot error if heartbeat last_success_at is not a string or null", async () => {
+      const MOCK_INVALID_HEARTBEAT_NUM = 99999;
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [], error: null }) // Roster
+        .mockResolvedValueOnce({ data: [], error: null }) // Headhunter
+        .mockResolvedValueOnce({ data: { last_success_at: MOCK_INVALID_HEARTBEAT_NUM }, error: null }) // Heartbeat with number instead of string
+        .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
+
+      await expect(SupabaseClient.fetchRemote()).rejects.toThrow();
+    });
   });
 });
