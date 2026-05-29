@@ -20,7 +20,10 @@ vi.mock("@core/api/SupabaseClient", () => ({
 vi.mock("@core/api/VoyageClient", () => ({
   initializeVoyage: vi.fn(),
   fetchVoyageSummary: vi.fn(),
-  fetchVoyageContributions: vi.fn()
+  fetchVoyageContributions: vi.fn(),
+  scheduleVoyageEvent: vi.fn(),
+  cancelScheduledVoyageEvent: vi.fn(),
+  setVoyageEnd: vi.fn()
 }));
 
 describe("useVoyageStore", () => {
@@ -186,6 +189,58 @@ describe("useVoyageStore", () => {
 
       const store = useVoyageStore();
       await expect(store.activateVoyage(target, startsIn, endsIn)).rejects.toThrow("Unauthorized");
+    });
+  });
+
+  describe("setVoyageEnd", () => {
+    it("should call setVoyageEnd RPC and refresh on success", async () => {
+      vi.mocked(VoyageClient.setVoyageEnd).mockResolvedValue({
+        success: true,
+        data: { success: true }
+      } as any);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(null);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
+
+      const store = useVoyageStore();
+      // Seed an ACTIVE voyage so the store can retrieve the ID
+      // @ts-ignore
+      store.summary = {
+        event: { id: 42, status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null, clan_tag: "#CLAN", activated_by: null, is_victory: false },
+        contributions: [],
+        total_crowns: 0,
+        progress_ratio: 0
+      };
+
+      await store.setVoyageEnd({ days: 3, hours: 0, minutes: 0 });
+
+      expect(VoyageClient.setVoyageEnd).toHaveBeenCalledWith(
+        42,
+        "2026-01-04T00:00:00.000Z"
+      );
+      expect(VoyageClient.fetchVoyageSummary).toHaveBeenCalled();
+    });
+
+    it("should throw if no active voyage is found", async () => {
+      const store = useVoyageStore();
+      await expect(store.setVoyageEnd({ days: 1, hours: 0, minutes: 0 })).rejects.toThrow("No active voyage found.");
+    });
+
+    it("should throw on RPC logic failure", async () => {
+      vi.mocked(VoyageClient.setVoyageEnd).mockResolvedValue({
+        success: true,
+        data: { success: false, error: "Not ACTIVE" }
+      } as any);
+
+      const store = useVoyageStore();
+      // @ts-ignore
+      store.summary = {
+        event: { id: 42, status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null, clan_tag: "#CLAN", activated_by: null, is_victory: false },
+        contributions: [],
+        total_crowns: 0,
+        progress_ratio: 0
+      };
+
+      await expect(store.setVoyageEnd({ days: 1, hours: 0, minutes: 0 })).rejects.toThrow("Not ACTIVE");
     });
   });
 });

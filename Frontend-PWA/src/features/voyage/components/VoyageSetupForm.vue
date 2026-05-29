@@ -128,11 +128,13 @@ const totalEndSeconds = computed(() => {
 /** Validated numeric crown target. */
 const safeTargetCrowns = computed(() => sanitize(targetCrowns.value));
 
-/** Form mode helper */
+/** Form mode helper: scheduling-only when startsIn is set but endsIn is zero and no event is active. */
 const isScheduleOnlyMode = computed(() => {
-  // If we are idle, startsIn is set but endsIn is not.
   return store.status === 'IDLE' && totalStartSeconds.value > 0 && totalEndSeconds.value === 0;
 });
+
+/** True when the event is ACTIVE but end_at has not been recorded yet. */
+const isAwaitingEndSet = computed(() => store.isActive && !store.endsAt);
 
 /**
  * Comprehensive form validity state.
@@ -145,10 +147,11 @@ const isScheduleOnlyMode = computed(() => {
 const isFormValid = computed(() => {
   if (safeTargetCrowns.value <= 0) return false;
 
-  if (store.isActive) {
+  if (isAwaitingEndSet.value) {
+    // ACTIVE but no end_at: only the endsIn field is required.
     return totalEndSeconds.value > 0;
   }
-  if (store.isAwaitingEnd) {
+  if (store.isActive) {
     return totalEndSeconds.value > 0;
   }
   if (isScheduleOnlyMode.value) {
@@ -164,7 +167,7 @@ const isFormValid = computed(() => {
  */
 const validationHint = computed(() => {
   if (safeTargetCrowns.value <= 0) return "Set a crown target above 0.";
-  if (store.isActive || store.isAwaitingEnd) {
+  if (isAwaitingEndSet.value || store.isActive) {
     if (totalEndSeconds.value === 0) return "Set an 'Ends In' duration.";
     return null;
   }
@@ -203,11 +206,7 @@ async function handleActivate() {
       minutes: sanitize(endsIn.value.minutes),
     };
 
-    if (store.isAwaitingEnd) {
-      // Promoting a PENDING voyage whose start time has already passed
-      await store.activateScheduledVoyage(safeTargetCrowns.value, strictEndsIn);
-      toast.success("Clan Voyage activated successfully.");
-    } else if (isScheduleOnlyMode.value) {
+    if (isScheduleOnlyMode.value) {
       // Scheduling a pre-event with start time only
       await store.scheduleVoyage(safeTargetCrowns.value, strictStartsIn);
       toast.success("Pre-event scheduled successfully.");
@@ -222,6 +221,28 @@ async function handleActivate() {
     }
   } catch (err: any) {
     console.error('[VoyageSetupForm] handleActivate error:', err);
+    toast.error(err?.message ?? "Operation failed.");
+  }
+}
+
+/**
+ * Sets the end time on the already-ACTIVE voyage once the official duration
+ * is publicly announced in-game.
+ */
+async function handleSetEnd() {
+  if (store.loading) return;
+  if (!isFormValid.value) return;
+
+  try {
+    const strictEndsIn: T2TInput = {
+      days: sanitize(endsIn.value.days),
+      hours: sanitize(endsIn.value.hours),
+      minutes: sanitize(endsIn.value.minutes),
+    };
+    await store.setVoyageEnd(strictEndsIn);
+    toast.success("End time set successfully.");
+  } catch (err: any) {
+    console.error('[VoyageSetupForm] handleSetEnd error:', err);
     toast.error(err?.message ?? "Operation failed.");
   }
 }
@@ -262,18 +283,18 @@ async function handleCancel() {
       </div>
     </div>
 
-    <!-- Starts In (Hidden if active or promoting scheduled, since startsIn is locked) -->
+    <!-- Starts In (hidden when active or pending, since start is already locked) -->
     <DurationInput
-      v-if="!store.isActive && !store.isAwaitingEnd && !store.isPending"
+      v-if="!store.isActive && !store.isPending"
       v-model="startsIn"
       label="Starts In"
     />
 
-    <!-- Ends In (Hidden if we are only scheduling a pre-event with startsIn) -->
+    <!-- Ends In (shown when active, or in normal direct-activation mode) -->
     <DurationInput
-      v-if="!store.isPending"
+      v-if="store.isActive || (!store.isPending && !isScheduleOnlyMode)"
       v-model="endsIn"
-      label="Ends In"
+      :label="isAwaitingEndSet ? 'Ends In (set once duration is known)' : 'Ends In'"
     />
 
     <!-- Validation Hint -->
@@ -283,17 +304,32 @@ async function handleCancel() {
       </p>
     </Transition>
 
-    <!-- Activate Button -->
+    <!-- Set End Time Button (ACTIVE but no end_at) -->
     <button
+      v-if="isAwaitingEndSet"
+      id="voyage-set-end-btn"
+      class="activate-btn"
+      :class="{ disabled: !isFormValid, loading: store.loading }"
+      @click="handleSetEnd"
+      :disabled="store.loading"
+    >
+      <div class="btn-glow" />
+      <span v-if="store.loading">Processing...</span>
+      <span v-else>Set End Time</span>
+    </button>
+
+    <!-- Activate / Schedule / Update Button (all other states) -->
+    <button
+      v-else
+      id="voyage-activate-btn"
       class="activate-btn"
       :class="{ disabled: !isFormValid, loading: store.loading }"
       @click="handleActivate"
-      :disabled="store.isPending"
+      :disabled="store.isPending || store.loading"
     >
       <div class="btn-glow" />
       <span v-if="store.loading">Processing...</span>
       <span v-else-if="store.isPending">Scheduled</span>
-      <span v-else-if="store.isAwaitingEnd">Activate Scheduled Event</span>
       <span v-else-if="store.isActive">Update Event</span>
       <span v-else-if="isScheduleOnlyMode">Schedule Pre-Event</span>
       <span v-else>Activate Mirror</span>
@@ -301,7 +337,8 @@ async function handleCancel() {
 
     <!-- Cancel Schedule Link -->
     <button
-      v-if="store.isPending || store.isAwaitingEnd"
+      v-if="store.isPending"
+      id="voyage-cancel-btn"
       class="cancel-btn"
       :class="{ disabled: store.loading }"
       @click="handleCancel"
