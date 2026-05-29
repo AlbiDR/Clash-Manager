@@ -131,9 +131,20 @@ export async function fetchRemote(options?: {
   if (headhunterResponse.error) throw new Error(`Headhunter Fetch Error: ${headhunterResponse.error.message}`);
   
   // [GUARD] VALIDATION BOUNDARY: Harden external view data before domain mapping.
+  // [THREAT:] Processing unvalidated raw data or using 'any' can cause runtime crashes if the DB schema shifts.
   const rosterData = v.parse(v.array(SbRosterRowSchema), rosterResponse.data || []);
   const headhunterData = v.parse(v.array(SbHeadhunterRowSchema), headhunterResponse.data || []);
-  const blacklistTags = (blacklistResponse.data || []).map((row: any) => row.player_tag ? (row.player_tag.startsWith('#') ? row.player_tag : `#${row.player_tag}`) : '').filter(Boolean);
+
+  const BlacklistRowSchema = v.object({
+    player_tag: v.string(),
+  });
+  const blacklistData = v.parse(v.array(BlacklistRowSchema), blacklistResponse.data || []);
+  const blacklistTags = blacklistData
+    .map((row) => {
+      const tag = row.player_tag;
+      return tag ? (tag.startsWith("#") ? tag : `#${tag}`) : "";
+    })
+    .filter(Boolean);
 
   const leaderboardMembers: LeaderboardMember[] = rosterData.map(mapSbRosterRow);
   const headhunterRecruits: Recruit[] = headhunterData.map(mapSbHeadhunterRow);
@@ -141,8 +152,15 @@ export async function fetchRemote(options?: {
   const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
   // Rationale: Use the kernel's ingestion heartbeat as the authoritative data age.
-  const timestamp = heartbeatResponse.data?.last_success_at
-    ? new Date(heartbeatResponse.data.last_success_at).getTime()
+  // [GUARD] Validate heartbeat structure before date conversion.
+  const HeartbeatRowSchema = v.object({
+    last_success_at: v.nullable(v.string()),
+  });
+  const heartbeatData = heartbeatResponse.data
+    ? v.parse(HeartbeatRowSchema, heartbeatResponse.data)
+    : null;
+  const timestamp = heartbeatData?.last_success_at
+    ? new Date(heartbeatData.last_success_at).getTime()
     : Date.now();
   
   const webAppData: WebAppData = {
