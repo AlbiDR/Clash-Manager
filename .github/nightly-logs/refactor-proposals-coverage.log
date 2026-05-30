@@ -1,0 +1,1 @@
+2026-09-02 | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Extracted form logic to useVoyageForm.ts, centralized sanitization to @core/utils/formatters.ts.

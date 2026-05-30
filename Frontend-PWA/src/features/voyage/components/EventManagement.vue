@@ -19,11 +19,12 @@
  *   to the 400-line SRP threshold (ADR Section III).
  * ============================================================================
  */
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from "vue";
 import { SettingsCard, Icon } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
-import VoyageSetupForm from "./VoyageSetupForm.vue";
 import { formatCountdown } from "@core/utils/formatters";
+
+const VoyageSetupForm = defineAsyncComponent(() => import("./VoyageSetupForm.vue"));
 
 const props = defineProps<{
   initiallyExpanded?: boolean;

@@ -15,6 +15,7 @@
  * - **Role:** Reusable input molecule for duration/countdown configurations.
  * ============================================================================
  */
+import { sanitizeNumericInput } from "@core/utils/formatters";
 
 interface DurationModel {
   days: number | '';
@@ -32,14 +33,6 @@ const emit = defineEmits<{
 }>();
 
 /**
- * Normalises a potentially NaN value from an empty number input to 0.
- */
-function sanitize(val: number | '' | null): number {
-  if (val === '' || val === null || isNaN(Number(val))) return 0;
-  return Number(val) < 0 ? 0 : Number(val);
-}
-
-/**
  * Clamps a T2T unit field to its logical maximum and emits update.
  */
 function onInput(key: keyof DurationModel) {
@@ -47,7 +40,7 @@ function onInput(key: keyof DurationModel) {
   const newValue = { ...props.modelValue };
 
   if (newValue[key] !== '') {
-    const sanitized = sanitize(newValue[key]);
+    const sanitized = sanitizeNumericInput(newValue[key]);
     if (sanitized > max) {
       newValue[key] = max;
     } else if (sanitized < 0) {
