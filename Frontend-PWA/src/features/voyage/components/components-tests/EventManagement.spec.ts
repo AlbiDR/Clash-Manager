@@ -2,11 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import EventManagement from "../EventManagement.vue";
 import { useVoyageStore } from "../../composables/useVoyageStore";
-import { nextTick } from "vue";
+import { nextTick, defineComponent, h } from "vue";
 
 // Mock @shared to provide SettingsCard and Icon
 vi.mock("@shared", async () => {
@@ -24,13 +24,6 @@ vi.mock("@shared", async () => {
   };
 });
 
-// Mock VoyageSetupForm
-vi.mock("../VoyageSetupForm.vue", () => ({
-  default: {
-    name: "VoyageSetupForm",
-    template: '<div class="voyage-setup-form-mock" />'
-  }
-}));
 
 // Mock SupabaseClient because useVoyageStore uses it
 vi.mock("@core/api/SupabaseClient", () => ({
@@ -63,13 +56,22 @@ describe("EventManagement.vue", () => {
 
   const createWrapper = (props = {}) => {
     return mount(EventManagement, {
-      props
+      props,
+      global: {
+        stubs: {
+          VoyageSetupForm: {
+            name: "VoyageSetupForm",
+            template: '<div class="voyage-setup-form-mock" />'
+          }
+        }
+      }
     });
   };
 
   it("renders correctly in IDLE state", async () => {
     const wrapper = createWrapper();
     await nextTick();
+    await flushPromises();
 
     expect(wrapper.find(".status-pill").text()).toBe("IDLE");
     expect(wrapper.find(".status-pill").classes()).toContain("idle");
