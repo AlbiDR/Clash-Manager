@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-30] PR #709: chore(version): no drift found
+**Commit**: `9b26b05418990634a1cde017c90ddadeb271b20c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/709)
+
+### Description
+Performed a full version integrity audit of the monorepo. Confirmed that all shared dependencies correctly utilize the PNPM `catalog:` protocol and that the monorepo version is consistently declared as `14.0.0` across root `package.json`, `Frontend-PWA/package.json`, `index.html`, and `protocol.ts`. Updated the version integrity coverage log to record the audit results. Verified system stability via `pnpm test` (1072 pass).
+
+---
+*PR created automatically by Jules for task [16344359237393167888](https://jules.google.com/task/16344359237393167888) started by @AlbiDR*
+
+---
+
 ## [2026-05-30] PR #708: docs(tsdoc): perfect useVoyageForm interface contracts
 **Commit**: `f14cc07c363c9eb77f3f93571110f64bfe2f6a5f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/708)
