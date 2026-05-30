@@ -63,7 +63,7 @@ Identify the single highest-priority documentation gap using the following queue
   2. **Missing Interface Contracts:** Locate exported functions, stores, composables, or Edge Function entry points lacking JSDoc/TSDoc blocks.
   3. **Inline Logic Gaps:** Identify complex, undocumented decision trees or algorithms.
   4. **Missing License Headers:** Prepend copyright lines to unadorned codebase files (final fallback).
-- **Log Consultation:** Consult `.github/nightly-logs/documentation-tsdoc-coverage.log` to avoid repeating recent targets for items 2 and 3.
+- **Log Consultation:** Consult `.github/nightly-logs/05-documentation-tsdoc-coverage.log` to avoid repeating recent targets for items 2 and 3.
 
 ### Step 2: Annotation and Intent Analysis
 - **ADR Synchronization:** Verify described types, schemas, and layer behaviors match the CleanStack Architecture ADR guidelines. Use correct system vocabulary (`@core`, `@shared`, `@features`, `@app`).
@@ -98,5 +98,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm the annotation is accurate against current code signatures.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/documentation-tsdoc-coverage.log
+  - Updated .github/nightly-logs/05-documentation-tsdoc-coverage.log
   ```

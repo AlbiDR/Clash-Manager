@@ -76,7 +76,7 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 - Apply hardening to the single selected file.
 - **Licensing Header:** Prepend standard license headers (`// SPDX-License-Identifier: GPL-3.0-only` / `// Copyright (C) 2026 AlbiDR`) on newly created `.ts` or `.vue` files.
 - **Inline Documentation:** Add a comment on every modified block explaining the specific threat it resolves.
-- **Log Updates:** Append your execution record to `.github/nightly-logs/hardening-coverage.log`.
+- **Log Updates:** Append your execution record to `.github/nightly-logs/01-hardening-coverage.log`.
 - Verify the build and run `pnpm test` locally.
 
 ### Step 4: Presentation (Pull Request)
@@ -102,5 +102,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm the threat identified in the Threat Statement is closed by the change.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/hardening-coverage.log
+  - Updated .github/nightly-logs/01-hardening-coverage.log
   ```

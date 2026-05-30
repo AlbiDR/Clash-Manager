@@ -53,7 +53,7 @@ Identify the single highest-priority README gap using the following queue in str
   1. **Drift Reconciler:** Locate any `README.md` whose examples, API shapes, or descriptions conflict with the codebase.
   2. **README Depth:** Identify existing README files that lack architectural context, system boundaries, or integration notes.
   3. **README Creation:** Locate undocumented directories containing public exports or business logic.
-- **Audit Logging:** Record the target path in `.github/nightly-logs/documentation-readme-coverage.log` as a write-only audit trail.
+- **Audit Logging:** Record the target path in `.github/nightly-logs/04-documentation-readme-coverage.log` as a write-only audit trail.
 
 ### Step 2: Architecture and Intent Analysis
 - **ADR Alignment:** Verify that the architectural descriptions, import bounds, and layer references comply with the CleanStack Architecture ADR. The ADR is authoritative; align any incorrect documentation to match its layering rules.
@@ -86,5 +86,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm every statement in the updated README has a corresponding code artifact validating it.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/documentation-readme-coverage.log
+  - Updated .github/nightly-logs/04-documentation-readme-coverage.log
   ```
