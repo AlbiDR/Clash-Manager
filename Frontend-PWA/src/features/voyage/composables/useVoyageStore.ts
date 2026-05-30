@@ -67,6 +67,11 @@ export const useVoyageStore = defineStore("voyage", () => {
   /** Returns true if the Voyage is currently in the ACTIVE state. */
   const isActive = computed(() => status.value === "ACTIVE");
 
+  /** Returns true if the Voyage is active but has no end time set yet. */
+  const isAwaitingEnd = computed(() => {
+    return status.value === "ACTIVE" && !summary.value?.event.end_at;
+  });
+
   /** The scheduled start date/time of the event as a JavaScript Date object. */
   const startsAt = computed(() =>
     summary.value?.event.start_at ? new Date(summary.value.event.start_at) : null
@@ -388,6 +393,7 @@ export const useVoyageStore = defineStore("voyage", () => {
     lastUpdated,
     status,
     isActive,
+    isAwaitingEnd,
     startsAt,
     isPending,
     isVictory,
