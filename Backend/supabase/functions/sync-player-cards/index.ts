@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       // 1. [CACHE CHECK]
       // [DECISION LOG] The features.player_card_snapshots table acts as a Layer 2 cache.
       // We check for existing data to minimize Royale API quota consumption and improve response speed.
-      const { data: rawStoredSnapshots, error: fetchError } = await supabase
+      const { data: unvalidatedStoredSnapshots, error: fetchError } = await supabase
         .schema("features")
         .from("player_card_snapshots")
         .select(
@@ -161,8 +161,8 @@ Deno.serve(async (req) => {
       }
 
       // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
-      // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists.
-      const snapshotValidation = v.safeParse(v.array(PlayerCardSnapshotSchema), rawStoredSnapshots ?? []);
+      // [THREAT:] Unvalidated data from the database can lead to downstream runtime crashes.
+      const snapshotValidation = v.safeParse(v.array(PlayerCardSnapshotSchema), unvalidatedStoredSnapshots ?? []);
       if (!snapshotValidation.success) {
         logAudit("CACHE_CHECK", "error", { message: "Validation failed", issues: snapshotValidation.issues });
         // Fail-safe: treat validation failure as a cache miss to allow re-fetching fresh data.
@@ -193,32 +193,32 @@ Deno.serve(async (req) => {
         throw new Error(`Clash Royale API error: ${royaleApiResponse.status}`);
       }
 
-      const rawPlayerData = await royaleApiResponse.json();
+      const unvalidatedPlayerData = await royaleApiResponse.json();
       // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
       // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes.
-      const playerValidation = v.safeParse(RoyaleFullPlayerSchema, rawPlayerData);
+      const playerValidation = v.safeParse(RoyaleFullPlayerSchema, unvalidatedPlayerData);
 
       if (!playerValidation.success) {
         logAudit("API_FETCH", "error", { message: "Validation failed", issues: playerValidation.issues });
         throw new Error("Invalid response from Clash Royale API");
       }
 
-      const validPlayerData = playerValidation.output;
+      const playerProfile = playerValidation.output;
       logAudit("API_FETCH", "run", { status: "SUCCESS" });
 
       // 3. [NORMALIZATION]
       logAudit("NORMALIZATION", "called");
-      const rawCards = validPlayerData.cards;
-      const rawTowerTroops = validPlayerData.towerTroops ?? [];
-      const allApiCards = [...rawCards, ...rawTowerTroops];
+      const playerBaseCards = playerProfile.cards;
+      const playerTowerTroops = playerProfile.towerTroops ?? [];
+      const allPlayerCards = [...playerBaseCards, ...playerTowerTroops];
 
       const baseMaxLevel =
-        allApiCards.reduce((max, card) => Math.max(max, card.maxLevel), 0) ||
+        allPlayerCards.reduce((max, card) => Math.max(max, card.maxLevel), 0) ||
         BASE_MAX_LEVEL;
 
-      const playerName = validPlayerData.name;
-      const kingLevel = validPlayerData.expLevel;
-      const xpIntoLevel = validPlayerData.expPoints;
+      const playerName = playerProfile.name;
+      const kingLevel = playerProfile.expLevel;
+      const xpIntoLevel = playerProfile.expPoints;
       const fetchedAt = new Date().toISOString();
 
       /**
@@ -226,41 +226,42 @@ Deno.serve(async (req) => {
        * [DECISION LOG] The Royale API uses relative levels (e.g. Rare 11). We convert these to
        * an absolute 1-16 scale based on the distance from the card's maximum level.
        */
-      function processCard(apiCard: v.InferOutput<typeof RoyaleFullPlayerSchema>["cards"][0], isTowerTroop: boolean): NormalizedCard {
-        const apiLevel = apiCard.level;
-        const apiMaxLevel = apiCard.maxLevel;
+      function processCard(rawCardEntry: v.InferOutput<typeof RoyaleFullPlayerSchema>["cards"][0], isTowerTroop: boolean): NormalizedCard {
+        const apiLevel = rawCardEntry.level;
+        const apiMaxLevel = rawCardEntry.maxLevel;
         const absoluteLevel = baseMaxLevel - (apiMaxLevel - apiLevel);
         return {
-          card_id: apiCard.id,
-          card_name: apiCard.name,
-          rarity: normalizeRarity(apiCard.rarity),
+          card_id: rawCardEntry.id,
+          card_name: rawCardEntry.name,
+          rarity: normalizeRarity(rawCardEntry.rarity),
           is_tower_troop: isTowerTroop,
           absolute_level: Math.max(1, Math.min(absoluteLevel, BASE_MAX_LEVEL)),
           api_level: apiLevel,
           api_max_level: apiMaxLevel,
-          count: apiCard.count ?? 0,
+          count: rawCardEntry.count ?? 0,
         };
       }
 
       const normalizedCards: NormalizedCard[] = [
-        ...rawCards.map((apiCard) => processCard(apiCard, false)),
-        ...rawTowerTroops.map((apiCard) => processCard(apiCard, true)),
+        ...playerBaseCards.map((rawCardEntry) => processCard(rawCardEntry, false)),
+        ...playerTowerTroops.map((rawCardEntry) => processCard(rawCardEntry, true)),
       ];
       logAudit("NORMALIZATION", "run", { cardCount: normalizedCards.length });
 
       // 4. [UPSERT]
+      // [DECISION LOG] Upsert failures are logged but non-fatal to ensure service availability even if the cache layer is degraded.
       if (normalizedCards.length > 0) {
         logAudit("UPSERT", "called");
-        const upsertRows = normalizedCards.map((normalizedCard) => ({
+        const upsertRows = normalizedCards.map((processedCardEntry) => ({
           player_tag: normalizedPlayerTag,
-          card_id: normalizedCard.card_id,
-          card_name: normalizedCard.card_name,
-          rarity: normalizedCard.rarity,
-          is_tower_troop: normalizedCard.is_tower_troop,
-          absolute_level: normalizedCard.absolute_level,
-          api_level: normalizedCard.api_level,
-          api_max_level: normalizedCard.api_max_level,
-          count: normalizedCard.count,
+          card_id: processedCardEntry.card_id,
+          card_name: processedCardEntry.card_name,
+          rarity: processedCardEntry.rarity,
+          is_tower_troop: processedCardEntry.is_tower_troop,
+          absolute_level: processedCardEntry.absolute_level,
+          api_level: processedCardEntry.api_level,
+          api_max_level: processedCardEntry.api_max_level,
+          count: processedCardEntry.count,
           player_name: playerName,
           king_level: kingLevel,
           xp_into_level: xpIntoLevel,
@@ -281,12 +282,12 @@ Deno.serve(async (req) => {
         }
       }
 
-      const freshRows: CardRow[] = normalizedCards.map((normalizedCard) => ({
-        card_name: normalizedCard.card_name,
-        rarity: normalizedCard.rarity,
-        absolute_level: normalizedCard.absolute_level,
-        count: normalizedCard.count,
-        is_tower_troop: normalizedCard.is_tower_troop,
+      const freshRows: CardRow[] = normalizedCards.map((processedCardEntry) => ({
+        card_name: processedCardEntry.card_name,
+        rarity: processedCardEntry.rarity,
+        absolute_level: processedCardEntry.absolute_level,
+        count: processedCardEntry.count,
+        is_tower_troop: processedCardEntry.is_tower_troop,
         fetched_at: fetchedAt,
         player_name: playerName,
         king_level: kingLevel,
