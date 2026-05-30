@@ -115,7 +115,12 @@ export function useVoyageForm() {
   // --- ACTIONS ---
 
   /**
+   * Input handler for the crown target field.
    * Enforces a hard boundary of [0, VOYAGE_MAX_TARGET] on the target input.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Validation Boundaries.
+   * Directly mutates the reactive `targetCrowns` state to clamp out-of-bounds values.
    */
   function onTargetInput() {
     if (targetCrowns.value === '') return;
@@ -126,7 +131,20 @@ export function useVoyageForm() {
   }
 
   /**
-   * Orchestrates the activation, scheduling, promotion, or update of a Clan Voyage.
+   * Orchestrates the setup, activation, or modification of a Clan Voyage event.
+   *
+   * @remarks
+   * Satisfies ADR Section IV: Operational Security & Resilience.
+   * - Implements optimistic UI feedback via toasts.
+   * - Enforces `isFormValid` check before proceeding.
+   * - Centralizes error propagation using safe `unknown` narrowing.
+   *
+   * @sideeffects
+   * - Triggers L1 network RPCs via `useVoyageStore`.
+   * - Emits success/error toast notifications.
+   * - Updates global feature state in Pinia.
+   *
+   * @returns Promise resolving when the operation completes.
    */
   async function handleActivate() {
     if (store.loading) return;
@@ -136,6 +154,9 @@ export function useVoyageForm() {
     }
 
     try {
+      // [DECISION LOG] STRICT NORMALIZATION
+      // Rationale: We ensure input units are sanitized to numbers before
+      // reaching the store/API to maintain the Validation Boundary.
       const strictStartsIn: T2TInput = {
         days: sanitizeNumericInput(startsIn.value.days),
         hours: sanitizeNumericInput(startsIn.value.hours),
@@ -166,7 +187,18 @@ export function useVoyageForm() {
     }
   }
 
-  /** Cancels a scheduled pre-event */
+  /**
+   * Cancels a scheduled pre-event (scheduled voyage).
+   *
+   * @remarks
+   * Satisfies ADR Section IV: Resilience.
+   * Requires explicit user confirmation via browser `confirm()` to prevent accidental data loss.
+   *
+   * @sideeffects
+   * - Triggers `cancel_scheduled_voyage` RPC via Pinia store.
+   * - Emits toast notifications on success or failure.
+   * - Mutates `store.scheduledVoyage` state.
+   */
   async function handleCancel() {
     if (store.loading) return;
     if (confirm("Are you sure you want to cancel the scheduled Clan Voyage?")) {
