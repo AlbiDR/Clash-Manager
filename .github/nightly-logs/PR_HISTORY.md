@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-30] PR #704: fix(harden): secure player card sync validation boundaries and excise anemic pathogens
+**Commit**: `e93cede8ddab9b2de4c9f24a6fa5a1dfcef979ef`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/704)
+
+### Description
+Hardened the `sync-player-cards` Edge Function by excising anemic variable pathogens and securing validation boundaries with explicit naming and annotations. Verified via monorepo test gate (1064 pass).
+
+---
+*PR created automatically by Jules for task [5050348096033375661](https://jules.google.com/task/5050348096033375661) started by @AlbiDR*
+
+---
+
 ## [2026-05-30] PR #703: refactor: extract voyage form logic to composable and centralize utils
 **Commit**: `541badf3ea31b80d5683b4425b64979605564993`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/703)
