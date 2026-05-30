@@ -142,9 +142,15 @@ export const PlayerCardSnapshotSchema = v.object({
 export const RoyaleBattleLogSchema = v.array(v.object({
     type: v.string(),
     battleTime: v.string(),
+    team: v.array(v.object({
+        tag: v.string(),
+        name: v.string(),
+        crowns: v.optional(v.number(), 0)
+    })),
     opponent: v.array(v.object({
         tag: v.string(),
         name: v.string(),
+        crowns: v.optional(v.number(), 0),
         clan: v.optional(v.nullable(v.object({
             tag: v.string()
         })))
