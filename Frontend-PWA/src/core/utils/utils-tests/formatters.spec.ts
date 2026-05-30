@@ -11,6 +11,8 @@ import {
   calculateMomentum,
   getDurationUnits,
   formatCountdown,
+  sanitizeNumericInput,
+  durationToSeconds,
 } from "@core/utils/formatters";
 
 describe("formatters", () => {
@@ -395,6 +397,46 @@ describe("formatters", () => {
       // previousRaw = 100, dt = 5.5 => 5.5%
       const result = calculateMomentum(5.5, 105.5);
       expect(result?.val).toBe("5.5%");
+    });
+  });
+
+  describe("sanitizeNumericInput", () => {
+    it("returns the number if positive", () => {
+      expect(sanitizeNumericInput(5)).toBe(5);
+    });
+
+    it("returns 0 for empty string", () => {
+      expect(sanitizeNumericInput("")).toBe(0);
+    });
+
+    it("returns 0 for null", () => {
+      expect(sanitizeNumericInput(null)).toBe(0);
+    });
+
+    it("returns 0 for NaN or invalid numeric strings", () => {
+      expect(sanitizeNumericInput(NaN)).toBe(0);
+      // @ts-expect-error - testing invalid input
+      expect(sanitizeNumericInput("abc")).toBe(0);
+    });
+
+    it("returns 0 for negative numbers", () => {
+      expect(sanitizeNumericInput(-5)).toBe(0);
+    });
+  });
+
+  describe("durationToSeconds", () => {
+    it("calculates total seconds correctly", () => {
+      // 1d (86400) + 1h (3600) + 1m (60) = 90060
+      expect(durationToSeconds(1, 1, 1)).toBe(90060);
+    });
+
+    it("returns 0 for all zero inputs", () => {
+      expect(durationToSeconds(0, 0, 0)).toBe(0);
+    });
+
+    it("handles large values", () => {
+      // 10d = 864000
+      expect(durationToSeconds(10, 0, 0)).toBe(864000);
     });
   });
 });
