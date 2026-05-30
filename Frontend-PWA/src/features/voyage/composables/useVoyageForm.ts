@@ -73,6 +73,9 @@ export function useVoyageForm() {
     return store.status === 'IDLE' && totalStartSeconds.value > 0 && totalEndSeconds.value === 0;
   });
 
+  /** Returns true if the Voyage is active but has no end time set yet. */
+  const isAwaitingEndSet = computed(() => store.isAwaitingEnd);
+
   /**
    * Comprehensive form validity state.
    */
@@ -212,6 +215,27 @@ export function useVoyageForm() {
     }
   }
 
+  /**
+   * Sets the end time on an active Voyage event.
+   */
+  async function handleSetEnd() {
+    if (store.loading) return;
+    if (!isFormValid.value) return;
+
+    try {
+      const strictEndsIn: T2TInput = {
+        days: sanitizeNumericInput(endsIn.value.days),
+        hours: sanitizeNumericInput(endsIn.value.hours),
+        minutes: sanitizeNumericInput(endsIn.value.minutes),
+      };
+      await store.setVoyageEnd(strictEndsIn);
+      toast.success("Voyage end time set successfully.");
+    } catch (err: unknown) {
+      console.error('[useVoyageForm] handleSetEnd error:', err);
+      toast.error(err instanceof Error ? err.message : "Setting end time failed.");
+    }
+  }
+
   return {
     targetCrowns,
     startsIn,
@@ -219,9 +243,11 @@ export function useVoyageForm() {
     isFormValid,
     validationHint,
     isScheduleOnlyMode,
+    isAwaitingEndSet,
     onTargetInput,
     handleActivate,
     handleCancel,
+    handleSetEnd,
     store,
   };
 }

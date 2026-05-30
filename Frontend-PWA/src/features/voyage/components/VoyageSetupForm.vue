@@ -31,9 +31,11 @@ const {
   isFormValid,
   validationHint,
   isScheduleOnlyMode,
+  isAwaitingEndSet,
   onTargetInput,
   handleActivate,
   handleCancel,
+  handleSetEnd,
   store
 } = useVoyageForm();
 
