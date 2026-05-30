@@ -78,3 +78,5 @@ Frontend-PWA/README.md
 2026-05-27 | Frontend-PWA/src/features/laboratory/README.md | Reconciled client drift and removed PriorityQueue
 2026-05-27 | Frontend-PWA/src/features/roster/README.md | Reconciled bezier dependency drift
 2026-05-28 | Frontend-PWA/src/shared/ui/README.md | Documented promoted history chart molecules
+2026-05-30 | Frontend-PWA/src/features/voyage/README.md | Reconciled useVoyageForm.ts delegation and event lifecycle logic
+2026-05-30 | Frontend-PWA/src/features/laboratory/README.md | Reconciled Registry.ts logic and substrate consumption
