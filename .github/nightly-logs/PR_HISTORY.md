@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-30] PR #706: refactor(opt): optimize voyage components and substrate hygiene
+**Commit**: `b1fa1ba11227cdd2eec1e75183c1ac13d0c81af7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/706)
+
+### Description
+Performed Stage 3 performance refactoring for the Voyage feature and theme substrate. Key actions include lazy-loading the Voyage setup form to optimize bundle size, excising a redundant barrel export, and hardening the design token interface to resolve a structural logic crack. Verified via full test gate (1072 pass).
+
+---
+*PR created automatically by Jules for task [5708350191687207429](https://jules.google.com/task/5708350191687207429) started by @AlbiDR*
+
+---
+
 ## [2026-05-30] PR #705: test(verify): saturating coverage for formatters logic
 **Commit**: `fef2433c49162b55aeb4f214c786798f05e97b4d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/705)
