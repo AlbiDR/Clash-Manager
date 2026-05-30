@@ -3,3 +3,4 @@
 
 export { default as VoyageBanner } from "./VoyageBanner.vue";
 export { default as EventManagement } from "./EventManagement.vue";
+export { default as VoyageSetupForm } from "./VoyageSetupForm.vue";
