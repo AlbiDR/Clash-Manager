@@ -56,7 +56,7 @@ Scan the codebase and substrate for a single high-impact, low-risk inefficiency 
   1. **Structural Rot:** Identify dead or orphaned logic, redundant helper files, or obsolete styles.
   2. **Substrate Hygiene:** Identify orphaned database views not referenced by Edge Functions, storage paths lacking database records, or redundant SQL indexes.
   3. **Duplicate Logic Extraction:** Locate Blatant duplicate logic blocks in Vue components and propose extracting them to a shared `@shared/utils` composable or `@core` provider. Keep abstractions simple; do not over-engineer.
-- **Log Reference:** Append optimized file paths to `.github/nightly-logs/optimization-coverage.log` to avoid repeating recent targets for items 2 and 3.
+- **Log Reference:** Append optimized file paths to `.github/nightly-logs/03-optimization-coverage.log` to avoid repeating recent targets for items 2 and 3.
 
 ### Step 2: Efficiency and Safety Analysis
 - Formulate a precise Refactoring Hypothesis: "Extracting [logic X] to [store or composable Y] will reduce duplication across [Z] call sites and improve performance."
@@ -67,7 +67,7 @@ Scan the codebase and substrate for a single high-impact, low-risk inefficiency 
 - Add structured JSDoc comments to document complex logic flows, using standard Layer terms (`@core`, `@shared`, `@features`, `@app`).
 - If introducing a new file, ensure it is properly exported via the parent directory's Barrel file (`index.ts`).
 - Execute `pnpm test` to verify all unit tests pass after the change.
-- **Log Updates:** Append the target path to `.github/nightly-logs/optimization-coverage.log`.
+- **Log Updates:** Append the target path to `.github/nightly-logs/03-optimization-coverage.log`.
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.
@@ -95,5 +95,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm structural improvements in the code diff.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/optimization-coverage.log
+  - Updated .github/nightly-logs/03-optimization-coverage.log
   ```

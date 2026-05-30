@@ -46,7 +46,7 @@ Major version bumps are **never applied autonomously**. For each major version d
 - Open a PR containing only the watchlist update and the impact analysis. No code changes.
 
 ### C. The Persistent Watchlist
-- **Location:** `.github/nightly-logs/dependency-audit-coverage.log`
+- **Location:** `.github/nightly-logs/07-dependency-audit-coverage.log`
 - Must maintain two sections:
   - **Section 1 - Automated Fixes:** Running record of Tier 1 changes applied (package name, old version, new version, date, test outcome).
   - **Section 2 - Major Version Watchlist:** Persistent markdown table of Tier 2 packages:
@@ -80,8 +80,8 @@ Audit all `package.json` files across the monorepo. If no changes are needed, re
 
 ### Step 3: Execution
 - **Tier 1:** Modify the relevant `package.json`. Run `pnpm install` and then `pnpm test`. If tests pass, proceed. If tests fail, revert and escalate to the watchlist.
-- **Tier 2:** Update the table in `.github/nightly-logs/dependency-audit-coverage.log`. Do not modify other files.
-- **Log Updates:** Update `.github/nightly-logs/dependency-audit-coverage.log`.
+- **Tier 2:** Update the table in `.github/nightly-logs/07-dependency-audit-coverage.log`. Do not modify other files.
+- **Log Updates:** Update `.github/nightly-logs/07-dependency-audit-coverage.log`.
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.
@@ -108,5 +108,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm the watchlist entry is complete: package name, current version, latest major, first-detected date, and codebase-specific impact notes are all populated.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/dependency-audit-coverage.log
+  - Updated .github/nightly-logs/07-dependency-audit-coverage.log
   ```

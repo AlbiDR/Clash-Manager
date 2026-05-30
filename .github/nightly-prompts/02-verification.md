@@ -60,7 +60,7 @@ Select the single highest-priority coverage gap using the following queue in str
   2. **Validation Boundary:** Target functions processing external data (APIs, LocalStorage, user input) that have no tests covering the invalid/malformed input branch.
   3. **Zero Coverage:** Identify any complex `.ts` utility or `.vue` composable with zero `*.spec.ts` coverage.
   4. **Partial Coverage:** Locate existing `*.spec.ts` files missing edge cases or sad paths (such as API failures or boundary values).
-- **Log Consultation:** Refer to `.github/nightly-logs/verification-coverage.log` to avoid repeating recent targets for items 2 and 3.
+- **Log Consultation:** Refer to `.github/nightly-logs/02-verification-coverage.log` to avoid repeating recent targets for items 2 and 3.
 
 ### Step 2: Trap Analysis
 - State your testing scenario: "I will test [utility] for [edge case A] and [edge case B]."
@@ -70,7 +70,7 @@ Select the single highest-priority coverage gap using the following queue in str
 ### Step 3: Test Writing and Verification
 - Write or update the target `*.spec.ts` file in the correct directory.
 - Run `pnpm test <file>` to ensure the new tests pass and assert correct behavior.
-- **Log Updates:** Append the target file path to `.github/nightly-logs/verification-coverage.log`.
+- **Log Updates:** Append the target file path to `.github/nightly-logs/02-verification-coverage.log`.
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.
@@ -96,5 +96,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm the new tests fail if the underlying logic is broken (asserting the test is non-trivial).
 
   ### Log Updates:
-  - Updated .github/nightly-logs/verification-coverage.log
+  - Updated .github/nightly-logs/02-verification-coverage.log
   ```

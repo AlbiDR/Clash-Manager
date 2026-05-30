@@ -68,7 +68,7 @@ Scan the codebase for version inconsistency using the following priority list. I
 - Apply the minimum change required to achieve consistency.
 - Prepend licensing headers on newly created files if applicable.
 - Execute `pnpm test` to verify that version changes do not affect test outcomes.
-- **Log Updates:** Append your execution record to `.github/nightly-logs/version-integrity-coverage.log`.
+- **Log Updates:** Append your execution record to `.github/nightly-logs/06-version-integrity-coverage.log`.
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.
@@ -92,5 +92,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm reconciled values now match across all locations.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/version-integrity-coverage.log
+  - Updated .github/nightly-logs/06-version-integrity-coverage.log
   ```
