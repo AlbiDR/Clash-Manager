@@ -18,248 +18,66 @@
  *   before backend activation.
  * ============================================================================
  */
-import { ref, computed, watch } from "vue";
+import { watch } from "vue";
 import { Icon, DurationInput } from "@shared";
-import { useVoyageStore } from "../composables/useVoyageStore";
+import { useVoyageForm } from "../composables/useVoyageForm";
 import { getDurationUnits } from "@core/utils/formatters";
 import { VOYAGE_DEFAULT_TARGET, VOYAGE_MAX_TARGET } from "@core/config";
-import { useToast } from "@core/services/useToast";
-import type { T2TInput } from "../types";
 
-const store = useVoyageStore();
-const toast = useToast();
-
-// --- FORM STATE ---
+const {
+  targetCrowns,
+  startsIn,
+  endsIn,
+  isFormValid,
+  validationHint,
+  isScheduleOnlyMode,
+  onTargetInput,
+  handleActivate,
+  handleCancel,
+  store
+} = useVoyageForm();
 
 /**
- * Representation of relative Time-to-Timestamp (T2T) input units.
- * Supports numeric input or empty string for UI state.
+ * Reactivity Logic: Synchronize form with store when an active event is loaded.
+ *
+ * @remarks
+ * This logic is kept in the component to maintain separation between
+ * generic form state and specific store synchronization side-effects.
  */
-interface FormT2T {
-  days: number | '';
-  hours: number | '';
-  minutes: number | '';
-}
-
-/** The primary crown goal for the Voyage event. Clamped between 1-9999. */
-const targetCrowns = ref<number | ''>(VOYAGE_DEFAULT_TARGET);
-
-/** Relative delay until the event begins. Zero indicates immediate start. */
-const startsIn = ref<FormT2T>({ days: 0, hours: 0, minutes: 0 });
-
-/** Relative duration until the event concludes. Must be greater than startsIn. */
-const endsIn   = ref<FormT2T>({ days: 1, hours: 0, minutes: 0 });
-
-// [DECISION LOG] STATE SYNCHRONIZATION
-// Rationale: When an event is active or pending, we populate the form from the store state
-// to provide context and allow for "Update Event" or promotion/cancellation workflows.
 watch(
-  () => [
-    store.isActive,
-    store.isPending,
-    store.isAwaitingEnd,
-    store.targetCrowns,
-    store.summary?.event?.end_at
-  ] as const,
-  ([isActive, isPending, isAwaitingEnd, target, endAt]) => {
-    if (isActive || isPending || isAwaitingEnd) {
-      if (target > 0) targetCrowns.value = target;
+  () => store.isActive,
+  (active) => {
+    if (active && store.summary?.event) {
+      targetCrowns.value = store.summary.event.target_crowns;
+
+      const endAt = store.summary.event.end_at;
       if (endAt) {
-        const end = new Date(endAt).getTime();
-        const now = new Date().getTime();
-        const diff = end - now;
-        if (diff > 0) {
-          const units = getDurationUnits(diff);
-          endsIn.value = {
-            days: units.days,
-            hours: units.hours,
-            minutes: units.minutes
-          };
-        } else {
-          endsIn.value = { days: 0, hours: 0, minutes: 0 };
-        }
+        const diff = new Date(endAt).getTime() - Date.now();
+        const units = getDurationUnits(diff);
+        endsIn.value = {
+          days: units.days,
+          hours: units.hours,
+          minutes: units.minutes,
+        };
       }
     }
   },
   { immediate: true }
 );
 
-// --- VALIDATION ---
-
 /**
- * Normalises a potentially NaN value from an empty number input to 0.
- *
- * @param val - The raw input value.
- * @returns A safe numeric representation.
+ * Pre-populate 'Ends In' with a 1-day default for new events
+ * to improve user experience (one less field to fill).
  */
-function sanitize(val: number | '' | null): number {
-  if (val === '' || val === null || isNaN(Number(val))) return 0;
-  return Number(val) < 0 ? 0 : Number(val);
-}
-
-/**
- * Event handler for the primary crown target input.
- * Enforces a hard boundary of [0, VOYAGE_MAX_TARGET].
- */
-function onTargetInput() {
-  if (targetCrowns.value === '') return;
-  if (Number(targetCrowns.value) < 0) targetCrowns.value = 0;
-  if (Number(targetCrowns.value) > VOYAGE_MAX_TARGET) {
-    targetCrowns.value = VOYAGE_MAX_TARGET;
-  }
-}
-
-/** Total 'Starts In' duration expressed in seconds for comparison. */
-const totalStartSeconds = computed(() => {
-  const d = sanitize(startsIn.value.days);
-  const h = sanitize(startsIn.value.hours);
-  const m = sanitize(startsIn.value.minutes);
-  return d * 86400 + h * 3600 + m * 60;
-});
-
-/** Total 'Ends In' duration expressed in seconds for comparison. */
-const totalEndSeconds = computed(() => {
-  const d = sanitize(endsIn.value.days);
-  const h = sanitize(endsIn.value.hours);
-  const m = sanitize(endsIn.value.minutes);
-  return d * 86400 + h * 3600 + m * 60;
-});
-
-/** Validated numeric crown target. */
-const safeTargetCrowns = computed(() => sanitize(targetCrowns.value));
-
-/** Form mode helper: scheduling-only when startsIn is set but endsIn is zero and no event is active. */
-const isScheduleOnlyMode = computed(() => {
-  return store.status === 'IDLE' && totalStartSeconds.value > 0 && totalEndSeconds.value === 0;
-});
-
-/** True when the event is ACTIVE but end_at has not been recorded yet. */
-const isAwaitingEndSet = computed(() => store.isActive && !store.endsAt);
-
-/**
- * Comprehensive form validity state.
- * Rationale:
- * - In Active Update mode: crowns > 0 && endsIn > 0.
- * - In Awaiting End mode (promoting PENDING): crowns > 0 && endsIn > 0.
- * - In Schedule-Only mode: crowns > 0 && startsIn > 0 && endsIn == 0.
- * - In Normal direct activation mode: crowns > 0 && endsIn > startsIn.
- */
-const isFormValid = computed(() => {
-  if (safeTargetCrowns.value <= 0) return false;
-
-  if (isAwaitingEndSet.value) {
-    // ACTIVE but no end_at: only the endsIn field is required.
-    return totalEndSeconds.value > 0;
-  }
-  if (store.isActive) {
-    return totalEndSeconds.value > 0;
-  }
-  if (isScheduleOnlyMode.value) {
-    return totalStartSeconds.value > 0;
-  }
-
-  // Normal mode direct activation: endsIn must be filled and greater than startsIn
-  return totalEndSeconds.value > 0 && totalEndSeconds.value > totalStartSeconds.value;
-});
-
-/**
- * User-facing validation feedback string.
- */
-const validationHint = computed(() => {
-  if (safeTargetCrowns.value <= 0) return "Set a crown target above 0.";
-  if (isAwaitingEndSet.value || store.isActive) {
-    if (totalEndSeconds.value === 0) return "Set an 'Ends In' duration.";
-    return null;
-  }
-  if (isScheduleOnlyMode.value) return null;
-
-  if (totalEndSeconds.value === 0 && totalStartSeconds.value === 0) {
-    return "Set an 'Ends In' duration or a 'Starts In' scheduling delay.";
-  }
-  if (totalEndSeconds.value > 0 && totalEndSeconds.value <= totalStartSeconds.value) {
-    return "'Ends In' must be after 'Starts In'.";
-  }
-  return null;
-});
-
-// --- ACTIONS ---
-
-/**
- * Orchestrates the activation, scheduling, promotion, or update of a Clan Voyage.
- */
-async function handleActivate() {
-  if (store.loading) return;
-
-  if (!isFormValid.value) {
-    return;
-  }
-
-  try {
-    const strictStartsIn: T2TInput = {
-      days: sanitize(startsIn.value.days),
-      hours: sanitize(startsIn.value.hours),
-      minutes: sanitize(startsIn.value.minutes),
-    };
-    const strictEndsIn: T2TInput = {
-      days: sanitize(endsIn.value.days),
-      hours: sanitize(endsIn.value.hours),
-      minutes: sanitize(endsIn.value.minutes),
-    };
-
-    if (isScheduleOnlyMode.value) {
-      // Scheduling a pre-event with start time only
-      await store.scheduleVoyage(safeTargetCrowns.value, strictStartsIn);
-      toast.success("Pre-event scheduled successfully.");
-    } else if (store.isActive) {
-      // Modifying active target/ends duration
-      await store.activateVoyage(safeTargetCrowns.value, strictStartsIn, strictEndsIn);
-      toast.success("Voyage event updated successfully.");
-    } else {
-      // Normal direct activation (both set immediately or immediate activation)
-      await store.activateVoyage(safeTargetCrowns.value, strictStartsIn, strictEndsIn);
-      toast.success("Clan Voyage activated successfully.");
+watch(
+  () => store.status,
+  (status) => {
+    if (status === 'IDLE' && endsIn.value.days === 0 && endsIn.value.hours === 0 && endsIn.value.minutes === 0) {
+      endsIn.value.days = 1;
     }
-  } catch (err: any) {
-    console.error('[VoyageSetupForm] handleActivate error:', err);
-    toast.error(err?.message ?? "Operation failed.");
-  }
-}
-
-/**
- * Sets the end time on the already-ACTIVE voyage once the official duration
- * is publicly announced in-game.
- */
-async function handleSetEnd() {
-  if (store.loading) return;
-  if (!isFormValid.value) return;
-
-  try {
-    const strictEndsIn: T2TInput = {
-      days: sanitize(endsIn.value.days),
-      hours: sanitize(endsIn.value.hours),
-      minutes: sanitize(endsIn.value.minutes),
-    };
-    await store.setVoyageEnd(strictEndsIn);
-    toast.success("End time set successfully.");
-  } catch (err: any) {
-    console.error('[VoyageSetupForm] handleSetEnd error:', err);
-    toast.error(err?.message ?? "Operation failed.");
-  }
-}
-
-/** Cancels a scheduled pre-event */
-async function handleCancel() {
-  if (store.loading) return;
-  if (confirm("Are you sure you want to cancel the scheduled Clan Voyage?")) {
-    try {
-      await store.cancelSchedule();
-      toast.success("Scheduled Clan Voyage cancelled.");
-    } catch (err: any) {
-      console.error('[VoyageSetupForm] handleCancel error:', err);
-      toast.error(err?.message ?? "Cancellation failed.");
-    }
-  }
-}
+  },
+  { immediate: true }
+);
 </script>
 
 <template>

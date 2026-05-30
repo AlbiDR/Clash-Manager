@@ -34,9 +34,9 @@ Upgrade priorities are defined by interchangeable strategies:
 - **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
 ### Constants Registry (Registry.ts)
-Acts as a local feature-level proxy for game-specific data, re-exporting authoritative constants from the Layer 1 core substrate (`@core/utils/game.ts`) and providing feature-specific calibrations.
-- **Authoritative Substrate**: Re-exports `GOLD_COST_TABLE`, `CARD_XP_TABLE`, and `MATERIAL_REQUIREMENTS` from `@core`.
+Acts as a local feature-level engine for card-specific data and calibrations, consuming authoritative constants from the Layer 1 core substrate (`@core/utils/game.ts`).
 - **Feature Calibration**: Houses specific overrides and logic calibrations required exclusively by the Laboratory simulation engine.
+- **Upgrade Resolution**: Implements the `getUpgradeData` helper to resolve costs and gains for specific card rarities and levels by mapping core constants to simulation requirements.
 
 ## State Management
 Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.
