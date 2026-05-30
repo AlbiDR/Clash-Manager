@@ -48,6 +48,7 @@ export interface ThemeTokens {
 
     outline: string;
     outlineVariant: string;
+    onSurfaceVariant: string;
 
     glass: string;
     glassBorder: string;
