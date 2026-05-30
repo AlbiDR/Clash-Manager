@@ -350,3 +350,31 @@ export function formatHeaderDescription(text: string): string {
       .replace(RE_NEWLINE, "<br>")
   );
 }
+
+/**
+ * Normalizes a potentially NaN value from an empty number input to 0.
+ * Enforces a minimum value of 0.
+ *
+ * @param val - The raw input value.
+ * @returns A safe numeric representation.
+ */
+export function sanitizeNumericInput(val: number | '' | null): number {
+  if (val === '' || val === null || isNaN(Number(val))) return 0;
+  return Number(val) < 0 ? 0 : Number(val);
+}
+
+/**
+ * Converts a duration in days, hours, and minutes to total seconds.
+ *
+ * @param days - Number of days.
+ * @param hours - Number of hours.
+ * @param minutes - Number of minutes.
+ * @returns Total duration in seconds.
+ */
+export function durationToSeconds(
+  days: number,
+  hours: number,
+  minutes: number
+): number {
+  return days * 86400 + hours * 3600 + minutes * 60;
+}
