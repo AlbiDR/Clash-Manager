@@ -172,8 +172,8 @@ export function useVoyageForm() {
       };
 
       if (store.isAwaitingEnd) {
-        await store.activateScheduledVoyage(safeTargetCrowns.value, strictEndsIn);
-        toast.success("Clan Voyage activated successfully.");
+        await store.setVoyageEnd(strictEndsIn);
+        toast.success("Voyage end time set successfully.");
       } else if (isScheduleOnlyMode.value) {
         await store.scheduleVoyage(safeTargetCrowns.value, strictStartsIn);
         toast.success("Pre-event scheduled successfully.");
