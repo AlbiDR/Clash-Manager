@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-31] PR #716: chore(deps): bump @ast-grep/cli from ^0.42.2 to ^0.43.0
+**Commit**: `7b6fad861cd838ab0ad11f0c67158555435e8172`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/716)
+
+### Description
+Updated `@ast-grep/cli` to `^0.43.0` in the monorepo catalog and synchronized the lockfile. Verified the change via the full monorepo test gate and updated the dependency audit log.
+
+---
+*PR created automatically by Jules for task [14285602595283103775](https://jules.google.com/task/14285602595283103775) started by @AlbiDR*
+
+---
+
 ## [2026-05-31] PR #715: chore(version): no drift found
 **Commit**: `5d7557d97691833025cda03bdf0c1bdbd0ccd657`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/715)
