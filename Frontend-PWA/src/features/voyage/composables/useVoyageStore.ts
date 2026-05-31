@@ -195,8 +195,8 @@ export const useVoyageStore = defineStore("voyage", () => {
           contributions: contributionsData.map(contributionRow => ({
             player_tag: contributionRow.player_tag,
             player_name: contributionRow.player_name,
-            crowns: contributionRow.crowns,
-            voyage_crown_pct: Number(contributionRow.voyage_crown_pct),
+            total_voyage_crowns: contributionRow.total_voyage_crowns,
+            percentage_voyage_crowns: Number(contributionRow.percentage_voyage_crowns),
             performance_score: contributionRow.performance_score ? Number(contributionRow.performance_score) : undefined
           })),
           total_voyage_crowns: summaryData.total_voyage_crowns,
