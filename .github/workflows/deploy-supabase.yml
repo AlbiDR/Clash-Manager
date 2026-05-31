@@ -25,7 +25,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.101.0
 
       - name: Pre-flight Script Validation
         # Clinical check to prevent broken scripts from blocking the heavy CLI logic.
