@@ -156,7 +156,7 @@ export interface VoyageContribution {
   player_tag: string;
   player_name?: string;
   crowns: number;
-  voyage_crown_pct: number;
+  voyage_crown_percentage: number;
   performance_score?: number;
 }
 

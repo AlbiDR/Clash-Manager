@@ -71,7 +71,7 @@ describe("useVoyageStore", () => {
         progress_ratio: 0.5
       };
       const mockContributions = [
-        { player_tag: "#P1", player_name: "Player 1", crowns: 100, voyage_crown_pct: "20", performance_score: 85 }
+        { player_tag: "#P1", player_name: "Player 1", crowns: 100, voyage_crown_percentage: "20", performance_score: 85 }
       ];
 
       vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
@@ -83,7 +83,7 @@ describe("useVoyageStore", () => {
       expect(store.summary).not.toBeNull();
       expect(store.summary?.event.status).toBe("ACTIVE");
       expect(store.summary?.total_crowns).toBe(500);
-      expect(store.summary?.contributions[0].voyage_crown_pct).toBe(20);
+      expect(store.summary?.contributions[0].voyage_crown_percentage).toBe(20);
       expect(store.status).toBe("ACTIVE");
       expect(store.isActive).toBe(true);
       expect(store.progressRatio).toBe(0.5);
