@@ -57,36 +57,36 @@ export type Database = {
       }
       clan_voyage_contributions: {
         Row: {
-          crowns: number | null
           id: number
-          total_crowns: number | null
-          total_crowns_at: string | null
+          manual_voyage_crowns: number | null
+          manual_voyage_crowns_at: string | null
+          percentage_voyage_crowns: number | null
           player_name: string | null
           player_tag: string
+          total_voyage_crowns: number | null
           updated_at: string | null
-          voyage_crown_percentage: number | null
           voyage_id: number
         }
         Insert: {
-          crowns?: number | null
           id?: never
-          total_crowns?: number | null
-          total_crowns_at?: string | null
+          manual_voyage_crowns?: number | null
+          manual_voyage_crowns_at?: string | null
+          percentage_voyage_crowns?: number | null
           player_name?: string | null
           player_tag: string
+          total_voyage_crowns?: number | null
           updated_at?: string | null
-          voyage_crown_percentage?: number | null
           voyage_id: number
         }
         Update: {
-          crowns?: number | null
           id?: never
-          total_crowns?: number | null
-          total_crowns_at?: string | null
+          manual_voyage_crowns?: number | null
+          manual_voyage_crowns_at?: string | null
+          percentage_voyage_crowns?: number | null
           player_name?: string | null
           player_tag?: string
+          total_voyage_crowns?: number | null
           updated_at?: string | null
-          voyage_crown_percentage?: number | null
           voyage_id?: number
         }
         Relationships: [
@@ -913,9 +913,11 @@ export type Database = {
       }
       voyage_contributions: {
         Row: {
-          crowns: number | null
+          percentage_voyage_crowns: number | null
           performance_score: number | null
+          player_name: string | null
           player_tag: string | null
+          total_voyage_crowns: number | null
         }
         Relationships: []
       }

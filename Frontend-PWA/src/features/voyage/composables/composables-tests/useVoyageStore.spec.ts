@@ -67,11 +67,11 @@ describe("useVoyageStore", () => {
           start_at: "2026-01-01T00:00:00Z",
           end_at: "2026-01-07T00:00:00Z"
         },
-        total_crowns: 500,
+        total_voyage_crowns: 500,
         progress_ratio: 0.5
       };
       const mockContributions = [
-        { player_tag: "#P1", player_name: "Player 1", crowns: 100, voyage_crown_percentage: "20", performance_score: 85 }
+        { player_tag: "#P1", player_name: "Player 1", total_voyage_crowns: 100, percentage_voyage_crowns: "20", performance_score: 85 }
       ];
 
       vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
@@ -82,8 +82,8 @@ describe("useVoyageStore", () => {
 
       expect(store.summary).not.toBeNull();
       expect(store.summary?.event.status).toBe("ACTIVE");
-      expect(store.summary?.total_crowns).toBe(500);
-      expect(store.summary?.contributions[0].voyage_crown_percentage).toBe(20);
+      expect(store.summary?.total_voyage_crowns).toBe(500);
+      expect(store.summary?.contributions[0].percentage_voyage_crowns).toBe(20);
       expect(store.status).toBe("ACTIVE");
       expect(store.isActive).toBe(true);
       expect(store.progressRatio).toBe(0.5);
@@ -117,7 +117,7 @@ describe("useVoyageStore", () => {
     it("should cap progress ratio at 1.0", async () => {
        const mockSummary = {
         event: { status: "COMPLETED", target_crowns: 1000 },
-        total_crowns: 1200,
+        total_voyage_crowns: 1200,
         progress_ratio: 1.2
       };
       vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
@@ -133,7 +133,7 @@ describe("useVoyageStore", () => {
     it("should setup realtime listeners when status is ACTIVE", async () => {
       const mockSummary = {
         event: { status: "ACTIVE" },
-        total_crowns: 0,
+        total_voyage_crowns: 0,
         progress_ratio: 0
       };
       vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
@@ -207,7 +207,7 @@ describe("useVoyageStore", () => {
       store.summary = {
         event: { id: 42, status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null, clan_tag: "#CLAN", activated_by: null, is_victory: false },
         contributions: [],
-        total_crowns: 0,
+        total_voyage_crowns: 0,
         progress_ratio: 0
       };
 
@@ -236,7 +236,7 @@ describe("useVoyageStore", () => {
       store.summary = {
         event: { id: 42, status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null, clan_tag: "#CLAN", activated_by: null, is_victory: false },
         contributions: [],
-        total_crowns: 0,
+        total_voyage_crowns: 0,
         progress_ratio: 0
       };
 

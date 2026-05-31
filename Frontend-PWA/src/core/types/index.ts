@@ -155,16 +155,16 @@ interface VoyageEvent {
 export interface VoyageContribution {
   player_tag: string;
   player_name?: string;
-  crowns: number;
-  voyage_crown_percentage: number;
+  total_voyage_crowns: number;
+  percentage_voyage_crowns: number;
   performance_score?: number;
 }
 
 export interface VoyageSummary {
   event: VoyageEvent;
   contributions: VoyageContribution[];
-  total_crowns: number;
-  progress_ratio: number; // 0.0 – 1.0
+  total_voyage_crowns: number;
+  progress_ratio: number; // 0.0 - 1.0
 }
 
 /**
