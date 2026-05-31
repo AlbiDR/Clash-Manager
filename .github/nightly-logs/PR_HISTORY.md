@@ -1,6 +1,27 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-31] PR #714: docs(tsdoc): enhance MaintenanceClient interface contracts
+**Commit**: `9167431fbadd8b69fd48de263493227caefbf5a7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/714)
+
+### Description
+This Pull Request enhances the TSDoc documentation for `MaintenanceClient.ts` as part of the Stage 5 (Interface Contract Architect) documentation effort.
+
+Key changes:
+- **MaintenanceClient.ts**: Added comprehensive TSDoc blocks to `triggerBackendUpdate` and `subscribeToPush`, including parameters, return types, remarks (ADR references), and side effects.
+- **Audit Log**: Updated `.github/nightly-logs/05-documentation-tsdoc-coverage.log` to reflect the improvements.
+
+Verification:
+- TSDoc accuracy confirmed against function signatures.
+- ADR Section III (Validation Boundaries) alignment verified.
+- Full monorepo test gate passed (1090 tests passed, 1 skipped).
+
+---
+*PR created automatically by Jules for task [5834648415836073512](https://jules.google.com/task/5834648415836073512) started by @AlbiDR*
+
+---
+
 ## [2026-05-31] PR #713: docs(readme): reconcile voyage feature lifecycle drift
 **Commit**: `86f6cc042c93047eb4af662c10029026a35cc3c3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/713)
