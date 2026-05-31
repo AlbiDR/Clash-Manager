@@ -35,6 +35,7 @@ import {
   cancelScheduledVoyageEvent as apiCancelScheduledVoyageEvent,
   setVoyageEnd as apiSetVoyageEnd
 } from "@core/api/VoyageClient";
+import { t2tToTimestamp } from "@core/utils/formatters";
 
 export const useVoyageStore = defineStore("voyage", () => {
   /**
@@ -111,22 +112,6 @@ export const useVoyageStore = defineStore("voyage", () => {
   const contributions = computed(
     () => summary.value?.contributions ?? []
   );
-
-  // --- T2T UTILITY ---
-
-  /**
-   * Converts a relative Time-to-Timestamp input into an absolute ISO-8601 string.
-   *
-   * @param input - The duration in days, hours, and minutes.
-   * @returns An ISO-8601 timestamp string relative to the current time.
-   */
-  function t2tToTimestamp(input: T2TInput): string {
-    const totalMs =
-      input.days * 86_400_000 +
-      input.hours * 3_600_000 +
-      input.minutes * 60_000;
-    return new Date(Date.now() + totalMs).toISOString();
-  }
 
   // --- REALTIME ---
 
@@ -416,7 +401,6 @@ export const useVoyageStore = defineStore("voyage", () => {
     targetCrowns,
     endsAt,
     contributions,
-    t2tToTimestamp,
     refresh,
     scheduleVoyage,
     setVoyageEnd,

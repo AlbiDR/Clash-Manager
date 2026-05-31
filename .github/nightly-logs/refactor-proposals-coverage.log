@@ -1,1 +1,2 @@
 2026-09-02 | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Extracted form logic to useVoyageForm.ts, centralized sanitization to @core/utils/formatters.ts.
+2026-09-03 | Frontend-PWA/src/features/voyage | Relocated t2tToTimestamp to core/utils and healed useVoyageForm logic crack.

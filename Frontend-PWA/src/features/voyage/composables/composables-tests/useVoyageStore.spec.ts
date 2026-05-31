@@ -6,6 +6,7 @@ import { setActivePinia, createPinia } from "pinia";
 import { useVoyageStore } from "../useVoyageStore";
 import * as SupabaseClient from "@core/api/SupabaseClient";
 import * as VoyageClient from "@core/api/VoyageClient";
+import { t2tToTimestamp } from "@core/utils/formatters";
 
 vi.mock("@core/api/SupabaseClient", () => ({
   createSupabaseClient: vi.fn(() => ({
@@ -48,10 +49,9 @@ describe("useVoyageStore", () => {
 
   describe("t2tToTimestamp", () => {
     it("should calculate correct future timestamp", () => {
-      const store = useVoyageStore();
       const input = { days: 1, hours: 2, minutes: 30 };
       // 1 day (86400s) + 2 hours (7200s) + 30 mins (1800s) = 95400s = 95400000ms
-      const result = store.t2tToTimestamp(input);
+      const result = t2tToTimestamp(input);
       expect(result).toBe("2026-01-02T02:30:00.000Z");
     });
   });
