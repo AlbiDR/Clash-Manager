@@ -209,7 +209,7 @@ export const useVoyageStore = defineStore("voyage", () => {
             player_tag: c.player_tag,
             player_name: c.player_name,
             crowns: c.crowns,
-            voyage_crown_pct: Number(c.voyage_crown_pct),
+            voyage_crown_percentage: Number(c.voyage_crown_percentage),
             performance_score: c.performance_score ? Number(c.performance_score) : undefined
           })),
           total_crowns: summaryData.total_crowns,

@@ -65,7 +65,7 @@ describe("VoyageClient", () => {
     });
 
     it("fetchVoyageContributions returns validated array", async () => {
-      const mockData = [{ player_tag: "TAG", crowns: 10, voyage_crown_pct: 0.01 }];
+      const mockData = [{ player_tag: "TAG", crowns: 10, voyage_crown_percentage: 0.01 }];
       vi.mocked(mockFrom.select).mockResolvedValue({ data: mockData, error: null });
 
       const result = await VoyageClient.fetchVoyageContributions();

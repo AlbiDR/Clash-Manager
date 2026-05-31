@@ -59,31 +59,34 @@ export type Database = {
         Row: {
           crowns: number | null
           id: number
-          manual_crowns: number | null
+          total_crowns: number | null
+          total_crowns_at: string | null
           player_name: string | null
           player_tag: string
           updated_at: string | null
-          voyage_crown_pct: number | null
+          voyage_crown_percentage: number | null
           voyage_id: number
         }
         Insert: {
           crowns?: number | null
           id?: never
-          manual_crowns?: number | null
+          total_crowns?: number | null
+          total_crowns_at?: string | null
           player_name?: string | null
           player_tag: string
           updated_at?: string | null
-          voyage_crown_pct?: number | null
+          voyage_crown_percentage?: number | null
           voyage_id: number
         }
         Update: {
           crowns?: number | null
           id?: never
-          manual_crowns?: number | null
+          total_crowns?: number | null
+          total_crowns_at?: string | null
           player_name?: string | null
           player_tag?: string
           updated_at?: string | null
-          voyage_crown_pct?: number | null
+          voyage_crown_percentage?: number | null
           voyage_id?: number
         }
         Relationships: [

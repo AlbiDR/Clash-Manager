@@ -400,7 +400,7 @@ export const VoyageContributionSchema = v.object({
   player_tag: SafeStringPipe,
   player_name: v.optional(SafeStringPipe),
   crowns: SafeNumberPipe,
-  voyage_crown_pct: SafeNumberPipe,
+  voyage_crown_percentage: SafeNumberPipe,
   performance_score: v.optional(SafeNumberPipe),
 });
 
