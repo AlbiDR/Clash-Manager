@@ -1,0 +1,27 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2026 AlbiDR
+
+-- 1. Temporarily drop the foreign key constraint to allow primary key modification
+ALTER TABLE drivers.clan_voyage_contributions 
+    DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_fkey;
+
+-- 2. Normalize the voyage ID from 4 to 2
+UPDATE drivers.clan_voyage 
+SET id = 2 
+WHERE id = 4;
+
+-- 3. Cascade the ID normalization to the contributions table
+UPDATE drivers.clan_voyage_contributions 
+SET voyage_id = 2 
+WHERE voyage_id = 4;
+
+-- 4. Re-establish the foreign key with CASCADE rules to prevent future friction
+ALTER TABLE drivers.clan_voyage_contributions 
+    ADD CONSTRAINT clan_voyage_contributions_voyage_id_fkey 
+    FOREIGN KEY (voyage_id) 
+    REFERENCES drivers.clan_voyage(id) 
+    ON UPDATE CASCADE 
+    ON DELETE CASCADE;
+
+-- 5. Reset the sequence so future voyages increment correctly from the current max
+SELECT setval(pg_get_serial_sequence('drivers.clan_voyage', 'id'), COALESCE((SELECT MAX(id) FROM drivers.clan_voyage), 1));
