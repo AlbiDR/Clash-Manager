@@ -347,3 +347,28 @@ When live data is unavailable or inconsistent during development or automated te
 - [ ] **Structural IQ:** `npx ast-grep scan` run for pattern compliance.
 - [ ] **Architectural IQ:** `npx depcruise` run to verify zero layer violations.
 - [ ] **Licensing:** Mandatory SPDX and Copyright headers at line 1.
+- [ ] **Retention Source:** Retention window is read dynamically from `[Domain]_pruning_config` or equivalent config structures, not hardcoded.
+- [ ] **Cascade Completeness:** Strict foreign key `ON DELETE CASCADE` verified for all downstream systems (Roster, War, Clan Voyage) to ensure zero data fragmentation upon player pruning.
+- [ ] **Expiry Semantics:** `expires_at TIMESTAMPTZ` column used for soft expiry; boolean flags prohibited.
+
+---
+
+## XI. Data Lifecycle Management (Smart Pruning)
+
+Supabase is not an archive or a data warehouse. To maintain a lean, drift-free, and high-performance backend, stale data must be systematically purged. Fragmented, orphaned, or speculative history is a violation of the CleanStack core.
+
+### 1. The Strict Cascading Purge Contract
+If, and only if, a root entity (such as a Player) is pruned, **all of their associated data across all sub-systems (including Roster, War, Clan Voyage systems, etc) MUST be purged completely**. Retaining residual activity telemetry, attack records, or contribution entries from pruned players is an architectural failure.
+
+### 2. Schema-Enforced Integrity (`ON DELETE CASCADE`)
+To guarantee that deletion is atomic and leaves zero orphan fragments, all tables containing dependent data (e.g., war attacks, voyage contributions, roster history) MUST explicitly configure their foreign key constraints referencing the parent table with `ON DELETE CASCADE`. Cascades are enforced strictly at the database schema level.
+
+### 3. Expiry and Inactivity Grace Periods
+Pruning must only target entities that have crossed a strict safety threshold of inactivity (e.g., a player who has left the clan and whose absence is continuous for 30 days). 
+- **Soft Expiry Phase:** An inactive entity is marked with a nullable `expires_at TIMESTAMPTZ` timestamp when they leave or become inactive. RLS policies and application queries must instantly filter out records where `expires_at <= now()`.
+- **Hard Purge Phase:** A scheduled backend worker or migration event performs the permanent DELETE operation once the current time exceeds `expires_at` plus the retention window.
+- **Flag Prohibition:** Boolean soft-delete flags (e.g., `is_deleted`) are strictly forbidden. They lack temporal semantics, prevent automated aging calculations, and pollute live queries indefinitely.
+
+### 4. Dynamic Configurations (No Magic Numbers)
+Retention periods and grace intervals must never be hardcoded as literals in SQL migrations, database functions, or Edge Function code. All retention parameters must be cataloged in a configuration table (e.g., `[Domain]_pruning_config`) and joined or queried dynamically when evaluating pruning eligibility.
+
