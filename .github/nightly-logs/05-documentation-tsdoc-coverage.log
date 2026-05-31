@@ -70,3 +70,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-05-27 | Frontend-PWA/src/core/api/DataSchemas.ts | Documented authoritative validation boundaries and major exported schemas with TSDoc.
 2026-05-28 | Frontend-PWA/src/core/theme/tokens.ts | Documented theme token substrate and transformation logic with ADR Section I/II mappings and decision logs.
 2026-05-30 | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Documented interface contracts and side effects for the recently refactored form orchestrator.
+2026-09-02 | Frontend-PWA/src/core/api/MaintenanceClient.ts | Enhanced interface contracts with missing @param, @remarks (ADR link), and @sideeffects.
