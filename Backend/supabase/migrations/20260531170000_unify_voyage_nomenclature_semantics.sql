@@ -643,4 +643,11 @@ SELECT
 
 GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 
+-- 10. Data Correction: Ensure total_voyage_crowns is at least manual_voyage_crowns for historical records
+UPDATE drivers.clan_voyage_contributions
+SET 
+    total_voyage_crowns = manual_voyage_crowns,
+    percentage_voyage_crowns = LEAST(ROUND((manual_voyage_crowns::numeric / NULLIF((SELECT target_crowns FROM drivers.clan_voyage WHERE id = voyage_id), 0)::numeric) * 100, 2), 100.0)
+WHERE manual_voyage_crowns > total_voyage_crowns;
+
 COMMIT;
