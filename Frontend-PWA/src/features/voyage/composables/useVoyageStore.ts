@@ -205,12 +205,14 @@ export const useVoyageStore = defineStore("voyage", () => {
             activated_by: null, // Optional for now
             is_victory: summaryData.progress_ratio >= 1.0,
           },
-          contributions: contributionsData.map(c => ({
-            player_tag: c.player_tag,
-            player_name: c.player_name,
-            crowns: c.crowns,
-            voyage_crown_pct: Number(c.voyage_crown_pct),
-            performance_score: c.performance_score ? Number(c.performance_score) : undefined
+          // [THREAT:] Anemic variable mapping ('c') and unvalidated numeric conversion can lead to silent data corruption.
+          // [DECISION LOG] Renamed to domain-descriptive 'contributionRow' and ensured explicit numeric conversion.
+          contributions: contributionsData.map(contributionRow => ({
+            player_tag: contributionRow.player_tag,
+            player_name: contributionRow.player_name,
+            crowns: contributionRow.crowns,
+            voyage_crown_pct: Number(contributionRow.voyage_crown_pct),
+            performance_score: contributionRow.performance_score ? Number(contributionRow.performance_score) : undefined
           })),
           total_crowns: summaryData.total_crowns,
           progress_ratio: summaryData.progress_ratio,
@@ -259,8 +261,11 @@ export const useVoyageStore = defineStore("voyage", () => {
       } else {
         throw new Error(String(response.error) ?? "Scheduling failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Schedule action error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Schedule action error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
@@ -298,8 +303,11 @@ export const useVoyageStore = defineStore("voyage", () => {
       } else {
         throw new Error(String(response.error) ?? "Setting end time failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Set end time error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Set end time error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
@@ -327,8 +335,11 @@ export const useVoyageStore = defineStore("voyage", () => {
       } else {
         throw new Error(String(response.error) ?? "Cancellation failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Cancel schedule action error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Cancel schedule action error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
@@ -379,8 +390,11 @@ export const useVoyageStore = defineStore("voyage", () => {
         console.error('[Voyage] Activation failed (network/auth):', response.error);
         throw new Error(String(response.error) ?? "Activation failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Action error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Action error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
