@@ -634,7 +634,7 @@ SELECT
         'end_at',        v.end_at,
         'is_victory',    (ts.total_crowns >= v.target_crowns)
     ) FROM current_voyage v JOIN total_stats ts ON ts.voyage_id = v.id) AS event,
-    COALESCE((SELECT ts.total_crowns FROM total_stats ts), 0) AS total_crowns,
+    COALESCE((SELECT ts.total_crowns FROM total_stats ts), 0) AS total_voyage_crowns,
     COALESCE(
         (SELECT (ts.total_crowns::numeric / NULLIF(v.target_crowns, 0)::numeric)
          FROM current_voyage v JOIN total_stats ts ON ts.voyage_id = v.id),
