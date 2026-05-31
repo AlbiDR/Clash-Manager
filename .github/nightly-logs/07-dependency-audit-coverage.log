@@ -72,6 +72,7 @@
 | vue | ^3.5.34 | ^3.5.35 | 2026-09-02 | PASS |
 | vite-plugin-pwa | ^1.2.0 | ^1.3.0 | 2026-09-02 | PASS |
 | workbox-build | NEW | ^7.4.1 | 2026-09-02 | PASS |
+| @ast-grep/cli | ^0.42.2 | ^0.43.0 | 2026-05-31 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import type { MomentumInfo } from "@core/types";
+import type { MomentumInfo, T2TInput } from "@core/types";
 
 /**
  * MODULE: FORMATTERS (Layer 1)
@@ -377,4 +377,18 @@ export function durationToSeconds(
   minutes: number
 ): number {
   return days * 86400 + hours * 3600 + minutes * 60;
+}
+
+/**
+ * Converts a relative Time-to-Timestamp input into an absolute ISO-8601 string.
+ *
+ * @param input - The duration in days, hours, and minutes.
+ * @returns An ISO-8601 timestamp string relative to the current time.
+ */
+export function t2tToTimestamp(input: T2TInput): string {
+  const totalMs =
+    input.days * 86_400_000 +
+    input.hours * 3_600_000 +
+    input.minutes * 60_000;
+  return new Date(Date.now() + totalMs).toISOString();
 }

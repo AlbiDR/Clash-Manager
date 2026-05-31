@@ -4,6 +4,7 @@
 import { ConsoleLayout, SkeletonSettingsCard } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
+import { defineAsyncComponent } from "vue";
 
 // Settings Components
 import {
@@ -15,6 +16,8 @@ import {
   BackendRefresher,
   RecoverySettings,
 } from "../components";
+
+const EventManagement = defineAsyncComponent(() => import("../../voyage/components/EventManagement.vue"));
 
 const {
   modules,
@@ -32,7 +35,7 @@ const { isShowcaseMode } = useShowcaseMode();
     v-on="layoutEvents"
   >
     <div class="settings-content">
-      <component :is="'EventManagement'" :initially-expanded="isShowcaseMode" />
+      <EventManagement :initially-expanded="isShowcaseMode" />
       <AppearanceSettings :initially-expanded="isShowcaseMode" />
       <NotificationSettings :initially-expanded="isShowcaseMode" />
       <FeatureSettings :initially-expanded="isShowcaseMode" />

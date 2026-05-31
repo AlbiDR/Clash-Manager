@@ -35,6 +35,7 @@ import {
   cancelScheduledVoyageEvent as apiCancelScheduledVoyageEvent,
   setVoyageEnd as apiSetVoyageEnd
 } from "@core/api/VoyageClient";
+import { t2tToTimestamp } from "@core/utils/formatters";
 
 export const useVoyageStore = defineStore("voyage", () => {
   /**
@@ -111,22 +112,6 @@ export const useVoyageStore = defineStore("voyage", () => {
   const contributions = computed(
     () => summary.value?.contributions ?? []
   );
-
-  // --- T2T UTILITY ---
-
-  /**
-   * Converts a relative Time-to-Timestamp input into an absolute ISO-8601 string.
-   *
-   * @param input - The duration in days, hours, and minutes.
-   * @returns An ISO-8601 timestamp string relative to the current time.
-   */
-  function t2tToTimestamp(input: T2TInput): string {
-    const totalMs =
-      input.days * 86_400_000 +
-      input.hours * 3_600_000 +
-      input.minutes * 60_000;
-    return new Date(Date.now() + totalMs).toISOString();
-  }
 
   // --- REALTIME ---
 
@@ -205,12 +190,14 @@ export const useVoyageStore = defineStore("voyage", () => {
             activated_by: null, // Optional for now
             is_victory: summaryData.progress_ratio >= 1.0,
           },
-          contributions: contributionsData.map(c => ({
-            player_tag: c.player_tag,
-            player_name: c.player_name,
-            total_voyage_crowns: c.total_voyage_crowns,
-            percentage_voyage_crowns: Number(c.percentage_voyage_crowns),
-            performance_score: c.performance_score ? Number(c.performance_score) : undefined
+          // [THREAT:] Anemic variable mapping ('c') and unvalidated numeric conversion can lead to silent data corruption.
+          // [DECISION LOG] Renamed to domain-descriptive 'contributionRow' and ensured explicit numeric conversion.
+          contributions: contributionsData.map(contributionRow => ({
+            player_tag: contributionRow.player_tag,
+            player_name: contributionRow.player_name,
+            crowns: contributionRow.crowns,
+            voyage_crown_pct: Number(contributionRow.voyage_crown_pct),
+            performance_score: contributionRow.performance_score ? Number(contributionRow.performance_score) : undefined
           })),
           total_voyage_crowns: summaryData.total_voyage_crowns,
           progress_ratio: summaryData.progress_ratio,
@@ -259,8 +246,11 @@ export const useVoyageStore = defineStore("voyage", () => {
       } else {
         throw new Error(String(response.error) ?? "Scheduling failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Schedule action error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Schedule action error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
@@ -298,8 +288,11 @@ export const useVoyageStore = defineStore("voyage", () => {
       } else {
         throw new Error(String(response.error) ?? "Setting end time failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Set end time error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Set end time error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
@@ -327,8 +320,11 @@ export const useVoyageStore = defineStore("voyage", () => {
       } else {
         throw new Error(String(response.error) ?? "Cancellation failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Cancel schedule action error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Cancel schedule action error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
@@ -379,8 +375,11 @@ export const useVoyageStore = defineStore("voyage", () => {
         console.error('[Voyage] Activation failed (network/auth):', response.error);
         throw new Error(String(response.error) ?? "Activation failed");
       }
-    } catch (err: any) {
-      console.error('[Voyage] Action error:', err);
+    } catch (err: unknown) {
+      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
+      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[Voyage] Action error:', errorMessage);
       throw err;
     } finally {
       loading.value = false;
@@ -402,7 +401,6 @@ export const useVoyageStore = defineStore("voyage", () => {
     targetCrowns,
     endsAt,
     contributions,
-    t2tToTimestamp,
     refresh,
     scheduleVoyage,
     setVoyageEnd,

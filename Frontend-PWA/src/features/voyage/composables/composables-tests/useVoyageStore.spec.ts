@@ -6,6 +6,7 @@ import { setActivePinia, createPinia } from "pinia";
 import { useVoyageStore } from "../useVoyageStore";
 import * as SupabaseClient from "@core/api/SupabaseClient";
 import * as VoyageClient from "@core/api/VoyageClient";
+import { t2tToTimestamp } from "@core/utils/formatters";
 
 vi.mock("@core/api/SupabaseClient", () => ({
   createSupabaseClient: vi.fn(() => ({
@@ -48,10 +49,9 @@ describe("useVoyageStore", () => {
 
   describe("t2tToTimestamp", () => {
     it("should calculate correct future timestamp", () => {
-      const store = useVoyageStore();
       const input = { days: 1, hours: 2, minutes: 30 };
       // 1 day (86400s) + 2 hours (7200s) + 30 mins (1800s) = 95400s = 95400000ms
-      const result = store.t2tToTimestamp(input);
+      const result = t2tToTimestamp(input);
       expect(result).toBe("2026-01-02T02:30:00.000Z");
     });
   });
@@ -143,6 +143,105 @@ describe("useVoyageStore", () => {
       await store.refresh();
 
       expect(SupabaseClient.createSupabaseClient).toHaveBeenCalled();
+    });
+
+    it("should setup realtime listeners when status is PENDING", async () => {
+      const mockSummary = {
+        event: { status: "PENDING" },
+        total_crowns: 0,
+        progress_ratio: 0
+      };
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(mockSummary as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
+
+      const store = useVoyageStore();
+      await store.refresh();
+
+      expect(SupabaseClient.createSupabaseClient).toHaveBeenCalled();
+    });
+  });
+
+  describe("computed properties", () => {
+    it("should correctly compute isPending", () => {
+      const store = useVoyageStore();
+
+      // @ts-ignore
+      store.summary = { event: { status: "PENDING", start_at: "2026-01-02T00:00:00Z" } };
+      expect(store.isPending).toBe(true);
+
+      // @ts-ignore
+      store.summary = { event: { status: "PENDING", start_at: "2025-12-31T23:59:59Z" } };
+      expect(store.isPending).toBe(false);
+
+      // @ts-ignore
+      store.summary = { event: { status: "ACTIVE", start_at: "2026-01-02T00:00:00Z" } };
+      expect(store.isPending).toBe(false);
+    });
+
+    it("should correctly compute isAwaitingEnd", () => {
+      const store = useVoyageStore();
+
+      // @ts-ignore
+      store.summary = { event: { status: "ACTIVE", end_at: null } };
+      expect(store.isAwaitingEnd).toBe(true);
+
+      // @ts-ignore
+      store.summary = { event: { status: "ACTIVE", end_at: "2026-01-07T00:00:00Z" } };
+      expect(store.isAwaitingEnd).toBe(false);
+
+      // @ts-ignore
+      store.summary = { event: { status: "IDLE", end_at: null } };
+      expect(store.isAwaitingEnd).toBe(false);
+    });
+  });
+
+  describe("scheduleVoyage", () => {
+    it("should call scheduleVoyageEvent and refresh on success", async () => {
+      vi.mocked(VoyageClient.scheduleVoyageEvent).mockResolvedValue({
+        success: true,
+        data: { success: true }
+      } as any);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(null);
+
+      const store = useVoyageStore();
+      await store.scheduleVoyage(1000, { days: 1, hours: 0, minutes: 0 });
+
+      expect(VoyageClient.scheduleVoyageEvent).toHaveBeenCalledWith(1000, "2026-01-02T00:00:00.000Z");
+      expect(VoyageClient.fetchVoyageSummary).toHaveBeenCalled();
+    });
+
+    it("should throw on RPC failure", async () => {
+      vi.mocked(VoyageClient.scheduleVoyageEvent).mockResolvedValue({
+        success: true,
+        data: { success: false, error: "Concurrency issue" }
+      } as any);
+
+      const store = useVoyageStore();
+      await expect(store.scheduleVoyage(1000, { days: 1, hours: 0, minutes: 0 })).rejects.toThrow("Concurrency issue");
+    });
+  });
+
+  describe("cancelSchedule", () => {
+    it("should call cancelScheduledVoyageEvent and refresh on success", async () => {
+      vi.mocked(VoyageClient.cancelScheduledVoyageEvent).mockResolvedValue({
+        success: true,
+        data: { success: true }
+      } as any);
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(null);
+
+      const store = useVoyageStore();
+      // @ts-ignore
+      store.summary = { event: { id: 101, status: "PENDING" } };
+
+      await store.cancelSchedule();
+
+      expect(VoyageClient.cancelScheduledVoyageEvent).toHaveBeenCalledWith(101);
+      expect(VoyageClient.fetchVoyageSummary).toHaveBeenCalled();
+    });
+
+    it("should throw if no scheduled voyage exists", async () => {
+      const store = useVoyageStore();
+      await expect(store.cancelSchedule()).rejects.toThrow("No scheduled voyage is active.");
     });
   });
 
