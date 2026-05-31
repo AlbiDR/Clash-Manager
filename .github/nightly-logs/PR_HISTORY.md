@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-05-31] PR #718: Optimization [Stage 3] - Performance Hygiene Refinement
+**Commit**: `d8f0f4a6cee7e307737f0521a95718f827fc333a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/718)
+
+### Description
+Implemented Stage 3 performance hygiene optimizations. Major changes include the de-globalization of Voyage feature components to improve initial bundle size and the implementation of lazy-loading for the Event Management cockpit in the Settings view. Also resolved structural rot by fixing a duplicate SVG path key in the central icon substrate and refining the Knip configuration to prevent future false-positive deletions of critical entry points. Verified via full monorepo test gate (1090 passed) and successful production build.
+
+---
+*PR created automatically by Jules for task [1113971678907451727](https://jules.google.com/task/1113971678907451727) started by @AlbiDR*
+
+---
+
 ## [2026-05-31] PR #717: refactor: centralize voyage time utility and heal form logic crack
 **Commit**: `b2bb0dbee7f50f354e06a48589ab33d4427a57bc`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/717)
