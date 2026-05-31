@@ -3,13 +3,9 @@
   "workspaces": {
     "Frontend-PWA": {
       "entry": [
-        "src/app/main.ts",
         "src/app/sw.ts"
       ],
-      "project": "src/**/*.{ts,vue}",
-      "ignoreDependencies": [
-        "virtual:pwa-register/vue"
-      ]
+      "project": "src/**/*.{ts,vue}"
     },
     ".": {
       "entry": [
