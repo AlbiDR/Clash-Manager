@@ -20,7 +20,16 @@ import type {
 
 /**
  * Manually triggers the backend data ingestion pipeline.
- * @returns A Promise resolving to an ApiResponse.
+ *
+ * @param target - Optional specific target for the update (e.g., 'roster', 'headhunter').
+ * @returns A Promise resolving to an ApiResponse indicating the outcome of the trigger.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Delegates the heavy-lifting of data ingestion to the Supabase backend.
+ *
+ * @sideeffects
+ * - Triggers an asynchronous execution of the backend pipeline.
  */
 export async function triggerBackendUpdate(
   target?: string,
@@ -34,8 +43,16 @@ export async function triggerBackendUpdate(
 
 /**
  * Registers a PushSubscription for server-side notifications.
- * @param subscription - The browser's PushSubscription object.
- * @returns A Promise resolving to true if successful.
+ *
+ * @param subscription - The browser's PushSubscription object containing endpoint and keys.
+ * @returns A Promise resolving to true if the subscription was successfully registered.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Persists the subscription object to the `drivers.push_subscriptions` table for later use by notification workers.
+ *
+ * @sideeffects
+ * - Inserts a new record into the `drivers.push_subscriptions` database table.
  */
 export async function subscribeToPush(subscription: PushSubscription): Promise<boolean> {
   const supabase = createSupabaseClient();

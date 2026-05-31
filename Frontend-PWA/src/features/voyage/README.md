@@ -23,7 +23,7 @@ The authoritative reactive manager for the Voyage state.
 - **Realtime Synchronization**: Implements a Postgres change listener via the Supabase SDK to instantly reflect crown updates from the `drivers.clan_voyage` and `drivers.clan_voyage_contributions` tables.
 - **T2T (Time-to-Timestamp) Utility**: Converts relative user inputs (Days/Hours/Minutes) into absolute ISO-8601 timestamps for backend compatibility.
 - **Progress Normalization**: Calculates `progressRatio` (0.0 - 1.0) and `isVictory` status to drive visual feedback across the application.
-- **Event Lifecycle**: Orchestrates the multi-phase lifecycle of a Voyage, providing methods for scheduling (`scheduleVoyage`), promoting scheduled events (`activateScheduledVoyage`), and cancellation (`cancelSchedule`).
+- **Event Lifecycle**: Orchestrates the multi-phase lifecycle of a Voyage, providing methods for scheduling (`scheduleVoyage`), direct activation (`activateVoyage`), setting event durations (`setVoyageEnd`), and cancellation (`cancelSchedule`).
 
 ### Event Management (EventManagement.vue)
 The "Mirror Activation Cockpit" located in the Settings feature.
@@ -34,7 +34,7 @@ The "Mirror Activation Cockpit" located in the Settings feature.
 The behavioral logic engine for the Voyage configuration interface.
 - **State Delegation**: Encapsulates form state, relative time inputs, and validation logic, decoupling the UI from business rules.
 - **Validation Boundary**: Enforces strict logical constraints (e.g., target > 0, end date > start date) using centralized utilities like `sanitizeNumericInput` and `durationToSeconds` from `@core/utils/formatters.ts`.
-- **Action Brokering**: Maps user intents (Activate, Schedule, Cancel) to the appropriate `useVoyageStore` methods.
+- **Action Brokering**: Maps user intents (Activate, Schedule, Cancel, Set End) to the appropriate `useVoyageStore` methods.
 
 ### Event Configuration (VoyageSetupForm.vue)
 The primary setup and validation interface for Clan Voyage events.

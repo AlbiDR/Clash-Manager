@@ -80,3 +80,4 @@ Frontend-PWA/README.md
 2026-05-28 | Frontend-PWA/src/shared/ui/README.md | Documented promoted history chart molecules
 2026-05-30 | Frontend-PWA/src/features/voyage/README.md | Reconciled useVoyageForm.ts delegation and event lifecycle logic
 2026-05-30 | Frontend-PWA/src/features/laboratory/README.md | Reconciled Registry.ts logic and substrate consumption
+2026-09-02 | Frontend-PWA/src/features/voyage/README.md | Reconciled non-existent activateScheduledVoyage method

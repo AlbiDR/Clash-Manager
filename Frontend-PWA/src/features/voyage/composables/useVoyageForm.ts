@@ -173,7 +173,7 @@ export function useVoyageForm() {
 
       if (store.isAwaitingEnd) {
         await store.setVoyageEnd(strictEndsIn);
-        toast.success("Voyage end time set successfully.");
+        toast.success("Clan Voyage activated successfully.");
       } else if (isScheduleOnlyMode.value) {
         await store.scheduleVoyage(safeTargetCrowns.value, strictStartsIn);
         toast.success("Pre-event scheduled successfully.");
