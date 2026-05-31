@@ -95,3 +95,5 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-05-29 | Frontend-PWA/src/core/api/ProfileClient.ts | Hardened validation boundary coverage testing direct/wrapped responses and default fallbacks
 2026-05-29 | Frontend-PWA/src/core/api/SupabaseClient.ts | Added deep logic proofs for newly added validation bounds including blacklist tags and pipeline heartbeat data structure
 2026-05-30 | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for sanitizeNumericInput and durationToSeconds (Layer 1 utilities)
+2026-09-02 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Saturating logic coverage for computed state (pending/awaiting-end) and action orchestration.
+2026-09-02 | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Saturating logic coverage for form validation branches and action orchestration.
