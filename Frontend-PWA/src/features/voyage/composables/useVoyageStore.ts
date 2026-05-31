@@ -95,7 +95,7 @@ export const useVoyageStore = defineStore("voyage", () => {
   );
 
   /** The aggregate sum of crowns contributed by all participants. */
-  const totalCrowns = computed(() => summary.value?.total_crowns ?? 0);
+  const totalCrowns = computed(() => summary.value?.total_voyage_crowns ?? 0);
 
   /** The crown requirement for the current Voyage event. */
   const targetCrowns = computed(() =>
@@ -208,11 +208,11 @@ export const useVoyageStore = defineStore("voyage", () => {
           contributions: contributionsData.map(c => ({
             player_tag: c.player_tag,
             player_name: c.player_name,
-            crowns: c.crowns,
-            voyage_crown_percentage: Number(c.voyage_crown_percentage),
+            total_voyage_crowns: c.total_voyage_crowns,
+            percentage_voyage_crowns: Number(c.percentage_voyage_crowns),
             performance_score: c.performance_score ? Number(c.performance_score) : undefined
           })),
-          total_crowns: summaryData.total_crowns,
+          total_voyage_crowns: summaryData.total_voyage_crowns,
           progress_ratio: summaryData.progress_ratio,
         };
         lastUpdated.value = Date.now();

@@ -399,8 +399,8 @@ const VoyageEventSchema = v.object({
 export const VoyageContributionSchema = v.object({
   player_tag: SafeStringPipe,
   player_name: v.optional(SafeStringPipe),
-  crowns: SafeNumberPipe,
-  voyage_crown_percentage: SafeNumberPipe,
+  total_voyage_crowns: SafeNumberPipe,
+  percentage_voyage_crowns: SafeNumberPipe,
   performance_score: v.optional(SafeNumberPipe),
 });
 
@@ -416,6 +416,6 @@ export const VoyageContributionSchema = v.object({
  */
 export const VoyageSummarySchema = v.object({
   event: VoyageEventSchema,
-  total_crowns: SafeNumberPipe,
+  total_voyage_crowns: SafeNumberPipe,
   progress_ratio: SafeNumberPipe,
 });

@@ -88,7 +88,7 @@ describe("EventManagement.vue", () => {
         target_crowns: 5000,
         end_at: new Date("2026-01-02T12:00:00Z").toISOString()
       },
-      total_crowns: 2500,
+      total_voyage_crowns: 2500,
       progress_ratio: 0.5,
       contributions: []
     };
@@ -116,7 +116,7 @@ describe("EventManagement.vue", () => {
         target_crowns: 5000,
         end_at: new Date("2026-01-02T12:00:00Z").toISOString()
       },
-      total_crowns: 5001,
+      total_voyage_crowns: 5001,
       progress_ratio: 1.0002,
       contributions: []
     };
@@ -136,7 +136,7 @@ describe("EventManagement.vue", () => {
         target_crowns: 5000,
         end_at: endAt.toISOString()
       },
-      total_crowns: 0,
+      total_voyage_crowns: 0,
       progress_ratio: 0,
       contributions: []
     };
@@ -175,7 +175,7 @@ describe("EventManagement.vue", () => {
         target_crowns: 5000,
         end_at: endAt.toISOString()
       },
-      total_crowns: 0,
+      total_voyage_crowns: 0,
       progress_ratio: 0,
       contributions: []
     };
@@ -201,7 +201,7 @@ describe("EventManagement.vue", () => {
         target_crowns: 5000,
         end_at: null
       },
-      total_crowns: 0,
+      total_voyage_crowns: 0,
       progress_ratio: 0,
       contributions: []
     };

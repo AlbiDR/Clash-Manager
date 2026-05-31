@@ -66,7 +66,7 @@ describe("VoyageBanner.vue", () => {
     // @ts-ignore
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000 },
-      total_crowns: 500,
+      total_voyage_crowns: 500,
       progress_ratio: 0.5
     };
 
@@ -83,7 +83,7 @@ describe("VoyageBanner.vue", () => {
     // @ts-ignore
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000 },
-      total_crowns: 1000,
+      total_voyage_crowns: 1000,
       progress_ratio: 1.0
     };
 
@@ -105,7 +105,7 @@ describe("VoyageBanner.vue", () => {
         target_crowns: 1000,
         end_at: futureDate.toISOString()
       },
-      total_crowns: 0,
+      total_voyage_crowns: 0,
       progress_ratio: 0
     };
 
@@ -129,7 +129,7 @@ describe("VoyageBanner.vue", () => {
     // @ts-ignore
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000, end_at: null },
-      total_crowns: 0,
+      total_voyage_crowns: 0,
       progress_ratio: 0
     };
     await wrapper.vm.$nextTick();

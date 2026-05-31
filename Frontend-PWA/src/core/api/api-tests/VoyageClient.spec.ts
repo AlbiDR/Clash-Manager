@@ -55,7 +55,7 @@ describe("VoyageClient", () => {
     it("fetchVoyageSummary returns validated summary", async () => {
       const mockData = {
         event: { id: 1, clan_tag: "TAG", status: "ACTIVE", target_crowns: 1000, start_at: "...", end_at: "..." },
-        total_crowns: 500,
+        total_voyage_crowns: 500,
         progress_ratio: 0.5
       };
       vi.mocked(mockFrom.maybeSingle).mockResolvedValue({ data: mockData, error: null });
@@ -65,7 +65,7 @@ describe("VoyageClient", () => {
     });
 
     it("fetchVoyageContributions returns validated array", async () => {
-      const mockData = [{ player_tag: "TAG", crowns: 10, voyage_crown_percentage: 0.01 }];
+      const mockData = [{ player_tag: "TAG", total_voyage_crowns: 10, percentage_voyage_crowns: 0.01 }];
       vi.mocked(mockFrom.select).mockResolvedValue({ data: mockData, error: null });
 
       const result = await VoyageClient.fetchVoyageContributions();
