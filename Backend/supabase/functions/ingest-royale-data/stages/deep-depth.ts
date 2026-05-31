@@ -10,6 +10,17 @@ import { RoyaleBattleLogSchema, IngestionTargetsSchema } from "../../_shared/sch
 /**
  * Stage 6: Native Deep Depth
  * Synchronizes battle logs for members and high-value recruits.
+ *
+ * @remarks
+ * **Polling interval rationale (30 minutes):**
+ * The Clash Royale battle log API returns a rolling window of at most 25 battles.
+ * A 30-minute cron interval means a player would need to complete all 25 battles
+ * in under 30 minutes, requiring each battle to end in 72 seconds or less.
+ * Given that the realistic minimum duration of a Clash Royale battle is roughly
+ * 1.5 to 2 minutes, a player can complete at most 15-20 battles in this window,
+ * keeping queue consumption well within the 25-battle buffer.
+ * Shortening the interval further adds API call overhead without meaningfully
+ * improving battle capture accuracy.
  */
 export async function runDeepDepth(
     results: IngestionResult, 
