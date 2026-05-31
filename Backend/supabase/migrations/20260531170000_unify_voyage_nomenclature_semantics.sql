@@ -27,10 +27,21 @@ DROP FUNCTION IF EXISTS drivers.set_voyage_total_crowns(TEXT, INTEGER);
 DROP FUNCTION IF EXISTS features.set_voyage_total_crowns(TEXT, INTEGER);
 
 -- 3. Rename columns in drivers.clan_voyage_contributions
-ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN total_crowns TO manual_voyage_crowns;
-ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN total_crowns_at TO manual_voyage_crowns_at;
-ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN crowns TO total_voyage_crowns;
-ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN voyage_crown_percentage TO percentage_voyage_crowns;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'drivers' AND table_name = 'clan_voyage_contributions' AND column_name = 'total_crowns') THEN
+        ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN total_crowns TO manual_voyage_crowns;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'drivers' AND table_name = 'clan_voyage_contributions' AND column_name = 'total_crowns_at') THEN
+        ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN total_crowns_at TO manual_voyage_crowns_at;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'drivers' AND table_name = 'clan_voyage_contributions' AND column_name = 'crowns') THEN
+        ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN crowns TO total_voyage_crowns;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'drivers' AND table_name = 'clan_voyage_contributions' AND column_name = 'voyage_crown_percentage') THEN
+        ALTER TABLE drivers.clan_voyage_contributions RENAME COLUMN voyage_crown_percentage TO percentage_voyage_crowns;
+    END IF;
+END $$;
 
 -- 4. Rebuild trigger function: drivers.on_battle_recorded()
 CREATE OR REPLACE FUNCTION drivers.on_battle_recorded()
