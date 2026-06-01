@@ -81,3 +81,6 @@ Frontend-PWA/README.md
 2026-05-30 | Frontend-PWA/src/features/voyage/README.md | Reconciled useVoyageForm.ts delegation and event lifecycle logic
 2026-05-30 | Frontend-PWA/src/features/laboratory/README.md | Reconciled Registry.ts logic and substrate consumption
 2026-09-02 | Frontend-PWA/src/features/voyage/README.md | Reconciled non-existent activateScheduledVoyage method
+2026-09-04 | Backend/README.md | Reconciled ingestion stages and orchestrator roles
+2026-09-04 | Frontend-PWA/README.md | Synchronized Layer 1 service list (30 entries) and specialized clients
+2026-09-04 | Frontend-PWA/src/features/voyage/README.md | Reconciled T2T utility relocation and injection strategy
