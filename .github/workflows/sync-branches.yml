@@ -1,7 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
 name: Sync Branches
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
   workflow_dispatch:
@@ -25,7 +26,7 @@ jobs:
       beta_nightly_diff: ${{ steps.check.outputs.beta_nightly_diff }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -92,7 +93,7 @@ jobs:
       merged: ${{ steps.merge.outputs.merged }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -144,7 +145,7 @@ jobs:
       backend_changed: ${{ steps.detect.outputs.backend_changed }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -218,7 +219,7 @@ jobs:
       merged: ${{ steps.merge.outputs.merged }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -261,20 +262,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
+          cache: "pnpm"
 
       - name: Verify Beta Stability (Air Gap Guard)
         run: |
           git checkout Beta
           git pull origin Beta
-          npm install -g pnpm
           pnpm install --no-frozen-lockfile
           if ! pnpm test; then
              echo "### Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
