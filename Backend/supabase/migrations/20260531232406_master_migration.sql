@@ -593,7 +593,7 @@ CREATE OR REPLACE FUNCTION substrate.purge_governance_telemetry()
 AS $function$
 BEGIN
     DELETE FROM substrate.governance_telemetry WHERE created_at < (now() - interval '30 days');
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.handle_heritage_snapshot()
  RETURNS trigger
@@ -724,7 +724,7 @@ BEGIN
     INSERT INTO substrate.governance_telemetry (event_type, status, message)
     VALUES ('SYSTEM_PURGE', 'SUCCESS',
             'Raw logs older than ' || p_retention_hours || ' hours successfully evicted.');
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.run_ingest_royale_data()
  RETURNS void
@@ -787,7 +787,7 @@ BEGIN
                 'Purged ' || v_count || ' stale heritage records (30-day horizon).');
     END IF;
     RETURN v_count;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.get_active_discovery_anchors(p_limit integer DEFAULT 15)
  RETURNS TABLE(keyword text)
@@ -842,7 +842,7 @@ BEGIN
         VALUES ('CLANNED_PURGE', 'SUCCESS', 'Auto-evicted ' || v_count || ' recruits who joined our clans.');
     END IF;
     RETURN v_count;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_stale_recruits()
  RETURNS integer
@@ -1081,7 +1081,7 @@ BEGIN
     END LOOP;
 
     RETURN NEW;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.rotate_recruits()
  RETURNS void
@@ -1216,7 +1216,7 @@ BEGIN
     WHERE keyword = p_keyword
       AND (total_scans - rate_limited_scans) > 20
       AND total_yield = 0;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.on_telemetry_complete()
  RETURNS trigger
@@ -1338,7 +1338,7 @@ BEGIN
     ELSIF p_days < 1     THEN RETURN round(p_days * 24) || 'h';
     ELSE                      RETURN floor(p_days) || 'd';
     END IF;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_recruit_ledger()
  RETURNS integer
@@ -1393,7 +1393,7 @@ BEGIN
     END IF;
 
     RETURN v_reset_count;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.format_tenure(p_days numeric)
  RETURNS text
@@ -1408,7 +1408,7 @@ BEGIN
     ELSIF p_days < 365 THEN RETURN floor(p_days / 30.44) || 'mo';
     ELSE                    RETURN floor(p_days / 365.25) || 'y';
     END IF;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION substrate.shred_war_log()
  RETURNS trigger
@@ -1550,7 +1550,7 @@ EXCEPTION WHEN OTHERS THEN
         updated_at      = NOW()
     WHERE component_id = 'NIGHTLY_MAINTENANCE';
     RAISE;
-END; $function$
+END; $function$;
 
 -- Drivers Functions
 CREATE OR REPLACE FUNCTION drivers.bench_underqualified_recruits()
@@ -1897,7 +1897,7 @@ BEGIN
                 'Evicted ' || v_deleted_count || ' expired entries from recruit blacklist.');
     END IF;
     RETURN v_deleted_count;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
  RETURNS numeric
@@ -2568,7 +2568,7 @@ BEGIN
       AND NOT EXISTS (SELECT 1 FROM drivers.recruit_blacklist bl WHERE bl.player_tag = pb.opponent_player_tag)
     ORDER BY pb.opponent_player_tag
     LIMIT p_limit;
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION public.get_recruits_fate(tags text[])
  RETURNS TABLE(player_tag text, status text, raw_potential_score numeric)
@@ -2701,7 +2701,7 @@ BEGIN
         type              = EXCLUDED.type,
         last_ingested_at  = EXCLUDED.last_ingested_at,
         updated_at        = NOW();
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION public.sync_players(p_players jsonb)
  RETURNS void
@@ -2850,7 +2850,7 @@ BEGIN
 
     INSERT INTO substrate.governance_telemetry (event_type, status, message)
     VALUES ('GHOST_EVICTION', 'INFO', 'Universal eviction of ghost player: ' || p_player_tag);
-END; $function$
+END; $function$;
 
 CREATE OR REPLACE FUNCTION public.bench_underqualified_recruits()
  RETURNS integer
