@@ -406,6 +406,8 @@ CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
     CONSTRAINT drivers_exclusion_cache_pkey PRIMARY KEY (player_tag)
 );
 
+ALTER TABLE drivers.exclusion_cache ENABLE ROW LEVEL SECURITY;
+
 -- Per-player card snapshot fetched from the Clash Royale API. Populated by the sync-player-cards Edge Function. Drives the Laboratory simulation engine.
 CREATE TABLE IF NOT EXISTS features.player_card_snapshots (
     player_tag text NOT NULL,
@@ -427,25 +429,25 @@ CREATE TABLE IF NOT EXISTS features.player_card_snapshots (
 ALTER TABLE features.player_card_snapshots ENABLE ROW LEVEL SECURITY;
 
 -- UNIQUE CONSTRAINTS
-ALTER TABLE drivers.clans DROP CONSTRAINT IF EXISTS clans_clan_tag_unique CASCADE;
+ALTER TABLE drivers.clans DROP CONSTRAINT IF EXISTS clans_clan_tag_unique;
 ALTER TABLE drivers.clans ADD CONSTRAINT clans_clan_tag_unique UNIQUE (clan_tag);
 
-ALTER TABLE drivers.members DROP CONSTRAINT IF EXISTS members_tag_unique CASCADE;
+ALTER TABLE drivers.members DROP CONSTRAINT IF EXISTS members_tag_unique;
 ALTER TABLE drivers.members ADD CONSTRAINT members_tag_unique UNIQUE (player_tag);
 
-ALTER TABLE drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_player_tag_key CASCADE;
+ALTER TABLE drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_player_tag_key;
 ALTER TABLE drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_voyage_id_player_tag_key UNIQUE (voyage_id, player_tag);
 
-ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_member_tag_week_id_key CASCADE;
+ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_member_tag_week_id_key;
 ALTER TABLE drivers.war_activity ADD CONSTRAINT war_activity_member_tag_week_id_key UNIQUE (player_tag, week_id);
 
-ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_tag_week_section_unique CASCADE;
+ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_tag_week_section_unique;
 ALTER TABLE drivers.war_activity ADD CONSTRAINT war_activity_tag_week_section_unique UNIQUE (player_tag, week_id, section_index);
 
-ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_tag_week_unique CASCADE;
+ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_tag_week_unique;
 ALTER TABLE drivers.war_history ADD CONSTRAINT war_history_tag_week_unique UNIQUE (clan_tag, week_id);
 
-ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_week_id_tag_key CASCADE;
+ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_week_id_tag_key;
 ALTER TABLE drivers.war_history ADD CONSTRAINT war_history_week_id_tag_key UNIQUE (week_id, clan_tag);
 
 -- FOREIGN KEY CONSTRAINTS
@@ -527,6 +529,7 @@ CREATE OR REPLACE FUNCTION substrate.finalize_expired_voyages()
  RETURNS integer
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_count INTEGER;
@@ -1615,7 +1618,7 @@ CREATE OR REPLACE FUNCTION drivers.set_voyage_manual_crowns(p_player_tag text, p
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_id      BIGINT;
@@ -1701,6 +1704,7 @@ CREATE OR REPLACE FUNCTION drivers.on_battle_recorded()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_id      BIGINT;
@@ -1774,7 +1778,7 @@ CREATE OR REPLACE FUNCTION drivers.refresh_voyage_contributions()
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_id         BIGINT;
@@ -1903,7 +1907,7 @@ CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
  RETURNS numeric
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     RETURN (
@@ -1923,6 +1927,7 @@ CREATE OR REPLACE FUNCTION drivers.on_contribution_manual_override_updated()
  RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_start      TIMESTAMPTZ;
@@ -1972,6 +1977,7 @@ CREATE OR REPLACE FUNCTION drivers.initialize_voyage(target_crowns integer, star
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_id BIGINT;
@@ -2014,6 +2020,8 @@ $function$;
 CREATE OR REPLACE FUNCTION drivers.sync_exclusion_cache()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
@@ -2039,6 +2047,7 @@ CREATE OR REPLACE FUNCTION drivers.schedule_voyage(target_crowns integer, start_
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_id BIGINT;
@@ -2076,6 +2085,7 @@ CREATE OR REPLACE FUNCTION drivers.activate_scheduled_voyage(voyage_id bigint, t
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_current_status TEXT;
@@ -2113,6 +2123,7 @@ CREATE OR REPLACE FUNCTION drivers.cancel_voyage(voyage_id bigint)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_current_status TEXT;
@@ -2142,7 +2153,7 @@ CREATE OR REPLACE FUNCTION drivers.auto_activate_pending_voyages()
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_affected INTEGER;
@@ -2167,7 +2178,7 @@ CREATE OR REPLACE FUNCTION drivers.set_voyage_end(voyage_id bigint, end_at times
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_current_status TEXT;
@@ -2200,7 +2211,7 @@ CREATE OR REPLACE FUNCTION drivers.get_voyage_poll_interval_seconds(p_last_seen_
  RETURNS bigint
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     -- External API constraint: Clash Royale battle log window size.
@@ -2210,7 +2221,6 @@ DECLARE
     v_seconds_per_hour        CONSTANT NUMERIC := 3600.0;
 
     -- Tier boundary thresholds (hours since last seen).
-    -- Mirror of VOYAGE_TRACKING_BOUNDARIES_HOURS in voyage-poll-schedule.ts.
     v_boundary_active_session CONSTANT INTEGER :=   3;
     v_boundary_recent_close   CONSTANT INTEGER :=   6;
     v_boundary_intermittent   CONSTANT INTEGER :=  12;
@@ -2222,7 +2232,6 @@ DECLARE
     v_boundary_dormant        CONSTANT INTEGER := 168;
 
     -- Target velocities: assumed minimum match duration per tier (seconds).
-    -- Mirror of VOYAGE_TRACKING_VELOCITIES_SECONDS in voyage-poll-schedule.ts.
     v_velocity_t1             CONSTANT INTEGER :=  72; -- 01:12 anchor
     v_velocity_t2             CONSTANT INTEGER :=  80; -- 01:20
     v_velocity_t3             CONSTANT INTEGER :=  90; -- 01:30
@@ -2270,7 +2279,7 @@ CREATE OR REPLACE FUNCTION features.set_voyage_manual_crowns(p_player_tag text, 
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     RETURN drivers.set_voyage_manual_crowns(p_player_tag, p_crowns);
@@ -2313,6 +2322,7 @@ CREATE OR REPLACE FUNCTION features.dismiss_recruits(items jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_count INTEGER := 0;
@@ -2377,6 +2387,7 @@ CREATE OR REPLACE FUNCTION features.undismiss_recruits(player_tags text[])
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_count INTEGER := 0;
@@ -2396,7 +2407,7 @@ CREATE OR REPLACE FUNCTION features.initialize_voyage(target_crowns integer, sta
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     RETURN drivers.initialize_voyage(target_crowns, start_at, end_at);
@@ -2407,7 +2418,7 @@ CREATE OR REPLACE FUNCTION features.schedule_voyage(target_crowns integer, start
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     RETURN drivers.schedule_voyage(target_crowns, start_at);
@@ -2418,7 +2429,7 @@ CREATE OR REPLACE FUNCTION features.activate_scheduled_voyage(voyage_id bigint, 
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     RETURN drivers.activate_scheduled_voyage(voyage_id, target_crowns, end_at);
@@ -2429,7 +2440,7 @@ CREATE OR REPLACE FUNCTION features.cancel_voyage(voyage_id bigint)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     RETURN drivers.cancel_voyage(voyage_id);
@@ -2440,7 +2451,7 @@ CREATE OR REPLACE FUNCTION features.set_voyage_end(voyage_id bigint, end_at time
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'drivers', 'public'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     RETURN drivers.set_voyage_end(voyage_id, end_at);
@@ -2452,7 +2463,7 @@ CREATE OR REPLACE FUNCTION public.get_headhunter_context()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public', 'drivers'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_required_trophies INTEGER;
@@ -2883,7 +2894,7 @@ CREATE OR REPLACE FUNCTION public.sync_recruits(p_recruits jsonb)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public', 'drivers'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     -- A. Ensure all players exist in the universal registry (FK Safety)
@@ -2949,6 +2960,7 @@ CREATE OR REPLACE FUNCTION public.get_ingestion_targets()
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_recruits               JSONB;
@@ -2988,6 +3000,7 @@ CREATE OR REPLACE FUNCTION public.ingest_player_battles(p_tag text, p_payload js
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
     v_battle                 RECORD;
@@ -3108,167 +3121,150 @@ SELECT player_tag AS tag,
   ORDER BY raw_potential_score DESC;
 
 CREATE OR REPLACE VIEW features.scoring_view AS
-WITH voyage_history AS (
-         SELECT c.player_tag,
-            c.total_voyage_crowns AS crowns,
-            v.target_crowns,
-            v.end_at,
-            row_number() OVER (PARTITION BY c.player_tag ORDER BY v.end_at DESC) AS recency_rank
-           FROM (drivers.clan_voyage_contributions c
-             JOIN drivers.clan_voyage v ON ((v.id = c.voyage_id)))
-          WHERE (v.status = 'COMPLETED'::text)
-        ), voyage_factuals AS (
-         SELECT voyage_history.player_tag,
-            sum((((voyage_history.crowns)::numeric / (voyage_history.target_crowns)::numeric) * GREATEST(0.5, (1.0 - (((voyage_history.recency_rank - 1))::numeric * 0.05))))) AS weighted_voyage_index,
-            ( SELECT string_agg((((sub.crowns)::text || ' '::text) || to_char(sub.end_at, 'YYYY-MM-DD'::text)), ' | '::text ORDER BY sub.end_at DESC) AS string_agg
-                   FROM ( SELECT vh_sub.crowns,
-                            vh_sub.end_at
-                           FROM voyage_history vh_sub
-                          WHERE (vh_sub.player_tag = voyage_history.player_tag)
-                          ORDER BY vh_sub.end_at DESC
-                         LIMIT 52) sub) AS v_hist
-           FROM voyage_history
-          GROUP BY voyage_history.player_tag
-        ), factual_logs AS (
-         SELECT m.player_tag,
-            count(DISTINCT wa.week_id) AS recorded_weeks,
-            avg(wa.fame) AS avg_fame,
-            ((avg(wa.decks_used) / 16.0) * 100.0) AS avg_war_rate,
-            ( SELECT string_agg((((sub.fame)::text || ' '::text) || sub.week_id), ' | '::text ORDER BY sub.max_recorded DESC) AS string_agg
-                   FROM ( SELECT wa2.week_id,
-                            max(wa2.fame) AS fame,
-                            max(wa2.recorded_at) AS max_recorded
-                           FROM drivers.war_activity wa2
-                          WHERE (wa2.player_tag = m.player_tag)
-                          GROUP BY wa2.week_id
-                          ORDER BY (max(wa2.recorded_at)) DESC) sub) AS hist
-           FROM (drivers.members m
-             LEFT JOIN drivers.war_activity wa ON ((wa.player_tag = m.player_tag)))
-          WHERE (m.is_active = true)
-          GROUP BY m.player_tag
-        ), benchmarking_context AS (
-         SELECT ( SELECT COALESCE(NULLIF(max(w.recorded_weeks), 0), (12)::bigint) AS "coalesce"
-                   FROM ( SELECT count(DISTINCT war_activity.week_id) AS recorded_weeks
-                           FROM drivers.war_activity
-                          GROUP BY war_activity.player_tag) w) AS max_history_weeks,
-            ( SELECT COALESCE(percentile_cont((0.25)::double precision) WITHIN GROUP (ORDER BY ((t.tenure_days)::double precision)), (14)::double precision) AS "coalesce"
-                   FROM ( SELECT GREATEST((0)::numeric, EXTRACT(day FROM (now() - members.joined_at))) AS tenure_days
-                           FROM drivers.members
-                          WHERE (members.is_active = true)) t) AS rookie_window_days,
-            ( SELECT max(s.baseline_raw_score) AS max
-                   FROM ( SELECT round(((((((COALESCE(m.week_fame, 0))::numeric * 3.0) + (COALESCE(fl2.avg_fame, (0)::numeric) * 15.0)) + ((m.donations)::numeric * 100.0)) + ((m.trophies)::numeric * 0.1)) + (COALESCE(fl2.avg_war_rate, (0)::numeric) * 600.0))) AS baseline_raw_score
-                           FROM (drivers.members m
-                             LEFT JOIN ( SELECT war_activity.player_tag,
-                                    avg(war_activity.fame) AS avg_fame,
-                                    ((avg(war_activity.decks_used) / 16.0) * 100.0) AS avg_war_rate
-                                   FROM drivers.war_activity
-                                  GROUP BY war_activity.player_tag) fl2 ON ((m.player_tag = fl2.player_tag)))
-                          WHERE (m.is_active = true)) s) AS clan_max_baseline
-        ), base_stats AS (
-         SELECT m.player_tag,
-            m.player_name AS name,
-            m.trophies,
-            m.donations,
-            m.joined_at,
-            m.last_seen_at,
-            m.war_wins,
-            GREATEST((0)::numeric, (EXTRACT(epoch FROM (now() - m.last_seen_at)) / 86400.0)) AS days_inactive,
-            GREATEST((0)::numeric, (EXTRACT(epoch FROM (now() - m.joined_at)) / 86400.0)) AS tenure_days,
-            COALESCE(m.week_fame, 0) AS current_fame,
-            COALESCE(fl.avg_fame, (0)::numeric) AS avg_fame,
-            COALESCE(fl.avg_war_rate, (0)::numeric) AS war_rate,
-            COALESCE(fl.recorded_weeks, (0)::bigint) AS recorded_weeks,
-            COALESCE(fl.hist, '-'::text) AS hist,
-            COALESCE(vf.v_hist, '-'::text) AS v_hist,
-            COALESCE(vf.weighted_voyage_index, (0)::numeric) AS voyage_index
-           FROM ((drivers.members m
-             LEFT JOIN factual_logs fl ON ((m.player_tag = fl.player_tag)))
-             LEFT JOIN voyage_factuals vf ON ((m.player_tag = vf.player_tag)))
-          WHERE (m.is_active = true)
-        ), weighted_calculations AS (
-         SELECT bs.player_tag,
-            bs.name,
-            bs.trophies,
-            bs.donations,
-            bs.joined_at,
-            bs.last_seen_at,
-            bs.war_wins,
-            bs.days_inactive,
-            bs.tenure_days,
-            bs.current_fame,
-            bs.avg_fame,
-            bs.war_rate,
-            bs.recorded_weeks,
-            bs.hist,
-            bs.v_hist,
-            bs.voyage_index,
-            LEAST(1.0, ((bs.recorded_weeks)::numeric / (bc.max_history_weeks)::numeric)) AS stability_index,
-            LEAST(1.10, (1.0 + ((bs.tenure_days / 30.0) * 0.01))) AS loyalty_multiplier,
-            round((bs.voyage_index * bc.clan_max_baseline)) AS voyage_merit,
-            round(((((((bs.current_fame)::numeric * 3.0) + (bs.avg_fame * 15.0)) + ((bs.donations)::numeric * 100.0)) + ((bs.trophies)::numeric * 0.1)) + (bs.war_rate * 600.0))) AS core_baseline_score,
-            power((1.0 - 0.08), GREATEST((0)::numeric, (bs.days_inactive - 4.0))) AS decay_multiplier,
-            bc.rookie_window_days
-           FROM (base_stats bs
-             CROSS JOIN benchmarking_context bc)
-        ), clinical_layer AS (
-         SELECT wc.player_tag,
-            wc.name,
-            wc.trophies,
-            wc.donations,
-            wc.joined_at,
-            wc.last_seen_at,
-            wc.war_wins,
-            wc.days_inactive,
-            wc.tenure_days,
-            wc.current_fame,
-            wc.avg_fame,
-            wc.war_rate,
-            wc.recorded_weeks,
-            wc.hist,
-            wc.v_hist,
-            wc.voyage_index,
-            wc.stability_index,
-            wc.loyalty_multiplier,
-            wc.voyage_merit,
-            wc.core_baseline_score,
-            wc.decay_multiplier,
-            wc.rookie_window_days,
-            round((((wc.core_baseline_score + wc.voyage_merit) * wc.loyalty_multiplier) * wc.decay_multiplier)) AS raw_performance_score,
-                CASE
-                    WHEN ((wc.tenure_days)::double precision < wc.rookie_window_days) THEN (((((((wc.trophies)::numeric * 1.0) + ((wc.donations)::numeric * 0.1)) + (((wc.war_wins + 500))::numeric * 20.0)))::double precision * power(((wc.rookie_window_days - (wc.tenure_days)::double precision) / wc.rookie_window_days), ((2)::numeric)::double precision)) / (5.0)::double precision)
-                    ELSE ((0)::numeric)::double precision
-                END AS heritage_bonus
-           FROM weighted_calculations wc
-        ), final_scoring AS (
-         SELECT clinical_layer.player_tag,
-            clinical_layer.name,
-            clinical_layer.trophies,
-            clinical_layer.donations,
-            clinical_layer.joined_at,
-            clinical_layer.last_seen_at,
-            clinical_layer.war_wins,
-            clinical_layer.days_inactive,
-            clinical_layer.tenure_days,
-            clinical_layer.current_fame,
-            clinical_layer.avg_fame,
-            clinical_layer.war_rate,
-            clinical_layer.recorded_weeks,
-            clinical_layer.hist,
-            clinical_layer.v_hist,
-            clinical_layer.voyage_index,
-            clinical_layer.stability_index,
-            clinical_layer.loyalty_multiplier,
-            clinical_layer.voyage_merit,
-            clinical_layer.core_baseline_score,
-            clinical_layer.decay_multiplier,
-            clinical_layer.rookie_window_days,
-            clinical_layer.raw_performance_score,
-            clinical_layer.heritage_bonus,
-            ((clinical_layer.raw_performance_score)::double precision + clinical_layer.heritage_bonus) AS total_combined_score,
-            max(((clinical_layer.raw_performance_score)::double precision + clinical_layer.heritage_bonus)) OVER () AS global_max_score
-           FROM clinical_layer
-        )
- SELECT player_tag,
+ WITH voyage_history AS (
+          SELECT c.player_tag,
+             c.total_voyage_crowns AS crowns,
+             v.target_crowns,
+             v.end_at,
+             row_number() OVER (PARTITION BY c.player_tag ORDER BY v.end_at DESC) AS recency_rank
+           FROM drivers.clan_voyage_contributions c
+             JOIN drivers.clan_voyage v ON v.id = c.voyage_id
+          WHERE v.status = 'COMPLETED'::text
+        ),
+  voyage_factuals AS (
+          SELECT voyage_history.player_tag,
+             sum(
+               voyage_history.crowns::numeric / voyage_history.target_crowns::numeric
+               * GREATEST(0.5, 1.0 - (voyage_history.recency_rank - 1)::numeric * 0.05)
+             ) AS weighted_voyage_index,
+             ( SELECT string_agg(sub.crowns::text || ' ' || TO_CHAR(sub.end_at, 'YYYY-MM-DD'), ' | ' ORDER BY sub.end_at DESC)
+               FROM (
+                 SELECT crowns, end_at
+                 FROM voyage_history vh_sub
+                 WHERE vh_sub.player_tag = voyage_history.player_tag
+                 ORDER BY end_at DESC
+                 LIMIT 52
+               ) sub
+             ) AS v_hist
+            FROM voyage_history
+           GROUP BY voyage_history.player_tag
+         ),
+  factual_logs AS (
+          SELECT
+             m.player_tag,
+             count(DISTINCT wa.week_id) AS recorded_weeks,
+             avg(wa.fame)              AS avg_fame,
+             -- CORRECTION: 16.0 denominator
+             avg(wa.decks_used) / 16.0 * 100.0 AS avg_war_rate,
+             ( SELECT string_agg(sub.fame::text || ' ' || sub.week_id, ' | ' ORDER BY sub.max_recorded DESC)
+               FROM (
+                 SELECT wa2.week_id,
+                        max(wa2.fame)        AS fame,
+                        max(wa2.recorded_at) AS max_recorded
+                 FROM drivers.war_activity wa2
+                 WHERE wa2.player_tag = m.player_tag
+                 GROUP BY wa2.week_id
+                 ORDER BY max(wa2.recorded_at) DESC
+               ) sub
+             ) AS hist
+            FROM drivers.members m
+            LEFT JOIN drivers.war_activity wa ON wa.player_tag = m.player_tag
+           WHERE m.is_active = true
+           GROUP BY m.player_tag
+         ),
+  benchmarking_context AS (
+          SELECT
+             ( SELECT COALESCE(NULLIF(max(w.recorded_weeks), 0), 12::bigint)
+                 FROM ( SELECT count(DISTINCT war_activity.week_id) AS recorded_weeks
+                          FROM drivers.war_activity
+                         GROUP BY war_activity.player_tag) w
+             ) AS max_history_weeks,
+             ( SELECT COALESCE(percentile_cont(0.25) WITHIN GROUP (ORDER BY t.tenure_days::double precision), 14::double precision)
+                 FROM ( SELECT GREATEST(0::numeric, EXTRACT(day FROM now() - members.joined_at)) AS tenure_days
+                          FROM drivers.members
+                         WHERE members.is_active = true) t
+             ) AS rookie_window_days,
+             ( SELECT max(s.baseline_raw_score)
+                 FROM ( SELECT round(
+                                 COALESCE(m.week_fame, 0)::numeric * 3.0
+                                 + COALESCE(fl2.avg_fame, 0::numeric) * 15.0
+                                 + m.donations::numeric * 100.0
+                                 + m.trophies::numeric * 0.1
+                                 -- CORRECTION: 600.0 multiplier
+                                 + COALESCE(fl2.avg_war_rate, 0::numeric) * 600.0
+                               ) AS baseline_raw_score
+                          FROM drivers.members m
+                          LEFT JOIN (
+                            SELECT war_activity.player_tag,
+                                   avg(war_activity.fame)               AS avg_fame,
+                                   -- CORRECTION: 16.0 denominator
+                                   avg(war_activity.decks_used) / 16.0 * 100.0 AS avg_war_rate
+                              FROM drivers.war_activity
+                             GROUP BY war_activity.player_tag
+                          ) fl2 ON m.player_tag = fl2.player_tag
+                         WHERE m.is_active = true) s
+             ) AS clan_max_baseline
+         ),
+  base_stats AS (
+          SELECT m.player_tag,
+             m.player_name AS name,
+             m.trophies,
+             m.donations,
+             m.joined_at,
+             m.last_seen_at,
+             m.war_wins,
+             GREATEST(0::numeric, EXTRACT(epoch FROM now() - m.last_seen_at) / 86400.0) AS days_inactive,
+             GREATEST(0::numeric, EXTRACT(epoch FROM now() - m.joined_at) / 86400.0)    AS tenure_days,
+             COALESCE(m.week_fame, 0)              AS current_fame,
+             COALESCE(fl.avg_fame, 0::numeric)     AS avg_fame,
+             COALESCE(fl.avg_war_rate, 0::numeric) AS war_rate,
+             COALESCE(fl.recorded_weeks, 0::bigint) AS recorded_weeks,
+             COALESCE(fl.hist, '-'::text)           AS hist,
+             COALESCE(vf.v_hist, '-'::text)         AS v_hist,
+             COALESCE(vf.weighted_voyage_index, 0::numeric) AS voyage_index
+            FROM drivers.members m
+              LEFT JOIN factual_logs fl ON m.player_tag = fl.player_tag
+              LEFT JOIN voyage_factuals vf ON m.player_tag = vf.player_tag
+            WHERE m.is_active = true
+         ),
+  weighted_calculations AS (
+          SELECT bs.*,
+             LEAST(1.0, bs.recorded_weeks::numeric / bc.max_history_weeks::numeric) AS stability_index,
+             LEAST(1.10, 1.0 + bs.tenure_days / 30.0 * 0.01)                        AS loyalty_multiplier,
+             round(bs.voyage_index * bc.clan_max_baseline)                           AS voyage_merit,
+             round(
+               bs.current_fame::numeric * 3.0
+               + bs.avg_fame * 15.0
+               + bs.donations::numeric * 100.0
+               + bs.trophies::numeric * 0.1
+               -- CORRECTION: 600.0 multiplier
+               + bs.war_rate * 600.0
+             ) AS core_baseline_score,
+             power(1.0 - 0.08, GREATEST(0::numeric, bs.days_inactive - 4.0)) AS decay_multiplier,
+             bc.rookie_window_days
+            FROM base_stats bs
+              CROSS JOIN benchmarking_context bc
+         ),
+  clinical_layer AS (
+          SELECT wc.*,
+             round((wc.core_baseline_score + wc.voyage_merit) * wc.loyalty_multiplier * wc.decay_multiplier) AS raw_performance_score,
+             CASE
+                 WHEN wc.tenure_days::double precision < wc.rookie_window_days
+                     THEN (wc.trophies::numeric * 1.0 + wc.donations::numeric * 0.1 + (wc.war_wins + 500)::numeric * 20.0)::double precision
+                          * power((wc.rookie_window_days - wc.tenure_days::double precision) / wc.rookie_window_days, 2::numeric::double precision)
+                          / 5.0
+                 ELSE 0::numeric::double precision
+             END AS heritage_bonus
+            FROM weighted_calculations wc
+         ),
+  final_scoring AS (
+          SELECT *,
+             raw_performance_score::double precision + heritage_bonus AS total_combined_score,
+             max(raw_performance_score::double precision + heritage_bonus) OVER () AS global_max_score
+            FROM clinical_layer
+         )
+ SELECT
+    player_tag,
     name,
     trophies,
     donations,
@@ -3291,57 +3287,60 @@ WITH voyage_history AS (
     heritage_bonus,
     hist,
     v_hist,
-        CASE
-            WHEN (global_max_score > ((0)::numeric)::double precision) THEN round(((total_combined_score / global_max_score) * (100.0)::double precision))
-            ELSE ((0)::numeric)::double precision
-        END AS performance_score
+    CASE
+        WHEN global_max_score > 0::numeric::double precision
+            THEN round(total_combined_score / global_max_score * 100.0::double precision)
+        ELSE 0::numeric::double precision
+    END AS performance_score
    FROM final_scoring;
 
+GRANT SELECT ON features.scoring_view TO authenticated, anon, service_role;
+
 CREATE OR REPLACE VIEW features.roster_view AS
-WITH roster_source AS (
-         SELECT m.id,
-            m.player_tag,
-            m.player_name,
-            m.role,
-            m.exp_level,
-            m.last_seen_at,
-            m.updated_at,
-            m.snapshot_date,
-            m.trophies,
-            m.donations,
-            m.donations_received,
-            m.joined_at,
-            m.star_points,
-            m.best_trophies,
-            m.total_donations,
-            m.war_day_wins,
-            m.clan_cards_collected,
-            m.challenge_max_wins,
-            m.card_count,
-            m.elite_wild_cards,
-            m.war_wins,
-            m.week_fame,
-            m.decks_used_today,
-            m.clan_rank,
-            m.last_ingested_at,
-            m.is_active,
-            m.decks_used_weekly,
-            m.current_clan_tag,
-            s.avg_fame,
-            s.war_rate,
-            s.voyage_index,
-            s.voyage_merit,
-            s.raw_performance_score,
-            s.performance_score,
-            s.stability_index,
-            s.days_inactive,
-            s.tenure_days,
-            s.hist,
-            s.v_hist,
-            ltrim(m.player_tag, '#'::text) AS raw_tag
-           FROM (drivers.members m
-             LEFT JOIN features.scoring_view s ON ((s.player_tag = m.player_tag)))
-          WHERE ((m.is_active = true) AND (m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text))
+ WITH roster_source AS (
+          SELECT m.id,
+             m.player_tag,
+             m.player_name,
+             m.role,
+             m.exp_level,
+             m.last_seen_at,
+             m.updated_at,
+             m.snapshot_date,
+             m.trophies,
+             m.donations,
+             m.donations_received,
+             m.joined_at,
+             m.star_points,
+             m.best_trophies,
+             m.total_donations,
+             m.war_day_wins,
+             m.clan_cards_collected,
+             m.challenge_max_wins,
+             m.card_count,
+             m.elite_wild_cards,
+             m.war_wins,
+             m.week_fame,
+             m.decks_used_today,
+             m.clan_rank,
+             m.last_ingested_at,
+             m.is_active,
+             m.decks_used_weekly,
+             m.current_clan_tag,
+             s.avg_fame,
+             s.war_rate,
+             s.voyage_index,
+             s.voyage_merit,
+             s.raw_performance_score,
+             s.performance_score,
+             s.stability_index,
+             s.days_inactive,
+             s.tenure_days,
+             s.hist,
+             s.v_hist,
+             ltrim(m.player_tag, '#'::text) AS raw_tag
+            FROM drivers.members m
+              LEFT JOIN features.scoring_view s ON s.player_tag = m.player_tag
+           WHERE m.is_active = true AND m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text
         )
  SELECT player_name,
     role,
@@ -3357,34 +3356,36 @@ WITH roster_source AS (
     avg_fame,
     voyage_index,
     voyage_merit,
-    COALESCE(war_rate, (0)::numeric) AS war_participation,
+    COALESCE(war_rate, 0::numeric) AS war_participation,
     raw_performance_score,
     performance_score,
     stability_index,
     substrate.format_last_seen(days_inactive) AS last_seen_label,
-    substrate.format_tenure(tenure_days) AS tenure_label,
+    substrate.format_tenure(tenure_days)       AS tenure_label,
     last_seen_at,
     last_ingested_at,
     tenure_days,
     hist,
     v_hist,
-    ('https://link.clashroyale.com/en?player='::text || raw_tag) AS ingame_link,
-    ('https://royaleapi.com/player/'::text || raw_tag) AS royaleapi_link
+    'https://link.clashroyale.com/en?player='::text || raw_tag AS ingame_link,
+    'https://royaleapi.com/player/'::text || raw_tag AS royaleapi_link
    FROM roster_source
   ORDER BY raw_performance_score DESC NULLS LAST, performance_score DESC NULLS LAST;
 
+GRANT SELECT ON features.roster_view TO authenticated, anon, service_role;
+
 CREATE OR REPLACE VIEW features.voyage_contributions AS
-SELECT c.player_tag,
+SELECT
+    c.player_tag,
     s.name AS player_name,
     c.total_voyage_crowns,
     c.percentage_voyage_crowns,
     s.performance_score
-   FROM (drivers.clan_voyage_contributions c
-     JOIN features.scoring_view s ON ((s.player_tag = c.player_tag)))
-  WHERE (c.voyage_id = ( SELECT clan_voyage.id
-           FROM drivers.clan_voyage
-          WHERE (clan_voyage.status = 'ACTIVE'::text)
-         LIMIT 1));
+FROM drivers.clan_voyage_contributions c
+JOIN features.scoring_view s ON s.player_tag = c.player_tag
+WHERE c.voyage_id = (SELECT id FROM drivers.clan_voyage WHERE status = 'ACTIVE' LIMIT 1);
+
+GRANT SELECT ON features.voyage_contributions TO authenticated, anon, service_role;
 
 CREATE OR REPLACE VIEW features.governance_report AS
 SELECT id,
@@ -3398,37 +3399,37 @@ SELECT id,
 
 CREATE OR REPLACE VIEW features.voyage_summary AS
 WITH current_voyage AS (
-         SELECT clan_voyage.id,
-            clan_voyage.clan_tag,
-            clan_voyage.status,
-            clan_voyage.target_crowns,
-            clan_voyage.start_at,
-            clan_voyage.end_at,
-            clan_voyage.created_at,
-            clan_voyage.updated_at
-           FROM drivers.clan_voyage
-          WHERE (clan_voyage.status = ANY (ARRAY['PENDING'::text, 'ACTIVE'::text]))
-          ORDER BY
-                CASE
-                    WHEN (clan_voyage.status = 'ACTIVE'::text) THEN 1
-                    ELSE 2
-                END, clan_voyage.created_at DESC
-         LIMIT 1
-        ), total_stats AS (
-         SELECT v.id AS voyage_id,
-            COALESCE(sum(c.total_voyage_crowns), (0)::bigint) AS total_crowns
-           FROM (current_voyage v
-             LEFT JOIN drivers.clan_voyage_contributions c ON ((c.voyage_id = v.id)))
-          GROUP BY v.id
-        )
- SELECT ( SELECT jsonb_build_object('id', v.id, 'clan_tag', v.clan_tag, 'status', v.status, 'target_crowns', v.target_crowns, 'start_at', v.start_at, 'end_at', v.end_at, 'is_victory', (ts.total_crowns >= v.target_crowns)) AS jsonb_build_object
-           FROM (current_voyage v
-             JOIN total_stats ts ON ((ts.voyage_id = v.id)))) AS event,
-    COALESCE(( SELECT ts.total_crowns
-           FROM total_stats ts), (0)::bigint) AS total_voyage_crowns,
-    COALESCE(( SELECT ((ts.total_crowns)::numeric / (NULLIF(v.target_crowns, 0))::numeric)
-           FROM (current_voyage v
-             JOIN total_stats ts ON ((ts.voyage_id = v.id)))), (0)::numeric) AS progress_ratio;
+    SELECT *
+    FROM drivers.clan_voyage
+    WHERE status IN ('PENDING', 'ACTIVE')
+    ORDER BY CASE WHEN status = 'ACTIVE' THEN 1 ELSE 2 END ASC, created_at DESC
+    LIMIT 1
+), total_stats AS (
+    SELECT
+        v.id AS voyage_id,
+        COALESCE(SUM(c.total_voyage_crowns), 0) AS total_crowns
+    FROM current_voyage v
+    LEFT JOIN drivers.clan_voyage_contributions c ON c.voyage_id = v.id
+    GROUP BY v.id
+)
+SELECT
+    (SELECT jsonb_build_object(
+        'id',            v.id,
+        'clan_tag',      v.clan_tag,
+        'status',        v.status,
+        'target_crowns', v.target_crowns,
+        'start_at',      v.start_at,
+        'end_at',        v.end_at,
+        'is_victory',    (ts.total_crowns >= v.target_crowns)
+    ) FROM current_voyage v JOIN total_stats ts ON ts.voyage_id = v.id) AS event,
+    COALESCE((SELECT ts.total_crowns FROM total_stats ts), 0) AS total_voyage_crowns,
+    COALESCE(
+        (SELECT (ts.total_crowns::numeric / NULLIF(v.target_crowns, 0)::numeric)
+         FROM current_voyage v JOIN total_stats ts ON ts.voyage_id = v.id),
+        0
+    ) AS progress_ratio;
+
+GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 
 CREATE OR REPLACE VIEW features.headhunter_view AS
 WITH benchmarking_context AS (
@@ -3631,50 +3632,73 @@ WITH latest_logs AS (
 -- TRIGGERS
 DROP TRIGGER IF EXISTS handle_updated_at_members ON drivers.members;
 CREATE TRIGGER handle_updated_at_members BEFORE UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS tr_heritage_snapshot ON drivers.members;
 CREATE TRIGGER tr_heritage_snapshot AFTER DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION substrate.handle_heritage_snapshot();
+
 DROP TRIGGER IF EXISTS trg_members_exclusion_sync ON drivers.members;
 CREATE TRIGGER trg_members_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
+
 DROP TRIGGER IF EXISTS handle_updated_at_war_opponents ON drivers.war_opponents;
 CREATE TRIGGER handle_updated_at_war_opponents BEFORE UPDATE ON drivers.war_opponents FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS handle_updated_at_battles ON drivers.player_battles;
 CREATE TRIGGER handle_updated_at_battles BEFORE UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS tr_battle_voyage_sync ON drivers.player_battles;
 CREATE TRIGGER tr_battle_voyage_sync AFTER INSERT OR UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION drivers.on_battle_recorded();
+
 DROP TRIGGER IF EXISTS handle_updated_at_telemetry ON substrate.governance_telemetry;
 CREATE TRIGGER handle_updated_at_telemetry BEFORE UPDATE ON substrate.governance_telemetry FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS tr_telemetry_integrity_sync ON substrate.governance_telemetry;
 CREATE TRIGGER tr_telemetry_integrity_sync AFTER UPDATE OF status ON substrate.governance_telemetry FOR EACH ROW WHEN ((new.status = ANY (ARRAY['SUCCESS'::text, 'COMPLETE'::text]))) EXECUTE FUNCTION substrate.on_telemetry_complete();
+
 DROP TRIGGER IF EXISTS handle_updated_at_blacklist ON drivers.recruit_blacklist;
 CREATE TRIGGER handle_updated_at_blacklist BEFORE UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS trg_blacklist_exclusion_sync ON drivers.recruit_blacklist;
 CREATE TRIGGER trg_blacklist_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
+
 DROP TRIGGER IF EXISTS trg_shredder_profile ON substrate.raw_clan_profile;
 CREATE TRIGGER trg_shredder_profile AFTER INSERT ON substrate.raw_clan_profile FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_profile();
+
 DROP TRIGGER IF EXISTS handle_updated_at_clans ON drivers.clans;
 CREATE TRIGGER handle_updated_at_clans BEFORE UPDATE ON drivers.clans FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS trg_on_contribution_manual_override_updated ON drivers.clan_voyage_contributions;
 CREATE TRIGGER trg_on_contribution_manual_override_updated BEFORE UPDATE OF manual_voyage_crowns ON drivers.clan_voyage_contributions FOR EACH ROW EXECUTE FUNCTION drivers.on_contribution_manual_override_updated();
+
 DROP TRIGGER IF EXISTS trg_shredder_members ON substrate.raw_clan_members;
 CREATE TRIGGER trg_shredder_members AFTER INSERT ON substrate.raw_clan_members FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_members();
+
 DROP TRIGGER IF EXISTS trg_shredder_river_race ON substrate.raw_river_race;
 CREATE TRIGGER trg_shredder_river_race AFTER INSERT ON substrate.raw_river_race FOR EACH ROW EXECUTE FUNCTION substrate.shred_river_race();
+
 DROP TRIGGER IF EXISTS handle_updated_at_war_activity ON drivers.war_activity;
 CREATE TRIGGER handle_updated_at_war_activity BEFORE UPDATE ON drivers.war_activity FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS handle_updated_at_recruits ON drivers.recruits;
 CREATE TRIGGER handle_updated_at_recruits BEFORE UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS tr_log_recruit_insert ON drivers.recruits;
 CREATE TRIGGER tr_log_recruit_insert AFTER INSERT ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
+
 DROP TRIGGER IF EXISTS tr_log_recruit_update ON drivers.recruits;
 CREATE TRIGGER tr_log_recruit_update AFTER UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
+
 DROP TRIGGER IF EXISTS tr_rotate_recruits ON drivers.recruits;
 CREATE TRIGGER tr_rotate_recruits AFTER INSERT OR UPDATE OF raw_potential_score ON drivers.recruits FOR EACH STATEMENT EXECUTE FUNCTION substrate.tr_fn_rotate_recruits();
+
 DROP TRIGGER IF EXISTS handle_updated_at_war_history ON drivers.war_history;
 CREATE TRIGGER handle_updated_at_war_history BEFORE UPDATE ON drivers.war_history FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS handle_updated_at_heritage ON drivers.heritage_ledger;
 CREATE TRIGGER handle_updated_at_heritage BEFORE UPDATE ON drivers.heritage_ledger FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS handle_updated_at_config ON substrate.config;
 CREATE TRIGGER handle_updated_at_config BEFORE UPDATE ON substrate.config FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+
 DROP TRIGGER IF EXISTS trg_shredder_war_log ON substrate.raw_war_log;
 CREATE TRIGGER trg_shredder_war_log AFTER INSERT ON substrate.raw_war_log FOR EACH ROW EXECUTE FUNCTION substrate.shred_war_log();
 
