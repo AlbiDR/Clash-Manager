@@ -20,15 +20,16 @@ forbidden-actions: [apply_migration, execute_sql, cosmetic-changes]
 
 ## [Base 1] Nightly Pipeline Sequence
 
-The pipeline operates in an 8-stage sequence where each stage runs as an atomic, self-contained run:
+The pipeline operates in a 9-stage sequence where each stage runs as an atomic, self-contained run:
 1. **Harden (Stage 1):** Security and Runtime Integrity.
 2. **Verify (Stage 2):** Test Suite and Logic Proof.
-3. **Optimize (Stage 3):** Performance and Hygiene.
-4. **Document-README (Stage 4):** Project Truth (READMEs).
-5. **Document-TSDoc (Stage 5):** Logic Intent (TSDoc/JSDoc).
-6. **Version-Integrity (Stage 6):** Version Reconciler.
-7. **Dependency-Audit (Stage 7):** External Research.
-8. **Refactor (Stage 8):** Structural Architect.
+3. **Baseline-Consolidation (Stage 3):** Database Schema Baselining.
+4. **Optimize (Stage 4):** Performance and Hygiene.
+5. **Document-README (Stage 5):** Project Truth (READMEs).
+6. **Document-TSDoc (Stage 6):** Logic Intent (TSDoc/JSDoc).
+7. **Version-Integrity (Stage 7):** Version Reconciler.
+8. **Dependency-Audit (Stage 8):** External Research.
+9. **Refactor (Stage 9):** Structural Architect.
 
 ---
 
@@ -94,7 +95,7 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 
 ### D. Exclusions and Constraints
 - **No Feature Work:** Do not implement new features. Every change must specifically resolve a named security or failure-mode risk.
-- **No Version Reconciliation:** Version string consistency and PNPM catalog checks are owned exclusively by Stage 6 (Version Integrity).
+- **No Version Reconciliation:** Version string consistency and PNPM catalog checks are owned exclusively by Stage 7 (Version Integrity).
 - **Supabase SSOT Firewall:** Do not modify database schemas, views, or triggers directly. DDL/DML mutations must only be written as migrations in `supabase/migrations/`. You may call read-only MCP tools for diagnosis, but you are strictly forbidden from executing mutations via `apply_migration` or `execute_sql`.
 - **No Cosmetic Changes:** Do not open Pull Requests for formatting, stylistic improvements, or variable renaming.
 

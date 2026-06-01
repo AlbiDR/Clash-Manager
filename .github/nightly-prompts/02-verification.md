@@ -20,15 +20,16 @@ forbidden-actions: [modify-application-code, modify-database-schema]
 
 ## [Base 1] Nightly Pipeline Sequence
 
-The pipeline operates in an 8-stage sequence where each stage runs as an atomic, self-contained run:
+The pipeline operates in a 9-stage sequence where each stage runs as an atomic, self-contained run:
 1. **Harden (Stage 1):** Security and Runtime Integrity.
 2. **Verify (Stage 2):** Test Suite and Logic Proof.
-3. **Optimize (Stage 3):** Performance and Hygiene.
-4. **Document-README (Stage 4):** Project Truth (READMEs).
-5. **Document-TSDoc (Stage 5):** Logic Intent (TSDoc/JSDoc).
-6. **Version-Integrity (Stage 6):** Version Reconciler.
-7. **Dependency-Audit (Stage 7):** External Research.
-8. **Refactor (Stage 8):** Structural Architect.
+3. **Baseline-Consolidation (Stage 3):** Database Schema Baselining.
+4. **Optimize (Stage 4):** Performance and Hygiene.
+5. **Document-README (Stage 5):** Project Truth (READMEs).
+6. **Document-TSDoc (Stage 6):** Logic Intent (TSDoc/JSDoc).
+7. **Version-Integrity (Stage 7):** Version Reconciler.
+8. **Dependency-Audit (Stage 8):** External Research.
+9. **Refactor (Stage 9):** Structural Architect.
 
 ---
 
@@ -102,7 +103,7 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 ### Step 1: Uncovered Gap Scan
 Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed to Step 4 and record a "No Blindspot Found" run.
 - **Priority List:**
-  1. **Recent-Change Priority:** Inspect recent commits on the `Nightly` branch. If files modified by Stage 1 (Harden) or Stage 3 (Optimize) lack corresponding specs, or their specs do not cover the changed logic, target them.
+  1. **Recent-Change Priority:** Inspect recent commits on the `Nightly` branch. If files modified by Stage 1 (Harden) or Stage 4 (Optimize) lack corresponding specs, or their specs do not cover the changed logic, target them.
   2. **Validation Boundary:** Target functions processing external data (APIs, LocalStorage, user input) that have no tests covering the invalid/malformed input branch.
   3. **Zero Coverage:** Identify any complex `.ts` utility or `.vue` composable with zero `*.spec.ts` coverage.
   4. **Partial Coverage:** Locate existing `*.spec.ts` files missing edge cases or sad paths (such as API failures or boundary values).
