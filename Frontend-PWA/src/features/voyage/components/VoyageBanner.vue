@@ -15,62 +15,24 @@
  * - **Role:** Live feedback surface for the active or upcoming Voyage event.
  * ============================================================================
  */
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { onMounted, computed } from "vue";
 import { useVoyageStore } from "../composables/useVoyageStore";
-import { Icon } from "@shared";
-import { formatCountdown } from "@core/utils/formatters";
+import { Icon, useCountdown } from "@shared";
 
 const store = useVoyageStore();
 
-// --- LIVE COUNTDOWN TIMER ---
-const timeRemaining = ref("");
-const startsInCountdown = ref("");
-
-let timer: ReturnType<typeof setInterval> | null = null;
-
 onMounted(() => {
   store.refresh();
-  timer = setInterval(() => {
-    if (store.endsAt) {
-      const wasEnded = timeRemaining.value === "Ended";
-      timeRemaining.value = formatCountdown(store.endsAt);
-      if (!wasEnded && timeRemaining.value === "Ended") {
-        store.refresh();
-      }
-    }
-    if (store.startsAt) {
-      const wasStarted = startsInCountdown.value === "Ended";
-      startsInCountdown.value = formatCountdown(store.startsAt);
-      if (!wasStarted && startsInCountdown.value === "Ended") {
-        store.refresh();
-      }
-    }
-  }, 1000);
-
-  if (store.endsAt) timeRemaining.value = formatCountdown(store.endsAt);
-  if (store.startsAt) startsInCountdown.value = formatCountdown(store.startsAt);
 });
 
-onUnmounted(() => {
-  if (timer) clearInterval(timer);
+// --- LIVE COUNTDOWN TIMERS ---
+const timeRemaining = useCountdown(computed(() => store.endsAt), {
+  onExpiry: () => store.refresh()
 });
 
-// React immediately to store state changes (e.g. activation)
-watch(() => store.endsAt, (newVal) => {
-  if (newVal) {
-    timeRemaining.value = formatCountdown(newVal);
-  } else {
-    timeRemaining.value = "";
-  }
-}, { immediate: true });
-
-watch(() => store.startsAt, (newVal) => {
-  if (newVal) {
-    startsInCountdown.value = formatCountdown(newVal);
-  } else {
-    startsInCountdown.value = "";
-  }
-}, { immediate: true });
+const startsInCountdown = useCountdown(computed(() => store.startsAt), {
+  onExpiry: () => store.refresh()
+});
 
 const progressPercent = computed(() =>
   Math.round(store.progressRatio * 100)

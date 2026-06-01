@@ -19,10 +19,9 @@
  *   to the 400-line SRP threshold (ADR Section III).
  * ============================================================================
  */
-import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from "vue";
-import { SettingsCard, Icon } from "@shared";
+import { computed, onMounted, defineAsyncComponent } from "vue";
+import { SettingsCard, Icon, useCountdown } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
-import { formatCountdown } from "@core/utils/formatters";
 
 const VoyageSetupForm = defineAsyncComponent(() => import("./VoyageSetupForm.vue"));
 
@@ -32,48 +31,19 @@ const props = defineProps<{
 
 const store = useVoyageStore();
 
-// --- LIVE COUNTDOWN TIMER ---
-const timeRemaining = ref("");
-const startsInCountdown = ref("");
-
-let timer: ReturnType<typeof setInterval> | null = null;
-
 onMounted(() => {
   store.refresh();
-  timer = setInterval(() => {
-    // Handle active endsAt countdown
-    if (store.endsAt) {
-      const wasEnded = timeRemaining.value === "Ended";
-      timeRemaining.value = formatCountdown(store.endsAt, { showDays: true });
-      if (!wasEnded && timeRemaining.value === "Ended") {
-        store.refresh();
-      }
-    } else {
-      timeRemaining.value = "";
-    }
-
-    // Handle scheduled startsAt countdown
-    if (store.startsAt) {
-      const wasStarted = startsInCountdown.value === "Ended";
-      startsInCountdown.value = formatCountdown(store.startsAt, { showDays: true });
-      if (!wasStarted && startsInCountdown.value === "Ended") {
-        store.refresh();
-      }
-    } else {
-      startsInCountdown.value = "";
-    }
-  }, 1000);
-
-  if (store.endsAt) {
-    timeRemaining.value = formatCountdown(store.endsAt, { showDays: true });
-  }
-  if (store.startsAt) {
-    startsInCountdown.value = formatCountdown(store.startsAt, { showDays: true });
-  }
 });
 
-onUnmounted(() => {
-  if (timer) clearInterval(timer);
+// --- LIVE COUNTDOWN TIMERS ---
+const timeRemaining = useCountdown(computed(() => store.endsAt), {
+  showDays: true,
+  onExpiry: () => store.refresh()
+});
+
+const startsInCountdown = useCountdown(computed(() => store.startsAt), {
+  showDays: true,
+  onExpiry: () => store.refresh()
 });
 
 const pillLabel = computed(() => {

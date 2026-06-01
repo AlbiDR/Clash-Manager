@@ -9,8 +9,10 @@ import { useVoyageStore } from "../../composables/useVoyageStore";
 import { nextTick, defineComponent, h } from "vue";
 
 // Mock @shared to provide SettingsCard and Icon
-vi.mock("@shared", async () => {
+vi.mock("@shared", async (importOriginal) => {
+  const actual = await importOriginal() as any;
   return {
+    ...actual,
     SettingsCard: {
       name: "SettingsCard",
       template: '<div class="settings-card-mock"><slot name="header-extra" /><slot /></div>',
