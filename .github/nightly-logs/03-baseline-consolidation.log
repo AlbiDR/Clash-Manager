@@ -1,0 +1,7 @@
+2026-09-04 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 1 (20260601011500_fix_war_participation_rate_denominator.sql)
+- Tables Hardened (RLS): 1 (drivers.exclusion_cache)
+- Functions Hardened (search_path): 87
+- Idempotency Guards Added: 24 Triggers, 15 Constraints
+- Verification: 1094 passed, 1 skipped
