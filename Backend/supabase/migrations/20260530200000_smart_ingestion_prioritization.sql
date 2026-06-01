@@ -9,7 +9,7 @@
  * each member gets an individual next_poll_at timestamp that reflects
  * how recently they were active in-game.
  *
- * Core invariant (SQL mirror of voyage-poll-schedule.ts):
+ * Core invariant:
  *
  *   T_poll = BATTLE_LOG_API_WINDOW * V_match
  *
@@ -20,7 +20,7 @@
  * Changes:
  *   1. Add next_poll_at TIMESTAMPTZ to drivers.members.
  *   2. Create drivers.get_voyage_poll_interval_seconds() — the SQL
- *      equivalent of getFinalPollIntervalSeconds() in voyage-poll-schedule.ts.
+ *      equivalent of the poll interval calculation logic.
  *   3. Update public.get_ingestion_targets() to filter by next_poll_at.
  *   4. Update public.ingest_player_battles() to write next_poll_at
  *      after each successful ingestion.
@@ -43,7 +43,6 @@ COMMENT ON COLUMN drivers.members.next_poll_at IS
 
 -- ==========================================================================
 -- 2. Helper: tier-based poll interval calculator
---    SQL mirror of getFinalPollIntervalSeconds() in voyage-poll-schedule.ts.
 --    All constants are declared as named variables — no magic numbers.
 -- ==========================================================================
 
@@ -65,7 +64,6 @@ DECLARE
     v_seconds_per_hour        CONSTANT NUMERIC := 3600.0;
 
     -- Tier boundary thresholds (hours since last seen).
-    -- Mirror of VOYAGE_TRACKING_BOUNDARIES_HOURS in voyage-poll-schedule.ts.
     v_boundary_active_session CONSTANT INTEGER :=   3;
     v_boundary_recent_close   CONSTANT INTEGER :=   6;
     v_boundary_intermittent   CONSTANT INTEGER :=  12;
@@ -77,7 +75,6 @@ DECLARE
     v_boundary_dormant        CONSTANT INTEGER := 168;
 
     -- Target velocities: assumed minimum match duration per tier (seconds).
-    -- Mirror of VOYAGE_TRACKING_VELOCITIES_SECONDS in voyage-poll-schedule.ts.
     v_velocity_t1             CONSTANT INTEGER :=  72; -- 01:12 anchor
     v_velocity_t2             CONSTANT INTEGER :=  80; -- 01:20
     v_velocity_t3             CONSTANT INTEGER :=  90; -- 01:30
