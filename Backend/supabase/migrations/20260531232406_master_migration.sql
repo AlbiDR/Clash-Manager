@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS substrate.discovery_cache (
     type text NOT NULL,
     scanned_at timestamp with time zone DEFAULT now() /* Timestamp of the last time this player was indexed in a discovery scan. */,
     player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
+    discovered_at timestamp with time zone DEFAULT now(),
     CONSTRAINT substrate_discovery_cache_pkey PRIMARY KEY (player_tag)
 );
 
@@ -126,6 +127,7 @@ CREATE TABLE IF NOT EXISTS substrate.pipeline_heartbeat (
     last_triggered_at timestamp with time zone DEFAULT now(),
     discovery_yield integer DEFAULT 0,
     updated_at timestamp with time zone DEFAULT now(),
+    metadata jsonb DEFAULT '{}'::jsonb,
     CONSTRAINT substrate_pipeline_heartbeat_pkey PRIMARY KEY (component_id)
 );
 
@@ -425,22 +427,50 @@ CREATE TABLE IF NOT EXISTS features.player_card_snapshots (
 ALTER TABLE features.player_card_snapshots ENABLE ROW LEVEL SECURITY;
 
 -- UNIQUE CONSTRAINTS
+ALTER TABLE drivers.clans DROP CONSTRAINT IF EXISTS clans_clan_tag_unique CASCADE;
 ALTER TABLE drivers.clans ADD CONSTRAINT clans_clan_tag_unique UNIQUE (clan_tag);
+
+ALTER TABLE drivers.members DROP CONSTRAINT IF EXISTS members_tag_unique CASCADE;
 ALTER TABLE drivers.members ADD CONSTRAINT members_tag_unique UNIQUE (player_tag);
+
+ALTER TABLE drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_player_tag_key CASCADE;
 ALTER TABLE drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_voyage_id_player_tag_key UNIQUE (voyage_id, player_tag);
+
+ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_member_tag_week_id_key CASCADE;
 ALTER TABLE drivers.war_activity ADD CONSTRAINT war_activity_member_tag_week_id_key UNIQUE (player_tag, week_id);
+
+ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_tag_week_section_unique CASCADE;
 ALTER TABLE drivers.war_activity ADD CONSTRAINT war_activity_tag_week_section_unique UNIQUE (player_tag, week_id, section_index);
+
+ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_tag_week_unique CASCADE;
 ALTER TABLE drivers.war_history ADD CONSTRAINT war_history_tag_week_unique UNIQUE (clan_tag, week_id);
+
+ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_week_id_tag_key CASCADE;
 ALTER TABLE drivers.war_history ADD CONSTRAINT war_history_week_id_tag_key UNIQUE (week_id, clan_tag);
 
 -- FOREIGN KEY CONSTRAINTS
+ALTER TABLE drivers.clan_voyage DROP CONSTRAINT IF EXISTS clan_voyage_clan_tag_fkey;
 ALTER TABLE drivers.clan_voyage ADD CONSTRAINT clan_voyage_clan_tag_fkey FOREIGN KEY (clan_tag) REFERENCES drivers.clans(clan_tag);
+
+ALTER TABLE drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_fkey;
 ALTER TABLE drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_voyage_id_fkey FOREIGN KEY (voyage_id) REFERENCES drivers.clan_voyage(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_player_tag_fkey;
 ALTER TABLE drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_player_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.players(player_tag);
+
+ALTER TABLE drivers.members DROP CONSTRAINT IF EXISTS fk_members_player;
 ALTER TABLE drivers.members ADD CONSTRAINT fk_members_player FOREIGN KEY (player_tag) REFERENCES drivers.players(player_tag) ON DELETE CASCADE;
+
+ALTER TABLE drivers.recruits DROP CONSTRAINT IF EXISTS fk_recruits_player;
 ALTER TABLE drivers.recruits ADD CONSTRAINT fk_recruits_player FOREIGN KEY (player_tag) REFERENCES drivers.players(player_tag) ON DELETE CASCADE;
+
+ALTER TABLE drivers.player_battles DROP CONSTRAINT IF EXISTS fk_player_battles_player;
 ALTER TABLE drivers.player_battles ADD CONSTRAINT fk_player_battles_player FOREIGN KEY (player_tag) REFERENCES drivers.players(player_tag) ON DELETE CASCADE;
+
+ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS fk_war_activity_player;
 ALTER TABLE drivers.war_activity ADD CONSTRAINT fk_war_activity_player FOREIGN KEY (player_tag) REFERENCES drivers.members(player_tag) ON DELETE CASCADE;
+
+ALTER TABLE drivers.member_snapshots DROP CONSTRAINT IF EXISTS member_snapshots_member_tag_fkey;
 ALTER TABLE drivers.member_snapshots ADD CONSTRAINT member_snapshots_member_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.members(player_tag) ON DELETE CASCADE;
 
 -- FUNCTIONS
