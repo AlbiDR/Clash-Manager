@@ -13,6 +13,7 @@ import {
   formatCountdown,
   sanitizeNumericInput,
   durationToSeconds,
+  t2tToTimestamp,
 } from "@core/utils/formatters";
 
 describe("formatters", () => {
@@ -348,6 +349,10 @@ describe("formatters", () => {
       const future = new Date("2026-01-01T13:05:10Z");
       expect(formatCountdown(future, { showDays: true })).toBe("01:05:10");
     });
+
+    it("returns empty string for invalid date strings", () => {
+      expect(formatCountdown("invalid-date")).toBe("");
+    });
   });
 
   describe("calculateMomentum", () => {
@@ -437,6 +442,30 @@ describe("formatters", () => {
     it("handles large values", () => {
       // 10d = 864000
       expect(durationToSeconds(10, 0, 0)).toBe(864000);
+    });
+  });
+
+  describe("t2tToTimestamp", () => {
+    beforeEach(() => {
+      vi.setSystemTime(new Date("2026-01-01T12:00:00Z"));
+    });
+
+    it("converts duration to ISO-8601 string relative to now", () => {
+      const input = { days: 1, hours: 2, minutes: 30 };
+      // 1d 2h 30m = 86400 + 7200 + 1800 = 95400 seconds
+      const expected = new Date("2026-01-02T14:30:00Z").toISOString();
+      expect(t2tToTimestamp(input)).toBe(expected);
+    });
+
+    it("handles zero duration", () => {
+      const input = { days: 0, hours: 0, minutes: 0 };
+      expect(t2tToTimestamp(input)).toBe(new Date("2026-01-01T12:00:00Z").toISOString());
+    });
+
+    it("handles large duration values", () => {
+      const input = { days: 100, hours: 0, minutes: 0 };
+      const expected = new Date("2026-04-11T12:00:00Z").toISOString();
+      expect(t2tToTimestamp(input)).toBe(expected);
     });
   });
 });
