@@ -45,6 +45,7 @@ export { vTooltip } from "./directives/vTooltip";
 
 export { useTheme } from "./composables/useTheme";
 export { useLongPress } from "./composables/useLongPress";
+export { useCountdown } from "./composables/useCountdown";
 
 export { useHeaderScroll } from "./composables/useHeaderScroll";
 export { usePullToRefresh } from "./composables/usePullToRefresh";
