@@ -23,7 +23,9 @@ import path from 'path';
  *   It must exit(1) only on hard failures that would corrupt the DB.
  */
 
-const MIGRATIONS_DIR = path.join(process.cwd(), 'supabase/migrations');
+const MIGRATIONS_DIR = fs.existsSync(path.join(process.cwd(), 'supabase/migrations'))
+  ? path.join(process.cwd(), 'supabase/migrations')
+  : path.join(process.cwd(), 'Backend/supabase/migrations');
 
 // ---------------------------------------------------------------------------
 // 1. Build the authoritative local version set (timestamps only)
