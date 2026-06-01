@@ -2219,7 +2219,6 @@ DECLARE
     v_seconds_per_hour        CONSTANT NUMERIC := 3600.0;
 
     -- Tier boundary thresholds (hours since last seen).
-    -- Mirror of VOYAGE_TRACKING_BOUNDARIES_HOURS in voyage-poll-schedule.ts.
     v_boundary_active_session CONSTANT INTEGER :=   3;
     v_boundary_recent_close   CONSTANT INTEGER :=   6;
     v_boundary_intermittent   CONSTANT INTEGER :=  12;
@@ -2231,7 +2230,6 @@ DECLARE
     v_boundary_dormant        CONSTANT INTEGER := 168;
 
     -- Target velocities: assumed minimum match duration per tier (seconds).
-    -- Mirror of VOYAGE_TRACKING_VELOCITIES_SECONDS in voyage-poll-schedule.ts.
     v_velocity_t1             CONSTANT INTEGER :=  72; -- 01:12 anchor
     v_velocity_t2             CONSTANT INTEGER :=  80; -- 01:20
     v_velocity_t3             CONSTANT INTEGER :=  90; -- 01:30
