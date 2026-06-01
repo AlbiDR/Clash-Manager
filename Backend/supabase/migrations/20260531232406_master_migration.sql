@@ -490,7 +490,7 @@ BEGIN
     
     RETURN v_secret;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.tr_fn_rotate_recruits()
  RETURNS trigger
@@ -502,7 +502,7 @@ BEGIN
     PERFORM substrate.rotate_recruits();
     RETURN NULL;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.format_longevity(p_minutes integer)
  RETURNS text
@@ -521,7 +521,7 @@ BEGIN
         RETURN (p_minutes / 10080) || 'w';
     END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.finalize_expired_voyages()
  RETURNS integer
@@ -584,7 +584,7 @@ BEGIN
 
     RETURN v_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_governance_telemetry()
  RETURNS void
@@ -622,7 +622,7 @@ BEGIN
     IF (TG_OP = 'DELETE') THEN RETURN OLD; END IF;
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_orphan_players()
  RETURNS integer
@@ -649,7 +649,7 @@ BEGIN
 
     RETURN v_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_stale_battles()
  RETURNS integer
@@ -669,7 +669,7 @@ BEGIN
     
     RETURN v_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.verify_run_integrity(p_telemetry_id uuid)
  RETURNS boolean
@@ -707,7 +707,7 @@ BEGIN
 
     RETURN v_is_perfect;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_raw_logs(p_retention_hours integer DEFAULT 24)
  RETURNS void
@@ -746,7 +746,7 @@ BEGIN
         )
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.run_headhunter_scanner()
  RETURNS void
@@ -769,7 +769,7 @@ BEGIN
         body := '{"tournaments": ["AUTO"]}'::jsonb
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_stale_heritage()
  RETURNS integer
@@ -815,7 +815,7 @@ BEGIN
         LIMIT (p_limit - (p_limit / 3))
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_clanned_recruits()
  RETURNS integer
@@ -866,7 +866,7 @@ BEGIN
 
     RETURN v_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.shred_river_race()
  RETURNS trigger
@@ -946,7 +946,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.report_heartbeat(p_component_id text, p_status substrate.pipeline_status, p_message text DEFAULT NULL::text, p_yield integer DEFAULT 0, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS void
@@ -993,7 +993,7 @@ BEGIN
         is_data_perfect = EXCLUDED.is_data_perfect,
         updated_at = NOW();
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.shred_clan_members()
  RETURNS trigger
@@ -1142,7 +1142,7 @@ EXCEPTION WHEN OTHERS THEN
     WHERE component_id = 'RECRUIT_ROTATION';
     RAISE;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_worst_recruits()
  RETURNS integer
@@ -1190,7 +1190,7 @@ BEGIN
 
     RETURN v_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.report_anchor_yield(p_keyword text, p_yield integer, p_was_rate_limited boolean DEFAULT false)
  RETURNS void
@@ -1250,7 +1250,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_inactive_members()
  RETURNS void
@@ -1272,7 +1272,7 @@ BEGIN
         VALUES ('MAINTENANCE_PURGE', 'INFO', 'Pruned ' || v_count || ' inactive members (30-day threshold).');
     END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.purge_stale_discovery_cache()
  RETURNS void
@@ -1283,7 +1283,7 @@ BEGIN
     DELETE FROM substrate.discovery_cache
     WHERE scanned_at < NOW() - INTERVAL '24 hours';
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.shred_clan_profile()
  RETURNS trigger
@@ -1321,7 +1321,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.format_last_seen(p_days numeric)
  RETURNS text
@@ -1366,7 +1366,7 @@ BEGIN
 
     RETURN coalesce(v_count_noise, 0) + coalesce(v_count_old, 0);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.pipeline_watchdog()
  RETURNS integer
@@ -1493,7 +1493,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.execute_nightly_maintenance()
  RETURNS void
@@ -1577,7 +1577,7 @@ BEGIN
 
     RETURN v_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.dismiss_recruit(p_tag text, p_days_to_ban integer DEFAULT 30)
  RETURNS void
@@ -1609,7 +1609,7 @@ BEGIN
 
     DELETE FROM drivers.recruits WHERE player_tag = p_tag;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.set_voyage_manual_crowns(p_player_tag text, p_crowns integer)
  RETURNS jsonb
@@ -1695,7 +1695,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.on_battle_recorded()
  RETURNS trigger
@@ -1768,7 +1768,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.refresh_voyage_contributions()
  RETURNS void
@@ -1826,7 +1826,7 @@ BEGIN
     WHERE voyage_id = v_id;
 
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.log_recruit_event()
  RETURNS trigger
@@ -1879,7 +1879,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.purge_expired_blacklist()
  RETURNS integer
@@ -1917,7 +1917,7 @@ BEGIN
         ) sub
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.on_contribution_manual_override_updated()
  RETURNS trigger
@@ -1966,7 +1966,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.initialize_voyage(target_crowns integer, start_at timestamp with time zone, end_at timestamp with time zone)
  RETURNS jsonb
@@ -2009,7 +2009,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.sync_exclusion_cache()
  RETURNS trigger
@@ -2033,7 +2033,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.schedule_voyage(target_crowns integer, start_at timestamp with time zone)
  RETURNS jsonb
@@ -2070,7 +2070,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.activate_scheduled_voyage(voyage_id bigint, target_crowns integer, end_at timestamp with time zone)
  RETURNS jsonb
@@ -2107,7 +2107,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.cancel_voyage(voyage_id bigint)
  RETURNS jsonb
@@ -2136,7 +2136,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.auto_activate_pending_voyages()
  RETURNS void
@@ -2161,7 +2161,7 @@ BEGIN
         PERFORM drivers.refresh_voyage_contributions();
     END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.set_voyage_end(voyage_id bigint, end_at timestamp with time zone)
  RETURNS jsonb
@@ -2194,7 +2194,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION drivers.get_voyage_poll_interval_seconds(p_last_seen_at timestamp with time zone, p_voyage_remaining_secs bigint)
  RETURNS bigint
@@ -2263,7 +2263,7 @@ BEGIN
 
     RETURN v_interval;
 END;
-$function$
+$function$;
 
 -- Features Functions
 CREATE OR REPLACE FUNCTION features.set_voyage_manual_crowns(p_player_tag text, p_crowns integer)
@@ -2275,7 +2275,7 @@ AS $function$
 BEGIN
     RETURN drivers.set_voyage_manual_crowns(p_player_tag, p_crowns);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.ping()
  RETURNS text
@@ -2285,7 +2285,7 @@ AS $function$
 BEGIN
     RETURN 'pong';
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.get_pwa_data(threshold numeric DEFAULT 75)
  RETURNS jsonb
@@ -2307,7 +2307,7 @@ BEGIN
         'data', jsonb_build_object('hh', COALESCE(v_hh, '[]'::jsonb))
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.dismiss_recruits(items jsonb)
  RETURNS jsonb
@@ -2340,7 +2340,7 @@ BEGIN
 
     RETURN jsonb_build_object('success', true, 'count', v_count, 'message', 'Recruits dismissed successfully.');
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.trigger_backend_update()
  RETURNS jsonb
@@ -2354,7 +2354,7 @@ BEGIN
         'message', 'Trigger received. Background sync is managed by autonomous crons.'
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.process_queue(req jsonb)
  RETURNS jsonb
@@ -2371,7 +2371,7 @@ BEGIN
     
     RETURN jsonb_build_object('success', true);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.undismiss_recruits(player_tags text[])
  RETURNS jsonb
@@ -2390,7 +2390,7 @@ BEGIN
 
     RETURN jsonb_build_object('success', true, 'count', v_count, 'message', 'Recruits restored successfully.');
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.initialize_voyage(target_crowns integer, start_at timestamp with time zone, end_at timestamp with time zone)
  RETURNS jsonb
@@ -2401,7 +2401,7 @@ AS $function$
 BEGIN
     RETURN drivers.initialize_voyage(target_crowns, start_at, end_at);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.schedule_voyage(target_crowns integer, start_at timestamp with time zone)
  RETURNS jsonb
@@ -2412,7 +2412,7 @@ AS $function$
 BEGIN
     RETURN drivers.schedule_voyage(target_crowns, start_at);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.activate_scheduled_voyage(voyage_id bigint, target_crowns integer, end_at timestamp with time zone)
  RETURNS jsonb
@@ -2423,7 +2423,7 @@ AS $function$
 BEGIN
     RETURN drivers.activate_scheduled_voyage(voyage_id, target_crowns, end_at);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.cancel_voyage(voyage_id bigint)
  RETURNS jsonb
@@ -2434,7 +2434,7 @@ AS $function$
 BEGIN
     RETURN drivers.cancel_voyage(voyage_id);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION features.set_voyage_end(voyage_id bigint, end_at timestamp with time zone)
  RETURNS jsonb
@@ -2445,7 +2445,7 @@ AS $function$
 BEGIN
     RETURN drivers.set_voyage_end(voyage_id, end_at);
 END;
-$function$
+$function$;
 
 -- Public Functions
 CREATE OR REPLACE FUNCTION public.get_headhunter_context()
@@ -2472,7 +2472,7 @@ BEGIN
         'exclusion_tags',    v_exclusion_tags
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.rls_auto_enable()
  RETURNS event_trigger
@@ -2502,7 +2502,7 @@ BEGIN
      END IF;
   END LOOP;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ingest_raw_clan_profile(p_clan_tag text, p_payload jsonb)
  RETURNS void
@@ -2514,7 +2514,7 @@ BEGIN
     INSERT INTO substrate.raw_clan_profile (clan_tag, payload, ingested_at)
     VALUES (p_clan_tag, p_payload, NOW());
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ingest_raw_clan_members(p_clan_tag text, p_payload jsonb)
  RETURNS void
@@ -2526,7 +2526,7 @@ BEGIN
     INSERT INTO substrate.raw_clan_members (clan_tag, payload, ingested_at)
     VALUES (p_clan_tag, p_payload, NOW());
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ingest_raw_river_race(p_clan_tag text, p_payload jsonb)
  RETURNS void
@@ -2538,7 +2538,7 @@ BEGIN
     INSERT INTO substrate.raw_river_race (clan_tag, payload, ingested_at)
     VALUES (p_clan_tag, p_payload, NOW());
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ingest_raw_war_log(p_clan_tag text, p_payload jsonb)
  RETURNS void
@@ -2550,7 +2550,7 @@ BEGIN
     INSERT INTO substrate.raw_war_log (clan_tag, payload, ingested_at)
     VALUES (p_clan_tag, p_payload, NOW());
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_shadow_discovery_targets(p_limit integer DEFAULT 50)
  RETURNS TABLE(opponent_player_tag text)
@@ -2582,7 +2582,7 @@ BEGIN
     FROM drivers.recruits r
     WHERE r.player_tag = ANY(tags);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_top_50_threshold()
  RETURNS numeric
@@ -2602,7 +2602,7 @@ BEGIN
     
     RETURN COALESCE(v_threshold, 0);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.purge_recruits(p_tags text[])
  RETURNS void
@@ -2614,7 +2614,7 @@ BEGIN
     DELETE FROM drivers.recruits
     WHERE player_tag = ANY(p_tags);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_discovery_cache(p_hours integer)
  RETURNS TABLE(player_tag text)
@@ -2628,7 +2628,7 @@ BEGIN
     FROM substrate.discovery_cache c
     WHERE c.scanned_at >= (NOW() - (p_hours || ' hours')::INTERVAL);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_stale_recruits(p_limit integer DEFAULT 20)
  RETURNS TABLE(player_tag text)
@@ -2652,7 +2652,7 @@ BEGIN
       r.raw_potential_score DESC
     LIMIT p_limit;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.upsert_discovery_cache(p_tag text, p_type text)
  RETURNS void
@@ -2667,7 +2667,7 @@ BEGIN
         scanned_at = EXCLUDED.scanned_at,
         type = EXCLUDED.type;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ingest_clan_profile(p_payload jsonb)
  RETURNS void
@@ -2716,7 +2716,7 @@ BEGIN
     ON CONFLICT (player_tag) DO UPDATE
     SET player_name = EXCLUDED.player_name;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.report_heartbeat(p_component_id text, p_status text, p_message text, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS void
@@ -2733,7 +2733,7 @@ BEGIN
         last_triggered_at = EXCLUDED.last_triggered_at,
         metadata = substrate.pipeline_heartbeat.metadata || EXCLUDED.metadata;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_hot_zone_recruits(p_limit integer)
  RETURNS TABLE(player_tag text)
@@ -2749,7 +2749,7 @@ BEGIN
     ORDER BY r.raw_potential_score DESC
     LIMIT p_limit;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.report_discovery(p_player_tag text, p_type text)
  RETURNS void
@@ -2762,7 +2762,7 @@ BEGIN
     VALUES (p_player_tag, p_type, NOW())
     ON CONFLICT (player_tag) DO NOTHING;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.touch_recruits(p_tags text[])
  RETURNS void
@@ -2775,7 +2775,7 @@ BEGIN
     SET last_scan = NOW()
     WHERE player_tag = ANY(p_tags);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.report_telemetry(p_event_type text, p_status text, p_metadata jsonb)
  RETURNS TABLE(id uuid)
@@ -2789,7 +2789,7 @@ BEGIN
     VALUES (p_event_type, p_status, p_metadata, NOW())
     RETURNING governance_telemetry.id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.update_telemetry(p_id uuid, p_status text, p_metadata jsonb)
  RETURNS void
@@ -2804,7 +2804,7 @@ BEGIN
         updated_at = NOW()
     WHERE id = p_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.report_dead_recruit(p_player_tag text)
  RETURNS void
@@ -2877,7 +2877,7 @@ BEGIN
 
     RETURN v_count;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.sync_recruits(p_recruits jsonb)
  RETURNS void
@@ -2943,7 +2943,7 @@ BEGIN
         drivers.recruits.status IS DISTINCT FROM EXCLUDED.status OR
         drivers.recruits.last_scan < NOW() - INTERVAL '15 minutes';
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_ingestion_targets()
  RETURNS jsonb
@@ -2982,7 +2982,7 @@ BEGIN
         'members',  COALESCE(v_members,  '[]'::JSONB)
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.ingest_player_battles(p_tag text, p_payload jsonb)
  RETURNS void
@@ -3087,7 +3087,7 @@ BEGIN
         WHERE player_tag = p_tag;
     END IF;
 END;
-$function$
+$function$;
 
 -- VIEWS
 CREATE OR REPLACE VIEW drivers.recruits_view AS
@@ -3629,29 +3629,53 @@ WITH latest_logs AS (
   ORDER BY (season_id)::integer DESC, (section_index)::integer DESC;
 
 -- TRIGGERS
+DROP TRIGGER IF EXISTS handle_updated_at_members ON drivers.members;
 CREATE TRIGGER handle_updated_at_members BEFORE UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS tr_heritage_snapshot ON drivers.members;
 CREATE TRIGGER tr_heritage_snapshot AFTER DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION substrate.handle_heritage_snapshot();
+DROP TRIGGER IF EXISTS trg_members_exclusion_sync ON drivers.members;
 CREATE TRIGGER trg_members_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
+DROP TRIGGER IF EXISTS handle_updated_at_war_opponents ON drivers.war_opponents;
 CREATE TRIGGER handle_updated_at_war_opponents BEFORE UPDATE ON drivers.war_opponents FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS handle_updated_at_battles ON drivers.player_battles;
 CREATE TRIGGER handle_updated_at_battles BEFORE UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS tr_battle_voyage_sync ON drivers.player_battles;
 CREATE TRIGGER tr_battle_voyage_sync AFTER INSERT OR UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION drivers.on_battle_recorded();
+DROP TRIGGER IF EXISTS handle_updated_at_telemetry ON substrate.governance_telemetry;
 CREATE TRIGGER handle_updated_at_telemetry BEFORE UPDATE ON substrate.governance_telemetry FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS tr_telemetry_integrity_sync ON substrate.governance_telemetry;
 CREATE TRIGGER tr_telemetry_integrity_sync AFTER UPDATE OF status ON substrate.governance_telemetry FOR EACH ROW WHEN ((new.status = ANY (ARRAY['SUCCESS'::text, 'COMPLETE'::text]))) EXECUTE FUNCTION substrate.on_telemetry_complete();
+DROP TRIGGER IF EXISTS handle_updated_at_blacklist ON drivers.recruit_blacklist;
 CREATE TRIGGER handle_updated_at_blacklist BEFORE UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS trg_blacklist_exclusion_sync ON drivers.recruit_blacklist;
 CREATE TRIGGER trg_blacklist_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
+DROP TRIGGER IF EXISTS trg_shredder_profile ON substrate.raw_clan_profile;
 CREATE TRIGGER trg_shredder_profile AFTER INSERT ON substrate.raw_clan_profile FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_profile();
+DROP TRIGGER IF EXISTS handle_updated_at_clans ON drivers.clans;
 CREATE TRIGGER handle_updated_at_clans BEFORE UPDATE ON drivers.clans FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS trg_on_contribution_manual_override_updated ON drivers.clan_voyage_contributions;
 CREATE TRIGGER trg_on_contribution_manual_override_updated BEFORE UPDATE OF manual_voyage_crowns ON drivers.clan_voyage_contributions FOR EACH ROW EXECUTE FUNCTION drivers.on_contribution_manual_override_updated();
+DROP TRIGGER IF EXISTS trg_shredder_members ON substrate.raw_clan_members;
 CREATE TRIGGER trg_shredder_members AFTER INSERT ON substrate.raw_clan_members FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_members();
+DROP TRIGGER IF EXISTS trg_shredder_river_race ON substrate.raw_river_race;
 CREATE TRIGGER trg_shredder_river_race AFTER INSERT ON substrate.raw_river_race FOR EACH ROW EXECUTE FUNCTION substrate.shred_river_race();
+DROP TRIGGER IF EXISTS handle_updated_at_war_activity ON drivers.war_activity;
 CREATE TRIGGER handle_updated_at_war_activity BEFORE UPDATE ON drivers.war_activity FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS handle_updated_at_recruits ON drivers.recruits;
 CREATE TRIGGER handle_updated_at_recruits BEFORE UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS tr_log_recruit_insert ON drivers.recruits;
 CREATE TRIGGER tr_log_recruit_insert AFTER INSERT ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
+DROP TRIGGER IF EXISTS tr_log_recruit_update ON drivers.recruits;
 CREATE TRIGGER tr_log_recruit_update AFTER UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
+DROP TRIGGER IF EXISTS tr_rotate_recruits ON drivers.recruits;
 CREATE TRIGGER tr_rotate_recruits AFTER INSERT OR UPDATE OF raw_potential_score ON drivers.recruits FOR EACH STATEMENT EXECUTE FUNCTION substrate.tr_fn_rotate_recruits();
+DROP TRIGGER IF EXISTS handle_updated_at_war_history ON drivers.war_history;
 CREATE TRIGGER handle_updated_at_war_history BEFORE UPDATE ON drivers.war_history FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS handle_updated_at_heritage ON drivers.heritage_ledger;
 CREATE TRIGGER handle_updated_at_heritage BEFORE UPDATE ON drivers.heritage_ledger FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS handle_updated_at_config ON substrate.config;
 CREATE TRIGGER handle_updated_at_config BEFORE UPDATE ON substrate.config FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+DROP TRIGGER IF EXISTS trg_shredder_war_log ON substrate.raw_war_log;
 CREATE TRIGGER trg_shredder_war_log AFTER INSERT ON substrate.raw_war_log FOR EACH ROW EXECUTE FUNCTION substrate.shred_war_log();
 
 COMMIT;
