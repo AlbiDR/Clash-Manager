@@ -48,21 +48,23 @@ export async function runGhostPurge(
 
         await Promise.all(batch.map(async (targetRecruit: { player_tag: string }) => {
             try {
-                const apiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetRecruit.player_tag)}`);
-                if (!apiResponse.ok) {
+                const royaleApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetRecruit.player_tag)}`);
+                if (!royaleApiResponse.ok) {
                     // [DECISION LOG] 404 indicates the player likely no longer exists (tag change/deleted).
                     // Purge immediately to clean the hot-zone.
-                    if (apiResponse.status === 404) {
+                    if (royaleApiResponse.status === 404) {
                         await supabase.rpc('purge_recruits', { p_tags: [targetRecruit.player_tag] });
                         ghostsEvicted++;
                     }
                     return;
                 }
-                const rawPlayerProfile = await apiResponse.json();
 
                 // [GUARD] VALIDATION BOUNDARY: Royale API data must match our internal schema.
-                // [THREAT:] Prevents runtime crashes or logic corruption from unexpected Royale API changes.
-                const validation = v.safeParse(RoyalePlayerSchema, rawPlayerProfile);
+                // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
+                // to enforce strict narrowing and prevent runtime crashes or logic corruption
+                // from unexpected Royale API changes.
+                const unvalidatedPlayerProfile: unknown = await royaleApiResponse.json();
+                const validation = v.safeParse(RoyalePlayerSchema, unvalidatedPlayerProfile);
 
                 if (!validation.success) {
                     logAudit('GHOST_PURGE', 'error', { tag: targetRecruit.player_tag, message: 'Player profile validation failed' });
