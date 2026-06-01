@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-01] PR #726: chore(deps): bump dependency-cruiser and update major watchlist
+**Commit**: `7344bd6a73fce6e04f403337cb0f639994a7075d`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/726)
+
+### Description
+Performed a dependency audit as the project's external health auditor. Updated `dependency-cruiser` to the latest patch version (^17.4.3) and conducted extensive research on major version updates for core dependencies. Updated the dependency audit log with a detailed "Major Version Watchlist," documenting critical breaking changes such as Vite 8's transition to Rolldown and TypeScript 6's shift in default compiler settings. All changes verified via the monorepo test suite.
+
+---
+*PR created automatically by Jules for task [15709588895970081699](https://jules.google.com/task/15709588895970081699) started by @AlbiDR*
+
+---
+
 ## [2026-06-01] PR #725: chore(version): no drift found
 **Commit**: `f7cb9d2d0c305bd9798e0a7b29ffe9a11e813bd1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/725)
