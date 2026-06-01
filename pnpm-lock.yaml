@@ -34,7 +34,7 @@ catalogs:
       specifier: ^0.9.1
       version: 0.9.1
     dependency-cruiser:
-      specifier: ^17.4.2
+      specifier: ^17.4.3
       version: 17.4.3
     jsdom:
       specifier: ^24.1.3

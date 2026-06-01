@@ -8,12 +8,16 @@ import VoyageBanner from "../VoyageBanner.vue";
 import { useVoyageStore } from "../../composables/useVoyageStore";
 
 // Mock @shared to avoid importing complex UI components
-vi.mock("@shared", () => ({
-  Icon: {
-    template: '<span class="mock-icon" :data-name="name"></span>',
-    props: ["name", "size"]
-  }
-}));
+vi.mock("@shared", async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    Icon: {
+      template: '<span class="mock-icon" :data-name="name"></span>',
+      props: ["name", "size"]
+    }
+  };
+});
 
 // Mock API clients used by the store to avoid side effects
 vi.mock("@core/api/VoyageClient", () => ({

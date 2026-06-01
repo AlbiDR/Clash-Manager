@@ -28,22 +28,39 @@ import { useConsoleMetadata } from "./useConsoleMetadata";
  * Defines the configuration contract for the useConsoleController.
  */
 interface ConsoleLogicOptions<T> {
+  /** The reactive dataset to be managed by the controller. */
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
+  /** Optional hydration status override. */
   isHydrated?: Ref<boolean> | ComputedRef<boolean>;
+  /** Optional data source provenance override. */
   currentSource?: Ref<"SUPABASE" | null> | ComputedRef<"SUPABASE" | null>;
+  /** Optional remote sync timestamp override. */
   remoteSyncTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** Optional compilation timestamp override. */
   lastCompiledTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** Optional fetch timestamp override. */
   lastFetchedTime?: Ref<number | null> | ComputedRef<number | null>;
+  /** Logic for extracting searchable tokens from an item. */
   filterFn: (item: T) => string[];
+  /** Map of comparator functions for sorting. */
   sortStrategies: Record<string, (a: T, b: T) => number>;
+  /** UI configuration for the sorting menu. */
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
+  /** Whether to enable the global search filter. */
   showSearch?: boolean;
+  /** The initial sort strategy key. */
   defaultSort: string;
+  /** Prefix used for deep-link URL fragments (e.g., 'member-'). */
   deepLinkPrefix: string;
+  /** Mapper to extract a unique ID for batch selection. */
   batchIdMapper: (item: T) => string;
+  /** Domain label for statistics (e.g., 'Member'). */
   statsLabel: string;
+  /** Optional logic to extract a numeric performance score. */
   scoreGetter?: (item: T) => number;
+  /** Optional override for the refresh action. */
   refresh?: () => void | Promise<void>;
+  /** Optional callback for when the management FAB is dismissed. */
   onDismiss?: () => void;
   /** Optional FAB state override for feature-specific actions. */
   fabState?: ComputedRef<any> | Ref<any>;
@@ -57,7 +74,21 @@ interface ConsoleLogicOptions<T> {
  * COMPOSABLE: useConsoleController
  *
  * @remarks
- * The primary orchestrator for complex list views.
+ * The primary orchestrator for complex list views (Roster, Headhunter). It
+ * encapsulates the logic for filtering, sorting, pagination, batch selection,
+ * and deep-linking into a unified interface.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Service (@core/services)
+ * - **Role:** Orchestrator. Consolidates multiple specialized services into a
+ *   standardized controller contract for Layer 3 feature views.
+ *
+ * Satisfies ADR Section III: Data Flow & Transactional Integrity by ensuring
+ * all list-level mutations (sort/filter/select) are handled via reactive
+ * controllers.
+ *
+ * @param options - Configuration for the controller.
+ * @returns Standardized state and actions for driving a console view.
  */
 export function useConsoleController<T extends { id: string; n?: string }>(
   options: ConsoleLogicOptions<T>,
@@ -150,6 +181,16 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   );
 
   let lastVisibilityTime = Date.now();
+  /**
+   * REVALIDATION: Visibility Change Handler
+   *
+   * @remarks
+   * [DECISION LOG] AUTOMATIC REVALIDATION
+   * Rationale: When the user returns to the app after it being in the background,
+   * we trigger a refresh if the `VISIBILITY_REFRESH_THRESHOLD` has passed.
+   * This ensures the UI accurately reflects the latest server-side state without
+   * requiring a manual pull-to-refresh.
+   */
   const handleVisibilityChange = () => {
     if (document.visibilityState === "visible") {
       const now = Date.now();
@@ -172,6 +213,19 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     setFabVisible(false);
   });
 
+  /**
+   * SKELETON RESOLUTION
+   *
+   * @remarks
+   * [DECISION LOG] SKELETON DISPLAY PRIORITY
+   * Logic: We show skeletons under three conditions:
+   * 1. BLUEPRINT MODE: Explicitly requested for UI design/testing.
+   * 2. INITIAL BOOT: Store is not yet hydrated and no sync error exists.
+   * 3. ACTIVE REFRESH: Currently fetching and no existing data is available.
+   *
+   * We bypass skeletons in SYNTHETIC/SHOWCASE modes to ensure deterministic
+   * high-fidelity rendering.
+   */
   const showSkeletons = computed(() => {
     if (isShowcase.value) return false;
     if (isBlueprintMode.value) return true;
@@ -182,14 +236,17 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     );
   });
 
+  /** Optimized set for O(1) membership checks in the UI layer. */
   const selectedSet = computed(() => new Set(selectedIds.value));
 
+  /** Action: Select all currently filtered items. */
   function handleSelectAll() {
     const ids = filteredItems.value.map(batchIdMapper);
     setForceSelectionMode(false);
     selectAll(ids);
   }
 
+  /** Action: Select items based on a numeric score threshold. */
   function handleSelectScore(threshold: number, mode: "ge" | "le", customScoreGetter?: (item: T) => number) {
     const scoreExtractor = customScoreGetter || scoreGetter;
     if (!scoreExtractor) return;
@@ -203,6 +260,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     selectAll(ids);
   }
 
+  /**
+   * Standardized Props Contract for the ConsoleLayout.vue component.
+   */
   const layoutProps = computed(() => ({
     status: status.value,
     loading: showSkeletons.value,
@@ -225,6 +285,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     },
   }));
 
+  /**
+   * Standardized Events Contract for the ConsoleLayout.vue component.
+   */
   const layoutEvents = computed(() => {
     const baseEvents = {
       refresh: refreshFn,
@@ -243,35 +306,67 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   });
 
   return {
+    /** The current reactive search query. */
     searchQuery,
+    /** The current active sorting strategy key. */
     sortBy,
+    /** The slice of items currently visible in the UI (pagination). */
     visibleItems,
+    /** Set of item IDs currently expanded. */
     expandedIds,
+    /** Array of item IDs currently selected. */
     selectedIds,
+    /** Set of item IDs currently selected (optimized for lookups). */
     selectedSet,
+    /** The resolved state of the Global FAB. */
     fabState,
+    /** Indicates if the list is currently in multi-selection mode. */
     isSelectionMode,
+    /** Indicates if the system is in showcase mode. */
     isShowcaseMode: isShowcase,
+    /** Unified connectivity health status. */
     status,
+    /** Item count badge configuration for the header. */
     statsBadge,
+    /** Whether to display skeleton loaders. */
     showSkeletons,
+    /** The fully filtered and sorted dataset. */
     filteredItems,
+    /** Indicates if a background sync is in progress. */
     isRefreshing,
+    /** The most recent synchronization error, if any. */
     syncError,
+    /** Indicates if the underlying store has been hydrated. */
     isHydrated,
+    /** Direct access to the source dataset. */
     data,
+    /** Unified props for the ConsoleLayout component. */
     layoutProps,
+    /** Unified events for the ConsoleLayout component. */
     layoutEvents,
+
+    /** Triggers a manual synchronization with the backend. */
     refresh: refreshFn,
+    /** Changes the active sorting strategy. */
     updateSort,
+    /** Toggles selection for a specific item. */
     toggleSelect,
+    /** Toggles expansion for a specific item. */
     toggleExpand,
+    /** Clears the current selection. */
     clearSelection,
+    /** Selects all filtered items. */
     handleSelectAll,
+    /** Selects items based on a numeric score threshold. */
     handleSelectScore,
+    /** Updates the current search query. */
     handleSearch: (query: string) => (searchQuery.value = query),
+    /** Forces selection mode even if zero items are selected. */
     setForceSelectionMode,
+    /** Manually triggers deep-link processing for the current dataset. */
     processDeepLink,
+
+    /** Retrieves authoritative UI metadata for a specific item card. */
     getCardMetadata: (id: string): ConsoleCardMetadata => ({
       expanded: expandedIds.value.has(id),
       selected: selectedSet.value.has(id),
@@ -279,6 +374,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       isTagged: data.value?.playerTag === id,
       appIsRefreshing: isRefreshing.value && expandedIds.value.has(id),
     }),
+    /** Generates a stable key array for use in Vue's memoization / keyed lists. */
     getMemoKeys: (id: string, extraKeys: unknown[] = []) => [
       id,
       isSelectionMode.value,

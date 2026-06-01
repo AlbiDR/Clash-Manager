@@ -90,7 +90,7 @@ A domain-blind utility for managing a set of selected item identifiers.
 - **Atomic Operations**: Provides handlers for toggling individual items, bulk selection (`selectAll`), and clearing state.
 
 ### 4. List Orchestration (`useConsoleController`)
-The primary Layer 1 orchestrator for high-density list views (Roster, Headhunter).
+The primary Layer 1 orchestrator for high-density list views (Roster, Headhunter, Laboratory).
 - **Layout Orchestration**: Centralizes communication with the `ConsoleLayout` component via standardized `layoutProps` and `layoutEvents` interfaces, reducing boilerplate in feature views.
 - **Domain Decoupling**: Bridges domain-blind infrastructure (filtering, sorting, progressive rendering, selection) with feature-level requirements.
 - **Metadata Integration**: Consumes `useConsoleMetadata` to provide consistent system health feedback and item statistics.
@@ -102,54 +102,54 @@ Extracts connectivity status and statistics badge logic from the list orchestrat
 - **Status Tiering**: Resolves tiered system health (text/type) based on `useConnectivityManager` diagnostics.
 - **Dynamic Statistics**: Manages item counters in the header, supporting special display modes (Showcase, Blueprint).
 
-### 6. Progressive Rendering Engine (`useProgressiveList`)
+### 6. Settings Store (`useAppSettings`)
+A multi-tier strategy for application configuration and feature flags.
+- **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access).
+- **Tab Synchronization**: Listens for the global `storage` event to ensure configuration remains atomic and consistent across multiple open browser tabs.
+- **Validation Boundary**: Enforces strict Valibot schema validation on all data retrieved from storage to prevent UI instability.
+
+### 7. Progressive Rendering Engine (`useProgressiveList`)
 Maintains 60FPS UI performance when handling large datasets via a time-sliced rendering strategy.
 - **Idle Budgeting**: Utilizes `requestIdleCallback`'s `IdleDeadline` to process multiple items per frame without blocking the main interaction thread.
 - **Adaptive Chunking**: Implements a dynamic sizing strategy (10 vs 20 items per chunk depending on total list size) to balance rendering speed with frame stability.
 - **Churn Prevention**: Implements an incremental update strategy for minor dataset changes (< 5 items) to prevent jarring layout shifts and scroll jumps.
 - **Memory Safety**: Uses `shallowRef` to minimize reactive overhead and ensures deterministic cleanup via `onScopeDispose`.
 
-### 7. Haptic Notification System (`useToast`)
+### 8. Haptic Notification System (`useToast`)
 A resilient, global notification service with integrated hardware feedback.
 - **Hardware Brokerage**: Pairs semantic notification types (Success, Error, Info) with specific haptic patterns via the `useHaptics` engine to provide physical confirmation.
 - **Interaction Safety**: Implements an 800ms debounce-locked action handler to prevent race conditions during rapid user input on high-consequence actions like "UNDO".
 
-### 8. Connectivity Singleton (`useApiState`)
+### 9. Connectivity Singleton (`useApiState`)
 The authoritative Layer 1 arbiter of backend availability and handshake discovery (located in `@core/api/`).
 - **Handshake Discovery**: Orchestrates the initial handshake to detect Supabase availability and configuration status.
 
-### 9. Connectivity Arbitrator (`useConnectionStatus`)
+### 10. Connectivity Arbitrator (`useConnectionStatus`)
 Unifies physical network status and logical API availability into a single source of truth.
 - **Priority Resolution**: Implements a 6-tier priority queue (Physical Offline -> Logical Offline -> Success -> Syncing -> Slow -> Online) to ensure the most critical status is always visible.
 - **Reactive Deltas**: Automatically manages window listeners and provides reactive feedback for network transitions and speed degradation.
 
-### 10. Connectivity Hub Orchestrator (`useConnectivityManager`)
+### 11. Connectivity Hub Orchestrator (`useConnectivityManager`)
 Orchestrates data provenance, synchronization health, and UI-level connectivity indicators.
 - **Confidence Scoring**: Calculates a health score based on network status, sync activity, and data age.
 - **8-Tier Health Hierarchy**: Implements a strict priority-based status resolver (SYNCING > Sync Error > Invalid API URL > OFFLINE > STALE > DB > LOCAL > INITIALIZING) to ensure the most critical system state is always prioritized in the UI.
 - **Metadata Normalization**: Bridges the gap between raw store metadata and human-readable temporal indicators (e.g., "10m ago").
 
-### 11. Hardware Brokerage (`useWakeLock`)
-Prevents device sleep during resource-intensive operations (Batch Blitz, Sync).
+### 12. Hardware Brokerage (`useWakeLock`)
+Prevents device sleep during resource-intensive operations (Sync).
 - **Visibility Resilience**: Automatically re-acquires the wake lock when the application returns to the foreground if user intent is still active.
 - **System Synchronization**: Integrated into the synchronization engine to ensure data integrity during long-running background fetches.
 
-### 12. Statistical Benchmarking (`useBenchmarking`)
+### 13. Statistical Benchmarking (`useBenchmarking`)
 A high-performance O(N) engine for comparing individual metrics against clan-wide averages.
 - **Single-Pass Optimization**: Aggregates mean, min, and max values across all metrics in a single traversal of the dataset to minimize CPU cycles.
 - **Tier Resolution**: Dynamically classifies performance into 4 tiers (Elite, Top Tier, Growing, Under) based on statistical deviations from the mean.
 - **Singleton Pattern**: Shares pre-calculated statistical models across all component instances via a module-level cache.
 
-### 13. UI Coordination (`useUiCoordinator`)
+### 14. UI Coordination (`useUiCoordinator`)
 The master arbiter of layout spacing and element visibility.
 - **Occlusion Prevention**: Dynamically calculates bottom offsets for the `FabIsland` and `ToastContainer` to ensure interactive elements never overlap.
 - **Singleton Control**: Manages a global FAB state, allowing different feature views to register actions and labels in a unified UI layer.
-
-### 14. Redundant Persistence (`useAppSettings`)
-A multi-tier strategy for application configuration and feature flags.
-- **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access). This ensures the Service Worker can access user preferences (like notification thresholds) even when the main thread is inactive.
-- **Tab Synchronization**: Listens for the global `storage` event to ensure configuration remains atomic and consistent across multiple open browser tabs.
-- **Validation Boundary**: Enforces strict Valibot schema validation (`ModuleStateSchema`) on all data retrieved from storage to prevent UI instability.
 
 ### 15. Deep Link Navigation (`useDeepLinkHandler`)
 Manages item expansion and auto-scroll based on URL query parameters.
@@ -219,7 +219,10 @@ Layer 1 hardware broker for the Network Information API.
 - **Degradation Detection**: Proactively identifies "Slow" connection states based on high latency (>500ms RTT) or low bandwidth (<1Mbps downlink).
 - **Singleton Persistence**: Maintains a module-level state to ensure consistent connection metrics across all application call sites.
 
-### 29. Optimized List Logic (`useListFilter`)
+### 29. Metadata Centralization (`useSystemInfo`)
+Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic). Implements a priority queue for display badges (Showcase > Blueprint > Synthetic).
+
+### 30. Optimized List Logic (`useListFilter`)
 A domain-blind engine for high-performance searching and sorting of large datasets.
 - **WeakMap Caching**: Utilizes a module-level `WeakMap` to cache normalized search fields, achieving O(1) amortized lookup performance and maintaining 60FPS during active filtering.
 - **Stability Support**: Implements stable tie-breaking logic (Name -> ID) to ensure deterministic rendering order across sort transitions.
