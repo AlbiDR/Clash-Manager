@@ -10,9 +10,11 @@ import path from 'path';
  * Clinical Self-Healing for Supabase Migration History
  *
  * Strategy:
- *   Uses `supabase migration repair --status reverted` (Management API, no direct
- *   DB connection required) to remove remote ghost versions - versions present in
- *   the remote migration history table but absent from the local migrations directory.
+ *   Uses `supabase migration repair --status reverted --linked` and
+ *   `supabase migration list --linked` (CLI v2.x requires an explicit target
+ *   flag; --linked routes through the linked project's DB connection).
+ *   Removes remote ghost versions - versions present in the remote migration
+ *   history table but absent from the local migrations directory.
  *
  *   Version (timestamp) is the SSOT key. Name is intentionally ignored; the Supabase
  *   CLI itself matches by version only, and remote names can legitimately drift from
@@ -52,7 +54,7 @@ console.log('[SYNC] Running Clinical Migration Sync...');
 
 let listOutput = '';
 try {
-  listOutput = execSync('supabase migration list', {
+  listOutput = execSync('supabase migration list --linked', {
     encoding: 'utf-8',
     stdio: ['pipe', 'pipe', 'pipe'],
   });
@@ -102,7 +104,7 @@ ghosts.forEach(v => console.log(`  Ghost: ${v}`));
 // ---------------------------------------------------------------------------
 try {
   execSync(
-    `supabase migration repair --status reverted ${ghosts.join(' ')}`,
+    `supabase migration repair --status reverted --linked ${ghosts.join(' ')}`,
     { stdio: 'inherit' }
   );
   console.log(`[SUCCESS] Autonomous self-healing completed (${ghosts.length} ghost(s) repaired).`);
