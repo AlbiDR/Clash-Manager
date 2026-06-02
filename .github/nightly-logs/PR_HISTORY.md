@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-02] PR #734: chore(deps): bump knip from 6.14.2 to 6.15.0
+**Commit**: `aa679e57786e491e8641e4f517954899d71610d4`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/734)
+
+### Description
+Automated dependency audit for Stage 8. Performed a Tier 1 minor bump of `knip` from `6.14.2` to `6.15.0` in the monorepo catalog and updated the Tier 2 major version watchlist for `vite`. Verified the changes via the full monorepo test gate (1104 pass, 1 skipped).
+
+---
+*PR created automatically by Jules for task [15268804291415827381](https://jules.google.com/task/15268804291415827381) started by @AlbiDR*
+
+---
+
 ## [2026-06-02] PR #733: fix(version): reconcile version drift in protocol.ts
 **Commit**: `aeb8e3a905a0ae65e048539ec08d622131323b05`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/733)
