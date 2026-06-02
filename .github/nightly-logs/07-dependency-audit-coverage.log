@@ -74,11 +74,12 @@
 | workbox-build | NEW | ^7.4.1 | 2026-09-02 | PASS |
 | @ast-grep/cli | ^0.42.2 | ^0.43.0 | 2026-05-31 | PASS |
 | dependency-cruiser | ^17.4.2 | ^17.4.3 | 2026-06-01 | PASS |
+| knip | ^6.14.2 | ^6.15.0 | 2026-09-04 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
-| vite | ^7.3.1 | 8.0.15 | 2026-05-17 | [Updated] Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. ManualChunks config replaced by codeSplitting. |
+| vite | ^7.3.1 | 8.0.16 | 2026-05-17 | [Updated] Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. ManualChunks config replaced by codeSplitting. |
 | typescript | ~5.9.3 | 6.0.3 | 2026-05-21 | Breaking: Significant transition release. 'types' defaults to []. 'rootDir' defaults to '.'. 'target' defaults to 'es2025'. |
 | @types/node | ^24.12.0 | 25.9.1 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
 | @vitejs/plugin-vue | ^6.0.5 | 6.0.7 | 2026-04-13 | [Updated] Tier 1 patch/minor bump previously failed test gate. |
