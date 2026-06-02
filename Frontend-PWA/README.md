@@ -322,7 +322,7 @@ pnpm type-check    # Verify TypeScript types
 ```
 
 ### Nightly Pipeline
-In addition to local testing, the codebase is autonomously maintained by an **8-agent Nightly Pipeline**. This system executes every 24 hours to enforce structural purity, synchronize README documentation, and audit dependency health via the `Nightly` branch.
+In addition to local testing, the codebase is autonomously maintained by a **9-agent Nightly Pipeline**. This system executes every 24 hours to enforce structural purity, synchronize README documentation, and audit dependency health via the `Nightly` branch.
 
 ---
 <br />
