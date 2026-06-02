@@ -16,7 +16,7 @@
  * - **Side Effects:** Triggers haptic feedback on user interaction.
  *
  * **State Management:**
- * - Managed locally for UI expansion and filter thresholds.
+ * - Logic encapsulated in `useSelectionBar` composable.
  * - Emits selection events to parent feature containers.
  *
  * @remarks
@@ -26,8 +26,8 @@
  */
 
 import Icon from "./Icon.vue";
-import { useHaptics, DEFAULT_SCORE_THRESHOLD, SCORE_SELECTION_STEPS } from "@core";
-import { ref, computed } from "vue";
+import { useSelectionBar } from "../composables/useSelectionBar";
+
 const props = defineProps<{
   count: number;
   totalCount: number;
@@ -41,54 +41,18 @@ const emit = defineEmits<{
   (e: "select-score", threshold: number, mode: "ge" | "le"): void;
 }>();
 
-const haptics = useHaptics();
+const {
+  isScoreExpanded,
+  filterMode,
+  filterValue,
+  valuePicker,
+  isActive,
+  thresholds,
+  toggleMode,
+  selectValue,
+  toggleExpand,
+} = useSelectionBar(props, emit);
 
-// UI State
-const isScoreExpanded = ref(false);
-const isActive = computed(() => props.count > 0);
-const valuePicker = ref<HTMLElement | null>(null);
-
-// Dynamic Filter State
-const filterMode = ref<"ge" | "le">("ge");
-const filterValue = ref(DEFAULT_SCORE_THRESHOLD);
-
-// Pre-calculated options for selection
-const thresholds = SCORE_SELECTION_STEPS;
-
-function toggleMode() {
-  filterMode.value = filterMode.value === "ge" ? "le" : "ge";
-  haptics.tap();
-  // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when mode is toggled
-  // to ensure UI state remains synchronized with the active list filter.
-  emit("select-score", filterValue.value, filterMode.value);
-}
-
-function selectValue(val: number) {
-  if (filterValue.value === val) return;
-  filterValue.value = val;
-  haptics.medium();
-  // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when a threshold is clicked.
-  // This reduces interaction friction compared to a two-step "select then apply" pattern.
-  emit("select-score", filterValue.value, filterMode.value);
-}
-
-function toggleExpand() {
-  isScoreExpanded.value = !isScoreExpanded.value;
-  haptics.tap();
-  if (isScoreExpanded.value) {
-    // [DECISION LOG] DEFERRED SCROLL
-    // We use a timeout to wait for the DOM to render the expanded value-picker
-    // before attempting to scroll to the end of the threshold list.
-    setTimeout(() => {
-      if (valuePicker.value && typeof valuePicker.value.scrollTo === "function") {
-        valuePicker.value.scrollTo({
-          left: valuePicker.value.scrollWidth,
-          behavior: "smooth",
-        });
-      }
-    }, 50);
-  }
-}
 </script>
 
 <template>
