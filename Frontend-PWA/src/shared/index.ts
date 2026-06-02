@@ -49,5 +49,6 @@ export { useCountdown } from "./composables/useCountdown";
 
 export { useHeaderScroll } from "./composables/useHeaderScroll";
 export { usePullToRefresh } from "./composables/usePullToRefresh";
+export { useSelectionBar } from "./composables/useSelectionBar";
 
 export { useCardMechanics } from "./composables/useCardMechanics";

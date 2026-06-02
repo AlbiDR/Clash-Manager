@@ -1,3 +1,4 @@
 2026-09-02 | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Extracted form logic to useVoyageForm.ts, centralized sanitization to @core/utils/formatters.ts.
 2026-09-03 | Frontend-PWA/src/features/voyage | Relocated t2tToTimestamp to core/utils and healed useVoyageForm logic crack.
 2026-09-04 | Frontend-PWA/src/shared/composables/useCountdown.ts | Extracted useCountdown shared composable from VoyageBanner and EventManagement. Reduced VoyageBanner line count to 392 (under 400-line threshold).
+2026-09-05 | Frontend-PWA/src/shared/ui/SelectionBar.vue | Extracted useSelectionBar shared composable from SelectionBar.vue. Centralized score threshold and mode logic.
