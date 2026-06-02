@@ -6,8 +6,45 @@ import { darkTokens, generateCssVariables, lightTokens } from "../../core/theme/
 export type Theme = "light" | "dark" | "auto";
 
 const STORAGE_KEY = "cm_theme_preference";
+
+// EPHEMERAL: intentionally resets on cold start
 const theme = ref<Theme>("auto");
+// EPHEMERAL: intentionally resets on cold start
 const isInitialized = ref(false);
+
+/**
+ * L1 CORE: Web App Manifest Interfaces
+ * Rationale: Ensures structural integrity for the dynamic manifest swapper.
+ */
+interface WebManifestIcon {
+  src: string;
+  sizes?: string;
+  type?: string;
+  purpose?: string;
+}
+
+interface WebManifestShortcut {
+  name: string;
+  url: string;
+  icons?: WebManifestIcon[];
+}
+
+interface WebManifest {
+  icons?: WebManifestIcon[];
+  shortcuts?: WebManifestShortcut[];
+  theme_color?: string;
+  background_color?: string;
+  display?: string;
+  display_override?: string[];
+  screenshots?: Array<{
+    src: string;
+    sizes?: string;
+    type?: string;
+    form_factor?: string;
+    label?: string;
+  }>;
+  [key: string]: unknown;
+}
 
 /**
  * @remarks
@@ -99,7 +136,8 @@ export function useTheme() {
   }
 
   // [CACHE] Cache Storage
-  let baseManifestCache: any = null;
+  // EPHEMERAL: intentionally resets on cold start
+  let baseManifestCache: WebManifest | null = null;
   const manifestBlobCache: Record<string, string> = {};
 
   /**
@@ -177,29 +215,29 @@ export function useTheme() {
       if (!baseManifestCache) {
         // use href of existing link to ensure base path is handled correctly
         const fetchUrl = link.getAttribute("href") || "manifest.json";
-        baseManifestCache = await fetch(fetchUrl).then((res) => res.json());
+        const response = await fetch(fetchUrl);
+        baseManifestCache = await response.json();
 
         // FIX: Resolve all relative icon paths to absolute to work with Blob URL
-        const env = (import.meta as any).env || {};
-        const baseUrl = env.BASE_URL || "/";
-        const resolvePath = (p: string) => {
-          if (!p || typeof p !== "string") return "";
-          if (p.startsWith("/") || p.startsWith("http")) return p;
-          // Ensure baseUrl ends with / if p doesn't start with it
+        const baseUrl = import.meta.env.BASE_URL || "/";
+        const resolvePath = (path: string) => {
+          if (!path || typeof path !== "string") return "";
+          if (path.startsWith("/") || path.startsWith("http")) return path;
+          // Ensure baseUrl ends with / if path doesn't start with it
           const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-          return `${cleanBase}${p}`;
+          return `${cleanBase}${path}`;
         };
         
-        if (baseManifestCache.icons) {
-          baseManifestCache.icons = baseManifestCache.icons.map((icon: any) => ({
+        if (baseManifestCache && baseManifestCache.icons) {
+          baseManifestCache.icons = baseManifestCache.icons.map((icon: WebManifestIcon) => ({
             ...icon,
             src: resolvePath(icon.src)
           }));
         }
-        if (baseManifestCache.shortcuts) {
-          baseManifestCache.shortcuts = baseManifestCache.shortcuts.map((shortcut: any) => ({
+        if (baseManifestCache && baseManifestCache.shortcuts) {
+          baseManifestCache.shortcuts = baseManifestCache.shortcuts.map((shortcut: WebManifestShortcut) => ({
             ...shortcut,
-            icons: shortcut.icons?.map((icon: any) => ({
+            icons: shortcut.icons?.map((icon: WebManifestIcon) => ({
               ...icon,
               src: resolvePath(icon.src)
             }))
@@ -208,22 +246,21 @@ export function useTheme() {
       }
 
       // 6. Construct new manifest
-      const env = (import.meta as any).env || {};
-      const baseUrl = env.BASE_URL || "/";
+      const baseUrl = import.meta.env.BASE_URL || "/";
       const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
       
       const themeColors = isDark
         ? { theme_color: "#0b0e14", background_color: "#0b0e14" }
         : { theme_color: "#fdfcff", background_color: "#fdfcff" };
 
-      const newManifest = {
+      const newManifest: WebManifest = {
         ...baseManifestCache,
         ...themeColors,
         display: "standalone",
         display_override: ["standalone", "minimal-ui"],
-        screenshots: manualScreenshots.map(s => ({
-          ...s,
-          src: `${cleanBase}assets/branding/${s.src}`
+        screenshots: manualScreenshots.map(screenshot => ({
+          ...screenshot,
+          src: `${cleanBase}assets/branding/${screenshot.src}`
         })),
       };
 
@@ -237,8 +274,10 @@ export function useTheme() {
       link.href = manifestURL;
 
       console.log(`[PWA] Generated and updated manifest for ${suffix} theme`);
-    } catch (e) {
-      console.warn("[PWA] Failed to update dynamic manifest", e);
+    } catch (manifestError: unknown) {
+      // [THREAT:] Silent failure during manifest swap leads to inconsistent PWA UI.
+      const errorMessage = manifestError instanceof Error ? manifestError.message : String(manifestError);
+      console.warn("[PWA] Failed to update dynamic manifest:", errorMessage);
     }
   }
 
