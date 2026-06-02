@@ -226,7 +226,7 @@ describe("useTheme", () => {
       init();
 
       await vi.runAllTimersAsync();
-      expect(warnSpy).toHaveBeenCalledWith("[PWA] Failed to update dynamic manifest", expect.any(Error));
+      expect(warnSpy).toHaveBeenCalledWith("[PWA] Failed to update dynamic manifest:", "Network Error");
     });
 
     it("handles invalid theme in localStorage by defaulting to 'auto'", () => {
