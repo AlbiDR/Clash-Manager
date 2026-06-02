@@ -72,3 +72,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-05-30 | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Documented interface contracts and side effects for the recently refactored form orchestrator.
 2026-09-02 | Frontend-PWA/src/core/api/MaintenanceClient.ts | Enhanced interface contracts with missing @param, @remarks (ADR link), and @sideeffects.
 2026-09-04 | Frontend-PWA/src/core/services/useConsoleController.ts | Documented orchestrator interface contracts and return types; added inline decision logs for revalidation and skeleton logic.
+2026-06-02 | Backend/supabase/functions/_shared/muscle.ts | Documented interface contracts for the Native Muscle core utility and added architectural decision logs for key rotation/backoff.
