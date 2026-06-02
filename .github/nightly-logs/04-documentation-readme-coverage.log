@@ -84,3 +84,5 @@ Frontend-PWA/README.md
 2026-09-04 | Backend/README.md | Reconciled ingestion stages and orchestrator roles
 2026-09-04 | Frontend-PWA/README.md | Synchronized Layer 1 service list (30 entries) and specialized clients
 2026-09-04 | Frontend-PWA/src/features/voyage/README.md | Reconciled T2T utility relocation and injection strategy
+2026-09-04 | Frontend-PWA/src/features/headhunter/README.md | Reconciled blitz orchestration and ephemeral tombstone substrate
+2026-09-04 | Frontend-PWA/README.md | Synchronized DeepNet nomenclature and de-duplicated service registry

@@ -1,8 +1,8 @@
-# Clash Manager --- Client Core (PWA)
+# Clash Manager --- Client Core (DeepNet)
 
 [![Client](https://img.shields.io/badge/Client-v14.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
-The **Operational Command Center**. A high-performance, offline-first Vue 3.5 application that serves as the primary interface for clan management.
+The **DeepNet Operational Command Center**. A high-performance, sovereign PWA infrastructure featuring intelligent local caching and live synchronization for administrative clan operations. Built on Vue 3.5.
 
 ---
 <br />
@@ -219,10 +219,7 @@ Layer 1 hardware broker for the Network Information API.
 - **Degradation Detection**: Proactively identifies "Slow" connection states based on high latency (>500ms RTT) or low bandwidth (<1Mbps downlink).
 - **Singleton Persistence**: Maintains a module-level state to ensure consistent connection metrics across all application call sites.
 
-### 29. Metadata Centralization (`useSystemInfo`)
-Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic). Implements a priority queue for display badges (Showcase > Blueprint > Synthetic).
-
-### 30. Optimized List Logic (`useListFilter`)
+### 29. Optimized List Logic (`useListFilter`)
 A domain-blind engine for high-performance searching and sorting of large datasets.
 - **WeakMap Caching**: Utilizes a module-level `WeakMap` to cache normalized search fields, achieving O(1) amortized lookup performance and maintaining 60FPS during active filtering.
 - **Stability Support**: Implements stable tie-breaking logic (Name -> ID) to ensure deterministic rendering order across sort transitions.
