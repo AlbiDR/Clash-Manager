@@ -22,8 +22,13 @@ const INITIAL_INDEX = 0;
 let activeKeys: string[] = [];
 
 /**
- * Explicitly sets the API keys. Accepting string or string[] allows calling with
- * parsed arrays or raw Vault strings.
+ * Explicitly sets the API keys for the rotation engine.
+ *
+ * @remarks
+ * Accepting both `string` and `string[]` ensures compatibility with both
+ * raw Vault secret strings (comma-separated or JSON) and pre-parsed arrays.
+ *
+ * @param keys - A single string (comma-separated or JSON array) or an array of API keys.
  */
 export function setKeys(keys: string | string[]): void {
   if (Array.isArray(keys)) {
@@ -66,6 +71,21 @@ console.log(`[Native-Muscle] Key Farm online. Keys will be resolved lazily per r
 
 /**
  * Executes an HTTP GET request with automatic key rotation and IP-bypass proxying.
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Utility (@shared)
+ * - **Role:** Resilient hardware broker for the Royale API.
+ * - **Resilience:** Implements exponential backoff and transparent key rotation to
+ *   maximize uptime against rate-limiting (429) or IP-based throttling.
+ *
+ * [DECISION LOG] Keys are resolved lazily inside this function to ensure that updates
+ * from the Supabase Vault (via syncVault) are reflected even after module cold-starts.
+ *
+ * @param endpoint - The Royale API endpoint path (e.g., "/clans/TAG").
+ * @param maxRetries - Maximum retry attempts per key before rotation. Defaults to 3.
+ * @returns A standard Fetch `Response` object.
+ * @throws Error if all keys in the rotation pool are exhausted or rejected by the proxy.
  */
 export async function fetchWithRotation(endpoint: string, maxRetries: number = DEFAULT_MAX_RETRIES): Promise<Response> {
   const keys = getKeys();
@@ -94,6 +114,8 @@ export async function fetchWithRotation(endpoint: string, maxRetries: number = D
           if (attempt === maxRetries) break; // Exhausted retries, rotate key just in case
           console.warn(`[Native-Muscle] API Error (${res.status}) on key [${targetIndex}]. Retrying ${attempt + 1}/${maxRetries}...`);
           attempt++;
+          // [DECISION LOG] Exponential backoff (2^attempt * 500ms) to allow Royale API
+          // or proxy nodes time to recover from transient failures.
           const backoffMs = Math.pow(BACKOFF_EXPONENT_BASE, attempt) * BACKOFF_MULTIPLIER_MS;
           await new Promise(r => setTimeout(r, backoffMs));
           continue;
@@ -121,14 +143,21 @@ const DEFAULT_CONCURRENCY = 20;
 
 /**
  * Executes a batch of tasks with a strict concurrency limit.
- * Uses `p-limit` to maximize throughput without exceeding memory/compute limits.
- * 
- * @param tasks An array of async functions to execute.
- * @param concurrency Limit of concurrent executions. Default is 20.
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Utility (@shared)
+ * - **Role:** High-concurrency orchestration for Supabase Edge Functions.
+ * - **Optimization:** Uses `p-limit` to maximize throughput while staying within
+ *   Edge Function memory and CPU constraints (preventing Error 546).
+ *
+ * @param tasks - An array of asynchronous functions to execute.
+ * @param concurrency - The maximum number of concurrent executions. Defaults to 20.
+ * @returns A promise that resolves to an array of results from the executed tasks.
  */
 export async function processBatch<T>(
-    tasks: (() => Promise<T>)[],
-    concurrency: number = DEFAULT_CONCURRENCY
+  tasks: (() => Promise<T>)[],
+  concurrency: number = DEFAULT_CONCURRENCY
 ): Promise<T[]> {
     const limit = pLimit(concurrency);
     return Promise.all(tasks.map(task => limit(task)));
