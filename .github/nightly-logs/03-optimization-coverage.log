@@ -181,3 +181,6 @@ Frontend-PWA/src/features/voyage/types.ts
 2026-09-02 | Frontend-PWA/src/features/voyage/components/index.ts | Excised redundant barrel export for VoyageSetupForm.
 2026-09-02 | Frontend-PWA/src/core/theme/tokens.ts | Standardized onSurfaceVariant token in ThemeTokens substrate.
 2026-09-04 | Backend/supabase/functions/_shared/voyage-poll-schedule.ts | Excised orphaned logic mirror and synchronized migration comments.
+Frontend-PWA/scripts/capture-portfolio.js
+Frontend-PWA/scripts/portfolio-stitch.html
+Frontend-PWA/scripts/portfolio.css
