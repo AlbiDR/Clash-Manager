@@ -98,3 +98,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-09-02 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Saturating logic coverage for computed state (pending/awaiting-end) and action orchestration.
 2026-09-02 | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Saturating logic coverage for form validation branches and action orchestration.
 2026-06-01 | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for t2tToTimestamp and formatCountdown edge cases
+2026-09-04 | Frontend-PWA/src/shared/composables/useTheme.ts | Enhanced coverage for dynamic manifest swapper, relative path resolution, and base manifest caching.

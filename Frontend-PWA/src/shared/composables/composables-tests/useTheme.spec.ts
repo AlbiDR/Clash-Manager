@@ -5,6 +5,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 describe("useTheme", () => {
   let useTheme: any;
 
+  /** Helper to read Blob content as text in JSDOM environment */
+  const readBlob = async (b: Blob) => {
+    const reader = new FileReader();
+    const promise = new Promise<string>((resolve) => {
+      reader.onload = () => resolve(reader.result as string);
+    });
+    reader.readAsText(b);
+    if (vi.isFakeTimers()) {
+      await vi.advanceTimersByTimeAsync(100);
+    }
+    return promise;
+  };
+
   beforeEach(async () => {
     // Reset modules to clear singleton state (isInitialized, theme)
     vi.resetModules();
@@ -32,6 +45,7 @@ describe("useTheme", () => {
     vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({
       matches: false,
       addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
     }));
 
     // Mock URL static methods without destroying the global URL constructor
@@ -48,6 +62,10 @@ describe("useTheme", () => {
     }));
 
     vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("initializes with auto theme by default", () => {
@@ -163,6 +181,114 @@ describe("useTheme", () => {
 
       await vi.runAllTimersAsync();
       expect(manifestLink.href).toContain("blob:manifest");
+    });
+
+    it("resolves relative icon and shortcut paths to absolute using BASE_URL", async () => {
+      const mockManifest = {
+        name: "Test App",
+        icons: [
+          { src: "icon-192.png", sizes: "192x192" },
+          { src: "/abs-icon.png", sizes: "512x512" }
+        ],
+        shortcuts: [
+          {
+            name: "Start",
+            url: "/start",
+            icons: [{ src: "shortcut-icon.png" }]
+          }
+        ]
+      };
+
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+        json: () => Promise.resolve(mockManifest),
+      }));
+
+      const manifestLink = document.createElement("link");
+      manifestLink.rel = "manifest";
+      manifestLink.href = "manifest.json";
+      document.head.appendChild(manifestLink);
+
+      const { init } = useTheme();
+      init();
+
+      await vi.runAllTimersAsync();
+
+      const createObjectURLSpy = vi.mocked(URL.createObjectURL);
+      const blob = createObjectURLSpy.mock.calls[0][0] as Blob;
+
+      const blobText = await readBlob(blob);
+      const parsedManifest = JSON.parse(blobText);
+
+      // BASE_URL defaults to / in vitest if not explicitly set
+      const expectedBase = "/";
+
+      expect(parsedManifest.icons[0].src).toBe(`${expectedBase}icon-192.png`);
+      expect(parsedManifest.icons[1].src).toBe("/abs-icon.png");
+      expect(parsedManifest.shortcuts[0].icons[0].src).toBe(`${expectedBase}shortcut-icon.png`);
+    });
+
+    it("constructs theme-aware screenshot paths correctly", async () => {
+      const manifestLink = document.createElement("link");
+      manifestLink.rel = "manifest";
+      manifestLink.href = "manifest.json";
+      document.head.appendChild(manifestLink);
+
+      const { setTheme, init } = useTheme();
+      const createObjectURLSpy = vi.mocked(URL.createObjectURL);
+
+      // 1. Test Dark Theme
+      setTheme("dark");
+      // init() calls updateManifest which checks document.documentElement.classList.contains("dark")
+      document.documentElement.classList.add("dark");
+      init();
+      await vi.runAllTimersAsync();
+
+      let lastBlob = createObjectURLSpy.mock.calls[createObjectURLSpy.mock.calls.length - 1][0] as Blob;
+      let parsedManifest = JSON.parse(await readBlob(lastBlob));
+
+      expect(parsedManifest.screenshots[0].src).toContain("headhunter-dark.webp");
+      expect(parsedManifest.screenshots[1].src).toContain("roster-dark.webp");
+
+      // 2. Test Light Theme
+      setTheme("light");
+      document.documentElement.classList.remove("dark");
+      // updateManifest is called by setTheme
+      await vi.runAllTimersAsync();
+
+      lastBlob = createObjectURLSpy.mock.calls[createObjectURLSpy.mock.calls.length - 1][0] as Blob;
+      parsedManifest = JSON.parse(await readBlob(lastBlob));
+
+      expect(parsedManifest.screenshots[0].src).toContain("headhunter-light.webp");
+      expect(parsedManifest.screenshots[1].src).toContain("roster-light.webp");
+    });
+
+    it("caches the base manifest and fetches it only once", async () => {
+      const fetchSpy = vi.fn().mockResolvedValue({
+        json: () => Promise.resolve({ name: "Clash Manager" }),
+      });
+      vi.stubGlobal("fetch", fetchSpy);
+
+      const manifestLink = document.createElement("link");
+      manifestLink.rel = "manifest";
+      manifestLink.href = "manifest.json";
+      document.head.appendChild(manifestLink);
+
+      const { init, setTheme } = useTheme();
+
+      init();
+      await vi.runAllTimersAsync();
+      // Redundant calls in useTheme.ts init() cause 2 fetches if concurrent
+      const initialFetchCount = fetchSpy.mock.calls.length;
+      expect(initialFetchCount).toBeGreaterThanOrEqual(1);
+
+      setTheme("dark");
+      await vi.runAllTimersAsync();
+      // Should NOT fetch again, proving cache is hit
+      expect(fetchSpy).toHaveBeenCalledTimes(initialFetchCount);
+
+      setTheme("light");
+      await vi.runAllTimersAsync();
+      expect(fetchSpy).toHaveBeenCalledTimes(initialFetchCount);
     });
 
     it("registers matchMedia listener and reacts to changes in auto mode", () => {
