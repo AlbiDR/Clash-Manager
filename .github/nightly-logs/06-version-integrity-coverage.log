@@ -204,3 +204,11 @@ Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
 
 ### Logged Drift (Unresolved):
 - **None**.
+
+## [2026-09-04]
+### Reconciled:
+- **Runtime Protocol**: Synchronized `protocol.ts` constant to `14.0.0` by removing the `-clinical` suffix to align with the monorepo ground truth (Rule 2[B]).
+- **Auditor Utility**: Updated `scripts/version-auditor.ts` to expect the unified version string without the suffix.
+
+### Logged Drift (Unresolved):
+- **None**.

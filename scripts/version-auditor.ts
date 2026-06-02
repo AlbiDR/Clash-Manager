@@ -90,7 +90,7 @@ function audit() {
 
   if (existsSync(PROTOCOL_PATH)) {
     const protocol = readFileSync(PROTOCOL_PATH, 'utf-8');
-    if (!protocol.includes(`version: '${groundTruth}-clinical'`)) {
+    if (!protocol.includes(`version: '${groundTruth}'`)) {
       console.error(`[DRIFT] Backend protocol.ts version mismatch`);
       driftDetected = true;
     }
