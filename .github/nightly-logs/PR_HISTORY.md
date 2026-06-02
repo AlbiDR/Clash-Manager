@@ -1,6 +1,25 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-02] PR #736: docs(readme): synchronize Nightly Pipeline section to 9-stage system
+**Commit**: `e85a914ee8af6027a514aa0b860acc55007c018c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/736)
+
+### Description
+Updated the main README.md to accurately reflect the current 9-stage
+automated maintenance and optimization engine.
+
+- Inserted [Stage 3] Baseline Consolidation - Declarative Schema Hardener.
+- Re-indexed all stages (1-9).
+- Synchronized stage titles and agent identities with the authoritative
+  prompts in .github/nightly-prompts/.
+- Updated the section description to highlight the 9-stage system.
+
+---
+*PR created automatically by Jules for task [9001009638175654922](https://jules.google.com/task/9001009638175654922) started by @AlbiDR*
+
+---
+
 ## [2026-06-02] PR #735: refactor: extract useSelectionBar shared composable
 **Commit**: `c018f2989848eaddcba8ebffbf939fd4566b4fe1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/735)
