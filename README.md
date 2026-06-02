@@ -154,16 +154,17 @@ flowchart TD
 
 ## Nightly Pipeline
 
-The Nightly pipeline is an automated maintenance and optimization engine designed to enforce structural purity, optimize performance, and synchronize system documentation. Running nightly on the `Nightly` branch, this sequenced multi-agent pipeline executes key phases to keep the monorepo pristine:
+The Nightly pipeline is an automated maintenance and optimization engine designed as a **9-stage multi-agent system** to enforce structural purity, optimize performance, and synchronize system documentation. Running nightly on the `Nightly` branch, this sequenced pipeline executes key phases to keep the monorepo pristine:
 
-1.  **Harden**: Secures validation boundaries and eliminates the "any" plague across the stack.
-2.  **Verify**: Proves system integrity through automated test suite execution and ADR checks.
-3.  **Optimize**: Refines code structures, enforces DRY principles, and prunes dead code.
-4.  **Document (README)**: The Structural Archivist. Synchronizes technical blueprints with implementation state.
-5.  **Document (TSDoc)**: The Technical Writer. Hardens interface contracts and architectural remarks.
-6.  **Version Integrity**: The Release Engineer. Enforces strict semantic versioning.
-7.  **Dependency Audit**: The Watchkeeper. Monitors external dependency health and security.
-8.  **Refactor**: The Structural Architect. Orchestrates large-scale structural improvements and architectural migrations.
+1.  **Harden**: The Runtime Integrity Auditor. Secures validation boundaries and eliminates the "any" plague across the stack.
+2.  **Verify**: The Logic Integrity Auditor. Proves system integrity through automated test suite execution and logic proofs.
+3.  **Baseline Consolidation**: The Declarative Schema Hardener. Hardens database schemas and consolidates incremental migrations into the master baseline.
+4.  **Optimize**: The Substrate Hygiene Engineer. Refines code structures, enforces DRY principles, and prunes dead code.
+5.  **Document (README)**: The Architecture Truth Architect. Synchronizes technical blueprints with the implementation state.
+6.  **Document (TSDoc)**: The Interface Contract Architect. Hardens interface contracts and architectural remarks via TSDoc.
+7.  **Version Integrity**: The Version Consistency Auditor. Eliminates version drift and enforces semantic versioning across the monorepo.
+8.  **Dependency Audit**: The External Health Auditor. Monitors external dependency health and security.
+9.  **Refactor**: The Structural Surgery Engineer. Orchestrates large-scale structural improvements and architectural migrations.
 
 ---
 <br />
