@@ -1,6 +1,33 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-03] PR #739: refactor(opt): extract useHistoryChart logic to shared composable
+**Commit**: `bb9fddc6211fb5e69d3fbfa8d3b8206d8180867e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/739)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** Blatant duplication of history parsing, slicing, and prediction logic in `WarHistoryChart.vue` and `VoyageHistoryChart.vue`.
+**[Refactoring Hypothesis]:** Extracting this logic to a shared composable reduces redundant allocations and centralizes the interface with the Layer 1 `predictionMath.ts` utility.
+**[Rationale]:** Aligns with CleanStack ADR by housing stateful logic in Composables and ensuring Layer 2 components remain focused on presentation.
+
+### Changes:
+- **[Composable]:** Created `Frontend-PWA/src/shared/composables/useHistoryChart.ts` with reactive input support.
+- **[Component]:** Refactored `Frontend-PWA/src/shared/ui/WarHistoryChart.vue` to use the new composable.
+- **[Component]:** Refactored `Frontend-PWA/src/shared/ui/VoyageHistoryChart.vue` to use the new composable.
+- **[Module]:** Exported `useHistoryChart` from `Frontend-PWA/src/shared/index.ts`.
+- **[Log]:** Updated `.github/nightly-logs/03-optimization-coverage.log`.
+
+### Verification:
+- **[Automated]:** Full monorepo test gate passed (1111 passed, 1 skipped).
+- **[Manual]:** Verified architectural alignment and reactivity fix via code review.
+
+
+---
+*PR created automatically by Jules for task [5061354003502957189](https://jules.google.com/task/5061354003502957189) started by @AlbiDR*
+
+---
+
 ## [2026-06-03] PR #738: test(verify): add specs for useSelectionBar composable
 **Commit**: `d2ad5e883bce37834aaab497e8c2fd24a36a714b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/738)
