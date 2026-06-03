@@ -86,7 +86,34 @@ if (remoteVersions.size === 0) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Identify ghost versions: remote-only, not in local directory
+// 3. Handle master migration alignment
+//    If a local master migration exists but is not registered on the remote database,
+//    mark it as applied to prevent schema collision errors during db push.
+// ---------------------------------------------------------------------------
+const masterFile = localFiles.find(f => f.endsWith('_master_migration.sql'));
+let masterVersion: string | null = null;
+if (masterFile) {
+  const match = masterFile.match(/^(\d{14})_/);
+  if (match) masterVersion = match[1];
+}
+
+if (masterVersion && !remoteVersions.has(masterVersion)) {
+  console.log(`[SYNC] Master migration ${masterVersion} is not marked as applied on remote. Repairing to applied status...`);
+  try {
+    execSync(
+      `supabase migration repair --status applied --linked ${masterVersion}`,
+      { stdio: 'inherit' }
+    );
+    console.log(`[SUCCESS] Master migration ${masterVersion} marked as applied.`);
+    remoteVersions.add(masterVersion);
+  } catch (error) {
+    console.error('[ERROR] Failed to repair master migration status:', error);
+    process.exit(1);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 4. Identify ghost versions: remote-only, not in local directory
 // ---------------------------------------------------------------------------
 const ghosts = [...remoteVersions].filter(v => !localVersions.has(v));
 
