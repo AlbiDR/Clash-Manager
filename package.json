@@ -8,6 +8,7 @@
     "dev:pwa": "pnpm -F clash-manager-pwa dev",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
+    "audit:version": "tsx scripts/version-auditor.ts",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json"
   },
@@ -16,6 +17,7 @@
     "@types/node": "catalog:",
     "dependency-cruiser": "catalog:",
     "knip": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   },
   "engines": {
