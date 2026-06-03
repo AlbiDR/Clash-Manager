@@ -10,7 +10,7 @@ import type {
 import {
   VoyageContributionSchema,
   VoyageSummarySchema
-} from "./DataSchemas";
+} from "./VoyageSchemas";
 import * as v from "valibot";
 
 /**
