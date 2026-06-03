@@ -10,7 +10,7 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
-const { mappedData } = useHistoryChart(props.history, "voyage", props.loading);
+const { mappedData } = useHistoryChart(() => props.history, "voyage", () => props.loading);
 </script>
 
 <template>
