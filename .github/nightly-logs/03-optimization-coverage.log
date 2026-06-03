@@ -184,3 +184,7 @@ Frontend-PWA/src/features/voyage/types.ts
 Frontend-PWA/scripts/capture-portfolio.js
 Frontend-PWA/scripts/portfolio-stitch.html
 Frontend-PWA/scripts/portfolio.css
+2026-09-05 | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Extracted shared history processing and prediction logic from War and Voyage charts.
+2026-09-05 | Frontend-PWA/src/shared/ui/WarHistoryChart.vue | Refactored to consume useHistoryChart.
+2026-09-05 | Frontend-PWA/src/shared/ui/VoyageHistoryChart.vue | Refactored to consume useHistoryChart.
+2026-09-05 | Backend/supabase/migrations/20260531232406_master_migration.sql | Identified orphaned database views: war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, and recruits_view.
