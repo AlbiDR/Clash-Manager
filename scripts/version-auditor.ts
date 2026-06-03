@@ -24,6 +24,11 @@ const HTML_PATH = join(ROOT_DIR, 'Frontend-PWA', 'index.html');
 const PROTOCOL_PATH = join(ROOT_DIR, 'Backend', 'supabase', 'functions', '_shared', 'protocol.ts');
 const WORKSPACE_PATH = join(ROOT_DIR, 'pnpm-workspace.yaml');
 
+// README Paths
+const ROOT_README = join(ROOT_DIR, 'README.md');
+const PWA_README = join(ROOT_DIR, 'Frontend-PWA', 'README.md');
+const BACKEND_README = join(ROOT_DIR, 'Backend', 'README.md');
+
 function getGroundTruthVersion(): string {
   const rootPkg = JSON.parse(readFileSync(ROOT_PKG_PATH, 'utf-8')) as PackageJson;
   const pwaPkg = JSON.parse(readFileSync(PWA_PKG_PATH, 'utf-8')) as PackageJson;
@@ -60,6 +65,36 @@ function extractCatalogDeps(): string[] {
   return deps;
 }
 
+function checkReadmeBadges(filePath: string, version: string): string[] {
+  if (!existsSync(filePath)) return [];
+  const content = readFileSync(filePath, 'utf-8');
+  const issues: string[] = [];
+
+  // Standard shields.io badge pattern: -v14.0.0-
+  const badgeRegex = /-(v[0-9]+\.[0-9]+\.[0-9]+)-/g;
+  let match;
+  while ((match = badgeRegex.exec(content)) !== null) {
+    if (match[1] !== `v${version}`) {
+      issues.push(`Badge version "${match[1]}" in ${filePath} should be "v${version}"`);
+    }
+  }
+  return issues;
+}
+
+function checkBackendRoadmap(filePath: string, version: string): string[] {
+  if (!existsSync(filePath)) return [];
+  const content = readFileSync(filePath, 'utf-8');
+  const issues: string[] = [];
+
+  // Roadmap pattern: Roadmap (v14.0.0)
+  const roadmapRegex = /Roadmap \(v([0-9]+\.[0-9]+\.[0-9]+)\)/;
+  const match = content.match(roadmapRegex);
+  if (match && match[1] !== version) {
+    issues.push(`Roadmap version "v${match[1]}" in ${filePath} should be "v${version}"`);
+  }
+  return issues;
+}
+
 function audit() {
   console.log('--- Clash Manager: Version Integrity Audit ---');
   const groundTruth = getGroundTruthVersion();
@@ -67,7 +102,7 @@ function audit() {
 
   let driftDetected = false;
 
-  // 1. Version Scan
+  // 1. Version Scan (Manifests & substrate)
   const rootPkg = JSON.parse(readFileSync(ROOT_PKG_PATH, 'utf-8')) as PackageJson;
   if (rootPkg.version !== groundTruth) {
     console.error(`[DRIFT] Root package.json version is ${rootPkg.version}`);
@@ -96,7 +131,20 @@ function audit() {
     }
   }
 
-  // 2. Catalog Scan
+  // 2. Documentation Scan (Badges & Roadmap)
+  const readmeIssues = [
+    ...checkReadmeBadges(ROOT_README, groundTruth),
+    ...checkReadmeBadges(PWA_README, groundTruth),
+    ...checkReadmeBadges(BACKEND_README, groundTruth),
+    ...checkBackendRoadmap(BACKEND_README, groundTruth)
+  ];
+
+  if (readmeIssues.length > 0) {
+    driftDetected = true;
+    readmeIssues.forEach(issue => console.error(`[DOC-DRIFT] ${issue}`));
+  }
+
+  // 3. Catalog Scan
   const catalogDeps = extractCatalogDeps();
   const rootIssues = checkPackageCatalogProtocol(ROOT_PKG_PATH, catalogDeps);
   const pwaIssues = checkPackageCatalogProtocol(PWA_PKG_PATH, catalogDeps);
