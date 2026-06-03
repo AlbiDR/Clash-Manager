@@ -181,17 +181,26 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }];
 
         const integrityChecks = audit_log_final.filter(entry => entry.action === 'integrity_checked');
+        // [THREAT:] False positives in data perfection reporting can mask silent validation failures.
+        // [DECISION LOG] Replacing unsafe type assertion with strict narrowing to ensure 'isDataPerfect'
+        // accurately reflects that ALL integrity checks passed.
         const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(check => {
-            const details = check.details as Record<string, unknown> | undefined;
-            return typeof details === 'object' && details !== null && details.passed === true;
+            const details = check.details;
+            return (
+                typeof details === 'object' &&
+                details !== null &&
+                'passed' in details &&
+                (details as Record<string, unknown>).passed === true
+            );
         });
 
         const validationReport = {
             stages_called: audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage),
             stages_run: audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage),
             integrity_checks: integrityChecks.map(check => {
-                const details = check.details as Record<string, unknown> | undefined;
-                return { stage: check.stage, passed: details?.passed === true };
+                const details = check.details;
+                const passed = typeof details === 'object' && details !== null && 'passed' in details && (details as Record<string, unknown>).passed === true;
+                return { stage: check.stage, passed };
             }),
             total_duration: Date.now() - startTime
         };
