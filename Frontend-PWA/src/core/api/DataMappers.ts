@@ -37,7 +37,7 @@ export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema
       days: Math.floor(Number(rosterRow.tenure_days)) || 0,
       avg: rosterRow.avg_daily_donations != null
         ? Number(rosterRow.avg_daily_donations)
-        : Number(rosterRow.donations) / 7 || 0,
+        : Number(rosterRow.donations) || 0,
       seen: rosterRow.last_seen_at || '-',
       rate: rosterRow.war_participation != null ? `${Math.round(Number(rosterRow.war_participation))}%` : '-',
       wfame: Math.round(Number(rosterRow.avg_fame || rosterRow.week_fame)) || 0,
