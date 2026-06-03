@@ -50,5 +50,6 @@ export { useCountdown } from "./composables/useCountdown";
 export { useHeaderScroll } from "./composables/useHeaderScroll";
 export { usePullToRefresh } from "./composables/usePullToRefresh";
 export { useSelectionBar } from "./composables/useSelectionBar";
+export { useHistoryChart } from "./composables/useHistoryChart";
 
 export { useCardMechanics } from "./composables/useCardMechanics";
