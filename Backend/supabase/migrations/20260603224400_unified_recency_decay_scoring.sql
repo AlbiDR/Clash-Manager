@@ -50,7 +50,7 @@ IMMUTABLE STRICT
 AS $$
     SELECT
         SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
-        NULLIF(SUM(GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)), 0)
+        NULLIF(SUM(CASE WHEN val IS NOT NULL THEN GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay) END), 0)
     FROM UNNEST(p_values) WITH ORDINALITY AS t(val, ord)
 $$;
 
