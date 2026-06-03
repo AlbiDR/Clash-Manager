@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-03] PR #744: Refactor: Decompose Monolithic DataSchemas into Domain Modules
+**Commit**: `b487397e71c98feffd783c3c947fcac168e9db49`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/744)
+
+### Description
+This refactor decomposes the monolithic DataSchemas.ts and its associated test suite into seven domain-specific modules. This alignment with the Single Responsibility Principle (SRP) reduces module size, improves testability, and allows for cleaner deep imports across the monorepo, satisfying the requirements of the CleanStack ADR. All imports have been updated and verified via the test gate.
+
+---
+*PR created automatically by Jules for task [6488828042769232398](https://jules.google.com/task/6488828042769232398) started by @AlbiDR*
+
+---
+
 ## [2026-06-03] PR #743: fix(version): enhance monorepo version auditor and integration
 **Commit**: `4991875bcdc74117bf90cf99516bf198689e3951`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/743)
