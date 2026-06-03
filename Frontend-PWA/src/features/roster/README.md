@@ -30,9 +30,9 @@ The Roster feature utilizes a dual-metric model to distinguish between historica
 
 ### Visualization & Predictive Trends
 High-precision visualization engines for performance tracking, utilized from the `@shared` layer.
-- **Historical Parsing**: Decompresses history logs (War Fame or Voyage Crowns) into chronological data points.
-- **Trend Analysis**: Uses a Linear Best Fit algorithm (`generateLinearTrend`) to calculate performance trajectories (Positive/Negative).
-- **Predictive Projection**: Implements a 10-week linear decay weighted average engine to project next-week performance.
+- **Historical Parsing & Projection**: Logic for decompressing history logs and calculating weighted projections is centralized in the `@shared/composables/useHistoryChart.ts` composable.
+- **Trend Analysis**: Uses a Linear Best Fit algorithm (`generateLinearTrend` from `@core/utils/bezier.ts`) to calculate performance trajectories (Positive/Negative).
+- **Predictive Engine**: Implements a 10-week linear decay weighted average engine (via `@core/utils/predictionMath.ts`) to project next-week performance.
 - **Hardware Acceleration**: Utilizes SVG overlays and CSS transforms for fluid, 60FPS interactions.
 
 ## Component Registry

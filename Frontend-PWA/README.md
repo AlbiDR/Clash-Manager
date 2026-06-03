@@ -263,7 +263,7 @@ src/
 ├── app/             # Layer 4: App (@app) [Glue] - Orchestration & Shell
 ├── core/            # Layer 1: Core (@core) [Kernel] - Agnostic Infrastructure
 ├── features/        # Layer 3: Features (@features) [Business] - Domain Silos
-├── shared/          # Layer 2: Shared (@shared) [Molecules] - Domain-blind UI
+├── shared/          # [Layer 2: Shared (@shared)](./src/shared/README.md) [Molecules] - Domain-blind UI
 └── env.d.ts         # Environment definitions
 ```
 

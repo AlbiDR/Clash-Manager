@@ -19,8 +19,8 @@ The Shared UI directory (Layer 2) contains reusable components that are agnostic
 
 ### Layout Orchestration
 Standardized containers that manage view-level states like loading, errors, and empty results.
-- **ConsoleLayout.vue**: The primary structural shell for feature views. Manages the `ConsoleHeader`, FAB synchronization, pull-to-refresh logic, and `remoteInfo` orchestration.
-- **ConsoleHeader.vue**: Standardized view header. Handles search debouncing, sorting controls, and visual status indicators (StatusPill).
+- **ConsoleLayout.vue**: The primary structural shell for feature views. Manages the `ConsoleHeader`, FAB synchronization, and `remoteInfo` orchestration. Delegates pull-to-refresh behavior to the `@shared/composables/usePullToRefresh.ts` composable.
+- **ConsoleHeader.vue**: Standardized view header. Handles search debouncing, sorting controls, and visual status indicators (StatusPill). Delegates scroll-aware styling to the `@shared/composables/useHeaderScroll.ts` composable.
 - **ConsoleList.vue**: Specialized list container with Showcase Mode support and `v-auto-animate` integration.
 - **AppFooter.vue**: Global navigation anchor and legal/version information container.
 - **SettingsCard.vue**: Collapsible container for feature settings and configurations. Supports header slots, loading states, and smooth "spring" transition animations.
@@ -32,13 +32,13 @@ Generic, high-performance visualization components.
 
 ### Domain-Aware Molecules (Promoted)
 Specialized components promoted to the shared layer to facilitate cross-feature performance auditing while maintaining domain-specific logic.
-- **WarHistoryChart.vue**: Visualizes clan war performance. Processes up to 52 weeks of fame history and utilizes a 10-week linear decay algorithm to project the next week's performance.
-- **VoyageHistoryChart.vue**: Visualizes Clan Voyage contributions. Tracks the last 15 voyage events, calculates victory-weighted projections, and implements a standard success threshold (100 crowns).
+- **WarHistoryChart.vue**: Visualizes clan war performance. Delegates history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+- **VoyageHistoryChart.vue**: Visualizes Clan Voyage contributions. Delegates history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
 
 ### UI Primitives
 Atomic elements that form the basis of the design system.
 - **BaseBadge.vue**: Low-level atomic component for all badge-like UI elements. Standardizes the 'badge' class styling and provides a consistent interface for metadata display.
-- **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling for metrics based on performance scores.
+- **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling via the `@shared/composables/useCardMechanics.ts` broker.
 - **BaseCardSkeleton.vue**: Placeholder variant of the card for loading states.
 - **Icon.vue**: The authoritative SVG renderer. Centralizes vector path definitions in `@core/theme/icons` and ensures CSS variable consistency with `non-scaling-stroke` vector effects.
 - **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata, including backend source (Supabase) and data age.
@@ -60,7 +60,7 @@ Standardized molecules for rendering player-specific metrics and metadata with i
 Components that facilitate user interaction and state management.
 - **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
-- **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes.
+- **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Delegates interactive logic (threshold selection, comparison modes) to the `@shared/composables/useSelectionBar.ts` composable.
 - **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers.
 - **HeaderInfoOverlay.vue**: Accessible detail layer for explaining view-specific metrics or statuses.
 

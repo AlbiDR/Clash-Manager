@@ -160,7 +160,7 @@ The Nightly pipeline is an automated maintenance and optimization engine designe
 2.  **Verify**: The Logic Integrity Auditor. Proves system integrity through automated test suite execution and logic proofs.
 3.  **Baseline Consolidation**: The Declarative Schema Hardener. Hardens database schemas and consolidates incremental migrations into the master baseline.
 4.  **Optimize**: The Substrate Hygiene Engineer. Refines code structures, enforces DRY principles, and prunes dead code.
-5.  **Document (README)**: The Architecture Truth Architect. Synchronizes technical blueprints with the implementation state.
+5.  **Document (README)**: The Architecture Truth Architect. Synchronizes technical blueprints with the implementation state (reconciles documentation drift).
 6.  **Document (TSDoc)**: The Interface Contract Architect. Hardens interface contracts and architectural remarks via TSDoc.
 7.  **Version Integrity**: The Version Consistency Auditor. Eliminates version drift and enforces semantic versioning across the monorepo.
 8.  **Dependency Audit**: The External Health Auditor. Monitors external dependency health and security.
