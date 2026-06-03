@@ -10,10 +10,8 @@ import type {
   LeaderboardMember,
 } from "@core/types";
 import { loadCache, saveCache } from "../services/StorageService";
-import {
-  SbRosterRowSchema,
-  SbHeadhunterRowSchema
-} from "./DataSchemas";
+import { SbRosterRowSchema } from "./MemberSchemas";
+import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 import { mapSbRosterRow, mapSbHeadhunterRow } from "./DataMappers";
 import * as v from "valibot";
 

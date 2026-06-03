@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { generateMockData, DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "../mockData";
-import { WebAppDataSchema } from "../../api/DataSchemas";
+import { WebAppDataSchema } from "../../api/AppSchemas";
 import * as v from "valibot";
 
 describe("mockData", () => {

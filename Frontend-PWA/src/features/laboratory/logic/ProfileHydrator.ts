@@ -16,7 +16,7 @@ import {
   normalizeRarity
 } from '@core/utils/game';
 import * as v from "valibot";
-import { ProfileInputSchema } from "@core/api/DataSchemas";
+import { ProfileInputSchema } from "@core/api/ProfileSchemas";
 import { asGold, asGems, asXP, addXP } from '@core/utils/economy';
 
 const ProfileHydrator = {
