@@ -27,7 +27,7 @@ The authoritative reactive manager for the Voyage state.
 
 ### Event Management (EventManagement.vue)
 The "Mirror Activation Cockpit" located in the Settings feature.
-- **Status Monitoring**: Provides real-time feedback on active event progress, including crown counts, completion percentages, and time remaining.
+- **Status Monitoring**: Provides real-time feedback on active event progress, including crown counts, completion percentages, and time remaining (powered by `@shared/composables/useCountdown.ts`).
 - **Modular Composition**: Acts as a high-level container that delegates configuration logic to `VoyageSetupForm.vue` to maintain SRP and architectural isolation.
 
 ### Event Setup Orchestration (useVoyageForm.ts)
@@ -44,7 +44,7 @@ The primary setup and validation interface for Clan Voyage events.
 ### Visual Feedback (VoyageBanner.vue)
 A high-visibility glassmorphism surface injected into the Roster view.
 - **Adaptive Styling**: Switches between a standard "Underway" blue glassmorphism and a gold/emerald "Victory" vibrant gradient when the goal is achieved.
-- **Live Countdown**: Implements a 1-second interval timer to provide real-time event expiration feedback.
+- **Live Countdown**: Delegates countdown logic and lifecycle management to the `@shared/composables/useCountdown.ts` composable to provide real-time event expiration feedback.
 - **Performance Optimized**: Leverages CSS transitions and SVG filters for fluid, 60FPS progress animations.
 
 ## Data Flow
