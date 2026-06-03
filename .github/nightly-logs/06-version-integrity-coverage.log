@@ -1,3 +1,11 @@
+## [2026-06-03]
+### Reconciled:
+- **Auditor Utility**: Enhanced `scripts/version-auditor.ts` with automated verification for README badges and roadmap versions.
+- **Monorepo Lifecycle**: Integrated the auditor into the root `package.json` as the `audit:version` script.
+
+### Logged Drift (Unresolved):
+- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
+
 ## [2026-05-31]
 ### Reconciled:
 - **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.

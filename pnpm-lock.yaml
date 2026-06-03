@@ -98,6 +98,9 @@ importers:
       knip:
         specifier: 'catalog:'
         version: 6.15.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.3
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
