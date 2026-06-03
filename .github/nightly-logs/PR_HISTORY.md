@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-03] PR #738: test(verify): add specs for useSelectionBar composable
+**Commit**: `d2ad5e883bce37834aaab497e8c2fd24a36a714b`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/738)
+
+### Description
+Established saturating logic coverage for the recently extracted `useSelectionBar` composable. Added 7 unit tests covering state reactivity, action orchestration, event emission, and deferred DOM side-effects. Resolved a Vitest compatibility issue with `vi.mock` by adopting the `importOriginal` callback pattern. Updated the verification coverage log.
+
+---
+*PR created automatically by Jules for task [3727326906334627119](https://jules.google.com/task/3727326906334627119) started by @AlbiDR*
+
+---
+
 ## [2026-06-03] PR #737: fix(harden): secure protocol integrity and vault resolution
 **Commit**: `efb1bedbcbcfae96e3ded9ee2b5d63b3b264c50b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/737)
