@@ -9,16 +9,28 @@ import {
   parseHistoryString
 } from "@core/utils/predictionMath";
 
-/**
- * USE HISTORY CHART (Layer 2 - Shared Composables)
- * ----------------------------------------------------------------------------
- * Rationale: Centralizes the stateful logic for processing historical trends
- * and generating performance projections for War and Voyage visualizations.
- * ----------------------------------------------------------------------------
- */
-
 export type HistoryChartType = "war" | "voyage";
 
+/**
+ * COMPOSABLE: useHistoryChart
+ *
+ * @remarks
+ * Centralizes the stateful logic for processing historical trends and generating
+ * performance projections for War and Voyage visualizations. It abstracts the
+ * complexity of parsing raw history strings and calculating weighted averages.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared Composable (@shared)
+ * - **Role:** Data transformation and prediction orchestrator for history charts.
+ * - **Satisfaction:** ADR Section III: Validation Boundaries (data parsing).
+ *
+ * @param history - Raw history string (e.g. "3600 2024-W12|2400 2024-W11") or reactive getter.
+ * @param type - Determines constants (War vs Voyage) used for scaling and colors.
+ * @param loading - Reactive state indicating if data is still being fetched.
+ *
+ * @returns
+ * - `mappedData`: Computed object containing processed chart data, projection, and max scale.
+ */
 export function useHistoryChart(
   history: MaybeRefOrGetter<string | undefined>,
   type: HistoryChartType,
@@ -45,10 +57,16 @@ export function useHistoryChart(
     }
 
     // Predict
+    // [DECISION LOG] TREND PREDICTION: Extracts raw values into a series for the
+    // weighted decay calculator. Isolation here ensures UI formatting doesn't
+    // leak into mathematical projections.
     const valueSeries = processedData.map((h) => h.value);
     const nextValue = calculatePrediction(valueSeries, maxScale);
 
     // Arrange Oldest -> Newest for UI
+    // [DECISION LOG] CHRONOLOGICAL REVERSAL: History strings are stored with the
+    // most recent entry first (index 0). SVG-based charts require left-to-right
+    // (oldest-to-newest) ordering for correct trend visualization.
     const chronologicalData = [...processedData].reverse();
     const data = chronologicalData.map((h, i) => {
       // [DECISION LOG] Use readableWeek from parser which already handles date vs week formatting
