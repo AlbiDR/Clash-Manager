@@ -47,7 +47,6 @@ CREATE OR REPLACE FUNCTION substrate.weighted_avg(
 RETURNS numeric
 LANGUAGE sql
 IMMUTABLE STRICT
-SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $$
     SELECT
         SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
@@ -136,8 +135,8 @@ CREATE OR REPLACE VIEW features.scoring_view AS
   war_factuals AS (
       SELECT player_tag,
              count(*)                                                                          AS recorded_weeks,
-             substrate.weighted_avg(ARRAY_AGG(fame      ORDER BY recency_rank))               AS avg_fame,
-             substrate.weighted_avg(ARRAY_AGG(decks_pct ORDER BY recency_rank))               AS avg_war_rate,
+             substrate.weighted_avg(ARRAY_AGG(fame::numeric      ORDER BY recency_rank))               AS avg_fame,
+             substrate.weighted_avg(ARRAY_AGG(decks_pct           ORDER BY recency_rank))               AS avg_war_rate,
              string_agg(fame::text || ' ' || week_id, ' | ' ORDER BY max_recorded DESC)       AS hist
         FROM war_ranked
        GROUP BY player_tag
@@ -165,7 +164,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
   -- Level 3: compute decayed weighted average, divide by 7 for daily rate
   donation_factuals AS (
       SELECT player_tag,
-             substrate.weighted_avg(ARRAY_AGG(max_donations ORDER BY recency_rank)) / 7.0
+             substrate.weighted_avg(ARRAY_AGG(max_donations::numeric ORDER BY recency_rank)) / 7.0
                  AS avg_daily_donations
         FROM donation_ranked
        GROUP BY player_tag
