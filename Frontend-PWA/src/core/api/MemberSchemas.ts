@@ -59,4 +59,5 @@ export const SbRosterRowSchema = v.object({
   hist: v.optional(SafeStringPipe, ""),
   v_hist: v.optional(v.nullable(SafeStringPipe)),
   war_participation: v.optional(SafeNumberPipe, 0),
+  avg_daily_donations: v.optional(v.nullable(SafeNumberPipe)),
 });
