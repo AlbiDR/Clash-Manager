@@ -3,7 +3,8 @@
 
 import * as v from "valibot";
 import type { LeaderboardMember, Recruit } from "@core/types";
-import { SbRosterRowSchema, SbHeadhunterRowSchema } from "./DataSchemas";
+import { SbRosterRowSchema } from "./MemberSchemas";
+import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 
 /**
  * DATA MAPPERS (Layer 1)

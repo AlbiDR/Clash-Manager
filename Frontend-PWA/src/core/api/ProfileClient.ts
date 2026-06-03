@@ -2,7 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import { getSupabaseUrl, getSupabaseKey } from "./SupabaseClient";
-import { ProfileInputSchema, RawCardSchema, RawInventorySchema } from "./DataSchemas";
+import { ProfileInputSchema } from "./ProfileSchemas";
+import { RawCardSchema, RawInventorySchema } from "./BaseSchemas";
 import * as v from "valibot";
 
 /**
