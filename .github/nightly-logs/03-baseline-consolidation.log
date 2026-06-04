@@ -5,3 +5,10 @@
 - Functions Hardened (search_path): 87
 - Idempotency Guards Added: 24 Triggers, 15 Constraints
 - Verification: 1094 passed, 1 skipped
+2026-09-06 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 0 (Baseline reconciled from 20260603235600 to 20260531232406)
+- Tables Hardened (RLS): 26 (Verified existing)
+- Functions Hardened (search_path): 1 (substrate.weighted_avg)
+- Visual Purity: Replaced non-ASCII box-drawing characters with standard hyphens
+- Verification: 1123 passed, 1 skipped
