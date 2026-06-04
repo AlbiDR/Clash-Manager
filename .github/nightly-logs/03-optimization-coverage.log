@@ -188,3 +188,5 @@ Frontend-PWA/scripts/portfolio.css
 2026-09-05 | Frontend-PWA/src/shared/ui/WarHistoryChart.vue | Refactored to consume useHistoryChart.
 2026-09-05 | Frontend-PWA/src/shared/ui/VoyageHistoryChart.vue | Refactored to consume useHistoryChart.
 2026-09-05 | Backend/supabase/migrations/20260531232406_master_migration.sql | Identified orphaned database views: war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, and recruits_view.
+2026-09-06 | Frontend-PWA/src/core/utils/idbKernel.ts | Extracted low-level IndexedDB kernel logic with memory fallback.
+2026-09-06 | Frontend-PWA/src/core/services/StorageService.ts | Refactored to consume idbKernel, reducing file size to 181 lines and enforcing SRP.
