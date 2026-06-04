@@ -1,20 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { useConnectionStatus } from "./useConnectionStatus";
-import { useWakeLock } from "./useWakeLock";
 import { DATA_STALENESS_THRESHOLD } from "../config";
-import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
-import { loadCache, saveCache } from "./StorageService";
 import { useBlueprintMode } from "./useBlueprintMode";
-import { useSyntheticMode } from "./useSyntheticMode";
-import { generateMockData } from "../utils/mockData";
-import { MemberSchema } from "../api/MemberSchemas";
-import { WebAppDataSchema } from "../api/AppSchemas";
-import * as v from "valibot";
+import { useClashSync } from "./useClashSync";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import type { WebAppData, PlayerTag } from "../types";
+import type { WebAppData } from "../types";
 
 /**
  * CLASH MANAGER - Central Data Store (Layer 1)
@@ -41,38 +33,13 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** The central dataset containing all clan and recruitment data. Null until hydration completes. */
   const data = ref<WebAppData | null>(null);
 
-  /** Reactive flag to prevent concurrent synchronization cycles and drive UI progress indicators. */
-  const loading = ref(false);
-
-  /** Unix timestamp (ms) representing the authoritative age of the local data. Used for TTL checks. */
-  const lastSync = ref<number>(0);
-
-  /** Stores the most recent sync error message. Suppressed until failure threshold to prevent UI flicker. */
-  const syncError = ref<string | null>(null);
-
-  /** Fault tolerance tracker; triggers user-visible errors only after 3 consecutive failures. */
-  const consecutiveSyncFailures = ref(0);
-
-  /** Indicates the provenance of the dataset (SUPABASE). */
-  const dataSource = ref<"SUPABASE" | null>(null);
-
-  /** Authoritative diagnosis state from the last Supabase sync attempt. */
-  const syncStatus = lastSyncStatus;
-
-  /** Authoritative timestamp from the last successful Supabase fetch. */
-  const remoteTimestamp = ref<number | null>(null);
-
-  /** Server-side compilation marker; indicates when the database last processed raw API data. */
-  const lastCompiled = ref<number | null>(null);
-
-  /** Raw API fetch marker; indicates the last time the server queried Supercell's endpoint. */
-  const lastFetched = ref<number | null>(null);
-
   // --- DEPENDENCIES ---
-  const { isSyntheticMode } = useSyntheticMode();
-  const { isOnline } = useConnectionStatus();
-  const wakeLock = useWakeLock();
   const blueprint = useBlueprintMode();
+
+  // [REFACTOR] DELEGATION: Structural Surgery Stage 9
+  // Rationale: Decompose monolithic store (>400 lines) by extracting
+  // sync and persistence logic to a specialized service.
+  const sync = useClashSync(data);
 
   // --- GETTERS ---
 
@@ -86,302 +53,27 @@ export const useClashDataStore = defineStore("clashData", () => {
   const lastUpdated = computed(() => data.value?.timestamp || "");
 
   /** Final resolution of where data was fetched from; used for debug badges in the footer. */
-  const currentSource = computed(() => data.value?.dataSource || dataSource.value);
+  const currentSource = computed(() => data.value?.dataSource || sync.dataSource.value);
 
   /** Authoritative remote generation time used to detect stale background sync cycles. */
-  const remoteSyncTime = computed(() => data.value?.remoteTimestamp || remoteTimestamp.value);
+  const remoteSyncTime = computed(() => data.value?.remoteTimestamp || sync.remoteTimestamp.value);
 
   /** Logic boundary: Marks data as 'STALE' if older than 30 minutes to prompt background refresh. */
   const isStale = computed(() => {
-    if (!lastSync.value) return true;
-    return Date.now() - lastSync.value > DATA_STALENESS_THRESHOLD;
+    if (!sync.lastSync.value) return true;
+    return Date.now() - sync.lastSync.value > DATA_STALENESS_THRESHOLD;
   });
 
   /** Indicates the store is ready for consumption. Guards components from accessing null `data`. */
   const isHydrated = computed(() => data.value !== null);
 
   /** Centralized loading state for pull-to-refresh and initial boot indicators. */
-  const isRefreshing = computed(() => loading.value);
+  const isRefreshing = computed(() => sync.loading.value);
 
   /** The authoritative age of the client's dataset in milliseconds. */
-  const lastSyncTime = computed(() => lastSync.value);
+  const lastSyncTime = computed(() => sync.lastSync.value);
 
   // --- ACTIONS ---
-
-  async function commitSyncResult(payload: WebAppData | null) {
-    data.value = payload;
-
-    if (payload) {
-      // [FIX] SERVER-AUTHORITATIVE FRESHNESS: Target A [1]
-      // Rationale: Use payload's generation timestamp to calculate age,
-      // preventing the "Just Now" reset on every hydration/refresh.
-      lastSync.value = payload.timestamp;
-
-      // Metadata Sync
-      dataSource.value = payload.dataSource || null;
-      remoteTimestamp.value = payload.remoteTimestamp || null;
-      lastCompiled.value = payload.lastCompiled || null;
-      lastFetched.value = payload.lastFetched || null;
-    } else {
-      lastSync.value = 0;
-      dataSource.value = null;
-      remoteTimestamp.value = null;
-      lastCompiled.value = null;
-      lastFetched.value = null;
-    }
-
-    // Status Reset
-    consecutiveSyncFailures.value = 0;
-    syncError.value = null;
-
-    // PERSISTENCE DURABILITY: Target A [2]
-    try {
-      if (payload) {
-        await saveCache(payload);
-      }
-    } catch (persistenceError: unknown) {
-      // THREAT: Silent persistence failure leads to data loss on session restart.
-      // Descriptively naming 'persistenceError' ensures failure modes are explicit.
-      console.error("[Store] Commit persistence failed:", persistenceError instanceof Error ? persistenceError.message : String(persistenceError));
-    }
-  }
-
-  /**
-   * Loads the dataset from the persistent browser cache (IndexedDB).
-   *
-   * @remarks
-   * This action is triggered immediately on app bootstrap to ensure zero-latency
-   * initial render (LCP optimization). It bypasses network requests by reading
-   * from the Layer 0 StorageService.
-   *
-   * @sideeffects
-   * - WRITES to reactive `data` and `lastSync` state on success.
-   * - READS from `IndexedDB` via `loadCache`.
-   */
-  async function loadLocal() {
-    try {
-      // [SYNTHETIC OVERRIDE] Target B [2]
-      // Rationale: If synthetic mode is active, seed the store immediately 
-      // with mock data to ensure zero-latency high-fidelity render, 
-      // bypassing potentially slow or invalid IndexedDB cache.
-      if (isSyntheticMode.value) {
-        console.debug("[Store] Synthetic Mode active: Seeding initial mock data");
-        await commitSyncResult(generateMockData());
-        return;
-      }
-
-      const cached = await loadCache();
-      
-      if (!cached) {
-        console.debug("[Store] No local cache found, starting fresh.");
-        await commitSyncResult(null);
-        return;
-      }
-
-      const validation = v.safeParse(WebAppDataSchema, cached);
-      if (validation.success) {
-        // [GUARD] LIVE DATA FIRST: Prevent stale local cache from overwriting fresh network data
-        // if refreshFromSupabase() completed before loadLocal() finished.
-        if (data.value && data.value.timestamp >= validation.output.timestamp) {
-          console.debug("[Store] Local cache is older than already hydrated live data, skipping.");
-          return;
-        }
-        console.debug("[Store] Local cache hydrated successfully.");
-        await commitSyncResult(validation.output);
-      } else {
-        console.warn("[Store] Local cache validation failed:", validation.issues);
-        if (!data.value) await commitSyncResult(null);
-      }
-    } catch (hydrationError: unknown) {
-      // THREAT: Corrupt disk state causing app boot failure.
-      // desriptively naming 'hydrationError' distinguishes it from network-driven sync failures.
-      console.error("[Store] Cache hydration failed:", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
-      await commitSyncResult(null);
-    }
-  }
-
-  /**
-   * Directly updates the local data state and persists it to the cache.
-   *
-   * @remarks
-   * Implements a strict validation boundary (Target B [1]) to ensure that
-   * external payloads (e.g., from Manual Ingest) do not corrupt the store.
-   *
-   * @param payload - The raw data object (usually WebAppData shape).
-   */
-  async function updateLocalData(payload: unknown) {
-    // [GUARD] VALIDATION BOUNDARY: Target B [1]
-    const result = v.safeParse(WebAppDataSchema, payload);
-    if (!result.success) {
-      console.warn("[Store] Local update rejected: Invalid WebAppData structure", result.issues);
-      return;
-    }
-
-    await commitSyncResult(result.output);
-  }
-
-  /**
-   * Triggers a forced, immediate synchronization with the Supabase backend.
-   *
-   * @remarks
-   * Provides instantaneous data updates for recruitment and roster status.
-   *
-   * @sideeffects
-   * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
-   * - FALLS BACK to `startBackgroundSync` on failure.
-   */
-  async function refreshFromSupabase() {
-    if (loading.value) return;
-
-    // [SYNTHETIC BYPASS] Target B [2]
-    // Rationale: In synthetic mode, we bypass remote network calls entirely 
-    // to provide deterministic, high-fidelity mock data.
-    if (isSyntheticMode.value) {
-      console.debug("[Store] Synthetic Mode active: Refreshing mock data");
-      await commitSyncResult(generateMockData());
-      return;
-    }
-
-    if (!isOnline.value) return;
-
-    loading.value = true;
-    try {
-      await wakeLock.request();
-      const remoteData = await fetchRemote({ force: true });
-      
-      const result = v.safeParse(WebAppDataSchema, remoteData);
-      if (!result.success) {
-        console.error("[Store] Data Validation Failure Details:", JSON.stringify(result.issues, null, 2));
-        throw new Error("Remote data validation failed");
-      }
-
-      console.debug(`[Store] Refresh successful. Source: ${result.output.dataSource}`);
-      await commitSyncResult(result.output);
-    } catch (supabaseRefreshError: unknown) {
-      console.warn("[Store] Supabase refresh failed:", supabaseRefreshError);
-
-      // Ensure loading guard is cleared before fallback sync to prevent deadlock.
-      loading.value = false;
-      await wakeLock.release();
-
-      return startBackgroundSync(true);
-    } finally {
-      // Ensure loading is cleared and lock is released even on success
-      if (loading.value) {
-        loading.value = false;
-        await wakeLock.release();
-      }
-    }
-  }
-
-  /**
-   * Orchestrates a background synchronization with the Supabase backend.
-   *
-   * @remarks
-   * Keeps the client in sync with the authoritative Supabase views.
-   * Employs logical fault tolerance, only surfacing errors after 3 failed attempts
-   * to mitigate noise from transient network fluctuations.
-   *
-   * @param force - If true, ignores `isOnline` and `loading` guards for a mandatory fetch.
-   *
-   * @sideeffects
-   * - TRIGGERS `WakeLock` to prevent mobile sleep during fetch.
-   */
-  async function startBackgroundSync(force = false) {
-    if (loading.value) return;
-    if (!isOnline.value && !force) return;
-
-    loading.value = true;
-    // Note: syncError is not cleared immediately if we have data, 
-    // to avoid flickering the UI if it's already showing an error.
-
-    try {
-      // Use WakeLock during heavy sync to prevent mobile sleep
-      await wakeLock.request();
-      
-      const remoteData = await fetchRemote({ force });
-
-      // [GUARD] VALIDATION BOUNDARY: Target B [1]
-      const result = v.safeParse(WebAppDataSchema, remoteData);
-      if (!result.success) {
-        throw new Error("Remote data validation failed");
-      }
-
-      await commitSyncResult(result.output);
-    } catch (backgroundSyncError: unknown) {
-      // THREAT: Network instability leading to stale data and user misinformation.
-      // Descriptively naming 'backgroundSyncError' ensures logical containment within the sync handler
-      // and avoids shadowing the global 'syncError' ref.
-      consecutiveSyncFailures.value++;
-      
-      const errorMessage = backgroundSyncError instanceof Error ? backgroundSyncError.message : "Sync failed";
-      
-      // LOGICAL FAULT TOLERANCE:
-      // If we already have data (isHydrated), only surfacing the error after 3 consecutive 
-      // failures to avoid alarming the user with transient network glitches.
-      if (!isHydrated.value || consecutiveSyncFailures.value >= 3) {
-        syncError.value = errorMessage;
-      }
-      
-      console.warn(`[Store] Background sync failed (Attempt ${consecutiveSyncFailures.value}):`, backgroundSyncError);
-    } finally {
-      loading.value = false;
-      await wakeLock.release();
-    }
-  }
-
-  /**
-   * Manually updates a specific player profile within the store.
-   *
-   * @remarks
-   * Useful for immediate feedback after a local edit or a single-player refresh.
-   * Implements a strict validation boundary (Target B [1]) and respects
-   * the clinical isolation of the store state by cloning the array to trigger reactivity.
-   *
-   * @param playerTag - The unique Supercell tag of the player to update.
-   * @param partial - The subset of player properties to merge into the state.
-   *
-   * @sideeffects
-   * - MUTATES reactive `data.lb` array.
-   * - WRITES to `IndexedDB` via `saveCache`.
-   */
-  function updatePlayerLocally(playerTag: PlayerTag, partial: unknown) {
-    if (!data.value) return;
-
-    // [GUARD] VALIDATION BOUNDARY: Target B [1]
-    // Rationale: Ensure that manual local updates do not corrupt the central store.
-    const validation = v.safeParse(v.partial(MemberSchema), partial);
-    if (!validation.success) {
-      console.warn("[Store] Local update rejected: Invalid partial data", validation.issues);
-      return;
-    }
-
-    const memberIndex = data.value.lb.findIndex(member => member.id === playerTag);
-
-    if (memberIndex !== -1) {
-      // TRANSACIONAL INTEGRITY: Clone the array to trigger reactivity correctly
-      // and ensure that we're not mutating a readonly property.
-      const newLb = [...data.value.lb];
-      newLb[memberIndex] = {
-        ...newLb[memberIndex],
-        ...validation.output
-      };
-
-      const updatedData = {
-        ...data.value,
-        lb: newLb
-      };
-
-      data.value = updatedData;
-
-      // PERSISTENCE DURABILITY: Target A [2]
-      saveCache(updatedData).catch(persistenceError => {
-        // THREAT: Local state mutation not surviving session restart.
-        // Descriptively naming 'persistenceError' aids in diagnosing disk-write failures.
-        console.error("[Store] Failed to persist player update:", persistenceError);
-      });
-    }
-  }
 
   /**
    * [DIAGNOSTIC] TRIGGER UPDATE
@@ -405,12 +97,12 @@ export const useClashDataStore = defineStore("clashData", () => {
   return {
     // State
     data,
-    loading,
-    lastSync,
-    syncError,
-    dataSource,
-    remoteTimestamp,
-    syncStatus,
+    loading: sync.loading,
+    lastSync: sync.lastSync,
+    syncError: sync.syncError,
+    dataSource: sync.dataSource,
+    remoteTimestamp: sync.remoteTimestamp,
+    syncStatus: sync.syncStatus,
 
     // Getters
     members,
@@ -419,22 +111,22 @@ export const useClashDataStore = defineStore("clashData", () => {
     currentSource,
     remoteSyncTime,
     /** Computed Unix timestamp (ms) of the server's dataset compilation. */
-    lastCompiledTime: computed(() => lastCompiled.value),
+    lastCompiledTime: computed(() => sync.lastCompiled.value),
     /** Computed Unix timestamp (ms) of the server's last fetch from Supercell. */
-    lastFetchedTime: computed(() => lastFetched.value),
+    lastFetchedTime: computed(() => sync.lastFetched.value),
     isStale,
     isHydrated,
     isRefreshing,
     lastSyncTime,
 
     // Actions
-    loadLocal,
-    updateLocalData,
-    startBackgroundSync,
+    loadLocal: sync.loadLocal,
+    updateLocalData: sync.updateLocalData,
+    startBackgroundSync: sync.startBackgroundSync,
     /** Alias for refreshFromSupabase to satisfy generic controller contracts. */
-    refresh: refreshFromSupabase,
-    refreshFromSupabase,
-    updatePlayerLocally,
+    refresh: sync.refreshFromSupabase,
+    refreshFromSupabase: sync.refreshFromSupabase,
+    updatePlayerLocally: sync.updatePlayerLocally,
     triggerUpdate
   };
 });
