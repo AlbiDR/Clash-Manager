@@ -100,3 +100,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-06-01 | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for t2tToTimestamp and formatCountdown edge cases
 2026-09-04 | Frontend-PWA/src/shared/composables/useTheme.ts | Enhanced coverage for dynamic manifest swapper, relative path resolution, and base manifest caching.
 2026-06-03 | Frontend-PWA/src/shared/composables/useSelectionBar.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
+2026-09-06 | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Zero Coverage gap closed; saturating tests for state, constants, and chronological reversal.
