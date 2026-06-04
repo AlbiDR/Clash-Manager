@@ -5,7 +5,7 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot";
-import { RoyalePlayerSchema, RecruitFateSchema } from "../../_shared/schemas.ts";
+import { RoyalePlayerSchema, RecruitFateSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
 interface ValidRecruit {
     player_tag: string;
@@ -40,14 +40,30 @@ export async function runProfiler(
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-        const { data: recentScans } = await supabase
+        const { data: rawRecentScans, error: recentScansError } = await supabase
             .schema('drivers')
             .from('recruits')
             .select('player_tag')
             .in('player_tag', tagsToProfile)
             .gt('last_scan', thirtyMinutesAgo);
 
-        const recentlyScannedTags = new Set(recentScans?.map(r => r.player_tag) || []);
+        // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
+        // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
+        // [DECISION LOG] Explicitly validating the shape of rawRecentScans before processing.
+        const recentScansValidation = v.safeParse(v.array(StaleRecruitSchema), rawRecentScans ?? []);
+
+        logAudit('PROFILING', 'integrity_checked', {
+            stage: 'RECENT_SCANS_FETCH',
+            passed: recentScansValidation.success && !recentScansError,
+            details: recentScansError ? recentScansError.message : (recentScansValidation.success ? 'Recent scans validated' : 'Malformed recent scans payload')
+        });
+
+        if (!recentScansValidation.success) {
+            console.error(`[PROFILING] Recent scans validation failed: ${JSON.stringify(recentScansValidation.issues)}`);
+        }
+
+        const recentScans = recentScansValidation.success ? recentScansValidation.output : [];
+        const recentlyScannedTags = new Set(recentScans.map(recentRecruit => recentRecruit.player_tag));
         const tagsToFetch = tagsToProfile.filter(tag => !recentlyScannedTags.has(tag));
 
         console.log(`[PROFILING] Pre-filtered: ${recentlyScannedTags.size} tags scanned in the last 30 minutes skipped. Remaining tags to fetch: ${tagsToFetch.length}`);
@@ -83,12 +99,12 @@ export async function runProfiler(
                         if (!playerProfile.clan?.tag && !exclusionSet.has(playerProfile.tag) && (playerProfile.trophies || 0) >= requiredTrophies) {
                             const trophies = playerProfile.trophies || 0;
                             const donations = playerProfile.totalDonations || 0;
-                            const war = playerProfile.warDayWins || 0;
+                            const warWins = playerProfile.warDayWins || 0;
                             const cards = playerProfile.challengeCardsWon || 0;
 
                             // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
                             // [DECISION LOG] This formula is the authoritative scoring engine for recruitment potential.
-                            const potentialRawScore = (trophies * 1.0) + (donations * 0.1) + ((war + 500) * 20.0);
+                            const potentialRawScore = (trophies * 1.0) + (donations * 0.1) + ((warWins + 500) * 20.0);
 
                             validRecruits.push({
                                 player_tag: playerProfile.tag,
@@ -96,12 +112,12 @@ export async function runProfiler(
                                 trophies,
                                 donations,
                                 cards,
-                                war_wins: war,
+                                war_wins: warWins,
                                 raw_potential_score: potentialRawScore,
                                 source: candidates.get(playerTag) || 'UNKNOWN',
                                 status: 'ACTIVE'
                             });
-                            console.log(`[PROFILER] Admitted ${playerProfile.tag} | trophies=${trophies} war=${war} donations=${donations} rawScore=${potentialRawScore}`);
+                            console.log(`[PROFILER] Admitted ${playerProfile.tag} | trophies=${trophies} war=${warWins} donations=${donations} rawScore=${potentialRawScore}`);
                             validCount++;
                         } else {
                             console.log(`[PROFILER] Rejected ${playerProfile.tag} | hasClan=${!!playerProfile.clan?.tag} inExclusion=${exclusionSet.has(playerProfile.tag)} trophies=${playerProfile.trophies || 0} required=${requiredTrophies}`);
@@ -159,13 +175,29 @@ export async function runProfiler(
             }
 
             // Determine which recruits are truly new vs refreshed
-            const { data: rawExistingData } = await supabase
+            const { data: rawExistingData, error: existingDataError } = await supabase
                 .schema('drivers')
                 .from('recruits')
                 .select('player_tag')
                 .in('player_tag', validRecruits.map(recruitItem => recruitItem.player_tag));
+
+            // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
+            // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
+            // [DECISION LOG] Ensuring data integrity before determining if recruits are new or refreshed.
+            const existingDataValidation = v.safeParse(v.array(StaleRecruitSchema), rawExistingData ?? []);
+
+            logAudit('PROFILING', 'integrity_checked', {
+                stage: 'EXISTING_DATA_FETCH',
+                passed: existingDataValidation.success && !existingDataError,
+                details: existingDataError ? existingDataError.message : (existingDataValidation.success ? 'Existing recruits validated' : 'Malformed existing recruits payload')
+            });
+
+            if (!existingDataValidation.success) {
+                console.error(`[PROFILING] Existing recruits validation failed: ${JSON.stringify(existingDataValidation.issues)}`);
+            }
             
-            const existingTags = new Set(rawExistingData?.map(existingRecruit => existingRecruit.player_tag) || []);
+            const existingRecruits = existingDataValidation.success ? existingDataValidation.output : [];
+            const existingTags = new Set(existingRecruits.map(existingRecruit => existingRecruit.player_tag));
             validRecruits.forEach(recruitItem => {
                 if (existingTags.has(recruitItem.player_tag)) refreshCount++;
                 else newCount++;
@@ -234,15 +266,24 @@ export async function runProfiler(
 
                 if (fateResults.length > 0) {
                     // Fetch Top 50 Threshold (lowest score in active pool)
-                    const { data: rawThresholdData } = await supabase.rpc('get_top_50_threshold');
+                    const { data: rawTop50Threshold, error: thresholdError } = await supabase.rpc('get_top_50_threshold');
                     
                     // [GUARD] VALIDATION BOUNDARY: Database RPC results must be validated.
                     // [THREAT:] Missing or malformed threshold would corrupt Top 50 telemetry reporting.
-                    const threshold50 = typeof rawThresholdData === 'number' ? rawThresholdData : 0;
+                    // [DECISION LOG] Replacing typeof check with strict Valibot validation for the RPC result.
+                    const thresholdValidation = v.safeParse(v.number(), rawTop50Threshold);
+
+                    logAudit('PROFILING', 'integrity_checked', {
+                        stage: 'TOP50_THRESHOLD_FETCH',
+                        passed: thresholdValidation.success && !thresholdError,
+                        details: thresholdError ? thresholdError.message : (thresholdValidation.success ? 'Threshold validated' : 'Malformed threshold payload')
+                    });
+
+                    const top50ScoreThreshold = thresholdValidation.success ? thresholdValidation.output : 0;
 
                     stats.new_recruits_active = fateResults.filter(fateEntry => fateEntry.status === 'ACTIVE').length;
                     stats.new_recruits_benched = fateResults.filter(fateEntry => fateEntry.status === 'BENCHED').length;
-                    stats.new_recruits_top50 = fateResults.filter(fateEntry => fateEntry.status === 'ACTIVE' && Number(fateEntry.raw_potential_score) >= threshold50).length;
+                    stats.new_recruits_top50 = fateResults.filter(fateEntry => fateEntry.status === 'ACTIVE' && Number(fateEntry.raw_potential_score) >= top50ScoreThreshold).length;
                     
                     console.error(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
                 } else {
