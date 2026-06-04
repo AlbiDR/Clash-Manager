@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-04] PR #748: perf(opt): decompose StorageService and extract idbKernel
+**Commit**: `2b618bbd46fbafb8c519b7ac3148527e7bbaabbf`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/748)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** `StorageService.ts` was a monolithic module (412 lines) mixing low-level IndexedDB management (connection handling, environment guards, memory fallback) with application-specific logic (legacy migrations, domain cache keys). This violated the Single Responsibility Principle and hindered reusability of the storage substrate.
+
+**[Refactoring Hypothesis]:** Extracting the generic IndexedDB boilerplate to a standalone kernel utility will reduce complexity in the service layer, ensure consistent environment handling across potential future stores, and bring `StorageService.ts` well below the 400-line SRP threshold.
+
+**[Rationale]:** Aligns with the CleanStack ADR by decoupling infrastructure management from domain services. The resilient memory fallback is now centrally managed, and the service focuses solely on high-level CRUD orchestration and lifecycle tasks (migrations).
+
+### Changes:
+- **[Utility]:** Created `Frontend-PWA/src/core/utils/idbKernel.ts` to house generic IndexedDB operations, environment checks, and the singleton connection manager.
+- **[Service]:** Refactored `Frontend-PWA/src/core/services/StorageService.ts` to utilize the new kernel, excising ~230 lines of infrastructure boilerplate.
+
+### Verification:
+- **[Automated]:** `pnpm -C Frontend-PWA test src/core/services/services-tests/StorageService.spec.ts` passed (4 tests).
+- **[Automated/Audit]:** Confirmed `StorageService.ts` line count reduced to 181 lines.
+
+### Log Updates:
+- Updated `.github/nightly-logs/03-optimization-coverage.log`
+
+---
+*PR created automatically by Jules for task [2788259329445597763](https://jules.google.com/task/2788259329445597763) started by @AlbiDR*
+
+---
+
 ## [2026-06-04] PR #747: chore(baseline): fold new migrations into master baseline
 **Commit**: `efe1b40c0fb3c084fd56bd2b136afa2adda002cb`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/747)
