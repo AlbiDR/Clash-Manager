@@ -3110,6 +3110,7 @@ CREATE OR REPLACE FUNCTION substrate.weighted_avg(
 RETURNS numeric
 LANGUAGE sql
 IMMUTABLE STRICT
+SET search_path TO 'public', 'substrate', 'drivers', 'features', 'pg_temp'
 AS $
     SELECT
         SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
@@ -3142,7 +3143,7 @@ SELECT player_tag AS tag,
 
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
-  -- ── Voyage pipeline (unchanged) ─────────────────────────────────────────────
+  -- -- Voyage pipeline (unchanged) ---------------------------------------------
   voyage_history AS (
       SELECT c.player_tag,
              c.total_voyage_crowns AS crowns,
@@ -3178,7 +3179,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY vh.player_tag
   ),
 
-  -- ── War pipeline: recency-decayed (replaces flat AVG factual_logs) ──────────
+  -- -- War pipeline: recency-decayed (replaces flat AVG factual_logs) ----------
   -- Level 1: aggregate to one row per (player, war section week)
   war_weekly AS (
       SELECT wa.player_tag,
@@ -3212,7 +3213,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY player_tag
   ),
 
-  -- ── Donation pipeline: recency-decayed weekly peaks expressed as daily avg ──
+  -- -- Donation pipeline: recency-decayed weekly peaks expressed as daily avg --
   -- Level 1: extract the weekly donation peak from daily snapshots
   donation_weekly AS (
       SELECT player_tag,
@@ -3240,7 +3241,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY player_tag
   ),
 
-  -- ── Benchmarking context: clan-wide maximum baseline ────────────────────────
+  -- -- Benchmarking context: clan-wide maximum baseline ------------------------
   benchmarking_context_base AS (
       SELECT
           ( SELECT COALESCE(NULLIF(max(w.recorded_weeks), 0), 12::bigint)
@@ -3281,7 +3282,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM benchmarking_context_base bcb
   ),
 
-  -- ── Base stats: per-player resolved values ───────────────────────────────────
+  -- -- Base stats: per-player resolved values -----------------------------------
   base_stats AS (
       SELECT m.player_tag,
              m.player_name AS name,
@@ -3309,7 +3310,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        WHERE m.is_active = true
   ),
 
-  -- ── Weighted calculations ────────────────────────────────────────────────────
+  -- -- Weighted calculations ----------------------------------------------------
   weighted_calculations AS (
       SELECT bs.*,
              LEAST(1.0, bs.recorded_weeks::numeric / bc.max_history_weeks::numeric) AS stability_index,
@@ -3328,7 +3329,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
           CROSS JOIN benchmarking_context bc
   ),
 
-  -- ── Clinical layer: raw performance + heritage bonus ────────────────────────
+  -- -- Clinical layer: raw performance + heritage bonus ------------------------
   clinical_layer AS (
       SELECT wc.*,
              round(
@@ -3354,7 +3355,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM weighted_calculations wc
   ),
 
-  -- ── Final scoring: normalize to 0-100 PeS ────────────────────────────────────
+  -- -- Final scoring: normalize to 0-100 PeS ------------------------------------
   final_scoring AS (
       SELECT *,
              raw_performance_score::double precision + heritage_bonus AS total_combined_score,
