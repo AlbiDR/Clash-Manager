@@ -92,6 +92,7 @@
 | typescript | ~5.9.3 | 6.0.3 | 2026-05-21 | Breaking: Significant transition release. 'types' defaults to []. 'rootDir' defaults to '.'. 'target' defaults to 'es2025'. |
 | @types/node | ^24.12.4 | 25.9.1 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
 | @vitejs/plugin-vue | ^6.0.7 | 6.0.7 | 2026-04-13 | [Identical] Current version now matches latest minor. Major 7.x not yet available. |
+| pnpm | >=10.0.0 | 11.5.1 | 2026-09-06 | New major available. Requires node >=22. Improved catalog support. |
 | vue-router | ^4.6.4 | 5.1.0 | 2026-06-05 | [Updated] Breaking: Transition release. Native ESM focus. |
 | jsdom | ^24.1.3 | 29.1.1 | 2026-08-04 | Breaking: Internal refactor, performance gains. Stricter spec compliance. |
 | rollup-plugin-visualizer | ^6.0.11 | 7.0.1 | 2026-08-04 | Breaking: Config schema changes for vite 8 compatibility. |
