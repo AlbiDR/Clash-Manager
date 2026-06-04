@@ -11,6 +11,7 @@ export * from "./api/DataMappers";
 export * from "./api/useApiState";
 export * from "./services/StorageService";
 export * from "./services/useClashDataStore";
+export * from "./services/useClashSync";
 export * from "./services/useStoragePersistence";
 export * from "./services/useAppSettings";
 export * from "./services/useBenchmarking";
