@@ -87,3 +87,5 @@ Frontend-PWA/README.md
 2026-09-04 | Frontend-PWA/src/features/headhunter/README.md | Reconciled blitz orchestration and ephemeral tombstone substrate
 2026-09-04 | Frontend-PWA/README.md | Synchronized DeepNet nomenclature and de-duplicated service registry
 2026-06-03 04:39:02 UTC | Reconciled README drift for Shared, Roster, and Voyage layers. Created src/shared/README.md.
+2026-06-04 04:22:27 UTC | Frontend-PWA/src/core/README.md | Created Layer 1 kernel documentation and documented deep import protocol.
+2026-06-04 04:22:27 UTC | Frontend-PWA/README.md | Reconciled StorageService and DataSchemas decomposition drift.

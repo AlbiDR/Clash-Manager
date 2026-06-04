@@ -72,6 +72,7 @@ The application kernel (@core) manages complex system-level behaviors through sp
 
 ### 1. Persistence Layer (`StorageService`)
 The resilient persistence engine for the application using IndexedDB with a robust in-memory fallback.
+- **Kernel Extraction**: Utilizes the `@core/utils/idbKernel.ts` utility to handle low-level IndexedDB boilerplate and memory-fallback logic.
 - **Clinical Isolation**: Abstracts the complexities of IndexedDB and provides a unified interface for CRUD operations.
 - **Fail-Safe Fallback**: Automatically switches to an ephemeral `memoryStore` if IndexedDB is unavailable (e.g., Private Browsing or restricted environments).
 - **Migration Protocol**: Implements an idempotent migration bridge to ensure data persistence during version upgrades.
@@ -82,7 +83,7 @@ The authoritative Layer 1 central store for high-integrity clan datasets.
 - **Direct View Access**: Utilizes authoritative Supabase feature views (`roster_view`, `headhunter_view`) to bypass legacy RPC bottlenecks.
 - **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) to ensure accurate data age calculations across distributed environments.
 - **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the Supabase backend in the background.
-- **Validation Boundary**: All inbound payloads are strictly validated against `WebAppDataSchema` to prevent "any" plague propagation into the application state.
+- **Validation Boundary**: All inbound payloads are strictly validated against domain-specific schemas (e.g., `WebAppDataSchema` in `AppSchemas.ts`) to prevent "any" plague propagation.
 
 ### 3. Selection Orchestrator (`useSelectionStore`)
 A domain-blind utility for managing a set of selected item identifiers.
@@ -261,7 +262,7 @@ The codebase is organized using a layered, feature-driven architecture to ensure
 ```text
 src/
 ├── app/             # Layer 4: App (@app) [Glue] - Orchestration & Shell
-├── core/            # Layer 1: Core (@core) [Kernel] - Agnostic Infrastructure
+├── core/            # [Layer 1: Core (@core)](./src/core/README.md) [Kernel] - Agnostic Infrastructure
 ├── features/        # Layer 3: Features (@features) [Business] - Domain Silos
 ├── shared/          # [Layer 2: Shared (@shared)](./src/shared/README.md) [Molecules] - Domain-blind UI
 └── env.d.ts         # Environment definitions
