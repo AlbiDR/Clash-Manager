@@ -4,34 +4,29 @@ import { ref, computed, type Ref } from "vue";
 import { useHaptics } from "../../core/services/useHaptics";
 
 /**
- * OPTIONS: PullToRefreshOptions
- *
- * @param isRefreshing - Reactive reference indicating if a sync is active.
- * @param onRefresh - Callback triggered when the pull threshold is met.
+ * Options for the pull-to-refresh composable.
  */
 interface PullToRefreshOptions {
+  /** Reactive reference indicating if a synchronization process is currently active. */
   isRefreshing: Ref<boolean>;
+  /** Callback function triggered when the pull threshold is met on release. */
   onRefresh: () => void;
 }
 
 /**
- * COMPOSABLE: usePullToRefresh
+ * Shared composable for managing Pull-to-Refresh (PTR) logic.
  *
  * @remarks
- * Encapsulates the Pull-to-Refresh (PTR) logic for scrollable views in Layer 2 (@shared).
- * Handles touch orchestration, resistance calculations, and haptic feedback
- * to provide a native-like refresh experience.
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared Composable (@shared)
+ * - **Role:** Orchestrates touch events to provide a resilient and native-feeling refresh trigger.
+ * - **Compliance:** Satisfies ADR Section II: Deep Import Protocol by residing in the shared layer.
  *
- * It implements a "PTR Protection" layer to prevent accidental triggers
- * during horizontal scrolling and applies an "Android Optimized" sensitivity curve.
+ * Handles touch orchestration, resistance calculations, and haptic feedback.
+ * Implements a "PTR Protection" layer to prevent accidental triggers during horizontal scrolling.
  *
- * @returns
- * - `isPulling`: Reactive flag indicating active user interaction.
- * - `pullOffset`: The current vertical displacement (unclamped).
- * - `ptrStyle`: Computed CSS variables for the UI indicator.
- * - `onTouchStart`: Touch start event handler.
- * - `onTouchMove`: Touch move event handler with resistance logic.
- * - `onTouchEnd`: Touch end handler for trigger evaluation.
+ * @param options - Configuration including the refreshing state and the refresh callback.
+ * @returns An object containing reactive state and event handlers for the PTR lifecycle.
  */
 export function usePullToRefresh(options: PullToRefreshOptions) {
   const { isRefreshing, onRefresh } = options;
@@ -56,9 +51,10 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
 
   /**
    * Initializes the pull sequence.
-   * [GUARD] GUARD: Prevents PTR if already scrolled or refreshing.
    */
   function onTouchStart(e: TouchEvent) {
+    // [GUARD] PTR ACTIVATION: Prevents pull-to-refresh if the view is already scrolled
+    // or if a refresh operation is currently in progress.
     if (window.scrollY > 0 || isRefreshing.value) return;
     touchStartY.value = e.touches[0].clientY;
     touchStartX.value = e.touches[0].clientX;
@@ -77,7 +73,8 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
     const rawDiff = Math.max(0, currentY - touchStartY.value);
     const xDiff = Math.abs(currentX - touchStartX.value);
 
-    // [GUARD] PTR PROTECTION: Ignore if moving sideways more than down.
+    // [GUARD] PTR PROTECTION: Ignore the pull if the user is moving sideways more than down.
+    // This prevents accidental triggers during horizontal swipes or carousels.
     if (xDiff > rawDiff * 0.5) {
       pullOffset.value = 0;
       isPulling.value = false;
@@ -85,10 +82,13 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
     }
 
     // Apply resistance (clamped logarithmic-like curve).
-    // [PERF] ANDROID OPTIMIZATION: More sensitive curve (0.85 -> 0.9) for better UX.
+    // [DECISION LOG] ANDROID OPTIMIZATION: Using a sensitivity curve (0.9 exponent)
+    // to provide a more responsive "rubber band" effect compared to linear scaling.
     pullOffset.value = Math.pow(rawDiff, 0.9) * 2;
 
     // Haptic feedback logic.
+    // [DECISION LOG] HAPTIC STAGING: Trigger a 'heavy' tap exactly when the threshold
+    // is crossed to provide tactile confirmation to the user.
     if (pullOffset.value >= threshold && !hapticFeedbackTriggered) {
       haptics.heavy();
       hapticFeedbackTriggered = true;
@@ -103,6 +103,8 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
   function onTouchEnd() {
     if (!isPulling.value) return;
 
+    // [DECISION LOG] TRIGGER EVALUATION: Execute the refresh callback only if the
+    // displacement exceeds the defined threshold (120px) at the moment of release.
     if (pullOffset.value >= threshold) {
       onRefresh();
       haptics.success();
