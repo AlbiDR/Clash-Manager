@@ -21,6 +21,8 @@ const ROOT_DIR = process.cwd();
 const ROOT_PKG_PATH = join(ROOT_DIR, 'package.json');
 const PWA_PKG_PATH = join(ROOT_DIR, 'Frontend-PWA', 'package.json');
 const HTML_PATH = join(ROOT_DIR, 'Frontend-PWA', 'index.html');
+const MANIFEST_PATH = join(ROOT_DIR, 'Frontend-PWA', 'public', 'manifest.json');
+const PROGRESSIVE_LIST_PATH = join(ROOT_DIR, 'Frontend-PWA', 'src', 'core', 'services', 'useProgressiveList.ts');
 const PROTOCOL_PATH = join(ROOT_DIR, 'Backend', 'supabase', 'functions', '_shared', 'protocol.ts');
 const WORKSPACE_PATH = join(ROOT_DIR, 'pnpm-workspace.yaml');
 
@@ -113,6 +115,24 @@ function audit() {
   if (pwaPkg.version !== groundTruth) {
     console.error(`[DRIFT] Frontend-PWA/package.json version is ${pwaPkg.version}`);
     driftDetected = true;
+  }
+
+  const majorVersion = groundTruth.split('.')[0];
+
+  if (existsSync(MANIFEST_PATH)) {
+    const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf-8'));
+    if (manifest.id !== `clash-manager-v${majorVersion}`) {
+      console.error(`[DRIFT] Frontend-PWA/public/manifest.json id mismatch: expected clash-manager-v${majorVersion}, got ${manifest.id}`);
+      driftDetected = true;
+    }
+  }
+
+  if (existsSync(PROGRESSIVE_LIST_PATH)) {
+    const content = readFileSync(PROGRESSIVE_LIST_PATH, 'utf-8');
+    if (!content.includes(`[PERF] Optimized for v${groundTruth}:`)) {
+      console.error(`[DRIFT] useProgressiveList.ts version comment mismatch`);
+      driftDetected = true;
+    }
   }
 
   if (existsSync(HTML_PATH)) {

@@ -8,7 +8,7 @@
   "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "scope": "/Clash-Manager/",
   "start_url": "/Clash-Manager/#/roster",
-  "id": "clash-manager-v13",
+  "id": "clash-manager-v14",
   "orientation": "natural",
   "categories": ["productivity", "games", "utilities"],
   "lang": "en",
