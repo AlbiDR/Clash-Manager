@@ -1,3 +1,12 @@
+## [2026-09-06]
+### Reconciled:
+- **Progressive List**: Updated stale version comment in `useProgressiveList.ts` from `v13.4` to `v14.0.0` to match ground truth.
+- **PWA Manifest**: Synchronized `id` in `manifest.json` from `clash-manager-v13` to `clash-manager-v14` to align with the major version.
+- **Auditor Utility**: Enhanced `scripts/version-auditor.ts` to include automated verification for the PWA manifest ID and the progressive list version comment.
+
+### Logged Drift (Unresolved):
+- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
+
 ## [2026-06-03]
 ### Reconciled:
 - **Auditor Utility**: Enhanced `scripts/version-auditor.ts` with automated verification for README badges and roadmap versions.
