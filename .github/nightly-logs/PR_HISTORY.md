@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-04] PR #752: chore(deps): update major version watchlist
+**Commit**: `533eb78d25418d51d8d1a9875f0bd13f2b6dca1d`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/752)
+
+### Description
+Audited monorepo dependencies and updated the Major Version Watchlist. Confirmed that all cataloged dependencies are at their latest patch/minor versions (No Tier 1 actions required). Escalated `pnpm` v11.5.1 to the Tier 2 watchlist and verified existing entries for major ecosystem shifts (Vite 8, TypeScript 6, Vue Router 5). Cleaned up temporary audit artifacts to maintain repository hygiene. All 1123 tests passed.
+
+---
+*PR created automatically by Jules for task [17974838028499052716](https://jules.google.com/task/17974838028499052716) started by @AlbiDR*
+
+---
+
 ## [2026-06-04] PR #751: fix(version): reconcile version drift in progressive list and manifest
 **Commit**: `39031c9690b15d0b34dcffda3504ee8e9b341eb1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/751)
