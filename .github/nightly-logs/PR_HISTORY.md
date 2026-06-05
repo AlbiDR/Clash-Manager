@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-05] PR #756: Reconcile Architectural Drift (Core & Voyage)
+**Commit**: `c7077d5272317d1c8096f4009bb979ad5f09011e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/756)
+
+### Description
+Reconciled documentation drift in the root PWA README, Core layer README, and Voyage feature README to reflect recent structural surgery stages (useClashSync extraction, DataSchemas decomposition, and useVoyageActions delegation). Updated documentation coverage logs. Verified via monorepo test gate (1123 passed, 1 skipped).
+
+---
+*PR created automatically by Jules for task [986556679615917477](https://jules.google.com/task/986556679615917477) started by @AlbiDR*
+
+---
+
 ## [2026-06-05] PR #755: refactor(opt): decompose Voyage store actions to satisfy SRP
 **Commit**: `2d4a7036d83702353151aaaca4f7259ada612017`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/755)
