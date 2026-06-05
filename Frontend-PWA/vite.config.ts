@@ -80,7 +80,7 @@ export default defineConfig({
     vue() as any,
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "auto",
+      injectRegister: "script-defer",
       strategies: "injectManifest",
       srcDir: "src/app",
       filename: "sw.ts",

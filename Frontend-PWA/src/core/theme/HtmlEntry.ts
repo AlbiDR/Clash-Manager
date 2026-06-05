@@ -58,6 +58,9 @@ export function generateHtmlEntry(version: string): string {
     
     <title>Roster | Clash Manager: Professional Recruitment & Analytics</title>
 
+    <!-- Critical Origin Preconnect -->
+    <link rel="preconnect" href="https://hucktamloykszinwbtuh.supabase.co" crossorigin />
+
     <link rel="preload" href="./fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 

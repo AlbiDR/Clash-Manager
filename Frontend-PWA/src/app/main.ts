@@ -11,14 +11,7 @@ import {
   vTooltip,
   Icon,
 } from "@shared";
-import {
-  idb,
-  useApiState,
-  useAppSettings,
-  useClashDataStore,
-  useStoragePersistence,
-  useWakeLock,
-} from "@core";
+import { useAppSettings } from "@core/services/useAppSettings";
 
 import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
@@ -123,88 +116,96 @@ async function bootstrap() {
     // 4. Mount App
     app.mount("#app");
 
-    // 4. Initialize Systems (Immediate)
-    const clashDataStore = useClashDataStore();
-    const apiState = useApiState();
-    const wakeLock = useWakeLock();
-    const storagePersistence = useStoragePersistence();
+    // 4. Initialize Data Layer (deferred after first paint)
+    // PERF: Dynamic import keeps the entire core data layer out of the render-blocking
+    // critical path. The LCP element (dock) paints immediately after mount; data
+    // hydration begins in the next macrotask once the browser is idle.
+    import(
+      /* webpackChunkName: "core-data" */
+      "@core"
+    ).then(({ idb, useApiState, useClashDataStore, useStoragePersistence, useWakeLock }) => {
+      const clashDataStore = useClashDataStore();
+      const apiState = useApiState();
+      const wakeLock = useWakeLock();
+      const storagePersistence = useStoragePersistence();
 
-    // INSTANT BOOT & LIVE DATA FIRST: Load local cache and trigger remote hydration in parallel
-    // removing ping-latency delays on boot.
-    clashDataStore.loadLocal();
-    clashDataStore.refreshFromSupabase();
-    
-    apiState.init();
+      // INSTANT BOOT & LIVE DATA FIRST: Load local cache and trigger remote hydration in parallel
+      // removing ping-latency delays on boot.
+      clashDataStore.loadLocal();
+      clashDataStore.refreshFromSupabase();
 
-    // PERFORMANCE: High-Speed SUPABASE Fetch fallback
-    // Rationale: If the initial refresh failed or was delayed, ensure background sync proceeds once online.
-    const unwatch = watch(
-      () => apiState.apiStatus.value,
-      (apiStatus) => {
-        if (apiStatus === "online") {
-          clashDataStore.startBackgroundSync();
-          unwatch(); // Run once per session
-        }
-      },
-      { immediate: true }
-    );
+      apiState.init();
 
-    // LIVE DATA FIRST: App Focus Revalidation
-    // Trigger immediate data revalidation when the app regains focus.
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        console.debug("[App] Visibility changed to visible: Triggering live data revalidation");
-        clashDataStore.refreshFromSupabase();
-      }
-    });
-
-    // Defer only truly heavy background tasks
-    setTimeout(async () => {
-      wakeLock.init();
-      
-      // PERSISTENCE: Request durable storage
-      storagePersistence.requestPersistence();
-
-      // SYNC SETTINGS: Ensure SW has access to latest configurations
-      if (modules.notificationThreshold) {
-        await idb.set(
-          "cm_notification_threshold",
-          modules.notificationThreshold,
-        );
-      }
-      if (apiState.apiUrl.value) {
-        await idb.set("cm_supabase_url", apiState.apiUrl.value);
-        await idb.set("cm_supabase_key", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-      }
-
-      // NATIVE: Register Periodic Sync for WebAPK
-      if (
-        "serviceWorker" in navigator &&
-        "periodicSync" in (navigator.serviceWorker as unknown as { periodicSync: unknown })
-      ) {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          const periodicSync = (registration as unknown as { periodicSync?: { register: (tag: string, options: { minInterval: number }) => Promise<void> } }).periodicSync;
-
-          if (periodicSync) {
-            const status = await (navigator.permissions as unknown as { query: (options: { name: string }) => Promise<{ state: string }> }).query({
-              name: "periodic-background-sync",
-            });
-
-            if (status.state === "granted") {
-              await periodicSync.register(
-                "update-recruit-badge",
-                {
-                  minInterval: 12 * 60 * 60 * 1000, // 12 hours
-                },
-              );
-            }
+      // PERFORMANCE: High-Speed SUPABASE Fetch fallback
+      // Rationale: If the initial refresh failed or was delayed, ensure background sync proceeds once online.
+      const unwatch = watch(
+        () => apiState.apiStatus.value,
+        (apiStatus) => {
+          if (apiStatus === "online") {
+            clashDataStore.startBackgroundSync();
+            unwatch(); // Run once per session
           }
-        } catch (e) {
-          console.warn("Periodic Sync registration failed", e);
+        },
+        { immediate: true }
+      );
+
+      // LIVE DATA FIRST: App Focus Revalidation
+      // Trigger immediate data revalidation when the app regains focus.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          console.debug("[App] Visibility changed to visible: Triggering live data revalidation");
+          clashDataStore.refreshFromSupabase();
         }
-      }
-    }, 1000);
+      });
+
+      // Defer truly heavy background tasks
+      setTimeout(async () => {
+        wakeLock.init();
+
+        // PERSISTENCE: Request durable storage
+        storagePersistence.requestPersistence();
+
+        // SYNC SETTINGS: Ensure SW has access to latest configurations
+        if (modules.notificationThreshold) {
+          await idb.set(
+            "cm_notification_threshold",
+            modules.notificationThreshold,
+          );
+        }
+        if (apiState.apiUrl.value) {
+          await idb.set("cm_supabase_url", apiState.apiUrl.value);
+          await idb.set("cm_supabase_key", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+        }
+
+        // NATIVE: Register Periodic Sync for WebAPK
+        if (
+          "serviceWorker" in navigator &&
+          "periodicSync" in (navigator.serviceWorker as unknown as { periodicSync: unknown })
+        ) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const periodicSync = (registration as unknown as { periodicSync?: { register: (tag: string, options: { minInterval: number }) => Promise<void> } }).periodicSync;
+
+            if (periodicSync) {
+              const status = await (navigator.permissions as unknown as { query: (options: { name: string }) => Promise<{ state: string }> }).query({
+                name: "periodic-background-sync",
+              });
+
+              if (status.state === "granted") {
+                await periodicSync.register(
+                  "update-recruit-badge",
+                  {
+                    minInterval: 12 * 60 * 60 * 1000, // 12 hours
+                  },
+                );
+              }
+            }
+          } catch (e) {
+            console.warn("Periodic Sync registration failed", e);
+          }
+        }
+      }, 1000);
+    });
   } catch (error) {
     showFatalError(error);
   }
