@@ -69,6 +69,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 1. **Zero Interaction Policy:** You are executing within an automated CI/CD pipeline. You must NEVER pause to ask the user for reviews, decisions, or guidance.
 2. **Autonomous Resolution:** If you encounter errors (e.g., missing environment variables, sandbox constraints, or visual verification failures), do not halt. You must attempt to resolve them autonomously or gracefully degrade your verification strategy.
 3. **Verification Fallback:** If visual or browser-based verification is blocked, rely entirely on the test suite (e.g., Vitest) and the production build output. A passing test suite and successful build are sufficient proof of correctness to proceed to submission.
+4. **Zero Conversational Pauses:** You must complete your execution without asking any conversational questions, wrap-ups, or requests for feedback. Your final response must be a direct status confirmation followed by the execution of the git/GitHub tools to submit your work.
 
 ## 1. Operating Mindset: Rigorous Skeptic
 
