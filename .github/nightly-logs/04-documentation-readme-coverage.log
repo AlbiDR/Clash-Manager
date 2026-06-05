@@ -89,3 +89,6 @@ Frontend-PWA/README.md
 2026-06-03 04:39:02 UTC | Reconciled README drift for Shared, Roster, and Voyage layers. Created src/shared/README.md.
 2026-06-04 04:22:27 UTC | Frontend-PWA/src/core/README.md | Created Layer 1 kernel documentation and documented deep import protocol.
 2026-06-04 04:22:27 UTC | Frontend-PWA/README.md | Reconciled StorageService and DataSchemas decomposition drift.
+2026-09-07 | Frontend-PWA/src/features/voyage/README.md | Reconciled useVoyageActions delegation and RPC orchestration
+2026-09-07 | Frontend-PWA/README.md | Reconciled useClashSync extraction and DataSchemas decomposition
+2026-09-07 | Frontend-PWA/src/core/README.md | Reconciled useClashSync service and domain schema module decomposition
