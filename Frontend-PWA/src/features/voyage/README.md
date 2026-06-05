@@ -23,7 +23,12 @@ The Voyage feature facilitates collaborative gameplay by providing a centralized
 The authoritative reactive manager for the Voyage state.
 - **Realtime Synchronization**: Implements a Postgres change listener via the Supabase SDK to instantly reflect crown updates from the `drivers.clan_voyage` and `drivers.clan_voyage_contributions` tables.
 - **Progress Normalization**: Calculates `progressRatio` (0.0 - 1.0) and `isVictory` status to drive visual feedback across the application.
-- **Event Lifecycle**: Orchestrates the multi-phase lifecycle of a Voyage, providing methods for scheduling (`scheduleVoyage`), direct activation (`activateVoyage`), setting event durations (`setVoyageEnd`), and cancellation (`cancelSchedule`).
+- **Action Delegation**: Consumes `useVoyageActions` to manage asynchronous event lifecycle operations while maintaining the central reactive state.
+
+### Voyage Actions (useVoyageActions.ts)
+Specialized engine for orchestrating asynchronous Clan Voyage operations.
+- **RPC Orchestration**: Centralizes the execution of backend RPCs for scheduling (`scheduleVoyage`), direct activation (`activateVoyage`), and cancellation.
+- **Standardized Response Handling**: Implements unified error narrowing and response validation to ensure consistent feedback during event state transitions.
 
 ### Event Management (EventManagement.vue)
 The "Mirror Activation Cockpit" located in the Settings feature.
