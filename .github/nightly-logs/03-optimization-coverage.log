@@ -190,3 +190,5 @@ Frontend-PWA/scripts/portfolio.css
 2026-09-05 | Backend/supabase/migrations/20260531232406_master_migration.sql | Identified orphaned database views: war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, and recruits_view.
 2026-09-06 | Frontend-PWA/src/core/utils/idbKernel.ts | Extracted low-level IndexedDB kernel logic with memory fallback.
 2026-09-06 | Frontend-PWA/src/core/services/StorageService.ts | Refactored to consume idbKernel, reducing file size to 181 lines and enforcing SRP.
+2026-09-07 | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Extracted Voyage actions (schedule, setEnd, cancel, activate) to reduce store size and eliminate boilerplate.
+2026-09-07 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Refactored to consume useVoyageActions, reducing file size from 410 to 233 lines to satisfy SRP.
