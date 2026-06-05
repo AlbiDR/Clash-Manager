@@ -75,3 +75,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-06-02 | Backend/supabase/functions/_shared/muscle.ts | Documented interface contracts for the Native Muscle core utility and added architectural decision logs for key rotation/backoff.
 2026-09-05 | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Documented interface contracts and architectural decision logs for the trend prediction orchestrator.
 2026-06-04 | Frontend-PWA/src/shared/composables/usePullToRefresh.ts | Refactored TSDoc with ADR Section II links and decision logs for the PTR orchestrator.
+2026-06-05 | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Documented interface contracts and side effects for the Voyage actions orchestrator.
