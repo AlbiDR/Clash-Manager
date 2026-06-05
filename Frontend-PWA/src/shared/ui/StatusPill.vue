@@ -1,10 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
-import { useHaptics } from "@core";
-import { onMounted, onBeforeUnmount } from "vue";
-
 /**
  * STATUS PILL / CONNECTIVITY HUB (Layer 2 - Shared UI)
  * ----------------------------------------------------------------------------
@@ -12,6 +8,8 @@ import { onMounted, onBeforeUnmount } from "vue";
  * Features: Smooth grid-based expansion, horizontal alignment, zero-overlap.
  * ----------------------------------------------------------------------------
  */
+
+import { useStatusPill } from "../composables/useStatusPill";
 
 const props = withDefaults(defineProps<{
   type: "success" | "warning" | "error" | "loading";
@@ -28,47 +26,14 @@ const props = withDefaults(defineProps<{
   direction: "right"
 });
 
-const emit = defineEmits<{}>();
+const {
+  isExpanded,
+  isDB,
+  displayText,
+  displaySource,
+  handleToggle
+} = useStatusPill(props);
 
-const haptics = useHaptics();
-const isExpanded = ref(false);
-
-// Auto-expand on errors or loading to catch user attention
-watch(() => props.type, (newType) => {
-  if (newType === "loading") {
-    isExpanded.value = true;
-  } else {
-    if (newType === "error") isExpanded.value = true;
-  }
-});
-
-const handleToggle = (e: Event) => {
-  
-  if (props.type === "loading") return;
-  haptics.tap();
-  isExpanded.value = !isExpanded.value;
-};
-
-
-
-const isDB = computed(() => props.text === 'DB');
-
-// Responsive label truncation: on very narrow screens, show only the last word (e.g., "Operational")
-const displayText = computed(() => {
-  // Use window.innerWidth for simple responsive check; fallback to full text on larger screens.
-  if (typeof window !== 'undefined' && window.innerWidth < 360) {
-    const parts = props.text.split(' ');
-    return parts.length > 1 ? parts[parts.length - 1] : props.text;
-  }
-  return props.text;
-});
-
-const displaySource = computed(() => {
-  if (!props.remoteInfo?.source) return null;
-  // If the status is 'DB', showing 'SUPABASE' is redundant
-  if (isDB.value && props.remoteInfo.source === 'SUPABASE') return null;
-  return props.remoteInfo.source === 'SUPABASE' ? 'DB' : props.remoteInfo.source;
-});
 </script>
 
 <template>
