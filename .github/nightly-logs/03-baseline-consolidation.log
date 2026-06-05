@@ -12,3 +12,11 @@
 - Functions Hardened (search_path): 1 (substrate.weighted_avg)
 - Visual Purity: Replaced non-ASCII box-drawing characters with standard hyphens
 - Verification: 1123 passed, 1 skipped
+2026-09-07 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 0 (Baseline hardened)
+- Types Hardened (Schema-Qualified): 3
+- Views Hardened (Idempotent DROP): 11
+- Functions Hardened (search_path): 1 (substrate.weighted_avg)
+- Trigger Guards Verified: 24
+- Verification: 1123 passed, 1 skipped
