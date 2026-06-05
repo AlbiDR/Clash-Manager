@@ -22,20 +22,16 @@
  */
 import { defineStore } from "pinia";
 import { ref, computed, onUnmounted } from "vue";
-import type { VoyageSummary, VoyageStatus, T2TInput } from "../types";
+import type { VoyageSummary, VoyageStatus } from "../types";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { 
   createSupabaseClient
 } from "@core/api/SupabaseClient";
 import {
-  initializeVoyage as apiInitializeVoyage, 
   fetchVoyageSummary as apiFetchVoyageSummary,
-  fetchVoyageContributions as apiFetchVoyageContributions,
-  scheduleVoyageEvent as apiScheduleVoyageEvent,
-  cancelScheduledVoyageEvent as apiCancelScheduledVoyageEvent,
-  setVoyageEnd as apiSetVoyageEnd
+  fetchVoyageContributions as apiFetchVoyageContributions
 } from "@core/api/VoyageClient";
-import { t2tToTimestamp } from "@core/utils/formatters";
+import { useVoyageActions } from "./useVoyageActions";
 
 export const useVoyageStore = defineStore("voyage", () => {
   /**
@@ -68,7 +64,7 @@ export const useVoyageStore = defineStore("voyage", () => {
   /** Returns true if the Voyage is currently in the ACTIVE state. */
   const isActive = computed(() => status.value === "ACTIVE");
 
-  /** Returns true if the Voyage is active but has no end time set yet. */
+  /** Returns true if the Voyage active but has no end time set yet. */
   const isAwaitingEnd = computed(() => {
     return status.value === "ACTIVE" && !summary.value?.event.end_at;
   });
@@ -117,11 +113,6 @@ export const useVoyageStore = defineStore("voyage", () => {
 
   /**
    * Establishes Postgres realtime listeners for the voyage tables.
-   *
-   * @remarks
-   * Side Effects:
-   * - Initializes `realtimeChannel`.
-   * - Triggers `refresh()` on any change to `drivers.clan_voyage` or `drivers.clan_voyage_contributions`.
    */
   function setupRealtimeListeners() {
     if (realtimeChannel) return;
@@ -161,14 +152,6 @@ export const useVoyageStore = defineStore("voyage", () => {
 
   /**
    * Authoritative fetch of the voyage state and performance aggregates.
-   *
-   * @remarks
-   * Satisfies ADR Section III: Validation Boundaries.
-   * Uses Layer 1 SupabaseClient which enforces Valibot schemas on all inbound data.
-   *
-   * Side Effects:
-   * - Updates `summary`, `loading`, and `lastUpdated`.
-   * - Automatically manages realtime listener lifecycle based on event status.
    */
   async function refresh() {
     loading.value = true;
@@ -187,11 +170,9 @@ export const useVoyageStore = defineStore("voyage", () => {
             target_crowns: summaryData.event.target_crowns,
             start_at: summaryData.event.start_at,
             end_at: summaryData.event.end_at,
-            activated_by: null, // Optional for now
+            activated_by: null,
             is_victory: summaryData.progress_ratio >= 1.0,
           },
-          // [THREAT:] Anemic variable mapping ('c') and unvalidated numeric conversion can lead to silent data corruption.
-          // [DECISION LOG] Renamed to domain-descriptive 'contributionRow' and ensured explicit numeric conversion.
           contributions: contributionsData.map(contributionRow => ({
             player_tag: contributionRow.player_tag,
             player_name: contributionRow.player_name,
@@ -204,11 +185,7 @@ export const useVoyageStore = defineStore("voyage", () => {
         };
         lastUpdated.value = Date.now();
 
-        // Listen for realtime updates whenever an event is in progress
-        if (summary.value.event.status === 'ACTIVE') {
-          setupRealtimeListeners();
-        } else if (summary.value.event.status === 'PENDING') {
-          // Realtime on clan_voyage keeps clients notified when the cron promotes to ACTIVE
+        if (summary.value.event.status === 'ACTIVE' || summary.value.event.status === 'PENDING') {
           setupRealtimeListeners();
         } else {
           cleanupListeners();
@@ -224,167 +201,13 @@ export const useVoyageStore = defineStore("voyage", () => {
     }
   }
 
-  /**
-   * Schedules a new PENDING Voyage event in the future.
-   *
-   * @param target - The crown goal.
-   * @param startsIn - Relative time when it starts.
-   */
-  async function scheduleVoyage(target: number, startsIn: T2TInput) {
-    loading.value = true;
-    try {
-      const start_at = t2tToTimestamp(startsIn);
-      const response = await apiScheduleVoyageEvent(target, start_at);
-
-      if (response.success) {
-        const result = response.data as { success: boolean; error?: string };
-        if (result.success) {
-          await refresh();
-        } else {
-          throw new Error(result.error ?? "Scheduling failed");
-        }
-      } else {
-        throw new Error(String(response.error) ?? "Scheduling failed");
-      }
-    } catch (err: unknown) {
-      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
-      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('[Voyage] Schedule action error:', errorMessage);
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  /**
-   * Sets the end time on an already-ACTIVE Voyage event.
-   *
-   * @param endsIn - Relative duration from now until the event concludes.
-   *
-   * @remarks
-   * Called after the pg_cron job auto-activates the voyage and the official
-   * in-game duration is publicly announced. The backend guards against calling
-   * this on a non-ACTIVE voyage.
-   *
-   * @throws Error if the operation fails (logic error or network/auth failure).
-   */
-  async function setVoyageEnd(endsIn: T2TInput) {
-    const voyageId = summary.value?.event.id;
-    if (!voyageId) throw new Error("No active voyage found.");
-
-    loading.value = true;
-    try {
-      const end_at = t2tToTimestamp(endsIn);
-      const response = await apiSetVoyageEnd(voyageId, end_at);
-
-      if (response.success) {
-        const result = response.data as { success: boolean; error?: string };
-        if (result.success) {
-          await refresh();
-        } else {
-          throw new Error(result.error ?? "Setting end time failed");
-        }
-      } else {
-        throw new Error(String(response.error) ?? "Setting end time failed");
-      }
-    } catch (err: unknown) {
-      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
-      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('[Voyage] Set end time error:', errorMessage);
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  /**
-   * Cancels the currently scheduled PENDING Voyage event.
-   */
-  async function cancelSchedule() {
-    const voyageId = summary.value?.event.id;
-    if (!voyageId) throw new Error("No scheduled voyage is active.");
-
-    loading.value = true;
-    try {
-      const response = await apiCancelScheduledVoyageEvent(voyageId);
-
-      if (response.success) {
-        const result = response.data as { success: boolean; error?: string };
-        if (result.success) {
-          await refresh();
-        } else {
-          throw new Error(result.error ?? "Cancellation failed");
-        }
-      } else {
-        throw new Error(String(response.error) ?? "Cancellation failed");
-      }
-    } catch (err: unknown) {
-      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
-      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('[Voyage] Cancel schedule action error:', errorMessage);
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  /**
-   * Activates a new Voyage event via Supabase RPC (Direct IMMEDIATE ACTIVE).
-   *
-   * @param target - The crown goal for the new Voyage.
-   * @param startsIn - Relative duration until the event begins.
-   * @param endsIn - Relative duration until the event concludes.
-   *
-   * @remarks
-   * Satisfies ADR Section IV: Resilience & Operational Security.
-   * Delegates event initialization to a secured backend RPC.
-   *
-   * Side Effects:
-   * - Triggers `refresh()` upon successful activation.
-   * - Writes to the Supabase backend via `apiInitializeVoyage`.
-   *
-   * @throws Error if the activation fails (logic error or network/auth failure).
-   */
-  async function activateVoyage(
-    target: number,
-    startsIn: T2TInput,
-    endsIn: T2TInput
-  ) {
-    loading.value = true;
-    try {
-      const start_at = t2tToTimestamp(startsIn);
-      const end_at = t2tToTimestamp(endsIn);
-      
-      const response = await apiInitializeVoyage(target, start_at, end_at);
-      
-      if (response.success) {
-        // Business logic check (the JSONB returned by the SQL)
-        const result = response.data as { success: boolean; error?: string };
-        
-        if (result.success) {
-          console.log('[Voyage] Activation successful:', result);
-          await refresh();
-        } else {
-          console.error('[Voyage] Activation failed (logic):', result.error);
-          throw new Error(result.error ?? "Activation failed");
-        }
-      } else {
-        console.error('[Voyage] Activation failed (network/auth):', response.error);
-        throw new Error(String(response.error) ?? "Activation failed");
-      }
-    } catch (err: unknown) {
-      // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces or cause silent failures.
-      // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('[Voyage] Action error:', errorMessage);
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+  // Compose actions from externalized logic
+  const {
+    scheduleVoyage,
+    setVoyageEnd,
+    cancelSchedule,
+    activateVoyage
+  } = useVoyageActions(summary, loading, refresh);
 
   return {
     summary,
