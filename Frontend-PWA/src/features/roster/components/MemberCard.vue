@@ -116,7 +116,7 @@ const ariaLabel = computed(() => {
         />
         <StatisticItem
           label="Avg. Donations"
-          :value="props.member.d.avg"
+          :value="Math.round(props.member.d.avg || 0)"
           :loading="props.appIsRefreshing"
           benchmark-type="lb"
           benchmark-metric="donations"
