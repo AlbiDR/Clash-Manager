@@ -4,3 +4,4 @@
 2026-09-05 | Frontend-PWA/src/shared/ui/SelectionBar.vue | Extracted useSelectionBar shared composable from SelectionBar.vue. Centralized score threshold and mode logic.
 2026-09-06 | Frontend-PWA/src/core/api/DataSchemas.ts | Decomposed monolithic DataSchemas.ts (421 lines) and its test suite into domain-focused modules. Updated monorepo to use deep imports.
 2026-09-06 | Frontend-PWA/src/core/services/useClashDataStore.ts | Decomposed monolithic useClashDataStore.ts (440 lines) by extracting sync and persistence logic to useClashSync.ts.
+2026-09-07 | Frontend-PWA/src/shared/ui/StatusPill.vue | Extracted useStatusPill shared composable, reduced file length from 421 to 386 lines.
