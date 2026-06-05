@@ -12,11 +12,21 @@ import {
 import { t2tToTimestamp } from "@core/utils/formatters";
 
 /**
- * COMPOSABLE: useVoyageActions
- * ----------------------------------------------------------------------------
- * Rationale: Decomposed logic for Voyage event orchestration and RPC handling.
- * Reduces complexity in useVoyageStore.ts to satisfy SRP (<400 lines).
- * ----------------------------------------------------------------------------
+ * Voyage Actions Orchestrator (Layer 3 Feature Composable)
+ *
+ * @remarks
+ * Architectural Context: Satisfies ADR Section II (Layer 3: Features) by providing
+ * a self-contained business silo for Voyage event orchestration.
+ *
+ * Logic Delegation: Extracted from `useVoyageStore.ts` to satisfy SRP and maintain
+ * a clean state management boundary. This composable handles async RPC triggers
+ * and response normalization while delegating state updates back to the caller.
+ *
+ * @param summary - Reactive reference to the current voyage summary (for ID lookup).
+ * @param loading - Reactive boolean flag to track active RPC operations.
+ * @param refresh - Async callback to trigger a full dataset re-hydration upon successful mutations.
+ *
+ * @returns Object containing the primary Voyage orchestration actions.
  */
 export function useVoyageActions(
   summary: Ref<VoyageSummary | null>,
@@ -26,8 +36,16 @@ export function useVoyageActions(
 
   /**
    * Internal helper to handle standardized Supabase RPC responses.
+   *
+   * @remarks
    * [DECISION LOG] Centralizing response handling eliminates redundant
    * boilerplate and ensures consistent error narrowing across all actions.
+   * It enforces the requirement that both the network call and the internal
+   * database logic report success before proceeding.
+   *
+   * @param operation - Descriptive name of the action (used for logging).
+   * @param response - Raw response object from the Supabase client.
+   * @throws Error if either the network or internal logic fails.
    */
   async function handleRpcResponse(
     operation: string,
@@ -50,6 +68,14 @@ export function useVoyageActions(
 
   /**
    * Internal helper to wrap actions with loading state and error narrowing.
+   *
+   * @remarks
+   * Logic Intent: Ensures the reactive `loading` state is strictly managed
+   * throughout the async lifecycle.
+   *
+   * @param operation - Descriptive name of the action.
+   * @param action - The async logic to execute within the wrapper.
+   * @throws Propagates the narrowed error from the action.
    */
   async function executeAction(operation: string, action: () => Promise<void>) {
     loading.value = true;
@@ -69,8 +95,11 @@ export function useVoyageActions(
   /**
    * Schedules a new PENDING Voyage event in the future.
    *
-   * @param target - The crown goal.
-   * @param startsIn - Relative time when it starts.
+   * @remarks
+   * Side Effects: Triggers the `refresh` callback upon successful scheduling.
+   *
+   * @param target - The crown goal for the new Voyage.
+   * @param startsIn - Relative duration/time when the event should begin.
    */
   async function scheduleVoyage(target: number, startsIn: T2TInput) {
     await executeAction("Schedule", async () => {
@@ -83,8 +112,11 @@ export function useVoyageActions(
   /**
    * Sets the end time on an already-ACTIVE Voyage event.
    *
+   * @remarks
+   * Side Effects: Triggers the `refresh` callback upon success.
+   *
    * @param endsIn - Relative duration from now until the event concludes.
-   * @throws Error if no active voyage is found or the operation fails.
+   * @throws Error if no active voyage is found in the `summary` ref or the operation fails.
    */
   async function setVoyageEnd(endsIn: T2TInput) {
     const voyageId = summary.value?.event.id;
@@ -99,7 +131,11 @@ export function useVoyageActions(
 
   /**
    * Cancels the currently scheduled PENDING Voyage event.
-   * @throws Error if no scheduled voyage exists or the operation fails.
+   *
+   * @remarks
+   * Side Effects: Triggers the `refresh` callback upon successful cancellation.
+   *
+   * @throws Error if no scheduled voyage is active in the `summary` ref or the operation fails.
    */
   async function cancelSchedule() {
     const voyageId = summary.value?.event.id;
@@ -113,6 +149,9 @@ export function useVoyageActions(
 
   /**
    * Activates a new Voyage event via Supabase RPC (Direct IMMEDIATE ACTIVE).
+   *
+   * @remarks
+   * Side Effects: Triggers the `refresh` callback upon successful activation.
    *
    * @param target - The crown goal for the new Voyage.
    * @param startsIn - Relative duration until the event begins.
