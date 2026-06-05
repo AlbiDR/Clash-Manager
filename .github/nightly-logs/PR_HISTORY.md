@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-05] PR #760: refactor: extract useStatusPill shared composable
+**Commit**: `66a4084eb9b04d8d489a86c1f7addfee703df5e0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/760)
+
+### Description
+Extracted expansion state and formatting logic from StatusPill.vue to a new shared composable useStatusPill.ts. This refactor reduces the component size below the 400-line SRP threshold and enhances testability.
+
+---
+*PR created automatically by Jules for task [3270435473003035701](https://jules.google.com/task/3270435473003035701) started by @AlbiDR*
+
+---
+
 ## [2026-06-05] PR #759: chore(deps): bump @types/node and @vue/test-utils
 **Commit**: `fca4e59d0c11d53f7434d812a4d13d8c76afa0df`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/759)
