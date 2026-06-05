@@ -21,13 +21,13 @@ The Core Layer (Layer 1) provides the essential infrastructure required for the 
 
 ### API Clients (`/api`)
 The authoritative transport layer for the Supabase binary stack.
-- **SupabaseClient.ts**: The primary gateway for remote data operations. Orchestrates view-direct fetching and initial data hydration.
+- **SupabaseClient.ts**: The infrastructure-level gateway for authentication and configuration.
 - **Specialized Clients**: Domain-specific orchestrators for RPC and Edge Function interactions:
   - `VoyageClient.ts`: Manages Clan Voyage activations and ledger fetching.
   - `RecruitClient.ts`: Manages headhunter recruitment and blacklist operations.
   - `ProfileClient.ts`: Brokered access to player card synchronization.
   - `MaintenanceClient.ts`: Triggers system-level janitor and maintenance cycles.
-- **Data Schemas**: Decomposed Valibot schemas for domain-specific validation (e.g., `VoyageSchemas.ts`, `MemberSchemas.ts`).
+- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`) providing strict Valibot validation for inbound database payloads.
 - **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models.
 
 ### Configuration (`/config`)
@@ -37,7 +37,8 @@ Static system constants and environment orchestration.
 ### Services (`/services`)
 Infrastructure singletons and Layer 1 state orchestrators.
 - **StorageService.ts**: The persistence engine. Brokers access to IndexedDB via the `idbKernel` and manages high-fidelity caching.
-- **useClashDataStore.ts**: The authoritative central store for high-integrity clan datasets.
+- **useClashDataStore.ts**: The authoritative central store for high-integrity clan datasets. Delegates sync logic to `useClashSync.ts`.
+- **useClashSync.ts**: The specialized kernel for managing the lifecycle of the central data store, including hydration and background synchronization.
 - **useConnectivityManager.ts**: Resolves 8-tier system health and synchronization status.
 - **useProgressiveList.ts**: Time-sliced rendering engine for high-density list stability.
 - **useHaptics.ts / useWakeLock.ts**: Brokered access to hardware APIs.
