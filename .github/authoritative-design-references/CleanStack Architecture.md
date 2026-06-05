@@ -285,14 +285,14 @@ To maintain a clinical, drift-free stack, the GitHub repository is the **Absolut
 
 Telling a developer or an agent what *to do* is insufficient; the ADR must explicitly forbid known failure vectors. Committing any of the following anti-patterns is a critical architectural violation:
 
-1.  **The "Feature-to-Feature" Bridge:** Feature A importing a composable or component directly from Feature B. Features are isolated silos. If logic must be shared, it must be extracted and pushed down to Layer 2 (`@shared`) or Layer 1 (`@core`).
-2.  **Bypassing the Pinia Firewall:** Mutating global state directly through `window` or utility side-effects instead of dispatching through an explicit Pinia action. State mutation must be traceable.
-3.  **Trusting the Payload:** Assuming that a JWT payload or client-side payload in a Supabase Edge Function is valid without running it through a strict `Valibot` schema first. The database trusts no one.
-4.  **"Magic Number" Hardcoding:** Hardcoding a scoring threshold or progression formula instead of deriving it dynamically from the data corpus.
-5.  **Unbrokered Hardware Access:** A Vue component calling `navigator.vibrate` or `wakeLock.request` directly. All hardware interactions must be brokered through a Layer 2 composable to ensure fallback safety.
-6.  **The "Awaiting Input" Stagnation:** Any logic, prompt, or tool-interaction that pauses for human confirmation or clarification in an automated pipeline. Autonomy is a binary state; "partial autonomy" is architectural failure.
-7.  **Bypassing the MCP Audit:** Adding or modifying external services/libraries without utilizing the Context7 MCP for research, or modifying the database substrate without consulting the Supabase MCP `get_advisors` results.
-8.  **Permission Requesting:** Implementing `confirm_cost` or similar tool calls without an autonomous decision-making block to resolve them based on the project's strategic goals. 
+1.  **The "Feature-to-Feature" Bridge:** Never import a composable or component directly from Feature B into Feature A. Features are isolated silos. If logic must be shared, it must be extracted and pushed down to Layer 2 (`@shared`) or Layer 1 (`@core`).
+2.  **Bypassing the Pinia Firewall:** Never mutate global state directly through `window` or utility side-effects instead of dispatching through an explicit Pinia action. State mutation must be traceable.
+3.  **Trusting the Payload:** Never assume that a JWT payload or client-side payload in a Supabase Edge Function is valid without running it through a strict `Valibot` schema first. The database trusts no one.
+4.  **"Magic Number" Hardcoding:** Never hardcode a scoring threshold or progression formula instead of deriving it dynamically from the data corpus.
+5.  **Unbrokered Hardware Access:** Never call hardware APIs (such as `navigator.vibrate` or `wakeLock.request`) directly from a Vue component. All hardware interactions must be brokered through a Layer 2 composable to ensure fallback safety.
+6.  **The "Awaiting Input" Stagnation:** Never pause or prompt for human confirmation or clarification in an automated pipeline. Autonomy is a binary state; "partial autonomy" is architectural failure.
+7.  **Bypassing the MCP Audit:** Never add or modify external services/libraries without utilizing the Context7 MCP for research, and never modify the database substrate without consulting the Supabase MCP `get_advisors` results.
+8.  **Permission Requesting:** Never implement `confirm_cost` or similar tool calls without an autonomous decision-making block to resolve them based on the project's strategic goals. 
 
 ---
 
