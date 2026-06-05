@@ -19,6 +19,7 @@ const HTTP_SERVER_ERROR_MAX = 599;
 const ARRAY_LAST_INDEX_OFFSET = 1;
 const INITIAL_INDEX = 0;
 
+// EPHEMERAL: intentionally resets on cold start
 let activeKeys: string[] = [];
 
 /**
@@ -38,7 +39,7 @@ export function setKeys(keys: string | string[]): void {
       const parsed = JSON.parse(keys);
       activeKeys = Array.isArray(parsed) ? parsed : [parsed];
     } catch {
-      activeKeys = keys.split(",").map((k: string) => k.trim()).filter(Boolean);
+      activeKeys = keys.split(",").map((keyToken: string) => keyToken.trim()).filter(Boolean);
     }
   }
 }
@@ -62,7 +63,7 @@ function getKeys(): string[] {
     const parsed = JSON.parse(rawArgs);
     return Array.isArray(parsed) ? parsed : [parsed];
   } catch {
-    return rawArgs.split(",").map((k: string) => k.trim()).filter(Boolean);
+    return rawArgs.split(",").map((keyToken: string) => keyToken.trim()).filter(Boolean);
   }
 }
 
@@ -91,47 +92,51 @@ export async function fetchWithRotation(endpoint: string, maxRetries: number = D
   const keys = getKeys();
   const startIndex = Math.floor(Math.random() * keys.length);
   
-  for (let i = INITIAL_INDEX; i < keys.length; i++) {
-    const targetIndex = (startIndex + i) % keys.length;
+  // [THREAT:] Prevents IP or token-based banning by distributing requests across a pool of API keys.
+  // [DECISION LOG] Key rotation is implemented via a random offset (startIndex) followed by a linear
+  // probe to ensure all keys are tried before declaring failure.
+  for (let rotationIndex = INITIAL_INDEX; rotationIndex < keys.length; rotationIndex++) {
+    const targetIndex = (startIndex + rotationIndex) % keys.length;
     let key = keys[targetIndex].trim().replace(/^"|"$/g, "");
     
-    let attempt = INITIAL_INDEX;
-    while (attempt <= maxRetries) {
+    let retryAttempt = INITIAL_INDEX;
+    while (retryAttempt <= maxRetries) {
       try {
-        const res = await fetch(`https://proxy.royaleapi.dev/v1${endpoint}`, {
+        const apiResponse = await fetch(`https://proxy.royaleapi.dev/v1${endpoint}`, {
           headers: { 
             Authorization: `Bearer ${key}`,
             "Accept": "application/json"
           }
         });
         
-        if (res.status === HTTP_STATUS_FORBIDDEN || res.status === HTTP_STATUS_TOO_MANY_REQUESTS) {
-          console.warn(`[Native-Muscle] Key [${targetIndex}] throttled/forbidden (${res.status}). Rotating to next...`);
+        if (apiResponse.status === HTTP_STATUS_FORBIDDEN || apiResponse.status === HTTP_STATUS_TOO_MANY_REQUESTS) {
+          console.warn(`[Native-Muscle] Key [${targetIndex}] throttled/forbidden (${apiResponse.status}). Rotating to next...`);
           break; // Break inner loop to rotate key
         }
 
-        if (res.status >= HTTP_SERVER_ERROR_MIN && res.status <= HTTP_SERVER_ERROR_MAX) {
-          if (attempt === maxRetries) break; // Exhausted retries, rotate key just in case
-          console.warn(`[Native-Muscle] API Error (${res.status}) on key [${targetIndex}]. Retrying ${attempt + 1}/${maxRetries}...`);
-          attempt++;
-          // [DECISION LOG] Exponential backoff (2^attempt * 500ms) to allow Royale API
+        if (apiResponse.status >= HTTP_SERVER_ERROR_MIN && apiResponse.status <= HTTP_SERVER_ERROR_MAX) {
+          if (retryAttempt === maxRetries) break; // Exhausted retries, rotate key just in case
+          console.warn(`[Native-Muscle] API Error (${apiResponse.status}) on key [${targetIndex}]. Retrying ${retryAttempt + 1}/${maxRetries}...`);
+          retryAttempt++;
+          // [DECISION LOG] Exponential backoff (2^retryAttempt * 500ms) to allow Royale API
           // or proxy nodes time to recover from transient failures.
-          const backoffMs = Math.pow(BACKOFF_EXPONENT_BASE, attempt) * BACKOFF_MULTIPLIER_MS;
-          await new Promise(r => setTimeout(r, backoffMs));
+          const backoffMs = Math.pow(BACKOFF_EXPONENT_BASE, retryAttempt) * BACKOFF_MULTIPLIER_MS;
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
           continue;
         }
         
-        return res;
+        return apiResponse;
       } catch (fetchError: unknown) {
         const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
         console.warn(`[Native-Muscle] Fetch failed for key [${targetIndex}]: ${errorMessage}`);
-        if (attempt === maxRetries) {
-          if (i === keys.length - ARRAY_LAST_INDEX_OFFSET) throw fetchError;
+        if (retryAttempt === maxRetries) {
+          if (rotationIndex === keys.length - ARRAY_LAST_INDEX_OFFSET) throw fetchError;
           break; // Break inner loop to rotate key
         }
-        attempt++;
-        const backoffMs = Math.pow(BACKOFF_EXPONENT_BASE, attempt) * BACKOFF_MULTIPLIER_MS;
-        await new Promise(r => setTimeout(r, backoffMs));
+        retryAttempt++;
+        // [THREAT:] Prevents hammering the proxy/API during transient network failures.
+        const backoffMs = Math.pow(BACKOFF_EXPONENT_BASE, retryAttempt) * BACKOFF_MULTIPLIER_MS;
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
       }
     }
   }
