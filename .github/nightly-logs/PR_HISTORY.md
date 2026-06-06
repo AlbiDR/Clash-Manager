@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-06] PR #766: docs(readme): reconcile shared layer documentation drift
+**Commit**: `c20d890e837dde01d677ebad139fb7afcab6d827`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/766)
+
+### Description
+Reconciled documentation drift in the Shared Layer on 2026-09-09. Action: (1) Updated `Frontend-PWA/src/shared/README.md` to include `useStatusPill.ts` and `useBenchmarkedStat.ts` in the Shared Composables registry. (2) Updated `Frontend-PWA/src/shared/ui/README.md` to document the delegation of `StatusPill.vue` to `useStatusPill.ts` and the use of `useBenchmarkedStat.ts` for centralized benchmarking in Player Identity Badges. Verified via full monorepo test gate (1170 passed, 1 skipped) and updated `.github/nightly-logs/04-documentation-readme-coverage.log`.
+
+---
+*PR created automatically by Jules for task [5323535801325538502](https://jules.google.com/task/5323535801325538502) started by @AlbiDR*
+
+---
+
 ## [2026-06-06] PR #765: perf(opt): extract useBenchmarkedStat shared composable
 **Commit**: `6de3bba284eb521c91a5464a46cdebe73ded6e3c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/765)
