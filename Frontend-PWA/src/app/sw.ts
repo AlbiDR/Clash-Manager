@@ -4,7 +4,7 @@
 
 // Service Worker for Clash Manager
 // Optimized for Native System Compatibility (WebAPK)
-import { precacheAndRoute } from "workbox-precaching";
+import { precacheAndRoute, matchPrecache } from "workbox-precaching";
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] };
 declare const clients: Clients;
@@ -70,7 +70,47 @@ self.addEventListener("install", () => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      try {
+        if (self.registration.navigationPreload) {
+          await self.registration.navigationPreload.enable();
+        }
+      } catch (e) {
+        console.warn("[SW] Navigation preload activation failed", e);
+      }
+      await self.clients.claim();
+    })(),
+  );
+});
+
+/**
+ * [ADR] Custom Navigation Preload Handler
+ * Intercepts document requests to consume parallel-fetched responses.
+ * Falls back to network or the precached app shell automatically.
+ */
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      (async () => {
+        try {
+          // Attempt to consume preloaded response if active
+          const preloadResponse = await event.preloadResponse;
+          if (preloadResponse) {
+            return preloadResponse;
+          }
+          return await fetch(event.request);
+        } catch (error) {
+          // Offline/Network error fallback to precached HTML shell
+          const cachedShell = await matchPrecache("/Clash-Manager/index.html");
+          if (cachedShell) {
+            return cachedShell;
+          }
+          throw error;
+        }
+      })(),
+    );
+  }
 });
 
 /**

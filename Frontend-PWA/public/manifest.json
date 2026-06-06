@@ -91,6 +91,12 @@
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]
   },
+  "protocol_handlers": [
+    {
+      "protocol": "web+clash",
+      "url": "/Clash-Manager/#/headhunter?query=%s"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Roster",
