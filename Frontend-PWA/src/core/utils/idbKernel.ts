@@ -120,6 +120,7 @@ export async function closeDB() {
 
 /**
  * Resets the singleton promise (used for testing).
+ * @public
  */
 export function resetDBPromise() {
   dbPromise = null;

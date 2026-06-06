@@ -6,7 +6,13 @@
         "src/app/main.ts",
         "src/app/sw.ts"
       ],
-      "project": "src/**/*.{ts,vue}"
+      "project": "src/**/*.{ts,vue}",
+      "ignore": [
+        "src/env.d.ts"
+      ],
+      "ignoreUnresolved": [
+        "virtual:pwa-register/vue"
+      ]
     },
     ".": {
       "entry": [
