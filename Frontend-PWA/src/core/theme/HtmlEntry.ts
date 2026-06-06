@@ -64,6 +64,17 @@ export function generateHtmlEntry(version: string): string {
     <link rel="preload" href="./fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 
+    <script>
+      (function() {
+        var pref = localStorage.getItem("cm_theme_preference");
+        var isDark = pref === "dark" || ((!pref || pref === "auto") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
     <style id="critical-substrate">
       ${getAppShellStyles()}
     </style>

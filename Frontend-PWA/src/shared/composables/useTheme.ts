@@ -99,9 +99,6 @@ export function useTheme() {
     meta.name = "theme-color";
     meta.content = isDark ? "#0b0e14" : "#fdfcff";
     document.head.appendChild(meta);
-
-    // Update manifest screenshots
-    updateManifest();
   }
 
   /**
@@ -131,171 +128,18 @@ export function useTheme() {
     }
 
     applyTheme();
-    updateManifest(); // Initial manifest update
     isInitialized.value = true;
-  }
-
-  // [CACHE] Cache Storage
-  // EPHEMERAL: intentionally resets on cold start
-  let baseManifestCache: WebManifest | null = null;
-  const manifestBlobCache: Record<string, string> = {};
-
-  /**
-   * Internal helper to detect automated crawlers/auditors.
-   * PageSpeed Insights and Lighthouse often fail when the manifest is a Blob URI.
-   */
-  function isCrawler(): boolean {
-    if (typeof navigator === "undefined") return false;
-    const ua = navigator.userAgent;
-    return /Lighthouse|PageSpeed|GTmetrix|Googlebot/i.test(ua);
-  }
-
-  /**
-   * MANIFEST SWAPPER: Dynamic injection of theme-aware screenshots.
-   *
-   * @remarks
-   * To maintain visual consistency in OS-level PWA surfaces (App Switcher, Splash Screens),
-   * this function regenerates the Web App Manifest on-the-fly. It utilizes Blob URIs
-   * to bypass static file limitations and ensure that screenshots match the current theme.
-   *
-   * Performance is maintained via a two-tier cache (Base Manifest JSON and Theme-specific Blob URIs).
-   */
-  async function updateManifest() {
-    if (typeof document === "undefined") return;
-
-    // 1. SECURITY & COMPATIBILITY GUARD: Skip for automated auditors
-    // Lighthouse and PSI often crash or find the manifest invalid if it's a blob: URI.
-    if (isCrawler()) {
-      console.log("[PWA] Crawler detected; skipping dynamic manifest swap for stability");
-      return;
-    }
-
-    // 2. Determine current visual state
-    const isDark = document.documentElement.classList.contains("dark");
-    const suffix = isDark ? "dark" : "light";
-
-    // [PERF] OPTIMIZATION: Return cached Blob URI if already generated
-    if (manifestBlobCache[suffix]) {
-      const link = document.querySelector(
-        'link[rel="manifest"]',
-      ) as HTMLLinkElement;
-      if (link && link.href !== manifestBlobCache[suffix]) {
-        link.href = manifestBlobCache[suffix];
-        console.log(`[PWA] Swapped to cached manifest for ${suffix}`);
-      }
-      return;
-    }
-
-    // 3. Define targeted screenshots
-    const manualScreenshots = [
-      {
-        src: `headhunter-${suffix}.webp`,
-        sizes: "1080x1920",
-        type: "image/webp",
-        form_factor: "narrow",
-        label: `Clash Manager Headhunter (${suffix})`,
-      },
-      {
-        src: `roster-${suffix}.webp`,
-        sizes: "1920x1080",
-        type: "image/webp",
-        form_factor: "wide",
-        label: `Clash Manager Roster (${suffix})`,
-      },
-    ];
-
-    try {
-      // 4. Find existing link
-      const link = document.querySelector(
-        'link[rel="manifest"]',
-      ) as HTMLLinkElement;
-      if (!link) return;
-
-      // 5. Fetch or use cached base manifest
-      if (!baseManifestCache) {
-        // use href of existing link to ensure base path is handled correctly
-        const fetchUrl = link.getAttribute("href") || "manifest.json";
-        const response = await fetch(fetchUrl);
-        baseManifestCache = await response.json();
-
-        // FIX: Resolve all relative icon paths to absolute to work with Blob URL
-        const baseUrl = import.meta.env.BASE_URL || "/";
-        const resolvePath = (path: string) => {
-          if (!path || typeof path !== "string") return "";
-          if (path.startsWith("/") || path.startsWith("http")) return path;
-          // Ensure baseUrl ends with / if path doesn't start with it
-          const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-          return `${cleanBase}${path}`;
-        };
-        
-        if (baseManifestCache && baseManifestCache.icons) {
-          baseManifestCache.icons = baseManifestCache.icons.map((icon: WebManifestIcon) => ({
-            ...icon,
-            src: resolvePath(icon.src)
-          }));
-        }
-        if (baseManifestCache && baseManifestCache.shortcuts) {
-          baseManifestCache.shortcuts = baseManifestCache.shortcuts.map((shortcut: WebManifestShortcut) => ({
-            ...shortcut,
-            icons: shortcut.icons?.map((icon: WebManifestIcon) => ({
-              ...icon,
-              src: resolvePath(icon.src)
-            }))
-          }));
-        }
-      }
-
-      // 6. Construct new manifest
-      const baseUrl = import.meta.env.BASE_URL || "/";
-      const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-      
-      const themeColors = isDark
-        ? { theme_color: "#0b0e14", background_color: "#0b0e14" }
-        : { theme_color: "#fdfcff", background_color: "#fdfcff" };
-
-      const newManifest: WebManifest = {
-        ...baseManifestCache,
-        ...themeColors,
-        display: "standalone",
-        display_override: ["standalone", "minimal-ui"],
-        screenshots: manualScreenshots.map(screenshot => ({
-          ...screenshot,
-          src: `${cleanBase}assets/branding/${screenshot.src}`
-        })),
-      };
-
-      // 7. Create Blob URI
-      const stringManifest = JSON.stringify(newManifest);
-      const blob = new Blob([stringManifest], { type: "application/json" });
-      const manifestURL = URL.createObjectURL(blob);
-
-      // 8. Cache and Swap
-      manifestBlobCache[suffix] = manifestURL;
-      link.href = manifestURL;
-
-      console.log(`[PWA] Generated and updated manifest for ${suffix} theme`);
-    } catch (manifestError: unknown) {
-      // [THREAT:] Silent failure during manifest swap leads to inconsistent PWA UI.
-      const errorMessage = manifestError instanceof Error ? manifestError.message : String(manifestError);
-      console.warn("[PWA] Failed to update dynamic manifest:", errorMessage);
-    }
   }
 
   /**
    * MANIFEST PURGE: Explicitly clears the manifest URI cache.
    *
    * @remarks
-   * Revokes all generated Blob URIs to prevent memory leaks and forces the
-   * engine to re-fetch the base manifest. This is primarily used for
-   * administrative recovery or after significant asset updates.
+   * Deprecated no-op after removing the dynamic manifest swapper.
    */
   function clearManifestCache() {
-    Object.keys(manifestBlobCache).forEach((key) => {
-      URL.revokeObjectURL(manifestBlobCache[key]);
-      delete manifestBlobCache[key];
-    });
-    baseManifestCache = null;
-    console.log("[PWA] Manifest cache cleared");
+    // Deprecated no-op
+    console.log("[PWA] Manifest cache clear requested (no-op)");
   }
 
   return {
@@ -305,3 +149,4 @@ export function useTheme() {
     clearManifestCache,
   };
 }
+
