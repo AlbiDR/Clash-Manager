@@ -1,0 +1,359 @@
+View at line 3142:
+CREATE OR REPLACE VIEW drivers.recruits_view AS
+SELECT player_tag AS tag,
+    player_name AS name,
+    trophies,
+    donations,
+    cards,
+    war_wins,
+    raw_potential_score,
+    round(((raw_potential_score / 10000.0) * 100.0), 2) AS potential_score,
+    source,
+    status,
+    found_date,
+    last_scan
+   FROM drivers.recruits
+  WHERE (target_clan_tag IS NULL)
+  ORDER BY raw_potential_score DESC;
+---
+View at line 3160:
+---
+View at line 3420:
+CREATE OR REPLACE VIEW features.roster_view AS
+ WITH roster_source AS (
+      SELECT m.id,
+             m.player_tag,
+             m.player_name,
+             m.role,
+             m.exp_level,
+             m.last_seen_at,
+             m.updated_at,
+             m.snapshot_date,
+             m.trophies,
+             m.donations,
+             m.donations_received,
+             m.joined_at,
+             m.star_points,
+             m.best_trophies,
+             m.total_donations,
+             m.war_day_wins,
+             m.clan_cards_collected,
+             m.challenge_max_wins,
+             m.card_count,
+             m.elite_wild_cards,
+             m.war_wins,
+             m.week_fame,
+             m.decks_used_today,
+             m.clan_rank,
+             m.last_ingested_at,
+             m.is_active,
+             m.decks_used_weekly,
+             m.current_clan_tag,
+             s.avg_fame,
+             s.war_rate,
+             s.voyage_index,
+             s.voyage_merit,
+             s.raw_performance_score,
+             s.performance_score,
+             s.stability_index,
+             s.days_inactive,
+             s.tenure_days,
+             s.hist,
+             s.v_hist,
+             s.avg_daily_donations,
+             ltrim(m.player_tag, '#'::text) AS raw_tag
+        FROM drivers.members m
+          LEFT JOIN features.scoring_view s ON s.player_tag = m.player_tag
+       WHERE m.is_active = true
+         AND m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text
+  )
+ SELECT player_name,
+    role,
+    player_tag,
+    clan_rank,
+    trophies,
+    exp_level,
+    donations,
+    donations_received,
+    decks_used_today,
+    decks_used_weekly,
+    week_fame,
+    avg_fame,
+    voyage_index,
+    voyage_merit,
+    COALESCE(war_rate, 0::numeric) AS war_participation,
+    raw_performance_score,
+    performance_score,
+    stability_index,
+    substrate.format_last_seen(days_inactive) AS last_seen_label,
+    substrate.format_tenure(tenure_days)       AS tenure_label,
+    last_seen_at,
+    last_ingested_at,
+    tenure_days,
+    hist,
+    v_hist,
+    avg_daily_donations,
+    'https://link.clashroyale.com/en?player='::text || raw_tag AS ingame_link,
+    'https://royaleapi.com/player/'::text || raw_tag          AS royaleapi_link
+   FROM roster_source
+  ORDER BY raw_performance_score DESC NULLS LAST, performance_score DESC NULLS LAST;
+---
+View at line 3505:
+CREATE OR REPLACE VIEW features.voyage_contributions AS
+SELECT c.player_tag,
+       s.name AS player_name,
+       c.total_voyage_crowns,
+       c.percentage_voyage_crowns,
+       s.performance_score
+  FROM drivers.clan_voyage_contributions c
+  JOIN features.scoring_view s ON s.player_tag = c.player_tag
+ WHERE c.voyage_id = (
+     SELECT id FROM drivers.clan_voyage WHERE status = 'ACTIVE' LIMIT 1
+ );
+---
+View at line 3520:
+CREATE OR REPLACE VIEW features.governance_report AS
+SELECT id,
+    event_type,
+    status,
+    message,
+    metadata,
+    created_at
+   FROM substrate.governance_telemetry gt
+  ORDER BY created_at DESC;
+---
+View at line 3531:
+CREATE OR REPLACE VIEW features.voyage_summary AS
+WITH current_voyage AS (
+    SELECT *
+      FROM drivers.clan_voyage
+     WHERE status IN ('PENDING', 'ACTIVE')
+     ORDER BY CASE WHEN status = 'ACTIVE' THEN 1 ELSE 2 END ASC, created_at DESC
+     LIMIT 1
+), total_stats AS (
+    SELECT v.id AS voyage_id,
+           COALESCE(SUM(c.total_voyage_crowns), 0) AS total_crowns
+      FROM current_voyage v
+      LEFT JOIN drivers.clan_voyage_contributions c ON c.voyage_id = v.id
+     GROUP BY v.id
+)
+SELECT
+    (SELECT jsonb_build_object(
+        'id',            v.id,
+        'clan_tag',      v.clan_tag,
+        'status',        v.status,
+        'target_crowns', v.target_crowns,
+        'start_at',      v.start_at,
+        'end_at',        v.end_at,
+        'is_victory',    (ts.total_crowns >= v.target_crowns)
+    ) FROM current_voyage v JOIN total_stats ts ON ts.voyage_id = v.id) AS event,
+    COALESCE((SELECT ts.total_crowns FROM total_stats ts), 0)           AS total_voyage_crowns,
+    COALESCE(
+        (SELECT ts.total_crowns::numeric / NULLIF(v.target_crowns, 0)::numeric
+           FROM current_voyage v JOIN total_stats ts ON ts.voyage_id = v.id),
+        0
+    ) AS progress_ratio;
+---
+View at line 3565:
+CREATE OR REPLACE VIEW features.headhunter_view AS
+WITH benchmarking_context AS (
+         SELECT GREATEST(COALESCE(( SELECT max(recruits.raw_potential_score) AS max
+                   FROM drivers.recruits
+                  WHERE (recruits.status = 'ACTIVE'::drivers.recruit_status)), (0)::numeric), COALESCE(( SELECT max(recruit_blacklist.raw_potential_score) AS max
+                   FROM drivers.recruit_blacklist
+                  WHERE (recruit_blacklist.expires_at > now())), (0)::numeric), COALESCE(( SELECT max(recruits.raw_potential_score) AS max
+                   FROM drivers.recruits), (1)::numeric)) AS max_corpus_score
+        ), heritage_context AS (
+         SELECT heritage_ledger.player_tag,
+            heritage_ledger.max_pes,
+            heritage_ledger.tenure_days,
+            (heritage_ledger.last_seen_at >= (now() - '30 days'::interval)) AS is_fresh
+           FROM drivers.heritage_ledger
+        ), base_calculations AS (
+         SELECT r.player_name,
+            r.player_tag,
+            r.trophies,
+            r.donations,
+            r.cards,
+            r.war_wins,
+            r.raw_potential_score,
+            r.found_date,
+            r.last_scan AS last_seen_at,
+            ((EXTRACT(epoch FROM (now() - r.found_date)))::integer / 60) AS raw_longevity_mins,
+            (h.player_tag IS NOT NULL) AS is_former_member,
+            COALESCE((h.is_fresh AND (h.max_pes >= 80)), false) AS has_blessing,
+            h.tenure_days AS heritage_tenure_days
+           FROM (drivers.recruits r
+             LEFT JOIN heritage_context h ON ((h.player_tag = r.player_tag)))
+          WHERE ((r.status = 'ACTIVE'::drivers.recruit_status) AND (NOT (EXISTS ( SELECT 1
+                   FROM drivers.recruit_blacklist bl
+                  WHERE (bl.player_tag = r.player_tag)))) AND (r.trophies > 0) AND (r.raw_potential_score > (0)::numeric))
+        ), scoring_layer AS (
+         SELECT bc.max_corpus_score,
+            b.player_name,
+            b.player_tag,
+            b.trophies,
+            b.donations,
+            b.cards,
+            b.war_wins,
+            b.raw_potential_score,
+            b.found_date,
+            b.last_seen_at,
+            b.raw_longevity_mins,
+            b.is_former_member,
+            b.has_blessing,
+            b.heritage_tenure_days,
+            LEAST((100)::numeric, round((((b.raw_potential_score *
+                CASE
+                    WHEN b.has_blessing THEN 1.05
+                    ELSE 1.0
+                END) / bc.max_corpus_score) * (100)::numeric))) AS potential_score
+           FROM (base_calculations b
+             CROSS JOIN benchmarking_context bc)
+        )
+ SELECT player_name,
+    player_tag,
+    trophies,
+    donations,
+    cards,
+    war_wins,
+    raw_potential_score,
+    potential_score,
+    substrate.format_longevity(raw_longevity_mins) AS longevity_label,
+    raw_longevity_mins AS longevity,
+    substrate.format_tenure((heritage_tenure_days)::numeric) AS tenure_label,
+    heritage_tenure_days AS tenure_days,
+        CASE
+            WHEN (potential_score >= (90)::numeric) THEN 'ELITE'::text
+            WHEN (potential_score >= (75)::numeric) THEN 'HIGH'::text
+            ELSE 'MID'::text
+        END AS tier,
+        CASE
+            WHEN has_blessing THEN 'RETURNING_VETERAN'::text
+            WHEN is_former_member THEN 'FORMER_MEMBER'::text
+            ELSE 'NEW_CANDIDATE'::text
+        END AS heritage_status,
+    has_blessing AS has_heritage_blessing,
+    last_seen_at,
+    found_date,
+    ('https://link.clashroyale.com/en?player='::text || ltrim(player_tag, '#'::text)) AS ingame_link,
+    ('https://royaleapi.com/player/'::text || ltrim(player_tag, '#'::text)) AS royaleapi_link
+   FROM scoring_layer
+  ORDER BY raw_potential_score DESC;
+---
+View at line 3652:
+CREATE OR REPLACE VIEW substrate.view_pipeline_health AS
+SELECT component_id,
+    status,
+    last_triggered_at,
+    last_success_at,
+    last_failure_at,
+    last_message,
+    is_data_perfect,
+    last_validation_report,
+    updated_at
+   FROM substrate.pipeline_heartbeat ph;
+---
+View at line 3665:
+CREATE OR REPLACE VIEW features.war_activity_view AS
+WITH activity_enriched AS (
+         SELECT wa.player_tag,
+            wa.player_name,
+            m.role,
+            COALESCE(m.is_active, false) AS is_still_in_clan,
+            wa.week_id,
+            wa.section_index,
+            wa.decks_used,
+            wa.decks_used_today,
+            wa.fame,
+                CASE
+                    WHEN (wa.decks_used > 0) THEN round(((wa.fame)::numeric / (wa.decks_used)::numeric), 1)
+                    ELSE (0)::numeric
+                END AS fame_per_deck,
+            GREATEST(0, (16 - wa.decks_used)) AS decks_remaining_weekly,
+            wa.updated_at
+           FROM (drivers.war_activity wa
+             LEFT JOIN drivers.members m ON ((m.player_tag = wa.player_tag)))
+        )
+ SELECT player_name,
+    role,
+    is_still_in_clan,
+    week_id,
+    section_index,
+    decks_used,
+    decks_used_today,
+    fame,
+    fame_per_deck,
+    decks_remaining_weekly,
+    updated_at,
+    player_tag
+   FROM activity_enriched
+  ORDER BY week_id DESC, fame DESC;
+---
+View at line 3701:
+CREATE OR REPLACE VIEW features.war_loyalty_view AS
+SELECT clan_tag,
+    clan_name,
+    week_id,
+    fame,
+    rank,
+    clan_points,
+    updated_at
+   FROM drivers.war_history wh;
+---
+View at line 3712:
+CREATE OR REPLACE VIEW features.war_performance_analytics_view AS
+WITH latest_logs AS (
+         SELECT DISTINCT ON ((item.value ->> 'seasonId'::text), (item.value ->> 'sectionIndex'::text), ((standing.value -> 'clan'::text) ->> 'tag'::text)) (item.value ->> 'seasonId'::text) AS season_id,
+            (item.value ->> 'sectionIndex'::text) AS section_index,
+            ((standing.value -> 'clan'::text) ->> 'name'::text) AS clan_name,
+            ((standing.value -> 'clan'::text) ->> 'tag'::text) AS clan_tag,
+            ((standing.value ->> 'rank'::text))::integer AS rank,
+            (((standing.value -> 'clan'::text) ->> 'fame'::text))::integer AS total_fame,
+            ((standing.value -> 'clan'::text) -> 'participants'::text) AS participants
+           FROM substrate.raw_war_log,
+            LATERAL jsonb_array_elements((raw_war_log.payload -> 'items'::text)) item(value),
+            LATERAL jsonb_array_elements((item.value -> 'standings'::text)) standing(value)
+          WHERE (((standing.value -> 'clan'::text) ->> 'tag'::text) IN ( SELECT clans.clan_tag
+                   FROM drivers.clans))
+          ORDER BY (item.value ->> 'seasonId'::text), (item.value ->> 'sectionIndex'::text), ((standing.value -> 'clan'::text) ->> 'tag'::text), raw_war_log.ingested_at DESC
+        ), player_stats AS (
+         SELECT latest_logs.season_id,
+            latest_logs.section_index,
+            latest_logs.clan_tag,
+            latest_logs.clan_name,
+            latest_logs.rank,
+            latest_logs.total_fame,
+            (p.value ->> 'tag'::text) AS player_tag,
+            (p.value ->> 'name'::text) AS player_name,
+            ((p.value ->> 'fame'::text))::integer AS player_fame,
+            ((p.value ->> 'decksUsed'::text))::integer AS decks_used
+           FROM latest_logs,
+            LATERAL jsonb_array_elements(latest_logs.participants) p(value)
+          WHERE (((p.value ->> 'fame'::text))::integer > 0)
+        ), weekly_summary AS (
+         SELECT player_stats.season_id,
+            player_stats.section_index,
+            player_stats.clan_tag,
+            player_stats.clan_name,
+            player_stats.rank,
+            player_stats.total_fame,
+            count(player_stats.player_tag) AS active_participants,
+            round(avg(player_stats.decks_used), 2) AS avg_decks_per_active,
+            (array_agg((((player_stats.player_name || ' ('::text) || player_stats.player_fame) || ')'::text) ORDER BY player_stats.player_fame DESC))[1:5] AS top_contributors
+           FROM player_stats
+          GROUP BY player_stats.season_id, player_stats.section_index, player_stats.clan_tag, player_stats.clan_name, player_stats.rank, player_stats.total_fame
+        )
+ SELECT season_id,
+    section_index,
+    clan_name,
+    clan_tag,
+    rank,
+    total_fame,
+    active_participants,
+    avg_decks_per_active,
+    top_contributors,
+    ((season_id || '-'::text) || ((section_index)::integer + 1)) AS week_label
+   FROM weekly_summary
+  ORDER BY (season_id)::integer DESC, (section_index)::integer DESC;
+---
