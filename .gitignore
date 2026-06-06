@@ -83,3 +83,10 @@ Backend/scripts/data/
 mcp_config.json
 test-stack.js
 Frontend-PWA/test-stack.js
+
+# Android Build Artifacts (keep out of repo)
+*.apk
+*.aab
+*.keystore
+/assetlinks.json
+!Frontend-PWA/public/.well-known/assetlinks.json
