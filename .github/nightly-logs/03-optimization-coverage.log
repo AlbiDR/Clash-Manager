@@ -192,3 +192,4 @@ Frontend-PWA/scripts/portfolio.css
 2026-09-06 | Frontend-PWA/src/core/services/StorageService.ts | Refactored to consume idbKernel, reducing file size to 181 lines and enforcing SRP.
 2026-09-07 | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Extracted Voyage actions (schedule, setEnd, cancel, activate) to reduce store size and eliminate boilerplate.
 2026-09-07 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Refactored to consume useVoyageActions, reducing file size from 410 to 233 lines to satisfy SRP.
+2026-09-09 | Frontend-PWA/src/shared/composables/useBenchmarkedStat.ts | Extracted shared benchmarking tooltip logic from multiple UI components to reduce duplication and standardize reactivity guards.

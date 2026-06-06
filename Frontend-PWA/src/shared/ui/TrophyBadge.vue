@@ -3,8 +3,7 @@
 
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useBenchmarking } from "@core/services/useBenchmarking";
-import { computed } from "vue";
+import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 
 /**
  * [UI] TROPHY BADGE
@@ -17,11 +16,11 @@ const props = defineProps<{
   context: "lb" | "hh";
 }>();
 
-const { getSafeBenchmark } = useBenchmarking();
-
-const benchmarkTooltipContent = computed(() => {
-  return getSafeBenchmark(props.context, "trophies", props.value);
-});
+const { benchmarkTooltipContent } = useBenchmarkedStat(
+  () => props.context,
+  "trophies",
+  () => props.value
+);
 </script>
 
 <template>

@@ -19,16 +19,30 @@ CREATE SCHEMA IF NOT EXISTS substrate;
 CREATE SCHEMA IF NOT EXISTS drivers;
 CREATE SCHEMA IF NOT EXISTS features;
 
--- Create Enums if they do not exist
+-- Create Enums if they do not exist (Declarative Hardening with Schema Qualification)
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'recruit_status') THEN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'recruit_status' AND n.nspname = 'drivers'
+    ) THEN
         CREATE TYPE drivers.recruit_status AS ENUM ('ACTIVE', 'QUEUE', 'ARCHIVED', 'INVITED', 'BENCHED');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'recruit_event_type') THEN
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'recruit_event_type' AND n.nspname = 'drivers'
+    ) THEN
         CREATE TYPE drivers.recruit_event_type AS ENUM ('DISCOVERED', 'SCORE_THRESHOLD_HIT', 'ACTION_INVITED', 'ACTION_DISCARDED', 'JOINED_US', 'PROMOTED', 'BENCHED', 'ROTATED_OUT', 'ARCHIVED', 'GHOST_DETECTED');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pipeline_status') THEN
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'pipeline_status' AND n.nspname = 'substrate'
+    ) THEN
         CREATE TYPE substrate.pipeline_status AS ENUM ('IDLE', 'RUNNING', 'COMPLETED', 'FAILED');
     END IF;
 END $$;
@@ -3110,7 +3124,7 @@ CREATE OR REPLACE FUNCTION substrate.weighted_avg(
 RETURNS numeric
 LANGUAGE sql
 IMMUTABLE STRICT
-SET search_path TO 'public', 'substrate', 'drivers', 'features', 'pg_temp'
+SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $
     SELECT
         SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
@@ -3124,6 +3138,7 @@ COMMENT ON FUNCTION substrate.weighted_avg(numeric[], numeric, numeric) IS
      Default: 5% decay per entry, floor at 50% (matches voyage_factuals).';
 
 -- VIEWS
+DROP VIEW IF EXISTS drivers.recruits_view CASCADE;
 CREATE OR REPLACE VIEW drivers.recruits_view AS
 SELECT player_tag AS tag,
     player_name AS name,
@@ -3141,6 +3156,7 @@ SELECT player_tag AS tag,
   WHERE (target_clan_tag IS NULL)
   ORDER BY raw_potential_score DESC;
 
+DROP VIEW IF EXISTS features.scoring_view CASCADE;
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
   -- -- Voyage pipeline (unchanged) ---------------------------------------------
@@ -3400,6 +3416,7 @@ GRANT SELECT ON features.scoring_view TO authenticated, anon, service_role;
 -- =============================================================================
 -- 4. Rebuild features.roster_view (exposes avg_daily_donations)
 -- =============================================================================
+DROP VIEW IF EXISTS features.roster_view CASCADE;
 CREATE OR REPLACE VIEW features.roster_view AS
  WITH roster_source AS (
       SELECT m.id,
@@ -3484,6 +3501,7 @@ GRANT SELECT ON features.roster_view TO authenticated, anon, service_role;
 -- =============================================================================
 -- 5. Rebuild features.voyage_contributions (unchanged logic, clean rebuild)
 -- =============================================================================
+DROP VIEW IF EXISTS features.voyage_contributions CASCADE;
 CREATE OR REPLACE VIEW features.voyage_contributions AS
 SELECT c.player_tag,
        s.name AS player_name,
@@ -3498,6 +3516,7 @@ SELECT c.player_tag,
 
 GRANT SELECT ON features.voyage_contributions TO authenticated, anon, service_role;
 
+DROP VIEW IF EXISTS features.governance_report CASCADE;
 CREATE OR REPLACE VIEW features.governance_report AS
 SELECT id,
     event_type,
@@ -3508,6 +3527,7 @@ SELECT id,
    FROM substrate.governance_telemetry gt
   ORDER BY created_at DESC;
 
+DROP VIEW IF EXISTS features.voyage_summary CASCADE;
 CREATE OR REPLACE VIEW features.voyage_summary AS
 WITH current_voyage AS (
     SELECT *
@@ -3541,6 +3561,7 @@ SELECT
 
 GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 
+DROP VIEW IF EXISTS features.headhunter_view CASCADE;
 CREATE OR REPLACE VIEW features.headhunter_view AS
 WITH benchmarking_context AS (
          SELECT GREATEST(COALESCE(( SELECT max(recruits.raw_potential_score) AS max
@@ -3627,6 +3648,7 @@ WITH benchmarking_context AS (
    FROM scoring_layer
   ORDER BY raw_potential_score DESC;
 
+DROP VIEW IF EXISTS substrate.view_pipeline_health CASCADE;
 CREATE OR REPLACE VIEW substrate.view_pipeline_health AS
 SELECT component_id,
     status,
@@ -3639,6 +3661,7 @@ SELECT component_id,
     updated_at
    FROM substrate.pipeline_heartbeat ph;
 
+DROP VIEW IF EXISTS features.war_activity_view CASCADE;
 CREATE OR REPLACE VIEW features.war_activity_view AS
 WITH activity_enriched AS (
          SELECT wa.player_tag,
@@ -3674,6 +3697,7 @@ WITH activity_enriched AS (
    FROM activity_enriched
   ORDER BY week_id DESC, fame DESC;
 
+DROP VIEW IF EXISTS features.war_loyalty_view CASCADE;
 CREATE OR REPLACE VIEW features.war_loyalty_view AS
 SELECT clan_tag,
     clan_name,
@@ -3684,6 +3708,7 @@ SELECT clan_tag,
     updated_at
    FROM drivers.war_history wh;
 
+DROP VIEW IF EXISTS features.war_performance_analytics_view CASCADE;
 CREATE OR REPLACE VIEW features.war_performance_analytics_view AS
 WITH latest_logs AS (
          SELECT DISTINCT ON ((item.value ->> 'seasonId'::text), (item.value ->> 'sectionIndex'::text), ((standing.value -> 'clan'::text) ->> 'tag'::text)) (item.value ->> 'seasonId'::text) AS season_id,

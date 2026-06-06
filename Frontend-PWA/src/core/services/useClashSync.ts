@@ -15,9 +15,15 @@ import type { WebAppData, PlayerTag } from "../types";
 
 /**
  * CLASH SYNC SERVICE (Layer 1)
- * ----------------------------------------------------------------------------
- * Rationale: Decomposed logic for data synchronization and persistence.
- * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Service (@core)
+ * - **Role:** Decomposed logic for data synchronization and persistence.
+ * - **Satisfaction:** ADR Section I (Core Services). Centralizes sync state and
+ *   persistence logic away from the main Pinia store to satisfy SRP.
+ *
+ * @param data - Reactive reference to the authoritative WebAppData state.
  */
 export function useClashSync(data: Ref<WebAppData | null>) {
   // --- STATE ---
@@ -56,6 +62,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
   // --- ACTIONS ---
 
+  /**
+   * Internal helper to update reactive state and persist the result to the local cache.
+   *
+   * @param payload - The new WebAppData to commit, or null to clear state.
+   */
   async function commitSyncResult(payload: WebAppData | null) {
     data.value = payload;
 
@@ -78,6 +89,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
     try {
       if (payload) {
+        // [THREAT:] Persistence failure can lead to data loss on refresh.
+        // [DECISION LOG] We log the error but do not block the UI, as the
+        // reactive state is already updated in memory.
         await saveCache(payload);
       }
     } catch (persistenceError: unknown) {
@@ -85,6 +99,13 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     }
   }
 
+  /**
+   * Hydrates the service state from the local IndexedDB cache.
+   *
+   * @remarks
+   * Performs Valibot validation on the cached data to ensure schema integrity.
+   * If validation fails or no cache exists, state is initialized to null.
+   */
   async function loadLocal() {
     try {
       if (isSyntheticMode.value) {
@@ -101,6 +122,8 @@ export function useClashSync(data: Ref<WebAppData | null>) {
         return;
       }
 
+      // [THREAT:] Corrupt or stale local cache can cause UI crashes.
+      // [DECISION LOG] Enforce strict validation boundary via WebAppDataSchema.
       const validation = v.safeParse(WebAppDataSchema, cached);
       if (validation.success) {
         if (data.value && data.value.timestamp >= validation.output.timestamp) {
@@ -119,7 +142,13 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     }
   }
 
+  /**
+   * Manually updates the service state with an external payload.
+   *
+   * @param payload - Unvalidated data object matching WebAppData schema.
+   */
   async function updateLocalData(payload: unknown) {
+    // [DECISION LOG] External ingress must be validated before commitment.
     const result = v.safeParse(WebAppDataSchema, payload);
     if (!result.success) {
       console.warn("[Sync] Local update rejected: Invalid WebAppData structure", result.issues);
@@ -129,7 +158,15 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     await commitSyncResult(result.output);
   }
 
+  /**
+   * Triggers a high-priority foreground synchronization from Supabase.
+   *
+   * @remarks
+   * Utilizes a WakeLock to prevent the device from sleeping during the network request.
+   * If the foreground sync fails, it automatically falls back to a background sync attempt.
+   */
   async function refreshFromSupabase() {
+    // [GUARD] Concurrency: Prevent overlapping sync cycles.
     if (loading.value) return;
 
     if (isSyntheticMode.value) {
@@ -142,9 +179,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
     loading.value = true;
     try {
+      // [DECISION LOG] Request WakeLock to ensure sync completes on mobile devices.
       await wakeLock.request();
       const remoteData = await fetchRemote({ force: true });
 
+      // [THREAT:] Malformed remote payload could corrupt local state.
+      // [DECISION LOG] Validation boundary protects the in-memory state.
       const result = v.safeParse(WebAppDataSchema, remoteData);
       if (!result.success) {
         console.error("[Sync] Data Validation Failure Details:", JSON.stringify(result.issues, null, 2));
@@ -168,7 +208,13 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     }
   }
 
+  /**
+   * Executes a non-blocking background synchronization.
+   *
+   * @param force - If true, bypasses the online check.
+   */
   async function startBackgroundSync(force = false) {
+    // [GUARD] Concurrency: Prevent overlapping sync cycles.
     if (loading.value) return;
     if (!isOnline.value && !force) return;
 
@@ -188,6 +234,8 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       consecutiveSyncFailures.value++;
       const errorMessage = backgroundSyncError instanceof Error ? backgroundSyncError.message : "Sync failed";
 
+      // [DECISION LOG] Failure threshold: Only expose sync errors to the user after
+      // 3 consecutive failures to avoid noise during transient network drops.
       if (!data.value || consecutiveSyncFailures.value >= 3) {
         syncError.value = errorMessage;
       }
@@ -199,9 +247,16 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     }
   }
 
+  /**
+   * Patches a specific player's data in the local state.
+   *
+   * @param playerTag - The unique identifier of the player to update.
+   * @param partial - The partial player data to merge.
+   */
   function updatePlayerLocally(playerTag: PlayerTag, partial: unknown) {
     if (!data.value) return;
 
+    // [DECISION LOG] Partial validation: Ensure the patch adheres to MemberSchema.
     const validation = v.safeParse(v.partial(MemberSchema), partial);
     if (!validation.success) {
       console.warn("[Sync] Local update rejected: Invalid partial data", validation.issues);
@@ -224,6 +279,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
       data.value = updatedData;
 
+      // [THREAT:] Persistence failure can lead to local state drift.
       saveCache(updatedData).catch(persistenceError => {
         console.error("[Sync] Failed to persist player update:", persistenceError);
       });
