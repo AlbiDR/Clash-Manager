@@ -86,13 +86,14 @@
 | @vitejs/plugin-vue | ^6.0.5 | ^6.0.7 | 2026-09-05 | PASS |
 | @types/node | ^24.12.4 | ^24.13.0 | 2026-06-05 | PASS |
 | @vue/test-utils | ^2.4.10 | ^2.4.11 | 2026-06-05 | PASS |
+| knip | ^6.15.0 | ^6.16.0 | 2026-09-11 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
 | vite | ^7.3.3 | 8.0.16 | 2026-05-17 | [Updated] Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. ManualChunks config replaced by codeSplitting. |
 | typescript | ~5.9.3 | 6.0.3 | 2026-05-21 | Breaking: Significant transition release. 'types' defaults to []. 'rootDir' defaults to '.'. 'target' defaults to 'es2025'. |
-| @types/node | ^24.13.0 | 25.9.1 | 2026-04-12 | [Updated] New major available. Tier 1 patch bump previously failed test gate. |
+| @types/node | ^24.13.0 | 25.9.2 | 2026-04-12 | [Updated] New major available. Breaking: Node 25 enables Web Storage (localStorage) by default; may impact Vitest environment. |
 | @vitejs/plugin-vue | ^6.0.7 | 6.0.7 | 2026-04-13 | [Identical] Current version now matches latest minor. Major 7.x not yet available. |
 | pnpm | >=10.0.0 | 11.5.1 | 2026-09-06 | New major available. Requires node >=22. Improved catalog support. |
 | vue-router | ^4.6.4 | 5.1.0 | 2026-06-05 | [Updated] Breaking: Transition release. Native ESM focus. |
