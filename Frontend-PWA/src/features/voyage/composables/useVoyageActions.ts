@@ -10,6 +10,8 @@ import {
   setVoyageEnd as apiSetVoyageEnd
 } from "@core/api/VoyageClient";
 import { t2tToTimestamp } from "@core/utils/formatters";
+import { VoyageRpcResultSchema } from "@core/api/VoyageSchemas";
+import * as v from "valibot";
 
 /**
  * Voyage Actions Orchestrator (Layer 3 Feature Composable)
@@ -49,16 +51,25 @@ export function useVoyageActions(
    */
   async function handleRpcResponse(
     operation: string,
-    response: { success: boolean; data?: any; error?: any }
+    response: { success: boolean; data?: unknown; error?: unknown }
   ) {
+    // [THREAT:] Unvalidated RPC responses can mask database failures or inject malformed state.
+    // [DECISION LOG] Ensuring both transport success and logical success via Valibot boundaries.
     if (response.success) {
-      const result = response.data as { success: boolean; error?: string };
-      if (result.success) {
-        console.log(`[Voyage] ${operation} successful:`, result);
+      const validation = v.safeParse(VoyageRpcResultSchema, response.data);
+
+      if (!validation.success) {
+        console.error(`[Voyage] ${operation} response validation failed:`, validation.issues);
+        throw new Error(`${operation} returned invalid data shape`);
+      }
+
+      const rpcResult = validation.output;
+      if (rpcResult.success) {
+        console.log(`[Voyage] ${operation} successful:`, rpcResult);
         await refresh();
       } else {
-        console.error(`[Voyage] ${operation} failed (logic):`, result.error);
-        throw new Error(result.error ?? `${operation} failed`);
+        console.error(`[Voyage] ${operation} failed (logic):`, rpcResult.error);
+        throw new Error(rpcResult.error ?? `${operation} failed`);
       }
     } else {
       console.error(`[Voyage] ${operation} failed (network/auth):`, response.error);

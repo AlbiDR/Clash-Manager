@@ -41,14 +41,14 @@ Atomic elements that form the basis of the design system.
 - **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling via the `@shared/composables/useCardMechanics.ts` broker.
 - **BaseCardSkeleton.vue**: Placeholder variant of the card for loading states.
 - **Icon.vue**: The authoritative SVG renderer. Centralizes vector path definitions in `@core/theme/icons` and ensures CSS variable consistency with `non-scaling-stroke` vector effects.
-- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata, including backend source (Supabase) and data age.
+- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata. Delegates expansion and interaction logic to the `@shared/composables/useStatusPill.ts` composable.
 - **MomentumPill.vue**: Specialized indicator for performance trends and momentum metrics.
 - **StatisticItem.vue**: Labeled data point with standardized typography and spacing.
 - **StatsGrid.vue**: Responsive layout component for displaying player statistics in 2 or 3 columns.
 - **SettingRow.vue**: Unified molecule for feature settings, supporting toggles, loading states, and disabled variants.
 
 ### Player Identity Badges
-Standardized molecules for rendering player-specific metrics and metadata with integrated benchmarking.
+Standardized molecules for rendering player-specific metrics and metadata with integrated benchmarking powered by the `@shared/composables/useBenchmarkedStat.ts` composable.
 - **TrophyBadge.vue**: Displays trophy counts with context-aware benchmarking tooltips (LB: Leaderboard vs HH: Headhunter).
 - **ScoreBadge.vue**: Renders PeS (Performance Score) / PoS (Potential Score) with integrated benchmarking and optional `MomentumPill` support.
 - **RoleBadge.vue**: Semantic-colored indicator for clan roles (Leader, Co-Leader, Elder, Member).
