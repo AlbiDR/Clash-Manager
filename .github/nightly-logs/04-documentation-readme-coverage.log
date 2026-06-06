@@ -92,3 +92,5 @@ Frontend-PWA/README.md
 2026-09-07 | Frontend-PWA/src/features/voyage/README.md | Reconciled useVoyageActions delegation and RPC orchestration
 2026-09-07 | Frontend-PWA/README.md | Reconciled useClashSync extraction and DataSchemas decomposition
 2026-09-07 | Frontend-PWA/src/core/README.md | Reconciled useClashSync service and domain schema module decomposition
+2026-09-09 | Frontend-PWA/src/shared/README.md | Reconciled useStatusPill and useBenchmarkedStat composables
+2026-09-09 | Frontend-PWA/src/shared/ui/README.md | Reconciled StatusPill delegation and benchmarking logic
