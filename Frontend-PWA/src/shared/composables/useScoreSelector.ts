@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+import { ref, type Ref } from "vue";
+import { useHaptics, SCORE_SELECTION_STEPS } from "@core";
+
+/**
+ * COMPOSABLE: useScoreSelector
+ *
+ * @remarks
+ * Encapsulates the UI logic for the score threshold picker, including
+ * expansion state, haptic feedback on interaction, and smooth scrolling.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared Composable (@shared)
+ * - **Role:** Internal logic for the ScoreThresholdSelector component.
+ */
+export function useScoreSelector(
+  props: { mode: "ge" | "le"; value: number },
+  emit: {
+    (e: "update:mode", val: "ge" | "le"): void;
+    (e: "update:value", val: number): void;
+    (e: "select", val: number, mode: "ge" | "le"): void;
+  }
+) {
+  const haptics = useHaptics();
+
+  // UI State
+  const isScoreExpanded = ref(false);
+  const valuePicker = ref<HTMLElement | null>(null);
+
+  // Constants
+  const thresholds = SCORE_SELECTION_STEPS;
+
+  /**
+   * Toggles the filter mode between 'Greater than or equal' and 'Less than or equal'.
+   * Triggers an immediate selection update.
+   */
+  function toggleMode() {
+    const newMode = props.mode === "ge" ? "le" : "ge";
+    emit("update:mode", newMode);
+    haptics.tap();
+    // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when mode is toggled
+    // to ensure UI state remains synchronized with the active list filter.
+    emit("select", props.value, newMode);
+  }
+
+  /**
+   * Updates the active score threshold and triggers a selection update.
+   * @param val - The new score threshold.
+   */
+  function selectValue(val: number) {
+    if (props.value === val) return;
+    emit("update:value", val);
+    haptics.medium();
+    // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when a threshold is clicked.
+    emit("select", val, props.mode);
+  }
+
+  /**
+   * Toggles the expansion state of the score threshold picker.
+   * Handles smooth scrolling to the end of the list when expanded.
+   */
+  function toggleExpand() {
+    isScoreExpanded.value = !isScoreExpanded.value;
+    haptics.tap();
+    if (isScoreExpanded.value) {
+      // [DECISION LOG] DEFERRED SCROLL
+      setTimeout(() => {
+        if (valuePicker.value && typeof valuePicker.value.scrollTo === "function") {
+          valuePicker.value.scrollTo({
+            left: valuePicker.value.scrollWidth,
+            behavior: "smooth",
+          });
+        }
+      }, 50);
+    }
+  }
+
+  return {
+    isScoreExpanded,
+    valuePicker,
+    thresholds,
+    toggleMode,
+    selectValue,
+    toggleExpand,
+  };
+}

@@ -1,0 +1,211 @@
+<script setup lang="ts">
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+import Icon from "./Icon.vue";
+import { useScoreSelector } from "../composables/useScoreSelector";
+
+const props = defineProps<{
+  mode: "ge" | "le";
+  value: number;
+  disabled?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: "update:mode", val: "ge" | "le"): void;
+  (e: "update:value", val: number): void;
+  (e: "select", val: number, mode: "ge" | "le"): void;
+}>();
+
+const {
+  isScoreExpanded,
+  valuePicker,
+  thresholds,
+  toggleMode,
+  selectValue,
+  toggleExpand,
+} = useScoreSelector(props, emit);
+
+defineExpose({
+  isExpanded: isScoreExpanded,
+});
+</script>
+
+<template>
+  <div class="score-pill-group" :class="{ expanded: isScoreExpanded, disabled: props.disabled }">
+    <!-- Comparison Mode Toggle -->
+    <button
+      class="mode-toggle"
+      @click="toggleMode"
+      :disabled="props.disabled"
+      :title="
+        props.mode === 'ge' ? 'Greater than or equal' : 'Less than or equal'
+      "
+    >
+      <span class="mode-symbol">{{ props.mode === "ge" ? "≥" : "≤" }}</span>
+    </button>
+
+    <!-- Main Trigger / Label -->
+    <button class="sp-trigger" @click="toggleExpand" :disabled="props.disabled">
+      <span class="sp-label">{{ props.value }}</span>
+      <span class="sp-chevron" :class="{ rotated: isScoreExpanded }">
+        <Icon name="chevron_down" size="14" />
+      </span>
+    </button>
+
+    <!-- Dynamic Value Picker (Horizontal Scroll) -->
+    <div v-if="isScoreExpanded" ref="valuePicker" class="value-picker">
+      <button
+        v-for="val in thresholds"
+        :key="val"
+        class="val-opt"
+        :class="{ active: props.value === val }"
+        @click="selectValue(val)"
+      >
+        {{ val }}
+      </button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.score-pill-group {
+  display: flex;
+  align-items: center;
+  background: var(--sys-color-surface-container-highest);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 2px;
+  transition: all 0.4s var(--sys-motion-spring);
+  border: 1px solid var(--sys-color-outline-variant);
+  min-width: 84px;
+  position: relative;
+  /* Default: Compact width, only what's needed */
+  flex: 0 0 auto;
+  justify-content: space-between;
+}
+
+.score-pill-group.expanded {
+  background: var(--sys-color-surface-container-high);
+  border-color: var(--sys-color-primary);
+  /* Expanded: Grow only to content size, up to available space */
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 100%;
+  /* Ensure it doesn't overflow parent flex */
+  overflow: hidden;
+}
+
+.score-pill-group.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.mode-toggle {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: none;
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.mode-toggle:active {
+  transform: scale(0.85) rotate(-15deg);
+}
+
+.mode-symbol {
+  font-size: 16px;
+  font-weight: 900;
+  font-family: var(--sys-font-family-mono);
+}
+
+.sp-trigger {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  height: 30px;
+  color: var(--sys-color-on-surface);
+  cursor: pointer;
+  justify-content: center;
+}
+
+.sp-label {
+  font-size: 14px;
+  font-weight: 900;
+  font-family: var(--sys-font-family-mono);
+  min-width: 24px;
+  text-align: center;
+}
+
+.sp-chevron {
+  transition: transform 0.3s var(--sys-motion-spring);
+  display: flex;
+  opacity: 0.4;
+}
+
+.sp-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+/* Value Picker */
+.value-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+  /* Fade mask for scroll indication */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10px,
+    black calc(100% - 10px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10px,
+    black calc(100% - 10px),
+    transparent 100%
+  );
+}
+
+.value-picker::-webkit-scrollbar {
+  display: none;
+}
+
+.val-opt {
+  height: 28px;
+  min-width: 36px;
+  padding: 0 6px;
+  border-radius: 7px;
+  border: none;
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface-variant);
+  font-size: 11px;
+  font-weight: 850;
+  font-family: var(--sys-font-family-mono);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.val-opt.active {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  transform: scale(1.05);
+}
+</style>
