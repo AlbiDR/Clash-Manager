@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.clashmanager",
+      "sha256_cert_fingerprints": [
+        "E5:6A:CA:67:08:CA:38:69:A6:0A:E0:81:4A:80:B7:69:3F:67:6F:91:B3:AE:6D:FD:DD:4C:68:5D:1A:2E:70:3A"
+      ]
+    }
+  }
+]
