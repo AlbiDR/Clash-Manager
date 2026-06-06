@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { useBenchmarking } from "@core/services/useBenchmarking";
-import { computed } from "vue";
+import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
+
 const props = defineProps<{
   label: string;
   value: string | number;
@@ -12,18 +12,12 @@ const props = defineProps<{
   benchmarkRawValue?: number;
 }>();
 
-const { getSafeBenchmark } = useBenchmarking();
-
-const benchmarkTooltipContent = computed(() => {
-  if (props.loading || !props.benchmarkType || !props.benchmarkMetric) {
-    return null;
-  }
-  return getSafeBenchmark(
-    props.benchmarkType,
-    props.benchmarkMetric,
-    props.benchmarkRawValue,
-  );
-});
+const { benchmarkTooltipContent } = useBenchmarkedStat(
+  () => props.benchmarkType,
+  () => props.benchmarkMetric,
+  () => props.benchmarkRawValue,
+  () => props.loading
+);
 </script>
 
 <template>
