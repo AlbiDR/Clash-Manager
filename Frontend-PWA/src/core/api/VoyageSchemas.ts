@@ -40,3 +40,12 @@ export const VoyageSummarySchema = v.object({
   total_voyage_crowns: SafeNumberPipe,
   progress_ratio: SafeNumberPipe,
 });
+
+/**
+ * [GUARD] VOYAGE RPC RESULT SCHEMA
+ * Validates the standard response shape returned by Voyage database RPCs.
+ */
+export const VoyageRpcResultSchema = v.object({
+  success: v.boolean(),
+  error: v.optional(v.nullable(SafeStringPipe)),
+});
