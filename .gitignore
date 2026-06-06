@@ -58,6 +58,7 @@ coverage
 Frontend-PWA/index.html
 
 # Supabase & Backend Temp
+supabase/.temp/
 Backend/supabase/.temp/
 Backend/scripts/data/
 
