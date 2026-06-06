@@ -90,3 +90,4 @@ Frontend-PWA/test-stack.js
 *.keystore
 /assetlinks.json
 !Frontend-PWA/public/.well-known/assetlinks.json
+gen-maskable-icons.js
