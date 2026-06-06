@@ -3,8 +3,7 @@
 
 <script setup lang="ts">
 import MomentumPill from "./MomentumPill.vue";
-import { useBenchmarking } from "@core/services/useBenchmarking";
-import { computed } from "vue";
+import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 
 /**
  * [UI] SCORE BADGE
@@ -22,11 +21,11 @@ const props = defineProps<{
   performanceRawScore?: number;
 }>();
 
-const { getSafeBenchmark } = useBenchmarking();
-
-const benchmarkTooltipContent = computed(() => {
-  return getSafeBenchmark(props.context, "score", props.score);
-});
+const { benchmarkTooltipContent } = useBenchmarkedStat(
+  () => props.context,
+  "score",
+  () => props.score
+);
 </script>
 
 <template>

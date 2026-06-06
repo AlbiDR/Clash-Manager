@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useBenchmarking } from "@core/services/useBenchmarking";
+import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 import { computed } from "vue";
 import { calculateMomentum } from "@core/utils/formatters";
 
@@ -20,17 +20,17 @@ const props = defineProps<{
   performanceRawScore: number | undefined;
 }>();
 
-const { getSafeBenchmark } = useBenchmarking();
-
 const trendInfo = computed(() => {
   const dt = Number(props.dt) || 0;
   const currentRaw = Number(props.performanceRawScore) || 0;
   return calculateMomentum(dt, currentRaw);
 });
 
-const benchmarkTooltipContent = computed(() => {
-  return getSafeBenchmark("lb", "momentum", trendInfo.value?.raw);
-});
+const { benchmarkTooltipContent } = useBenchmarkedStat(
+  "lb",
+  "momentum",
+  () => trendInfo.value?.raw
+);
 </script>
 
 <template>
