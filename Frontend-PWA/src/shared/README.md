@@ -36,6 +36,8 @@ Stateful logic engines that manage component-level behaviors and hardware broker
 - **usePullToRefresh.ts**: Orchestrates native-feeling pull-to-refresh gestures and synchronization triggers.
 - **useHeaderScroll.ts**: Provides reactive scroll-depth detection for adaptive header styling.
 - **useLongPress.ts**: Hardware-accelerated long-press gesture detection with haptic feedback.
+- **useStatusPill.ts**: Centralizes expansion state, haptic feedback, and responsive label formatting for connectivity status indicators.
+- **useBenchmarkedStat.ts**: Encapsulates reactive logic for generating benchmarking tooltips, integrating with the core benchmarking engine.
 
 ### Interaction Directives (`/directives`)
 Low-level DOM manipulators for standardized user feedback.
