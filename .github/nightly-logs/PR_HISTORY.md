@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-06] PR #765: perf(opt): extract useBenchmarkedStat shared composable
+**Commit**: `6de3bba284eb521c91a5464a46cdebe73ded6e3c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/765)
+
+### Description
+Extracted redundant benchmarking tooltip logic from multiple UI components into a new shared composable @shared/composables/useBenchmarkedStat.ts. This standardizes tooltip generation, improves reactivity handling via toValue/MaybeRefOrGetter, and ensures consistent loading state safeguards across the application. Refactored components include ScoreBadge, TrophyBadge, StatisticItem, and MomentumPill. Verified via new unit tests and existing component test suites.
+
+---
+*PR created automatically by Jules for task [9753198775150204943](https://jules.google.com/task/9753198775150204943) started by @AlbiDR*
+
+---
+
 ## [2026-06-06] PR #764: test(verify): add saturating coverage for useVoyageActions
 **Commit**: `a038191c4b1de1182a89981fcfd6f1299a8f9436`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/764)
