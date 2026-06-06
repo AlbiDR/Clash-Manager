@@ -37,11 +37,28 @@ Thumbs.db
 .vscode
 *.swp
 *.swo
+.history/
+*.code-workspace
 
-# Environment variables
+# Environment variables and Secrets
 .env
 .env.local
 .env.*.local
+secrets/
+secrets.json
+credentials.json
+*.pem
+*.key
+*.crt
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Temporary files
+*.tmp
+*.bak
 
 # PWA / Vite Generated
 public/sw.js
