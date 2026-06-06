@@ -26,10 +26,8 @@ export function getAppShellStyles(): string {
       ${getVars(lightTokens)}
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        ${getVars(darkTokens)}
-      }
+    html.dark {
+      ${getVars(darkTokens)}
     }
 
     body {
