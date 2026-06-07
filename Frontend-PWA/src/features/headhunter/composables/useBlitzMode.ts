@@ -56,7 +56,19 @@ export function useBlitzMode(
 
   /**
    * Environment Trust Verification.
+   *
+   * @remarks
+   * An environment is considered trusted if:
+   * - The native AndroidBridge JSBridge is available (TWA wrapper context), OR
+   * - Navigator is defined (standard browser/PWA context).
+   *
+   * The native bridge path bypasses all web popup restrictions.
    */
+  const hasNativeBridge = computed(() => {
+    if (typeof window === "undefined") return false;
+    return !!(window as any).AndroidBridge;
+  });
+
   const isTrusted = computed(() => {
     if (typeof navigator === "undefined") return false;
     return true;
@@ -107,7 +119,10 @@ export function useBlitzMode(
       isProcessing: isProcessing.value,
       isBlasting: isBlitzActive.value,
       selectionCount: totalSelectedCount,
-      blitzEnabled: modules.blitzMode && isTrusted.value,
+      // Blitz is enabled when:
+      // 1. The native AndroidBridge is present (TWA wrapper) - always available, no popup required.
+      // 2. OR the user has manually enabled the blitzMode module flag in settings.
+      blitzEnabled: hasNativeBridge.value || (modules.blitzMode && isTrusted.value),
     };
   });
 
