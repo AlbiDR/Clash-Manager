@@ -2,16 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { computed } from "vue";
-import { generateLinearTrend, type Point } from "@core/utils/bezier";
-
-interface ChartBarItem {
-  id: string;
-  value: number;
-  height: string;
-  isProjection: boolean;
-  tooltip: string;
-}
+import { useBaseHistoryChart } from "../composables/useBaseHistoryChart";
 
 const props = defineProps<{
   /** Format: array of { value, tooltipLabel } (Oldest to Newest) */
@@ -21,71 +12,18 @@ const props = defineProps<{
   /** Whether data is loading */
   loading?: boolean;
   /** Theme affects gradient and glow colors */
-  theme: 'war' | 'voyage';
+  theme: "war" | "voyage";
   /** Max value for scaling heights */
   maxScale: number;
   /** Optional threshold for coloring 'win' vs 'hit' */
   winThreshold?: number;
 }>();
 
-const CHART_MIN_HEIGHT = 15; // Percent
-
-const chartData = computed(() => {
-  if (props.loading || props.data.length === 0) {
-    return {
-      bars: [],
-      path: null,
-      projPoint: null,
-      isPositive: false,
-      isEmpty: true,
-    };
-  }
-
-  const bars: ChartBarItem[] = [];
-
-  // 1. Process Actuals
-  props.data.forEach((entry) => {
-    bars.push({
-      id: entry.id,
-      value: entry.value,
-      height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (entry.value / props.maxScale) * 100))}%`,
-      isProjection: false,
-      tooltip: entry.tooltipLabel,
-    });
-  });
-
-  // 2. Process Projection (if any)
-  if (props.projection) {
-    bars.push({
-      id: 'proj-next-value',
-      value: props.projection.value,
-      height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (props.projection.value / props.maxScale) * 100))}%`,
-      isProjection: true,
-      tooltip: props.projection.tooltipLabel,
-    });
-  }
-
-  // 3. Geometry
-  const totalSlots = bars.length;
-  // Map bars to X,Y coordinates (0-100 scale for SVG viewBox)
-  const curvePoints: Point[] = bars.map((bar, barIndex) => ({
-    x: ((barIndex + 0.5) / totalSlots) * 100,
-    y: (1 - Math.min(1, bar.value / props.maxScale)) * 100, // Invert Y for SVG
-  }));
-
-  // Generate Linear Trend Line (Best Fit)
-  const trend = generateLinearTrend(curvePoints);
-
-  // Identify key points for dots (These stay on the bars, not the line)
-  const projPoint = props.projection ? curvePoints[curvePoints.length - 1] : null;
-
-  return {
-    bars,
-    path: trend.path,
-    projPoint,
-    isPositive: trend.isPositive,
-    isEmpty: false,
-  };
+const { chartData } = useBaseHistoryChart({
+  data: () => props.data,
+  projection: () => props.projection,
+  loading: () => props.loading,
+  maxScale: () => props.maxScale,
 });
 </script>
 
