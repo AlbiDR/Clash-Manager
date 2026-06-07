@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import { computed } from "vue";
 import { Icon, SettingRow, vTactile, SettingsCard } from "@shared";
 import { useSettings } from "../composables/useSettings";
 defineProps<{
@@ -15,6 +16,16 @@ const {
   clearCache,
   factoryReset,
 } = useSettings();
+
+/**
+ * Detects whether the app is running inside the native Android TWA wrapper.
+ * When the AndroidBridge JSBridge is injected, Blitz Mode is always delegated
+ * to the native foreground service and does not require the manual module toggle.
+ */
+const isNativeWrapper = computed(() => {
+  if (typeof window === "undefined") return false;
+  return !!(window as any).AndroidBridge;
+});
 </script>
 
 <template>
@@ -24,12 +35,14 @@ const {
     </template>
 
     <div class="features-list">
+      <!-- On the native Android wrapper, Blitz Mode is always hardware-delegated via JSBridge.
+           The manual toggle has no effect in this context. -->
       <SettingRow
         label="Blitz Mode"
-        description="Batch operations without confirmation"
-        :active="modules.blitzMode"
+        :description="isNativeWrapper ? 'Delegated to native foreground service' : 'Batch operations without confirmation'"
+        :active="isNativeWrapper ? true : modules.blitzMode"
         :loading="isRefreshing"
-        @click="toggle('blitzMode')"
+        @click="isNativeWrapper ? undefined : toggle('blitzMode')"
       />
     </div>
 

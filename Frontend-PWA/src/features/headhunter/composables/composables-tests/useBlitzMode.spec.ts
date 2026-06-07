@@ -116,5 +116,35 @@ describe("useBlitzMode", () => {
       expect(fabState.value.isBlasting).toBe(false);
       expect(selectionStore.selectedIds.value).toEqual([]);
     });
+    it("enables blitz via AndroidBridge even when blitzMode module is off", () => {
+      // Simulate native wrapper: inject the bridge before creating the composable
+      const mockStartBlitz = vi.fn();
+      (window as any).AndroidBridge = { startBlitz: mockStartBlitz, isAndroidWrapper: () => true };
+
+      const { fabState } = useBlitzMode(selectionStore);
+      selectionStore.selectAll(["R1", "R2"]);
+
+      // blitzEnabled must be true from the bridge, not from module setting
+      expect(fabState.value.blitzEnabled).toBe(true);
+
+      // Clean up bridge injection
+      delete (window as any).AndroidBridge;
+    });
+
+    it("delegates startBlitz to AndroidBridge when available", () => {
+      const mockStartBlitz = vi.fn();
+      (window as any).AndroidBridge = { startBlitz: mockStartBlitz };
+
+      const { handleBlitz } = useBlitzMode(selectionStore);
+      selectionStore.selectAll(["R1", "R2"]);
+      handleBlitz();
+
+      // Bridge must receive the JSON tag list
+      expect(mockStartBlitz).toHaveBeenCalledWith(JSON.stringify(["R1", "R2"]));
+      // Web-side openInGame must NOT be called (native handles it)
+      expect(mockOpenInGame).not.toHaveBeenCalled();
+
+      delete (window as any).AndroidBridge;
+    });
   });
 });

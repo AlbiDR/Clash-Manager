@@ -114,7 +114,6 @@ function handleFabDismiss() {
           class="fab-btn blitz"
           @click="handleFabBlitz"
           @pointerdown="onInteractionStart"
-          v-tooltip="'Requires Pop-ups permission'"
           aria-label="Start Blitz Mode"
         >
           <Icon name="lightning" size="18" />
