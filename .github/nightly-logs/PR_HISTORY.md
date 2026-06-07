@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-07] PR #776: docs(tsdoc): document useScoreSelector interface contract
+**Commit**: `a0e36f66eaa8281454e50cc4a2fd8f817eeea7c6`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/776)
+
+### Description
+This PR enhances the documentation for the `useScoreSelector` shared composable by providing a comprehensive TSDoc block. The documentation covers input parameters, reactive return states, and identifies critical architectural side effects such as hardware haptic feedback and DOM scroll manipulation. This alignment ensures the composable satisfies ADR Section II (Structural Unitary Architecture) standards. Additionally, the TSDoc coverage log has been updated to reflect this improvement.
+
+---
+*PR created automatically by Jules for task [16711984107175882604](https://jules.google.com/task/16711984107175882604) started by @AlbiDR*
+
+---
+
 ## [2026-06-07] PR #775: docs(readme): reconcile shared and core layer documentation
 **Commit**: `95bcf7ffa0457ed2217bbbed438fb4bf9fbbf893`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/775)
