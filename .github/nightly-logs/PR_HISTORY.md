@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-07] PR #778: chore(deps): Stage 8 - Dependency Audit Maintenance
+**Commit**: `b09eb51c9ed503f2a01f3e97fad6429fa7e2866f`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/778)
+
+### Description
+This PR completes Stage 8 of the nightly pipeline: Dependency Audit. It applies Tier 1 automated updates for knip, vite, and @types/node, synchronizes the lockfile, and updates the external health audit log. It also refreshes the Tier 2 major version watchlist to monitor high-risk architectural transitions.
+
+---
+*PR created automatically by Jules for task [14190034172575152398](https://jules.google.com/task/14190034172575152398) started by @AlbiDR*
+
+---
+
 ## [2026-06-07] PR #777: chore(version): no drift found in monorepo v14.0.0
 **Commit**: `6e1cdc1cf029f01199b2b4aa111e5ae6fd9b8a28`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/777)
