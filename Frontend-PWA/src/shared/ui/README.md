@@ -28,7 +28,7 @@ Standardized containers that manage view-level states like loading, errors, and 
 
 ### Data Visualization
 Generic, high-performance visualization components.
-- **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories, projected next values, and theme-specific color palettes (War/Voyage).
+- **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories and projected next values. Delegates geometric translation to the `@shared/composables/useBaseHistoryChart.ts` composable.
 
 ### Domain-Aware Molecules (Promoted)
 Specialized components promoted to the shared layer to facilitate cross-feature performance auditing while maintaining domain-specific logic.
@@ -60,7 +60,8 @@ Standardized molecules for rendering player-specific metrics and metadata with i
 Components that facilitate user interaction and state management.
 - **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
-- **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Delegates interactive logic (threshold selection, comparison modes) to the `@shared/composables/useSelectionBar.ts` composable.
+- **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable.
+- **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
 - **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers.
 - **HeaderInfoOverlay.vue**: Accessible detail layer for explaining view-specific metrics or statuses.
 

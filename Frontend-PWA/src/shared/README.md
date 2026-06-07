@@ -38,6 +38,8 @@ Stateful logic engines that manage component-level behaviors and hardware broker
 - **useLongPress.ts**: Hardware-accelerated long-press gesture detection with haptic feedback.
 - **useStatusPill.ts**: Centralizes expansion state, haptic feedback, and responsive label formatting for connectivity status indicators.
 - **useBenchmarkedStat.ts**: Encapsulates reactive logic for generating benchmarking tooltips, integrating with the core benchmarking engine.
+- **useScoreSelector.ts**: Encapsulates the UI logic for score threshold selection, including expansion state, haptic feedback, and smooth scrolling.
+- **useBaseHistoryChart.ts**: Handles geometric translation of raw values into SVG paths and bar heights for history visualizations.
 
 ### Interaction Directives (`/directives`)
 Low-level DOM manipulators for standardized user feedback.
