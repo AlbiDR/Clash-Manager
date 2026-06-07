@@ -16,8 +16,8 @@ catalogs:
       specifier: ^2.107.0
       version: 2.107.0
     '@types/node':
-      specifier: ^24.13.0
-      version: 24.13.0
+      specifier: ^24.13.1
+      version: 24.13.1
     '@vite-pwa/assets-generator':
       specifier: ^1.0.2
       version: 1.0.2
@@ -40,8 +40,8 @@ catalogs:
       specifier: ^24.1.3
       version: 24.1.3
     knip:
-      specifier: ^6.16.0
-      version: 6.16.0
+      specifier: ^6.16.1
+      version: 6.16.1
     pinia:
       specifier: ^3.0.4
       version: 3.0.4
@@ -58,8 +58,8 @@ catalogs:
       specifier: ^1.4.1
       version: 1.4.1
     vite:
-      specifier: ^7.3.3
-      version: 7.3.3
+      specifier: ^7.3.5
+      version: 7.3.5
     vite-plugin-pwa:
       specifier: ^1.3.0
       version: 1.3.0
@@ -91,13 +91,13 @@ importers:
         version: 0.43.0
       '@types/node':
         specifier: 'catalog:'
-        version: 24.13.0
+        version: 24.13.1
       dependency-cruiser:
         specifier: 'catalog:'
         version: 17.4.3
       knip:
         specifier: 'catalog:'
-        version: 6.16.0
+        version: 6.16.1
       tsx:
         specifier: 'catalog:'
         version: 4.22.4
@@ -134,13 +134,13 @@ importers:
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
-        version: 24.13.0
+        version: 24.13.1
       '@vite-pwa/assets-generator':
         specifier: 'catalog:'
         version: 1.0.2
       '@vitejs/plugin-vue':
         specifier: 'catalog:'
-        version: 6.0.7(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.35(typescript@5.9.3))
+        version: 6.0.7(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.35(typescript@5.9.3))
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.8(vitest@4.1.8)
@@ -164,13 +164,13 @@ importers:
         version: 5.9.3
       vite:
         specifier: 'catalog:'
-        version: 7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
+        version: 7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
       vite-plugin-pwa:
         specifier: 'catalog:'
-        version: 1.3.0(@vite-pwa/assets-generator@1.0.2)(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1)
+        version: 1.3.0(@vite-pwa/assets-generator@1.0.2)(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.8(@types/node@24.13.0)(@vitest/coverage-v8@4.1.8)(jsdom@24.1.3)(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
+        version: 4.1.8(@types/node@24.13.1)(@vitest/coverage-v8@4.1.8)(jsdom@24.1.3)(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
       vue-tsc:
         specifier: 'catalog:'
         version: 3.3.3(typescript@5.9.3)
@@ -1727,8 +1727,8 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
-  '@types/node@24.13.0':
-    resolution: {integrity: sha512-5vtOqGQr4NJKeEzV441FcOi2MeG9UTWq9LqVLGneDdu4vlX17H8kQ2PA2UmNwCUGPVDj4oBjNhS7ReVEIWJJrg==}
+  '@types/node@24.13.1':
+    resolution: {integrity: sha512-RSpUJGmvsJ1ZeBehQZFhIdpsz+bIpES0nIQXko4Ybq+N+kX6XvOq3Jo+iJ82FWLdblFq85AsMikd3m35jgezYg==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -2662,8 +2662,8 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
-  knip@6.16.0:
-    resolution: {integrity: sha512-znPEmwYmkGHp57VxCQ/k983bVWls74DpRKh/EgYojyssgV2h2dZDvjN3+7WU034LzObjElUVRPoBHq9w/fG1ng==}
+  knip@6.16.1:
+    resolution: {integrity: sha512-TKMn1rxgH6h9vXR9Y0B+Cq7AdPTr9EI02IwoT65NzqYUkvoDQAaJ/aPybiFpAhZ1px6cNYYwXf86iHkBgzCo9w==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -3381,8 +3381,8 @@ packages:
       '@vite-pwa/assets-generator':
         optional: true
 
-  vite@7.3.3:
-    resolution: {integrity: sha512-/4XH147Ui7OGTjg3HbdWe5arnZQSbfuRzdr9Ec7TQi5I7R+ir0Rlc9GIvD4v0XZurELqA035KVXJXpR61xhiTA==}
+  vite@7.3.5:
+    resolution: {integrity: sha512-KuOaNhcnGFN2zIPGA7wRmzF+lJA1sea7rHq17aiJ++9lzY1WWG6Jpwqwe1KNbRVPIqHmr8GLYx7jbrQcN/7/ww==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -4988,7 +4988,7 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
-  '@types/node@24.13.0':
+  '@types/node@24.13.1':
     dependencies:
       undici-types: 7.18.2
 
@@ -5005,10 +5005,10 @@ snapshots:
       sharp-ico: 0.1.5
       unconfig: 7.5.0
 
-  '@vitejs/plugin-vue@6.0.7(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.35(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.7(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(vue@3.5.35(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
+      vite: 7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
       vue: 3.5.35(typescript@5.9.3)
 
   '@vitest/coverage-v8@4.1.8(vitest@4.1.8)':
@@ -5023,7 +5023,7 @@ snapshots:
       obug: 2.1.1
       std-env: 4.1.0
       tinyrainbow: 3.1.0
-      vitest: 4.1.8(@types/node@24.13.0)(@vitest/coverage-v8@4.1.8)(jsdom@24.1.3)(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
+      vitest: 4.1.8(@types/node@24.13.1)(@vitest/coverage-v8@4.1.8)(jsdom@24.1.3)(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
 
   '@vitest/expect@4.1.8':
     dependencies:
@@ -5034,13 +5034,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.8(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.8(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.8
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
+      vite: 7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
 
   '@vitest/pretty-format@4.1.8':
     dependencies:
@@ -6084,7 +6084,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  knip@6.16.0:
+  knip@6.16.1:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.4)
       formatly: 0.3.0
@@ -6876,12 +6876,12 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  vite-plugin-pwa@1.3.0(@vite-pwa/assets-generator@1.0.2)(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1):
+  vite-plugin-pwa@1.3.0(@vite-pwa/assets-generator@1.0.2)(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1):
     dependencies:
       debug: 4.4.3
       pretty-bytes: 6.1.1
       tinyglobby: 0.2.16
-      vite: 7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
+      vite: 7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
       workbox-build: 7.4.1
       workbox-window: 7.4.1
     optionalDependencies:
@@ -6889,7 +6889,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0):
+  vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0):
     dependencies:
       esbuild: 0.27.7
       fdir: 6.5.0(picomatch@4.0.4)
@@ -6898,7 +6898,7 @@ snapshots:
       rollup: 4.60.4
       tinyglobby: 0.2.16
     optionalDependencies:
-      '@types/node': 24.13.0
+      '@types/node': 24.13.1
       fsevents: 2.3.3
       jiti: 2.7.0
       lightningcss: 1.30.2
@@ -6906,10 +6906,10 @@ snapshots:
       tsx: 4.22.4
       yaml: 2.9.0
 
-  vitest@4.1.8(@types/node@24.13.0)(@vitest/coverage-v8@4.1.8)(jsdom@24.1.3)(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)):
+  vitest@4.1.8(@types/node@24.13.1)(@vitest/coverage-v8@4.1.8)(jsdom@24.1.3)(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.8
-      '@vitest/mocker': 4.1.8(vite@7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.8(vite@7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.8
       '@vitest/runner': 4.1.8
       '@vitest/snapshot': 4.1.8
@@ -6926,10 +6926,10 @@ snapshots:
       tinyexec: 1.2.3
       tinyglobby: 0.2.16
       tinyrainbow: 3.1.0
-      vite: 7.3.3(@types/node@24.13.0)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
+      vite: 7.3.5(@types/node@24.13.1)(jiti@2.7.0)(lightningcss@1.30.2)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 24.13.0
+      '@types/node': 24.13.1
       '@vitest/coverage-v8': 4.1.8(vitest@4.1.8)
       jsdom: 24.1.3
     transitivePeerDependencies:
