@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-07] PR #773: test(verify): add saturating coverage for ScoreThresholdSelector
+**Commit**: `9d0b2d055dc92029586e745acfae444209127ea9`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/773)
+
+### Description
+This PR adds saturating unit test coverage for the `ScoreThresholdSelector.vue` component. It verifies initial state, interaction logic (mode toggle, expansion), value selection, and disabled state enforcement. No application code was modified.
+
+---
+*PR created automatically by Jules for task [3533287701419777299](https://jules.google.com/task/3533287701419777299) started by @AlbiDR*
+
+---
+
 ## [2026-06-07] PR #772: fix(harden): secure player card sync validation boundary
 **Commit**: `7426fb8aebc8298bd78036884d712b204ab1bce4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/772)
