@@ -20,7 +20,7 @@ interface PackageJson {
 const ROOT_DIR = process.cwd();
 const ROOT_PKG_PATH = join(ROOT_DIR, 'package.json');
 const PWA_PKG_PATH = join(ROOT_DIR, 'Frontend-PWA', 'package.json');
-const HTML_PATH = join(ROOT_DIR, 'Frontend-PWA', 'index.html');
+const HTML_ENTRY_PATH = join(ROOT_DIR, 'Frontend-PWA', 'src', 'core', 'theme', 'HtmlEntry.ts');
 const MANIFEST_PATH = join(ROOT_DIR, 'Frontend-PWA', 'public', 'manifest.json');
 const PROGRESSIVE_LIST_PATH = join(ROOT_DIR, 'Frontend-PWA', 'src', 'core', 'services', 'useProgressiveList.ts');
 const PROTOCOL_PATH = join(ROOT_DIR, 'Backend', 'supabase', 'functions', '_shared', 'protocol.ts');
@@ -135,10 +135,10 @@ function audit() {
     }
   }
 
-  if (existsSync(HTML_PATH)) {
-    const html = readFileSync(HTML_PATH, 'utf-8');
-    if (!html.includes(`"softwareVersion": "${groundTruth}"`)) {
-      console.error(`[DRIFT] Frontend-PWA/index.html softwareVersion mismatch`);
+  if (existsSync(HTML_ENTRY_PATH)) {
+    const content = readFileSync(HTML_ENTRY_PATH, 'utf-8');
+    if (!content.includes('"softwareVersion": "${version}"')) {
+      console.error(`[DRIFT] HtmlEntry.ts softwareVersion template mismatch`);
       driftDetected = true;
     }
   }
