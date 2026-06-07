@@ -156,6 +156,14 @@ export function useBlitzMode(
 
   function handleBlitz() {
     if (isBlitzActive.value || selectedIds.value.length === 0) return;
+
+    // JSBridge Integration: Delegate blitz execution to the native Android wrapper if available
+    const bridge = (window as any).AndroidBridge;
+    if (bridge) {
+      bridge.startBlitz(JSON.stringify(selectedIds.value));
+      return;
+    }
+
     if (!isTrusted.value) {
       error("Environment verification failed");
       return;
