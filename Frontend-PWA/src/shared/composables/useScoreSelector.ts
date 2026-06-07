@@ -14,6 +14,24 @@ import { useHaptics, SCORE_SELECTION_STEPS } from "@core";
  * **Architectural Context:**
  * - **Layer:** Layer 2 Shared Composable (@shared)
  * - **Role:** Internal logic for the ScoreThresholdSelector component.
+ * - **Satisfaction:** ADR Section II: Structural Unitary Architecture.
+ *
+ * @param props - Reactive component properties.
+ * @param props.mode - Current comparison mode ('ge' for ≥, 'le' for ≤).
+ * @param props.value - Current score threshold value.
+ * @param emit - Vue emit function for state updates and selection events.
+ *
+ * @returns
+ * - `isScoreExpanded`: Reactive boolean for picker expansion state.
+ * - `valuePicker`: Ref to the scrollable HTML container.
+ * - `thresholds`: Static array of available score steps.
+ * - `toggleMode`: Function to switch comparison direction.
+ * - `selectValue`: Function to commit a specific score value.
+ * - `toggleExpand`: Function to open/close the picker with scroll logic.
+ *
+ * @sideeffects
+ * - Triggers hardware haptic feedback via `useHaptics`.
+ * - Manipulates DOM scroll position via `scrollTo` when expanded.
  */
 export function useScoreSelector(
   props: { mode: "ge" | "le"; value: number },
