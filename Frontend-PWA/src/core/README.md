@@ -27,7 +27,8 @@ The authoritative transport layer for the Supabase binary stack.
   - `RecruitClient.ts`: Manages headhunter recruitment and blacklist operations.
   - `ProfileClient.ts`: Brokered access to player card synchronization.
   - `MaintenanceClient.ts`: Triggers system-level janitor and maintenance cycles.
-- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`) providing strict Valibot validation for inbound database payloads.
+- **useApiState.ts**: Authoritative connectivity singleton for backend availability and handshake discovery.
+- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`) providing strict Valibot validation for inbound database payloads.
 - **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models.
 
 ### Configuration (`/config`)
