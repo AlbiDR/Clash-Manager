@@ -53,6 +53,7 @@ export { usePullToRefresh } from "./composables/usePullToRefresh";
 export { useSelectionBar } from "./composables/useSelectionBar";
 export { useScoreSelector } from "./composables/useScoreSelector";
 export { useHistoryChart } from "./composables/useHistoryChart";
+export { useBaseHistoryChart } from "./composables/useBaseHistoryChart";
 export { useStatusPill } from "./composables/useStatusPill";
 export { useBenchmarkedStat } from "./composables/useBenchmarkedStat";
 
