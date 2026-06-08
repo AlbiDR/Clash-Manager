@@ -127,9 +127,9 @@ onMounted(() => {
       <SettingRow
         label="Blitz Mode"
         :description="isNativeWrapper ? 'Delegated to native foreground service' : 'Batch operations without confirmation'"
-        :active="isNativeWrapper ? true : modules.blitzMode"
+        :active="modules.blitzMode"
         :loading="isRefreshing"
-        @click="isNativeWrapper ? undefined : handleBlitzToggle()"
+        @click="handleBlitzToggle()"
       />
     </div>
 
