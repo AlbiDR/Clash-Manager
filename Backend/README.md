@@ -54,12 +54,12 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 ## IV. The Clinical Ingestion Pipeline
 Ingestion is performed via a **Tri-Engine Edge Architecture**, supported by automated database shredders and the authoritative maintenance orchestrator.
 
-1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the clinical synchronization protocol. While implemented as a unified pipeline for efficiency, it conceptually covers 6 stages:
+1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the clinical synchronization protocol. Features strict Valibot-enforced structural validation and a clinical Penta-Stage synchronization protocol. While implemented as a unified pipeline for efficiency, it conceptually covers 6 stages:
     - **S1 (Discovery)**: Harvests new recruits from high-fidelity tournament anchors.
     - **S2-S5 (Clan Sync)**: Atomic synchronization of clan profile, member telemetry, river race standings, and war history.
     - **S6 (Deep Depth)**: Extracts 100-sample battle logs for high-precision competitive scoring.
 2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
-3. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Implements rarity-relative normalization to the unified 1-16 absolute scale.
+3. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Utilizes inferred Valibot schemas for rarity-relative normalization and backend persistence, enforcing a zero-trust boundary for client-supplied snapshots.
 4. **Voyage Orchestrator (`initialize_voyage`)**: SQL-based L5 Control Layer (RPC) responsible for activating and configuring Clan Voyage events.
 5. **Shredder (`drivers` layer)**: Automated SQL triggers and functions in the database substrate that decompose raw JSON payloads into relational telemetry.
 6. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative SQL system janitor (pg_cron) responsible for pruning volatile state and maintaining substrate health.
@@ -127,4 +127,4 @@ supabase functions deploy sync-player-cards --no-verify-jwt
 
 > [!NOTE]
 > This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> *Compiled: 2026-09-04 by Jules (Stage 5 Archivist)*
+> *Compiled: 2026-09-15 by Jules (Stage 5 Archivist)*

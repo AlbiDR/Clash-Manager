@@ -35,10 +35,15 @@ export function useExternalLink() {
    * @param url - The full destination URL.
    */
   async function openExternal(url: string) {
+    // [STRATEGY] Native Bridge: Inside the Android WebView, window.open is blocked.
+    // Delegate to the native bridge which calls startActivity(ACTION_VIEW) directly.
+    const bridge = (window as any).AndroidBridge;
+    if (bridge?.openExternalUrl) {
+      bridge.openExternalUrl(url);
+      return;
+    }
+
     try {
-      // [LOGIC] BROWSER / PWA FALLBACK:
-      // Note: On Android WebView, window.open with custom schemes often triggers ERR_UNKNOWN_URL_SCHEME.
-      // We prioritize the system browser for deep links if possible.
       const newWindow = window.open(url, "_blank", "noopener,noreferrer");
       if (!newWindow) {
         console.warn("External link blocked or failed to open");
@@ -58,66 +63,37 @@ export function useExternalLink() {
     const id = cleanTag(tag);
     if (!id) return;
 
-    console.log("[openInGame] Starting with tag:", tag, "cleaned:", id);
+    // [STRATEGY] Native Bridge: The custom WebView intercepts shouldOverrideUrlLoading
+    // for intent:// only for direct navigations, not for anchor target=_blank clicks.
+    // Calling the bridge method directly bypasses WebView routing entirely.
+    const bridge = (window as any).AndroidBridge;
+    if (bridge?.openPlayerProfile) {
+      bridge.openPlayerProfile(id);
+      return;
+    }
 
-    const userAgent = navigator.userAgent;
-    console.log("[openInGame] UserAgent:", userAgent);
+    const isAndroid = /android/i.test(navigator.userAgent);
 
-    const isAndroid = /android/i.test(userAgent);
-    console.log("[openInGame] Environment - Android:", isAndroid);
-
-    // [STRATEGY] Android Intent: Use direct Intent URL for maximum reliability.
-    // Rationale: The intent scheme allows specifying the package name, which prevents
-    // the browser from showing the "Open with..." dialog or failing in WebViews.
     if (isAndroid) {
       const intentUrl =
         `intent://playerInfo?id=${id}#Intent;` +
         `scheme=clashroyale;` +
         `package=com.supercell.clashroyale;` +
         `end`;
-
-      console.log("[openInGame] Android mode - using direct intent");
-
       try {
-        // [LOGIC] Temporary Anchor: Creates a hidden DOM element to trigger the intent.
-        // Rationale: Directly setting window.location.href can sometimes be blocked
-        // by pop-up blockers or cause navigation loops in certain PWA contexts.
-        const anchor = document.createElement("a");
-        anchor.href = intentUrl;
-        anchor.style.display = "none";
-        anchor.target = "_blank";
-        anchor.rel = "noopener noreferrer";
-
-        document.body.appendChild(anchor);
-        anchor.click();
-
-        // [LOGIC] Anchor Cleanup: Removes the element after a short delay.
-        // Rationale: 100ms provides enough time for the browser to register the click
-        // without dropping the current PWA process state during the context switch.
-        setTimeout(() => {
-          if (document.body.contains(anchor)) {
-            document.body.removeChild(anchor);
-          }
-        }, 100);
-
-        console.log("[openInGame] Intent triggered successfully");
-      } catch (err) {
-        console.error("[openInGame] Intent click failed:", err);
-        // Fallback: direct location change if anchor method fails.
         window.location.href = intentUrl;
+      } catch (err) {
+        console.error("[openInGame] intent href failed:", err);
+        error("Failed to open game - app may not be installed");
       }
       return;
     }
 
-    // [STRATEGY] iOS/Desktop Fallback: Try multiple methods for standard schemes.
-    const directUrl = `clashroyale://playerInfo?id=${id}`;
-
-    // Final fallback: Try direct window.location (works on iOS)
-    console.log("[openInGame] Fallback: using window.location.href");
+    // iOS / Desktop fallback
     try {
-      window.location.href = directUrl;
+      window.location.href = `clashroyale://playerInfo?id=${id}`;
     } catch (err) {
-      console.error("[openInGame] window.location failed:", err);
+      console.error("[openInGame] clashroyale:// failed:", err);
       error("Failed to open game - app may not be installed");
     }
   }

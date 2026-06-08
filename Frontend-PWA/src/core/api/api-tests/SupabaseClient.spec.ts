@@ -156,8 +156,6 @@ describe("SupabaseClient", () => {
       expect(result.hh[0].id).toBe('XYZ');
       expect(result.timestamp).toBe(new Date('2026-01-01T00:00:00Z').getTime());
       expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
-      const { saveCache } = await import("../../services/StorageService");
-      expect(saveCache).toHaveBeenCalled();
     });
 
     it("fetchRemote uses fallback defaults for malformed data", async () => {

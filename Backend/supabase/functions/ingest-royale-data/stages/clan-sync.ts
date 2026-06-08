@@ -36,59 +36,62 @@ export async function runClanSync(
             const apiResponse = await fetchWithRotation(syncTask.path);
             logAudit(stageName, 'run', { status: apiResponse.status });
 
-            const targetResult = results[syncTask.key];
+            const stageIngestionResult = results[syncTask.key];
 
             if (apiResponse.ok) {
-                const rawPayload = await apiResponse.json();
+                // [THREAT:] The 'any Plague' is closed by explicitly typing raw ingress as unknown.
+                const rawRoyalePayload: unknown = await apiResponse.json();
 
                 // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
                 // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes.
-                const validation = v.safeParse(syncTask.schema, rawPayload);
+                // [DECISION LOG] Every API payload is validated against a strict Valibot schema before being passed to the database RPC.
+                const payloadValidation = v.safeParse(syncTask.schema, rawRoyalePayload);
 
                 logAudit(stageName, 'resulted_data');
                 logAudit(stageName, 'integrity_checked', { 
-                    passed: validation.success,
-                    details: validation.success ? 'Data shape validated via Valibot' : 'Malformed payload structure'
+                    passed: payloadValidation.success,
+                    details: payloadValidation.success ? 'Data shape validated via Valibot' : 'Malformed payload structure'
                 });
                 
-                if (validation.success) {
-                    const sanitizedPayload: unknown = validation.output;
+                if (payloadValidation.success) {
+                    const validatedPayload: unknown = payloadValidation.output;
                     
-                    const ingestionRpc = syncTask.key === 'profile' ? 'ingest_raw_clan_profile' :
+                    const ingestionRpcName = syncTask.key === 'profile' ? 'ingest_raw_clan_profile' :
                                    syncTask.key === 'members' ? 'ingest_raw_clan_members' :
                                    syncTask.key === 'race' ? 'ingest_raw_river_race' :
                                    'ingest_raw_war_log';
 
-                    const { error: dbError } = await supabase.rpc(ingestionRpc, {
+                    // [THREAT:] Database ingestion failures or RPC execution errors are caught and recorded in the audit log.
+                    const { error: databaseError } = await supabase.rpc(ingestionRpcName, {
                         p_clan_tag: clanTag,
-                        p_payload: sanitizedPayload
+                        p_payload: validatedPayload
                     });
 
-                    targetResult.success = !dbError;
-                    if (dbError) {
-                        targetResult.error = dbError.message;
-                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure (RPC)', details: dbError });
+                    stageIngestionResult.success = !databaseError;
+                    if (databaseError) {
+                        stageIngestionResult.error = databaseError.message;
+                        logAudit(stageName, 'error', { message: 'DB Ingestion Failure (RPC)', details: databaseError });
                     }
                 } else {
-                    targetResult.success = false;
-                    targetResult.error = 'VALIDATION_FAILED';
-                    logAudit(stageName, 'error', { message: 'Validation Failed', issues: validation.issues });
+                    stageIngestionResult.success = false;
+                    stageIngestionResult.error = 'VALIDATION_FAILED';
+                    logAudit(stageName, 'error', { message: 'Validation Failed', issues: payloadValidation.issues });
                 }
             } else {
-                targetResult.success = false;
-                targetResult.error = `HTTP_${apiResponse.status}`;
+                stageIngestionResult.success = false;
+                stageIngestionResult.error = `HTTP_${apiResponse.status}`;
                 logAudit(stageName, 'integrity_checked', { passed: false, details: `HTTP_${apiResponse.status}` });
                 logAudit(stageName, 'error', { status: apiResponse.status });
             }
-            logAudit(stageName, 'terminated', { success: targetResult.success });
-        } catch (syncError: unknown) {
-            const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
+            logAudit(stageName, 'terminated', { success: stageIngestionResult.success });
+        } catch (taskExecutionError: unknown) {
+            const errorMessage = taskExecutionError instanceof Error ? taskExecutionError.message : String(taskExecutionError);
             logAudit(stageName, 'integrity_checked', { passed: false, details: errorMessage });
             logAudit(stageName, 'error', { message: errorMessage });
 
-            const targetResult = results[syncTask.key];
-            targetResult.success = false;
-            targetResult.error = errorMessage;
+            const stageIngestionResult = results[syncTask.key];
+            stageIngestionResult.success = false;
+            stageIngestionResult.error = errorMessage;
             logAudit(stageName, 'terminated', { error: true });
         }
     }
