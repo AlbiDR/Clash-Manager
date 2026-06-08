@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-08] PR #785: chore(deps): Stage 8 Dependency Audit - June 8, 2026
+**Commit**: `bea4f0f818751c10320a71d149d241ff09b3ef94`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/785)
+
+### Description
+This Pull Request executes the Stage 8 Dependency Audit. It applies a Tier 1 patch update to `vue-tsc`, refines the Knip configuration by removing redundant binary ignores, and synchronizes the major version watchlist to reflect the latest ecosystem status (Vite 8, TypeScript 6, Node 25 types). All changes have been verified against the monorepo test suite.
+
+---
+*PR created automatically by Jules for task [14659960167162924823](https://jules.google.com/task/14659960167162924823) started by @AlbiDR*
+
+---
+
 ## [2026-06-08] PR #784: chore(version): no drift found
 **Commit**: `393df430bb3200b787622678a4c95d47a6417813`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/784)
