@@ -28,7 +28,8 @@ const SettingRowStub = defineComponent({
 describe("FeatureSettings.vue", () => {
   const mockModules = reactive({
     ghostBenchmarking: false,
-    sortExplanation: true
+    sortExplanation: true,
+    blitzMode: false
   });
   const mockIsRefreshing = ref(false);
   const mockToggle = vi.fn();
@@ -37,6 +38,7 @@ describe("FeatureSettings.vue", () => {
     vi.clearAllMocks();
     mockModules.ghostBenchmarking = false;
     mockModules.sortExplanation = true;
+    mockModules.blitzMode = false;
     mockIsRefreshing.value = false;
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
@@ -72,9 +74,10 @@ describe("FeatureSettings.vue", () => {
     const wrapper = mountComponent();
     const rows = wrapper.findAllComponents(SettingRowStub);
 
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
     expect(rows[0].props("label")).toBe("Ghost Benchmarking");
     expect(rows[1].props("label")).toBe("Sorting Descriptions");
+    expect(rows[2].props("label")).toBe("Blitz Mode");
   });
 
   it("synchronizes row active state with modules", () => {
@@ -83,9 +86,10 @@ describe("FeatureSettings.vue", () => {
 
     expect(rows[0].props("active")).toBe(false); // ghostBenchmarking
     expect(rows[1].props("active")).toBe(true);  // sortExplanation
+    expect(rows[2].props("active")).toBe(false); // blitzMode
   });
 
-  it("calls toggle with correct module name when a row is clicked", async () => {
+  it("calls toggle with correct module name when feature rows are clicked", async () => {
     const wrapper = mountComponent();
     const rows = wrapper.findAllComponents(SettingRowStub);
 
@@ -94,6 +98,50 @@ describe("FeatureSettings.vue", () => {
 
     await rows[1].trigger("click");
     expect(mockToggle).toHaveBeenCalledWith("sortExplanation");
+  });
+
+  describe("Blitz Mode toggle (PWA mode)", () => {
+    it("calls toggle('blitzMode') when clicked in PWA mode", async () => {
+      const wrapper = mountComponent();
+      const blitzRow = wrapper.findAllComponents(SettingRowStub)[2];
+
+      await blitzRow.trigger("click");
+      expect(mockToggle).toHaveBeenCalledWith("blitzMode");
+    });
+
+    it("opens accessibility settings via intent:// fallback when enabling Blitz Mode in PWA mode", async () => {
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: { href: "" },
+      });
+
+      mockModules.blitzMode = false;
+      const wrapper = mountComponent();
+      const blitzRow = wrapper.findAllComponents(SettingRowStub)[2];
+
+      await blitzRow.trigger("click");
+
+      expect(window.location.href).toBe(
+        "intent:#Intent;action=android.settings.ACCESSIBILITY_SETTINGS;end"
+      );
+    });
+
+    it("does not redirect to accessibility settings when disabling Blitz Mode", async () => {
+      const initialHref = "about:blank";
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: { href: initialHref },
+      });
+
+      mockModules.blitzMode = true; // Already enabled - clicking toggles it OFF
+      const wrapper = mountComponent();
+      const blitzRow = wrapper.findAllComponents(SettingRowStub)[2];
+
+      await blitzRow.trigger("click");
+
+      // href must remain unchanged - no redirect when disabling
+      expect(window.location.href).toBe(initialHref);
+    });
   });
 
   it("passes isRefreshing state to card and rows", async () => {
@@ -108,5 +156,6 @@ describe("FeatureSettings.vue", () => {
     const rows = wrapper.findAllComponents(SettingRowStub);
     expect(rows[0].props("loading")).toBe(true);
     expect(rows[1].props("loading")).toBe(true);
+    expect(rows[2].props("loading")).toBe(true);
   });
 });
