@@ -195,3 +195,6 @@ Frontend-PWA/scripts/portfolio.css
 2026-09-09 | Frontend-PWA/src/shared/composables/useBenchmarkedStat.ts | Extracted shared benchmarking tooltip logic from multiple UI components to reduce duplication and standardize reactivity guards.
 2026-09-12 | Frontend-PWA/src/shared/composables/useBaseHistoryChart.ts | Extracted geometric and trend logic from BaseHistoryChart.vue to a shared composable.
 2026-09-12 | Frontend-PWA/src/shared/ui/BaseHistoryChart.vue | Refactored to consume useBaseHistoryChart, reducing size to 342 lines.
+2026-09-15 | Frontend-PWA/src/core/api/SupabaseClient.ts | Removed redundant cache writes from fetchRemote.
+2026-09-15 | Frontend-PWA/src/core/services/useClashSync.ts | Implemented skipSave guard in commitSyncResult to optimize hydration.
+2026-09-15 | Backend/supabase/migrations/20260531232406_master_migration.sql | Identified orphaned database view: war_activity_view.
