@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
 import { SettingRow, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 
@@ -41,22 +41,6 @@ function loadCoordinates() {
   }
 }
 
-function applyPhonePreset() {
-  inviteX.value = 50.83;
-  inviteY.value = 72.14;
-  closeX.value = 92.13;
-  closeY.value = 20.44;
-  saveCoordinates();
-}
-
-function applyBluestacksPreset() {
-  inviteX.value = 53.30;
-  inviteY.value = 77.90;
-  closeX.value = 92.04;
-  closeY.value = 14.29;
-  saveCoordinates();
-}
-
 function saveCoordinates() {
   if (isNativeWrapper.value && (window as any).AndroidBridge?.saveCoordinates) {
     (window as any).AndroidBridge.saveCoordinates(
@@ -67,6 +51,11 @@ function saveCoordinates() {
     );
   }
 }
+
+// Auto-save coordinates to native bridge whenever any value changes.
+// This replaces the manual "Apply" flow so the on-device session always
+// boots with the last values the user dragged/typed in.
+watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
 
 /**
  * Handles the Blitz Mode toggle in non-native-wrapper (PWA) mode.
@@ -137,13 +126,8 @@ onMounted(() => {
     <div v-if="isNativeWrapper" class="calibration-section">
       <div class="card-divider-s" />
       <h3 class="section-title">Blitz Mode Calibration</h3>
-      <p class="section-desc">Adjust tap coordinates to match your screen resolution or emulator layout.</p>
-      
-      <div class="preset-row">
-        <button class="preset-btn" @click="applyPhonePreset" v-tactile>Phone Preset</button>
-        <button class="preset-btn" @click="applyBluestacksPreset" v-tactile>BlueStacks Preset</button>
-      </div>
-      
+      <p class="section-desc">Changes are saved automatically and become the default for the next session.</p>
+
       <div class="input-grid">
         <div class="input-group">
           <label>Invite X (%)</label>
@@ -162,8 +146,6 @@ onMounted(() => {
           <input type="number" step="0.01" v-model="closeY" class="coord-input" />
         </div>
       </div>
-      
-      <button class="apply-btn" @click="saveCoordinates" v-tactile>Apply Calibration</button>
     </div>
   </SettingsCard>
 </template>
@@ -202,28 +184,6 @@ onMounted(() => {
   line-height: 1.4;
 }
 
-.preset-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.preset-btn {
-  padding: 10px 8px;
-  background: var(--sys-color-surface-container-high);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: 12px;
-  color: var(--sys-color-primary);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s;
-}
-
-.preset-btn:active {
-  transform: scale(0.94);
-  background: var(--sys-color-surface-container-highest);
-}
 
 .input-grid {
   display: grid;
@@ -263,21 +223,4 @@ onMounted(() => {
   border-color: var(--sys-color-primary);
 }
 
-.apply-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--sys-color-primary);
-  border: none;
-  border-radius: 12px;
-  color: var(--sys-color-on-primary);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s;
-}
-
-.apply-btn:active {
-  transform: scale(0.97);
-  opacity: 0.85;
-}
 </style>
