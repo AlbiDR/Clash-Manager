@@ -84,12 +84,13 @@
 | vite | ^7.3.1 | ^7.3.3 | 2026-09-05 | PASS |
 | rollup-plugin-visualizer | ^6.0.5 | ^6.0.11 | 2026-09-05 | PASS |
 | @vitejs/plugin-vue | ^6.0.5 | ^6.0.7 | 2026-09-05 | PASS |
-| @types/node | ^24.12.4 | ^24.13.0 | 2026-06-05 | PASS |
+| @types/node | ^24.13.0 | ^24.13.1 | 2026-06-05 | PASS |
 | @vue/test-utils | ^2.4.10 | ^2.4.11 | 2026-06-05 | PASS |
 | knip | ^6.15.0 | ^6.16.0 | 2026-09-11 | PASS |
 | knip | ^6.16.0 | ^6.16.1 | 2026-06-07 | PASS |
 | vite | ^7.3.3 | ^7.3.5 | 2026-06-07 | PASS |
 | @types/node | ^24.13.0 | ^24.13.1 | 2026-06-07 | PASS |
+| vue-tsc | ^3.3.3 | ^3.3.4 | 2026-06-08 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
@@ -97,7 +98,6 @@
 | vite | ^7.3.5 | 8.0.16 | 2026-05-17 | [Updated] Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. ManualChunks config replaced by codeSplitting. |
 | typescript | ~5.9.3 | 6.0.3 | 2026-05-21 | Breaking: Significant transition release. 'types' defaults to []. 'rootDir' defaults to '.'. 'target' defaults to 'es2025'. |
 | @types/node | ^24.13.1 | 25.9.2 | 2026-04-12 | [Updated] New major available. Breaking: Node 25 enables Web Storage (localStorage) by default; may impact Vitest environment. |
-| @vitejs/plugin-vue | ^6.0.7 | 6.0.7 | 2026-04-13 | [Identical] Current version now matches latest minor. Major 7.x not yet available. |
 | pnpm | >=10.0.0 | 11.5.1 | 2026-09-06 | New major available. Requires node >=22. Improved catalog support. |
 | vue-router | ^4.6.4 | 5.1.0 | 2026-06-05 | [Updated] Breaking: Transition release. Native ESM focus. |
 | jsdom | ^24.1.3 | 29.1.1 | 2026-08-04 | Breaking: Internal refactor, performance gains. Stricter spec compliance. |
