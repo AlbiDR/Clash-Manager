@@ -48,6 +48,18 @@ export const VOYAGE_DEFAULT_TARGET = 1600;
 export const VOYAGE_MAX_TARGET = 9999;
 
 /**
+ * Notification tag used to deduplicate and manage recruit push notifications.
+ * Must be kept in sync with the PWA manifest shortcut and sw.ts routing.
+ */
+export const NOTIFICATION_TAG_RECRUIT = "com.app.RECRUIT_UPDATES";
+
+/**
+ * Shortcut ID referenced in push notification payloads for native deep linking
+ * into the headhunter route via the PWA app shortcut.
+ */
+export const NOTIFICATION_SHORTCUT_ID = "recruit_shortcut_id";
+
+/**
  * AUTHORITATIVE STORAGE CONSTANTS (Layer 1)
  * ----------------------------------------------------------------------------
  * Rationale: Centralizes IndexedDB configuration to ensure consistency

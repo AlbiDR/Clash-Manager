@@ -6,6 +6,7 @@
 // Optimized for Native System Compatibility (WebAPK)
 import { precacheAndRoute, matchPrecache } from "workbox-precaching";
 import { openDB, getValue, handlePushBadge, handleBackgroundSync } from "./sw/index";
+import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../core/config";
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] };
 declare const clients: Clients;
@@ -143,20 +144,20 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
           body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
           icon: "pwa-192.png",
           badge: "pwa-64.png",
-          tag: "com.app.RECRUIT_UPDATES",
+          tag: NOTIFICATION_TAG_RECRUIT,
           renotify: false,
           silent: false,
           requireInteraction: false,
           data: {
             type: "badge",
             count: countAboveThreshold,
-            shortcutId: "recruit_shortcut_id",
+            shortcutId: NOTIFICATION_SHORTCUT_ID,
             url: "/#/headhunter",
           },
         } as NotificationOptions);
       } else {
         const notifications = await self.registration.getNotifications({
-          tag: "com.app.RECRUIT_UPDATES",
+          tag: NOTIFICATION_TAG_RECRUIT,
         });
         notifications.forEach((n) => n.close());
       }

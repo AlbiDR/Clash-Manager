@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { openDB, getValue } from "./swKernel";
+import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../../core/config";
 
 /**
  * SW SYNC (Layer 4 Sub-module)
@@ -46,13 +47,13 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
           `You have ${badgeCount} recruit${badgeCount === 1 ? "" : "s"} above your threshold.`,
         icon: "pwa-192.png",
         badge: "pwa-64.png",
-        tag: "com.app.RECRUIT_UPDATES",
+        tag: NOTIFICATION_TAG_RECRUIT,
         renotify: false,
         silent: false,
         data: {
           type: "badge",
           count: badgeCount,
-          shortcutId: "recruit_shortcut_id",
+          shortcutId: NOTIFICATION_SHORTCUT_ID,
           url: "/#/headhunter",
         },
       } as NotificationOptions,
@@ -116,21 +117,21 @@ export async function handleBackgroundSync(): Promise<void> {
           body: `You have ${count} recruit${count === 1 ? "" : "s"} above your threshold.`,
           icon: "pwa-192.png",
           badge: "pwa-64.png",
-          tag: "com.app.RECRUIT_UPDATES",
+          tag: NOTIFICATION_TAG_RECRUIT,
           renotify: false,
           silent: false,
           requireInteraction: false,
           data: {
             type: "badge",
             count,
-            shortcutId: "recruit_shortcut_id",
+            shortcutId: NOTIFICATION_SHORTCUT_ID,
             url: "/#/headhunter",
             timestamp: Date.now(),
           },
         } as NotificationOptions);
       } else {
         const notifications = await self.registration.getNotifications({
-          tag: "com.app.RECRUIT_UPDATES",
+          tag: NOTIFICATION_TAG_RECRUIT,
         });
         notifications.forEach((n) => n.close());
         if (self.navigator.clearAppBadge)
