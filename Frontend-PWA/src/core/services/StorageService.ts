@@ -2,6 +2,14 @@
 // Copyright (C) 2026 AlbiDR
 
 import { openDB, idbCore, deleteDatabasePromise, closeDB, useMemoryStore, memoryStore, forceMemoryMode } from "../utils/idbKernel";
+import {
+  STORAGE_DB_NAME,
+  STORAGE_STORE_NAME,
+  STORAGE_DB_VERSION,
+  STORAGE_LEGACY_DB_NAME,
+  STORAGE_LEGACY_STORE_NAME,
+  STORAGE_DEPRECATED_DB_NAMES
+} from "../config";
 
 /**
  * STORAGE SERVICE (Layer 1)
@@ -16,35 +24,12 @@ import { openDB, idbCore, deleteDatabasePromise, closeDB, useMemoryStore, memory
  * unified interface for CRUD operations.
  */
 
-const DB_NAME = "clash_manager_v11";
-const STORE_NAME = "keyval";
-const DB_VERSION = 1;
-
-const LEGACY_DB_NAME = "clash_manager_db";
-const LEGACY_STORE_NAME = "key_val_store";
-
-const DEPRECATED_DB_NAMES = [
-  "clash_manager_db",
-  "clash_manager",
-  "clash-manager",
-  "clash_manager_v1",
-  "clash_manager_v2",
-  "clash_manager_v3",
-  "clash_manager_v4",
-  "clash_manager_v5",
-  "clash_manager_v6",
-  "clash_manager_v7",
-  "clash_manager_v8",
-  "clash_manager_v9",
-  "clash_manager_v10"
-];
-
 /**
  * Purges all known deprecated databases from disk.
  */
 async function purgeDeprecatedDatabases(): Promise<void> {
-  for (const dbName of DEPRECATED_DB_NAMES) {
-    if (dbName !== LEGACY_DB_NAME) {
+  for (const dbName of STORAGE_DEPRECATED_DB_NAMES) {
+    if (dbName !== STORAGE_LEGACY_DB_NAME) {
       await deleteDatabasePromise(dbName);
     }
   }
@@ -55,11 +40,11 @@ async function purgeDeprecatedDatabases(): Promise<void> {
  */
 function getStorageDB(): Promise<IDBDatabase> {
   return openDB(
-    DB_NAME,
-    DB_VERSION,
+    STORAGE_DB_NAME,
+    STORAGE_DB_VERSION,
     (db) => {
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+      if (!db.objectStoreNames.contains(STORAGE_STORE_NAME)) {
+        db.createObjectStore(STORAGE_STORE_NAME);
       }
     },
     async (db) => {
@@ -74,20 +59,20 @@ function getStorageDB(): Promise<IDBDatabase> {
 async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
   return new Promise((resolve) => {
     if (typeof indexedDB === "undefined") return resolve();
-    const checkRequest = indexedDB.open(LEGACY_DB_NAME);
+    const checkRequest = indexedDB.open(STORAGE_LEGACY_DB_NAME);
     
     checkRequest.onsuccess = () => {
       const oldDb = checkRequest.result;
-      if (!oldDb.objectStoreNames.contains(LEGACY_STORE_NAME)) {
+      if (!oldDb.objectStoreNames.contains(STORAGE_LEGACY_STORE_NAME)) {
         oldDb.close();
-        deleteDatabasePromise(LEGACY_DB_NAME)
+        deleteDatabasePromise(STORAGE_LEGACY_DB_NAME)
           .then(() => purgeDeprecatedDatabases())
           .then(resolve);
         return;
       }
 
-      const tx = oldDb.transaction(LEGACY_STORE_NAME, "readonly");
-      const store = tx.objectStore(LEGACY_STORE_NAME);
+      const tx = oldDb.transaction(STORAGE_LEGACY_STORE_NAME, "readonly");
+      const store = tx.objectStore(STORAGE_LEGACY_STORE_NAME);
       const getAllKeys = store.getAllKeys();
       const getAllValues = store.getAll();
 
@@ -97,27 +82,27 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
         
         if (keys.length > 0) {
           console.info(`[Storage] Migrating ${keys.length} items from legacy database...`);
-          const newTx = newDb.transaction(STORE_NAME, "readwrite");
-          const newStore = newTx.objectStore(STORE_NAME);
+          const newTx = newDb.transaction(STORAGE_STORE_NAME, "readwrite");
+          const newStore = newTx.objectStore(STORAGE_STORE_NAME);
           for (let i = 0; i < keys.length; i++) {
             newStore.put(values[i], keys[i]);
           }
           
           newTx.oncomplete = async () => {
             oldDb.close();
-            await deleteDatabasePromise(LEGACY_DB_NAME);
+            await deleteDatabasePromise(STORAGE_LEGACY_DB_NAME);
             await purgeDeprecatedDatabases();
             resolve();
           };
           newTx.onerror = async () => {
             oldDb.close();
-            await deleteDatabasePromise(LEGACY_DB_NAME);
+            await deleteDatabasePromise(STORAGE_LEGACY_DB_NAME);
             await purgeDeprecatedDatabases();
             resolve();
           };
         } else {
           oldDb.close();
-          await deleteDatabasePromise(LEGACY_DB_NAME);
+          await deleteDatabasePromise(STORAGE_LEGACY_DB_NAME);
           await purgeDeprecatedDatabases();
           resolve();
         }
@@ -125,7 +110,7 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
       
       tx.onerror = async () => {
         oldDb.close();
-        await deleteDatabasePromise(LEGACY_DB_NAME);
+        await deleteDatabasePromise(STORAGE_LEGACY_DB_NAME);
         await purgeDeprecatedDatabases();
         resolve();
       };
@@ -143,27 +128,27 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
  */
 export const idb = {
   async get<T>(key: string): Promise<T | null> {
-    return idbCore.get<T>(key, getStorageDB, STORE_NAME);
+    return idbCore.get<T>(key, getStorageDB, STORAGE_STORE_NAME);
   },
 
   async set(key: string, value: unknown): Promise<void> {
-    return idbCore.set(key, value, getStorageDB, STORE_NAME);
+    return idbCore.set(key, value, getStorageDB, STORAGE_STORE_NAME);
   },
 
   async del(key: string): Promise<void> {
-    return idbCore.del(key, getStorageDB, STORE_NAME);
+    return idbCore.del(key, getStorageDB, STORAGE_STORE_NAME);
   },
 
   async clear(): Promise<void> {
-    await idbCore.clear(getStorageDB, STORE_NAME);
-    await deleteDatabasePromise(LEGACY_DB_NAME);
+    await idbCore.clear(getStorageDB, STORAGE_STORE_NAME);
+    await deleteDatabasePromise(STORAGE_LEGACY_DB_NAME);
     await purgeDeprecatedDatabases();
   },
 
   async destroyAll(): Promise<void> {
     await closeDB();
-    await deleteDatabasePromise(DB_NAME);
-    await deleteDatabasePromise(LEGACY_DB_NAME);
+    await deleteDatabasePromise(STORAGE_DB_NAME);
+    await deleteDatabasePromise(STORAGE_LEGACY_DB_NAME);
     await purgeDeprecatedDatabases();
     memoryStore.clear();
     forceMemoryMode();
