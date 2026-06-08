@@ -66,8 +66,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
    * Internal helper to update reactive state and persist the result to the local cache.
    *
    * @param payload - The new WebAppData to commit, or null to clear state.
+   * @param skipSave - If true, bypasses saving to the persistent cache.
    */
-  async function commitSyncResult(payload: WebAppData | null) {
+  async function commitSyncResult(payload: WebAppData | null, skipSave = false) {
     data.value = payload;
 
     if (payload) {
@@ -86,6 +87,8 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
     consecutiveSyncFailures.value = 0;
     syncError.value = null;
+
+    if (skipSave) return;
 
     try {
       if (payload) {
@@ -131,7 +134,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
           return;
         }
         console.debug("[Sync] Local cache hydrated successfully.");
-        await commitSyncResult(validation.output);
+        await commitSyncResult(validation.output, true);
       } else {
         console.warn("[Sync] Local cache validation failed:", validation.issues);
         if (!data.value) await commitSyncResult(null);

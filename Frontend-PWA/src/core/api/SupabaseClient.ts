@@ -175,6 +175,5 @@ export async function fetchRemote(options?: {
   
   lastSyncStatus.value = "SUCCESS";
   
-  await saveCache(webAppData);
   return webAppData;
 }
