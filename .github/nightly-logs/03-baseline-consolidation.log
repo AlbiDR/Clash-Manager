@@ -20,3 +20,13 @@
 - Functions Hardened (search_path): 1 (substrate.weighted_avg)
 - Trigger Guards Verified: 24
 - Verification: 1123 passed, 1 skipped
+2026-06-08 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 0 (No new migrations found)
+- Structural Hardening: Resolved 31 unqualified table/view references within function/view bodies to ensure strict schema qualification.
+- Tables Hardened (RLS): 26 (Verified existing)
+- Functions Hardened (search_path): 88 (Verified existing)
+- Trigger Guards Verified: 24
+- Views Hardened (Idempotent DROP): 11
+- Visual Purity: Verified (ASCII only)
+- Verification: 1196 passed, 1 skipped

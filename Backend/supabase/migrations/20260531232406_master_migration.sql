@@ -661,7 +661,7 @@ BEGIN
     
     IF v_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
-        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Purged ' || v_count || ' orphaned players.');
+        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Purged ' || v_count || ' orphaned drivers.players.');
     END IF;
 
     RETURN v_count;
@@ -856,7 +856,7 @@ BEGIN
     END LOOP;
     IF v_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
-        VALUES ('CLANNED_PURGE', 'SUCCESS', 'Auto-evicted ' || v_count || ' recruits who joined our clans.');
+        VALUES ('CLANNED_PURGE', 'SUCCESS', 'Auto-evicted ' || v_count || ' drivers.recruits who joined our drivers.clans.');
     END IF;
     RETURN v_count;
 END; $function$;
@@ -994,15 +994,15 @@ BEGIN
         status = EXCLUDED.status,
         last_triggered_at = CASE 
             WHEN EXCLUDED.status = 'RUNNING' THEN EXCLUDED.last_triggered_at 
-            ELSE pipeline_heartbeat.last_triggered_at 
+            ELSE substrate.pipeline_heartbeat.last_triggered_at
         END,
         last_success_at = CASE 
             WHEN EXCLUDED.status = 'COMPLETED' THEN NOW() 
-            ELSE pipeline_heartbeat.last_success_at 
+            ELSE substrate.pipeline_heartbeat.last_success_at
         END,
         last_failure_at = CASE 
             WHEN EXCLUDED.status = 'FAILED' THEN NOW() 
-            ELSE pipeline_heartbeat.last_failure_at 
+            ELSE substrate.pipeline_heartbeat.last_failure_at
         END,
         last_message = EXCLUDED.last_message,
         discovery_yield = EXCLUDED.discovery_yield,
@@ -1202,7 +1202,7 @@ BEGIN
 
     IF v_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
-        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Purged ' || v_count || ' recruits (corrupted or low-score) to maintain pipeline health.');
+        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Purged ' || v_count || ' drivers.recruits (corrupted or low-score) to maintain pipeline health.');
     END IF;
 
     RETURN v_count;
@@ -1286,7 +1286,7 @@ BEGIN
 
     IF v_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
-        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Pruned ' || v_count || ' inactive members (30-day threshold).');
+        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Pruned ' || v_count || ' inactive drivers.members (30-day threshold).');
     END IF;
 END;
 $function$;
@@ -1318,7 +1318,7 @@ BEGIN
         NEW.payload->>'name',
         NEW.payload->>'description',
         (NEW.payload->>'badgeId')::INT,
-        (NEW.payload->>'members')::INT,
+        (NEW.payload->>'drivers.members')::INT,
         NEW.payload->>'type',
         (NEW.payload->>'requiredTrophies')::INT,
         (NEW.payload->>'clanWarTrophies')::INT,
@@ -2043,11 +2043,11 @@ BEGIN
         VALUES (NEW.player_tag)
         ON CONFLICT (player_tag) DO NOTHING;
     ELSIF TG_OP = 'DELETE' THEN
-        IF TG_TABLE_NAME = 'members' THEN
+        IF TG_TABLE_NAME = 'drivers.members' THEN
             IF NOT EXISTS (SELECT 1 FROM drivers.recruit_blacklist WHERE player_tag = OLD.player_tag) THEN
                 DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.player_tag;
             END IF;
-        ELSIF TG_TABLE_NAME = 'recruit_blacklist' THEN
+        ELSIF TG_TABLE_NAME = 'drivers.recruit_blacklist' THEN
             IF NOT EXISTS (SELECT 1 FROM drivers.members WHERE player_tag = OLD.player_tag) THEN
                 DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.player_tag;
             END IF;
@@ -2711,7 +2711,7 @@ BEGIN
         p_payload->>'name',
         p_payload->>'description',
         (p_payload->>'badgeId')::INTEGER,
-        (p_payload->>'members')::INTEGER,
+        (p_payload->>'drivers.members')::INTEGER,
         (p_payload->>'requiredTrophies')::INTEGER,
         p_payload->>'type',
         NOW(),
@@ -2812,7 +2812,7 @@ BEGIN
     RETURN QUERY
     INSERT INTO substrate.governance_telemetry (event_type, status, metadata, created_at)
     VALUES (p_event_type, p_status, p_metadata, NOW())
-    RETURNING governance_telemetry.id;
+    RETURNING substrate.governance_telemetry.id;
 END;
 $function$;
 
@@ -3004,8 +3004,8 @@ BEGIN
     LIMIT 50;
 
     RETURN jsonb_build_object(
-        'recruits', COALESCE(v_recruits, '[]'::JSONB),
-        'members',  COALESCE(v_members,  '[]'::JSONB)
+        'drivers.recruits', COALESCE(v_recruits, '[]'::JSONB),
+        'drivers.members',  COALESCE(v_members,  '[]'::JSONB)
     );
 END;
 $function$;
@@ -3261,18 +3261,18 @@ CREATE OR REPLACE VIEW features.scoring_view AS
   benchmarking_context_base AS (
       SELECT
           ( SELECT COALESCE(NULLIF(max(w.recorded_weeks), 0), 12::bigint)
-              FROM ( SELECT count(DISTINCT war_activity.week_id) AS recorded_weeks
+              FROM ( SELECT count(DISTINCT drivers.war_activity.week_id) AS recorded_weeks
                        FROM drivers.war_activity
-                      GROUP BY war_activity.player_tag) w
+                      GROUP BY drivers.war_activity.player_tag) w
           ) AS max_history_weeks,
           ( SELECT COALESCE(
                        percentile_cont(0.25) WITHIN GROUP (ORDER BY t.tenure_days::double precision),
                        14::double precision
                    )
-              FROM ( SELECT GREATEST(0::numeric, EXTRACT(day FROM now() - members.joined_at))
+              FROM ( SELECT GREATEST(0::numeric, EXTRACT(day FROM now() - drivers.members.joined_at))
                              AS tenure_days
                        FROM drivers.members
-                      WHERE members.is_active = true) t
+                      WHERE drivers.members.is_active = true) t
           ) AS rookie_window_days
   ),
   benchmarking_context AS (
@@ -3564,17 +3564,17 @@ GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 DROP VIEW IF EXISTS features.headhunter_view CASCADE;
 CREATE OR REPLACE VIEW features.headhunter_view AS
 WITH benchmarking_context AS (
-         SELECT GREATEST(COALESCE(( SELECT max(recruits.raw_potential_score) AS max
+         SELECT GREATEST(COALESCE(( SELECT max(drivers.recruits.raw_potential_score) AS max
                    FROM drivers.recruits
-                  WHERE (recruits.status = 'ACTIVE'::drivers.recruit_status)), (0)::numeric), COALESCE(( SELECT max(recruit_blacklist.raw_potential_score) AS max
+                  WHERE (drivers.recruits.status = 'ACTIVE'::drivers.recruit_status)), (0)::numeric), COALESCE(( SELECT max(drivers.recruit_blacklist.raw_potential_score) AS max
                    FROM drivers.recruit_blacklist
-                  WHERE (recruit_blacklist.expires_at > now())), (0)::numeric), COALESCE(( SELECT max(recruits.raw_potential_score) AS max
+                  WHERE (drivers.recruit_blacklist.expires_at > now())), (0)::numeric), COALESCE(( SELECT max(drivers.recruits.raw_potential_score) AS max
                    FROM drivers.recruits), (1)::numeric)) AS max_corpus_score
         ), heritage_context AS (
-         SELECT heritage_ledger.player_tag,
-            heritage_ledger.max_pes,
-            heritage_ledger.tenure_days,
-            (heritage_ledger.last_seen_at >= (now() - '30 days'::interval)) AS is_fresh
+         SELECT drivers.heritage_ledger.player_tag,
+            drivers.heritage_ledger.max_pes,
+            drivers.heritage_ledger.tenure_days,
+            (drivers.heritage_ledger.last_seen_at >= (now() - '30 days'::interval)) AS is_fresh
            FROM drivers.heritage_ledger
         ), base_calculations AS (
          SELECT r.player_name,
@@ -3719,11 +3719,11 @@ WITH latest_logs AS (
             (((standing.value -> 'clan'::text) ->> 'fame'::text))::integer AS total_fame,
             ((standing.value -> 'clan'::text) -> 'participants'::text) AS participants
            FROM substrate.raw_war_log,
-            LATERAL jsonb_array_elements((raw_war_log.payload -> 'items'::text)) item(value),
+            LATERAL jsonb_array_elements((substrate.raw_war_log.payload -> 'items'::text)) item(value),
             LATERAL jsonb_array_elements((item.value -> 'standings'::text)) standing(value)
-          WHERE (((standing.value -> 'clan'::text) ->> 'tag'::text) IN ( SELECT clans.clan_tag
+          WHERE (((standing.value -> 'clan'::text) ->> 'tag'::text) IN ( SELECT drivers.clans.clan_tag
                    FROM drivers.clans))
-          ORDER BY (item.value ->> 'seasonId'::text), (item.value ->> 'sectionIndex'::text), ((standing.value -> 'clan'::text) ->> 'tag'::text), raw_war_log.ingested_at DESC
+          ORDER BY (item.value ->> 'seasonId'::text), (item.value ->> 'sectionIndex'::text), ((standing.value -> 'clan'::text) ->> 'tag'::text), substrate.raw_war_log.ingested_at DESC
         ), player_stats AS (
          SELECT latest_logs.season_id,
             latest_logs.section_index,
