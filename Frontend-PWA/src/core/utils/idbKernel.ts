@@ -7,12 +7,29 @@
  * Rationale: Provides a generic, resilient Promise-wrapped interface for
  * IndexedDB with a mandatory in-memory fallback.
  * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Utility (@core)
+ * - **Role:** Agnostic infrastructure for local persistence.
+ * - **Satisfaction:** ADR Section II (Layer 1: Core) and Section IV (Tiered Caching Protocol).
  */
 
+/**
+ * Fallback in-memory storage for environments where IndexedDB is unavailable or failing.
+ */
 export const memoryStore = new Map<string, unknown>();
+
+/**
+ * Global flag indicating if the kernel has fallen back to memory-only mode.
+ */
 export let useMemoryStore = false;
 
 // [GUARD] ENVIRONMENT CHECK
+// [THREAT:] Private browsing modes or restricted environments can expose the IndexedDB
+// global but throw security errors upon access, leading to unhandled runtime exceptions.
+// [DECISION LOG] We perform a proactive probe on initialization to detect these
+// failures early and force a graceful degradation to the memoryStore.
 if (typeof indexedDB === "undefined") {
   useMemoryStore = true;
 } else {
@@ -35,6 +52,7 @@ if (typeof indexedDB === "undefined") {
 
 /**
  * Force the kernel into memory-only mode.
+ * Useful for testing or when manual fallback is required.
  */
 export function forceMemoryMode() {
   useMemoryStore = true;
@@ -42,6 +60,9 @@ export function forceMemoryMode() {
 
 /**
  * Robust helper to delete an IndexedDB database with full Promise wrapping.
+ *
+ * @param dbName - The name of the database to delete.
+ * @returns A promise that resolves when deletion is complete or failed.
  */
 export function deleteDatabasePromise(dbName: string): Promise<void> {
   return new Promise((resolve) => {
@@ -52,6 +73,7 @@ export function deleteDatabasePromise(dbName: string): Promise<void> {
       req.onerror = () => resolve();
       req.onblocked = () => {
         // [DECISION LOG] Non-blocking timeout to prevent hanging the pipeline
+        // during database migrations or concurrent access conflicts.
         setTimeout(resolve, 1500);
       };
     } catch (e) {
@@ -64,6 +86,13 @@ let dbPromise: Promise<IDBDatabase> | null = null;
 
 /**
  * Internal factory to open the IndexedDB connection.
+ * Manages a singleton connection promise to prevent race conditions.
+ *
+ * @param dbName - The database name.
+ * @param version - The schema version.
+ * @param onUpgrade - Callback for schema migrations.
+ * @param onSuccess - Optional callback for post-connection logic.
+ * @returns A promise resolving to the IDBDatabase instance.
  */
 export async function openDB(
   dbName: string,
@@ -74,6 +103,9 @@ export async function openDB(
   if (dbPromise) return dbPromise;
 
   dbPromise = new Promise((resolve, reject) => {
+    // [THREAT:] Attempting to open IDB in unsupported environments triggers uncaught errors.
+    // [DECISION LOG] Guarding the open request with useMemoryStore ensures we never
+    // attempt a native call when the kernel has degraded.
     if (useMemoryStore || typeof indexedDB === "undefined") {
       dbPromise = null;
       return reject(new Error("IDB Unsupported"));
@@ -108,7 +140,7 @@ export async function openDB(
 }
 
 /**
- * Closes the active database connection.
+ * Closes the active database connection and resets the singleton promise.
  */
 export async function closeDB() {
   if (dbPromise) {
@@ -127,9 +159,21 @@ export function resetDBPromise() {
 }
 
 /**
- * Core IDB operations with fallback logic.
+ * Core IDB operations with transparent fallback logic.
+ *
+ * @remarks
+ * Every method in this object automatically checks the `useMemoryStore` flag.
+ * If true, it bypasses the IndexedDB layer and uses the `memoryStore` Map.
  */
 export const idbCore = {
+  /**
+   * Retrieves a value from the store.
+   *
+   * @param key - The record key.
+   * @param getDB - Function to retrieve the active IDBDatabase connection.
+   * @param storeName - The target object store name.
+   * @returns A promise resolving to the retrieved value of type T or null.
+   */
   async get<T>(key: string, getDB: () => Promise<IDBDatabase>, storeName: string): Promise<T | null> {
     if (useMemoryStore) return (memoryStore.get(key) as T) || null;
     try {
@@ -144,11 +188,21 @@ export const idbCore = {
         } catch (e) { reject(e); }
       });
     } catch {
+      // [DECISION LOG] Runtime failures in IDB trigger an immediate degradation
+      // to memory-only mode to preserve application responsiveness.
       useMemoryStore = true;
       return (memoryStore.get(key) as T) || null;
     }
   },
 
+  /**
+   * Persists a value to the store.
+   *
+   * @param key - The record key.
+   * @param value - The data to persist.
+   * @param getDB - Function to retrieve the active IDBDatabase connection.
+   * @param storeName - The target object store name.
+   */
   async set(key: string, value: unknown, getDB: () => Promise<IDBDatabase>, storeName: string): Promise<void> {
     if (useMemoryStore) { memoryStore.set(key, value); return; }
     try {
@@ -168,6 +222,13 @@ export const idbCore = {
     }
   },
 
+  /**
+   * Removes a record from the store.
+   *
+   * @param key - The record key.
+   * @param getDB - Function to retrieve the active IDBDatabase connection.
+   * @param storeName - The target object store name.
+   */
   async del(key: string, getDB: () => Promise<IDBDatabase>, storeName: string): Promise<void> {
     if (useMemoryStore) { memoryStore.delete(key); return; }
     try {
@@ -187,6 +248,12 @@ export const idbCore = {
     }
   },
 
+  /**
+   * Clears all records from the target object store.
+   *
+   * @param getDB - Function to retrieve the active IDBDatabase connection.
+   * @param storeName - The target object store name.
+   */
   async clear(getDB: () => Promise<IDBDatabase>, storeName: string): Promise<void> {
     if (useMemoryStore) { memoryStore.clear(); return; }
     try {
