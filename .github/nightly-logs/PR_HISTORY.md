@@ -1,6 +1,25 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-08] PR #787: perf(opt): eliminate redundant cache writes and identify orphaned view
+**Commit**: `9f50d0712f1ab41293424c8d64521fd2939230d9`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/787)
+
+### Description
+Eliminated redundant cache writes in the synchronization substrate and identified an additional orphaned database view.
+
+1. **Substrate Hygiene**: Confirmed `war_activity_view` is unreferenced by application logic in `Frontend-PWA` and Backend Edge Functions. Recorded as an orphaned view in the optimization log.
+2. **Logic Efficiency**:
+   - Removed direct `saveCache` call from `SupabaseClient.fetchRemote`. Persistence is now exclusively handled by the calling `useClashSync` service.
+   - Refactored `useClashSync.commitSyncResult` to accept a `skipSave` parameter.
+   - Optimized `useClashSync.loadLocal` (hydration phase) by passing `skipSave: true` to prevent re-writing data that was just fetched from the cache.
+3. **Regression Testing**: Updated `SupabaseClient.spec.ts` and verified the entire suite (1196 tests passing).
+
+---
+*PR created automatically by Jules for task [8225782509992574282](https://jules.google.com/task/8225782509992574282) started by @AlbiDR*
+
+---
+
 ## [2026-06-08] PR #786: refactor: decompose monolithic sw.ts and centralize storage config
 **Commit**: `86eac0737a9e731f619483286ccc2539ee924299`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/786)
