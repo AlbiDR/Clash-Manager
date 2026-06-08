@@ -24,7 +24,7 @@
         ".github/scripts/*.ts"
       ],
       "ignoreDependencies": ["npm"],
-      "ignoreBinaries": ["tsx", "wait-on"]
+      "ignoreBinaries": ["wait-on"]
     }
   },
   "compilers": {
