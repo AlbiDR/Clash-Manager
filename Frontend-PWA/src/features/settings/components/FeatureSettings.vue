@@ -77,11 +77,11 @@ function saveCoordinates() {
  * activation panel must be opened explicitly from the web side right after.
  */
 function handleBlitzToggle() {
-  const isCurrentlyEnabled = modules.blitzMode;
+  const wasEnabled = !!modules.blitzMode;
   toggle("blitzMode");
 
-  // Only redirect when the user is turning Blitz ON (not off).
-  if (!isCurrentlyEnabled) {
+  // Only redirect to accessibility activation when the setting is being enabled
+  if (!wasEnabled) {
     const bridge = (window as any).AndroidBridge;
     if (bridge?.openAccessibilitySettings) {
       bridge.openAccessibilitySettings();
