@@ -46,3 +46,51 @@ export const VOYAGE_DEFAULT_TARGET = 1600;
  * Hard upper bound for Clan Voyage crown targets.
  */
 export const VOYAGE_MAX_TARGET = 9999;
+
+/**
+ * Notification tag used to deduplicate and manage recruit push notifications.
+ * Must be kept in sync with the PWA manifest shortcut and sw.ts routing.
+ */
+export const NOTIFICATION_TAG_RECRUIT = "com.app.RECRUIT_UPDATES";
+
+/**
+ * Shortcut ID referenced in push notification payloads for native deep linking
+ * into the headhunter route via the PWA app shortcut.
+ */
+export const NOTIFICATION_SHORTCUT_ID = "recruit_shortcut_id";
+
+/**
+ * AUTHORITATIVE STORAGE CONSTANTS (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: Centralizes IndexedDB configuration to ensure consistency
+ * between the main UI thread and the Service Worker substrate.
+ */
+
+/** Primary database name for local persistence. */
+export const STORAGE_DB_NAME = "clash_manager_v11";
+/** Standard object store name for key-value pairs. */
+export const STORAGE_STORE_NAME = "keyval";
+/** Current IndexedDB schema version. */
+export const STORAGE_DB_VERSION = 1;
+
+/** Legacy database name for migration logic. */
+export const STORAGE_LEGACY_DB_NAME = "clash_manager_db";
+/** Legacy object store name for migration logic. */
+export const STORAGE_LEGACY_STORE_NAME = "key_val_store";
+
+/** Registry of all deprecated database names to be purged during maintenance. */
+export const STORAGE_DEPRECATED_DB_NAMES = [
+  "clash_manager_db",
+  "clash_manager",
+  "clash-manager",
+  "clash_manager_v1",
+  "clash_manager_v2",
+  "clash_manager_v3",
+  "clash_manager_v4",
+  "clash_manager_v5",
+  "clash_manager_v6",
+  "clash_manager_v7",
+  "clash_manager_v8",
+  "clash_manager_v9",
+  "clash_manager_v10"
+];
