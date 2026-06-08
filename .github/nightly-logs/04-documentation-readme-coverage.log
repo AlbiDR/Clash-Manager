@@ -97,3 +97,5 @@ Frontend-PWA/README.md
 2026-09-12 | Frontend-PWA/src/shared/README.md | Reconciled useScoreSelector and useBaseHistoryChart composables
 2026-09-12 | Frontend-PWA/src/shared/ui/README.md | Reconciled ScoreThresholdSelector, SelectionBar, and BaseHistoryChart drift
 2026-09-12 | Frontend-PWA/src/core/README.md | Reconciled useApiState and Schema decomposition (Profile, App, Offline)
+2026-09-15 | Frontend-PWA/src/app/README.md | Created Layer 4 App layer documentation and documented shell/router orchestrators.
+2026-09-15 | Backend/README.md | Reconciled Gatekeeper and User Proxy hardening drift (Stage 1 hardening).
