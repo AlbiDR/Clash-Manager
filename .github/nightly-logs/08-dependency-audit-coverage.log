@@ -91,6 +91,7 @@
 | vite | ^7.3.3 | ^7.3.5 | 2026-06-07 | PASS |
 | @types/node | ^24.13.0 | ^24.13.1 | 2026-06-07 | PASS |
 | vue-tsc | ^3.3.3 | ^3.3.4 | 2026-06-08 | PASS |
+| @supabase/supabase-js | ^2.107.0 | ^2.108.0 | 2026-06-09 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
