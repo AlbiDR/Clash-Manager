@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-09] PR #790: docs(readme): create headhunter-scanner documentation
+**Commit**: `bf6689e04c3de189467e5e9d22d9cf72f4a3832e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/790)
+
+### Description
+This PR establishes the authoritative documentation for the `headhunter-scanner` Edge Function. It details the 5-stage clinical discovery pipeline (Ghost Purge, Shadow Scout, Tournament Discovery, Profiler, and Rescan) and defines its architectural boundaries within the CleanStack framework. It also updates the documentation coverage log for chronological tracking.
+
+---
+*PR created automatically by Jules for task [14190063984380970631](https://jules.google.com/task/14190063984380970631) started by @AlbiDR*
+
+---
+
 ## [2026-06-09] PR #789: test(verify): add saturating tests for swKernel
 **Commit**: `b22c34d2ed85c02dc0eaacd859c21f9be7feb9f6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/789)
