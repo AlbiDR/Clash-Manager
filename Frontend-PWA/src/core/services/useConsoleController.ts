@@ -16,7 +16,7 @@ import { useHaptics } from "./useHaptics";
 import { storeToRefs } from "pinia";
 import { ref, computed, watch, onMounted, onUnmounted, toRef, type Ref, type ComputedRef } from "vue";
 import type { ConsoleCardMetadata, HubInfo } from "@core/types";
-import { formatTimeAgo } from "@core/utils/formatters";
+import { formatTimeAgo } from "@core";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 import { VISIBILITY_REFRESH_THRESHOLD } from "../config";
 import { useConsoleMetadata } from "./useConsoleMetadata";

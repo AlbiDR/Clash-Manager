@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
 import { useVoyageActions } from "../useVoyageActions";
 import * as VoyageClient from "@core/api/VoyageClient";
-import * as formatters from "@core/utils/formatters";
+import * as coreUtils from "@core";
 import type { VoyageSummary } from "../../types";
 
 vi.mock("@core/api/VoyageClient", () => ({
@@ -15,7 +15,7 @@ vi.mock("@core/api/VoyageClient", () => ({
   setVoyageEnd: vi.fn()
 }));
 
-vi.mock("@core/utils/formatters", () => ({
+vi.mock("@core", () => ({
   t2tToTimestamp: vi.fn((input) => `MOCKED_TIMESTAMP_${JSON.stringify(input)}`)
 }));
 
@@ -115,7 +115,7 @@ describe("useVoyageActions", () => {
       const startsIn = { days: 2, hours: 1, minutes: 30 };
       await actions.scheduleVoyage(target, startsIn);
 
-      expect(formatters.t2tToTimestamp).toHaveBeenCalledWith(startsIn);
+      expect(coreUtils.t2tToTimestamp).toHaveBeenCalledWith(startsIn);
       expect(VoyageClient.scheduleVoyageEvent).toHaveBeenCalledWith(
         target,
         `MOCKED_TIMESTAMP_${JSON.stringify(startsIn)}`

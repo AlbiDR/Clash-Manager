@@ -4,7 +4,7 @@
 import Icon from "./Icon.vue";
 import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 import { computed } from "vue";
-import { calculateMomentum } from "@core/utils/formatters";
+import { calculateMomentum } from "@core";
 
 /**
  * MomentumPill Component

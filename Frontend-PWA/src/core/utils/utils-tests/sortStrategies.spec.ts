@@ -12,7 +12,7 @@ import {
 import type { LeaderboardMember, Recruit } from "@core/types";
 
 // Mock parseTimeAgoValue to isolate sortByLastSeen
-vi.mock("../formatters", () => ({
+vi.mock("../time", () => ({
   parseTimeAgoValue: vi.fn((val) => {
     if (val === "new") return 10;
     if (val === "old") return 100;

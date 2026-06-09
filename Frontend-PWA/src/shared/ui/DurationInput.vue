@@ -15,7 +15,7 @@
  * - **Role:** Reusable input molecule for duration/countdown configurations.
  * ============================================================================
  */
-import { sanitizeNumericInput } from "@core/utils/formatters";
+import { sanitizeNumericInput } from "@core";
 
 interface DurationModel {
   days: number | '';

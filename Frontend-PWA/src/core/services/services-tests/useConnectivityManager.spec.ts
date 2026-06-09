@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useConnectivityManager } from "../useConnectivityManager";
 import { useClashDataStore } from "../useClashDataStore";
 import { useConnectionStatus } from "../useConnectionStatus";
-import * as formatters from "../../utils/formatters";
+import * as timeUtils from "../../utils/time";
 import { ref } from "vue";
 import { setActivePinia, createPinia } from "pinia";
 
@@ -18,7 +18,7 @@ vi.mock("../useConnectionStatus", () => ({
   useConnectionStatus: vi.fn()
 }));
 
-vi.mock("../../utils/formatters", () => ({
+vi.mock("../../utils/time", () => ({
   formatTimeAgo: vi.fn((ts: string) => `formatted-${ts}`)
 }));
 
@@ -81,7 +81,7 @@ describe("useConnectivityManager", () => {
     it("returns STALE state when data is older than 30 minutes", () => {
       const now = Date.now();
       mockStore.lastSyncTime = now - (31 * 60 * 1000);
-      vi.mocked(formatters.formatTimeAgo).mockReturnValue("31m ago");
+      vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("31m ago");
 
       const { hubHealth } = useConnectivityManager();
 
@@ -147,14 +147,14 @@ describe("useConnectivityManager", () => {
       mockStore.lastCompiledTime = now - 1000;
       mockStore.lastFetchedTime = now - 2000;
 
-      vi.mocked(formatters.formatTimeAgo).mockImplementation((ts: string) => `formatted-${ts}`);
+      vi.mocked(timeUtils.formatTimeAgo).mockImplementation((ts: string) => `formatted-${ts}`);
 
       const { metadata } = useConnectivityManager();
 
-      // Accessing the computed property triggers the formatters
+      // Accessing the computed property triggers the utilities
       const { age, lastCompiled, lastFetched } = metadata.value;
 
-      expect(formatters.formatTimeAgo).toHaveBeenCalledTimes(3);
+      expect(timeUtils.formatTimeAgo).toHaveBeenCalledTimes(3);
       expect(age).toContain("formatted-");
       expect(metadata.value.lastCompiled).toContain("formatted-");
       expect(metadata.value.lastFetched).toContain("formatted-");

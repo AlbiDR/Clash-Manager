@@ -6,7 +6,7 @@ import { setActivePinia, createPinia } from "pinia";
 import { useVoyageStore } from "../useVoyageStore";
 import * as SupabaseClient from "@core/api/SupabaseClient";
 import * as VoyageClient from "@core/api/VoyageClient";
-import { t2tToTimestamp } from "@core/utils/formatters";
+import { t2tToTimestamp } from "@core";
 
 vi.mock("@core/api/SupabaseClient", () => ({
   createSupabaseClient: vi.fn(() => ({
