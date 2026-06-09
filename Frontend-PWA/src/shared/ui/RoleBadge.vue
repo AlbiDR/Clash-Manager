@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 <script setup lang="ts">
-import { formatRole } from "@core/utils/formatters";
+import { formatRole } from "@core";
 import { computed } from "vue";
 import BaseBadge from "./BaseBadge.vue";
 

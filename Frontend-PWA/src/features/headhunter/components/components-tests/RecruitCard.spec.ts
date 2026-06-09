@@ -9,7 +9,7 @@ import RecruitCard from "../RecruitCard.vue";
 import type { Recruit } from "@core/types";
 
 // Mock Layer 1 services via deep imports to avoid Barrel side effects (ADR Section II)
-vi.mock("../../../../core/utils/formatters", () => ({
+vi.mock("../../../../core/utils/time", () => ({
   formatTimeAgo: vi.fn((date) => `Time ago: ${date}`),
 }));
 

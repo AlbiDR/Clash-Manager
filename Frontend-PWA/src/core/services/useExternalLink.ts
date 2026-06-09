@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { useToast } from "./useToast";
-import { cleanTag } from "@core/utils/formatters";
+import { cleanTag } from "@core";
 
 /**
  * COMPOSABLE: useExternalLink
