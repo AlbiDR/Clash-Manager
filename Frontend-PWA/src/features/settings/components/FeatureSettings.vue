@@ -43,12 +43,18 @@ function loadCoordinates() {
 
 function saveCoordinates() {
   if (isNativeWrapper.value && (window as any).AndroidBridge?.saveCoordinates) {
-    (window as any).AndroidBridge.saveCoordinates(
-      inviteX.value / 100,
-      inviteY.value / 100,
-      closeX.value / 100,
-      closeY.value / 100
-    );
+    const ix = parseFloat(inviteX.value as any);
+    const iy = parseFloat(inviteY.value as any);
+    const cx = parseFloat(closeX.value as any);
+    const cy = parseFloat(closeY.value as any);
+    if (!isNaN(ix) && !isNaN(iy) && !isNaN(cx) && !isNaN(cy)) {
+      (window as any).AndroidBridge.saveCoordinates(
+        ix / 100,
+        iy / 100,
+        cx / 100,
+        cy / 100
+      );
+    }
   }
 }
 
@@ -84,6 +90,13 @@ function handleBlitzToggle() {
 
 onMounted(() => {
   loadCoordinates();
+  // Sync blitzMode setting state with native accessibility service status on mount
+  if (isNativeWrapper.value && (window as any).AndroidBridge?.isAccessibilityActive) {
+    const active = (window as any).AndroidBridge.isAccessibilityActive();
+    if (active !== modules.blitzMode) {
+      toggle("blitzMode");
+    }
+  }
 });
 </script>
 
