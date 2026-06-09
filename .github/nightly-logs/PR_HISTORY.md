@@ -1,6 +1,44 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-09] PR #794: refactor: decompose monolithic formatters utility
+**Commit**: `3015b16d43ad2dffd3a86da2bb449fe8d1facc0a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/794)
+
+### Description
+This PR performs a structural surgery on the core utility layer by decomposing the monolithic `formatters.ts` file. The original file had reached the SRP threshold (394 lines) and contained mixed responsibilities.
+
+### Debt Resolved:
+`formatters.ts` acted as a "utility bucket" for time formatting, text sanitization, and math calculations.
+
+### Refactor Applied:
+1.  **Surgery:** Split `formatters.ts` into:
+    *   `time.ts`: Relative time, countdowns, and IDB/API timestamp parsing.
+    *   `text.ts`: Tag cleaning and Markdown-to-HTML description formatting.
+    *   `math.ts`: Momentum calculations, numeric sanitization, and duration conversions.
+2.  **Domain Alignment:** Moved `formatRole` to `game.ts` as it is strictly tied to Clash Royale role logic.
+3.  **Barrel Update:** Updated `core/index.ts` to export the new modules and removed the deleted `formatters.ts`.
+4.  **Monorepo-wide Healing:** Updated all callers in `@features`, `@shared`, and `@core` to use the new structure.
+5.  **Test Decomposition:** Split the giant `formatters.spec.ts` into `time.spec.ts`, `text.spec.ts`, and `math.spec.ts`, while moving role tests to `game.spec.ts`.
+
+### Impact:
+- **[SRP]:** Improved Single Responsibility Principle adherence across utilities.
+- **[Maintainability]:** Smaller, focused files and test suites.
+- **[Layering]:** Better alignment of domain-specific logic (`formatRole`).
+
+### Verification:
+- **[Automated]:** `pnpm test` (1202 passed).
+- **[Architectural]:** `npx dependency-cruiser` (no violations).
+- **[Manual]:** Verified `MemberCard.spec.ts` mock alignment.
+
+### Log Updates:
+- Updated `.github/nightly-logs/refactor-proposals-coverage.log`
+
+---
+*PR created automatically by Jules for task [18256442250704241784](https://jules.google.com/task/18256442250704241784) started by @AlbiDR*
+
+---
+
 ## [2026-06-09] PR #793: chore(deps): bump @supabase/supabase-js from 2.107.0 to 2.108.0
 **Commit**: `aa6f5a79391138980ae930bf0f02fcb7339dffc3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/793)
