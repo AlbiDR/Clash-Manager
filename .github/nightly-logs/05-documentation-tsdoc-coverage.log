@@ -79,3 +79,5 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-09-06 | Frontend-PWA/src/core/services/useClashSync.ts | Documented orchestrator interface contracts and reactive state; added mandatory threat/decision logs for sync/persistence.
 2026-09-13 | Frontend-PWA/src/shared/composables/useScoreSelector.ts | Documented interface contracts and architectural side effects (haptics/DOM) for the score threshold orchestrator.
 2026-09-16 | Frontend-PWA/src/core/utils/idbKernel.ts | Fully documented Layer 1 core utility, including resilience patterns, tiered caching (ADR Sec IV), and environmental guards.
+2026-09-19 | Frontend-PWA/src/app/sw/swSync.ts | Documented interface contracts and mandatory threat/decision logs for background sync and push notifications.
+2026-09-19 | Frontend-PWA/src/app/sw/swKernel.ts | Enhanced interface contracts with ADR links and threat annotations for SW persistence primitives.
