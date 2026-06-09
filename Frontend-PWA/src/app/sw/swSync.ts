@@ -9,6 +9,10 @@ import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../../core/c
  * ----------------------------------------------------------------------------
  * Rationale: Orchestrates background data synchronization and push notification
  * logic for the Service Worker. Extracted from sw.ts for modularity.
+ *
+ * @remarks
+ * Satisfies ADR Section II (Layer 4: App) and Section IV (Tiered Caching Protocol).
+ * Acts as the background orchestrator for offline-first notifications.
  * ----------------------------------------------------------------------------
  */
 
@@ -30,12 +34,21 @@ declare const self: ServiceWorkerGlobalScope;
 /**
  * Handle push-initiated badge updates.
  *
- * @param payload - The push notification payload.
+ * @param payload - The push notification payload containing badge count and text.
+ * @returns A promise that resolves when the notification is shown or skipped.
+ *
+ * @sideeffects
+ * - Shows a browser notification via `self.registration.showNotification`.
+ * - Updates the app badge via `navigator.setAppBadge`.
  */
 export async function handlePushBadge(payload: PushPayload): Promise<void> {
   const { badgeCount, title, body } = payload;
 
   const db = await openDB();
+
+  // [THREAT:] Unvalidated IndexedDB ingress.
+  // [DECISION LOG] We default to enabled (true) if the key is missing to ensure
+  // users receive critical updates by default unless they explicitly opted out.
   const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
 
   if (badgeCount && badgeCount > 0 && enabled) {
@@ -73,18 +86,34 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
 
 /**
  * Executes a background synchronization to update the recruit badge.
- * Direct View Access: Querying the headhunter_view directly with column aliasing.
+ *
+ * @remarks
+ * Implements "Direct View Access" strategy by querying the headhunter_view
+ * directly via PostgREST to minimize Edge Function invocation costs.
+ *
+ * @returns A promise that resolves when the sync is complete.
+ *
+ * @sideeffects
+ * - Queries the remote Supabase REST API.
+ * - Shows or clears browser notifications.
+ * - Updates the app badge.
  */
 export async function handleBackgroundSync(): Promise<void> {
   try {
     const db = await openDB();
 
+    // [THREAT:] Notification permission guards.
+    // [DECISION LOG] Background sync is aborted if notifications are disabled in app settings
+    // to preserve battery and data, even if the browser registration is active.
     const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
     if (!enabled) {
       console.log("[SW] Background sync skipped: Notifications disabled");
       return;
     }
 
+    // [THREAT:] Configuration drift.
+    // [DECISION LOG] We retrieve connectivity secrets directly from IDB to avoid
+    // hardcoding production URLs in the service worker script.
     const supabaseUrl = await getValue(db, "cm_supabase_url") as string;
     if (!supabaseUrl) return;
 
@@ -93,6 +122,8 @@ export async function handleBackgroundSync(): Promise<void> {
     const supabaseKey = await getValue(db, "cm_supabase_key") as string;
     if (!supabaseKey) return;
 
+    // [DECISION LOG] Direct View Access: We query the view with aliasing (s:potential_score)
+    // to reduce payload size and decouple from internal database column naming.
     const response = await fetch(`${supabaseUrl}/rest/v1/headhunter_view?select=s:potential_score`, {
       method: "GET",
       headers: {
