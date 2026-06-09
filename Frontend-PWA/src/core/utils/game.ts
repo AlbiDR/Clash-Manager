@@ -317,6 +317,22 @@ export function getKingLevelBaseXp(level: number): XP {
 }
 
 /**
+ * Normalizes a raw role string from the API into a display label and CSS class.
+ *
+ * @param roleStr - The raw role string (e.g., 'coleader', 'elder').
+ * @returns Object containing the formatted label and its associated CSS class.
+ */
+export function formatRole(roleStr: string): { label: string; class: string } {
+  const r = (roleStr || "").toLowerCase();
+  if (r.includes("leader") && !r.includes("co"))
+    return { label: "Leader", class: "role-leader" };
+  if (r.includes("coleader") || r.includes("co-leader"))
+    return { label: "Co-Lead", class: "role-coleader" };
+  if (r.includes("elder")) return { label: "Elder", class: "role-elder" };
+  return { label: "Member", class: "role-member" };
+}
+
+/**
  * Calculates the Gem cost for a material (card) deficit.
  *
  * @param rarity - The card rarity.

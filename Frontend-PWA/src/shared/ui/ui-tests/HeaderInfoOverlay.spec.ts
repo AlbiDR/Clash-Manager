@@ -4,10 +4,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import HeaderInfoOverlay from "../HeaderInfoOverlay.vue";
-import * as formatters from "../../../core/utils/formatters";
+import * as textUtils from "../../../core/utils/text";
 import Icon from "../Icon.vue";
 
-vi.mock("../../../core/utils/formatters", () => ({
+vi.mock("../../../core/utils/text", () => ({
   formatHeaderDescription: vi.fn((text) => `formatted-${text}`),
 }));
 
@@ -44,7 +44,7 @@ describe("HeaderInfoOverlay.vue", () => {
     expect(overlay).toBeTruthy();
     expect(overlay?.textContent).toContain("Test Title");
     expect(overlay?.querySelector(".expansion-content")?.innerHTML).toBe("formatted-Test Content");
-    expect(formatters.formatHeaderDescription).toHaveBeenCalledWith("Test Content");
+    expect(textUtils.formatHeaderDescription).toHaveBeenCalledWith("Test Content");
   });
 
   it("does not render when show is false", () => {

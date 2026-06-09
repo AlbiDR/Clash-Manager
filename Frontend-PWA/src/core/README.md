@@ -56,7 +56,7 @@ Authoritative TypeScript interfaces and enums used across the entire application
 Pure, stateless logic engines and formatting primitives.
 - **idbKernel.ts**: Low-level IndexedDB boilerplate and memory-fallback logic.
 - **predictionMath.ts**: Weighted-average engines and historical performance projection.
-- **formatters.ts**: Standardized sanitization and duration conversion logic.
+- **time.ts, text.ts, math.ts**: Standardized sanitization and duration conversion logic.
 - **bezier.ts**: Geometric calculations for trend visualization.
 
 ---

@@ -7,3 +7,4 @@
 2026-09-07 | Frontend-PWA/src/shared/ui/StatusPill.vue | Extracted useStatusPill shared composable, reduced file length from 421 to 386 lines.
 2026-09-10 | Frontend-PWA/src/shared/ui/SelectionBar.vue | Decomposed monolithic SelectionBar.vue (405 lines) by extracting score threshold UI to ScoreThresholdSelector.vue and logic to useScoreSelector.ts. Reduced to 224 lines.
 2026-09-17 | Frontend-PWA/src/app/sw.ts | Decomposed monolithic sw.ts (402 lines) into swKernel.ts and swSync.ts. Centralized storage constants to @core/config/index.ts. Reduced sw.ts to 239 lines.
+2026-09-19 | Frontend-PWA/src/core/utils/formatters.ts | Decomposed monolithic formatters.ts (394 lines) into time.ts, text.ts, and math.ts. Migrated formatRole to game.ts.

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, onMounted, onUnmounted, watch, type Ref, type ComputedRef } from "vue";
-import { formatCountdown } from "@core/utils/formatters";
+import { formatCountdown } from "@core";
 
 interface CountdownOptions {
   /** Whether to show days in the formatted output (e.g., "1d 05h"). */

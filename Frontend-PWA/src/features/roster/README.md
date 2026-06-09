@@ -46,7 +46,7 @@ The primary entry for member data. Implements high-density information layout, i
 
 ## Data Flow
 1. **Ingestion**: `useLeaderboard` observes the Layer 1 `members` store.
-2. **Analysis**: Stats are passed through `@core/utils` formatters for display normalization.
+2. **Analysis**: Stats are passed through `@core/utils` for display normalization.
 3. **Visualization**: The MemberCard delegates performance visualization to shared domain-aware molecules.
 4. **Interaction**: User selection/search updates the `useConsoleController` state -> Filters the visible list with `v-auto-animate` transitions.
 

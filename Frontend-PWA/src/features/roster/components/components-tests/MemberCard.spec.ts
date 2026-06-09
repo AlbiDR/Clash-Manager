@@ -15,11 +15,14 @@ vi.mock("../../../../core/services/useBenchmarking", () => ({
   }),
 }));
 
-vi.mock("../../../../core/utils/formatters", () => ({
+vi.mock("../../../../core/utils/game", () => ({
   formatRole: vi.fn((role) => ({
     label: `Formatted ${role}`,
     class: `role-${role}`,
   })),
+}));
+
+vi.mock("../../../../core/utils/time", () => ({
   formatTimeAgo: vi.fn((date) => `Time ago: ${date}`),
 }));
 
