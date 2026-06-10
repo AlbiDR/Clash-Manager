@@ -15,20 +15,45 @@
  * ============================================================================
  */
 
+/** Constants for Clan War scoring boundaries. */
 export const WAR_CONSTANTS = {
+  /** Maximum fame achievable in a single war week. */
   MAX_FAME: 3600,
 };
 
+/** Constants for Voyage scoring boundaries. */
 export const VOYAGE_CONSTANTS = {
+  /** Maximum crowns achievable in a single voyage cycle. */
   MAX_CROWNS: 250,
 };
 
+/**
+ * Represents a normalized data point extracted from a historical performance string.
+ */
 export interface HistoryEntry {
-  value: number; // Generic term, could be fame or crowns
+  /** The numeric performance value (fame or crowns). */
+  value: number;
+  /** The unique week identifier (e.g., '2026-W34'). */
   weekId: string;
+  /** Human-readable week label for UI display. */
   readableWeek: string;
 }
 
+/**
+ * PARSER: PERFORMANCE HISTORY
+ * Converts semi-structured history strings into a sorted array of entries.
+ *
+ * @remarks
+ * Architectural Context:
+ * - Layer: Layer 1 (@core/utils)
+ * - Satisfies ADR Section I: Core Utilities.
+ *
+ * This parser handles multiple legacy formats including comma/pipe separated
+ * lists and custom date strings.
+ *
+ * @param historyStr - The raw history string from the remote data source.
+ * @returns Array of parsed {@link HistoryEntry} objects.
+ */
 export function parseHistoryString(
   historyStr: string | undefined,
 ): HistoryEntry[] {
@@ -60,9 +85,24 @@ export function parseHistoryString(
 }
 
 /**
+ * PREDICTION ENGINE: WEIGHTED DECAY
  * Calculates a projected score using a 10-week linear decay weighted average.
- * Weight starts at 1.0 for the most recent entry and drops by 0.05 each entry,
- * flooring at 0.5.
+ *
+ * @remarks
+ * Architectural Context:
+ * - Layer: Layer 1 (@core/utils)
+ * - Satisfies ADR Section I: Core Utilities.
+ *
+ * [DECISION LOG] WEIGHTED DECAY STRATEGY
+ * Rationale: Historical performance is a lagging indicator. Recent performance
+ * is more predictive of future outcomes than distant history.
+ * - Slope: Weights start at 1.0 (100%) and decrement by 0.05 (5%) per week.
+ * - Floor: Weights floor at 0.5 (50%) to ensure old data still contributes
+ *   to the baseline without overwhelming recent trends.
+ *
+ * @param historyScores - Array of numeric scores, ordered most-recent first.
+ * @param maxScore - The ceiling for the calculated prediction.
+ * @returns The projected score, clamped between 0 and maxScore.
  */
 export function calculatePrediction(historyScores: number[], maxScore: number): number {
   const n = historyScores.length;
@@ -73,7 +113,8 @@ export function calculatePrediction(historyScores: number[], maxScore: number): 
 
   for (let i = 0; i < n; i++) {
     // i=0 is most recent
-    // Weight = max(0.5, 1.0 - (i * 0.05))
+    // [DECISION LOG] Weight Calculation: Weight = max(0.5, 1.0 - (i * 0.05))
+    // This ensures a 10-week linear ramp before hitting the 50% floor.
     const weight = Math.max(0.5, 1.0 - (i * 0.05));
     totalWeightedScore += historyScores[i] * weight;
     totalWeights += weight;
