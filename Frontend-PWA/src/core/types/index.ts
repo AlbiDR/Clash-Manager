@@ -103,6 +103,55 @@ export interface DismissResponse {
 }
 
 /**
+ * Shared UI State for the Global FAB (Floating Action Button).
+ *
+ * @remarks
+ * Formalizes the contract for the management button used in Console views.
+ */
+export interface ConsoleFabState {
+  /** Indicates if the FAB should be rendered. */
+  visible: boolean;
+  /** The primary text label displayed on the button. */
+  label: string;
+  /** Indicates if a background operation is currently in progress. */
+  isProcessing: boolean;
+  /** Indicates if the system is preparing a "Blasting" operation (batch sync). */
+  isBlasting: boolean;
+  /** The current number of items selected in the batch. */
+  selectionCount: number;
+  /** Indicates if "Blitz Mode" (high-speed processing) is enabled. */
+  blitzEnabled: boolean;
+}
+
+/**
+ * Standardized events contract for the ConsoleLayout component.
+ *
+ * @remarks
+ * Eliminates 'any' pathogens from the event stream by defining the
+ * authoritative set of interactions supported by the orchestration layer.
+ *
+ * @typeParam T - The type of items being managed in the console.
+ */
+export interface ConsoleLayoutEvents<T = any> {
+  /** Triggers a manual data refresh. */
+  refresh: () => void | Promise<void>;
+  /** Updates the active search filter. */
+  "update:search": (query: string) => void;
+  /** Changes the active sorting strategy. */
+  "update:sort": (sort: string) => void;
+  /** Selects all currently filtered items. */
+  "select-all": () => void;
+  /** Resets the current batch selection. */
+  "clear-selection": () => void;
+  /** Selects items based on a numeric score threshold. */
+  "select-score": (threshold: number, mode: "ge" | "le", customScoreGetter?: (item: T) => number) => void;
+  /** Triggered when the management FAB is dismissed. */
+  "fab-dismiss": () => void;
+  /** Allows for feature-specific event extensions. */
+  [key: string]: ((...args: any[]) => void | Promise<void>) | undefined | any;
+}
+
+/**
  * Shared UI State for Console Cards
  *
  * @remarks
