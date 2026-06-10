@@ -31,8 +31,10 @@ The authoritative manager for navigation and view transitions.
 - **View Transitions**: Orchestrates hardware-accelerated View Transitions for fluid UI state changes.
 - **Resilience**: Implements chunk-loading recovery to handle network errors during dynamic imports.
 
-### The Service Worker (`sw.ts`)
-The PWA kernel responsible for offline capability and asset delivery.
+### The Service Worker (`sw.ts` & `/sw`)
+The PWA kernel responsible for offline capability, asset delivery, and background tasks. Decomposed into specialized sub-modules for structural purity.
+- **swKernel.ts**: Low-level IndexedDB primitives and environmental guards for the worker thread.
+- **swSync.ts**: Domain-specific logic for background synchronization and push notification management.
 - **Caching Topologies**: Enforces strict caching rules (Cache-First for assets, Stale-While-Revalidate for data).
 - **Update Orchestration**: Manages the "Prompt for Update" lifecycle to ensure clients are running the latest authoritative version.
 - **Background Sync**: Coordinates with Layer 1 services to ensure data integrity during offline operations.
