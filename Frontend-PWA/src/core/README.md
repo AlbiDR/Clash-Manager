@@ -34,15 +34,34 @@ The authoritative transport layer for the Supabase binary stack.
 ### Configuration (`/config`)
 Static system constants and environment orchestration.
 - **constants.ts**: Global thresholds, timeouts, and non-business identities.
+- **index.ts**: Centralized business thresholds, storage constants, and notification identities.
 
 ### Services (`/services`)
 Infrastructure singletons and Layer 1 state orchestrators.
 - **StorageService.ts**: The persistence engine. Brokers access to IndexedDB via the `idbKernel` and manages high-fidelity caching.
 - **useClashDataStore.ts**: The authoritative central store for high-integrity clan datasets. Delegates sync logic to `useClashSync.ts`.
 - **useClashSync.ts**: The specialized kernel for managing the lifecycle of the central data store, including hydration and background synchronization.
+- **useConsoleController.ts**: The primary orchestrator for complex list views (Roster, Headhunter).
 - **useConnectivityManager.ts**: Resolves 8-tier system health and synchronization status.
+- **useConnectionStatus.ts**: Unifies physical network status and logical API availability.
+- **useConsoleMetadata.ts**: Manages connectivity status and statistics badges for the list orchestrator.
 - **useProgressiveList.ts**: Time-sliced rendering engine for high-density list stability.
+- **useListFilter.ts**: High-performance engine for searching and sorting large datasets.
+- **useSelectionStore.ts**: Manages sets of selected item identifiers for batch operations.
+- **useUiCoordinator.ts**: Master arbiter of layout spacing and global FAB state.
+- **useToast.ts**: Global notification service with hardware haptic feedback.
+- **useAppSettings.ts**: Multi-tier strategy for application configuration and feature flags.
+- **useDeepLinkHandler.ts**: Manages item expansion and auto-scroll based on URL parameters.
+- **useVisibilityRefresh.ts**: Triggers background refreshes based on document visibility changes.
+- **useSystemInfo.ts**: SSOT for application versioning and global modes.
+- **useShowcaseMode.ts / useBlueprintMode.ts / useSyntheticMode.ts**: Specialized global demonstration and auditing modes.
+- **useStoragePersistence.ts**: Brokered access to prevent silent data eviction.
+- **useBackHandler.ts**: Orchestrates hardware back button interception.
+- **useBadge.ts**: Cross-platform application badging (Native vs Notification fallback).
+- **useNetworkInfo.ts**: Layer 1 broker for network telemetry and degradation detection.
 - **useHaptics.ts / useWakeLock.ts**: Brokered access to hardware APIs.
+- **useShare.ts / useShareTarget.ts / useExternalLink.ts**: Native sharing and OS intent brokerage.
+- **useBroadcastChannel.ts**: Cross-tab state synchronization.
 
 ### Theme Engine (`/theme`)
 The visual DNA of the application.
@@ -56,6 +75,7 @@ Authoritative TypeScript interfaces and enums used across the entire application
 Pure, stateless logic engines and formatting primitives.
 - **idbKernel.ts**: Low-level IndexedDB boilerplate and memory-fallback logic.
 - **predictionMath.ts**: Weighted-average engines and historical performance projection.
+- **game.ts**: Authoritative Clash Royale domain logic, costs, and XP tables.
 - **time.ts, text.ts, math.ts**: Standardized sanitization and duration conversion logic.
 - **bezier.ts**: Geometric calculations for trend visualization.
 
