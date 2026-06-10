@@ -5,6 +5,7 @@ import {
   calculateMomentum,
   sanitizeNumericInput,
   durationToSeconds,
+  formatNumber,
 } from "../math";
 
 describe("math utilities", () => {
@@ -95,6 +96,20 @@ describe("math utilities", () => {
     it("handles large values", () => {
       // 10d = 864000
       expect(durationToSeconds(10, 0, 0)).toBe(864000);
+    });
+  });
+
+  describe("formatNumber", () => {
+    it("formats small numbers correctly", () => {
+      const val = 1000;
+      const expected = new Intl.NumberFormat().format(val);
+      expect(formatNumber(val)).toBe(expected);
+    });
+
+    it("formats large numbers with separators", () => {
+      const val = 1234567.89;
+      const expected = new Intl.NumberFormat().format(val);
+      expect(formatNumber(val)).toBe(expected);
     });
   });
 });

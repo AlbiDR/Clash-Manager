@@ -77,3 +77,14 @@ export function durationToSeconds(
 ): number {
   return days * 86400 + hours * 3600 + minutes * 60;
 }
+
+/**
+ * Standardized numeric formatter for the application.
+ * Uses Intl.NumberFormat to provide locale-aware thousand separators.
+ *
+ * @param val - The numeric value to format.
+ * @returns A formatted string representation of the number.
+ */
+export function formatNumber(val: number): string {
+  return new Intl.NumberFormat().format(val);
+}

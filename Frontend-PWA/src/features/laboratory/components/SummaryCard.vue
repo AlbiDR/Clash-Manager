@@ -4,15 +4,13 @@
 import { Icon } from "@shared";
 import { type OptimizationResult, type PlayerProfile, type OptimizationSettings } from "../logic";
 import { computed } from "vue";
+import { formatNumber } from "@core";
+
 const props = defineProps<{
   result: OptimizationResult;
   profile: PlayerProfile;
   settings?: OptimizationSettings;
 }>();
-
-const formatNumber = (valueToFormat: number) => {
-  return new Intl.NumberFormat().format(valueToFormat);
-};
 
 const engineStatus = computed(() => {
   if (!props.settings) {
