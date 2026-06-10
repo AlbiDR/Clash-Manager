@@ -4,22 +4,16 @@
 import { useListFilter } from "./useListFilter";
 import { useProgressiveList } from "./useProgressiveList";
 import { useUiCoordinator } from "./useUiCoordinator";
-import { useConnectionStatus } from "./useConnectionStatus";
-import { useApiState } from "../api/useApiState";
 import { useSelectionStore } from "./useSelectionStore";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { useDeepLinkHandler } from "./useDeepLinkHandler";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { useClashDataStore } from "./useClashDataStore";
-import { useHaptics } from "./useHaptics";
-import { storeToRefs } from "pinia";
-import { ref, computed, watch, onMounted, onUnmounted, toRef, toValue, type Ref, type ComputedRef } from "vue";
-import type { ConsoleCardMetadata, HubInfo, ConsoleFabState, ConsoleLayoutEvents } from "@core/types";
-import { formatTimeAgo } from "@core";
-import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
-import { VISIBILITY_REFRESH_THRESHOLD } from "../config";
+import { computed, watch, onUnmounted, toRef, toValue, type Ref, type ComputedRef } from "vue";
+import type { ConsoleCardMetadata, ConsoleFabState, ConsoleLayoutEvents } from "@core/types";
 import { useConsoleMetadata } from "./useConsoleMetadata";
+import { useVisibilityRefresh } from "./useVisibilityRefresh";
 
 /**
  * CONFIGURATION: ConsoleLogicOptions
@@ -40,8 +34,8 @@ interface ConsoleLogicOptions<T> {
   lastCompiledTime?: Ref<number | null> | ComputedRef<number | null>;
   /** Optional fetch timestamp override. */
   lastFetchedTime?: Ref<number | null> | ComputedRef<number | null>;
-  /** Logic for extracting searchable tokens from an item. */
-  filterFn: (item: T) => string[];
+  /** Logic for extracting searchable tokens from a candidate item. */
+  filterFn: (candidateItem: T) => string[];
   /** Map of comparator functions for sorting. */
   sortStrategies: Record<string, (a: T, b: T) => number>;
   /** UI configuration for the sorting menu. */
@@ -53,11 +47,11 @@ interface ConsoleLogicOptions<T> {
   /** Prefix used for deep-link URL fragments (e.g., 'member-'). */
   deepLinkPrefix: string;
   /** Mapper to extract a unique ID for batch selection. */
-  batchIdMapper: (item: T) => string;
+  batchIdMapper: (candidateItem: T) => string;
   /** Domain label for statistics (e.g., 'Member'). */
   statsLabel: string;
   /** Optional logic to extract a numeric performance score. */
-  scoreGetter?: (item: T) => number;
+  scoreGetter?: (candidateItem: T) => number;
   /** Optional override for the refresh action. */
   refresh?: () => void | Promise<void>;
   /** Optional callback for when the management FAB is dismissed. */
@@ -183,36 +177,10 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     { immediate: true },
   );
 
-  let lastVisibilityTime = Date.now();
-  /**
-   * REVALIDATION: Visibility Change Handler
-   *
-   * @remarks
-   * [DECISION LOG] AUTOMATIC REVALIDATION
-   * Rationale: When the user returns to the app after it being in the background,
-   * we trigger a refresh if the `VISIBILITY_REFRESH_THRESHOLD` has passed.
-   * This ensures the UI accurately reflects the latest server-side state without
-   * requiring a manual pull-to-refresh.
-   */
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === "visible") {
-      const now = Date.now();
-      const hiddenDuration = now - lastVisibilityTime;
-      if (hiddenDuration > VISIBILITY_REFRESH_THRESHOLD && !isRefreshing.value && refreshFn) {
-        refreshFn();
-      }
-      lastVisibilityTime = now;
-    } else {
-      lastVisibilityTime = Date.now();
-    }
-  };
-
-  onMounted(() => {
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-  });
+  // DELEGATED REVALIDATION: Visibility Refresh logic is now handled by the Core Service.
+  useVisibilityRefresh(refreshFn, isRefreshing);
 
   onUnmounted(() => {
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
     setFabVisible(false);
   });
 
@@ -250,12 +218,12 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   }
 
   /** Action: Select items based on a numeric score threshold. */
-  function handleSelectScore(threshold: number, mode: "ge" | "le", customScoreGetter?: (item: T) => number) {
+  function handleSelectScore(threshold: number, mode: "ge" | "le", customScoreGetter?: (candidateItem: T) => number) {
     const scoreExtractor = customScoreGetter || scoreGetter;
     if (!scoreExtractor) return;
     const targetIds = filteredItems.value
-      .filter((item: T) => {
-        const score = scoreExtractor(item);
+      .filter((candidateItem: T) => {
+        const score = scoreExtractor(candidateItem);
         return mode === "ge" ? score >= threshold : score <= threshold;
       })
       .map(batchIdMapper);
@@ -311,8 +279,8 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       // [THREAT:] Implicit 'any' and unvalidated overrides (Target C [1]).
       // Rationale: Using toValue ensures we handle both Ref and ComputedRef overrides
       // without resorting to 'as any' assertions, maintaining strict type safety.
-      const overrides = toValue(eventsOverride);
-      return { ...baseEvents, ...overrides };
+      const eventOverrides = toValue(eventsOverride);
+      return { ...baseEvents, ...eventOverrides };
     }
     return baseEvents;
   });
