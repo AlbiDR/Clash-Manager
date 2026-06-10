@@ -14,8 +14,8 @@ import { useSyntheticMode } from "./useSyntheticMode";
 import { useClashDataStore } from "./useClashDataStore";
 import { useHaptics } from "./useHaptics";
 import { storeToRefs } from "pinia";
-import { ref, computed, watch, onMounted, onUnmounted, toRef, type Ref, type ComputedRef } from "vue";
-import type { ConsoleCardMetadata, HubInfo } from "@core/types";
+import { ref, computed, watch, onMounted, onUnmounted, toRef, toValue, type Ref, type ComputedRef } from "vue";
+import type { ConsoleCardMetadata, HubInfo, ConsoleFabState, ConsoleLayoutEvents } from "@core/types";
 import { formatTimeAgo } from "@core";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
 import { VISIBILITY_REFRESH_THRESHOLD } from "../config";
@@ -63,9 +63,9 @@ interface ConsoleLogicOptions<T> {
   /** Optional callback for when the management FAB is dismissed. */
   onDismiss?: () => void;
   /** Optional FAB state override for feature-specific actions. */
-  fabState?: ComputedRef<any> | Ref<any>;
+  fabState?: ComputedRef<ConsoleFabState> | Ref<ConsoleFabState>;
   /** Optional layout events override. */
-  layoutEvents?: ComputedRef<Record<string, any>> | Record<string, any>;
+  layoutEvents?: ComputedRef<Partial<ConsoleLayoutEvents<T>>> | Partial<ConsoleLayoutEvents<T>>;
   /** Optional selection store override. */
   selectionStore?: ReturnType<typeof useSelectionStore>;
 }
@@ -174,8 +174,11 @@ export function useConsoleController<T extends { id: string; n?: string }>(
 
   watch(
     data,
-    (newVal) => {
-      if (newVal && newVal.length > 0) processDeepLink(newVal as T[]);
+    (refreshedData) => {
+      // [THREAT:] Data drift in deep links (Target B [4]).
+      // Rationale: We re-process deep links whenever the underlying dataset is refreshed
+      // to ensure expanded states remain consistent with the active list contents.
+      if (refreshedData && refreshedData.length > 0) processDeepLink(refreshedData as T[]);
     },
     { immediate: true },
   );
@@ -241,23 +244,23 @@ export function useConsoleController<T extends { id: string; n?: string }>(
 
   /** Action: Select all currently filtered items. */
   function handleSelectAll() {
-    const ids = filteredItems.value.map(batchIdMapper);
+    const targetIds = filteredItems.value.map(batchIdMapper);
     setForceSelectionMode(false);
-    selectAll(ids);
+    selectAll(targetIds);
   }
 
   /** Action: Select items based on a numeric score threshold. */
   function handleSelectScore(threshold: number, mode: "ge" | "le", customScoreGetter?: (item: T) => number) {
     const scoreExtractor = customScoreGetter || scoreGetter;
     if (!scoreExtractor) return;
-    const ids = filteredItems.value
+    const targetIds = filteredItems.value
       .filter((item: T) => {
         const score = scoreExtractor(item);
         return mode === "ge" ? score >= threshold : score <= threshold;
       })
       .map(batchIdMapper);
-    setForceSelectionMode(ids.length === 0);
-    selectAll(ids);
+    setForceSelectionMode(targetIds.length === 0);
+    selectAll(targetIds);
   }
 
   /**
@@ -287,9 +290,15 @@ export function useConsoleController<T extends { id: string; n?: string }>(
 
   /**
    * Standardized Events Contract for the ConsoleLayout.vue component.
+   *
+   * [DECISION LOG] EVENT ORCHESTRATION
+   * Rationale: We provide a base set of console events that can be augmented or
+   * overridden by specific features. This ensures that features like Roster
+   * or Headhunter can implement domain-specific logic (like Dismissal) while
+   * maintaining a consistent interface for the shell.
    */
-  const layoutEvents = computed(() => {
-    const baseEvents = {
+  const layoutEvents = computed((): ConsoleLayoutEvents<T> => {
+    const baseEvents: ConsoleLayoutEvents<T> = {
       refresh: refreshFn,
       "update:search": (query: string) => (searchQuery.value = query),
       "update:sort": updateSort,
@@ -299,8 +308,11 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       "fab-dismiss": onDismissFn || clearSelection,
     };
     if (eventsOverride) {
-      const overrides = computed(() => (typeof eventsOverride === "function" ? eventsOverride : (eventsOverride as any).value || eventsOverride));
-      return { ...baseEvents, ...overrides.value };
+      // [THREAT:] Implicit 'any' and unvalidated overrides (Target C [1]).
+      // Rationale: Using toValue ensures we handle both Ref and ComputedRef overrides
+      // without resorting to 'as any' assertions, maintaining strict type safety.
+      const overrides = toValue(eventsOverride);
+      return { ...baseEvents, ...overrides };
     }
     return baseEvents;
   });
