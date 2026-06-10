@@ -18,16 +18,14 @@
  */
 import { Icon } from "@shared";
 import { type UpgradeAction } from "../logic";
+import { formatNumber } from "@core";
+
 defineProps<{
   /** The upgrade action data to display. */
   upgrade: UpgradeAction;
   /** The index in the list for animation staggering. */
   index: number;
 }>();
-
-const formatNumber = (num: number) => {
-  return new Intl.NumberFormat().format(num);
-};
 
 const baseUrl = import.meta.env.BASE_URL;
 </script>
