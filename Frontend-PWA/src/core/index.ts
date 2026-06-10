@@ -30,6 +30,7 @@ export * from "./services/useToast";
 export * from "./services/useShare";
 export * from "./services/useExternalLink";
 export * from "./services/useSystemInfo";
+export * from "./services/useVisibilityRefresh";
 
 // Math & Utils
 export * from "./utils/predictionMath";
@@ -40,6 +41,7 @@ export * from "./utils/time";
 export * from "./utils/text";
 export * from "./utils/math";
 export * from "./utils/bezier";
+export * from "./utils/visibility";
 export * from "./utils/navigation";
 export * from "./utils/sortOptions";
 export * from "./utils/sortStrategies";

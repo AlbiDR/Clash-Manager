@@ -198,3 +198,7 @@ Frontend-PWA/scripts/portfolio.css
 2026-09-15 | Frontend-PWA/src/core/api/SupabaseClient.ts | Removed redundant cache writes from fetchRemote.
 2026-09-15 | Frontend-PWA/src/core/services/useClashSync.ts | Implemented skipSave guard in commitSyncResult to optimize hydration.
 2026-09-15 | Backend/supabase/migrations/20260531232406_master_migration.sql | Identified orphaned database view: war_activity_view.
+2026-06-10 | Frontend-PWA/src/core/utils/visibility.ts | Extracted centralized visibility revalidation utility to standardize refresh thresholds.
+2026-06-10 | Frontend-PWA/src/core/services/useVisibilityRefresh.ts | Created Vue-compatible visibility refresh service.
+2026-06-10 | Frontend-PWA/src/core/services/useConsoleController.ts | Refactored to consume centralized visibility logic, reducing file size to 368 lines and eliminating pathogens.
+2026-06-10 | Frontend-PWA/src/app/main.ts | Standardized app-level revalidation to respect the 30-minute threshold.
