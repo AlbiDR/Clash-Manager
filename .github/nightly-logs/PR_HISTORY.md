@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-10] PR #798: docs(readme): reconcile core and app layer drift
+**Commit**: `2a304cf6e4fd20c4c5ee7a4bc9419ca895e05ae1`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/798)
+
+### Description
+Reconciled documentation drift in the Frontend-PWA layer. Updated core and app READMEs to reflect recent service extractions and Service Worker decomposition. Created new documentation for the utility layer.
+
+---
+*PR created automatically by Jules for task [8556627239966603537](https://jules.google.com/task/8556627239966603537) started by @AlbiDR*
+
+---
+
 ## [2026-06-10] PR #797: perf(opt): decompose visibility refresh logic
 **Commit**: `d74fa58cb1f46be5eb724b10a5b40ff5fd91daef`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/797)
