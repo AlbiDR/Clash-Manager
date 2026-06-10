@@ -14,25 +14,21 @@ import * as v from "valibot";
 
 // Progression Engine 2.0 Primitives
 import {
-  calculateProgressionPath,
-  mapStateToResult,
   ProfileHydrator,
   RawInventorySchema,
   type PlayerData,
-  type PlayerProfile,
-  type OptimizationSettings,
-  type SimulationState,
   type Inventory,
-  type OptimizationResult,
   type UpgradeAction
 } from '../logic';
 
 import {
   calculateDefaultTarget,
+  normalizeRarity,
   type Rarity
 } from '@core';
 
 import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLaboratoryStore";
+import { useLaboratorySimulation } from "./useLaboratorySimulation";
 
 /**
  * @remarks
@@ -41,12 +37,9 @@ import { useLaboratoryStore, STORAGE_KEY_OBSERVATION } from "../stores/useLabora
  * the behavioral logic (simulations, API fetching) while delegating state
  * management to the useLaboratoryStore.
  *
- * Performance is maintained through generator-based simulation processing
- * which avoids blocking the main UI thread.
+ * It utilizes useLaboratorySimulation for the underlying progression engine
+ * orchestration.
  */
-
-// Performance Control Block
-let currentSimulationId = 0;
 
 /**
  * Primary composable for Laboratory operations.
@@ -62,7 +55,7 @@ let currentSimulationId = 0;
  * - `fetchError`: Error message if the profile fetch fails.
  *
  * **Behavioral Logic:**
- * - Triggers asynchronous simulation via `requestIdleCallback`.
+ * - Triggers asynchronous simulation via `useLaboratorySimulation`.
  * - Fetches data from the Supabase backend when `playerTag` changes.
  */
 export function useLaboratory() {
@@ -80,76 +73,7 @@ export function useLaboratory() {
   const clashDataStore = useClashDataStore();
   const { data: clashData, currentSource, remoteSyncTime } = storeToRefs(clashDataStore);
 
-  let currentSimulation: Generator<SimulationState, SimulationState, void> | null = null;
-
-  /**
-   * Triggers the progression simulation engine.
-   *
-   * @remarks
-   * Utilizes a generator-based simulation loop processed in ~10ms chunks
-   * to maintain UI responsiveness (60FPS).
-   */
-  function analyze() {
-    if (!observation.value) return;
-    
-    const currentTag = observation.value.profile.tag;
-
-    const simulationId = ++currentSimulationId;
-    store.setSimulating(true);
-    
-    const currentSettings = settings.value;
-    const forceInfinite = currentSettings.strategy === "Level Projection";
-    
-    const engineSettings: OptimizationSettings = {
-      ...currentSettings,
-      infiniteResources: forceInfinite
-    };
-
-    const initialState = ProfileHydrator.createInitialState(observation.value);
-    const initialTotalXp = Number(initialState.totalXp);
-    currentSimulation = calculateProgressionPath(initialState, engineSettings);
-
-    const processBatch = () => {
-      // Cancellation check: if a newer simulation has started, abort this one.
-      if (simulationId !== currentSimulationId || !currentSimulation) return;
-
-      let latestSimulationState: SimulationState | null = null;
-      let batchStartTime = performance.now();
-      const BATCH_TIME_MS = 10;
-      
-      while (performance.now() - batchStartTime < BATCH_TIME_MS) {
-        const { value, done } = currentSimulation.next();
-        if (done) {
-          if (value && simulationId === currentSimulationId) {
-            store.setOperation(mapStateToResult(value, observation.value?.profile as PlayerProfile, initialTotalXp));
-          }
-          if (simulationId === currentSimulationId) {
-            currentSimulation = null;
-            store.setSimulating(false);
-          }
-          return;
-        }
-        latestSimulationState = value;
-      }
-
-      // Update intermediate state for progress feeling - throttled to ~30fps
-      if (latestSimulationState && simulationId === currentSimulationId) {
-        store.setOperation(mapStateToResult(latestSimulationState, observation.value?.profile as PlayerProfile, initialTotalXp));
-      }
-
-      if (window.requestIdleCallback) {
-        window.requestIdleCallback(processBatch);
-      } else {
-        setTimeout(processBatch, 16); // 16ms approx 60fps, but logic uses 10ms budget
-      }
-    };
-
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(processBatch);
-    } else {
-      setTimeout(processBatch, 0);
-    }
-  }
+  const { analyze } = useLaboratorySimulation();
 
   /**
    * Processes raw player snapshot and inventory into the internal hydrated state.
@@ -336,9 +260,9 @@ export function useLaboratory() {
       strategy[key]();
     } else if (key.startsWith('wc_')) {
       const rawRarity = key.split('_')[1] || '';
-      const capitalized = (rawRarity.charAt(0).toUpperCase() + rawRarity.slice(1)) as Rarity;
+      const normalized = normalizeRarity(rawRarity);
       store.updateInventory({
-        wildCards: { [capitalized]: value } as Partial<Record<Rarity, number>>
+        wildCards: { [normalized]: value } as Partial<Record<Rarity, number>>
       });
     }
   }
