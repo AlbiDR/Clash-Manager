@@ -1,6 +1,31 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-11] PR #806: docs(readme): reconcile query-royale-api and leaderboard harvesting
+**Commit**: `8336a9bf026f01c7bee968058fcd793967f0f4bf`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/806)
+
+### Description
+### Reasoning:
+**[Priority Queue Item]:** Step 1 (Drift Reconciler) and Step 3 (README Creation). The `query-royale-api` Edge Function and `useLeaderboardScraper` composable were undocumented or missing from architectural overviews.
+**[Safety Checks]:** Confirmed ADR coherence and vocabulary compliance. Verified Layer 1 (@core) and Layer 3 (@features) boundaries.
+**[Rationale]:** Ensure synchronization between the newly hardened Royale API proxy and its documentation, providing a clear map for future agents and developers.
+
+### Changes:
+- **Backend/README.md**: Integrated `query-royale-api` into the clinical ingestion pipeline.
+- **Backend/supabase/functions/query-royale-api/README.md**: Created detailed documentation for the proxy's rotation logic and security boundaries.
+- **Frontend-PWA/src/features/headhunter/README.md**: Documented the `useLeaderboardScraper` subsystem.
+- **.github/nightly-logs/04-documentation-readme-coverage.log**: Recorded audit trail.
+
+### Verification:
+- **[Automated]:** Full monorepo test gate passed (1232 tests).
+- **[Automated/Audit]:** Verified every statement in the READMEs matches implementation reality in `index.ts` and `useLeaderboardScraper.ts`.
+
+---
+*PR created automatically by Jules for task [1257149728042729401](https://jules.google.com/task/1257149728042729401) started by @AlbiDR*
+
+---
+
 ## [2026-06-11] PR #805: perf(opt): centralize haptic interactions
 **Commit**: `4e2557efde7cd54b08a2a3fdadd1ca58cbe6cb1d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/805)
