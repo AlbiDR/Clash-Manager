@@ -103,3 +103,6 @@ Frontend-PWA/README.md
 2026-09-19 | Frontend-PWA/src/core/README.md | Reconciled Layer 1 service drift and utility extraction
 2026-09-19 | Frontend-PWA/src/app/README.md | Reconciled Service Worker decomposition drift
 2026-09-19 | Frontend-PWA/src/core/utils/README.md | Created Utility Layer documentation
+2026-09-26 | Backend/README.md | Reconciled query-royale-api proxy documentation
+2026-09-26 | Backend/supabase/functions/query-royale-api/README.md | Created Royale API Proxy documentation
+2026-09-26 | Frontend-PWA/src/features/headhunter/README.md | Reconciled useLeaderboardScraper.ts subsystem
