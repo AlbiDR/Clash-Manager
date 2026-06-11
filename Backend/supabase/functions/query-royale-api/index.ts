@@ -4,6 +4,11 @@
 import * as v from "npm:valibot";
 import { fetchWithRotation } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
+import {
+  RoyaleClanSchema,
+  RoyaleLocationListSchema,
+  RoyaleRankingListSchema
+} from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 
 /**
@@ -21,7 +26,8 @@ const LOCATION_ID_INTERNATIONAL = 57000101;
 const DEFAULT_FALLBACK_COUNTRY = "United States";
 const DEFAULT_FALLBACK_ID = 57000120;
 
-// Ephemeral top-level cache to minimize locations list roundtrips
+// EPHEMERAL: intentionally resets on cold start.
+// Top-level cache to minimize locations list roundtrips.
 let cachedCountries: { id: number; name: string }[] | null = null;
 
 Deno.serve(async (req) => {
@@ -45,8 +51,16 @@ Deno.serve(async (req) => {
         if (!response.ok) {
           throw new Error(`Royale API Global rankings failed: ${response.status}`);
         }
-        const results = await response.json();
-        return { items: results.items || [], region: "Global" };
+
+        // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
+        const rawGlobalRankingsPayload: unknown = await response.json();
+        const globalRankingsValidation = v.safeParse(RoyaleRankingListSchema, rawGlobalRankingsPayload);
+
+        if (!globalRankingsValidation.success) {
+          throw new Error("Global rankings payload failed structural validation.");
+        }
+
+        return { items: globalRankingsValidation.output.items, region: "Global" };
       }
 
       // Local Harvest Resolution
@@ -62,8 +76,16 @@ Deno.serve(async (req) => {
         throw new Error(`Failed to retrieve clan details to identify region: ${clanResponse.status}`);
       }
 
-      const clanDetails = await clanResponse.json();
-      const location = clanDetails.location;
+      // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
+      const rawClanProfile: unknown = await clanResponse.json();
+      const clanProfileValidation = v.safeParse(RoyaleClanSchema, rawClanProfile);
+
+      if (!clanProfileValidation.success) {
+        throw new Error("Clan profile payload failed structural validation.");
+      }
+
+      const targetClanProfile = clanProfileValidation.output;
+      const location = targetClanProfile.location;
       if (!location) {
         throw new Error("Clan profile does not contain a registered location.");
       }
@@ -72,7 +94,12 @@ Deno.serve(async (req) => {
       let targetLocationName = location.name;
 
       // Handle International location rotation
-      const isInternational = targetLocationId === LOCATION_ID_INTERNATIONAL || targetLocationName === "International" || !location.isCountry;
+      // [DECISION LOG] International clans see the same 'Global' players if queried as International.
+      // Rotating through countries provides a more diverse set of potential recruits.
+      const isInternational = targetLocationId === LOCATION_ID_INTERNATIONAL ||
+                              targetLocationName === "International" ||
+                              !location.isCountry;
+
       if (isInternational) {
         logAudit("INTERNATIONAL_DETECTED", "run");
 
@@ -82,12 +109,20 @@ Deno.serve(async (req) => {
           if (!locationsResponse.ok) {
             throw new Error(`Failed to retrieve locations catalog: ${locationsResponse.status}`);
           }
-          const locationsData = await locationsResponse.json();
-          const list = locationsData.items || [];
+
+          // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
+          const rawLocationsPayload: unknown = await locationsResponse.json();
+          const locationsValidation = v.safeParse(RoyaleLocationListSchema, rawLocationsPayload);
+
+          if (!locationsValidation.success) {
+            throw new Error("Locations catalog failed structural validation.");
+          }
+
+          const rawLocationsList = locationsValidation.output.items;
           
-          cachedCountries = list
-            .filter((item: any) => item.isCountry === true)
-            .map((item: any) => ({ id: item.id, name: item.name }));
+          cachedCountries = rawLocationsList
+            .filter((locationCandidate) => locationCandidate.isCountry === true)
+            .map((locationCandidate) => ({ id: locationCandidate.id, name: locationCandidate.name }));
         }
 
         if (cachedCountries && cachedCountries.length > 0) {
@@ -110,8 +145,15 @@ Deno.serve(async (req) => {
         throw new Error(`Royale API Local rankings failed for region ${targetLocationName}: ${localResponse.status}`);
       }
 
-      const localResults = await localResponse.json();
-      return { items: localResults.items || [], region: targetLocationName };
+      // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
+      const rawLocalRankingsPayload: unknown = await localResponse.json();
+      const localRankingsValidation = v.safeParse(RoyaleRankingListSchema, rawLocalRankingsPayload);
+
+      if (!localRankingsValidation.success) {
+        throw new Error(`Local rankings payload for ${targetLocationName} failed structural validation.`);
+      }
+
+      return { items: localRankingsValidation.output.items, region: targetLocationName };
     },
   });
 });
