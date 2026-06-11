@@ -82,3 +82,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-09-19 | Frontend-PWA/src/app/sw/swSync.ts | Documented interface contracts and mandatory threat/decision logs for background sync and push notifications.
 2026-09-19 | Frontend-PWA/src/app/sw/swKernel.ts | Enhanced interface contracts with ADR links and threat annotations for SW persistence primitives.
 2026-09-21 | Frontend-PWA/src/core/utils/predictionMath.ts | Documented interface contracts and weighted-decay prediction logic with ADR links and decision logs.
+2026-10-06 | Frontend-PWA/src/features/headhunter/composables/useLeaderboardScraper.ts | Documented leaderboard scraper composable and added threat/decision logs.
