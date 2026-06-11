@@ -9,3 +9,4 @@
 2026-09-17 | Frontend-PWA/src/app/sw.ts | Decomposed monolithic sw.ts (402 lines) into swKernel.ts and swSync.ts. Centralized storage constants to @core/config/index.ts. Reduced sw.ts to 239 lines.
 2026-09-19 | Frontend-PWA/src/core/utils/formatters.ts | Decomposed monolithic formatters.ts (394 lines) into time.ts, text.ts, and math.ts. Migrated formatRole to game.ts.
 2026-09-24 | Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts | Decomposed laboratory logic and extracted formatNumber utility.
+2026-06-11 | Frontend-PWA/src/shared/ui/FloatingDock.vue | Decomposed monolithic FloatingDock.vue (421 lines) into NavigationDock.vue and SelectionFab.vue. Extracted useViewport.ts shared composable. Reduced FloatingDock.vue to 92 lines.
