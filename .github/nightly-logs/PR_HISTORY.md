@@ -1,6 +1,27 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-11] PR #805: perf(opt): centralize haptic interactions
+**Commit**: `4e2557efde7cd54b08a2a3fdadd1ca58cbe6cb1d`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/805)
+
+### Description
+This PR centralizes hardware haptic feedback across the PWA by replacing direct `navigator.vibrate` calls with the Layer 1 `useHaptics` service. This refactoring ensures that high-impact interactions (tooltips, tactile taps, long presses) now respect the centralized power-saving logic (intensity scaling on low battery) and initialization guards (user gesture requirements).
+
+### Changes:
+- **`vTooltip.ts`**: Refactored to use `haptics.heavy()` for rich tooltip activation.
+- **`vTactile.ts`**: Refactored to use `haptics.tap()` and `haptics.longPress()` for standardized interaction feedback.
+- **`useLongPress.ts`**: Refactored to use `haptics.longPress()`.
+- **Unit Tests**: Updated `vTactile.spec.ts` and `useLongPress.spec.ts` to correctly mock and initialize the `useHaptics` singleton state.
+- **Substrate Hygiene**: Audited the PWA UI layer for remaining hardware pathogens and re-verified the status of orphaned database views.
+
+All 1232 monorepo tests pass. Updated `03-optimization-coverage.log` accordingly.
+
+---
+*PR created automatically by Jules for task [4104206022986077971](https://jules.google.com/task/4104206022986077971) started by @AlbiDR*
+
+---
+
 ## [2026-06-11] PR #804: test(verify): add specs for useLaboratorySimulation
 **Commit**: `b408000a40d9d74c8c38a9b8e6420ce23271a78f`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/804)
