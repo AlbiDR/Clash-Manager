@@ -1,6 +1,36 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-11] PR #810: refactor: structural surgery on FloatingDock component
+**Commit**: `8d65772aa6541186ddc9b9f612ff5a239ebbe60e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/810)
+
+### Description
+This PR executes structural surgery on the `FloatingDock.vue` component, which had exceeded the 400-line SRP threshold. 
+
+### Structural Changes:
+1.  **Logic Extraction**: Centralized viewport and breakpoint detection into a new Layer 2 shared composable, `useViewport.ts`. This replaces local `window.innerWidth` listeners and hardcoded 1024px/360px breakpoints.
+2.  **UI Decomposition**:
+    *   `NavigationDock.vue`: Now handles all primary application navigation items and routing logic.
+    *   `SelectionFab.vue`: Now handles contextual selection actions, Blitz mode UI, and harvester status.
+3.  **Orchestration**: `FloatingDock.vue` has been reduced to 92 lines. It now acts solely as a container that toggles between the navigation and selection views based on global state.
+
+### Verification:
+*   **Vitest**: Updated `FloatingDock.spec.ts` passes with the new component structure.
+*   **Dependency Cruiser**: Confirmed no cyclical dependencies or layer violations.
+*   **Playwright**: Visually verified that both the Navigation Dock and Selection FAB render correctly in mobile viewports.
+
+### Architectural Alignment:
+*   Satisfies ADR Section II (Structural Unitary Architecture).
+*   Correctly utilizes Layer 2 Shared Composables for environmental sensing.
+*   Updated `src/shared/ui/README.md` and `src/shared/README.md` to reflect the new substrate organization.
+
+
+---
+*PR created automatically by Jules for task [14789275886690979905](https://jules.google.com/task/14789275886690979905) started by @AlbiDR*
+
+---
+
 ## [2026-06-11] PR #809: chore(deps): update vue and @types/node
 **Commit**: `ea137fdcc18c2cde54556f31b81cf66848072b88`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/809)
