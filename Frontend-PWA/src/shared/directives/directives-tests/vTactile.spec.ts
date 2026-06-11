@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { vTactile } from "../vTactile";
 import { defineComponent } from "vue";
+import { resetHapticsState, useHaptics } from "../../../core/services/useHaptics";
 
 describe("vTactile directive", () => {
   const mockOnTap = vi.fn();
@@ -26,6 +27,8 @@ describe("vTactile directive", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    resetHapticsState();
+    useHaptics(); // Ensure listeners are attached
 
     // Mock navigator.vibrate
     vi.stubGlobal("navigator", {
@@ -34,6 +37,9 @@ describe("vTactile directive", () => {
 
     // Mock devicePixelRatio
     vi.stubGlobal("devicePixelRatio", 1);
+
+    // Trigger interaction to enable haptics
+    window.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
 
   afterEach(() => {
@@ -56,7 +62,7 @@ describe("vTactile directive", () => {
     expect(mockOnLongPress).not.toHaveBeenCalled();
   });
 
-  it("should trigger onLongPress and vibrate(60) after delay", async () => {
+  it("should trigger onLongPress and vibrate(65) after delay", async () => {
     const wrapper = mount(TestComponent, {
       props: { onTap: mockOnTap, onLongPress: mockOnLongPress }
     });
@@ -68,7 +74,7 @@ describe("vTactile directive", () => {
     vi.advanceTimersByTime(500);
 
     expect(mockOnLongPress).toHaveBeenCalled();
-    expect(vibrateSpy).toHaveBeenCalledWith(60);
+    expect(vibrateSpy).toHaveBeenCalledWith(65);
 
     await target.trigger("pointerup");
     expect(mockOnTap).not.toHaveBeenCalled(); // Tap should be blocked after long press

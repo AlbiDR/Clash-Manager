@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import type { Directive } from "vue";
+import { useHaptics } from "../../core";
 
 interface TactileBinding {
   onTap: () => void;
@@ -43,6 +44,7 @@ const stateMap = new WeakMap<HTMLElement, TactileState>();
  */
 export const vTactile: Directive<HTMLElement, TactileBinding> = {
   mounted(el, binding) {
+    const haptics = useHaptics();
     const state: TactileState = {
       startX: 0,
       startY: 0,
@@ -74,7 +76,7 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
           state.timer = window.setTimeout(() => {
             if (state.isActive) {
               state.isLongPress = true;
-              if (navigator.vibrate) navigator.vibrate(60);
+              haptics.longPress();
               if (binding.value?.onLongPress) {
                 binding.value.onLongPress();
               }
@@ -99,7 +101,7 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
 
         pointerup: () => {
           if (state.isActive && !state.isLongPress) {
-            if (navigator.vibrate) navigator.vibrate(12);
+            haptics.tap();
             if (binding.value?.onTap) {
               binding.value.onTap();
             }
