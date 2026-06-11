@@ -7,7 +7,7 @@ import { useToast } from "@core/services/useToast";
 import {
   sanitizeNumericInput,
   durationToSeconds
-} from "@core/utils/formatters";
+} from "@core";
 import {
   VOYAGE_DEFAULT_TARGET,
   VOYAGE_MAX_TARGET

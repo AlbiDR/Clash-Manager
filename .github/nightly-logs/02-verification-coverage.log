@@ -105,3 +105,5 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-09-08 | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Zero Coverage gap closed; saturating tests for RPC validation boundaries and error narrowing
 2026-09-11 | Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue | Zero Coverage gap closed; saturating tests for initial state, mode toggle, expansion, value selection, and disabled state.
 2026-09-14 | Frontend-PWA/src/core/services/useClashSync.ts | Zero Coverage gap closed; saturating tests for hydration, validation boundaries, concurrency guards, and failure resiliency.
+2026-09-18 | Frontend-PWA/src/app/sw/swKernel.ts | Zero Coverage gap closed; saturating tests for openDB, getValue, and setValue IndexedDB primitives.
+2026-09-18 | Frontend-PWA/src/app/sw/swSync.ts | Zero Coverage gap closed; saturating tests for push badge and background sync logic.

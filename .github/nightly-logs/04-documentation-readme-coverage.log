@@ -99,3 +99,7 @@ Frontend-PWA/README.md
 2026-09-12 | Frontend-PWA/src/core/README.md | Reconciled useApiState and Schema decomposition (Profile, App, Offline)
 2026-09-15 | Frontend-PWA/src/app/README.md | Created Layer 4 App layer documentation and documented shell/router orchestrators.
 2026-09-15 | Backend/README.md | Reconciled Gatekeeper and User Proxy hardening drift (Stage 1 hardening).
+2026-09-16 | Backend/supabase/functions/headhunter-scanner/README.md | Created Headhunter Scanner documentation and documented the 5-stage pipeline.
+2026-09-19 | Frontend-PWA/src/core/README.md | Reconciled Layer 1 service drift and utility extraction
+2026-09-19 | Frontend-PWA/src/app/README.md | Reconciled Service Worker decomposition drift
+2026-09-19 | Frontend-PWA/src/core/utils/README.md | Created Utility Layer documentation

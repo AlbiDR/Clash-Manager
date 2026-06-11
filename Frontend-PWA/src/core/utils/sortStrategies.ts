@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import type { LeaderboardMember, Recruit } from "@core/types";
-import { parseTimeAgoValue } from "./formatters";
+import { parseTimeAgoValue } from "./time";
 
 /**
  * ============================================================================
