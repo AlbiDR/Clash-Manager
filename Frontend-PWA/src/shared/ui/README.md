@@ -62,7 +62,9 @@ Components that facilitate user interaction and state management.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
 - **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable.
 - **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
-- **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers.
+- **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers. Orchestrates `NavigationDock.vue` and `SelectionFab.vue`.
+- **NavigationDock.vue**: Internal UI component for rendering the primary app navigation items.
+- **SelectionFab.vue**: Internal UI component for rendering the selection-mode actions and FAB.
 - **HeaderInfoOverlay.vue**: Accessible detail layer for explaining view-specific metrics or statuses.
 
 ### Resilience & Feedback
