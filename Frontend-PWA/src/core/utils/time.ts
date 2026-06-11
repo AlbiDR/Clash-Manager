@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import type { MomentumInfo, T2TInput } from "@core/types";
+import type { T2TInput } from "@core/types";
 
 /**
- * MODULE: FORMATTERS (Layer 1)
+ * MODULE: TIME UTILITIES (Layer 1)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Centralized formatting utilities for consistency across the application.
- * Handles time parsing, role normalization, score coloring, and description sanitization.
+ * DESCRIPTION: Centralized time parsing and formatting utilities.
+ * Handles relative time formatting, countdowns, and legacy 'ago' parsing.
  *
  * ARCHITECTURE:
  *    - Stateless: All functions are pure and rely only on inputs.
- *    - Performance: Uses hoisting for static assets (TIME_UNITS) and dual-tier
- *      caching for expensive parsing operations (parseTimeAgoValue).
- *
- * ROLE: Core utility for UI-level data transformation.
+ *    - Performance: Uses dual-tier caching for expensive parsing operations.
  * ============================================================================
  */
 
@@ -31,18 +28,6 @@ const TIME_UNITS = [
 
 /** Regex for parsing Project Standard date format: dd/MM/yyyy HH.mm.ss */
 const RE_CUSTOM_DATE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})\.(\d{2})\.(\d{2})$/;
-/** Regex for identifying leading player/clan tag hashes. */
-const RE_TAG_HASH = /^#/;
-/** Regex for identifying section titles in Markdown-like descriptions. */
-const RE_DESC_SECTION = /^(\*\*.*?\*\*|.*?:)\s*$/gm;
-/** Regex for bold text markdown. */
-const RE_DESC_BOLD = /\*\*(.*?)\*\*/g;
-/** Regex for bullet point markdown. */
-const RE_DESC_BULLET = /^• (.+)$/gm;
-/** Regex for grouping list items into semantic <ul> structures. */
-const RE_DESC_LIST = /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li class="bullet-item">))?)+/g;
-/** Global newline regex. */
-const RE_NEWLINE = /\n/g;
 
 /**
  * DURATION UNITS (Internal/Utility)
@@ -250,133 +235,6 @@ export function parseTimeAgoValue(val: string | null | undefined): number {
   // Final Fallback: Mark as unparseable
   ABS_CACHE.set(val, null);
   return 99999999;
-}
-
-/**
- * MOMENTUM CALCULATOR
- * Analyzes the delta in Raw Score to produce a human-readable trend % and direction.
- *
- * @param dt - The numeric change (delta) in score.
- * @param currentRaw - The current raw score value.
- * @returns MomentumInfo containing direction and formatted percentage, or null if insignificant.
- */
-export function calculateMomentum(
-  dt: number,
-  currentRaw: number,
-): MomentumInfo | null {
-  if (dt === 0 || currentRaw === 0) return null;
-  const previousRaw = currentRaw - dt;
-
-  // Safeguard: Score must be significant to show momentum
-  if (previousRaw < 50) return null;
-
-  // Safeguard: Ignore massive outliers/glitches (>1000% jump)
-  if (previousRaw > 0 && dt / previousRaw > 10) return null;
-
-  const percentChange = (dt / previousRaw) * 100;
-  const absPercent = Math.abs(percentChange);
-
-  let valStr = "";
-  if (absPercent < 0.1 && absPercent > 0) valStr = "<0.1%";
-  else if (absPercent < 10) valStr = absPercent.toFixed(1) + "%";
-  else valStr = Math.round(absPercent) + "%";
-
-  return {
-    val: valStr,
-    dir: dt > 0 ? "up" : "down",
-    raw: dt,
-  };
-}
-
-/**
- * Normalizes a raw role string from the API into a display label and CSS class.
- *
- * @param roleStr - The raw role string (e.g., 'coleader', 'elder').
- * @returns Object containing the formatted label and its associated CSS class.
- */
-export function formatRole(roleStr: string): { label: string; class: string } {
-  const r = (roleStr || "").toLowerCase();
-  if (r.includes("leader") && !r.includes("co"))
-    return { label: "Leader", class: "role-leader" };
-  if (r.includes("coleader") || r.includes("co-leader"))
-    return { label: "Co-Lead", class: "role-coleader" };
-  if (r.includes("elder")) return { label: "Elder", class: "role-elder" };
-  return { label: "Member", class: "role-member" };
-}
-
-/**
- * CLEAN TAG
- * Removes leading '#' and converts to uppercase for API/Deep Link compatibility.
- *
- * @param tag - The raw player or clan tag.
- * @returns A normalized, uppercase tag string without the hash prefix.
- */
-export function cleanTag(tag: string | undefined): string {
-  if (!tag) return "";
-  return tag.replace(RE_TAG_HASH, "").toUpperCase().trim();
-}
-
-/**
- * DESCRIPTION FORMATTER
- * Converts markdown-ish strings from remote data sources into semantic HTML.
- *
- * @remarks
- * Implements a custom parsing pipeline for section titles, bold text, and
- * bulleted lists. Specifically handles consecutive list items to wrap them
- * in valid <ul> tags for accessibility.
- *
- * @param text - The raw Markdown-like text from a remote data cell.
- * @returns Sanitized and formatted HTML string.
- */
-export function formatHeaderDescription(text: string): string {
-  if (!text) return "";
-
-  return (
-    text
-      // Section headers (Key: Value or Title:)
-      .replace(RE_DESC_SECTION, '<div class="desc-section-title">$1</div>')
-      // Bold text (**text**)
-      .replace(RE_DESC_BOLD, "<strong>$1</strong>")
-      // Bullet points (• item)
-      .replace(RE_DESC_BULLET, '<li class="bullet-item">$1</li>')
-      // Wrap lists in ul (BEFORE converting newlines to <br>)
-      // Use non-greedy matching and group only consecutive li elements.
-      // We use a lookahead (?=<li) to ensure we only eat newlines BETWEEN items,
-      // preserving the trailing newline after the last item for proper spacing.
-      .replace(RE_DESC_LIST, (match) => {
-        return `<ul class="desc-list">${match.trim().replace(RE_NEWLINE, "")}</ul>`;
-      })
-      // Actual Line breaks
-      .replace(RE_NEWLINE, "<br>")
-  );
-}
-
-/**
- * Normalizes a potentially NaN value from an empty number input to 0.
- * Enforces a minimum value of 0.
- *
- * @param val - The raw input value.
- * @returns A safe numeric representation.
- */
-export function sanitizeNumericInput(val: number | '' | null): number {
-  if (val === '' || val === null || isNaN(Number(val))) return 0;
-  return Number(val) < 0 ? 0 : Number(val);
-}
-
-/**
- * Converts a duration in days, hours, and minutes to total seconds.
- *
- * @param days - Number of days.
- * @param hours - Number of hours.
- * @param minutes - Number of minutes.
- * @returns Total duration in seconds.
- */
-export function durationToSeconds(
-  days: number,
-  hours: number,
-  minutes: number
-): number {
-  return days * 86400 + hours * 3600 + minutes * 60;
 }
 
 /**

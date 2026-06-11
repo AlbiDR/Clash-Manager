@@ -3,7 +3,7 @@
 import Icon from "./Icon.vue";
 <script setup lang="ts">
 import { watch } from "vue";
-import { formatHeaderDescription } from "@core/utils/formatters";
+import { formatHeaderDescription } from "@core";
 
 const props = defineProps<{
   show: boolean;

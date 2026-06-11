@@ -9,7 +9,7 @@ import {
   cancelScheduledVoyageEvent as apiCancelScheduledVoyageEvent,
   setVoyageEnd as apiSetVoyageEnd
 } from "@core/api/VoyageClient";
-import { t2tToTimestamp } from "@core/utils/formatters";
+import { t2tToTimestamp } from "@core";
 import { VoyageRpcResultSchema } from "@core/api/VoyageSchemas";
 import * as v from "valibot";
 

@@ -21,7 +21,7 @@
 import { watch } from "vue";
 import { Icon, DurationInput } from "@shared";
 import { useVoyageForm } from "../composables/useVoyageForm";
-import { getDurationUnits } from "@core/utils/formatters";
+import { getDurationUnits } from "@core";
 import { VOYAGE_DEFAULT_TARGET, VOYAGE_MAX_TARGET } from "@core/config";
 
 const {

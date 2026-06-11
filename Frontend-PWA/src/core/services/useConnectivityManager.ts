@@ -5,7 +5,7 @@ import { computed, unref, type ComputedRef, type Ref } from "vue";
 import { useClashDataStore } from "./useClashDataStore";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
-import { formatTimeAgo } from "../utils/formatters";
+import { formatTimeAgo } from "../utils/time";
 import { DATA_STALENESS_MINUTES } from "../config";
 
 /**

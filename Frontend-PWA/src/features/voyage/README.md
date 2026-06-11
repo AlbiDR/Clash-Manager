@@ -38,7 +38,7 @@ The "Mirror Activation Cockpit" located in the Settings feature.
 ### Event Setup Orchestration (useVoyageForm.ts)
 The behavioral logic engine for the Voyage configuration interface.
 - **State Delegation**: Encapsulates form state, relative time inputs, and validation logic, decoupling the UI from business rules.
-- **Validation Boundary**: Enforces strict logical constraints (e.g., target > 0, end date > start date) using centralized utilities like `sanitizeNumericInput` and `durationToSeconds` from `@core/utils/formatters.ts`.
+- **Validation Boundary**: Enforces strict logical constraints (e.g., target > 0, end date > start date) using centralized utilities like `sanitizeNumericInput` and `durationToSeconds` from `@core/utils/math.ts`.
 - **Action Brokering**: Maps user intents (Activate, Schedule, Cancel, Set End) to the appropriate `useVoyageStore` methods.
 
 ### Event Configuration (VoyageSetupForm.vue)

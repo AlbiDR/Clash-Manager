@@ -33,7 +33,7 @@ import {
 } from "@shared";
 import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
-import { formatRole, formatTimeAgo } from "@core/utils/formatters";
+import { formatRole, formatTimeAgo } from "@core";
 
 const activeChart = ref<'war' | 'voyage'>('war');
 

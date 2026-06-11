@@ -8,6 +8,10 @@ import { STORAGE_DB_NAME, STORAGE_STORE_NAME, STORAGE_DB_VERSION } from "../../c
  * ----------------------------------------------------------------------------
  * Rationale: Provides minimalist IndexedDB primitives for the Service Worker.
  * Extracted from sw.ts to reduce monolithic complexity and improve SRP.
+ *
+ * @remarks
+ * Satisfies ADR Section II (Layer 4: App). Provides low-level persistence
+ * for the Service Worker without relying on higher-layer services.
  * ----------------------------------------------------------------------------
  */
 
@@ -15,6 +19,12 @@ import { STORAGE_DB_NAME, STORAGE_STORE_NAME, STORAGE_DB_VERSION } from "../../c
  * Minimal IDB helper to open a database connection in the Service Worker.
  *
  * @returns A promise resolving to the IDBDatabase instance.
+ *
+ * @remarks
+ * [THREAT:] IndexedDB connection failures.
+ * [DECISION LOG] In the SW context, we do not implement a memory-fallback here
+ * because the kernel must provide atomic database access. Failures are rejected
+ * to allow calling sync tasks to fail gracefully.
  */
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -30,6 +40,11 @@ export function openDB(): Promise<IDBDatabase> {
  * @param db - The active IDBDatabase connection.
  * @param key - The record key.
  * @returns A promise resolving to the value or null.
+ *
+ * @remarks
+ * [THREAT:] Transaction timeouts in Service Worker.
+ * [DECISION LOG] We use a dedicated transaction per request to ensure isolation
+ * and minimize the risk of "Transaction inactive" errors during async orchestration.
  */
 export function getValue(db: IDBDatabase, key: string): Promise<unknown> {
   return new Promise((resolve) => {
@@ -47,6 +62,7 @@ export function getValue(db: IDBDatabase, key: string): Promise<unknown> {
  * @param db - The active IDBDatabase connection.
  * @param key - The record key.
  * @param value - The value to persist.
+ * @returns A promise that resolves when the value is saved.
  */
 export function setValue(db: IDBDatabase, key: string, value: unknown): Promise<void> {
   return new Promise((resolve, reject) => {

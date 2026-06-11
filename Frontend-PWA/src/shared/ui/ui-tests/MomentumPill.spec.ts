@@ -19,7 +19,7 @@ vi.mock("@core/services/useBenchmarking", () => ({
   })
 }));
 
-vi.mock("@core/utils/formatters", () => ({
+vi.mock("@core", () => ({
   calculateMomentum: mockCalculateMomentum
 }));
 

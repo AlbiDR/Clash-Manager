@@ -12,6 +12,7 @@ import {
   Icon,
 } from "@shared";
 import { useAppSettings } from "@core/services/useAppSettings";
+import { registerVisibilityRefresh } from "@core";
 
 import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
@@ -150,12 +151,10 @@ async function bootstrap() {
       );
 
       // LIVE DATA FIRST: App Focus Revalidation
-      // Trigger immediate data revalidation when the app regains focus.
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-          console.debug("[App] Visibility changed to visible: Triggering live data revalidation");
-          clashDataStore.refreshFromSupabase();
-        }
+      // Trigger data revalidation when the app regains focus, respecting the staleness threshold.
+      registerVisibilityRefresh(() => {
+        console.debug("[App] Visibility threshold reached: Triggering live data revalidation");
+        clashDataStore.refreshFromSupabase();
       });
 
       // Defer truly heavy background tasks

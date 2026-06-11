@@ -33,7 +33,7 @@ import {
 } from "@shared";
 import { computed } from "vue";
 import type { Recruit, ConsoleCardMetadata } from "@core/types";
-import { formatTimeAgo } from "@core/utils/formatters";
+import { formatTimeAgo } from "@core";
 
 const props = defineProps<ConsoleCardMetadata & {
   /** Unique identifier for the recruit (Player Tag). */
