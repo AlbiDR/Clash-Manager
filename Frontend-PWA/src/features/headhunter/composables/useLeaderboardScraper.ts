@@ -19,6 +19,18 @@ import { getSupabaseUrl, getSupabaseKey } from "@core/api/SupabaseClient";
  * **Architectural Context:**
  * - Layer: Layer 3 (@features/headhunter)
  * - Responsibility: Transient leaderboards scraping and queue injection.
+ *
+ * Satisfies ADR Section II: Structural Unitary Architecture (Layer 3 Feature isolation)
+ * and ADR Section III: Data Flow & Transactional Integrity (Validation Boundaries).
+ *
+ * @param selectionStore - The authoritative selection store for the feature.
+ * @param onBlitzTrigger - Callback to initiate the recruitment Blitz sequence.
+ * @returns State and actions for managing the leaderboard harvest lifecycle.
+ *
+ * @sideeffects
+ * - Updates the Global FAB state via `useUiCoordinator`.
+ * - Triggers haptic feedback via `useHaptics`.
+ * - Displays toast notifications via `useToast`.
  */
 export function useLeaderboardScraper(
   selectionStore: ReturnType<typeof useSelectionStore>,
@@ -33,6 +45,10 @@ export function useLeaderboardScraper(
 
   /**
    * Aborts the active fetch operation and restores UI states.
+   *
+   * @remarks
+   * Performs clean cancellation of the AbortController and resets the FAB
+   * to its idle state.
    */
   function abortHarvest() {
     if (activeController.value) {
@@ -51,6 +67,11 @@ export function useLeaderboardScraper(
 
   /**
    * Executes the player harvest process from the specified leaderboard endpoint.
+   *
+   * @remarks
+   * Communicates with the `query-royale-api` Edge Function to retrieve
+   * leaderboard data. Results are filtered for clanless players and
+   * injected directly into the selection store.
    *
    * @param mode - The target query scope ("local" or "global").
    */
@@ -83,13 +104,19 @@ export function useLeaderboardScraper(
         throw new Error(errorDetails.error ?? `Query failed with status ${response.status}`);
       }
 
+      // [THREAT:] External API ingress. The 'any' plague here reflects unvalidated
+      // data from the Royale API. While the Edge Function performs structural
+      // validation, the client-side consumer must still handle these types defensively.
       const responseEnvelope = await response.json();
       const payload = responseEnvelope.data || responseEnvelope;
 
       const rawItems = payload.items || [];
       const region = payload.region || "Unknown";
 
-      // Filter for clanless players (where the clan object is absent or null)
+      // [DECISION LOG] CLANLESS FILTERING
+      // Rationale: Only players without a clan are viable recruitment targets.
+      // We filter these out before they ever reach the selection store to
+      // minimize noise in the Blitz recruitment loop.
       const clanlessPlayers = rawItems.filter((player: any) => !player.clan);
 
       if (clanlessPlayers.length === 0) {
@@ -102,7 +129,9 @@ export function useLeaderboardScraper(
         return;
       }
 
-      // Convert player tags to the standard format (without the leading hash symbol)
+      // [DECISION LOG] TAG SANITIZATION
+      // Rationale: Standardizing on tags without the leading hash ensures consistency
+      // across the selection store, local lookups, and future database writes.
       const sanitizedTags = clanlessPlayers.map((player: any) => player.tag.replace(/^#/, ""));
 
       clearSelection();
