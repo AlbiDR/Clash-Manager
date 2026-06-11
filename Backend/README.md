@@ -59,10 +59,11 @@ Ingestion is performed via a **Tri-Engine Edge Architecture**, supported by auto
     - **S2-S5 (Clan Sync)**: Atomic synchronization of clan profile, member telemetry, river race standings, and war history.
     - **S6 (Deep Depth)**: Extracts 100-sample battle logs for high-precision competitive scoring.
 2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
-3. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Utilizes inferred Valibot schemas for rarity-relative normalization and backend persistence, enforcing a zero-trust boundary for client-supplied snapshots.
-4. **Voyage Orchestrator (`initialize_voyage`)**: SQL-based L5 Control Layer (RPC) responsible for activating and configuring Clan Voyage events.
-5. **Shredder (`drivers` layer)**: Automated SQL triggers and functions in the database substrate that decompose raw JSON payloads into relational telemetry.
-6. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative SQL system janitor (pg_cron) responsible for pruning volatile state and maintaining substrate health.
+3. **Royale API Proxy (`query-royale-api`)**: A secure L5 Control Layer proxy for transient leaderboard harvesting. Features a dynamic country rotation strategy for International clans to ensure diverse recruit discovery without polluting the database substrate.
+4. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Utilizes inferred Valibot schemas for rarity-relative normalization and backend persistence, enforcing a zero-trust boundary for client-supplied snapshots.
+5. **Voyage Orchestrator (`initialize_voyage`)**: SQL-based L5 Control Layer (RPC) responsible for activating and configuring Clan Voyage events.
+6. **Shredder (`drivers` layer)**: Automated SQL triggers and functions in the database substrate that decompose raw JSON payloads into relational telemetry.
+7. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative SQL system janitor (pg_cron) responsible for pruning volatile state and maintaining substrate health.
 
 ---
 
