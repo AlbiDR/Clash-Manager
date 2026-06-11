@@ -38,6 +38,18 @@ function handleFabBlitz() {
 function handleFabDismiss() {
   if (fabState.onDismiss) fabState.onDismiss();
 }
+
+function handleFabGlobalHarvest() {
+  if (fabState.onGlobalHarvest) fabState.onGlobalHarvest();
+}
+
+function handleFabLocalHarvest() {
+  if (fabState.onLocalHarvest) fabState.onLocalHarvest();
+}
+
+function handleFabAbortHarvest() {
+  if (fabState.onAbortHarvest) fabState.onAbortHarvest();
+}
 </script>
 
 <template>
@@ -73,13 +85,13 @@ function handleFabDismiss() {
       <!-- Dismiss Button (Always Visible) -->
       <button
         class="fab-btn danger"
-        :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 }"
-        @click="handleFabDismiss"
+        :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
+        @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
         @pointerdown="onInteractionStart"
-        :aria-label="fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
+        :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
       >
         <Icon name="close" size="18" />
-        <span v-if="!fabState.selectionCount && !fabState.isBlasting"
+        <span v-if="!fabState.selectionCount && !fabState.isBlasting && !fabState.isHarvesting"
           >Clear</span
         >
       </button>
@@ -103,25 +115,50 @@ function handleFabDismiss() {
 
       <!-- Normal Selection State -->
       <template v-else>
-        <!-- Blitz Button (Only if enabled and multiple selected) -->
-        <button
-          v-if="
-            fabState.blitzEnabled &&
-            fabState.selectionCount &&
-            fabState.selectionCount > 1 &&
-            !fabState.isProcessing
-          "
-          class="fab-btn blitz"
-          @click="handleFabBlitz"
-          @pointerdown="onInteractionStart"
-          aria-label="Start Blitz Mode"
-        >
-          <Icon name="lightning" size="18" />
-          <span>Blitz</span>
-        </button>
+        <!-- Harvest & Blitz Button Group (If Blitz is enabled) -->
+        <template v-if="fabState.blitzEnabled">
+          <!-- Global Harvest Button (Globe) -->
+          <button
+            class="fab-btn compact secondary-harvest"
+            :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
+            :disabled="fabState.isHarvesting"
+            @click="handleFabGlobalHarvest"
+            @pointerdown="onInteractionStart"
+            aria-label="Global Harvest"
+          >
+            <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'" class="spinner-small"></div>
+            <Icon v-else name="globe" size="18" />
+          </button>
 
-        <!-- Action Button (Always Visible) -->
+          <!-- Main Blitz Button -->
+          <button
+            class="fab-btn blitz"
+            :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
+            @click="handleFabBlitz"
+            @pointerdown="onInteractionStart"
+            aria-label="Start Blitz Mode"
+          >
+            <Icon name="lightning" size="18" />
+            <span>Blitz</span>
+          </button>
+
+          <!-- Local Harvest Button (Map-Pin) -->
+          <button
+            class="fab-btn compact secondary-harvest"
+            :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
+            :disabled="fabState.isHarvesting"
+            @click="handleFabLocalHarvest"
+            @pointerdown="onInteractionStart"
+            aria-label="Local Harvest"
+          >
+            <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'" class="spinner-small"></div>
+            <Icon v-else name="map_pin" size="18" />
+          </button>
+        </template>
+
+        <!-- Action Button (Only if Blitz is NOT enabled) -->
         <button
+          v-else
           class="fab-btn primary"
           @click="handleFabAction"
           @pointerdown="onInteractionStart"
@@ -326,6 +363,20 @@ function handleFabDismiss() {
 .fade-fast-enter-from,
 .fade-fast-leave-to {
   opacity: 0;
+}
+
+.fab-btn.secondary-harvest {
+  background: var(--sys-color-surface-container-highest, #2a2233);
+  color: var(--sys-color-on-surface, #f2daff);
+  border: 1px solid var(--sys-color-outline-variant, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.fab-btn.secondary-harvest:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+.fab-btn.secondary-harvest:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 600px) {

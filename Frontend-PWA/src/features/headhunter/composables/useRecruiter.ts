@@ -14,6 +14,7 @@ import { RecruiterSort } from "@core/utils/sortStrategies";
 import type { Recruit } from "@core/types";
 import { useBlitzMode } from "./useBlitzMode";
 import { useSelectionStore } from "@core/services/useSelectionStore";
+import { useLeaderboardScraper } from "./useLeaderboardScraper";
 
 /**
  * COMPOSABLE: useRecruiter
@@ -46,6 +47,7 @@ export function useRecruiter() {
   // and blitz orchestration from the generic console controller.
   const selectionStore = useSelectionStore();
   const blitz = useBlitzMode(selectionStore);
+  const scraper = useLeaderboardScraper(selectionStore, blitz.handleBlitz);
 
   const controller = useConsoleController({
     data: recruits,
@@ -65,6 +67,9 @@ export function useRecruiter() {
       "fab-blitz": blitz.handleBlitz,
       "clear-selection": blitz.clearSelection,
       "fab-dismiss": dismissBulk,
+      "fab-global-harvest": () => scraper.executeHarvest("global"),
+      "fab-local-harvest": () => scraper.executeHarvest("local"),
+      "fab-abort-harvest": scraper.abortHarvest,
     }))
   });
 

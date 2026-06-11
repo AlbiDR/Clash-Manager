@@ -12,12 +12,17 @@ const fabState = reactive({
   actionHref: undefined as string | undefined,
   isProcessing: false,
   isBlasting: false,
+  isHarvesting: false,
+  activeHarvester: null as "global" | "local" | null,
   selectionCount: 0,
   blitzEnabled: false,
   // Callbacks - set by the view that owns the selection
   onAction: null as ((event: MouseEvent) => void) | null,
   onBlitz: null as (() => void) | null,
   onDismiss: null as (() => void) | null,
+  onGlobalHarvest: null as (() => void) | null,
+  onLocalHarvest: null as (() => void) | null,
+  onAbortHarvest: null as (() => void) | null,
 });
 
 /**
@@ -63,21 +68,31 @@ export function useUiCoordinator() {
     actionHref?: string;
     isProcessing?: boolean;
     isBlasting?: boolean;
+    isHarvesting?: boolean;
+    activeHarvester?: "global" | "local" | null;
     selectionCount?: number;
     blitzEnabled?: boolean;
     onAction?: (event: MouseEvent) => void;
     onBlitz?: () => void;
     onDismiss?: () => void;
+    onGlobalHarvest?: () => void;
+    onLocalHarvest?: () => void;
+    onAbortHarvest?: () => void;
   }) {
     if (state.label !== undefined) fabState.label = state.label;
     if (state.actionHref !== undefined) fabState.actionHref = state.actionHref;
     if (state.isProcessing !== undefined) fabState.isProcessing = state.isProcessing;
     if (state.isBlasting !== undefined) fabState.isBlasting = state.isBlasting;
+    if (state.isHarvesting !== undefined) fabState.isHarvesting = state.isHarvesting;
+    if (state.activeHarvester !== undefined) fabState.activeHarvester = state.activeHarvester;
     if (state.selectionCount !== undefined) fabState.selectionCount = state.selectionCount;
     if (state.blitzEnabled !== undefined) fabState.blitzEnabled = state.blitzEnabled;
     if (state.onAction !== undefined) fabState.onAction = state.onAction;
     if (state.onBlitz !== undefined) fabState.onBlitz = state.onBlitz;
     if (state.onDismiss !== undefined) fabState.onDismiss = state.onDismiss;
+    if (state.onGlobalHarvest !== undefined) fabState.onGlobalHarvest = state.onGlobalHarvest;
+    if (state.onLocalHarvest !== undefined) fabState.onLocalHarvest = state.onLocalHarvest;
+    if (state.onAbortHarvest !== undefined) fabState.onAbortHarvest = state.onAbortHarvest;
   }
 
   /**
