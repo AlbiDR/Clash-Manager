@@ -175,6 +175,24 @@ export function useBlitzMode(
     // JSBridge Integration: Delegate blitz execution to the native Android wrapper if available
     const bridge = (window as any).AndroidBridge;
     if (bridge) {
+      if (bridge.getCoordinates && bridge.saveCoordinates) {
+        try {
+          const coords = JSON.parse(bridge.getCoordinates());
+          const DEFAULT_INVITE_X = 0.5083;
+          const DEFAULT_INVITE_Y = 0.7214;
+          const DEFAULT_CLOSE_X = 0.9213;
+          const DEFAULT_CLOSE_Y = 0.2044;
+          
+          const inviteX = typeof coords.inviteX === "number" ? coords.inviteX : DEFAULT_INVITE_X;
+          const inviteY = typeof coords.inviteY === "number" ? coords.inviteY : DEFAULT_INVITE_Y;
+          const closeX = typeof coords.closeX === "number" ? coords.closeX : DEFAULT_CLOSE_X;
+          const closeY = typeof coords.closeY === "number" ? coords.closeY : DEFAULT_CLOSE_Y;
+          
+          bridge.saveCoordinates(inviteX, inviteY, closeX, closeY);
+        } catch (e) {
+          console.error("Failed to sync coordinates at start of Blitz:", e);
+        }
+      }
       bridge.startBlitz(JSON.stringify(selectedIds.value));
       return;
     }
