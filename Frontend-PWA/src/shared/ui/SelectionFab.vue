@@ -80,6 +80,18 @@ function handleFabAbortHarvest() {
   <template v-else>
     <!-- Harvest & Blitz Button Group (If Blitz is enabled) -->
     <template v-if="fabState.blitzEnabled">
+      <!-- Main Blitz Button -->
+      <button
+        class="fab-btn blitz"
+        :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
+        @click="handleFabBlitz"
+        @pointerdown="onInteractionStart"
+        aria-label="Start Blitz Mode"
+      >
+        <Icon name="lightning" size="18" />
+        <span>Blitz</span>
+      </button>
+
       <!-- Global Harvest Button (Globe) -->
       <button
         class="fab-btn compact secondary-harvest"
@@ -91,18 +103,6 @@ function handleFabAbortHarvest() {
       >
         <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'" class="spinner-small"></div>
         <Icon v-else name="globe" size="18" />
-      </button>
-
-      <!-- Main Blitz Button -->
-      <button
-        class="fab-btn blitz"
-        :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
-        @click="handleFabBlitz"
-        @pointerdown="onInteractionStart"
-        aria-label="Start Blitz Mode"
-      >
-        <Icon name="lightning" size="18" />
-        <span>Blitz</span>
       </button>
 
       <!-- Local Harvest Button (Map-Pin) -->

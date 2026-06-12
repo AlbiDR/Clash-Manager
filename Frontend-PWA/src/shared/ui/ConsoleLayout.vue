@@ -48,6 +48,8 @@ const props = defineProps<{
     isBlasting: boolean;
     selectionCount: number;
     blitzEnabled: boolean;
+    isHarvesting?: boolean;
+    activeHarvester?: "global" | "local" | null;
   };
   skeletonComponent?: any;
   skeletonCount?: number;
@@ -70,6 +72,9 @@ const emit = defineEmits<{
   "fab-action": [MouseEvent];
   "fab-blitz": [];
   "fab-dismiss": [];
+  "fab-global-harvest": [];
+  "fab-local-harvest": [];
+  "fab-abort-harvest": [];
 }>();
 
 const { setFabVisible, updateFabState } = useUiCoordinator();
@@ -106,9 +111,14 @@ watch(
         isBlasting: state.isBlasting,
         selectionCount: state.selectionCount,
         blitzEnabled: state.blitzEnabled,
+        isHarvesting: state.isHarvesting,
+        activeHarvester: state.activeHarvester,
         onAction: (e: MouseEvent) => emit("fab-action", e),
         onBlitz: () => emit("fab-blitz"),
         onDismiss: () => emit("fab-dismiss"),
+        onGlobalHarvest: () => emit("fab-global-harvest"),
+        onLocalHarvest: () => emit("fab-local-harvest"),
+        onAbortHarvest: () => emit("fab-abort-harvest"),
       });
 
       nextTick(() => {

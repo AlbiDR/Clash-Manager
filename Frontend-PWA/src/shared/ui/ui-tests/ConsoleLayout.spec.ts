@@ -208,4 +208,47 @@ describe("ConsoleLayout", () => {
     await wrapper.find(".mock-header").trigger("click");
     expect(wrapper.emitted("refresh")).toBeTruthy();
   });
+
+  it("synchronizes harvesting state and callbacks correctly", async () => {
+    const fabState = {
+      visible: true,
+      label: "Action",
+      isProcessing: false,
+      isBlasting: false,
+      selectionCount: 0,
+      blitzEnabled: true,
+      isHarvesting: true,
+      activeHarvester: "global" as const,
+    };
+
+    const wrapper = mount(ConsoleLayout, {
+      props: {
+        ...defaultProps,
+        fabState,
+      },
+      global: globalConfig,
+    });
+
+    expect(mockUpdateFabState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isHarvesting: true,
+        activeHarvester: "global",
+        onGlobalHarvest: expect.any(Function),
+        onLocalHarvest: expect.any(Function),
+        onAbortHarvest: expect.any(Function),
+      })
+    );
+
+    const calls = mockUpdateFabState.mock.calls;
+    const lastCallArg = calls[calls.length - 1][0];
+    
+    lastCallArg.onGlobalHarvest();
+    expect(wrapper.emitted("fab-global-harvest")).toBeTruthy();
+
+    lastCallArg.onLocalHarvest();
+    expect(wrapper.emitted("fab-local-harvest")).toBeTruthy();
+
+    lastCallArg.onAbortHarvest();
+    expect(wrapper.emitted("fab-abort-harvest")).toBeTruthy();
+  });
 });

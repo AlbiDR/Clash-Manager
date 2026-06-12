@@ -121,6 +121,10 @@ export interface ConsoleFabState {
   selectionCount: number;
   /** Indicates if "Blitz Mode" (high-speed processing) is enabled. */
   blitzEnabled: boolean;
+  /** Indicates if a leaderboard harvest operation is currently active. */
+  isHarvesting?: boolean;
+  /** The active harvester mode (local or global). */
+  activeHarvester?: "global" | "local" | null;
 }
 
 /**
