@@ -19,11 +19,19 @@ The Laboratory allows users to project their future King Level and resource cons
 ### Validation Boundary (ProfileHydrator.ts)
 The Laboratory implements a strict validation boundary. Raw data from the Supabase backend or external RoyaleAPI payloads is passed through `ProfileInputSchema` (Valibot) before being transformed into domain-specific types.
 
-### Progression Engine (Simulation.ts)
-A non-blocking, generator-based engine that calculates the most efficient upgrade path.
+### Progression Engine (SimulationEngine.ts)
+A non-blocking, generator-based engine that coordinates core logic and scoring strategies to calculate optimal upgrade paths.
 - **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
-- **Priority Queue Optimization**: Utilizes the `@core/utils/PriorityQueue` to maintain an $O(\log N)$ selection loop for upgrade candidates, eliminating the $O(N \log N)$ re-sorting overhead of legacy versions.
-- **Greedy Optimization**: Employs an iterative selection logic that identifies and executes the optimal upgrade step based on the active scoring strategy.
+- **Priority Queue Optimization**: Utilizes the `@core/utils/PriorityQueue` to maintain an $O(\log N)$ selection loop for upgrade candidates.
+- **Greedy Optimization**: Identifies and executes the optimal upgrade step based on the active scoring strategy.
+
+### Simulation Core (SimulationCore.ts)
+Atomic evaluation and state transition logic.
+- **getUpgradeCandidate**: Evaluates card upgrade viability against resource constraints.
+- **applyUpgrade**: Executes immutable state transitions for chosen upgrades.
+
+### Simulation Mappers (SimulationMappers.ts)
+- **mapStateToResult**: Transformer that converts internal simulation state to UI-ready DTOs.
 
 ### Trajectory Rendering (TrajectoryList.vue)
 Renders the recommended upgrade path using a high-performance rendering strategy.
