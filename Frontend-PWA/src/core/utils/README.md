@@ -19,9 +19,10 @@ Utility Kernels (Layer 1) provide the foundational logic required for data trans
 
 ## Core Utilities
 
-### Domain Logic (`game.ts`)
+### Domain Logic (`game.ts` & `economy.ts`)
 The authoritative source of truth for Clash Royale game constants and logic.
 - **Economy Tables**: Gold costs, XP gains, and material requirements for card upgrades.
+- **Branded Currencies**: Implements `Gold`, `Gems`, and `XP` branded types to enforce compile-time currency isolation.
 - **Normalization**: Logic for converting relative card levels to absolute game levels.
 - **King Level Projection**: Tables and algorithms for calculating account level based on cumulative XP.
 
@@ -43,6 +44,15 @@ Stateless transformation logic for UI display.
 ### Geometric Substrate (`bezier.ts`)
 Mathematical foundations for data visualization.
 - **Cubic Bezier**: Calculations for smooth trend lines and SVG path generation.
+
+### Performance Collections (`PriorityQueue.ts`)
+High-performance data structures for simulation optimization.
+- **Binary Heap**: Implements an $O(\log N)$ priority queue for efficient upgrade selection in the Laboratory simulation engine.
+
+### Operational Primitives (`navigation.ts` & `visibility.ts`)
+Structural and lifecycle logic for application state.
+- **Navigation SSOT**: The authoritative source for application-level navigation items and icons.
+- **Visibility Registry**: Orchestrates time-based revalidation triggers when the application regains focus.
 
 ---
 
