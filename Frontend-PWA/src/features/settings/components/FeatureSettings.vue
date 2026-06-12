@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from "vue";
+import { computed, ref, watch, onMounted, nextTick } from "vue";
 import { SettingRow, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 
@@ -41,7 +41,10 @@ function loadCoordinates() {
   }
 }
 
+let isLoaded = false;
+
 function saveCoordinates() {
+  if (!isLoaded) return;
   if (isNativeWrapper.value && (window as any).AndroidBridge?.saveCoordinates) {
     const ix = parseFloat(inviteX.value as any);
     const iy = parseFloat(inviteY.value as any);
@@ -90,6 +93,9 @@ function handleBlitzToggle() {
 
 onMounted(() => {
   loadCoordinates();
+  nextTick(() => {
+    isLoaded = true;
+  });
   // Sync blitzMode setting state with native accessibility service status on mount
   if (isNativeWrapper.value && (window as any).AndroidBridge?.isAccessibilityActive) {
     const active = (window as any).AndroidBridge.isAccessibilityActive();
