@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-12] PR #815: docs(readme): reconcile architectural drift across monorepo
+**Commit**: `3088c6d4585ade22986fa85719e356b2c9e3eb29`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/815)
+
+### Description
+Executed Stage 5 (Document-README) of the Nightly Pipeline. Reconciled documentation drift across the monorepo, specifically updating the Core Utilities, Laboratory feature, Backend ingestion pipeline, and PWA service registry to match implementation ground truth. Verified via monorepo test gate (1245 passed).
+
+---
+*PR created automatically by Jules for task [7111272882645887792](https://jules.google.com/task/7111272882645887792) started by @AlbiDR*
+
+---
+
 ## [2026-06-12] PR #814: perf(opt): optimize laboratory simulation and numeric formatting
 **Commit**: `ee29bcfafc6b46e5911ff3b00929cfbc046e0b57`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/814)

@@ -15,6 +15,12 @@
  * - Import Boundaries: Restricted to Layer 1 (@core) and internal Feature types.
  *   Satisfies ADR Section III: Validation Boundaries by operating on hydrated
  *   and validated domain objects.
+ *
+ * [DECISION LOG] GREEDY OPTIMIZATION:
+ * The engine employs a greedy heuristic via a Priority Queue. While not
+ * guaranteed to find the absolute global optimum for every edge case of
+ * resource depletion, it provides an $O(N \log N)$ approximation that aligns
+ * with realistic player upgrade behavior (prioritizing high ROI).
  */
 
 import type { 
@@ -83,6 +89,9 @@ const getUpgradeCandidate = (
   if (nextLevel > CARD_LEVEL_CAP) return null;
 
   // 2. Resource Requirements - look up by rarity, not flat by level.
+  // [DECISION LOG] SSOT ALIGNMENT:
+  // Rarity-based lookups ensure that specialized rarities (Champion, Legendary)
+  // respect their unique cost curves defined in Layer 1 @core/utils/game.
   const goldCost = GOLD_COST_TABLE[card.rarity]?.[nextLevel];
   const cardsRequired = MATERIAL_REQUIREMENTS[card.rarity]?.[nextLevel];
   const xpGained = CARD_XP_TABLE[nextLevel];
@@ -114,6 +123,10 @@ const getUpgradeCandidate = (
     upgradeType = 'Wild';
   } else if (wildDeficit > 0 && settings.allowGemSpending) {
     // Gems cover any remaining deficit after wilds are exhausted.
+    // [THREAT:] Material shortage could stall the engine.
+    // [DECISION LOG] GEM FALLBACK:
+    // If 'allowGemSpending' is enabled, the engine calculates the market
+    // gem-equivalent for the missing cards, treating Gems as a universal material.
     wildCardsUsed = availableWilds;
     gemsUsedForCards = calculateGemCostForCards(card.rarity, wildDeficit);
     upgradeType = 'Gem';
@@ -166,6 +179,9 @@ const getUpgradeCandidate = (
  * @remarks
  * This function maintains the immutability of the simulation state,
  * returning a new state object with updated roster, inventory, and history.
+ *
+ * Satisfies ADR Section III: Data Flow & Transactional Integrity by ensuring
+ * that simulation snapshots are never mutated in-place.
  *
  * @param state - The previous simulation state.
  * @param candidate - The upgrade candidate to apply.
@@ -233,6 +249,11 @@ const applyUpgrade = (state: SimulationState, candidate: ResolvedCandidate): Sim
  * Satisfies ADR Section I: Foundations of "Clinical" Logic (Adaptive Pipeline
  * Design) and Section III: Validation Boundaries.
  *
+ * [DECISION LOG] GENERATOR ORCHESTRATION:
+ * By yielding every state change, we allow the consumer (useLaboratorySimulation)
+ * to implement batching and requestIdleCallback integration, preventing
+ * "Application Not Responding" (ANR) states during deep simulations.
+ *
  * @param initialState - The starting point of the simulation.
  * @param settings - User configuration (targets, resource limits).
  * @param strategy - Optional scoring strategy (defaults to strategy from settings).
@@ -286,6 +307,11 @@ export function* calculateProgressionPath(
 
       // LAZY RE-VALIDATION
       // Since inventory changed, we must re-calculate to ensure costs/gems are still accurate.
+      // [THREAT:] Stale costs in the Priority Queue could lead to resource over-drafting.
+      // [DECISION LOG] LAZY EVALUATION:
+      // Instead of re-sorting the entire queue on every inventory change (O(N log N)),
+      // we only re-validate the top candidate (O(log N)). If its viability or
+      // score has changed, it is either discarded or re-pushed to its correct position.
       const freshCandidate = getUpgradeCandidate(
         currentState.roster[candidate.index],
         candidate.index,
