@@ -15,7 +15,7 @@ const BaseClanIdentitySchema = v.object({
 });
 
 /** [GUARD] Royale Location Schema. */
-export const RoyaleLocationSchema = v.object({
+const RoyaleLocationSchema = v.object({
     id: v.number(),
     name: v.string(),
     isCountry: v.optional(v.boolean(), false)

@@ -36,7 +36,7 @@ catalogs:
 
 
     # Core Shared Dependencies (Consolidated)
-    vue: "^3.5.37"
+    vue: "^3.5.38"
     vue-router: "^4.6.4"
     vue-tsc: "^3.3.4"
     workbox-precaching: "^7.4.1"
