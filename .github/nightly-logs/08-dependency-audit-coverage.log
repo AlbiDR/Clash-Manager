@@ -95,6 +95,8 @@
 | @supabase/supabase-js | ^2.108.0 | ^2.108.1 | 2026-06-10 | PASS |
 | vue | ^3.5.35 | ^3.5.37 | 2026-06-11 | PASS |
 | @types/node | ^24.13.1 | ^24.13.2 | 2026-06-11 | PASS |
+| vue | ^3.5.37 | ^3.5.38 | 2026-06-12 | PASS |
+| supabase | NEW | ^2.106.0 | 2026-06-12 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
