@@ -53,7 +53,7 @@ function handleFabAbortHarvest() {
     @pointerdown="onInteractionStart"
     :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
   >
-    <Icon name="close" size="18" />
+    <Icon name="trash" size="18" />
     <span v-if="!fabState.selectionCount && !fabState.isBlasting && !fabState.isHarvesting"
       >Clear</span
     >
