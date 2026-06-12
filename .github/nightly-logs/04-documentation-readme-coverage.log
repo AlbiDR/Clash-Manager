@@ -106,3 +106,7 @@ Frontend-PWA/README.md
 2026-09-26 | Backend/README.md | Reconciled query-royale-api proxy documentation
 2026-09-26 | Backend/supabase/functions/query-royale-api/README.md | Created Royale API Proxy documentation
 2026-09-26 | Frontend-PWA/src/features/headhunter/README.md | Reconciled useLeaderboardScraper.ts subsystem
+2026-06-12 | Frontend-PWA/src/core/utils/README.md | Reconciled missing utilities: PriorityQueue, economy, navigation, visibility.
+2026-06-12 | Frontend-PWA/src/features/laboratory/README.md | Reconciled useLaboratorySimulation and PriorityQueue optimization.
+2026-06-12 | Backend/README.md | Corrected ingestion engine count (Quad-Engine) and Hexa-Stage sync protocol.
+2026-06-12 | Frontend-PWA/README.md | Reconciled useVisibilityRefresh and synchronized service numbering.
