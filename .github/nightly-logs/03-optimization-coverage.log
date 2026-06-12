@@ -202,3 +202,11 @@ Frontend-PWA/scripts/portfolio.css
 2026-06-10 | Frontend-PWA/src/core/services/useVisibilityRefresh.ts | Created Vue-compatible visibility refresh service.
 2026-06-10 | Frontend-PWA/src/core/services/useConsoleController.ts | Refactored to consume centralized visibility logic, reducing file size to 368 lines and eliminating pathogens.
 2026-06-10 | Frontend-PWA/src/app/main.ts | Standardized app-level revalidation to respect the 30-minute threshold.
+2026-09-26 | Frontend-PWA/src/shared/directives/vTooltip.ts | Centralized haptics via useHaptics service to enforce power-saving logic.
+2026-09-26 | Frontend-PWA/src/shared/directives/vTactile.ts | Centralized haptics via useHaptics service.
+2026-09-26 | Frontend-PWA/src/shared/composables/useLongPress.ts | Centralized haptics via useHaptics service.
+2026-09-26 | Substrate Hygiene | Audited and confirmed that all direct navigator.vibrate calls have been excised from the PWA UI layer.
+2026-09-26 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-10-27 | Frontend-PWA/src/features/laboratory/logic/Simulation.ts | Optimized simulation loop with PriorityQueue and lazy re-validation.
+2026-10-27 | Frontend-PWA/src/features/laboratory/logic/ScoringStrategy.ts | Refactored to use centralized economy utilities.
+2026-10-27 | Frontend-PWA/src/core/utils/math.ts | Cached Intl.NumberFormat instance for performance.

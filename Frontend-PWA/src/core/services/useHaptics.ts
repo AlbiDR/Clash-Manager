@@ -22,9 +22,19 @@ interface BatteryManager extends EventTarget {
 
 // [PERF] Module-level state (Singleton)
 // Ensures state and listeners are shared across all call sites.
+// EPHEMERAL: intentionally resets on cold start
 const isLowPowerMode = ref(false);
+// EPHEMERAL: intentionally resets on cold start
 let hasInteracted = false;
+// EPHEMERAL: intentionally resets on cold start
 let isInitialized = false;
+
+/**
+ * Extended Navigator Interface for Battery API.
+ */
+interface NavigatorWithBattery extends Navigator {
+  getBattery(): Promise<BatteryManager>;
+}
 
 /**
  * INITIALIZATION ENGINE
@@ -35,13 +45,16 @@ function init() {
   if (isInitialized || typeof window === "undefined") return;
 
   // 1. Battery Awareness: Preserves device juice in low-power conditions.
-  if ("getBattery" in (navigator as any)) {
-    (navigator as Navigator & { getBattery(): Promise<BatteryManager> })
+  // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
+  // [DECISION LOG] Utilizing strict type narrowing for NavigatorWithBattery to
+  // eliminate 'any' casts and ensure hardware access integrity.
+  if ("getBattery" in navigator) {
+    (navigator as NavigatorWithBattery)
       .getBattery()
       .then((battery) => {
         const update = () => {
           isLowPowerMode.value =
-            (battery as any).saveData ||
+            !!battery.saveData ||
             (battery.level < 0.2 && !battery.charging);
         };
         battery.addEventListener("levelchange", update);
@@ -51,6 +64,8 @@ function init() {
   }
 
   // 2. Interaction Tracking: Browser security requires user gesture before vibration.
+  // [THREAT:] Vibration API calls will be ignored by the browser if triggered
+  // without a prior user interaction (security requirement).
   const setInteracted = () => {
     hasInteracted = true;
     window.removeEventListener("click", setInteracted);
@@ -100,9 +115,11 @@ export function useHaptics() {
     if (!isSupported || !hasInteracted) return;
 
     // [PERF] POWER CONSERVATION: Scale down intensity in low power mode.
+    // [DECISION LOG] Adaptive haptic scaling: reductions are applied to
+    // preserve battery life when the system is in low-power state.
     if (isLowPowerMode.value) {
       if (Array.isArray(pattern)) {
-        pattern = pattern.map((p) => Math.max(0, p - 5));
+        pattern = pattern.map((patternPart) => Math.max(0, patternPart - 5));
       } else {
         pattern = Math.max(0, pattern - 5);
       }
@@ -110,7 +127,7 @@ export function useHaptics() {
 
     try {
       navigator.vibrate(pattern);
-    } catch (e) {
+    } catch (vibrationError: unknown) {
       /* Silent fail for non-Haptic devices */
     }
   };

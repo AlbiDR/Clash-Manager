@@ -1,55 +1,25 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import Icon from "./Icon.vue";
-import { useHaptics, useUiCoordinator, NAV_ITEMS } from "@core";
+/**
+ * [SHARED] FLOATING DOCK
+ * ----------------------------------------------------------------------------
+ * Rationale: Orchestrates the global navigation dock and selection FAB.
+ * Layer: @shared/ui
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Acts as a lightweight orchestrator that toggles between `NavigationDock`
+ * and `SelectionFab` based on the global UI state. Centralizes viewport-aware
+ * styling for the dock container.
+ */
+import { useUiCoordinator } from "@core";
+import { useViewport } from "../composables/useViewport";
+import NavigationDock from "./NavigationDock.vue";
+import SelectionFab from "./SelectionFab.vue";
 
-const route = useRoute();
-const router = useRouter();
-const { dockVisible, fabState } = useUiCoordinator();
-const haptics = useHaptics();
-
-
-const isDesktop = ref(window.innerWidth > 1024);
-const onResize = () => { isDesktop.value = window.innerWidth > 1024; };
-onMounted(() => window.addEventListener("resize", onResize));
-onUnmounted(() => window.removeEventListener("resize", onResize));
-
-function goTo(targetPath: string) {
-  if (route.path === targetPath) return;
-  router.push(targetPath);
-}
-
-// Trigger haptic feedback on pointerdown to minimize latency perception.
-function onInteractionStart() {
-  haptics.tap();
-}
-
-function handleFabAction(e: MouseEvent) {
-  if (fabState.onAction) fabState.onAction(e);
-}
-
-function handleFabBlitz() {
-  if (fabState.onBlitz) fabState.onBlitz();
-}
-
-function handleFabDismiss() {
-  if (fabState.onDismiss) fabState.onDismiss();
-}
-
-function handleFabGlobalHarvest() {
-  if (fabState.onGlobalHarvest) fabState.onGlobalHarvest();
-}
-
-function handleFabLocalHarvest() {
-  if (fabState.onLocalHarvest) fabState.onLocalHarvest();
-}
-
-function handleFabAbortHarvest() {
-  if (fabState.onAbortHarvest) fabState.onAbortHarvest();
-}
+const { dockVisible } = useUiCoordinator();
+const { isDesktop } = useViewport();
 </script>
 
 <template>
@@ -61,114 +31,10 @@ function handleFabAbortHarvest() {
     }"
   >
     <!-- Navigation Dock Mode -->
-    <template v-if="dockVisible">
-      <button
-        v-for="item in NAV_ITEMS"
-        :key="item.name"
-        class="dock-item"
-        :class="{ active: route.path === item.path }"
-        @click="goTo(item.path)"
-        @pointerdown="onInteractionStart"
-        :aria-label="item.label"
-        v-bind="{ 'aria-current': route.path === item.path ? 'page' : undefined }"
-      >
-        <div v-if="route.path === item.path" class="capsule-bg"></div>
-        <Icon :name="item.icon" size="22" class="dock-icon" />
-        <span v-if="item.label" class="dock-label">
-          {{ item.label }}
-        </span>
-      </button>
-    </template>
+    <NavigationDock v-if="dockVisible" />
 
     <!-- Selection FAB Mode -->
-    <template v-else>
-      <!-- Dismiss Button (Always Visible) -->
-      <button
-        class="fab-btn danger"
-        :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
-        @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
-        @pointerdown="onInteractionStart"
-        :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
-      >
-        <Icon name="close" size="18" />
-        <span v-if="!fabState.selectionCount && !fabState.isBlasting && !fabState.isHarvesting"
-          >Clear</span
-        >
-      </button>
-
-      <!-- Blasting State: Progress Indicator -->
-      <template v-if="fabState.isBlasting">
-        <div class="blast-status">
-          <div class="spinner-small"></div>
-          <span class="blast-label">{{ fabState.label }}</span>
-        </div>
-
-        <button
-          class="fab-btn primary compact"
-          @click="handleFabAction"
-          @pointerdown="onInteractionStart"
-          aria-label="Open Next Profile"
-        >
-          <Icon name="chevron_right" size="20" />
-        </button>
-      </template>
-
-      <!-- Normal Selection State -->
-      <template v-else>
-        <!-- Harvest & Blitz Button Group (If Blitz is enabled) -->
-        <template v-if="fabState.blitzEnabled">
-          <!-- Main Blitz Button -->
-          <button
-            class="fab-btn blitz"
-            :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
-            @click="handleFabBlitz"
-            @pointerdown="onInteractionStart"
-            aria-label="Start Blitz Mode"
-          >
-            <Icon name="lightning" size="18" />
-            <span>Blitz</span>
-          </button>
-
-          <!-- Global Harvest Button (Globe) -->
-          <button
-            class="fab-btn compact secondary-harvest"
-            :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
-            :disabled="fabState.isHarvesting"
-            @click="handleFabGlobalHarvest"
-            @pointerdown="onInteractionStart"
-            aria-label="Global Harvest"
-          >
-            <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'" class="spinner-small"></div>
-            <Icon v-else name="globe" size="18" />
-          </button>
-
-          <!-- Local Harvest Button (Map-Pin) -->
-          <button
-            class="fab-btn compact secondary-harvest"
-            :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
-            :disabled="fabState.isHarvesting"
-            @click="handleFabLocalHarvest"
-            @pointerdown="onInteractionStart"
-            aria-label="Local Harvest"
-          >
-            <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'" class="spinner-small"></div>
-            <Icon v-else name="map_pin" size="18" />
-          </button>
-        </template>
-
-        <!-- Action Button (Only if Blitz is NOT enabled) -->
-        <button
-          v-else
-          class="fab-btn primary"
-          @click="handleFabAction"
-          @pointerdown="onInteractionStart"
-          :aria-label="fabState.label || 'Open'"
-        >
-          <Icon name="check" size="18" />
-          <span :key="fabState.label">{{ fabState.label }}</span>
-        </button>
-      </template>
-    </template>
+    <SelectionFab v-else />
   </div>
 </template>
 
@@ -201,182 +67,12 @@ function handleFabAbortHarvest() {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
-
 /* FAB Mode Styling */
 .dock-container.fab-mode {
   flex-direction: row;
   align-items: center;
   /* Prevent flex items from wrapping on smaller screens */
   flex-wrap: nowrap;
-}
-
-.dock-item {
-  position: relative;
-  /* Ensure sufficient touch target size */
-  height: 56px;
-  flex: 1;
-  min-width: 64px;
-  padding: 0 12px;
-  border-radius: var(--sys-shape-corner-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 15px;
-  font-weight: 850;
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-  -webkit-tap-highlight-color: transparent;
-  background: none;
-  border: none;
-  font-family: inherit;
-  /* Prevent text wrapping on narrower viewports */
-  white-space: nowrap;
-}
-
-/* Active state feedback */
-.dock-item:active {
-  transform: scale(0.92);
-  background: rgba(var(--sys-color-primary-rgb), 0.1);
-}
-
-.dock-item.active {
-  color: var(--sys-color-on-primary);
-  flex: 1.2; /* Slightly more prominence for active item, still balanced by flex */
-}
-
-/* Maintain scale stability on active selected item */
-.dock-item.active:active {
-  transform: scale(0.96);
-  background: none;
-}
-
-.capsule-bg {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    var(--sys-color-primary),
-    var(--sys-color-primary-variant, var(--sys-color-primary))
-  );
-  border-radius: var(--sys-shape-corner-full);
-  z-index: -1;
-  animation: pop-in 0.3s cubic-bezier(0.2, 0, 0, 1.2);
-  box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
-}
-
-
-.dock-label {
-  transition: opacity 0.3s;
-  letter-spacing: -0.01em;
-}
-
-/* FAB Buttons */
-.fab-btn {
-  /* Maintain minimum height for touch targets */
-  height: 56px;
-  padding: 0 24px;
-  min-height: 56px;
-  border-radius: var(--sys-shape-corner-full);
-  font-weight: 900;
-  font-size: 15px;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  border: none;
-  transition:
-    transform 0.15s cubic-bezier(0.2, 0, 0, 1),
-    background 0.2s;
-  color: var(--sys-color-on-surface);
-  /* Prevent text wrapping on constrained mobile viewports */
-  white-space: nowrap;
-  flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.fab-btn:active {
-  transform: scale(0.93);
-  opacity: 0.9;
-}
-
-.fab-btn.compact {
-  padding: 0;
-  width: 56px;
-  min-width: 56px;
-}
-
-.fab-btn.primary {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  box-shadow: 0 4px 16px rgba(var(--sys-color-primary-rgb), 0.35);
-}
-.fab-btn.danger {
-  background: var(--sys-color-error-container);
-  color: var(--sys-color-on-error-container);
-}
-
-.fab-btn.blitz {
-  background: linear-gradient(135deg, #6b5778, #4a3b55);
-  color: #f2daff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 12px rgba(107, 87, 120, 0.4);
-}
-
-.blast-status {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-width: 90px;
-}
-.blast-label {
-  font-family: var(--sys-font-family-mono);
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--sys-color-on-surface);
-}
-
-.spinner-small {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--sys-color-primary);
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  opacity: 0.6;
-}
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.fade-fast-enter-active,
-.fade-fast-leave-active {
-  transition: opacity 0.1s ease;
-}
-.fade-fast-enter-from,
-.fade-fast-leave-to {
-  opacity: 0;
-}
-
-.fab-btn.secondary-harvest {
-  background: var(--sys-color-surface-container-highest, #2a2233);
-  color: var(--sys-color-on-surface, #f2daff);
-  border: 1px solid var(--sys-color-outline-variant, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-.fab-btn.secondary-harvest:active {
-  background: rgba(255, 255, 255, 0.05);
-}
-.fab-btn.secondary-harvest:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 @media (max-width: 600px) {
@@ -391,31 +87,6 @@ function handleFabAbortHarvest() {
     width: auto;
     max-width: calc(100% - 32px);
     justify-content: center;
-  }
-  .dock-item {
-    flex: 1;
-    min-width: 0; /* Allow shrinking below base */
-    padding: 0;
-    gap: 4px;
-    font-size: 13px;
-  }
-  .dock-item .dock-label {
-    display: none;
-  }
-  .dock-item.active {
-    flex: 2; /* Active item takes more space, but total flex is constant */
-  }
-  .dock-item.active .dock-label {
-    display: block;
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  /* Refine FAB buttons for mobile density */
-  .fab-btn:not(.compact) {
-    padding: 0 16px;
-    gap: 8px;
-    font-size: 14px;
   }
 }
 </style>

@@ -14,6 +14,13 @@ const BaseClanIdentitySchema = v.object({
     name: v.string()
 });
 
+/** [GUARD] Royale Location Schema. */
+const RoyaleLocationSchema = v.object({
+    id: v.number(),
+    name: v.string(),
+    isCountry: v.optional(v.boolean(), false)
+});
+
 /** [GUARD] Clan Profile Schema. */
 export const RoyaleClanSchema = v.intersect([
     BaseClanIdentitySchema,
@@ -22,7 +29,8 @@ export const RoyaleClanSchema = v.intersect([
         description: v.optional(v.string()),
         badgeId: v.optional(v.number()),
         clanScore: v.optional(v.number()),
-        clanWarTrophies: v.optional(v.number())
+        clanWarTrophies: v.optional(v.number()),
+        location: v.optional(v.nullable(RoyaleLocationSchema))
     })
 ]);
 
@@ -183,4 +191,14 @@ export const IngestionTargetsSchema = v.object({
 export const RecruitFateSchema = v.object({
     status: v.string(),
     raw_potential_score: v.union([v.number(), v.string()])
+});
+
+/** [GUARD] Royale Location List Schema. */
+export const RoyaleLocationListSchema = v.object({
+    items: v.array(RoyaleLocationSchema)
+});
+
+/** [GUARD] Royale Ranking List Schema. */
+export const RoyaleRankingListSchema = v.object({
+    items: v.array(v.record(v.string(), v.unknown()))
 });

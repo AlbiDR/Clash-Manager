@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { ref } from "vue";
+import { useHaptics } from "../../core";
 
 /**
  * [UX] USE LONG PRESS
  * Provides a standardized long-press gesture with built-in haptic feedback.
  */
 export function useLongPress(callback: () => void, duration = 400) {
+  const haptics = useHaptics();
   const isLongPressActive = ref(false);
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -16,9 +18,7 @@ export function useLongPress(callback: () => void, duration = 400) {
       isLongPressActive.value = true;
       
       // Standardized Selection Haptic (Medium pulse)
-      if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate(60);
-      }
+      haptics.longPress();
       callback();
     }, duration);
   }

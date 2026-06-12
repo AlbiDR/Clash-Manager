@@ -4,7 +4,7 @@
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { generateLinearTrend, type Point } from "@core/utils/bezier";
 
-export interface ChartBarItem {
+interface ChartBarItem {
   id: string;
   value: number;
   height: string;
