@@ -186,7 +186,8 @@ CREATE TABLE IF NOT EXISTS drivers.clans (
     war_trophies integer,
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
     snapshot_date date DEFAULT CURRENT_DATE,
-    CONSTRAINT drivers_clans_pkey PRIMARY KEY (id)
+    CONSTRAINT drivers_clans_pkey PRIMARY KEY (id),
+    CONSTRAINT clans_clan_tag_unique UNIQUE (clan_tag)
 );
 
 ALTER TABLE drivers.clans ENABLE ROW LEVEL SECURITY;
@@ -222,7 +223,8 @@ CREATE TABLE IF NOT EXISTS drivers.members (
     last_ingested_at timestamp with time zone,
     is_active boolean DEFAULT true /* Soft-delete flag: FALSE indicates the member has left the clan but their record is preserved for history. */,
     next_poll_at timestamp with time zone /* Earliest timestamp at which this player's battle log should next be fetched. NULL means poll immediately on the next ingestion run. Computed by drivers.get_voyage_poll_interval_seconds() after each successful ingest_player_battles() call. */,
-    CONSTRAINT drivers_members_pkey PRIMARY KEY (id)
+    CONSTRAINT drivers_members_pkey PRIMARY KEY (id),
+    CONSTRAINT members_tag_unique UNIQUE (player_tag)
 );
 
 ALTER TABLE drivers.members ENABLE ROW LEVEL SECURITY;
@@ -239,7 +241,9 @@ CREATE TABLE IF NOT EXISTS drivers.war_activity (
     updated_at timestamp with time zone DEFAULT now(),
     player_name text NOT NULL,
     recorded_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT drivers_war_activity_pkey PRIMARY KEY (id)
+    CONSTRAINT drivers_war_activity_pkey PRIMARY KEY (id),
+    CONSTRAINT war_activity_member_tag_week_id_key UNIQUE (player_tag, week_id),
+    CONSTRAINT war_activity_tag_week_section_unique UNIQUE (player_tag, week_id, section_index)
 );
 
 ALTER TABLE drivers.war_activity ENABLE ROW LEVEL SECURITY;
@@ -254,7 +258,9 @@ CREATE TABLE IF NOT EXISTS drivers.war_history (
     fame integer DEFAULT 0,
     updated_at timestamp with time zone DEFAULT now(),
     clan_name text NOT NULL,
-    CONSTRAINT drivers_war_history_pkey PRIMARY KEY (id)
+    CONSTRAINT drivers_war_history_pkey PRIMARY KEY (id),
+    CONSTRAINT war_history_tag_week_unique UNIQUE (clan_tag, week_id),
+    CONSTRAINT war_history_week_id_tag_key UNIQUE (week_id, clan_tag)
 );
 
 ALTER TABLE drivers.war_history ENABLE ROW LEVEL SECURITY;
@@ -410,7 +416,8 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
     manual_voyage_crowns integer DEFAULT 0,
     manual_voyage_crowns_at timestamp with time zone,
     percentage_voyage_crowns numeric DEFAULT 0.0,
-    CONSTRAINT drivers_clan_voyage_contributions_pkey PRIMARY KEY (id)
+    CONSTRAINT drivers_clan_voyage_contributions_pkey PRIMARY KEY (id),
+    CONSTRAINT clan_voyage_contributions_voyage_id_player_tag_key UNIQUE (voyage_id, player_tag)
 );
 
 ALTER TABLE drivers.clan_voyage_contributions ENABLE ROW LEVEL SECURITY;
@@ -441,28 +448,6 @@ CREATE TABLE IF NOT EXISTS features.player_card_snapshots (
 );
 
 ALTER TABLE features.player_card_snapshots ENABLE ROW LEVEL SECURITY;
-
--- UNIQUE CONSTRAINTS
-ALTER TABLE drivers.clans DROP CONSTRAINT IF EXISTS clans_clan_tag_unique;
-ALTER TABLE drivers.clans ADD CONSTRAINT clans_clan_tag_unique UNIQUE (clan_tag);
-
-ALTER TABLE drivers.members DROP CONSTRAINT IF EXISTS members_tag_unique;
-ALTER TABLE drivers.members ADD CONSTRAINT members_tag_unique UNIQUE (player_tag);
-
-ALTER TABLE drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_player_tag_key;
-ALTER TABLE drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_voyage_id_player_tag_key UNIQUE (voyage_id, player_tag);
-
-ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_member_tag_week_id_key;
-ALTER TABLE drivers.war_activity ADD CONSTRAINT war_activity_member_tag_week_id_key UNIQUE (player_tag, week_id);
-
-ALTER TABLE drivers.war_activity DROP CONSTRAINT IF EXISTS war_activity_tag_week_section_unique;
-ALTER TABLE drivers.war_activity ADD CONSTRAINT war_activity_tag_week_section_unique UNIQUE (player_tag, week_id, section_index);
-
-ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_tag_week_unique;
-ALTER TABLE drivers.war_history ADD CONSTRAINT war_history_tag_week_unique UNIQUE (clan_tag, week_id);
-
-ALTER TABLE drivers.war_history DROP CONSTRAINT IF EXISTS war_history_week_id_tag_key;
-ALTER TABLE drivers.war_history ADD CONSTRAINT war_history_week_id_tag_key UNIQUE (week_id, clan_tag);
 
 -- FOREIGN KEY CONSTRAINTS
 ALTER TABLE drivers.clan_voyage DROP CONSTRAINT IF EXISTS clan_voyage_clan_tag_fkey;
@@ -2043,11 +2028,11 @@ BEGIN
         VALUES (NEW.player_tag)
         ON CONFLICT (player_tag) DO NOTHING;
     ELSIF TG_OP = 'DELETE' THEN
-        IF TG_TABLE_NAME = 'drivers.members' THEN
+        IF TG_TABLE_NAME = 'members' THEN
             IF NOT EXISTS (SELECT 1 FROM drivers.recruit_blacklist WHERE player_tag = OLD.player_tag) THEN
                 DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.player_tag;
             END IF;
-        ELSIF TG_TABLE_NAME = 'drivers.recruit_blacklist' THEN
+        ELSIF TG_TABLE_NAME = 'recruit_blacklist' THEN
             IF NOT EXISTS (SELECT 1 FROM drivers.members WHERE player_tag = OLD.player_tag) THEN
                 DELETE FROM drivers.exclusion_cache WHERE player_tag = OLD.player_tag;
             END IF;
@@ -3765,76 +3750,52 @@ WITH latest_logs AS (
   ORDER BY (season_id)::integer DESC, (section_index)::integer DESC;
 
 -- TRIGGERS
-DROP TRIGGER IF EXISTS handle_updated_at_members ON drivers.members;
-CREATE TRIGGER handle_updated_at_members BEFORE UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_members BEFORE UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS tr_heritage_snapshot ON drivers.members;
-CREATE TRIGGER tr_heritage_snapshot AFTER DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION substrate.handle_heritage_snapshot();
+CREATE OR REPLACE TRIGGER tr_heritage_snapshot AFTER DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION substrate.handle_heritage_snapshot();
 
-DROP TRIGGER IF EXISTS trg_members_exclusion_sync ON drivers.members;
-CREATE TRIGGER trg_members_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
+CREATE OR REPLACE TRIGGER trg_members_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
 
-DROP TRIGGER IF EXISTS handle_updated_at_war_opponents ON drivers.war_opponents;
-CREATE TRIGGER handle_updated_at_war_opponents BEFORE UPDATE ON drivers.war_opponents FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_war_opponents BEFORE UPDATE ON drivers.war_opponents FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS handle_updated_at_battles ON drivers.player_battles;
-CREATE TRIGGER handle_updated_at_battles BEFORE UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_battles BEFORE UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS tr_battle_voyage_sync ON drivers.player_battles;
-CREATE TRIGGER tr_battle_voyage_sync AFTER INSERT OR UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION drivers.on_battle_recorded();
+CREATE OR REPLACE TRIGGER tr_battle_voyage_sync AFTER INSERT OR UPDATE ON drivers.player_battles FOR EACH ROW EXECUTE FUNCTION drivers.on_battle_recorded();
 
-DROP TRIGGER IF EXISTS handle_updated_at_telemetry ON substrate.governance_telemetry;
-CREATE TRIGGER handle_updated_at_telemetry BEFORE UPDATE ON substrate.governance_telemetry FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_telemetry BEFORE UPDATE ON substrate.governance_telemetry FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS tr_telemetry_integrity_sync ON substrate.governance_telemetry;
-CREATE TRIGGER tr_telemetry_integrity_sync AFTER UPDATE OF status ON substrate.governance_telemetry FOR EACH ROW WHEN ((new.status = ANY (ARRAY['SUCCESS'::text, 'COMPLETE'::text]))) EXECUTE FUNCTION substrate.on_telemetry_complete();
+CREATE OR REPLACE TRIGGER tr_telemetry_integrity_sync AFTER UPDATE OF status ON substrate.governance_telemetry FOR EACH ROW WHEN ((new.status = ANY (ARRAY['SUCCESS'::text, 'COMPLETE'::text]))) EXECUTE FUNCTION substrate.on_telemetry_complete();
 
-DROP TRIGGER IF EXISTS handle_updated_at_blacklist ON drivers.recruit_blacklist;
-CREATE TRIGGER handle_updated_at_blacklist BEFORE UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_blacklist BEFORE UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS trg_blacklist_exclusion_sync ON drivers.recruit_blacklist;
-CREATE TRIGGER trg_blacklist_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
+CREATE OR REPLACE TRIGGER trg_blacklist_exclusion_sync AFTER INSERT OR DELETE OR UPDATE ON drivers.recruit_blacklist FOR EACH ROW EXECUTE FUNCTION drivers.sync_exclusion_cache();
 
-DROP TRIGGER IF EXISTS trg_shredder_profile ON substrate.raw_clan_profile;
-CREATE TRIGGER trg_shredder_profile AFTER INSERT ON substrate.raw_clan_profile FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_profile();
+CREATE OR REPLACE TRIGGER trg_shredder_profile AFTER INSERT ON substrate.raw_clan_profile FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_profile();
 
-DROP TRIGGER IF EXISTS handle_updated_at_clans ON drivers.clans;
-CREATE TRIGGER handle_updated_at_clans BEFORE UPDATE ON drivers.clans FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_clans BEFORE UPDATE ON drivers.clans FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS trg_on_contribution_manual_override_updated ON drivers.clan_voyage_contributions;
-CREATE TRIGGER trg_on_contribution_manual_override_updated BEFORE UPDATE OF manual_voyage_crowns ON drivers.clan_voyage_contributions FOR EACH ROW EXECUTE FUNCTION drivers.on_contribution_manual_override_updated();
+CREATE OR REPLACE TRIGGER trg_on_contribution_manual_override_updated BEFORE UPDATE OF manual_voyage_crowns ON drivers.clan_voyage_contributions FOR EACH ROW EXECUTE FUNCTION drivers.on_contribution_manual_override_updated();
 
-DROP TRIGGER IF EXISTS trg_shredder_members ON substrate.raw_clan_members;
-CREATE TRIGGER trg_shredder_members AFTER INSERT ON substrate.raw_clan_members FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_members();
+CREATE OR REPLACE TRIGGER trg_shredder_members AFTER INSERT ON substrate.raw_clan_members FOR EACH ROW EXECUTE FUNCTION substrate.shred_clan_members();
 
-DROP TRIGGER IF EXISTS trg_shredder_river_race ON substrate.raw_river_race;
-CREATE TRIGGER trg_shredder_river_race AFTER INSERT ON substrate.raw_river_race FOR EACH ROW EXECUTE FUNCTION substrate.shred_river_race();
+CREATE OR REPLACE TRIGGER trg_shredder_river_race AFTER INSERT ON substrate.raw_river_race FOR EACH ROW EXECUTE FUNCTION substrate.shred_river_race();
 
-DROP TRIGGER IF EXISTS handle_updated_at_war_activity ON drivers.war_activity;
-CREATE TRIGGER handle_updated_at_war_activity BEFORE UPDATE ON drivers.war_activity FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_war_activity BEFORE UPDATE ON drivers.war_activity FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS handle_updated_at_recruits ON drivers.recruits;
-CREATE TRIGGER handle_updated_at_recruits BEFORE UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_recruits BEFORE UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS tr_log_recruit_insert ON drivers.recruits;
-CREATE TRIGGER tr_log_recruit_insert AFTER INSERT ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
+CREATE OR REPLACE TRIGGER tr_log_recruit_insert AFTER INSERT ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
 
-DROP TRIGGER IF EXISTS tr_log_recruit_update ON drivers.recruits;
-CREATE TRIGGER tr_log_recruit_update AFTER UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
+CREATE OR REPLACE TRIGGER tr_log_recruit_update AFTER UPDATE ON drivers.recruits FOR EACH ROW EXECUTE FUNCTION drivers.log_recruit_event();
 
-DROP TRIGGER IF EXISTS tr_rotate_recruits ON drivers.recruits;
-CREATE TRIGGER tr_rotate_recruits AFTER INSERT OR UPDATE OF raw_potential_score ON drivers.recruits FOR EACH STATEMENT EXECUTE FUNCTION substrate.tr_fn_rotate_recruits();
+CREATE OR REPLACE TRIGGER tr_rotate_recruits AFTER INSERT OR UPDATE OF raw_potential_score ON drivers.recruits FOR EACH STATEMENT EXECUTE FUNCTION substrate.tr_fn_rotate_recruits();
 
-DROP TRIGGER IF EXISTS handle_updated_at_war_history ON drivers.war_history;
-CREATE TRIGGER handle_updated_at_war_history BEFORE UPDATE ON drivers.war_history FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_war_history BEFORE UPDATE ON drivers.war_history FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS handle_updated_at_heritage ON drivers.heritage_ledger;
-CREATE TRIGGER handle_updated_at_heritage BEFORE UPDATE ON drivers.heritage_ledger FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_heritage BEFORE UPDATE ON drivers.heritage_ledger FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS handle_updated_at_config ON substrate.config;
-CREATE TRIGGER handle_updated_at_config BEFORE UPDATE ON substrate.config FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+CREATE OR REPLACE TRIGGER handle_updated_at_config BEFORE UPDATE ON substrate.config FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
-DROP TRIGGER IF EXISTS trg_shredder_war_log ON substrate.raw_war_log;
-CREATE TRIGGER trg_shredder_war_log AFTER INSERT ON substrate.raw_war_log FOR EACH ROW EXECUTE FUNCTION substrate.shred_war_log();
+CREATE OR REPLACE TRIGGER trg_shredder_war_log AFTER INSERT ON substrate.raw_war_log FOR EACH ROW EXECUTE FUNCTION substrate.shred_war_log();
 
 COMMIT;

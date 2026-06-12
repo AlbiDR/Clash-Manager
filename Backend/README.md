@@ -52,17 +52,21 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 ---
 
 ## IV. The Clinical Ingestion Pipeline
-Ingestion is performed via a **Tri-Engine Edge Architecture**, supported by automated database shredders and the authoritative maintenance orchestrator.
+Ingestion is performed via a **Quad-Engine Edge Architecture**, supported by automated database shredders and the authoritative maintenance orchestrator.
 
-1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the clinical synchronization protocol. Features strict Valibot-enforced structural validation and a clinical Penta-Stage synchronization protocol. While implemented as a unified pipeline for efficiency, it conceptually covers 6 stages:
+1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the clinical synchronization protocol. Features strict Valibot-enforced structural validation and a clinical Hexa-Stage synchronization protocol. While implemented as a unified pipeline for efficiency, it conceptually covers 6 stages:
     - **S1 (Discovery)**: Harvests new recruits from high-fidelity tournament anchors.
-    - **S2-S5 (Clan Sync)**: Atomic synchronization of clan profile, member telemetry, river race standings, and war history.
+    - **S2 (Clan Profile)**: Atomic synchronization of clan-level telemetry.
+    - **S3 (Roster Sync)**: Synchronization of active member telemetry.
+    - **S4 (River Race)**: Extraction of current standings and task completion.
+    - **S5 (War History)**: Infinite Career Ledger synchronization.
     - **S6 (Deep Depth)**: Extracts 100-sample battle logs for high-precision competitive scoring.
 2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
-3. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Utilizes inferred Valibot schemas for rarity-relative normalization and backend persistence, enforcing a zero-trust boundary for client-supplied snapshots.
-4. **Voyage Orchestrator (`initialize_voyage`)**: SQL-based L5 Control Layer (RPC) responsible for activating and configuring Clan Voyage events.
-5. **Shredder (`drivers` layer)**: Automated SQL triggers and functions in the database substrate that decompose raw JSON payloads into relational telemetry.
-6. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative SQL system janitor (pg_cron) responsible for pruning volatile state and maintaining substrate health.
+3. **Royale API Proxy (`query-royale-api`)**: A secure L5 Control Layer proxy for transient leaderboard harvesting. Features a dynamic country rotation strategy for International clans to ensure diverse recruit discovery without polluting the database substrate.
+4. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Utilizes inferred Valibot schemas for rarity-relative normalization and backend persistence, enforcing a zero-trust boundary for client-supplied snapshots.
+5. **Voyage Orchestrator (`initialize_voyage`)**: SQL-based L5 Control Layer (RPC) responsible for activating and configuring Clan Voyage events.
+6. **Shredder (`drivers` layer)**: Automated SQL triggers and functions in the database substrate that decompose raw JSON payloads into relational telemetry.
+7. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative SQL system janitor (pg_cron) responsible for pruning volatile state and maintaining substrate health.
 
 ---
 
@@ -76,7 +80,7 @@ The `deploy-supabase.yml` workflow automates the following sequence:
     - `CLAN_TAG` and `PLAYER_TAG` repository variables are synced.
     - `ROYALE_API_KEYS` (The Key Farm) is injected into the Supabase environment.
 3. **Database DNA Sync**: SQL migrations are pushed if `SUPABASE_DB_PASSWORD` is present.
-4. **Edge Layer Deployment**: The tri-engine cluster (`ingest-royale-data`, `headhunter-scanner`, and `sync-player-cards`) is bundled and deployed.
+4. **Edge Layer Deployment**: The quad-engine cluster (`ingest-royale-data`, `headhunter-scanner`, `sync-player-cards`, and `query-royale-api`) is bundled and deployed.
 
 ### Common CLI Operations
 ```bash
@@ -93,6 +97,7 @@ supabase functions serve ingest-royale-data --no-verify-jwt
 supabase functions deploy ingest-royale-data --no-verify-jwt
 supabase functions deploy headhunter-scanner --no-verify-jwt
 supabase functions deploy sync-player-cards --no-verify-jwt
+supabase functions deploy query-royale-api --no-verify-jwt
 ```
 
 ---
@@ -127,4 +132,4 @@ supabase functions deploy sync-player-cards --no-verify-jwt
 
 > [!NOTE]
 > This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> *Compiled: 2026-09-15 by Jules (Stage 5 Archivist)*
+> *Compiled: 2026-06-12 by Jules (Stage 5 Archivist)*

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import type { Directive } from "vue";
-import type { BenchmarkData } from "../../core/services/useBenchmarking";
+import { useHaptics } from "../../core";
+import type { BenchmarkData } from "../../core";
 
 // Singleton Tooltip State
 let tooltipEl: HTMLDivElement | null = null;
@@ -127,6 +128,8 @@ interface TooltipHTMLElement extends HTMLElement {
 
 // SPEED WIZARD: Unified Delegated Listeners
 if (typeof window !== "undefined") {
+  const haptics = useHaptics();
+
   const handleShow = (el: TooltipHTMLElement) => {
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     const value = el._tooltipValue;
@@ -135,7 +138,7 @@ if (typeof window !== "undefined") {
     activeTarget = el;
     renderContent(value);
     positionTooltip(el);
-    if (navigator.vibrate) navigator.vibrate(40);
+    haptics.heavy();
   };
 
   const handleHide = () => {
@@ -194,7 +197,7 @@ if (typeof window !== "undefined") {
  * Side Effects:
  * - Creates and appends a '.rich-tooltip' div to document.body on first use.
  * - Attaches global listeners to document.body and window for event delegation and scroll-to-hide.
- * - Triggers hardware haptics via navigator.vibrate.
+ * - Triggers hardware haptics via useHaptics.
  *
  * Reactive State:
  * - The directive's value (BenchmarkData | string) is stored as an expando

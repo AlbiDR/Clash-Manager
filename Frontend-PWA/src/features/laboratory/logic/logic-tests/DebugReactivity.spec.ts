@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect } from "vitest";
-import { calculateProgressionPath } from "../Simulation";
+import { calculateProgressionPath } from "../SimulationEngine";
 import type { SimulationState, OptimizationSettings, PlayerData, PlayerProfile, Inventory, Card, UpgradeAction } from "../Types";
 
 // Mock data to match a typical Level 76 player

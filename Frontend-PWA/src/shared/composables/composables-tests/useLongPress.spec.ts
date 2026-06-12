@@ -2,13 +2,20 @@
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useLongPress } from '../useLongPress';
+import { resetHapticsState } from "../../../core/services/useHaptics";
 
 describe('useLongPress', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    resetHapticsState();
     // Mock navigator.vibrate
     if (typeof navigator !== 'undefined') {
       (navigator as any).vibrate = vi.fn();
+    }
+
+    // Trigger interaction to enable haptics
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new MouseEvent("click"));
     }
   });
 
@@ -59,7 +66,7 @@ describe('useLongPress', () => {
     start();
     vi.advanceTimersByTime(400);
 
-    expect(navigator.vibrate).toHaveBeenCalledWith(60);
+    expect(navigator.vibrate).toHaveBeenCalledWith(65);
   });
 
   it('should update isLongPressActive state correctly', () => {

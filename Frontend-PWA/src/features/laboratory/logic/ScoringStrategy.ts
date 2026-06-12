@@ -18,7 +18,7 @@
  */
 
 import type { Card, OptimizationSettings, UpgradeCandidate } from './Types';
-import { GEM_TO_GOLD_FACTOR } from '@core/utils/economy';
+import { convertGemsToGold } from '@core/utils/economy';
 
 /**
  * Interface for progression scoring logic.
@@ -61,7 +61,7 @@ export class ProjectionStrategy implements ScoringStrategy {
     
     // Rationale: Theoretical Gems are weighted at 10% of their market value
     // because projection mode assumes long-term resource acquisition.
-    const effectiveCost = Number(goldCost) + (Number(gemsUsed) * GEM_TO_GOLD_FACTOR * 0.1);
+    const effectiveCost = Number(goldCost) + (Number(convertGemsToGold(gemsUsed)) * 0.1);
     
     // Base Ratio: Cost per 1 XP gained.
     let score = effectiveCost / (Number(xpGained) || 1);
@@ -103,7 +103,7 @@ export class InventoryStrategy implements ScoringStrategy {
 
     // Rationale: Gems are extremely "expensive" (50x multiplier) to force the
     // engine to exhaust all gold-based upgrades before suggesting gem spending.
-    const effectiveCost = Number(goldCost) + (Number(gemsUsed) * GEM_TO_GOLD_FACTOR * 50);
+    const effectiveCost = Number(goldCost) + (Number(convertGemsToGold(gemsUsed)) * 50);
 
     // Strict ROI: Pure cost-efficiency without milestone bias.
     let score = effectiveCost / (Number(xpGained) || 1);

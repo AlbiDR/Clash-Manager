@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateProgressionPath,
   mapStateToResult
-} from '../Simulation';
+} from '../SimulationEngine';
 import { calculateKingLevel } from '@core/utils/game';
 import { asGold, asGems, asXP } from '@core/utils/economy';
 import type { SimulationState, OptimizationSettings, Card, PlayerProfile } from '../Types';

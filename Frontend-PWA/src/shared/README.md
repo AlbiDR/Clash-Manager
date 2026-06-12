@@ -32,6 +32,7 @@ Stateful logic engines that manage component-level behaviors and hardware broker
 - **useHistoryChart.ts**: Centralizes history parsing, slicing, and weighted trend prediction for visualization components.
 - **useSelectionBar.ts**: Encapsulates logic for score threshold selection and comparison mode toggling in bulk operation surfaces.
 - **useCountdown.ts**: High-performance interval timer for real-time expiration feedback (e.g., Voyage banners).
+- **useViewport.ts**: Orchestrates viewport-aware reactivity and breakpoint sensing across the monorepo.
 - **useCardMechanics.ts**: Manages "squish-interactions," selection states, and semantic scaling for card-based UI.
 - **usePullToRefresh.ts**: Orchestrates native-feeling pull-to-refresh gestures and synchronization triggers.
 - **useHeaderScroll.ts**: Provides reactive scroll-depth detection for adaptive header styling.

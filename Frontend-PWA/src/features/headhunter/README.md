@@ -18,6 +18,13 @@ The Headhunter feature provides a real-time feed of candidates scanned from exte
 
 ## Logic Subsystems
 
+### Leaderboard Harvesting (useLeaderboardScraper.ts)
+Orchestrates the dynamic, transient harvesting of clanless players from the Clash Royale global and local leaderboards.
+- **Transient Harvesting**: Queries the `query-royale-api` Edge Function to retrieve live leaderboard data without persistent writes.
+- **Client-Side Filtering**: Filters harvested players to identify those without a clan.
+- **Queue Injection**: Injects sanitized player tags directly into the `useSelectionStore` to trigger immediate Recruitment Blitz loops.
+- **UI Coordination**: Manages the harvesting state in the UI Coordinator, including abort logic for long-running fetches.
+
 ### Recruitment Orchestrator (useRecruiter.ts)
 The primary behavioral engine for the Headhunter interface.
 - **Dual-Phase Sync**: Orchestrates **Manual Ingest** (manual sync trigger) and **Background Sync** (consistency check with the Supabase view).

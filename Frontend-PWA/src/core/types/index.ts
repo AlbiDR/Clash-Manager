@@ -174,7 +174,7 @@ export interface ConsoleCardMetadata {
 /**
  * Standardized provenance metadata from the Layer 1 ClashDataStore.
  */
-export interface HubInfo {
+interface HubInfo {
   /** The authoritative source of the current dataset. */
   source: "SUPABASE" | "WORKER" | "GAS";
   /** Human-readable age of the data at the source. */
