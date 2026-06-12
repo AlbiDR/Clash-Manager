@@ -2,12 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "npm:valibot";
-import { fetchWithRotation } from "../_shared/muscle.ts";
+import { fetchWithRotation, processBatch } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import {
   RoyaleClanSchema,
-  RoyaleLocationListSchema,
-  RoyaleRankingListSchema
+  RoyaleLocationListSchema
 } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 
@@ -15,7 +14,7 @@ import { supabase, CONFIG, syncVault } from "./client.ts";
  * Edge Function: query-royale-api
  * L5 Control Layer: Secure proxy for client-side Clash Royale API queries.
  *
- * Implements strict whitelisting and dynamic fallback routing for International clans.
+ * Implements robust clanless player harvesting via active clan battle log scanning.
  */
 
 const PayloadSchema = v.object({
@@ -26,9 +25,99 @@ const LOCATION_ID_INTERNATIONAL = 57000101;
 const DEFAULT_FALLBACK_COUNTRY = "United States";
 const DEFAULT_FALLBACK_ID = 57000120;
 
+const TOP_CLANS_LIMIT = 3;
+const TOP_MEMBERS_PER_CLAN_LIMIT = 3;
+const INITIAL_ARRAY_INDEX = 0;
+
 // EPHEMERAL: intentionally resets on cold start.
 // Top-level cache to minimize locations list roundtrips.
 let cachedCountries: { id: number; name: string }[] | null = null;
+
+/**
+ * Discovers active, clanless players by fetching top clans in a location,
+ * getting their active members, and extracting clanless opponents from their battle logs.
+ */
+async function harvestClanlessPlayers(locationId: string, logAudit: any): Promise<any[]> {
+  const clansPath = `/locations/${locationId}/rankings/clans?limit=${TOP_CLANS_LIMIT}`;
+  logAudit("HARVEST_CLANS_FETCH", "called", { path: clansPath });
+  const clansRes = await fetchWithRotation(clansPath);
+  if (!clansRes.ok) {
+    throw new Error(`Failed to fetch top clans: ${clansRes.status}`);
+  }
+  
+  const clansData = await clansRes.json();
+  const clans = clansData.items || [];
+  if (clans.length === INITIAL_ARRAY_INDEX) {
+    return [];
+  }
+  
+  // Fetch clan details to get members
+  const memberFetchTasks = clans.map((clan: any) => {
+    return async () => {
+      const encodedTag = encodeURIComponent(clan.tag);
+      const clanRes = await fetchWithRotation(`/clans/${encodedTag}`);
+      if (!clanRes.ok) {
+        console.warn(`Failed to fetch clan detail for ${clan.tag}: ${clanRes.status}`);
+        return [];
+      }
+      const clanData = await clanRes.json();
+      return clanData.memberList || [];
+    };
+  });
+  
+  // Process member fetches in parallel
+  const clanMembersList = await processBatch(memberFetchTasks);
+  
+  // Collect target players (top members per clan)
+  const targetPlayerTags: string[] = [];
+  for (const members of clanMembersList) {
+    const activeMembers = members.slice(INITIAL_ARRAY_INDEX, TOP_MEMBERS_PER_CLAN_LIMIT);
+    for (const member of activeMembers) {
+      if (member.tag) {
+        targetPlayerTags.push(member.tag);
+      }
+    }
+  }
+  
+  if (targetPlayerTags.length === INITIAL_ARRAY_INDEX) {
+    return [];
+  }
+  
+  // Fetch battle logs for target players
+  const battlelogTasks = targetPlayerTags.map((playerTag) => {
+    return async () => {
+      const encodedPlayerTag = encodeURIComponent(playerTag);
+      const logRes = await fetchWithRotation(`/players/${encodedPlayerTag}/battlelog`);
+      if (!logRes.ok) {
+        console.warn(`Failed to fetch battlelog for ${playerTag}: ${logRes.status}`);
+        return [];
+      }
+      return await logRes.json();
+    };
+  });
+  
+  const battlelogs = await processBatch(battlelogTasks);
+  
+  // Extract clanless opponents
+  const clanlessMap = new Map<string, any>();
+  for (const log of battlelogs) {
+    if (!Array.isArray(log)) continue;
+    for (const battle of log) {
+      const opponents = battle.opponent || [];
+      for (const opponent of opponents) {
+        if (opponent.tag && !opponent.clan) {
+          clanlessMap.set(opponent.tag, {
+            tag: opponent.tag,
+            name: opponent.name,
+            clan: null
+          });
+        }
+      }
+    }
+  }
+  
+  return Array.from(clanlessMap.values());
+}
 
 Deno.serve(async (req) => {
   await syncVault();
@@ -45,22 +134,12 @@ Deno.serve(async (req) => {
       logAudit("HARVEST_START", "called", { mode });
 
       if (mode === "global") {
-        const globalPath = "/locations/global/rankings/players";
-        logAudit("GLOBAL_HARVEST", "called", { path: globalPath });
-        const response = await fetchWithRotation(globalPath);
-        if (!response.ok) {
-          throw new Error(`Royale API Global rankings failed: ${response.status}`);
-        }
-
-        // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
-        const rawGlobalRankingsPayload: unknown = await response.json();
-        const globalRankingsValidation = v.safeParse(RoyaleRankingListSchema, rawGlobalRankingsPayload);
-
-        if (!globalRankingsValidation.success) {
-          throw new Error("Global rankings payload failed structural validation.");
-        }
-
-        return { items: globalRankingsValidation.output.items, region: "Global" };
+        logAudit("GLOBAL_HARVEST", "called");
+        const items = await harvestClanlessPlayers("global", logAudit);
+        return { 
+          items, 
+          region: "Global"
+        };
       }
 
       // Local Harvest Resolution
@@ -76,7 +155,6 @@ Deno.serve(async (req) => {
         throw new Error(`Failed to retrieve clan details to identify region: ${clanResponse.status}`);
       }
 
-      // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
       const rawClanProfile: unknown = await clanResponse.json();
       const clanProfileValidation = v.safeParse(RoyaleClanSchema, rawClanProfile);
 
@@ -94,8 +172,6 @@ Deno.serve(async (req) => {
       let targetLocationName = location.name;
 
       // Handle International location rotation
-      // [DECISION LOG] International clans see the same 'Global' players if queried as International.
-      // Rotating through countries provides a more diverse set of potential recruits.
       const isInternational = targetLocationId === LOCATION_ID_INTERNATIONAL ||
                               targetLocationName === "International" ||
                               !location.isCountry;
@@ -110,7 +186,6 @@ Deno.serve(async (req) => {
             throw new Error(`Failed to retrieve locations catalog: ${locationsResponse.status}`);
           }
 
-          // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
           const rawLocationsPayload: unknown = await locationsResponse.json();
           const locationsValidation = v.safeParse(RoyaleLocationListSchema, rawLocationsPayload);
 
@@ -125,35 +200,25 @@ Deno.serve(async (req) => {
             .map((locationCandidate) => ({ id: locationCandidate.id, name: locationCandidate.name }));
         }
 
-        if (cachedCountries && cachedCountries.length > 0) {
+        if (cachedCountries && cachedCountries.length > INITIAL_ARRAY_INDEX) {
           const randomIndex = Math.floor(Math.random() * cachedCountries.length);
           const selectedCountry = cachedCountries[randomIndex];
           targetLocationId = selectedCountry.id;
           targetLocationName = selectedCountry.name;
           logAudit("ROTATION_SELECT", "run", { selected: targetLocationName });
         } else {
-          // Fallback to safety country if catalog is completely empty
           targetLocationId = DEFAULT_FALLBACK_ID;
           targetLocationName = DEFAULT_FALLBACK_COUNTRY;
         }
       }
 
-      const localRankingsPath = `/locations/${targetLocationId}/rankings/players`;
-      logAudit("LOCAL_HARVEST_RANKINGS_FETCH", "called", { path: localRankingsPath, country: targetLocationName });
-      const localResponse = await fetchWithRotation(localRankingsPath);
-      if (!localResponse.ok) {
-        throw new Error(`Royale API Local rankings failed for region ${targetLocationName}: ${localResponse.status}`);
-      }
+      logAudit("LOCAL_HARVEST_CLANLESS_DISCOVERY", "called", { country: targetLocationName });
+      const items = await harvestClanlessPlayers(String(targetLocationId), logAudit);
 
-      // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
-      const rawLocalRankingsPayload: unknown = await localResponse.json();
-      const localRankingsValidation = v.safeParse(RoyaleRankingListSchema, rawLocalRankingsPayload);
-
-      if (!localRankingsValidation.success) {
-        throw new Error(`Local rankings payload for ${targetLocationName} failed structural validation.`);
-      }
-
-      return { items: localRankingsValidation.output.items, region: targetLocationName };
+      return { 
+        items, 
+        region: targetLocationName
+      };
     },
   });
 });
