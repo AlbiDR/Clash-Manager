@@ -36,9 +36,22 @@ import {
   calculateKingLevel as registryCalculateKingLevel,
   calculateGemCostForCards
 } from '@core/utils/game';
+import { PriorityQueue } from '@core/utils/PriorityQueue';
 import type { ScoringStrategy } from './ScoringStrategy';
 import { ProjectionStrategy, InventoryStrategy } from './ScoringStrategy';
-import { asGold, asGems, addGold, addXP, addGems, type Gold, type XP, type Gems } from '@core/utils/economy';
+import {
+  asGold,
+  asGems,
+  addGold,
+  addXP,
+  addGems,
+  subGold,
+  canAffordGems,
+  calculateGemCostForGold,
+  type Gold,
+  type XP,
+  type Gems
+} from '@core/utils/economy';
 
 /** Internal candidate with resolved upgrade type. */
 type ResolvedCandidate = UpgradeCandidate & { upgradeType: UpgradeAction['upgradeType'] };
@@ -114,12 +127,13 @@ const getUpgradeCandidate = (
   // 5. Gold-via-Gems fallback
   let gemsUsedForGold = asGems(0);
   if (!hasGold && settings.allowGemSpending) {
-    const goldDeficit = Number(goldCost) - Number(state.inventory.gold);
-    // 1 Gem converts to 20 Gold (standard shop rate).
-    const gemsNeeded = Math.ceil(goldDeficit / 20);
-    const totalGemsNeeded = Number(gemsUsedForCards) + gemsNeeded;
-    if (totalGemsNeeded > Number(state.inventory.gems)) return null;
-    gemsUsedForGold = asGems(gemsNeeded);
+    const goldDeficit = subGold(goldCost, state.inventory.gold);
+    const gemsNeeded = calculateGemCostForGold(goldDeficit);
+    const totalGemsNeeded = addGems(gemsUsedForCards, gemsNeeded);
+
+    if (!canAffordGems(state.inventory.gems, totalGemsNeeded)) return null;
+
+    gemsUsedForGold = gemsNeeded;
     upgradeType = 'Gem';
   } else if (!hasGold) {
     return null;
@@ -244,6 +258,17 @@ export function* calculateProgressionPath(
   const targetXpRow = KING_XP_TABLE.find(r => r.level === targetLevel) ?? KING_XP_TABLE[KING_XP_TABLE.length - 1];
   const targetXp = Number(targetXpRow.cumulative);
 
+  // Initialize Priority Queue with a strategy-based comparator.
+  const queue = new PriorityQueue<ResolvedCandidate>((a, b) =>
+    scoringStrategy.calculateScore(a, settings) - scoringStrategy.calculateScore(b, settings)
+  );
+
+  // Initial population of the queue.
+  currentState.roster.forEach((card, index) => {
+    const candidate = getUpgradeCandidate(card, index, currentState, settings);
+    if (candidate) queue.push(candidate);
+  });
+
   while (iterations < MAX_ITERATIONS) {
     iterations++;
 
@@ -253,26 +278,53 @@ export function* calculateProgressionPath(
       return currentState;
     }
 
-    // 2. Identify all possible upgrades
-    const candidates: ResolvedCandidate[] = [];
-    currentState.roster.forEach((card, index) => {
-      const candidate = getUpgradeCandidate(card, index, currentState, settings);
-      if (candidate) candidates.push(candidate);
-    });
+    // 2. Extract best candidate from queue
+    let bestChoice: ResolvedCandidate | undefined;
 
-    // 3. Termination: no viable upgrades - return so done=true on this call.
-    if (candidates.length === 0) {
+    while (queue.size() > 0) {
+      const candidate = queue.pop()!;
+
+      // LAZY RE-VALIDATION
+      // Since inventory changed, we must re-calculate to ensure costs/gems are still accurate.
+      const freshCandidate = getUpgradeCandidate(
+        currentState.roster[candidate.index],
+        candidate.index,
+        currentState,
+        settings
+      );
+
+      if (!freshCandidate) continue; // No longer affordable or valid.
+
+      // If the candidate's score is still the best (or if it's the only one left), we take it.
+      // Otherwise, we re-push it to its new position and continue.
+      const currentTop = queue.peek();
+      if (!currentTop ||
+          scoringStrategy.calculateScore(freshCandidate, settings) <= scoringStrategy.calculateScore(currentTop, settings)) {
+        bestChoice = freshCandidate;
+        break;
+      } else {
+        queue.push(freshCandidate);
+      }
+    }
+
+    // 3. Termination: no viable upgrades
+    if (!bestChoice) {
       return currentState;
     }
 
-    // 4. Strategy-based ranking (lower score = higher priority).
-    candidates.sort((a, b) => scoringStrategy.calculateScore(a, settings) - scoringStrategy.calculateScore(b, settings));
-    const bestChoice = candidates[0];
-
-    // 5. Evolve State
+    // 4. Evolve State
     currentState = applyUpgrade(currentState, bestChoice);
 
-    // 6. Throttled Yield (every upgrade so tests always get fresh state;
+    // 5. Re-queue the card that was just upgraded (for its NEXT level)
+    const nextStep = getUpgradeCandidate(
+      currentState.roster[bestChoice.index],
+      bestChoice.index,
+      currentState,
+      settings
+    );
+    if (nextStep) queue.push(nextStep);
+
+    // 6. Throttled Yield (every upgrade so tests always get fresh state)
     //    the UI consumer can batch if needed).
     yield currentState;
   }
