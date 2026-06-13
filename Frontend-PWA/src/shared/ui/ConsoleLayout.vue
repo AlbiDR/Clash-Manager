@@ -113,6 +113,7 @@ watch(
         blitzEnabled: state.blitzEnabled,
         isHarvesting: state.isHarvesting,
         activeHarvester: state.activeHarvester,
+        dismissIcon: state.dismissIcon,
         onAction: (e: MouseEvent) => emit("fab-action", e),
         onBlitz: () => emit("fab-blitz"),
         onDismiss: () => emit("fab-dismiss"),

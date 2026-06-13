@@ -158,6 +158,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       isBlasting: false,
       selectionCount: selectedIds.value.length,
       blitzEnabled: false,
+      dismissIcon: "close",
     };
   });
 
