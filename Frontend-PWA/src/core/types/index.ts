@@ -125,6 +125,8 @@ export interface ConsoleFabState {
   isHarvesting?: boolean;
   /** The active harvester mode (local or global). */
   activeHarvester?: "global" | "local" | null;
+  /** Optional icon override for the dismiss/close button. */
+  dismissIcon?: string;
 }
 
 /**

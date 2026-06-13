@@ -87,6 +87,7 @@ export function useBlitzMode(
         isBlasting: false,
         selectionCount: 0,
         blitzEnabled: false,
+        dismissIcon: "trash",
       };
     }
 
@@ -123,6 +124,7 @@ export function useBlitzMode(
       // 1. The native AndroidBridge is present (TWA wrapper) - always available, no popup required.
       // 2. OR the user has manually enabled the blitzMode module flag in settings.
       blitzEnabled: hasNativeBridge.value || (modules.blitzMode && isTrusted.value),
+      dismissIcon: "trash",
     };
   });
 

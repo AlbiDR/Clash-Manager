@@ -16,6 +16,7 @@ const fabState = reactive({
   activeHarvester: null as "global" | "local" | null,
   selectionCount: 0,
   blitzEnabled: false,
+  dismissIcon: "close",
   // Callbacks - set by the view that owns the selection
   onAction: null as ((event: MouseEvent) => void) | null,
   onBlitz: null as (() => void) | null,
@@ -72,6 +73,7 @@ export function useUiCoordinator() {
     activeHarvester?: "global" | "local" | null;
     selectionCount?: number;
     blitzEnabled?: boolean;
+    dismissIcon?: string;
     onAction?: (event: MouseEvent) => void;
     onBlitz?: () => void;
     onDismiss?: () => void;
@@ -87,6 +89,7 @@ export function useUiCoordinator() {
     if (state.activeHarvester !== undefined) fabState.activeHarvester = state.activeHarvester;
     if (state.selectionCount !== undefined) fabState.selectionCount = state.selectionCount;
     if (state.blitzEnabled !== undefined) fabState.blitzEnabled = state.blitzEnabled;
+    if (state.dismissIcon !== undefined) fabState.dismissIcon = state.dismissIcon;
     if (state.onAction !== undefined) fabState.onAction = state.onAction;
     if (state.onBlitz !== undefined) fabState.onBlitz = state.onBlitz;
     if (state.onDismiss !== undefined) fabState.onDismiss = state.onDismiss;
