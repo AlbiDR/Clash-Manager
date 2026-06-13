@@ -11,3 +11,4 @@
 2026-09-24 | Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts | Decomposed laboratory logic and extracted formatNumber utility.
 2026-06-11 | Frontend-PWA/src/shared/ui/FloatingDock.vue | Decomposed monolithic FloatingDock.vue (421 lines) into NavigationDock.vue and SelectionFab.vue. Extracted useViewport.ts shared composable. Reduced FloatingDock.vue to 92 lines.
 2026-06-12 | Frontend-PWA/src/features/laboratory/logic/Simulation.ts | Decomposed monolithic Simulation.ts (404 lines) into SimulationEngine.ts, SimulationCore.ts, and SimulationMappers.ts to satisfy SRP.
+2026-06-13 | Frontend-PWA/src/features/settings/composables/useSettings.ts | Decomposed monolithic useSettings.ts (370 lines) by extracting PWA lifecycle and recovery logic to new Layer 1 service usePwaManager.ts.
