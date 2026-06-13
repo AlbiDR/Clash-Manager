@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 import { useTheme } from "@shared";
-import { idb } from "@core/services/StorageService";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBlueprintMode } from "@core/services/useBlueprintMode";
 import { useClashDataStore } from "@core";
@@ -16,6 +15,7 @@ import { useWakeLock } from "@core/services/useWakeLock";
 import { useSystemInfo } from "@core/services/useSystemInfo";
 import { useApiState } from "@core/api/useApiState";
 import { useBadge } from "@core/services/useBadge";
+import { usePwaManager } from "@core/services/usePwaManager";
 import { subscribeToPush } from "@core/api/MaintenanceClient";
 import { computed, ref, onMounted } from "vue";
 // import { registerSW } from "virtual:pwa-register";
@@ -54,9 +54,7 @@ export function useSettings() {
   const { isHydrated, isRefreshing, lastSyncTime } = storeToRefs(clashDataStore);
   const { refresh, startBackgroundSync } = clashDataStore;
   const { status: unifiedStatus } = useConnectionStatus();
-  const updateServiceWorker = ref((reload?: boolean) => {
-    console.log('SW Update check initiated', reload);
-  });
+  const { updateServiceWorker, forceUpdate, clearCache: clearPwaCache, factoryReset: performPwaReset } = usePwaManager();
   const toast = useToast();
   const { appVersion, activeBadge: footerBadgeText } = useSystemInfo();
   const { apiUrl, apiStatus, pingData } = useApiState();
@@ -121,137 +119,17 @@ export function useSettings() {
   }
 
   /**
-   * Triggers an explicit check for Service Worker updates.
-   *
-   * @remarks
-   * Uses the native `navigator.serviceWorker` API. If a waiting worker is found,
-   * it triggers an immediate skipWaiting via `updateServiceWorker(true)`.
-   */
-  async function forceUpdate() {
-    haptics.heavy();
-    const activeToastId = toast.info("Checking for updates...");
-
-    try {
-      // THREAT: Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
-      if ("serviceWorker" in navigator) {
-        const swRegistration = await navigator.serviceWorker.getRegistration();
-        
-        if (!swRegistration) {
-          // Rationale: No registration found usually means the app hasn't fully booted or is in a broken state.
-          toast.remove(activeToastId);
-          toast.error("No active session found");
-          return;
-        }
-
-        if (swRegistration.waiting) {
-          // Rationale: An update was already downloaded and is ready to be applied.
-          toast.remove(activeToastId);
-          toast.success("Update ready! Reloading...");
-          updateServiceWorker.value(true);
-          return;
-        }
-
-        await swRegistration.update();
-
-        if (swRegistration.installing || swRegistration.waiting) {
-          toast.remove(activeToastId);
-          toast.success("Update found! Downloading...");
-        } else {
-          toast.remove(activeToastId);
-          toast.success("Clash Manager is up to date");
-        }
-      } else {
-        toast.remove(activeToastId);
-        toast.error("Service Worker not available");
-      }
-    } catch (swUpdateError) {
-      console.error("Update check failed", swUpdateError);
-      toast.remove(activeToastId);
-      toast.error("Update check failed");
-    }
-  }
-
-  /**
    * Purges the Service Worker and Cache API assets.
-   *
-   * @remarks
-   * This is a non-destructive recovery action. It unregisters all service workers
-   * and deletes all named caches before triggering a hard reload.
    */
   async function clearCache() {
-    haptics.medium();
-    if (
-      confirm(
-        "Purge Asset Cache?\n\nThis will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
-      )
-    ) {
-      // 1. Unregister Workers: Forces the browser to discard the current control logic.
-      if ("serviceWorker" in navigator) {
-        const swRegistrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of swRegistrations) {
-          await registration.unregister();
-        }
-      }
-      // 2. Delete Caches: Clears the 'Stale' or corrupted assets stored via CacheStorage.
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
-      clearManifestCache();
-      window.location.reload();
-    }
+    await clearPwaCache(() => clearManifestCache());
   }
 
   /**
    * Performs a total wipe of local application data.
-   *
-   * @remarks
-   * Destructive action. Clears LocalStorage, SessionStorage, and the authoritative
-   * IndexedDB store. Used to resolve deep state corruption.
    */
   async function factoryReset() {
-    haptics.heavy();
-    if (
-      confirm(
-        "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",
-      )
-    ) {
-      // 1. Unregister Workers: Forces the browser to discard the current control logic and release IDB locks.
-      if ("serviceWorker" in navigator) {
-        try {
-          const swRegistrations = await navigator.serviceWorker.getRegistrations();
-          for (const registration of swRegistrations) {
-            await registration.unregister();
-          }
-        } catch (swError) {
-          console.warn("SW unregister failed during reset", swError);
-        }
-      }
-
-      // 2. Delete Caches: Clears the 'Stale' or corrupted assets stored via CacheStorage.
-      try {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
-      } catch (cacheError) {
-        console.warn("Cache delete failed during reset", cacheError);
-      }
-
-      // 3. Clear Storage: Purge LocalStorage and SessionStorage.
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // 4. Destroy IndexedDB: Purge active and legacy databases completely.
-      try {
-        if (typeof idb.destroyAll === "function") {
-          await idb.destroyAll();
-        } else {
-          await idb.clear();
-        }
-      } catch (resetError) {
-        console.warn("IDB destroyAll/clear failed", resetError);
-      }
-
-      clearManifestCache();
-      window.location.reload();
-    }
+    await performPwaReset(() => clearManifestCache());
   }
 
   const lastSyncFormatted = computed(() => {
