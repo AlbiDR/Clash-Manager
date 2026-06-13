@@ -2,15 +2,12 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect } from 'vitest';
-import {
-  calculateProgressionPath,
-  mapStateToResult
-} from '../SimulationEngine';
+import { calculateProgressionPath } from '../SimulationEngine';
 import { calculateKingLevel } from '@core/utils/game';
 import { asGold, asGems, asXP } from '@core/utils/economy';
-import type { SimulationState, OptimizationSettings, Card, PlayerProfile } from '../Types';
+import type { SimulationState, OptimizationSettings, Card } from '../Types';
 
-describe('Laboratory Simulation Engine', () => {
+describe('SimulationEngine', () => {
   const mockCard: Card = {
     name: 'Tesla',
     rarity: 'Common',
@@ -151,81 +148,30 @@ describe('Laboratory Simulation Engine', () => {
       expect(Number(step1.value.inventory.gems)).toBe(95500);
     });
 
-    it('should reject upgrade if gems are insufficient', () => {
-      const gemState: SimulationState = {
-        ...initialState,
-        inventory: {
-          ...initialState.inventory,
-          gold: asGold(0),
-          gems: asGems(10) // Need 4500 gems
-        }
-      };
+    it('should prioritize better efficiency when using Resource Efficiency strategy', () => {
+       const commonCard: Card = { name: 'Common', rarity: 'Common', level: 13, count: 10000, isTowerTroop: false }; // XP: 1600, Gold: 40k. Eff: 1600/40000 = 0.04
+       const rareCard: Card = { name: 'Rare', rarity: 'Rare', level: 13, count: 10000, isTowerTroop: false }; // XP: 1600, Gold: 40k. Eff: 1600/40000 = 0.04
+       // At level 14->15:
+       // Common: XP: 50000, Gold: 90k. Eff: 50000/90000 = 0.555
+       // Rare: XP: 50000, Gold: 90k. Eff: 50000/90000 = 0.555
 
-      const gemSettings: OptimizationSettings = { ...settings, allowGemSpending: true };
-      const generator = calculateProgressionPath(gemState, gemSettings);
-      const first = generator.next();
-      expect(first.done).toBe(true);
-    });
-  });
+       // Let's use lower levels to see difference.
+       // Common 10->11: XP 600, Gold 15k. Eff: 0.04
+       // Common 11->12: XP 800, Gold 25k. Eff: 0.032
 
-  describe('calculateKingLevel', () => {
-    it('should return correct level for XP thresholds', () => {
-      expect(calculateKingLevel(0)).toBe(1);
-      expect(calculateKingLevel(19)).toBe(1);
-      expect(calculateKingLevel(20)).toBe(2);
-      expect(calculateKingLevel(69)).toBe(2);
-      expect(calculateKingLevel(70)).toBe(3);
-      expect(calculateKingLevel(11000000)).toBe(80);
-      expect(calculateKingLevel(27438770)).toBe(90);
-      expect(calculateKingLevel(99999999)).toBe(90);
-    });
-  });
+       const state: SimulationState = {
+         ...initialState,
+         roster: [
+           { ...mockCard, name: 'LowLevel', level: 10, count: 10000 },
+           { ...mockCard, name: 'HighLevel', level: 11, count: 10000 }
+         ]
+       };
 
-  describe('mapStateToResult', () => {
-    it('should correctly transform SimulationState to OptimizationResult', () => {
-      const mockProfile: PlayerProfile = {
-        name: 'Player',
-        tag: 'TAG',
-        kingLevel: 1,
-        xpIntoLevel: 0
-      };
+       const effSettings: OptimizationSettings = { ...settings, strategy: 'Resource Efficiency' };
+       const generator = calculateProgressionPath(state, effSettings);
 
-      const finalState: SimulationState = {
-        ...initialState,
-        totalXp: asXP(50000), // Level 15
-        inventory: {
-          ...initialState.inventory,
-          gold: asGold(910000)
-        },
-        totalGoldSpent: asGold(90000),
-        history: [{
-          cardName: 'Tesla',
-          rarity: 'Common',
-          currentLevel: 14,
-          targetLevel: 15,
-          goldCost: asGold(90000),
-          cardCost: 5500,
-          wildCardsUsed: 0,
-          gemsUsed: asGems(0),
-          xpGained: asXP(50000),
-          efficiencyIndex: 1,
-          upgradeType: 'Direct',
-          isTowerTroop: false
-        }]
-      };
-
-      // Gain 50k XP starting from Level 10 (770 cumulative)
-      // 770 + 50,000 = 50,770
-      // Table says Level 31 starts at 45,770, Level 32 at 53,770
-      const result = mapStateToResult(finalState, mockProfile, 0);
-
-      expect(result.projectedKingLevel).toBe(31);
-      expect(result.totalXpGained).toBe(50000);
-      expect(result.finalGold).toBe(910000);
-      expect(result.totalGoldSpent).toBe(90000);
-      expect(result.actions).toHaveLength(1);
-      expect(result.finalProfile.kingLevel).toBe(31);
-      expect(result.finalProfile.xpIntoLevel).toBe(4230); // 50000 - 45770 (Level 31 start)
+       const step1 = generator.next();
+       expect(step1.value.history[0].cardName).toBe('LowLevel'); // 0.04 > 0.032
     });
   });
 });

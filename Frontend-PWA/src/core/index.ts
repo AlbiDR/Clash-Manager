@@ -17,6 +17,7 @@ export * from "./services/useAppSettings";
 export * from "./services/useBenchmarking";
 export * from "./services/useSelectionStore";
 export * from "./services/useBadge";
+export * from "./services/usePwaManager";
 export * from "./services/useConsoleController";
 export * from "./services/useConsoleMetadata";
 export * from "./services/useBroadcastChannel";

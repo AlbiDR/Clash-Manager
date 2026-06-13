@@ -109,3 +109,6 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-09-18 | Frontend-PWA/src/app/sw/swSync.ts | Zero Coverage gap closed; saturating tests for push badge and background sync logic.
 2026-09-25 | Frontend-PWA/src/features/laboratory/composables/useLaboratorySimulation.ts | Zero Coverage gap closed; saturating tests for generator-based orchestration, batch budget, and cancellation logic.
 2026-09-27 | Frontend-PWA/src/shared/ui/SelectionFab.vue | Zero Coverage gap closed; saturating tests for dismiss/abort logic, blasting mode, and blitz orchestration.
+2026-10-27 | Frontend-PWA/src/features/laboratory/logic/SimulationCore.ts | Zero Coverage gap closed; saturating tests for resource evaluation and state transitions
+2026-10-27 | Frontend-PWA/src/features/laboratory/logic/SimulationMappers.ts | Zero Coverage gap closed; saturating tests for DTO mapping and XP projection
+2026-10-27 | Frontend-PWA/src/features/laboratory/logic/SimulationEngine.ts | Saturating coverage for generator-based progression and strategy-driven prioritization
