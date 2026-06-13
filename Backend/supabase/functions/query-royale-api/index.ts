@@ -21,6 +21,12 @@ import { AuditEntry } from "../_shared/types.ts";
  * Implements robust clanless player harvesting via active clan battle log scanning.
  */
 
+/**
+ * Validation schema for the inbound Royale API query payload.
+ * @remarks
+ * Restricts queries to either 'local' (based on configured clan region)
+ * or 'global' (international rankings).
+ */
 const PayloadSchema = v.object({
   endpoint: v.picklist(["local", "global"]),
 });
@@ -38,8 +44,23 @@ const INITIAL_ARRAY_INDEX = 0;
 let cachedCountries: { id: number; name: string }[] | null = null;
 
 /**
- * Discovers active, clanless players by fetching top clans in a location,
- * getting their active members, and extracting clanless opponents from their battle logs.
+ * HARVESTER: Discovery Engine
+ *
+ * Scans the competitive ecosystem to identify active players currently
+ * unaffiliated with any clan.
+ *
+ * @remarks
+ * Satisfies ADR Section V: Edge Functions - Data Ingestion.
+ *
+ * Implements a three-tier discovery pipeline:
+ * 1. Rankings: Fetches top clans in the target region.
+ * 2. Membership: Inspects top members of those clans.
+ * 3. Battle Logs: Scans the combat history of those members to find "Shadow Leads"
+ *    (clanless opponents).
+ *
+ * @param locationId - The Royale API location ID or 'global'.
+ * @param logAudit - Telemetry callback for clinical auditing.
+ * @returns An array of discovered clanless player objects.
  */
 async function harvestClanlessPlayers(
   locationId: string,
@@ -157,6 +178,13 @@ async function harvestClanlessPlayers(
   return Array.from(clanlessMap.values());
 }
 
+/**
+ * MAIN HANDLER: query-royale-api
+ *
+ * @remarks
+ * Satisfies ADR Section II: Control Layer.
+ * Orchestrates the secure proxying of Royale API discovery queries.
+ */
 Deno.serve(async (req) => {
   await syncVault();
 
