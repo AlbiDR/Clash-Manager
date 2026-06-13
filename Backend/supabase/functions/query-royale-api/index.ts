@@ -6,9 +6,13 @@ import { fetchWithRotation, processBatch } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import {
   RoyaleClanSchema,
-  RoyaleLocationListSchema
+  RoyaleLocationListSchema,
+  RoyaleClanRankingListSchema,
+  RoyaleClanDetailSchema,
+  RoyaleBattleLogSchema
 } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
+import { AuditEntry } from "../_shared/types.ts";
 
 /**
  * Edge Function: query-royale-api
@@ -37,31 +41,56 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  * Discovers active, clanless players by fetching top clans in a location,
  * getting their active members, and extracting clanless opponents from their battle logs.
  */
-async function harvestClanlessPlayers(locationId: string, logAudit: any): Promise<any[]> {
+async function harvestClanlessPlayers(
+  locationId: string,
+  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+): Promise<unknown[]> {
   const clansPath = `/locations/${locationId}/rankings/clans?limit=${TOP_CLANS_LIMIT}`;
   logAudit("HARVEST_CLANS_FETCH", "called", { path: clansPath });
-  const clansRes = await fetchWithRotation(clansPath);
-  if (!clansRes.ok) {
-    throw new Error(`Failed to fetch top clans: ${clansRes.status}`);
+  const clanRankingsResponse = await fetchWithRotation(clansPath);
+  if (!clanRankingsResponse.ok) {
+    throw new Error(`Failed to fetch top clans: ${clanRankingsResponse.status}`);
   }
   
-  const clansData = await clansRes.json();
-  const clans = clansData.items || [];
-  if (clans.length === INITIAL_ARRAY_INDEX) {
+  const rawClanRankingPayload: unknown = await clanRankingsResponse.json();
+
+  // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
+  // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in rankings.
+  const rankingValidation = v.safeParse(RoyaleClanRankingListSchema, rawClanRankingPayload);
+
+  logAudit("HARVEST_CLANS_INTEGRITY", "integrity_checked", {
+    passed: rankingValidation.success,
+    details: rankingValidation.success ? "Clan rankings validated" : "Malformed rankings payload"
+  });
+
+  if (!rankingValidation.success) {
+    throw new Error("Clan rankings payload failed structural validation.");
+  }
+
+  const clanRankingItems = rankingValidation.output.items;
+  if (clanRankingItems.length === INITIAL_ARRAY_INDEX) {
     return [];
   }
   
   // Fetch clan details to get members
-  const memberFetchTasks = clans.map((clan: any) => {
+  // [DECISION LOG] We scan top clans to find highly active members as "discovery anchors".
+  const memberFetchTasks = clanRankingItems.map((clanItem) => {
     return async () => {
-      const encodedTag = encodeURIComponent(clan.tag);
-      const clanRes = await fetchWithRotation(`/clans/${encodedTag}`);
-      if (!clanRes.ok) {
-        console.warn(`Failed to fetch clan detail for ${clan.tag}: ${clanRes.status}`);
+      const encodedTag = encodeURIComponent(clanItem.tag);
+      const clanDetailResponse = await fetchWithRotation(`/clans/${encodedTag}`);
+      if (!clanDetailResponse.ok) {
+        console.warn(`Failed to fetch clan detail for ${clanItem.tag}: ${clanDetailResponse.status}`);
         return [];
       }
-      const clanData = await clanRes.json();
-      return clanData.memberList || [];
+      const rawClanDetailPayload: unknown = await clanDetailResponse.json();
+
+      const detailValidation = v.safeParse(RoyaleClanDetailSchema, rawClanDetailPayload);
+      if (!detailValidation.success) {
+          console.warn(`Validation failed for clan ${clanItem.tag}`);
+          return [];
+      }
+
+      return detailValidation.output.memberList;
     };
   });
   
@@ -84,28 +113,37 @@ async function harvestClanlessPlayers(locationId: string, logAudit: any): Promis
   }
   
   // Fetch battle logs for target players
+  // [DECISION LOG] Battle logs of top players are a rich source of clanless "Shadow Leads".
   const battlelogTasks = targetPlayerTags.map((playerTag) => {
     return async () => {
       const encodedPlayerTag = encodeURIComponent(playerTag);
-      const logRes = await fetchWithRotation(`/players/${encodedPlayerTag}/battlelog`);
-      if (!logRes.ok) {
-        console.warn(`Failed to fetch battlelog for ${playerTag}: ${logRes.status}`);
+      const battleLogResponse = await fetchWithRotation(`/players/${encodedPlayerTag}/battlelog`);
+      if (!battleLogResponse.ok) {
+        console.warn(`Failed to fetch battlelog for ${playerTag}: ${battleLogResponse.status}`);
         return [];
       }
-      return await logRes.json();
+      const rawBattleLogPayload: unknown = await battleLogResponse.json();
+
+      const battleLogValidation = v.safeParse(RoyaleBattleLogSchema, rawBattleLogPayload);
+      if (!battleLogValidation.success) {
+          console.warn(`Battle log validation failed for player ${playerTag}`);
+          return [];
+      }
+
+      return battleLogValidation.output;
     };
   });
   
   const battlelogs = await processBatch(battlelogTasks);
   
   // Extract clanless opponents
-  const clanlessMap = new Map<string, any>();
-  for (const log of battlelogs) {
-    if (!Array.isArray(log)) continue;
-    for (const battle of log) {
+  const clanlessMap = new Map<string, { tag: string, name: string, clan: null }>();
+  for (const battleLog of battlelogs) {
+    if (!Array.isArray(battleLog)) continue;
+    for (const battle of battleLog) {
       const opponents = battle.opponent || [];
       for (const opponent of opponents) {
-        if (opponent.tag && !opponent.clan) {
+        if (opponent.tag && !opponent.clan?.tag) {
           clanlessMap.set(opponent.tag, {
             tag: opponent.tag,
             name: opponent.name,
@@ -135,9 +173,9 @@ Deno.serve(async (req) => {
 
       if (mode === "global") {
         logAudit("GLOBAL_HARVEST", "called");
-        const items = await harvestClanlessPlayers("global", logAudit);
+        const harvestResults = await harvestClanlessPlayers("global", logAudit);
         return { 
-          items, 
+          items: harvestResults,
           region: "Global"
         };
       }
@@ -213,10 +251,10 @@ Deno.serve(async (req) => {
       }
 
       logAudit("LOCAL_HARVEST_CLANLESS_DISCOVERY", "called", { country: targetLocationName });
-      const items = await harvestClanlessPlayers(String(targetLocationId), logAudit);
+      const harvestResults = await harvestClanlessPlayers(String(targetLocationId), logAudit);
 
       return { 
-        items, 
+        items: harvestResults,
         region: targetLocationName
       };
     },
