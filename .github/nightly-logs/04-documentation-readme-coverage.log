@@ -110,3 +110,4 @@ Frontend-PWA/README.md
 2026-06-12 | Frontend-PWA/src/features/laboratory/README.md | Reconciled useLaboratorySimulation and PriorityQueue optimization.
 2026-06-12 | Backend/README.md | Corrected ingestion engine count (Quad-Engine) and Hexa-Stage sync protocol.
 2026-06-12 | Frontend-PWA/README.md | Reconciled useVisibilityRefresh and synchronized service numbering.
+2026-06-13 | Backend/supabase/functions/ingest-royale-data/README.md | Created Ingestion Gatekeeper documentation and documented the Hexa-Stage protocol.
