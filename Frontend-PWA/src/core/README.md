@@ -50,7 +50,9 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useSelectionStore.ts**: Manages sets of selected item identifiers for batch operations.
 - **useUiCoordinator.ts**: Master arbiter of layout spacing and global FAB state.
 - **useToast.ts**: Global notification service with hardware haptic feedback.
+- **usePwaManager.ts**: Infrastructure-level PWA lifecycle and recovery orchestrator.
 - **useAppSettings.ts**: Multi-tier strategy for application configuration and feature flags.
+- **useBenchmarking.ts**: Statistical engine for comparing individual metrics against clan averages.
 - **useDeepLinkHandler.ts**: Manages item expansion and auto-scroll based on URL parameters.
 - **useVisibilityRefresh.ts**: Triggers background refreshes based on document visibility changes.
 - **useSystemInfo.ts**: SSOT for application versioning and global modes.
