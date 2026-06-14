@@ -156,5 +156,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm the watchlist entry is complete: package name, current version, latest major, first-detected date, and codebase-specific impact notes are all populated.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/08-dependency-audit-coverage.log
+  - Updated .github/nightly-logs/07-dependency-audit-coverage.log
   ```
