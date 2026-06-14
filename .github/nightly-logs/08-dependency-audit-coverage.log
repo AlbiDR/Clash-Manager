@@ -97,6 +97,8 @@
 | @types/node | ^24.13.1 | ^24.13.2 | 2026-06-11 | PASS |
 | vue | ^3.5.37 | ^3.5.38 | 2026-06-12 | PASS |
 | supabase | NEW | ^2.106.0 | 2026-06-12 | PASS |
+| @types/node | ALIGN | catalog: | 2026-06-14 | PASS |
+| vue-tsc | ^3.3.4 | ^3.3.5 | 2026-06-14 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
