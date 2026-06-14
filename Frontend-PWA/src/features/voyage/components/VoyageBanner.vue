@@ -18,6 +18,7 @@
 import { onMounted, computed } from "vue";
 import { useVoyageStore } from "../composables/useVoyageStore";
 import { Icon, useCountdown } from "@shared";
+import { formatNumber } from "@core";
 
 const store = useVoyageStore();
 
@@ -74,10 +75,10 @@ const shouldShowBanner = computed(() => {
         </div>
         <div class="banner-meta">
           <div class="crown-count">
-            <span class="crown-value">{{ store.totalCrowns.toLocaleString() }}</span>
+              <span class="crown-value">{{ formatNumber(store.totalCrowns) }}</span>
             <span class="crown-sep" v-if="store.isActive">/</span>
-            <span class="crown-target" v-if="store.isActive">{{ store.targetCrowns.toLocaleString() }}</span>
-            <span class="crown-target-single" v-else>Target: {{ store.targetCrowns.toLocaleString() }}</span>
+              <span class="crown-target" v-if="store.isActive">{{ formatNumber(store.targetCrowns) }}</span>
+              <span class="crown-target-single" v-else>Target: {{ formatNumber(store.targetCrowns) }}</span>
             <span class="crown-icon"><Icon name="crown" size="14" /></span>
           </div>
           <div class="countdown" v-if="store.isActive" :class="{ 'ended': timeRemaining === 'Ended' }">
