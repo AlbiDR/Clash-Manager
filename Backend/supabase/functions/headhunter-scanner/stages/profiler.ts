@@ -7,21 +7,54 @@ import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot";
 import { RoyalePlayerSchema, RecruitFateSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
+/**
+ * Represents a player candidate that has passed initial trophy and clan filters.
+ * Acting as a temporary DTO (Data Transfer Object) for validated recruit data
+ * before it is ingested into the database.
+ */
 interface ValidRecruit {
+    /** Unique player identifier (e.g., #P9999) */
     player_tag: string;
+    /** Current display name */
     player_name: string;
+    /** Current trophy count */
     trophies: number;
+    /** Lifetime donation count */
     donations: number;
+    /** Challenge cards won metric */
     cards: number;
+    /** Total war day wins */
     war_wins: number;
+    /** Calculated recruitment priority score */
     raw_potential_score: number;
+    /** Discovery source (SHADOW, TOURNAMENT, etc.) */
     source: string;
+    /** Ingestion status (ACTIVE, BENCHED) */
     status: string;
 }
 
 /**
- * Stage: Profiling & Ingestion
- * Fetches deep profile data for discovered candidates and ingests them into raw logs.
+ * STAGE: Profiling & Ingestion
+ *
+ * @remarks
+ * This stage orchestrates the enrichment of discovered player tags with deep
+ * profile data from the Royale API. It enforces strict validation boundaries
+ * and executes bulk ingestion into the recruitment substrate.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Stage (Headhunter Scanner)
+ * - **Satisfaction:** ADR Section II (Shared Substrate usage) and ADR Section III (Validation Boundaries).
+ *
+ * **Side Effects:**
+ * - **External API:** Performs throttled fetches against the Royale API.
+ * - **Database:** Executes multiple RPCs (`sync_recruits`, `report_dead_recruit`, `get_recruits_fate`, `get_top_50_threshold`).
+ * - **Telemetry:** Updates the `ScannerStats` object with ingestion results.
+ *
+ * @param candidates - Map of discovered tags and their discovery source.
+ * @param exclusionSet - Set of tags to ignore (existing members or blacklisted players).
+ * @param requiredTrophies - Minimum trophy threshold for admission.
+ * @param stats - Shared stats object for telemetry tracking.
+ * @param logAudit - Function to record stage execution events.
  */
 export async function runProfiler(
     candidates: Map<string, string>,
@@ -103,7 +136,11 @@ export async function runProfiler(
                             const cards = playerProfile.challengeCardsWon || 0;
 
                             // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
-                            // [DECISION LOG] This formula is the authoritative scoring engine for recruitment potential.
+                            // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
+                            // This formula prioritizes war experience (WarWins) as the primary indicator
+                            // of long-term value, while using Trophies and Donations as stability markers.
+                            // The +500 offset on WarWins ensures that even low-win players have a
+                            // base competitive score, while the 20x multiplier creates clear tier separation.
                             const potentialRawScore = (trophies * 1.0) + (donations * 0.1) + ((warWins + 500) * 20.0);
 
                             validRecruits.push({
@@ -230,6 +267,10 @@ export async function runProfiler(
                 let attempts = 0;
                 const maxAttempts = 4; // Total 10s potential delay
 
+                // [DECISION LOG] INCREMENTAL BACKOFF TELEMETRY:
+                // Database triggers promote recruits from QUEUE to ACTIVE/BENCHED asynchronously.
+                // We use an incremental backoff (1s, 2s, 3s, 4s) to wait for trigger convergence
+                // without blocking the main execution path indefinitely.
                 while (attempts < maxAttempts) {
                     attempts++;
                     // Incremental backoff: 1s, 2s, 3s, 4s
@@ -264,6 +305,9 @@ export async function runProfiler(
                     }
                 }
 
+                // [THREAT:] If the telemetry loop fails to find converged results after 4 attempts,
+                // the stage stats (new_recruits_active, etc.) will be zeroed, leading to
+                // inaccurate dashboard reporting despite successful ingestion.
                 if (fateResults.length > 0) {
                     // Fetch Top 50 Threshold (lowest score in active pool)
                     const { data: rawTop50Threshold, error: thresholdError } = await supabase.rpc('get_top_50_threshold');
