@@ -46,3 +46,10 @@
 - Schema Qualification: Verified strict schema qualification across all DDL blocks.
 - Search Path Isolation: Verified SET search_path presence for all functions.
 - Verification: 1259 passed
+2026-06-14 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 0 (No new migrations found)
+- Logic Corrections: Refactored public.ingest_clan_profile (delegated to trigger) and standardizing percentage_voyage_crowns reference in drivers.get_rolling_voyage_performance.
+- Search Path Isolation: Verified SET search_path for 88 functions.
+- Postgres 17 Hardening: Verified CREATE OR REPLACE TRIGGER syntax across 24 triggers.
+- Verification: 1267 passed, 1 skipped (check_baseline.py passed)
