@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-14] PR #832: docs(tsdoc): document headhunter-scanner profiler stage
+**Commit**: `c2b6e112f560afe0d5a4e81914feb97cf215c200`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/832)
+
+### Description
+This PR enhances the inline documentation for the `headhunter-scanner` profiler stage to satisfy Stage 6 (Documentation TSDoc) requirements. It maps interface contracts, architectural context, and critical decision logic to preserve the reasoning behind the code.
+
+---
+*PR created automatically by Jules for task [7188349190867907175](https://jules.google.com/task/7188349190867907175) started by @AlbiDR*
+
+---
+
 ## [2026-06-14] PR #831: docs(readme): reconcile pwa service registry and document user proxy engine
 **Commit**: `217b351f71456e7c8bfb4f4e0bfecdcea07bc48c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/831)
