@@ -1893,9 +1893,9 @@ CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
 AS $function$
 BEGIN
     RETURN (
-        SELECT COALESCE(AVG(voyage_crown_pct), 0)
+        SELECT COALESCE(AVG(percentage_voyage_crowns), 0)
         FROM (
-            SELECT voyage_crown_pct
+            SELECT percentage_voyage_crowns
             FROM drivers.clan_voyage_contributions
             WHERE player_tag = p_tag
             ORDER BY id DESC
@@ -2665,35 +2665,12 @@ $function$;
 CREATE OR REPLACE FUNCTION public.ingest_clan_profile(p_payload jsonb)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
+    -- [DECISION LOG] Delegated drivers.clans upsert to trg_shredder_profile to prevent double-insertion logic rot.
     INSERT INTO substrate.raw_clan_profile (payload) VALUES (p_payload);
-
-    INSERT INTO drivers.clans (
-        clan_tag, clan_name, description, badge_id,
-        member_count, required_trophies, type, last_ingested_at, snapshot_date
-    )
-    VALUES (
-        p_payload->>'tag',
-        p_payload->>'name',
-        p_payload->>'description',
-        (p_payload->>'badgeId')::INTEGER,
-        (p_payload->>'members')::INTEGER,
-        (p_payload->>'requiredTrophies')::INTEGER,
-        p_payload->>'type',
-        NOW(),
-        CURRENT_DATE
-    )
-    ON CONFLICT (clan_tag, snapshot_date) DO UPDATE SET
-        clan_name         = EXCLUDED.clan_name,
-        description       = EXCLUDED.description,
-        badge_id          = EXCLUDED.badge_id,
-        member_count      = EXCLUDED.member_count,
-        required_trophies = EXCLUDED.required_trophies,
-        type              = EXCLUDED.type,
-        last_ingested_at  = EXCLUDED.last_ingested_at,
-        updated_at        = NOW();
 END; $function$;
 
 CREATE OR REPLACE FUNCTION public.sync_players(p_players jsonb)
