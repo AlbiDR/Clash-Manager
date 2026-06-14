@@ -59,3 +59,6 @@ export { useStatusPill } from "./composables/useStatusPill";
 export { useBenchmarkedStat } from "./composables/useBenchmarkedStat";
 
 export { useCardMechanics } from "./composables/useCardMechanics";
+
+// Utilities
+export { formatRole } from "./utils/game";
