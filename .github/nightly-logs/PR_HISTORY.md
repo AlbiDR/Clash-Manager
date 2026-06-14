@@ -1,6 +1,29 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-14] PR #829: test(verify): add specs for useViewport composable
+**Commit**: `99a584558c0ec3df3907f5c2ade39073f4c4db46`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/829)
+
+### Description
+This PR addresses a "Zero Coverage" gap in the `useViewport` shared composable as part of the Stage 2 Verification audit. 
+
+### Changes:
+- Created `Frontend-PWA/src/shared/composables/composables-tests/useViewport.spec.ts` with 8 comprehensive tests.
+- Verified initial state and reactivity for `isDesktop` and `isMobileNarrow` based on `window.innerWidth`.
+- Asserted correct handling of boundary conditions (1024px and 360px).
+- Confirmed that the `resize` event listener is properly removed upon component unmount.
+- Updated `.github/nightly-logs/02-verification-coverage.log` to reflect the newly covered logic.
+
+### Verification:
+- All 8 new tests in `useViewport.spec.ts` pass.
+- Full monorepo test gate (PWA) passed with 1267 successes.
+
+---
+*PR created automatically by Jules for task [15483136250127242703](https://jules.google.com/task/15483136250127242703) started by @AlbiDR*
+
+---
+
 ## [2026-06-14] PR #828: fix(harden): secure wake lock engine and excise any pathogens
 **Commit**: `fab0dcd0b38baf7436a818b581e14508bb732bcd`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/828)
