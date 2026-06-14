@@ -22,6 +22,7 @@
 import { computed, onMounted, defineAsyncComponent } from "vue";
 import { SettingsCard, Icon, useCountdown } from "@shared";
 import { useVoyageStore } from "../composables/useVoyageStore";
+import { formatNumber } from "@core";
 
 const VoyageSetupForm = defineAsyncComponent(() => import("./VoyageSetupForm.vue"));
 
@@ -78,7 +79,7 @@ const pillClass = computed(() => {
       <div class="summary-row">
         <span class="summary-label">Crown Target</span>
         <span class="summary-value primary">
-          {{ store.targetCrowns.toLocaleString() }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
+          {{ formatNumber(store.targetCrowns) }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
         </span>
       </div>
       <div class="summary-row" v-if="startsInCountdown">
@@ -95,7 +96,7 @@ const pillClass = computed(() => {
       <div class="summary-row">
         <span class="summary-label">Progress</span>
         <span class="summary-value primary">
-          {{ store.totalCrowns.toLocaleString() }} / {{ store.targetCrowns.toLocaleString() }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
+          {{ formatNumber(store.totalCrowns) }} / {{ formatNumber(store.targetCrowns) }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
         </span>
       </div>
       <div class="summary-row">
