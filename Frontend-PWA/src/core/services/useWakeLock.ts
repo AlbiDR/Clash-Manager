@@ -14,38 +14,54 @@ interface WakeLockSentinel extends EventTarget {
   readonly released: boolean;
   readonly type: "screen";
   release(): Promise<void>;
-  onrelease: ((this: WakeLockSentinel, ev: Event) => any) | null;
+  onrelease: ((this: WakeLockSentinel, ev: Event) => void) | null;
 }
 
 interface WakeLock {
   request(type: "screen"): Promise<WakeLockSentinel>;
 }
 
+interface NavigatorWithWakeLock extends Navigator {
+  readonly wakeLock: WakeLock;
+}
+
+// [THREAT:] Browser support for Screen Wake Lock API is non-universal.
+// [DECISION LOG] Explicitly checking for 'wakeLock' in navigator to prevent runtime crashes on legacy engines.
 const isSupported = typeof navigator !== "undefined" && "wakeLock" in navigator;
+
+// EPHEMERAL: intentionally resets on cold start
 const isActive = ref(false);
+
+// EPHEMERAL: intentionally resets on cold start
 // Track user intent to persist lock across visibility changes. Default to FALSE.
 let shouldBeActive = false;
+
+// EPHEMERAL: intentionally resets on cold start
 let wakeLockSentinel: WakeLockSentinel | null = null;
 
 async function request() {
   if (!isSupported) return;
   try {
-    wakeLockSentinel = await (navigator as any).wakeLock.request("screen");
+    // [THREAT:] Unsafe cast to 'any' for navigator bypasses type safety.
+    // [DECISION LOG] Using NavigatorWithWakeLock interface to ensure structural integrity of the hardware bridge.
+    wakeLockSentinel = await (navigator as NavigatorWithWakeLock).wakeLock.request("screen");
     if (!wakeLockSentinel) return;
 
     isActive.value = true;
     shouldBeActive = true;
 
     wakeLockSentinel.addEventListener("release", () => {
-      // If released by system (tab hidden, low battery), isActive becomes false visually.
+      // [THREAT:] System-level releases (tab hidden, low battery) can cause silent desync between UI and hardware.
+      // [DECISION LOG] If released by system, isActive becomes false visually.
       // We rely on visibilitychange listener to re-acquire if shouldBeActive is true.
       if (wakeLockSentinel !== null) {
         isActive.value = false;
         wakeLockSentinel = null;
       }
     });
-  } catch (err) {
-    console.warn(`WakeLock request failed: ${(err as Error).message}`);
+  } catch (wakeLockRequestError: unknown) {
+    const errorMessage = wakeLockRequestError instanceof Error ? wakeLockRequestError.message : String(wakeLockRequestError);
+    console.warn(`WakeLock request failed: ${errorMessage}`);
     isActive.value = false;
   }
 }
@@ -131,4 +147,3 @@ export function useWakeLock() {
     init,
   };
 }
-
