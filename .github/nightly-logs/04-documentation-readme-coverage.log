@@ -111,3 +111,6 @@ Frontend-PWA/README.md
 2026-06-12 | Backend/README.md | Corrected ingestion engine count (Quad-Engine) and Hexa-Stage sync protocol.
 2026-06-12 | Frontend-PWA/README.md | Reconciled useVisibilityRefresh and synchronized service numbering.
 2026-06-13 | Backend/supabase/functions/ingest-royale-data/README.md | Created Ingestion Gatekeeper documentation and documented the Hexa-Stage protocol.
+2026-06-14 | Frontend-PWA/README.md | Reconciled usePwaManager and updated service registry (32 entries)
+2026-06-14 | Frontend-PWA/src/core/README.md | Reconciled usePwaManager and useBenchmarking services
+2026-06-14 | Backend/supabase/functions/sync-player-cards/README.md | Created User Proxy documentation and documented normalization protocol
