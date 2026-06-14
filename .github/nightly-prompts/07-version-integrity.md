@@ -140,5 +140,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm reconciled values now match across all locations.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/07-version-integrity-coverage.log
+  - Updated .github/nightly-logs/06-version-integrity-coverage.log
   ```

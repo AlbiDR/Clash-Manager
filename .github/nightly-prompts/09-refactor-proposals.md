@@ -117,7 +117,7 @@ Scan the monorepo for refactor opportunities.
 - Prepend the licensing copyright header on newly created `.ts` or `.vue` files.
 - Update import references monorepo-wide.
 - Execute `pnpm test` and `npx depcruise` to verify structural validity and ensure no cyclical dependencies exist.
-- **Log Updates:** Append your execution record to `.github/nightly-logs/09-refactor-proposals-coverage.log`.
+- **Log Updates:** Append your execution record to `.github/nightly-logs/refactor-proposals-coverage.log`.
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.
@@ -142,5 +142,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated]:** Confirm pnpm test and npx depcruise pass successfully.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/09-refactor-proposals-coverage.log
+  - Updated .github/nightly-logs/refactor-proposals-coverage.log
   ```
