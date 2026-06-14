@@ -1807,7 +1807,7 @@ BEGIN
     UPDATE drivers.clan_voyage_contributions c
     SET
         total_voyage_crowns = COALESCE(c.manual_voyage_crowns, 0) + COALESCE((
-            SELECT SUM(b.team_crowns)
+            SELECT SUM(b.team_crowns + (3 - b.opponent_crowns))
             FROM drivers.player_battles b
             WHERE b.player_tag = c.player_tag
               AND b.battle_time <= v_window_end
@@ -1952,7 +1952,7 @@ BEGIN
 
         -- 3. Calculate total voyage crowns and percentage
         NEW.total_voyage_crowns := COALESCE(NEW.manual_voyage_crowns, 0) + COALESCE((
-            SELECT SUM(b.team_crowns)
+            SELECT SUM(b.team_crowns + (3 - b.opponent_crowns))
             FROM drivers.player_battles b
             WHERE b.player_tag = NEW.player_tag
               AND b.battle_time <= v_window_end
