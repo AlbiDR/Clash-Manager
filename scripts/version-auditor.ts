@@ -85,15 +85,12 @@ function reconcilePackageJson(pkgPath: string, groundTruth: string, rootPkg: Pac
         modified = true;
       }
     }
-    if (pkg.packageManager !== rootPkg.packageManager && pkgPath !== BACKEND_PKG_PATH) {
-        // Backend might not have packageManager if it's just for version tracking
-        if (pkg.packageManager || pkgPath === PWA_PKG_PATH) {
-            issues.push(`[DRIFT] ${pkgPath} packageManager mismatch`);
-            if (IS_FIX_MODE) {
-                pkg.packageManager = rootPkg.packageManager;
-                modified = true;
-            }
-        }
+    if (pkg.packageManager !== rootPkg.packageManager) {
+      issues.push(`[DRIFT] ${pkgPath} packageManager mismatch`);
+      if (IS_FIX_MODE) {
+        pkg.packageManager = rootPkg.packageManager;
+        modified = true;
+      }
     }
   }
 
@@ -221,6 +218,17 @@ function reconcileOtherFiles(groundTruth: string) {
         content = content.replace(/version: '[0-9]+\.[0-9]+\.[0-9]+'/, expected);
         writeFileSync(PROTOCOL_PATH, content);
       }
+    }
+  }
+
+  // 4. HTML Entry Template Verification
+  if (existsSync(HTML_ENTRY_PATH)) {
+    const content = readFileSync(HTML_ENTRY_PATH, 'utf-8');
+    const expected = '"softwareVersion": "${version}"';
+    if (!content.includes(expected)) {
+      issues.push(`[DRIFT] HtmlEntry.ts softwareVersion template mismatch`);
+      // Note: This is a template, we don't automatically fix it if the string is completely missing
+      // as it's a structural requirement rather than a version-specific one.
     }
   }
 

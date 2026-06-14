@@ -198,6 +198,36 @@ export const RoyaleLocationListSchema = v.object({
     items: v.array(RoyaleLocationSchema)
 });
 
+/** [GUARD] Royale Clan Member Schema. */
+export const RoyaleClanMemberSchema = v.object({
+    tag: v.string(),
+    name: v.string(),
+    role: v.optional(v.string()),
+    trophies: v.optional(v.number())
+});
+
+/** [GUARD] Royale Clan Ranking Item Schema. */
+export const RoyaleClanRankingItemSchema = v.object({
+    tag: v.string(),
+    name: v.string(),
+    rank: v.number(),
+    clanScore: v.number(),
+    badgeId: v.number()
+});
+
+/** [GUARD] Royale Clan Ranking List Schema. */
+export const RoyaleClanRankingListSchema = v.object({
+    items: v.array(RoyaleClanRankingItemSchema)
+});
+
+/** [GUARD] Royale Clan Detail Schema. */
+export const RoyaleClanDetailSchema = v.intersect([
+    RoyaleClanSchema,
+    v.object({
+        memberList: v.array(RoyaleClanMemberSchema)
+    })
+]);
+
 /** [GUARD] Royale Ranking List Schema. */
 export const RoyaleRankingListSchema = v.object({
     items: v.array(v.record(v.string(), v.unknown()))
