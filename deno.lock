@@ -1,0 +1,31 @@
+{
+  "version": "5",
+  "redirects": {
+    "https://esm.sh/@supabase/phoenix@^0.4.2?target=denonext": "https://esm.sh/@supabase/phoenix@0.4.2?target=denonext",
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.108.1",
+    "https://esm.sh/iceberg-js@^0.8.1?target=denonext": "https://esm.sh/iceberg-js@0.8.1?target=denonext"
+  },
+  "remote": {
+    "https://esm.sh/@supabase/auth-js@2.108.1/denonext/auth-js.mjs": "7444f8b83853c22f4547fe8e385d3c1ff7b646ad07af0e268efc4a45c2b0767c",
+    "https://esm.sh/@supabase/functions-js@2.108.1/denonext/functions-js.mjs": "8281d7c05253d84450217f5b76c0b2076705a5388429aa4b582c0aa6cd4c9d27",
+    "https://esm.sh/@supabase/phoenix@0.4.2/denonext/phoenix.mjs": "8099a9b1277ec1776f0d0ae15e35be72b87b541a3f787b5477a11b546c8d62a9",
+    "https://esm.sh/@supabase/phoenix@0.4.2?target=denonext": "0790ada96f524af71c1af9a3f01b5517bd6e90e9e7e22e4c5436b92bc1534e8d",
+    "https://esm.sh/@supabase/postgrest-js@2.108.1/denonext/postgrest-js.mjs": "42cf937da414cda576171052c10ee7745ed6487089ecacff1da6db70d7bdb2bd",
+    "https://esm.sh/@supabase/realtime-js@2.108.1/denonext/realtime-js.mjs": "8c41774cb45dd3fdfe2c9b2b0964f6e707db46e105d8137bf70c0048539c02d6",
+    "https://esm.sh/@supabase/storage-js@2.108.1/denonext/storage-js.mjs": "890db0e0ae32c624688ea5c93015cad75a1bf6f62cb963683e9d00c7346f5d75",
+    "https://esm.sh/@supabase/supabase-js@2.108.1": "fca0990662d240263b440bc055ea919312c0d27f7ab295e835e1644cf49200ce",
+    "https://esm.sh/@supabase/supabase-js@2.108.1/denonext/supabase-js.mjs": "8a0b1a85c2aa73ef81dc9798508f1b8d7a980ea100bde88c9453fc90f1e1afc2",
+    "https://esm.sh/iceberg-js@0.8.1/denonext/iceberg-js.mjs": "d839d81a2e3966500ca2cdd0c1cb458e9608bacfc91f7bb67a69b2e878dcdb4f",
+    "https://esm.sh/iceberg-js@0.8.1?target=denonext": "58c849d7fe2bf4eca4a84eb501e83c161a7d8c34ca1bec15a962b3bec3062633",
+    "https://esm.sh/tslib@2.8.1/denonext/tslib.mjs": "c38da5dd6da6281964435002ce204cd586634fe3bdfb24a0ee116f48cf3292e9",
+    "https://esm.sh/valibot@1.4.1": "0b7314464dc425b0c381482243c310e71bf2dc941ad44cc083725608b35128a1",
+    "https://esm.sh/valibot@1.4.1/denonext/valibot.mjs": "edf4fc24f4e67cf277dece6367910f2e65fa4813a3e9a28b773b921accefbff2"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:supabase@^2.106.0"
+      ]
+    }
+  }
+}

@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.query-royale-api]
 verify_jwt = false
+
+[functions.fetch-player-battlelog]
+verify_jwt = false
