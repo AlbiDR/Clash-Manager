@@ -86,3 +86,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-10-27 | Frontend-PWA/src/features/laboratory/logic/Simulation.ts | Documented interface contracts and added mandatory threat/decision logs for the optimized simulation engine.
 2026-06-13 | Backend/supabase/functions/query-royale-api/index.ts | Fully documented L5 API proxy, including harvest discovery engine and ADR Section V/II links.
 2026-06-14 | Backend/supabase/functions/headhunter-scanner/stages/profiler.ts | Fully documented L1 Profiler stage, including ValidRecruit DTO, RPoS decision logs, and backoff telemetry threats.
+2026-06-15 | Frontend-PWA/src/shared/ui/SelectionFab.vue | Documented SelectionFab component rationale, architectural context, and added decision/threat logs for action delegation and compact styling.
