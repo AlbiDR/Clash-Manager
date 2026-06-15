@@ -53,3 +53,10 @@
 - Search Path Isolation: Verified SET search_path for 88 functions.
 - Postgres 17 Hardening: Verified CREATE OR REPLACE TRIGGER syntax across 24 triggers.
 - Verification: 1267 passed, 1 skipped (check_baseline.py passed)
+2026-06-15 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 2 (20260614082900, 20260615004900)
+- Functions Updated: 4 (refresh_voyage_contributions, on_contribution_manual_override_updated, finalize_expired_voyages, on_battle_recorded)
+- Battle Types Standardized: Added 'trail' to voyage contribution filters.
+- Logic Hardening: Fixed 0-crown voyage backfill and cleanup scoping.
+- Verification: 1267 passed, 1 skipped (Local vitest Pass)
