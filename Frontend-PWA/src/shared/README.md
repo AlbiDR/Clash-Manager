@@ -47,6 +47,10 @@ Low-level DOM manipulators for standardized user feedback.
 - **vTactile.ts**: Injects "squish" scale transformations and haptic pulses into interactive elements upon activation.
 - **vTooltip.ts**: Declarative interface for injecting accessible, theme-aware information overlays.
 
+### Shared Utilities (`/utils`)
+Domain-aware presentation helpers for UI formatting.
+- **game.ts**: Authoritative role-to-label normalization and CSS class mapping.
+
 ---
 
 ## Integration Standards
