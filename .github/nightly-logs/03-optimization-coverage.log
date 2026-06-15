@@ -210,3 +210,10 @@ Frontend-PWA/scripts/portfolio.css
 2026-10-27 | Frontend-PWA/src/features/laboratory/logic/Simulation.ts | Optimized simulation loop with PriorityQueue and lazy re-validation.
 2026-10-27 | Frontend-PWA/src/features/laboratory/logic/ScoringStrategy.ts | Refactored to use centralized economy utilities.
 2026-10-27 | Frontend-PWA/src/core/utils/math.ts | Cached Intl.NumberFormat instance for performance.
+2026-06-15 | Frontend-PWA/src/core/utils/math.ts | Enhanced formatNumber utility to support options and handle null/NaN.
+2026-06-15 | Frontend-PWA/src/shared/directives/vTooltip.ts | Standardized numeric formatting via formatNumber.
+2026-06-15 | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Standardized numeric formatting via formatNumber.
+2026-06-15 | Frontend-PWA/src/shared/ui/TrophyBadge.vue | Standardized numeric formatting via formatNumber.
+2026-06-15 | Frontend-PWA/src/features/roster/components/MemberCard.vue | Standardized numeric formatting via formatNumber.
+2026-06-15 | Frontend-PWA/src/features/headhunter/components/RecruitCard.vue | Standardized numeric formatting via formatNumber.
+2026-06-15 | Frontend-PWA/src/shared/ui/TenureBadge.vue | Pruned redundant styles overlapping with global .badge system.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import type { Directive } from "vue";
-import { useHaptics } from "../../core";
+import { useHaptics, formatNumber } from "../../core";
 import type { BenchmarkData } from "../../core";
 
 // Singleton Tooltip State
@@ -60,12 +60,12 @@ function renderContent(data: BenchmarkData | string) {
         <div class="rt-marker player ${sentimentClass}" style="left: ${playerPos}%"></div>
     </div></div>
     <div class="rt-footer">
-        <span class="rt-stat">AVG ${Math.round(data.avg).toLocaleString()}</span>
+        <span class="rt-stat">AVG ${formatNumber(Math.round(data.avg))}</span>
         <span class="rt-delta ${sentimentClass}">${delta}</span>
     </div>
     <div class="rt-bounds">
-        <div class="rt-bound"><span>MIN</span> ${Math.round(data.min).toLocaleString()}</div>
-        <div class="rt-bound"><span>MAX</span> ${Math.round(data.max).toLocaleString()}</div>
+        <div class="rt-bound"><span>MIN</span> ${formatNumber(Math.round(data.min))}</div>
+        <div class="rt-bound"><span>MAX</span> ${formatNumber(Math.round(data.max))}</div>
     </div>`;
 }
 
