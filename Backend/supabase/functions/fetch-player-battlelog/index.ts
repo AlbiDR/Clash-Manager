@@ -41,15 +41,18 @@ const PayloadSchema = v.object({
  * so it always reflects the freshest set of keys available in CONFIG.
  */
 function resolveKeyPool(): string[] {
-  const raw = CONFIG.ROYALE_API_KEYS;
-  if (!raw) return [];
+  const rawKeyData = CONFIG.ROYALE_API_KEYS;
+  if (!rawKeyData) return [];
+
+  // [DECISION LOG] Keys are resolved lazily from the CONFIG (which is synced from Vault).
+  // We handle both JSON array format and comma-separated string format for maximum flexibility.
   try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.map((k: string) => k.trim()).filter(Boolean)
-      : [String(parsed).trim()];
+    const parsedKeys: unknown = JSON.parse(rawKeyData);
+    return Array.isArray(parsedKeys)
+      ? parsedKeys.map((keyToken: string) => String(keyToken).trim()).filter(Boolean)
+      : [String(parsedKeys).trim()];
   } catch {
-    return raw.split(",").map((k) => k.trim()).filter(Boolean);
+    return rawKeyData.split(",").map((keyToken) => keyToken.trim()).filter(Boolean);
   }
 }
 
@@ -58,29 +61,37 @@ function resolveKeyPool(): string[] {
  * Returns null on any non-200 response or network error.
  *
  * @param encodedTag - URL-encoded player tag.
- * @param key - The Royale API bearer token to use.
+ * @param keyToken - The Royale API bearer token to use.
  */
 async function fetchBattlelogWithKey(
   encodedTag: string,
-  key: string,
+  keyToken: string,
 ): Promise<v.InferOutput<typeof RoyaleBattleLogSchema> | null> {
   try {
-    const response = await fetch(
+    // [THREAT:] External API calls are potential failure points.
+    // [DECISION LOG] Standard fetch is used here; rotation and fan-out are handled
+    // at the orchestrator level to maximize data freshness across proxy nodes.
+    const apiResponse = await fetch(
       `${ROYALE_PROXY_BASE}/players/${encodedTag}/battlelog`,
       {
         headers: {
-          Authorization: `Bearer ${key.trim().replace(/^"|"$/g, "")}`,
+          Authorization: `Bearer ${keyToken.trim().replace(/^"|"$/g, "")}`,
           Accept: "application/json",
         },
       },
     );
 
-    if (!response.ok) return null;
+    if (!apiResponse.ok) return null;
 
-    const raw: unknown = await response.json();
-    const validation = v.safeParse(RoyaleBattleLogSchema, raw);
-    return validation.success ? validation.output : null;
-  } catch {
+    const rawBattleLogPayload: unknown = await apiResponse.json();
+
+    // [GUARD] VALIDATION BOUNDARY: External API ingress must be validated.
+    // [THREAT:] Prevents runtime crashes from unexpected Royale API payload changes.
+    const battleLogValidation = v.safeParse(RoyaleBattleLogSchema, rawBattleLogPayload);
+    return battleLogValidation.success ? battleLogValidation.output : null;
+  } catch (fetchError: unknown) {
+    const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
+    console.warn(`[fetch-player-battlelog] Single-key fetch failed: ${errorMessage}`);
     return null;
   }
 }
@@ -148,9 +159,12 @@ Deno.serve(async (req) => {
         keyPool.map((key) => fetchBattlelogWithKey(encodedTag, key)),
       );
 
+      // [THREAT:] Silent failures in the fan-out pool could lead to stale or missing data.
+      // [DECISION LOG] We filter for valid, non-empty battle logs and then pick the freshest
+      // to ensure we surface the most recent data available across the full key pool.
       const validResults = results.filter(
-        (r): r is v.InferOutput<typeof RoyaleBattleLogSchema> =>
-          r !== null && r.length > INITIAL_INDEX,
+        (result): result is v.InferOutput<typeof RoyaleBattleLogSchema> =>
+          result !== null && result.length > INITIAL_INDEX,
       );
 
       logAudit("BATTLELOG_FAN_OUT", "completed", {
@@ -166,22 +180,22 @@ Deno.serve(async (req) => {
       }
 
       // Select the result whose most recent battle is the freshest across all nodes.
-      const freshest = validResults.reduce((best, candidate) => {
-        const bestTime = parseBattleTime(best[INITIAL_INDEX].battleTime);
-        const candidateTime = parseBattleTime(candidate[INITIAL_INDEX].battleTime);
-        return candidateTime > bestTime ? candidate : best;
+      const freshestBattleLog = validResults.reduce((bestBattleLog, candidateBattleLog) => {
+        const bestTime = parseBattleTime(bestBattleLog[INITIAL_INDEX].battleTime);
+        const candidateTime = parseBattleTime(candidateBattleLog[INITIAL_INDEX].battleTime);
+        return candidateTime > bestTime ? candidateBattleLog : bestBattleLog;
       });
 
       logAudit("BATTLELOG_FETCH", "completed", {
         playerTag: normalizedTag,
-        battleCount: freshest.length,
-        mostRecentBattle: freshest[INITIAL_INDEX].battleTime,
+        battleCount: freshestBattleLog.length,
+        mostRecentBattle: freshestBattleLog[INITIAL_INDEX].battleTime,
       });
 
       return {
         playerTag: normalizedTag,
-        battleCount: freshest.length,
-        battles: freshest,
+        battleCount: freshestBattleLog.length,
+        battles: freshestBattleLog,
       };
     },
   });
