@@ -554,13 +554,12 @@ BEGIN
     
     GET DIAGNOSTICS v_count = ROW_COUNT;
 
-    -- 3. Clean up the database: prune any 0-crown contribution records of players who are no longer active
+    -- 3. Clean up: prune 0-crown records ONLY for players who are no longer active.
+    -- [FIX] Removed OR player_name IS NULL - that condition incorrectly deleted
+    --       valid 0-crown records for active members with a temporarily-NULL name.
     DELETE FROM drivers.clan_voyage_contributions
     WHERE total_voyage_crowns = 0
-      AND (
-          player_tag NOT IN (SELECT player_tag FROM drivers.members WHERE is_active = true)
-          OR player_name IS NULL
-      );
+      AND player_tag NOT IN (SELECT player_tag FROM drivers.members WHERE is_active = true);
 
     IF v_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
@@ -1739,17 +1738,38 @@ BEGIN
         WHERE voyage_id = v_id;
 
         IF v_current >= v_target OR now() >= v_end THEN
+            -- [FIX] Pre-populate 0-crown rows for all non-participating active members
+            --       before transitioning to COMPLETED. This ensures every member has a
+            --       contribution record (even at 0) so their voyage history is complete.
+            INSERT INTO drivers.clan_voyage_contributions (
+                voyage_id,
+                player_tag,
+                player_name,
+                total_voyage_crowns,
+                percentage_voyage_crowns
+            )
+            SELECT
+                v_id,
+                m.player_tag,
+                m.player_name,
+                0,
+                0.0
+            FROM drivers.members m
+            WHERE m.is_active = true
+              AND m.player_tag NOT IN (
+                  SELECT player_tag FROM drivers.clan_voyage_contributions WHERE voyage_id = v_id
+              )
+            ON CONFLICT (voyage_id, player_tag) DO NOTHING;
+
             UPDATE drivers.clan_voyage
             SET status = 'COMPLETED',
                 updated_at = now()
             WHERE id = v_id;
         END IF;
     ELSE
-        UPDATE drivers.clan_voyage
-        SET status = 'COMPLETED',
-            updated_at = now()
-        WHERE status = 'ACTIVE'
-        AND end_at <= now();
+        -- Handle the case where the voyage end_at has passed during battle processing.
+        -- Delegate to finalize_expired_voyages() which handles 0-crown insertion atomically.
+        PERFORM substrate.finalize_expired_voyages();
     END IF;
 
     RETURN NEW;
