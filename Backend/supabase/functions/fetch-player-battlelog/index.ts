@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "npm:valibot";
-import { fetchWithRotation } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import { RoyaleBattleLogSchema } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
@@ -14,9 +13,14 @@ import { supabase, CONFIG, syncVault } from "./client.ts";
  *
  * @remarks
  * Intended for testing and diagnostic purposes. Accepts a player tag,
- * fetches the raw battle log from the Royale API, validates it against
- * the canonical RoyaleBattleLogSchema, and returns the structured result.
+ * fans out the battlelog request across ALL available API keys in parallel
+ * (each key routes to a different proxy node with its own cache state),
+ * then returns the response with the most recent battleTime. This maximises
+ * the chance of surfacing the freshest available data across the full key pool.
  */
+
+const ROYALE_PROXY_BASE = "https://proxy.royaleapi.dev/v1";
+const INITIAL_INDEX = 0;
 
 /**
  * Validation schema for the inbound payload.
@@ -28,6 +32,73 @@ const PayloadSchema = v.object({
     v.minLength(3, "Player tag must be at least 3 characters."),
   ),
 });
+
+/**
+ * Resolves the full key pool from the environment secret.
+ *
+ * @remarks
+ * Mirrors the logic in muscle.ts getKeys() but operates post-syncVault,
+ * so it always reflects the freshest set of keys available in CONFIG.
+ */
+function resolveKeyPool(): string[] {
+  const raw = CONFIG.ROYALE_API_KEYS;
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.map((k: string) => k.trim()).filter(Boolean)
+      : [String(parsed).trim()];
+  } catch {
+    return raw.split(",").map((k) => k.trim()).filter(Boolean);
+  }
+}
+
+/**
+ * Fetches the battle log for a player using a single API key.
+ * Returns null on any non-200 response or network error.
+ *
+ * @param encodedTag - URL-encoded player tag.
+ * @param key - The Royale API bearer token to use.
+ */
+async function fetchBattlelogWithKey(
+  encodedTag: string,
+  key: string,
+): Promise<v.InferOutput<typeof RoyaleBattleLogSchema> | null> {
+  try {
+    const response = await fetch(
+      `${ROYALE_PROXY_BASE}/players/${encodedTag}/battlelog`,
+      {
+        headers: {
+          Authorization: `Bearer ${key.trim().replace(/^"|"$/g, "")}`,
+          Accept: "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) return null;
+
+    const raw: unknown = await response.json();
+    const validation = v.safeParse(RoyaleBattleLogSchema, raw);
+    return validation.success ? validation.output : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parses a Royale API battleTime string into a comparable timestamp number.
+ * Format: "20260614T093152.000Z"
+ *
+ * @param battleTime - Raw battleTime string from the Royale API.
+ */
+function parseBattleTime(battleTime: string): number {
+  // Reformat from "20260614T093152.000Z" to "2026-06-14T09:31:52.000Z"
+  const reformatted = battleTime.replace(
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
+    "$1-$2-$3T$4:$5:$6",
+  );
+  return new Date(reformatted).getTime();
+}
 
 /**
  * MAIN HANDLER: fetch-player-battlelog
@@ -59,52 +130,58 @@ Deno.serve(async (req) => {
         : `#${playerTag}`;
 
       const encodedTag = encodeURIComponent(normalizedTag);
-      const battlelogPath = `/players/${encodedTag}/battlelog`;
+      const keyPool = resolveKeyPool();
 
-      logAudit("BATTLELOG_FETCH", "called", {
+      logAudit("BATTLELOG_FAN_OUT", "called", {
         playerTag: normalizedTag,
-        path: battlelogPath,
+        keyCount: keyPool.length,
       });
 
-      const battlelogResponse = await fetchWithRotation(battlelogPath);
+      if (keyPool.length === INITIAL_INDEX) {
+        throw new Error("No Royale API keys available in the key pool.");
+      }
 
-      if (!battlelogResponse.ok) {
-        const status = battlelogResponse.status;
-        logAudit("BATTLELOG_FETCH", "failed", { status, playerTag: normalizedTag });
+      // Fan out across ALL keys in parallel. Each key routes to a potentially
+      // different proxy node with its own cache state. We collect every valid
+      // response and then pick the one whose first battle is the most recent.
+      const results = await Promise.all(
+        keyPool.map((key) => fetchBattlelogWithKey(encodedTag, key)),
+      );
+
+      const validResults = results.filter(
+        (r): r is v.InferOutput<typeof RoyaleBattleLogSchema> =>
+          r !== null && r.length > INITIAL_INDEX,
+      );
+
+      logAudit("BATTLELOG_FAN_OUT", "completed", {
+        playerTag: normalizedTag,
+        responded: validResults.length,
+        failed: keyPool.length - validResults.length,
+      });
+
+      if (validResults.length === INITIAL_INDEX) {
         throw new Error(
-          `Royale API returned ${status} for player tag ${normalizedTag}.`,
+          `All ${keyPool.length} keys failed to return a valid battle log for ${normalizedTag}.`,
         );
       }
 
-      const rawPayload: unknown = await battlelogResponse.json();
-
-      // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
-      // [THREAT:] Prevents runtime crashes from unexpected Royale API structural changes.
-      const validation = v.safeParse(RoyaleBattleLogSchema, rawPayload);
-
-      logAudit("BATTLELOG_INTEGRITY", "integrity_checked", {
-        passed: validation.success,
-        playerTag: normalizedTag,
-        details: validation.success
-          ? `Validated ${validation.output.length} battle entries.`
-          : "Battle log payload failed structural validation.",
+      // Select the result whose most recent battle is the freshest across all nodes.
+      const freshest = validResults.reduce((best, candidate) => {
+        const bestTime = parseBattleTime(best[INITIAL_INDEX].battleTime);
+        const candidateTime = parseBattleTime(candidate[INITIAL_INDEX].battleTime);
+        return candidateTime > bestTime ? candidate : best;
       });
-
-      if (!validation.success) {
-        throw new Error(
-          `Battle log for ${normalizedTag} failed structural validation.`,
-        );
-      }
 
       logAudit("BATTLELOG_FETCH", "completed", {
         playerTag: normalizedTag,
-        battleCount: validation.output.length,
+        battleCount: freshest.length,
+        mostRecentBattle: freshest[INITIAL_INDEX].battleTime,
       });
 
       return {
         playerTag: normalizedTag,
-        battleCount: validation.output.length,
-        battles: validation.output,
+        battleCount: freshest.length,
+        battles: freshest,
       };
     },
   });
