@@ -17,7 +17,7 @@
     "@types/node": "catalog:",
     "dependency-cruiser": "catalog:",
     "knip": "catalog:",
-    "supabase": "^2.106.0",
+    "supabase": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
   },
