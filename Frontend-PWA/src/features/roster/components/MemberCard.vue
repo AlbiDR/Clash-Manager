@@ -34,7 +34,7 @@ import {
 } from "@shared";
 import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
-import { formatTimeAgo } from "@core";
+import { formatTimeAgo, formatNumber } from "@core";
 
 const activeChart = ref<'war' | 'voyage'>('war');
 
@@ -113,7 +113,7 @@ const ariaLabel = computed(() => {
         <StatisticItem
           label="Average Fame"
           :loading="props.appIsRefreshing"
-          :value="(props.member.d.wfame || 0).toLocaleString()"
+          :value="formatNumber(props.member.d.wfame)"
         />
         <StatisticItem
           label="Avg. Donations"

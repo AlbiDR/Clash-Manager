@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 <script setup lang="ts">
+import { formatNumber } from "../../core";
 import Icon from "./Icon.vue";
 import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 
@@ -29,6 +30,6 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
     v-tooltip="benchmarkTooltipContent"
   >
     <Icon name="trophy" size="12" />
-    <span class="trophy-val">{{ (props.value || 0).toLocaleString() }}</span>
+    <span class="trophy-val">{{ formatNumber(props.value) }}</span>
   </div>
 </template>

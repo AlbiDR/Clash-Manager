@@ -21,9 +21,5 @@ const { days = 0 } = defineProps<{
 </template>
 
 <style scoped>
-.badge.tenure {
-  color: var(--sys-color-on-surface);
-  background: var(--sys-color-surface-container-highest);
-  opacity: 1;
-}
+/* TenureBadge inherits standard .badge styles from @core/theme/components.ts */
 </style>

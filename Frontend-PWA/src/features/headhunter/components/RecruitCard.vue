@@ -33,7 +33,7 @@ import {
 } from "@shared";
 import { computed } from "vue";
 import type { Recruit, ConsoleCardMetadata } from "@core/types";
-import { formatTimeAgo } from "@core";
+import { formatTimeAgo, formatNumber } from "@core";
 
 const props = defineProps<ConsoleCardMetadata & {
   /** Unique identifier for the recruit (Player Tag). */
@@ -115,7 +115,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
         />
         <StatisticItem
           label="RPoS"
-          :value="props.recruit.potentialRawScore.toLocaleString(undefined, { maximumFractionDigits: 0 })"
+          :value="formatNumber(props.recruit.potentialRawScore, { maximumFractionDigits: 0 })"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
           benchmark-metric="score"

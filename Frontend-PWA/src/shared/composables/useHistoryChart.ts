@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
+import { formatNumber } from "@core/utils/math";
 import {
   WAR_CONSTANTS,
   VOYAGE_CONSTANTS,
@@ -73,13 +74,13 @@ export function useHistoryChart(
       return {
         id: `${idPrefix}-${h.weekId}-${i}`,
         value: h.value,
-        tooltipLabel: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase">${h.readableWeek}</span><br>${h.value.toLocaleString()} ${unit}`
+        tooltipLabel: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase">${h.readableWeek}</span><br>${formatNumber(h.value)} ${unit}`
       };
     });
 
     const projection = {
       value: nextValue,
-      tooltipLabel: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:${projColor}">Projected</span><br>${Math.round(nextValue).toLocaleString()} ${unit}`
+      tooltipLabel: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:${projColor}">Projected</span><br>${formatNumber(Math.round(nextValue))} ${unit}`
     };
 
     return { data, projection, maxScale };
