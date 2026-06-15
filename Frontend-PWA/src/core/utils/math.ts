@@ -80,17 +80,28 @@ export function durationToSeconds(
 
 /**
  * Standardized numeric formatter instance for the application.
- * Cached at module level to reduce instantiation overhead.
+ * Cached at module level to reduce instantiation overhead for standard formatting.
  */
-const NUMBER_FORMATTER = new Intl.NumberFormat();
+const DEFAULT_NUMBER_FORMATTER = new Intl.NumberFormat();
 
 /**
  * Standardized numeric formatter for the application.
- * Uses a cached Intl.NumberFormat to provide locale-aware thousand separators.
+ * Uses a cached Intl.NumberFormat for standard calls to provide locale-aware thousand separators.
+ * Supports custom options and handles null/NaN/undefined by defaulting to 0.
  *
  * @param val - The numeric value to format.
+ * @param options - Optional Intl.NumberFormatOptions for custom formatting.
  * @returns A formatted string representation of the number.
  */
-export function formatNumber(val: number): string {
-  return NUMBER_FORMATTER.format(val);
+export function formatNumber(
+  val: number | null | undefined,
+  options?: Intl.NumberFormatOptions
+): string {
+  const safeVal = (val === null || val === undefined || isNaN(val)) ? 0 : val;
+
+  if (options) {
+    return new Intl.NumberFormat(undefined, options).format(safeVal);
+  }
+
+  return DEFAULT_NUMBER_FORMATTER.format(safeVal);
 }
