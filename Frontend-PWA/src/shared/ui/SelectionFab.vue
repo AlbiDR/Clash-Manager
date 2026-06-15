@@ -5,19 +5,42 @@ import Icon from "./Icon.vue";
 import { useHaptics, useUiCoordinator } from "@core";
 
 /**
- * [UI] SELECTION FAB
- * ----------------------------------------------------------------------------
- * Rationale: Renders the contextual FAB for selection actions and blitz mode.
- * Layer: @shared/ui
- * ----------------------------------------------------------------------------
+ * COMPONENT: SelectionFab
+ *
+ * @remarks
+ * Orchestrates contextual actions (Selection, Blitz, Harvesting) within a
+ * unified floating action button cluster. This component is strictly
+ * presentation-oriented, delegating all logic to the `useUiCoordinator`
+ * `fabState` contract.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared UI (@shared/ui)
+ * - **Role:** Contextual action entry point.
+ * - **Satisfaction:** ADR Section II: Structural Unitary Architecture.
  */
 
 const { fabState } = useUiCoordinator();
 const haptics = useHaptics();
 
+/**
+ * Triggers haptic feedback on interaction start.
+ */
 function onInteractionStart() {
   haptics.tap();
 }
+
+/**
+ * [DECISION LOG] ACTION DELEGATION: All handlers verify the existence of
+ * callbacks in `fabState` before execution, ensuring the component remains
+ * decoupled from feature-specific logic.
+ *
+ * [DECISION LOG] COMPACT MODE: The dismiss button collapses into a circle
+ * whenever additional actions (Blitz/Harvest/Selection) are active in the
+ * template to preserve horizontal space and maintain visual hierarchy.
+ *
+ * [THREAT:] UI desynchronization if `fabState` is modified without
+ * corresponding callback updates. Guarded by null-checks.
+ */
 
 function handleFabAction(e: MouseEvent) {
   if (fabState.onAction) fabState.onAction(e);
