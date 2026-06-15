@@ -114,3 +114,6 @@ Frontend-PWA/README.md
 2026-06-14 | Frontend-PWA/README.md | Reconciled usePwaManager and updated service registry (32 entries)
 2026-06-14 | Frontend-PWA/src/core/README.md | Reconciled usePwaManager and useBenchmarking services
 2026-06-14 | Backend/supabase/functions/sync-player-cards/README.md | Created User Proxy documentation and documented normalization protocol
+2026-06-15 | Backend/README.md | Reconciled Penta-Engine Edge Architecture and Battlelog Proxy
+2026-06-15 | Backend/supabase/functions/fetch-player-battlelog/README.md | Created Battlelog Proxy documentation
+2026-06-15 | Frontend-PWA/src/shared/utils/README.md | Created Shared Utilities documentation and reconciled @shared drift
