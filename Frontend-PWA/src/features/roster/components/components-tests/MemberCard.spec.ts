@@ -15,7 +15,7 @@ vi.mock("../../../../core/services/useBenchmarking", () => ({
   }),
 }));
 
-vi.mock("../../../../core/utils/game", () => ({
+vi.mock("../../../../shared/utils/game", () => ({
   formatRole: vi.fn((role) => ({
     label: `Formatted ${role}`,
     class: `role-${role}`,
