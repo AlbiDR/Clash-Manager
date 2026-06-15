@@ -519,23 +519,23 @@ DECLARE
 BEGIN
     -- For each voyage that is about to be auto-finalized
     FOR v_rec IN (
-        SELECT id, target_crowns 
-        FROM drivers.clan_voyage 
+        SELECT id, target_crowns
+        FROM drivers.clan_voyage
         WHERE status = 'ACTIVE' AND end_at <= now()
     ) LOOP
         -- 1. One-time pre-population of 0-crown rows for all active members who did not participate
         INSERT INTO drivers.clan_voyage_contributions (
-            voyage_id, 
-            player_tag, 
-            player_name, 
-            total_voyage_crowns, 
+            voyage_id,
+            player_tag,
+            player_name,
+            total_voyage_crowns,
             percentage_voyage_crowns
         )
-        SELECT 
-            v_rec.id, 
-            m.player_tag, 
-            m.player_name, 
-            0, 
+        SELECT
+            v_rec.id,
+            m.player_tag,
+            m.player_name,
+            0,
             0.0
         FROM drivers.members m
         WHERE m.is_active = true
@@ -1643,12 +1643,12 @@ BEGIN
     END IF;
 
     INSERT INTO drivers.clan_voyage_contributions (
-        voyage_id, 
-        player_tag, 
-        player_name, 
-        manual_voyage_crowns, 
-        manual_voyage_crowns_at, 
-        total_voyage_crowns, 
+        voyage_id,
+        player_tag,
+        player_name,
+        manual_voyage_crowns,
+        manual_voyage_crowns_at,
+        total_voyage_crowns,
         percentage_voyage_crowns
     )
     VALUES (
@@ -1712,10 +1712,10 @@ BEGIN
 
         IF v_name IS NOT NULL THEN
             INSERT INTO drivers.clan_voyage_contributions (
-                voyage_id, 
-                player_tag, 
-                player_name, 
-                total_voyage_crowns, 
+                voyage_id,
+                player_tag,
+                player_name,
+                total_voyage_crowns,
                 percentage_voyage_crowns
             )
             VALUES (
@@ -1768,7 +1768,8 @@ BEGIN
         END IF;
     ELSE
         -- Handle the case where the voyage end_at has passed during battle processing.
-        -- Delegate to finalize_expired_voyages() which handles 0-crown insertion atomically.
+        -- Delegate to finalize_expired_voyages() which handles 0-crown insertion atomically,
+        -- avoiding code duplication and ensuring consistent behaviour.
         PERFORM substrate.finalize_expired_voyages();
     END IF;
 
@@ -1814,7 +1815,7 @@ BEGIN
             FROM drivers.player_battles b
             WHERE b.player_tag = c.player_tag
               AND b.battle_time <= v_window_end
-              AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel')
+              AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail')
               AND (
                   -- If there's a manual override, only count subsequent battles
                   (c.manual_voyage_crowns IS NOT NULL AND b.battle_time > c.manual_voyage_crowns_at)
@@ -1959,7 +1960,7 @@ BEGIN
             FROM drivers.player_battles b
             WHERE b.player_tag = NEW.player_tag
               AND b.battle_time <= v_window_end
-              AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel')
+              AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail')
               AND (
                   (NEW.manual_voyage_crowns IS NOT NULL AND b.battle_time > NEW.manual_voyage_crowns_at)
                   OR
