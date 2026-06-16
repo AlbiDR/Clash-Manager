@@ -84,17 +84,29 @@ async function harvestClanlessPlayers(
   }
 
   const rankingItems = rankingValidation.output.items;
+
+  // [DIAGNOSTIC] Surfaces the raw API item count in edge function logs to allow
+  // distinguishing between an empty API response and a fully-filtered result set.
+  console.log(`[HARVEST] Raw players received from API: ${rankingItems.length}`);
+
   if (rankingItems.length === INITIAL_ARRAY_INDEX) {
     return [];
   }
 
   // [DECISION LOG] CLANLESS FILTERING
   // Rationale: Only players without a clan are viable recruitment targets.
-  // We filter these out before they ever reach the selection store to
-  // minimize noise in the Blitz recruitment loop.
+  // We filter them out at the earliest possible point in the pipeline.
+  //
+  // [THREAT:] The Royale API rankings endpoint may return an empty clan object {}
+  // for clanless players rather than omitting the key entirely. Checking !player.clan
+  // alone is insufficient because !{} evaluates to false (truthy object). We must
+  // inspect clan.tag specifically to correctly classify clanless players.
   const clanlessPlayers = rankingItems.filter((player) => {
-    return !player.clan;
+    const clan = player.clan as Record<string, unknown> | null | undefined;
+    return !clan || !clan.tag;
   });
+
+  console.log(`[HARVEST] Clanless players after filter: ${clanlessPlayers.length}`);
 
   return clanlessPlayers.map((player) => ({
     tag: typeof player.tag === "string" ? player.tag : String(player.tag ?? ""),
