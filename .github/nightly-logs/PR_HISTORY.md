@@ -1,6 +1,31 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-16] PR #850: chore(deps): apply Tier 1 maintenance updates
+**Commit**: `70b6bdd92fb92ed0dbe963f3d61fdd5b74043118`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/850)
+
+### Description
+This Pull Request applies Tier 1 maintenance updates as part of the Stage 8 Dependency Audit.
+
+### Changes:
+- Updated `@supabase/supabase-js` from `^2.108.1` to `^2.108.2` in `pnpm-workspace.yaml`.
+- Updated `knip` from `^6.16.1` to `^6.17.0` in `pnpm-workspace.yaml`.
+- Updated `vitest` from `^4.1.8` to `^4.1.9` in `pnpm-workspace.yaml`.
+- Updated `@vitest/coverage-v8` from `^4.1.8` to `^4.1.9` in `pnpm-workspace.yaml`.
+- Regenerated `pnpm-lock.yaml`.
+- Updated `.github/nightly-logs/08-dependency-audit-coverage.log` to document the successful updates.
+
+### Verification:
+- Ran `npm_config_engine_strict=false pnpm install` to update the lockfile.
+- Ran `npm_config_engine_strict=false pnpm -r --no-engine-strict test`: **1283 passed, 1 skipped**.
+- Verified Section 2 of the audit log remains accurate with the latest major versions.
+
+---
+*PR created automatically by Jules for task [12218394856458767247](https://jules.google.com/task/12218394856458767247) started by @AlbiDR*
+
+---
+
 ## [2026-06-16] PR #849: chore(version): no drift found
 **Commit**: `b0c37b53db7a697843267bbd4aa3ac7b3b60d02d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/849)
