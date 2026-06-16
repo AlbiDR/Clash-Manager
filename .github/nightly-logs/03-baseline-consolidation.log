@@ -60,3 +60,8 @@
 - Battle Types Standardized: Added 'trail' to voyage contribution filters.
 - Logic Hardening: Fixed 0-crown voyage backfill and cleanup scoping.
 - Verification: 1267 passed, 1 skipped (Local vitest Pass)
+2026-06-16 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 0 (Already reconciled)
+- Hardening: Added SECURITY DEFINER to 20 functions (tr_fn_rotate_recruits, format_longevity, purge_governance_telemetry, handle_heritage_snapshot, purge_orphan_players, purge_stale_battles, shred_river_race, shred_clan_members, rotate_recruits, purge_stale_discovery_cache, shred_clan_profile, format_last_seen, format_tenure, shred_war_log, bench_underqualified_recruits, dismiss_recruit, log_recruit_event, ping, get_shadow_discovery_targets, weighted_avg).
+- Verification: audit_baseline.py and check_baseline.py passed.
