@@ -3,6 +3,7 @@
 
 import { ref, watch, computed, toValue, type MaybeRefOrGetter } from "vue";
 import { useHaptics } from "@core";
+import { useViewport } from "./useViewport";
 
 export interface StatusPillProps {
   type: "success" | "warning" | "error" | "loading";
@@ -53,9 +54,10 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
 
   // [DECISION LOG] RESPONSIVE TRUNCATION: On narrow viewports, truncate
   // to the last word to maintain UI stability in header clusters.
+  const { isMobileNarrow } = useViewport();
   const displayText = computed(() => {
     const p = toValue(props);
-    if (typeof window !== 'undefined' && window.innerWidth < 360) {
+    if (isMobileNarrow.value) {
       const parts = p.text.split(' ');
       return parts.length > 1 ? parts[parts.length - 1] : p.text;
     }

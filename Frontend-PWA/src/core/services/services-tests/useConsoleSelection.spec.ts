@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+import { describe, it, expect, vi } from 'vitest';
+import { useConsoleSelection } from '../useConsoleSelection';
+import { ref, computed } from 'vue';
+
+describe('useConsoleSelection', () => {
+  const mockItems = [
+    { id: '1', score: 80 },
+    { id: '2', score: 40 },
+    { id: '3', score: 95 },
+  ];
+  const items = ref(mockItems);
+  const batchIdMapper = (item: any) => item.id;
+  const setForceSelectionMode = vi.fn();
+  const selectAll = vi.fn();
+  const scoreGetter = (item: any) => item.score;
+
+  it('selects all items correctly', () => {
+    const { handleSelectAll } = useConsoleSelection(
+      items,
+      batchIdMapper,
+      setForceSelectionMode,
+      selectAll
+    );
+
+    handleSelectAll();
+
+    expect(selectAll).toHaveBeenCalledWith(['1', '2', '3']);
+    expect(setForceSelectionMode).toHaveBeenCalledWith(false);
+  });
+
+  it('selects items by score (greater than or equal)', () => {
+    const { handleSelectScore } = useConsoleSelection(
+      items,
+      batchIdMapper,
+      setForceSelectionMode,
+      selectAll,
+      scoreGetter
+    );
+
+    handleSelectScore(80, 'ge');
+
+    expect(selectAll).toHaveBeenCalledWith(['1', '3']);
+    expect(setForceSelectionMode).toHaveBeenCalledWith(false);
+  });
+
+  it('selects items by score (less than or equal)', () => {
+    const { handleSelectScore } = useConsoleSelection(
+      items,
+      batchIdMapper,
+      setForceSelectionMode,
+      selectAll,
+      scoreGetter
+    );
+
+    handleSelectScore(50, 'le');
+
+    expect(selectAll).toHaveBeenCalledWith(['2']);
+    expect(setForceSelectionMode).toHaveBeenCalledWith(false);
+  });
+
+  it('forces selection mode if no items match the score threshold', () => {
+    const { handleSelectScore } = useConsoleSelection(
+      items,
+      batchIdMapper,
+      setForceSelectionMode,
+      selectAll,
+      scoreGetter
+    );
+
+    handleSelectScore(100, 'ge');
+
+    expect(selectAll).toHaveBeenCalledWith([]);
+    expect(setForceSelectionMode).toHaveBeenCalledWith(true);
+  });
+
+  it('uses customScoreGetter if provided', () => {
+    const { handleSelectScore } = useConsoleSelection(
+      items,
+      batchIdMapper,
+      setForceSelectionMode,
+      selectAll,
+      scoreGetter
+    );
+
+    const customScoreGetter = (item: any) => item.id === '2' ? 100 : 0;
+    handleSelectScore(100, 'ge', customScoreGetter);
+
+    expect(selectAll).toHaveBeenCalledWith(['2']);
+  });
+});

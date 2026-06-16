@@ -14,6 +14,7 @@ import { computed, watch, onUnmounted, toRef, toValue, type Ref, type ComputedRe
 import type { ConsoleCardMetadata, ConsoleFabState, ConsoleLayoutEvents } from "@core/types";
 import { useConsoleMetadata } from "./useConsoleMetadata";
 import { useVisibilityRefresh } from "./useVisibilityRefresh";
+import { useConsoleSelection } from "./useConsoleSelection";
 
 /**
  * CONFIGURATION: ConsoleLogicOptions
@@ -181,6 +182,15 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   // DELEGATED REVALIDATION: Visibility Refresh logic is now handled by the Core Service.
   useVisibilityRefresh(refreshFn, isRefreshing);
 
+  // STEP 6: Selection Actions (Delegated)
+  const { handleSelectAll, handleSelectScore } = useConsoleSelection(
+    filteredItems,
+    batchIdMapper,
+    setForceSelectionMode,
+    selectAll,
+    scoreGetter,
+  );
+
   onUnmounted(() => {
     setFabVisible(false);
   });
@@ -210,27 +220,6 @@ export function useConsoleController<T extends { id: string; n?: string }>(
 
   /** Optimized set for O(1) membership checks in the UI layer. */
   const selectedSet = computed(() => new Set(selectedIds.value));
-
-  /** Action: Select all currently filtered items. */
-  function handleSelectAll() {
-    const targetIds = filteredItems.value.map(batchIdMapper);
-    setForceSelectionMode(false);
-    selectAll(targetIds);
-  }
-
-  /** Action: Select items based on a numeric score threshold. */
-  function handleSelectScore(threshold: number, mode: "ge" | "le", customScoreGetter?: (candidateItem: T) => number) {
-    const scoreExtractor = customScoreGetter || scoreGetter;
-    if (!scoreExtractor) return;
-    const targetIds = filteredItems.value
-      .filter((candidateItem: T) => {
-        const score = scoreExtractor(candidateItem);
-        return mode === "ge" ? score >= threshold : score <= threshold;
-      })
-      .map(batchIdMapper);
-    setForceSelectionMode(targetIds.length === 0);
-    selectAll(targetIds);
-  }
 
   /**
    * Standardized Props Contract for the ConsoleLayout.vue component.
