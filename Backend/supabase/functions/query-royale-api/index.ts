@@ -2,14 +2,12 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "npm:valibot";
-import { fetchWithRotation, processBatch } from "../_shared/muscle.ts";
+import { fetchWithRotation } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import {
   RoyaleClanSchema,
   RoyaleLocationListSchema,
-  RoyaleClanRankingListSchema,
-  RoyaleClanDetailSchema,
-  RoyaleBattleLogSchema
+  RoyaleRankingListSchema
 } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 import { AuditEntry } from "../_shared/types.ts";
@@ -18,7 +16,7 @@ import { AuditEntry } from "../_shared/types.ts";
  * Edge Function: query-royale-api
  * L5 Control Layer: Secure proxy for client-side Clash Royale API queries.
  *
- * Implements robust clanless player harvesting via active clan battle log scanning.
+ * Implements robust clanless player harvesting via direct player rankings.
  */
 
 /**
@@ -35,8 +33,7 @@ const LOCATION_ID_INTERNATIONAL = 57000101;
 const DEFAULT_FALLBACK_COUNTRY = "United States";
 const DEFAULT_FALLBACK_ID = 57000120;
 
-const TOP_CLANS_LIMIT = 3;
-const TOP_MEMBERS_PER_CLAN_LIMIT = 3;
+const PLAYER_LEADERBOARD_LIMIT = 1000;
 const INITIAL_ARRAY_INDEX = 0;
 
 // EPHEMERAL: intentionally resets on cold start.
@@ -52,11 +49,9 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  * @remarks
  * Satisfies ADR Section V: Edge Functions - Data Ingestion.
  *
- * Implements a three-tier discovery pipeline:
- * 1. Rankings: Fetches top clans in the target region.
- * 2. Membership: Inspects top members of those clans.
- * 3. Battle Logs: Scans the combat history of those members to find "Shadow Leads"
- *    (clanless opponents).
+ * Implements a direct player rankings harvesting pipeline:
+ * 1. Rankings: Fetches top players in the target region.
+ * 2. Filters: Filters out players who are currently in a clan.
  *
  * @param locationId - The Royale API location ID or 'global'.
  * @param logAudit - Telemetry callback for clinical auditing.
@@ -66,116 +61,46 @@ async function harvestClanlessPlayers(
   locationId: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
-  const clansPath = `/locations/${locationId}/rankings/clans?limit=${TOP_CLANS_LIMIT}`;
-  logAudit("HARVEST_CLANS_FETCH", "called", { path: clansPath });
-  const clanRankingsResponse = await fetchWithRotation(clansPath);
-  if (!clanRankingsResponse.ok) {
-    throw new Error(`Failed to fetch top clans: ${clanRankingsResponse.status}`);
+  const playersPath = `/locations/${locationId}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath });
+  const playerRankingsResponse = await fetchWithRotation(playersPath);
+  if (!playerRankingsResponse.ok) {
+    throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
   }
   
-  const rawClanRankingPayload: unknown = await clanRankingsResponse.json();
+  const rawPlayerRankingPayload: unknown = await playerRankingsResponse.json();
 
   // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
   // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in rankings.
-  const rankingValidation = v.safeParse(RoyaleClanRankingListSchema, rawClanRankingPayload);
+  const rankingValidation = v.safeParse(RoyaleRankingListSchema, rawPlayerRankingPayload);
 
-  logAudit("HARVEST_CLANS_INTEGRITY", "integrity_checked", {
+  logAudit("HARVEST_PLAYERS_INTEGRITY", "integrity_checked", {
     passed: rankingValidation.success,
-    details: rankingValidation.success ? "Clan rankings validated" : "Malformed rankings payload"
+    details: rankingValidation.success ? "Player rankings validated" : "Malformed player rankings payload"
   });
 
   if (!rankingValidation.success) {
-    throw new Error("Clan rankings payload failed structural validation.");
+    throw new Error("Player rankings payload failed structural validation.");
   }
 
-  const clanRankingItems = rankingValidation.output.items;
-  if (clanRankingItems.length === INITIAL_ARRAY_INDEX) {
+  const rankingItems = rankingValidation.output.items;
+  if (rankingItems.length === INITIAL_ARRAY_INDEX) {
     return [];
   }
-  
-  // Fetch clan details to get members
-  // [DECISION LOG] We scan top clans to find highly active members as "discovery anchors".
-  const memberFetchTasks = clanRankingItems.map((clanItem) => {
-    return async () => {
-      const encodedTag = encodeURIComponent(clanItem.tag);
-      const clanDetailResponse = await fetchWithRotation(`/clans/${encodedTag}`);
-      if (!clanDetailResponse.ok) {
-        console.warn(`Failed to fetch clan detail for ${clanItem.tag}: ${clanDetailResponse.status}`);
-        return [];
-      }
-      const rawClanDetailPayload: unknown = await clanDetailResponse.json();
 
-      const detailValidation = v.safeParse(RoyaleClanDetailSchema, rawClanDetailPayload);
-      if (!detailValidation.success) {
-          console.warn(`Validation failed for clan ${clanItem.tag}`);
-          return [];
-      }
-
-      return detailValidation.output.memberList;
-    };
+  // [DECISION LOG] CLANLESS FILTERING
+  // Rationale: Only players without a clan are viable recruitment targets.
+  // We filter these out before they ever reach the selection store to
+  // minimize noise in the Blitz recruitment loop.
+  const clanlessPlayers = rankingItems.filter((player) => {
+    return !player.clan;
   });
-  
-  // Process member fetches in parallel
-  const clanMembersList = await processBatch(memberFetchTasks);
-  
-  // Collect target players (top members per clan)
-  const targetPlayerTags: string[] = [];
-  for (const members of clanMembersList) {
-    const activeMembers = members.slice(INITIAL_ARRAY_INDEX, TOP_MEMBERS_PER_CLAN_LIMIT);
-    for (const member of activeMembers) {
-      if (member.tag) {
-        targetPlayerTags.push(member.tag);
-      }
-    }
-  }
-  
-  if (targetPlayerTags.length === INITIAL_ARRAY_INDEX) {
-    return [];
-  }
-  
-  // Fetch battle logs for target players
-  // [DECISION LOG] Battle logs of top players are a rich source of clanless "Shadow Leads".
-  const battlelogTasks = targetPlayerTags.map((playerTag) => {
-    return async () => {
-      const encodedPlayerTag = encodeURIComponent(playerTag);
-      const battleLogResponse = await fetchWithRotation(`/players/${encodedPlayerTag}/battlelog`);
-      if (!battleLogResponse.ok) {
-        console.warn(`Failed to fetch battlelog for ${playerTag}: ${battleLogResponse.status}`);
-        return [];
-      }
-      const rawBattleLogPayload: unknown = await battleLogResponse.json();
 
-      const battleLogValidation = v.safeParse(RoyaleBattleLogSchema, rawBattleLogPayload);
-      if (!battleLogValidation.success) {
-          console.warn(`Battle log validation failed for player ${playerTag}`);
-          return [];
-      }
-
-      return battleLogValidation.output;
-    };
-  });
-  
-  const battlelogs = await processBatch(battlelogTasks);
-  
-  // Extract clanless opponents
-  const clanlessMap = new Map<string, { tag: string, name: string, clan: null }>();
-  for (const battleLog of battlelogs) {
-    if (!Array.isArray(battleLog)) continue;
-    for (const battle of battleLog) {
-      const opponents = battle.opponent || [];
-      for (const opponent of opponents) {
-        if (opponent.tag && !opponent.clan?.tag) {
-          clanlessMap.set(opponent.tag, {
-            tag: opponent.tag,
-            name: opponent.name,
-            clan: null
-          });
-        }
-      }
-    }
-  }
-  
-  return Array.from(clanlessMap.values());
+  return clanlessPlayers.map((player) => ({
+    tag: typeof player.tag === "string" ? player.tag : String(player.tag ?? ""),
+    name: typeof player.name === "string" ? player.name : String(player.name ?? ""),
+    clan: null
+  }));
 }
 
 /**
