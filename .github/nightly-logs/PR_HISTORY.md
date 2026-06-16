@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-16] PR #846: refactor(opt): decouple selection logic and standardize viewport sensing
+**Commit**: `b72b138cef7e5dbe454c038b7e0f3263712487a7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/846)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** `useConsoleController.ts` (369 lines) was approaching the 400-line SRP threshold and contained mixed concerns (orchestration + selection logic). `useStatusPill.ts` used direct `window.innerWidth` checks, violating the centralized viewport sensing pattern.
+**[Refactoring Hypothesis]:** Extracting selection management to `useConsoleSelection.ts` improves modularity and maintainability. Migrating to `useViewport` ensures consistent breakpoint behavior across the PWA.
+**[Rationale]:** Aligns with CleanStack Architecture (Layer 1 Core Services) and satisfies the SRP threshold by delegating specialized logic to atomic services.
+
+### Changes:
+- **[useConsoleSelection.ts]:** Created new Layer 1 Core Service for bulk and score-based selection.
+- **[useConsoleController.ts]:** Refactored to delegate selection handling, reducing internal complexity.
+- **[useStatusPill.ts]:** Standardized responsive behavior by consuming `useViewport`.
+- **[Substrate Hygiene]:** Re-verified zero-reference status for orphaned database views.
+
+### Verification:
+- **[Automated]:** Full monorepo test gate passed (1283 tests).
+- **[Automated/Audit]:** New service unit tests (5 passed).
+
+### Log Updates:
+- Updated .github/nightly-logs/03-optimization-coverage.log
+
+---
+*PR created automatically by Jules for task [13274946723469915008](https://jules.google.com/task/13274946723469915008) started by @AlbiDR*
+
+---
+
 ## [2026-06-16] PR #845: chore(baseline): fold new migrations into master baseline
 **Commit**: `47961b49d8708e010a88b4cebbc6627b85fcbd61`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/845)
