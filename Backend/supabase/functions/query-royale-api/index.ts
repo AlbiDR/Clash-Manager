@@ -138,12 +138,51 @@ Deno.serve(async (req) => {
 
       if (mode === "global") {
         logAudit("GLOBAL_HARVEST", "called");
-        const harvestResults = await harvestClanlessPlayers("global", logAudit);
-        return { 
+
+        // [DECISION LOG] GLOBAL ENDPOINT LIMITATION
+        // The Clash Royale API's /locations/global/rankings/players endpoint
+        // returns an empty items array regardless of limit. Country-specific
+        // player ranking endpoints are the only reliable data source.
+        // Global Harvest therefore uses the same proven rotating-country
+        // mechanism as Local Harvest for International clans, but independently
+        // of the clan's registered region to maximize recruitment diversity.
+        if (!cachedCountries) {
+          logAudit("GLOBAL_COUNTRIES_FETCH", "called");
+          const locationsResponse = await fetchWithRotation("/locations");
+          if (!locationsResponse.ok) {
+            throw new Error(`Failed to retrieve locations catalog: ${locationsResponse.status}`);
+          }
+
+          const rawLocationsPayload: unknown = await locationsResponse.json();
+          const locationsValidation = v.safeParse(RoyaleLocationListSchema, rawLocationsPayload);
+
+          if (!locationsValidation.success) {
+            throw new Error("Locations catalog failed structural validation.");
+          }
+
+          cachedCountries = locationsValidation.output.items
+            .filter((loc) => loc.isCountry === true)
+            .map((loc) => ({ id: loc.id, name: loc.name }));
+        }
+
+        let globalLocationId: number = DEFAULT_FALLBACK_ID;
+        let globalLocationName: string = DEFAULT_FALLBACK_COUNTRY;
+
+        if (cachedCountries && cachedCountries.length > INITIAL_ARRAY_INDEX) {
+          const randomIndex = Math.floor(Math.random() * cachedCountries.length);
+          const selectedCountry = cachedCountries[randomIndex];
+          globalLocationId = selectedCountry.id;
+          globalLocationName = selectedCountry.name;
+        }
+
+        logAudit("GLOBAL_ROTATION_SELECT", "run", { selected: globalLocationName });
+        const harvestResults = await harvestClanlessPlayers(String(globalLocationId), logAudit);
+        return {
           items: harvestResults,
-          region: "Global"
+          region: globalLocationName,
         };
       }
+
 
       // Local Harvest Resolution
       if (!CONFIG.CLAN_TAG) {
