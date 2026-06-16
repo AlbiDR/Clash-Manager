@@ -78,7 +78,7 @@ async function harvestClanlessPlayers(
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
   const seasonId = getCurrentSeasonId();
-  const playersPath = `/locations/${locationId}/pathoflegend/${seasonId}?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  const playersPath = `/locations/${locationId}/rankings/players/pathoflegend/${seasonId}?limit=${PLAYER_LEADERBOARD_LIMIT}`;
   logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath, seasonId });
   const playerRankingsResponse = await fetchWithRotation(playersPath);
   if (!playerRankingsResponse.ok) {
