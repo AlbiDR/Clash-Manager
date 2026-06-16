@@ -240,6 +240,11 @@ A domain-blind engine for high-performance searching and sorting of large datase
 - **WeakMap Caching**: Utilizes a module-level `WeakMap` to cache normalized search fields, achieving O(1) amortized lookup performance and maintaining 60FPS during active filtering.
 - **Stability Support**: Implements stable tie-breaking logic (Name -> ID) to ensure deterministic rendering order across sort transitions.
 
+### 33. Selection Logic Orchestrator (`useConsoleSelection`)
+Orchestrates batch selection logic for console views, decoupling complex selection handlers from the main controller.
+- **Domain Decoupling**: Provides a domain-agnostic interface for bulk selection and score-based thresholding.
+- **Thresholding Strategy**: Implements centralized logic for filtering items based on numeric performance scores (`ge` / `le`).
+
 ---
 <br />
 

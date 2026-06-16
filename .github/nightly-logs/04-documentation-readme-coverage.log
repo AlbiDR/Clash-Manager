@@ -117,3 +117,5 @@ Frontend-PWA/README.md
 2026-06-15 | Backend/README.md | Reconciled Penta-Engine Edge Architecture and Battlelog Proxy
 2026-06-15 | Backend/supabase/functions/fetch-player-battlelog/README.md | Created Battlelog Proxy documentation
 2026-06-15 | Frontend-PWA/src/shared/utils/README.md | Created Shared Utilities documentation and reconciled @shared drift
+2026-06-16 | Frontend-PWA/README.md | Reconciled useConsoleSelection drift and updated service registry (33 entries)
+2026-06-16 | Frontend-PWA/src/core/README.md | Reconciled useConsoleSelection and useConsoleController delegation drift
