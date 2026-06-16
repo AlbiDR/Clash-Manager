@@ -231,11 +231,17 @@ export const KING_XP_TABLE: ReadonlyArray<KingXpRow> = [
 ];
 
 /**
+ * The maximum King Level (Account Level) in the current game version.
+ * Rationale: Derived from the King XP table to ensure domain synchronization.
+ */
+export const KING_LEVEL_MAX = KING_XP_TABLE[KING_XP_TABLE.length - 1].level;
+
+/**
  * Key milestones for King Level projection.
  * Rationale: Represents levels where significant game features or rewards are unlocked.
  */
 export const IMPORTANT_KING_LEVELS: ReadonlyArray<number> = [
-  2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 75, 80, 85, 90
+  2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 75, 80, 85, KING_LEVEL_MAX
 ];
 
 /**
