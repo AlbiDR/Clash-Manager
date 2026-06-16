@@ -13,6 +13,9 @@ import type { Ref, ComputedRef } from "vue";
  * **Architectural Context:**
  * - **Layer:** Layer 1 Core Service (@core/services)
  * - **Role:** Selection logic handler.
+ * - **Satisfaction:** Satisfies ADR Section I: Foundations (SRP) and ADR Section III:
+ *   Data Flow (Orchestration). Decouples batch selection workflows from
+ *   monolithic controllers to ensure technical purity and reusability.
  *
  * @param filteredItems - The reactive dataset that has been filtered and sorted.
  * @param batchIdMapper - Logic for extracting a unique ID from a candidate item.
@@ -30,12 +33,24 @@ export function useConsoleSelection<T>(
 ) {
   /** Action: Select all currently filtered items. */
   function handleSelectAll() {
+    // [DECISION LOG] FLATTENING: Extracts IDs from the currently filtered dataset
+    // to ensure selection respect active search/filter constraints.
     const targetIds = filteredItems.value.map(batchIdMapper);
+
+    // [THREAT:] Accidental 'empty' selection mode persistence.
+    // Rationale: Selecting all items should always disable forced mode as
+    // the selection set is now authoritative and potentially non-empty.
     setForceSelectionMode(false);
     selectAll(targetIds);
   }
 
-  /** Action: Select items based on a numeric score threshold. */
+  /**
+   * Action: Select items based on a numeric score threshold.
+   *
+   * @param threshold - The numeric value to compare against.
+   * @param mode - Comparison mode ('ge' for greater-than-equal, 'le' for less-than-equal).
+   * @param customScoreGetter - Optional override for extracting the score.
+   */
   function handleSelectScore(
     threshold: number,
     mode: "ge" | "le",
@@ -44,6 +59,9 @@ export function useConsoleSelection<T>(
     const scoreExtractor = customScoreGetter || scoreGetter;
     if (!scoreExtractor) return;
 
+    // [DECISION LOG] PREDICATE FILTERING: We filter the active dataset using
+    // the score threshold to allow users to target specific performance bands
+    // (e.g. "Select all members with score >= 90") in one tap.
     const targetIds = filteredItems.value
       .filter((candidateItem: T) => {
         const score = scoreExtractor(candidateItem);
@@ -51,6 +69,10 @@ export function useConsoleSelection<T>(
       })
       .map(batchIdMapper);
 
+    // [THREAT:] Ghost selection UI.
+    // Rationale: If the threshold produces zero matches, we force selection
+    // mode ON to allow the user to manually adjust or see the 'zero' state
+    // feedback in the FAB, rather than the FAB disappearing abruptly.
     setForceSelectionMode(targetIds.length === 0);
     selectAll(targetIds);
   }
