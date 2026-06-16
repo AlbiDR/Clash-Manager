@@ -100,6 +100,10 @@
 | @types/node | ALIGN | catalog: | 2026-06-14 | PASS |
 | vue-tsc | ^3.3.4 | ^3.3.5 | 2026-06-14 | PASS |
 | [Audit] | - | - | 2026-06-15 | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
+| @supabase/supabase-js | ^2.108.1 | ^2.108.2 | 2026-06-16 | PASS |
+| knip | ^6.16.1 | ^6.17.0 | 2026-06-16 | PASS |
+| vitest | ^4.1.8 | ^4.1.9 | 2026-06-16 | PASS |
+| @vitest/coverage-v8 | ^4.1.8 | ^4.1.9 | 2026-06-16 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
