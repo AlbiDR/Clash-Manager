@@ -479,6 +479,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.tr_fn_rotate_recruits()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -491,7 +492,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.format_longevity(p_minutes integer)
  RETURNS text
  LANGUAGE plpgsql
- IMMUTABLE
+ IMMUTABLE SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -573,6 +574,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.purge_governance_telemetry()
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -582,6 +584,7 @@ END; $function$;
 CREATE OR REPLACE FUNCTION substrate.handle_heritage_snapshot()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -611,6 +614,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.purge_orphan_players()
  RETURNS integer
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -638,6 +642,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.purge_stale_battles()
  RETURNS integer
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -855,6 +860,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.shred_river_race()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -982,6 +988,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.shred_clan_members()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -1070,6 +1077,7 @@ END; $function$;
 CREATE OR REPLACE FUNCTION substrate.rotate_recruits()
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -1261,6 +1269,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.purge_stale_discovery_cache()
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -1272,6 +1281,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.shred_clan_profile()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -1310,7 +1320,7 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.format_last_seen(p_days numeric)
  RETURNS text
  LANGUAGE plpgsql
- IMMUTABLE
+ IMMUTABLE SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE v_minutes float;
@@ -1382,7 +1392,7 @@ END; $function$;
 CREATE OR REPLACE FUNCTION substrate.format_tenure(p_days numeric)
  RETURNS text
  LANGUAGE plpgsql
- IMMUTABLE
+ IMMUTABLE SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -1397,6 +1407,7 @@ END; $function$;
 CREATE OR REPLACE FUNCTION substrate.shred_war_log()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -1540,6 +1551,7 @@ END; $function$;
 CREATE OR REPLACE FUNCTION drivers.bench_underqualified_recruits()
  RETURNS integer
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -1566,6 +1578,7 @@ $function$;
 CREATE OR REPLACE FUNCTION drivers.dismiss_recruit(p_tag text, p_days_to_ban integer DEFAULT 30)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -1838,6 +1851,7 @@ $function$;
 CREATE OR REPLACE FUNCTION drivers.log_recruit_event()
  RETURNS trigger
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
@@ -2292,6 +2306,7 @@ $function$;
 CREATE OR REPLACE FUNCTION features.ping()
  RETURNS text
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -2569,6 +2584,7 @@ $function$;
 CREATE OR REPLACE FUNCTION public.get_shadow_discovery_targets(p_limit integer DEFAULT 50)
  RETURNS TABLE(opponent_player_tag text)
  LANGUAGE plpgsql
+ SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
@@ -3089,7 +3105,7 @@ CREATE OR REPLACE FUNCTION substrate.weighted_avg(
 )
 RETURNS numeric
 LANGUAGE sql
-IMMUTABLE STRICT
+IMMUTABLE STRICT SECURITY DEFINER
 SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $
     SELECT
