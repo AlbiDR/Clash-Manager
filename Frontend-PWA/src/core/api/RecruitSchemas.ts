@@ -54,3 +54,22 @@ export const SbHeadhunterRowSchema = v.object({
  * Validates the collection of dismissed recruit IDs stored in LocalStorage.
  */
 export const RecruitTombstoneSchema = v.array(v.string());
+
+/**
+ * [GUARD] HARVESTED PLAYER SCHEMA
+ * Validates the shape of a single player harvested from the leaderboard proxy.
+ */
+export const HarvestedPlayerSchema = v.object({
+  tag: SafeStringPipe,
+  name: SafeStringPipe,
+  clan: v.optional(v.nullable(v.unknown()))
+});
+
+/**
+ * [GUARD] LEADERBOARD HARVEST SCHEMA
+ * Authoritative validation boundary for the query-royale-api response.
+ */
+export const LeaderboardHarvestSchema = v.object({
+  items: v.array(HarvestedPlayerSchema),
+  region: v.optional(SafeStringPipe, "Unknown")
+});
