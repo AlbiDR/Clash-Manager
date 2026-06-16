@@ -7,6 +7,8 @@ import { useUiCoordinator } from "@core/services/useUiCoordinator";
 import { useToast } from "@core/services/useToast";
 import { useHaptics } from "@core/services/useHaptics";
 import { getSupabaseUrl, getSupabaseKey } from "@core/api/SupabaseClient";
+import * as v from "valibot";
+import { LeaderboardHarvestSchema } from "@core/api/RecruitSchemas";
 
 /**
  * COMPOSABLE: useLeaderboardScraper
@@ -104,20 +106,36 @@ export function useLeaderboardScraper(
         throw new Error(errorDetails.error ?? `Query failed with status ${response.status}`);
       }
 
-      // [THREAT:] External API ingress. The 'any' plague here reflects unvalidated
-      // data from the Royale API. While the Edge Function performs structural
-      // validation, the client-side consumer must still handle these types defensively.
-      const responseEnvelope = await response.json();
-      const payload = responseEnvelope.data || responseEnvelope;
+      // [THREAT:] External API ingress. Replacing unsafe 'any' processing with strict
+      // validation boundaries to prevent runtime crashes from unexpected payload shifts.
+      const responseJson: unknown = await response.json();
 
-      const rawItems = payload.items || [];
-      const region = payload.region || "Unknown";
+      // [GUARD] VALIDATION BOUNDARY: Enforce schema on Edge Function response before domain use.
+      const envelopeValidation = v.safeParse(
+        v.union([
+          v.object({ data: LeaderboardHarvestSchema }),
+          LeaderboardHarvestSchema,
+        ]),
+        responseJson
+      );
+
+      if (!envelopeValidation.success) {
+        console.error("[Harvest] Validation failed:", envelopeValidation.issues);
+        throw new Error("Invalid response structure from harvest engine.");
+      }
+
+      const payload = "data" in envelopeValidation.output && envelopeValidation.output.data
+        ? envelopeValidation.output.data
+        : envelopeValidation.output as v.InferOutput<typeof LeaderboardHarvestSchema>;
+
+      const rawItems = payload.items;
+      const region = payload.region;
 
       // [DECISION LOG] CLANLESS FILTERING
       // Rationale: Only players without a clan are viable recruitment targets.
       // We filter these out before they ever reach the selection store to
       // minimize noise in the Blitz recruitment loop.
-      const clanlessPlayers = rawItems.filter((player: any) => !player.clan);
+      const clanlessPlayers = rawItems.filter((harvestedPlayer) => !harvestedPlayer.clan);
 
       if (clanlessPlayers.length === 0) {
         info(`Harvest complete: zero clanless players found on the ${region} leaderboard.`);
@@ -132,7 +150,7 @@ export function useLeaderboardScraper(
       // [DECISION LOG] TAG SANITIZATION
       // Rationale: Standardizing on tags without the leading hash ensures consistency
       // across the selection store, local lookups, and future database writes.
-      const sanitizedTags = clanlessPlayers.map((player: any) => player.tag.replace(/^#/, ""));
+      const sanitizedTags = clanlessPlayers.map((harvestedPlayer) => harvestedPlayer.tag.replace(/^#/, ""));
 
       clearSelection();
       selectAll(sanitizedTags);
@@ -142,11 +160,12 @@ export function useLeaderboardScraper(
 
       // Trigger the recruitment Blitz sequence immediately
       onBlitzTrigger();
-    } catch (err: any) {
-      if (err.name === "AbortError") {
+    } catch (harvestError: unknown) {
+      if (harvestError instanceof Error && harvestError.name === "AbortError") {
         return;
       }
-      error(err.message || "Failed to harvest leaderboard players");
+      const errorMessage = harvestError instanceof Error ? harvestError.message : "Failed to harvest leaderboard players";
+      error(errorMessage);
     } finally {
       updateFabState({
         isHarvesting: false,
