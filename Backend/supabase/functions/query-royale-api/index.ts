@@ -16,7 +16,7 @@ import { AuditEntry } from "../_shared/types.ts";
  * Edge Function: query-royale-api
  * L5 Control Layer: Secure proxy for client-side Clash Royale API queries.
  *
- * Implements robust clanless player harvesting via direct player rankings.
+ * Implements robust clanless player harvesting via Path of Legends rankings.
  */
 
 /**
@@ -36,6 +36,21 @@ const DEFAULT_FALLBACK_ID = 57000120;
 const PLAYER_LEADERBOARD_LIMIT = 1000;
 const INITIAL_ARRAY_INDEX = 0;
 
+/**
+ * Derives the current Clash Royale ranked season ID in YYYY-MM format.
+ *
+ * @remarks
+ * The Path of Legends API requires a seasonId parameter.
+ * Clash Royale seasons map 1:1 to calendar months, so the current
+ * season is always the current UTC year and month.
+ */
+function getCurrentSeasonId(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
 // EPHEMERAL: intentionally resets on cold start.
 // Top-level cache to minimize locations list roundtrips.
 let cachedCountries: { id: number; name: string }[] | null = null;
@@ -49,11 +64,12 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  * @remarks
  * Satisfies ADR Section V: Edge Functions - Data Ingestion.
  *
- * Implements a direct player rankings harvesting pipeline:
- * 1. Rankings: Fetches top players in the target region.
- * 2. Filters: Filters out players who are currently in a clan.
+ * Implements a Path of Legends harvesting pipeline:
+ * 1. Season: Derives the current ranked season ID from the UTC date.
+ * 2. Rankings: Fetches the top Path of Legends players for the target region.
+ * 3. Filters: Retains only players currently unaffiliated with any clan.
  *
- * @param locationId - The Royale API location ID or 'global'.
+ * @param locationId - The Royale API location ID ('global' or numeric string).
  * @param logAudit - Telemetry callback for clinical auditing.
  * @returns An array of discovered clanless player objects.
  */
@@ -61,11 +77,12 @@ async function harvestClanlessPlayers(
   locationId: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
-  const playersPath = `/locations/${locationId}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
-  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath });
+  const seasonId = getCurrentSeasonId();
+  const playersPath = `/locations/${locationId}/pathoflegend/${seasonId}?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath, seasonId });
   const playerRankingsResponse = await fetchWithRotation(playersPath);
   if (!playerRankingsResponse.ok) {
-    throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
+    throw new Error(`Failed to fetch Path of Legends rankings: ${playerRankingsResponse.status}`);
   }
   
   const rawPlayerRankingPayload: unknown = await playerRankingsResponse.json();
@@ -138,48 +155,13 @@ Deno.serve(async (req) => {
 
       if (mode === "global") {
         logAudit("GLOBAL_HARVEST", "called");
-
-        // [DECISION LOG] GLOBAL ENDPOINT LIMITATION
-        // The Clash Royale API's /locations/global/rankings/players endpoint
-        // returns an empty items array regardless of limit. Country-specific
-        // player ranking endpoints are the only reliable data source.
-        // Global Harvest therefore uses the same proven rotating-country
-        // mechanism as Local Harvest for International clans, but independently
-        // of the clan's registered region to maximize recruitment diversity.
-        if (!cachedCountries) {
-          logAudit("GLOBAL_COUNTRIES_FETCH", "called");
-          const locationsResponse = await fetchWithRotation("/locations");
-          if (!locationsResponse.ok) {
-            throw new Error(`Failed to retrieve locations catalog: ${locationsResponse.status}`);
-          }
-
-          const rawLocationsPayload: unknown = await locationsResponse.json();
-          const locationsValidation = v.safeParse(RoyaleLocationListSchema, rawLocationsPayload);
-
-          if (!locationsValidation.success) {
-            throw new Error("Locations catalog failed structural validation.");
-          }
-
-          cachedCountries = locationsValidation.output.items
-            .filter((loc) => loc.isCountry === true)
-            .map((loc) => ({ id: loc.id, name: loc.name }));
-        }
-
-        let globalLocationId: number = DEFAULT_FALLBACK_ID;
-        let globalLocationName: string = DEFAULT_FALLBACK_COUNTRY;
-
-        if (cachedCountries && cachedCountries.length > INITIAL_ARRAY_INDEX) {
-          const randomIndex = Math.floor(Math.random() * cachedCountries.length);
-          const selectedCountry = cachedCountries[randomIndex];
-          globalLocationId = selectedCountry.id;
-          globalLocationName = selectedCountry.name;
-        }
-
-        logAudit("GLOBAL_ROTATION_SELECT", "run", { selected: globalLocationName });
-        const harvestResults = await harvestClanlessPlayers(String(globalLocationId), logAudit);
+        // [DECISION LOG] The Path of Legends API supports 'global' as a locationId
+        // natively, returning the worldwide ranked leaderboard in a single request.
+        // This is preferred over country aggregation for accuracy and efficiency.
+        const harvestResults = await harvestClanlessPlayers("global", logAudit);
         return {
           items: harvestResults,
-          region: globalLocationName,
+          region: "Global",
         };
       }
 
