@@ -3,12 +3,22 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useStatusPill, type StatusPillProps } from '../useStatusPill';
-import { reactive, nextTick } from 'vue';
+import { reactive, nextTick, ref } from 'vue';
+
+const isMobileNarrow = ref(false);
 
 // Mock useHaptics
 vi.mock('@core', () => ({
   useHaptics: () => ({
     tap: vi.fn(),
+  }),
+}));
+
+// Mock useViewport
+vi.mock('../useViewport', () => ({
+  useViewport: () => ({
+    isDesktop: ref(false),
+    isMobileNarrow,
   }),
 }));
 
@@ -90,14 +100,14 @@ describe('useStatusPill', () => {
 
   it('handles responsive truncation for narrow screens', () => {
     props.text = 'System Operational';
-    vi.stubGlobal('innerWidth', 320);
+    isMobileNarrow.value = true;
     const { displayText } = useStatusPill(props);
     expect(displayText.value).toBe('Operational');
   });
 
   it('does not truncate on wide screens', () => {
     props.text = 'System Operational';
-    vi.stubGlobal('innerWidth', 1024);
+    isMobileNarrow.value = false;
     const { displayText } = useStatusPill(props);
     expect(displayText.value).toBe('System Operational');
   });

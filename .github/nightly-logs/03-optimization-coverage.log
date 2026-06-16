@@ -217,3 +217,7 @@ Frontend-PWA/scripts/portfolio.css
 2026-06-15 | Frontend-PWA/src/features/roster/components/MemberCard.vue | Standardized numeric formatting via formatNumber.
 2026-06-15 | Frontend-PWA/src/features/headhunter/components/RecruitCard.vue | Standardized numeric formatting via formatNumber.
 2026-06-15 | Frontend-PWA/src/shared/ui/TenureBadge.vue | Pruned redundant styles overlapping with global .badge system.
+2026-06-16 | Frontend-PWA/src/shared/composables/useStatusPill.ts | Optimized viewport sensing by migrating to useViewport composable.
+2026-06-16 | Frontend-PWA/src/core/services/useConsoleSelection.ts | Created new selection management service to decouple logic from useConsoleController.
+2026-06-16 | Frontend-PWA/src/core/services/useConsoleController.ts | Refactored to delegate selection handling to useConsoleSelection service.
+2026-06-16 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
