@@ -28,6 +28,7 @@ import type {
 } from './Types';
 import {
   KING_XP_TABLE,
+  KING_LEVEL_MAX,
   calculateKingLevel as registryCalculateKingLevel
 } from '@core/utils/game';
 import { PriorityQueue } from '@core/utils/PriorityQueue';
@@ -76,7 +77,7 @@ export function* calculateProgressionPath(
       : new ProjectionStrategy()
   );
 
-  const targetLevel = settings.targetLevel || 90;
+  const targetLevel = settings.targetLevel || KING_LEVEL_MAX;
   const targetXpRow = KING_XP_TABLE.find(r => r.level === targetLevel) ?? KING_XP_TABLE[KING_XP_TABLE.length - 1];
   const targetXp = Number(targetXpRow.cumulative);
 
