@@ -11,7 +11,7 @@
 import { Icon, SettingRow } from "@shared";
 import { computed } from "vue";
 import { type OptimizationSettings } from "../logic";
-import { IMPORTANT_KING_LEVELS } from "@core";
+import { IMPORTANT_KING_LEVELS, KING_LEVEL_MAX } from "@core";
 const props = defineProps<{
   settings: OptimizationSettings;
   currentLevel: number;
@@ -37,7 +37,7 @@ const toggleGemSpending = () => {
 };
 
 const filteredLevels = computed(() => {
-  return Array.from({ length: 90 }, (_, i) => i + 1).filter(level => {
+  return Array.from({ length: KING_LEVEL_MAX }, (_, i) => i + 1).filter(level => {
     // Current and future levels are always shown
     if (level >= props.currentLevel) return true;
     // Past levels only shown if they are milestones
@@ -93,7 +93,7 @@ const baseUrl = import.meta.env.BASE_URL;
         <div class="select-wrapper">
           <select 
             class="level-select" 
-            :value="settings.targetLevel || 90" 
+            :value="settings.targetLevel || KING_LEVEL_MAX"
             @change="handleTargetChange"
           >
             <option 

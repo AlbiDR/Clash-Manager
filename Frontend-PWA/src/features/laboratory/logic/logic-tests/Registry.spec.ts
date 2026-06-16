@@ -10,6 +10,7 @@ import {
   MATERIAL_REQUIREMENTS,
   GEM_CONVERSION_RATES,
   KING_XP_TABLE,
+  KING_LEVEL_MAX,
   IMPORTANT_KING_LEVELS,
   calculateKingLevel,
   calculateDefaultTarget,
@@ -113,7 +114,7 @@ describe('Laboratory Registry', () => {
 
   describe('KING_XP_TABLE', () => {
     it('should have 90 levels', () => {
-      expect(KING_XP_TABLE).toHaveLength(90);
+      expect(KING_XP_TABLE).toHaveLength(KING_LEVEL_MAX);
     });
 
     it('should have monotonically increasing cumulative XP', () => {
