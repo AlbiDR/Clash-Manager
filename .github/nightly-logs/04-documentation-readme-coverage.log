@@ -119,3 +119,4 @@ Frontend-PWA/README.md
 2026-06-15 | Frontend-PWA/src/shared/utils/README.md | Created Shared Utilities documentation and reconciled @shared drift
 2026-06-16 | Frontend-PWA/README.md | Reconciled useConsoleSelection drift and updated service registry (33 entries)
 2026-06-16 | Frontend-PWA/src/core/README.md | Reconciled useConsoleSelection and useConsoleController delegation drift
+2026-06-16 | Frontend-PWA/src/features/settings/README.md | Reconciled Registry Injection Pattern and decomposed sub-setting modules.
