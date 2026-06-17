@@ -88,3 +88,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-06-14 | Backend/supabase/functions/headhunter-scanner/stages/profiler.ts | Fully documented L1 Profiler stage, including ValidRecruit DTO, RPoS decision logs, and backoff telemetry threats.
 2026-06-15 | Frontend-PWA/src/shared/ui/SelectionFab.vue | Documented SelectionFab component rationale, architectural context, and added decision/threat logs for action delegation and compact styling.
 2026-06-16 | Frontend-PWA/src/core/services/useConsoleSelection.ts | Documented orchestrator interface contracts and reactive state; added mandatory threat/decision logs for score thresholding and force-selection.
+2026-06-17 | Frontend-PWA/src/core/services/usePwaManager.ts | Fully documented Layer 1 core service, including PWA lifecycle, recovery logic, and mandatory threat/decision logs.
