@@ -29,27 +29,15 @@ const PayloadSchema = v.object({
   endpoint: v.picklist(["local", "global"]),
 });
 
+// The Royale API accepts the literal "global" as a location for the
+// worldwide Path of Legends leaderboard; countries use their numeric ID.
+const GLOBAL_LOCATION = "global";
 const LOCATION_ID_INTERNATIONAL = 57000101;
 const DEFAULT_FALLBACK_COUNTRY = "United States";
 const DEFAULT_FALLBACK_ID = 57000120;
 
 const PLAYER_LEADERBOARD_LIMIT = 1000;
 const INITIAL_ARRAY_INDEX = 0;
-
-/**
- * Derives the current Clash Royale ranked season ID in YYYY-MM format.
- *
- * @remarks
- * The Path of Legends API requires a seasonId parameter.
- * Clash Royale seasons map 1:1 to calendar months, so the current
- * season is always the current UTC year and month.
- */
-function getCurrentSeasonId(): string {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
-  return `${year}-${month}`;
-}
 
 // EPHEMERAL: intentionally resets on cold start.
 // Top-level cache to minimize locations list roundtrips.
@@ -64,22 +52,29 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  * @remarks
  * Satisfies ADR Section V: Edge Functions - Data Ingestion.
  *
- * Implements a Path of Legends harvesting pipeline:
- * 1. Season: Derives the current ranked season ID from the UTC date.
- * 2. Rankings: Fetches the top Path of Legends players for the target region.
- * 3. Filters: Retains only players currently unaffiliated with any clan.
+ * Uses the live Path of Legends rankings endpoint:
+ *   `/locations/{location}/pathoflegend/players`
  *
- * @param locationId - The Royale API location ID ('global' or numeric string).
+ * [DECISION LOG] This is the ONLY player leaderboard the official Clash Royale
+ * API still serves. The legacy trophy ladder (`/rankings/players`) was retired
+ * with the 2025 Trophy Road rework and now returns an empty list for every
+ * location. The season-scoped form (`/pathoflegend/{season}/rankings/players`)
+ * exists only for `global` and only for *completed* seasons, so it cannot
+ * surface the live board. The season-less form used here returns the current,
+ * in-progress standings (verified byte-for-byte against RoyaleAPI's public
+ * leaderboard) for both `global` and individual country IDs — up to 1000 ranked
+ * entries with the clan embedded as an object.
+ *
+ * @param location - "global" or a numeric Royale API location ID as a string.
  * @param logAudit - Telemetry callback for clinical auditing.
  * @returns An array of discovered clanless player objects.
  */
 async function harvestClanlessPlayers(
-  locationId: string,
+  location: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
-  const seasonId = getCurrentSeasonId();
-  const playersPath = `/locations/${locationId}/rankings/players/pathoflegend/${seasonId}?limit=${PLAYER_LEADERBOARD_LIMIT}`;
-  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath, seasonId });
+  const playersPath = `/locations/${location}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath });
   const playerRankingsResponse = await fetchWithRotation(playersPath);
   if (!playerRankingsResponse.ok) {
     throw new Error(`Failed to fetch Path of Legends rankings: ${playerRankingsResponse.status}`);
@@ -154,11 +149,10 @@ Deno.serve(async (req) => {
       logAudit("HARVEST_START", "called", { mode });
 
       if (mode === "global") {
-        logAudit("GLOBAL_HARVEST", "called");
-        // [DECISION LOG] The Path of Legends API supports 'global' as a locationId
-        // natively, returning the worldwide ranked leaderboard in a single request.
-        // This is preferred over country aggregation for accuracy and efficiency.
-        const harvestResults = await harvestClanlessPlayers("global", logAudit);
+        logAudit("GLOBAL_HARVEST", "called", { location: GLOBAL_LOCATION });
+        // [DECISION LOG] "global" is a first-class location on the Path of Legends
+        // rankings endpoint, returning the live worldwide top 1000 in one request.
+        const harvestResults = await harvestClanlessPlayers(GLOBAL_LOCATION, logAudit);
         return {
           items: harvestResults,
           region: "Global",
