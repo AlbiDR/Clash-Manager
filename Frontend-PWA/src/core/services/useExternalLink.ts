@@ -3,6 +3,7 @@
 
 import { useToast } from "./useToast";
 import { cleanTag } from "@core";
+import { WindowWithBridge } from "../types";
 
 /**
  * COMPOSABLE: useExternalLink
@@ -37,7 +38,10 @@ export function useExternalLink() {
   async function openExternal(url: string) {
     // [STRATEGY] Native Bridge: Inside the Android WebView, window.open is blocked.
     // Delegate to the native bridge which calls startActivity(ACTION_VIEW) directly.
-    const bridge = (window as any).AndroidBridge;
+    // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
+    // [DECISION LOG] Utilizing strict type narrowing for WindowWithBridge to
+    // eliminate 'any' casts and ensure hardware bridge access integrity.
+    const bridge = (window as WindowWithBridge).AndroidBridge;
     if (bridge?.openExternalUrl) {
       bridge.openExternalUrl(url);
       return;
@@ -48,8 +52,9 @@ export function useExternalLink() {
       if (!newWindow) {
         console.warn("External link blocked or failed to open");
       }
-    } catch (e) {
-      console.error("Failed to open external link:", e);
+    } catch (externalLinkError: unknown) {
+      const errorMessage = externalLinkError instanceof Error ? externalLinkError.message : String(externalLinkError);
+      console.error("Failed to open external link:", errorMessage);
       error("Could not open link");
     }
   }
@@ -66,7 +71,9 @@ export function useExternalLink() {
     // [STRATEGY] Native Bridge: The custom WebView intercepts shouldOverrideUrlLoading
     // for intent:// only for direct navigations, not for anchor target=_blank clicks.
     // Calling the bridge method directly bypasses WebView routing entirely.
-    const bridge = (window as any).AndroidBridge;
+    // [THREAT:] Hardware desynchronization if calling 'any' methods on Window.
+    // [DECISION LOG] Enforcing the WindowWithBridge contract to secure player profile navigation.
+    const bridge = (window as WindowWithBridge).AndroidBridge;
     if (bridge?.openPlayerProfile) {
       bridge.openPlayerProfile(id);
       return;
@@ -82,8 +89,9 @@ export function useExternalLink() {
         `end`;
       try {
         window.location.href = intentUrl;
-      } catch (err) {
-        console.error("[openInGame] intent href failed:", err);
+      } catch (deepLinkError: unknown) {
+        const errorMessage = deepLinkError instanceof Error ? deepLinkError.message : String(deepLinkError);
+        console.error("[openInGame] intent href failed:", errorMessage);
         error("Failed to open game - app may not be installed");
       }
       return;
@@ -92,8 +100,9 @@ export function useExternalLink() {
     // iOS / Desktop fallback
     try {
       window.location.href = `clashroyale://playerInfo?id=${id}`;
-    } catch (err) {
-      console.error("[openInGame] clashroyale:// failed:", err);
+    } catch (deepLinkError: unknown) {
+      const errorMessage = deepLinkError instanceof Error ? deepLinkError.message : String(deepLinkError);
+      console.error("[openInGame] clashroyale:// failed:", errorMessage);
       error("Failed to open game - app may not be installed");
     }
   }
