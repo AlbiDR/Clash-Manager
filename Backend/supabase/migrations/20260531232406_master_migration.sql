@@ -397,7 +397,7 @@ ALTER TABLE drivers.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- L2 Drivers: Registry of Clan Voyage events mirrored from in-game countdowns.
 CREATE TABLE IF NOT EXISTS drivers.clan_voyage (
-    clan_tag text NOT NULL,
+    clan_tag text NOT NULL CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     target_crowns integer NOT NULL,
     start_at timestamp with time zone NOT NULL,
     status text NOT NULL DEFAULT 'PENDING'::text CHECK (status = ANY (ARRAY['PENDING'::text, 'ACTIVE'::text, 'COMPLETED'::text])),
@@ -415,7 +415,7 @@ ALTER TABLE drivers.clan_voyage ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
     voyage_id bigint NOT NULL,
-    player_tag text NOT NULL,
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     updated_at timestamp with time zone DEFAULT now(),
     total_voyage_crowns integer DEFAULT 0,
     player_name text,
@@ -431,7 +431,7 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
 ALTER TABLE drivers.clan_voyage_contributions ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
-    player_tag text NOT NULL,
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     CONSTRAINT drivers_exclusion_cache_pkey PRIMARY KEY (player_tag)
 );
 
@@ -439,7 +439,7 @@ ALTER TABLE drivers.exclusion_cache ENABLE ROW LEVEL SECURITY;
 
 -- Per-player card snapshot fetched from the Clash Royale API. Populated by the sync-player-cards Edge Function. Drives the Laboratory simulation engine.
 CREATE TABLE IF NOT EXISTS features.player_card_snapshots (
-    player_tag text NOT NULL,
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     card_id bigint NOT NULL,
     card_name text NOT NULL,
     rarity text NOT NULL CHECK (rarity = ANY (ARRAY['Common'::text, 'Rare'::text, 'Epic'::text, 'Legendary'::text, 'Champion'::text])),
@@ -1388,6 +1388,27 @@ BEGIN
 
     RETURN v_reset_count;
 END; $function$;
+
+CREATE OR REPLACE FUNCTION substrate.weighted_avg(
+    p_values numeric[],
+    p_decay  numeric DEFAULT 0.05,
+    p_floor  numeric DEFAULT 0.5
+)
+RETURNS numeric
+LANGUAGE sql
+IMMUTABLE STRICT SECURITY DEFINER
+SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $
+    SELECT
+        SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
+        NULLIF(SUM(CASE WHEN val IS NOT NULL THEN GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay) END), 0)
+    FROM UNNEST(p_values) WITH ORDINALITY AS t(val, ord)
+$;
+
+COMMENT ON FUNCTION substrate.weighted_avg(numeric[], numeric, numeric) IS
+    'Recency-decayed weighted average. Index 1 = most recent (full weight).
+     Each subsequent entry loses p_decay weight, floored at p_floor.
+     Default: 5% decay per entry, floor at 50% (matches voyage_factuals).';
 
 CREATE OR REPLACE FUNCTION substrate.format_tenure(p_days numeric)
  RETURNS text
@@ -2865,24 +2886,8 @@ CREATE OR REPLACE FUNCTION public.bench_underqualified_recruits()
  SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
-DECLARE
-    v_count             INTEGER;
-    v_required_trophies INTEGER;
 BEGIN
-    SELECT COALESCE(required_trophies, 0) INTO v_required_trophies
-    FROM drivers.clans LIMIT 1;
-
-    WITH affected_rows AS (
-        UPDATE drivers.recruits
-        SET    status    = 'ARCHIVED'::drivers.recruit_status,
-               last_scan = NOW()
-        WHERE  trophies < v_required_trophies
-          AND  status != 'ARCHIVED'::drivers.recruit_status
-        RETURNING player_tag
-    )
-    SELECT count(*) INTO v_count FROM affected_rows;
-
-    RETURN v_count;
+    RETURN drivers.bench_underqualified_recruits();
 END;
 $function$;
 
@@ -3097,27 +3102,6 @@ BEGIN
     END IF;
 END;
 $function$;
-
-CREATE OR REPLACE FUNCTION substrate.weighted_avg(
-    p_values numeric[],
-    p_decay  numeric DEFAULT 0.05,
-    p_floor  numeric DEFAULT 0.5
-)
-RETURNS numeric
-LANGUAGE sql
-IMMUTABLE STRICT SECURITY DEFINER
-SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
-AS $
-    SELECT
-        SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
-        NULLIF(SUM(CASE WHEN val IS NOT NULL THEN GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay) END), 0)
-    FROM UNNEST(p_values) WITH ORDINALITY AS t(val, ord)
-$;
-
-COMMENT ON FUNCTION substrate.weighted_avg(numeric[], numeric, numeric) IS
-    'Recency-decayed weighted average. Index 1 = most recent (full weight).
-     Each subsequent entry loses p_decay weight, floored at p_floor.
-     Default: 5% decay per entry, floor at 50% (matches voyage_factuals).';
 
 -- VIEWS
 DROP VIEW IF EXISTS drivers.recruits_view CASCADE;
