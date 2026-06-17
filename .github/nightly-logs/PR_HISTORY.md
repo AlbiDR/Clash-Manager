@@ -1,6 +1,33 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-17] PR #852: fix(harden): secure native bridge boundary and excise any pathogens
+**Commit**: `7800643a443cd70b4ab10787ffa162a3878da2e7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/852)
+
+### Description
+### Reasoning:
+**[Threat Statement]:** If the native Android bridge is accessed via `any` types, then the application is vulnerable to runtime crashes and silent failures if the bridge contract changes or is missing.
+**[Blast Radius]:** External link handling, player profile navigation, and Blitz Mode calibration in the native Android wrapper.
+**[Rationale]:** Formalizing the `AndroidBridge` interface ensures type safety and predictable hardware brokerage. Renaming anemic variables improves diagnostic clarity during failure modes.
+
+### Changes:
+- **Frontend-PWA/src/core/types/index.ts:** Defined `AndroidBridge` and `WindowWithBridge` interfaces.
+- **Frontend-PWA/src/core/services/useExternalLink.ts:** Hardened native bridge calls and error handling.
+- **Frontend-PWA/src/features/settings/components/FeatureSettings.vue:** Secured coordinate persistence and native bridge interactions.
+
+### Verification:
+- **[Automated]:** Full PWA test suite passed (1283 pass, 1 skipped).
+- **[Automated/Audit]:** Verified that all direct `(window as any).AndroidBridge` calls in the target files were replaced with typed access.
+
+### Log Updates:
+- Updated .github/nightly-logs/01-hardening-coverage.log
+
+---
+*PR created automatically by Jules for task [9319818809255639370](https://jules.google.com/task/9319818809255639370) started by @AlbiDR*
+
+---
+
 ## [2026-06-16] PR #851: refactor: centralize KING_LEVEL_MAX and eliminate magic number 90
 **Commit**: `78da64ea7f06a1848d5b033e7825d5a7722f8251`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/851)
