@@ -14,14 +14,14 @@ The Settings feature provides a centralized interface for users to calibrate the
 
 ## Architectural Context
 - **Layer**: Layer 3 (@features)
-- **Isolation**: Strictly decoupled. Never imports from other business features (Headhunter, Roster, Laboratory).
+- **Isolation**: Largely decoupled from Headhunter, Roster, and Laboratory. One deliberate exception: `SettingsView.vue` lazy-loads `EventManagement` from the `voyage` feature for inline event configuration.
 - **Orchestration**: Operates as a **Feature Orchestrator** through the `useSettings` composable, which bridges domain-blind infrastructure services (@core) with feature-level views.
 
 ## Logic Subsystems
 
 ### Hardware & Utility Brokerage (AppearanceSettings.vue)
 Brokers access to device-level capabilities through Layer 2 drivers.
-- **Theme Engine**: Interfaces with `@shared/composables/useTheme` to manage dynamic HSL variable injection for Light, Dark, and Auto modes.
+- **Theme Engine**: Interfaces with `@shared/composables/useTheme` to apply hex/RGB design tokens as CSS variables for Light, Dark, and Auto modes.
 - **Wake Lock**: Coordinates with `@core/services/useWakeLock` to prevent device sleep during intensive operations, ensuring synchronization integrity.
 
 ### Environment & Audit Controls (ModeSettings.vue)
@@ -37,7 +37,7 @@ The primary interface for managing the distributed backend lifecycle.
 
 ### Notifications & Push Alerts (NotificationSettings.vue)
 Orchestrates the application's reactive feedback loop.
-- **Web Push**: Manages VAPID-based subscription lifecycles via the Remote Worker.
+- **Web Push**: VAPID-based cloud push is not yet implemented. The `subscribePush` handler is currently a placeholder that surfaces a "coming soon" notice pending Edge Function setup.
 - **Badging**: Interfaces with `@core/services/useBadge` to manage application-level notification badges across inconsistent platform APIs (iOS vs Android).
 
 ### System Recovery & Lifecycle (RecoverySettings.vue)

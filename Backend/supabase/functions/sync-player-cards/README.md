@@ -25,7 +25,7 @@ The function implements a strictly ordered, four-stage lifecycle:
 The Clash Royale API provides card levels relative to their specific rarity (e.g., Rare Level 11). This engine normalizes all cards to a unified **Absolute Scale** (1-16) based on the distance from the card's maximum level, ensuring consistent performance scoring across the Roster and Laboratory features.
 
 ### Cache Strategy & TTL
-To ensure system stability and API quota health, the engine enforces a **12-hour Cache-Control TTL**.
+To ensure system stability and API quota health, the engine enforces a **12-hour cache TTL**. This is an internal database-freshness cutoff compared against each snapshot's `fetched_at`, not an HTTP `Cache-Control` header.
 - **Cache Hit**: Returns a standardized profile immediately from the database substrate without consuming API rotation slots.
 - **Cache Miss**: Triggers a fresh extraction and updates the persistence layer for subsequent requests.
 
