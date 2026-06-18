@@ -146,5 +146,5 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Automated/Audit]:** Confirm the annotation is accurate against current code signatures.
 
   ### Log Updates:
-  - Updated .github/nightly-logs/05-documentation-tsdoc-coverage.log
+  - Updated .github/nightly-logs/06-documentation-tsdoc-coverage.log
   ```

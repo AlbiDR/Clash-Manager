@@ -132,7 +132,7 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 ### Step 3: Local Compilation and Verification
 - Update `20260531232406_master_migration.sql` with the newly folded AST.
 - Run `pnpm test` in the monorepo workspace to guarantee complete compilation integrity.
-- Write run metrics (number of migrations folded, schema elements modified) to `.github/nightly-logs/03-baseline-consolidation.log`.
+- Write run metrics (number of migrations folded, schema elements modified) to `.github/nightly-logs/03-baseline-consolidation-coverage.log`.
 
 ### Step 4: Submission
 Create a Pull Request targeting the `Nightly` branch.
