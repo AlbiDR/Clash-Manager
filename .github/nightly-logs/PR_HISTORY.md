@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-18] PR #861: docs(tsdoc): document NavigationDock component contracts
+**Commit**: `d7adf860de7d51eed9836d9eddda6baa5a66bd89`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/861)
+
+### Description
+This PR enhances the `NavigationDock.vue` component with comprehensive TSDoc and architectural metadata (Decision/Threat logs) as specified in the project's documentation guidelines for Stage 6 (Interface Contract Architect). It includes architectural context, documents side effects (haptics and routing), and adds mandatory annotations for navigation and haptic feedback logic. The documentation coverage log is also updated.
+
+---
+*PR created automatically by Jules for task [13301626633434710813](https://jules.google.com/task/13301626633434710813) started by @AlbiDR*
+
+---
+
 ## [2026-06-18] PR #860: chore(baseline): fold new migrations into master baseline
 **Commit**: `a03bf2a74257a40e7df1d38560e2ed752370fce6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/860)
