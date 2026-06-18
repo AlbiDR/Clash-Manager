@@ -6,22 +6,42 @@ import Icon from "./Icon.vue";
 import { useHaptics, NAV_ITEMS } from "@core";
 
 /**
- * [UI] NAVIGATION DOCK
- * ----------------------------------------------------------------------------
- * Rationale: Renders the primary application navigation items.
- * Layer: @shared/ui
- * ----------------------------------------------------------------------------
+ * COMPONENT: NavigationDock
+ *
+ * @remarks
+ * Renders the primary application navigation rail at the bottom of the viewport.
+ * Orchestrates route transitions and provides tactile feedback.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared UI (@shared/ui)
+ * - **Role:** Global Navigation Orchestration.
+ * - **Satisfaction:** ADR Section II: Structural Unitary Architecture.
+ *
+ * @sideeffects
+ * - Triggers haptic feedback via `useHaptics`.
+ * - Mutates browser history via `vue-router`.
  */
 
 const route = useRoute();
 const router = useRouter();
 const haptics = useHaptics();
 
+/**
+ * [DECISION LOG] IDEMPOTENT NAVIGATION: Guards against redundant router
+ * pushes if the user is already on the target route.
+ *
+ * [THREAT:] Redundant history entries if navigation guard is bypassed.
+ */
 function goTo(targetPath: string) {
   if (route.path === targetPath) return;
   router.push(targetPath);
 }
 
+/**
+ * [DECISION LOG] HAPTIC FEEDBACK: We trigger haptics on `pointerdown` rather
+ * than `click` to provide immediate tactile acknowledgment of the intent,
+ * improving perceived responsiveness.
+ */
 function onInteractionStart() {
   haptics.tap();
 }
