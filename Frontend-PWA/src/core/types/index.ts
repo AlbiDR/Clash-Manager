@@ -25,6 +25,8 @@ export interface AndroidBridge {
   openAccessibilitySettings(): void;
   /** Checks if the native accessibility service is currently active. */
   isAccessibilityActive(): boolean;
+  /** Initiates a Blitz Mode sequence for the provided list of player tags. */
+  startBlitz(payload: string): void;
 }
 
 /**
