@@ -42,12 +42,12 @@ Ingestion is performed as a sequential pipeline, decomposed into six logical sta
 
 ### S5: War History
 **Objective**: synchronize career ledgers.
-- Ingests the Infinite Career Ledger for all active members.
-- Ensures historical performance vectors are archived in `drivers.war_history`.
+- Ingests the clan's River Race log (most recent 12 war weeks) via `/clans/{tag}/riverracelog?limit=12`.
+- Archives per-week clan-level standings (rank, fame, clan points) in `drivers.war_history`.
 
 ### S6: Deep Depth
 **Objective**: competitive scoring enrichment.
-- Extracts a 100-sample rolling window of battle logs for every resident.
+- Extracts a rolling battle-log window (capped by the Royale API at ~25 most-recent battles) for every resident.
 - Provides the high-precision data required for PeS/RPeS performance scoring in `drivers.player_battles`.
 
 ---

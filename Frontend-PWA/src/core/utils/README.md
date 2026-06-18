@@ -28,7 +28,7 @@ The authoritative source of truth for Clash Royale game constants and logic.
 
 ### Persistence Primitives (`idbKernel.ts`)
 Low-level IndexedDB boilerplate and resilience logic.
-- **IDB Primitives**: Standardized wrappers for `openDB`, `getValue`, and `setValue`.
+- **IDB Primitives**: Standardized wrappers for `openDB` and the `idbCore` operations (`get`, `set`, `del`, `clear`).
 - **Memory Fallback**: Orchestrates the transparent switch to in-memory storage if IndexedDB is blocked or unavailable.
 
 ### Numerical Engines (`math.ts` & `predictionMath.ts`)
@@ -38,7 +38,7 @@ Standardized sanitization and projection logic.
 
 ### Formatting Kernels (`time.ts` & `text.ts`)
 Stateless transformation logic for UI display.
-- **time.ts**: Standardized date/time formatting and duration-to-seconds conversion.
+- **time.ts**: Standardized relative-time/countdown formatting and recency parsing (`parseTimeAgoValue`).
 - **text.ts**: HTML normalization and text sanitization.
 
 ### Geometric Substrate (`bezier.ts`)

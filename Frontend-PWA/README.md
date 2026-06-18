@@ -42,11 +42,11 @@ The **DeepNet Operational Command Center**. A high-performance, sovereign PWA in
 
 The application utilizes a custom-engineered **Sovereign Design System** built on Vanilla CSS and TypeScript-driven injection (`src/core/theme/`).
 
-- **Theme Engine**: Dynamic HSL variable injection for seamless Light/Dark mode transitions without CSS-in-JS overhead.
+- **Theme Engine**: Dynamic CSS variable injection (hex/RGB design tokens generated via `generateCssVariables` in `tokens.ts`) for seamless Light/Dark mode transitions without CSS-in-JS overhead.
 - **Visual Purity**: Zero dependency on third-party icon libraries; all iconography is rendered via custom SVG paths in the `Icon.vue` primitive.
 - **Hardware-Accelerated blurs**: Strategic use of `backdrop-filter` for glassmorphism effects on navigation and overlay layers.
 - **Haptic Synchronization**: Interactions are paired with `navigator.vibrate` patterns (Heavy/Light/Success) via the `useHaptics` broker to provide physical feedback on mobile devices.
-- **Fluid Topology**: Layouts that adapt continuously from mobile viewports to ultra-wide desktop dashboards using container queries and flexbox.
+- **Fluid Topology**: Layouts that adapt continuously from mobile viewports to ultra-wide desktop dashboards using responsive media queries and flexbox.
 
 ---
 <br />
@@ -60,7 +60,7 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 | **State** | **Pinia** | Authoritative store for high-volume clan data (Roster/Headhunter) |
 | **Transport** | **Supabase SDK** | Native real-time bridge utilizing direct View access and Postgres RPCs for high-fidelity data orchestration. |
 | **Validation** | **Valibot** | Mandatory schema enforcement at all Layer 1 boundaries |
-| **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (idb) |
+| **Storage** | **IndexedDB** | High-performance persistence via `StorageService` (custom `idbKernel` IndexedDB wrapper with in-memory fallback) |
 | **Build** | **Vite 7** | Optimized build pipeline with advanced PWA workbox strategies |
 
 ---

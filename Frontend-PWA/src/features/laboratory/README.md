@@ -51,7 +51,7 @@ Acts as a local feature-level engine for card-specific data and calibrations, co
 Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.
 
 ### Persistence & Hydration
-- **LocalStorage**: Settings (`laboratory-settings`) and Simulation Results (`laboratory-observation`) are persisted to ensure session resilience.
+- **LocalStorage**: Settings (`laboratory_settings`) and the player Observation (`laboratory_observation`, the hydrated `PlayerData` input — not the computed result) are persisted to ensure session resilience. Inventory overrides use `laboratory_inventory`.
 - **Migration Logic**: The store includes a migration layer to normalize legacy strategy names ('Target' -> 'Level Projection', 'Maximize' -> 'Resource Efficiency').
 
 ### Performance & Memoization
@@ -62,6 +62,6 @@ The behavioral layer standardizes communication between the simulation logic and
 - **useLaboratory.ts**: Orchestrates high-level layout state and data ingestion.
   - **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution and refresh logic.
   - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
+  - **Memoization**: Exposes `getTrajectoryMemoKeys` for stable `v-memo` dependency arrays across the trajectory list.
 - **useLaboratorySimulation.ts**: Specialized orchestrator for simulation execution.
-  - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs, and progress reporting via reactive refs.
-  - **Performance Optimization**: Centralizes the `getTrajectoryMemoKeys` logic to ensure stable rendering performance across the trajectory list.
+  - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs (via `currentSimulationId`), and batched generator consumption within ~10ms `requestIdleCallback` budgets.

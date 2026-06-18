@@ -46,7 +46,7 @@ The project employs a strictly segmented schema strategy to maintain domain isol
     - `features.roster_view`: Deeply sorted roster with dynamic tenure labeling.
     - `features.voyage_summary`: SSOT for active Clan Voyage status and progress.
     - `features.voyage_contributions`: High-resolution ledger of individual voyage performance.
-    - `features.tactical_awareness_view`: Realtime clan activity and presence tracking.
+    - `features.war_activity_view`: Realtime clan activity and presence tracking.
     - `features.governance_report`: Consolidated system audit trail and pipeline health logs.
 
 ---
@@ -60,7 +60,7 @@ Ingestion is performed via a **Penta-Engine Edge Architecture**, supported by au
     - **S3 (Roster Sync)**: Synchronization of active member telemetry.
     - **S4 (River Race)**: Extraction of current standings and task completion.
     - **S5 (War History)**: Infinite Career Ledger synchronization.
-    - **S6 (Deep Depth)**: Extracts 100-sample battle logs for high-precision competitive scoring.
+    - **S6 (Deep Depth)**: Extracts the rolling battle-log window (capped by the Royale API at ~25 battles) for high-precision competitive scoring.
 2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
 3. **Royale API Proxy (`query-royale-api`)**: A secure L5 Control Layer proxy for transient leaderboard harvesting. Features a dynamic country rotation strategy for International clans to ensure diverse recruit discovery without polluting the database substrate.
 4. **Battlelog Proxy (`fetch-player-battlelog`)**: A specialized L5 Control Layer proxy for fetching live player battle logs. Features a parallel fan-out strategy across the Key Farm to maximize data freshness across distributed proxy nodes.
@@ -81,7 +81,7 @@ The `deploy-supabase.yml` workflow automates the following sequence:
     - `CLAN_TAG` and `PLAYER_TAG` repository variables are synced.
     - `ROYALE_API_KEYS` (The Key Farm) is injected into the Supabase environment.
 3. **Database DNA Sync**: SQL migrations are pushed if `SUPABASE_DB_PASSWORD` is present.
-4. **Edge Layer Deployment**: The penta-engine cluster (`ingest-royale-data`, `headhunter-scanner`, `sync-player-cards`, `query-royale-api`, and `fetch-player-battlelog`) is bundled and deployed.
+4. **Edge Layer Deployment**: The workflow deploys `ingest-royale-data`, `headhunter-scanner`, and `sync-player-cards`; `query-royale-api` and `fetch-player-battlelog` are deployed manually via the Supabase CLI.
 
 ### Common CLI Operations
 ```bash
@@ -107,7 +107,7 @@ supabase functions deploy fetch-player-battlelog --no-verify-jwt
 ## VI. Environment & Secret Registry
 | Constant | Source | Scope | Role |
 | :--- | :--- | :--- | :--- |
-| `ROYALE_API_KEYS` | GitHub Secret | Edge Function | The Key Farm (10 Supercell JWTs). |
+| `ROYALE_API_KEYS` | GitHub Secret | Edge Function | The Key Farm (pool of Supercell JWTs, comma-separated/JSON; ~20 per the deploy workflow). |
 | `CLAN_TAG` | GitHub Variable | Edge/Pipeline | The Targeted Clan Identifier (SSOT). |
 | `PLAYER_TAG` | GitHub Variable | Edge/Pipeline | The Targeted Player Identifier (SSOT). |
 
@@ -115,8 +115,11 @@ supabase functions deploy fetch-player-battlelog --no-verify-jwt
 | Secret | Role |
 | :--- | :--- |
 | `SUPABASE_ACCESS_TOKEN` | Authoritative CLI authentication. |
-| `SUPABASE_PROJECT_ID` | Project Reference ID (hucktamloykszinwbtuh). |
 | `SUPABASE_DB_PASSWORD` | Database DNA (Migration) synchronization password. |
+| `INTERNAL_BEARER_TOKEN` | Shared internal bearer token for service-to-service Edge Function auth (also synced to the Vault). |
+
+> [!NOTE]
+> `SUPABASE_PROJECT_ID` is a GitHub repository **Variable** (`vars.SUPABASE_PROJECT_ID`, value `hucktamloykszinwbtuh`) — the Project Reference ID — not a Secret.
 
 ---
 
