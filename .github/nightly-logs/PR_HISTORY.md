@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-18] PR #860: chore(baseline): fold new migrations into master baseline
+**Commit**: `a03bf2a74257a40e7df1d38560e2ed752370fce6`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/860)
+
+### Description
+Standardized tag CHECK constraints in drivers.players and drivers.clans to use case-sensitive ~ regex, matching the canonical uppercase format. Verified full integration of incremental migrations and confirmed RLS compliance, Postgres 17 trigger syntax, and strict function hardening (SECURITY DEFINER, SET search_path) across the master baseline.
+
+---
+*PR created automatically by Jules for task [17648316717029044363](https://jules.google.com/task/17648316717029044363) started by @AlbiDR*
+
+---
+
 ## [2026-06-18] PR #859: fix(harden): secure native bridge access in useBlitzMode
 **Commit**: `800a4a46ea2f689e44ace15640c6d18b7c1728b9`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/859)
