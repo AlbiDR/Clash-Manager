@@ -71,3 +71,10 @@
 - Structural Optimization: Standardized 4 CHECK constraints (player_tag/clan_tag), refactored public.bench_underqualified_recruits (delegated to drivers), relocated substrate.weighted_avg.
 - Hardening: Verified SECURITY DEFINER and search_path for all 88 functions.
 - Verification: 1288 passed, 1 skipped (check_baseline.py and audit_baseline.py passed)
+2026-06-18 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 0 (Already reconciled)
+- Tag Hardening: Standardized CHECK constraints to case-sensitive (~) in drivers.players and drivers.clans.
+- Structural Audit: Verified 26 RLS declarations, 24 CREATE OR REPLACE TRIGGER statements, and 88 hardened functions.
+- Visual Purity: Verified (ASCII only, zero em-dashes/emojis).
+- Verification: 1288 passed, 1 skipped (check_baseline.py passed).
