@@ -164,7 +164,7 @@ ALTER TABLE substrate.discovery_anchors ENABLE ROW LEVEL SECURITY;
 
 -- L2 Drivers: The authoritative universal registry of all players encountered by the system.
 CREATE TABLE IF NOT EXISTS drivers.players (
-    player_tag text NOT NULL CHECK (player_tag ~* '^#[0289CGJLPQRUVY]+$'::text),
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     player_name text,
     updated_at timestamp with time zone DEFAULT now(),
     CONSTRAINT drivers_players_pkey PRIMARY KEY (player_tag)
@@ -174,7 +174,7 @@ ALTER TABLE drivers.players ENABLE ROW LEVEL SECURITY;
 
 -- Authoritative registry of tracked clans and their operational requirements (trophies, etc.).
 CREATE TABLE IF NOT EXISTS drivers.clans (
-    clan_tag text NOT NULL CHECK (clan_tag ~* '^#[0289CGJLPQRUVY]+$'::text) /* Official Clash Royale clan tag. Primary logic key. */,
+    clan_tag text NOT NULL CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text) /* Official Clash Royale clan tag. Primary logic key. */,
     clan_name text NOT NULL,
     description text,
     badge_id integer,
