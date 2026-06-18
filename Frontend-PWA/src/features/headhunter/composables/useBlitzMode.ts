@@ -6,6 +6,7 @@ import { useExternalLink, buildDeepLink } from "@core/services/useExternalLink";
 import { useToast } from "@core/services/useToast";
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
+import { WindowWithBridge } from "@core/types";
 
 interface BlitzOptions {
   throttleMs?: number;
@@ -66,7 +67,10 @@ export function useBlitzMode(
    */
   const hasNativeBridge = computed(() => {
     if (typeof window === "undefined") return false;
-    return !!(window as any).AndroidBridge;
+    // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
+    // [DECISION LOG] Utilizing strict type narrowing for WindowWithBridge to
+    // ensure hardware bridge detection integrity in useBlitzMode.
+    return !!(window as WindowWithBridge).AndroidBridge;
   });
 
   const isTrusted = computed(() => {
@@ -174,9 +178,11 @@ export function useBlitzMode(
   function handleBlitz() {
     if (isBlitzActive.value || selectedIds.value.length === 0) return;
 
-    const bridge = (window as any).AndroidBridge;
-    if (bridge) {
-      bridge.startBlitz(JSON.stringify(selectedIds.value));
+    // [THREAT:] Hardware desynchronization if calling 'any' methods on Window.
+    // [DECISION LOG] Enforcing the WindowWithBridge contract for Blitz Mode delegation.
+    const nativeBridge = (window as WindowWithBridge).AndroidBridge;
+    if (nativeBridge) {
+      nativeBridge.startBlitz(JSON.stringify(selectedIds.value));
       return;
     }
 
