@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-18] PR #859: fix(harden): secure native bridge access in useBlitzMode
+**Commit**: `800a4a46ea2f689e44ace15640c6d18b7c1728b9`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/859)
+
+### Description
+This PR hardens the native bridge boundary in the Headhunter feature's Blitz Mode. By formalizing the `AndroidBridge` interface and using strict type narrowing in `useBlitzMode.ts`, we eliminate unsafe `any` pathogens and ensure that hardware-delegated operations adhere to a defined contract. Domain-descriptive variable names and mandatory threat documentation have been added to comply with CleanStack hardening standards.
+
+---
+*PR created automatically by Jules for task [12312034568024942932](https://jules.google.com/task/12312034568024942932) started by @AlbiDR*
+
+---
+
 ## [2026-06-17] PR #858: chore(deps): bump knip and update major version watchlist
 **Commit**: `e6393bffbef2fa214b90d2de07fd9de390cdeb2c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/858)
