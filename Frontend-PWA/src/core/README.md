@@ -33,8 +33,7 @@ The authoritative transport layer for the Supabase binary stack.
 
 ### Configuration (`/config`)
 Static system constants and environment orchestration.
-- **constants.ts**: Global thresholds, timeouts, and non-business identities.
-- **index.ts**: Centralized business thresholds, storage constants, and notification identities.
+- **index.ts**: The sole config module, centralizing business thresholds, staleness/visibility timeouts, IndexedDB storage constants (including the deprecated-DB purge registry), and push-notification identities.
 
 ### Services (`/services`)
 Infrastructure singletons and Layer 1 state orchestrators.
@@ -68,7 +67,7 @@ Infrastructure singletons and Layer 1 state orchestrators.
 
 ### Theme Engine (`/theme`)
 The visual DNA of the application.
-- **Theme Injection**: Logic for HSL variable injection and dynamic theme swapping.
+- **Theme Injection**: Logic for CSS variable injection (hex/RGB design tokens) and dynamic light/dark theme swapping.
 - **Icon Paths**: Centralized SVG path definitions for the `Icon.vue` primitive.
 
 ### Domain Types (`/types`)

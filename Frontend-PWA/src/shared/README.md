@@ -28,7 +28,7 @@ Dumb or brokered components that receive data via props and emit events.
 
 ### Shared Composables (`/composables`)
 Stateful logic engines that manage component-level behaviors and hardware brokerage.
-- **useTheme.ts**: Master arbiter for dynamic manifest swapping and theme-aware asset resolution.
+- **useTheme.ts**: Master arbiter for theme-aware visual states — applies light/dark tokens as CSS variables on the document root, toggles the `dark` class, persists the preference to LocalStorage (`cm_theme_preference`), and rewrites the `theme-color` meta tag.
 - **useHistoryChart.ts**: Centralizes history parsing, slicing, and weighted trend prediction for visualization components.
 - **useSelectionBar.ts**: Encapsulates logic for score threshold selection and comparison mode toggling in bulk operation surfaces.
 - **useCountdown.ts**: High-performance interval timer for real-time expiration feedback (e.g., Voyage banners).

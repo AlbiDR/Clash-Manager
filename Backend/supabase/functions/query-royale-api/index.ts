@@ -2,14 +2,12 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "npm:valibot";
-import { fetchWithRotation, processBatch } from "../_shared/muscle.ts";
+import { fetchWithRotation } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import {
   RoyaleClanSchema,
   RoyaleLocationListSchema,
-  RoyaleClanRankingListSchema,
-  RoyaleClanDetailSchema,
-  RoyaleBattleLogSchema
+  RoyaleRankingListSchema
 } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 import { AuditEntry } from "../_shared/types.ts";
@@ -18,7 +16,7 @@ import { AuditEntry } from "../_shared/types.ts";
  * Edge Function: query-royale-api
  * L5 Control Layer: Secure proxy for client-side Clash Royale API queries.
  *
- * Implements robust clanless player harvesting via active clan battle log scanning.
+ * Implements robust clanless player harvesting via Path of Legends rankings.
  */
 
 /**
@@ -31,12 +29,14 @@ const PayloadSchema = v.object({
   endpoint: v.picklist(["local", "global"]),
 });
 
+// The Royale API accepts the literal "global" as a location for the
+// worldwide Path of Legends leaderboard; countries use their numeric ID.
+const GLOBAL_LOCATION = "global";
 const LOCATION_ID_INTERNATIONAL = 57000101;
 const DEFAULT_FALLBACK_COUNTRY = "United States";
 const DEFAULT_FALLBACK_ID = 57000120;
 
-const TOP_CLANS_LIMIT = 3;
-const TOP_MEMBERS_PER_CLAN_LIMIT = 3;
+const PLAYER_LEADERBOARD_LIMIT = 1000;
 const INITIAL_ARRAY_INDEX = 0;
 
 // EPHEMERAL: intentionally resets on cold start.
@@ -52,130 +52,79 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  * @remarks
  * Satisfies ADR Section V: Edge Functions - Data Ingestion.
  *
- * Implements a three-tier discovery pipeline:
- * 1. Rankings: Fetches top clans in the target region.
- * 2. Membership: Inspects top members of those clans.
- * 3. Battle Logs: Scans the combat history of those members to find "Shadow Leads"
- *    (clanless opponents).
+ * Uses the live Path of Legends rankings endpoint:
+ *   `/locations/{location}/pathoflegend/players`
  *
- * @param locationId - The Royale API location ID or 'global'.
+ * [DECISION LOG] This is the ONLY player leaderboard the official Clash Royale
+ * API still serves. The legacy trophy ladder (`/rankings/players`) was retired
+ * with the 2025 Trophy Road rework and now returns an empty list for every
+ * location. The season-scoped form (`/pathoflegend/{season}/rankings/players`)
+ * exists only for `global` and only for *completed* seasons, so it cannot
+ * surface the live board. The season-less form used here returns the current,
+ * in-progress standings (verified byte-for-byte against RoyaleAPI's public
+ * leaderboard) for both `global` and individual country IDs — up to 1000 ranked
+ * entries with the clan embedded as an object.
+ *
+ * @param location - "global" or a numeric Royale API location ID as a string.
  * @param logAudit - Telemetry callback for clinical auditing.
  * @returns An array of discovered clanless player objects.
  */
 async function harvestClanlessPlayers(
-  locationId: string,
+  location: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
-  const clansPath = `/locations/${locationId}/rankings/clans?limit=${TOP_CLANS_LIMIT}`;
-  logAudit("HARVEST_CLANS_FETCH", "called", { path: clansPath });
-  const clanRankingsResponse = await fetchWithRotation(clansPath);
-  if (!clanRankingsResponse.ok) {
-    throw new Error(`Failed to fetch top clans: ${clanRankingsResponse.status}`);
+  const playersPath = `/locations/${location}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath });
+  const playerRankingsResponse = await fetchWithRotation(playersPath);
+  if (!playerRankingsResponse.ok) {
+    throw new Error(`Failed to fetch Path of Legends rankings: ${playerRankingsResponse.status}`);
   }
   
-  const rawClanRankingPayload: unknown = await clanRankingsResponse.json();
+  const rawPlayerRankingPayload: unknown = await playerRankingsResponse.json();
 
   // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
   // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in rankings.
-  const rankingValidation = v.safeParse(RoyaleClanRankingListSchema, rawClanRankingPayload);
+  const rankingValidation = v.safeParse(RoyaleRankingListSchema, rawPlayerRankingPayload);
 
-  logAudit("HARVEST_CLANS_INTEGRITY", "integrity_checked", {
+  logAudit("HARVEST_PLAYERS_INTEGRITY", "integrity_checked", {
     passed: rankingValidation.success,
-    details: rankingValidation.success ? "Clan rankings validated" : "Malformed rankings payload"
+    details: rankingValidation.success ? "Player rankings validated" : "Malformed player rankings payload"
   });
 
   if (!rankingValidation.success) {
-    throw new Error("Clan rankings payload failed structural validation.");
+    throw new Error("Player rankings payload failed structural validation.");
   }
 
-  const clanRankingItems = rankingValidation.output.items;
-  if (clanRankingItems.length === INITIAL_ARRAY_INDEX) {
+  const rankingItems = rankingValidation.output.items;
+
+  // [DIAGNOSTIC] Surfaces the raw API item count in edge function logs to allow
+  // distinguishing between an empty API response and a fully-filtered result set.
+  console.log(`[HARVEST] Raw players received from API: ${rankingItems.length}`);
+
+  if (rankingItems.length === INITIAL_ARRAY_INDEX) {
     return [];
   }
-  
-  // Fetch clan details to get members
-  // [DECISION LOG] We scan top clans to find highly active members as "discovery anchors".
-  const memberFetchTasks = clanRankingItems.map((clanItem) => {
-    return async () => {
-      const encodedTag = encodeURIComponent(clanItem.tag);
-      const clanDetailResponse = await fetchWithRotation(`/clans/${encodedTag}`);
-      if (!clanDetailResponse.ok) {
-        console.warn(`Failed to fetch clan detail for ${clanItem.tag}: ${clanDetailResponse.status}`);
-        return [];
-      }
-      const rawClanDetailPayload: unknown = await clanDetailResponse.json();
 
-      const detailValidation = v.safeParse(RoyaleClanDetailSchema, rawClanDetailPayload);
-      if (!detailValidation.success) {
-          console.warn(`Validation failed for clan ${clanItem.tag}`);
-          return [];
-      }
-
-      return detailValidation.output.memberList;
-    };
+  // [DECISION LOG] CLANLESS FILTERING
+  // Rationale: Only players without a clan are viable recruitment targets.
+  // We filter them out at the earliest possible point in the pipeline.
+  //
+  // [THREAT:] The Royale API rankings endpoint may return an empty clan object {}
+  // for clanless players rather than omitting the key entirely. Checking !player.clan
+  // alone is insufficient because !{} evaluates to false (truthy object). We must
+  // inspect clan.tag specifically to correctly classify clanless players.
+  const clanlessPlayers = rankingItems.filter((player) => {
+    const clan = player.clan as Record<string, unknown> | null | undefined;
+    return !clan || !clan.tag;
   });
-  
-  // Process member fetches in parallel
-  const clanMembersList = await processBatch(memberFetchTasks);
-  
-  // Collect target players (top members per clan)
-  const targetPlayerTags: string[] = [];
-  for (const members of clanMembersList) {
-    const activeMembers = members.slice(INITIAL_ARRAY_INDEX, TOP_MEMBERS_PER_CLAN_LIMIT);
-    for (const member of activeMembers) {
-      if (member.tag) {
-        targetPlayerTags.push(member.tag);
-      }
-    }
-  }
-  
-  if (targetPlayerTags.length === INITIAL_ARRAY_INDEX) {
-    return [];
-  }
-  
-  // Fetch battle logs for target players
-  // [DECISION LOG] Battle logs of top players are a rich source of clanless "Shadow Leads".
-  const battlelogTasks = targetPlayerTags.map((playerTag) => {
-    return async () => {
-      const encodedPlayerTag = encodeURIComponent(playerTag);
-      const battleLogResponse = await fetchWithRotation(`/players/${encodedPlayerTag}/battlelog`);
-      if (!battleLogResponse.ok) {
-        console.warn(`Failed to fetch battlelog for ${playerTag}: ${battleLogResponse.status}`);
-        return [];
-      }
-      const rawBattleLogPayload: unknown = await battleLogResponse.json();
 
-      const battleLogValidation = v.safeParse(RoyaleBattleLogSchema, rawBattleLogPayload);
-      if (!battleLogValidation.success) {
-          console.warn(`Battle log validation failed for player ${playerTag}`);
-          return [];
-      }
+  console.log(`[HARVEST] Clanless players after filter: ${clanlessPlayers.length}`);
 
-      return battleLogValidation.output;
-    };
-  });
-  
-  const battlelogs = await processBatch(battlelogTasks);
-  
-  // Extract clanless opponents
-  const clanlessMap = new Map<string, { tag: string, name: string, clan: null }>();
-  for (const battleLog of battlelogs) {
-    if (!Array.isArray(battleLog)) continue;
-    for (const battle of battleLog) {
-      const opponents = battle.opponent || [];
-      for (const opponent of opponents) {
-        if (opponent.tag && !opponent.clan?.tag) {
-          clanlessMap.set(opponent.tag, {
-            tag: opponent.tag,
-            name: opponent.name,
-            clan: null
-          });
-        }
-      }
-    }
-  }
-  
-  return Array.from(clanlessMap.values());
+  return clanlessPlayers.map((player) => ({
+    tag: typeof player.tag === "string" ? player.tag : String(player.tag ?? ""),
+    name: typeof player.name === "string" ? player.name : String(player.name ?? ""),
+    clan: null
+  }));
 }
 
 /**
@@ -200,13 +149,16 @@ Deno.serve(async (req) => {
       logAudit("HARVEST_START", "called", { mode });
 
       if (mode === "global") {
-        logAudit("GLOBAL_HARVEST", "called");
-        const harvestResults = await harvestClanlessPlayers("global", logAudit);
-        return { 
+        logAudit("GLOBAL_HARVEST", "called", { location: GLOBAL_LOCATION });
+        // [DECISION LOG] "global" is a first-class location on the Path of Legends
+        // rankings endpoint, returning the live worldwide top 1000 in one request.
+        const harvestResults = await harvestClanlessPlayers(GLOBAL_LOCATION, logAudit);
+        return {
           items: harvestResults,
-          region: "Global"
+          region: "Global",
         };
       }
+
 
       // Local Harvest Resolution
       if (!CONFIG.CLAN_TAG) {

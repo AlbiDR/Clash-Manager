@@ -9,11 +9,9 @@ import type {
   Card
 } from './Types';
 import {
-  GOLD_COST_TABLE,
-  CARD_XP_TABLE,
-  MATERIAL_REQUIREMENTS,
   CARD_LEVEL_CAP,
-  calculateGemCostForCards
+  calculateGemCostForCards,
+  getUpgradeData
 } from '@core/utils/game';
 import {
   asGold,
@@ -59,11 +57,10 @@ export const getUpgradeCandidate = (
   // [DECISION LOG] SSOT ALIGNMENT:
   // Rarity-based lookups ensure that specialized rarities (Champion, Legendary)
   // respect their unique cost curves defined in Layer 1 @core/utils/game.
-  const goldCost = GOLD_COST_TABLE[card.rarity]?.[nextLevel];
-  const cardsRequired = MATERIAL_REQUIREMENTS[card.rarity]?.[nextLevel];
-  const xpGained = CARD_XP_TABLE[nextLevel];
+  const upgradeData = getUpgradeData(card.rarity, nextLevel);
+  if (!upgradeData) return null;
 
-  if (goldCost === undefined || cardsRequired === undefined || xpGained === undefined) return null;
+  const { goldCost, cardsRequired, xpGain: xpGained } = upgradeData;
 
   // 3. Gold check
   const hasGold = settings.infiniteResources || Number(state.inventory.gold) >= Number(goldCost);

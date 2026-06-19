@@ -42,16 +42,15 @@ Upgrade priorities are defined by interchangeable strategies:
 - **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
 - **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
-### Constants Registry (Registry.ts)
-Acts as a local feature-level engine for card-specific data and calibrations, consuming authoritative constants from the Layer 1 core substrate (`@core/utils/game.ts`).
-- **Feature Calibration**: Houses specific overrides and logic calibrations required exclusively by the Laboratory simulation engine.
-- **Upgrade Resolution**: Implements the `getUpgradeData` helper to resolve costs and gains for specific card rarities and levels by mapping core constants to simulation requirements.
+### Logic Subsystems
+The feature logic is decomposed into several specialized modules to ensure Layer 3 compliance and maintainability:
+- **Upgrade Resolution**: Delegates to the core `getUpgradeData` utility (Layer 1) to resolve costs and gains for specific card rarities and levels, ensuring domain synchronization across features.
 
 ## State Management
 Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.
 
 ### Persistence & Hydration
-- **LocalStorage**: Settings (`laboratory-settings`) and Simulation Results (`laboratory-observation`) are persisted to ensure session resilience.
+- **LocalStorage**: Settings (`laboratory_settings`) and the player Observation (`laboratory_observation`, the hydrated `PlayerData` input — not the computed result) are persisted to ensure session resilience. Inventory overrides use `laboratory_inventory`.
 - **Migration Logic**: The store includes a migration layer to normalize legacy strategy names ('Target' -> 'Level Projection', 'Maximize' -> 'Resource Efficiency').
 
 ### Performance & Memoization
@@ -62,6 +61,6 @@ The behavioral layer standardizes communication between the simulation logic and
 - **useLaboratory.ts**: Orchestrates high-level layout state and data ingestion.
   - **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution and refresh logic.
   - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
+  - **Memoization**: Exposes `getTrajectoryMemoKeys` for stable `v-memo` dependency arrays across the trajectory list.
 - **useLaboratorySimulation.ts**: Specialized orchestrator for simulation execution.
-  - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs, and progress reporting via reactive refs.
-  - **Performance Optimization**: Centralizes the `getTrajectoryMemoKeys` logic to ensure stable rendering performance across the trajectory list.
+  - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs (via `currentSimulationId`), and batched generator consumption within ~10ms `requestIdleCallback` budgets.

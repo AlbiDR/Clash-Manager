@@ -104,14 +104,17 @@
 | knip | ^6.16.1 | ^6.17.0 | 2026-06-16 | PASS |
 | vitest | ^4.1.8 | ^4.1.9 | 2026-06-16 | PASS |
 | @vitest/coverage-v8 | ^4.1.8 | ^4.1.9 | 2026-06-16 | PASS |
+| knip | ^6.17.0 | ^6.17.1 | 2026-06-17 | PASS |
+| supabase | ^2.106.0 | ^2.107.0 | 2026-06-18 | PASS |
+| [Audit] | - | - | 2026-06-19 | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
-| vite | ^7.3.5 | 8.0.16 | 2026-05-17 | [Updated] Breaking: Rolldown migration. Unified Rust bundler 10-30x faster. ManualChunks config replaced by codeSplitting. |
-| typescript | ~5.9.3 | 6.0.3 | 2026-05-21 | Breaking: Significant transition release. 'types' defaults to []. 'rootDir' defaults to '.'. 'target' defaults to 'es2025'. |
-| @types/node | ^24.13.2 | 25.9.3 | 2026-04-12 | [Updated] New major available. Breaking: Node 25 enables Web Storage (localStorage) by default; may impact Vitest environment. |
-| pnpm | >=10.0.0 | 11.6.0 | 2026-09-06 | [Updated] New major available. Drops Node.js 18-21. Pure ESM. Minimum Release Age (24h) enabled by default. SQLite store. |
-| vue-router | ^4.6.4 | 5.1.0 | 2026-06-05 | [Updated] Breaking: Transition release. Native ESM focus. |
-| jsdom | ^24.1.3 | 29.1.1 | 2026-08-04 | Breaking: Internal refactor, performance gains. Stricter spec compliance. |
-| rollup-plugin-visualizer | ^6.0.11 | 7.0.1 | 2026-08-04 | Breaking: Config schema changes for vite 8 compatibility. |
+| vite | ^7.3.5 | 8.0.16 | 2026-06-18 | [Updated] Breaking: Rolldown migration (Rust-based). 10-30x faster builds. Unified dev/prod bundler. |
+| typescript | ~5.9.3 | 6.0.3 | 2026-06-18 | [Updated] Breaking: Significant transition release. 'types' defaults to []. 'rootDir' defaults to '.'. 'target' defaults to 'es2025'. lib 'DOM' includes iterables. |
+| @types/node | ^24.13.2 | 25.9.3 | 2026-06-18 | [Updated] New major available. Breaking: Node 25 enables Web Storage (localStorage) by default; may impact Vitest environment. Requires --localstorage-file for persistence. |
+| pnpm | >=10.0.0 | 11.8.0 | 2026-06-18 | [Updated] New major available. Drops Node.js <22. Pure ESM. `postinstall` blocked by default. `overrides` migrated to `pnpm-workspace.yaml`. |
+| vue-router | ^4.6.4 | 5.1.0 | 2026-06-18 | [Updated] Transition release. Merges `unplugin-vue-router` (file-based routing) into core. No breaking changes for V4 users. |
+| jsdom | ^24.1.3 | 29.1.1 | 2026-06-18 | [Updated] New major available. Breaking: Internal performance refactor. Stricter spec compliance. |
+| rollup-plugin-visualizer | ^6.0.11 | 7.0.1 | 2026-06-18 | [Updated] New major available. Breaking: Config schema changes for Vite 8 compatibility. |
