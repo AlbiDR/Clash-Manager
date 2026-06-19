@@ -27,12 +27,17 @@ The authoritative reactive manager for the Voyage state.
 
 ### Voyage Actions (useVoyageActions.ts)
 Specialized engine for orchestrating asynchronous Clan Voyage operations.
-- **RPC Orchestration**: Centralizes the execution of backend RPCs for scheduling (`scheduleVoyage`), direct activation (`activateVoyage`), and cancellation.
+- **RPC Orchestration**: Centralizes the execution of backend RPCs for scheduling (`scheduleVoyage`), direct activation (`activateVoyage`), setting end times (`setVoyageEnd`), and cancellation.
 - **Standardized Response Handling**: Implements unified error narrowing and response validation to ensure consistent feedback during event state transitions.
+
+### Voyage Status (useVoyageStatus.ts)
+Centralizes the live status tracking for Clan Voyage events, including countdown timers and progress normalization.
+- **Countdown Orchestration**: Delegates countdown logic to the `@shared/composables/useCountdown.ts` composable for both event starts and ends.
+- **Progress Normalization**: Calculates `progressPercent` based on the store's `progressRatio` to ensure consistent feedback across UI components.
 
 ### Event Management (EventManagement.vue)
 The "Mirror Activation Cockpit" located in the Settings feature.
-- **Status Monitoring**: Provides real-time feedback on active event progress, including crown counts, completion percentages, and time remaining (powered by `@shared/composables/useCountdown.ts`).
+- **Status Monitoring**: Provides real-time feedback on active event progress, including crown counts, completion percentages, and time remaining (delegated to `useVoyageStatus.ts`).
 - **Modular Composition**: Acts as a high-level container that delegates configuration logic to `VoyageSetupForm.vue` to maintain SRP and architectural isolation.
 
 ### Event Setup Orchestration (useVoyageForm.ts)
@@ -49,7 +54,7 @@ The primary setup and validation interface for Clan Voyage events.
 ### Visual Feedback (VoyageBanner.vue)
 A high-visibility glassmorphism surface injected into the Roster view.
 - **Adaptive Styling**: Switches between a standard "Underway" blue glassmorphism and a gold/emerald "Victory" vibrant gradient when the goal is achieved.
-- **Live Countdown**: Delegates countdown logic and lifecycle management to the `@shared/composables/useCountdown.ts` composable to provide real-time event expiration feedback.
+- **Live Feedback**: Delegates countdown logic and progress normalization to the `useVoyageStatus.ts` composable to provide real-time event expiration feedback.
 - **Performance Optimized**: Leverages CSS transitions and SVG filters for fluid, 60FPS progress animations.
 
 ## Data Flow
