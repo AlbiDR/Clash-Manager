@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-19] PR #867: Centralize Voyage Status Logic
+**Commit**: `14a9469e599facec473c49337c31e8142bc631ef`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/867)
+
+### Description
+Centralized Voyage-related status and countdown logic into a new feature composable to eliminate code duplication and improve maintainability. Verified with unit tests and visual inspection.
+
+---
+*PR created automatically by Jules for task [8098802062455924993](https://jules.google.com/task/8098802062455924993) started by @AlbiDR*
+
+---
+
 ## [2026-06-19] PR #866: chore(baseline): fold new migrations into master baseline
 **Commit**: `df74a77924ab15e6f32e5d9413ebcff4f830797c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/866)
