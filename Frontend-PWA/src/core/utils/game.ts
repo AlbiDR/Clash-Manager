@@ -311,6 +311,34 @@ export function normalizeRarity(raw: string): Rarity {
 }
 
 /**
+ * Atomic data bundle for a specific card upgrade.
+ */
+export interface UpgradeData {
+  readonly cardsRequired: number;
+  readonly goldCost: Gold;
+  readonly xpGain: XP;
+}
+
+/**
+ * Retrieves costs and gains for a card upgrade.
+ *
+ * @param rarity - The card rarity.
+ * @param targetLevel - The level being upgraded to.
+ * @returns UpgradeData if level exists, otherwise null.
+ */
+export function getUpgradeData(rarity: Rarity, targetLevel: number): UpgradeData | null {
+  const cardsRequired = MATERIAL_REQUIREMENTS[rarity]?.[targetLevel];
+  const goldCost = GOLD_COST_TABLE[rarity]?.[targetLevel];
+  const xpGain = CARD_XP_TABLE[targetLevel];
+
+  if (cardsRequired === undefined || goldCost === undefined || xpGain === undefined) {
+    return null;
+  }
+
+  return { cardsRequired, goldCost, xpGain };
+}
+
+/**
  * Retrieves the base cumulative XP for a specific King Level.
  *
  * @param level - The King Level.
