@@ -14,8 +14,8 @@ The Settings feature provides a centralized interface for users to calibrate the
 
 ## Architectural Context
 - **Layer**: Layer 3 (@features)
-- **Isolation**: Largely decoupled from Headhunter, Roster, and Laboratory. One deliberate exception: `SettingsView.vue` lazy-loads `EventManagement` from the `voyage` feature for inline event configuration.
-- **Orchestration**: Operates as a **Feature Orchestrator** through the `useSettings` composable, which bridges domain-blind infrastructure services (@core) with feature-level views.
+- **Isolation**: Strictly decoupled. While it acts as a host for decentralized configuration, it remains domain-blind to the business logic of the features it serves.
+- **Orchestration**: Operates as a **Feature Orchestrator** through the `useSettings` composable. It utilizes a **Registry Injection Pattern** where management components (e.g., Voyage's `EventManagement`) are injected via asynchronous components to maintain strict bundle boundaries while centralizing administrative control.
 
 ## Logic Subsystems
 
@@ -29,6 +29,17 @@ Manages specialized application modes used for auditing and demonstration.
 - **Showcase Mode**: Acts as a master toggle that synchronizes Blueprint (structural) and Synthetic (data) modes.
 - **Blueprint Mode**: Interfaces with `@core/services/useBlueprintMode` to force geometric skeleton rendering for layout auditing.
 - **Synthetic Mode**: Interfaces with `@core/services/useSyntheticMode` to redirect data ingestion to high-fidelity mock payloads.
+
+### Application Features (FeatureSettings.vue)
+Brokers access to advanced application behaviors and hardware-delegated services.
+- **Blitz Mode Calibration**: Provides a calibration interface for the native Android wrapper's foreground service coordinates.
+- **Hardware Bridge Detection**: Automatically detects the presence of the `AndroidBridge` JSBridge to toggle between PWA-driven and hardware-delegated Blitz Mode.
+- **Benchmarking Toggles**: Manages visibility for cross-feature performance auditing tooltips.
+
+### Backend Maintenance (BackendRefresher.vue)
+Orchestrates manual maintenance triggers for the distributed backend engines.
+- **Engine Selection**: Allows for targeted manual updates of the Database, Scanner, and Key Farm.
+- **Cooldown Governance**: Enforces backend-defined cooldowns to prevent API exhaustion and redundant maintenance cycles.
 
 ### Connectivity & API Management (NetworkSettings.vue)
 The primary interface for managing the distributed backend lifecycle.
@@ -48,9 +59,10 @@ Provides failsafe mechanisms for resolving structural or state corruption.
 
 ## Component Topology
 The UI is organized into a modular, card-based layout to ensure scalability and consistent visual hierarchy.
-- **SettingsView.vue**: The top-level orchestrator that composes sub-settings into a standardized `ConsoleLayout`.
+- **SettingsView.vue**: The top-level orchestrator that composes sub-settings into a standardized `ConsoleLayout`. It acts as a collector for decentralized configuration modules (FeatureSettings, NetworkSettings, etc.) and externally injected feature managers (EventManagement).
 - **SettingsCard.vue**: A Layer 2 container that provides standardized expansion behavior and iconography.
 - **SkeletonSettingsCard.vue**: Provides geometric stability during initial hydration via a specialized skeleton implementation.
+- **Sub-Setting Modules**: Decomposed cards (`AppearanceSettings.vue`, `FeatureSettings.vue`, `ModeSettings.vue`, `NetworkSettings.vue`, `NotificationSettings.vue`, `RecoverySettings.vue`, `BackendRefresher.vue`) that encapsulate specific configuration domains.
 
 ## State Management
 The Settings feature does not maintain private state for configuration. Instead, it delegates all persistence and reactive flag management to the `@core/services/useAppSettings` singleton. This ensures that user preferences are globally accessible to other features and the Service Worker.

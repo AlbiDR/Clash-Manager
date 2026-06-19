@@ -16,7 +16,8 @@ import {
   normalizeLevel,
   normalizeRarity,
   getKingLevelBaseXp,
-  calculateGemCostForCards
+  calculateGemCostForCards,
+  getUpgradeData
 } from '../game';
 
 describe('Game Core Domain Logic', () => {
@@ -163,6 +164,25 @@ describe('Game Core Domain Logic', () => {
   });
 
   describe('Economic Calculations', () => {
+    describe('getUpgradeData()', () => {
+      it('should return upgrade data for valid level and rarity', () => {
+        const data = getUpgradeData('Common', 14);
+        expect(data).not.toBeNull();
+        expect(data?.cardsRequired).toBe(3500);
+        expect(Number(data?.goldCost)).toBe(60000);
+        expect(Number(data?.xpGain)).toBe(2000);
+      });
+
+      it('should return null for invalid target level', () => {
+        expect(getUpgradeData('Common', 1)).toBeNull(); // Upgrades start at level 2
+        expect(getUpgradeData('Common', 17)).toBeNull(); // Above cap
+      });
+
+      it('should return null for target level not applicable to rarity', () => {
+        expect(getUpgradeData('Champion', 5)).toBeNull(); // Champions start at level 11, first upgrade is 12
+      });
+    });
+
     describe('calculateGemCostForCards()', () => {
       it('should return 0 for non-positive deficit', () => {
         expect(Number(calculateGemCostForCards('Common', 0))).toBe(0);

@@ -20,8 +20,8 @@
  * ============================================================================
  */
 import { computed, onMounted, defineAsyncComponent } from "vue";
-import { SettingsCard, Icon, useCountdown } from "@shared";
-import { useVoyageStore } from "../composables/useVoyageStore";
+import { SettingsCard, Icon } from "@shared";
+import { useVoyageStatus } from "../composables/useVoyageStatus";
 import { formatNumber } from "@core";
 
 const VoyageSetupForm = defineAsyncComponent(() => import("./VoyageSetupForm.vue"));
@@ -30,21 +30,10 @@ const props = defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
-const store = useVoyageStore();
+const { store, timeRemaining, startsInCountdown } = useVoyageStatus({ showDays: true });
 
 onMounted(() => {
   store.refresh();
-});
-
-// --- LIVE COUNTDOWN TIMERS ---
-const timeRemaining = useCountdown(computed(() => store.endsAt), {
-  showDays: true,
-  onExpiry: () => store.refresh()
-});
-
-const startsInCountdown = useCountdown(computed(() => store.startsAt), {
-  showDays: true,
-  onExpiry: () => store.refresh()
 });
 
 const pillLabel = computed(() => {

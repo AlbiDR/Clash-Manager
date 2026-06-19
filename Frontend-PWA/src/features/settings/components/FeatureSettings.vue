@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, nextTick } from "vue";
 import { SettingRow, SettingsCard, vTactile } from "@shared";
+import { WindowWithBridge } from "@core";
 import { useSettings } from "../composables/useSettings";
 
 defineProps<{
@@ -18,7 +19,10 @@ const { modules, toggle, isRefreshing } = useSettings();
  */
 const isNativeWrapper = computed(() => {
   if (typeof window === "undefined") return false;
-  return !!(window as any).AndroidBridge;
+  // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
+  // [DECISION LOG] Utilizing strict type narrowing for WindowWithBridge to
+  // ensure hardware bridge detection integrity.
+  return !!(window as WindowWithBridge).AndroidBridge;
 });
 
 // Calibration coordinates state
@@ -28,15 +32,18 @@ const closeX = ref(92.13);
 const closeY = ref(20.44);
 
 function loadCoordinates() {
-  if (isNativeWrapper.value && (window as any).AndroidBridge?.getCoordinates) {
+  const bridge = (window as WindowWithBridge).AndroidBridge;
+  if (isNativeWrapper.value && bridge?.getCoordinates) {
     try {
-      const coords = JSON.parse((window as any).AndroidBridge.getCoordinates());
+      const rawCoordinates = bridge.getCoordinates();
+      const coords = JSON.parse(rawCoordinates);
       inviteX.value = Math.round(coords.inviteX * 10000) / 100;
       inviteY.value = Math.round(coords.inviteY * 10000) / 100;
       closeX.value = Math.round(coords.closeX * 10000) / 100;
       closeY.value = Math.round(coords.closeY * 10000) / 100;
-    } catch (e) {
-      console.error("Failed to parse native coordinates", e);
+    } catch (nativeCoordinatesError: unknown) {
+      const errorMessage = nativeCoordinatesError instanceof Error ? nativeCoordinatesError.message : String(nativeCoordinatesError);
+      console.error("Failed to parse native coordinates:", errorMessage);
     }
   }
 }
@@ -45,13 +52,17 @@ let isLoaded = false;
 
 function saveCoordinates() {
   if (!isLoaded) return;
-  if (isNativeWrapper.value && (window as any).AndroidBridge?.saveCoordinates) {
-    const ix = parseFloat(inviteX.value as any);
-    const iy = parseFloat(inviteY.value as any);
-    const cx = parseFloat(closeX.value as any);
-    const cy = parseFloat(closeY.value as any);
+  // [THREAT:] Hardware desynchronization if calling 'any' methods on Window.
+  // [DECISION LOG] Enforcing the WindowWithBridge contract for coordinate persistence.
+  const bridge = (window as WindowWithBridge).AndroidBridge;
+  if (isNativeWrapper.value && bridge?.saveCoordinates) {
+    const ix = typeof inviteX.value === 'string' ? parseFloat(inviteX.value) : inviteX.value;
+    const iy = typeof inviteY.value === 'string' ? parseFloat(inviteY.value) : inviteY.value;
+    const cx = typeof closeX.value === 'string' ? parseFloat(closeX.value) : closeX.value;
+    const cy = typeof closeY.value === 'string' ? parseFloat(closeY.value) : closeY.value;
+
     if (!isNaN(ix) && !isNaN(iy) && !isNaN(cx) && !isNaN(cy)) {
-      (window as any).AndroidBridge.saveCoordinates(
+      bridge.saveCoordinates(
         ix / 100,
         iy / 100,
         cx / 100,
@@ -80,7 +91,7 @@ function handleBlitzToggle() {
 
   // Only redirect to accessibility activation when the setting is being enabled
   if (!wasEnabled) {
-    const bridge = (window as any).AndroidBridge;
+    const bridge = (window as WindowWithBridge).AndroidBridge;
     if (bridge?.openAccessibilitySettings) {
       bridge.openAccessibilitySettings();
     } else {
@@ -97,8 +108,9 @@ onMounted(() => {
     isLoaded = true;
   });
   // Sync blitzMode setting state with native accessibility service status on mount
-  if (isNativeWrapper.value && (window as any).AndroidBridge?.isAccessibilityActive) {
-    const active = (window as any).AndroidBridge.isAccessibilityActive();
+  const bridge = (window as WindowWithBridge).AndroidBridge;
+  if (isNativeWrapper.value && bridge?.isAccessibilityActive) {
+    const active = bridge.isAccessibilityActive();
     if (active !== modules.blitzMode) {
       toggle("blitzMode");
     }
