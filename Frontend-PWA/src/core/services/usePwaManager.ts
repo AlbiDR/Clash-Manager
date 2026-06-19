@@ -21,6 +21,9 @@ import { idb } from "./StorageService";
  * - **Layer:** Layer 1 (@core)
  * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
  *   Imports from Shared (@shared) or Features (@features) are forbidden.
+ *
+ * Satisfies ADR Section II: Layer 1 Core services (Agnostic Infrastructure).
+ * Satisfies ADR Section IV: Tiered Caching Protocol (Cache API management).
  */
 
 /**
@@ -39,6 +42,8 @@ export function usePwaManager() {
   /**
    * Function to trigger a Service Worker reload/update.
    * Typically populated by 'virtual:pwa-register' in the feature layer.
+   *
+   * @param reload - Whether to force a full page reload after the update.
    */
   const updateServiceWorker = ref((reload?: boolean) => {
     console.log("[PWA] SW Update check initiated (no-op stub)", reload);
@@ -50,25 +55,29 @@ export function usePwaManager() {
    * @remarks
    * Uses the native `navigator.serviceWorker` API. If a waiting worker is found,
    * it triggers an immediate skipWaiting via `updateServiceWorker(true)`.
+   *
+   * @returns A promise that resolves when the update check completes.
    */
-  async function forceUpdate() {
+  async function forceUpdate(): Promise<void> {
     haptics.heavy();
     const activeToastId = toast.info("Checking for updates...");
 
     try {
-      // THREAT: Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
+      // [THREAT:] Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
       if ("serviceWorker" in navigator) {
         const swRegistration = await navigator.serviceWorker.getRegistration();
 
         if (!swRegistration) {
-          // Rationale: No registration found usually means the app hasn't fully booted or is in a broken state.
+          // [DECISION LOG] No registration found usually means the app hasn't fully
+          // booted or is in a broken state. Exit early to avoid null reference.
           toast.remove(activeToastId);
           toast.error("No active session found");
           return;
         }
 
         if (swRegistration.waiting) {
-          // Rationale: An update was already downloaded and is ready to be applied.
+          // [DECISION LOG] An update was already downloaded and is ready to be applied.
+          // Trigger immediate activation and reload.
           toast.remove(activeToastId);
           toast.success("Update ready! Reloading...");
           updateServiceWorker.value(true);
@@ -88,8 +97,9 @@ export function usePwaManager() {
         toast.remove(activeToastId);
         toast.error("Service Worker not available");
       }
-    } catch (swUpdateError) {
-      console.error("Update check failed", swUpdateError);
+    } catch (swUpdateError: unknown) {
+      const errorMessage = swUpdateError instanceof Error ? swUpdateError.message : String(swUpdateError);
+      console.error("Update check failed", errorMessage);
       toast.remove(activeToastId);
       toast.error("Update check failed");
     }
@@ -99,19 +109,20 @@ export function usePwaManager() {
    * Purges the Service Worker and Cache API assets.
    *
    * @param onCleanup - Optional callback for Layer 2/3 specific cleanup tasks.
+   * @returns A promise that resolves after the purge (if confirmed).
    *
    * @remarks
    * This is a non-destructive recovery action. It unregisters all service workers
    * and deletes all named caches before triggering a hard reload.
    */
-  async function clearCache(onCleanup?: () => void) {
+  async function clearCache(onCleanup?: () => void): Promise<void> {
     haptics.medium();
     if (
       confirm(
         "Purge Asset Cache?\n\nThis will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
       )
     ) {
-      // 1. Unregister Workers: Forces the browser to discard the current control logic.
+      // [DECISION LOG] 1. Unregister Workers: Forces the browser to discard the current control logic.
       if ("serviceWorker" in navigator) {
         const swRegistrations = await navigator.serviceWorker.getRegistrations();
         for (const registration of swRegistrations) {
@@ -119,11 +130,12 @@ export function usePwaManager() {
         }
       }
 
-      // 2. Delete Caches: Clears the 'Stale' or corrupted assets stored via CacheStorage.
+      // [DECISION LOG] 2. Delete Caches: Clears the 'Stale' or corrupted assets stored via CacheStorage.
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
 
-      // 3. Optional Callback (e.g. for Layer 2 theme manifest cleanup)
+      // [DECISION LOG] 3. Optional Callback (e.g. for Layer 2 theme manifest cleanup)
+      // Maintaining strict Layer 1 boundaries by delegating Layer 2 specific cleanup.
       if (onCleanup) onCleanup();
 
       window.location.reload();
@@ -134,19 +146,20 @@ export function usePwaManager() {
    * Performs a total wipe of local application data.
    *
    * @param onCleanup - Optional callback for Layer 2/3 specific cleanup tasks.
+   * @returns A promise that resolves after the reset (if confirmed).
    *
    * @remarks
    * Destructive action. Clears LocalStorage, SessionStorage, and the authoritative
    * IndexedDB store. Used to resolve deep state corruption.
    */
-  async function factoryReset(onCleanup?: () => void) {
+  async function factoryReset(onCleanup?: () => void): Promise<void> {
     haptics.heavy();
     if (
       confirm(
         "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",
       )
     ) {
-      // 1. Unregister Workers: Forces the browser to discard logic and release IDB locks.
+      // [DECISION LOG] 1. Unregister Workers: Forces the browser to discard logic and release IDB locks.
       if ("serviceWorker" in navigator) {
         try {
           const swRegistrations = await navigator.serviceWorker.getRegistrations();
@@ -158,7 +171,7 @@ export function usePwaManager() {
         }
       }
 
-      // 2. Delete Caches: Clears the 'Stale' or corrupted assets.
+      // [DECISION LOG] 2. Delete Caches: Clears the 'Stale' or corrupted assets.
       try {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
@@ -166,11 +179,11 @@ export function usePwaManager() {
         console.warn("[PWA] Cache delete failed during reset", cacheError);
       }
 
-      // 3. Clear Storage: Purge LocalStorage and SessionStorage.
+      // [DECISION LOG] 3. Clear Storage: Purge LocalStorage and SessionStorage.
       localStorage.clear();
       sessionStorage.clear();
 
-      // 4. Destroy IndexedDB: Purge active and legacy databases completely.
+      // [DECISION LOG] 4. Destroy IndexedDB: Purge active and legacy databases completely.
       try {
         if (typeof idb.destroyAll === "function") {
           await idb.destroyAll();
@@ -181,7 +194,7 @@ export function usePwaManager() {
         console.warn("IDB destroyAll/clear failed", resetError);
       }
 
-      // 5. Optional Callback (e.g. for Layer 2 theme manifest cleanup)
+      // [DECISION LOG] 5. Optional Callback (e.g. for Layer 2 theme manifest cleanup)
       if (onCleanup) onCleanup();
 
       window.location.reload();

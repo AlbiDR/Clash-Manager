@@ -29,7 +29,7 @@ Orchestrates the dynamic, transient harvesting of clanless players from the Clas
 The primary behavioral engine for the Headhunter interface.
 - **Dual-Phase Sync**: Orchestrates **Manual Ingest** (manual sync trigger) and **Background Sync** (consistency check with the Supabase view).
 - **Blitz Orchestration**: Configures the `useBlitzMode` engine for automated batch recruitment processing.
-- **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Score, Trophies, Wins) and deep-linking.
+- **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Potential, Trophies, Donations, Recency, Name) and deep-linking.
 
 ### Recruitment Pipeline (useBlitzMode.ts)
 Specialized engine for high-velocity recruitment processing.

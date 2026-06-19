@@ -4,6 +4,7 @@
 import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import * as v from "npm:valibot";
 import { AuditEntry } from "./types.ts";
+import { IntegrityCheckDetailsSchema } from "./schemas.ts";
 
 /**
  * CONFIGURATION: ProtocolOptions
@@ -181,26 +182,27 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }];
 
         const integrityChecks = audit_log_final.filter(entry => entry.action === 'integrity_checked');
+
+        // [GUARD] VALIDATION BOUNDARY: isDataPerfect Calculation
         // [THREAT:] False positives in data perfection reporting can mask silent validation failures.
-        // [DECISION LOG] Replacing unsafe type assertion with strict narrowing to ensure 'isDataPerfect'
-        // accurately reflects that ALL integrity checks passed.
+        // [DECISION LOG] Replacing manual typeof narrowing and unsafe 'as' type assertions with a
+        // strict v.safeParse() validation boundary using IntegrityCheckDetailsSchema.
+        // This ensures that 'isDataPerfect' accurately reflects that ALL integrity checks passed
+        // based on a validated structural contract.
         const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(check => {
-            const details = check.details;
-            return (
-                typeof details === 'object' &&
-                details !== null &&
-                'passed' in details &&
-                (details as Record<string, unknown>).passed === true
-            );
+            const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
+            return validation.success && validation.output.passed === true;
         });
 
         const validationReport = {
             stages_called: audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage),
             stages_run: audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage),
             integrity_checks: integrityChecks.map(check => {
-                const details = check.details;
-                const passed = typeof details === 'object' && details !== null && 'passed' in details && (details as Record<string, unknown>).passed === true;
-                return { stage: check.stage, passed };
+                const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
+                return {
+                    stage: check.stage,
+                    passed: validation.success ? validation.output.passed : false
+                };
             }),
             total_duration: Date.now() - startTime
         };

@@ -16,28 +16,15 @@
  * ============================================================================
  */
 import { onMounted, computed } from "vue";
-import { useVoyageStore } from "../composables/useVoyageStore";
-import { Icon, useCountdown } from "@shared";
+import { useVoyageStatus } from "../composables/useVoyageStatus";
+import { Icon } from "@shared";
 import { formatNumber } from "@core";
 
-const store = useVoyageStore();
+const { store, timeRemaining, startsInCountdown, progressPercent } = useVoyageStatus();
 
 onMounted(() => {
   store.refresh();
 });
-
-// --- LIVE COUNTDOWN TIMERS ---
-const timeRemaining = useCountdown(computed(() => store.endsAt), {
-  onExpiry: () => store.refresh()
-});
-
-const startsInCountdown = useCountdown(computed(() => store.startsAt), {
-  onExpiry: () => store.refresh()
-});
-
-const progressPercent = computed(() =>
-  Math.round(store.progressRatio * 100)
-);
 
 const shouldShowBanner = computed(() => {
   return store.isActive || store.isPending || store.isAwaitingEnd;

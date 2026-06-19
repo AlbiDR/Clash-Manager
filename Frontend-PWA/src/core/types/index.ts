@@ -5,6 +5,37 @@
  * TypeScript interfaces for Clash Royale Manager
  */
 
+/**
+ * Interface for the Native Android JSBridge.
+ *
+ * @remarks
+ * Formalizes the contract for communication between the PWA and the native
+ * Android wrapper (TWA).
+ */
+export interface AndroidBridge {
+  /** Opens a URL using the native Android ACTION_VIEW intent. */
+  openExternalUrl(url: string): void;
+  /** Directs the native app to open a specific player profile in Clash Royale. */
+  openPlayerProfile(id: string): void;
+  /** Retrieves persisted Blitz Mode calibration coordinates as a JSON string. */
+  getCoordinates(): string;
+  /** Persists Blitz Mode calibration coordinates to native storage. */
+  saveCoordinates(ix: number, iy: number, cx: number, cy: number): void;
+  /** Directs the native app to open the System Accessibility Settings. */
+  openAccessibilitySettings(): void;
+  /** Checks if the native accessibility service is currently active. */
+  isAccessibilityActive(): boolean;
+  /** Initiates a Blitz Mode sequence for the provided list of player tags. */
+  startBlitz(payload: string): void;
+}
+
+/**
+ * Extended Window interface to include the Native Android Bridge.
+ */
+export interface WindowWithBridge extends Window {
+  AndroidBridge?: AndroidBridge;
+}
+
 // API Response Envelope
 export interface ApiResponse<T> {
   success: boolean;

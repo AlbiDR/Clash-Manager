@@ -21,7 +21,7 @@ The Shared UI directory (Layer 2) contains reusable components that are agnostic
 Standardized containers that manage view-level states like loading, errors, and empty results.
 - **ConsoleLayout.vue**: The primary structural shell for feature views. Manages the `ConsoleHeader`, FAB synchronization, and `remoteInfo` orchestration. Delegates pull-to-refresh behavior to the `@shared/composables/usePullToRefresh.ts` composable.
 - **ConsoleHeader.vue**: Standardized view header. Handles search debouncing, sorting controls, and visual status indicators (StatusPill). Delegates scroll-aware styling to the `@shared/composables/useHeaderScroll.ts` composable.
-- **ConsoleList.vue**: Specialized list container with Showcase Mode support and `v-auto-animate` integration.
+- **ConsoleList.vue**: Specialized list container with Showcase Mode support and time-sliced (progressive) rendering.
 - **AppFooter.vue**: Global navigation anchor and legal/version information container.
 - **SettingsCard.vue**: Collapsible container for feature settings and configurations. Supports header slots, loading states, and smooth "spring" transition animations.
 - **SkeletonSettingsCard.vue**: Placeholder variant for settings cards with staggered skeleton animations to prevent layout shifts.
@@ -95,4 +95,4 @@ Components in this layer must adhere to the **Visual Purity** protocol:
 - **Accessibility**: Minimum touch targets of 48px and descriptive ARIA labels are mandatory.
 
 ## Testing Strategy
-Each component is verified via Vitest (`*.spec.ts`) located in the sibling `ui-tests/` directory. Tests focus on prop-driven rendering, event emission, and visual state transitions.
+Each component is verified via Vitest (`*.spec.ts`) located in the nested `ui-tests/` subdirectory (`src/shared/ui/ui-tests/`). Tests focus on prop-driven rendering, event emission, and visual state transitions.

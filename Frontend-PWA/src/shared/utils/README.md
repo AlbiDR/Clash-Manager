@@ -28,4 +28,4 @@ Authoritative logic for normalizing domain strings into UI-ready labels and styl
 ## Integration Standards
 - **Presentation Focus**: Logic here should be focused on *how things look* rather than *what things mean* (which belongs in `@core/utils`).
 - **Statelessness**: Helpers MUST remain pure and stateless. Any logic requiring reactivity should be implemented as a Composable in the `@shared/composables` directory.
-- **Direct Consumption**: Favor direct file imports over barrel exports to ensure optimal tree-shaking for the production build.
+- **Barrel Consumption**: Shared utils are exposed through the `@shared` barrel (`src/shared/index.ts`) and consumed via that aggregate export (e.g. `RoleBadge.vue` imports `formatRole` from `@shared`).

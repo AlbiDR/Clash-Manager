@@ -19,13 +19,20 @@ async function getVaultSecret(supabase: SupabaseClient, secretName: string): Pro
         return "";
     }
 
-    const secretValidation = v.safeParse(v.string(), rawSecret);
-    if (!secretValidation.success) {
-        console.error(`[Vault] Type mismatch for secret '${secretName}': expected string, received ${typeof rawSecret}`);
+    // [THREAT:] PostgREST auto-parses text values that are valid JSON (e.g. a stored
+    // JSON array for ROYALE_API_KEYS) into a JS object before the client receives them.
+    // Strictly checking v.string() therefore fails with "received object".
+    // [DECISION LOG] Coerce any non-null, non-string vault return to a JSON string
+    // so downstream consumers (setKeys, loadConfig) receive a consistent string type.
+    if (rawSecret === null || rawSecret === undefined) {
+        console.warn(`[Vault] Secret '${secretName}' not found in vault.`);
         return "";
     }
-    
-    return secretValidation.output;
+    if (typeof rawSecret !== "string") {
+        return JSON.stringify(rawSecret);
+    }
+    return rawSecret;
+
 }
 
 /**
