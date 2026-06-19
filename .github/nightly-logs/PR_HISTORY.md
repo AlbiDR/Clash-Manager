@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-19] PR #869: Document Voyage Status Orchestrator (Stage 6)
+**Commit**: `bc14597aeeca4747f7999cbba0d31996a2889606`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/869)
+
+### Description
+This change documents the `useVoyageStatus` feature-level orchestrator in the Voyage feature. It adds architectural context, interface contracts, and mandatory inline decision/threat logs to ensure the logic intent is preserved and synchronized with the current code state.
+
+---
+*PR created automatically by Jules for task [2802049945354391080](https://jules.google.com/task/2802049945354391080) started by @AlbiDR*
+
+---
+
 ## [2026-06-19] PR #868: docs(readme): reconcile voyage feature drift
 **Commit**: `b986989e8345d75653b7f47397eb65bac317cd39`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/868)
