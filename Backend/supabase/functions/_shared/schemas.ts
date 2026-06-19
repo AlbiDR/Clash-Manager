@@ -232,3 +232,10 @@ export const RoyaleClanDetailSchema = v.intersect([
 export const RoyaleRankingListSchema = v.object({
     items: v.array(v.record(v.string(), v.unknown()))
 });
+
+/** [GUARD] Integrity Check Details Schema. */
+export const IntegrityCheckDetailsSchema = v.object({
+    passed: v.boolean(),
+    details: v.optional(v.string()),
+    issues: v.optional(v.array(v.any()))
+});
