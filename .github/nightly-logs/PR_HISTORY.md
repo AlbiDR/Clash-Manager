@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-19] PR #868: docs(readme): reconcile voyage feature drift
+**Commit**: `b986989e8345d75653b7f47397eb65bac317cd39`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/868)
+
+### Description
+Reconciled documentation drift in the Voyage feature (`Frontend-PWA/src/features/voyage/README.md`) to reflect implementation ground truth. Added the `useVoyageStatus.ts` subsystem (centralizing countdown and progress normalization), updated component descriptions to reflect logic delegation, and included the `setVoyageEnd` action. Updated the authoritative audit log.
+
+---
+*PR created automatically by Jules for task [15159076923898030754](https://jules.google.com/task/15159076923898030754) started by @AlbiDR*
+
+---
+
 ## [2026-06-19] PR #867: Centralize Voyage Status Logic
 **Commit**: `14a9469e599facec473c49337c31e8142bc631ef`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/867)
