@@ -5,8 +5,29 @@ import * as v from "valibot";
 import { SafeStringPipe, SafeNumberPipe } from "./BaseSchemas";
 
 /**
+ * MEMBER SCHEMAS (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: Centralizes validation boundaries for clan roster data.
+ * Ensures structural integrity between the Supabase persistence layer and
+ * the PWA domain logic.
+ *
+ * ARCHITECTURAL CONTEXT:
+ * - Layer: Layer 1 (@core)
+ * - ADR Reference: Section III: Data Flow & Transactional Integrity
+ * ----------------------------------------------------------------------------
+ */
+
+/**
  * [GUARD] MEMBER SCHEMA
- * Domain-compliant schema for clan roster members.
+ * Authoritative domain-compliant schema for clan roster members.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Domain Model Transformation.
+ * This schema defines a 'Persistence-Ignorant' domain object, decoupled from
+ * raw database column names. It serves as the target for DTO mapping in Layer 1.
+ *
+ * [THREAT:] Structural drift in domain models can cause silent failures in
+ * UI components that rely on specific property paths.
  */
 export const MemberSchema = v.object({
   id: SafeStringPipe,
@@ -30,6 +51,17 @@ export const MemberSchema = v.object({
 /**
  * [GUARD] SUPABASE ROSTER ROW SCHEMA
  * Validates the raw shape of a row from the roster_view.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundary (Schema-Gatekeeper).
+ * This schema acts as the primary gatekeeper for raw data entering from
+ * the Supabase 'roster_view'. It handles optionality and nullability
+ * to ensure stable ingestion even if the underlying view undergoes minor shifts.
+ *
+ * [THREAT:] Database schema evolution without corresponding frontend updates
+ * can lead to hydration failures.
+ * [DECISION LOG] Utilizing 'v.optional' with sensible defaults to prevent
+ * runtime crashes if specific columns are temporarily missing or null.
  */
 export const SbRosterRowSchema = v.object({
   player_tag: v.optional(SafeStringPipe, ""),
