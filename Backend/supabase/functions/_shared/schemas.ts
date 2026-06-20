@@ -228,14 +228,26 @@ export const RoyaleClanDetailSchema = v.intersect([
     })
 ]);
 
+/** [GUARD] Royale Ranking Item Schema. */
+export const RoyaleRankingItemSchema = v.object({
+    tag: v.string(),
+    name: v.string(),
+    rank: v.number(),
+    trophies: v.optional(v.nullable(v.number())),
+    clan: v.optional(v.nullable(v.object({
+        tag: v.optional(v.string()),
+        name: v.optional(v.string())
+    })))
+});
+
 /** [GUARD] Royale Ranking List Schema. */
 export const RoyaleRankingListSchema = v.object({
-    items: v.array(v.record(v.string(), v.unknown()))
+    items: v.array(RoyaleRankingItemSchema)
 });
 
 /** [GUARD] Integrity Check Details Schema. */
 export const IntegrityCheckDetailsSchema = v.object({
     passed: v.boolean(),
     details: v.optional(v.string()),
-    issues: v.optional(v.array(v.any()))
+    issues: v.optional(v.array(v.unknown()))
 });
