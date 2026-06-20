@@ -86,3 +86,10 @@
 - Trigger Hardening: Verified 24 triggers use Postgres 17 CREATE OR REPLACE syntax.
 - Visual Purity: Confirmed 100% ASCII compliance (zero em-dashes/emojis).
 - Verification: 1295 passed (monorepo test gate confirmed state integrity).
+2026-06-20 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 1 (20260617013100_add_public_vault_secret_wrapper.sql)
+- Functions Updated: 1 (public.get_vault_secret)
+- Hardening: Verified SECURITY DEFINER and search_path for the new public wrapper.
+- Structural Audit: Verified 26 RLS declarations, 24 CREATE OR REPLACE TRIGGER statements, and 89 hardened functions.
+- Verification: 1271 passed, 1 skipped (monorepo test gate confirmed state integrity).
