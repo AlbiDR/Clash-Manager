@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-20] PR #876: refactor(opt): centralize tag normalization via cleanTag utility
+**Commit**: `596e141dea922ea20a4743796442d030d1a00dd5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/876)
+
+### Description
+Centralized player tag normalization logic across DataMappers, useShareTarget, and TargetPicker using the cleanTag utility. Performed a substrate hygiene audit to re-verify orphaned database views.
+
+---
+*PR created automatically by Jules for task [11200811524086614315](https://jules.google.com/task/11200811524086614315) started by @AlbiDR*
+
+---
+
 ## [2026-06-20] PR #875: chore(baseline): fold new migrations into master baseline
 **Commit**: `f4ae331fc57ccab495a3c0417bb52452963cec55`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/875)
