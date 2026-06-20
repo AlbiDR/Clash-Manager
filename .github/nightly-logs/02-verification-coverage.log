@@ -116,3 +116,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-06-16 | Frontend-PWA/src/core/services/usePwaManager.ts | Zero Coverage gap closed; saturating tests for SW updates, cache purging, and factory resets.
 2026-06-17 | Frontend-PWA/src/shared/ui/NavigationDock.vue | Zero Coverage gap closed; saturating tests for rendering, navigation, and haptics.
 2026-06-19 | Frontend-PWA/src/core/services/useExternalLink.ts | Saturating coverage for Native Bridge delegation, Android intent protocol, and hardware boundary failure modes.
+2026-06-20 | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Zero Coverage gap closed; saturating tests for countdown orchestration and progress normalization.
