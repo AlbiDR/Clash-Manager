@@ -1,6 +1,30 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-21] PR #883: chore(baseline): fold new migrations into master baseline
+**Commit**: `296eb9bccacba7c6e7f078e471fb5a00b1e7d351`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/883)
+
+### Description
+This submission performs the Stage 3 Baseline Consolidation and Declarative Schema Hardening for June 21, 2026. 
+
+The master baseline (`20260531232406_master_migration.sql`) was audited and confirmed to be fully synchronized with all incremental migrations (`20260614082900`, `20260615004900`, and `20260617013100`). 
+
+Key hardening measures verified:
+1. **Functions:** All 89 functions are hardened with `SECURITY DEFINER` and strict `SET search_path` isolation.
+2. **Tables:** All 26 tables utilize `IF NOT EXISTS` guards and have Row Level Security (RLS) enabled.
+3. **Triggers:** All 24 triggers utilize Postgres 17 `CREATE OR REPLACE TRIGGER` syntax.
+4. **Views:** All 11 views utilize `OR REPLACE` for idempotency.
+5. **Tag Integrity:** All Supercell tag columns (`player_tag`, `clan_tag`, etc.) utilize standardized case-sensitive regex `CHECK` constraints.
+6. **Visual Purity:** The entire schema baseline is 100% ASCII compliant, with no em-dashes or emojis.
+
+The night log `.github/nightly-logs/03-baseline-consolidation-coverage.log` has been updated with the results of this comprehensive audit. No schema drift was detected, confirming the master baseline is in perfect parity with the incremental history.
+
+---
+*PR created automatically by Jules for task [15921670774137507992](https://jules.google.com/task/15921670774137507992) started by @AlbiDR*
+
+---
+
 ## [2026-06-21] PR #882: test(verify): saturating coverage for formatNumber edge cases
 **Commit**: `157830adb9c87e546d33bbcfac8bca5cded78a02`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/882)
