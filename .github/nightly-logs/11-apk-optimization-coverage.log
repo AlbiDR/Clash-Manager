@@ -1,1 +1,2 @@
 
+2026-06-21 | Frontend-PWA/vite.config.ts & pwa-assets.config.ts | Optimized PWA/APK performance and assets: (1) Included '.webp' in SW precaching glob patterns. (2) Consolidated auxiliary vendor libraries into 'vendor-aux' chunk to reduce HTTP overhead. (3) Refined icon padding (0.05 for 'any', 0.16 for 'maskable') to optimize launcher representation. Verified via monorepo test gate (1274 pass).

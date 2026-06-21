@@ -19,7 +19,9 @@ export default defineConfig({
         background: APP_BACKGROUND_COLOR,
         fit: "contain" as const,
       },
-      padding: 0.1,
+      // [OPTIMIZATION] Reduced padding for 'any' icons to maximize visibility
+      // while maintaining the background safety margin.
+      padding: 0.05,
     },
     maskable: {
       // Both 192 and 512 maskable sizes: some Android versions prefer 192px
@@ -31,7 +33,9 @@ export default defineConfig({
       },
       // IMPORTANT: Android crops maskable icons.
       // 0.18 (18%) padding ensures the logo stays inside the "Safe Zone" circle.
-      padding: 0.18,
+      // [OPTIMIZATION] Slightly tightened to 0.16 to better utilize available
+      // real estate while remaining well within the 10% safety margin.
+      padding: 0.16,
     },
     apple: {
       sizes: [180] as const,
