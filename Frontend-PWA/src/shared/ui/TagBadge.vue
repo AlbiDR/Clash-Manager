@@ -3,6 +3,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import BaseBadge from "./BaseBadge.vue";
+import { formatDisplayTag } from "@core";
 
 /**
  * [UI] TAG BADGE
@@ -23,8 +24,8 @@ const props = defineProps<{
 </script>
 
 <template>
-  <BaseBadge class="tag" :aria-label="`Player tag: #${props.id}`">
-    #{{ props.id.substring(0, 5) }}
+  <BaseBadge class="tag" :aria-label="`Player tag: ${formatDisplayTag(props.id)}`">
+    {{ formatDisplayTag(props.id) }}
   </BaseBadge>
 </template>
 
