@@ -6,7 +6,7 @@ import { useExternalLink, buildDeepLink } from "@core/services/useExternalLink";
 import { useToast } from "@core/services/useToast";
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
-import { WindowWithBridge } from "@core/types";
+import { type WindowWithBridge } from "@core";
 
 interface BlitzOptions {
   throttleMs?: number;
