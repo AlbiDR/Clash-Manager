@@ -38,6 +38,20 @@ export function cleanTag(tag: string | undefined): string {
 }
 
 /**
+ * FORMAT DISPLAY TAG
+ * Standardizes the visual presentation of tags (e.g., '#ABC12').
+ * Truncates to 5 characters and ensures the '#' prefix is present.
+ *
+ * @param tag - The raw player or clan tag.
+ * @returns A formatted tag string for UI display.
+ */
+export function formatDisplayTag(tag: string | undefined): string {
+  const cleaned = cleanTag(tag);
+  if (!cleaned) return "";
+  return `#${cleaned.substring(0, 5)}`;
+}
+
+/**
  * DESCRIPTION FORMATTER
  * Converts markdown-ish strings from remote data sources into semantic HTML.
  *
