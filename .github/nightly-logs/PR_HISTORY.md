@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-21] PR #887: chore(version): no drift found
+**Commit**: `6436d99c874199d0c96ea16305b6639c33174a05`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/887)
+
+### Description
+Performed a comprehensive version integrity audit across the monorepo. Confirmed that all package manifests, substrate files, and documentation are synchronized at the ground truth version 14.0.0. Verified that shared dependencies correctly utilize the PNPM catalog protocol. No version drift was detected. Updated the version integrity coverage log with today's audit results.
+
+---
+*PR created automatically by Jules for task [2876294768568319989](https://jules.google.com/task/2876294768568319989) started by @AlbiDR*
+
+---
+
 ## [2026-06-21] PR #886: docs(tsdoc): document adaptive haptics engine
 **Commit**: `e4896f74d3b59bfe77d6b70c01b1d9cb61335dc1`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/886)
