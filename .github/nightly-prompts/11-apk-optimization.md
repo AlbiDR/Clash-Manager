@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# [Stage 11] APK - APK & Native Wrapper Optimizations
+# [Stage 11] APK & Native Wrapper Optimizations
 
 ---
 role: APK-Optimization
@@ -20,7 +20,7 @@ forbidden-actions: [apply_migration, execute_sql, cosmetic-changes]
 
 ## [Base 1] Nightly Pipeline Sequence
 
-The pipeline operates in an 11-stage sequence where each stage runs as an atomic, self-contained run:
+The pipeline operates in a 12-stage sequence where each stage runs as an atomic, self-contained run:
 1. **Harden (Stage 1):** Security and Runtime Integrity.
 2. **Verify (Stage 2):** Test Suite and Logic Proof.
 3. **Baseline-Consolidation (Stage 3):** Database Schema Baselining.
@@ -32,6 +32,7 @@ The pipeline operates in an 11-stage sequence where each stage runs as an atomic
 9. **Refactor (Stage 9):** Structural Architect.
 10. **APK-Integrity (Stage 10):** APK and PWA Wrapper Integrity.
 11. **APK-Optimization (Stage 11):** APK and Native Wrapper Optimizations.
+12. **APK-UX (Stage 12):** Hybrid Shell UX and UI Auditor.
 
 ---
 

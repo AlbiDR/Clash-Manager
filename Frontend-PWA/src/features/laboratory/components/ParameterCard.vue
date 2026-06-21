@@ -8,7 +8,7 @@
  * Manages simulation parameters for the Laboratory engine.
  * Following Layer 3 (@features) isolation rules.
  */
-import { Icon, SettingRow } from "@shared";
+import { Icon, SettingRow, BaseSelect } from "@shared";
 import { computed } from "vue";
 import { type OptimizationSettings, type OptimizationResult } from "../logic";
 import { IMPORTANT_KING_LEVELS, KING_LEVEL_MAX } from "@core";
@@ -34,8 +34,7 @@ const setStrategy = (strategyType: "Level Projection" | "Resource Efficiency") =
   emit("update", { ...props.settings, ...updates });
 };
 
-const handleTargetChange = (changeEvent: Event) => {
-  const targetLevelValue = parseInt((changeEvent.target as HTMLSelectElement).value);
+const handleTargetChange = (targetLevelValue: number) => {
   emit("update", { targetLevel: targetLevelValue });
 };
 
@@ -43,14 +42,24 @@ const toggleGemSpending = () => {
   emit("update", { allowGemSpending: !props.settings.allowGemSpending });
 };
 
-const filteredLevels = computed(() => {
-  return Array.from({ length: KING_LEVEL_MAX }, (_, i) => i + 1).filter(level => {
-    // Current and future levels are always shown
-    if (level >= props.currentLevel) return true;
-    // Past levels only shown if they are milestones
-    // [THREAT:] The 'any' pathogen is removed to ensure type-safe includes() check.
-    return IMPORTANT_KING_LEVELS.includes(level);
-  });
+const selectOptions = computed(() => {
+  return Array.from({ length: KING_LEVEL_MAX }, (_, i) => i + 1)
+    .filter(level => {
+      // Current and future levels are always shown
+      if (level >= props.currentLevel) return true;
+      // Past levels only shown if they are milestones
+      return IMPORTANT_KING_LEVELS.includes(level);
+    })
+    .map(level => {
+      const isMilestone = IMPORTANT_KING_LEVELS.includes(level);
+      const isPast = level <= props.currentLevel;
+      return {
+        label: `Level ${String(level).padStart(2, '0')} ${isMilestone ? '•' : ''}`,
+        value: level,
+        disabled: level <= props.currentLevel,
+        class: `${isMilestone ? 'milestone' : ''} ${isPast ? 'past' : ''}`.trim()
+      };
+    });
 });
 
 const baseUrl = import.meta.env.BASE_URL;
@@ -99,25 +108,12 @@ const baseUrl = import.meta.env.BASE_URL;
       <div class="parameter-item" v-if="settings.strategy === 'Level Projection'">
         <label class="parameter-label">Target King Level</label>
         <div class="select-wrapper">
-          <select 
-            class="level-select" 
-            :value="settings.targetLevel || KING_LEVEL_MAX"
-            @change="handleTargetChange"
-          >
-            <option 
-              v-for="level in filteredLevels" 
-              :key="level" 
-              :value="level"
-              :disabled="level <= currentLevel"
-              :class="{ 
-              milestone: IMPORTANT_KING_LEVELS.includes(level),
-                past: level <= currentLevel 
-              }"
-            >
-            Level {{ String(level).padStart(2, '0') }} {{ IMPORTANT_KING_LEVELS.includes(level) ? '•' : '' }}
-            </option>
-          </select>
-          <Icon name="chevron-down" size="14" class="select-icon" />
+          <BaseSelect
+            :model-value="settings.targetLevel || KING_LEVEL_MAX"
+            :options="selectOptions"
+            aria-label="Target King Level"
+            @update:model-value="handleTargetChange"
+          />
         </div>
         
         <div v-if="operation && settings.targetLevel && operation.projectedKingLevel < settings.targetLevel" class="limit-warning">

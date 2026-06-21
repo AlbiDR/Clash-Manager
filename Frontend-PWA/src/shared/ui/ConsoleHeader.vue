@@ -6,6 +6,7 @@ import { useHaptics } from "@core";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
+import BaseSelect from "./BaseSelect.vue";
 
 const props = defineProps<{
   title: string;
@@ -118,23 +119,12 @@ const handleOpenDashboard = () => {
         <slot name="filters"></slot>
 
         <div v-if="props.sortOptions" class="sort-box">
-          <div class="sort-select-wrapper">
-            <select
-              :value="props.currentSort"
-              class="sort-select"
-              aria-label="Sort by"
-              @change="(e) => emit('update:sort', (e.target as HTMLSelectElement).value)"
-            >
-              <option
-                v-for="opt in props.sortOptions"
-                :key="opt.value"
-                :value="opt.value"
-              >
-                {{ opt.label }}
-              </option>
-            </select>
-            <Icon name="chevron-down" size="14" class="sort-chevron" />
-          </div>
+          <BaseSelect
+            :model-value="props.currentSort"
+            :options="props.sortOptions"
+            aria-label="Sort by"
+            @update:model-value="(val) => emit('update:sort', val)"
+          />
           <span v-if="activeSortDescription" class="sort-desc">
             {{ activeSortDescription }}
           </span>

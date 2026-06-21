@@ -93,8 +93,8 @@ describe("ConsoleHeader", () => {
       props: { title: "Sort Test", showSearch: true, sortOptions, currentSort: "name" },
     });
 
-    const select = wrapper.find(".sort-select");
-    await select.setValue("level");
+    const select = wrapper.findComponent({ name: "BaseSelect" });
+    select.vm.$emit("update:modelValue", "level");
 
     expect(wrapper.emitted("update:sort")?.[0]).toEqual(["level"]);
   });
