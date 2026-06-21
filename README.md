@@ -62,7 +62,7 @@ The system replaces intuition with a **Complex Valuation Metric** that sorts pla
 <details>
 <summary><strong>Internal Metrics: Clan Roster (RPeS & PeS)</strong></summary>
 
-- **RPeS (Raw Performance Score)**: The absolute value derived from a member's contributions while being part of the clan (donations, war fame, war participation, trophies, tenure Clan Voyage participation).
+- **RPeS (Raw Performance Score)**: The absolute value derived from a member's contributions while being part of the clan (donations, war fame, war participation, trophies, tenure, Clan Voyage participation).
 - **PeS (Performance Score)**: A relative percentage (0-100%) normalized against active clan benchmarks and adjusted via Inertia & Heritage logic.
 - **Inertia & Heritage**: Algorithmic decay applied to stagnant profiles, balanced by momentum tracking for incoming recruits to eliminate historic stat bias.
 
