@@ -264,6 +264,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: Beta
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -277,9 +278,7 @@ jobs:
 
       - name: Verify Beta Stability (Air Gap Guard)
         run: |
-          git checkout Beta
-          git pull origin Beta
-          pnpm install --no-frozen-lockfile
+          pnpm install --no-frozen-lockfile --prefer-offline
           if ! pnpm test; then
              echo "### Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
              echo "Unit tests failed on Beta. Downstream sync to Nightly aborted to protect the automated environment from contaminated state." >> $GITHUB_STEP_SUMMARY
