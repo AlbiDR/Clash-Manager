@@ -84,6 +84,7 @@ async function harvestClanlessPlayers(
 
   // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
   // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in rankings.
+  // [DECISION LOG] Transitioned to RoyaleRankingListSchema for strict structural enforcement.
   const rankingValidation = v.safeParse(RoyaleRankingListSchema, rawPlayerRankingPayload);
 
   logAudit("HARVEST_PLAYERS_INTEGRITY", "integrity_checked", {
@@ -110,19 +111,19 @@ async function harvestClanlessPlayers(
   // We filter them out at the earliest possible point in the pipeline.
   //
   // [THREAT:] The Royale API rankings endpoint may return an empty clan object {}
-  // for clanless players rather than omitting the key entirely. Checking !player.clan
-  // alone is insufficient because !{} evaluates to false (truthy object). We must
-  // inspect clan.tag specifically to correctly classify clanless players.
-  const clanlessPlayers = rankingItems.filter((player) => {
-    const clan = player.clan as Record<string, unknown> | null | undefined;
-    return !clan || !clan.tag;
+  // for clanless players rather than omitting the key entirely. Checking !rankingItem.clan
+  // alone is insufficient because !{} evaluates to false (truthy object).
+  // [GUARD] We use strict schema validation to ensure clan.tag presence.
+  const clanlessPlayers = rankingItems.filter((rankingItem) => {
+    const rankingClan = rankingItem.clan;
+    return !rankingClan || !rankingClan.tag;
   });
 
   console.log(`[HARVEST] Clanless players after filter: ${clanlessPlayers.length}`);
 
-  return clanlessPlayers.map((player) => ({
-    tag: typeof player.tag === "string" ? player.tag : String(player.tag ?? ""),
-    name: typeof player.name === "string" ? player.name : String(player.name ?? ""),
+  return clanlessPlayers.map((rankingItem) => ({
+    tag: rankingItem.tag,
+    name: rankingItem.name,
     clan: null
   }));
 }
@@ -134,21 +135,21 @@ async function harvestClanlessPlayers(
  * Satisfies ADR Section II: Control Layer.
  * Orchestrates the secure proxying of Royale API discovery queries.
  */
-Deno.serve(async (req) => {
+Deno.serve(async (request) => {
   await syncVault();
 
   return await clinicalServe({
-    req,
+    req: request,
     supabase,
     bearerToken: [CONFIG.INTERNAL_BEARER_TOKEN, CONFIG.SUPABASE_ANON_KEY],
     eventType: "ROYALE_API_QUERY",
     componentId: "ROYALE_API_PROXY",
     schema: PayloadSchema,
-    handler: async (payload, logAudit) => {
-      const mode = payload.endpoint;
-      logAudit("HARVEST_START", "called", { mode });
+    handler: async (queryPayload, logAudit) => {
+      const harvestMode = queryPayload.endpoint;
+      logAudit("HARVEST_START", "called", { mode: harvestMode });
 
-      if (mode === "global") {
+      if (harvestMode === "global") {
         logAudit("GLOBAL_HARVEST", "called", { location: GLOBAL_LOCATION });
         // [DECISION LOG] "global" is a first-class location on the Path of Legends
         // rankings endpoint, returning the live worldwide top 1000 in one request.

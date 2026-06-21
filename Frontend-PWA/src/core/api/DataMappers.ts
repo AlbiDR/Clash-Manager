@@ -3,6 +3,7 @@
 
 import * as v from "valibot";
 import type { LeaderboardMember, Recruit } from "@core/types";
+import { cleanTag } from "@core";
 import { SbRosterRowSchema } from "./MemberSchemas";
 import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 
@@ -26,7 +27,7 @@ import { SbHeadhunterRowSchema } from "./RecruitSchemas";
  */
 export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema>): LeaderboardMember {
   return {
-    id: rosterRow.player_tag?.replace('#', '') || '',
+    id: cleanTag(rosterRow.player_tag),
     n: rosterRow.player_name || '',
     t: Number(rosterRow.trophies) || 0,
     performanceScore: Number(rosterRow.performance_score) || 0,
@@ -65,7 +66,7 @@ export function mapSbHeadhunterRow(headhunterRow: v.InferOutput<typeof SbHeadhun
   // If the processed potential_score is zero but raw data exists, fallback to raw score.
   const finalPotentialScore = potentialScore || rawPotentialScore;
   return {
-    id: headhunterRow.player_tag?.replace('#', '') || '',
+    id: cleanTag(headhunterRow.player_tag),
     n: headhunterRow.player_name || '',
     t: Number(headhunterRow.trophies) || 0,
     potentialScore: finalPotentialScore,

@@ -10,12 +10,19 @@
  */
 import { Icon, SettingRow } from "@shared";
 import { computed } from "vue";
-import { type OptimizationSettings } from "../logic";
+import { type OptimizationSettings, type OptimizationResult } from "../logic";
 import { IMPORTANT_KING_LEVELS, KING_LEVEL_MAX } from "@core";
+
+/**
+ * [DECISION LOG] Prop types are strictly enforced to satisfy the CleanStack
+ * Architecture's mandate to excise 'any' pathogens at component boundaries.
+ */
 const props = defineProps<{
   settings: OptimizationSettings;
   currentLevel: number;
-  operation?: any;
+  // [THREAT:] External simulation result is un-trusted. Replacing implicit 'any'
+  // with 'OptimizationResult' to ensure structural contract enforcement.
+  operation?: OptimizationResult;
 }>();
 
 const emit = defineEmits<{
@@ -41,7 +48,8 @@ const filteredLevels = computed(() => {
     // Current and future levels are always shown
     if (level >= props.currentLevel) return true;
     // Past levels only shown if they are milestones
-    return IMPORTANT_KING_LEVELS.includes(level as any);
+    // [THREAT:] The 'any' pathogen is removed to ensure type-safe includes() check.
+    return IMPORTANT_KING_LEVELS.includes(level);
   });
 });
 
@@ -102,11 +110,11 @@ const baseUrl = import.meta.env.BASE_URL;
               :value="level"
               :disabled="level <= currentLevel"
               :class="{ 
-                milestone: IMPORTANT_KING_LEVELS.includes(level as any),
+              milestone: IMPORTANT_KING_LEVELS.includes(level),
                 past: level <= currentLevel 
               }"
             >
-              Level {{ String(level).padStart(2, '0') }} {{ IMPORTANT_KING_LEVELS.includes(level as any) ? '•' : '' }}
+            Level {{ String(level).padStart(2, '0') }} {{ IMPORTANT_KING_LEVELS.includes(level) ? '•' : '' }}
             </option>
           </select>
           <Icon name="chevron-down" size="14" class="select-icon" />

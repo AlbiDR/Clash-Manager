@@ -52,7 +52,7 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 ---
 
 ## IV. The Clinical Ingestion Pipeline
-Ingestion is performed via a **Penta-Engine Edge Architecture**, supported by automated database shredders and the authoritative maintenance orchestrator.
+Ingestion is performed via a **Hexa-Engine Edge Architecture**, supported by automated database shredders and the authoritative maintenance orchestrator.
 
 1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the clinical synchronization protocol. Features strict Valibot-enforced structural validation and a clinical Hexa-Stage synchronization protocol. While implemented as a unified pipeline for efficiency, it conceptually covers 6 stages:
     - **S1 (Discovery)**: Harvests new recruits from high-fidelity tournament anchors.
@@ -137,4 +137,4 @@ supabase functions deploy fetch-player-battlelog --no-verify-jwt
 
 > [!NOTE]
 > This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> *Compiled: 2026-06-15 by Jules (Stage 5 Archivist)*
+> *Compiled: 2026-06-21 by Jules (Stage 5 Archivist)*

@@ -29,7 +29,14 @@ describe("TagBadge.vue", () => {
     const wrapper = mount(TagBadge, {
       props: { id }
     });
-    expect(wrapper.attributes("aria-label")).toBe(`Player tag: #${id}`);
+    expect(wrapper.attributes("aria-label")).toBe(`Player tag: #TAG99`);
+  });
+
+  it("handles tags that already have a '#' prefix", () => {
+    const wrapper = mount(TagBadge, {
+      props: { id: "#ABC1234" }
+    });
+    expect(wrapper.text()).toBe("#ABC12");
   });
 
   it("applies the tag class to the base badge", () => {

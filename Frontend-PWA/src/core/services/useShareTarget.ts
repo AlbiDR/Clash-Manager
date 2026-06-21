@@ -3,6 +3,7 @@
 
 import { useToast } from "./useToast";
 import { useRouter } from "vue-router";
+import { cleanTag } from "@core";
 
 /**
  * SHARE TARGET SERVICE (Layer 1)
@@ -51,7 +52,7 @@ export function useShareTarget() {
       const tagMatch = text.match(/(?:#|tag=)([0-9A-Z]{3,9})/i);
 
       if (tagMatch && tagMatch[1]) {
-        const extractedTag = tagMatch[1].toUpperCase();
+        const extractedTag = cleanTag(tagMatch[1]);
         success(`Shared Tag Found: #${extractedTag}`);
 
         // Clean URL: Remove the share parameters from the browser history
