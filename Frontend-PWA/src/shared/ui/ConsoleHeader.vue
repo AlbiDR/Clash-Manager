@@ -6,6 +6,7 @@ import { useHaptics } from "@core";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
+import BaseSelect from "./BaseSelect.vue";
 
 const props = defineProps<{
   title: string;
@@ -118,23 +119,12 @@ const handleOpenDashboard = () => {
         <slot name="filters"></slot>
 
         <div v-if="props.sortOptions" class="sort-box">
-          <div class="sort-select-wrapper">
-            <select
-              :value="props.currentSort"
-              class="sort-select"
-              aria-label="Sort by"
-              @change="(e) => emit('update:sort', (e.target as HTMLSelectElement).value)"
-            >
-              <option
-                v-for="opt in props.sortOptions"
-                :key="opt.value"
-                :value="opt.value"
-              >
-                {{ opt.label }}
-              </option>
-            </select>
-            <Icon name="chevron-down" size="14" class="sort-chevron" />
-          </div>
+          <BaseSelect
+            :model-value="props.currentSort"
+            :options="props.sortOptions"
+            aria-label="Sort by"
+            @update:model-value="(val) => emit('update:sort', val)"
+          />
           <span v-if="activeSortDescription" class="sort-desc">
             {{ activeSortDescription }}
           </span>
@@ -309,36 +299,6 @@ const handleOpenDashboard = () => {
   flex-shrink: 0;
   width: auto;
   min-width: 110px;
-}
-
-.sort-select-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.sort-select {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  padding-right: 32px;
-  background: var(--sys-surf-c);
-  border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  border-radius: 10px;
-  appearance: none;
-  color: var(--sys-text-secondary);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.sort-chevron {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sys-text-tertiary);
-  pointer-events: none;
 }
 
 .sort-desc {
