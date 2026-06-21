@@ -139,6 +139,19 @@ export async function executeScanner(
     }
     await heartbeat('S4_RESCAN', stats);
 
+    // --- EPOCH GUARD FEEDBACK ---
+    // Report the top-50 outcome to the epoch guard state machine so it can
+    // decide whether to arm (top50 = 0) or disarm (top50 >= 1) for this cycle.
+    // Non-fatal: a telemetry write failure must never abort the scanner result.
+    try {
+        await supabase.rpc('update_epoch_state', { p_top50: stats.new_recruits_top50 ?? 0 });
+        logAudit('EPOCH_GUARD', 'terminated', { new_recruits_top50: stats.new_recruits_top50 ?? 0 });
+    } catch (epochStateError: unknown) {
+        const message = epochStateError instanceof Error ? epochStateError.message : String(epochStateError);
+        stats.errors.push(`EPOCH_GUARD: ${message}`);
+        logAudit('EPOCH_GUARD', 'error', { message });
+    }
+
     return {
         ...stats,
         duration_ms: Date.now() - startTime
