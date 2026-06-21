@@ -111,5 +111,19 @@ describe("math utilities", () => {
       const expected = new Intl.NumberFormat().format(val);
       expect(formatNumber(val)).toBe(expected);
     });
+
+    it("handles null, undefined, and NaN by defaulting to 0", () => {
+      const expectedZero = new Intl.NumberFormat().format(0);
+      expect(formatNumber(null)).toBe(expectedZero);
+      expect(formatNumber(undefined)).toBe(expectedZero);
+      expect(formatNumber(NaN)).toBe(expectedZero);
+    });
+
+    it("supports custom Intl.NumberFormatOptions", () => {
+      const val = 0.1234;
+      const options: Intl.NumberFormatOptions = { style: "percent", minimumFractionDigits: 2 };
+      const expected = new Intl.NumberFormat(undefined, options).format(val);
+      expect(formatNumber(val, options)).toBe(expected);
+    });
   });
 });
