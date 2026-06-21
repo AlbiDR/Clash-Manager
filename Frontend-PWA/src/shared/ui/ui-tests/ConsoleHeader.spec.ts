@@ -94,7 +94,7 @@ describe("ConsoleHeader", () => {
     });
 
     const select = wrapper.findComponent({ name: "BaseSelect" });
-    select.vm.$emit("update:modelValue", "level");
+    await select.vm.$emit("update:modelValue", "level");
 
     expect(wrapper.emitted("update:sort")?.[0]).toEqual(["level"]);
   });

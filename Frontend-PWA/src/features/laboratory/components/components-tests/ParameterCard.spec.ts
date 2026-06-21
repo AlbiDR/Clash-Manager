@@ -66,7 +66,7 @@ describe("ParameterCard.vue", () => {
     const wrapper = createWrapper();
     const select = wrapper.findComponent({ name: "BaseSelect" });
 
-    select.vm.$emit("update:modelValue", 15);
+    await select.vm.$emit("update:modelValue", 15);
 
     expect(wrapper.emitted("update")).toBeTruthy();
     expect(wrapper.emitted("update")![0]).toEqual([{
@@ -97,7 +97,7 @@ describe("ParameterCard.vue", () => {
     const currentLevel = 50;
     const wrapper = createWrapper({ currentLevel });
     const select = wrapper.findComponent({ name: "BaseSelect" });
-    const options = select.props("options") as any[];
+    const options = select.props("options");
 
     // IMPORTANT_KING_LEVELS = [2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 75, 80, 85, 90]
     // For currentLevel 50:
@@ -105,7 +105,7 @@ describe("ParameterCard.vue", () => {
     // level 51-90: future -> shown
     // level 50: NOT a milestone and NOT > 50 -> NOT shown
 
-    const shownLevels = options.map(o => o.value);
+    const shownLevels = options.map((o: any) => o.value);
     expect(shownLevels).toContain(14);
     expect(shownLevels).toContain(42);
     expect(shownLevels).toContain(54); // Milestone > 50
@@ -117,10 +117,10 @@ describe("ParameterCard.vue", () => {
     expect(shownLevels).not.toContain(13); // Not a milestone and < 50
 
     // Check if past levels are disabled
-    const level14Option = options.find(o => o.value === 14);
+    const level14Option = options.find((o: any) => o.value === 14);
     expect(level14Option?.disabled).toBe(true);
 
-    const level51Option = options.find(o => o.value === 51);
+    const level51Option = options.find((o: any) => o.value === 51);
     expect(level51Option?.disabled).toBe(false);
   });
 });

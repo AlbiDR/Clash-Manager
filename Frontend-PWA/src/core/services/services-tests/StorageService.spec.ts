@@ -133,7 +133,7 @@ describe("StorageService", () => {
           const req = createMockRequest();
           if (name === "test-db") {
             req.result = { close: vi.fn() };
-          } else if (name === "clash_manager_v11") {
+          } else if (name === "clash_manager_v14") {
             req.result = newDb;
           } else if (name === "clash_manager_db") {
             req.result = legacyDb;

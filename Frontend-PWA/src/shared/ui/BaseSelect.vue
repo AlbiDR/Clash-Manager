@@ -203,6 +203,16 @@ const getSelectedLabel = () => {
   cursor: not-allowed;
 }
 
+/* Support for custom semantic classes from parents */
+.option-item.milestone {
+  font-weight: 900;
+  color: var(--sys-color-primary);
+}
+
+.option-item.past {
+  opacity: 0.5;
+}
+
 /* Animations */
 .fade-slide-enter-active,
 .fade-slide-leave-active {

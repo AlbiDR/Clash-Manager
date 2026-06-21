@@ -301,36 +301,6 @@ const handleOpenDashboard = () => {
   min-width: 110px;
 }
 
-.sort-select-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.sort-select {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  padding-right: 32px;
-  background: var(--sys-surf-c);
-  border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  border-radius: 10px;
-  appearance: none;
-  color: var(--sys-text-secondary);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.sort-chevron {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sys-text-tertiary);
-  pointer-events: none;
-}
-
 .sort-desc {
   display: none;
 }

@@ -1,1 +1,7 @@
 
+[2026-06-21] Stage 10: APK & PWA Wrapper Integrity Audit
+- Synchronized Android package name in assetlinks generator: com.albidr.clashmanager -> com.clashmanager.
+- Incremented STORAGE_DB_NAME to clash_manager_v14 (Major 14 alignment).
+- Updated STORAGE_DEPRECATED_DB_NAMES to include v11, v12, v13 for maintenance purging.
+- Verified storage migration logic via updated unit tests (StorageService.spec.ts).
+- Validated project integrity via validate_project.ts (All systems nominal).

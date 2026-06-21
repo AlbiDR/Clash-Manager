@@ -34,10 +34,6 @@ const setStrategy = (strategyType: "Level Projection" | "Resource Efficiency") =
   emit("update", { ...props.settings, ...updates });
 };
 
-const handleTargetChange = (targetLevelValue: number) => {
-  emit("update", { targetLevel: targetLevelValue });
-};
-
 const toggleGemSpending = () => {
   emit("update", { allowGemSpending: !props.settings.allowGemSpending });
 };
@@ -60,6 +56,15 @@ const selectOptions = computed(() => {
         class: `${isMilestone ? 'milestone' : ''} ${isPast ? 'past' : ''}`.trim()
       };
     });
+});
+
+const levelOptions = computed(() => {
+  return filteredLevels.value.map(level => ({
+    label: `Level ${String(level).padStart(2, '0')} ${IMPORTANT_KING_LEVELS.includes(level) ? '•' : ''}`,
+    value: level,
+    disabled: level <= props.currentLevel,
+    class: level <= props.currentLevel ? 'past' : (IMPORTANT_KING_LEVELS.includes(level) ? 'milestone' : '')
+  }));
 });
 
 const baseUrl = import.meta.env.BASE_URL;
@@ -107,14 +112,11 @@ const baseUrl = import.meta.env.BASE_URL;
       <!-- Target Level Selector -->
       <div class="parameter-item" v-if="settings.strategy === 'Level Projection'">
         <label class="parameter-label">Target King Level</label>
-        <div class="select-wrapper">
-          <BaseSelect
-            :model-value="settings.targetLevel || KING_LEVEL_MAX"
-            :options="selectOptions"
-            aria-label="Target King Level"
-            @update:model-value="handleTargetChange"
-          />
-        </div>
+        <BaseSelect
+          :model-value="settings.targetLevel || KING_LEVEL_MAX"
+          :options="levelOptions"
+          @update:model-value="(val) => emit('update', { targetLevel: val })"
+        />
         
         <div v-if="operation && settings.targetLevel && operation.projectedKingLevel < settings.targetLevel" class="limit-warning">
           <Icon name="warning" size="12" />
@@ -220,48 +222,6 @@ const baseUrl = import.meta.env.BASE_URL;
 .strategy-desc p {
   opacity: 0.8;
   margin: 0;
-}
-
-.select-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.level-select {
-  appearance: none;
-  background: var(--sys-color-surface-container);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-medium);
-  padding: 12px 14px;
-  font-family: var(--sys-font-family-mono);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--sys-color-on-surface);
-  width: 100%;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.level-select:focus {
-  outline: none;
-  border-color: var(--sys-color-primary);
-}
-
-.level-select option.milestone {
-  font-weight: 900;
-  color: var(--sys-color-primary);
-}
-
-.level-select option.past {
-  opacity: 0.5;
-}
-
-.select-icon {
-  position: absolute;
-  right: 14px;
-  pointer-events: none;
-  opacity: 0.4;
 }
 
 .parameter-toggle {
