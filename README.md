@@ -122,6 +122,9 @@ The command center. A **Vue 3.5 Progressive Web Application** designed for admin
 
 ## Architectural Topology
 
+<details>
+<summary><strong>View System Data Flow</strong></summary>
+
 The system utilizes a linear, high-integrity data flow with sub-second interaction latency.
 
 ```mermaid
@@ -148,6 +151,8 @@ flowchart TD
     UI <-->|Hydration| Cache
     UI -->|Manual Trigger| Edge
 ```
+
+</details>
 
 ---
 <br />
