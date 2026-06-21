@@ -46,17 +46,22 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("vue") || id.includes("vue-router")) {
+            // Core Vue Ecosystem (Prioritized for fast PWA boot)
+            if (
+              id.includes("vue") ||
+              id.includes("vue-router") ||
+              id.includes("pinia")
+            ) {
               return "vendor-core";
             }
-            if (id.includes("valibot")) {
-              return "vendor-validation";
-            }
-            if (id.includes("workbox-")) {
-              return "vendor-pwa";
-            }
-            if (id.includes("@formkit")) {
-              return "vendor-ui-deps";
+            // Auxiliary Libraries (Consolidated to reduce HTTP overhead in WebView)
+            if (
+              id.includes("valibot") ||
+              id.includes("workbox-") ||
+              id.includes("@formkit") ||
+              id.includes("@supabase")
+            ) {
+              return "vendor-aux";
             }
             return "vendor-stable";
           }
@@ -86,7 +91,8 @@ export default defineConfig({
       filename: "sw.ts",
       manifest: false, // Already exists in public/manifest.json
       injectManifest: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // [OPTIMIZATION] Included webp for high-resolution game assets and screenshots
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {
