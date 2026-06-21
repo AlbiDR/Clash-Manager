@@ -3,7 +3,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, nextTick } from "vue";
 import { SettingRow, SettingsCard, vTactile } from "@shared";
-import { WindowWithBridge } from "@core";
+import { type WindowWithBridge } from "@core";
 import { useSettings } from "../composables/useSettings";
 
 defineProps<{

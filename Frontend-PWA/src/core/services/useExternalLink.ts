@@ -3,7 +3,7 @@
 
 import { useToast } from "./useToast";
 import { cleanTag } from "@core";
-import { WindowWithBridge } from "../types";
+import { type WindowWithBridge } from "@core";
 
 /**
  * COMPOSABLE: useExternalLink
