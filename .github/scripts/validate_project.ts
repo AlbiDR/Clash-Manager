@@ -1,13 +1,13 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 /**
  * ============================================================================
  * SCRIPT: VALIDATE PROJECT
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Comprehensive integrity check for the entire repository.
- * VERSION: 2.1.0
+ * Enforces versioning, catalog requirements, DB baseline checks, and env sync.
  * ============================================================================
  */
 
@@ -16,14 +16,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- Configuration & Paths ---
-const ROOT_DIR = path.resolve(__dirname, "../../");
-const PWA_DIR = path.join(ROOT_DIR, "Frontend-PWA");
+const ROOT_DIR = path.resolve(__dirname, '../../');
+const PWA_DIR = path.join(ROOT_DIR, 'Frontend-PWA');
+const BACKEND_DIR = path.join(ROOT_DIR, 'Backend');
 
 const PATHS = {
-  packageJson: path.join(PWA_DIR, "package.json"),
-  readme: path.join(ROOT_DIR, "README.md"),
-  env: path.join(PWA_DIR, ".env"),
+  packageJson: path.join(PWA_DIR, 'package.json'),
+  readme: path.join(ROOT_DIR, 'README.md'),
+  env: path.join(PWA_DIR, '.env'),
+  rootPkg: path.join(ROOT_DIR, 'package.json'),
+  pwaPkg: path.join(PWA_DIR, 'package.json'),
+  backendPkg: path.join(BACKEND_DIR, 'package.json'),
+  htmlEntry: path.join(PWA_DIR, 'src', 'core', 'theme', 'HtmlEntry.ts'),
+  manifest: path.join(PWA_DIR, 'public', 'manifest.json'),
+  progressiveList: path.join(PWA_DIR, 'src', 'core', 'services', 'useProgressiveList.ts'),
+  protocol: path.join(BACKEND_DIR, 'supabase', 'functions', '_shared', 'protocol.ts'),
+  workspace: path.join(ROOT_DIR, 'pnpm-workspace.yaml'),
+  rootReadme: path.join(ROOT_DIR, 'README.md'),
+  pwaReadme: path.join(PWA_DIR, 'README.md'),
+  backendReadme: path.join(BACKEND_DIR, 'README.md'),
+  dbBaseline: path.join(BACKEND_DIR, 'supabase', 'migrations', '20260531232406_master_migration.sql'),
 };
+
+const ARGS = process.argv.slice(2);
+const IS_FIX_MODE = ARGS.includes('--fix');
 
 // --- Helpers ---
 const log = {
@@ -36,87 +52,43 @@ const log = {
 
 let hasFailure = false;
 
+interface PackageJson {
+  name?: string;
+  version: string;
+  license?: string;
+  packageManager?: string;
+  engines?: Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * 1. Scoring Integrity Check
  */
-function extractWeightsFromConfig(
-  text: string,
-  section: string = "ROSTER",
-): Record<string, number> | null {
-  // Search for "ROSTER: {" then "WEIGHTS: {" inside it
-  const rosterIdx = text.search(/ROSTER\s*:\s*{/);
-  if (rosterIdx === -1) return null;
-  
-  const weightsIdx = text.indexOf("WEIGHTS", rosterIdx);
-  if (weightsIdx === -1) return null;
-
-  const braceStart = text.indexOf("{", weightsIdx);
-  if (braceStart === -1) return null;
-
-  let i = braceStart;
-  let depth = 0;
-  while (i < text.length) {
-    if (text[i] === "{") depth++;
-    else if (text[i] === "}") {
-      depth--;
-      if (depth === 0) break;
-    }
-    i++;
-  }
-  if (depth !== 0) return null;
-
-  const body = text.slice(braceStart + 1, i);
-  const re = /([A-Z_]+)\s*:\s*([0-9.eE+-]+)/g;
-  const weights: Record<string, number> = {};
-  let m;
-  while ((m = re.exec(body)) !== null) {
-    weights[m[1]] = Number(m[2]);
-  }
-  return weights;
-}
-
-function extractWeightsFromReadme(text: string): Record<string, number> {
-  const formulaIdx = text.indexOf("Current Fame");
-  const snippet =
-    formulaIdx === -1 ? text : text.slice(formulaIdx, formulaIdx + 400);
-
-  const mapping: Record<string, RegExp> = {
-    FAME: /Current Fame[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
-    AVG_FAME: /(?:Avg|Average) Fame[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
-    DONATION: /Donations[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
-    TROPHY: /Trophies[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
-    WAR_RATE: /War Rate[^0-9]*([0-9]+\.?[0-9eE-]*)/i,
-  };
-  const out: Record<string, number> = {};
-  Object.keys(mapping).forEach((k) => {
-    const m = snippet.match(mapping[k]);
-    if (m) out[k] = Number(m[1]);
-  });
-  return out;
-}
-
 function checkScoringIntegrity() {
-  log.header("1. Scoring Logic Integrity");
-  // Scoring source of truth is now Supabase views (features.roster_view).
-  // Static config validation against Configuration.ts has been decommissioned.
-  log.info("Scoring integrity is enforced via Supabase view definitions. Skipping static check.");
+  log.header('1. Scoring Logic Integrity');
+  log.info('Scoring integrity is enforced via Supabase view definitions. Skipping static check.');
 }
 
 /**
  * 2. URL Safety Check
  */
 function checkUrlSafety() {
-  log.header("2. Environment URL Safety");
+  log.header('2. Environment URL Safety');
 
-  const supabaseUrl = process.env["VITE_SUPABASE_URL"];
+  const supabaseUrl = process.env['VITE_SUPABASE_URL'];
 
   if (!supabaseUrl && fs.existsSync(PATHS.env)) {
-    const envContent = fs.readFileSync(PATHS.env, "utf8");
+    const envContent = fs.readFileSync(PATHS.env, 'utf8');
     const match = envContent.match(/VITE_SUPABASE_URL=(.*)/);
     if (match) {
       const url = match[1].trim();
       log.info(`Supabase URL: ${url.slice(0, 40)}...`);
-      log.pass("VITE_SUPABASE_URL is configured.");
+      log.pass('VITE_SUPABASE_URL is configured.');
       return;
     }
   }
@@ -124,7 +96,7 @@ function checkUrlSafety() {
   if (supabaseUrl) {
     log.pass(`VITE_SUPABASE_URL is set (${supabaseUrl.slice(0, 30)}...).`);
   } else {
-    log.warn("VITE_SUPABASE_URL not found. Ensure it is set in the environment.");
+    log.warn('VITE_SUPABASE_URL not found. Ensure it is set in the environment.');
   }
 }
 
@@ -132,27 +104,27 @@ function checkUrlSafety() {
  * 3. Environment Documentation Check
  */
 function checkEnvDocumentation() {
-  log.header("3. Environment Data Sync");
+  log.header('3. Environment Data Sync');
 
-  const envExamplePath = path.join(PWA_DIR, ".env.example");
+  const envExamplePath = path.join(PWA_DIR, '.env.example');
 
   if (!fs.existsSync(PATHS.env)) {
-    log.info(".env file not found. Skipping sync check.");
+    log.info('.env file not found. Skipping sync check.');
     return;
   }
 
   if (!fs.existsSync(envExamplePath)) {
-    log.warn("Missing .env.example! You should document your secrets.");
+    log.warn('Missing .env.example! You should document your secrets.');
     return;
   }
 
   const parseKeys = (filePath: string) => {
     return fs
-      .readFileSync(filePath, "utf8")
-      .split("\n")
+      .readFileSync(filePath, 'utf8')
+      .split('\n')
       .map((l) => l.trim())
-      .filter((l) => l && !l.startsWith("#"))
-      .map((l) => l.split("=")[0]);
+      .filter((l) => l && !l.startsWith('#'))
+      .map((l) => l.split('=')[0]);
   };
 
   const envKeys = new Set(parseKeys(PATHS.env));
@@ -161,30 +133,388 @@ function checkEnvDocumentation() {
   const missingInExample = [...envKeys].filter((k) => !exampleKeys.has(k));
 
   if (missingInExample.length > 0) {
-    log.warn(`Undocumented secrets in .env: ${missingInExample.join(", ")}`);
-    log.warn("Add these to .env.example to keep project healthy.");
+    log.warn(`Undocumented secrets in .env: ${missingInExample.join(', ')}`);
+    log.warn('Add these to .env.example to keep project healthy.');
   } else {
-    log.pass(".env.example fully documents all active secrets.");
+    log.pass('.env.example fully documents all active secrets.');
+  }
+}
+
+/**
+ * 4. Version & Catalog Drift Checks
+ */
+function getGroundTruthVersion(): string {
+  const rootPkg = JSON.parse(fs.readFileSync(PATHS.rootPkg, 'utf-8')) as PackageJson;
+  const pwaPkg = JSON.parse(fs.readFileSync(PATHS.pwaPkg, 'utf-8')) as PackageJson;
+
+  const versions = [rootPkg.version, pwaPkg.version];
+  if (fs.existsSync(PATHS.backendPkg)) {
+    const backendPkg = JSON.parse(fs.readFileSync(PATHS.backendPkg, 'utf-8')) as PackageJson;
+    versions.push(backendPkg.version);
+  }
+
+  // Sorting helper (returns descending version comparison)
+  return versions.sort((a, b) => {
+    const partsA = a.split('.').map(Number);
+    const partsB = b.split('.').map(Number);
+    const partsCount = 3;
+    for (let i = 0; i < partsCount; i++) {
+      if (partsA[i] > partsB[i]) return -1;
+      if (partsA[i] < partsB[i]) return 1;
+    }
+    return 0;
+  })[0];
+}
+
+function reconcilePackageJson(pkgPath: string, groundTruth: string, rootPkg: PackageJson): string[] {
+  if (!fs.existsSync(pkgPath)) return [];
+  const content = fs.readFileSync(pkgPath, 'utf-8');
+  const pkg = JSON.parse(content) as PackageJson;
+  const issues: string[] = [];
+  let modified = false;
+
+  if (pkg.version !== groundTruth) {
+    issues.push(`[DRIFT] ${pkgPath} version is ${pkg.version}, expected ${groundTruth}`);
+    if (IS_FIX_MODE) {
+      pkg.version = groundTruth;
+      modified = true;
+    }
+  }
+
+  if (pkgPath !== PATHS.rootPkg) {
+    if (JSON.stringify(pkg.engines) !== JSON.stringify(rootPkg.engines)) {
+      issues.push(`[DRIFT] ${pkgPath} engines mismatch`);
+      if (IS_FIX_MODE) {
+        pkg.engines = rootPkg.engines;
+        modified = true;
+      }
+    }
+    if (pkg.packageManager !== rootPkg.packageManager) {
+      issues.push(`[DRIFT] ${pkgPath} packageManager mismatch`);
+      if (IS_FIX_MODE) {
+        pkg.packageManager = rootPkg.packageManager;
+        modified = true;
+      }
+    }
+  }
+
+  if (modified) {
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+  }
+
+  return issues;
+}
+
+function extractCatalogDeps(): string[] {
+  if (!fs.existsSync(PATHS.workspace)) return [];
+  const content = fs.readFileSync(PATHS.workspace, 'utf-8');
+  const catalogLines = content.split('catalogs:')[1]?.split('\n') || [];
+  const deps: string[] = [];
+
+  for (const line of catalogLines) {
+    const match = line.match(/^\s+["']?(@?[a-z0-9/-]+)["']?:/);
+    if (match) {
+      deps.push(match[1]);
+    }
+  }
+  return deps;
+}
+
+function reconcileCatalogProtocol(pkgPath: string, catalogDeps: string[]): string[] {
+  if (!fs.existsSync(pkgPath)) return [];
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as PackageJson;
+  const issues: string[] = [];
+  let modified = false;
+
+  const processDeps = (deps?: Record<string, string>) => {
+    if (!deps) return;
+    for (const dep of catalogDeps) {
+      if (deps[dep] && deps[dep] !== 'catalog:') {
+        issues.push(`[CATALOG] ${dep} in ${pkgPath} is ${deps[dep]}, should be "catalog:"`);
+        if (IS_FIX_MODE) {
+          deps[dep] = 'catalog:';
+          modified = true;
+        }
+      }
+    }
+  };
+
+  processDeps(pkg.dependencies);
+  processDeps(pkg.devDependencies);
+
+  if (modified) {
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+  }
+  return issues;
+}
+
+function reconcileReadme(filePath: string, version: string): string[] {
+  if (!fs.existsSync(filePath)) return [];
+  let content = fs.readFileSync(filePath, 'utf-8');
+  const issues: string[] = [];
+  let modified = false;
+
+  const badgeRegex = /-(v[0-9]+\.[0-9]+\.[0-9]+)-/g;
+  let match;
+  while ((match = badgeRegex.exec(content)) !== null) {
+    if (match[1] !== `v${version}`) {
+      issues.push(`[DOC] Badge "${match[1]}" in ${filePath} should be "v${version}"`);
+      if (IS_FIX_MODE) {
+        content = content.replace(match[0], match[0].replace(match[1], `v${version}`));
+        modified = true;
+      }
+    }
+  }
+
+  const roadmapRegex = /Roadmap \(v([0-9]+\.[0-9]+\.[0-9]+)\)/;
+  const roadmapMatch = content.match(roadmapRegex);
+  if (roadmapMatch && roadmapMatch[1] !== version) {
+    issues.push(`[DOC] Roadmap "v${roadmapMatch[1]}" in ${filePath} should be "v${version}"`);
+    if (IS_FIX_MODE) {
+      content = content.replace(roadmapMatch[0], `Roadmap (v${version})`);
+      modified = true;
+    }
+  }
+
+  if (modified) {
+    fs.writeFileSync(filePath, content);
+  }
+  return issues;
+}
+
+function reconcileOtherFiles(groundTruth: string): string[] {
+  const issues: string[] = [];
+  const majorVersion = groundTruth.split('.')[0];
+
+  if (fs.existsSync(PATHS.manifest)) {
+    const manifest = JSON.parse(fs.readFileSync(PATHS.manifest, 'utf-8'));
+    if (manifest.id !== `clash-manager-v${majorVersion}`) {
+      issues.push(`[DRIFT] manifest.json id mismatch: expected clash-manager-v${majorVersion}`);
+      if (IS_FIX_MODE) {
+        manifest.id = `clash-manager-v${majorVersion}`;
+        fs.writeFileSync(PATHS.manifest, JSON.stringify(manifest, null, 2) + '\n');
+      }
+    }
+  }
+
+  if (fs.existsSync(PATHS.progressiveList)) {
+    let content = fs.readFileSync(PATHS.progressiveList, 'utf-8');
+    const expected = `[PERF] Optimized for v${groundTruth}:`;
+    if (!content.includes(expected)) {
+      issues.push(`[DRIFT] useProgressiveList.ts version comment mismatch`);
+      if (IS_FIX_MODE) {
+        content = content.replace(/\[PERF\] Optimized for v[0-9]+\.[0-9]+\.[0-9]+:/, expected);
+        fs.writeFileSync(PATHS.progressiveList, content);
+      }
+    }
+  }
+
+  if (fs.existsSync(PATHS.protocol)) {
+    let content = fs.readFileSync(PATHS.protocol, 'utf-8');
+    const expected = `version: '${groundTruth}'`;
+    if (!content.includes(expected)) {
+      issues.push(`[DRIFT] Backend protocol.ts version mismatch`);
+      if (IS_FIX_MODE) {
+        content = content.replace(/version: '[0-9]+\.[0-9]+\.[0-9]+'/, expected);
+        fs.writeFileSync(PATHS.protocol, content);
+      }
+    }
+  }
+
+  if (fs.existsSync(PATHS.htmlEntry)) {
+    const content = fs.readFileSync(PATHS.htmlEntry, 'utf-8');
+    const expected = '"softwareVersion": "${version}"';
+    if (!content.includes(expected)) {
+      issues.push(`[DRIFT] HtmlEntry.ts softwareVersion template mismatch`);
+    }
+  }
+
+  return issues;
+}
+
+function checkVersionIntegrity() {
+  log.header('4. Version & Monorepo Integrity Audit');
+  const groundTruth = getGroundTruthVersion();
+  log.info(`Ground Truth Version: ${groundTruth}`);
+
+  const rootPkg = JSON.parse(fs.readFileSync(PATHS.rootPkg, 'utf-8')) as PackageJson;
+  const catalogDeps = extractCatalogDeps();
+
+  const allIssues = [
+    ...reconcilePackageJson(PATHS.rootPkg, groundTruth, rootPkg),
+    ...reconcilePackageJson(PATHS.pwaPkg, groundTruth, rootPkg),
+    ...reconcilePackageJson(PATHS.backendPkg, groundTruth, rootPkg),
+    ...reconcileCatalogProtocol(PATHS.rootPkg, catalogDeps),
+    ...reconcileCatalogProtocol(PATHS.pwaPkg, catalogDeps),
+    ...reconcileOtherFiles(groundTruth),
+    ...reconcileReadme(PATHS.rootReadme, groundTruth),
+    ...reconcileReadme(PATHS.pwaReadme, groundTruth),
+    ...reconcileReadme(PATHS.backendReadme, groundTruth),
+  ];
+
+  if (allIssues.length === 0) {
+    log.pass('No version drift or catalog violations detected.');
+  } else {
+    allIssues.forEach((issue) => log.fail(issue));
+    if (IS_FIX_MODE) {
+      log.pass('Reconciliation complete. Drift has been synchronized.');
+    } else {
+      log.fail('Version integrity audit failed.');
+      hasFailure = true;
+    }
+  }
+}
+
+/**
+ * 5. Database Baseline & Security Audit
+ */
+function checkDatabaseBaseline() {
+  log.header('5. Database Migration Baseline & Security Audit');
+
+  if (!fs.existsSync(PATHS.dbBaseline)) {
+    log.warn(`Database baseline file not found at ${PATHS.dbBaseline}. Skipping.`);
+    return;
+  }
+
+  const content = fs.readFileSync(PATHS.dbBaseline, 'utf-8');
+  const lines = content.split('\n');
+  const dbErrors: string[] = [];
+
+  // Function search_path check
+  const funcPattern = /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+([\w\.]+)/i;
+  const asPattern = /AS\s+\$(?:function)?\$/i;
+  const searchPathPattern = /SET\s+search_path/i;
+
+  let currentFunc: string | null = null;
+  let funcStartLine = 0;
+  let inFuncHeader = false;
+  let hasSearchPath = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = funcPattern.exec(line);
+    if (m) {
+      currentFunc = m[1];
+      funcStartLine = i + 1;
+      inFuncHeader = true;
+      hasSearchPath = false;
+      continue;
+    }
+
+    if (inFuncHeader) {
+      if (searchPathPattern.test(line)) {
+        hasSearchPath = true;
+      }
+      if (asPattern.test(line)) {
+        if (!hasSearchPath) {
+          dbErrors.push(`Function ${currentFunc} at line ${funcStartLine} missing SET search_path`);
+        }
+        inFuncHeader = false;
+        currentFunc = null;
+      }
+    }
+  }
+
+  // Idempotent CREATE TABLE check
+  const tablePattern = /CREATE\s+TABLE\s+(?!IF\s+NOT\s+EXISTS)([\w\.]+)/i;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.includes('--')) {
+      continue;
+    }
+    const m = tablePattern.exec(line);
+    if (m) {
+      if (line.includes("'") || line.includes('"')) {
+        continue;
+      }
+      dbErrors.push(`Table ${m[1]} at line ${i + 1} missing IF NOT EXISTS`);
+    }
+  }
+
+  // Row Level Security check
+  const tables: string[] = [];
+  const tableIfPattern = /CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+([\w\.]+)/gi;
+  let match;
+  while ((match = tableIfPattern.exec(content)) !== null) {
+    tables.push(match[1]);
+  }
+
+  for (const table of tables) {
+    if (table.includes('elite_tags')) {
+      continue;
+    }
+    const rlsPattern = new RegExp(`ALTER\\s+TABLE\\s+${escapeRegExp(table)}\\s+ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY`, 'i');
+    if (!rlsPattern.test(content)) {
+      dbErrors.push(`Table ${table} missing RLS`);
+    }
+  }
+
+  // Idempotent CREATE TRIGGER check
+  const triggerPattern = /CREATE\s+(?!OR\s+REPLACE\s+)TRIGGER/i;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (triggerPattern.test(line)) {
+      dbErrors.push(`Trigger at line ${i + 1} missing OR REPLACE`);
+    }
+  }
+
+  // Formatting & character checks
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.includes('—')) {
+      dbErrors.push(`Line ${i + 1} has em-dash`);
+    }
+    let hasAboveBMP = false;
+    for (const char of line) {
+      const codePoint = char.codePointAt(0);
+      if (codePoint !== undefined && codePoint > 0xFFFF) {
+        hasAboveBMP = true;
+        break;
+      }
+    }
+    if (hasAboveBMP) {
+      dbErrors.push(`Line ${i + 1} has emoji/non-BMP char`);
+    }
+  }
+
+  // Out of line UNIQUE constraints check
+  if (content.includes('ALTER TABLE') && content.includes('ADD CONSTRAINT') && content.includes('UNIQUE')) {
+    dbErrors.push('Found out-of-line UNIQUE constraints');
+  }
+
+  // Unqualified moddatetime trigger function check
+  if (/EXECUTE\s+FUNCTION\s+moddatetime/i.test(content)) {
+    dbErrors.push('Unqualified moddatetime call found');
+  }
+
+  if (dbErrors.length === 0) {
+    log.pass('All database baseline rules and security conditions satisfied.');
+  } else {
+    dbErrors.forEach((e) => log.fail(e));
+    log.fail('Database baseline security check failed.');
+    hasFailure = true;
   }
 }
 
 // --- Main Execution ---
-console.log("Starting Project Integrity Check...\n");
+console.log(`Starting Project Integrity Check... ${IS_FIX_MODE ? '(FIX MODE ACTIVE)' : ''}\n`);
 
 try {
   checkScoringIntegrity();
   checkUrlSafety();
   checkEnvDocumentation();
+  checkVersionIntegrity();
+  checkDatabaseBaseline();
 } catch (e: any) {
   log.fail(`Crash during validation: ${e.message}`);
   hasFailure = true;
 }
 
-console.log("\n--------------------------------------------------");
+console.log('\n--------------------------------------------------');
 if (hasFailure) {
-  console.log("Project Integrity Check FAILED. See errors above.");
-  (process as any).exit(1);
+  log.fail('Project Integrity Check FAILED. See errors above.');
+  process.exit(1);
 } else {
-  console.log("Project Integrity Check PASSED. All systems nominal.");
-  (process as any).exit(0);
+  log.pass('Project Integrity Check PASSED. All systems nominal.');
+  process.exit(0);
 }
