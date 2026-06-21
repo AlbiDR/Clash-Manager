@@ -33,7 +33,7 @@ const assetLinks: AssetLink[] = [
     relation: ["delegate_permission/common.handle_all_urls"],
     target: {
       namespace: "android_app",
-      package_name: "com.albidr.clashmanager",
+      package_name: "com.clashmanager",
       sha256_cert_fingerprints: [fingerprint],
     },
   },

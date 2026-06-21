@@ -67,7 +67,7 @@ export const NOTIFICATION_SHORTCUT_ID = "recruit_shortcut_id";
  */
 
 /** Primary database name for local persistence. */
-export const STORAGE_DB_NAME = "clash_manager_v11";
+export const STORAGE_DB_NAME = "clash_manager_v14";
 /** Standard object store name for key-value pairs. */
 export const STORAGE_STORE_NAME = "keyval";
 /** Current IndexedDB schema version. */
@@ -92,5 +92,8 @@ export const STORAGE_DEPRECATED_DB_NAMES = [
   "clash_manager_v7",
   "clash_manager_v8",
   "clash_manager_v9",
-  "clash_manager_v10"
+  "clash_manager_v10",
+  "clash_manager_v11",
+  "clash_manager_v12",
+  "clash_manager_v13"
 ];
