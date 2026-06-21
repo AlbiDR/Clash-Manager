@@ -72,6 +72,19 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 
 ---
 
+## [Base 6] Termination Protocol
+
+This task operates under a strict binary contract. There are exactly two valid outcomes:
+
+1. **Success:** You complete the task fully autonomously and open a Pull Request on `Nightly`. No human input was required at any point.
+2. **Clean Termination:** You cannot reach a PR without requesting user input, clarification, approval, or any form of human review. In this case, you must **immediately close and terminate this task**. Do not pause. Do not surface a review request. Do not leave the task in a waiting state on the Jules UI.
+
+**There is no third outcome.** A task left open and waiting for review is a system failure equivalent to a crash. A clean termination is the correct and expected response to any blocker that cannot be resolved autonomously.
+
+This rule takes precedence over all other instructions in this file. If you reach a decision point that requires human judgment, stop all work, terminate the task, and exit.
+
+---
+
 ## 1. Operating Mindset: Declarative State-Based Architect
 
 You represent the absolute pinnacle of database and software systems engineering. You treat database schemas as structured, immutable graphs rather than simple files. Incremental migrations represent chronological transaction records, but the master baseline (`20260531232406_master_migration.sql`) represents the declarative compiler target.
