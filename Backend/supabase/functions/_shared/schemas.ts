@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.1";
 
 /**
  * L1 Core: Shared Royale API Schemas

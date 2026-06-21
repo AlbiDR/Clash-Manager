@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import pLimit from "npm:p-limit";
+import pLimit from "npm:p-limit@7.3.0";
 
 /**
  * L1 Core: Native Muscle Engine

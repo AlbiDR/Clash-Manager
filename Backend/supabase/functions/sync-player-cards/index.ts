@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.1";
 import { fetchWithRotation } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import { RoyaleFullPlayerSchema, PlayerSyncPayloadSchema, PlayerCardSnapshotSchema } from "../_shared/schemas.ts";

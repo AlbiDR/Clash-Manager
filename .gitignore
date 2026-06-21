@@ -92,4 +92,6 @@ functions_*.txt
 *.keystore
 /assetlinks.json
 !Frontend-PWA/public/.well-known/assetlinks.json
-gen-maskable-icons.js
+
+# Android icon-generator preview output (gen-android-icons.mjs --preview)
+.icon-preview/

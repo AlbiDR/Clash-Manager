@@ -4,7 +4,7 @@
 import { executePipeline } from "./pipeline.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.1";
 
 /**
  * Supabase Edge Function: ingest-royale-data

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.1";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";

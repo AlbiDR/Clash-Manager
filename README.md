@@ -157,6 +157,32 @@ flowchart TD
 ---
 <br />
 
+## Android Wrapper (TWA) Icons
+
+The Android APK is a **Trusted Web Activity** packaged with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap). The native project lives **outside this repo** at `~/bubblewrap-project`.
+
+Bubblewrap's default adaptive icon is broken (solid-white background layer, empty foreground, no monochrome layer). [`gen-android-icons.mjs`](gen-android-icons.mjs) replaces it with a correct, fully-native set generated from `logo.svg`:
+
+| Layer | Source |
+| --- | --- |
+| `background` | `@color/ic_launcher_background` — solid brand `#0B0E14` |
+| `foreground` | logo fitted by its **true height** into the 108dp safe zone (the mark is taller than wide) |
+| `monochrome` | white silhouette for Android 13+ themed icons |
+| legacy | pre-masked square + round PNGs for API < 26 |
+
+**Workflow** — always regenerate icons immediately before building the APK, and **always after `bubblewrap update`** (which restores Bubblewrap's broken default):
+
+```bash
+pnpm icons:android                      # regenerate the adaptive icon set
+pnpm icons:android -- --preview         # also emit launcher previews to .icon-preview/
+cd ~/bubblewrap-project && bubblewrap build
+```
+
+The script is idempotent and validates against the live res tree. Override the target with `ANDROID_RES_DIR=…`.
+
+---
+<br />
+
 ## Nightly Pipeline
 
 The Nightly pipeline is an automated maintenance and optimization engine designed as a **12-stage multi-agent system** to enforce structural purity, optimize performance, and synchronize system documentation. Running nightly on the `Nightly` branch, this sequenced pipeline executes key phases to keep the monorepo pristine:

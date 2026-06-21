@@ -3,7 +3,9 @@
   "specifiers": {
     "npm:@supabase/supabase-js@2": "2.108.1",
     "npm:p-limit@*": "7.3.0",
-    "npm:valibot@*": "1.4.1"
+    "npm:p-limit@7.3.0": "7.3.0",
+    "npm:valibot@*": "1.4.1",
+    "npm:valibot@1.4.1": "1.4.1"
   },
   "npm": {
     "@supabase/auth-js@2.108.1": {
