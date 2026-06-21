@@ -82,7 +82,7 @@ The authoritative Layer 1 central store for high-integrity clan datasets.
 - **Sync Delegation**: Consumes the `useClashSync` service to manage reactive state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence.
 - **Direct View Access**: Utilizes authoritative Supabase feature views (`roster_view`, `headhunter_view`) to bypass legacy RPC bottlenecks.
 - **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) to ensure accurate data age calculations across distributed environments.
-- **Stale-While-Revalidate**: Implements a zero-latency hydration strategy by loading from IndexedDB on boot while updating from the Supabase backend in the background.
+- **SWR Hydration Pattern**: Implements a zero-latency "Stale-While-Revalidate" hydration strategy by loading from IndexedDB on boot while updating from the Supabase backend in the background.
 - **Validation Boundary**: All inbound payloads are strictly validated against domain-specific schemas (e.g., `WebAppDataSchema` in `AppSchemas.ts`) to prevent "any" plague propagation.
 
 ### 3. Selection Orchestrator (`useSelectionStore`)
@@ -351,7 +351,7 @@ In addition to local testing, the codebase is autonomously maintained by a **9-a
 ## Mobile-First Features
 
 - **Installable**: Meets all PWA criteria for installation on iOS and Android.
-- **Offline Capable**: Views cache automatically (Stale-While-Revalidate strategy).
+- **Offline Capable**: Application logic implements a "Stale-While-Revalidate" hydration pattern for domain data. Note that PWA assets utilize strict Workbox precaching for the shell, with no runtime SWR strategies applied to network requests.
 - **Haptics**: Uses `navigator.vibrate` for tactile feedback on interactions.
 - **Deep Linking**: Supports URL routing for sharing specific clan profiles or searches.
 
