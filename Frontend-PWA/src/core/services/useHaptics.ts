@@ -4,42 +4,73 @@
 import { ref, readonly } from "vue";
 
 /**
- * [PERF] ADAPTIVE HAPTICS ENGINE
- * Optimization #48: Adjusts feedback intensity based on battery status and power mode.
- * Optimization #49: Specialized patterns for high-value recruits.
+ * MODULE: ADAPTIVE HAPTICS ENGINE (Layer 1 Core Service)
+ * ----------------------------------------------------------------------------
+ * DESCRIPTION:
+ * Orchestrates device vibration feedback through a tiered, battery-aware proxy.
+ * This engine acts as the authoritative broker for tactile interaction across
+ * the application, ensuring that feedback is both meaningful and efficient.
+ *
+ * ARCHITECTURE:
+ * - Singleton Pattern: Module-level state ensures that battery listeners and
+ *   interaction tracking are instantiated exactly once per app lifecycle.
+ * - Brokered Access: Business logic never touches `navigator.vibrate` directly.
+ * - Adaptive Scaling: Automatically reduces vibration intensity when the
+ *   device enters Low Power Mode or has a critical battery level.
+ *
+ * OPTIMIZATIONS:
+ * - Optimization #48: Adjusts feedback intensity based on battery status.
+ * - Optimization #49: Specialized patterns for high-value recruits.
+ * ----------------------------------------------------------------------------
  */
 
-// Native API Types
+/**
+ * Native API Type: BatteryManager
+ * Represents the W3C Battery Status API interface.
+ */
 interface BatteryManager extends EventTarget {
+  /** Indicates if the device is currently plugged in and charging. */
   charging: boolean;
+  /** Floating point number between 0 and 1 representing battery level. */
   level: number;
+  /** Experimental flag indicating if the system is in Save Data mode. */
   saveData?: boolean;
+  /** Attaches listeners for battery state changes. */
   addEventListener(
     type: "chargingchange" | "levelchange",
     listener: EventListenerOrEventListenerObject,
   ): void;
 }
 
-// [PERF] Module-level state (Singleton)
-// Ensures state and listeners are shared across all call sites.
-// EPHEMERAL: intentionally resets on cold start
+// --- MODULE STATE (SINGLETON) ---
+// Rationale: Ensures state and listeners are shared across all call sites
+// and eliminates redundant event registration.
+
+/** Reactive status indicating if the system should prioritize power conservation. */
 const isLowPowerMode = ref(false);
-// EPHEMERAL: intentionally resets on cold start
+/** Tracks if the user has performed a gesture required to unlock the Vibration API. */
 let hasInteracted = false;
-// EPHEMERAL: intentionally resets on cold start
+/** Guard variable to prevent multiple initializations of the battery engine. */
 let isInitialized = false;
 
 /**
  * Extended Navigator Interface for Battery API.
+ * Provides type-safe access to the experimental `getBattery` method.
  */
 interface NavigatorWithBattery extends Navigator {
+  /** Asynchronously retrieves the battery manager instance. */
   getBattery(): Promise<BatteryManager>;
 }
 
 /**
  * INITIALIZATION ENGINE
+ *
+ * @remarks
  * Guards against redundant listener attachment and ensures the battery
- * monitor is only instantiated once.
+ * monitor is only instantiated once. Implements the interaction tracking
+ * required by browser security policies to unlock vibration.
+ *
+ * @internal
  */
 function init() {
   if (isInitialized || typeof window === "undefined") return;
@@ -48,6 +79,7 @@ function init() {
   // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
   // [DECISION LOG] Utilizing strict type narrowing for NavigatorWithBattery to
   // eliminate 'any' casts and ensure hardware access integrity.
+  // Satisfies ADR Section IV: Resilience & Operational Security - Hardware Brokering.
   if ("getBattery" in navigator) {
     (navigator as NavigatorWithBattery)
       .getBattery()
@@ -97,12 +129,29 @@ function init() {
  * pattern to minimize event listener overhead and ensure consistent state
  * across the application.
  *
+ * Satisfies ADR Section IV: Resilience & Operational Security - Hardware Brokering.
+ * All hardware interactions are brokered through this composable to ensure
+ * fallback safety and battery awareness.
+ *
  * @returns
- * - isSupported: Hardware capability check.
- * - isLowPowerMode: Reactive status of the device battery/power state.
- * - tap/medium/heavy: Standard feedback patterns.
- * - success/error/warning/sync: Tactical feedback patterns.
- * - criticalHit/rareFind: Domain-specific reward patterns.
+ * - `isSupported`: Boolean indicating if the Vibration API is available.
+ * - `isLowPowerMode`: Readonly reactive status of the device power state.
+ * - `tap`: Standard light feedback (12ms).
+ * - `medium`: Standard medium feedback (25ms).
+ * - `heavy`: Standard heavy feedback (35ms).
+ * - `impact`: Style-based feedback (light/medium/heavy).
+ * - `longPress`: Extended feedback for long-press actions (65ms).
+ * - `success`: Triple-pulse pattern for positive actions.
+ * - `error`: Dual-pulse heavy pattern for critical errors.
+ * - `warning`: Sharp double-pulse for warnings.
+ * - `sync`: Rapid quadruple-pulse for background synchronization events.
+ * - `criticalHit`: Intense pattern for high-value recruitment events.
+ * - `rareFind`: Rising intensity pattern for legendary/rare discoveries.
+ * - `custom`: Direct access for arbitrary vibration patterns.
+ *
+ * @sideeffects
+ * - Accesses the `navigator.vibrate` hardware API.
+ * - Attaches global window listeners on first call (initialization).
  */
 export function useHaptics() {
   const isSupported =
@@ -111,12 +160,18 @@ export function useHaptics() {
   // [PERF] LAZY INIT: Call singleton initialization on first use.
   init();
 
+  /**
+   * Internal proxy for the vibration API with power-aware scaling.
+   *
+   * @param pattern - Duration in ms or a pattern array.
+   */
   const vibrate = (pattern: number | number[]) => {
     if (!isSupported || !hasInteracted) return;
 
     // [PERF] POWER CONSERVATION: Scale down intensity in low power mode.
     // [DECISION LOG] Adaptive haptic scaling: reductions are applied to
     // preserve battery life when the system is in low-power state.
+    // This reduces the 'juice' consumed by the vibration motor.
     if (isLowPowerMode.value) {
       if (Array.isArray(pattern)) {
         pattern = pattern.map((patternPart) => Math.max(0, patternPart - 5));
@@ -160,6 +215,9 @@ export function useHaptics() {
 
 /**
  * TEST EXPORT: Resets the singleton state for unit testing.
+ *
+ * @remarks
+ * Only functional within the Vitest environment.
  * @internal
  */
 export function resetHapticsState() {
