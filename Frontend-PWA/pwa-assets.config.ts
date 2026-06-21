@@ -2,8 +2,9 @@ import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
 import type { Preset } from "@vite-pwa/assets-generator/config";
 
 // The app's canonical background color, matching manifest.json and the app shell.
-// Used consistently across all icon variants so the OS splash screen never
-// shows a mismatched white background regardless of which icon it selects.
+// Used as the fill for maskable icons (which require an opaque background inside
+// the safe-zone) and Apple touch icons. The 'any' / transparent variant intentionally
+// omits this so Android's adaptive-icon system can apply its own launcher shape.
 const APP_BACKGROUND_COLOR = "#0b0e14";
 
 export default defineConfig({
@@ -13,14 +14,13 @@ export default defineConfig({
       sizes: [64, 192, 512] as const,
       favicons: [[64, "favicon.ico"]] as const,
       resizeOptions: {
-        // USING DARK BACKGROUND: Matches the manifest background_color so the
-        // Android OS splash screen renders consistently regardless of whether it
-        // picks the "any" or "maskable" icon variant.
-        background: APP_BACKGROUND_COLOR,
+        // TRANSPARENT BACKGROUND: The 'any' icon variant must NOT have a filled
+        // background. The OS applies its own adaptive-icon shape (circle, squircle,
+        // etc.) over a transparent canvas. Forcing a background here causes Android
+        // to wrap a filled square inside its own shape, producing a black box.
         fit: "contain" as const,
       },
-      // [OPTIMIZATION] Reduced padding for 'any' icons to maximize visibility
-      // while maintaining the background safety margin.
+      // Reduced padding keeps the logo large and clearly visible on all launchers.
       padding: 0.05,
     },
     maskable: {
