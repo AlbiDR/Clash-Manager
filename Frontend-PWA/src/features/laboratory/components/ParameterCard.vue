@@ -38,7 +38,7 @@ const toggleGemSpending = () => {
   emit("update", { allowGemSpending: !props.settings.allowGemSpending });
 };
 
-const selectOptions = computed(() => {
+const levelOptions = computed(() => {
   return Array.from({ length: KING_LEVEL_MAX }, (_, i) => i + 1)
     .filter(level => {
       // Current and future levels are always shown
@@ -56,15 +56,6 @@ const selectOptions = computed(() => {
         class: `${isMilestone ? 'milestone' : ''} ${isPast ? 'past' : ''}`.trim()
       };
     });
-});
-
-const levelOptions = computed(() => {
-  return filteredLevels.value.map(level => ({
-    label: `Level ${String(level).padStart(2, '0')} ${IMPORTANT_KING_LEVELS.includes(level) ? '•' : ''}`,
-    value: level,
-    disabled: level <= props.currentLevel,
-    class: level <= props.currentLevel ? 'past' : (IMPORTANT_KING_LEVELS.includes(level) ? 'milestone' : '')
-  }));
 });
 
 const baseUrl = import.meta.env.BASE_URL;
