@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-22] PR #898: chore(version): no drift found in monorepo v14.0.0
+**Commit**: `e3f7998c8679030d224934ccf9e3dbc1c329784a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/898)
+
+### Description
+Performed a full version integrity audit of the monorepo for Stage 7. Confirmed that the ground truth version v14.0.0 is synchronized across all manifests, code substrate, and documentation. Verified PNPM catalog protocol adherence for shared dependencies. No drift or violations were found. Verified system stability via full test suite (1282 pass). Updated .github/nightly-logs/07-version-integrity-coverage.log.
+
+---
+*PR created automatically by Jules for task [3843238856260753036](https://jules.google.com/task/3843238856260753036) started by @AlbiDR*
+
+---
+
 ## [2026-06-22] PR #897: docs(tsdoc): document authoritative validation schemas in _shared
 **Commit**: `f3947dbbef1ff4ac723feaaf94f4d754ef485fd5`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/897)
