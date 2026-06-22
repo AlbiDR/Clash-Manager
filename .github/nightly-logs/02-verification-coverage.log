@@ -118,3 +118,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-06-19 | Frontend-PWA/src/core/services/useExternalLink.ts | Saturating coverage for Native Bridge delegation, Android intent protocol, and hardware boundary failure modes.
 2026-06-20 | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Zero Coverage gap closed; saturating tests for countdown orchestration and progress normalization.
 2026-06-21 | Frontend-PWA/src/core/utils/math.ts | Saturating coverage for formatNumber edge cases (null, undefined, NaN, and Intl options).
+2026-06-22 | Frontend-PWA/src/shared/ui/BaseSelect.vue | Zero Coverage gap closed; saturating tests for toggle, selection, disabled state, and semantic classes.
