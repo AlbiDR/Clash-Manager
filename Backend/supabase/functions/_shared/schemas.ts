@@ -8,20 +8,29 @@ import * as v from "npm:valibot";
  * Authoritative validation boundaries for raw data from Royale API Proxy.
  */
 
-/** [GUARD] Base Clan Identity. */
+/**
+ * Internal: Base Clan Identity.
+ */
 const BaseClanIdentitySchema = v.object({
     tag: v.string(),
     name: v.string()
 });
 
-/** [GUARD] Royale Location Schema. */
+/**
+ * Internal: Royale Location Schema.
+ */
 const RoyaleLocationSchema = v.object({
     id: v.number(),
     name: v.string(),
     isCountry: v.optional(v.boolean(), false)
 });
 
-/** [GUARD] Clan Profile Schema. */
+/**
+ * L1 Core: Clan Profile Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleClanSchema = v.intersect([
     BaseClanIdentitySchema,
     v.object({
@@ -34,7 +43,13 @@ export const RoyaleClanSchema = v.intersect([
     })
 ]);
 
-/** [GUARD] Flexible schema for endpoints that might return an array or a wrapped object. */
+/**
+ * L1 Core: Flexible List Schema.
+ *
+ * @remarks
+ * Handles endpoints that return either a raw array or an 'items' wrapped object.
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleFlexibleListSchema = v.pipe(
     v.union([
         v.array(v.record(v.string(), v.unknown())),
@@ -50,7 +65,12 @@ export const RoyaleFlexibleListSchema = v.pipe(
     })
 );
 
-/** [GUARD] River Race Schema. */
+/**
+ * L1 Core: River Race Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleRiverRaceSchema = v.object({
     state: v.string(),
     clan: v.object({
@@ -59,7 +79,12 @@ export const RoyaleRiverRaceSchema = v.object({
     })
 });
 
-/** [GUARD] Royale Player Profile Schema. */
+/**
+ * L1 Core: Royale Player Profile Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyalePlayerSchema = v.object({
     tag: v.string(),
     name: v.string(),
@@ -72,7 +97,9 @@ export const RoyalePlayerSchema = v.object({
     })))
 });
 
-/** [GUARD] Royale Card Schema. */
+/**
+ * Internal: Royale Card Schema.
+ */
 const RoyaleCardSchema = v.object({
     name: v.string(),
     id: v.number(),
@@ -82,7 +109,13 @@ const RoyaleCardSchema = v.object({
     rarity: v.string()
 });
 
-/** [GUARD] Royale Full Player Profile Schema (for /players endpoint). */
+/**
+ * L1 Core: Royale Full Player Profile Schema.
+ *
+ * @remarks
+ * Used for /players endpoint.
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleFullPlayerSchema = v.intersect([
     RoyalePlayerSchema,
     v.object({
@@ -93,24 +126,42 @@ export const RoyaleFullPlayerSchema = v.intersect([
     })
 ]);
 
-/** [GUARD] Player Sync Payload Schema. */
+/**
+ * L1 Core: Player Sync Payload Schema.
+ *
+ * @remarks
+ * Used for inbound sync-player-cards requests.
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const PlayerSyncPayloadSchema = v.object({
     tag: v.string()
 });
 
-/** [GUARD] Royale Tournament List Item Schema. */
+/**
+ * Internal: Royale Tournament List Item Schema.
+ */
 const RoyaleTournamentListItemSchema = v.object({
     tag: v.string(),
     capacity: v.number(),
     maxCapacity: v.number()
 });
 
-/** [GUARD] Royale Tournament List Schema. */
+/**
+ * L1 Core: Royale Tournament List Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleTournamentListSchema = v.object({
     items: v.array(RoyaleTournamentListItemSchema)
 });
 
-/** [GUARD] Royale Tournament Details Schema. */
+/**
+ * L1 Core: Royale Tournament Details Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleTournamentSchema = v.object({
     tag: v.string(),
     membersList: v.array(v.object({
@@ -123,17 +174,32 @@ export const RoyaleTournamentSchema = v.object({
     }))
 });
 
-/** [GUARD] Shadow Discovery Target Schema (RPC). */
+/**
+ * L1 Core: Shadow Discovery Target Schema (RPC).
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const ShadowTargetSchema = v.object({
     opponent_player_tag: v.string()
 });
 
-/** [GUARD] Stale Recruit Schema (RPC). */
+/**
+ * L1 Core: Stale Recruit Schema (RPC).
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const StaleRecruitSchema = v.object({
     player_tag: v.string()
 });
 
-/** [GUARD] Player Card Snapshot Schema (Database Row). */
+/**
+ * L1 Core: Player Card Snapshot Schema (Database Row).
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const PlayerCardSnapshotSchema = v.object({
     card_name: v.string(),
     rarity: v.string(),
@@ -146,7 +212,12 @@ export const PlayerCardSnapshotSchema = v.object({
     xp_into_level: v.number()
 });
 
-/** [GUARD] Royale Battle Log Schema. */
+/**
+ * L1 Core: Royale Battle Log Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleBattleLogSchema = v.array(v.object({
     type: v.string(),
     battleTime: v.string(),
@@ -165,40 +236,75 @@ export const RoyaleBattleLogSchema = v.array(v.object({
     }))
 }));
 
-/** [GUARD] Headhunter Context Schema (RPC). */
+/**
+ * L1 Core: Headhunter Context Schema (RPC).
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const HeadhunterContextSchema = v.object({
     required_trophies: v.number(),
     exclusion_tags: v.array(v.string())
 });
 
-/** [GUARD] Discovery Anchor Schema (RPC). */
+/**
+ * L1 Core: Discovery Anchor Schema (RPC).
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const DiscoveryAnchorSchema = v.object({
     keyword: v.string()
 });
 
-/** [GUARD] Discovery Cache Item Schema. */
+/**
+ * L1 Core: Discovery Cache Item Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const DiscoveryCacheItemSchema = v.object({
     player_tag: v.string()
 });
 
-/** [GUARD] Ingestion Targets Schema. */
+/**
+ * L1 Core: Ingestion Targets Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const IngestionTargetsSchema = v.object({
     members: v.array(v.string()),
     recruits: v.array(v.string())
 });
 
-/** [GUARD] Recruit Fate Schema (RPC). */
+/**
+ * L1 Core: Recruit Fate Schema (RPC).
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RecruitFateSchema = v.object({
     status: v.string(),
     raw_potential_score: v.union([v.number(), v.string()])
 });
 
-/** [GUARD] Royale Location List Schema. */
+/**
+ * L1 Core: Royale Location List Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleLocationListSchema = v.object({
     items: v.array(RoyaleLocationSchema)
 });
 
-/** [GUARD] Royale Clan Member Schema. */
+/**
+ * L1 Core: Royale Clan Member Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleClanMemberSchema = v.object({
     tag: v.string(),
     name: v.string(),
@@ -206,7 +312,12 @@ export const RoyaleClanMemberSchema = v.object({
     trophies: v.optional(v.number())
 });
 
-/** [GUARD] Royale Clan Ranking Item Schema. */
+/**
+ * L1 Core: Royale Clan Ranking Item Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleClanRankingItemSchema = v.object({
     tag: v.string(),
     name: v.string(),
@@ -215,12 +326,22 @@ export const RoyaleClanRankingItemSchema = v.object({
     badgeId: v.number()
 });
 
-/** [GUARD] Royale Clan Ranking List Schema. */
+/**
+ * L1 Core: Royale Clan Ranking List Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleClanRankingListSchema = v.object({
     items: v.array(RoyaleClanRankingItemSchema)
 });
 
-/** [GUARD] Royale Clan Detail Schema. */
+/**
+ * L1 Core: Royale Clan Detail Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleClanDetailSchema = v.intersect([
     RoyaleClanSchema,
     v.object({
@@ -228,7 +349,12 @@ export const RoyaleClanDetailSchema = v.intersect([
     })
 ]);
 
-/** [GUARD] Royale Ranking Item Schema. */
+/**
+ * L1 Core: Royale Ranking Item Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleRankingItemSchema = v.object({
     tag: v.string(),
     name: v.string(),
@@ -240,25 +366,54 @@ export const RoyaleRankingItemSchema = v.object({
     })))
 });
 
-/** [GUARD] Royale Ranking List Schema. */
+/**
+ * L1 Core: Royale Ranking List Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const RoyaleRankingListSchema = v.object({
     items: v.array(RoyaleRankingItemSchema)
 });
 
-/** [GUARD] Integrity Check Details Schema. */
+/**
+ * L1 Core: Integrity Check Details Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const IntegrityCheckDetailsSchema = v.object({
     passed: v.boolean(),
     details: v.optional(v.string()),
     issues: v.optional(v.array(v.unknown()))
 });
 
-/** [GUARD] Telemetry Response Schema. */
+/**
+ * L1 Core: Telemetry Response Schema.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const TelemetrySchema = v.union([
     v.object({ id: v.union([v.string(), v.number()]) }),
     v.array(v.object({ id: v.union([v.string(), v.number()]) }))
 ]);
 
-/** [GUARD] Royale API Key Pool Schema. */
+/**
+ * L1 Core: Royale API Key Pool Schema.
+ *
+ * @remarks
+ * **Normalization:**
+ * Automatically normalizes heterogeneous key inputs (JSON arrays, comma-separated
+ * strings, or single tokens) into a clinical `string[]`.
+ *
+ * **Threat Mitigation:**
+ * Prevents sync failures and runtime crashes by ensuring that the key pool is
+ * always a valid array of strings, even if the Vault or Environment contains
+ * malformed data.
+ *
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const KeyPoolSchema = v.pipe(
     v.union([v.string(), v.array(v.string())]),
     v.transform((input) => {
@@ -273,7 +428,20 @@ export const KeyPoolSchema = v.pipe(
     })
 );
 
-/** [GUARD] Vault Secret Schema. */
+/**
+ * L1 Core: Vault Secret Schema.
+ *
+ * @remarks
+ * **Normalization:**
+ * Coerces heterogeneous Vault results (null, undefined, objects, numbers) into
+ * a predictable string format.
+ *
+ * **Threat Mitigation:**
+ * Prevents logic corruption and runtime crashes caused by unexpected database
+ * return types (e.g., PostgREST auto-parsing JSON strings into objects).
+ *
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
 export const VaultSecretSchema = v.pipe(
     v.unknown(),
     v.transform((input) => {

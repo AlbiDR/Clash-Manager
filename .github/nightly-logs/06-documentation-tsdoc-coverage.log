@@ -93,3 +93,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-06-20 | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Documented Voyage status orchestrator and added mandatory threat/decision logs for countdown/progress logic.
 2026-06-21 | Frontend-PWA/src/core/api/MemberSchemas.ts | Documented member schemas and added mandatory threat/decision logs for validation boundaries.
 2026-06-21 | Frontend-PWA/src/core/services/useHaptics.ts | Documented adaptive haptics engine and added mandatory threat/decision logs for battery-aware scaling.
+2026-06-25 | Backend/supabase/functions/_shared/schemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
