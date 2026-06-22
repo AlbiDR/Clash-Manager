@@ -2,6 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import pLimit from "npm:p-limit";
+import * as v from "npm:valibot";
+import { KeyPoolSchema } from "./schemas.ts";
 
 /**
  * L1 Core: Native Muscle Engine
@@ -31,17 +33,10 @@ let activeKeys: string[] = [];
  *
  * @param keys - A single string (comma-separated or JSON array) or an array of API keys.
  */
-export function setKeys(keys: string | string[]): void {
-  if (Array.isArray(keys)) {
-    activeKeys = keys;
-  } else {
-    try {
-      const parsed = JSON.parse(keys);
-      activeKeys = Array.isArray(parsed) ? parsed : [parsed];
-    } catch {
-      activeKeys = keys.split(",").map((keyToken: string) => keyToken.trim()).filter(Boolean);
-    }
-  }
+export function setKeys(keys: unknown): void {
+  // [THREAT:] Unvalidated key configurations can lead to silent sync failures.
+  // [DECISION LOG] Utilizing KeyPoolSchema for clinical normalization of keys.
+  activeKeys = v.parse(KeyPoolSchema, keys);
 }
 
 /**
@@ -59,12 +54,7 @@ function getKeys(): string[] {
     return activeKeys;
   }
   const rawArgs = Deno.env.get("ROYALE_API_KEYS") || "";
-  try {
-    const parsed = JSON.parse(rawArgs);
-    return Array.isArray(parsed) ? parsed : [parsed];
-  } catch {
-    return rawArgs.split(",").map((keyToken: string) => keyToken.trim()).filter(Boolean);
-  }
+  return v.parse(KeyPoolSchema, rawArgs);
 }
 
 console.log(`[Native-Muscle] Key Farm online. Keys will be resolved lazily per request.`);

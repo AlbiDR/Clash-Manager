@@ -3,6 +3,7 @@
 
 import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import * as v from "npm:valibot";
+import { VaultSecretSchema } from "./schemas.ts";
 
 /**
  * L1 Core: Vault Secret Broker
@@ -10,8 +11,9 @@ import * as v from "npm:valibot";
  */
 async function getVaultSecret(supabase: SupabaseClient, secretName: string): Promise<string> {
     // [THREAT:] Unvalidated RPC results could leak implementation details or cause runtime crashes
-    // if the database schema drift causes the RPC to return unexpected types (e.g. object instead of string).
-    // [DECISION LOG] Explicitly validating that secrets are strings before consumption at the core layer.
+    // if the database schema drift causes the RPC to return unexpected types.
+    // [DECISION LOG] Replacing manual typeof checks and JSON.stringify with VaultSecretSchema
+    // to ensure a hardened validation boundary for all secrets.
     const { data: rawSecret, error: vaultError } = await supabase.rpc('get_vault_secret', { p_name: secretName });
     
     if (vaultError) {
@@ -19,20 +21,23 @@ async function getVaultSecret(supabase: SupabaseClient, secretName: string): Pro
         return "";
     }
 
-    // [THREAT:] PostgREST auto-parses text values that are valid JSON (e.g. a stored
-    // JSON array for ROYALE_API_KEYS) into a JS object before the client receives them.
-    // Strictly checking v.string() therefore fails with "received object".
-    // [DECISION LOG] Coerce any non-null, non-string vault return to a JSON string
-    // so downstream consumers (setKeys, loadConfig) receive a consistent string type.
-    if (rawSecret === null || rawSecret === undefined) {
-        console.warn(`[Vault] Secret '${secretName}' not found in vault.`);
+    // [GUARD] VALIDATION BOUNDARY: Harden secret ingestion.
+    // [THREAT:] PostgREST auto-parses JSON-like strings into objects.
+    // VaultSecretSchema handles the unknown input and ensures a consistent string return.
+    const validation = v.safeParse(VaultSecretSchema, rawSecret);
+
+    if (!validation.success) {
+        console.error(`[Vault] Secret structural violation for '${secretName}'.`);
         return "";
     }
-    if (typeof rawSecret !== "string") {
-        return JSON.stringify(rawSecret);
-    }
-    return rawSecret;
 
+    const secretValue = validation.output;
+
+    if (!secretValue) {
+        console.warn(`[Vault] Secret '${secretName}' not found or empty in vault.`);
+    }
+
+    return secretValue;
 }
 
 /**
