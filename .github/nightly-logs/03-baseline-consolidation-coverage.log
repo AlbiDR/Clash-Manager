@@ -102,3 +102,10 @@
 - Views Audited: 11 (Verified OR REPLACE idempotency)
 - Visual Purity: Confirmed 100% ASCII compliance (zero em-dashes/emojis)
 - Verification: scripts/audit_baseline.py and scripts/check_baseline.py passed.
+2026-06-25 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 6 (20260614082900, 20260615004900, 20260617013100, 20260620113000, 20260620120000, 20260620142000)
+- Tables Consolidated: 1 (substrate.headhunter_epoch_state)
+- Functions Updated/Added: 8 (drivers.refresh_voyage_contributions, drivers.on_contribution_manual_override_updated, drivers.on_battle_recorded, public.ingest_player_battles, substrate.update_epoch_state, substrate.run_headhunter_epoch_guard, public.update_epoch_state, public.get_vault_secret)
+- Hardening: Replaced hardcoded Supabase secrets with vault-backed get_vault_secret calls; enforced search_path on new functions.
+- Verification: 1282 passed (monorepo test gate confirmed baseline compilation).
