@@ -7,6 +7,8 @@ _agents
 .cursor
 .jules
 .mcp
+# Claude Code personal settings — contains API tokens; never commit
+.claude/settings.local.json
 
 # Dependencies
 node_modules
@@ -90,6 +92,9 @@ functions_*.txt
 *.apk
 *.aab
 *.keystore
+# ...but DO track the one ground-truth reference APK (the recovered native layer
+# is the irreplaceable IP — this is its proven, signed source-of-truth binary).
+!APK/reference/clashmanager-v4.apk
 /assetlinks.json
 !Frontend-PWA/public/.well-known/assetlinks.json
 
