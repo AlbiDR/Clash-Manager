@@ -102,6 +102,26 @@ CREATE TABLE IF NOT EXISTS substrate.config (
 
 ALTER TABLE substrate.config ENABLE ROW LEVEL SECURITY;
 
+INSERT INTO substrate.config (key, value, description) VALUES
+    (
+        'EPOCH_MAX_RETRIES',
+        '3',
+        'Maximum number of epoch retries the guard will fire per 30-minute main scan cycle.'
+    ),
+    (
+        'EPOCH_INTER_DELAY_S',
+        '300',
+        'Minimum seconds between epoch guard fires (must match or exceed the pg_cron tick interval of 5 min).'
+    ),
+    (
+        'EPOCH_WINDOW_S',
+        '900',
+        'Hard wall-clock deadline in seconds from last_main_scan_at beyond which the guard will not fire. '
+        'Must be strictly less than the main scanner cadence (1800 s / 30 min).'
+    )
+ON CONFLICT (key) DO NOTHING;
+
+
 -- L0 Substrate: Central audit log for system events and error propagation.
 CREATE TABLE IF NOT EXISTS substrate.governance_telemetry (
     discovery_yield integer DEFAULT 0 /* Number of new unique recruits discovered in this cycle. */,
@@ -161,6 +181,41 @@ CREATE TABLE IF NOT EXISTS substrate.discovery_anchors (
 );
 
 ALTER TABLE substrate.discovery_anchors ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- EPOCH STATE TABLE
+-- Singleton row tracking the current epoch loop state.
+-- epoch_count is reset to 0 at the start of each new 30-min main cycle.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS substrate.headhunter_epoch_state (
+    id                 integer      NOT NULL DEFAULT 1,
+    last_main_scan_at  timestamptz,
+    epoch_count        integer      NOT NULL DEFAULT 0,
+    last_top50_count   integer      NOT NULL DEFAULT 0,
+    updated_at         timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT headhunter_epoch_state_pkey PRIMARY KEY (id),
+    CONSTRAINT headhunter_epoch_state_singleton CHECK (id = 1)
+);
+
+ALTER TABLE substrate.headhunter_epoch_state ENABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE substrate.headhunter_epoch_state IS
+    'Singleton row tracking the headhunter top-50 epoch retry loop state. '
+    'Maintained by substrate.update_epoch_state() and consumed by '
+    'substrate.run_headhunter_epoch_guard().';
+
+COMMENT ON COLUMN substrate.headhunter_epoch_state.epoch_count IS
+    'Number of epoch retries fired in the current 30-minute cycle. '
+    'Resets to 0 when a scan succeeds (top50 >= 1) or the epoch window expires.';
+
+COMMENT ON COLUMN substrate.headhunter_epoch_state.last_top50_count IS
+    'The new_recruits_top50 value reported by the most recent scanner run.';
+
+-- Seed the singleton row (safe to run multiple times)
+INSERT INTO substrate.headhunter_epoch_state (id)
+VALUES (1)
+ON CONFLICT (id) DO NOTHING;
+
 
 -- L2 Drivers: The authoritative universal registry of all players encountered by the system.
 CREATE TABLE IF NOT EXISTS drivers.players (
@@ -1727,6 +1782,7 @@ DECLARE
     v_current INT;
     v_end     TIMESTAMPTZ;
     v_name    TEXT;
+    v_earned  INT;
 BEGIN
     SELECT v.id, v.target_crowns, v.end_at
     INTO v_id, v_target, v_end
@@ -1737,7 +1793,6 @@ BEGIN
     LIMIT 1;
 
     IF v_id IS NOT NULL THEN
-        -- Only record voyage contribution if the player is currently an active clan member
         SELECT player_name INTO v_name
         FROM drivers.members
         WHERE player_tag = NEW.player_tag
@@ -1745,6 +1800,8 @@ BEGIN
         LIMIT 1;
 
         IF v_name IS NOT NULL THEN
+            v_earned := NEW.team_crowns + (3 - NEW.opponent_crowns);
+
             INSERT INTO drivers.clan_voyage_contributions (
                 voyage_id,
                 player_tag,
@@ -1756,11 +1813,11 @@ BEGIN
                 v_id,
                 NEW.player_tag,
                 v_name,
-                NEW.team_crowns,
-                LEAST(ROUND((NEW.team_crowns::numeric / NULLIF(v_target, 0)::numeric) * 100, 2), 100.0)
+                v_earned,
+                LEAST(ROUND((v_earned::numeric / NULLIF(v_target, 0)::numeric) * 100, 2), 100.0)
             )
             ON CONFLICT (voyage_id, player_tag)
-            DO UPDATE SET 
+            DO UPDATE SET
                 total_voyage_crowns = drivers.clan_voyage_contributions.total_voyage_crowns + EXCLUDED.total_voyage_crowns,
                 percentage_voyage_crowns = LEAST(ROUND(((drivers.clan_voyage_contributions.total_voyage_crowns + EXCLUDED.total_voyage_crowns)::numeric / NULLIF(v_target, 0)::numeric) * 100, 2), 100.0),
                 player_name = v_name,
@@ -1772,9 +1829,6 @@ BEGIN
         WHERE voyage_id = v_id;
 
         IF v_current >= v_target OR now() >= v_end THEN
-            -- [FIX] Pre-populate 0-crown rows for all non-participating active members
-            --       before transitioning to COMPLETED. This ensures every member has a
-            --       contribution record (even at 0) so their voyage history is complete.
             INSERT INTO drivers.clan_voyage_contributions (
                 voyage_id,
                 player_tag,
@@ -1801,9 +1855,6 @@ BEGIN
             WHERE id = v_id;
         END IF;
     ELSE
-        -- Handle the case where the voyage end_at has passed during battle processing.
-        -- Delegate to finalize_expired_voyages() which handles 0-crown insertion atomically,
-        -- avoiding code duplication and ensuring consistent behaviour.
         PERFORM substrate.finalize_expired_voyages();
     END IF;
 
@@ -1841,7 +1892,6 @@ BEGIN
       AND player_tag NOT IN (SELECT player_tag FROM drivers.members WHERE is_active = true);
 
     -- 2. Calculate and update the correct live scores.
-    --    We perform this in a clean UPDATE pass that handles both players with and without overrides.
     UPDATE drivers.clan_voyage_contributions c
     SET
         total_voyage_crowns = COALESCE(c.manual_voyage_crowns, 0) + COALESCE((
@@ -1851,10 +1901,8 @@ BEGIN
               AND b.battle_time <= v_window_end
               AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail')
               AND (
-                  -- If there's a manual override, only count subsequent battles
                   (c.manual_voyage_crowns IS NOT NULL AND b.battle_time > c.manual_voyage_crowns_at)
                   OR
-                  -- Otherwise, count everything since voyage start
                   (c.manual_voyage_crowns IS NULL AND b.battle_time >= v_start)
               )
         ), 0),
@@ -1974,14 +2022,12 @@ DECLARE
     v_window_end TIMESTAMPTZ;
 BEGIN
     IF NEW.manual_voyage_crowns IS DISTINCT FROM OLD.manual_voyage_crowns THEN
-        -- 1. Update the timestamp
         IF NEW.manual_voyage_crowns IS NOT NULL THEN
             NEW.manual_voyage_crowns_at := now();
         ELSE
             NEW.manual_voyage_crowns_at := NULL;
         END IF;
 
-        -- 2. Fetch voyage details
         SELECT start_at, end_at, target_crowns
         INTO v_start, v_end, v_target
         FROM drivers.clan_voyage
@@ -1989,7 +2035,6 @@ BEGIN
 
         v_window_end := COALESCE(v_end, now());
 
-        -- 3. Calculate total voyage crowns and percentage
         NEW.total_voyage_crowns := COALESCE(NEW.manual_voyage_crowns, 0) + COALESCE((
             SELECT SUM(b.team_crowns + (3 - b.opponent_crowns))
             FROM drivers.player_battles b
@@ -3045,10 +3090,20 @@ BEGIN
                 item->>'battleTime'             AS bt,
                 item->>'type'                   AS type,
                 item->'team'->0->>'tag'         AS team_tag,
-                COALESCE((item->'team'->0->>'crowns')::INT, 0)     AS team_crowns,
+                CASE
+                    WHEN item->>'type' = 'riverRaceDuel' AND jsonb_typeof(item->'team'->0->'rounds') = 'array' THEN
+                        (SELECT (COALESCE(SUM((r->>'crowns')::INT), 0) + (3 * GREATEST(COUNT(r) - 1, 0)))::INT
+                         FROM jsonb_array_elements(item->'team'->0->'rounds') r)
+                    ELSE COALESCE((item->'team'->0->>'crowns')::INT, 0)
+                END AS team_crowns,
                 item->'opponent'->0->>'tag'     AS opponent_player_tag,
                 item->'opponent'->0->>'name'    AS opponent_player_name,
-                COALESCE((item->'opponent'->0->>'crowns')::INT, 0) AS opponent_crowns
+                CASE
+                    WHEN item->>'type' = 'riverRaceDuel' AND jsonb_typeof(item->'opponent'->0->'rounds') = 'array' THEN
+                        (SELECT COALESCE(SUM((r->>'crowns')::INT), 0)::INT
+                         FROM jsonb_array_elements(item->'opponent'->0->'rounds') r)
+                    ELSE COALESCE((item->'opponent'->0->>'crowns')::INT, 0)
+                END AS opponent_crowns
             FROM jsonb_array_elements(p_payload) item
             WHERE item->>'battleTime' IS NOT NULL
               AND item->'opponent' IS NOT NULL
@@ -3113,7 +3168,7 @@ BEGIN
         );
 
         UPDATE drivers.members
-        SET next_poll_at = now() + make_interval(secs => v_interval_secs)
+        SET next_poll_at = now() + make_interval(secs => v_interval_secs::double precision)
         WHERE player_tag = p_tag;
     END IF;
 END;
@@ -3747,6 +3802,18 @@ WITH latest_logs AS (
   ORDER BY (season_id)::integer DESC, (section_index)::integer DESC;
 
 -- TRIGGERS
+-- ============================================================
+-- 6. pg_cron SCHEDULE
+-- Ticks every 5 minutes. The guard function itself is idempotent
+-- and fast-exits when no action is required.
+-- ============================================================
+SELECT cron.schedule(
+    'headhunter-epoch-guard',
+    '*/5 * * * *',
+    $$SELECT substrate.run_headhunter_epoch_guard()$$
+);
+
+
 CREATE OR REPLACE TRIGGER handle_updated_at_members BEFORE UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
 CREATE OR REPLACE TRIGGER tr_heritage_snapshot AFTER DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION substrate.handle_heritage_snapshot();

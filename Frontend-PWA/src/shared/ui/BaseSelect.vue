@@ -29,9 +29,9 @@ const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
 };
 
-const selectOption = (opt: Option) => {
-  if (opt.disabled) return;
-  emit("update:modelValue", opt.value);
+const selectOption = (option: Option) => {
+  if (option.disabled) return;
+  emit("update:modelValue", option.value);
   isOpen.value = false;
 };
 
@@ -72,21 +72,21 @@ const getSelectedLabel = () => {
       <div v-if="isOpen" class="options-dropdown">
         <ul role="listbox" class="options-list">
           <li
-            v-for="opt in props.options"
-            :key="opt.value"
+            v-for="option in props.options"
+            :key="option.value"
             role="option"
-            :aria-selected="opt.value === props.modelValue"
+            :aria-selected="option.value === props.modelValue"
             class="option-item"
             :class="[
-              opt.class || '',
+              option.class || '',
               {
-                active: opt.value === props.modelValue,
-                disabled: opt.disabled
+                active: option.value === props.modelValue,
+                disabled: option.disabled
               }
             ]"
-            @click="selectOption(opt)"
+            @click="selectOption(option)"
           >
-            {{ opt.label }}
+            {{ option.label }}
           </li>
         </ul>
       </div>

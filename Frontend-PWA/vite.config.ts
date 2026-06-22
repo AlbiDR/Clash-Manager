@@ -40,6 +40,10 @@ export default defineConfig({
   base: "/Clash-Manager/",
   build: {
     outDir: "dist",
+    target: ["es2022", "edge112", "firefox112", "chrome112", "safari16.4"],
+    modulePreload: {
+      polyfill: false,
+    },
     sourcemap: false,
     cssCodeSplit: true,
     rollupOptions: {

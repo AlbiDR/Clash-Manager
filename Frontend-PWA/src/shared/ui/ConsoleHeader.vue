@@ -41,11 +41,11 @@ const { isScrolled } = useHeaderScroll(10);
 let debounceTimer: number | null = null;
 
 const handleInput = (e: Event) => {
-  const val = (e.target as HTMLInputElement).value;
+  const searchQuery = (e.target as HTMLInputElement).value;
   if (debounceTimer) window.clearTimeout(debounceTimer);
 
   debounceTimer = window.setTimeout(() => {
-    emit("update:search", val);
+    emit("update:search", searchQuery);
   }, 300);
 };
 

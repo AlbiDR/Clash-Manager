@@ -56,13 +56,13 @@ defineExpose({
     <!-- Dynamic Value Picker (Horizontal Scroll) -->
     <div v-if="isScoreExpanded" ref="valuePicker" class="value-picker">
       <button
-        v-for="val in thresholds"
-        :key="val"
+        v-for="threshold in thresholds"
+        :key="threshold"
         class="val-opt"
-        :class="{ active: props.value === val }"
-        @click="selectValue(val)"
+        :class="{ active: props.value === threshold }"
+        @click="selectValue(threshold)"
       >
-        {{ val }}
+        {{ threshold }}
       </button>
     </div>
   </div>

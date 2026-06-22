@@ -28,8 +28,10 @@ The backend has transitioned from a distributed model (GAS/Node.js) into a strea
 The project employs a strictly segmented schema strategy to maintain domain isolation:
 
 ### 1. `substrate` (L0 - Raw Data)
-- **Role**: Ingestion gatekeeper.
+- **Role**: Ingestion gatekeeper and orchestration state.
 - **Logic**: Receives volatile raw state from Edge Functions. No processing logic.
+- **Core Models**:
+    - `substrate.headhunter_epoch_state`: Singleton state table for managing the Headhunter Top-50 Safety Epoch Loop.
 - **Privacy**: Service-role internal only; strictly isolated from public access.
 
 ### 2. `drivers` (L2 - Domain Storage)
@@ -37,7 +39,7 @@ The project employs a strictly segmented schema strategy to maintain domain isol
 - **Core Models**:
     - `drivers.members`: The single authoritative source for active player telemetry.
     - `drivers.war_history`: **Infinite Career Ledger** tracking every week since first sync (Unlimited History).
-    - `drivers.player_battles`: **100-Sample Rolling Window** per resident for deep performance scoring.
+    - `drivers.player_battles`: **100-Sample Rolling Window** per resident for deep performance scoring. Includes server-side `riverRaceDuel` and crown metrics derived at ingestion.
     - `drivers.war_activity`: Daily deck usage and participation logs.
 
 ### 3. `features` (L3 - Business Presentation)
@@ -58,10 +60,10 @@ Ingestion is performed via a **Hexa-Engine Edge Architecture**, supported by aut
     - **S1 (Discovery)**: Harvests new recruits from high-fidelity tournament anchors.
     - **S2 (Clan Profile)**: Atomic synchronization of clan-level telemetry.
     - **S3 (Roster Sync)**: Synchronization of active member telemetry.
-    - **S4 (River Race)**: Extraction of current standings and task completion.
+    - **S4 (River Race)**: Extraction of current standings and task completion. Performs server-side `riverRaceDuel` and crown derivation for the current week.
     - **S5 (War History)**: Infinite Career Ledger synchronization.
-    - **S6 (Deep Depth)**: Extracts the rolling battle-log window (capped by the Royale API at ~25 battles) for high-precision competitive scoring.
-2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling.
+    - **S6 (Deep Depth)**: Extracts the rolling battle-log window (capped by the Royale API at ~25 battles) for high-precision competitive scoring. Implements server-side crown derivation for historical battle logs.
+2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling. Implements the **Safety Epoch Loop** via `substrate.headhunter_epoch_state` to prevent redundant Top-50 leaderboard scans.
 3. **Royale API Proxy (`query-royale-api`)**: A secure L5 Control Layer proxy for transient leaderboard harvesting. Features a dynamic country rotation strategy for International clans to ensure diverse recruit discovery without polluting the database substrate.
 4. **Battlelog Proxy (`fetch-player-battlelog`)**: A specialized L5 Control Layer proxy for fetching live player battle logs. Features a parallel fan-out strategy across the Key Farm to maximize data freshness across distributed proxy nodes.
 5. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Utilizes inferred Valibot schemas for rarity-relative normalization and backend persistence, enforcing a zero-trust boundary for client-supplied snapshots.
@@ -125,7 +127,7 @@ supabase functions deploy fetch-player-battlelog --no-verify-jwt
 
 ## VII. Operational Security (Clinical Protocol)
 - **RLS Lockdown**: Deny-by-default on all tables. Only specifically authorized `view` operations are permitted for the `anon` role.
-- **Zero-Trust Boundary**: High-fidelity validation of all inbound payloads at the Ingestion Gate level.
+- **Zero-Trust Boundary**: High-fidelity validation of all inbound payloads at the Ingestion Gate level. Enforces strict Valibot schemas (`TelemetrySchema`, `KeyPoolSchema`, `VaultSecretSchema`) centralized in `_shared/schemas.ts`.
 - **Quota Guarding**: Proactive management of free-tier storage (500MB) via the automated janitor cycle.
 
 ---

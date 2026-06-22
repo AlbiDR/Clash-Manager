@@ -36,7 +36,7 @@ export function useBenchmarkedStat(
   const benchmarkTooltipContent = computed(() => {
     const ctx = toValue(context);
     const m = toValue(metric);
-    const val = toValue(value);
+    const statValue = toValue(value);
     const isLoading = toValue(loading);
 
     // [DECISION LOG] Safeguard: Prevent benchmarking during loading or if
@@ -45,7 +45,7 @@ export function useBenchmarkedStat(
       return null;
     }
 
-    return getSafeBenchmark(ctx, m, val);
+    return getSafeBenchmark(ctx, m, statValue);
   });
 
   return {

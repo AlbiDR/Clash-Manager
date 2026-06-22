@@ -76,21 +76,26 @@ self.addEventListener("activate", (event) => {
  */
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
+    /**
+     * [OPTIMIZATION] Native-Like Navigation Strategy (Cache-First)
+     * To achieve sub-second "native" startup latency in the hybrid shell, we
+     * prioritize the precached app shell (index.html) for all navigation requests.
+     * This bypasses the network completely for the initial document load.
+     */
     event.respondWith(
       (async () => {
+        const cachedShell = await matchPrecache("/Clash-Manager/index.html");
+        if (cachedShell) {
+          return cachedShell;
+        }
+
         try {
-          // Attempt to consume preloaded response if active
           const preloadResponse = await event.preloadResponse;
           if (preloadResponse) {
             return preloadResponse;
           }
           return await fetch(event.request);
         } catch (error) {
-          // Offline/Network error fallback to precached HTML shell
-          const cachedShell = await matchPrecache("/Clash-Manager/index.html");
-          if (cachedShell) {
-            return cachedShell;
-          }
           throw error;
         }
       })(),
