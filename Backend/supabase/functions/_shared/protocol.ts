@@ -4,7 +4,7 @@
 import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import * as v from "npm:valibot";
 import { AuditEntry } from "./types.ts";
-import { IntegrityCheckDetailsSchema } from "./schemas.ts";
+import { IntegrityCheckDetailsSchema, TelemetrySchema } from "./schemas.ts";
 
 /**
  * CONFIGURATION: ProtocolOptions
@@ -115,7 +115,10 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             });
         }
 
-        const rawBody = await req.json().catch(() => ({}));
+        // [THREAT:] Implicit 'any' from request JSON can lead to logic corruption or runtime crashes.
+        // [DECISION LOG] Replacing implicit 'any' with 'unknown' and enforcing a strict validation boundary.
+        const rawBody: unknown = await req.json().catch(() => ({}));
+
         // [GUARD] VALIDATION BOUNDARY: Satisfies ADR Section III.
         // Rejects malformed or hostile payloads before they reach business logic.
         const parsed = v.safeParse(schema, rawBody);
@@ -129,12 +132,26 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // 4. Governance: Initial Heartbeat & Telemetry Boot
         // [DECISION LOG] Telemetry is initiated at the BOOT stage to track the full
         // lifecycle of the request, including duration and audit logs.
-        const { data: telemetryData } = await supabase.rpc('report_telemetry', {
+        // [THREAT:] Unvalidated RPC responses can mask database connectivity issues or schema drift.
+        // [DECISION LOG] Explicitly validating the telemetry registration result to ensure persistence availability.
+        const { data: rawTelemetryData, error: telemetryError } = await supabase.rpc('report_telemetry', {
             p_event_type: eventType,
             p_status: 'IN_PROGRESS',
             p_metadata: { stage: 'BOOT', payload: parsed.output }
         });
-        const telemetry = telemetryData && Array.isArray(telemetryData) ? telemetryData[0] : telemetryData;
+
+        if (telemetryError) {
+            console.error(`[Protocol] Telemetry registration failed: ${telemetryError.message}`);
+        }
+
+        const telemetryValidation = v.safeParse(TelemetrySchema, rawTelemetryData);
+        const telemetry = telemetryValidation.success
+            ? (Array.isArray(telemetryValidation.output) ? telemetryValidation.output[0] : telemetryValidation.output)
+            : null;
+
+        if (!telemetryValidation.success && rawTelemetryData !== null) {
+            console.warn(`[Protocol] Telemetry response failed structural validation for ${componentId}.`);
+        }
 
         logAudit('BOOT', 'triggered', { payload: parsed.output });
 

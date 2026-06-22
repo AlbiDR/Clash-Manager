@@ -251,3 +251,35 @@ export const IntegrityCheckDetailsSchema = v.object({
     details: v.optional(v.string()),
     issues: v.optional(v.array(v.unknown()))
 });
+
+/** [GUARD] Telemetry Response Schema. */
+export const TelemetrySchema = v.union([
+    v.object({ id: v.union([v.string(), v.number()]) }),
+    v.array(v.object({ id: v.union([v.string(), v.number()]) }))
+]);
+
+/** [GUARD] Royale API Key Pool Schema. */
+export const KeyPoolSchema = v.pipe(
+    v.union([v.string(), v.array(v.string())]),
+    v.transform((input) => {
+        if (Array.isArray(input)) return input.filter(Boolean);
+        if (!input) return [];
+        try {
+            const parsed = JSON.parse(input);
+            return Array.isArray(parsed) ? parsed.map(String).filter(Boolean) : [String(parsed)].filter(Boolean);
+        } catch {
+            return input.split(",").map((k) => k.trim()).filter(Boolean);
+        }
+    })
+);
+
+/** [GUARD] Vault Secret Schema. */
+export const VaultSecretSchema = v.pipe(
+    v.unknown(),
+    v.transform((input) => {
+        if (input === null || input === undefined) return "";
+        if (typeof input === "string") return input;
+        return JSON.stringify(input);
+    }),
+    v.string()
+);
