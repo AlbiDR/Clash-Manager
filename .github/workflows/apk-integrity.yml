@@ -1,0 +1,26 @@
+# Fails if a change strips the custom native layer from the recovered android/
+# project. The release APK's Blitz overlay service, accessibility tap-gesture
+# service and WebView bridge exist ONLY in android/classes.dex — there is no
+# Kotlin source. This gate makes "someone repackaged it as a generic TWA" a
+# red CI check instead of a silent production regression.
+name: APK Native-Layer Integrity
+
+on:
+  push:
+    paths:
+      - "APK/**"
+      - ".github/workflows/apk-integrity.yml"
+  pull_request:
+    paths:
+      - "APK/**"
+
+jobs:
+  custom-layer-intact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify APK/android retains the custom native layer
+        run: node APK/verify-android-source.mjs APK/android

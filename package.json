@@ -6,7 +6,11 @@
   "scripts": {
     "deploy:pwa": "pnpm -F clash-manager-pwa build",
     "dev:pwa": "pnpm -F clash-manager-pwa dev",
-    "icons:android": "node gen-android-icons.mjs",
+    "icons:android": "node APK/gen-android-icons.mjs",
+    "apk:build": "./APK/build-apk.sh",
+    "apk:build:unsigned": "./APK/build-apk.sh --no-sign",
+    "apk:verify": "node APK/verify-apk-integrity.mjs",
+    "apk:verify:source": "node APK/verify-android-source.mjs APK/android",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "audit:version": "tsx .github/scripts/validate_project.ts",

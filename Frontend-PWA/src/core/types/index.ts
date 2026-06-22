@@ -11,6 +11,17 @@
  * @remarks
  * Formalizes the contract for communication between the PWA and the native
  * Android wrapper (TWA).
+ *
+ * ⚠️ HARD NATIVE DEPENDENCY — DO NOT BREAK THIS CONTRACT.
+ * These methods are implemented by a custom Kotlin layer
+ * (`MainActivity$AndroidBridge` + `BlitzService` + `ClashManagerAccessibilityService`)
+ * that exists ONLY as compiled code inside the release APK — there is no Kotlin
+ * source in this repo. The recovered, rebuildable project is `APK/android/`
+ * (see `APK/README.md`); the release is built with `pnpm apk:build`, NOT
+ * `bubblewrap build` (which produces a generic TWA that strips this bridge).
+ * Renaming a method here requires a matching change in that native layer, or the
+ * Blitz / accessibility / external-link features silently break on device.
+ * `verify-apk-integrity.mjs` asserts every method below survives a build.
  */
 export interface AndroidBridge {
   /** Opens a URL using the native Android ACTION_VIEW intent. */

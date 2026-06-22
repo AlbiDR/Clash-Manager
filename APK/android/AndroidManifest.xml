@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="36" android:compileSdkVersionCodename="16" package="com.albidr.clashmanager" platformBuildVersionCode="36" platformBuildVersionName="16">
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <queries>
+        <package android:name="com.supercell.clashroyale"/>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="clashroyale"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+    <permission android:name="com.albidr.clashmanager.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
+    <uses-permission android:name="com.albidr.clashmanager.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
+    <application android:allowBackup="true" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:extractNativeLibs="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:label="@string/appName" android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity" android:name="com.albidr.clashmanager.Application" android:supportsRtl="true" android:theme="@android:style/Theme.Translucent.NoTitleBar">
+        <meta-data android:name="asset_statements" android:resource="@string/assetStatements"/>
+        <meta-data android:name="web_manifest_url" android:value="@string/webManifestUrl"/>
+        <meta-data android:name="twa_generator" android:value="@string/generatorApp"/>
+        <activity android:enabled="true" android:excludeFromRecents="true" android:exported="false" android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity">
+            <meta-data android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL" android:value="@string/launchUrl"/>
+            <intent-filter>
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity android:alwaysRetainTaskState="true" android:exported="true" android:label="@string/launcherName" android:name="com.albidr.clashmanager.MainActivity">
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:host="@string/hostName" android:pathPrefix="/Clash-Manager/" android:scheme="https"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="web+clash"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
+            </intent-filter>
+        </activity>
+        <activity android:name="com.google.androidbrowserhelper.trusted.FocusActivity"/>
+        <activity android:configChanges="orientation|screenSize" android:name="com.google.androidbrowserhelper.trusted.WebViewFallbackActivity"/>
+        <provider android:authorities="com.albidr.clashmanager.fileprovider" android:exported="false" android:grantUriPermissions="true" android:name="androidx.core.content.FileProvider">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/filepaths"/>
+        </provider>
+        <service android:enabled="@bool/enableNotification" android:exported="@bool/enableNotification" android:name="com.albidr.clashmanager.DelegationService">
+            <meta-data android:name="android.support.customtabs.trusted.SMALL_ICON" android:resource="@drawable/ic_notification_icon"/>
+            <intent-filter>
+                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </service>
+        <service android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" android:name="com.albidr.clashmanager.BlitzService"/>
+        <service android:exported="true" android:label="Clash Manager Blitz" android:name="com.albidr.clashmanager.ClashManagerAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config"/>
+        </service>
+        <activity android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity"/>
+        <provider android:authorities="com.albidr.clashmanager.androidx-startup" android:exported="false" android:name="androidx.startup.InitializationProvider">
+            <meta-data android:name="androidx.emoji2.text.EmojiCompatInitializer" android:value="androidx.startup"/>
+            <meta-data android:name="androidx.lifecycle.ProcessLifecycleInitializer" android:value="androidx.startup"/>
+            <meta-data android:name="androidx.profileinstaller.ProfileInstallerInitializer" android:value="androidx.startup"/>
+        </provider>
+        <receiver android:directBootAware="false" android:enabled="true" android:exported="true" android:name="androidx.profileinstaller.ProfileInstallReceiver" android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SKIP_FILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION"/>
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

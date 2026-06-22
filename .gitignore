@@ -95,3 +95,7 @@ functions_*.txt
 
 # Android icon-generator preview output (gen-android-icons.mjs --preview)
 .icon-preview/
+
+# Android build outputs (apktool b / build-apk.sh) — sources live in APK/android/
+APK/android/build/
+APK/build-apk-out/
