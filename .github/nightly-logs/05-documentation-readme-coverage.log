@@ -4,3 +4,4 @@
 2026-06-21 | Frontend-PWA/README.md | Clarified SWR hydration boundaries and verified service registry
 2026-06-21 | Frontend-PWA/src/core/utils/README.md | Documented formatNumber optimizations for null/NaN and caching
 2026-06-21 | Frontend-PWA/src/core/README.md | Re-synchronized useConsoleSelection in the service registry
+2026-06-25 | Backend/README.md | Reconciled Headhunter Epoch safety, server-side crown/duel derivation, and centralized Valibot boundaries.
