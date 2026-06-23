@@ -76,10 +76,16 @@ Authoritative TypeScript interfaces and enums used across the entire application
 ### Utility Kernels (`/utils`)
 Pure, stateless logic engines and formatting primitives.
 - **idbKernel.ts**: Low-level IndexedDB boilerplate and memory-fallback logic.
-- **predictionMath.ts**: Weighted-average engines and historical performance projection.
+- **PriorityQueue.ts**: High-performance data structure implementing a binary heap for $O(\log N)$ priority-based selection in simulation engines.
+- **economy.ts**: Authoritative source for Clash Royale currency math, branded types (`Gold`, `Gems`, `XP`), and cost conversion logic.
+- **predictionMath.ts**: Weighted-average engines and historical performance projection for forecasting trends.
 - **game.ts**: Authoritative Clash Royale domain logic, costs, and XP tables.
-- **time.ts, text.ts, math.ts**: Standardized sanitization and duration conversion logic.
-- **bezier.ts**: Geometric calculations for trend visualization.
+- **time.ts, text.ts, math.ts**: Standardized sanitization, duration conversion, and high-performance numeric formatting logic.
+- **navigation.ts**: Single Source of Truth for application-level navigation items, paths, and icons.
+- **visibility.ts**: Lifecycle registry for orchestrating time-based revalidation triggers when the application regains focus.
+- **bezier.ts**: Geometric foundations for data visualization and smooth SVG path generation.
+- **sortOptions.ts & sortStrategies.ts**: Centralized logic for list orchestration, providing both UI metadata and clinical comparator functions.
+- **mockData.ts**: High-fidelity synthetic payload generator for the Synthetic Data engine, ensuring UI stability during demonstration and testing.
 
 ---
 
