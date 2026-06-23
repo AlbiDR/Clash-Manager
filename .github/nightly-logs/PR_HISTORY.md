@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-23] PR #903: test(verify): add specs for formatDisplayTag
+**Commit**: `9516127215baf6dfdab37ac9839db88b1b3f7733`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/903)
+
+### Description
+I have added unit tests for the `formatDisplayTag` utility to ensure logic integrity and prevent regressions in tag formatting. This change increases the coverage of the core text utilities and adheres to the Stage 2 Verification mandate.
+
+---
+*PR created automatically by Jules for task [2237923889314994992](https://jules.google.com/task/2237923889314994992) started by @AlbiDR*
+
+---
+
 ## [2026-06-23] PR #902: fix(harden): implement generics in BaseSelect.vue
 **Commit**: `7169de7ce3046b9c559b6e066045cc0b2c4e64f4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/902)
