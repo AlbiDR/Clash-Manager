@@ -22,7 +22,7 @@ export async function runShadowScout(
         logAudit('SHADOW_SCOUT', 'called');
         console.log(`[SHADOW_SCOUT] Fetching shadow discovery targets via RPC...`);
         const { data: rawShadowTargets, error: shadowError } = await supabase
-            .rpc('get_shadow_discovery_targets', { p_limit: 50 });
+            .rpc('get_shadow_discovery_targets', { p_limit: 75 });
         
         logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(rawShadowTargets) ? rawShadowTargets.length : 0, error: shadowError });
         if (!shadowError && rawShadowTargets) {

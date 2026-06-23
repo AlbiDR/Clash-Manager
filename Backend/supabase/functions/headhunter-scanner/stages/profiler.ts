@@ -63,7 +63,7 @@ export async function runProfiler(
     stats: ScannerStats,
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ) {
-    const tagsToProfile = [...candidates.keys()].slice(0, 500);
+    const tagsToProfile = [...candidates.keys()].slice(0, 1000);
     if (tagsToProfile.length === 0) {
         console.log(`[PROFILING] No candidates to profile. Skipping.`);
         return;

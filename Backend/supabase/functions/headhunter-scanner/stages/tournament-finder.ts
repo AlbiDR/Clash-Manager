@@ -9,9 +9,9 @@ import { DiscoveryAnchorSchema, DiscoveryCacheItemSchema, RoyaleTournamentListSc
 
 const ANCHOR_LIMIT = 36;
 const CACHE_HOURS = 5 / 60; // 5 minutes cache window
-const TOURNAMENT_SEARCH_LIMIT = 10;
+const TOURNAMENT_SEARCH_LIMIT = 25;
 const BATCH_TOURNAMENTS = 25;
-const BATCH_KEYWORDS = 15;
+const BATCH_KEYWORDS = 30;
 
 /**
  * Stage: Tournament Discovery
