@@ -69,20 +69,20 @@ function onInteractionStart() {
 <style scoped>
 .dock-item {
   position: relative;
-  height: 56px;
+  height: var(--sys-space-56);
   flex: 1;
   min-width: 64px;
-  padding: 0 12px;
+  padding: 0 var(--sys-space-12);
   border-radius: var(--sys-shape-corner-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  font-size: 15px;
+  gap: var(--sys-space-10);
+  font-size: var(--sys-typescale-body-rg);
   font-weight: 850;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   -webkit-tap-highlight-color: transparent;
   background: none;
   border: none;
@@ -115,13 +115,13 @@ function onInteractionStart() {
   );
   border-radius: var(--sys-shape-corner-full);
   z-index: -1;
-  animation: pop-in 0.3s cubic-bezier(0.2, 0, 0, 1.2);
+  animation: pop-in var(--sys-motion-duration-300) var(--sys-motion-easing-spring-nav);
   box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
 .dock-label {
-  transition: opacity 0.3s;
-  letter-spacing: -0.01em;
+  transition: opacity var(--sys-motion-duration-300);
+  letter-spacing: var(--sys-tracking-neg-1);
 }
 
 @media (max-width: 600px) {
@@ -129,8 +129,8 @@ function onInteractionStart() {
     flex: 1;
     min-width: 0;
     padding: 0;
-    gap: 4px;
-    font-size: 13px;
+    gap: var(--sys-space-4);
+    font-size: var(--sys-typescale-body-sm);
   }
   .dock-item .dock-label {
     display: none;

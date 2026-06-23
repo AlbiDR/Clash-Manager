@@ -63,7 +63,7 @@ defineEmits<{
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: all 0.2s var(--sys-motion-standard);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .setting-row.disabled {

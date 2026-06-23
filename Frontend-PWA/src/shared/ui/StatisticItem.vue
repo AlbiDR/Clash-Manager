@@ -36,15 +36,15 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 6px 4px;
-  border-radius: 10px;
+  gap: var(--sys-space-2);
+  padding: var(--sys-space-6) var(--sys-space-4);
+  border-radius: var(--sys-shape-corner-stat);
   background: var(--sys-color-surface-container-highest);
   border: 1px solid var(--sys-surface-glass-border);
   transition:
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-spring-overshoot),
+    background-color var(--sys-motion-duration-200) ease,
+    box-shadow var(--sys-motion-duration-200) ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 .stat-item:hover {
@@ -55,14 +55,14 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 }
 
 .label {
-  font-size: 9px;
+  font-size: var(--sys-typescale-label-sm);
   text-transform: uppercase;
   font-weight: 850;
   color: var(--sys-color-secondary);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--sys-tracking-wider);
   opacity: 1;
   text-align: center;
-  line-height: 1.1;
+  line-height: var(--sys-leading-tight);
   min-height: 20px;
   display: flex;
   align-items: center;
@@ -71,22 +71,22 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 }
 
 .value {
-  font-size: 14px;
+  font-size: var(--sys-typescale-body-md);
   font-weight: 900;
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
-  line-height: 1;
+  line-height: var(--sys-leading-none);
 }
 
 @media (max-width: 360px) {
   .stat-item {
-    padding: 4px 2px;
+    padding: var(--sys-space-4) var(--sys-space-2);
   }
   .value {
-    font-size: 13px;
+    font-size: var(--sys-typescale-body-sm);
   }
   .label {
-    font-size: 8px;
+    font-size: var(--sys-typescale-label-xs);
   }
 }
 </style>

@@ -34,6 +34,11 @@ export interface ThemeTokens {
     successContainer: string;
     onSuccessContainer: string;
 
+    warning: string;
+    onWarning: string;
+    warningContainer: string;
+    onWarningContainer: string;
+
     background: string;
     surface: string;
     onSurface: string;
@@ -92,6 +97,11 @@ export const lightTokens: ThemeTokens = {
     onSuccess: '#ffffff',
     successContainer: '#b9f6ca',
     onSuccessContainer: '#002105',
+
+    warning: '#7D5700',
+    onWarning: '#ffffff',
+    warningContainer: '#FFDEA8',
+    onWarningContainer: '#261A00',
 
     background: '#fdfcff',
     surface: '#fdfcff',
@@ -152,6 +162,11 @@ export const darkTokens: ThemeTokens = {
     onSuccess: '#00390a',
     successContainer: '#005313',
     onSuccessContainer: '#b9f6ca',
+
+    warning: '#FFC53D',
+    onWarning: '#401A00',
+    warningContainer: '#5A3600',
+    onWarningContainer: '#FFDEA8',
 
     background: '#0b0e14',
     surface: '#0b0e14',

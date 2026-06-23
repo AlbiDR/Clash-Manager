@@ -153,10 +153,10 @@ const {
 }
 
 /* Color Tones */
-.status-pill.success { color: var(--sys-success); }
-.status-pill.warning { color: var(--sys-warning); border-color: var(--sys-warning); }
-.status-pill.error   { color: var(--sys-error); border-color: var(--sys-error); }
-.status-pill.loading { border-color: var(--sys-primary); color: var(--sys-primary); }
+.status-pill.success { color: var(--sys-color-success); }
+.status-pill.warning { color: var(--sys-color-warning); border-color: var(--sys-color-warning); }
+.status-pill.error   { color: var(--sys-color-error); border-color: var(--sys-color-error); }
+.status-pill.loading { border-color: var(--sys-color-primary); color: var(--sys-color-primary); }
 
 .status-dot {
   position: relative;
@@ -224,7 +224,7 @@ const {
 }
 
 .technical {
-  font-family: var(--sys-font-mono);
+  font-family: var(--sys-font-family-mono);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -240,7 +240,7 @@ const {
 }
 
 .status-label.is-db {
-  color: var(--sys-primary);
+  color: var(--sys-color-primary);
 }
 
 .icon-bolt {
@@ -276,7 +276,7 @@ const {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--sys-outline-variant);
+  background: var(--sys-color-outline-variant);
   margin: 0 4px;
   flex-shrink: 0;
 }
@@ -292,29 +292,29 @@ const {
   align-items: center;
   padding: 2px 5px;
   border-radius: 5px;
-  background: var(--sys-surface-container-highest);
-  color: var(--sys-text-secondary);
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface-variant);
   font-size: 8px;
   font-weight: 900;
 }
 
 .source-tag.supabase {
-  color: var(--sys-primary);
-  background: var(--sys-primary-container);
+  color: var(--sys-color-primary);
+  background: var(--sys-color-primary-container);
 }
 
 .age-info,
 .diagnosis-info {
-  color: var(--sys-text-tertiary);
+  color: var(--sys-color-on-surface-variant);
   font-size: 9px;
 }
 
 .diagnosis-info {
-  color: var(--sys-warning);
+  color: var(--sys-color-warning);
 }
 
 .status-pill.error .diagnosis-info {
-  color: var(--sys-error);
+  color: var(--sys-color-error);
 }
 
 .sync-action {
@@ -325,16 +325,16 @@ const {
   height: 22px;
   border-radius: 50%;
   border: none;
-  background: var(--sys-surface-container-high);
-  color: var(--sys-primary);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-primary);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
 .sync-action:hover {
-  background: var(--sys-primary);
-  color: var(--sys-on-primary);
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
   transform: scale(1.1) rotate(15deg);
 }
 
@@ -359,7 +359,7 @@ const {
 }
 
 @keyframes bolt-flicker {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--sys-primary)); }
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--sys-color-primary)); }
   50% { opacity: 0.7; filter: drop-shadow(0 0 0px transparent); }
 }
 

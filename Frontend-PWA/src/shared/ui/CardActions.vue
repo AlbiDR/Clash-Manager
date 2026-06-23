@@ -54,7 +54,7 @@ const iconSize = props.compact ? 14 : 16;
 <style scoped>
 .card-actions-wrapper {
   display: flex;
-  gap: 8px;
+  gap: var(--sys-space-8);
   width: 100%;
 }
 </style>

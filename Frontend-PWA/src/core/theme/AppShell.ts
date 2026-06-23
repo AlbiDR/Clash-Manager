@@ -41,11 +41,11 @@ export function getAppShellStyles(): string {
 
     #app-shell {
       display: block;
-      max-width: 720px;
+      max-width: var(--sys-layout-max-width);
       margin: 0 auto;
-      padding: 0 12px;
-      padding-top: calc(12px + env(safe-area-inset-top));
-      padding-bottom: 120px;
+      padding: 0 var(--sys-space-12);
+      padding-top: calc(var(--sys-space-12) + env(safe-area-inset-top));
+      padding-bottom: var(--sys-space-120);
       contain: content;
     }
 
@@ -55,12 +55,12 @@ export function getAppShellStyles(): string {
       z-index: 10;
       background: var(--sh-glass);
       border: 1px solid var(--sh-border);
-      border-radius: 24px;
-      padding: 18px;
-      margin-bottom: 20px;
+      border-radius: var(--sys-shape-corner-l);
+      padding: var(--sys-space-18);
+      margin-bottom: var(--sys-space-20);
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: var(--sys-space-14);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     }
 
@@ -68,10 +68,10 @@ export function getAppShellStyles(): string {
 
     .view-title {
       margin: 0;
-      font-size: 24px;
+      font-size: var(--sys-typescale-title-lg);
       font-weight: 900;
       color: var(--sh-text);
-      letter-spacing: -0.03em;
+      letter-spacing: var(--sys-tracking-snug);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -79,17 +79,17 @@ export function getAppShellStyles(): string {
       contain: paint;
     }
 
-    .sh-pill { width: 100px; height: 28px; background: var(--sh-surf-c); border-radius: 10px; }
-    .sh-search { height: 46px; background: var(--sh-surf-h); border-radius: 14px; display: flex; align-items: center; padding: 0 14px; gap: 12px; }
+    .sh-pill { width: 100px; height: 28px; background: var(--sh-surf-c); border-radius: var(--sys-shape-corner-stat); }
+    .sh-search { height: 46px; background: var(--sh-surf-h); border-radius: var(--sys-shape-corner-input); display: flex; align-items: center; padding: 0 var(--sys-space-14); gap: var(--sys-space-12); }
     .sh-s-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--sh-outline); opacity: 0.3; }
-    .sh-s-line { height: 12px; width: 80px; background: var(--sh-outline); opacity: 0.1; border-radius: 4px; }
+    .sh-s-line { height: 12px; width: 80px; background: var(--sh-outline); opacity: 0.1; border-radius: var(--sys-shape-corner-extra-small); }
 
-    .sh-list { display: flex; flex-direction: column; gap: 8px; }
+    .sh-list { display: flex; flex-direction: column; gap: var(--sys-space-8); }
     .sh-card {
-      height: 76px;
+      height: var(--sys-space-76);
       background: var(--sh-surf-c);
-      border-radius: 20px;
-      padding: 12px 16px;
+      border-radius: var(--sys-shape-corner-m);
+      padding: var(--sys-space-12) var(--sys-space-16);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -97,31 +97,31 @@ export function getAppShellStyles(): string {
       contain: content;
     }
 
-    .sh-c-left { display: flex; gap: 14px; align-items: center; }
-    .sh-c-meta { display: flex; flex-direction: column; gap: 4px; width: 60px; }
-    .sh-badge { height: 18px; background: var(--sh-surf-h); border-radius: 6px; opacity: 0.8; }
-    .sh-c-info { display: flex; flex-direction: column; gap: 8px; }
-    .sh-name { width: 120px; height: 16px; background: var(--sh-sk); border-radius: 4px; }
-    .sh-sub { width: 80px; height: 12px; background: var(--sh-sk); border-radius: 4px; opacity: 0.8; }
-    .sh-score { width: 48px; height: 48px; background: var(--sh-sk); border-radius: 14px; margin-right: 4px; }
-    .sh-expand { width: 36px; height: 36px; background: var(--sh-surf-h); border-radius: 12px; opacity: 0.6; }
+    .sh-c-left { display: flex; gap: var(--sys-space-14); align-items: center; }
+    .sh-c-meta { display: flex; flex-direction: column; gap: var(--sys-space-4); width: 60px; }
+    .sh-badge { height: var(--sys-space-18); background: var(--sh-surf-h); border-radius: var(--sys-shape-corner-badge); opacity: 0.8; }
+    .sh-c-info { display: flex; flex-direction: column; gap: var(--sys-space-8); }
+    .sh-name { width: 120px; height: 16px; background: var(--sh-sk); border-radius: var(--sys-shape-corner-extra-small); }
+    .sh-sub { width: 80px; height: 12px; background: var(--sh-sk); border-radius: var(--sys-shape-corner-extra-small); opacity: 0.8; }
+    .sh-score { width: var(--sys-space-48); height: var(--sys-space-48); background: var(--sh-sk); border-radius: var(--sys-shape-corner-input); margin-right: var(--sys-space-4); }
+    .sh-expand { width: 36px; height: 36px; background: var(--sh-surf-h); border-radius: var(--sys-shape-corner-medium); opacity: 0.6; }
 
     .sh-dock {
       position: fixed;
-      bottom: calc(24px + env(safe-area-inset-bottom));
+      bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       background: var(--sh-glass);
       border: 1px solid var(--sh-border);
-      padding: 6px;
-      border-radius: 99px;
+      padding: var(--sys-space-6);
+      border-radius: var(--sys-shape-corner-full);
       display: flex;
-      gap: 4px;
-      z-index: 50;
+      gap: var(--sys-space-4);
+      z-index: var(--sys-z-sticky);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     }
 
-    .sh-d-item { padding: 10px 20px; border-radius: 99px; display: flex; gap: 8px; align-items: center; }
+    .sh-d-item { padding: var(--sys-space-10) var(--sys-space-20); border-radius: var(--sys-shape-corner-full); display: flex; gap: var(--sys-space-8); align-items: center; }
     .sh-d-item.active { background: var(--sh-primary); }
     .sh-d-icon { width: 22px; height: 22px; background: currentColor; opacity: 0.8; }
     .sh-pulse { opacity: 0.85; }
@@ -168,7 +168,7 @@ export function getAppShellHtml(): string {
             <title>Roster Icon</title>
             <path d="M3,3v18h18V3H3z M17,17h-2v-5h2V17z M13,17h-2v-9h2V17z M9,17H7V9h2V17z" vector-effect="non-scaling-stroke"/>
           </svg>
-          <span style="font-size: 14px; font-weight: 750; color: white; font-family: var(--sys-font-family-body);">Roster</span>
+          <span style="font-size: var(--sys-typescale-body-md); font-weight: 750; color: white; font-family: var(--sys-font-family-body);">Roster</span>
         </div>
         <div class="sh-d-item" role="link" aria-label="Headhunter View" tabindex="0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#73777f" role="img" aria-hidden="true">

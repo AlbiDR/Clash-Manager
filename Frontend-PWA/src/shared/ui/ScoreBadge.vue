@@ -58,10 +58,10 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 18px;
+  font-size: var(--sys-typescale-score);
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
-  line-height: 1;
+  line-height: var(--sys-leading-none);
 }
 
 .momentum-overlay {

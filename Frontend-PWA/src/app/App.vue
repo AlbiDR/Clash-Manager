@@ -141,7 +141,7 @@ onMounted(() => {
   background-color: var(--sys-color-background);
   color: var(--sys-color-on-surface);
   overflow-x: hidden;
-  transition: outline 0.3s ease;
+  transition: outline var(--sys-motion-duration-300) ease;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -153,7 +153,7 @@ onMounted(() => {
   --sys-safe-frame-offset: 1px;
   outline: 1px solid #000000;
   outline-offset: -1px;
-  z-index: 9999;
+  z-index: var(--sys-z-frame);
 }
 :root.dark .app-shell.showcase-frame {
   outline: 1px solid #ffffff;
@@ -162,8 +162,8 @@ onMounted(() => {
 .app-container {
   width: 100%;
   max-width: var(--sys-layout-max-width);
-  padding: 0 12px;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  padding: 0 var(--sys-space-12);
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -175,9 +175,9 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 3px;
-  z-index: 3000;
+  z-index: var(--sys-z-strip);
   opacity: 0;
-  transition: all 0.4s ease;
+  transition: all var(--sys-motion-duration-400) ease;
   pointer-events: none;
 }
 .connectivity-strip.offline {

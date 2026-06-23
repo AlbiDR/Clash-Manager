@@ -134,7 +134,7 @@ const getSelectedLabel = () => {
   cursor: pointer;
   outline: none;
   text-align: left;
-  transition: border-color 0.2s var(--sys-motion-standard);
+  transition: border-color 0.2s var(--sys-motion-spring);
 }
 
 .select-trigger:focus-visible {
@@ -153,7 +153,7 @@ const getSelectedLabel = () => {
   top: 50%;
   transform: translateY(-50%);
   color: var(--sys-text-tertiary, var(--sys-color-outline));
-  transition: transform 0.2s var(--sys-motion-standard);
+  transition: transform 0.2s var(--sys-motion-spring);
 }
 
 .select-chevron.is-open {
@@ -201,7 +201,7 @@ const getSelectedLabel = () => {
   font-weight: 600;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: all 0.15s var(--sys-motion-standard);
+  transition: all 0.15s var(--sys-motion-spring);
 }
 
 .option-item:hover:not(.disabled) {
@@ -232,8 +232,8 @@ const getSelectedLabel = () => {
 /* Animations */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity 0.2s var(--sys-motion-standard),
-              transform 0.2s var(--sys-motion-standard);
+  transition: opacity 0.2s var(--sys-motion-spring),
+              transform 0.2s var(--sys-motion-spring);
 }
 
 .fade-slide-enter-from,
