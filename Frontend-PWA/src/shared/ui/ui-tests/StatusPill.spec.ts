@@ -42,7 +42,9 @@ describe("StatusPill", () => {
       expect(wrapper.classes()).toContain(type);
       expect(wrapper.find(".status-dot").exists()).toBe(true);
       
-      if (type !== "success") {
+      if (type === "loading") {
+        expect(wrapper.find(".spinner").exists()).toBe(true);
+      } else if (type !== "success") {
         expect(wrapper.find(".dot-nucleus.pulse").exists()).toBe(true);
       }
     }

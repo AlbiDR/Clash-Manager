@@ -1,6 +1,6 @@
 # Clash Manager --- Client Core (DeepNet)
 
-[![Client](https://img.shields.io/badge/Client-v14.1.2-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
+[![Client](https://img.shields.io/badge/Client-v14.1.3-0066CC?style=flat-square&logo=vue.js&logoColor=white)](https://github.com/albidr/Clash-Manager) [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](../.github/authoritative-design-references/CleanStack%20Architecture.md) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](../LICENSE)
 
 The **DeepNet Operational Command Center**. A high-performance, sovereign PWA infrastructure featuring intelligent local caching and live synchronization for administrative clan operations. Built on Vue 3.5.
 
