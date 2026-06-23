@@ -109,3 +109,9 @@
 - Functions Updated/Added: 8 (drivers.refresh_voyage_contributions, drivers.on_contribution_manual_override_updated, drivers.on_battle_recorded, public.ingest_player_battles, substrate.update_epoch_state, substrate.run_headhunter_epoch_guard, public.update_epoch_state, public.get_vault_secret)
 - Hardening: Replaced hardcoded Supabase secrets with vault-backed get_vault_secret calls; enforced search_path on new functions.
 - Verification: 1282 passed (monorepo test gate confirmed baseline compilation).
+2026-06-26 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 6 (Completed previous partial synchronization)
+- Functions Updated/Added: 3 (substrate.update_epoch_state, public.update_epoch_state, substrate.run_headhunter_epoch_guard)
+- Hardening: Verified SECURITY DEFINER, SET search_path, and Postgres 17 trigger syntax across all consolidated elements.
+- Verification: 1282 passed (monorepo test gate confirmed baseline compilation and logic integrity).

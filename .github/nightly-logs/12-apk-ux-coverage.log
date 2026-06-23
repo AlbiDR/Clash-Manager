@@ -1,1 +1,2 @@
 [2026-06-22] - replaced native <select> elements in ConsoleHeader.vue and ParameterCard.vue with BaseSelect abstraction to ensure consistent hybrid shell UI.
+[2026-06-26] - Integrated v-tactile haptic feedback into SettingRow.vue to ensure consistent tactile response for settings toggles in Android WebView.

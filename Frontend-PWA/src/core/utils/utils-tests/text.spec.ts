@@ -3,6 +3,7 @@
 import { describe, it, expect } from "vitest";
 import {
   cleanTag,
+  formatDisplayTag,
   formatHeaderDescription,
 } from "../text";
 
@@ -19,6 +20,27 @@ describe("text utilities", () => {
     it("handles undefined/empty input", () => {
       expect(cleanTag(undefined)).toBe("");
       expect(cleanTag("")).toBe("");
+    });
+  });
+
+  describe("formatDisplayTag", () => {
+    it("adds hashtag and keeps tag if length <= 5", () => {
+      expect(formatDisplayTag("ABC")).toBe("#ABC");
+      expect(formatDisplayTag("12345")).toBe("#12345");
+    });
+
+    it("adds hashtag and truncates to 5 characters if length > 5", () => {
+      expect(formatDisplayTag("ABCDEFG")).toBe("#ABCDE");
+    });
+
+    it("normalizes tag before formatting", () => {
+      expect(formatDisplayTag("#abc123")).toBe("#ABC12");
+      expect(formatDisplayTag("  xyz  ")).toBe("#XYZ");
+    });
+
+    it("handles undefined/empty input", () => {
+      expect(formatDisplayTag(undefined)).toBe("");
+      expect(formatDisplayTag("")).toBe("");
     });
   });
 

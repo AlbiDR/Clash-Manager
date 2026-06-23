@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import { vTactile } from "../directives/vTactile";
+
 /**
  * COMPONENT: SettingRow
  *
@@ -33,6 +35,7 @@ defineEmits<{
       'disabled': disabled
     }"
     @click="!disabled && $emit('click')"
+    v-tactile
   >
     <div class="row-info">
       <div class="row-label">
