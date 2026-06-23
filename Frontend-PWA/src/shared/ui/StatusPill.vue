@@ -195,7 +195,8 @@ const {
   inset: 0;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.12;
+  transform: scale(0.6);
+  opacity: 0.4;
   animation: halo-pulse 2.5s infinite;
 }
 
