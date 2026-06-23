@@ -47,21 +47,19 @@ const {
     @click="handleToggle"
   >
     <div class="status-dot">
-      <div 
-        class="dot-nucleus" 
-        :class="{ 
-          'breath': props.type === 'success' && !isExpanded, 
-          'pulse': props.type !== 'success',
-          'is-syncing': props.type === 'loading' 
-        }"
-      >
-        <template v-if="props.type === 'loading'">
-          <svg class="spinner" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" />
-          </svg>
-        </template>
-      </div>
-      <div v-if="props.type !== 'loading'" class="dot-halo"></div>
+      <svg v-if="props.type === 'loading'" class="spinner" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" />
+      </svg>
+      <template v-else>
+        <div
+          class="dot-nucleus"
+          :class="{
+            'breath': props.type === 'success' && !isExpanded,
+            'pulse': true,
+          }"
+        />
+        <div class="dot-halo" />
+      </template>
     </div>
 
     <div class="pill-content-wrapper">
@@ -178,9 +176,6 @@ const {
   transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
 }
 
-.status-pill.loading .dot-nucleus {
-  background: transparent;
-}
 
 .dot-nucleus.breath {
   animation: breath 4s ease-in-out infinite;
@@ -350,8 +345,9 @@ const {
 }
 
 .spinner {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
   animation: rotate 1.5s linear infinite;
 }
 
