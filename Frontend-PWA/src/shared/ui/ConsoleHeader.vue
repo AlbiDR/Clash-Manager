@@ -214,7 +214,7 @@ const handleOpenDashboard = () => {
 }
 
 .view-title.is-link:hover {
-  color: var(--sys-primary);
+  color: var(--sys-color-primary);
 }
 
 .view-title.is-link:active {

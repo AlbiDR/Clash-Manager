@@ -169,6 +169,7 @@ const {
 }
 
 .dot-nucleus {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -191,8 +192,7 @@ const {
 
 .dot-halo {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   border-radius: 50%;
   background: currentColor;
   opacity: 0.12;
