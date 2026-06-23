@@ -12,7 +12,7 @@ import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { RECRUITER_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { RecruiterSort } from "@core/utils/sortStrategies";
 import type { Recruit } from "@core/types";
-import { useBlitzMode } from "./useBlitzMode";
+import { useBlitzMode } from "@core/services/useBlitzMode";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useLeaderboardScraper } from "./useLeaderboardScraper";
 

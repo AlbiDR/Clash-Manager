@@ -3,7 +3,10 @@
 
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
+import { computed } from "vue";
 import { useConsoleController } from "@core/services/useConsoleController";
+import { useBlitzMode } from "@core/services/useBlitzMode";
+import { useSelectionStore } from "@core/services/useSelectionStore";
 import { LEADERBOARD_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { LeaderboardSort } from "@core/utils/sortStrategies";
 import type { LeaderboardMember } from "@core/types";
@@ -32,6 +35,13 @@ export function useLeaderboard() {
   const clashDataStore = useClashDataStore();
   const { members } = storeToRefs(clashDataStore);
 
+  // [REFACTOR] ARCHITECTURAL ALIGNMENT: Adopt the shared Blitz pipeline so the
+  // Roster FAB exposes the same Open/Blitz batch actions as Headhunter. Members
+  // are not dismissible, so dismissal simply clears the selection and the
+  // dismiss affordance keeps the neutral "close" icon (not Blitz's "trash").
+  const selectionStore = useSelectionStore();
+  const blitz = useBlitzMode(selectionStore);
+
   const controller = useConsoleController({
     data: members,
     filterFn: (member: LeaderboardMember) => [member.n, member.id],
@@ -42,6 +52,17 @@ export function useLeaderboard() {
     batchIdMapper: (member: LeaderboardMember) => member.id,
     statsLabel: "Member",
     scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
+    selectionStore,
+    fabState: computed(() => ({
+      ...blitz.fabState.value,
+      dismissIcon: "close",
+    })),
+    layoutEvents: computed(() => ({
+      "fab-action": blitz.handleAction,
+      "fab-blitz": blitz.handleBlitz,
+      "clear-selection": blitz.clearSelection,
+      "fab-dismiss": blitz.clearSelection,
+    })),
   });
 
   return {

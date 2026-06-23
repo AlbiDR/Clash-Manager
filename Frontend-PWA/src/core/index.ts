@@ -20,6 +20,7 @@ export * from "./services/useSelectionStore";
 export * from "./services/useBadge";
 export * from "./services/usePwaManager";
 export * from "./services/useConsoleController";
+export * from "./services/useBlitzMode";
 export * from "./services/useConsoleSelection";
 export * from "./services/useConsoleMetadata";
 export * from "./services/useBroadcastChannel";

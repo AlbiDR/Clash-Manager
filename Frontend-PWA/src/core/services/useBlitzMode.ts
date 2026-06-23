@@ -16,12 +16,15 @@ interface BlitzOptions {
  * COMPOSABLE: useBlitzMode
  *
  * @remarks
- * Orchestrates the "Recruitment Pipeline" for the Headhunter feature.
- * It manages a multi-tier deep-linking strategy for processing lists of items.
+ * Orchestrates the automated batch deep-linking ("Blitz") pipeline shared by
+ * console views (Headhunter, Roster). It manages a multi-tier deep-linking
+ * strategy for processing a selection of items by their IDs.
  *
  * **Architectural Context:**
- * - **Layer:** Layer 3 (@features/headhunter)
- * - **Responsibility:** Manages recruitment selection and automated "Blitz" execution.
+ * - **Layer:** Layer 1 Core Service (@core/services)
+ * - **Responsibility:** Manages selection-driven, automated "Blitz" execution.
+ *   Domain-agnostic: parameterized by the supplied selection store and operates
+ *   purely on opaque item IDs, so any console feature can adopt it.
  *
  * **Side Effects:**
  * - Triggers global toast notifications via `useToast`.
