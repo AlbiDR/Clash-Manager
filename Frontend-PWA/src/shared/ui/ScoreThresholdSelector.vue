@@ -5,18 +5,44 @@
 import Icon from "./Icon.vue";
 import { useScoreSelector } from "../composables/useScoreSelector";
 
+/**
+ * SHARED UI: ScoreThresholdSelector (Layer 2)
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 (@shared/ui)
+ * - **Role:** Interactive Molecule. Provides a high-precision threshold selector
+ *   for score-based filtering in Roster and Headhunter views.
+ *
+ * **Satisfaction:**
+ * - ADR Section II: Structural Unitary Architecture (Logic Delegation).
+ * - ADR Section IV: Tactile Interaction (Hardware Brokering via useScoreSelector).
+ *
+ * [DECISION LOG] Delegated complex UI orchestration (scroll, expansion, haptics)
+ * to the useScoreSelector composable to maintain a clinical, presentational view.
+ */
+
 const props = defineProps<{
+  /** Comparison mode: 'ge' (Greater than or equal) or 'le' (Less than or equal). */
   mode: "ge" | "le";
+  /** Current active score threshold. */
   value: number;
+  /** Disables all interactions when true. */
   disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
+  /** Updates the comparison mode. */
   (e: "update:mode", val: "ge" | "le"): void;
+  /** Updates the threshold value. */
   (e: "update:value", val: number): void;
+  /** Emitted when a selection is finalized (value or mode changed). */
   (e: "select", val: number, mode: "ge" | "le"): void;
 }>();
 
+// [THREAT:] Unsynchronized filter state.
+// [DECISION LOG] The useScoreSelector manages the interaction protocol. The 'select'
+// event ensures that higher-layer filters are immediately notified of changes.
 const {
   isScoreExpanded,
   valuePicker,
@@ -27,6 +53,7 @@ const {
 } = useScoreSelector(props, emit);
 
 defineExpose({
+  /** Expansion state for external visibility (e.g., automated tests or parent logic). */
   isExpanded: isScoreExpanded,
 });
 </script>
