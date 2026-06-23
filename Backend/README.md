@@ -132,7 +132,7 @@ supabase functions deploy fetch-player-battlelog --no-verify-jwt
 
 ---
 
-## VIII. Current State - Roadmap (v14.1.0)
+## VIII. Current State - Roadmap (v14.1.1)
 - [x] **Phase 1-7**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor, Full PWA integration).
 
 ---
