@@ -1,25 +1,38 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { ref, onMounted, onUnmounted } from "vue";
 import Icon from "./Icon.vue";
 
-interface Option {
+/**
+ * SHARED UI: BaseSelect (Layer 2)
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 (@shared/ui)
+ * - **Role:** Presentation. Provides a clinical, keyboard-accessible replacement
+ *   for native HTML <select> elements in Android WebViews.
+ *
+ * [DECISION LOG] Transitioned to generic <T> to eliminate 'any' pathogens
+ * in value handling. Renamed anemic 'o' to 'option' for domain clarity.
+ */
+
+interface Option<V> {
   label: string;
-  value: any;
+  value: V;
   disabled?: boolean;
   class?: string;
 }
 
 const props = defineProps<{
-  modelValue: any;
-  options: Option[];
+  modelValue: T;
+  options: Option<T>[];
   placeholder?: string;
   ariaLabel?: string;
 }>();
 
 const emit = defineEmits<{
-  "update:modelValue": [any];
+  "update:modelValue": [T];
 }>();
 
 const isOpen = ref(false);
@@ -29,8 +42,10 @@ const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
 };
 
-const selectOption = (option: Option) => {
+const selectOption = (option: Option<T>) => {
   if (option.disabled) return;
+  // [THREAT:] Emitting unvalidated 'any' values can corrupt higher-layer state.
+  // [DECISION LOG] Generics ensure that the emitted value strictly matches the T type.
   emit("update:modelValue", option.value);
   isOpen.value = false;
 };
@@ -50,7 +65,8 @@ onUnmounted(() => {
 });
 
 const getSelectedLabel = () => {
-  const selected = props.options.find((o) => o.value === props.modelValue);
+  // [DECISION LOG] Renaming anemic pathogen 'o' to 'option'.
+  const selected = props.options.find((option) => option.value === props.modelValue);
   return selected ? selected.label : props.placeholder || "Select...";
 };
 </script>
