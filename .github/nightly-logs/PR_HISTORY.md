@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-23] PR #907: docs(tsdoc): document ScoreThresholdSelector component
+**Commit**: `4dda289e72a7e93ae5ea890ec3ee2c4e11c78655`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/907)
+
+### Description
+Documented the `ScoreThresholdSelector.vue` component using TSDoc, architectural context, and decision logs. This satisfies the Stage 6 (Documentation TSDoc) requirements by mapping the interface contracts and internal decision logs to CleanStack ADR principles. Verified via unit tests (1286 pass) and updated the coverage log.
+
+---
+*PR created automatically by Jules for task [12189159012324657342](https://jules.google.com/task/12189159012324657342) started by @AlbiDR*
+
+---
+
 ## [2026-06-23] PR #906: docs(readme): reconcile shared ui and core utility drift
 **Commit**: `675cac7e5d7c24fd96d0430d62ba1a0662081d05`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/906)
