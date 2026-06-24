@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-24] PR #915: chore(version): reconcile version drift in supabase plan
+**Commit**: `c57ab4b7d948a74084405b9c80152b446a2ae093`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/915)
+
+### Description
+Reconciled version drift in `.github/supabase-plan.md` by updating it from `v14.0.0` to `v14.1.4` to match the monorepo ground truth. Verified consistency using the authoritative `audit:version` script and the full test suite. Updated the reconciliation log.
+
+---
+*PR created automatically by Jules for task [909255610251879575](https://jules.google.com/task/909255610251879575) started by @AlbiDR*
+
+---
+
 ## [2026-06-24] PR #914: docs(readme): reconcile shared interaction directive constraints
 **Commit**: `4429e8dc2ea0bb397e726d02182c81736aae83b5`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/914)
