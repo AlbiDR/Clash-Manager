@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts" generic="T">
 import { ref, onMounted, onUnmounted } from "vue";
+import { useHaptics } from "@core";
 import Icon from "./Icon.vue";
 
 /**
@@ -35,17 +36,20 @@ const emit = defineEmits<{
   "update:modelValue": [T];
 }>();
 
+const haptics = useHaptics();
 const isOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
+  haptics.tap();
 };
 
 const selectOption = (option: Option<T>) => {
   if (option.disabled) return;
   // [THREAT:] Emitting unvalidated 'any' values can corrupt higher-layer state.
   // [DECISION LOG] Generics ensure that the emitted value strictly matches the T type.
+  haptics.medium();
   emit("update:modelValue", option.value);
   isOpen.value = false;
 };
