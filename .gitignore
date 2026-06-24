@@ -9,6 +9,7 @@ _agents
 .mcp
 # Claude Code personal settings — contains API tokens; never commit
 .claude/settings.local.json
+.claude
 
 # Dependencies
 node_modules

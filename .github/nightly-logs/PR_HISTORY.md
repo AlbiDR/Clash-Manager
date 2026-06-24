@@ -501,7 +501,7 @@ I have added unit tests for the `formatDisplayTag` utility to ensure logic integ
 **[Impact]:** Potential web-to-native app display failures (App Links/TWA).
 
 ### Changes:
-- **[Component/File]:** Updated `Frontend-PWA/public/.well-known/assetlinks.json` package name to `com.clashmanager`.
+- **[Component/File]:** Updated `Frontend-PWA/public/.well-known/assetlinks.json` package name to `com.albidr.clashmanager` (canonical). Note: this PR incorrectly set the name to `com.clashmanager`; that change was reverted.
 
 ### Verification:
 - **[Automated]:** Verified PWA build integrity, project-wide version synchronization (`audit:version`), and full Vitest suite (1282 passed).
@@ -792,7 +792,7 @@ Folded incremental migrations (20260614 to 20260620) into the master baseline `2
 **[Impact]:** Potential web-to-native app display failures and data desynchronization during major version upgrades.
 
 ### Changes:
-- **[Component/File]:** `.github/scripts/generate-assetlinks.ts`: Updated package name to `com.clashmanager` for Trusted Web Activity alignment.
+- **[Component/File]:** `.github/scripts/generate-assetlinks.ts`: Verified package name `com.albidr.clashmanager` for Trusted Web Activity alignment (canonical). Note: this PR incorrectly set the name to `com.clashmanager`; that change was reverted.
 - **[Component/File]:** `Frontend-PWA/src/core/config/index.ts`: Synchronized `STORAGE_DB_NAME` to `clash_manager_v14` and added legacy versions to deprecated registry.
 - **[Component/File]:** `Frontend-PWA/src/core/services/services-tests/StorageService.spec.ts`: Updated unit tests to reflect storage version bump.
 
