@@ -44,8 +44,8 @@ Stateful logic engines that manage component-level behaviors and hardware broker
 
 ### Interaction Directives (`/directives`)
 Low-level DOM manipulators for standardized user feedback.
-- **vTactile.ts**: Injects "squish" scale transformations and haptic pulses into interactive elements upon activation.
-- **vTooltip.ts**: Declarative interface for injecting accessible, theme-aware information overlays.
+- **vTactile.ts**: High-performance tap and long-press haptic engine. Implements an **Architectural Protection** rule that ignores interactions on actionable children (`.btn-action`, `a`, `.hit-target`) to prevent nested haptic conflicts. Features a 500ms long-press threshold and DPI-aware movement tolerance (10px baseline).
+- **vTooltip.ts**: Accessible, theme-aware rich information overlay utilizing the native **Popover API** for top-layer rendering. Employs a singleton delegation architecture on `document.body` to minimize DOM footprint. Features a 400ms touch long-press trigger, 40ms haptic feedback, and automatic hide-on-scroll resilience.
 
 ### Shared Utilities (`/utils`)
 Domain-aware presentation helpers for UI formatting.
