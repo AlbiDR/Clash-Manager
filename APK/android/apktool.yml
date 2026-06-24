@@ -13,7 +13,6 @@ resourcesInfo:
   packageId: 127
 doNotCompress:
 - arsc
-- png
 - META-INF/androidx.activity_activity.version
 - META-INF/androidx.annotation_annotation-experimental.version
 - META-INF/androidx.appcompat_appcompat-resources.version
