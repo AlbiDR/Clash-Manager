@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-24] PR #920: fix(apk-ux): add tactile feedback to BaseSelect
+**Commit**: `2be5f2f07fa5f0fe9c262218f8ee288e9a42940a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/920)
+
+### Description
+Modernized the `BaseSelect` component by integrating brokered tactile feedback. Added `haptics.tap()` to the dropdown toggle and `haptics.medium()` to the selection finalization, ensuring a consistent and premium hybrid experience across the Android WebView shell. Verified via full test suite and visual verification.
+
+---
+*PR created automatically by Jules for task [17172183564262881667](https://jules.google.com/task/17172183564262881667) started by @AlbiDR*
+
+---
+
 ## [2026-06-24] PR #919: perf(apk-optimization): enable asset compression and prune locales
 **Commit**: `7e9a02b3e11a0fadc646d5518defab5c1d80a09c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/919)
