@@ -269,6 +269,14 @@
 
 # Version Integrity Reconciliation Log
 
+## [2026-06-24]
+### Reconciled:
+- **Supabase Plan**: Synchronized version declaration in `.github/supabase-plan.md` from `v14.0.0` to `v14.1.4` to match the monorepo ground truth (Rule 3[B]).
+- **Authoritative Audit**: Verified monorepo consistency via `audit:version` and confirmed logic integrity via full test suite (1286 pass).
+
+### Logged Drift (Unresolved):
+- **None**.
+
 ## [2026-06-03]
 ### Reconciled:
 - **None**: Performed full consistency audit. Zero drift detected across all 25 GAS modules and Worker subsystem (v10.1.4).

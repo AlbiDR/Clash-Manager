@@ -7,13 +7,12 @@ sdkInfo:
   minSdkVersion: 21
   targetSdkVersion: 35
 versionInfo:
-  versionCode: 5
-  versionName: 5
+  versionCode: 14104
+  versionName: 14.1.4
 resourcesInfo:
   packageId: 127
 doNotCompress:
 - arsc
-- png
 - META-INF/androidx.activity_activity.version
 - META-INF/androidx.annotation_annotation-experimental.version
 - META-INF/androidx.appcompat_appcompat-resources.version

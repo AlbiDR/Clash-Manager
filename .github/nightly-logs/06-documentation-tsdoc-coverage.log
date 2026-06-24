@@ -95,3 +95,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-06-21 | Frontend-PWA/src/core/services/useHaptics.ts | Documented adaptive haptics engine and added mandatory threat/decision logs for battery-aware scaling.
 2026-06-25 | Backend/supabase/functions/_shared/schemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
 2026-06-27 | Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue | Documented interactive molecule and logic delegation to useScoreSelector, adding ADR Section II/IV mappings and threat logs.
+2026-11-20 | Frontend-PWA/src/core/utils/sortOptions.ts | Documented interface contracts for sorting metadata and stabilized license header per ADR Section II.

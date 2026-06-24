@@ -4,11 +4,25 @@ import type { Directive } from "vue";
 import { useHaptics, formatNumber } from "../../core";
 import type { BenchmarkData } from "../../core";
 
+/**
+ * Native API Type: PopoverElement
+ * Represents the experimental Popover API interface for HTML elements.
+ */
+interface PopoverElement extends HTMLDivElement {
+  popover: string;
+  showPopover(): void;
+  hidePopover(): void;
+}
+
 // Singleton Tooltip State
-let tooltipEl: HTMLDivElement | null = null;
+// [THREAT:] Singleton state in a shared directive can lead to memory leaks if not
+// properly unmounted. vTooltip implements a globalHide and singleton pattern to
+// maintain a single DOM footprint.
+// [DECISION LOG] EPHEMERAL: singleton state intentionally resets on full page reload.
+let tooltipEl: PopoverElement | null = null;
 let activeTarget: HTMLElement | null = null;
 let hideTimer: number | null = null;
-let pressTimer: any = null;
+let pressTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Internal UI: Create or retrieve the singleton tooltip element.
@@ -16,16 +30,18 @@ let pressTimer: any = null;
  * @internal
  * Side Effect: Appends a div to document.body and initializes Popover API if supported.
  */
-function createTooltip() {
+function createTooltip(): PopoverElement {
   if (tooltipEl) return tooltipEl;
-  const el = document.createElement("div");
+  const el = document.createElement("div") as PopoverElement;
   el.className = "rich-tooltip";
-  
-  // OPTIMIZATION: Use Popover API if available (Optimization #54)
+
+  // [THREAT:] Unvalidated hardware/browser API access.
+  // [DECISION LOG] Utilizing the Popover API (Optimization #54) for top-layer
+  // rendering to prevent clipping in scrolling containers.
   if ("showPopover" in el) {
-    (el as any).popover = "manual";
+    el.popover = "manual";
   }
-  
+
   document.body.appendChild(el);
   tooltipEl = el;
   return el;
@@ -83,9 +99,14 @@ function positionTooltip(el: HTMLElement) {
 
   tooltipEl.classList.add("visible");
   
-  // Show via Popover API if supported for better layering
+  // [THREAT:] Popover API might throw if already showing or if the state is invalid.
+  // [DECISION LOG] Safe execution of Popover API via unknown narrowing.
   if ("showPopover" in tooltipEl) {
-    try { (tooltipEl as any).showPopover(); } catch (e) { /* fallback */ }
+    try {
+      tooltipEl.showPopover();
+    } catch (popoverShowError: unknown) {
+      /* fallback: CSS visibility class already added */
+    }
   }
 
   const tipRect = tooltipEl.getBoundingClientRect();
@@ -113,9 +134,18 @@ function positionTooltip(el: HTMLElement) {
 function globalHide() {
   if (tooltipEl) {
     tooltipEl.classList.remove("visible");
-    tooltipEl.style.transform = tooltipEl.style.transform.replace("scale(1)", "scale(0.8)");
+    tooltipEl.style.transform = tooltipEl.style.transform.replace(
+      "scale(1)",
+      "scale(0.8)",
+    );
+    // [THREAT:] Popover API might throw if already hidden.
+    // [DECISION LOG] Safe execution of Popover API via unknown narrowing.
     if ("hidePopover" in tooltipEl) {
-      try { (tooltipEl as any).hidePopover(); } catch (e) { /* ignore */ }
+      try {
+        tooltipEl.hidePopover();
+      } catch (popoverHideError: unknown) {
+        /* ignore: CSS visibility already handled */
+      }
     }
   }
   activeTarget = null;
@@ -146,26 +176,40 @@ if (typeof window !== "undefined") {
   };
 
   // Mouse Delegation
-  document.body.addEventListener("mouseover", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-v-tooltip]") as TooltipHTMLElement | null;
-    if (target) handleShow(target);
+  document.body.addEventListener("mouseover", (mouseOverEvent) => {
+    const tooltipTarget = (mouseOverEvent.target as HTMLElement).closest(
+      "[data-v-tooltip]",
+    ) as TooltipHTMLElement | null;
+    if (tooltipTarget) handleShow(tooltipTarget);
   });
-  
-  document.body.addEventListener("mouseout", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-v-tooltip]") as TooltipHTMLElement | null;
-    if (target) handleHide();
+
+  document.body.addEventListener("mouseout", (mouseOutEvent) => {
+    const tooltipTarget = (mouseOutEvent.target as HTMLElement).closest(
+      "[data-v-tooltip]",
+    ) as TooltipHTMLElement | null;
+    if (tooltipTarget) handleHide();
   });
 
   // Touch Delegation (Long Press)
-  document.body.addEventListener("touchstart", (e) => {
-    const target = (e.target as HTMLElement).closest("[data-v-tooltip]") as TooltipHTMLElement | null;
-    if (!target) {
-        if (tooltipEl?.classList.contains("visible") && !((e.target as HTMLElement).closest(".rich-tooltip"))) globalHide();
+  document.body.addEventListener(
+    "touchstart",
+    (touchStartEvent) => {
+      const tooltipTarget = (touchStartEvent.target as HTMLElement).closest(
+        "[data-v-tooltip]",
+      ) as TooltipHTMLElement | null;
+      if (!tooltipTarget) {
+        if (
+          tooltipEl?.classList.contains("visible") &&
+          !(touchStartEvent.target as HTMLElement).closest(".rich-tooltip")
+        )
+          globalHide();
         return;
-    }
-    if (pressTimer) clearTimeout(pressTimer);
-    pressTimer = setTimeout(() => handleShow(target), 400);
-  }, { passive: true });
+      }
+      if (pressTimer) clearTimeout(pressTimer);
+      pressTimer = setTimeout(() => handleShow(tooltipTarget), 400);
+    },
+    { passive: true },
+  );
 
   document.body.addEventListener("touchend", () => {
     if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
