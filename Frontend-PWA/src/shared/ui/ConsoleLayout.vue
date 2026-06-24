@@ -3,12 +3,12 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import {
-  useHaptics,
   useUiCoordinator,
   useShowcaseMode,
   useBlueprintMode,
   useSystemInfo,
 } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import EmptyState from "./EmptyState.vue";

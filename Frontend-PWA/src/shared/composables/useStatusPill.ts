@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, watch, computed, toValue, type MaybeRefOrGetter } from "vue";
-import { useHaptics } from "@core";
+import { useHaptics } from "./useHaptics";
 import { useViewport } from "./useViewport";
 
 export interface StatusPillProps {

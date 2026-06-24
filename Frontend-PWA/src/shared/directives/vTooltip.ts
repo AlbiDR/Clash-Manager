@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import type { Directive } from "vue";
-import { useHaptics, formatNumber } from "../../core";
+import { formatNumber } from "../../core";
+import { useHaptics } from "../composables/useHaptics";
 import type { BenchmarkData } from "../../core";
 
 /**

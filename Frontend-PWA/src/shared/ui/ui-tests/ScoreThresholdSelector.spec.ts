@@ -7,19 +7,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import ScoreThresholdSelector from "../ScoreThresholdSelector.vue";
 
-// Mocking @core dependencies used by useScoreSelector
-const mockTap = vi.fn();
-const mockMedium = vi.fn();
+const { mockTap, mockMedium } = vi.hoisted(() => ({
+  mockTap: vi.fn(),
+  mockMedium: vi.fn(),
+}));
+
+vi.mock("@shared/composables/useHaptics", () => ({
+  useHaptics: () => ({
+    tap: mockTap,
+    medium: mockMedium,
+    heavy: vi.fn(),
+  }),
+}));
 
 vi.mock("@core", async (importOriginal) => {
   const actual = await importOriginal() as any;
   return {
     ...actual,
-    useHaptics: () => ({
-      tap: mockTap,
-      medium: mockMedium,
-      heavy: vi.fn(),
-    }),
     SCORE_SELECTION_STEPS: [15, 30, 45, 60, 75, 90, 100],
   };
 });

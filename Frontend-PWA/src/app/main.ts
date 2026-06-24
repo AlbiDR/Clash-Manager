@@ -10,6 +10,7 @@ import {
   vTactile,
   vTooltip,
   Icon,
+  useWakeLock,
 } from "@shared";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { registerVisibilityRefresh } from "@core";
@@ -124,7 +125,7 @@ async function bootstrap() {
     import(
       /* webpackChunkName: "core-data" */
       "@core"
-    ).then(({ idb, useApiState, useClashDataStore, useStoragePersistence, useWakeLock }) => {
+    ).then(({ idb, useApiState, useClashDataStore, useStoragePersistence }) => {
       const clashDataStore = useClashDataStore();
       const apiState = useApiState();
       const wakeLock = useWakeLock();

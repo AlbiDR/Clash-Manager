@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref } from "vue";
-import { useHaptics } from "./useHaptics";
 import { useToast } from "./useToast";
 import { idb } from "./StorageService";
 
@@ -36,7 +35,6 @@ import { idb } from "./StorageService";
  * - `factoryReset`: Destructive wipe of all local application state.
  */
 export function usePwaManager() {
-  const haptics = useHaptics();
   const toast = useToast();
 
   /**
@@ -59,7 +57,6 @@ export function usePwaManager() {
    * @returns A promise that resolves when the update check completes.
    */
   async function forceUpdate(): Promise<void> {
-    haptics.heavy();
     const activeToastId = toast.info("Checking for updates...");
 
     try {
@@ -116,7 +113,6 @@ export function usePwaManager() {
    * and deletes all named caches before triggering a hard reload.
    */
   async function clearCache(onCleanup?: () => void): Promise<void> {
-    haptics.medium();
     if (
       confirm(
         "Purge Asset Cache?\n\nThis will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
@@ -153,7 +149,6 @@ export function usePwaManager() {
    * IndexedDB store. Used to resolve deep state corruption.
    */
   async function factoryReset(onCleanup?: () => void): Promise<void> {
-    haptics.heavy();
     if (
       confirm(
         "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",

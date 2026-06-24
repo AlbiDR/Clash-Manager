@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { usePwaManager } from "../usePwaManager";
-import { useHaptics } from "../useHaptics";
+import { useHaptics } from "@shared/composables/useHaptics";
 import { useToast } from "../useToast";
 import { idb } from "../StorageService";
 
@@ -19,7 +19,7 @@ const mockToast = {
   remove: vi.fn(),
 };
 
-vi.mock("../useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => mockHaptics),
 }));
 

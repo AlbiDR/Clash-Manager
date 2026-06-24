@@ -16,7 +16,7 @@ vi.mock("vue-router", () => ({
 
 // Mock services with deep paths
 const mockTap = vi.fn();
-vi.mock("@core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({ tap: mockTap }),
 }));
 

@@ -4,7 +4,6 @@
 import { ref, type Ref } from "vue";
 import * as v from "valibot";
 import { useConnectionStatus } from "./useConnectionStatus";
-import { useWakeLock } from "./useWakeLock";
 import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useSyntheticMode } from "./useSyntheticMode";
@@ -58,7 +57,6 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   // --- DEPENDENCIES ---
   const { isSyntheticMode } = useSyntheticMode();
   const { isOnline } = useConnectionStatus();
-  const wakeLock = useWakeLock();
 
   // --- ACTIONS ---
 
@@ -182,8 +180,6 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
     loading.value = true;
     try {
-      // [DECISION LOG] Request WakeLock to ensure sync completes on mobile devices.
-      await wakeLock.request();
       const remoteData = await fetchRemote({ force: true });
 
       // [THREAT:] Malformed remote payload could corrupt local state.
@@ -200,13 +196,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       console.warn("[Sync] Supabase refresh failed:", supabaseRefreshError);
 
       loading.value = false;
-      await wakeLock.release();
 
       return startBackgroundSync(true);
     } finally {
       if (loading.value) {
         loading.value = false;
-        await wakeLock.release();
       }
     }
   }
@@ -224,7 +218,6 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     loading.value = true;
 
     try {
-      await wakeLock.request();
       const remoteData = await fetchRemote({ force });
 
       const result = v.safeParse(WebAppDataSchema, remoteData);
@@ -246,7 +239,6 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       console.warn(`[Sync] Background sync failed (Attempt ${consecutiveSyncFailures.value}):`, backgroundSyncError);
     } finally {
       loading.value = false;
-      await wakeLock.release();
     }
   }
 

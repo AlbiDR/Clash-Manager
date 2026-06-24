@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts" generic="T">
 import { ref, onMounted, onUnmounted } from "vue";
-import { useHaptics } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 import Icon from "./Icon.vue";
 
 /**

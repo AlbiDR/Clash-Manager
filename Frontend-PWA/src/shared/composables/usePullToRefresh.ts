@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { ref, computed, type Ref } from "vue";
-import { useHaptics } from "../../core/services/useHaptics";
+import { useHaptics } from "./useHaptics";
 
 /**
  * Options for the pull-to-refresh composable.

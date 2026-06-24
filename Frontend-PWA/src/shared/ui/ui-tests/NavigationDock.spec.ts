@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { shallowMount } from "@vue/test-utils";
 import NavigationDock from "../NavigationDock.vue";
 import { useRoute, useRouter } from "vue-router";
-import * as hapticsModule from "../../../core/services/useHaptics";
+import * as hapticsModule from "@shared/composables/useHaptics";
 import { NAV_ITEMS } from "../../../core/utils/navigation";
 
 // Mock vue-router
@@ -19,7 +19,7 @@ vi.mock("vue-router", () => ({
 }));
 
 // Mock useHaptics
-vi.mock("../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => ({
     tap: vi.fn(),
   })),

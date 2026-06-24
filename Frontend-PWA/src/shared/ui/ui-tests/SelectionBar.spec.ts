@@ -12,7 +12,7 @@ const { tapMock, mediumMock } = vi.hoisted(() => ({
   mediumMock: vi.fn(),
 }));
 
-vi.mock("../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({
     tap: tapMock,
     medium: mediumMock,

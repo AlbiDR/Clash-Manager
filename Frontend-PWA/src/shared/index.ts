@@ -60,6 +60,8 @@ export { useStatusPill } from "./composables/useStatusPill";
 export { useBenchmarkedStat } from "./composables/useBenchmarkedStat";
 
 export { useCardMechanics } from "./composables/useCardMechanics";
+export { useHaptics, resetHapticsState } from "./composables/useHaptics";
+export { useWakeLock } from "./composables/useWakeLock";
 
 // Utilities
 export { formatRole } from "./utils/game";

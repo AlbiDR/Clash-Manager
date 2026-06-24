@@ -2,7 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, type Ref } from "vue";
-import { useHaptics, SCORE_SELECTION_STEPS } from "@core";
+import { SCORE_SELECTION_STEPS } from "@core";
+import { useHaptics } from "./useHaptics";
 
 /**
  * COMPOSABLE: useScoreSelector

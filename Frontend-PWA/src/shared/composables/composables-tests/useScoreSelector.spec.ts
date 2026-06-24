@@ -4,20 +4,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useScoreSelector } from "../useScoreSelector";
 
-// Mocking @core dependencies
-const mockTap = vi.fn();
-const mockMedium = vi.fn();
-const mockHeavy = vi.fn();
+const { mockTap, mockMedium, mockHeavy } = vi.hoisted(() => ({
+  mockTap: vi.fn(),
+  mockMedium: vi.fn(),
+  mockHeavy: vi.fn(),
+}));
+
+vi.mock("@shared/composables/useHaptics", () => ({
+  useHaptics: () => ({
+    tap: mockTap,
+    medium: mockMedium,
+    heavy: mockHeavy,
+  }),
+}));
 
 vi.mock("@core", async (importOriginal) => {
   const actual = await importOriginal() as any;
   return {
     ...actual,
-    useHaptics: () => ({
-      tap: mockTap,
-      medium: mockMedium,
-      heavy: mockHeavy,
-    }),
     SCORE_SELECTION_STEPS: [15, 30, 45, 60, 75, 90, 100],
   };
 });

@@ -1,17 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ref } from 'vue';
-
-const mockHaptics = {
-  success: vi.fn(),
-  error: vi.fn(),
-  tap: vi.fn()
-};
-
-vi.mock("../useHaptics", () => ({
-  useHaptics: () => mockHaptics
-}));
 
 describe('useToast', () => {
   let useToast: any;
@@ -35,24 +24,22 @@ describe('useToast', () => {
     vi.useRealTimers();
   });
 
-  it('should add a toast with success type and trigger haptics', () => {
+  it('should add a toast with success type', () => {
     const { add, toasts } = useToast();
 
     add({ type: 'success', message: 'Operation successful' });
 
     expect(toasts.value).toHaveLength(1);
     expect(toasts.value[0].type).toBe('success');
-    expect(mockHaptics.success).toHaveBeenCalled();
   });
 
-  it('should add an error toast with longer duration and error haptics', () => {
+  it('should add an error toast with longer duration', () => {
     const { error, toasts } = useToast();
 
     error('Something went wrong');
 
     expect(toasts.value).toHaveLength(1);
     expect(toasts.value[0].duration).toBe(8000);
-    expect(mockHaptics.error).toHaveBeenCalled();
   });
 
   it('should auto-remove toast after duration', () => {

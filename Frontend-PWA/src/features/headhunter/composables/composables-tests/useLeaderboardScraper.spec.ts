@@ -5,10 +5,12 @@ import { useLeaderboardScraper } from "../useLeaderboardScraper";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockUpdateFabState = vi.fn();
-const mockInfo = vi.fn();
-const mockError = vi.fn();
-const mockTap = vi.fn();
+const { mockUpdateFabState, mockInfo, mockError, mockTap } = vi.hoisted(() => ({
+  mockUpdateFabState: vi.fn(),
+  mockInfo: vi.fn(),
+  mockError: vi.fn(),
+  mockTap: vi.fn(),
+}));
 
 vi.mock("@core/services/useUiCoordinator", () => ({
   useUiCoordinator: () => ({
@@ -23,7 +25,7 @@ vi.mock("@core/services/useToast", () => ({
   }),
 }));
 
-vi.mock("@core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({
     tap: mockTap,
   }),

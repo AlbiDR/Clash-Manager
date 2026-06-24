@@ -5,7 +5,7 @@ import { ref } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useUiCoordinator } from "@core/services/useUiCoordinator";
 import { useToast } from "@core/services/useToast";
-import { useHaptics } from "@core/services/useHaptics";
+import { useHaptics } from "@shared";
 import { getSupabaseUrl, getSupabaseKey } from "@core/api/SupabaseClient";
 import * as v from "valibot";
 import { LeaderboardHarvestSchema } from "@core/api/RecruitSchemas";

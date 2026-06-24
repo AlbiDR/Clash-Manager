@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { useHaptics } from "@core/services/useHaptics";
+import { useHaptics } from "./useHaptics";
 
 /**
  * Interface defining the required callbacks for card interactions.

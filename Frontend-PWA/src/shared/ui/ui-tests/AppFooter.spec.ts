@@ -3,10 +3,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { shallowMount } from "@vue/test-utils";
 import AppFooter from "../AppFooter.vue";
-import * as hapticsModule from "../../../core/services/useHaptics";
+import * as hapticsModule from "@shared/composables/useHaptics";
 
 // Mock useHaptics from the actual file
-vi.mock("../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => ({
     heavy: vi.fn(),
   })),

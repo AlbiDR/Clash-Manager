@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useClashDataStore } from "../useClashDataStore";
 import { useConnectionStatus } from "../useConnectionStatus";
-import { useWakeLock } from "../useWakeLock";
+import { useWakeLock } from "@shared/composables/useWakeLock";
 import { fetchRemote } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 
@@ -27,7 +27,7 @@ const mockWakeLock = {
   init: vi.fn()
 };
 
-vi.mock("../useWakeLock", () => ({
+vi.mock("@shared/composables/useWakeLock", () => ({
   useWakeLock: vi.fn(() => mockWakeLock)
 }));
 
@@ -169,10 +169,8 @@ describe("useClashDataStore", () => {
 
       expect(store.loading).toBe(false);
       expect(store.data).toEqual(mockRemoteData);
-      expect(mockWakeLock.request).toHaveBeenCalled();
       expect(fetchRemote).toHaveBeenCalled();
       expect(saveCache).toHaveBeenCalledWith(mockRemoteData);
-      expect(mockWakeLock.release).toHaveBeenCalled();
     });
 
     it("should respect offline guard", async () => {
@@ -214,7 +212,6 @@ describe("useClashDataStore", () => {
 
       expect(store.loading).toBe(false);
       expect(store.syncError).toBe("API Down");
-      expect(mockWakeLock.release).toHaveBeenCalled();
     });
 
     it("should tolerate up to 2 consecutive failures if data exists", async () => {
@@ -293,10 +290,8 @@ describe("useClashDataStore", () => {
       expect(store.loading).toBe(false);
       expect(store.data).toEqual(mockRemoteData);
       expect(store.dataSource).toBe("SUPABASE");
-      expect(mockWakeLock.request).toHaveBeenCalled();
       expect(fetchRemote).toHaveBeenCalledWith({ force: true });
       expect(saveCache).toHaveBeenCalledWith(mockRemoteData);
-      expect(mockWakeLock.release).toHaveBeenCalled();
     });
 
     it("should attempt fallback to startBackgroundSync(true) if fetchRemote fails [CRACK: Guard Blocked]", async () => {

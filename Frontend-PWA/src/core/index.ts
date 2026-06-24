@@ -51,11 +51,10 @@ export * from "./utils/sortOptions";
 export * from "./utils/sortStrategies";
 export * from "./utils/mockData";
 
-// Infrastructure Services (Promoted from Shared)
-export * from "./services/useHaptics";
+// Infrastructure Services
 export * from "./services/useNetworkInfo";
 export * from "./services/useListFilter";
 export * from "./services/useProgressiveList";
 export * from "./services/useUiCoordinator";
-export * from "./services/useWakeLock";
 export * from "./services/useConnectionStatus";
+export * from "./services/useConnectivityManager";

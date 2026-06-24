@@ -49,7 +49,7 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useListFilter.ts**: High-performance engine for searching and sorting large datasets.
 - **useSelectionStore.ts**: Manages sets of selected item identifiers for batch operations.
 - **useUiCoordinator.ts**: Master arbiter of layout spacing and global FAB state.
-- **useToast.ts**: Global notification service with hardware haptic feedback.
+- **useToast.ts**: Global notification service.
 - **usePwaManager.ts**: Infrastructure-level PWA lifecycle and recovery orchestrator.
 - **useAppSettings.ts**: Multi-tier strategy for application configuration and feature flags.
 - **useBenchmarking.ts**: Statistical engine for comparing individual metrics against clan averages.
@@ -61,7 +61,6 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useBackHandler.ts**: Orchestrates hardware back button interception.
 - **useBadge.ts**: Cross-platform application badging (Native vs Notification fallback).
 - **useNetworkInfo.ts**: Layer 1 broker for network telemetry and degradation detection.
-- **useHaptics.ts / useWakeLock.ts**: Brokered access to hardware APIs.
 - **useShare.ts / useShareTarget.ts / useExternalLink.ts**: Native sharing and OS intent brokerage.
 - **useBroadcastChannel.ts**: Cross-tab state synchronization.
 

@@ -11,18 +11,13 @@ const { tapMock } = vi.hoisted(() => ({
   tapMock: vi.fn(),
 }));
 
-// Mock @core to intercept useHaptics
-vi.mock("@core", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useHaptics: () => ({
-      tap: tapMock,
-      warning: vi.fn(),
-      error: vi.fn(),
-    }),
-  };
-});
+vi.mock("@shared/composables/useHaptics", () => ({
+  useHaptics: () => ({
+    tap: tapMock,
+    warning: vi.fn(),
+    error: vi.fn(),
+  }),
+}));
 
 describe("StatusPill", () => {
   it("renders correctly for each valid type", async () => {

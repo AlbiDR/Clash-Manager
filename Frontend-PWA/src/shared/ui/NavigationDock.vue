@@ -3,7 +3,8 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
-import { useHaptics, NAV_ITEMS } from "@core";
+import { NAV_ITEMS } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 
 /**
  * COMPONENT: NavigationDock

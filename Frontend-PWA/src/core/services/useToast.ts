@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { useHaptics } from "./useHaptics";
 import { ref } from "vue";
 
 /**
@@ -41,7 +40,7 @@ const processingIds = new Set<string>();
  * durations and semantic haptic feedback.
  *
  * [ARCHITECTURE] ADR LAYER: @core (Layer 1)
- * - Permitted Imports: Other @core services (e.g., useHaptics), Vue reactivity.
+ * - Permitted Imports: Other @core services, Vue reactivity.
  * - Forbidden Imports: Any component or service from @shared or @features.
  *
  * @returns
@@ -52,13 +51,10 @@ const processingIds = new Set<string>();
  * - `success/error/info/undo`: Semantic shorthand methods.
  *
  * @sideeffects
- * - TRIGGERS device haptics via `useHaptics`.
  * - SCHEDULES `setTimeout` for automatic dismissal.
  * - MUTATES the global `toasts` reactive state.
  */
 export function useToast() {
-  const haptics = useHaptics();
-
   /**
    * Internal helper to create and track a new toast notification.
    *
@@ -92,12 +88,6 @@ export function useToast() {
     };
 
     toasts.value.push(toast);
-
-    // [GUARD] Logic: Semantic Haptics
-    // Rationale: Provides physical confirmation aligned with the notification type.
-    if (options.type === "error") haptics.error();
-    else if (options.type === "success") haptics.success();
-    else haptics.tap();
 
     // [GUARD] Logic: Memory-safe auto-dismiss (Memory #9)
     // Rationale: Automatically cleans up DOM elements and timer references.

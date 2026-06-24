@@ -3,7 +3,8 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { Icon } from "@shared";
-import { useHaptics, cleanTag } from "@core";
+import { cleanTag } from "@core";
+import { useHaptics } from "@shared";
 
 const props = defineProps<{
   modelValue: string | null;

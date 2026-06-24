@@ -2,9 +2,9 @@
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useCardMechanics } from "../useCardMechanics";
-import { useHaptics } from "../../../core/services/useHaptics";
+import { useHaptics } from "@shared/composables/useHaptics";
 
-vi.mock("../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(),
 }));
 

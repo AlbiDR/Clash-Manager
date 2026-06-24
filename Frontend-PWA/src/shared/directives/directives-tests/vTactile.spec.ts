@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { vTactile } from "../vTactile";
 import { defineComponent } from "vue";
-import { resetHapticsState, useHaptics } from "../../../core/services/useHaptics";
+import { resetHapticsState, useHaptics } from "@shared/composables/useHaptics";
 
 describe("vTactile directive", () => {
   const mockOnTap = vi.fn();

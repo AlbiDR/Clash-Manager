@@ -10,10 +10,10 @@ import {
   useClashDataStore,
   useShowcaseMode,
   useConnectionStatus,
-  useHaptics,
   useUiCoordinator,
   useSystemInfo,
 } from "@core";
+import { useHaptics } from "@shared";
 import { onMounted, computed, watch, ref } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useHeadhunter } from "@features/headhunter";

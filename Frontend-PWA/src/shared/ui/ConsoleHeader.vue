@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed, unref } from "vue";
-import { useHaptics } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";

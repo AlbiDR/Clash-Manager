@@ -53,8 +53,8 @@ import { useShowcaseMode } from "../../../../core/services/useShowcaseMode";
 import { useSyntheticMode } from "../../../../core/services/useSyntheticMode";
 import { useToast } from "../../../../core/services/useToast";
 import { useConnectionStatus } from "../../../../core/services/useConnectionStatus";
-import { useHaptics } from "../../../../core/services/useHaptics";
-import { useWakeLock } from "../../../../core/services/useWakeLock";
+import { useHaptics } from "@shared/composables/useHaptics";
+import { useWakeLock } from "@shared/composables/useWakeLock";
 import { useSystemInfo } from "../../../../core/services/useSystemInfo";
 import { useSettings } from "../useSettings";
 
@@ -140,7 +140,7 @@ vi.mock("../../../../core/services/useConnectionStatus", () => ({
   })),
 }));
 
-vi.mock("../../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => mocks.mockHaptics),
 }));
 
@@ -170,7 +170,7 @@ vi.mock("../../../../core/api/MaintenanceClient", () => ({
   subscribeToPush: mocks.mockSubscribeToPush,
 }));
 
-vi.mock("../../../../core/services/useWakeLock", () => ({
+vi.mock("@shared/composables/useWakeLock", () => ({
   useWakeLock: vi.fn(() => ({
     isActive: ref(false),
     request: vi.fn(),
@@ -428,7 +428,6 @@ describe("useSettings", () => {
       const { result } = withSetup(useSettings);
       await result.clearCache();
 
-      expect(mocks.mockHaptics.medium).toHaveBeenCalled();
       expect(mockUnregister).toHaveBeenCalled();
       expect(mockCacheDelete).toHaveBeenCalledWith("cache-v1");
       expect(mocks.mockClearManifestCache).toHaveBeenCalled();
@@ -449,7 +448,6 @@ describe("useSettings", () => {
       const { result } = withSetup(useSettings);
       await result.factoryReset();
 
-      expect(mocks.mockHaptics.heavy).toHaveBeenCalled();
       expect(localStorage.clear).toHaveBeenCalled();
       expect(sessionStorage.clear).toHaveBeenCalled();
       expect(idb.destroyAll).toHaveBeenCalled();

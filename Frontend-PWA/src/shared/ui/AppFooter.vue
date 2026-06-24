@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { vTactile } from "../directives/vTactile";
-import { useHaptics } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
   version: string;
