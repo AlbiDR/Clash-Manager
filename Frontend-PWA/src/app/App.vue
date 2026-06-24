@@ -78,8 +78,11 @@ onMounted(() => {
       const { registerSW } = await import("virtual:pwa-register");
       const update = registerSW({
         immediate: true,
-        onRegistered(r: any) {
-          r && setInterval(() => r.update(), 60 * 60 * 1000);
+        onRegistered(registration: ServiceWorkerRegistration | undefined) {
+          // [THREAT:] Silent failure to check for updates can lead to stale app versions.
+          // [DECISION LOG] Implementing an hourly background check for Service Worker
+          // updates to ensure clients are not stuck on legacy code.
+          registration && setInterval(() => registration.update(), 60 * 60 * 1000);
         },
         onNeedRefresh() {
           console.log("[PWA] Update available");
