@@ -120,3 +120,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-06-21 | Frontend-PWA/src/core/utils/math.ts | Saturating coverage for formatNumber edge cases (null, undefined, NaN, and Intl options).
 2026-06-22 | Frontend-PWA/src/shared/ui/BaseSelect.vue | Zero Coverage gap closed; saturating tests for toggle, selection, disabled state, and semantic classes.
 2026-06-23 | Frontend-PWA/src/core/utils/text.ts | Saturating coverage for formatDisplayTag and markdown edge cases
+2026-06-24 | Backend/supabase/functions/_shared/schemas.ts | Zero Coverage gap closed; saturating tests for authoritative validation boundaries, key pool normalization, and vault secret resilience.
