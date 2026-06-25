@@ -111,13 +111,14 @@
 | [Audit] | - | - | 2026-06-20 | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 | @ast-grep/cli | ^0.43.0 | ^0.44.0 | 2026-06-22 | PASS |
 | [Audit] | - | - | 2026-06-24 | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
+| knip | ^6.18.0 | ^6.20.0 | 2026-06-28 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
 | vite | ^7.3.5 | 8.1.0 | 2026-06-18 | [Updated] Breaking: Transition to Rolldown (Rust-based core). 10-30x faster builds. Unified dev/prod bundler. Deprecates `manualChunks` in favor of `codeSplitting`. |
 | typescript | ~5.9.3 | 6.0.3 | 2026-06-18 | [Updated] Breaking: Strict mode enabled by default. `types` defaults to []. `target` defaults to `es2025`. ES5 support removed. |
-| @types/node | ^24.13.2 | 26.0.0 | 2026-06-18 | [Updated] New major available. Aligned with Node 26. Breaking: Enables Temporal API by default, Undici 8, and V8 14.6. |
+| @types/node | ^24.13.2 | 26.0.1 | 2026-06-18 | [Updated] New major available. Aligned with Node 26. Breaking: Enables Temporal API by default, Undici 8, and V8 14.6. |
 | pnpm | >=10.0.0 | 11.8.0 | 2026-06-18 | [Updated] Breaking: Drops Node.js <22. Pure ESM distribution. Configuration must live in `pnpm-workspace.yaml`. `allowBuilds` replaces legacy build settings. |
 | vue-router | ^4.6.4 | 5.1.0 | 2026-06-18 | [Updated] Transition release. Merges `unplugin-vue-router` (file-based routing) into core. No breaking changes for V4 users unless using file-based routing. |
 | jsdom | ^24.1.3 | 29.1.1 | 2026-06-18 | [Updated] Breaking: Node.js v22.13.0+ required. CSSOM overhauled with internal implementation. Stricter spec compliance. |
