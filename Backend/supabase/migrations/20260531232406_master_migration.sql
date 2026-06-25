@@ -485,6 +485,36 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
 
 ALTER TABLE drivers.clan_voyage_contributions ENABLE ROW LEVEL SECURITY;
 
+-- =============================================================================
+-- Retroactive backfill for all completed voyages
+-- =============================================================================
+-- Insert 0-crown rows for every active member who has no contribution record
+-- for any completed voyage. ON CONFLICT ensures idempotency.
+INSERT INTO drivers.clan_voyage_contributions (
+    voyage_id,
+    player_tag,
+    player_name,
+    total_voyage_crowns,
+    percentage_voyage_crowns
+)
+SELECT
+    v.id,
+    m.player_tag,
+    m.player_name,
+    0,
+    0.0
+FROM drivers.clan_voyage v
+CROSS JOIN drivers.members m
+WHERE v.status = 'COMPLETED'
+  AND m.is_active = true
+  AND NOT EXISTS (
+      SELECT 1
+      FROM drivers.clan_voyage_contributions c
+      WHERE c.voyage_id = v.id
+        AND c.player_tag = m.player_tag
+  )
+ON CONFLICT (voyage_id, player_tag) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
     player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     CONSTRAINT drivers_exclusion_cache_pkey PRIMARY KEY (player_tag)
@@ -778,14 +808,16 @@ CREATE OR REPLACE FUNCTION substrate.run_ingest_royale_data()
 AS $function$
 DECLARE
     v_token text;
+    v_anon  text;
 BEGIN
     v_token := substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
+    v_anon  := substrate.get_vault_secret('SUPABASE_ANON_KEY');
     
     PERFORM net.http_post(
         url := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/ingest-royale-data',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
+            'apikey', v_anon,
             'Authorization', 'Bearer ' || v_token
         )
     );
@@ -800,14 +832,16 @@ CREATE OR REPLACE FUNCTION substrate.run_headhunter_scanner()
 AS $function$
 DECLARE
     v_token text;
+    v_anon  text;
 BEGIN
     v_token := substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
+    v_anon  := substrate.get_vault_secret('SUPABASE_ANON_KEY');
     
     PERFORM net.http_post(
         url := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/headhunter-scanner',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
+            'apikey', v_anon,
             'Authorization', 'Bearer ' || v_token
         ),
         body := '{"tournaments": ["AUTO"]}'::jsonb
@@ -970,7 +1004,7 @@ BEGIN
         url     := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/headhunter-scanner',
         headers := jsonb_build_object(
             'Content-Type',  'application/json',
-            'apikey',        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
+            'apikey',        substrate.get_vault_secret('SUPABASE_ANON_KEY'),
             'Authorization', 'Bearer ' || v_token
         ),
         body    := '{"tournaments": ["AUTO"]}'::jsonb
