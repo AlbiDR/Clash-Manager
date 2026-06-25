@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-25] PR #927: chore(version): no drift found
+**Commit**: `dd5b78829c2d27041fc87f85cf241104340caa3a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/927)
+
+### Description
+This PR records the results of the Stage 7 Version Integrity audit. No version drift or catalog violations were detected across the monorepo manifests, substrate files, or documentation. All components are consistently synchronized at version 14.1.4. System integrity was verified via the full Vitest suite.
+
+---
+*PR created automatically by Jules for task [2606563139286474513](https://jules.google.com/task/2606563139286474513) started by @AlbiDR*
+
+---
+
 ## [2026-06-25] PR #926: docs(tsdoc): document core selection and visibility services
 **Commit**: `9b798fb736798d2853fd985592d4435b297ad2f7`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/926)
