@@ -115,3 +115,11 @@
 - Functions Updated/Added: 3 (substrate.update_epoch_state, public.update_epoch_state, substrate.run_headhunter_epoch_guard)
 - Hardening: Verified SECURITY DEFINER, SET search_path, and Postgres 17 trigger syntax across all consolidated elements.
 - Verification: 1282 passed (monorepo test gate confirmed baseline compilation and logic integrity).
+2026-06-27 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 6 (Fully reconciled incremental history)
+- Tables Consolidated: 1 (substrate.headhunter_epoch_state)
+- Functions Hardened: 92 (Verified SECURITY DEFINER and search_path)
+- Secrets Hardened: 4 (Replaced hardcoded JWTs with vault-backed calls)
+- Logic Hardening: Integrated retroactive voyage backfill and riverRaceDuel crown calculation.
+- Verification: Monorepo test gate verified compilation integrity.
