@@ -44,7 +44,7 @@ export function calculateMomentum(
   else momentumLabel = Math.round(absPercent) + "%";
 
   return {
-    val: momentumLabel,
+    momentumLabel,
     dir: scoreDelta > 0 ? "up" : "down",
     raw: scoreDelta,
   };
