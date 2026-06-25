@@ -44,7 +44,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
       :name="trendInfo.dir === 'up' ? 'trend_up' : 'trend_down'"
       size="10"
     />
-    <span class="trend-val">{{ trendInfo.val }}</span>
+    <span class="trend-val">{{ trendInfo.momentumLabel }}</span>
   </div>
 </template>
 
