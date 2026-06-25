@@ -56,6 +56,16 @@ export const SbHeadhunterRowSchema = v.object({
 export const RecruitTombstoneSchema = v.array(v.string());
 
 /**
+ * [GUARD] DISMISS RESPONSE SCHEMA
+ * Validates the shape of dismissal RPC results.
+ */
+export const DismissResponseSchema = v.object({
+  success: v.boolean(),
+  count: v.optional(SafeNumberPipe),
+  message: v.optional(SafeStringPipe),
+});
+
+/**
  * [GUARD] HARVESTED PLAYER SCHEMA
  * Validates the shape of a single player harvested from the leaderboard proxy.
  */
