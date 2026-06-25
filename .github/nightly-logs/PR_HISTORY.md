@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-25] PR #931: fix(apk-ux): enhance MemberCard tactile feedback and touch targets
+**Commit**: `c2979ebc863e2ac19978d54a802e08c93c817e80`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/931)
+
+### Description
+Enhanced MemberCard.vue with tactile feedback for chart toggles and compliant 48px touch targets for the hybrid shell.
+
+---
+*PR created automatically by Jules for task [15034198557730289803](https://jules.google.com/task/15034198557730289803) started by @AlbiDR*
+
+---
+
 ## [2026-06-25] PR #930: perf(apk-optimization): prune redundant resources and refine SW cache policy
 **Commit**: `546da8554ab05f33a470b833dcf894fbfc999c0a`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/930)
