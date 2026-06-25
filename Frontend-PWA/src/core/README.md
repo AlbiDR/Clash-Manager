@@ -42,6 +42,7 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useClashSync.ts**: The specialized kernel for managing the lifecycle of the central data store, including hydration and background synchronization.
 - **useConsoleController.ts**: The primary orchestrator for complex list views (Roster, Headhunter). Delegates selection logic to `useConsoleSelection.ts`.
 - **useConsoleSelection.ts**: Orchestrates batch selection logic (Select All, Score-based thresholding) for console views.
+- **useBlitzMode.ts**: Orchestrates the automated batch deep-linking ("Blitz") pipeline shared by console views.
 - **useConnectivityManager.ts**: Resolves 8-tier system health and synchronization status.
 - **useConnectionStatus.ts**: Unifies physical network status and logical API availability.
 - **useConsoleMetadata.ts**: Manages connectivity status and statistics badges for the list orchestrator.
