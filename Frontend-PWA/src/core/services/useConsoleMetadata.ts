@@ -37,24 +37,24 @@ export function useConsoleMetadata(
   }));
 
   const statsBadge = computed(() => {
-    let count: number;
+    let itemCount: number;
 
     if (isShowcase.value) {
-      count = Math.floor(Math.random() * 50) + 1;
+      itemCount = Math.floor(Math.random() * 50) + 1;
     } else if (isBlueprintMode.value) {
-      count =
+      itemCount =
         statsLabel === "Recruit"
           ? DEFAULT_MOCK_RECRUIT_COUNT
           : DEFAULT_MOCK_MEMBER_COUNT;
     } else {
-      count = dataCount.value;
+      itemCount = dataCount.value;
     }
 
-    const displayLabel = count === 1 ? statsLabel : `${statsLabel}s`;
+    const badgeLabel = itemCount === 1 ? statsLabel : `${statsLabel}s`;
 
     return {
-      label: displayLabel,
-      value: count.toString(),
+      label: badgeLabel,
+      value: itemCount.toString(),
     };
   });
 
