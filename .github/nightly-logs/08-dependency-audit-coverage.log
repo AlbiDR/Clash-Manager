@@ -112,6 +112,10 @@
 | @ast-grep/cli | ^0.43.0 | ^0.44.0 | 2026-06-22 | PASS |
 | [Audit] | - | - | 2026-06-24 | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 | knip | ^6.18.0 | ^6.20.0 | 2026-06-28 | PASS |
+| vue | ^3.5.38 | ^3.5.39 | 2026-06-26 | PASS |
+| supabase | ^2.107.0 | ^2.108.0 | 2026-06-26 | PASS |
+| Backend/.../schemas.spec.ts | EXISTING | REMOVED | 2026-06-26 | PASS |
+| Frontend-PWA/.../index.ts | EXISTING | REMOVED | 2026-06-26 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
@@ -123,3 +127,4 @@
 | vue-router | ^4.6.4 | 5.1.0 | 2026-06-18 | [Updated] Transition release. Merges `unplugin-vue-router` (file-based routing) into core. No breaking changes for V4 users unless using file-based routing. |
 | jsdom | ^24.1.3 | 29.1.1 | 2026-06-18 | [Updated] Breaking: Node.js v22.13.0+ required. CSSOM overhauled with internal implementation. Stricter spec compliance. |
 | rollup-plugin-visualizer | ^6.0.11 | 7.0.1 | 2026-06-18 | [Updated] Breaking: Drops Node <10.16 and Rollup 1.x. Optimized internal data structures. Default export changed. |
+| dependency-cruiser | ^17.4.3 | 18.0.0 | 2026-06-26 | Breaking: Configuration format changes. Support for newer TypeScript versions. Internal engine optimizations. |
