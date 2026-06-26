@@ -39,7 +39,7 @@ Standardized sanitization, formatting, and projection logic.
 
 ### Formatting Kernels (`time.ts` & `text.ts`)
 Stateless transformation logic for UI display.
-- **text.ts**: Centralized **tag normalization** (`cleanTag`) for player and clan tags. Handles HTML normalization and Markdown-like description parsing.
+- **text.ts**: Centralized **tag normalization** (`cleanTag`) and **visual standardization** (`formatDisplayTag`) for player and clan tags. Implements a custom Markdown-like parsing pipeline for converting remote header descriptions into semantic HTML (supporting titles, bold text, and bulleted lists).
 - **time.ts**: Standardized relative-time/countdown formatting and recency parsing (`parseTimeAgoValue`).
 
 ### Sort Kernels (`sortOptions.ts` & `sortStrategies.ts`)

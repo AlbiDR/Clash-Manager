@@ -28,8 +28,8 @@ The authoritative transport layer for the Supabase binary stack.
   - `ProfileClient.ts`: Brokered access to player card synchronization.
   - `MaintenanceClient.ts`: Triggers system-level janitor and maintenance cycles.
 - **useApiState.ts**: Authoritative connectivity singleton for backend availability and handshake discovery.
-- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`) providing strict Valibot validation for inbound database payloads.
-- **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models.
+- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`) providing strict Valibot validation for inbound database payloads. Aggregated via the `DataSchemas.ts` barrel.
+- **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for complex telemetry, including Voyage history and Heritage tenure.
 
 ### Configuration (`/config`)
 Static system constants and environment orchestration.
