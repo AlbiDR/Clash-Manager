@@ -35,7 +35,8 @@ The authoritative manager for navigation and view transitions.
 The PWA kernel responsible for offline capability, asset delivery, and background tasks. Decomposed into specialized sub-modules for structural purity.
 - **swKernel.ts**: Low-level IndexedDB primitives and environmental guards for the worker thread.
 - **swSync.ts**: Domain-specific logic for background synchronization and push notification management.
-- **Caching Topologies**: Uses Workbox precaching (`precacheAndRoute`) for the app shell and assets, paired with a network-first style custom navigation handler (navigation preload -> network -> precached `index.html` shell as the offline fallback). No runtime CacheFirst or StaleWhileRevalidate routes are registered, and there is no dedicated data caching strategy.
+- **swSchemas.ts**: Authoritative Valibot schemas for hardening the background sync boundary against malformed API and configuration ingress.
+- **Caching Topologies**: Uses Workbox precaching (`precacheAndRoute`) for the app shell and assets. Implements a **Cache-First** navigation strategy for the core document (`index.html`) to achieve sub-second startup latency in hybrid shells. No runtime SWR strategies are applied to network requests.
 - **Update Orchestration**: Manages the "Prompt for Update" lifecycle to ensure clients are running the latest authoritative version.
 - **Background Sync**: A `periodicsync` handler (tag `update-recruit-badge`) refreshes the recruit badge by querying the `headhunter_view` directly via PostgREST from the worker thread (Direct View Access), independently of the @core/Layer-1 services.
 
