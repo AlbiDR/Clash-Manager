@@ -34,18 +34,18 @@ export function useBenchmarkedStat(
   const { getSafeBenchmark } = useBenchmarking();
 
   const benchmarkTooltipContent = computed(() => {
-    const ctx = toValue(context);
-    const m = toValue(metric);
-    const statValue = toValue(value);
-    const isLoading = toValue(loading);
+    const datasetContext = toValue(context);
+    const metricKey = toValue(metric);
+    const metricValue = toValue(value);
+    const isDataLoading = toValue(loading);
 
     // [DECISION LOG] Safeguard: Prevent benchmarking during loading or if
     // required context/metric is missing to avoid reactive churn on invalid state.
-    if (isLoading || !ctx || !m) {
+    if (isDataLoading || !datasetContext || !metricKey) {
       return null;
     }
 
-    return getSafeBenchmark(ctx, m, statValue);
+    return getSafeBenchmark(datasetContext, metricKey, metricValue);
   });
 
   return {

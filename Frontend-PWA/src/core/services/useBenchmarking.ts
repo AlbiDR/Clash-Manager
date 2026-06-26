@@ -175,18 +175,18 @@ function getBenchmark(
   const metricStats = stats[metric];
   if (!metricStats) return null;
 
-  const diff = value - metricStats.avg;
-  const percent = Math.abs(Math.round((diff / (metricStats.avg || 1)) * 100));
-  const isBetter = diff >= 0;
+  const scoreDelta = value - metricStats.avg;
+  const deviationPercentage = Math.abs(Math.round((scoreDelta / (metricStats.avg || 1)) * 100));
+  const isAboveAverage = scoreDelta >= 0;
 
   const labelRaw = BENCHMARK_LABELS[metric];
   const label =
     typeof labelRaw === "function" ? labelRaw(context) : labelRaw || metric;
 
-  const tier =
+  const performanceTier =
     value >= metricStats.max * 0.9
       ? "ELITE"
-      : isBetter
+      : isAboveAverage
         ? "TOP TIER"
         : value < metricStats.avg * 0.5
           ? "UNDER"
@@ -194,13 +194,13 @@ function getBenchmark(
 
   return {
     label,
-    tier: tier as BenchmarkData["tier"],
+    tier: performanceTier as BenchmarkData["tier"],
     value,
     avg: metricStats.avg,
     min: metricStats.min,
     max: metricStats.max,
-    percent,
-    isBetter,
+    percent: deviationPercentage,
+    isBetter: isAboveAverage,
   };
 }
 

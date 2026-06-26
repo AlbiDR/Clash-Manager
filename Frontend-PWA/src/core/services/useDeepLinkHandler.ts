@@ -50,13 +50,13 @@ export function useDeepLinkHandler(domIdPrefix: string) {
    * @param id - The unique identifier of the item to toggle.
    */
   function toggleExpand(id: string) {
-    const newSet = new Set(expandedIds.value);
-    if (newSet.has(id)) {
-      newSet.delete(id);
+    const updatedExpandedSet = new Set(expandedIds.value);
+    if (updatedExpandedSet.has(id)) {
+      updatedExpandedSet.delete(id);
     } else {
-      newSet.add(id);
+      updatedExpandedSet.add(id);
     }
-    expandedIds.value = newSet;
+    expandedIds.value = updatedExpandedSet;
   }
 
   /**
@@ -72,20 +72,20 @@ export function useDeepLinkHandler(domIdPrefix: string) {
     // Only run once per session/reload to avoid jarring resets.
     if (deepLinkHandled.value) return;
 
-    const pinId = route.query.pin as string | undefined;
+    const pinnedId = route.query.pin as string | undefined;
 
     // Check if the pinned ID exists in the current dataset.
-    if (pinId && items.some((item) => item.id === pinId)) {
-      const newSet = new Set(expandedIds.value);
-      newSet.add(pinId);
-      expandedIds.value = newSet;
+    if (pinnedId && items.some((candidateItem) => candidateItem.id === pinnedId)) {
+      const updatedExpandedSet = new Set(expandedIds.value);
+      updatedExpandedSet.add(pinnedId);
+      expandedIds.value = updatedExpandedSet;
 
       deepLinkHandled.value = true; // Mark handled
 
       nextTick(() => {
-        const el = document.getElementById(`${domIdPrefix}${pinId}`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const targetElement = document.getElementById(`${domIdPrefix}${pinnedId}`);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
           // Highlight the element briefly? (Optional future optimization)
         }
       });
