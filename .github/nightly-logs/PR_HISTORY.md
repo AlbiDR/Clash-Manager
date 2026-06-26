@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-26] PR #939: fix(apk-ux): add tactile feedback to CardActions
+**Commit**: `a25b1074fc092ca693d0a46c35f6e8773fc85d9e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/939)
+
+### Description
+Integrated brokered tactile feedback into CardActions.vue action buttons to ensure tactile consistency in the hybrid shell. This addresses the lack of haptic response for RoyaleAPI and Open Game interactions in Android WebViews.
+
+---
+*PR created automatically by Jules for task [1926899961484857745](https://jules.google.com/task/1926899961484857745) started by @AlbiDR*
+
+---
+
 ## [2026-06-26] PR #938: perf(apk-optimization): prune redundant resources and debug metadata
 **Commit**: `9a163f99b00824eb1e0f9672ba1211d587fb90e4`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/938)
