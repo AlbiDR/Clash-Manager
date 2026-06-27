@@ -179,6 +179,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     if (!isOnline.value) return;
 
     loading.value = true;
+    let syncFailed = false;
     try {
       const remoteData = await fetchRemote({ force: true });
 
@@ -194,14 +195,15 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       await commitSyncResult(result.output);
     } catch (supabaseRefreshError: unknown) {
       console.warn("[Sync] Supabase refresh failed:", supabaseRefreshError);
-
-      loading.value = false;
-
-      return startBackgroundSync(true);
+      syncFailed = true;
     } finally {
-      if (loading.value) {
-        loading.value = false;
-      }
+      // Reset loading BEFORE startBackgroundSync to avoid premature reset
+      // of loading state that startBackgroundSync sets on its own.
+      loading.value = false;
+    }
+
+    if (syncFailed) {
+      startBackgroundSync(true);
     }
   }
 

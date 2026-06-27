@@ -77,6 +77,34 @@ export function generateHtmlEntry(version: string): string {
         }
       })();
     </script>
+    <script>
+      (function() {
+        // Early SW update guard: catches skipWaiting activations that happen before
+        // registerSW.js (defer) gets a chance to attach its own controllerchange listener.
+        // When a new SW takes over mid-load, the old index.html references old chunk hashes
+        // that are now 404 — a reload is required to pick up the new bundle.
+        if ('serviceWorker' in navigator) {
+          var wasControlled = !!navigator.serviceWorker.controller;
+          navigator.serviceWorker.addEventListener('controllerchange', function() {
+            if (wasControlled) window.location.reload();
+          });
+        }
+        // Boot-stuck guard: if Vue hasn't replaced the app shell after 10 seconds,
+        // the JS bundle failed to load (stale cache, network error). Reload up to 2×.
+        var retryKey = 'cm_boot_retry';
+        var retries = parseInt(sessionStorage.getItem(retryKey) || '0');
+        if (retries < 2) {
+          setTimeout(function() {
+            if (document.getElementById('app-shell')) {
+              sessionStorage.setItem(retryKey, String(retries + 1));
+              window.location.reload();
+            } else {
+              sessionStorage.removeItem(retryKey);
+            }
+          }, 10000);
+        }
+      })();
+    </script>
     <style id="critical-substrate">
       ${getAppShellStyles()}
     </style>

@@ -125,7 +125,17 @@ async function bootstrap() {
     import(
       /* webpackChunkName: "core-data" */
       "@core"
-    ).then(({ idb, useApiState, useClashDataStore, useStoragePersistence }) => {
+    ).catch((err) => {
+      console.error("[App] Core module failed to load — reloading:", err);
+      const retries = parseInt(sessionStorage.getItem('cm_boot_retry') || '0');
+      if (retries < 2) {
+        sessionStorage.setItem('cm_boot_retry', String(retries + 1));
+        window.location.reload();
+      }
+      return null;
+    }).then((mod) => {
+      if (!mod) return;
+      const { idb, useApiState, useClashDataStore, useStoragePersistence } = mod as Awaited<typeof import("@core")>;
       const clashDataStore = useClashDataStore();
       const apiState = useApiState();
       const wakeLock = useWakeLock();
