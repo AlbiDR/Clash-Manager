@@ -20,7 +20,8 @@
  * ============================================================================
  */
 import { computed, onMounted, defineAsyncComponent } from "vue";
-import { SettingsCard, Icon } from "@shared";
+import { default as SettingsCard } from "./SettingsCard.vue";
+import Icon from "./Icon.vue";
 import { useVoyageStatus } from "../composables/useVoyageStatus";
 import { formatNumber } from "@core";
 

@@ -4,14 +4,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useVoyageStatus } from "../useVoyageStatus";
 import { useVoyageStore } from "../useVoyageStore";
-import { useCountdown } from "@shared";
+import { useCountdown } from "../useCountdown";
 import { ref, computed, nextTick, reactive } from "vue";
 
 vi.mock("../useVoyageStore", () => ({
   useVoyageStore: vi.fn()
 }));
 
-vi.mock("@shared", () => ({
+vi.mock("../useCountdown", () => ({
   useCountdown: vi.fn()
 }));
 

@@ -17,7 +17,7 @@
  */
 import { onMounted, computed } from "vue";
 import { useVoyageStatus } from "../composables/useVoyageStatus";
-import { Icon } from "@shared";
+import Icon from "./Icon.vue";
 import { formatNumber } from "@core";
 
 const { store, timeRemaining, startsInCountdown, progressPercent } = useVoyageStatus();

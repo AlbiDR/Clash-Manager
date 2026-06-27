@@ -19,7 +19,8 @@
  * ============================================================================
  */
 import { watch } from "vue";
-import { Icon, DurationInput } from "@shared";
+import Icon from "./Icon.vue";
+import DurationInput from "./DurationInput.vue";
 import { useVoyageForm } from "../composables/useVoyageForm";
 import { getDurationUnits } from "@core";
 import { VOYAGE_DEFAULT_TARGET, VOYAGE_MAX_TARGET } from "@core/config";

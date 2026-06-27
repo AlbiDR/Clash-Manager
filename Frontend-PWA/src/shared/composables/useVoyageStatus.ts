@@ -3,7 +3,7 @@
 
 import { computed } from "vue";
 import { useVoyageStore } from "./useVoyageStore";
-import { useCountdown } from "@shared";
+import { useCountdown } from "./useCountdown";
 
 /**
  * COMPOSABLE: useVoyageStatus

@@ -8,23 +8,22 @@ import EventManagement from "../EventManagement.vue";
 import { useVoyageStore } from "../../composables/useVoyageStore";
 import { nextTick, defineComponent, h } from "vue";
 
-// Mock @shared to provide SettingsCard and Icon
-vi.mock("@shared", async (importOriginal) => {
-  const actual = await importOriginal() as any;
-  return {
-    ...actual,
-    SettingsCard: {
-      name: "SettingsCard",
-      template: '<div class="settings-card-mock"><slot name="header-extra" /><slot /></div>',
-      props: ["title", "icon", "initiallyExpanded"]
-    },
-    Icon: {
-      name: "Icon",
-      template: '<div class="icon-mock" />',
-      props: ["name", "size"]
-    }
-  };
-});
+// Mock SettingsCard and Icon to avoid importing complex UI components
+vi.mock("../SettingsCard.vue", () => ({
+  default: {
+    name: "SettingsCard",
+    template: '<div class="settings-card-mock"><slot name="header-extra" /><slot /></div>',
+    props: ["title", "icon", "initiallyExpanded"]
+  }
+}));
+
+vi.mock("../Icon.vue", () => ({
+  default: {
+    name: "Icon",
+    template: '<div class="icon-mock" />',
+    props: ["name", "size"]
+  }
+}));
 
 
 // Mock SupabaseClient because useVoyageStore uses it
