@@ -65,11 +65,11 @@ export function useSyntheticMode() {
   /**
    * Explicitly sets the synthetic mode state and persists the change.
    *
-   * @param val - The target boolean state.
+   * @param targetState - The target boolean state.
    */
-  function setSyntheticMode(val: boolean) {
-    isSyntheticMode.value = val;
-    localStorage.setItem(SYNTHETIC_KEY, String(val));
+  function setSyntheticMode(targetState: boolean) {
+    isSyntheticMode.value = targetState;
+    localStorage.setItem(SYNTHETIC_KEY, String(targetState));
   }
 
   return {
