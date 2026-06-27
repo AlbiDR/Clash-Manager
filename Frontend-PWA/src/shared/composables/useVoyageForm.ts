@@ -12,7 +12,7 @@ import {
   VOYAGE_DEFAULT_TARGET,
   VOYAGE_MAX_TARGET
 } from "@core/config";
-import type { T2TInput } from "../types";
+import type { T2TInput } from "./voyageTypes";
 
 /**
  * Representation of relative Time-to-Timestamp (T2T) input units.
@@ -31,7 +31,7 @@ interface FormT2T {
  *
  * @remarks
  * **Architectural Context:**
- * - **Layer:** Layer 3 Feature Composable (@features/voyage)
+ * - **Layer:** Layer 3 Feature Composable (@shared)
  * - **Role:** Decouples form logic from the UI view.
  * ============================================================================
  */

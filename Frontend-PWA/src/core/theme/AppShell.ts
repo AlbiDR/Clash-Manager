@@ -9,17 +9,17 @@ import { staticTokens } from './base';
  */
 
 export function getAppShellStyles(): string {
-  const getVars = (t: ThemeTokens) => `
-    --sh-bg: ${t.color.background};
-    --sh-surf: ${t.color.surface};
-    --sh-surf-c: ${t.color.surfaceContainer};
-    --sh-surf-h: ${t.color.surfaceContainerHigh};
-    --sh-text: ${t.color.onSurface};
-    --sh-outline: ${t.color.outline};
-    --sh-primary: ${t.color.primary};
-    --sh-glass: ${t.color.surfaceContainer};
-    --sh-border: ${t.color.outlineVariant};
-    --sh-sk: ${t.color.surfaceContainerHighest};
+  const getVars = (themeTokens: ThemeTokens) => `
+    --sh-bg: ${themeTokens.color.background};
+    --sh-surf: ${themeTokens.color.surface};
+    --sh-surf-c: ${themeTokens.color.surfaceContainer};
+    --sh-surf-h: ${themeTokens.color.surfaceContainerHigh};
+    --sh-text: ${themeTokens.color.onSurface};
+    --sh-outline: ${themeTokens.color.outline};
+    --sh-primary: ${themeTokens.color.primary};
+    --sh-glass: ${themeTokens.color.surfaceContainer};
+    --sh-border: ${themeTokens.color.outlineVariant};
+    --sh-sk: ${themeTokens.color.surfaceContainerHighest};
   `;
 
   return staticTokens + `

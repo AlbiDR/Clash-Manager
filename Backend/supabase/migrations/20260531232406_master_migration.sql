@@ -1672,12 +1672,12 @@ RETURNS numeric
 LANGUAGE sql
 IMMUTABLE STRICT SECURITY DEFINER
 SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
-AS $
+AS $$
     SELECT
         SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
         NULLIF(SUM(CASE WHEN val IS NOT NULL THEN GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay) END), 0)
     FROM UNNEST(p_values) WITH ORDINALITY AS t(val, ord)
-$;
+$$;
 
 COMMENT ON FUNCTION substrate.weighted_avg(numeric[], numeric, numeric) IS
     'Recency-decayed weighted average. Index 1 = most recent (full weight).

@@ -80,6 +80,17 @@ watch(
   },
   { immediate: true }
 );
+
+// EXPOSE FOR TESTING
+defineExpose({
+  targetCrowns,
+  startsIn,
+  endsIn,
+  isFormValid,
+  validationHint,
+  handleActivate,
+  handleSetEnd
+});
 </script>
 
 <template>

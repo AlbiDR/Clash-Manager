@@ -1,10 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ConsoleLayout, SkeletonSettingsCard } from "@shared";
+import { ConsoleLayout, SkeletonSettingsCard, EventManagement } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
-import { defineAsyncComponent } from "vue";
 
 // Settings Components
 import {
@@ -16,8 +15,6 @@ import {
   BackendRefresher,
   RecoverySettings,
 } from "../components";
-
-const EventManagement = defineAsyncComponent(() => import("../../voyage/components/EventManagement.vue"));
 
 const {
   modules,

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { type Ref } from "vue";
-import type { T2TInput, VoyageSummary } from "../types";
+import type { T2TInput, VoyageSummary } from "./voyageTypes";
 import {
   initializeVoyage as apiInitializeVoyage,
   scheduleVoyageEvent as apiScheduleVoyageEvent,
