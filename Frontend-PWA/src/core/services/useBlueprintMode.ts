@@ -62,11 +62,11 @@ export function useBlueprintMode() {
 
   /**
    * Explicitly sets the Blueprint Mode status and persists it.
-   * @param val - The target boolean state.
+   * @param targetState - The target boolean state.
    */
-  function setBlueprintMode(val: boolean) {
-    isBlueprintMode.value = val;
-    localStorage.setItem(BLUEPRINT_KEY, String(val));
+  function setBlueprintMode(targetState: boolean) {
+    isBlueprintMode.value = targetState;
+    localStorage.setItem(BLUEPRINT_KEY, String(targetState));
   }
 
   return {

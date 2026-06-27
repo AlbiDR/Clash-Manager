@@ -148,11 +148,11 @@ describe("useConsoleController", () => {
         currentSource: ref(null as "SUPABASE" | null),
         lastCompiledTime: ref(null as number | null),
         lastFetchedTime: ref(null as number | null),
-        filterFn: (item: any) => [item.n],
+        filterFn: (candidateItem: any) => [candidateItem.n],
         sortStrategies: {},
         defaultSort: "score",
         deepLinkPrefix: "test-",
-        batchIdMapper: (item: any) => item.id,
+        batchIdMapper: (candidateItem: any) => candidateItem.id,
         statsLabel: "Test",
       };
   }
@@ -226,7 +226,7 @@ describe("useConsoleController", () => {
 
   it("uses default scoreGetter in handleSelectScore if not provided", () => {
     const { ref } = require("vue");
-    const scoreGetter = vi.fn((item: any) => item.score);
+    const scoreGetter = vi.fn((candidateItem: any) => candidateItem.score);
     const options = {
       ...createOptions(),
       scoreGetter,
@@ -447,11 +447,11 @@ describe("useConsoleController", () => {
       options.statsLabel = "Test";
       const { statsBadge } = useConsoleController(options);
       
-      const val = parseInt(statsBadge.value.value);
-      expect(val).toBeGreaterThanOrEqual(1);
-      expect(val).toBeLessThanOrEqual(50);
+      const statsValue = parseInt(statsBadge.value.value);
+      expect(statsValue).toBeGreaterThanOrEqual(1);
+      expect(statsValue).toBeLessThanOrEqual(50);
       
-      if (val === 1) {
+      if (statsValue === 1) {
         expect(statsBadge.value.label).toBe("Test");
       } else {
         expect(statsBadge.value.label).toBe("Tests");
@@ -486,7 +486,7 @@ describe("useConsoleController", () => {
           data: ref([{ id: "1", n: "Test" }]),
           sortStrategies: { score: (a: any, b: any) => 0 },
           defaultSort: "score",
-          filterFn: (item: any) => [item.n],
+          filterFn: (candidateItem: any) => [candidateItem.n],
       } as any);
 
       expect(isRefreshing.value).toBe(false);

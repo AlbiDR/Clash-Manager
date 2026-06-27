@@ -95,14 +95,14 @@ export function useShowcaseMode() {
   /**
    * Sets the master Showcase state to a specific boolean value.
    */
-  function setShowcaseMode(val: boolean) {
-    if (isShowcaseMode.value === val) return;
-    isShowcaseMode.value = val;
-    localStorage.setItem(SHOWCASE_KEY, String(val));
+  function setShowcaseMode(targetState: boolean) {
+    if (isShowcaseMode.value === targetState) return;
+    isShowcaseMode.value = targetState;
+    localStorage.setItem(SHOWCASE_KEY, String(targetState));
 
     // [PROPAGATION] MASTER -> CHILD
-    setSyntheticMode(val);
-    setBlueprintMode(val);
+    setSyntheticMode(targetState);
+    setBlueprintMode(targetState);
   }
 
   return {
