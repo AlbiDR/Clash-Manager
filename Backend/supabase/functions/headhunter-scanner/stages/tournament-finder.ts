@@ -9,9 +9,20 @@ import { DiscoveryAnchorSchema, DiscoveryCacheItemSchema, RoyaleTournamentListSc
 
 const ANCHOR_LIMIT = 36;
 const CACHE_HOURS = 5 / 60; // 5 minutes cache window
-const TOURNAMENT_SEARCH_LIMIT = 25;
+const TOURNAMENT_SEARCH_LIMIT = 50;
 const BATCH_TOURNAMENTS = 25;
 const BATCH_KEYWORDS = 30;
+
+// Canonical tournament types as documented by the Royale API.
+const KNOWN_TOURNAMENT_TYPES = new Set([
+    'openTournament',
+    'invitatioTournament',
+]);
+
+// Runtime registry seeded from KNOWN_TOURNAMENT_TYPES.
+// Unknown types are added on first encounter and kept for the lifetime of the
+// function instance (persists across warm-start re-invocations).
+const runtimeTypeRegistry = new Set(KNOWN_TOURNAMENT_TYPES);
 
 /**
  * Stage: Tournament Discovery
@@ -109,6 +120,25 @@ export async function runTournamentDiscovery(
                     (firstTournament, secondTournament) => secondTournament.capacity - firstTournament.capacity
                 );
 
+                const typeDistribution = tournamentList.reduce((acc, t) => {
+                    const t_type = t.type ?? 'unknown';
+                    acc[t_type] = (acc[t_type] ?? 0) + 1;
+                    return acc;
+                }, {} as Record<string, number>);
+                console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' list: ${tournamentList.length} tournaments, types=${JSON.stringify(typeDistribution)}`);
+
+                for (const seenType of Object.keys(typeDistribution)) {
+                    if (seenType !== 'unknown' && !runtimeTypeRegistry.has(seenType)) {
+                        runtimeTypeRegistry.add(seenType);
+                        console.warn(`[TOURNAMENT_DISCOVERY] NEW TOURNAMENT TYPE DISCOVERED: '${seenType}' — added to runtime registry (now ${runtimeTypeRegistry.size} known types)`);
+                        logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
+                            passed: true,
+                            details: `new_tournament_type_discovered: ${seenType}`,
+                            known_types: [...runtimeTypeRegistry]
+                        });
+                    }
+                }
+
                 const tournamentDetailTasks = tournamentList.map((tournamentTarget) => async () => {
                     if (blacklist.has(tournamentTarget.tag)) {
                         console.log(`[TOURNAMENT_DISCOVERY] Skipping tournament ${tournamentTarget.tag}: blacklisted/cached`);
@@ -125,8 +155,23 @@ export async function runTournamentDiscovery(
 
                             if (detailsValidation.success) {
                                 const tournamentDetails = detailsValidation.output;
+                                const tournamentType = tournamentDetails.type ?? 'unknown';
                                 let foundInTournament = 0;
                                 let skippedClanned = 0;
+                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag} type=${tournamentType} members=${tournamentDetails.membersList.length}`);
+
+                                if (tournamentDetails.membersList.length === 0) {
+                                    const isUnknownType = !KNOWN_TOURNAMENT_TYPES.has(tournamentType);
+                                    if (isUnknownType) {
+                                        console.warn(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag} type=${tournamentType} returned 0 members — unknown type may use a different member field name`);
+                                        logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
+                                            passed: false,
+                                            details: `empty_membersList_unknown_type: ${tournamentTarget.tag} type=${tournamentType}`,
+                                        });
+                                    } else {
+                                        console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag} is empty (0 members).`);
+                                    }
+                                }
 
                                 tournamentDetails.membersList.forEach((tournamentMember) => {
                                     // NOTE: tournamentMember.trophies here is the player's tournament score,

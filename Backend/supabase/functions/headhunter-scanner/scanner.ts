@@ -117,6 +117,19 @@ export async function executeScanner(
     }
     await heartbeat('S2_TOURNAMENT_DISCOVERY', stats);
 
+    // Discovery cap check: the profiler hard-caps at 1000 candidates. If we hit
+    // that ceiling, lower-priority sources (tournament) lose candidates silently.
+    if (candidates.size >= 1000) {
+        const capMessage = `Discovery cap reached: ${candidates.size} candidates found — profiler will truncate to 1000`;
+        console.warn(`[SCANNER] ${capMessage}`);
+        logAudit('DISCOVERY_CAP', 'integrity_checked', {
+            passed: true,
+            details: capMessage,
+            discovery_shadow: stats.discovery_shadow,
+            discovery_tournament: stats.discovery_tournament,
+        });
+    }
+
     // S3: Profiling & Ingestion
     try {
         await withTimeout(runProfiler(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S3_PROFILING');

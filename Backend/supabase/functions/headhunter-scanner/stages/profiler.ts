@@ -190,6 +190,35 @@ export async function runProfiler(
         await processBatch(profileTasks, 40);
         console.log(`[PROFILING] Batch processing complete. Valid: ${validCount}, Invalid/Filtered: ${invalidCount}`);
 
+        // Field health check: detect silent Royale API field renames or deprecations.
+        // Key RPoS fields default to 0 via the schema, so a broken field is invisible
+        // unless we actively verify that at least some players returned non-zero values.
+        if (validRecruits.length >= 10) {
+            const withTrophies = validRecruits.filter(r => r.trophies > 0).length;
+            const withWarWins = validRecruits.filter(r => r.war_wins > 0).length;
+            const withDonations = validRecruits.filter(r => r.donations > 0).length;
+            const healthReport = {
+                trophies: `${withTrophies}/${validRecruits.length}`,
+                war_wins: `${withWarWins}/${validRecruits.length}`,
+                donations: `${withDonations}/${validRecruits.length}`,
+            };
+            console.log(`[PROFILING] RPoS field health: ${JSON.stringify(healthReport)}`);
+
+            const suspiciousFields: string[] = [];
+            if (withTrophies === 0) suspiciousFields.push('trophies');
+            if (withWarWins === 0) suspiciousFields.push('warDayWins');
+            if (withDonations === 0) suspiciousFields.push('totalDonations');
+
+            if (suspiciousFields.length > 0) {
+                console.warn(`[PROFILING] RPoS FIELD ANOMALY: [${suspiciousFields.join(', ')}] returned 0 across all ${validRecruits.length} profiles — possible Royale API field rename or deprecation`);
+                logAudit('PROFILING', 'integrity_checked', {
+                    passed: false,
+                    details: `rpos_field_anomaly: ${suspiciousFields.join(', ')} missing across all profiles`,
+                    field_health: healthReport,
+                });
+            }
+        }
+
         if (validRecruits.length > 0) {
             // Group recruits by their discovery source for accurate attribution
             const bySource = new Map<string, ValidRecruit[]>();

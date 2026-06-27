@@ -142,8 +142,9 @@ export const PlayerSyncPayloadSchema = v.object({
  */
 const RoyaleTournamentListItemSchema = v.object({
     tag: v.string(),
-    capacity: v.number(),
-    maxCapacity: v.number()
+    type: v.optional(v.string()),
+    capacity: v.optional(v.number(), 0),
+    maxCapacity: v.optional(v.number(), 0)
 });
 
 /**
@@ -164,14 +165,15 @@ export const RoyaleTournamentListSchema = v.object({
  */
 export const RoyaleTournamentSchema = v.object({
     tag: v.string(),
-    membersList: v.array(v.object({
+    type: v.optional(v.string()),
+    membersList: v.optional(v.array(v.object({
         tag: v.string(),
         name: v.string(),
         trophies: v.optional(v.number(), 0),
         clan: v.optional(v.nullable(v.object({
             tag: v.string()
         })))
-    }))
+    })), [])
 });
 
 /**
