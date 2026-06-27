@@ -8,3 +8,8 @@
 2026-06-23 | Frontend-PWA/src/core/README.md | Reconciled utility kernels (PriorityQueue, economy, navigation, sorting, visibility, mockData)
 2026-06-25 | Backend/README.md | Reconciled Headhunter Epoch safety, server-side crown/duel derivation, and centralized Valibot boundaries.
 2026-06-27 | Frontend-PWA/src/shared/README.md | Reconciled v-tactile (Architectural Protection) and v-tooltip (Popover API/Delegation) constraints.
+2026-06-28 | Backend/supabase/functions/_shared/README.md | Documented Backend Kernel (Layer 1): protocol, schemas, vault, muscle, and types.
+2026-06-28 | Frontend-PWA/src/core/README.md | Re-synchronized service registry with useBlitzMode.ts (Automated Batch Deep-Link Orchestrator).
+2026-06-26 | Frontend-PWA/src/core/README.md | Reconciled DataSchemas barrel and DataMappers telemetry normalization (Voyage/Heritage)
+2026-06-26 | Frontend-PWA/src/app/README.md | Documented Cache-First navigation strategy and swSchemas sub-module hardening
+2026-06-26 | Frontend-PWA/src/core/utils/README.md | Documented formatDisplayTag and Markdown-like description parsing pipeline

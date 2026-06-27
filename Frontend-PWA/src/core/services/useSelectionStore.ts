@@ -11,8 +11,12 @@ import { ref, computed } from "vue";
  * Facilitates multi-selection modes and batch processing workflows.
  *
  * **Architectural Context:**
- * - **Layer:** Layer 1 (@core)
- * - **Responsibility:** Pure state management for item selection.
+ * - **Layer:** Layer 1 Core Service (@core/services)
+ * - **Role:** Pure state management for item selection.
+ * - **Satisfaction:** Satisfies ADR Section I: Foundations (SRP) and ADR Section III: Data Flow.
+ *   Provides a centralized, reactive state for batch selection that is decoupled
+ *   from feature-specific logic, enabling standardized interaction patterns
+ *   across the Roster and Headhunter features.
  *
  * @returns Reactive state and handlers for selection operations.
  */

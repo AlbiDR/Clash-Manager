@@ -58,7 +58,7 @@ describe("MomentumPill.vue", () => {
 
   it("renders correctly for 'up' trend", () => {
     mockCalculateMomentum.mockReturnValue({
-      val: "10.0%",
+      momentumLabel: "10.0%",
       dir: "up",
       raw: 10
     });
@@ -73,7 +73,7 @@ describe("MomentumPill.vue", () => {
 
   it("renders correctly for 'down' trend", () => {
     mockCalculateMomentum.mockReturnValue({
-      val: "5.5%",
+      momentumLabel: "5.5%",
       dir: "down",
       raw: -5
     });

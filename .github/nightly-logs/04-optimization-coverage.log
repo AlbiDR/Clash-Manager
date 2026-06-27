@@ -227,3 +227,18 @@ Optimization (Substrate Hygiene - Stage 4) 2026-06-25: Standardized variable nam
 2026-06-23 | Frontend-PWA/src/core/services/useBenchmarking.ts | Standardized variable naming for domain clarity (candidatePool, metricExtractors, statAccumulators, metricValue, accumulator, metricStats).
 2026-06-23 | Frontend-PWA/src/core/utils/math.ts | Standardized variable naming for domain clarity (numericValue, scoreDelta, momentumLabel).
 2026-06-23 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-06-25 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-06-26 | Frontend-PWA/src/shared/composables/useBenchmarkedStat.ts | Standardized variable naming for domain clarity.
+2026-06-26 | Frontend-PWA/src/core/services/useDeepLinkHandler.ts | Standardized variable naming for domain clarity.
+2026-06-26 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Standardized variable naming for domain clarity.
+2026-06-26 | Frontend-PWA/src/core/services/useBenchmarking.ts | Standardized variable naming for domain clarity.
+2026-06-26 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-06-28 | Frontend-PWA/src/core/services/useShowcaseMode.ts | Standardized 'val' to 'targetState' for domain clarity.
+2026-06-28 | Frontend-PWA/src/core/services/useSyntheticMode.ts | Standardized 'val' to 'targetState' for domain clarity.
+2026-06-28 | Frontend-PWA/src/core/services/useBlueprintMode.ts | Standardized 'val' to 'targetState' for domain clarity.
+2026-06-28 | Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts | Standardized 'item' to 'candidateItem' and 'val' to 'statsValue'.
+2026-06-28 | Frontend-PWA/src/core/services/services-tests/useShowcaseMode.spec.ts | Standardized 'val' to 'targetState'.
+2026-06-28 | Frontend-PWA/src/core/services/services-tests/StorageService.spec.ts | Standardized 'val' to 'targetValue' and 'key' to 'storageKey'.
+2026-06-28 | Frontend-PWA/src/core/services/services-tests/useConsoleSelection.spec.ts | Standardized 'item' to 'candidateItem'.
+2026-06-28 | Frontend-PWA/src/core/services/services-tests/useListFilter.spec.ts | Standardized 'item' to 'candidateItem'.
+2026-06-28 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.

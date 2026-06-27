@@ -3,6 +3,8 @@
 
 import { openDB, getValue } from "./swKernel";
 import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../../core/config";
+import * as v from "valibot";
+import { SwSupabaseResponseSchema } from "./swSchemas";
 
 /**
  * SW SYNC (Layer 4 Sub-module)
@@ -25,10 +27,6 @@ interface PushPayload {
   threshold?: number;
 }
 
-interface SupabaseRow {
-  s: number;
-}
-
 declare const self: ServiceWorkerGlobalScope;
 
 /**
@@ -44,14 +42,16 @@ declare const self: ServiceWorkerGlobalScope;
 export async function handlePushBadge(payload: PushPayload): Promise<void> {
   const { badgeCount, title, body } = payload;
 
-  const db = await openDB();
+  const storageConnection = await openDB();
 
-  // [THREAT:] Unvalidated IndexedDB ingress.
+  // [THREAT:] Unvalidated IndexedDB ingress (Target C [1]).
   // [DECISION LOG] We default to enabled (true) if the key is missing to ensure
   // users receive critical updates by default unless they explicitly opted out.
-  const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
+  // Validation ensures that corrupted IDB data doesn't crash the Service Worker.
+  const rawEnabled = await getValue(storageConnection, "cm_notifications_enabled");
+  const notificationsAreEnabled = v.safeParse(v.boolean(), rawEnabled).success ? (rawEnabled as boolean) : true;
 
-  if (badgeCount && badgeCount > 0 && enabled) {
+  if (badgeCount && badgeCount > 0 && notificationsAreEnabled) {
     await self.registration.showNotification(
       title || "New Recruits Available",
       {
@@ -79,8 +79,9 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
         await self.navigator.setAppBadge(badgeCount);
       else await self.navigator.clearAppBadge();
     }
-  } catch (e) {
-    // Silent fail
+  } catch (badgeUpdateError: unknown) {
+    // Silent fail for hardware boundary
+    console.warn("[SW] Native badge update failed", badgeUpdateError);
   }
 }
 
@@ -100,31 +101,40 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
  */
 export async function handleBackgroundSync(): Promise<void> {
   try {
-    const db = await openDB();
+    const storageConnection = await openDB();
 
     // [THREAT:] Notification permission guards.
     // [DECISION LOG] Background sync is aborted if notifications are disabled in app settings
     // to preserve battery and data, even if the browser registration is active.
-    const enabled = (await getValue(db, "cm_notifications_enabled")) !== false;
-    if (!enabled) {
+    const rawEnabled = await getValue(storageConnection, "cm_notifications_enabled");
+    const notificationsAreEnabled = v.safeParse(v.boolean(), rawEnabled).success ? (rawEnabled as boolean) : true;
+
+    if (!notificationsAreEnabled) {
       console.log("[SW] Background sync skipped: Notifications disabled");
       return;
     }
 
-    // [THREAT:] Configuration drift.
+    // [THREAT:] Configuration drift and 'any Plague' (Target C [1, 4]).
     // [DECISION LOG] We retrieve connectivity secrets directly from IDB to avoid
-    // hardcoding production URLs in the service worker script.
-    const supabaseUrl = await getValue(db, "cm_supabase_url") as string;
-    if (!supabaseUrl) return;
+    // hardcoding production URLs in the service worker script. Strict validation
+    // via Valibot ensures configuration integrity.
+    const rawUrl = await getValue(storageConnection, "cm_supabase_url");
+    const supabaseUrlValidation = v.safeParse(v.pipe(v.string(), v.url()), rawUrl);
+    if (!supabaseUrlValidation.success) return;
+    const supabaseUrl = supabaseUrlValidation.output;
 
-    const threshold = (await getValue(db, "cm_notification_threshold") as number) || 75;
+    const rawThreshold = await getValue(storageConnection, "cm_notification_threshold");
+    const thresholdValidation = v.safeParse(v.pipe(v.number(), v.picklist([50, 75])), rawThreshold);
+    const scoreThreshold = thresholdValidation.success ? thresholdValidation.output : 75;
 
-    const supabaseKey = await getValue(db, "cm_supabase_key") as string;
-    if (!supabaseKey) return;
+    const rawKey = await getValue(storageConnection, "cm_supabase_key");
+    const supabaseKeyValidation = v.safeParse(v.pipe(v.string(), v.minLength(1)), rawKey);
+    if (!supabaseKeyValidation.success) return;
+    const supabaseKey = supabaseKeyValidation.output;
 
     // [DECISION LOG] Direct View Access: We query the view with aliasing (s:potential_score)
     // to reduce payload size and decouple from internal database column naming.
-    const response = await fetch(`${supabaseUrl}/rest/v1/headhunter_view?select=s:potential_score`, {
+    const apiResponse = await fetch(`${supabaseUrl}/rest/v1/headhunter_view?select=s:potential_score`, {
       method: "GET",
       headers: {
         "apikey": supabaseKey,
@@ -132,44 +142,51 @@ export async function handleBackgroundSync(): Promise<void> {
       },
     });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!apiResponse.ok) throw new Error(`HTTP ${apiResponse.status}`);
 
-    const recruits = (await response.json()) as SupabaseRow[];
+    // [GUARD] VALIDATION BOUNDARY (Target C [1]).
+    // [THREAT:] External API data is un-trusted. Replacing unsafe 'as' with strict validation.
+    const rawRecruitsPayload: unknown = await apiResponse.json();
+    const recruitValidation = v.safeParse(SwSupabaseResponseSchema, rawRecruitsPayload);
 
-    if (Array.isArray(recruits)) {
-      const count = recruits.filter((r) => r.s >= threshold).length;
-
-      if (count > 0) {
-        if (self.navigator.setAppBadge) {
-          await self.navigator.setAppBadge(count);
-        }
-
-        await self.registration.showNotification("New Recruits Available", {
-          body: `You have ${count} recruit${count === 1 ? "" : "s"} above your threshold.`,
-          icon: "pwa-192.png",
-          badge: "pwa-64.png",
-          tag: NOTIFICATION_TAG_RECRUIT,
-          renotify: false,
-          silent: false,
-          requireInteraction: false,
-          data: {
-            type: "badge",
-            count,
-            shortcutId: NOTIFICATION_SHORTCUT_ID,
-            url: "/#/headhunter",
-            timestamp: Date.now(),
-          },
-        } as NotificationOptions);
-      } else {
-        const notifications = await self.registration.getNotifications({
-          tag: NOTIFICATION_TAG_RECRUIT,
-        });
-        notifications.forEach((n) => n.close());
-        if (self.navigator.clearAppBadge)
-          await self.navigator.clearAppBadge();
-      }
+    if (!recruitValidation.success) {
+      console.error("[SW] Background sync: Malformed API response", recruitValidation.issues);
+      return;
     }
-  } catch (e) {
-    console.error("[SW] Background sync failed", e);
+
+    const recruitSnapshots = recruitValidation.output;
+    const highPotentialCount = recruitSnapshots.filter((recruitSnapshot) => recruitSnapshot.s >= scoreThreshold).length;
+
+    if (highPotentialCount > 0) {
+      if (self.navigator.setAppBadge) {
+        await self.navigator.setAppBadge(highPotentialCount);
+      }
+
+      await self.registration.showNotification("New Recruits Available", {
+        body: `You have ${highPotentialCount} recruit${highPotentialCount === 1 ? "" : "s"} above your threshold.`,
+        icon: "pwa-192.png",
+        badge: "pwa-64.png",
+        tag: NOTIFICATION_TAG_RECRUIT,
+        renotify: false,
+        silent: false,
+        requireInteraction: false,
+        data: {
+          type: "badge",
+          count: highPotentialCount,
+          shortcutId: NOTIFICATION_SHORTCUT_ID,
+          url: "/#/headhunter",
+          timestamp: Date.now(),
+        },
+      } as NotificationOptions);
+    } else {
+      const activeNotifications = await self.registration.getNotifications({
+        tag: NOTIFICATION_TAG_RECRUIT,
+      });
+      activeNotifications.forEach((notification) => notification.close());
+      if (self.navigator.clearAppBadge)
+        await self.navigator.clearAppBadge();
+    }
+  } catch (backgroundSyncError: unknown) {
+    console.error("[SW] Background sync failed", backgroundSyncError);
   }
 }

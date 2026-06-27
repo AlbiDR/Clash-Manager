@@ -95,8 +95,11 @@ export default defineConfig({
       filename: "sw.ts",
       manifest: false, // Already exists in public/manifest.json
       injectManifest: {
-        // [OPTIMIZATION] Included webp for high-resolution game assets and screenshots
+        // [OPTIMIZATION] Included webp for high-resolution game assets and screenshots.
+        // Large branding screenshots used for manifest/store representation are excluded
+        // to minimize SW cache footprint and update bandwidth.
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        globIgnores: ["assets/branding/*.webp"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {

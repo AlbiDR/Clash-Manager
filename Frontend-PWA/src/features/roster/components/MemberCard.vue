@@ -30,13 +30,23 @@ import {
   StatisticItem,
   WarHistoryChart,
   VoyageHistoryChart,
-  formatRole
+  formatRole,
 } from "@shared";
 import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
-import { formatTimeAgo, formatNumber } from "@core";
+import { formatTimeAgo, formatNumber, useHaptics } from "@core";
 
-const activeChart = ref<'war' | 'voyage'>('war');
+const activeChart = ref<"war" | "voyage">("war");
+const haptics = useHaptics();
+
+/**
+ * Switch the active chart view with tactile feedback.
+ */
+function setChart(mode: "war" | "voyage") {
+  if (activeChart.value === mode) return;
+  haptics.tap();
+  activeChart.value = mode;
+}
 
 const props = defineProps<ConsoleCardMetadata & {
   /** Unique player tag identifier. */
@@ -131,16 +141,20 @@ const ariaLabel = computed(() => {
       </StatsGrid>
 
       <div class="chart-toggle-container">
-        <button 
-          class="toggle-btn hit-target" 
+        <button
+          class="toggle-btn hit-target"
           :class="{ active: activeChart === 'war' }"
-          @click.stop="activeChart = 'war'"
-        >War</button>
-        <button 
-          class="toggle-btn hit-target" 
+          @click.stop="setChart('war')"
+        >
+          War
+        </button>
+        <button
+          class="toggle-btn hit-target"
           :class="{ active: activeChart === 'voyage' }"
-          @click.stop="activeChart = 'voyage'"
-        >Voyage</button>
+          @click.stop="setChart('voyage')"
+        >
+          Voyage
+        </button>
       </div>
 
       <WarHistoryChart v-if="activeChart === 'war'" :history="props.member.d.hist" :loading="props.appIsRefreshing" />
@@ -184,6 +198,15 @@ const ariaLabel = computed(() => {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/*
+ * [UX] TOUCH TARGET COMPLIANCE
+ * Ensures the toggle buttons achieve a 48px tap footprint in the hybrid shell
+ * without altering the compact visual design of the chart controls.
+ */
+.toggle-btn.hit-target::after {
+  inset: -12px -4px;
 }
 
 .card-actions-margin {

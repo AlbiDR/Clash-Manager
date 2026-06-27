@@ -3,10 +3,16 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { useExternalLink } from "@core/services/useExternalLink";
+import { useHaptics } from "@core";
+
 /**
  * [UTIL] CARD ACTIONS
  * Atomic component for player-specific action buttons (RoyaleAPI, Open Game).
  * Deduplicated from MemberCard and RecruitCard.
+ *
+ * @remarks
+ * [DECISION LOG] Haptic feedback integrated via useHaptics to ensure tactile
+ * consistency for global card actions across the Android WebView shell.
  */
 const props = defineProps<{
   /** Player Tag */
@@ -18,8 +24,27 @@ const props = defineProps<{
 }>();
 
 const { openExternal, openInGame } = useExternalLink();
+const haptics = useHaptics();
 
 const iconSize = props.compact ? 14 : 16;
+
+/**
+ * [DECISION LOG] BROKERED TACTILE FEEDBACK
+ * Triggers a standard tap haptic before delegating to the external link service.
+ */
+function handleOpenExternal() {
+  haptics.tap();
+  openExternal(`https://royaleapi.com/player/${props.id}`);
+}
+
+/**
+ * [DECISION LOG] BROKERED TACTILE FEEDBACK
+ * Triggers a standard tap haptic before attempting to open the game deep-link.
+ */
+function handleOpenInGame() {
+  haptics.tap();
+  openInGame(props.id);
+}
 </script>
 
 <template>
@@ -30,7 +55,7 @@ const iconSize = props.compact ? 14 : 16;
     </template>
     <template v-else>
       <button
-        @click.stop="openExternal(`https://royaleapi.com/player/${id}`)"
+        @click.stop="handleOpenExternal"
         class="btn-action"
         :class="{ compact: compact }"
         aria-label="View on RoyaleAPI"
@@ -39,7 +64,7 @@ const iconSize = props.compact ? 14 : 16;
         <span>RoyaleAPI</span>
       </button>
       <button
-        @click.stop="openInGame(id)"
+        @click.stop="handleOpenInGame"
         class="btn-action primary"
         :class="{ compact: compact }"
         aria-label="Open in Game"

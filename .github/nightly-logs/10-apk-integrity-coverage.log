@@ -18,3 +18,16 @@
 - Verified PWA/APK manifest parity for theme colors, background colors, and start URLs.
 - Confirmed Digital Asset Links alignment between PWA and APK package names.
 - Validated system stability via monorepo test gate (1286 passed) and apk:verify:source integrity check.
+[2026-06-25] Stage 10: APK & PWA Wrapper Integrity Audit
+- Synchronized APK versioning in twa-manifest.json with monorepo ground truth (v14.1.4, versionCode 14104).
+- Fixed corruption in assetlinks.json by removing trailing 'x' and verifying JSON validity.
+- Verified PWA/APK manifest parity and native layer integrity via apk:verify:source.
+- Validated system stability via monorepo test gate (1300+ passed) using Node 22 bypass.
+
+[2026-11-20] Stage 10: APK & PWA Wrapper Integrity Audit
+- Synchronized APK/reference/twa-manifest.json with PWA manifest (natural orientation, lowercase colors).
+- Injected authoritative SHA-256 fingerprint into twa-manifest.json for Digital Asset Link integrity.
+- Audited native configuration: verified targetSdkVersion 35 and cleartext traffic restriction.
+- Verified custom native layer integrity via apk:verify:source.
+- Validated system stability via monorepo test gate (1300+ passed) using Node 22 bypass.
+November 2026: Synchronized APK/PWA orientation to 'natural' in strings.xml and verified integrity of AndroidManifest.xml (usesCleartextTraffic, permissions) and versioning consistency (v14.1.4). Verified source integrity via APK verification scripts and monorepo test gate.

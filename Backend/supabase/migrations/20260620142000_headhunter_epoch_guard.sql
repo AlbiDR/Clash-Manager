@@ -273,7 +273,7 @@ BEGIN
         url     := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/headhunter-scanner',
         headers := jsonb_build_object(
             'Content-Type',  'application/json',
-            'apikey',        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
+            'apikey',        substrate.get_vault_secret('SUPABASE_ANON_KEY'),
             'Authorization', 'Bearer ' || v_token
         ),
         body    := '{"tournaments": ["AUTO"]}'::jsonb

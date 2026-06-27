@@ -126,7 +126,7 @@ export interface PingResponse {
 
 // Momentum / Trend Calculation Result
 export interface MomentumInfo {
-  val: string;
+  momentumLabel: string;
   dir: "up" | "down";
   raw: number;
 }

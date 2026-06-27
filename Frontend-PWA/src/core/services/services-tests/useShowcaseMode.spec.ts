@@ -5,13 +5,13 @@ import { ref, nextTick } from "vue";
 
 // Mock child composables
 const isSyntheticMode = ref(false);
-const setSyntheticMode = vi.fn((val: boolean) => { isSyntheticMode.value = val; });
+const setSyntheticMode = vi.fn((targetState: boolean) => { isSyntheticMode.value = targetState; });
 vi.mock("../useSyntheticMode", () => ({
   useSyntheticMode: () => ({ isSyntheticMode, setSyntheticMode }),
 }));
 
 const isBlueprintMode = ref(false);
-const setBlueprintMode = vi.fn((val: boolean) => { isBlueprintMode.value = val; });
+const setBlueprintMode = vi.fn((targetState: boolean) => { isBlueprintMode.value = targetState; });
 vi.mock("../useBlueprintMode", () => ({
   useBlueprintMode: () => ({ isBlueprintMode, setBlueprintMode }),
 }));

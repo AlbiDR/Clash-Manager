@@ -103,8 +103,8 @@ describe("StorageService", () => {
       };
 
       const newStore = {
-        put: (val: any, key: any) => {
-          if (key === "migrated_key" && val === "migrated_value") {
+        put: (targetValue: any, storageKey: any) => {
+          if (storageKey === "migrated_key" && targetValue === "migrated_value") {
             legacyPutCalled = true;
           }
           return createMockRequest();
