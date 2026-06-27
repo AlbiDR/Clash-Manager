@@ -3,7 +3,7 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { useExternalLink } from "@core/services/useExternalLink";
-import { useHaptics } from "@core";
+import { useHaptics } from "@shared/composables/useHaptics";
 
 /**
  * [UTIL] CARD ACTIONS

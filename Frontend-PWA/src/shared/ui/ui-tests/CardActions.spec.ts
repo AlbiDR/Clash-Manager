@@ -9,6 +9,11 @@ import { mount } from "@vue/test-utils";
 
 const mockOpenExternal = vi.fn();
 const mockOpenInGame = vi.fn();
+const mockTap = vi.fn();
+
+vi.mock("@shared/composables/useHaptics", () => ({
+  useHaptics: () => ({ tap: mockTap }),
+}));
 
 vi.mock("@core/services/useExternalLink", () => ({
   useExternalLink: () => ({

@@ -28,7 +28,7 @@
 
 import ScoreThresholdSelector from "./ScoreThresholdSelector.vue";
 import { useSelectionBar } from "../composables/useSelectionBar";
-import { useHaptics } from "@core";
+import { useHaptics } from "@shared/composables/useHaptics";
 
 const props = defineProps<{
   count: number;

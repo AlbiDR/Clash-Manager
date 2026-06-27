@@ -34,7 +34,8 @@ import {
 } from "@shared";
 import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
-import { formatTimeAgo, formatNumber, useHaptics } from "@core";
+import { formatTimeAgo, formatNumber } from "@core";
+import { useHaptics } from "@shared/composables/useHaptics";
 
 const activeChart = ref<"war" | "voyage">("war");
 const haptics = useHaptics();
