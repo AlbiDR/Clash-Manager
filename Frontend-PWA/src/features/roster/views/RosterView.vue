@@ -27,7 +27,7 @@ import {
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
 import { MemberCard } from "../components";
-import { VoyageBanner } from "@features/voyage/components";
+import { VoyageBanner } from "@shared";
 
 const {
   isShowcaseMode,

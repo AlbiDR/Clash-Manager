@@ -22,7 +22,7 @@
  */
 import { defineStore } from "pinia";
 import { ref, computed, onUnmounted } from "vue";
-import type { VoyageSummary, VoyageStatus } from "../types";
+import type { VoyageSummary, VoyageStatus } from "./voyageTypes";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { 
   createSupabaseClient

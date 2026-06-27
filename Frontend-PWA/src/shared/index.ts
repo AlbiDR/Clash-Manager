@@ -38,6 +38,9 @@ export { default as DurationInput } from "./ui/DurationInput.vue";
 export { default as BaseHistoryChart } from "./ui/BaseHistoryChart.vue";
 export { default as WarHistoryChart } from "./ui/WarHistoryChart.vue";
 export { default as VoyageHistoryChart } from "./ui/VoyageHistoryChart.vue";
+export { default as EventManagement } from "./ui/EventManagement.vue";
+export { default as VoyageBanner } from "./ui/VoyageBanner.vue";
+export { default as VoyageSetupForm } from "./ui/VoyageSetupForm.vue";
 
 // Directives
 export { vTactile } from "./directives/vTactile";
@@ -62,6 +65,10 @@ export { useBenchmarkedStat } from "./composables/useBenchmarkedStat";
 export { useCardMechanics } from "./composables/useCardMechanics";
 export { useHaptics, resetHapticsState } from "./composables/useHaptics";
 export { useWakeLock } from "./composables/useWakeLock";
+export { useVoyageStatus } from "./composables/useVoyageStatus";
+export { useVoyageForm } from "./composables/useVoyageForm";
+export { useVoyageStore } from "./composables/useVoyageStore";
+export { useVoyageActions } from "./composables/useVoyageActions";
 
 // Utilities
 export { formatRole } from "./utils/game";

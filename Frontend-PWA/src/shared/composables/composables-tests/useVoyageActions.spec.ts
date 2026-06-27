@@ -6,7 +6,7 @@ import { ref } from "vue";
 import { useVoyageActions } from "../useVoyageActions";
 import * as VoyageClient from "@core/api/VoyageClient";
 import * as coreUtils from "@core";
-import type { VoyageSummary } from "../../types";
+import type { VoyageSummary } from "../voyageTypes";
 
 vi.mock("@core/api/VoyageClient", () => ({
   initializeVoyage: vi.fn(),
