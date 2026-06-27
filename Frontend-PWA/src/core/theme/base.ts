@@ -4,10 +4,12 @@
  * CLASH MANAGER - Base Reset & Gestures
  * Ported to TypeScript for Technical Purity.
  */
-export const baseStyles = `
-/* =========================================
-   DESIGN TOKENS (Static Substrate)
-   ========================================= */
+
+/**
+ * STATIC TOKENS
+ * Extracted for use in the critical App Shell to ensure 100/100 performance.
+ */
+export const staticTokens = `
 :root {
   /* ── LAYOUT ── */
   --sys-layout-max-width: 720px;
@@ -107,7 +109,9 @@ export const baseStyles = `
   --sys-leading-tight:  1.1;
   --sys-leading-normal: 1.5;
 }
+`;
 
+export const baseStyles = staticTokens + `
 /* =========================================
    MINIMAL RESET
    ========================================= */

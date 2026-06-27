@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { type ThemeTokens, lightTokens, darkTokens } from './tokens';
+import { staticTokens } from './base';
 
 /**
  * CLASH MANAGER - App Shell (TypeScript Source of Truth)
@@ -21,7 +22,7 @@ export function getAppShellStyles(): string {
     --sh-sk: ${t.color.surfaceContainerHighest};
   `;
 
-  return `
+  return staticTokens + `
     :root {
       ${getVars(lightTokens)}
     }
@@ -124,7 +125,10 @@ export function getAppShellStyles(): string {
     .sh-d-item { padding: var(--sys-space-10) var(--sys-space-20); border-radius: var(--sys-shape-corner-full); display: flex; gap: var(--sys-space-8); align-items: center; }
     .sh-d-item.active { background: var(--sh-primary); }
     .sh-d-icon { width: 22px; height: 22px; background: currentColor; opacity: 0.8; }
-    .sh-pulse { opacity: 0.85; }
+    .sh-pulse {
+      opacity: 0.85;
+      animation: sh-pulse 1.5s infinite ease-in-out;
+    }
     @keyframes sh-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   `;
 }
