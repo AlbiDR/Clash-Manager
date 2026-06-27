@@ -119,8 +119,8 @@ export async function fetchRemote(options?: {
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC 
   // to fetch high-fidelity datasets directly from the authoritative feature views.
   const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
-    supabase.from('roster_view').select('*').abortSignal(signal),
-    supabase.from('headhunter_view').select('*').limit(250).abortSignal(signal),
+    supabase.schema('features').from('roster_view').select('*').abortSignal(signal),
+    supabase.schema('features').from('headhunter_view').select('*').limit(250).abortSignal(signal),
     supabase.schema('substrate').from('pipeline_heartbeat').select('last_success_at').eq('component_id', 'ROYALE_DATA_INGESTOR').single().abortSignal(signal),
     supabase.schema('drivers').from('recruit_blacklist').select('player_tag').abortSignal(signal)
   ]);
