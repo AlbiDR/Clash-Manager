@@ -3,3 +3,4 @@
 [2026-06-27] Modernized BaseSelect.vue with brokered tactile feedback (tap on toggle, medium on select).
 [2026-06-28] Enhanced MemberCard.vue with tactile feedback for chart toggles and expanded touch targets (48px footprint) for mobile compliance.
 [2026-06-29] Integrated brokered tactile feedback into CardActions.vue action buttons to ensure tactile consistency in the hybrid shell.
+[2026-06-30] Integrated brokered tactile feedback into SelectionBar.vue morph button to preserve physical touch response across the hybrid shell.

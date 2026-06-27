@@ -28,6 +28,7 @@
 
 import ScoreThresholdSelector from "./ScoreThresholdSelector.vue";
 import { useSelectionBar } from "../composables/useSelectionBar";
+import { useHaptics } from "@core";
 
 const props = defineProps<{
   count: number;
@@ -47,6 +48,15 @@ const {
   filterValue,
   isActive,
 } = useSelectionBar(props);
+
+const haptics = useHaptics();
+
+/**
+ * Triggers haptic feedback on interaction start.
+ */
+function onInteractionStart() {
+  haptics.tap();
+}
 
 </script>
 
@@ -88,6 +98,7 @@ const {
             ? emit('clear')
             : emit('select-score', filterValue, filterMode)
         "
+        @pointerdown="onInteractionStart"
       >
         <Transition name="text-morph" mode="out-in">
           <span v-if="!isActive" key="select">Select</span>
