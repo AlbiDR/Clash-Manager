@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-27] PR #946: chore(deps): bump knip and update major version watchlist
+**Commit**: `680a2393eb4c3c95842a4b715735120abc0e7669`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/946)
+
+### Description
+This PR executes the Stage 8 Dependency Audit. It includes a Tier 1 minor update for `knip` (^6.20.0 -> ^6.21.0) and a comprehensive update to the Tier 2 Major Version Watchlist in `.github/nightly-logs/08-dependency-audit-coverage.log`. The watchlist now contains detailed research on breaking changes for Vite 8, TypeScript 6, Node 26 types, and other critical infrastructure packages. All changes were verified via the monorepo Vitest suite (1313 passed) using the Node 22 bypass.
+
+---
+*PR created automatically by Jules for task [14731875074809831372](https://jules.google.com/task/14731875074809831372) started by @AlbiDR*
+
+---
+
 ## [2026-06-27] PR #945: chore(version): no drift found
 **Commit**: `f535b106e12f7841ed374263743dd9be7d4d7e23`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/945)
