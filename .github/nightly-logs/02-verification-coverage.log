@@ -123,3 +123,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-06-24 | Backend/supabase/functions/_shared/schemas.ts | Zero Coverage gap closed; saturating tests for authoritative validation boundaries, key pool normalization, and vault secret resilience.
 2026-06-28 | Frontend-PWA/src/core/api/RecruitClient.ts | Extended Realtime and RPC validation coverage; confirmed removal of channel and Valibot boundary integrity.
 2026-06-28 | Frontend-PWA/src/core/api/RecruitSchemas.ts | Saturating coverage for DismissResponse, HarvestedPlayer, and LeaderboardHarvest validation boundaries.
+2026-06-27 | Frontend-PWA/src/core/api/VoyageClient.ts | Saturating coverage for RPC functions, error paths, and validation boundaries
