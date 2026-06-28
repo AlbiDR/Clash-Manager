@@ -117,14 +117,16 @@
 | Backend/.../schemas.spec.ts | EXISTING | REMOVED | 2026-06-26 | PASS |
 | Frontend-PWA/.../index.ts | EXISTING | REMOVED | 2026-06-26 | PASS |
 | knip | ^6.20.0 | ^6.21.0 | 2026-06-27 | PASS |
+| knip | ^6.21.0 | ^6.22.0 | 2026-06-28 | PASS |
+| Frontend-PWA/.../voyage/index.ts | EXISTING | REMOVED | 2026-06-28 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
-| vite | ^7.3.5 | 8.1.0 | 2026-06-18 | [Updated] Breaking: Single unified bundler (Rolldown). Experimental Bundled Dev Mode for ~15x faster startup. No minor-range breaking changes for V8. |
-| typescript | ~5.9.3 | 6.0.3 | 2026-06-18 | [Updated] Breaking: `rootDir` defaults to `.`. `types` defaults to `[]`. Deprecates `target: es5`, `downlevelIteration`, and `node10` module resolution. |
+| vite | ^7.3.5 | 8.1.0 | 2026-06-18 | [Updated] Breaking: Single unified bundler (Rolldown). Renames `build.rollupOptions` to `build.rolldownOptions`. Experimental Bundled Dev Mode for ~15x faster startup. |
+| typescript | ~5.9.3 | 6.0.3 | 2026-06-18 | [Updated] Breaking: `rootDir` defaults to `.`. `types` defaults to `[]`. Deprecates `target: es5`. Introduces `ignoreDeprecations` compiler option for gradual migration. |
 | @types/node | ^24.13.2 | 26.0.1 | 2026-06-18 | [Updated] Breaking: Temporal API enabled by default. `Map.getOrInsert` and `Iterator.concat` added. Drops support for several legacy stream modules. |
-| pnpm | >=10.0.0 | 11.8.0 | 2026-06-18 | [Updated] Breaking: Drops Node <22. Configuration must live in `pnpm-workspace.yaml`. `allowBuilds` replaces legacy build settings. Native publish implementation. |
+| pnpm | >=10.0.0 | 11.8.0 | 2026-06-18 | [Updated] Breaking: Pure ESM distribution. Drops Node <22. Settings must live in `pnpm-workspace.yaml`. `allowBuilds` replaces legacy build settings. |
 | vue-router | ^4.6.4 | 5.1.0 | 2026-06-18 | [Updated] Breaking: No breaking changes for V4 users unless using file-based routing (merges `unplugin-vue-router`). Devtools API upgraded to v8. |
 | jsdom | ^24.1.3 | 29.1.1 | 2026-06-18 | [Updated] Breaking: Node.js v22.13.0+ required. Upgraded from jsdom 21 to 26 in Jest context. CSSOM overhauled with internal implementation. |
 | rollup-plugin-visualizer | ^6.0.11 | 7.0.1 | 2026-06-18 | [Updated] Breaking: Migrate to ESM-only. Drops Node <22. Added Rolldown support. New Markdown report template (LLM-friendly). |
