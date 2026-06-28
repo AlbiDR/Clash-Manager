@@ -8,13 +8,30 @@
  * ----------------------------------------------------------------------------
  */
 
+/**
+ * Defines the structure for a primary navigation item in the application.
+ *
+ * @remarks
+ * Satisfies ADR Section II: Structural Unitary Architecture.
+ */
 export interface NavItem {
+  /** The application path used for routing. */
   path: string;
+  /** Unique internal name for the navigation route. */
   name: string;
+  /** Human-readable label displayed in the UI. */
   label: string;
+  /** Identifier for the icon associated with the route. */
   icon: string;
 }
 
+/**
+ * The authoritative list of primary navigation items.
+ *
+ * @remarks
+ * Satisfies ADR Section IV: Navigation SSOT. Provides the central registry
+ * used by the NavigationDock and other UI layout components.
+ */
 export const NAV_ITEMS: NavItem[] = [
   {
     path: "/roster",
