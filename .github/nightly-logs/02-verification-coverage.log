@@ -124,3 +124,7 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-06-28 | Frontend-PWA/src/core/api/RecruitClient.ts | Extended Realtime and RPC validation coverage; confirmed removal of channel and Valibot boundary integrity.
 2026-06-28 | Frontend-PWA/src/core/api/RecruitSchemas.ts | Saturating coverage for DismissResponse, HarvestedPlayer, and LeaderboardHarvest validation boundaries.
 2026-06-27 | Frontend-PWA/src/core/api/VoyageClient.ts | Saturating coverage for RPC functions, error paths, and validation boundaries
+2026-07-01 | Frontend-PWA/src/core/api/DataMappers.ts | Extended coverage for v_hist normalization and potential_score fallback logic.
+2026-07-01 | Frontend-PWA/src/shared/ui/BaseBadge.vue | Zero Coverage gap closed; saturating tests for slot content and CSS classes.
+2026-07-01 | Frontend-PWA/src/features/laboratory/components/LaboratorySkeleton.vue | Zero Coverage gap closed; verified representation of the dashboard grid.
+2026-07-01 | Frontend-PWA/src/core/utils/navigation.ts | Zero Coverage gap closed; verified navigation SSOT integrity.
