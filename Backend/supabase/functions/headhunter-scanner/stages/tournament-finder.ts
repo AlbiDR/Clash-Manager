@@ -40,6 +40,9 @@ export async function runTournamentDiscovery(
     try {
         // 1. Fetch Autonomous Anchors
         // [DECISION LOG] Anchors are keywords stored in the database to guide the discovery engine autonomously.
+        // [SCHEMA] The data API only exposes the `public` schema to RPC. A thin
+        // public.get_active_discovery_anchors wrapper (migration) delegates to the
+        // substrate implementation — same pattern as get_shadow_discovery_targets / get_discovery_cache.
         const { data: rawAnchors, error: anchorError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT });
 
         if (anchorError) {

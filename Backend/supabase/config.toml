@@ -15,3 +15,9 @@ verify_jwt = false
 
 [functions.fetch-player-battlelog]
 verify_jwt = false
+
+[functions.headhunter-scanner]
+# Authenticates via its own INTERNAL_BEARER_TOKEN (clinicalServe guard), used by both
+# the pg_cron epoch guard and the manual GitHub workflow. The gateway must NOT enforce a
+# Supabase JWT, or those custom-bearer calls are rejected with UNAUTHORIZED_INVALID_JWT_FORMAT.
+verify_jwt = false
