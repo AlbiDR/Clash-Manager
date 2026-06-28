@@ -40,8 +40,8 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **StorageService.ts**: The persistence engine. Brokers access to IndexedDB via the `idbKernel` and manages high-fidelity caching.
 - **useClashDataStore.ts**: The authoritative central store for high-integrity clan datasets. Delegates sync logic to `useClashSync.ts`.
 - **useClashSync.ts**: The specialized kernel for managing the lifecycle of the central data store, including hydration and background synchronization.
-- **useConsoleController.ts**: The primary orchestrator for complex list views (Roster, Headhunter). Delegates selection logic to `useConsoleSelection.ts`.
-- **useConsoleSelection.ts**: Orchestrates batch selection logic (Select All, Score-based thresholding) for console views.
+- **useConsoleController.ts**: The primary orchestrator for complex list views (Roster, Headhunter). Manages domain-blind infrastructure (filtering, sorting, progressive rendering) and delegates selection logic to `useConsoleSelection.ts`.
+- **useConsoleSelection.ts**: Orchestrates batch selection logic (Select All, Score-based thresholding) for console views, decoupling selection handlers from the main controller.
 - **useBlitzMode.ts**: Orchestrates the automated batch deep-linking ("Blitz") pipeline shared by console views.
 - **useConnectivityManager.ts**: Resolves 8-tier system health and synchronization status.
 - **useConnectionStatus.ts**: Unifies physical network status and logical API availability.

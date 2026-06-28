@@ -33,13 +33,13 @@ The `query-royale-api` function acts as a secure proxy for the PWA, allowing it 
 
 ### Local Harvesting & Country Rotation
 - **Endpoint**: `/locations/{id}/pathoflegend/players`
-- **Identification**: Automatically identifies the clan's registered location via the `CLAN_TAG` configuration.
-- **International Rotation**: If the clan is registered as "International", the function performs a **Dynamic Country Rotation**:
+- **Identification**: Automatically identifies the clan's registered location by fetching clan details for the configured `CLAN_TAG`.
+- **International Rotation**: If the clan is registered as "International" (ID 57000101) or non-country, the function performs a **Dynamic Country Rotation**:
     1. Fetches the full locations catalog from `/locations`.
     2. Filters for valid country locations (`isCountry: true`).
-    3. Randomly selects a country for the current request.
-    4. **Rationale**: Rotating countries for International clans provides a more diverse set of potential recruits compared to the static "Global" pool, which often overlaps with the Global leaderboard.
-- **Ephemeral Caching**: The locations catalog is cached in-memory (`cachedCountries`) to minimize roundtrips to the Royale API during a single execution instance.
+    3. Randomly selects a country for the current request to ensure diverse discovery.
+    4. **Rationale**: Rotating countries for International clans prevents stagnation in the recruitment pool by accessing distinct regional leaderboards that would otherwise be ignored.
+- **Ephemeral Caching**: The locations catalog is cached in-memory (`cachedCountries`) at the module level to minimize roundtrips during an execution instance lifecycle.
 
 ## Security & Validation Boundaries
 

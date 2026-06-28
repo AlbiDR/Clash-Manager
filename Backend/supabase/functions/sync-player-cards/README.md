@@ -16,10 +16,10 @@ The `sync-player-cards` function provides an authenticated, safe boundary for re
 
 ### Clinical Synchronization Protocol
 The function implements a strictly ordered, four-stage lifecycle:
-1.  **Cache Discovery (S1)**: Checks the `features.player_card_snapshots` substrate for a valid, fresh snapshot.
-2.  **API Extraction (S2)**: On cache miss, performs an authenticated fetch from the Clash Royale API via the **Native Muscle** key rotation engine.
-3.  **Clinical Normalization (S3)**: Transforms relative Royale API card levels into the authoritative 1-16 absolute scale.
-4.  **Substrate Persistence (S4)**: Upserts the standardized payload into the database while maintaining the 12-hour TTL boundary.
+1.  **Cache Discovery (S1)**: Checks the `features.player_card_snapshots` substrate for a valid, fresh snapshot (<12h old). Returns a standardized response on hit.
+2.  **API Extraction (S2)**: On cache miss, performs an authenticated fetch from the Clash Royale API via the **Native Muscle** key rotation engine (`fetchWithRotation`).
+3.  **Clinical Normalization (S3)**: Transforms relative Royale API card levels into the authoritative 1-16 absolute scale based on distance from `maxLevel`.
+4.  **Substrate Persistence (S4)**: Upserts the standardized payload into the database while maintaining the 12-hour TTL boundary via the `fetched_at` column.
 
 ### High-Fidelity Normalization
 The Clash Royale API provides card levels relative to their specific rarity (e.g., Rare Level 11). This engine normalizes all cards to a unified **Absolute Scale** (1-16) based on the distance from the card's maximum level, ensuring consistent performance scoring across the Roster and Laboratory features.

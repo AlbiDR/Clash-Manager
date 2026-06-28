@@ -29,11 +29,8 @@ Standardized containers that manage view-level states like loading, errors, and 
 ### Data Visualization
 Generic, high-performance visualization components.
 - **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories and projected next values. Delegates geometric translation to the `@shared/composables/useBaseHistoryChart.ts` composable.
-
-### Domain-Aware Molecules (Promoted)
-Specialized components promoted to the shared layer to facilitate cross-feature performance auditing while maintaining domain-specific logic.
-- **WarHistoryChart.vue**: Visualizes clan war performance. Delegates history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
-- **VoyageHistoryChart.vue**: Visualizes Clan Voyage contributions. Delegates history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+- **WarHistoryChart.vue**: Domain-aware molecule for visualizing clan war performance. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+- **VoyageHistoryChart.vue**: Domain-aware molecule for visualizing Clan Voyage contributions. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
 
 ### UI Primitives
 Atomic elements that form the basis of the design system.
