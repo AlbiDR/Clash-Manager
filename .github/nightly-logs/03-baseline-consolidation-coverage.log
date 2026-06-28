@@ -132,3 +132,9 @@
 - Views Audited: 11 (Verified OR REPLACE idempotency)
 - Visual Purity: Confirmed 100% ASCII compliance (zero em-dashes/emojis)
 - Verification: Monorepo vitest suite (1313 passes) confirmed state integrity.
+2026-06-28 | Stage 3 | Baseline Consolidation
+--------------------------------------------
+- Migrations Folded: 2 (20260628003700_fix_discovery_cache_fractional_hours, 20260628010500_add_public_get_active_discovery_anchors)
+- Functions Updated: 1 (public.get_discovery_cache: integer -> numeric parameter)
+- Functions Added: 1 (public.get_active_discovery_anchors: PostgREST wrapper for substrate implementation)
+- Verification: 1300 passed, 1 skipped (monorepo test gate confirmed baseline compilation)

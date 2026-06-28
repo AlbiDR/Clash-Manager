@@ -9,9 +9,12 @@
  * Following Layer 3 (@features) isolation rules.
  */
 import { Icon, SettingRow, BaseSelect } from "@shared";
+import { useHaptics } from "@shared/composables/useHaptics";
 import { computed } from "vue";
 import { type OptimizationSettings, type OptimizationResult } from "../logic";
 import { IMPORTANT_KING_LEVELS, KING_LEVEL_MAX } from "@core";
+
+const haptics = useHaptics();
 
 /**
  * [DECISION LOG] Prop types are strictly enforced to satisfy the CleanStack
@@ -30,11 +33,14 @@ const emit = defineEmits<{
 }>();
 
 const setStrategy = (strategyType: "Level Projection" | "Resource Efficiency") => {
+  if (props.settings.strategy === strategyType) return;
+  haptics.tap();
   const updates: Partial<OptimizationSettings> = { strategy: strategyType };
   emit("update", { ...props.settings, ...updates });
 };
 
 const toggleGemSpending = () => {
+  haptics.tap();
   emit("update", { allowGemSpending: !props.settings.allowGemSpending });
 };
 

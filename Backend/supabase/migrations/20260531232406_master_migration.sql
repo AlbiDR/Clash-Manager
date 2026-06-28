@@ -2963,7 +2963,7 @@ BEGIN
 END;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.get_discovery_cache(p_hours integer)
+CREATE OR REPLACE FUNCTION public.get_discovery_cache(p_hours numeric)
  RETURNS TABLE(player_tag text)
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -2975,6 +2975,16 @@ BEGIN
     FROM substrate.discovery_cache c
     WHERE c.scanned_at >= (NOW() - (p_hours || ' hours')::INTERVAL);
 END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_active_discovery_anchors(p_limit integer DEFAULT 15)
+ RETURNS TABLE(keyword text)
+ LANGUAGE sql
+ STABLE
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+    SELECT keyword FROM substrate.get_active_discovery_anchors(p_limit);
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_stale_recruits(p_limit integer DEFAULT 20)

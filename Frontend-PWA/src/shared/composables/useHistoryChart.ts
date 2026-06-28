@@ -3,14 +3,55 @@
 
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { formatNumber } from "@core/utils/math";
-import {
-  WAR_CONSTANTS,
-  VOYAGE_CONSTANTS,
-  calculatePrediction,
-  parseHistoryString
-} from "@core/utils/predictionMath";
 
 export type HistoryChartType = "war" | "voyage";
+
+const WAR_CONSTANTS = { MAX_FAME: 3600 };
+const VOYAGE_CONSTANTS = { MAX_CROWNS: 250 };
+
+interface HistoryEntry {
+  value: number;
+  weekId: string;
+  readableWeek: string;
+}
+
+function parseHistoryString(historyStr: string | undefined): HistoryEntry[] {
+  if (!historyStr || historyStr === "-") return [];
+  const weekRegex = /(\d+)[W-](?:W)?(\d+)/;
+  return historyStr
+    .split(/[|,]/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [valStr, weekStr] = entry.split(" ");
+      const value = parseInt(valStr || "0", 10) || 0;
+      const wStr = weekStr || "";
+      const weekMatch = wStr.match(weekRegex);
+      let readableWeek = wStr || "?";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(wStr)) {
+        readableWeek = wStr.substring(5).replace('-', '/');
+      } else if (weekMatch) {
+        readableWeek = `Week ${parseInt(weekMatch[2], 10)}`;
+      }
+      return { value, weekId: wStr, readableWeek };
+    });
+}
+
+// [DECISION LOG] WEIGHTED DECAY: weights start at 1.0, decrement 0.05/week, floor at 0.5.
+// Recent performance is more predictive; old data still contributes without dominating.
+function calculatePrediction(historyScores: number[], maxScore: number): number {
+  const n = historyScores.length;
+  if (n === 0) return 0;
+  let totalWeightedScore = 0;
+  let totalWeights = 0;
+  for (let i = 0; i < n; i++) {
+    const weight = Math.max(0.5, 1.0 - (i * 0.05));
+    totalWeightedScore += historyScores[i] * weight;
+    totalWeights += weight;
+  }
+  const projection = totalWeights > 0 ? totalWeightedScore / totalWeights : 0;
+  return Math.max(0, Math.min(maxScore, projection));
+}
 
 /**
  * COMPOSABLE: useHistoryChart
@@ -57,20 +98,17 @@ export function useHistoryChart(
       return { data: [], projection: null, maxScale };
     }
 
-    // Predict
     // [DECISION LOG] TREND PREDICTION: Extracts raw values into a series for the
     // weighted decay calculator. Isolation here ensures UI formatting doesn't
     // leak into mathematical projections.
     const valueSeries = processedData.map((h) => h.value);
     const nextValue = calculatePrediction(valueSeries, maxScale);
 
-    // Arrange Oldest -> Newest for UI
     // [DECISION LOG] CHRONOLOGICAL REVERSAL: History strings are stored with the
     // most recent entry first (index 0). SVG-based charts require left-to-right
     // (oldest-to-newest) ordering for correct trend visualization.
     const chronologicalData = [...processedData].reverse();
     const data = chronologicalData.map((h, i) => {
-      // [DECISION LOG] Use readableWeek from parser which already handles date vs week formatting
       return {
         id: `${idPrefix}-${h.weekId}-${i}`,
         value: h.value,
