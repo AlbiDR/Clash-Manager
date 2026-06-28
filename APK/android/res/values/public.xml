@@ -638,12 +638,6 @@
     <public type="drawable" name="btn_radio_off_to_on_mtrl_animation" id="0x7f080055" />
     <public type="drawable" name="btn_radio_on_mtrl" id="0x7f080056" />
     <public type="drawable" name="btn_radio_on_to_off_mtrl_animation" id="0x7f080057" />
-    <public type="drawable" name="ic_call_answer" id="0x7f080058" />
-    <public type="drawable" name="ic_call_answer_low" id="0x7f080059" />
-    <public type="drawable" name="ic_call_answer_video" id="0x7f08005a" />
-    <public type="drawable" name="ic_call_answer_video_low" id="0x7f08005b" />
-    <public type="drawable" name="ic_call_decline" id="0x7f08005c" />
-    <public type="drawable" name="ic_call_decline_low" id="0x7f08005d" />
     <public type="drawable" name="ic_notification_icon" id="0x7f08005e" />
     <public type="drawable" name="ic_site_settings" id="0x7f08005f" />
     <public type="drawable" name="notification_action_background" id="0x7f080060" />
