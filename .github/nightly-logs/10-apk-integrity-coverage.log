@@ -12,17 +12,26 @@
 - Validated PWA build integrity and project-wide version synchronization.
 - Verified monorepo stability via full Vitest suite (1282 passed).
 
+[2026-06-25] Stage 10: APK & PWA Wrapper Integrity Audit
+- Synchronized APK versioning in twa-manifest.json with monorepo ground truth (v14.1.4, versionCode 14104).
+- Fixed corruption in assetlinks.json by removing trailing 'x' and verifying JSON validity.
+- Verified PWA/APK manifest parity and native layer integrity via apk:verify:source.
+- Validated system stability via monorepo test gate (1300+ passed) using Node 22 bypass.
+
 [2026-06-27] Stage 10: APK & PWA Wrapper Integrity Audit
 - Synchronized APK versioning in apktool.yml with monorepo ground truth (v14.1.4, versionCode 14104).
 - Hardened Android network security by explicitly forbidding cleartext traffic (usesCleartextTraffic="false") in AndroidManifest.xml.
 - Verified PWA/APK manifest parity for theme colors, background colors, and start URLs.
 - Confirmed Digital Asset Links alignment between PWA and APK package names.
 - Validated system stability via monorepo test gate (1286 passed) and apk:verify:source integrity check.
-[2026-06-25] Stage 10: APK & PWA Wrapper Integrity Audit
-- Synchronized APK versioning in twa-manifest.json with monorepo ground truth (v14.1.4, versionCode 14104).
-- Fixed corruption in assetlinks.json by removing trailing 'x' and verifying JSON validity.
-- Verified PWA/APK manifest parity and native layer integrity via apk:verify:source.
-- Validated system stability via monorepo test gate (1300+ passed) using Node 22 bypass.
+
+[2026-06-28] Stage 10: APK & PWA Wrapper Integrity Audit
+- Verified version synchronization (14.2.0 / 14200) across package.json, Frontend-PWA/package.json, Backend/package.json, APK/android/apktool.yml, and APK/reference/twa-manifest.json.
+- Verified manifest parity: theme colors (#0b0e14), orientation (natural), and start URLs synchronized across manifest.json, twa-manifest.json, and Android res/values/.
+- Validated Digital Asset Links fingerprint (E5:6A:CA:67:08:CA:38:69:A6:0A:E0:81:4A:80:B7:69:3F:67:6F:91:B3:AE:6D:FD:DD:4C:68:5D:1A:2E:70:3A) in assetlinks.json.
+- Hardened security: verified android:usesCleartextTraffic="false" and sanitized permissions (POST_NOTIFICATIONS, SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC, INTERNET) in AndroidManifest.xml.
+- Verified custom native layer integrity via apk:verify:source.
+- Validated system stability via monorepo test gate (1324 passed) using Node 22 bypass.
 
 [2026-11-20] Stage 10: APK & PWA Wrapper Integrity Audit
 - Synchronized APK/reference/twa-manifest.json with PWA manifest (natural orientation, lowercase colors).
@@ -30,4 +39,5 @@
 - Audited native configuration: verified targetSdkVersion 35 and cleartext traffic restriction.
 - Verified custom native layer integrity via apk:verify:source.
 - Validated system stability via monorepo test gate (1300+ passed) using Node 22 bypass.
+
 November 2026: Synchronized APK/PWA orientation to 'natural' in strings.xml and verified integrity of AndroidManifest.xml (usesCleartextTraffic, permissions) and versioning consistency (v14.1.4). Verified source integrity via APK verification scripts and monorepo test gate.
