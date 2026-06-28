@@ -79,6 +79,34 @@ describe("DataMappers", () => {
       const result = mapSbRosterRow(row as any);
       expect(result.d.wfame).toBe(1500);
     });
+
+    it("handles voyage history (v_hist) correctly", () => {
+      // Case 1: v_hist present
+      const row1 = { v_hist: "S-S-F" };
+      expect(mapSbRosterRow(row1 as any).d.v_hist).toBe("S-S-F");
+
+      // Case 2: v_hist empty string
+      const row2 = { v_hist: "" };
+      expect(mapSbRosterRow(row2 as any).d.v_hist).toBeUndefined();
+
+      // Case 3: v_hist missing
+      const row3 = {};
+      expect(mapSbRosterRow(row3 as any).d.v_hist).toBeUndefined();
+    });
+
+    it("resiliently handles malformed numeric inputs", () => {
+      const row = {
+        trophies: "not-a-number",
+        performance_score: null,
+        tenure_days: undefined,
+        avg_fame: "invalid",
+      };
+      const result = mapSbRosterRow(row as any);
+      expect(result.t).toBe(0);
+      expect(result.performanceScore).toBe(0);
+      expect(result.d.days).toBe(0);
+      expect(result.d.wfame).toBe(0);
+    });
   });
 
   describe("mapSbHeadhunterRow", () => {
@@ -148,6 +176,48 @@ describe("DataMappers", () => {
       };
       const result = mapSbHeadhunterRow(row as any);
       expect(result.lastScan).toBeNaN();
+    });
+
+    it("implements potential_score fallback to raw_potential_score", () => {
+      // Case 1: potential_score is 0, raw is present
+      const row1 = {
+        potential_score: 0,
+        raw_potential_score: 55000,
+      };
+      const res1 = mapSbHeadhunterRow(row1 as any);
+      expect(res1.potentialScore).toBe(55000);
+      expect(res1.potentialRawScore).toBe(55000);
+
+      // Case 2: both present, potential_score takes precedence
+      const row2 = {
+        potential_score: 80,
+        raw_potential_score: 55000,
+      };
+      const res2 = mapSbHeadhunterRow(row2 as any);
+      expect(res2.potentialScore).toBe(80);
+      expect(res2.potentialRawScore).toBe(55000);
+
+      // Case 3: both null (fallback to 0)
+      const row3 = {
+        potential_score: null,
+        raw_potential_score: null,
+      };
+      const res3 = mapSbHeadhunterRow(row3 as any);
+      expect(res3.potentialScore).toBe(0);
+    });
+
+    it("resiliently handles malformed numeric inputs for recruits", () => {
+      const row = {
+        trophies: "invalid",
+        longevity: null,
+        donations: undefined,
+        cards: "NaN",
+      };
+      const result = mapSbHeadhunterRow(row as any);
+      expect(result.t).toBe(0);
+      expect(result.longevity).toBe(0);
+      expect(result.d.don).toBe(0);
+      expect(result.d.cards).toBe(0);
     });
   });
 });
