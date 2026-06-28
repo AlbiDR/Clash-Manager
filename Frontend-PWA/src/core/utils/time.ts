@@ -173,26 +173,26 @@ const REL_CACHE = new Map<string, number>();
  *    is recalculated against Date.now() on every call to ensure accuracy.
  * 2. Relative strings ("2d ago") are cached as constant minute values.
  *
- * @param val - The time string to parse (ISO, Custom, or Legacy 'ago').
+ * @param timeString - The time string to parse (ISO, Custom, or Legacy 'ago').
  * @returns The number of minutes elapsed since the timestamp.
  */
-export function parseTimeAgoValue(val: string | null | undefined): number {
-  if (!val || val === "-") return 99999999;
+export function parseTimeAgoValue(timeString: string | null | undefined): number {
+  if (!timeString || timeString === "-") return 99999999;
 
   // Tier 1: Relative Cache (Stateless)
   // Rationale: Pre-formatted strings like "2d ago" are constant deltas in minutes.
-  const cachedRel = REL_CACHE.get(val);
+  const cachedRel = REL_CACHE.get(timeString);
   if (cachedRel !== undefined) return cachedRel;
 
   // Tier 2: Absolute Cache (Stateful)
   // Rationale: Avoid expensive Date parsing for repeated ISO/Timestamp strings.
-  const cachedAbs = ABS_CACHE.get(val);
+  const cachedAbs = ABS_CACHE.get(timeString);
   if (cachedAbs !== undefined) {
     return cachedAbs === null ? 99999999 : Math.floor((Date.now() - cachedAbs) / 60000);
   }
 
   // 1. Try parsing custom format: dd/MM/yyyy HH.mm.ss (Project Standard)
-  const customMatch = val.match(RE_CUSTOM_DATE);
+  const customMatch = timeString.match(RE_CUSTOM_DATE);
   if (customMatch) {
     const day = parseInt(customMatch[1], 10);
     const month = parseInt(customMatch[2], 10) - 1;
@@ -204,36 +204,36 @@ export function parseTimeAgoValue(val: string | null | undefined): number {
 
     if (!isNaN(date.getTime())) {
       const ts = date.getTime();
-      ABS_CACHE.set(val, ts);
+      ABS_CACHE.set(timeString, ts);
       return Math.floor((Date.now() - ts) / 60000);
     }
   }
 
   // 2. Try parsing as Standard Date / ISO String (Fallback)
-  const date = new Date(val);
+  const date = new Date(timeString);
   if (!isNaN(date.getTime())) {
     const ts = date.getTime();
-    ABS_CACHE.set(val, ts);
+    ABS_CACHE.set(timeString, ts);
     return Math.floor((Date.now() - ts) / 60000);
   }
 
   // 3. Legacy Fallback: Parse "2d ago" strings (Old Backend / UI formatted)
-  if (val === "Just now") {
-    REL_CACHE.set(val, 0);
+  if (timeString === "Just now") {
+    REL_CACHE.set(timeString, 0);
     return 0;
   }
 
-  const match = val.match(TIME_AGO_REGEX);
+  const match = timeString.match(TIME_AGO_REGEX);
   if (match) {
     const num = parseInt(match[1], 10);
     const unit = match[2];
     const result = num * (TIME_AGO_MULTIPLIERS[unit] || 1);
-    REL_CACHE.set(val, result);
+    REL_CACHE.set(timeString, result);
     return result;
   }
 
   // Final Fallback: Mark as unparseable
-  ABS_CACHE.set(val, null);
+  ABS_CACHE.set(timeString, null);
   return 99999999;
 }
 

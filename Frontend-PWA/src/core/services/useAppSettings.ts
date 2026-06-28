@@ -182,11 +182,11 @@ export function useAppSettings() {
    * Toggle a boolean feature flag safely.
    */
   function toggle(key: keyof ModuleState) {
-    const val = modules[key];
-    if (typeof val === "boolean") {
+    const currentSettingValue = modules[key];
+    if (typeof currentSettingValue === "boolean") {
       // THREAT: The 'any Plague' (Target B [4]).
       // Rationale: Avoid explicit casting by using a type-safe assignment.
-      Object.assign(modules, { [key]: !val });
+      Object.assign(modules, { [key]: !currentSettingValue });
     }
   }
 

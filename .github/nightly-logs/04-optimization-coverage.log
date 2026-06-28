@@ -242,3 +242,7 @@ Optimization (Substrate Hygiene - Stage 4) 2026-06-25: Standardized variable nam
 2026-06-28 | Frontend-PWA/src/core/services/services-tests/useConsoleSelection.spec.ts | Standardized 'item' to 'candidateItem'.
 2026-06-28 | Frontend-PWA/src/core/services/services-tests/useListFilter.spec.ts | Standardized 'item' to 'candidateItem'.
 2026-06-28 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-06-30 | Frontend-PWA/src/core/api/BaseSchemas.ts | Standardized 'val' to 'candidateValue' and 'rawRarity' for domain clarity.
+2026-06-30 | Frontend-PWA/src/core/services/useAppSettings.ts | Standardized 'val' to 'currentSettingValue' for domain clarity.
+2026-06-30 | Frontend-PWA/src/core/utils/time.ts | Standardized 'val' to 'timeString' for domain clarity.
+2026-06-30 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
