@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-28] PR #957: chore(deps): bump knip from 6.21.0 to 6.22.0
+**Commit**: `80e598aceaf88da81f74b22812bf3f9a91250301`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/957)
+
+### Description
+Executed monorepo-wide dependency audit and hygiene. (1) Tier 1: Bumped `knip` (^6.21.0 -> ^6.22.0) in `pnpm-workspace.yaml` catalog and excised redundant `Frontend-PWA/src/features/voyage/index.ts` identified as dead code. (2) Tier 2 Watchlist: Refined `.github/nightly-logs/08-dependency-audit-coverage.log` with technical breaking change research for Vite 8 (`build.rolldownOptions`), TS 6 (`ignoreDeprecations`), and pnpm 11 (pure ESM, blocked postinstall). Verified via monorepo test gate (1324 passed) using Node 22 bypass and updated audit log.
+
+---
+*PR created automatically by Jules for task [11259029163662776168](https://jules.google.com/task/11259029163662776168) started by @AlbiDR*
+
+---
+
 ## [2026-06-28] PR #956: fix(version): reconcile version drift in APK/android
 **Commit**: `48da03926a1b4236a447d45a193dc5f3313c53ba`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/956)
