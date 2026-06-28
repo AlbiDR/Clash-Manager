@@ -3,7 +3,12 @@
 
 import * as v from "valibot";
 import type { LeaderboardMember, Recruit } from "@core/types";
-import { cleanTag } from "@core";
+// [CYCLE GUARD] Import directly from the source module, NOT the @core barrel.
+// DataMappers is re-exported by @core/index; importing cleanTag back through the
+// barrel forms an evaluation cycle (barrel → SupabaseClient → DataMappers → barrel)
+// that throws a TDZ ReferenceError ("cannot access before initialization") when the
+// service worker delivers all chunks at once. See useExternalLink/useBlitzMode/useShareTarget.
+import { cleanTag } from "../utils/text";
 import { SbRosterRowSchema } from "./MemberSchemas";
 import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 

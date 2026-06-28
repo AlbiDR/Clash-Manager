@@ -6,7 +6,8 @@ import { useExternalLink, buildDeepLink } from "@core/services/useExternalLink";
 import { useToast } from "@core/services/useToast";
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
-import { type WindowWithBridge } from "@core";
+// [CYCLE GUARD] Direct source import, NOT the @core barrel (avoids TDZ eval cycle).
+import { type WindowWithBridge } from "@core/types";
 
 interface BlitzOptions {
   throttleMs?: number;

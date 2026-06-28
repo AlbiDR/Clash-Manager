@@ -64,7 +64,32 @@ self.addEventListener("activate", (event) => {
       } catch (e) {
         console.warn("[SW] Navigation preload activation failed", e);
       }
+
       await self.clients.claim();
+
+      // [SELF-HEAL] CRITICAL: force every controlled tab to reload once this new
+      // version activates. Navigation is cache-first (matchPrecache below), so a
+      // tab that was already open keeps rendering the STALE precached shell + stale
+      // chunks indefinitely — skipWaiting/claim alone never re-runs the document.
+      // Driving the reload from the SW is the ONLY mechanism that reaches clients
+      // still running an OLD shell (which predates any client-side update listener).
+      // This is what un-sticks browsers wedged on a prior broken deploy.
+      //
+      // Cost: a genuinely-fresh first install also reloads once here — standard,
+      // near-invisible PWA behavior (the app re-renders instantly from cache).
+      // It does NOT loop: a stable version never re-activates, so no further reload.
+      try {
+        const windowClients = await self.clients.matchAll({ type: "window" });
+        for (const client of windowClients) {
+          if ("navigate" in client && typeof client.navigate === "function") {
+            client.navigate(client.url).catch(() => {
+              /* client may be mid-unload; ignore */
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[SW] Client self-heal reload failed", e);
+      }
     })(),
   );
 });

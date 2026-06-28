@@ -2,8 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 
 import { useToast } from "./useToast";
-import { cleanTag } from "@core";
-import { type WindowWithBridge } from "@core";
+// [CYCLE GUARD] Direct source imports, NOT the @core barrel (which re-exports this
+// module) — barrel self-imports form an evaluation cycle that TDZ-crashes the app
+// when the service worker serves all chunks at once.
+import { cleanTag } from "../utils/text";
+import { type WindowWithBridge } from "../types";
 
 /**
  * COMPOSABLE: useExternalLink

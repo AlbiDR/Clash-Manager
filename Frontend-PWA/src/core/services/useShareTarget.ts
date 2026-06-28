@@ -3,7 +3,8 @@
 
 import { useToast } from "./useToast";
 import { useRouter } from "vue-router";
-import { cleanTag } from "@core";
+// [CYCLE GUARD] Direct source import, NOT the @core barrel (avoids TDZ eval cycle).
+import { cleanTag } from "../utils/text";
 
 /**
  * SHARE TARGET SERVICE (Layer 1)
