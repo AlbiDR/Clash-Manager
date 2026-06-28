@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-28] PR #951: fix(harden): secure ingest-royale-data pipeline and discovery stage
+**Commit**: `f864888566499524ab120f19ae3344372d34e82c`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/951)
+
+### Description
+Hardened the `ingest-royale-data` Edge Function by securing the orchestration pipeline and the native discovery stage. Key improvements include strict error narrowing, RPC boundary protection for player registration, and the elimination of anemic variable pathogens. Mandatory threat documentation and decision logs were injected to align with CleanStack ADR Section III and IV. Verified via the full monorepo test gate (1313 tests passed).
+
+---
+*PR created automatically by Jules for task [12771517624091050415](https://jules.google.com/task/12771517624091050415) started by @AlbiDR*
+
+---
+
 ## [2026-06-27] PR #949: perf(apk-optimization): prune redundant resources and metadata
 **Commit**: `c65d698c78393cbe66b59b8b849c8b02bccb98b3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/949)
