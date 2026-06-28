@@ -414,3 +414,12 @@ Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
 
 ### Logged Drift (Unresolved):
 - **None**.
+
+## [2026-06-28]
+### Reconciled:
+- **APK Artifacts**: Updated `versionName` to `14.2.0` and `versionCode` to `14200` in `APK/android/apktool.yml` to synchronize with the monorepo ground truth (Rule 2[B]).
+- **Catalog Scan**: Confirmed monorepo-wide adherence to the PNPM `catalog:` protocol for all shared infrastructure dependencies in `Frontend-PWA/package.json` and `Backend/package.json` (Rule 2[A]).
+- **Substrate Audit**: Verified version consistency in `protocol.ts`, `HtmlEntry.ts`, and `twa-manifest.json`, which were already synchronized at `14.2.0`. Verified integrity via monorepo test gate using Node 22 bypass.
+
+### Logged Drift (Unresolved):
+- **None**.
