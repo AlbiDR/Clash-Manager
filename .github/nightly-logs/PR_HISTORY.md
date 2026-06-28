@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-28] PR #955: docs(tsdoc): document navigation SSOT interface
+**Commit**: `1b202b404d00e67b41fecd11c39dd82ba79644a6`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/955)
+
+### Description
+Enhanced the navigation utility in the Frontend-PWA with comprehensive TSDoc documentation. This includes documenting the `NavItem` interface and the `NAV_ITEMS` constant, with explicit mappings to ADR Section II (Structural Unitary Architecture) and Section IV (Navigation SSOT). The documentation coverage log was also updated to reflect these changes. All relevant tests passed.
+
+---
+*PR created automatically by Jules for task [11347204349071247667](https://jules.google.com/task/11347204349071247667) started by @AlbiDR*
+
+---
+
 ## [2026-06-28] PR #954: docs(readme): reconcile backend proxy boundaries and UI molecules
 **Commit**: `8d418676808c762a1c15eb5f05f35786af1e5ba6`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/954)
