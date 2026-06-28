@@ -20,11 +20,13 @@ export async function runDiscovery(
 ) {
     logAudit('S1_DISCOVERY', 'triggered');
     try {
-        const keywords = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int"];
+        const discoveryKeywords = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int"];
         // [DECISION LOG] EPHEMERAL: intentionally resets on cold start to maintain memory hygiene.
+        // [THREAT:] Native Discovery depends on in-memory state during the harvest phase;
+        // instance termination will lead to partial harvest loss if not synchronized to DB.
         const globalNewRecruits = new Map<string, { name: string, trophies: number }>();
         
-        const discoveryTasks = keywords.map(keyword => async () => {
+        const discoveryTasks = discoveryKeywords.map(keyword => async () => {
             try {
                 const tournamentListResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
                 if (!tournamentListResponse.ok) return;
@@ -72,17 +74,17 @@ export async function runDiscovery(
                                 logAudit('S1_DISCOVERY', 'error', { tag: tournamentTarget.tag, message: 'Tournament details validation failed' });
                             }
                         }
-                    } catch (tournamentError: unknown) {
+                    } catch (tournamentDiscoveryError: unknown) {
                         // Silent fail for individual tournament to maintain pipeline progress
-                        const errorMessage = tournamentError instanceof Error ? tournamentError.message : String(tournamentError);
+                        const errorMessage = tournamentDiscoveryError instanceof Error ? tournamentDiscoveryError.message : String(tournamentDiscoveryError);
                         console.warn(`[S1_DISCOVERY] Individual tournament discovery failure: ${errorMessage}`);
                     }
                 });
                 
                 // [DECISION LOG] Concurrency of 5 for tournament details per keyword to balance throughput and API rate limits.
                 await processBatch(tournamentTasks, 5);
-            } catch (keywordError: unknown) {
-                const errorMessage = keywordError instanceof Error ? keywordError.message : String(keywordError);
+            } catch (keywordDiscoveryError: unknown) {
+                const errorMessage = keywordDiscoveryError instanceof Error ? keywordDiscoveryError.message : String(keywordDiscoveryError);
                 logAudit('S1_DISCOVERY', 'error', { keyword, message: errorMessage });
             }
         });
@@ -91,6 +93,8 @@ export async function runDiscovery(
         await processBatch(discoveryTasks, 3);
 
         // Batch synchronize all discovered recruits
+        // [THREAT:] Failure to synchronize the player registry before the recruitment registry
+        // results in foreign key violations and data loss in the recruitment substrate.
         if (globalNewRecruits.size > 0) {
             const playerRegistryPayload = Array.from(globalNewRecruits.entries()).map(([playerTag, playerInfo]) => ({
                 player_tag: playerTag.startsWith('#') ? playerTag : `#${playerTag}`,
@@ -105,22 +109,26 @@ export async function runDiscovery(
                 status: 'ACTIVE'
             }));
 
-            await supabase.rpc('sync_players', { p_players: playerRegistryPayload });
-            const { error: recruitError } = await supabase.rpc('sync_recruits', { p_recruits: recruitRegistryPayload });
+            const { error: playerRegistryError } = await supabase.rpc('sync_players', { p_players: playerRegistryPayload });
+            if (playerRegistryError) {
+                logAudit('S1_DISCOVERY', 'error', { message: 'Player Registry Batch Sync Failure', details: playerRegistryError });
+            }
+
+            const { error: recruitRegistryError } = await supabase.rpc('sync_recruits', { p_recruits: recruitRegistryPayload });
             
-            if (!recruitError) {
+            if (!recruitRegistryError) {
                 results.discovery.harvested = globalNewRecruits.size;
             } else {
-                logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Batch Upsert Failure', details: recruitError });
+                logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Registry Batch Sync Failure', details: recruitRegistryError });
             }
         }
 
         logAudit('S1_DISCOVERY', 'terminated', { harvested: results.discovery.harvested });
-    } catch (pipelineError: unknown) {
-        const errorMessage = pipelineError instanceof Error ? pipelineError.message : String(pipelineError);
+    } catch (pipelineDiscoveryError: unknown) {
+        const errorMessage = pipelineDiscoveryError instanceof Error ? pipelineDiscoveryError.message : String(pipelineDiscoveryError);
         results.discovery.error = errorMessage;
         logAudit('S1_DISCOVERY', 'error', { message: errorMessage });
         logAudit('S1_DISCOVERY', 'terminated', { error: true });
-        throw pipelineError;
+        throw pipelineDiscoveryError;
     }
 }

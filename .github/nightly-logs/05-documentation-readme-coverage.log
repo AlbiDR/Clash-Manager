@@ -13,3 +13,9 @@
 2026-06-26 | Frontend-PWA/src/core/README.md | Reconciled DataSchemas barrel and DataMappers telemetry normalization (Voyage/Heritage)
 2026-06-26 | Frontend-PWA/src/app/README.md | Documented Cache-First navigation strategy and swSchemas sub-module hardening
 2026-06-26 | Frontend-PWA/src/core/utils/README.md | Documented formatDisplayTag and Markdown-like description parsing pipeline
+2026-06-28 | Backend/README.md | Reconciled Hexa-Stage ingestion protocol stages (S1-S6)
+2026-06-28 | Backend/supabase/functions/sync-player-cards/README.md | Documented User Proxy 4-stage lifecycle, 12h TTL, and rarity-normalization
+2026-06-28 | Backend/supabase/functions/query-royale-api/README.md | Documented Royale API Proxy and Dynamic Country Rotation strategy
+2026-06-28 | Frontend-PWA/src/shared/ui/README.md | Synchronized VoyageHistoryChart and WarHistoryChart promotion details
+2026-06-28 | Frontend-PWA/src/shared/README.md | Documented v-tactile (.btn-action exclusion) and v-tooltip (Popover API) constraints
+2026-06-28 | Frontend-PWA/src/core/README.md | Refined service roles for useConsoleController and useConsoleSelection

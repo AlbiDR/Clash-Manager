@@ -58,10 +58,10 @@ Ingestion is performed via a **Hexa-Engine Edge Architecture**, supported by aut
 
 1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the clinical synchronization protocol. Features strict Valibot-enforced structural validation and a clinical Hexa-Stage synchronization protocol. While implemented as a unified pipeline for efficiency, it conceptually covers 6 stages:
     - **S1 (Discovery)**: Harvests new recruits from high-fidelity tournament anchors.
-    - **S2 (Clan Profile)**: Atomic synchronization of clan-level telemetry.
-    - **S3 (Roster Sync)**: Synchronization of active member telemetry.
+    - **S2 (Clan Profile)**: Atomic synchronization of clan-level telemetry (trophies, location, requirements).
+    - **S3 (Roster Sync)**: Full-pool synchronization of active member telemetry and joins/leaves.
     - **S4 (River Race)**: Extraction of current standings and task completion. Performs server-side `riverRaceDuel` and crown derivation for the current week.
-    - **S5 (War History)**: Infinite Career Ledger synchronization.
+    - **S5 (War History)**: Infinite Career Ledger synchronization (most recent 12 war weeks).
     - **S6 (Deep Depth)**: Extracts the rolling battle-log window (capped by the Royale API at ~25 battles) for high-precision competitive scoring. Implements server-side crown derivation for historical battle logs.
 2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling. Implements the **Safety Epoch Loop** via `substrate.headhunter_epoch_state` to prevent redundant Top-50 leaderboard scans.
 3. **Royale API Proxy (`query-royale-api`)**: A secure L5 Control Layer proxy for transient leaderboard harvesting. Features a dynamic country rotation strategy for International clans to ensure diverse recruit discovery without polluting the database substrate.

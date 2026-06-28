@@ -10,22 +10,22 @@ import * as v from "valibot";
  */
 export const SafeNumberPipe = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (typeof val === "number") return val;
+  v.transform((candidateValue) => {
+    if (typeof candidateValue === "number") return candidateValue;
     // THREAT: Missing matrix columns causing validation failure.
     // Rationale: Defaulting to 0 for missing numeric fields ensures
     // that the PWA can still display a partial roster if the backend
     // schema is slightly out of sync or if optional columns are omitted.
-    if (val === null || val === undefined) return 0;
-    if (typeof val === "string") {
+    if (candidateValue === null || candidateValue === undefined) return 0;
+    if (typeof candidateValue === "string") {
       // Handle comma-separated or percentage-based strings from remote sources
-      const cleaned = val.replace(/,/g, "").replace(/%/g, "").trim();
+      const cleaned = candidateValue.replace(/,/g, "").replace(/%/g, "").trim();
       if (cleaned === "") return 0;
       const n = parseFloat(cleaned);
       // Only return the number if it's actually numeric
       if (!isNaN(n)) return n;
     }
-    return val; // Pass through to v.number() for rejection
+    return candidateValue; // Pass through to v.number() for rejection
   }),
   v.number() // The final gatekeeper
 );
@@ -37,10 +37,10 @@ export const SafeNumberPipe = v.pipe(
  */
 export const LaxNumberPipe = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (typeof val === "number") return val;
-    if (typeof val === "string") {
-      const n = parseFloat(val);
+  v.transform((candidateValue) => {
+    if (typeof candidateValue === "number") return candidateValue;
+    if (typeof candidateValue === "string") {
+      const n = parseFloat(candidateValue);
       return isNaN(n) ? 0 : n;
     }
     return 0;
@@ -50,11 +50,11 @@ export const LaxNumberPipe = v.pipe(
 
 export const SafeStringPipe = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (val === null || val === undefined) return "";
-    if (typeof val === "string") return val;
-    if (typeof val === "number" || typeof val === "boolean") return String(val);
-    return val; // Pass through to v.string() for rejection
+  v.transform((candidateValue) => {
+    if (candidateValue === null || candidateValue === undefined) return "";
+    if (typeof candidateValue === "string") return candidateValue;
+    if (typeof candidateValue === "number" || typeof candidateValue === "boolean") return String(candidateValue);
+    return candidateValue; // Pass through to v.string() for rejection
   }),
   v.string() // The final gatekeeper
 );
@@ -68,7 +68,7 @@ export const RaritySchema = v.fallback(
     v.string(),
     v.trim(),
     v.toLowerCase(),
-    v.transform((val) => {
+    v.transform((rawRarity) => {
       const map: Record<string, string> = {
         "common": "Common",
         "rare": "Rare",
@@ -76,7 +76,7 @@ export const RaritySchema = v.fallback(
         "legendary": "Legendary",
         "champion": "Champion"
       };
-      return map[val] || "Common";
+      return map[rawRarity] || "Common";
     }),
     v.picklist(["Common", "Rare", "Epic", "Legendary", "Champion"])
   ),
