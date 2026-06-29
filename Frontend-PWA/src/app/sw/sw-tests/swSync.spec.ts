@@ -237,5 +237,25 @@ describe("swSync", () => {
 
       expect(console.error).toHaveBeenCalledWith("[SW] Background sync failed", expect.any(Error));
     });
+
+    it("should abort if API returns malformed data", async () => {
+      vi.mocked(openDB).mockResolvedValue({} as any);
+      vi.mocked(getValue).mockImplementation(async (db, key) => {
+        if (key === "cm_notifications_enabled") return true;
+        if (key === "cm_supabase_url") return mockSupabaseUrl;
+        if (key === "cm_supabase_key") return mockSupabaseKey;
+        return null;
+      });
+
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: async () => [{ invalid: "data" }], // Fails SwSupabaseResponseSchema
+      } as any);
+
+      await handleBackgroundSync();
+
+      expect(console.error).toHaveBeenCalledWith("[SW] Background sync: Malformed API response", expect.any(Array));
+      expect(mockShowNotification).not.toHaveBeenCalled();
+    });
   });
 });
