@@ -32,7 +32,7 @@ The primary behavioral engine for the Headhunter interface.
 - **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Potential, Trophies, Donations, Recency, Name) and deep-linking.
 
 ### Recruitment Pipeline (useBlitzMode.ts)
-Specialized engine for high-velocity recruitment processing.
+Specialized engine for high-velocity recruitment processing, orchestrated via the `@core/services` Layer 1 kernel.
 - **Multi-Tier Deep Linking**: Manages a sequential queue for opening player profiles directly in the Clash Royale application.
 - **Automated Blitz**: Implements a throttle-controlled execution loop to cycle through selected recruits with safety delays.
 - **Environment Trust**: Proactively verifies the execution context before allowing hardware-level OS intents.

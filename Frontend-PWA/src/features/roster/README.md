@@ -9,11 +9,12 @@ The Roster feature provides an authoritative view of the clan's internal health.
 
 ## Architectural Context
 - **Layer**: Layer 3 (@features)
-- **Isolation**: Domain-blind to `Laboratory`, `Headhunter`, and `Settings`. One deliberate exception: `RosterView.vue` composes the `VoyageBanner` component from `@features/voyage` in its top slot.
+- **Isolation**: Domain-blind to `Laboratory`, `Headhunter`, and `Settings`. One deliberate exception: `RosterView.vue` composes the `VoyageBanner` component from `@shared` in its top slot.
 - **Dependencies**:
   - `@core/utils/predictionMath`: Historical parsing and predictive algorithms.
   - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
   - `@shared/ui/BaseCard`: The foundational UI molecule for member profiles.
+  - `@shared/ui/VoyageBanner`: Promoted molecule for live event feedback.
 
 ## Logic Subsystems
 
@@ -52,5 +53,5 @@ The primary entry for member data. Implements high-density information layout, i
 
 ## Key Constraints & Silo Isolation
 - **Sovereign Design**: No third-party charting libraries. All visualizations are custom-crafted using SVG and pure CSS.
-- **Limited Cross-Feature Imports**: The Roster is domain-blind to recruitment (Headhunter) and simulations (Laboratory); it does compose the `VoyageBanner` UI component from `@features/voyage`.
+- **Limited Cross-Feature Imports**: The Roster is domain-blind to recruitment (Headhunter) and simulations (Laboratory); it does compose the `VoyageBanner` UI component from `@shared`.
 - **Read-Only Purity**: While the Roster allows for management decisions, it never modifies core data directly. All persistent state changes must be routed through Layer 1 API services.
