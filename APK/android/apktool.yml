@@ -13,5 +13,3 @@ resourcesInfo:
   packageId: 127
 doNotCompress:
 - arsc
-- assets/dexopt/baseline.prof
-- assets/dexopt/baseline.profm

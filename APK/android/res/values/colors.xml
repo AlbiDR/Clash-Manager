@@ -26,8 +26,6 @@
     <color name="browser_actions_title_color">#646464</color>
     <color name="button_material_dark">#ff5a595b</color>
     <color name="button_material_light">#ffd6d7d7</color>
-    <color name="call_notification_answer_color">#1d873b</color>
-    <color name="call_notification_decline_color">#d93025</color>
     <color name="colorAccent">#0061a4</color>
     <color name="colorPrimary">#0b0e14</color>
     <color name="colorPrimaryDark">#000000</color>
