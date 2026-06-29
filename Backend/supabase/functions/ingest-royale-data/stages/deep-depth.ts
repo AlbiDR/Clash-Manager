@@ -46,8 +46,8 @@ export async function runDeepDepth(
 
         const targets = targetsValidation.output;
         const ingestionTargets = [
-            ...targets.members,
-            ...targets.recruits
+            ...targets['drivers.members'],
+            ...targets['drivers.recruits']
         ];
 
         if (ingestionTargets.length > 0) {

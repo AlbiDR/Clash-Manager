@@ -215,10 +215,26 @@ export const PlayerCardSnapshotSchema = v.object({
 });
 
 /**
+ * Internal: Battle participant round schema (riverRaceDuel).
+ *
+ * @remarks
+ * The Royale API returns a `rounds` array on each participant in a
+ * `riverRaceDuel` battle. Without this field in the schema, Valibot
+ * strips it before the payload reaches ingest_player_battles(), causing
+ * the SQL function to fall back to the top-level `crowns` field (which
+ * is incorrect for duels) and zero out the actual round-based crown total.
+ */
+const BattleParticipantRoundSchema = v.object({
+    crowns: v.optional(v.number(), 0)
+});
+
+/**
  * L1 Core: Royale Battle Log Schema.
  *
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
+ * The optional `rounds` field on team/opponent members is required for
+ * correct riverRaceDuel crown calculation in ingest_player_battles().
  */
 export const RoyaleBattleLogSchema = v.array(v.object({
     type: v.string(),
@@ -226,12 +242,14 @@ export const RoyaleBattleLogSchema = v.array(v.object({
     team: v.array(v.object({
         tag: v.string(),
         name: v.string(),
-        crowns: v.optional(v.number(), 0)
+        crowns: v.optional(v.number(), 0),
+        rounds: v.optional(v.array(BattleParticipantRoundSchema), [])
     })),
     opponent: v.array(v.object({
         tag: v.string(),
         name: v.string(),
         crowns: v.optional(v.number(), 0),
+        rounds: v.optional(v.array(BattleParticipantRoundSchema), []),
         clan: v.optional(v.nullable(v.object({
             tag: v.string()
         })))
@@ -274,10 +292,13 @@ export const DiscoveryCacheItemSchema = v.object({
  *
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
+ * Keys match the JSON output of public.get_ingestion_targets(), which
+ * returns schema-qualified keys ('drivers.members', 'drivers.recruits')
+ * to avoid ambiguity with same-named keys across schemas.
  */
 export const IngestionTargetsSchema = v.object({
-    members: v.array(v.string()),
-    recruits: v.array(v.string())
+    'drivers.members': v.array(v.string()),
+    'drivers.recruits': v.array(v.string())
 });
 
 /**
