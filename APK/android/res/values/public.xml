@@ -371,8 +371,6 @@
     <public type="color" name="browser_actions_title_color" id="0x7f06002b" />
     <public type="color" name="button_material_dark" id="0x7f06002c" />
     <public type="color" name="button_material_light" id="0x7f06002d" />
-    <public type="color" name="call_notification_answer_color" id="0x7f06002e" />
-    <public type="color" name="call_notification_decline_color" id="0x7f06002f" />
     <public type="color" name="colorAccent" id="0x7f060030" />
     <public type="color" name="colorPrimary" id="0x7f060031" />
     <public type="color" name="colorPrimaryDark" id="0x7f060032" />
@@ -943,13 +941,6 @@
     <public type="string" name="appName" id="0x7f0f001d" />
     <public type="string" name="app_name" id="0x7f0f001e" />
     <public type="string" name="assetStatements" id="0x7f0f001f" />
-    <public type="string" name="call_notification_answer_action" id="0x7f0f0020" />
-    <public type="string" name="call_notification_answer_video_action" id="0x7f0f0021" />
-    <public type="string" name="call_notification_decline_action" id="0x7f0f0022" />
-    <public type="string" name="call_notification_hang_up_action" id="0x7f0f0023" />
-    <public type="string" name="call_notification_incoming_text" id="0x7f0f0024" />
-    <public type="string" name="call_notification_ongoing_text" id="0x7f0f0025" />
-    <public type="string" name="call_notification_screening_text" id="0x7f0f0026" />
     <public type="string" name="copy_toast_msg" id="0x7f0f0027" />
     <public type="string" name="fallbackType" id="0x7f0f0028" />
     <public type="string" name="fallback_menu_item_copy_link" id="0x7f0f0029" />
