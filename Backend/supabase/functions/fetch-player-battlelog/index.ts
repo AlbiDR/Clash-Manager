@@ -3,7 +3,7 @@
 
 import * as v from "npm:valibot@1.4.1";
 import { clinicalServe } from "../_shared/protocol.ts";
-import { RoyaleBattleLogSchema } from "../_shared/schemas.ts";
+import { RoyaleBattleLogSchema, KeyPoolSchema } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 
 /**
@@ -39,21 +39,12 @@ const PayloadSchema = v.object({
  * @remarks
  * Mirrors the logic in muscle.ts getKeys() but operates post-syncVault,
  * so it always reflects the freshest set of keys available in CONFIG.
+ *
+ * [THREAT:] Unvalidated key pool configurations can lead to silent sync failures.
+ * [DECISION LOG] Transitioned to KeyPoolSchema for clinical normalization of keys.
  */
 function resolveKeyPool(): string[] {
-  const rawKeyData = CONFIG.ROYALE_API_KEYS;
-  if (!rawKeyData) return [];
-
-  // [DECISION LOG] Keys are resolved lazily from the CONFIG (which is synced from Vault).
-  // We handle both JSON array format and comma-separated string format for maximum flexibility.
-  try {
-    const parsedKeys: unknown = JSON.parse(rawKeyData);
-    return Array.isArray(parsedKeys)
-      ? parsedKeys.map((keyToken: string) => String(keyToken).trim()).filter(Boolean)
-      : [String(parsedKeys).trim()];
-  } catch {
-    return rawKeyData.split(",").map((keyToken) => keyToken.trim()).filter(Boolean);
-  }
+  return v.parse(KeyPoolSchema, CONFIG.ROYALE_API_KEYS);
 }
 
 /**
@@ -152,35 +143,32 @@ Deno.serve(async (req) => {
         throw new Error("No Royale API keys available in the key pool.");
       }
 
-      // Fan out across ALL keys in parallel. Each key routes to a potentially
-      // different proxy node with its own cache state. We collect every valid
-      // response and then pick the one whose first battle is the most recent.
-      const results = await Promise.all(
-        keyPool.map((key) => fetchBattlelogWithKey(encodedTag, key)),
+      // [THREAT:] Silent failures in the fan-out pool could lead to stale or missing data.
+      // [DECISION LOG] We fan out across ALL keys in parallel and pick the freshest result
+      // to ensure we surface the most recent data available across the full key pool.
+      const battleLogPool = await Promise.all(
+        keyPool.map((keyToken) => fetchBattlelogWithKey(encodedTag, keyToken)),
       );
 
-      // [THREAT:] Silent failures in the fan-out pool could lead to stale or missing data.
-      // [DECISION LOG] We filter for valid, non-empty battle logs and then pick the freshest
-      // to ensure we surface the most recent data available across the full key pool.
-      const validResults = results.filter(
-        (result): result is v.InferOutput<typeof RoyaleBattleLogSchema> =>
-          result !== null && result.length > INITIAL_INDEX,
+      const validBattleLogs = battleLogPool.filter(
+        (battleLogCandidate): battleLogCandidate is v.InferOutput<typeof RoyaleBattleLogSchema> =>
+          battleLogCandidate !== null && battleLogCandidate.length > INITIAL_INDEX,
       );
 
       logAudit("BATTLELOG_FAN_OUT", "completed", {
         playerTag: normalizedTag,
-        responded: validResults.length,
-        failed: keyPool.length - validResults.length,
+        responded: validBattleLogs.length,
+        failed: keyPool.length - validBattleLogs.length,
       });
 
-      if (validResults.length === INITIAL_INDEX) {
+      if (validBattleLogs.length === INITIAL_INDEX) {
         throw new Error(
           `All ${keyPool.length} keys failed to return a valid battle log for ${normalizedTag}.`,
         );
       }
 
       // Select the result whose most recent battle is the freshest across all nodes.
-      const freshestBattleLog = validResults.reduce((bestBattleLog, candidateBattleLog) => {
+      const freshestBattleLog = validBattleLogs.reduce((bestBattleLog, candidateBattleLog) => {
         const bestTime = parseBattleTime(bestBattleLog[INITIAL_INDEX].battleTime);
         const candidateTime = parseBattleTime(candidateBattleLog[INITIAL_INDEX].battleTime);
         return candidateTime > bestTime ? candidateBattleLog : bestBattleLog;

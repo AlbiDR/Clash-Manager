@@ -121,3 +121,20 @@ export const LeaderboardHarvestSchema = v.object({
   items: v.array(HarvestedPlayerSchema),
   region: v.optional(SafeStringPipe, "Unknown")
 });
+
+/**
+ * BLACKLIST EVENT SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Validates the shape of Realtime payloads from drivers.recruit_blacklist.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
+ *
+ * [THREAT:] Unvalidated realtime payloads can cause runtime crashes in feature-layer
+ * subscribers if the database trigger or replication payload shape changes.
+ */
+export const BlacklistEventSchema = v.union([
+  v.object({ new: v.object({ player_tag: SafeStringPipe }) }),
+  v.object({ old: v.object({ player_tag: SafeStringPipe }) })
+]);

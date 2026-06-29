@@ -10,7 +10,7 @@ import type {
 } from "@core/types";
 import { mapSbHeadhunterRow } from "./DataMappers";
 import * as v from "valibot";
-import { DismissResponseSchema } from "./RecruitSchemas";
+import { DismissResponseSchema, BlacklistEventSchema } from "./RecruitSchemas";
 
 /**
  * RECRUIT CLIENT (Layer 1)
@@ -113,25 +113,30 @@ export function subscribeToBlacklist(
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'drivers', table: 'recruit_blacklist' },
-        (payload: unknown) => {
+        (realtimePayload: unknown) => {
           // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
-          // [DECISION LOG] Replaced implicit 'any' with strict narrowing and validation.
-          const raw = payload as { new?: { player_tag?: string } };
-          const playerTag = raw.new?.player_tag;
-          if (playerTag && typeof playerTag === 'string') onInsert(playerTag);
+          // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
+          // Valibot validation using BlacklistEventSchema to ensure data integrity.
+          const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
+          if (blacklistValidation.success && 'new' in blacklistValidation.output) {
+            onInsert(blacklistValidation.output.new.player_tag);
+          }
         },
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'drivers', table: 'recruit_blacklist' },
-        (payload: unknown) => {
+        (realtimePayload: unknown) => {
           // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
-          const raw = payload as { old?: { player_tag?: string } };
-          const playerTag = raw.old?.player_tag;
-          if (playerTag && typeof playerTag === 'string') onDelete(playerTag);
+          // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
+          // Valibot validation using BlacklistEventSchema to ensure data integrity.
+          const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
+          if (blacklistValidation.success && 'old' in blacklistValidation.output) {
+            onDelete(blacklistValidation.output.old.player_tag);
+          }
         },
       )
-      .subscribe((status, err) => {
+      .subscribe((_status, err) => {
         if (err) {
           console.warn("[Realtime] Subscription error:", err);
         }
