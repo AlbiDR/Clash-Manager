@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-29] PR #961: test(verify): saturating coverage for swSchemas and swSync boundaries
+**Commit**: `9feba4fd20329b93deeca5daa0c184ca8ae6dea5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/961)
+
+### Description
+Implemented saturating tests for Service Worker schemas and extended background sync validation coverage to ensure runtime integrity and resilience against malformed data.
+
+---
+*PR created automatically by Jules for task [925175657431895715](https://jules.google.com/task/925175657431895715) started by @AlbiDR*
+
+---
+
 ## [2026-06-29] PR #960: fix(harden): secure battlelog proxy and recruitment realtime boundary
 **Commit**: `ae8f495fae6c0503b78e3b13821e9d7ecdba1b21`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/960)
