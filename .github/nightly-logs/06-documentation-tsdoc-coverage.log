@@ -100,3 +100,5 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-06-25 | Frontend-PWA/src/core/services/useSelectionStore.ts | Documented Layer 1 core service and added ADR Section I/III mappings for centralized selection state.
 2026-06-28 | Frontend-PWA/src/core/api/RecruitSchemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
 2026-06-28 | Frontend-PWA/src/core/utils/navigation.ts | Documented navigation SSOT interface and registry with ADR Section II/IV mappings.
+2026-06-29 | Frontend-PWA/src/core/api/VoyageSchemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
+2026-06-29 | Frontend-PWA/src/core/api/BaseSchemas.ts | Documented core coercion pipes and structural guards with ADR Section III mappings and threat annotations.

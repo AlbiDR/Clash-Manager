@@ -6,7 +6,16 @@ import { SafeStringPipe, SafeNumberPipe } from "./BaseSchemas";
 
 /**
  * [GUARD] VOYAGE EVENT SCHEMA
- * Validates the shape of a Clan Voyage event.
+ * Authoritative validation boundary for Clan Voyage events.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * This schema ensures that voyage lifecycle events (IDLE, PENDING, ACTIVE, COMPLETED)
+ * are strictly validated before entering the feature state.
+ *
+ * [THREAT:] Undefined voyage states can lead to UI rendering deadlocks.
+ * [DECISION LOG] Utilizing SafeNumberPipe and SafeStringPipe to handle
+ * potential nullability from the Supabase view.
  */
 export const VoyageEventSchema = v.object({
   id: SafeNumberPipe,
@@ -21,7 +30,14 @@ export const VoyageEventSchema = v.object({
 
 /**
  * [GUARD] VOYAGE CONTRIBUTION SCHEMA
- * Validates player performance within a voyage.
+ * Validates player performance metrics within a specific voyage event.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Normalizes contribution percentages and performance scores for display.
+ *
+ * [THREAT:] Floating point precision issues in remote calculations can
+ * cause validation rejection if not coerced via SafeNumberPipe.
  */
 export const VoyageContributionSchema = v.object({
   player_tag: SafeStringPipe,
@@ -33,7 +49,14 @@ export const VoyageContributionSchema = v.object({
 
 /**
  * [GUARD] VOYAGE SUMMARY SCHEMA
- * Validates the raw output of the `features.voyage_summary` view.
+ * Validates the aggregate output of the voyage summary view.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Acts as the primary orchestrator for the Voyage feature's initial hydration.
+ *
+ * [THREAT:] Structural drift in the 'features.voyage_summary' view can
+ * break the dashboard if defaults are not provided.
  */
 export const VoyageSummarySchema = v.object({
   event: VoyageEventSchema,
@@ -43,7 +66,15 @@ export const VoyageSummarySchema = v.object({
 
 /**
  * [GUARD] VOYAGE RPC RESULT SCHEMA
- * Validates the standard response shape returned by Voyage database RPCs.
+ * Validates the standard response shape for Voyage database procedures.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Ensures consistent error handling for critical mutations (scheduling/canceling).
+ *
+ * [THREAT:] Silent RPC failures can lead to "optimistic UI" desynchronization.
+ * [DECISION LOG] Explicitly requiring the 'success' boolean to ensure the
+ * UI can react to transaction failures.
  */
 export const VoyageRpcResultSchema = v.object({
   success: v.boolean(),
