@@ -8,7 +8,7 @@
  * Manages simulation parameters for the Laboratory engine.
  * Following Layer 3 (@features) isolation rules.
  */
-import { Icon, SettingRow, BaseSelect } from "@shared";
+import { Icon, SettingRow, BaseSelect, BaseSegmentedControl } from "@shared";
 import { useHaptics } from "@shared/composables/useHaptics";
 import { computed } from "vue";
 import { type OptimizationSettings, type OptimizationResult } from "../logic";
@@ -31,13 +31,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [newSettings: Partial<OptimizationSettings>];
 }>();
-
-const setStrategy = (strategyType: "Level Projection" | "Resource Efficiency") => {
-  if (props.settings.strategy === strategyType) return;
-  haptics.tap();
-  const updates: Partial<OptimizationSettings> = { strategy: strategyType };
-  emit("update", { ...props.settings, ...updates });
-};
 
 const toggleGemSpending = () => {
   haptics.tap();
@@ -78,22 +71,14 @@ const baseUrl = import.meta.env.BASE_URL;
       <!-- Strategy Selector -->
       <div class="parameter-item">
         <label class="parameter-label">Optimization Strategy</label>
-        <div class="strategy-selector">
-          <button 
-            class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Level Projection' }"
-            @click="setStrategy('Level Projection')"
-          >
-            <span>Level Projection</span>
-          </button>
-          <button 
-            class="strategy-btn" 
-            :class="{ active: settings.strategy === 'Resource Efficiency' }"
-            @click="setStrategy('Resource Efficiency')"
-          >
-            <span>Resource Efficiency</span>
-          </button>
-        </div>
+        <BaseSegmentedControl
+          :model-value="settings.strategy"
+          :options="[
+            { label: 'Level Projection', value: 'Level Projection' },
+            { label: 'Resource Efficiency', value: 'Resource Efficiency' }
+          ]"
+          @update:model-value="(val) => emit('update', { strategy: val })"
+        />
         <div class="strategy-desc">
           <template v-if="settings.strategy === 'Level Projection'">
             <strong>Goal: Level Projection (Simulation)</strong>
@@ -159,41 +144,6 @@ const baseUrl = import.meta.env.BASE_URL;
   opacity: 0.6;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-}
-
-.strategy-selector {
-  display: flex;
-  gap: 4px;
-  background: var(--sys-color-surface-container-high);
-  padding: 4px;
-  border-radius: var(--sys-shape-corner-large);
-  border: 1px solid var(--sys-color-outline-variant);
-}
-
-.strategy-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding: 10px 0;
-  border: none;
-  background: transparent;
-  color: var(--sys-color-on-surface);
-  font-size: 13px;
-  font-weight: 800;
-  border-radius: var(--sys-shape-corner-medium);
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.5;
-  white-space: nowrap;
-}
-
-.strategy-btn.active {
-  background: var(--sys-color-surface-container-highest);
-  box-shadow: var(--sys-elevation-1);
-  opacity: 1;
-  color: var(--sys-color-primary);
 }
 
 .strategy-desc {

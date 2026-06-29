@@ -56,6 +56,7 @@ Standardized molecules for rendering player-specific metrics and metadata with i
 ### Interactive Molecules
 Components that facilitate user interaction and state management.
 - **BaseSelect.vue**: A clinical, keyboard-accessible replacement for native HTML `<select>` elements, ensuring visual parity and interaction stability in Android WebViews. Supports generic types to prevent state corruption.
+- **BaseSegmentedControl.vue**: Standardized toggle/segment selector for switching between mutually exclusive options. Supports generic types and compact variants for high-density UI contexts.
 - **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
 - **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable.

@@ -43,21 +43,18 @@ describe("ParameterCard.vue", () => {
   it("renders correctly with initial props", () => {
     const wrapper = createWrapper();
     expect(wrapper.find(".panel-header span").text()).toBe("Parameters");
-    expect(wrapper.find(".strategy-btn.active").text()).toBe("Level Projection");
+    expect(wrapper.findComponent({ name: "BaseSegmentedControl" }).props("modelValue")).toBe("Level Projection");
     expect(wrapper.findComponent({ name: "BaseSelect" }).exists()).toBe(true);
   });
 
   it("emits update when a new strategy is selected", async () => {
     const wrapper = createWrapper();
-    const strategyBtns = wrapper.findAll(".strategy-btn");
+    const segmentedControl = wrapper.findComponent({ name: "BaseSegmentedControl" });
 
-    // Find the Resource Efficiency button
-    const resourceBtn = strategyBtns.find(btn => btn.text() === "Resource Efficiency");
-    await resourceBtn?.trigger("click");
+    await segmentedControl.vm.$emit("update:modelValue", "Resource Efficiency");
 
     expect(wrapper.emitted("update")).toBeTruthy();
     expect(wrapper.emitted("update")![0]).toEqual([{
-      ...defaultSettings,
       strategy: "Resource Efficiency"
     }]);
   });
