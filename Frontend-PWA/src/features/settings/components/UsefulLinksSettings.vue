@@ -83,7 +83,7 @@ const { isRefreshing } = useSettings();
         v-tactile
       >
         <div class="link-info">
-          <span class="link-label">GitHub Repository</span>
+          <span class="link-label">Clash Manager on GitHub</span>
           <span class="link-desc">Contribute to the open source project</span>
         </div>
         <Icon name="github" size="18" class="link-icon" />

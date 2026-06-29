@@ -45,6 +45,6 @@ describe("UsefulLinksSettings.vue", () => {
     expect(labels).toContain("RoyaleAPI Giveaway");
     expect(labels).toContain("Supercell ID Rewards");
     expect(labels).toContain("Clash Royale Store");
-    expect(labels).toContain("GitHub Repository");
+    expect(labels).toContain("Clash Manager on GitHub");
   });
 });
