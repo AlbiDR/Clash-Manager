@@ -118,6 +118,11 @@ INSERT INTO substrate.config (key, value, description) VALUES
         '900',
         'Hard wall-clock deadline in seconds from last_main_scan_at beyond which the guard will not fire. '
         'Must be strictly less than the main scanner cadence (1800 s / 30 min).'
+    ),
+    (
+        'MAX_ACTIVE_RECRUITS',
+        '50',
+        'Maximum number of recruits held in the ACTIVE rotation pool. High-PeS leads beyond this limit are benched.'
     )
 ON CONFLICT (key) DO NOTHING;
 
