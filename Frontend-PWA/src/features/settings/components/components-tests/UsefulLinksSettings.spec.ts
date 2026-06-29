@@ -41,14 +41,10 @@ describe("UsefulLinksSettings.vue", () => {
     const links = wrapper.findAll("a");
     const labels = links.map(link => link.find(".link-label").text());
 
-    expect(labels).toContain("RoyaleAPI News");
+    expect(labels).toContain("RoyaleAPI Blog");
+    expect(labels).toContain("RoyaleAPI Giveaway");
     expect(labels).toContain("Supercell ID Rewards");
-    expect(labels).toContain("Supercell Store (CR)");
+    expect(labels).toContain("Clash Royale Store");
     expect(labels).toContain("GitHub Repository");
-
-    const tbdRow = wrapper.find(".link-row.disabled");
-    expect(tbdRow.exists()).toBe(true);
-    expect(tbdRow.find(".link-label").text()).toBe("Rewards Page");
-    expect(tbdRow.find(".tbd-badge").text()).toBe("TBD");
   });
 });

@@ -27,7 +27,7 @@ const { isRefreshing } = useSettings();
         v-tactile
       >
         <div class="link-info">
-          <span class="link-label">RoyaleAPI News</span>
+          <span class="link-label">RoyaleAPI Blog</span>
           <span class="link-desc">Latest news and articles about Clash Royale</span>
         </div>
         <Icon name="external-link" size="18" class="link-icon" />
@@ -41,33 +41,39 @@ const { isRefreshing } = useSettings();
         v-tactile
       >
         <div class="link-info">
-          <span class="link-label">Supercell ID Rewards</span>
+          <span class="link-label">RoyaleAPI Giveaway</span>
           <span class="link-desc">Claim free in-game cosmetics and perks</span>
         </div>
         <Icon name="external-link" size="18" class="link-icon" />
       </a>
 
       <a
-        href="https://store.supercell.com/it/clashroyale#storespecials"
+        href="https://id.supercell.com/it/clashroyale/"
         target="_blank"
         rel="noopener noreferrer"
         class="link-row"
         v-tactile
       >
         <div class="link-info">
-          <span class="link-label">Supercell Store (CR)</span>
-          <span class="link-desc">Exclusive discounts and store special deals</span>
+          <span class="link-label">Supercell ID Rewards</span>
+          <span class="link-desc">Access your Supercell ID rewards and benefits</span>
         </div>
         <Icon name="external-link" size="18" class="link-icon" />
       </a>
 
-      <div class="link-row disabled">
+      <a
+        href="https://store.supercell.com/it/clashroyale"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="link-row"
+        v-tactile
+      >
         <div class="link-info">
-          <span class="link-label">Rewards Page</span>
-          <span class="link-desc">Special rewards redemption hub (TBD)</span>
+          <span class="link-label">Clash Royale Store</span>
+          <span class="link-desc">Official Supercell store specials and deals</span>
         </div>
-        <span class="tbd-badge">TBD</span>
-      </div>
+        <Icon name="external-link" size="18" class="link-icon" />
+      </a>
 
       <a
         href="https://github.com/AlbiDR/Clash-Manager"
