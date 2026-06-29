@@ -128,3 +128,5 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-07-01 | Frontend-PWA/src/shared/ui/BaseBadge.vue | Zero Coverage gap closed; saturating tests for slot content and CSS classes.
 2026-07-01 | Frontend-PWA/src/features/laboratory/components/LaboratorySkeleton.vue | Zero Coverage gap closed; verified representation of the dashboard grid.
 2026-07-01 | Frontend-PWA/src/core/utils/navigation.ts | Zero Coverage gap closed; verified navigation SSOT integrity.
+2026-06-29 | Frontend-PWA/src/app/sw/swSchemas.ts | Zero Coverage gap closed; saturating tests for SW background sync and config validation boundaries.
+2026-06-29 | Frontend-PWA/src/app/sw/swSync.ts | Extended validation boundary coverage for malformed API responses.
