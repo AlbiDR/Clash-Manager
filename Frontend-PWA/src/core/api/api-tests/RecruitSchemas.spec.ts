@@ -10,6 +10,7 @@ import {
   DismissResponseSchema,
   HarvestedPlayerSchema,
   LeaderboardHarvestSchema,
+  BlacklistEventSchema,
 } from "../RecruitSchemas";
 
 describe("RecruitSchemas", () => {
@@ -152,6 +153,26 @@ describe("RecruitSchemas", () => {
       const input = { region: "Mars" };
       const result = v.safeParse(LeaderboardHarvestSchema, input);
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe("BlacklistEventSchema", () => {
+    it("should parse valid INSERT event", () => {
+      const input = { new: { player_tag: "#NEW123" } };
+      const result = v.parse(BlacklistEventSchema, input);
+      expect('new' in result && result.new.player_tag).toBe("#NEW123");
+    });
+
+    it("should parse valid DELETE event", () => {
+      const input = { old: { player_tag: "#OLD456" } };
+      const result = v.parse(BlacklistEventSchema, input);
+      expect('old' in result && result.old.player_tag).toBe("#OLD456");
+    });
+
+    it("should fail for malformed payloads", () => {
+      expect(v.safeParse(BlacklistEventSchema, { foo: "bar" }).success).toBe(false);
+      expect(v.safeParse(BlacklistEventSchema, { new: {} }).success).toBe(false);
+      expect(v.safeParse(BlacklistEventSchema, { old: { tag: "#NO" } }).success).toBe(false);
     });
   });
 });
