@@ -14,6 +14,7 @@ import {
   NetworkSettings,
   BackendRefresher,
   RecoverySettings,
+  UsefulLinksSettings,
 } from "../components";
 
 const {
@@ -39,6 +40,7 @@ const { isShowcaseMode } = useShowcaseMode();
       <ModeSettings :initially-expanded="isShowcaseMode" />
       <NetworkSettings :initially-expanded="isShowcaseMode" />
       <BackendRefresher v-if="modules.backendRefresher" :initially-expanded="isShowcaseMode" />
+      <UsefulLinksSettings :initially-expanded="isShowcaseMode" />
       <RecoverySettings :initially-expanded="isShowcaseMode" />
     </div>
   </ConsoleLayout>
