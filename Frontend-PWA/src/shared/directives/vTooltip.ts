@@ -94,7 +94,6 @@ function renderContent(data: BenchmarkData | string) {
 function positionTooltip(el: HTMLElement) {
   if (!tooltipEl) return;
   const rect = el.getBoundingClientRect();
-  const scrollY = window.scrollY;
   const viewportWidth = window.innerWidth;
   const padding = 12;
 
@@ -117,10 +116,10 @@ function positionTooltip(el: HTMLElement) {
   if (left - halfWidth < padding) left = halfWidth + padding;
   else if (left + halfWidth > viewportWidth - padding) left = viewportWidth - halfWidth - padding;
 
-  let top = rect.top + scrollY - 8;
+  let top = rect.top - 8;
   let translateY = "-100%";
   if (rect.top < tipRect.height + padding * 2) {
-    top = rect.bottom + scrollY + 8;
+    top = rect.bottom + 8;
     translateY = "0%";
   }
 

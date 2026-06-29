@@ -78,7 +78,7 @@ a { text-decoration: underline; color: inherit; }
    RICH TOOLTIPS
    ========================================= */
 .rich-tooltip {
-  position: absolute; background: var(--sys-surface-glass);
+  position: fixed; background: var(--sys-surface-glass);
   color: var(--sys-color-on-surface); padding: var(--sys-space-16); border-radius: var(--sys-shape-corner-m); width: 180px;
   pointer-events: none; opacity: 0; z-index: var(--sys-z-tooltip);
   border: 0.5px solid rgba(255, 255, 255, 0.15);
