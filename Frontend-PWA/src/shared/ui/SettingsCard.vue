@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon } from "@shared";
+import { Icon, vTactile, useHaptics } from "@shared";
 import { ref } from "vue";
 const props = defineProps<{
   title: string;
@@ -11,9 +11,11 @@ const props = defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
+const haptics = useHaptics();
 const isCollapsed = ref(!props.initiallyExpanded);
 
 const toggleCollapse = () => {
+  haptics.tap();
   isCollapsed.value = !isCollapsed.value;
 };
 </script>
@@ -24,7 +26,7 @@ const toggleCollapse = () => {
     :class="{ collapsed: isCollapsed }"
     :aria-busy="loading ? 'true' : 'false'"
   >
-    <div class="card-header" @click="toggleCollapse">
+    <div class="card-header" @click="toggleCollapse" v-tactile>
       <div class="header-main">
         <Icon :name="icon" size="20" class="header-icon" />
         <h3>{{ title }}</h3>

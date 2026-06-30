@@ -5,3 +5,4 @@
 [2026-06-29] Integrated brokered tactile feedback into CardActions.vue action buttons to ensure tactile consistency in the hybrid shell.
 [2026-06-30] Integrated brokered tactile feedback into SelectionBar.vue morph button to preserve physical touch response across the hybrid shell.
 [2026-06-28] Integrated brokered tactile feedback into ParameterCard.vue strategy selector and gem spending toggle to ensure consistent tactile response in the hybrid shell.
+[2026-06-30] - Integrated brokered tactile feedback into SettingsCard.vue header toggle to ensure consistent interaction response in the hybrid shell.
