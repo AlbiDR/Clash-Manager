@@ -22,7 +22,7 @@
       "entry": ".github/scripts/*.ts",
       "project": ".github/scripts/*.ts",
       "ignoreDependencies": ["npm"],
-      "ignoreBinaries": ["wait-on"]
+      "ignoreBinaries": []
     }
   },
   "compilers": {
