@@ -5,7 +5,13 @@
 // Service Worker for Clash Manager
 // Optimized for Native System Compatibility (WebAPK)
 import { precacheAndRoute, matchPrecache } from "workbox-precaching";
-import { openDB, getValue, handlePushBadge, handleBackgroundSync } from "./sw/index";
+import {
+  openDB,
+  getValue,
+  handlePushBadge,
+  handleBackgroundSync,
+  handleAndroidBadge,
+} from "./sw/index";
 import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../core/config";
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] };
@@ -61,8 +67,8 @@ self.addEventListener("activate", (event) => {
         if (self.registration.navigationPreload) {
           await self.registration.navigationPreload.enable();
         }
-      } catch (e) {
-        console.warn("[SW] Navigation preload activation failed", e);
+      } catch (navigationPreloadError: unknown) {
+        console.warn("[SW] Navigation preload activation failed", navigationPreloadError);
       }
 
       await self.clients.claim();
@@ -87,8 +93,8 @@ self.addEventListener("activate", (event) => {
             });
           }
         }
-      } catch (e) {
-        console.warn("[SW] Client self-heal reload failed", e);
+      } catch (selfHealError: unknown) {
+        console.warn("[SW] Client self-heal reload failed", selfHealError);
       }
     })(),
   );
@@ -120,8 +126,8 @@ self.addEventListener("fetch", (event) => {
             return preloadResponse;
           }
           return await fetch(event.request);
-        } catch (error) {
-          throw error;
+        } catch (fetchError: unknown) {
+          throw fetchError;
         }
       })(),
     );
@@ -144,56 +150,14 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
         if (count > 0) await self.navigator.setAppBadge(count);
         else await self.navigator.clearAppBadge();
       }
-    } catch (e) {
-      console.warn("[SW] Badge update failed", e);
+    } catch (badgeUpdateError: unknown) {
+      console.warn("[SW] Badge update failed", badgeUpdateError);
     }
   }
 
   // ANDROID: Badge via persistent notification
   if (data.type === "BADGE_NOTIFICATION_ANDROID") {
-    const { count = 0 } = data;
-    const countAboveThreshold = Math.max(0, count);
-
-    try {
-      const db = await openDB();
-      const enabled =
-        (await getValue(db, "cm_notifications_enabled")) !== false;
-
-      // Update badge
-      if (self.navigator.setAppBadge) {
-        if (countAboveThreshold > 0 && enabled) {
-          await self.navigator.setAppBadge(countAboveThreshold);
-        } else {
-          await self.navigator.clearAppBadge();
-        }
-      }
-
-      // Show/update notification
-      if (countAboveThreshold > 0 && enabled) {
-        await self.registration.showNotification("New Recruits Available", {
-          body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
-          icon: "pwa-192.png",
-          badge: "pwa-64.png",
-          tag: NOTIFICATION_TAG_RECRUIT,
-          renotify: false,
-          silent: false,
-          requireInteraction: false,
-          data: {
-            type: "badge",
-            count: countAboveThreshold,
-            shortcutId: NOTIFICATION_SHORTCUT_ID,
-            url: "/#/headhunter",
-          },
-        } as NotificationOptions);
-      } else {
-        const notifications = await self.registration.getNotifications({
-          tag: NOTIFICATION_TAG_RECRUIT,
-        });
-        notifications.forEach((n) => n.close());
-      }
-    } catch (e) {
-      console.warn("[SW] Android badge notification failed", e);
-    }
+    await handleAndroidBadge(data.count ?? 0);
   }
 
   if (data.type === "SHOW_NOTIFICATION") {
@@ -222,10 +186,10 @@ self.addEventListener("push", (event: PushEvent) => {
 
   event.waitUntil(
     (async (): Promise<void> => {
-      const db = await openDB();
-      const enabled =
-        (await getValue(db, "cm_notifications_enabled")) !== false;
-      if (!enabled) return;
+      const storageConnection = await openDB();
+      const notificationsAreEnabled =
+        (await getValue(storageConnection, "cm_notifications_enabled")) !== false;
+      if (!notificationsAreEnabled) return;
 
       if (payload.badgeCount !== undefined) {
         await handlePushBadge(payload);
