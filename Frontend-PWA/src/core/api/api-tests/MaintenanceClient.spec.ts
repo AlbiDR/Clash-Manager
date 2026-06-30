@@ -34,11 +34,14 @@ describe("MaintenanceClient", () => {
   describe("Pipeline Operations", () => {
     it("triggerBackendUpdate returns success/failure based on RPC", async () => {
       const mockClient = vi.mocked(createClient)();
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
+      vi.mocked(mockClient.rpc).mockResolvedValue({
+        data: { success: true, message: "Trigger received" },
+        error: null
+      });
 
       const result = await MaintenanceClient.triggerBackendUpdate();
       expect(result.success).toBe(true);
-      expect(result.data).toEqual({ success: true });
+      expect(result.data).toEqual({ success: true, message: "Trigger received" });
     });
 
     it("triggerBackendUpdate returns error if RPC fails", async () => {
@@ -49,16 +52,64 @@ describe("MaintenanceClient", () => {
       expect(result.success).toBe(false);
       expect(result.error?.message).toBe('Trigger Failed');
     });
+
+    it("triggerBackendUpdate returns validation error if RPC returns malformed data", async () => {
+      const mockClient = vi.mocked(createClient)();
+      // Missing 'message' field
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
+
+      const result = await MaintenanceClient.triggerBackendUpdate();
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('VALIDATION_FAILED');
+    });
   });
 
   describe("Push Notifications", () => {
-    it("subscribeToPush inserts subscription", async () => {
+    it("subscribeToPush inserts valid subscription", async () => {
       vi.mocked(mockFrom.insert).mockResolvedValue({ error: null } as any);
 
-      const sub = { endpoint: 'https://push.com' } as any;
-      const result = await MaintenanceClient.subscribeToPush(sub);
+      const mockSub = {
+        toJSON: () => ({
+          endpoint: 'https://push.com/v1',
+          keys: { p256dh: 'key1', auth: 'auth1' }
+        })
+      };
+
+      const result = await MaintenanceClient.subscribeToPush(mockSub as any);
       expect(result).toBe(true);
-      expect(mockFrom.insert).toHaveBeenCalled();
+      expect(mockFrom.insert).toHaveBeenCalledWith({
+        subscription: {
+          endpoint: 'https://push.com/v1',
+          keys: { p256dh: 'key1', auth: 'auth1' }
+        }
+      });
+    });
+
+    it("subscribeToPush rejects invalid subscription", async () => {
+      const mockSub = {
+        toJSON: () => ({
+          endpoint: 'not-a-url',
+          keys: { p256dh: 'key1' } // Missing auth
+        })
+      };
+
+      const result = await MaintenanceClient.subscribeToPush(mockSub as any);
+      expect(result).toBe(false);
+      expect(mockFrom.insert).not.toHaveBeenCalled();
+    });
+
+    it("subscribeToPush returns false if database insertion fails", async () => {
+      vi.mocked(mockFrom.insert).mockResolvedValue({ error: { message: "DB Error" } } as any);
+
+      const mockSub = {
+        toJSON: () => ({
+          endpoint: 'https://push.com/v1',
+          keys: { p256dh: 'key1', auth: 'auth1' }
+        })
+      };
+
+      const result = await MaintenanceClient.subscribeToPush(mockSub as any);
+      expect(result).toBe(false);
     });
   });
 });
