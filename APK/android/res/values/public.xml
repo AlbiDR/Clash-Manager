@@ -627,7 +627,6 @@
     <public type="drawable" name="abc_textfield_search_activated_mtrl_alpha" id="0x7f08004c" />
     <public type="drawable" name="abc_textfield_search_default_mtrl_alpha" id="0x7f08004d" />
     <public type="drawable" name="abc_textfield_search_material" id="0x7f08004e" />
-    <public type="drawable" name="abc_vector_test" id="0x7f08004f" />
     <public type="drawable" name="btn_checkbox_checked_mtrl" id="0x7f080050" />
     <public type="drawable" name="btn_checkbox_checked_to_unchecked_mtrl_animation" id="0x7f080051" />
     <public type="drawable" name="btn_checkbox_unchecked_mtrl" id="0x7f080052" />
@@ -659,7 +658,6 @@
     <public type="drawable" name="shortcut_2_maskable" id="0x7f080072" />
     <public type="drawable" name="shortcut_legacy_background" id="0x7f080073" />
     <public type="drawable" name="splash" id="0x7f080074" />
-    <public type="drawable" name="test_level_drawable" id="0x7f080075" />
     <public type="drawable" name="tooltip_frame_dark" id="0x7f080076" />
     <public type="drawable" name="tooltip_frame_light" id="0x7f080077" />
     <public type="id" name="ALT" id="0x7f090000" />
@@ -891,8 +889,6 @@
     <public type="layout" name="browser_actions_context_menu_page" id="0x7f0c001c" />
     <public type="layout" name="browser_actions_context_menu_row" id="0x7f0c001d" />
     <public type="layout" name="custom_dialog" id="0x7f0c001e" />
-    <public type="layout" name="ime_base_split_test_activity" id="0x7f0c001f" />
-    <public type="layout" name="ime_secondary_split_test_activity" id="0x7f0c0020" />
     <public type="layout" name="notification_action" id="0x7f0c0021" />
     <public type="layout" name="notification_action_tombstone" id="0x7f0c0022" />
     <public type="layout" name="notification_template_custom_big" id="0x7f0c0023" />
