@@ -45,6 +45,7 @@ Logic for managing complex UI patterns and component lifecycles.
 
 ### Voyage Feature Composables
 Specialized behavioral logic for the Clan Voyage subsystem, promoted to the Shared layer to resolve cross-feature dependency violations.
+- **voyageTypes.ts**: Authoritative domain models and enums for the Voyage subsystem, ensuring type safety across Layer 2 components and composables.
 - **useVoyageStore.ts**: Manages the reactive state for active voyages and contributions.
 - **useVoyageStatus.ts**: Resolves the current phase and progress of a voyage event.
 - **useVoyageActions.ts**: Orchestrates the lifecycle of voyage management (Activation, Ledger Sync).

@@ -66,8 +66,12 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useBroadcastChannel.ts**: Cross-tab state synchronization.
 
 ### Theme Engine (`/theme`)
-The visual DNA of the application.
-- **Theme Injection**: Logic for CSS variable injection (hex/RGB design tokens) and dynamic light/dark theme swapping.
+The visual DNA of the application. Orchestrates a clinical, CSS-variable-driven design system with zero-flicker hydration.
+- **AppShell.ts**: The structural architect. Orchestrates the generation of critical CSS, including animated skeletons and static theme tokens, to ensure sub-second visual stability during initial hydration.
+- **tokens.ts**: The Design Token SSOT. Defines the foundational hex/RGB design tokens and generates standardized CSS variables (`--sys-color-*`).
+- **base.ts**: The foundational substrate. Injects CSS resets, typography scales, and native gesture overrides.
+- **animations.ts**: Centralizes high-performance CSS keyframes for shell-wide interactions (skeletons, transitions).
+- **Theme Injection**: Logic for dynamic Light/Dark theme swapping and `theme-color` meta-tag orchestration.
 - **Icon Paths**: Centralized SVG path definitions for the `Icon.vue` primitive.
 
 ### Domain Types (`/types`)
