@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import * as v from "npm:valibot@1.4.1";
+import * as v from "npm:valibot@1.4.2";
 import { clinicalServe } from "../_shared/protocol.ts";
 import { RoyaleBattleLogSchema, KeyPoolSchema } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";

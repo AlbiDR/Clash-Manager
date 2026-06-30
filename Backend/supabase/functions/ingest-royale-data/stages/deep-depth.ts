@@ -4,7 +4,7 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
-import * as v from "npm:valibot@1.4.1";
+import * as v from "npm:valibot@1.4.2";
 import { RoyaleBattleLogSchema, IngestionTargetsSchema } from "../../_shared/schemas.ts";
 
 /**
