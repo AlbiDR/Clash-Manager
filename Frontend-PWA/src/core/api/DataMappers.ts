@@ -26,11 +26,14 @@ import { SbHeadhunterRowSchema } from "./RecruitSchemas";
  * @remarks
  * [GUARD] DATA NORMALIZATION: Resolves schema-specific projections to
  * unified L1 Core types.
+ * Satisfies ADR Section III: Validation Boundaries.
  *
  * @param rosterRow - Validated row from roster_view.
  * @returns A domain-compliant LeaderboardMember object.
  */
 export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema>): LeaderboardMember {
+  // [DECISION LOG] Coerce all numeric fields to ensure type safety in the simulation engine.
+  // [DECISION LOG] Voyage history (v_hist) is optional to maintain backward compatibility with older DB views.
   return {
     id: cleanTag(rosterRow.player_tag),
     n: rosterRow.player_name || '',
@@ -60,16 +63,19 @@ export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema
  * @remarks
  * [GUARD] DATA NORMALIZATION: Resolves schema-specific projections to
  * unified L1 Core types.
+ * Satisfies ADR Section III: Validation Boundaries.
  *
  * @param headhunterRow - Validated row from headhunter_view.
  * @returns A domain-compliant Recruit object.
  */
-// Transforms a Supabase headhunter row into a Recruit.
 export function mapSbHeadhunterRow(headhunterRow: v.InferOutput<typeof SbHeadhunterRowSchema>): Recruit {
   const potentialScore = Number(headhunterRow.potential_score);
   const rawPotentialScore = Number(headhunterRow.raw_potential_score);
-  // If the processed potential_score is zero but raw data exists, fallback to raw score.
+
+  // [DECISION LOG] If the processed potential_score is zero but raw data exists, fallback to raw score.
+  // This prevents recruits from appearing as "0 potential" due to temporary scoring engine glitches.
   const finalPotentialScore = potentialScore || rawPotentialScore;
+
   return {
     id: cleanTag(headhunterRow.player_tag),
     n: headhunterRow.player_name || '',
