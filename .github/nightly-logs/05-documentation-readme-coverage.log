@@ -25,3 +25,6 @@
 2026-06-29 | Frontend-PWA/src/core/services/README.md | Created: Documented infrastructure singletons and state orchestrators
 2026-06-29 | Frontend-PWA/src/shared/composables/README.md | Created: Documented behavioral logic and promoted voyage composables
 2026-06-29 | Frontend-PWA/src/shared/directives/README.md | Created: Documented DOM catalysts (v-tactile, v-tooltip) and architectural protection
+2026-06-30 | Frontend-PWA/src/shared/ui/README.md | Reconciled promoted Voyage components and domain sectioning
+2026-06-30 | Frontend-PWA/src/shared/composables/README.md | Reconciled voyageTypes.ts as domain SSOT for promoted subsystem
+2026-06-30 | Frontend-PWA/src/core/README.md | Reconciled Theme Engine substrate (AppShell, tokens, base, animations)
