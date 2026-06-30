@@ -86,6 +86,64 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
 }
 
 /**
+ * Handle Android-specific badge notifications.
+ *
+ * @param count - The number of recruits above threshold.
+ * @returns A promise that resolves when the badge/notification is updated.
+ *
+ * @sideeffects
+ * - Shows or clears a browser notification via `self.registration.showNotification`.
+ * - Updates the app badge via `navigator.setAppBadge`.
+ */
+export async function handleAndroidBadge(count: number): Promise<void> {
+  const countAboveThreshold = Math.max(0, count);
+
+  try {
+    const storageConnection = await openDB();
+
+    // [THREAT:] Unvalidated IndexedDB ingress.
+    // [DECISION LOG] Default to enabled (true) if key is missing.
+    const rawEnabled = await getValue(storageConnection, "cm_notifications_enabled");
+    const notificationsAreEnabled = v.safeParse(v.boolean(), rawEnabled).success ? (rawEnabled as boolean) : true;
+
+    // Update badge
+    if (self.navigator.setAppBadge) {
+      if (countAboveThreshold > 0 && notificationsAreEnabled) {
+        await self.navigator.setAppBadge(countAboveThreshold);
+      } else {
+        await self.navigator.clearAppBadge();
+      }
+    }
+
+    // Show/update notification
+    if (countAboveThreshold > 0 && notificationsAreEnabled) {
+      await self.registration.showNotification("New Recruits Available", {
+        body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
+        icon: "pwa-192.png",
+        badge: "pwa-64.png",
+        tag: NOTIFICATION_TAG_RECRUIT,
+        renotify: false,
+        silent: false,
+        requireInteraction: false,
+        data: {
+          type: "badge",
+          count: countAboveThreshold,
+          shortcutId: NOTIFICATION_SHORTCUT_ID,
+          url: "/#/headhunter",
+        },
+      } as NotificationOptions);
+    } else {
+      const activeNotifications = await self.registration.getNotifications({
+        tag: NOTIFICATION_TAG_RECRUIT,
+      });
+      activeNotifications.forEach((notification) => notification.close());
+    }
+  } catch (androidBadgeError: unknown) {
+    console.warn("[SW] Android badge notification failed", androidBadgeError);
+  }
+}
+
+/**
  * Executes a background synchronization to update the recruit badge.
  *
  * @remarks
