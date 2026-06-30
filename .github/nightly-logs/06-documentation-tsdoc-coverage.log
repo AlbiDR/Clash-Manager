@@ -102,3 +102,5 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-06-28 | Frontend-PWA/src/core/utils/navigation.ts | Documented navigation SSOT interface and registry with ADR Section II/IV mappings.
 2026-06-29 | Frontend-PWA/src/core/api/VoyageSchemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
 2026-06-29 | Frontend-PWA/src/core/api/BaseSchemas.ts | Documented core coercion pipes and structural guards with ADR Section III mappings and threat annotations.
+2026-06-30 | Frontend-PWA/src/core/api/ProfileSchemas.ts | Enhanced authoritative validation schemas with TSDoc and ADR mappings.
+2026-06-30 | Frontend-PWA/src/core/api/DataMappers.ts | Documented interface contracts and added mandatory decision logs for normalization.
