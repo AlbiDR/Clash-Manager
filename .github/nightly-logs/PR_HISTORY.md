@@ -1,6 +1,30 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-30] PR #975: chore(deps): dependency audit and hygiene [Stage 8]
+**Commit**: `aff2639b553b2ad5337ca37d78df13fef86084c7`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/975)
+
+### Description
+This PR completes the Stage 8 Dependency Audit. 
+
+### Reasoning:
+- **Action Tier:** Tier 1 (Audit) and Tier 2 (Watchlist Update).
+- **Rationale:** All dependencies are currently stable at their latest minor/patch versions. The watchlist requires detailed research to prepare for upcoming major architectural shifts (Rolldown in Vite 8, Native TS 7 transition).
+
+### Changes:
+- **.github/nightly-logs/08-dependency-audit-coverage.log:** Updated with fresh research and Tier 1 status.
+- **.github/knip.json:** Removed redundant `wait-on` suppression.
+
+### Verification:
+- **Automated:** Full Vitest suite passed (1335 tests) under Node 22 bypass.
+- **Audit:** Knip configuration hint resolved. Watchlist entries synchronized with the latest ecosystem state (June 2026).
+
+---
+*PR created automatically by Jules for task [17787866072100788217](https://jules.google.com/task/17787866072100788217) started by @AlbiDR*
+
+---
+
 ## [2026-06-30] PR #974: fix(version): reconcile version drift in Supabase Functions
 **Commit**: `3f87f8780f2f8dc971b8e0a11737ff543e1336ea`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/974)
