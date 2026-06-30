@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-06-30] PR #971: perf(opt): standardize service worker naming and refactor android badge logic
+**Commit**: `3932d230658c2acb28b29b433655d0fea176461a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/971)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** The Service Worker implementation (`sw.ts` and `swKernel.ts`) contained several anemic variable pathogens (e.g., `db`, `request`, `e`) and monolithic logic for Android badge notifications, violating SRP and CleanStack naming conventions.
+**[Refactoring Hypothesis]:** Standardizing variable names to domain-descriptive terms and extracting specialized logic to sub-modules will improve structural purity, maintainability, and architectural compliance.
+**[Rationale]:** Aligns with CleanStack ADR for domain-descriptive naming and Section II (Structural Unitary Architecture) by modularizing Layer 4 (App) logic.
+
+### Changes:
+- **[Frontend-PWA/src/app/sw/swKernel.ts]:** Renamed generic identifiers (`db`, `request`, `transaction`, `store`) to domain-descriptive terms (`storageConnection`, `idbRequest`, `idbTransaction`, `idbStore`).
+- **[Frontend-PWA/src/app/sw/swSync.ts]:** Extracted `handleAndroidBadge` function to encapsulate Android-specific notification logic.
+- **[Frontend-PWA/src/app/sw.ts]:** Refactored to consume `handleAndroidBadge` and standardized remaining anemic variables (`e`, `error`, `db`, `enabled`).
+- **[Frontend-PWA/src/app/sw/index.ts]:** Updated barrel export for the new function.
+
+### Verification:
+- **[Automated]:** Full monorepo Vitest suite passed (1335 tests).
+- **[Audit]:** Confirmed orphaned database views (`war_loyalty_view`, `war_performance_analytics_view`, `governance_report`, `view_pipeline_health`, `recruits_view`, `war_activity_view`) remain unreferenced.
+
+### Log Updates:
+- Updated `.github/nightly-logs/04-optimization-coverage.log`
+
+---
+*PR created automatically by Jules for task [10909236125787014606](https://jules.google.com/task/10909236125787014606) started by @AlbiDR*
+
+---
+
 ## [2026-06-30] PR #970: fix(harden): secure maintenance and push subscription boundaries
 **Commit**: `cf271b6029f1b0b7bac3d2f59083aeb3d97c122b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/970)
