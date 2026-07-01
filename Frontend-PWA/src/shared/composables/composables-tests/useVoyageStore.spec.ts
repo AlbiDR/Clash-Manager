@@ -111,7 +111,7 @@ describe("useVoyageStore", () => {
       await store.refresh();
 
       expect(store.loading).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith("[Voyage] Refresh failed:", expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith("[Voyage] Refresh failed:", "API Error");
     });
 
     it("should cap progress ratio at 1.0", async () => {

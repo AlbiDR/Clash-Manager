@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import * as VoyageClient from "../VoyageClient";
+import { NetworkError } from "../SupabaseClient";
 
 // Mock Supabase JS Client
 const mockFrom = {
@@ -47,6 +48,7 @@ describe("VoyageClient", () => {
 
       const result = await VoyageClient.initializeVoyage(1600, "start", "end");
       expect(result.success).toBe(true);
+      expect(result.data).toEqual({ success: true });
       expect(mockClient.rpc).toHaveBeenCalledWith("initialize_voyage", {
         target_crowns: 1600,
         start_at: "start",
@@ -54,13 +56,11 @@ describe("VoyageClient", () => {
       });
     });
 
-    it("initializeVoyage handles RPC error", async () => {
+    it("initializeVoyage throws NetworkError on RPC error", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "RPC Error" } });
 
-      const result = await VoyageClient.initializeVoyage(1600, "start", "end");
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("RPC Error");
+      await expect(VoyageClient.initializeVoyage(1600, "start", "end")).rejects.toThrow(NetworkError);
     });
 
     it("scheduleVoyageEvent calls RPC with correct params", async () => {
@@ -69,19 +69,18 @@ describe("VoyageClient", () => {
 
       const result = await VoyageClient.scheduleVoyageEvent(1000, "future_start");
       expect(result.success).toBe(true);
+      expect(result.data).toEqual({ success: true });
       expect(mockClient.rpc).toHaveBeenCalledWith("schedule_voyage", {
         target_crowns: 1000,
         start_at: "future_start"
       });
     });
 
-    it("scheduleVoyageEvent handles RPC error", async () => {
+    it("scheduleVoyageEvent throws NetworkError on RPC error", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "Schedule Error" } });
 
-      const result = await VoyageClient.scheduleVoyageEvent(1000, "future_start");
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Schedule Error");
+      await expect(VoyageClient.scheduleVoyageEvent(1000, "future_start")).rejects.toThrow(NetworkError);
     });
 
     it("setVoyageEnd calls RPC with correct params", async () => {
@@ -90,19 +89,18 @@ describe("VoyageClient", () => {
 
       const result = await VoyageClient.setVoyageEnd(123, "end_at");
       expect(result.success).toBe(true);
+      expect(result.data).toEqual({ success: true });
       expect(mockClient.rpc).toHaveBeenCalledWith("set_voyage_end", {
         voyage_id: 123,
         end_at: "end_at"
       });
     });
 
-    it("setVoyageEnd handles RPC error", async () => {
+    it("setVoyageEnd throws NetworkError on RPC error", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "End Error" } });
 
-      const result = await VoyageClient.setVoyageEnd(123, "end_at");
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("End Error");
+      await expect(VoyageClient.setVoyageEnd(123, "end_at")).rejects.toThrow(NetworkError);
     });
 
     it("cancelScheduledVoyageEvent calls RPC with correct params", async () => {
@@ -111,18 +109,17 @@ describe("VoyageClient", () => {
 
       const result = await VoyageClient.cancelScheduledVoyageEvent(123);
       expect(result.success).toBe(true);
+      expect(result.data).toEqual({ success: true });
       expect(mockClient.rpc).toHaveBeenCalledWith("cancel_voyage", {
         voyage_id: 123
       });
     });
 
-    it("cancelScheduledVoyageEvent handles RPC error", async () => {
+    it("cancelScheduledVoyageEvent throws NetworkError on RPC error", async () => {
       const mockClient = vi.mocked(createClient)();
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "Cancel Error" } });
 
-      const result = await VoyageClient.cancelScheduledVoyageEvent(123);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("Cancel Error");
+      await expect(VoyageClient.cancelScheduledVoyageEvent(123)).rejects.toThrow(NetworkError);
     });
   });
 

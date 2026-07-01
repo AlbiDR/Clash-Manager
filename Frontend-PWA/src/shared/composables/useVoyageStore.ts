@@ -51,7 +51,10 @@ export const useVoyageStore = defineStore("voyage", () => {
   /** Unix timestamp (ms) of the last successful state refresh. */
   const lastUpdated = ref<number>(0);
 
-  /** Realtime channel instance for listening to Postgres changes in the voyage tables. */
+  /**
+   * Realtime channel instance for listening to Postgres changes in the voyage tables.
+   * // EPHEMERAL: intentionally resets on cold start.
+   */
   let realtimeChannel: RealtimeChannel | null = null;
 
   // --- GETTERS ---
@@ -156,32 +159,34 @@ export const useVoyageStore = defineStore("voyage", () => {
   async function refresh() {
     loading.value = true;
     try {
-      const [summaryData, contributionsData] = await Promise.all([
+      // [THREAT:] Anemic variable pathogens (Target C) can mask structural intent.
+      // [DECISION LOG] Renamed to domain-descriptive terms to align with CleanStack standards.
+      const [voyageSummarySnapshot, contributionLedgerSnapshot] = await Promise.all([
         apiFetchVoyageSummary(),
         apiFetchVoyageContributions()
       ]);
 
-      if (summaryData && summaryData.event) {
+      if (voyageSummarySnapshot && voyageSummarySnapshot.event) {
         summary.value = {
           event: {
-            id: summaryData.event.id,
-            clan_tag: summaryData.event.clan_tag,
-            status: summaryData.event.status,
-            target_crowns: summaryData.event.target_crowns,
-            start_at: summaryData.event.start_at,
-            end_at: summaryData.event.end_at,
+            id: voyageSummarySnapshot.event.id,
+            clan_tag: voyageSummarySnapshot.event.clan_tag,
+            status: voyageSummarySnapshot.event.status,
+            target_crowns: voyageSummarySnapshot.event.target_crowns,
+            start_at: voyageSummarySnapshot.event.start_at,
+            end_at: voyageSummarySnapshot.event.end_at,
             activated_by: null,
-            is_victory: summaryData.progress_ratio >= 1.0,
+            is_victory: voyageSummarySnapshot.progress_ratio >= 1.0,
           },
-          contributions: contributionsData.map(contributionRow => ({
-            player_tag: contributionRow.player_tag,
-            player_name: contributionRow.player_name,
-            total_voyage_crowns: contributionRow.total_voyage_crowns,
-            percentage_voyage_crowns: Number(contributionRow.percentage_voyage_crowns),
-            performance_score: contributionRow.performance_score ? Number(contributionRow.performance_score) : undefined
+          contributions: contributionLedgerSnapshot.map(contributionCandidate => ({
+            player_tag: contributionCandidate.player_tag,
+            player_name: contributionCandidate.player_name,
+            total_voyage_crowns: contributionCandidate.total_voyage_crowns,
+            percentage_voyage_crowns: Number(contributionCandidate.percentage_voyage_crowns),
+            performance_score: contributionCandidate.performance_score ? Number(contributionCandidate.performance_score) : undefined
           })),
-          total_voyage_crowns: summaryData.total_voyage_crowns,
-          progress_ratio: summaryData.progress_ratio,
+          total_voyage_crowns: voyageSummarySnapshot.total_voyage_crowns,
+          progress_ratio: voyageSummarySnapshot.progress_ratio,
         };
         lastUpdated.value = Date.now();
 
@@ -194,8 +199,11 @@ export const useVoyageStore = defineStore("voyage", () => {
         summary.value = null;
         cleanupListeners();
       }
-    } catch (error) {
-      console.error("[Voyage] Refresh failed:", error);
+    } catch (voyageRefreshError: unknown) {
+      // [THREAT:] Silent failures in state hydration (Target C).
+      // [DECISION LOG] Explicitly catching and logging state hydration errors.
+      const errorMessage = voyageRefreshError instanceof Error ? voyageRefreshError.message : String(voyageRefreshError);
+      console.error("[Voyage] Refresh failed:", errorMessage);
     } finally {
       loading.value = false;
     }
