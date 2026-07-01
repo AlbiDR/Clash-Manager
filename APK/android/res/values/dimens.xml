@@ -54,8 +54,6 @@
     <dimen name="abc_list_item_padding_horizontal_material">@dimen/abc_action_bar_content_inset_material</dimen>
     <dimen name="abc_panel_menu_list_width">296.0dp</dimen>
     <dimen name="abc_progress_bar_height_material">4.0dp</dimen>
-    <dimen name="abc_search_view_preferred_height">48.0dp</dimen>
-    <dimen name="abc_search_view_preferred_width">320.0dp</dimen>
     <dimen name="abc_seekbar_track_background_height_material">2.0dp</dimen>
     <dimen name="abc_seekbar_track_progress_height_material">2.0dp</dimen>
     <dimen name="abc_select_dialog_padding_start_material">20.0dp</dimen>
