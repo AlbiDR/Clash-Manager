@@ -53,7 +53,7 @@ Ingestion is performed as a sequential pipeline, decomposed into six logical sta
 ---
 
 ## Technical Standards & Safety
-- **Validation Boundary**: Implements strict `v.safeParse` validation using Valibot for all inbound Royale API payloads. Malformed or unexpected data shapes are rejected at the gate to prevent substrate corruption.
+- **Validation Boundary**: Implements strict `v.safeParse` validation using Valibot for all inbound Royale API payloads. Enforces zero-trust boundaries via standardized schemas (`TelemetrySchema`, `KeyPoolSchema`, `VaultSecretSchema`) centralized in `_shared/schemas.ts`. Malformed or unexpected data shapes are rejected at the gate to prevent substrate corruption.
 - **RPC Orchestration**: Delegates persistence logic to specialized database RPCs (e.g., `ingest_raw_clan_profile`, `ingest_raw_war_log`) to maintain persistence ignorance in the Edge Layer.
 - **Timeout Resilience**: Each stage is wrapped in a deterministic 10-minute timeout to prevent zombie execution and ensure predictable resource consumption in the Deno environment.
 - **Clinical Auditing**: Dispatches real-time audit logs and progress heartbeats to the `governance_report` view, providing full transparency into pipeline health and execution metrics.

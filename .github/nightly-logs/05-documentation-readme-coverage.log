@@ -28,3 +28,4 @@
 2026-06-30 | Frontend-PWA/src/shared/ui/README.md | Reconciled promoted Voyage components and domain sectioning
 2026-06-30 | Frontend-PWA/src/shared/composables/README.md | Reconciled voyageTypes.ts as domain SSOT for promoted subsystem
 2026-06-30 | Frontend-PWA/src/core/README.md | Reconciled Theme Engine substrate (AppShell, tokens, base, animations)
+2026-11-25 | Monorepo | Reconciled documentation drift for SW sub-handlers, MaintenanceSchemas, and Backend zero-trust boundaries.
