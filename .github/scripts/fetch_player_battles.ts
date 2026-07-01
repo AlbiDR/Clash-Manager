@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as v from "https://esm.sh/valibot@1.4.1";
+import * as v from "https://esm.sh/valibot@1.4.2";
 
 const RoyaleBattleLogSchema = v.array(
   v.object({

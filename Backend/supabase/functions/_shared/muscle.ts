@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import pLimit from "npm:p-limit";
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.2";
 import { KeyPoolSchema } from "./schemas.ts";
 
 /**

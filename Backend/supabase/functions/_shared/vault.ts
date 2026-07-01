@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.2";
 import { VaultSecretSchema } from "./schemas.ts";
 
 /**
