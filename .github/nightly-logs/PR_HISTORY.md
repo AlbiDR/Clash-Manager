@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-01] PR #979: fix(harden): secure voyage api boundary and state lifecycle
+**Commit**: `61ab03d0d9b610159b1f958fea1b51346c720c33`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/979)
+
+### Description
+Hardened the Voyage substrate by establishing strict Valibot validation boundaries for all RPC and view-based ingress in `VoyageClient.ts`. Excised anemic variable pathogens and renamed them to domain-descriptive terms in both `VoyageClient.ts` and `useVoyageStore.ts`. Annotated the module-level `realtimeChannel` as ephemeral and injected mandatory [THREAT:] and [DECISION LOG] annotations. Verified the changes with an updated unit test suite.
+
+---
+*PR created automatically by Jules for task [10916899192253995626](https://jules.google.com/task/10916899192253995626) started by @AlbiDR*
+
+---
+
 ## [2026-06-30] PR #978: fix(apk-ux): integrate tactile feedback into SettingsCard header
 **Commit**: `a1c3064c18394298eefa4771825df297fafc7b6d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/978)
