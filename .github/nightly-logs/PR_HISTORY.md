@@ -1,6 +1,29 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-01] PR #982: perf(opt): standardize variable naming and audit substrate hygiene
+**Commit**: `2bddbead77a1eac3a53572fdb853e2c59d628d20`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/982)
+
+### Description
+This PR performs Substrate Hygiene (Stage 4) by standardizing anemic variable naming for domain clarity and auditing orphaned database views.
+
+### Changes:
+- **useConnectionStatus.ts**: Renamed `val` to `isSyncingActive` in `setSyncing`.
+- **useBroadcastChannel.ts**: Renamed `msg` to `outgoingMessage` in `post`.
+- **main.ts**: Renamed `err` to `coreLoadError` in the `@core` dynamic import catch block.
+- **Audit**: Confirmed that `war_loyalty_view`, `war_performance_analytics_view`, `governance_report`, `view_pipeline_health`, `recruits_view`, and `war_activity_view` are unreferenced by application logic.
+- **Logging**: Updated `.github/nightly-logs/04-optimization-coverage.log`.
+
+### Verification:
+- Ran `pnpm test` for affected services; 14/14 tests passed.
+- Manual audit via `grep` confirmed view orphancy.
+
+---
+*PR created automatically by Jules for task [18107676908302430546](https://jules.google.com/task/18107676908302430546) started by @AlbiDR*
+
+---
+
 ## [2026-07-01] PR #981: chore(baseline): fold new migrations into master baseline
 **Commit**: `c48d190f8b52aed2d984cbaf9f30f147f7df0917`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/981)
