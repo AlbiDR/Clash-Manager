@@ -24,13 +24,14 @@ The foundational infrastructure gateway.
 
 ### Voyage Client (`VoyageClient.ts`)
 The transport orchestrator for the Clan Voyage subsystem.
-- **RPC Lifecycle**: Manages voyage activation (`initialize_voyage`), ledger updates (`scheduleVoyageEvent`), and event cancellation (`cancelScheduledVoyageEvent`).
+- **RPC Lifecycle**: Manages voyage activation (`initialize_voyage`), ledger updates (`scheduleVoyageEvent`), event cancellation (`cancelScheduledVoyageEvent`), and completion (`set_voyage_end`).
 - **Data Fetching**: Provides high-performance methods for retrieving voyage summaries and contribution ledgers from authoritative database views.
 
 ### Recruit Client (`RecruitClient.ts`)
 The transport orchestrator for Headhunter recruitment operations.
 - **Blacklist Management**: Interfaces with RPCs (`dismiss_recruits`, `undismiss_recruits`) to manage recruit rejection state.
 - **Realtime Sync**: Orchestrates Postgres Realtime subscriptions to ensure cross-device consistency for the recruitment blacklist.
+- **Scouting**: Provides diagnostic direct-query methods (`scanRecruitsDirect`) for pool auditing.
 
 ### Profile Client (`ProfileClient.ts`)
 The transport orchestrator for player card synchronization.
@@ -39,14 +40,15 @@ The transport orchestrator for player card synchronization.
 ### Maintenance Client (`MaintenanceClient.ts`)
 The transport orchestrator for system-level administrative tasks.
 - **Nightly Triggers**: Provides an interface for manually triggering the nightly maintenance and database janitor cycles.
+- **Push Registration**: Manages the registration of browser `PushSubscription` objects for server-side notification dispatch.
 
 ---
 
 ## Validation Boundaries (`DataSchemas.ts`)
 
 All inbound data MUST be validated against a Valibot schema at the client entry point to prevent state corruption.
-- **Schema Modules**: Decomposed by domain (e.g., `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`) and aggregated via the `DataSchemas.ts` barrel.
-- **Data Mappers**: Transformation logic for converting raw database rows into persistence-ignorant domain models. Enforces clinical normalization for telemetry (Voyage history, Heritage tenure).
+- **Schema Modules**: Decomposed by domain (e.g., `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `MaintenanceSchemas.ts`) and aggregated via the `DataSchemas.ts` barrel.
+- **Data Mappers**: Transformation logic for converting raw database rows into persistence-ignorant domain models. Enforces clinical normalization for telemetry (Voyage history, Heritage tenure) and provides fallback logic for missing metrics (e.g., `potential_score`).
 
 ---
 

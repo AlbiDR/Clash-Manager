@@ -23,13 +23,13 @@ The Core Layer (Layer 1) provides the essential infrastructure required for the 
 The authoritative transport layer for the Supabase binary stack.
 - **SupabaseClient.ts**: The infrastructure-level gateway for authentication and configuration.
 - **Specialized Clients**: Domain-specific orchestrators for RPC and Edge Function interactions:
-  - `VoyageClient.ts`: Manages Clan Voyage activations and ledger fetching.
-  - `RecruitClient.ts`: Manages headhunter recruitment and blacklist operations.
+  - `VoyageClient.ts`: Manages Clan Voyage activations, ledger updates, and event completion.
+  - `RecruitClient.ts`: Manages headhunter recruitment, blacklist operations, and diagnostic scouting.
   - `ProfileClient.ts`: Brokered access to player card synchronization.
-  - `MaintenanceClient.ts`: Triggers system-level janitor and maintenance cycles.
+  - `MaintenanceClient.ts`: Triggers system-level maintenance cycles and manages push notification registration.
 - **useApiState.ts**: Authoritative connectivity singleton for backend availability and handshake discovery.
-- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`) providing strict Valibot validation for inbound database payloads. Aggregated via the `DataSchemas.ts` barrel.
-- **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for complex telemetry, including Voyage history and Heritage tenure.
+- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`, `MaintenanceSchemas.ts`) providing strict Valibot validation for inbound database payloads. Aggregated via the `DataSchemas.ts` barrel.
+- **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for complex telemetry, including Voyage history, Heritage tenure, and `potential_score` fallback logic.
 
 ### Configuration (`/config`)
 Static system constants and environment orchestration.
