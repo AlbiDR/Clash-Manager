@@ -441,3 +441,12 @@ Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
 
 ### Logged Drift (Unresolved):
 - **None**.
+
+## [2026-07-03]
+### Reconciled:
+- **Substrate Sync**: Synchronized valibot version from @1.4.1 to @1.4.2 in .github/scripts/fetch_player_battles.ts to align with the monorepo catalog.
+- **Backend Hardening**: Explicitly pinned npm:valibot@1.4.2 in Backend/supabase/functions/_shared/muscle.ts and vault.ts to eliminate unversioned dependency risks and ensure clinical consistency with the PNPM catalog.
+- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6 and fully adhere to the catalog: protocol. Verified via monorepo test gate (1346 passed).
+
+### Logged Drift (Unresolved):
+- **None**.
