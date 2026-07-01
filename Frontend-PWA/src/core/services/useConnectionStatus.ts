@@ -75,8 +75,8 @@ export function useConnectionStatus() {
   const { apiStatus } = useApiState();
   const { isSlowConnection, effectiveType } = useNetworkInfo();
 
-  function setSyncing(val: boolean) {
-    isSyncing.value = val;
+  function setSyncing(isSyncingActive: boolean) {
+    isSyncing.value = isSyncingActive;
   }
 
   function setSuccess() {

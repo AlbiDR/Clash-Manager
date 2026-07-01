@@ -53,11 +53,11 @@ export function useBroadcastChannel(
   /**
    * Dispatches a message to all other active tabs.
    *
-   * @param msg - The typed message payload to broadcast.
+   * @param outgoingMessage - The typed message payload to broadcast.
    */
-  function post(msg: BroadcastMessage) {
+  function post(outgoingMessage: BroadcastMessage) {
     if (channel) {
-      channel.postMessage(msg);
+      channel.postMessage(outgoingMessage);
     }
   }
 
