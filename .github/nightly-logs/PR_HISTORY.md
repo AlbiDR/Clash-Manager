@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-01] PR #986: chore(deps): Stage 8 Dependency Audit - Tier 1 Updates and Watchlist Reconciler
+**Commit**: `5aa2831a656b5c4122ade7fe03f478e7a1c19f68`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/986)
+
+### Description
+This PR completes the Stage 8 Dependency Audit. It applies Tier 1 updates to `@supabase/supabase-js`, `supabase`, and `vue-tsc` in the monorepo catalog and synchronizes the lockfile. It also updates the major version watchlist with technical impact analysis for upcoming major migrations (Vite 8, TypeScript 6, pnpm 11). All tests passed with 1346 successes in the PWA suite.
+
+---
+*PR created automatically by Jules for task [15213258762570682645](https://jules.google.com/task/15213258762570682645) started by @AlbiDR*
+
+---
+
 ## [2026-07-01] PR #985: fix(version): reconcile version drift in valibot substrate
 **Commit**: `e3f134c92520be98fca6d00a8f7e09090addda75`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/985)
