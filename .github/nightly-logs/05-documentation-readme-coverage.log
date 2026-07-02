@@ -29,3 +29,9 @@
 2026-06-30 | Frontend-PWA/src/shared/composables/README.md | Reconciled voyageTypes.ts as domain SSOT for promoted subsystem
 2026-06-30 | Frontend-PWA/src/core/README.md | Reconciled Theme Engine substrate (AppShell, tokens, base, animations)
 2026-11-25 | Monorepo | Reconciled documentation drift for SW sub-handlers, MaintenanceSchemas, and Backend zero-trust boundaries.
+2026-07-03 | Frontend-PWA/src/core/theme/README.md | Created: Documented Theme Engine, Design Tokens, and App Shell hydration strategy
+2026-07-03 | Frontend-PWA/src/core/utils/README.md | Reconciled durationToSeconds and calculateMomentum utilities
+2026-07-03 | Frontend-PWA/src/app/README.md | Documented SW sub-handler extraction and swSchemas boundary hardening
+2026-07-03 | Backend/README.md | Reconciled Hexa-Stage ingestion and Safety Epoch Loop state
+2026-07-03 | Backend/supabase/functions/headhunter-scanner/README.md | Reconciled 5-stage discovery pipeline and Safety Epoch Loop documentation
+2026-07-03 | Frontend-PWA/src/features/laboratory/README.md | Reconciled Scoring Strategy patterns and Priority Queue optimization details

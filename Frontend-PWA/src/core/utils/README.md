@@ -34,7 +34,7 @@ Low-level IndexedDB boilerplate and resilience logic.
 
 ### Numerical Engines (`math.ts` & `predictionMath.ts`)
 Standardized sanitization, formatting, and projection logic.
-- **math.ts**: Authoritative SSOT for **standardized numeric formatting** (`formatNumber`), supporting locale-aware separators and custom options. Handles `null | undefined | NaN` cases (defaulting to '0') and utilizes a cached formatter for standard cases to reduce instantiation overhead. Handles basic numeric sanitization and trend momentum calculations.
+- **math.ts**: Authoritative SSOT for **standardized numeric formatting** (`formatNumber`), supporting locale-aware separators and custom options. Handles `null | undefined | NaN` cases (defaulting to '0') and utilizes a cached formatter for standard cases to reduce instantiation overhead. Handles basic numeric sanitization, trend momentum calculations (`calculateMomentum`), and time-unit conversion (`durationToSeconds`).
 - **predictionMath.ts**: Weighted-average engines for historical performance projection and crown forecasting.
 
 ### Formatting Kernels (`time.ts` & `text.ts`)
