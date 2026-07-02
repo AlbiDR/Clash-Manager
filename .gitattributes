@@ -3,7 +3,6 @@
 
 # Exclude developer portfolio scripts and assets from language statistics
 Frontend-PWA/scripts/* linguist-documentation
-Frontend-PWA/public/portfolio-stitch.html linguist-documentation
 
 # Exclude scratch asset generators from language statistics
 Frontend-PWA/scratch/* linguist-documentation
