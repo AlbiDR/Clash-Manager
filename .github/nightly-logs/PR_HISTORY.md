@@ -1,6 +1,24 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-02] PR #990: chore(deps): Stage 8 Dependency Audit - July 2026
+**Commit**: `d4280fa0a30337c67a35ed6add77822ce8808f7e`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/990)
+
+### Description
+This PR completes the Stage 8 Dependency Audit. 
+
+Key changes:
+- **Tier 1 Update**: `knip` bumped to `^6.24.0`.
+- **Tier 2 Watchlist**: Updated Section 2 of the audit log with latest major versions and codebase-specific impact notes for Vite 8 (Rolldown), TypeScript 6 (v7 bridge), and other core infrastructure.
+- **Verification**: Confirmed system stability via recursive test suite execution.
+- **Hygiene**: Cleaned up all temporary audit artifacts before submission.
+
+---
+*PR created automatically by Jules for task [13985794210967228392](https://jules.google.com/task/13985794210967228392) started by @AlbiDR*
+
+---
+
 ## [2026-07-01] PR #989: fix(apk-ux): modernize VoyageSetupForm actions with tactile feedback
 **Commit**: `68230b007b5f94b1ad5df43d4ac049ac7b7ba2b8`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/989)
