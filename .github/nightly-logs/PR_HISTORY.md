@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-02] PR #992: Standardize Variable Naming for Domain Clarity
+**Commit**: `bd8edd6a7d022725f08e3b006cd3a0248aba0456`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/992)
+
+### Description
+Standardized variable naming across core utilities and API transport layers to improve domain clarity and maintainability. Re-verified substrate hygiene for orphaned database views.
+
+---
+*PR created automatically by Jules for task [12517606571989146189](https://jules.google.com/task/12517606571989146189) started by @AlbiDR*
+
+---
+
 ## [2026-07-02] PR #991: docs(readme): reconcile monorepo architecture and theme drift
 **Commit**: `a32d0218a980288b4ddf092507e435d9679094eb`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/991)
