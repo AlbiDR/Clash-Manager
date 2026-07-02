@@ -19,6 +19,9 @@ const KNOWN_TOURNAMENT_TYPES = new Set([
     'invitatioTournament',
 ]);
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Runtime registry is volatile and will reset on cold start.
+// [DECISION LOG] Keeping registry in-memory for performance; types are rediscovered lazily.
 // Runtime registry seeded from KNOWN_TOURNAMENT_TYPES.
 // Unknown types are added on first encounter and kept for the lifetime of the
 // function instance (persists across warm-start re-invocations).
@@ -123,20 +126,24 @@ export async function runTournamentDiscovery(
                     (firstTournament, secondTournament) => secondTournament.capacity - firstTournament.capacity
                 );
 
-                const typeDistribution = tournamentList.reduce((acc, t) => {
-                    const t_type = t.type ?? 'unknown';
-                    acc[t_type] = (acc[t_type] ?? 0) + 1;
-                    return acc;
+                // [DECISION LOG] Calculating type distribution to monitor API behavior and discovery health.
+                // [THREAT:] Anemic variables ('acc', 't', 't_type') can lead to logic corruption during refactoring.
+                const typeDistribution = tournamentList.reduce((distributionAccumulator, tournamentCandidate) => {
+                    const candidateType = tournamentCandidate.type ?? 'unknown';
+                    distributionAccumulator[candidateType] = (distributionAccumulator[candidateType] ?? 0) + 1;
+                    return distributionAccumulator;
                 }, {} as Record<string, number>);
                 console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' list: ${tournamentList.length} tournaments, types=${JSON.stringify(typeDistribution)}`);
 
-                for (const seenType of Object.keys(typeDistribution)) {
-                    if (seenType !== 'unknown' && !runtimeTypeRegistry.has(seenType)) {
-                        runtimeTypeRegistry.add(seenType);
-                        console.warn(`[TOURNAMENT_DISCOVERY] NEW TOURNAMENT TYPE DISCOVERED: '${seenType}' — added to runtime registry (now ${runtimeTypeRegistry.size} known types)`);
+                for (const observedType of Object.keys(typeDistribution)) {
+                    if (observedType !== 'unknown' && !runtimeTypeRegistry.has(observedType)) {
+                        // [DECISION LOG] Auto-discovery of new tournament types ensures the system adapts to Royale API shifts.
+                        // [THREAT:] Unknown types may require specialized parsing logic; we track them via telemetry for clinical auditing.
+                        runtimeTypeRegistry.add(observedType);
+                        console.warn(`[TOURNAMENT_DISCOVERY] NEW TOURNAMENT TYPE DISCOVERED: '${observedType}' — added to runtime registry (now ${runtimeTypeRegistry.size} known types)`);
                         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
                             passed: true,
-                            details: `new_tournament_type_discovered: ${seenType}`,
+                            details: `new_tournament_type_discovered: ${observedType}`,
                             known_types: [...runtimeTypeRegistry]
                         });
                     }
