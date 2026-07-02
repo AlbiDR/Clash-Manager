@@ -35,17 +35,17 @@ if (typeof indexedDB === "undefined") {
 } else {
   try {
     // Some private browsing modes expose the symbol but fail on open
-    const req = indexedDB.open("CM_KERNEL_CHECK");
-    req.onerror = () => {
+    const idbProbeRequest = indexedDB.open("CM_KERNEL_CHECK");
+    idbProbeRequest.onerror = () => {
       useMemoryStore = true;
     };
-    req.onsuccess = () => {
-      if (req.result && typeof req.result.close === "function") {
-        req.result.close();
+    idbProbeRequest.onsuccess = () => {
+      if (idbProbeRequest.result && typeof idbProbeRequest.result.close === "function") {
+        idbProbeRequest.result.close();
       }
       indexedDB.deleteDatabase("CM_KERNEL_CHECK");
     };
-  } catch (e) {
+  } catch (probeError) {
     useMemoryStore = true;
   }
 }
@@ -68,15 +68,15 @@ export function deleteDatabasePromise(dbName: string): Promise<void> {
   return new Promise((resolve) => {
     try {
       if (typeof indexedDB === "undefined") return resolve();
-      const req = indexedDB.deleteDatabase(dbName);
-      req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
-      req.onblocked = () => {
+      const idbDeleteRequest = indexedDB.deleteDatabase(dbName);
+      idbDeleteRequest.onsuccess = () => resolve();
+      idbDeleteRequest.onerror = () => resolve();
+      idbDeleteRequest.onblocked = () => {
         // [DECISION LOG] Non-blocking timeout to prevent hanging the pipeline
         // during database migrations or concurrent access conflicts.
         setTimeout(resolve, 1500);
       };
-    } catch (e) {
+    } catch (idbDeleteError) {
       resolve();
     }
   });
@@ -111,28 +111,28 @@ export async function openDB(
       return reject(new Error("IDB Unsupported"));
     }
 
-    const request = indexedDB.open(dbName, version);
+    const idbOpenRequest = indexedDB.open(dbName, version);
 
-    request.onupgradeneeded = (e) => {
-      const db = (e.target as IDBOpenDBRequest).result;
+    idbOpenRequest.onupgradeneeded = (idbUpgradeEvent) => {
+      const db = (idbUpgradeEvent.target as IDBOpenDBRequest).result;
       onUpgrade(db);
     };
 
-    request.onsuccess = async () => {
-      const db = request.result;
+    idbOpenRequest.onsuccess = async () => {
+      const db = idbOpenRequest.result;
       if (onSuccess) {
         try {
           await onSuccess(db);
-        } catch (err) {
-          console.warn("[IDB-Kernel] onSuccess hook failed:", err);
+        } catch (idbSuccessHookError) {
+          console.warn("[IDB-Kernel] onSuccess hook failed:", idbSuccessHookError);
         }
       }
       resolve(db);
     };
 
-    request.onerror = (e) => {
+    idbOpenRequest.onerror = (idbOpenError) => {
       dbPromise = null;
-      reject(request.error || e);
+      reject(idbOpenRequest.error || idbOpenError);
     };
   });
 
@@ -180,12 +180,12 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readonly");
-          const store = transaction.objectStore(storeName);
-          const request = store.get(key);
-          request.onsuccess = () => resolve((request.result as T) || null);
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readonly");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbGetRequest = idbStore.get(key);
+          idbGetRequest.onsuccess = () => resolve((idbGetRequest.result as T) || null);
+          idbGetRequest.onerror = () => reject(idbGetRequest.error);
+        } catch (idbGetError) { reject(idbGetError); }
       });
     } catch {
       // [DECISION LOG] Runtime failures in IDB trigger an immediate degradation
@@ -209,12 +209,12 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readwrite");
-          const store = transaction.objectStore(storeName);
-          const request = store.put(value, key);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readwrite");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbSetRequest = idbStore.put(value, key);
+          idbSetRequest.onsuccess = () => resolve();
+          idbSetRequest.onerror = () => reject(idbSetRequest.error);
+        } catch (idbSetError) { reject(idbSetError); }
       });
     } catch {
       useMemoryStore = true;
@@ -235,12 +235,12 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readwrite");
-          const store = transaction.objectStore(storeName);
-          const request = store.delete(key);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readwrite");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbDelRequest = idbStore.delete(key);
+          idbDelRequest.onsuccess = () => resolve();
+          idbDelRequest.onerror = () => reject(idbDelRequest.error);
+        } catch (idbDelError) { reject(idbDelError); }
       });
     } catch {
       useMemoryStore = true;
@@ -260,12 +260,12 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readwrite");
-          const store = transaction.objectStore(storeName);
-          const request = store.clear();
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readwrite");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbClearRequest = idbStore.clear();
+          idbClearRequest.onsuccess = () => resolve();
+          idbClearRequest.onerror = () => reject(idbClearRequest.error);
+        } catch (idbClearError) { reject(idbClearError); }
       });
     } catch {
       useMemoryStore = true;
