@@ -83,11 +83,11 @@ export function getApiUrl(): string {
 export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
   try {
     const supabase = createSupabaseClient();
-    const { data, error } = await supabase.rpc('ping');
-    if (error) return { status: 'error', message: error.message };
+    const { data: pingRpcResponse, error: pingRpcError } = await supabase.rpc('ping');
+    if (pingRpcError) return { status: 'error', message: pingRpcError.message };
     return { status: 'success', message: 'Pong' };
-  } catch (err) {
-    return { status: 'error', message: String(err) };
+  } catch (pingHandshakeError) {
+    return { status: 'error', message: String(pingHandshakeError) };
   }
 }
 
@@ -138,8 +138,8 @@ export async function fetchRemote(options?: {
   });
   const blacklistData = v.parse(v.array(BlacklistRowSchema), blacklistResponse.data || []);
   const blacklistTags = blacklistData
-    .map((row) => {
-      const tag = row.player_tag;
+    .map((blacklistRow) => {
+      const tag = blacklistRow.player_tag;
       return tag ? (tag.startsWith("#") ? tag : `#${tag}`) : "";
     })
     .filter(Boolean);
