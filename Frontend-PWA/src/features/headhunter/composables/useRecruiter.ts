@@ -20,8 +20,21 @@ import { useLeaderboardScraper } from "./useLeaderboardScraper";
  * COMPOSABLE: useRecruiter
  *
  * @remarks
- * Specialized logic for the Recruiter view (Headhunter). Orchestrates Manual Scouting 
- * and background synchronization with the Supabase backend.
+ * Specialized orchestrator for the Headhunter (Recruiter) feature (Layer 3).
+ * It unifies global data hydration, local optimistic filtering, and multi-tier
+ * automation (Blitz, Leaderboard Scraping) into a single reactive interface.
+ *
+ * Satisfies ADR Section III: Validation Boundaries and ADR Section IV: Resilience.
+ *
+ * **Reactive State:**
+ * - `recruits`: A filtered, sorted, and windowed (top 50) view of the recruit pool.
+ * - `isRefreshing`: Boolean indicating if the authoritative store is currently fetching.
+ * - Inherits reactive search, sort, and selection state from `useConsoleController`.
+ *
+ * @returns
+ * - `...controller`: Standardized console interface (search, sort, filter, pagination).
+ * - `isRefreshing`: Ref indicating background data synchronization status.
+ * - `dismissBulk`: Action to trigger batch dismissal of the current selection.
  */
 export function useRecruiter() {
   const clashDataStore = useClashDataStore();
@@ -31,24 +44,46 @@ export function useRecruiter() {
   const { undo, success, info } = useToast();
   const { isOnline } = useConnectionStatus();
 
-  // PRE-FILTER: Exclude Tombstones and apply 50-recruit "Active Window"
+  /**
+   * RECRUIT POOL FILTER
+   * [DECISION LOG] Applying a 50-recruit "Active Window" to ensure UI performance
+   * while prioritizing the highest-potential candidates.
+   */
   const recruits = computed(() => {
-  // Filter active recruits (exclude tombstones)
-  const filtered = (data.value?.hh || []).filter(
-    (recruit) => !blacklist.tombstones.value.has(recruit.id),
-  );
-  // Sort descending by potentialScore to prioritize highest scores
-  const sorted = filtered.sort((a, b) => (b.potentialScore || 0) - (a.potentialScore || 0));
-  // Return top 50 active recruits
-  return sorted.slice(0, 50);
-});
+    // [THREAT:] Unvalidated nullish data access could trigger runtime crashes.
+    const filtered = (data.value?.hh || []).filter(
+      (recruit) => !blacklist.tombstones.value.has(recruit.id),
+    );
+    // Sort descending by potentialScore to prioritize highest scores
+    const sorted = filtered.sort((a, b) => (b.potentialScore || 0) - (a.potentialScore || 0));
+    // Return top 50 active recruits
+    return sorted.slice(0, 50);
+  });
 
   // [REFACTOR] ARCHITECTURAL ALIGNMENT: Decouple Headhunter-specific selection
   // and blitz orchestration from the generic console controller.
   const selectionStore = useSelectionStore();
+
+  /**
+   * BLITZ ENGINE
+   * [DECISION LOG] Orchestrates automated batch deep-linking via a dedicated
+   * core service to prevent feature-logic bloat in the UI layer.
+   */
   const blitz = useBlitzMode(selectionStore);
+
+  /**
+   * SCRAPER ENGINE
+   * [DECISION LOG] Injects automated scraping capabilities into the Recruiter
+   * view, delegating Blitz-aware results to the shared orchestrator.
+   */
   const scraper = useLeaderboardScraper(selectionStore, blitz.handleBlitz);
 
+  /**
+   * CONSOLE CONTROLLER CONFIGURATION
+   * [DECISION LOG] We delegate display logic (sorting, filtering, search) to
+   * the generic useConsoleController while parameterizing it with Headhunter-specific
+   * actions (Blitz, Dismissal, Scraping) via layoutEvents.
+   */
   const controller = useConsoleController({
     data: recruits,
     filterFn: (recruit: Recruit) => [recruit.n, recruit.id],
@@ -73,6 +108,13 @@ export function useRecruiter() {
     }))
   });
 
+  /**
+   * ACTION: executeDismiss
+   * Orchestrates the multi-stage dismissal of recruits, coordinating in-memory
+   * tombstones, network persistence, and undo capabilities.
+   *
+   * @param recruitsToRemove - The array of recruit objects to dismiss.
+   */
   function executeDismiss(recruitsToRemove: Recruit[]) {
     if (!isOnline.value) {
       info("Connection required to dismiss recruits.");
@@ -80,6 +122,7 @@ export function useRecruiter() {
     }
 
     const targetRecruitIds = recruitsToRemove.map(recruit => recruit.id);
+    // [GUARD] Payload transformation: Mapping domain model to RPC input schema.
     const dismissalPayload = recruitsToRemove.map(recruit => ({
       id: recruit.id,
       name: recruit.n,
@@ -88,12 +131,16 @@ export function useRecruiter() {
     }));
 
     const { undismissRecruitsAction } = useHeadhunter();
+
+    // 1. [OPTIMISTIC] Inject in-memory tombstones to hide items immediately.
     blacklist.hide(targetRecruitIds);
 
+    // 2. [PERSISTENCE] Dispatch network request. Failure triggers rollback.
     dismissRecruitsAction(dismissalPayload).catch(() => {
       blacklist.restore(targetRecruitIds);
     });
 
+    // 3. [RESILIENCE] Provide undo mechanism for user error recovery.
     undo(`Dismissed ${targetRecruitIds.length} recruits`, () => {
       blacklist.restore(targetRecruitIds);
       undismissRecruitsAction(targetRecruitIds, recruitsToRemove);
@@ -101,6 +148,10 @@ export function useRecruiter() {
     });
   }
 
+  /**
+   * ACTION: dismissBulk
+   * Triggers the dismissal flow for all currently selected items.
+   */
   function dismissBulk() {
     if (controller.selectedIds.value.length === 0) {
       blitz.clearSelection();
@@ -109,6 +160,7 @@ export function useRecruiter() {
     const targetRecruitIds = [...controller.selectedIds.value];
     const recruitsToRemove = recruits.value.filter(recruit => targetRecruitIds.includes(recruit.id));
     
+    // Clear selection state before dismissal to prevent UI desync.
     blitz.clearSelection();
     executeDismiss(recruitsToRemove);
   }
