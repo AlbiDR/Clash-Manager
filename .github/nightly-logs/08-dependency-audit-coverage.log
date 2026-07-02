@@ -124,13 +124,14 @@
 | vue-tsc | 3.3.5 | 3.3.6 | 2026-07-01 | PASS |
 | @supabase/supabase-js | ^2.108.2 | ^2.110.0 | 2026-07-01 | PASS |
 | supabase | ^2.108.0 | ^2.109.0 | 2026-07-01 | PASS |
+| knip | ^6.23.0 | ^6.24.0 | 2026-07-02 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
-| vite | ^7.3.5 | 8.1.2 | 2026-06-18 | [Updated] Breaking: Single Rust-based bundler (Rolldown). Renames `build.rollupOptions` to `build.rolldownOptions`. Integrated Lightning CSS/Oxc. |
-| typescript | ~5.9.3 | 6.0.3 | 2026-06-18 | [Updated] Breaking: `strict: true` and `types: []` by default. `rootDir` defaults to tsconfig dir. Transition bridge to Go-based v7. |
-| @types/node | ^24.13.2 | 26.0.1 | 2026-06-18 | [Updated] Breaking: Stable Temporal API. Removed legacy internal stream modules. |
+| vite | ^7.3.5 | 8.1.3 | 2026-06-18 | [Updated] Breaking: Single Rust-based bundler (Rolldown). Renames `build.rollupOptions` to `build.rolldownOptions`. CJS interop changes. |
+| typescript | ~5.9.3 | 6.0.3 | 2026-06-18 | [Updated] Breaking: `strict: true` and `types: []` by default. `rootDir` defaults to tsconfig dir. Removes `--outFile`. Bridge to v7. |
+| @types/node | ^24.13.2 | 26.1.0 | 2026-06-18 | [Updated] Breaking: Stable Temporal API. Removed legacy internal stream modules. Drops Node <22 support. |
 | pnpm | >=10.0.0 | 11.9.0 | 2026-06-18 | [Updated] Breaking: Pure ESM (Node 22+). Most settings moved to `pnpm-workspace.yaml`. `allowBuilds` for scripts. |
 | vue-router | ^4.6.4 | 5.1.0 | 2026-06-18 | [Updated] Breaking: Merges `unplugin-vue-router`. IIFE build affected by Devtools v8 upgrade. |
 | jsdom | ^24.1.3 | 29.1.1 | 2026-06-18 | [Updated] Breaking: Node 22.13.0+ required. Overhauled CSSOM with Rust-backed implementation. |
