@@ -52,6 +52,7 @@ The scanner operates as a sequential, atomic pipeline to maintain data integrity
 - **Key Farm (`ROYALE_API_KEYS`)**: Utilizes the concurrent key farm to bypass Supercell API rate limits during high-volume tournament scans.
 - **Vault Sync**: Dynamically retrieves authoritative secrets from the Supabase Vault during boot to ensure runtime security.
 - **Context Boundary (`get_headhunter_context`)**: Relies on a secured database RPC to retrieve dynamic exclusion sets (clanned players, blacklisted tags) and performance thresholds.
+- **Safety Epoch Loop**: Implements the Safety Epoch Loop via `substrate.headhunter_epoch_state` to prevent redundant Top-50 leaderboard scans and ensure optimal discovery rotation.
 
 ## Operational Standards
 - **Concurrency Control**: Implements batch processing with concurrency guards to balance ingestion speed against backend pressure.
