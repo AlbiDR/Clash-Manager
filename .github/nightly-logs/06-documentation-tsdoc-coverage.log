@@ -106,3 +106,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-06-30 | Frontend-PWA/src/core/api/DataMappers.ts | Documented interface contracts and added mandatory decision logs for normalization.
 2026-07-01 | Frontend-PWA/src/core/api/AppSchemas.ts | Documented authoritative validation boundary for the full application state with TSDoc and ADR Section III mappings.
 2026-07-01 | Frontend-PWA/src/core/api/OfflineSchemas.ts | Documented offline queue schemas with TSDoc, ADR mappings, and mandatory threat/decision logs.
+2026-07-02 | Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts | Documented Layer 3 orchestrator and added mandatory threat/decision logs for Blitz and Scraper engines.
