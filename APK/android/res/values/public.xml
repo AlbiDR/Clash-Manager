@@ -925,7 +925,6 @@
     <public type="string" name="accessibility_service_description" id="0x7f0f001b" />
     <public type="string" name="androidx_startup" id="0x7f0f001c" />
     <public type="string" name="appName" id="0x7f0f001d" />
-    <public type="string" name="app_name" id="0x7f0f001e" />
     <public type="string" name="assetStatements" id="0x7f0f001f" />
     <public type="string" name="copy_toast_msg" id="0x7f0f0027" />
     <public type="string" name="fallbackType" id="0x7f0f0028" />

@@ -21,7 +21,7 @@ COUNT=$(( ( RANDOM % 50 ) + 1 ))
 for view in "${VIEWS[@]}"; do
   for theme in "${THEMES[@]}"; do
     echo "Capturing $view ($theme) with count $COUNT..."
-    shot-scraper shot "http://localhost:5173/Clash-Manager/portfolio-stitch.html?theme=$theme&view=$view&count=$COUNT" \
+    shot-scraper shot "http://localhost:5173/Clash-Manager/scripts/portfolio-stitch.html?theme=$theme&view=$view&count=$COUNT" \
       --width 1200 --height 4000 \
       --selector "#wrapper-$view" \
       --retina \
