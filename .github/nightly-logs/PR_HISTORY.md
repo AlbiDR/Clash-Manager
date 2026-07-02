@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-02] PR #991: docs(readme): reconcile monorepo architecture and theme drift
+**Commit**: `a32d0218a980288b4ddf092507e435d9679094eb`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/991)
+
+### Description
+This PR reconciles documentation drift across the monorepo, ensuring absolute synchronization between Substrate Reality and Architectural Intent. Key updates include the creation of a dedicated Theme Engine guide, documentation of recent Service Worker and Laboratory refactors, and alignment of Backend ingestion pipeline descriptions. Verified via full monorepo test gate.
+
+---
+*PR created automatically by Jules for task [6127857028415281644](https://jules.google.com/task/6127857028415281644) started by @AlbiDR*
+
+---
+
 ## [2026-07-02] PR #990: chore(deps): Stage 8 Dependency Audit - July 2026
 **Commit**: `d4280fa0a30337c67a35ed6add77822ce8808f7e`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/990)
