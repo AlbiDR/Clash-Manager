@@ -18,34 +18,21 @@ The Ingestion Gatekeeper (Layer 5 Control) orchestrates the primary synchronizat
     - **Axiom**: Acts as the primary entry point for administrative data synchronization, triggered by the PWA or internal automated cycles.
 
 ## The Clinical Hexa-Stage Protocol
-Ingestion is performed as a sequential pipeline, decomposed into six logical stages to maintain structural purity and facilitate granular audit logging.
+Ingestion is performed as a sequential pipeline, decomposed into six logical stages to maintain structural purity and facilitate granular audit logging. To optimize execution, these conceptual stages are orchestrated into three primary execution blocks in the `pipeline.ts` kernel.
 
-### S1: Discovery
+### S1: Discovery (Execution Block 1)
 **Objective**: identify potential recruits.
 - Harvests fresh candidates from high-fidelity tournament anchors.
 - Pre-populates the discovery buffer before the primary clan sync begins.
 
-### S2: Clan Profile
-**Objective**: synchronize clan identity.
-- Atomic synchronization of clan-level telemetry (trophies, location, requirements).
-- Updates the authoritative `drivers.clans` SSOT.
+### S2 - S5: Clan Synchronization (Execution Block 2)
+**Objective**: synchronize clan identity, residents, and competitive history.
+- **S2: Clan Profile**: Atomic synchronization of clan-level telemetry (trophies, location, requirements). Updates the authoritative `drivers.clans` SSOT.
+- **S3: Roster Sync**: Full-pool synchronization of active member telemetry. Resolves member transitions (joins/leaves) and updates the `drivers.members` substrate.
+- **S4: River Race**: Extraction of current River Race standings and task completion metrics. Updates the `drivers.war_activity` daily logs.
+- **S5: War History**: Ingests the clan's River Race log (most recent 12 war weeks) via `/clans/{tag}/riverracelog?limit=12`. Archives per-week clan-level standings (rank, fame, clan points) in `drivers.war_history`.
 
-### S3: Roster Sync
-**Objective**: synchronize resident telemetry.
-- Full-pool synchronization of active member telemetry.
-- Resolves member transitions (joins/leaves) and updates the `drivers.members` substrate.
-
-### S4: River Race
-**Objective**: synchronize war standings.
-- Extraction of current River Race standings and task completion metrics.
-- Updates the `drivers.war_activity` daily logs.
-
-### S5: War History
-**Objective**: synchronize career ledgers.
-- Ingests the clan's River Race log (most recent 12 war weeks) via `/clans/{tag}/riverracelog?limit=12`.
-- Archives per-week clan-level standings (rank, fame, clan points) in `drivers.war_history`.
-
-### S6: Deep Depth
+### S6: Deep Depth (Execution Block 3)
 **Objective**: competitive scoring enrichment.
 - Extracts a rolling battle-log window (capped by the Royale API at ~25 most-recent battles) for every resident.
 - Provides the high-precision data required for PeS/RPeS performance scoring in `drivers.player_battles`.

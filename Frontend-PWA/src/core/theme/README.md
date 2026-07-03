@@ -29,10 +29,12 @@ Injects the global CSS reset and static design tokens.
 - **CSS Reset**: Normalizes browser styles and enforces native-feeling gesture overrides (touch-action, overscroll-behavior).
 - **Static Tokens**: Centralizes non-color design tokens including Typography scales (`--sys-typescale-*`), Spacing (`--sys-space-*`), Shapes (`--sys-shape-*`), and Z-Index layers.
 
-### App Shell Architect (`AppShell.ts`)
-The structural architect responsible for the "Zero-Flicker" hydration strategy.
-- **Critical CSS**: Generates `getAppShellStyles()`, a self-contained CSS string containing critical layout styles and theme tokens for immediate injection into the `<head>`.
-- **HTML Substrate**: Generates `getAppShellHtml()`, the hardcoded HTML structure (including skeletons) that mirrors the initial Vue render. This ensures 100/100 Lighthouse performance and eliminates layout shifts during hydration.
+### App Shell Architect (`AppShell.ts` & `HtmlEntry.ts`)
+The structural orchestrators responsible for the "Zero-Flicker" hydration strategy and technical purity.
+- **HtmlEntry.ts**: The **TypeScript Source of Truth** for the application's entry point. It replaces the physical `index.html` file, allowing the system to dynamically inject versioning, metadata, and critical shell artifacts during the build process.
+- **AppShell.ts**: The structural architect. Generates the self-contained CSS and HTML substrate (including skeletons) required for sub-second visual stability.
+- **Critical CSS**: Generates `getAppShellStyles()`, which includes critical layout styles and theme tokens for immediate injection into the `<head>`.
+- **HTML Substrate**: Generates `getAppShellHtml()`, providing the hardcoded DOM structure that mirrors the initial Vue render to eliminate hydration-related layout shifts.
 
 ### Skeletons & Animations (`skeletons.ts` & `animations.ts`)
 Provides the geometric and temporal foundations for the loading state.

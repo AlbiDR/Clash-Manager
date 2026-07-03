@@ -67,7 +67,8 @@ Infrastructure singletons and Layer 1 state orchestrators.
 
 ### Theme Engine (`/theme`)
 The visual DNA of the application. Orchestrates a clinical, CSS-variable-driven design system with zero-flicker hydration.
-- **AppShell.ts**: The structural architect. Orchestrates the generation of critical CSS, including animated skeletons and static theme tokens, to ensure sub-second visual stability during initial hydration.
+- **HtmlEntry.ts**: The **TypeScript Source of Truth** for the application's entry point. It replaces the physical `index.html` file to achieve 100% technical purity and allows for dynamic metadata injection.
+- **AppShell.ts**: The structural architect. Orchestrates the generation of critical CSS and static HTML skeletons to ensure sub-second visual stability during initial hydration.
 - **tokens.ts**: The Design Token SSOT. Defines the foundational hex/RGB design tokens and generates standardized CSS variables (`--sys-color-*`).
 - **base.ts**: The foundational substrate. Injects CSS resets, typography scales, and native gesture overrides.
 - **animations.ts**: Centralizes high-performance CSS keyframes for shell-wide interactions (skeletons, transitions).
