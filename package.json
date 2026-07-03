@@ -14,6 +14,7 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "audit:version": "tsx .github/scripts/validate_project.ts",
+    "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json"
   },
