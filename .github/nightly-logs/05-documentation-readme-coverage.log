@@ -35,3 +35,7 @@
 2026-07-03 | Backend/README.md | Reconciled Hexa-Stage ingestion and Safety Epoch Loop state
 2026-07-03 | Backend/supabase/functions/headhunter-scanner/README.md | Reconciled 5-stage discovery pipeline and Safety Epoch Loop documentation
 2026-07-03 | Frontend-PWA/src/features/laboratory/README.md | Reconciled Scoring Strategy patterns and Priority Queue optimization details
+2026-07-04 | Frontend-PWA/src/core/api/README.md | Reconciled DataSchemas barrel (Base, Profile, App, Offline)
+2026-07-04 | Frontend-PWA/src/core/theme/README.md | Documented HtmlEntry.ts as TypeScript SSOT for index.html
+2026-07-04 | Frontend-PWA/src/core/README.md | Reconciled HtmlEntry.ts and verified Theme Engine substrate
+2026-07-04 | Backend/supabase/functions/ingest-royale-data/README.md | Reconciled Hexa-Stage conceptual mapping to pipeline execution blocks
