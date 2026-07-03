@@ -65,8 +65,8 @@ export async function handlePushBadge(pushNotificationPayload: PushPayload): Pro
         body:
           body ||
           `You have ${badgeCount} recruit${badgeCount === 1 ? "" : "s"} above your threshold.`,
-        icon: "pwa-192.png",
-        badge: "pwa-64.png",
+        icon: "assets/icons/icon-192.png",
+        badge: "assets/icons/icon-64.png",
         tag: NOTIFICATION_TAG_RECRUIT,
         renotify: false,
         silent: false,
@@ -128,8 +128,8 @@ export async function handleAndroidBadge(targetBadgeCount: number): Promise<void
 
       await self.registration.showNotification("New Recruits Available", {
         body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
-        icon: "pwa-192.png",
-        badge: "pwa-64.png",
+        icon: "assets/icons/icon-192.png",
+        badge: "assets/icons/icon-64.png",
         tag: NOTIFICATION_TAG_RECRUIT,
         renotify: false,
         silent: false,
@@ -234,8 +234,8 @@ export async function handleBackgroundSync(): Promise<void> {
 
       await self.registration.showNotification("New Recruits Available", {
         body: `You have ${highPotentialCount} recruit${highPotentialCount === 1 ? "" : "s"} above your threshold.`,
-        icon: "pwa-192.png",
-        badge: "pwa-64.png",
+        icon: "assets/icons/icon-192.png",
+        badge: "assets/icons/icon-64.png",
         tag: NOTIFICATION_TAG_RECRUIT,
         renotify: false,
         silent: false,

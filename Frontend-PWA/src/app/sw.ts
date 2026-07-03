@@ -163,8 +163,8 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
   if (swMessagePayload.type === "SHOW_NOTIFICATION") {
     const { title, options } = swMessagePayload;
     await self.registration.showNotification(title, {
-      icon: "pwa-192.png",
-      badge: "pwa-64.png",
+      icon: "assets/icons/icon-192.png",
+      badge: "assets/icons/icon-64.png",
       tag: "clash-manager-alert",
       ...options,
     });
@@ -196,8 +196,8 @@ self.addEventListener("push", (event: PushEvent) => {
       } else if (pushEventPayload.title) {
         await self.registration.showNotification(pushEventPayload.title, {
           body: pushEventPayload.body || "",
-          icon: "pwa-192.png",
-          badge: "pwa-64.png",
+          icon: "assets/icons/icon-192.png",
+          badge: "assets/icons/icon-64.png",
           tag: pushEventPayload.tag || "push-alert",
           data: pushEventPayload.data || {},
         } as NotificationOptions);
