@@ -39,8 +39,8 @@ declare const self: ServiceWorkerGlobalScope;
  * - Shows a browser notification via `self.registration.showNotification`.
  * - Updates the app badge via `navigator.setAppBadge`.
  */
-export async function handlePushBadge(payload: PushPayload): Promise<void> {
-  const { badgeCount, title, body } = payload;
+export async function handlePushBadge(pushNotificationPayload: PushPayload): Promise<void> {
+  const { badgeCount, title, body } = pushNotificationPayload;
 
   const storageConnection = await openDB();
 
@@ -52,6 +52,13 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
   const notificationsAreEnabled = v.safeParse(v.boolean(), rawEnabled).success ? (rawEnabled as boolean) : true;
 
   if (badgeCount && badgeCount > 0 && notificationsAreEnabled) {
+    const notificationMetadata = {
+      type: "badge",
+      count: badgeCount,
+      shortcutId: NOTIFICATION_SHORTCUT_ID,
+      url: "/#/headhunter",
+    };
+
     await self.registration.showNotification(
       title || "New Recruits Available",
       {
@@ -63,12 +70,7 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
         tag: NOTIFICATION_TAG_RECRUIT,
         renotify: false,
         silent: false,
-        data: {
-          type: "badge",
-          count: badgeCount,
-          shortcutId: NOTIFICATION_SHORTCUT_ID,
-          url: "/#/headhunter",
-        },
+        data: notificationMetadata,
       } as NotificationOptions,
     );
   }
@@ -88,15 +90,15 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
 /**
  * Handle Android-specific badge notifications.
  *
- * @param count - The number of recruits above threshold.
+ * @param targetBadgeCount - The number of recruits above threshold.
  * @returns A promise that resolves when the badge/notification is updated.
  *
  * @sideeffects
  * - Shows or clears a browser notification via `self.registration.showNotification`.
  * - Updates the app badge via `navigator.setAppBadge`.
  */
-export async function handleAndroidBadge(count: number): Promise<void> {
-  const countAboveThreshold = Math.max(0, count);
+export async function handleAndroidBadge(targetBadgeCount: number): Promise<void> {
+  const countAboveThreshold = Math.max(0, targetBadgeCount);
 
   try {
     const storageConnection = await openDB();
@@ -117,6 +119,13 @@ export async function handleAndroidBadge(count: number): Promise<void> {
 
     // Show/update notification
     if (countAboveThreshold > 0 && notificationsAreEnabled) {
+      const notificationMetadata = {
+        type: "badge",
+        count: countAboveThreshold,
+        shortcutId: NOTIFICATION_SHORTCUT_ID,
+        url: "/#/headhunter",
+      };
+
       await self.registration.showNotification("New Recruits Available", {
         body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
         icon: "pwa-192.png",
@@ -125,12 +134,7 @@ export async function handleAndroidBadge(count: number): Promise<void> {
         renotify: false,
         silent: false,
         requireInteraction: false,
-        data: {
-          type: "badge",
-          count: countAboveThreshold,
-          shortcutId: NOTIFICATION_SHORTCUT_ID,
-          url: "/#/headhunter",
-        },
+        data: notificationMetadata,
       } as NotificationOptions);
     } else {
       const activeNotifications = await self.registration.getNotifications({
@@ -220,6 +224,14 @@ export async function handleBackgroundSync(): Promise<void> {
         await self.navigator.setAppBadge(highPotentialCount);
       }
 
+      const notificationMetadata = {
+        type: "badge",
+        count: highPotentialCount,
+        shortcutId: NOTIFICATION_SHORTCUT_ID,
+        url: "/#/headhunter",
+        timestamp: Date.now(),
+      };
+
       await self.registration.showNotification("New Recruits Available", {
         body: `You have ${highPotentialCount} recruit${highPotentialCount === 1 ? "" : "s"} above your threshold.`,
         icon: "pwa-192.png",
@@ -228,13 +240,7 @@ export async function handleBackgroundSync(): Promise<void> {
         renotify: false,
         silent: false,
         requireInteraction: false,
-        data: {
-          type: "badge",
-          count: highPotentialCount,
-          shortcutId: NOTIFICATION_SHORTCUT_ID,
-          url: "/#/headhunter",
-          timestamp: Date.now(),
-        },
+        data: notificationMetadata,
       } as NotificationOptions);
     } else {
       const activeNotifications = await self.registration.getNotifications({

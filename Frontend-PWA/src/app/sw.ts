@@ -140,14 +140,14 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", async (event: ExtendableMessageEvent) => {
   if (!event.data) return;
 
-  const data = event.data as MessageData;
+  const swMessagePayload = event.data as MessageData;
 
   // NON-ANDROID: Standard Badge API (Windows, macOS, iOS Safari)
-  if (data.type === "SET_BADGE") {
-    const count = data.count;
+  if (swMessagePayload.type === "SET_BADGE") {
+    const targetBadgeCount = swMessagePayload.count;
     try {
       if (self.navigator.setAppBadge) {
-        if (count > 0) await self.navigator.setAppBadge(count);
+        if (targetBadgeCount > 0) await self.navigator.setAppBadge(targetBadgeCount);
         else await self.navigator.clearAppBadge();
       }
     } catch (badgeUpdateError: unknown) {
@@ -156,12 +156,12 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
   }
 
   // ANDROID: Badge via persistent notification
-  if (data.type === "BADGE_NOTIFICATION_ANDROID") {
-    await handleAndroidBadge(data.count ?? 0);
+  if (swMessagePayload.type === "BADGE_NOTIFICATION_ANDROID") {
+    await handleAndroidBadge(swMessagePayload.count ?? 0);
   }
 
-  if (data.type === "SHOW_NOTIFICATION") {
-    const { title, options } = data;
+  if (swMessagePayload.type === "SHOW_NOTIFICATION") {
+    const { title, options } = swMessagePayload;
     await self.registration.showNotification(title, {
       icon: "pwa-192.png",
       badge: "pwa-64.png",
@@ -171,7 +171,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
   }
 
   // FORCE UPDATE: Manual skipWaiting via message
-  if (data.type === ("SKIP_WAITING" as string)) {
+  if (swMessagePayload.type === ("SKIP_WAITING" as string)) {
     self.skipWaiting();
   }
 });
@@ -182,7 +182,7 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
 self.addEventListener("push", (event: PushEvent) => {
   if (!event.data) return;
 
-  const payload = (event.data.json?.() ?? {}) as PushPayload;
+  const pushEventPayload = (event.data.json?.() ?? {}) as PushPayload;
 
   event.waitUntil(
     (async (): Promise<void> => {
@@ -191,15 +191,15 @@ self.addEventListener("push", (event: PushEvent) => {
         (await getValue(storageConnection, "cm_notifications_enabled")) !== false;
       if (!notificationsAreEnabled) return;
 
-      if (payload.badgeCount !== undefined) {
-        await handlePushBadge(payload);
-      } else if (payload.title) {
-        await self.registration.showNotification(payload.title, {
-          body: payload.body || "",
+      if (pushEventPayload.badgeCount !== undefined) {
+        await handlePushBadge(pushEventPayload);
+      } else if (pushEventPayload.title) {
+        await self.registration.showNotification(pushEventPayload.title, {
+          body: pushEventPayload.body || "",
           icon: "pwa-192.png",
           badge: "pwa-64.png",
-          tag: payload.tag || "push-alert",
-          data: payload.data || {},
+          tag: pushEventPayload.tag || "push-alert",
+          data: pushEventPayload.data || {},
         } as NotificationOptions);
       }
     })(),
