@@ -1,3 +1,13 @@
+## [2026-07-04]
+### Reconciled:
+- **Supabase Functions**: Synchronized all 'npm:@supabase/supabase-js@2' imports in Edge Functions to 'npm:@supabase/supabase-js@2.110.0' to align with the monorepo catalog ground truth (Rule 2[A]).
+- **Deno Scripts**: Updated 'https://esm.sh/@supabase/supabase-js@2' to 'https://esm.sh/@supabase/supabase-js@2.110.0' in '.github/scripts/fetch_player_battles.ts'.
+- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6. Verified PNPM 'catalog:' protocol adherence and substrate version consistency via 'audit:version'.
+- **Integrity Proof**: Verified system integrity via full monorepo test gate (1355 passed) using Node 22 bypass flags.
+
+### Logged Drift (Unresolved):
+- **None**.
+
 ## [2026-07-03]
 ### Reconciled:
 - **Supabase Functions**: Synchronized all pinned 'npm:valibot@1.4.1' imports in Edge Functions to 'npm:valibot@1.4.2' to align with the monorepo catalog ground truth (Rule 2[A]).
