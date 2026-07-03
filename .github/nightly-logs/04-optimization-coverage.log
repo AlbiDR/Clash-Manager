@@ -258,3 +258,7 @@ Optimization (Substrate Hygiene - Stage 4) 2026-06-25: Standardized variable nam
 2026-07-02 | Frontend-PWA/src/core/api/SupabaseClient.ts | Standardized variable naming (data, error, err, row) in ping and fetchRemote for domain clarity.
 2026-07-02 | Frontend-PWA/src/shared/composables/useScoreSelector.ts | Standardized 'val' to 'thresholdValue' and 'thresholdMode' for domain clarity.
 2026-07-02 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-07-04 | Frontend-PWA/src/app/sw.ts | Standardized anemic variable naming (data -> swMessagePayload, count -> targetBadgeCount, payload -> pushEventPayload).
+2026-07-04 | Frontend-PWA/src/app/sw/swSync.ts | Standardized anemic variable naming (payload -> pushNotificationPayload, count -> targetBadgeCount) and extracted notificationMetadata.
+2026-07-04 | Frontend-PWA/src/app/sw/sw-tests/swSchemas.spec.ts | Standardized generic data variables to mockRowCandidate and mockResponsePayload.
+2026-07-04 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
