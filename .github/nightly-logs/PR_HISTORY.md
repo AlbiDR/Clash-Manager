@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-03] PR #1000: refactor(opt): standardize anemic variables in service worker substrate
+**Commit**: `b9c118f6b877c88772e14eda463ba4cd608a2032`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1000)
+
+### Description
+### Reasoning:
+**[Bottleneck Identified]:** Presence of "anemic" variable pathogens (generic names like `data`, `payload`, `count`) in the Service Worker and synchronization substrate, reducing domain clarity.
+**[Refactoring Hypothesis]:** Replacing generic identifiers with domain-descriptive terms improves logic readability and maintains consistency with the CleanStack ADR.
+**[Rationale]:** Alignment with CleanStack ADR Section III (Validation Boundaries) and domain-descriptive naming conventions.
+
+### Changes:
+- **[Frontend-PWA/src/app/sw.ts]:** Standardized variable naming in message and push event listeners.
+- **[Frontend-PWA/src/app/sw/swSync.ts]:** Standardized function parameters and internal data objects for push and background sync logic.
+- **[Frontend-PWA/src/app/sw/sw-tests/swSchemas.spec.ts]:** Standardized mock data identifiers in schema tests.
+- **[Substrate Hygiene]:** Audited and confirmed orphaned database views remain unreferenced.
+
+### Verification:
+- **[Automated]:** Service Worker test suite (31 passed).
+- **[Automated/Audit]:** Verified domain clarity in the code diff and substrate unreferenced view status.
+
+### Log Updates:
+- Updated .github/nightly-logs/04-optimization-coverage.log
+
+---
+*PR created automatically by Jules for task [17570215886943199818](https://jules.google.com/task/17570215886943199818) started by @AlbiDR*
+
+---
+
 ## [2026-07-03] PR #999: test(verify): add saturating coverage for useConnectionStatus service
 **Commit**: `7183c6727cedd3f1383165fa41e93192456ae12b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/999)
