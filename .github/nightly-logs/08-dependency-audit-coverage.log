@@ -126,6 +126,7 @@
 | supabase | ^2.108.0 | ^2.109.0 | 2026-07-01 | PASS |
 | knip | ^6.23.0 | ^6.24.0 | 2026-07-02 | PASS |
 | tsx | ^4.22.4 | ^4.22.5 | 2026-07-03 | PASS |
+| tsx | ^4.22.5 | ^4.23.0 | 2026-07-04 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
