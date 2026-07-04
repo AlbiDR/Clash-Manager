@@ -20,6 +20,7 @@ The Core API directory (Layer 1) centralizes the logic for data ingestion, remot
 The foundational infrastructure gateway.
 - **Client Initialization**: Manages the singleton instance of the Supabase client.
 - **Auth & Connectivity**: Handles internal authentication and provides the underlying transport for all specialized clients.
+- **fetchRemote**: High-fidelity data orchestrator that performs parallel fetching from authoritative feature views (Direct View Access) and enforces strict validation boundaries.
 - **useApiState.ts**: Authoritative connectivity singleton for backend availability and handshake discovery.
 
 ### Voyage Client (`VoyageClient.ts`)
@@ -47,7 +48,7 @@ The transport orchestrator for system-level administrative tasks.
 ## Validation Boundaries (`DataSchemas.ts`)
 
 All inbound data MUST be validated against a Valibot schema at the client entry point to prevent state corruption.
-- **Schema Modules**: Decomposed by domain and aggregated via the `DataSchemas.ts` barrel:
+- **Schema Modules**: Decomposed by domain for high-granularity validation. Most are aggregated via the `DataSchemas.ts` barrel for external consumption:
   - `BaseSchemas.ts`: Foundational validation primitives and shared domain constraints.
   - `MemberSchemas.ts`: Authoritative schemas for active clan residents.
   - `RecruitSchemas.ts`: Validation for discovery candidates and recruitment status.
@@ -55,7 +56,7 @@ All inbound data MUST be validated against a Valibot schema at the client entry 
   - `VoyageSchemas.ts`: Schemas for Clan Voyage events and contribution ledgers.
   - `AppSchemas.ts`: Validation for global web application data and system-level payloads.
   - `OfflineSchemas.ts`: Schemas for hardening the offline queue and background synchronization boundary.
-  - `MaintenanceSchemas.ts`: (Specialized) Validation for system maintenance and push subscription ingress.
+  - `MaintenanceSchemas.ts`: (Specialized) Internal validation for system maintenance and push subscription ingress. *Exempt from the DataSchemas barrel to maintain domain isolation.*
 - **Data Mappers**: Transformation logic for converting raw database rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for telemetry (Voyage history, Heritage tenure) and provides fallback logic for missing metrics (e.g., `potential_score`).
 
 ---
