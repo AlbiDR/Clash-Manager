@@ -480,8 +480,6 @@
     <public type="dimen" name="abc_list_item_padding_horizontal_material" id="0x7f070033" />
     <public type="dimen" name="abc_panel_menu_list_width" id="0x7f070034" />
     <public type="dimen" name="abc_progress_bar_height_material" id="0x7f070035" />
-    <public type="dimen" name="abc_search_view_preferred_height" id="0x7f070036" />
-    <public type="dimen" name="abc_search_view_preferred_width" id="0x7f070037" />
     <public type="dimen" name="abc_seekbar_track_background_height_material" id="0x7f070038" />
     <public type="dimen" name="abc_seekbar_track_progress_height_material" id="0x7f070039" />
     <public type="dimen" name="abc_select_dialog_padding_start_material" id="0x7f07003a" />
@@ -599,9 +597,6 @@
     <public type="drawable" name="abc_list_selector_holo_light" id="0x7f080030" />
     <public type="drawable" name="abc_menu_hardkey_panel_mtrl_mult" id="0x7f080031" />
     <public type="drawable" name="abc_popup_background_mtrl_mult" id="0x7f080032" />
-    <public type="drawable" name="abc_ratingbar_indicator_material" id="0x7f080033" />
-    <public type="drawable" name="abc_ratingbar_material" id="0x7f080034" />
-    <public type="drawable" name="abc_ratingbar_small_material" id="0x7f080035" />
     <public type="drawable" name="abc_scrubber_control_off_mtrl_alpha" id="0x7f080036" />
     <public type="drawable" name="abc_scrubber_control_to_pressed_mtrl_000" id="0x7f080037" />
     <public type="drawable" name="abc_scrubber_control_to_pressed_mtrl_005" id="0x7f080038" />
@@ -627,7 +622,6 @@
     <public type="drawable" name="abc_textfield_search_activated_mtrl_alpha" id="0x7f08004c" />
     <public type="drawable" name="abc_textfield_search_default_mtrl_alpha" id="0x7f08004d" />
     <public type="drawable" name="abc_textfield_search_material" id="0x7f08004e" />
-    <public type="drawable" name="abc_vector_test" id="0x7f08004f" />
     <public type="drawable" name="btn_checkbox_checked_mtrl" id="0x7f080050" />
     <public type="drawable" name="btn_checkbox_checked_to_unchecked_mtrl_animation" id="0x7f080051" />
     <public type="drawable" name="btn_checkbox_unchecked_mtrl" id="0x7f080052" />
@@ -659,7 +653,6 @@
     <public type="drawable" name="shortcut_2_maskable" id="0x7f080072" />
     <public type="drawable" name="shortcut_legacy_background" id="0x7f080073" />
     <public type="drawable" name="splash" id="0x7f080074" />
-    <public type="drawable" name="test_level_drawable" id="0x7f080075" />
     <public type="drawable" name="tooltip_frame_dark" id="0x7f080076" />
     <public type="drawable" name="tooltip_frame_light" id="0x7f080077" />
     <public type="id" name="ALT" id="0x7f090000" />
@@ -744,7 +737,6 @@
     <public type="id" name="customPanel" id="0x7f09004f" />
     <public type="id" name="decor_content_parent" id="0x7f090050" />
     <public type="id" name="default_activity_button" id="0x7f090051" />
-    <public type="id" name="dialog_button" id="0x7f090052" />
     <public type="id" name="disableHome" id="0x7f090053" />
     <public type="id" name="edit_query" id="0x7f090054" />
     <public type="id" name="edit_text_id" id="0x7f090055" />
@@ -860,8 +852,6 @@
     <public type="interpolator" name="btn_radio_to_off_mtrl_animation_interpolator_0" id="0x7f0b0004" />
     <public type="interpolator" name="btn_radio_to_on_mtrl_animation_interpolator_0" id="0x7f0b0005" />
     <public type="interpolator" name="fast_out_slow_in" id="0x7f0b0006" />
-    <public type="layout" name="abc_action_bar_title_item" id="0x7f0c0000" />
-    <public type="layout" name="abc_action_bar_up_container" id="0x7f0c0001" />
     <public type="layout" name="abc_action_menu_item_layout" id="0x7f0c0002" />
     <public type="layout" name="abc_action_menu_layout" id="0x7f0c0003" />
     <public type="layout" name="abc_action_mode_bar" id="0x7f0c0004" />
@@ -885,14 +875,10 @@
     <public type="layout" name="abc_screen_simple_overlay_action_mode" id="0x7f0c0016" />
     <public type="layout" name="abc_screen_toolbar" id="0x7f0c0017" />
     <public type="layout" name="abc_search_dropdown_item_icons_2line" id="0x7f0c0018" />
-    <public type="layout" name="abc_search_view" id="0x7f0c0019" />
     <public type="layout" name="abc_select_dialog_material" id="0x7f0c001a" />
     <public type="layout" name="abc_tooltip" id="0x7f0c001b" />
     <public type="layout" name="browser_actions_context_menu_page" id="0x7f0c001c" />
     <public type="layout" name="browser_actions_context_menu_row" id="0x7f0c001d" />
-    <public type="layout" name="custom_dialog" id="0x7f0c001e" />
-    <public type="layout" name="ime_base_split_test_activity" id="0x7f0c001f" />
-    <public type="layout" name="ime_secondary_split_test_activity" id="0x7f0c0020" />
     <public type="layout" name="notification_action" id="0x7f0c0021" />
     <public type="layout" name="notification_action_tombstone" id="0x7f0c0022" />
     <public type="layout" name="notification_template_custom_big" id="0x7f0c0023" />
@@ -939,7 +925,6 @@
     <public type="string" name="accessibility_service_description" id="0x7f0f001b" />
     <public type="string" name="androidx_startup" id="0x7f0f001c" />
     <public type="string" name="appName" id="0x7f0f001d" />
-    <public type="string" name="app_name" id="0x7f0f001e" />
     <public type="string" name="assetStatements" id="0x7f0f001f" />
     <public type="string" name="copy_toast_msg" id="0x7f0f0027" />
     <public type="string" name="fallbackType" id="0x7f0f0028" />

@@ -125,8 +125,8 @@ async function bootstrap() {
     import(
       /* webpackChunkName: "core-data" */
       "@core"
-    ).catch((err) => {
-      console.error("[App] Core module failed to load — reloading:", err);
+    ).catch((coreLoadError) => {
+      console.error("[App] Core module failed to load — reloading:", coreLoadError);
       const retries = parseInt(sessionStorage.getItem('cm_boot_retry') || '0');
       if (retries < 2) {
         sessionStorage.setItem('cm_boot_retry', String(retries + 1));

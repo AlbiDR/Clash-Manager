@@ -30,7 +30,13 @@ Standardized containers that manage view-level states like loading, errors, and 
 Generic, high-performance visualization components.
 - **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories and projected next values. Delegates geometric translation to the `@shared/composables/useBaseHistoryChart.ts` composable.
 - **WarHistoryChart.vue**: Domain-aware molecule for visualizing clan war performance. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
-- **VoyageHistoryChart.vue**: Domain-aware molecule for visualizing Clan Voyage contributions. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+
+### Voyage Management Molecules
+Specialized UI components for orchestrating and visualizing Clan Voyage events, promoted from Layer 3 to resolve structural dependency violations.
+- **VoyageBanner.vue**: A high-visibility, glassmorphism-styled progress banner for the active or upcoming Voyage event. Orchestrates real-time progress feedback and phase transitions (Active, Pending, Awaiting Promotion).
+- **VoyageHistoryChart.vue**: Domain-aware molecule for visualizing chronological Clan Voyage contributions. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+- **EventManagement.vue**: Administrative hub for managing the Voyage lifecycle, including event activation, ledger synchronization, and cancellation.
+- **VoyageSetupForm.vue**: Specialized configuration interface for initializing new Voyage events. Handles goal setting, end-time scheduling, and validation.
 
 ### UI Primitives
 Atomic elements that form the basis of the design system.

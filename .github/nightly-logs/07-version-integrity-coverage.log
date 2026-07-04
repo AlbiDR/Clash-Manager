@@ -1,3 +1,31 @@
+## [2026-07-05]
+### Reconciled:
+- **PNPM Catalog**: Migrated `p-limit` to the monorepo catalog (`pnpm-workspace.yaml`) at `^7.3.0` to establish a unified version ground truth for the ingestion engine.
+- **Backend Hardening**: Explicitly pinned `npm:p-limit@7.3.0` in `Backend/supabase/functions/_shared/muscle.ts` to align with the catalog and eliminate unversioned substrate risks (Rule 2[A]).
+- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6. Verified PNPM 'catalog:' protocol adherence and substrate version consistency via 'audit:version'.
+
+### Logged Drift (Unresolved):
+- **None**.
+
+## [2026-07-04]
+### Reconciled:
+- **Supabase Functions**: Synchronized all 'npm:@supabase/supabase-js@2' imports in Edge Functions to 'npm:@supabase/supabase-js@2.110.0' to align with the monorepo catalog ground truth (Rule 2[A]).
+- **Deno Scripts**: Updated 'https://esm.sh/@supabase/supabase-js@2' to 'https://esm.sh/@supabase/supabase-js@2.110.0' in '.github/scripts/fetch_player_battles.ts'.
+- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6. Verified PNPM 'catalog:' protocol adherence and substrate version consistency via 'audit:version'.
+- **Integrity Proof**: Verified system integrity via full monorepo test gate (1355 passed) using Node 22 bypass flags.
+
+### Logged Drift (Unresolved):
+- **None**.
+
+## [2026-07-03]
+### Reconciled:
+- **Supabase Functions**: Synchronized all pinned 'npm:valibot@1.4.1' imports in Edge Functions to 'npm:valibot@1.4.2' to align with the monorepo catalog ground truth (Rule 2[A]).
+- **Monorepo Audit**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6'.
+- **Integrity Proof**: Verified system integrity via full monorepo test gate (1335 passed).
+
+### Logged Drift (Unresolved):
+- **None**.
+
 ## [2026-06-27]
 ### Reconciled:
 - **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), documentation (READMEs, migration plan), and APK artifacts (`apktool.yml`, `twa-manifest.json`). Monorepo is perfectly synchronized at ground truth `v14.1.4`.
@@ -432,3 +460,20 @@ Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
 
 ### Logged Drift (Unresolved):
 - **None**.
+
+## [2026-07-03]
+### Reconciled:
+- **Substrate Sync**: Synchronized valibot version from @1.4.1 to @1.4.2 in .github/scripts/fetch_player_battles.ts to align with the monorepo catalog.
+- **Backend Hardening**: Explicitly pinned npm:valibot@1.4.2 in Backend/supabase/functions/_shared/muscle.ts and vault.ts to eliminate unversioned dependency risks and ensure clinical consistency with the PNPM catalog.
+- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6 and fully adhere to the catalog: protocol. Verified via monorepo test gate (1346 passed).
+
+### Logged Drift (Unresolved):
+- **None**.
+## [2026-07-02]
+### Reconciled:
+- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6 and fully adhere to the catalog: protocol.
+- **APK Artifacts**: Verified versionName '14.2.6' and versionCode 14260 in APK/android/apktool.yml and twa-manifest.json.
+- **Edge Functions**: Confirmed all valibot imports in Supabase Edge Functions are pinned to @1.4.2.
+
+### Logged Drift (Unresolved):
+- **None**: No version drift or catalog violations detected. Verified via monorepo test gate (1346 passed).

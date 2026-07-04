@@ -4,7 +4,7 @@
 import { supabase, CONFIG, syncVault } from "./client.ts";
 import { executeScanner } from "./scanner.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
-import * as v from "npm:valibot@1.4.1";
+import * as v from "npm:valibot@1.4.2";
 
 /**
  * Supabase Edge Function: headhunter-scanner

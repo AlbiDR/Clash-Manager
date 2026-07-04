@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import * as v from "npm:valibot@1.4.1";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2.110.0";
+import * as v from "npm:valibot@1.4.2";
 import { AuditEntry } from "./types.ts";
 import { IntegrityCheckDetailsSchema, TelemetrySchema } from "./schemas.ts";
 

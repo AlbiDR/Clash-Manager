@@ -246,3 +246,26 @@ Optimization (Substrate Hygiene - Stage 4) 2026-06-25: Standardized variable nam
 2026-06-30 | Frontend-PWA/src/core/services/useAppSettings.ts | Standardized 'val' to 'currentSettingValue' for domain clarity.
 2026-06-30 | Frontend-PWA/src/core/utils/time.ts | Standardized 'val' to 'timeString' for domain clarity.
 2026-06-30 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-11-04 | Frontend-PWA/src/app/sw/swKernel.ts | Standardized anemic variable pathogens (db, request, transaction, store).
+2026-11-04 | Frontend-PWA/src/app/sw/swSync.ts | Extracted handleAndroidBadge function to satisfy SRP.
+2026-11-04 | Frontend-PWA/src/app/sw.ts | Refactored to consume handleAndroidBadge and standardized anemic variables.
+2026-11-04 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-11-04 | Frontend-PWA/src/core/services/useConnectionStatus.ts | Standardized 'val' to 'isSyncingActive' for domain clarity.
+2026-11-04 | Frontend-PWA/src/core/services/useBroadcastChannel.ts | Standardized 'msg' to 'outgoingMessage' for domain clarity.
+2026-11-04 | Frontend-PWA/src/app/main.ts | Standardized 'err' to 'coreLoadError' in dynamic import catch block.
+2026-11-04 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-07-02 | Frontend-PWA/src/core/utils/idbKernel.ts | Standardized anemic variable pathogens (req, request, e, err) for domain clarity.
+2026-07-02 | Frontend-PWA/src/core/api/SupabaseClient.ts | Standardized variable naming (data, error, err, row) in ping and fetchRemote for domain clarity.
+2026-07-02 | Frontend-PWA/src/shared/composables/useScoreSelector.ts | Standardized 'val' to 'thresholdValue' and 'thresholdMode' for domain clarity.
+2026-07-02 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+2026-07-04 | Frontend-PWA/src/app/sw.ts | Standardized anemic variable naming (data -> swMessagePayload, count -> targetBadgeCount, payload -> pushEventPayload).
+2026-07-04 | Frontend-PWA/src/app/sw/swSync.ts | Standardized anemic variable naming (payload -> pushNotificationPayload, count -> targetBadgeCount) and extracted notificationMetadata.
+2026-07-04 | Frontend-PWA/src/app/sw/sw-tests/swSchemas.spec.ts | Standardized generic data variables to mockRowCandidate and mockResponsePayload.
+2026-07-04 | Substrate Hygiene | Re-verified orphaned database views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) remain unreferenced.
+Frontend-PWA/src/core/services/usePwaManager.ts
+Frontend-PWA/src/core/services/useConnectivityManager.ts
+Frontend-PWA/src/core/services/useBadge.ts
+Frontend-PWA/src/core/services/useDeepLinkHandler.ts
+Frontend-PWA/src/core/services/useBroadcastChannel.ts
+Frontend-PWA/src/shared/composables/useCardMechanics.ts
+Optimization (Substrate Hygiene - Stage 4) 2026-07-06: Standardized variable naming for domain clarity and audited substrate hygiene. Action: (1) Refactored usePwaManager, useConnectivityManager, useBadge, useDeepLinkHandler, useBroadcastChannel, and useCardMechanics to use domain-descriptive names. (2) Re-verified that orphaned database views remain unreferenced. Verified via monorepo test gate (1355 passed).

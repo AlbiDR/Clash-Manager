@@ -21,7 +21,7 @@
  * ============================================================================
  */
 <script setup lang="ts">
-import { Icon, SettingsCard } from "@shared";
+import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { ref, computed, watch } from "vue";
 
@@ -111,7 +111,7 @@ function saveApiUrl() {
         </template>
         <template v-else>
           <span class="url-text">{{ apiUrl }}</span>
-          <button class="edit-btn" @click="isEditing = true">Edit</button>
+          <button class="edit-btn" @click="isEditing = true" v-tactile>Edit</button>
         </template>
       </div>
       <div v-else class="url-input-row">
@@ -127,13 +127,13 @@ function saveApiUrl() {
             placeholder="https://[project-id].supabase.co"
             class="glass-input"
           />
-          <button class="save-btn" @click="saveApiUrl">
+          <button class="save-btn" @click="saveApiUrl" v-tactile>
             <Icon name="check" size="20" />
           </button>
-          <button class="cancel-btn" @click="isEditing = false">X</button>
+          <button class="cancel-btn" @click="isEditing = false" v-tactile>X</button>
         </template>
       </div>
-      <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl">
+      <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl" v-tactile>
         Running custom override • Tap to reset
       </div>
     </div>

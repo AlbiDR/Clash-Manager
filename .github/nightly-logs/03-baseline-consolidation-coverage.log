@@ -145,23 +145,10 @@
 - Structural Audit: Verified 93 functions (SECURITY DEFINER/search_path), 27 tables (RLS), 24 triggers (Postgres 17).
 - Visual Purity: Confirmed 100% ASCII compliance (zero em-dashes/emojis).
 - Verification: Monorepo vitest suite (1327 passed) confirmed state integrity.
-2026-06-29 | Stage 3 | Logic Correction
+2026-07-04 | Stage 3 | Baseline Consolidation
 --------------------------------------------
-- Migration Added: 20260629212000_fix_voyage_ingestion_targeting.sql
-- Functions Updated: 1 (public.get_ingestion_targets)
-- Root Cause Fixed: During an active Clan Voyage, get_ingestion_targets() previously
-  filtered active members by next_poll_at. Members with long inactivity-derived
-  poll schedules were silently skipped, preventing ingest_player_battles() from
-  ever applying the voyage ceiling. This caused systematic under-reporting of
-  voyage crowns (1,157 crowns missed across 36 of 37 members in Voyage 5).
-- Fix: When v_voyage_is_active is TRUE, the next_poll_at gate is bypassed and all
-  active members are returned as ingestion targets unconditionally. Normal
-  schedule-based targeting is preserved when no voyage is active.
-- Edge Function Schema Fixed: Corrected IngestionTargetsSchema keys in schemas.ts
-  and stage mapping in deep-depth.ts to use 'drivers.members' and 'drivers.recruits'
-  instead of 'members' and 'recruits' to match the actual JSON output of the
-  get_ingestion_targets RPC. This resolved a validation failure that had silently
-  blocked all battle ingestion cycles since June 1.
-- Duel Crowns Fixed: Added the missing 'rounds' array field to RoyaleBattleLogSchema
-  to prevent Valibot from stripping it out of the payload. This ensures the
-  riverRaceDuel crowns are calculated correctly rather than defaulting to zero.
+- Migrations Folded: 0 (Baseline fully synchronized with incremental history)
+- Structural Audit: Verified 93 functions (SECURITY DEFINER/search_path), 27 tables (RLS), 24 triggers (Postgres 17).
+- Hardening: Verified strict schema qualification and idempotency guards.
+- Visual Purity: Confirmed 100% ASCII compliance (zero em-dashes/emojis).
+- Verification: Monorepo vitest suite (1355 passed) confirmed state integrity.

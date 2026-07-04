@@ -4,8 +4,11 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
-import * as v from "npm:valibot@1.4.1";
+import * as v from "npm:valibot@1.4.2";
 import { RoyalePlayerSchema, RecruitFateSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
+
+const PROFILER_BATCH_CEILING = 1000;
+const RECENT_SCAN_THRESHOLD_MS = 30 * 60 * 1000;
 
 /**
  * Represents a player candidate that has passed initial trophy and clan filters.
@@ -63,7 +66,9 @@ export async function runProfiler(
     stats: ScannerStats,
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ) {
-    const tagsToProfile = [...candidates.keys()].slice(0, 1000);
+    // [THREAT:] Un-truncated candidate lists could exceed the memory limits of the Edge Function.
+    // [DECISION LOG] The profiler hard-caps at PROFILER_BATCH_CEILING to ensure predictable execution duration.
+    const tagsToProfile = [...candidates.keys()].slice(0, PROFILER_BATCH_CEILING);
     if (tagsToProfile.length === 0) {
         console.log(`[PROFILING] No candidates to profile. Skipping.`);
         return;
@@ -72,7 +77,7 @@ export async function runProfiler(
     logAudit('PROFILING', 'triggered', { count: tagsToProfile.length });
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        const thirtyMinutesAgo = new Date(Date.now() - RECENT_SCAN_THRESHOLD_MS).toISOString();
         const { data: rawRecentScans, error: recentScansError } = await supabase
             .schema('drivers')
             .from('recruits')
@@ -97,7 +102,7 @@ export async function runProfiler(
 
         const recentScans = recentScansValidation.success ? recentScansValidation.output : [];
         const recentlyScannedTags = new Set(recentScans.map(recentRecruit => recentRecruit.player_tag));
-        const tagsToFetch = tagsToProfile.filter(tag => !recentlyScannedTags.has(tag));
+        const tagsToFetch = tagsToProfile.filter(playerTagCandidate => !recentlyScannedTags.has(playerTagCandidate));
 
         console.log(`[PROFILING] Pre-filtered: ${recentlyScannedTags.size} tags scanned in the last 30 minutes skipped. Remaining tags to fetch: ${tagsToFetch.length}`);
 
@@ -193,10 +198,12 @@ export async function runProfiler(
         // Field health check: detect silent Royale API field renames or deprecations.
         // Key RPoS fields default to 0 via the schema, so a broken field is invisible
         // unless we actively verify that at least some players returned non-zero values.
+        // [THREAT:] Implicit 'any' or anemic variables mask structural drift.
+        // [DECISION LOG] Renamed 'r' to 'recruitCandidate' to satisfy CleanStack naming conventions.
         if (validRecruits.length >= 10) {
-            const withTrophies = validRecruits.filter(r => r.trophies > 0).length;
-            const withWarWins = validRecruits.filter(r => r.war_wins > 0).length;
-            const withDonations = validRecruits.filter(r => r.donations > 0).length;
+            const withTrophies = validRecruits.filter(recruitCandidate => recruitCandidate.trophies > 0).length;
+            const withWarWins = validRecruits.filter(recruitCandidate => recruitCandidate.war_wins > 0).length;
+            const withDonations = validRecruits.filter(recruitCandidate => recruitCandidate.donations > 0).length;
             const healthReport = {
                 trophies: `${withTrophies}/${validRecruits.length}`,
                 war_wins: `${withWarWins}/${validRecruits.length}`,
@@ -245,7 +252,7 @@ export async function runProfiler(
                 .schema('drivers')
                 .from('recruits')
                 .select('player_tag')
-                .in('player_tag', validRecruits.map(recruitItem => recruitItem.player_tag));
+                .in('player_tag', validRecruits.map(recruitCandidate => recruitCandidate.player_tag));
 
             // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
             // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
@@ -264,8 +271,8 @@ export async function runProfiler(
             
             const existingRecruits = existingDataValidation.success ? existingDataValidation.output : [];
             const existingTags = new Set(existingRecruits.map(existingRecruit => existingRecruit.player_tag));
-            validRecruits.forEach(recruitItem => {
-                if (existingTags.has(recruitItem.player_tag)) refreshCount++;
+            validRecruits.forEach(recruitCandidate => {
+                if (existingTags.has(recruitCandidate.player_tag)) refreshCount++;
                 else newCount++;
             });
 
@@ -286,8 +293,8 @@ export async function runProfiler(
             // --- INGESTION FATE TELEMETRY ---
             // [DECISION LOG] Newly ingested recruits are tracked to verify their promotion from QUEUE to ACTIVE/BENCHED.
             const newTags = validRecruits
-                .filter(recruitItem => !existingTags.has(recruitItem.player_tag))
-                .map(recruitItem => recruitItem.player_tag);
+                .filter(recruitCandidate => !existingTags.has(recruitCandidate.player_tag))
+                .map(recruitCandidate => recruitCandidate.player_tag);
             
             if (newTags.length > 0) {
                 console.error(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);

@@ -82,7 +82,6 @@
     <id name="customPanel" />
     <id name="decor_content_parent" />
     <id name="default_activity_button" />
-    <id name="dialog_button" />
     <id name="disableHome" />
     <id name="edit_query" />
     <id name="edit_text_id" />

@@ -21,6 +21,7 @@ Core Services (Layer 1) manage global application concerns such as persistence, 
 - **useClashDataStore.ts**: The central store for high-integrity clan datasets. Delegates sync logic to `useClashSync.ts`.
 - **useClashSync.ts**: Orchestrates the lifecycle of the central data store, including hydration from local cache and background synchronization.
 - **useStoragePersistence.ts**: Brokered access to the Storage Manager API to prevent silent data eviction.
+- **useSelectionStore.ts**: Manages the persistence and synchronization of item selection states across complex views.
 
 ### Console & List Orchestration
 - **useConsoleController.ts**: The primary orchestrator for complex feature views. Manages domain-blind infrastructure (filtering, sorting, progressive rendering).
@@ -34,14 +35,20 @@ Core Services (Layer 1) manage global application concerns such as persistence, 
 - **useConnectionStatus.ts**: Unifies physical network status and logical API availability.
 - **useNetworkInfo.ts**: Hardware broker for network telemetry (RTT, Downlink) and degradation detection.
 - **useVisibilityRefresh.ts**: Triggers background data refreshes based on document visibility changes.
+- **useBroadcastChannel.ts**: Facilitates cross-tab/window communication for synchronized state updates (e.g., login, settings).
+- **useBadge.ts**: Centralized manager for application-level badges (Home Screen, Dock) with support for hardware-brokered native updates.
 
 ### Application Shell & Logic
 - **useAppSettings.ts**: Multi-tier strategy for application configuration, mirrored across `LocalStorage` and `IndexedDB`.
 - **usePwaManager.ts**: Manages infrastructure-level PWA lifecycle (SW updates, recovery protocols).
 - **useUiCoordinator.ts**: Master arbiter of layout spacing and global FAB (Floating Action Button) state.
+- **useBackHandler.ts**: Orchestrates hardware back button behavior in hybrid environments, ensuring predictable navigation stack exit.
 - **useBenchmarking.ts**: Statistical engine for comparing individual metrics against clan averages using single-pass O(N) optimization.
 - **useDeepLinkHandler.ts**: Manages item expansion and auto-scroll based on URL parameters.
-- **useSystemInfo.ts**: SSOT for application versioning and global modes (Showcase, Blueprint, Synthetic).
+- **useSystemInfo.ts**: SSOT for application versioning and global modes.
+- **useShowcaseMode.ts**: Global UI simulation engine for high-fidelity demonstration and marketing.
+- **useBlueprintMode.ts**: Orchestrates the "Blueprint" overlay for rapid UI prototyping and architectural review.
+- **useSyntheticMode.ts**: Enables synthetic data injection for stress-testing and zero-network development.
 - **useToast.ts**: Global notification service with semantic hardware haptic pairing.
 
 ---

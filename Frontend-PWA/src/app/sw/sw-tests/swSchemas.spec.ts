@@ -12,8 +12,8 @@ import {
 describe("swSchemas", () => {
   describe("SwSupabaseRowSchema", () => {
     it("should validate a correct row", () => {
-      const data = { s: 80 };
-      expect(v.safeParse(SwSupabaseRowSchema, data).success).toBe(true);
+      const mockRowCandidate = { s: 80 };
+      expect(v.safeParse(SwSupabaseRowSchema, mockRowCandidate).success).toBe(true);
     });
 
     it("should fail for out of bounds score", () => {
@@ -29,8 +29,8 @@ describe("swSchemas", () => {
 
   describe("SwSupabaseResponseSchema", () => {
     it("should validate a correct array of rows", () => {
-      const data = [{ s: 0 }, { s: 100 }, { s: 50 }];
-      expect(v.safeParse(SwSupabaseResponseSchema, data).success).toBe(true);
+      const mockResponsePayload = [{ s: 0 }, { s: 100 }, { s: 50 }];
+      expect(v.safeParse(SwSupabaseResponseSchema, mockResponsePayload).success).toBe(true);
     });
 
     it("should validate an empty array", () => {
@@ -38,8 +38,8 @@ describe("swSchemas", () => {
     });
 
     it("should fail if any item is invalid", () => {
-      const data = [{ s: 80 }, { s: 150 }];
-      expect(v.safeParse(SwSupabaseResponseSchema, data).success).toBe(false);
+      const invalidResponseCandidate = [{ s: 80 }, { s: 150 }];
+      expect(v.safeParse(SwSupabaseResponseSchema, invalidResponseCandidate).success).toBe(false);
     });
   });
 

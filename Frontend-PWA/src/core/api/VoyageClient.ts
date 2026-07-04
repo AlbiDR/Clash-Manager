@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { createSupabaseClient } from "./SupabaseClient";
+import { createSupabaseClient, NetworkError } from "./SupabaseClient";
 import type {
+  ApiResponse,
   VoyageContribution,
-  VoyageSummary,
   VoyageViewSummary,
 } from "@core/types";
 import {
   VoyageContributionSchema,
-  VoyageSummarySchema
+  VoyageSummarySchema,
+  VoyageRpcResultSchema
 } from "./VoyageSchemas";
 import * as v from "valibot";
 
@@ -38,29 +39,31 @@ import * as v from "valibot";
  * @param target - The goal crown count for the event.
  * @param start - ISO timestamp for event commencement.
  * @param end - ISO timestamp for event conclusion.
- * @returns A Promise resolving to an object indicating success or error details.
+ * @returns A Promise resolving to a validated ApiResponse.
+ * @throws {NetworkError} If the RPC fails.
  */
-export async function initializeVoyage(target: number, start: string, end: string) {
+export async function initializeVoyage(
+  target: number,
+  start: string,
+  end: string
+): Promise<ApiResponse<v.InferOutput<typeof VoyageRpcResultSchema>>> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+
+  // [THREAT:] Unvalidated RPC results (Target C) can cause logic corruption.
+  // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
+  const { data: rawRpcResponse, error: rpcError } = await supabase
     .rpc('initialize_voyage', {
       target_crowns: target,
       start_at: start,
       end_at: end
     });
 
-  if (error) {
-    console.error('[Voyage] RPC Execution Error:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code
-    });
-    return { success: false, error: error.message };
-  }
+  if (rpcError) throw new NetworkError(rpcError.message);
 
-  // data is the JSONB object returned by the function
-  return { success: true, data };
+  return {
+    success: true,
+    data: v.parse(VoyageRpcResultSchema, rawRpcResponse)
+  };
 }
 
 /**
@@ -68,22 +71,29 @@ export async function initializeVoyage(target: number, start: string, end: strin
  *
  * @param target - The goal crown count for the event.
  * @param start - ISO timestamp for event commencement (future).
- * @returns A Promise resolving to an object indicating success or error details.
+ * @returns A Promise resolving to a validated ApiResponse.
+ * @throws {NetworkError} If the RPC fails.
  */
-export async function scheduleVoyageEvent(target: number, start: string) {
+export async function scheduleVoyageEvent(
+  target: number,
+  start: string
+): Promise<ApiResponse<v.InferOutput<typeof VoyageRpcResultSchema>>> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+
+  // [THREAT:] Unvalidated RPC results (Target C) can cause logic corruption.
+  // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
+  const { data: rawRpcResponse, error: rpcError } = await supabase
     .rpc('schedule_voyage', {
       target_crowns: target,
       start_at: start
     });
 
-  if (error) {
-    console.error('[Voyage] RPC schedule_voyage Error:', error);
-    return { success: false, error: error.message };
-  }
+  if (rpcError) throw new NetworkError(rpcError.message);
 
-  return { success: true, data };
+  return {
+    success: true,
+    data: v.parse(VoyageRpcResultSchema, rawRpcResponse)
+  };
 }
 
 /**
@@ -96,43 +106,56 @@ export async function scheduleVoyageEvent(target: number, start: string) {
  *
  * @param voyageId - The ID of the ACTIVE voyage.
  * @param end - ISO timestamp for event conclusion.
- * @returns A Promise resolving to an object indicating success or error details.
+ * @returns A Promise resolving to a validated ApiResponse.
+ * @throws {NetworkError} If the RPC fails.
  */
-export async function setVoyageEnd(voyageId: number, end: string) {
+export async function setVoyageEnd(
+  voyageId: number,
+  end: string
+): Promise<ApiResponse<v.InferOutput<typeof VoyageRpcResultSchema>>> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+
+  // [THREAT:] Unvalidated RPC results (Target C) can cause logic corruption.
+  // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
+  const { data: rawRpcResponse, error: rpcError } = await supabase
     .rpc('set_voyage_end', {
       voyage_id: voyageId,
       end_at: end
     });
 
-  if (error) {
-    console.error('[Voyage] RPC set_voyage_end Error:', error);
-    return { success: false, error: error.message };
-  }
+  if (rpcError) throw new NetworkError(rpcError.message);
 
-  return { success: true, data };
+  return {
+    success: true,
+    data: v.parse(VoyageRpcResultSchema, rawRpcResponse)
+  };
 }
 
 /**
  * [VOYAGE] Cancels a scheduled PENDING voyage.
  *
  * @param voyageId - The ID of the PENDING voyage.
- * @returns A Promise resolving to an object indicating success or error details.
+ * @returns A Promise resolving to a validated ApiResponse.
+ * @throws {NetworkError} If the RPC fails.
  */
-export async function cancelScheduledVoyageEvent(voyageId: number) {
+export async function cancelScheduledVoyageEvent(
+  voyageId: number
+): Promise<ApiResponse<v.InferOutput<typeof VoyageRpcResultSchema>>> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+
+  // [THREAT:] Unvalidated RPC results (Target C) can cause logic corruption.
+  // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
+  const { data: rawRpcResponse, error: rpcError } = await supabase
     .rpc('cancel_voyage', {
       voyage_id: voyageId
     });
 
-  if (error) {
-    console.error('[Voyage] RPC cancel_voyage Error:', error);
-    return { success: false, error: error.message };
-  }
+  if (rpcError) throw new NetworkError(rpcError.message);
 
-  return { success: true, data };
+  return {
+    success: true,
+    data: v.parse(VoyageRpcResultSchema, rawRpcResponse)
+  };
 }
 
 /**
@@ -149,20 +172,23 @@ export async function cancelScheduledVoyageEvent(voyageId: number) {
  */
 export async function fetchVoyageSummary(): Promise<VoyageViewSummary | null> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+
+  // [THREAT:] Processing unvalidated raw view data can cause runtime crashes.
+  // [DECISION LOG] Implemented strict Valibot validation boundary for summary ingress.
+  const { data: rawSummaryPayload, error: summaryFetchError } = await supabase
     .from('voyage_summary')
     .select('*')
     .limit(1)
     .maybeSingle();
 
-  if (error) {
-    console.error('[Voyage] Summary fetch error:', error);
+  if (summaryFetchError) {
+    console.error('[Voyage] Summary fetch error:', summaryFetchError);
     return null;
   }
 
-  if (!data) return null;
+  if (!rawSummaryPayload) return null;
 
-  return v.parse(VoyageSummarySchema, data);
+  return v.parse(VoyageSummarySchema, rawSummaryPayload);
 }
 
 /**
@@ -177,14 +203,17 @@ export async function fetchVoyageSummary(): Promise<VoyageViewSummary | null> {
  */
 export async function fetchVoyageContributions(): Promise<VoyageContribution[]> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase
+
+  // [THREAT:] Processing unvalidated raw ledger data can cause performance metric corruption.
+  // [DECISION LOG] Implemented strict Valibot array validation for contribution ingress.
+  const { data: rawContributionsPayload, error: contributionsFetchError } = await supabase
     .from('voyage_contributions')
     .select('*');
 
-  if (error) {
-    console.error('[Voyage] Contributions fetch error:', error);
+  if (contributionsFetchError) {
+    console.error('[Voyage] Contributions fetch error:', contributionsFetchError);
     return [];
   }
 
-  return v.parse(v.array(VoyageContributionSchema), data || []);
+  return v.parse(v.array(VoyageContributionSchema), rawContributionsPayload || []);
 }

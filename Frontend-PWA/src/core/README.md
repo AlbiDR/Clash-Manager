@@ -23,13 +23,13 @@ The Core Layer (Layer 1) provides the essential infrastructure required for the 
 The authoritative transport layer for the Supabase binary stack.
 - **SupabaseClient.ts**: The infrastructure-level gateway for authentication and configuration.
 - **Specialized Clients**: Domain-specific orchestrators for RPC and Edge Function interactions:
-  - `VoyageClient.ts`: Manages Clan Voyage activations and ledger fetching.
-  - `RecruitClient.ts`: Manages headhunter recruitment and blacklist operations.
+  - `VoyageClient.ts`: Manages Clan Voyage activations, ledger updates, and event completion.
+  - `RecruitClient.ts`: Manages headhunter recruitment, blacklist operations, and diagnostic scouting.
   - `ProfileClient.ts`: Brokered access to player card synchronization.
-  - `MaintenanceClient.ts`: Triggers system-level janitor and maintenance cycles.
+  - `MaintenanceClient.ts`: Triggers system-level maintenance cycles and manages push notification registration.
 - **useApiState.ts**: Authoritative connectivity singleton for backend availability and handshake discovery.
-- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`) providing strict Valibot validation for inbound database payloads. Aggregated via the `DataSchemas.ts` barrel.
-- **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for complex telemetry, including Voyage history and Heritage tenure.
+- **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`, `MaintenanceSchemas.ts`) providing strict Valibot validation for inbound database payloads. Aggregated via the `DataSchemas.ts` barrel.
+- **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for complex telemetry, including Voyage history, Heritage tenure, and `potential_score` fallback logic.
 
 ### Configuration (`/config`)
 Static system constants and environment orchestration.
@@ -66,8 +66,13 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useBroadcastChannel.ts**: Cross-tab state synchronization.
 
 ### Theme Engine (`/theme`)
-The visual DNA of the application.
-- **Theme Injection**: Logic for CSS variable injection (hex/RGB design tokens) and dynamic light/dark theme swapping.
+The visual DNA of the application. Orchestrates a clinical, CSS-variable-driven design system with zero-flicker hydration.
+- **HtmlEntry.ts**: The **TypeScript Source of Truth** for the application's entry point. It replaces the physical `index.html` file to achieve 100% technical purity and allows for dynamic metadata injection.
+- **AppShell.ts**: The structural architect. Orchestrates the generation of critical CSS and static HTML skeletons to ensure sub-second visual stability during initial hydration.
+- **tokens.ts**: The Design Token SSOT. Defines the foundational hex/RGB design tokens and generates standardized CSS variables (`--sys-color-*`).
+- **base.ts**: The foundational substrate. Injects CSS resets, typography scales, and native gesture overrides.
+- **animations.ts**: Centralizes high-performance CSS keyframes for shell-wide interactions (skeletons, transitions).
+- **Theme Injection**: Logic for dynamic Light/Dark theme swapping and `theme-color` meta-tag orchestration.
 - **Icon Paths**: Centralized SVG path definitions for the `Icon.vue` primitive.
 
 ### Domain Types (`/types`)

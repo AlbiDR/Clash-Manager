@@ -54,7 +54,7 @@ jobs:
         run: |
           pnpm run dev &
           # Wait for the dev server to be ready and the specific portfolio entry point
-          npx wait-on http://localhost:5173/Clash-Manager/portfolio-stitch.html --timeout 120000
+          npx wait-on http://localhost:5173/Clash-Manager/scripts/portfolio-stitch.html --timeout 120000
 
       - name: Run Branding Pipeline
         run: bash scratch/generate_hifi_branding.sh

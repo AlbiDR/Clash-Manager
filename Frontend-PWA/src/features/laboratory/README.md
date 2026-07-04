@@ -25,6 +25,11 @@ A non-blocking, generator-based engine that coordinates core logic and scoring s
 - **Priority Queue Optimization**: Utilizes the `@core/utils/PriorityQueue` to maintain an $O(\log N)$ selection loop for upgrade candidates.
 - **Greedy Optimization**: Identifies and executes the optimal upgrade step based on the active scoring strategy.
 
+### Strategy Pattern (ScoringStrategy.ts)
+Upgrade priorities are defined by interchangeable strategies:
+- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
+- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
+
 ### Simulation Core (SimulationCore.ts)
 Atomic evaluation and state transition logic.
 - **getUpgradeCandidate**: Evaluates card upgrade viability against resource constraints.
@@ -36,11 +41,6 @@ Atomic evaluation and state transition logic.
 ### Trajectory Rendering (TrajectoryList.vue)
 Renders the recommended upgrade path using a high-performance rendering strategy.
 - **Progressive Rendering**: Utilizes `useProgressiveList` (@core/services) to time-slice the injection of trajectory items into the DOM. This maintains 60FPS even when a simulation results in hundreds of recommended actions, replacing the legacy "Show More" manual expansion.
-
-### Strategy Pattern (ScoringStrategy.ts)
-Upgrade priorities are defined by interchangeable strategies:
-- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
-- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
 ### Logic Subsystems
 The feature logic is decomposed into several specialized modules to ensure Layer 3 compliance and maintainability:

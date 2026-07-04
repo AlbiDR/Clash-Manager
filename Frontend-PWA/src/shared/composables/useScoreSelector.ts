@@ -37,9 +37,9 @@ import { useHaptics } from "./useHaptics";
 export function useScoreSelector(
   props: { mode: "ge" | "le"; value: number },
   emit: {
-    (e: "update:mode", val: "ge" | "le"): void;
-    (e: "update:value", val: number): void;
-    (e: "select", val: number, mode: "ge" | "le"): void;
+    (e: "update:mode", thresholdMode: "ge" | "le"): void;
+    (e: "update:value", thresholdValue: number): void;
+    (e: "select", thresholdValue: number, thresholdMode: "ge" | "le"): void;
   }
 ) {
   const haptics = useHaptics();
@@ -66,14 +66,14 @@ export function useScoreSelector(
 
   /**
    * Updates the active score threshold and triggers a selection update.
-   * @param val - The new score threshold.
+   * @param thresholdValue - The new score threshold.
    */
-  function selectValue(val: number) {
-    if (props.value === val) return;
-    emit("update:value", val);
+  function selectValue(thresholdValue: number) {
+    if (props.value === thresholdValue) return;
+    emit("update:value", thresholdValue);
     haptics.medium();
     // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when a threshold is clicked.
-    emit("select", val, props.mode);
+    emit("select", thresholdValue, props.mode);
   }
 
   /**

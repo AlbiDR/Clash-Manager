@@ -30,7 +30,6 @@
     <string name="accessibility_service_description">Automated Blitz Mode tap gestures for Clash Manager</string>
     <string name="androidx_startup">androidx.startup</string>
     <string name="appName">Clash Manager</string>
-    <string name="app_name">Clash Manager</string>
     <string name="assetStatements">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://albidr.github.io\" } }]</string>
     <string name="copy_toast_msg">Link copied to clipboard</string>
     <string name="fallbackType">customtabs</string>

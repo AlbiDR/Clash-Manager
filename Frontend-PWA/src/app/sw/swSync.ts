@@ -39,8 +39,8 @@ declare const self: ServiceWorkerGlobalScope;
  * - Shows a browser notification via `self.registration.showNotification`.
  * - Updates the app badge via `navigator.setAppBadge`.
  */
-export async function handlePushBadge(payload: PushPayload): Promise<void> {
-  const { badgeCount, title, body } = payload;
+export async function handlePushBadge(pushNotificationPayload: PushPayload): Promise<void> {
+  const { badgeCount, title, body } = pushNotificationPayload;
 
   const storageConnection = await openDB();
 
@@ -52,23 +52,25 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
   const notificationsAreEnabled = v.safeParse(v.boolean(), rawEnabled).success ? (rawEnabled as boolean) : true;
 
   if (badgeCount && badgeCount > 0 && notificationsAreEnabled) {
+    const notificationMetadata = {
+      type: "badge",
+      count: badgeCount,
+      shortcutId: NOTIFICATION_SHORTCUT_ID,
+      url: "/#/headhunter",
+    };
+
     await self.registration.showNotification(
       title || "New Recruits Available",
       {
         body:
           body ||
           `You have ${badgeCount} recruit${badgeCount === 1 ? "" : "s"} above your threshold.`,
-        icon: "pwa-192.png",
-        badge: "pwa-64.png",
+        icon: "assets/icons/icon-192.png",
+        badge: "assets/icons/icon-64.png",
         tag: NOTIFICATION_TAG_RECRUIT,
         renotify: false,
         silent: false,
-        data: {
-          type: "badge",
-          count: badgeCount,
-          shortcutId: NOTIFICATION_SHORTCUT_ID,
-          url: "/#/headhunter",
-        },
+        data: notificationMetadata,
       } as NotificationOptions,
     );
   }
@@ -82,6 +84,66 @@ export async function handlePushBadge(payload: PushPayload): Promise<void> {
   } catch (badgeUpdateError: unknown) {
     // Silent fail for hardware boundary
     console.warn("[SW] Native badge update failed", badgeUpdateError);
+  }
+}
+
+/**
+ * Handle Android-specific badge notifications.
+ *
+ * @param targetBadgeCount - The number of recruits above threshold.
+ * @returns A promise that resolves when the badge/notification is updated.
+ *
+ * @sideeffects
+ * - Shows or clears a browser notification via `self.registration.showNotification`.
+ * - Updates the app badge via `navigator.setAppBadge`.
+ */
+export async function handleAndroidBadge(targetBadgeCount: number): Promise<void> {
+  const countAboveThreshold = Math.max(0, targetBadgeCount);
+
+  try {
+    const storageConnection = await openDB();
+
+    // [THREAT:] Unvalidated IndexedDB ingress.
+    // [DECISION LOG] Default to enabled (true) if key is missing.
+    const rawEnabled = await getValue(storageConnection, "cm_notifications_enabled");
+    const notificationsAreEnabled = v.safeParse(v.boolean(), rawEnabled).success ? (rawEnabled as boolean) : true;
+
+    // Update badge
+    if (self.navigator.setAppBadge) {
+      if (countAboveThreshold > 0 && notificationsAreEnabled) {
+        await self.navigator.setAppBadge(countAboveThreshold);
+      } else {
+        await self.navigator.clearAppBadge();
+      }
+    }
+
+    // Show/update notification
+    if (countAboveThreshold > 0 && notificationsAreEnabled) {
+      const notificationMetadata = {
+        type: "badge",
+        count: countAboveThreshold,
+        shortcutId: NOTIFICATION_SHORTCUT_ID,
+        url: "/#/headhunter",
+      };
+
+      await self.registration.showNotification("New Recruits Available", {
+        body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
+        icon: "assets/icons/icon-192.png",
+        badge: "assets/icons/icon-64.png",
+        tag: NOTIFICATION_TAG_RECRUIT,
+        renotify: false,
+        silent: false,
+        requireInteraction: false,
+        data: notificationMetadata,
+      } as NotificationOptions);
+    } else {
+      const activeNotifications = await self.registration.getNotifications({
+        tag: NOTIFICATION_TAG_RECRUIT,
+      });
+      activeNotifications.forEach((notification) => notification.close());
+    }
+  } catch (androidBadgeError: unknown) {
+    console.warn("[SW] Android badge notification failed", androidBadgeError);
   }
 }
 
@@ -162,21 +224,23 @@ export async function handleBackgroundSync(): Promise<void> {
         await self.navigator.setAppBadge(highPotentialCount);
       }
 
+      const notificationMetadata = {
+        type: "badge",
+        count: highPotentialCount,
+        shortcutId: NOTIFICATION_SHORTCUT_ID,
+        url: "/#/headhunter",
+        timestamp: Date.now(),
+      };
+
       await self.registration.showNotification("New Recruits Available", {
         body: `You have ${highPotentialCount} recruit${highPotentialCount === 1 ? "" : "s"} above your threshold.`,
-        icon: "pwa-192.png",
-        badge: "pwa-64.png",
+        icon: "assets/icons/icon-192.png",
+        badge: "assets/icons/icon-64.png",
         tag: NOTIFICATION_TAG_RECRUIT,
         renotify: false,
         silent: false,
         requireInteraction: false,
-        data: {
-          type: "badge",
-          count: highPotentialCount,
-          shortcutId: NOTIFICATION_SHORTCUT_ID,
-          url: "/#/headhunter",
-          timestamp: Date.now(),
-        },
+        data: notificationMetadata,
       } as NotificationOptions);
     } else {
       const activeNotifications = await self.registration.getNotifications({

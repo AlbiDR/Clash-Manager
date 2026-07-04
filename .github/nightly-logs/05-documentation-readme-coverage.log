@@ -25,3 +25,21 @@
 2026-06-29 | Frontend-PWA/src/core/services/README.md | Created: Documented infrastructure singletons and state orchestrators
 2026-06-29 | Frontend-PWA/src/shared/composables/README.md | Created: Documented behavioral logic and promoted voyage composables
 2026-06-29 | Frontend-PWA/src/shared/directives/README.md | Created: Documented DOM catalysts (v-tactile, v-tooltip) and architectural protection
+2026-06-30 | Frontend-PWA/src/shared/ui/README.md | Reconciled promoted Voyage components and domain sectioning
+2026-06-30 | Frontend-PWA/src/shared/composables/README.md | Reconciled voyageTypes.ts as domain SSOT for promoted subsystem
+2026-06-30 | Frontend-PWA/src/core/README.md | Reconciled Theme Engine substrate (AppShell, tokens, base, animations)
+2026-11-25 | Monorepo | Reconciled documentation drift for SW sub-handlers, MaintenanceSchemas, and Backend zero-trust boundaries.
+2026-07-03 | Frontend-PWA/src/core/theme/README.md | Created: Documented Theme Engine, Design Tokens, and App Shell hydration strategy
+2026-07-03 | Frontend-PWA/src/core/utils/README.md | Reconciled durationToSeconds and calculateMomentum utilities
+2026-07-03 | Frontend-PWA/src/app/README.md | Documented SW sub-handler extraction and swSchemas boundary hardening
+2026-07-03 | Backend/README.md | Reconciled Hexa-Stage ingestion and Safety Epoch Loop state
+2026-07-03 | Backend/supabase/functions/headhunter-scanner/README.md | Reconciled 5-stage discovery pipeline and Safety Epoch Loop documentation
+2026-07-03 | Frontend-PWA/src/features/laboratory/README.md | Reconciled Scoring Strategy patterns and Priority Queue optimization details
+2026-07-04 | Frontend-PWA/src/core/api/README.md | Reconciled DataSchemas barrel (Base, Profile, App, Offline)
+2026-07-04 | Frontend-PWA/src/core/theme/README.md | Documented HtmlEntry.ts as TypeScript SSOT for index.html
+2026-07-04 | Frontend-PWA/src/core/README.md | Reconciled HtmlEntry.ts and verified Theme Engine substrate
+2026-07-04 | Backend/supabase/functions/ingest-royale-data/README.md | Reconciled Hexa-Stage conceptual mapping to pipeline execution blocks
+2026-07-04 | Frontend-PWA/src/core/services/README.md | Reconciled missing services: useBroadcastChannel, useBadge, useBackHandler, and UI Mode engines.
+2026-07-04 | Frontend-PWA/src/core/api/README.md | Reconciled fetchRemote orchestrator and MaintenanceSchemas isolation.
+2026-07-04 | Frontend-PWA/src/app/README.md | Reconciled Service Worker sub-module structure and swSchemas boundary hardening.
+2026-07-04 | Backend/supabase/functions/headhunter-scanner/README.md | Reconciled S1 target limits and S2 discovery keyword details.

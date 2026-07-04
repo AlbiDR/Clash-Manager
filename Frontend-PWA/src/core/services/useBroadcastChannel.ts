@@ -53,11 +53,11 @@ export function useBroadcastChannel(
   /**
    * Dispatches a message to all other active tabs.
    *
-   * @param msg - The typed message payload to broadcast.
+   * @param outgoingMessage - The typed message payload to broadcast.
    */
-  function post(msg: BroadcastMessage) {
+  function post(outgoingMessage: BroadcastMessage) {
     if (channel) {
-      channel.postMessage(msg);
+      channel.postMessage(outgoingMessage);
     }
   }
 
@@ -85,8 +85,8 @@ export function useBroadcastChannel(
    * [GUARD] Logic: Safe lifecycle management.
    * Rationale: Composables used in Pinia or services may not have a component instance.
    */
-  const instance = getCurrentInstance();
-  if (instance) {
+  const componentInstance = getCurrentInstance();
+  if (componentInstance) {
     onUnmounted(() => {
       if (channel) {
         if (onMessage) channel.removeEventListener("message", handleMessage);

@@ -27,13 +27,13 @@ The scanner operates as a sequential, atomic pipeline to maintain data integrity
 
 ### S1: Shadow Scout
 **Objective**: opportunistic ingestion.
-- Harvests leads from recent battle-log opponents of tracked players via the `get_shadow_discovery_targets` RPC, which selects distinct recent opponents from `drivers.player_battles` (last 24h), excluding existing members, recruits, and blacklisted tags.
+- Harvests leads from recent battle-log opponents of tracked players via the `get_shadow_discovery_targets` RPC (limited to 75 targets), which selects distinct recent opponents from `drivers.player_battles` (last 24h), excluding existing members, recruits, and blacklisted tags.
 - Identifies "Shadow" candidates—players who have interacted with the clan but are not yet formally tracked.
 
 ### S2: Tournament Discovery
 **Objective**: ecosystem expansion.
 - Activates only when the request payload contains the sentinel `"AUTO"` (cron sends `{"tournaments":["AUTO"]}`); no tournament tags are taken from the payload.
-- Pulls discovery keywords from the DB via the `get_active_discovery_anchors` RPC (falling back to a hardcoded alphanumeric keyword set), then searches `/tournaments?name={keyword}` and harvests members.
+- Pulls discovery keywords from the DB via the `get_active_discovery_anchors` RPC (falling back to a curated alphanumeric keyword set), then searches `/tournaments?name={keyword}` and harvests members.
 - Does NOT apply a trophy filter; it filters only by clan status / exclusion set. Trophy gating is deferred to the S3 Profiler, which fetches the full ladder profile.
 
 ### S3: Profiler
@@ -52,6 +52,7 @@ The scanner operates as a sequential, atomic pipeline to maintain data integrity
 - **Key Farm (`ROYALE_API_KEYS`)**: Utilizes the concurrent key farm to bypass Supercell API rate limits during high-volume tournament scans.
 - **Vault Sync**: Dynamically retrieves authoritative secrets from the Supabase Vault during boot to ensure runtime security.
 - **Context Boundary (`get_headhunter_context`)**: Relies on a secured database RPC to retrieve dynamic exclusion sets (clanned players, blacklisted tags) and performance thresholds.
+- **Safety Epoch Loop**: Implements the Safety Epoch Loop via `substrate.headhunter_epoch_state` to prevent redundant Top-50 leaderboard scans and ensure optimal discovery rotation.
 
 ## Operational Standards
 - **Concurrency Control**: Implements batch processing with concurrency guards to balance ingestion speed against backend pressure.

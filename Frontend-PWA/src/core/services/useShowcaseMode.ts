@@ -47,7 +47,7 @@ export function useShowcaseMode() {
     isSyntheticMode.value = true;
     
     // [FLEXIBILITY] Only force blueprint if not explicitly disabled.
-    // This allows branding pipelines (like portfolio-stitch.html) to request 
+    // This allows branding pipelines (like scripts/portfolio-stitch.html) to request
     // Showcase orchestration without skeleton overlays.
     if (localStorage.getItem("clash_manager_blueprint_mode") !== "false") {
       isBlueprintMode.value = true;
