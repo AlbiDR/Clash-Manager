@@ -136,6 +136,12 @@ export function useBlitzMode(
     };
   });
 
+  /**
+   * Immediately terminates the automated Blitz operation.
+   *
+   * @remarks
+   * Resets the Blitz state and clears any pending execution timers.
+   */
   function stopBlitz() {
     isBlitzActive.value = false;
     if (blitzOperationTimer) {
@@ -144,6 +150,14 @@ export function useBlitzMode(
     }
   }
 
+  /**
+   * Orchestrates the sequential advancement of the Blitz pipeline.
+   *
+   * @remarks
+   * Satisfies ADR Section IV: Resilience. Implements a safety-throttled
+   * recursion pattern to process the selection queue without overwhelming
+   * the native intent handler or triggering browser popup guards.
+   */
   function advanceBlitz() {
     if (!isBlitzActive.value) return;
 
@@ -157,6 +171,9 @@ export function useBlitzMode(
     if (activeRecruitId) {
       openInGame(activeRecruitId);
 
+      // [THREAT:] Rapid intent firing can lead to OS-level queue saturation or battery drain.
+      // [DECISION LOG] Implemented a 4000ms minimum safety delay for automated blitz
+      // to ensure stable deep-link resolution in the native wrapper.
       const safetyDelay = Math.max(throttleMs, 4000);
       if (blitzCurrentItemIndex.value < selectedIds.value.length - 1) {
         blitzOperationTimer = setTimeout(() => {
@@ -179,11 +196,20 @@ export function useBlitzMode(
     }
   }
 
+  /**
+   * Entry point for initiating the automated Blitz operation.
+   *
+   * @remarks
+   * Detects the environment and delegates to the native Android bridge
+   * if available, otherwise initiates the web-based throttled sequence.
+   */
   function handleBlitz() {
     if (isBlitzActive.value || selectedIds.value.length === 0) return;
 
     // [THREAT:] Hardware desynchronization if calling 'any' methods on Window.
     // [DECISION LOG] Enforcing the WindowWithBridge contract for Blitz Mode delegation.
+    // This allows the native Android app to handle the full batch in a single
+    // high-performance loop, bypassing web-layer constraints.
     const nativeBridge = (window as WindowWithBridge).AndroidBridge;
     if (nativeBridge) {
       nativeBridge.startBlitz(JSON.stringify(selectedIds.value));
@@ -200,8 +226,20 @@ export function useBlitzMode(
     advanceBlitz();
   }
 
+  /**
+   * Unified click handler for the floating action button.
+   *
+   * @remarks
+   * Supports two distinct operation modes:
+   * 1. **Manual Incremental:** Advances the blitz state on each user click.
+   * 2. **Batch Semi-Automated:** Processes a local queue with minimal delay.
+   *
+   * @param event - The triggering MouseEvent.
+   */
   function handleAction(event: MouseEvent) {
     if (isBlitzActive.value) {
+      // [DECISION LOG] When Blitz is active, each FAB click acts as a 'manual advance'
+      // signal, allowing users to accelerate the sequence while maintaining control.
       event.preventDefault();
       const activeRecruitId = selectedIds.value[blitzCurrentItemIndex.value];
       if (activeRecruitId) {
@@ -210,6 +248,9 @@ export function useBlitzMode(
 
         if (blitzOperationTimer) {
           clearTimeout(blitzOperationTimer);
+          // [THREAT:] Accidental double-clicks triggering overlapping intent calls.
+          // [DECISION LOG] Resetting the auto-advance timer to prevent race conditions
+          // between manual and automated progression.
           blitzOperationTimer = setTimeout(advanceBlitz, Math.max(throttleMs, 2000));
         }
       }
@@ -218,6 +259,8 @@ export function useBlitzMode(
 
     const currentTime = Date.now();
     if (currentTime - lastDeepLinkTriggerTime.value < throttleMs) {
+      // [THREAT:] Rapid clicking causing browser navigation blocks or 'Popups Blocked' warnings.
+      // [DECISION LOG] Enforcing a hard throttle at the action boundary.
       event.preventDefault();
       return;
     }
