@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-04] PR #1010: docs(readme): reconcile core service and api documentation gaps
+**Commit**: `ba956c390db020da4ab6878932a559b79dc857d0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1010)
+
+### Description
+Synchronized monorepo-wide documentation with the implementation ground truth on the Nightly branch at v14.2.6. Reconciled missing services in @core/services, documented fetchRemote orchestrator in @core/api, synchronized Service Worker sub-modules in @app, and updated Headhunter Scanner stage details in the Backend.
+
+---
+*PR created automatically by Jules for task [42254490687590174](https://jules.google.com/task/42254490687590174) started by @AlbiDR*
+
+---
+
 ## [2026-07-04] PR #1009: chore(baseline): fold new migrations into master baseline
 **Commit**: `3102f67201e7c1275787886abce54e83987719af`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1009)
