@@ -17,11 +17,13 @@
 
 /**
  * Fallback in-memory storage for environments where IndexedDB is unavailable or failing.
+ * // EPHEMERAL: intentionally resets on cold start
  */
 export const memoryStore = new Map<string, unknown>();
 
 /**
  * Global flag indicating if the kernel has fallen back to memory-only mode.
+ * // EPHEMERAL: intentionally resets on cold start
  */
 export let useMemoryStore = false;
 
@@ -29,7 +31,8 @@ export let useMemoryStore = false;
 // [THREAT:] Private browsing modes or restricted environments can expose the IndexedDB
 // global but throw security errors upon access, leading to unhandled runtime exceptions.
 // [DECISION LOG] We perform a proactive probe on initialization to detect these
-// failures early and force a graceful degradation to the memoryStore.
+// failures early and force a graceful degradation to the memoryStore. This protects
+// the higher layers (@core/services) from silent failures during the boot sequence.
 if (typeof indexedDB === "undefined") {
   useMemoryStore = true;
 } else {
@@ -45,7 +48,7 @@ if (typeof indexedDB === "undefined") {
       }
       indexedDB.deleteDatabase("CM_KERNEL_CHECK");
     };
-  } catch (probeError) {
+  } catch (idbProbeError: unknown) {
     useMemoryStore = true;
   }
 }
@@ -76,12 +79,13 @@ export function deleteDatabasePromise(dbName: string): Promise<void> {
         // during database migrations or concurrent access conflicts.
         setTimeout(resolve, 1500);
       };
-    } catch (idbDeleteError) {
+    } catch (dbDeletionError: unknown) {
       resolve();
     }
   });
 }
 
+// EPHEMERAL: intentionally resets on cold start
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 /**
@@ -113,8 +117,11 @@ export async function openDB(
 
     const idbOpenRequest = indexedDB.open(dbName, version);
 
-    idbOpenRequest.onupgradeneeded = (idbUpgradeEvent) => {
-      const db = (idbUpgradeEvent.target as IDBOpenDBRequest).result;
+    // [THREAT:] Race conditions or schema conflicts during upgrade can corrupt persistence.
+    // [DECISION LOG] Upgrade logic is encapsulated in a dedicated callback to ensure
+    // structural integrity before the connection is marked successful.
+    idbOpenRequest.onupgradeneeded = (dbUpgradeEvent) => {
+      const db = (dbUpgradeEvent.target as IDBOpenDBRequest).result;
       onUpgrade(db);
     };
 
@@ -123,16 +130,16 @@ export async function openDB(
       if (onSuccess) {
         try {
           await onSuccess(db);
-        } catch (idbSuccessHookError) {
-          console.warn("[IDB-Kernel] onSuccess hook failed:", idbSuccessHookError);
+        } catch (postConnectionHookError: unknown) {
+          console.warn("[IDB-Kernel] onSuccess hook failed:", postConnectionHookError);
         }
       }
       resolve(db);
     };
 
-    idbOpenRequest.onerror = (idbOpenError) => {
+    idbOpenRequest.onerror = (dbOpeningError) => {
       dbPromise = null;
-      reject(idbOpenRequest.error || idbOpenError);
+      reject(idbOpenRequest.error || dbOpeningError);
     };
   });
 
@@ -185,9 +192,10 @@ export const idbCore = {
           const idbGetRequest = idbStore.get(key);
           idbGetRequest.onsuccess = () => resolve((idbGetRequest.result as T) || null);
           idbGetRequest.onerror = () => reject(idbGetRequest.error);
-        } catch (idbGetError) { reject(idbGetError); }
+        } catch (readOperationError: unknown) { reject(readOperationError); }
       });
     } catch {
+      // [THREAT:] Silent runtime failures in IDB operations can stall the UI thread.
       // [DECISION LOG] Runtime failures in IDB trigger an immediate degradation
       // to memory-only mode to preserve application responsiveness.
       useMemoryStore = true;
@@ -214,9 +222,12 @@ export const idbCore = {
           const idbSetRequest = idbStore.put(value, key);
           idbSetRequest.onsuccess = () => resolve();
           idbSetRequest.onerror = () => reject(idbSetRequest.error);
-        } catch (idbSetError) { reject(idbSetError); }
+        } catch (writeOperationError: unknown) { reject(writeOperationError); }
       });
     } catch {
+      // [THREAT:] Storage exhaustion or IO failures must not prevent UI state commitment.
+      // [DECISION LOG] Fall back to memoryStore to ensure that the user's latest interactions
+      // are captured even if persistence is failing.
       useMemoryStore = true;
       memoryStore.set(key, value);
     }
@@ -240,7 +251,7 @@ export const idbCore = {
           const idbDelRequest = idbStore.delete(key);
           idbDelRequest.onsuccess = () => resolve();
           idbDelRequest.onerror = () => reject(idbDelRequest.error);
-        } catch (idbDelError) { reject(idbDelError); }
+        } catch (deleteOperationError: unknown) { reject(deleteOperationError); }
       });
     } catch {
       useMemoryStore = true;
@@ -265,7 +276,7 @@ export const idbCore = {
           const idbClearRequest = idbStore.clear();
           idbClearRequest.onsuccess = () => resolve();
           idbClearRequest.onerror = () => reject(idbClearRequest.error);
-        } catch (idbClearError) { reject(idbClearError); }
+        } catch (clearOperationError: unknown) { reject(clearOperationError); }
       });
     } catch {
       useMemoryStore = true;
