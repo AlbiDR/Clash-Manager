@@ -118,9 +118,9 @@ export function useBadge() {
    */
   async function setDirectBadge(count: number) {
     if (hasStandardBadge) {
-      const nav = navigator as NavigatorWithBadge;
-      if (count > 0) await nav.setAppBadge(count);
-      else await nav.clearAppBadge();
+      const badgeNavigator = navigator as NavigatorWithBadge;
+      if (count > 0) await badgeNavigator.setAppBadge(count);
+      else await badgeNavigator.clearAppBadge();
     }
 
     // Also notify service worker for consistency
@@ -174,12 +174,12 @@ export function useBadge() {
           // OTHER PLATFORMS: Use direct Badge API.
           await setDirectBadge(safeCount);
         }
-      } catch (e) {
+      } catch (badgeUpdateError) {
         if (attempts < MAX_RETRIES) {
           attempts++;
           setTimeout(trySet, 800 * attempts);
         } else {
-          console.warn("[Badge] Persistent failure", e);
+          console.warn("[Badge] Persistent failure", badgeUpdateError);
         }
       }
     };

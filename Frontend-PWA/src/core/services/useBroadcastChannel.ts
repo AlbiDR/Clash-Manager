@@ -85,8 +85,8 @@ export function useBroadcastChannel(
    * [GUARD] Logic: Safe lifecycle management.
    * Rationale: Composables used in Pinia or services may not have a component instance.
    */
-  const instance = getCurrentInstance();
-  if (instance) {
+  const componentInstance = getCurrentInstance();
+  if (componentInstance) {
     onUnmounted(() => {
       if (channel) {
         if (onMessage) channel.removeEventListener("message", handleMessage);
