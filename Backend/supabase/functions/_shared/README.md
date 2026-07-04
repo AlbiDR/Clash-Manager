@@ -26,10 +26,10 @@ Standardizes authorization, validation, and microscopic telemetry across all Edg
 - **Microscopic Telemetry**: Orchestrates the standard `report_telemetry` and `report_heartbeat` lifecycle, tracking durations and audit logs for every execution.
 
 ### Validation Boundaries (`schemas.ts`)
-The authoritative Single Source of Truth for backend validation.
-- **Royale API Normalization**: Standardizes raw data from external sources (Clash Royale API) into clinical relational payloads.
-- **Key Farm Hygiene**: Provides the `KeyPoolSchema` for clinical normalization and fallback of heterogeneous API key inputs.
-- **Secret Hardening**: Implements the `VaultSecretSchema` to coerce heterogeneous database results into predictable, typed strings.
+The authoritative Single Source of Truth for backend validation. This monolithic module is decomposed into domain-specific sub-modules to ensure maintainability and adhere to the Single Responsibility Principle (SRP).
+- **Royale API Schemas (`royaleSchemas.ts`)**: Standardizes raw data from external sources (Clash Royale API) into clinical relational payloads.
+- **RPC Schemas (`rpcSchemas.ts`)**: Defines strict contracts for data crossing the Supabase RPC boundary, including sync payloads and scanner contexts.
+- **Substrate Schemas (`substrateSchemas.ts`)**: Provides validation for internal telemetry, key farm hygiene (`KeyPoolSchema`), and secret hardening (`VaultSecretSchema`).
 
 ### Hardware Brokers (`muscle.ts`)
 The high-concurrency ingestion engine (Native Muscle).
