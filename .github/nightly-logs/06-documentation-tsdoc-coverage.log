@@ -109,3 +109,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-07-02 | Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts | Documented Layer 3 orchestrator and added mandatory threat/decision logs for Blitz and Scraper engines.
 2026-07-03 | Backend/supabase/functions/_shared/types.ts | Documented shared pipeline interfaces and added ADR Section II mappings.
 2026-07-03 | Frontend-PWA/src/shared/utils/game.ts | Documented role formatter and added architectural decision logs for display labels.
+2026-07-04 | Frontend-PWA/src/core/services/useBlitzMode.ts | Documented automated blitz orchestrator, added TSDoc for internal handlers and injected mandatory threat/decision logs for native bridge delegation.
