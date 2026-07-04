@@ -84,15 +84,15 @@ export function useConnectivityManager() {
    * formatted strings and logical minutes.
    */
   const metadata = computed((): HubMetadata => {
-    const now = Date.now();
+    const currentTimeMs = Date.now();
     const lastSyncTs = unref(store.lastSyncTime);
-    const ageMs = lastSyncTs ? now - lastSyncTs : 0;
-    const ageMins = Math.floor(ageMs / 60000);
+    const dataAgeMs = lastSyncTs ? currentTimeMs - lastSyncTs : 0;
+    const dataAgeMinutes = Math.floor(dataAgeMs / 60000);
 
     return {
       source: unref(store.currentSource) || "LOCAL",
       age: lastSyncTs ? formatTimeAgo(lastSyncTs) : null,
-      ageMinutes: ageMins,
+      ageMinutes: dataAgeMinutes,
       lastCompiled: unref(store.lastCompiledTime) ? formatTimeAgo(unref(store.lastCompiledTime)) : null,
       lastFetched: unref(store.lastFetchedTime) ? formatTimeAgo(unref(store.lastFetchedTime)) : null,
       isStale: unref(store.isStale)

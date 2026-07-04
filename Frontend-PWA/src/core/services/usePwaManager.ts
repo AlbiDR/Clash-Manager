@@ -62,9 +62,9 @@ export function usePwaManager() {
     try {
       // [THREAT:] Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
       if ("serviceWorker" in navigator) {
-        const swRegistration = await navigator.serviceWorker.getRegistration();
+        const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
 
-        if (!swRegistration) {
+        if (!serviceWorkerRegistration) {
           // [DECISION LOG] No registration found usually means the app hasn't fully
           // booted or is in a broken state. Exit early to avoid null reference.
           toast.remove(activeToastId);
@@ -72,7 +72,7 @@ export function usePwaManager() {
           return;
         }
 
-        if (swRegistration.waiting) {
+        if (serviceWorkerRegistration.waiting) {
           // [DECISION LOG] An update was already downloaded and is ready to be applied.
           // Trigger immediate activation and reload.
           toast.remove(activeToastId);
@@ -81,9 +81,9 @@ export function usePwaManager() {
           return;
         }
 
-        await swRegistration.update();
+        await serviceWorkerRegistration.update();
 
-        if (swRegistration.installing || swRegistration.waiting) {
+        if (serviceWorkerRegistration.installing || serviceWorkerRegistration.waiting) {
           toast.remove(activeToastId);
           toast.success("Update found! Downloading...");
         } else {
@@ -127,8 +127,8 @@ export function usePwaManager() {
       }
 
       // [DECISION LOG] 2. Delete Caches: Clears the 'Stale' or corrupted assets stored via CacheStorage.
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+      const pwaCacheNames = await caches.keys();
+      await Promise.all(pwaCacheNames.map((cacheName) => caches.delete(cacheName)));
 
       // [DECISION LOG] 3. Optional Callback (e.g. for Layer 2 theme manifest cleanup)
       // Maintaining strict Layer 1 boundaries by delegating Layer 2 specific cleanup.
@@ -161,15 +161,15 @@ export function usePwaManager() {
           for (const registration of swRegistrations) {
             await registration.unregister();
           }
-        } catch (swError) {
-          console.warn("[PWA] SW unregister failed during reset", swError);
+        } catch (serviceWorkerUnregisterError) {
+          console.warn("[PWA] SW unregister failed during reset", serviceWorkerUnregisterError);
         }
       }
 
       // [DECISION LOG] 2. Delete Caches: Clears the 'Stale' or corrupted assets.
       try {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+        const pwaCacheNames = await caches.keys();
+        await Promise.all(pwaCacheNames.map((cacheName) => caches.delete(cacheName)));
       } catch (cacheError) {
         console.warn("[PWA] Cache delete failed during reset", cacheError);
       }
@@ -185,8 +185,8 @@ export function usePwaManager() {
         } else {
           await idb.clear();
         }
-      } catch (resetError) {
-        console.warn("IDB destroyAll/clear failed", resetError);
+      } catch (idbResetError) {
+        console.warn("IDB destroyAll/clear failed", idbResetError);
       }
 
       // [DECISION LOG] 5. Optional Callback (e.g. for Layer 2 theme manifest cleanup)

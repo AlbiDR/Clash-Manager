@@ -71,12 +71,12 @@ export function useCardMechanics(
    * Specialized handler for clicks on the ScoreBadge.
    *
    * @remarks
-   * Utilizes `interactionEvent.stopPropagation()` to isolate the event from the card's main
+   * Utilizes `cardInteractionEvent.stopPropagation()` to isolate the event from the card's main
    * tap handler, ensuring that clicking the score ONLY selects the card
    * without triggering an unintentional expansion or collapse.
    */
-  function handleScoreClick(interactionEvent: MouseEvent | TouchEvent) {
-    interactionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
+  function handleScoreClick(cardInteractionEvent: MouseEvent | TouchEvent) {
+    cardInteractionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
     haptics.tap();
     interactionCallbacks.onSelect();
   }
@@ -85,12 +85,12 @@ export function useCardMechanics(
    * Specialized handler for clicks on the Expansion Toggle (Chevron).
    *
    * @remarks
-   * Utilizes `interactionEvent.stopPropagation()` to isolate the event from the card's main
+   * Utilizes `cardInteractionEvent.stopPropagation()` to isolate the event from the card's main
    * tap handler. This is critical when the card is in selection mode,
    * allowing the user to expand details without unintentionally selecting the item.
    */
-  function handleExpandClick(interactionEvent: MouseEvent | TouchEvent) {
-    interactionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
+  function handleExpandClick(cardInteractionEvent: MouseEvent | TouchEvent) {
+    cardInteractionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
     haptics.tap();
     interactionCallbacks.onExpand();
   }

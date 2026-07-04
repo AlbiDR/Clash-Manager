@@ -47,14 +47,14 @@ export function useDeepLinkHandler(domIdPrefix: string) {
   /**
    * Toggles the expansion state of a specific item.
    *
-   * @param id - The unique identifier of the item to toggle.
+   * @param targetItemId - The unique identifier of the item to toggle.
    */
-  function toggleExpand(id: string) {
+  function toggleExpand(targetItemId: string) {
     const updatedExpandedSet = new Set(expandedIds.value);
-    if (updatedExpandedSet.has(id)) {
-      updatedExpandedSet.delete(id);
+    if (updatedExpandedSet.has(targetItemId)) {
+      updatedExpandedSet.delete(targetItemId);
     } else {
-      updatedExpandedSet.add(id);
+      updatedExpandedSet.add(targetItemId);
     }
     expandedIds.value = updatedExpandedSet;
   }
