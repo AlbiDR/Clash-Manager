@@ -3289,22 +3289,41 @@ DECLARE
     v_recruits               JSONB;
     v_members                JSONB;
     v_voyage_remaining_secs  BIGINT;
+    v_voyage_is_active       BOOLEAN;
 BEGIN
-    -- Resolve active voyage remaining time (NULL when no voyage is active).
-    SELECT GREATEST(0, EXTRACT(EPOCH FROM (end_at - now()))::BIGINT)
-    INTO v_voyage_remaining_secs
+    -- Resolve active voyage state and remaining time.
+    -- NULL remaining means no voyage is currently active.
+    SELECT
+        TRUE,
+        GREATEST(0, EXTRACT(EPOCH FROM (end_at - now()))::BIGINT)
+    INTO v_voyage_is_active, v_voyage_remaining_secs
     FROM drivers.clan_voyage
     WHERE status = 'ACTIVE'
     ORDER BY created_at DESC
     LIMIT 1;
 
-    -- Members: only those whose scheduled poll time has elapsed or is unset.
-    -- next_poll_at NULL means "never polled yet" - always include.
+    v_voyage_is_active := COALESCE(v_voyage_is_active, FALSE);
+
+    -- Members targeting logic:
+    --   [VOYAGE ACTIVE]  Bypass next_poll_at entirely. All active members
+    --                    must be polled on every pipeline run to guarantee
+    --                    zero battle-log gaps during the event window.
+    --                    The per-player adaptive ceiling is applied inside
+    --                    ingest_player_battles() once they are fetched.
+    --
+    --   [NO VOYAGE]      Normal schedule-based targeting: include only
+    --                    members whose poll window has elapsed or is unset.
+    --                    next_poll_at IS NULL means "never polled" - always
+    --                    include.
     SELECT jsonb_agg(player_tag)
     INTO v_members
     FROM drivers.members
     WHERE is_active = true
-      AND (next_poll_at IS NULL OR next_poll_at <= now());
+      AND (
+          v_voyage_is_active
+          OR next_poll_at IS NULL
+          OR next_poll_at <= now()
+      );
 
     SELECT jsonb_agg(player_tag)
     INTO v_recruits
