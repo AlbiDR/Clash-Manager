@@ -477,8 +477,12 @@ function checkDatabaseBaseline() {
     }
   }
 
-  // Out of line UNIQUE constraints check
-  if (content.includes('ALTER TABLE') && content.includes('ADD CONSTRAINT') && content.includes('UNIQUE')) {
+  // Out of line UNIQUE constraints check.
+  // Must match a single ALTER TABLE statement that adds a UNIQUE constraint,
+  // e.g.: ALTER TABLE foo ADD CONSTRAINT bar UNIQUE (col);
+  // Inline UNIQUE inside CREATE TABLE and FK-only ALTER TABLE statements are not flagged.
+  const outOfLineUniquePattern = /ALTER\s+TABLE\s+\S+\s+ADD\s+CONSTRAINT\s+\S+\s+UNIQUE\b/i;
+  if (outOfLineUniquePattern.test(content)) {
     dbErrors.push('Found out-of-line UNIQUE constraints');
   }
 
