@@ -12,6 +12,7 @@ import {
   useConnectionStatus,
   useUiCoordinator,
   useSystemInfo,
+  useShareTarget,
 } from "@core";
 import { useHaptics } from "@shared";
 import { onMounted, computed, watch, ref } from "vue";
@@ -69,9 +70,15 @@ watch(isOnline, (online, wasOnline) => {
 const updateServiceWorker = ref(() => {});
 
 onMounted(() => {
-  // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent 
+  // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent
   // headless browser crashes during branding asset generation.
   if (!import.meta.env.PROD) return;
+
+  // SHARE TARGET: Process any incoming Web Share Target API parameters.
+  // Must run before the PWA registration so the router is already mounted.
+  // [ADR II] L4 is the only layer permitted to orchestrate cross-service entry.
+  const { handleShareTarget } = useShareTarget();
+  handleShareTarget();
 
   setTimeout(async () => {
     try {

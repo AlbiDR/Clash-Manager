@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shortcuts
   xmlns:android="http://schemas.android.com/apk/res/android">
-    <shortcut android:icon="@drawable/shortcut_0" android:enabled="true">
+    <shortcut android:icon="@drawable/shortcut_0" android:enabled="true" android:shortcutId="shortcut0" android:shortcutShortLabel="@string/shortcut_short_name_0" android:shortcutLongLabel="@string/shortcut_name_0">
         <intent android:targetPackage="com.albidr.clashmanager" android:action="android.intent.action.MAIN" android:data="https://albidr.github.io/Clash-Manager/#/roster" android:targetClass="com.albidr.clashmanager.MainActivity" />
         <categories android:name="android.intent.category.LAUNCHER" />
     </shortcut>
-    <shortcut android:icon="@drawable/shortcut_1" android:enabled="true">
+    <shortcut android:icon="@drawable/shortcut_1" android:enabled="true" android:shortcutId="shortcut1" android:shortcutShortLabel="@string/shortcut_short_name_1" android:shortcutLongLabel="@string/shortcut_name_1">
         <intent android:targetPackage="com.albidr.clashmanager" android:action="android.intent.action.MAIN" android:data="https://albidr.github.io/Clash-Manager/#/headhunter" android:targetClass="com.albidr.clashmanager.MainActivity" />
         <categories android:name="android.intent.category.LAUNCHER" />
     </shortcut>
-    <shortcut android:icon="@drawable/shortcut_2" android:enabled="true">
+    <shortcut android:icon="@drawable/shortcut_2" android:enabled="true" android:shortcutId="shortcut2" android:shortcutShortLabel="@string/shortcut_short_name_2" android:shortcutLongLabel="@string/shortcut_name_2">
         <intent android:targetPackage="com.albidr.clashmanager" android:action="android.intent.action.MAIN" android:data="https://albidr.github.io/Clash-Manager/#/settings" android:targetClass="com.albidr.clashmanager.MainActivity" />
         <categories android:name="android.intent.category.LAUNCHER" />
     </shortcut>

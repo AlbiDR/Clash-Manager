@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <background>
+        <layer-list>
+            <item android:drawable="@color/shortcut_background" />
+            <item android:drawable="@drawable/shortcut_1_maskable" android:left="8.5dp" android:top="8.5dp" android:right="8.5dp" android:bottom="8.5dp" />
+        </layer-list>
+    </background>
+    <foreground android:drawable="@android:color/transparent" />
+</adaptive-icon>

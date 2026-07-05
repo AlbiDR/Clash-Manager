@@ -65,7 +65,7 @@ export function useShareTarget() {
         );
 
         // Redirect to Recruiter with filter
-        router.push({ path: "/recruiter", query: { pin: extractedTag } });
+        router.push({ path: "/headhunter", query: { pin: extractedTag } });
       }
     }
   }

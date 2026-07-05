@@ -1,14 +1,55 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import { computed } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
+import { useExternalLink, getSupercellLocale } from "@core";
 
 defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
 const { isRefreshing } = useSettings();
+const { openExternal } = useExternalLink();
+
+// Locale-aware: Supercell URLs include a locale segment that must match the
+// user's browser language. Resolved once at mount via getSupercellLocale().
+const usefulLinks = computed(() => {
+  const locale = getSupercellLocale();
+  return [
+    {
+      label: "RoyaleAPI Blog",
+      desc: "Latest news and articles about Clash Royale",
+      url: "https://royaleapi.com/blog",
+      icon: "external-link",
+    },
+    {
+      label: "RoyaleAPI Giveaway",
+      desc: "Claim free in-game cosmetics and perks",
+      url: "https://royaleapi.com/free",
+      icon: "external-link",
+    },
+    {
+      label: "Supercell ID Rewards",
+      desc: "Access your Supercell ID rewards and benefits",
+      url: `https://id.supercell.com/${locale}/clashroyale/`,
+      icon: "external-link",
+    },
+    {
+      label: "Clash Royale Store",
+      desc: "Official Supercell store specials and deals",
+      url: `https://store.supercell.com/${locale}/clashroyale`,
+      icon: "external-link",
+    },
+    {
+      label: "Clash Manager on GitHub",
+      desc: "Contribute to the open source project",
+      url: "https://github.com/AlbiDR/Clash-Manager",
+      icon: "github",
+    },
+  ];
+});
 </script>
 
 <template>
@@ -19,75 +60,19 @@ const { isRefreshing } = useSettings();
     :initially-expanded="initiallyExpanded"
   >
     <div class="links-list">
-      <a
-        href="https://royaleapi.com/blog"
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        v-for="link in usefulLinks"
+        :key="link.url"
         class="link-row"
         v-tactile
+        @click="openExternal(link.url)"
       >
         <div class="link-info">
-          <span class="link-label">RoyaleAPI Blog</span>
-          <span class="link-desc">Latest news and articles about Clash Royale</span>
+          <span class="link-label">{{ link.label }}</span>
+          <span class="link-desc">{{ link.desc }}</span>
         </div>
-        <Icon name="external-link" size="18" class="link-icon" />
-      </a>
-
-      <a
-        href="https://royaleapi.com/free"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="link-row"
-        v-tactile
-      >
-        <div class="link-info">
-          <span class="link-label">RoyaleAPI Giveaway</span>
-          <span class="link-desc">Claim free in-game cosmetics and perks</span>
-        </div>
-        <Icon name="external-link" size="18" class="link-icon" />
-      </a>
-
-      <a
-        href="https://id.supercell.com/it/clashroyale/"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="link-row"
-        v-tactile
-      >
-        <div class="link-info">
-          <span class="link-label">Supercell ID Rewards</span>
-          <span class="link-desc">Access your Supercell ID rewards and benefits</span>
-        </div>
-        <Icon name="external-link" size="18" class="link-icon" />
-      </a>
-
-      <a
-        href="https://store.supercell.com/it/clashroyale"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="link-row"
-        v-tactile
-      >
-        <div class="link-info">
-          <span class="link-label">Clash Royale Store</span>
-          <span class="link-desc">Official Supercell store specials and deals</span>
-        </div>
-        <Icon name="external-link" size="18" class="link-icon" />
-      </a>
-
-      <a
-        href="https://github.com/AlbiDR/Clash-Manager"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="link-row"
-        v-tactile
-      >
-        <div class="link-info">
-          <span class="link-label">Clash Manager on GitHub</span>
-          <span class="link-desc">Contribute to the open source project</span>
-        </div>
-        <Icon name="github" size="18" class="link-icon" />
-      </a>
+        <Icon :name="link.icon" size="18" class="link-icon" />
+      </button>
     </div>
   </SettingsCard>
 </template>
@@ -103,6 +88,15 @@ const { isRefreshing } = useSettings();
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  /* button resets */
+  appearance: none;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  /* shared */
   text-decoration: none;
   cursor: pointer;
   padding: 4px 0;

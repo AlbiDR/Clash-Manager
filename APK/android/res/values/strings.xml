@@ -37,7 +37,7 @@
     <string name="fallback_menu_item_open_in_browser">Open in browser</string>
     <string name="fallback_menu_item_share_link">Share link</string>
     <string name="fullScopeUrl">https://albidr.github.io/Clash-Manager/</string>
-    <string name="generatorApp">bubblewrap-cli</string>
+    <string name="generatorApp">clash-manager-apk</string>
     <string name="hostName">albidr.github.io</string>
     <string name="launchHandlerClientMode">navigate-existing,auto</string>
     <string name="launchUrl">https://albidr.github.io/Clash-Manager/#/roster</string>
