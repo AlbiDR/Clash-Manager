@@ -1046,8 +1046,6 @@
     <public type="style" name="Base.V26.Theme.AppCompat" id="0x7f10005a" />
     <public type="style" name="Base.V26.Theme.AppCompat.Light" id="0x7f10005b" />
     <public type="style" name="Base.V26.Widget.AppCompat.Toolbar" id="0x7f10005c" />
-    <public type="style" name="Base.V28.Theme.AppCompat" id="0x7f10005d" />
-    <public type="style" name="Base.V28.Theme.AppCompat.Light" id="0x7f10005e" />
     <public type="style" name="Base.V7.Theme.AppCompat" id="0x7f10005f" />
     <public type="style" name="Base.V7.Theme.AppCompat.Dialog" id="0x7f100060" />
     <public type="style" name="Base.V7.Theme.AppCompat.Light" id="0x7f100061" />
