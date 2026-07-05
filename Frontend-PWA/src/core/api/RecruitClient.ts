@@ -40,21 +40,21 @@ export async function dismissRecruits(
 ): Promise<ApiResponse<DismissResponse>> {
   const supabase = createSupabaseClient();
   // [ADR] Normalize IDs: Ensure all tags have the # prefix to satisfy drivers.recruit_blacklist CHECK constraints.
-  const normalizedItems = dismissalRequests.map(item => ({
-    ...item,
-    id: item.id.startsWith('#') ? item.id : `#${item.id}`
+  const normalizedItems = dismissalRequests.map(dismissalRequest => ({
+    ...dismissalRequest,
+    id: dismissalRequest.id.startsWith('#') ? dismissalRequest.id : `#${dismissalRequest.id}`
   }));
 
   // [THREAT:] Unvalidated RPC results can cause logic corruption in the feature layer.
   // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
-  const { data, error } = await supabase.rpc('dismiss_recruits', { items: normalizedItems });
+  const { data: dismissRpcResponse, error: dismissRpcError } = await supabase.rpc('dismiss_recruits', { items: normalizedItems });
 
   // [DESIGN] CONNECTION REQUIRED: Dismissal requires an active connection.
   // The offline queue has been removed. On any failure, throw immediately so
   // the caller can roll back the optimistic tombstone and inform the user.
-  if (error) throw new NetworkError(error.message);
+  if (dismissRpcError) throw new NetworkError(dismissRpcError.message);
 
-  return { success: true, data: v.parse(DismissResponseSchema, data) };
+  return { success: true, data: v.parse(DismissResponseSchema, dismissRpcResponse) };
 }
 
 /**
@@ -72,16 +72,16 @@ export async function undismissRecruits(
   targetTags: string[],
 ): Promise<ApiResponse<DismissResponse>> {
   const supabase = createSupabaseClient();
-  const player_tags = targetTags.map(id => id.startsWith('#') ? id : `#${id}`);
+  const playerTagCandidates = targetTags.map(playerTagCandidate => playerTagCandidate.startsWith('#') ? playerTagCandidate : `#${playerTagCandidate}`);
 
   // [THREAT:] Unvalidated RPC results can cause logic corruption in the feature layer.
   // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
-  const { data, error } = await supabase.rpc('undismiss_recruits', { player_tags });
+  const { data: undismissRpcResponse, error: undismissRpcError } = await supabase.rpc('undismiss_recruits', { player_tags: playerTagCandidates });
 
   // [DESIGN] CONNECTION REQUIRED: Undismissal requires an active connection.
-  if (error) throw new NetworkError(error.message);
+  if (undismissRpcError) throw new NetworkError(undismissRpcError.message);
 
-  return { success: true, data: v.parse(DismissResponseSchema, data) };
+  return { success: true, data: v.parse(DismissResponseSchema, undismissRpcResponse) };
 }
 
 /**
@@ -155,7 +155,7 @@ export function subscribeToBlacklist(
  */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase.from('headhunter_view').select('*').limit(20);
-  if (error || !data) return null;
-  return data.map(mapSbHeadhunterRow);
+  const { data: rawHeadhunterRows, error: headhunterFetchError } = await supabase.from('headhunter_view').select('*').limit(20);
+  if (headhunterFetchError || !rawHeadhunterRows) return null;
+  return rawHeadhunterRows.map(mapSbHeadhunterRow);
 }
