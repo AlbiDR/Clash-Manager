@@ -95,6 +95,7 @@ try {
 
 if (process.exitCode === 1) {
   console.log('\n\x1b[31m\x1b[1mAUDIT FAILED\x1b[0m');
-} else {
-  console.log('\n\x1b[32m\x1b[1mAUDIT PASSED\x1b[0m');
+  process.exit(1);
 }
+console.log('\n\x1b[32m\x1b[1mAUDIT PASSED\x1b[0m');
+process.exit(0);

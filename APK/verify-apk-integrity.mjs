@@ -25,6 +25,9 @@ import os from "node:os";
 
 const APK = process.argv[2] || "clashmanager.apk";
 
+// Hard timeout per child process: prevents aapt2 or unzip from hanging the pipeline.
+const EXEC_TIMEOUT_MS = 120_000;
+
 // ---- Verified expectations (recovered from the V4 APK; see android/README.md)
 const EXPECT = {
   packageName: "com.albidr.clashmanager",
@@ -87,12 +90,12 @@ function main() {
     process.exit(2);
   }
 
-  const badging = execSync(`"${aapt2}" dump badging "${APK}"`, { encoding: "utf8", maxBuffer: 64 << 20 });
-  const manifest = execSync(`"${aapt2}" dump xmltree "${APK}" --file AndroidManifest.xml`, { encoding: "utf8", maxBuffer: 64 << 20 });
+  const badging = execSync(`"${aapt2}" dump badging "${APK}"`, { encoding: "utf8", maxBuffer: 64 << 20, timeout: EXEC_TIMEOUT_MS });
+  const manifest = execSync(`"${aapt2}" dump xmltree "${APK}" --file AndroidManifest.xml`, { encoding: "utf8", maxBuffer: 64 << 20, timeout: EXEC_TIMEOUT_MS });
   // dex method-name strings (covers single + multidex)
   let dexStrings = "";
   try {
-    dexStrings = execSync(`unzip -p "${APK}" 'classes*.dex' | strings`, { encoding: "utf8", maxBuffer: 256 << 20, shell: "/bin/bash" });
+    dexStrings = execSync(`unzip -p "${APK}" 'classes*.dex' | strings`, { encoding: "utf8", maxBuffer: 256 << 20, shell: "/bin/bash", timeout: EXEC_TIMEOUT_MS });
   } catch { /* strings/unzip may warn; ignore */ }
 
   const problems = [];

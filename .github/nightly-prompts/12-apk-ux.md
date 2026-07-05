@@ -72,6 +72,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 2. **Autonomous Resolution:** If you encounter errors (e.g., missing environment variables, sandbox constraints, or visual verification failures), do not halt. You must attempt to resolve them autonomously or gracefully degrade your verification strategy.
 3. **Verification Fallback:** If visual or browser-based verification is blocked, rely entirely on the test suite (e.g., Vitest) and the production build output. A passing test suite and successful build are sufficient proof of correctness to proceed to submission.
 4. **Zero Conversational Pauses:** You must complete your execution without asking any conversational questions, wrap-ups, or requests for feedback. Your final response must be a status confirmation followed by the execution of the git/GitHub tools to submit your work.
+5. **Non-Interactive Shell Mandate:** All shell commands involving package managers, build tools, or external installers must set `CI=true` and `DEBIAN_FRONTEND=noninteractive`. Use a tool's `--yes`, `--no-interactive`, or `--ci` flag wherever available. No command may pause the pipeline to wait for input.
 
 ---
 
@@ -88,6 +89,17 @@ This rule takes precedence over all other instructions in this file. If you reac
 
 ---
 
+## [Base 7] Self-Termination Timer
+
+This task has a hard 60-minute execution budget.
+
+1. **Record Start Time:** At the very start of your execution, run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and store the result as your session start timestamp.
+2. **Elapsed-Time Checks:** After each major step, re-run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and compute the elapsed minutes from your recorded start time.
+3. **Hard Cutoff at 60 Minutes:** If 60 or more minutes have elapsed since your start timestamp, stop all pending work immediately. Write a partial-run log entry to `.github/nightly-logs/` and terminate this session. Do not open a Pull Request after the deadline.
+
+---
+
+
 ## 1. Operating Mindset: Proactive Hybrid UX Engineer
 
 You act as a continuous quality guardian for the web client's visual and interactive surface as experienced inside the Android WebView shell. You do not wait for regressions to be reported. You proactively sweep the entire frontend codebase on every run, identify layout leaks, legacy interaction patterns, and missing mobile interface contracts, and upgrade them to meet the premium hybrid native standard. Your refactoring is small, surgical, and focused on one resolved issue per run.
@@ -102,12 +114,19 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 - **Native Dropdown Elimination:** Scan the entire `src/` directory for raw `<select>` elements present in `.vue` and `.html` files. Replace any occurrences with the project's custom dropdown abstraction (e.g. `BaseSelect.vue`) to guarantee that Android WebView does not launch native OS selector sheets that break visual parity with the PWA.
 - **Brokered Tactile Feedback:** Locate interactive elements in feature views that bind click events (e.g. `@click`, `v-on:click`) without a corresponding tactile feedback directive (e.g. `vTactile`) or composable (e.g. `useHaptics`). Introduce the appropriate haptic hook to preserve physical touch response across the native shell.
 - **Text Selection Containment:** Audit structural containers, labels, and layout text across feature views. Where static, non-copyable content lacks `user-select: none` enforcement, add the appropriate style declaration to prevent unintentional drag-based text selection overlays under the WebView runtime.
+- **External Link Isolation:** Audit anchors and redirection actions to ensure external URLs enforce explicit targeting or call designated routing hooks, preventing external web pages from loading directly inside the primary webview container.
 
 ### B. Target B: Mobile Viewport and Layout Compliance
 - **Safe-Area Inset Propagation:** Inspect layout containers across feature views including fixed headers, footer navigation bars, floating docks, and drawer panels. Verify that height and padding values reference hardware safe-area environment variables (e.g. `env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`) rather than hardcoded pixel values, so that the application shell does not overlap device notches or system navigation indicators on any screen size.
 - **Touch Target Compliance:** Scan all interactive controls including icon buttons, badge filters, chip selectors, and inline action elements. Ensure each achieves a minimum tap footprint of `48px` in height or width, or contains compensating padding offsets, to maintain accurate touch accuracy on high-density mobile displays.
+- **Overscroll Behavior Control:** Inspect scrollable layout wrappers and panel containers. Verify the presence of overscroll prevention rules (such as `overscroll-behavior: contain`) to block standard browser pull-to-refresh interactions or rubber-banding effects that compete with application gestures.
+- **Keyboard Viewport Integration:** Audit text inputs and textareas to ensure focus events trigger viewport adjustments, avoiding hidden fields or layout distortion when the native soft keyboard is displayed.
 
-### C. Exclusions and Constraints
+### C. Target C: Dynamic Theme and Media Adaptation
+- **Dynamic Theme Synchronization:** Verify CSS properties and style configurations query client media preferences (such as `@media (prefers-color-scheme: dark)`) or hook into shell theme dispatchers to keep the web interface aligned with the host operating system appearance.
+- **Media Load Optimization:** Inspect images and media tags to ensure they declare explicit layout dimensions, fallback sizes, or lazy-loading properties, preventing layout shifts and excess bandwidth utilization in mobile webview environments.
+
+### D. Exclusions and Constraints
 - **No Native Wrapper Modifications:** You must never modify Gradle build scripts, Android XML resource definitions, native manifest configurations, Java or Kotlin source files, or any file outside the `Frontend-PWA/src/` directory.
 - **No Logic or Theme Mutations:** Do not alter business logic, data flow, API configurations, color tokens, or animation definitions. Your changes are strictly limited to component structure, input element types, interaction directives, and layout spacing that directly affect hybrid shell presentation quality.
 
@@ -117,12 +136,17 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 
 ### Step 1: Global Frontend Sweep
 - Scan the entire `Frontend-PWA/src/` directory.
-- Identify potential UX issues. If multiple issues are found, select the first one encountered in the list sequence (1 through 5). Do not list options, do not ask the user for choice or direction, and do not pause. Select one autonomously and proceed immediately to Step 2.
+- Identify potential UX issues. If multiple issues are found, select the first one encountered in the list sequence (1 through 10). Do not list options, do not ask the user for choice or direction, and do not pause. Select one autonomously and proceed immediately to Step 2.
   1. Raw `<select>` elements not yet replaced by a custom abstraction.
   2. Interactive click elements missing tactile feedback hooks.
   3. Layout containers with hardcoded height values ignoring safe-area insets.
   4. Interactive controls with a tap footprint below `48px`.
   5. Static structural text without `user-select: none` containment.
+  6. External URLs loading inside the main webview without route isolation.
+  7. Missing overscroll container boundary controls on scrollable elements.
+  8. Input fields lacking viewport adjustment hooks for virtual keyboard views.
+  9. Color schemes missing active prefers-color-scheme query support.
+  10. Media elements missing dimensions or lazy-loading settings.
 - If no UX issues are found, output a final status confirmation: "No UX issues found. Exiting cleanly." and stop calling tools to complete your execution.
 
 ### Step 2: Surgical Fix

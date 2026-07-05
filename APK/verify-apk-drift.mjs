@@ -18,6 +18,9 @@ import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 
+// Hard timeout per child process: prevents a hung unzip from blocking the pipeline.
+const EXEC_TIMEOUT_MS = 120_000;
+
 const [, , committed, fresh] = process.argv;
 if (!committed || !fresh) {
   console.error("usage: verify-apk-drift.mjs <committed.apk> <freshly-built.apk>");
@@ -31,7 +34,7 @@ const sha = (buf) => createHash("sha256").update(buf).digest("hex");
 
 /** List zip entry names matching the verbatim-content patterns we compare. */
 function entries(apk) {
-  const out = execSync(`unzip -Z1 "${apk}"`, { encoding: "utf8", maxBuffer: 64 << 20 });
+  const out = execSync(`unzip -Z1 "${apk}"`, { encoding: "utf8", maxBuffer: 64 << 20, timeout: EXEC_TIMEOUT_MS });
   return out.split("\n").filter((n) =>
     n === "classes.dex" ||
     /^classes\d+\.dex$/.test(n) ||
@@ -40,7 +43,7 @@ function entries(apk) {
 
 /** sha256 of a single zip entry's bytes. */
 function entrySha(apk, name) {
-  const buf = execSync(`unzip -p "${apk}" "${name}"`, { maxBuffer: 256 << 20 });
+  const buf = execSync(`unzip -p "${apk}" "${name}"`, { maxBuffer: 256 << 20, timeout: EXEC_TIMEOUT_MS });
   return sha(buf);
 }
 

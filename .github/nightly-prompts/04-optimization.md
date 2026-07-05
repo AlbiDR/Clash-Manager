@@ -73,6 +73,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 2. **Autonomous Resolution:** If you encounter errors (e.g., missing environment variables, sandbox constraints, or visual verification failures), do not halt. You must attempt to resolve them autonomously or gracefully degrade your verification strategy.
 3. **Verification Fallback:** If visual or browser-based verification is blocked, rely entirely on the test suite (e.g., Vitest) and the production build output. A passing test suite and successful build are sufficient proof of correctness to proceed to submission.
 4. **Zero Conversational Pauses:** You must complete your execution without asking any conversational questions, wrap-ups, or requests for feedback. Your final response must be a direct status confirmation followed by the execution of the git/GitHub tools to submit your work.
+5. **Non-Interactive Shell Mandate:** All shell commands involving package managers, build tools, or external installers must set `CI=true` and `DEBIAN_FRONTEND=noninteractive`. Use a tool's `--yes`, `--no-interactive`, or `--ci` flag wherever available. No command may pause the pipeline to wait for input.
 
 ---
 
@@ -86,6 +87,19 @@ This task operates under a strict binary contract. There are exactly two valid o
 **There is no third outcome.** A task left open and waiting for review is a system failure equivalent to a crash. A clean termination is the correct and expected response to any blocker that cannot be resolved autonomously.
 
 This rule takes precedence over all other instructions in this file. If you reach a decision point that requires human judgment, stop all work, terminate the task, and exit.
+
+---
+
+## [Base 7] Self-Termination Timer
+
+This task has a hard 60-minute execution budget.
+
+1. **Record Start Time:** At the very start of your execution, run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and store the result as your session start timestamp.
+2. **Elapsed-Time Checks:** After each major step, re-run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and compute the elapsed minutes from your recorded start time.
+3. **Hard Cutoff at 60 Minutes:** If 60 or more minutes have elapsed since your start timestamp, stop all pending work immediately. Write a partial-run log entry to `.github/nightly-logs/` and terminate this session. Do not open a Pull Request after the deadline.
+
+---
+
 
 ## 1. Operating Mindset: Performance Refiner
 

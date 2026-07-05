@@ -12,9 +12,10 @@
 #   ./build-apk.sh --no-sign       # build unsigned + verify only
 #
 # Env overrides:
-#   JAVA_HOME            (default: JDK 17 — Gradle/apktool reject the system JDK 26)
+#   JAVA_HOME              (default: JDK 17 — Gradle/apktool reject the system JDK 26)
 #   CLASHMANAGER_KEYSTORE  signing keystore (default: ~/.clash-manager-signing/android.keystore)
-#   CLASHMANAGER_KEY_ALIAS keystore alias  (default: android)
+#   CLASHMANAGER_KEY_ALIAS keystore alias   (default: android)
+#   CLASHMANAGER_KEY_PASS  keystore password (if set, signing runs non-interactively; required in CI)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -45,9 +46,16 @@ fi
 echo "▶ Zipalign ..."
 "${BT}/zipalign" -f -p 4 "${OUT}/clashmanager-unsigned.apk" "${OUT}/clashmanager-aligned.apk"
 
-echo "▶ Signing (you will be prompted for the keystore password) ..."
-"${BT}/apksigner" sign --ks "${KEYSTORE}" --ks-key-alias "${KEY_ALIAS}" \
-  --out "${OUT}/clashmanager.apk" "${OUT}/clashmanager-aligned.apk"
+echo "▶ Signing ..."
+if [ -n "${CLASHMANAGER_KEY_PASS:-}" ]; then
+  "${BT}/apksigner" sign --ks "${KEYSTORE}" --ks-key-alias "${KEY_ALIAS}" \
+    --ks-pass "pass:${CLASHMANAGER_KEY_PASS}" \
+    --out "${OUT}/clashmanager.apk" "${OUT}/clashmanager-aligned.apk"
+else
+  echo "  (no CLASHMANAGER_KEY_PASS set — prompting interactively; set it in CI to avoid hanging)"
+  "${BT}/apksigner" sign --ks "${KEYSTORE}" --ks-key-alias "${KEY_ALIAS}" \
+    --out "${OUT}/clashmanager.apk" "${OUT}/clashmanager-aligned.apk"
+fi
 
 echo "▶ Verifying native-layer integrity (release gate) ..."
 node "${ROOT}/verify-apk-integrity.mjs" "${OUT}/clashmanager.apk"
