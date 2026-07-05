@@ -117,6 +117,7 @@ jobs:
               
               # Re-stage our fresh APK, ignoring any remote version binary
               git rm -f APK/build-apk-out/clashmanager-v*.apk 2>/dev/null || true
+              mkdir -p APK/build-apk-out
               cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/build-apk-out/clashmanager-v${VERSION}.apk
               git add APK/build-apk-out/clashmanager-v${VERSION}.apk
               git commit --amend -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
