@@ -106,8 +106,22 @@ jobs:
             echo "No APK changes to commit"
           else
             git commit -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
-            # Pull with rebase to catch incoming pushes, then push. Handle lock races gracefully.
-            git pull --rebase origin Beta
+            
+            # Fetch latest remote changes
+            git fetch origin Beta
+            
+            # If the remote has moved, reset branch pointer but keep our new APK file intact
+            if [ "$(git rev-parse HEAD~1)" != "$(git rev-parse origin/Beta)" ]; then
+              echo "Remote branch moved. Syncing and resolving conflict..."
+              git reset --soft origin/Beta
+              
+              # Re-stage our fresh APK, ignoring any remote version binary
+              git rm -f APK/build-apk-out/clashmanager-v*.apk 2>/dev/null || true
+              cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/build-apk-out/clashmanager-v${VERSION}.apk
+              git add APK/build-apk-out/clashmanager-v${VERSION}.apk
+              git commit --amend -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
+            fi
+            
             git push origin Beta || {
               echo "Push failed. Checking if target commit is already on remote..."
               git fetch origin Beta
