@@ -150,7 +150,12 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 
 ### Step 1: Compilation Scan
 - Load the master baseline `20260531232406_master_migration.sql` into the DDL parser.
-- Identify all newer migrations. If none exist, terminate the execution loop cleanly without changes.
+- Identify all newer migrations.
+- If no newer migrations exist:
+  1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
+  2. Parse and re-format the master migration to optimize query format, statement ordering, and comment consistency.
+  3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, terminate the execution loop cleanly without changes.
+
 
 ### Step 2: DDL Folding Integration
 - Parse the incremental SQL files using `@pg-query/parser` or via local database schema compile/dump.
