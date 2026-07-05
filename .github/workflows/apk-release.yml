@@ -15,7 +15,7 @@ on:
       - ".github/workflows/apk-release.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-sign-verify:
@@ -25,6 +25,8 @@ jobs:
       APKTOOL_VERSION: "3.0.2"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -82,6 +84,27 @@ jobs:
         run: |
           export AAPT2="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}/aapt2"
           node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager-v${VERSION}.apk"
+
+      - name: Commit signed APK back to repository
+        env:
+          VERSION: ${{ steps.version.outputs.val }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          
+          # Clean any old versioned APK files from build-apk-out to maintain a single release binary
+          git rm -f APK/build-apk-out/clashmanager-v*.apk 2>/dev/null || true
+          
+          # Copy the fresh signed build to the destination path
+          mkdir -p APK/build-apk-out
+          cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/build-apk-out/clashmanager-v${VERSION}.apk
+          
+          # Track the new APK file
+          git add APK/build-apk-out/clashmanager-v${VERSION}.apk
+          
+          git diff --cached --quiet \
+            && echo "No APK changes to commit" \
+            || (git commit -m "chore(apk): update signed release APK to v${VERSION} [skip ci]" && git push)
 
       - name: Remove decoded keystore
         if: always()
