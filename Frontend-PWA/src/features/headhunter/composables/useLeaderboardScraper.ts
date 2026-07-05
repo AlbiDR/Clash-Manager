@@ -6,9 +6,7 @@ import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useUiCoordinator } from "@core/services/useUiCoordinator";
 import { useToast } from "@core/services/useToast";
 import { useHaptics } from "@shared";
-import { getSupabaseUrl, getSupabaseKey } from "@core/api/SupabaseClient";
-import * as v from "valibot";
-import { LeaderboardHarvestSchema } from "@core/api/RecruitSchemas";
+import { scoutLeaderboard } from "@core/api/RecruitClient";
 
 /**
  * COMPOSABLE: useLeaderboardScraper
@@ -90,43 +88,10 @@ export function useLeaderboardScraper(
     });
 
     try {
-      const functionUrl = `${getSupabaseUrl()}/functions/v1/query-royale-api`;
-      const response = await fetch(functionUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${getSupabaseKey()}`,
-        },
-        body: JSON.stringify({ endpoint: mode }),
-        signal: activeController.value.signal,
-      });
-
-      if (!response.ok) {
-        const errorDetails = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-        throw new Error(errorDetails.error ?? `Query failed with status ${response.status}`);
-      }
-
-      // [THREAT:] External API ingress. Replacing unsafe 'any' processing with strict
-      // validation boundaries to prevent runtime crashes from unexpected payload shifts.
-      const responseJson: unknown = await response.json();
-
-      // [GUARD] VALIDATION BOUNDARY: Enforce schema on Edge Function response before domain use.
-      const envelopeValidation = v.safeParse(
-        v.union([
-          v.object({ data: LeaderboardHarvestSchema }),
-          LeaderboardHarvestSchema,
-        ]),
-        responseJson
+      const payload = await scoutLeaderboard(
+        mode,
+        activeController.value.signal,
       );
-
-      if (!envelopeValidation.success) {
-        console.error("[Harvest] Validation failed:", envelopeValidation.issues);
-        throw new Error("Invalid response structure from harvest engine.");
-      }
-
-      const payload = "data" in envelopeValidation.output && envelopeValidation.output.data
-        ? envelopeValidation.output.data
-        : envelopeValidation.output as v.InferOutput<typeof LeaderboardHarvestSchema>;
 
       const rawItems = payload.items;
       const region = payload.region;

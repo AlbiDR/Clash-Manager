@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { createSupabaseClient, NetworkError } from "./SupabaseClient";
+import {
+  createSupabaseClient,
+  getSupabaseUrl,
+  getSupabaseKey,
+  NetworkError,
+} from "./SupabaseClient";
 import type {
   ApiResponse,
   DismissResponse,
@@ -10,7 +15,11 @@ import type {
 } from "@core/types";
 import { mapSbHeadhunterRow } from "./DataMappers";
 import * as v from "valibot";
-import { DismissResponseSchema, BlacklistEventSchema } from "./RecruitSchemas";
+import {
+  DismissResponseSchema,
+  BlacklistEventSchema,
+  LeaderboardHarvestSchema,
+} from "./RecruitSchemas";
 
 /**
  * RECRUIT CLIENT (Layer 1)
@@ -82,6 +91,70 @@ export async function undismissRecruits(
   if (undismissRpcError) throw new NetworkError(undismissRpcError.message);
 
   return { success: true, data: v.parse(DismissResponseSchema, undismissRpcResponse) };
+}
+
+/**
+ * Executes a transient harvest of clanless players from global or local leaderboards.
+ *
+ * @remarks
+ * Communicates with the `query-royale-api` Edge Function. This is a read-only
+ * operation that does not persist data to the database.
+ *
+ * @param mode - The target leaderboard scope ('local' | 'global').
+ * @param signal - Optional AbortSignal for request cancellation.
+ * @returns A promise resolving to the validated harvest payload.
+ * @throws {NetworkError} If the network is unavailable or the Edge Function fails.
+ * @throws {v.ValiError} If the response fails schema validation.
+ */
+export async function scoutLeaderboard(
+  mode: "local" | "global",
+  signal?: AbortSignal,
+): Promise<v.InferOutput<typeof LeaderboardHarvestSchema>> {
+  const functionUrl = `${getSupabaseUrl()}/functions/v1/query-royale-api`;
+
+  const response = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getSupabaseKey()}`,
+    },
+    body: JSON.stringify({ endpoint: mode }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorDetails = await response
+      .json()
+      .catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new NetworkError(
+      errorDetails.error ?? `Query failed with status ${response.status}`,
+    );
+  }
+
+  const responseJson: unknown = await response.json();
+
+  // [GUARD] VALIDATION BOUNDARY: Enforce schema on Edge Function response.
+  const envelopeValidation = v.safeParse(
+    v.union([
+      v.object({ data: LeaderboardHarvestSchema }),
+      LeaderboardHarvestSchema,
+    ]),
+    responseJson,
+  );
+
+  if (!envelopeValidation.success) {
+    console.error("[Scout] Validation failed:", envelopeValidation.issues);
+    throw new Error("Invalid response structure from harvest engine.");
+  }
+
+  const payload =
+    "data" in envelopeValidation.output && envelopeValidation.output.data
+      ? envelopeValidation.output.data
+      : (envelopeValidation.output as v.InferOutput<
+          typeof LeaderboardHarvestSchema
+        >);
+
+  return payload;
 }
 
 /**
