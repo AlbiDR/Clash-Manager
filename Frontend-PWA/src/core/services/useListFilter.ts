@@ -11,6 +11,12 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * strings, achieving O(N) lookup performance during active filtering by
  * decoupling normalization from the filter predicate.
  *
+ * Satisfies ADR Section I (Core Services) and ADR Section II (Presentation Orchestration).
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Performance:** Employs a module-level `WeakMap` for amortized O(1) normalization.
+ *
  * @param items - Reactive reference to the source array.
  * @param searchFields - Function to extract searchable strings from an item.
  * @param sortStrategies - Dictionary of comparator functions.
@@ -25,11 +31,20 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * @sideeffects
  * None. This composable manages internal reactive state only.
  */
+
 // PERFORMANCE: Cache normalized search strings to avoid O(N * F) work on every keystroke.
 // We use a persistent WeakMap to enable O(1) amortized normalization per item.
 // [PERF] MODULE SCOPE: Shared across instances (Roster/Headhunter) to avoid re-indexing.
+// [THREAT:] Memory exhaustion in long-lived sessions if using a standard Map.
+// [DECISION LOG] WeakMap is used to allow the garbage collector to reclaim
+// item-specific cache entries once the source item is no longer referenced.
 const searchCache = new WeakMap<object, string[]>();
 
+/**
+ * Orchestrates filtering and sorting logic for list-based datasets.
+ *
+ * @template T - The item type, which must include at least an `id` and optional `n` (name).
+ */
 export function useListFilter<T extends { id: string; n?: string }>(
   items: Ref<readonly T[]> | ComputedRef<readonly T[]>,
   searchFields: (candidateItem: T) => string[],
