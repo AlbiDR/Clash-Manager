@@ -161,7 +161,7 @@ flowchart TD
 
 The Android APK is a **Trusted Web Activity** packaged with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap). The native project lives **outside this repo** at `~/bubblewrap-project`.
 
-Bubblewrap's default adaptive icon is broken (solid-white background layer, empty foreground, no monochrome layer). [`gen-android-icons.mjs`](gen-android-icons.mjs) replaces it with a correct, fully-native set generated from `logo.svg`:
+Bubblewrap's default adaptive icon is broken (solid-white background layer, empty foreground, no monochrome layer). [`gen-android-icons.mjs`](APK/gen-android-icons.mjs) replaces it with a correct, fully-native set generated from `logo.svg`:
 
 | Layer | Source |
 | --- | --- |
