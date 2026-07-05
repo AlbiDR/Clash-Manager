@@ -17,3 +17,8 @@ Structural Surgery (Domain Utility Centralization - Stage 9) June 21, 2026: Exec
 2026-06-28 | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Inlined predictionMath.ts into sole consumer useHistoryChart.ts; deleted dead @core/utils/predictionMath.ts module and orphaned spec. Eliminates unnecessary Layer 1 public API surface used exclusively by one Layer 2 composable.
 2026-09-25 | Frontend-PWA/src/shared/ui/BaseSegmentedControl.vue | Extracted BaseSegmentedControl generic molecule from MemberCard and ParameterCard. Unified toggle UI pattern.
 2026-06-25 | Backend/supabase/functions/_shared/schemas.ts | Decomposed monolithic schemas.ts (455 lines) into domain-focused modules: royaleSchemas.ts, rpcSchemas.ts, and substrateSchemas.ts to satisfy SRP.
+[2026-07-05T06:27:00Z] Refactored 'useLeaderboardScraper' to decouple infrastructure logic.
+- Extracted 'scoutLeaderboard' API call to Layer 1 (@core/api/RecruitClient.ts).
+- Satisfied Layer 3 -> Layer 1 architectural alignment by removing direct 'fetch' from feature layer.
+- Updated 'useLeaderboardScraper.spec.ts' to mock the new core API.
+- Verified zero architectural violations via depcruise.
