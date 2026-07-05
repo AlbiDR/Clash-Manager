@@ -14,6 +14,12 @@ import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/uti
  * Extracts connectivity status and statistics badge logic from the monolithic
  * useConsoleController. This facilitates Layer 1 architectural purity.
  *
+ * Satisfies ADR Section I (Core Services) and ADR Section II (Presentation Orchestration).
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Import Boundaries:** Restricted to Layer 1 services and Layer 0 utilities.
+ *
  * @param statsLabel - Singular display label for the item type (e.g., 'Member').
  * @param dataCount - Reactive count of the current dataset.
  * @returns
@@ -30,15 +36,30 @@ export function useConsoleMetadata(
   const { isBlueprintMode } = useBlueprintMode();
   const { hubHealth, metadata } = useConnectivityManager();
 
+  /**
+   * Derived health status for the console header.
+   *
+   * @remarks
+   * Maps complex `HubHealth` states into a simplified format for header pills.
+   */
   const status = computed(() => ({
     type: hubHealth.value.type,
     text: hubHealth.value.label,
     nominal: hubHealth.value.type === "success",
   }));
 
+  /**
+   * Header badge configuration containing the item count and label.
+   *
+   * @remarks
+   * [DECISION LOG] Implements logic to handle Showcase and Blueprint modes
+   * by providing synthetic counts that match the visual expectations of those modes.
+   */
   const statsBadge = computed(() => {
     let itemCount: number;
 
+    // [THREAT:] Anemic or mismatched counts in demo modes can undermine
+    // stakeholder confidence during UI reviews.
     if (isShowcase.value) {
       itemCount = Math.floor(Math.random() * 50) + 1;
     } else if (isBlueprintMode.value) {
