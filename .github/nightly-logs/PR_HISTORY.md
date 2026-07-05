@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-05] PR #1024: refactor: extract leaderboard scouting to core api
+**Commit**: `d91e226cef6458c9515b1a61a837e3411a29e212`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1024)
+
+### Description
+This Pull Request addresses a Layer 3 -> Layer 1 architectural violation discovered in the Headhunter feature.
+
+### Debt Resolved:
+The `useLeaderboardScraper.ts` composable was directly performing network fetches and low-level schema validation, violating the Single Responsibility Principle and Feature isolation boundaries.
+
+### Refactor Applied:
+1.  **Core API Enhancement**: Created `scoutLeaderboard` in `Frontend-PWA/src/core/api/RecruitClient.ts`. This function now encapsulates the authorization, request orchestration, and Valibot validation for the Royale API proxy.
+2.  **Feature Layer Decoupling**: Updated `useLeaderboardScraper.ts` to consume the new `scoutLeaderboard` method, delegating infrastructure concerns to the kernel.
+3.  **Test Realignment**: Updated `useLeaderboardScraper.spec.ts` to mock the `RecruitClient` instead of the global `fetch` API, reflecting the corrected structural boundaries.
+
+### Impact:
+- **Coupling**: Reduced feature-level awareness of infrastructure details.
+- **Layering**: Corrected Layer 3 -> Layer 1 alignment.
+
+### Verification:
+- **Automated**: `pnpm test` (168 passed) and `npx depcruise` (zero violations).
+- **Log Updates**: Updated `.github/nightly-logs/09-refactor-proposals-coverage.log`.
+
+---
+*PR created automatically by Jules for task [2313867210177597877](https://jules.google.com/task/2313867210177597877) started by @AlbiDR*
+
+---
+
 ## [2026-07-05] PR #1023: chore(deps): bump @ast-grep/cli from 0.44.0 to 0.44.1
 **Commit**: `d5bbbab05db35b108c317114abe9435e1d13cbee`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1023)
