@@ -43,3 +43,6 @@
 2026-07-04 | Frontend-PWA/src/core/api/README.md | Reconciled fetchRemote orchestrator and MaintenanceSchemas isolation.
 2026-07-04 | Frontend-PWA/src/app/README.md | Reconciled Service Worker sub-module structure and swSchemas boundary hardening.
 2026-07-04 | Backend/supabase/functions/headhunter-scanner/README.md | Reconciled S1 target limits and S2 discovery keyword details.
+2026-07-05 | Monorepo | Reconciled gen-android-icons.mjs path in root README
+2026-07-05 | Frontend-PWA/README.md | Reconciled Core Services list (removed useWakeLock)
+2026-07-05 | Frontend-PWA/src/features/settings/README.md | Reconciled UsefulLinksSettings, EventManagement orchestration, and useWakeLock import path

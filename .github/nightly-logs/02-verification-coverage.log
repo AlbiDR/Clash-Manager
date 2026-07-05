@@ -132,3 +132,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-06-29 | Frontend-PWA/src/app/sw/swSync.ts | Extended validation boundary coverage for malformed API responses.
 2026-07-01 | Frontend-PWA/src/core/api/MaintenanceSchemas.ts | Zero Coverage gap closed; saturating tests for maintenance response and push subscription validation boundaries.
 2026-07-01 | Frontend-PWA/src/core/services/useConnectionStatus.ts | Zero Coverage gap closed; saturating tests for physical and logical status priority
+2026-07-05 | Frontend-PWA/src/core/theme/HtmlEntry.ts | Zero Coverage gap closed; saturating tests for the HTML5 entry point and boot-stuck guard.

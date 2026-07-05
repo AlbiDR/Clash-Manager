@@ -110,3 +110,6 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-07-03 | Backend/supabase/functions/_shared/types.ts | Documented shared pipeline interfaces and added ADR Section II mappings.
 2026-07-03 | Frontend-PWA/src/shared/utils/game.ts | Documented role formatter and added architectural decision logs for display labels.
 2026-07-04 | Frontend-PWA/src/core/services/useBlitzMode.ts | Documented automated blitz orchestrator, added TSDoc for internal handlers and injected mandatory threat/decision logs for native bridge delegation.
+2026-07-05 | Frontend-PWA/src/core/services/useSystemInfo.ts | Documented system info orchestrator and priority badge resolution logic with mandatory threat/decision logs.
+2026-07-05 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Documented header metadata orchestrator and synthetic mode handling with mandatory threat/decision logs.
+2026-07-05 | Frontend-PWA/src/core/services/useListFilter.ts | Documented optimized list engine, WeakMap-based caching rationale, and stable sorting guards.

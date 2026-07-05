@@ -4,6 +4,7 @@
 import { reactive, onScopeDispose } from "vue";
 import { triggerBackendUpdate } from "@core/api/MaintenanceClient";
 import { useClashDataStore } from "@core";
+import { useHaptics } from "@shared";
 import { storeToRefs } from "pinia";
 
 /**
@@ -39,6 +40,7 @@ export interface RefreshTarget {
  */
 export function useBackendRefresher() {
   const clashDataStore = useClashDataStore();
+  const haptics = useHaptics();
   const { isRefreshing } = storeToRefs(clashDataStore);
 
   const targets = reactive<Record<TargetKey, RefreshTarget>>({
@@ -101,6 +103,10 @@ export function useBackendRefresher() {
   const refresh = async (key: TargetKey) => {
     const target = targets[key];
     if (target.status === "loading" || target.cooldown > 0) return;
+
+    // [DECISION LOG] BROKERED TACTILE FEEDBACK: Triggers a standard tap haptic
+    // to acknowledge manual refresh intent in the Android WebView shell.
+    haptics.tap();
 
     target.status = "loading";
 
