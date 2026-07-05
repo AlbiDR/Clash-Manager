@@ -329,6 +329,44 @@ function reconcileOtherFiles(groundTruth: string): string[] {
     }
   }
 
+  // Sync versionInfo in APK/android/apktool.yml
+  const apktoolPath = path.join(ROOT_DIR, 'APK', 'android', 'apktool.yml');
+  if (fs.existsSync(apktoolPath)) {
+    let content = fs.readFileSync(apktoolPath, 'utf-8');
+    
+    // Parse version components: e.g. "14.2.6" -> code: 14260
+    const parts = groundTruth.split('.').map(Number);
+    const expectedCode = parts[0] * 1000 + parts[1] * 100 + parts[2] * 10;
+    
+    const nameRegex = /versionName:\s*['"]?([0-9.]+)['"]?/;
+    const codeRegex = /versionCode:\s*['"]?(\d+)['"]?/;
+    
+    const nameMatch = content.match(nameRegex);
+    const codeMatch = content.match(codeRegex);
+    
+    let modified = false;
+    
+    if (!nameMatch || nameMatch[1] !== groundTruth) {
+      issues.push(`[DRIFT] apktool.yml versionName mismatch: expected ${groundTruth}`);
+      if (IS_FIX_MODE) {
+        content = content.replace(nameRegex, `versionName: ${groundTruth}`);
+        modified = true;
+      }
+    }
+    
+    if (!codeMatch || Number(codeMatch[1]) !== expectedCode) {
+      issues.push(`[DRIFT] apktool.yml versionCode mismatch: expected ${expectedCode}`);
+      if (IS_FIX_MODE) {
+        content = content.replace(codeRegex, `versionCode: ${expectedCode}`);
+        modified = true;
+      }
+    }
+    
+    if (modified) {
+      fs.writeFileSync(apktoolPath, content);
+    }
+  }
+
   return issues;
 }
 

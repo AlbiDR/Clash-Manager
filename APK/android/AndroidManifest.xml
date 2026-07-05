@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <queries>
         <package android:name="com.supercell.clashroyale"/>
         <intent>
@@ -47,6 +48,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="web+clash"/>
+                <data android:scheme="clash-manager"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
