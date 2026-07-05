@@ -42,18 +42,20 @@ APK/
   reference/                 archives — original V4 APK + the Bubblewrap twa-manifest.json
 ```
 
-## Build a release
+## Releasing a new version
+
+1. Release builds are handled exclusively via GitHub Actions:
+   Trigger the `APK Release Build` workflow manually on the `Beta` branch via the Actions tab on GitHub.
+2. The workflow compiles, signs, verifies, and publishes the versioned installable APK (e.g. `clashmanager-v14.2.6.apk`) as a downloadable workflow run artifact.
+3. The repository does not track compiled APK files.
+
+## Local Development & Sanity Checks
 
 ```bash
-pnpm apk:build            # apktool b android/ → zipalign → sign → integrity gate
-pnpm apk:build:unsigned   # build + verify only, no signing
-pnpm apk:verify <apk>     # run the integrity gate against any APK
-pnpm apk:verify:source    # check the android/ tree still has the custom layer
+pnpm apk:check            # local compile + verify integrity check (no signing)
+pnpm apk:verify:source    # assert that the local android/ tree still has the custom native layer
+pnpm apk:verify <apk>     # test integrity of any local .apk file
 ```
-
-`pnpm apk:build` **rejects** the output if the custom layer is missing. Requires
-`apktool` + JDK 17 (system JDK 26 is too new). Signing uses
-`~/.clash-manager-signing/android.keystore` (override with `CLASHMANAGER_KEYSTORE`).
 
 ## Make changes
 

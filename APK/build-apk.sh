@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
 #
-# build-apk.sh — canonical Clash Manager APK release build.
+# build-apk.sh — Local Clash Manager APK compilation & sanity checks.
 #
-# Builds from the committed android/ project (apktool), which PRESERVES the
-# custom native layer (Blitz overlay service, accessibility tap-gesture service,
-# WebView JS bridge). It does NOT use ~/bubblewrap-project, which is a generic
-# decoy that strips all of that. The build is rejected if the integrity gate
-# (verify-apk-integrity.mjs) finds the custom layer missing.
+# Compiles the committed android/ project (apktool) to verify build success and
+# integrity. This is a local verification tool only; production release builds
+# are run and signed exclusively in CI (apk-release.yml).
 #
-#   ./build-apk.sh                 # build + sign + verify -> build-apk-out/clashmanager.apk
-#   ./build-apk.sh --no-sign       # build unsigned + verify only
+#   ./build-apk.sh --no-sign       # compile unsigned + verify integrity (typical dev flow)
+#   ./build-apk.sh                 # build + sign (only if local keystore is available)
 #
 # Env overrides:
 #   JAVA_HOME              (default: JDK 17 — Gradle/apktool reject the system JDK 26)
 #   CLASHMANAGER_KEYSTORE  signing keystore (default: ~/.clash-manager-signing/android.keystore)
 #   CLASHMANAGER_KEY_ALIAS keystore alias   (default: android)
-#   CLASHMANAGER_KEY_PASS  keystore password (if set, signing runs non-interactively; required in CI)
+#   CLASHMANAGER_KEY_PASS  keystore password (if set, signing runs non-interactively)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"

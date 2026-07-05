@@ -1,6 +1,5 @@
-# Reproducible APK release build — proves the signed APK can be rebuilt OFF the
-# maintainer's laptop, and that the committed APK/build-apk-out/clashmanager.apk
-# still matches APK/android/ source (drift guard).
+# Reproducible APK release build — compiles the APK from the committed APK/android/
+# source and signs it with the release keystore.
 #
 # Signing material comes from repo Secrets (the keystore itself is NOT in the
 # repo): ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
@@ -13,11 +12,10 @@ on:
     paths:
       - "APK/android/**"
       - "APK/verify-apk-integrity.mjs"
-      - "APK/verify-apk-drift.mjs"
       - ".github/workflows/apk-release.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-sign-verify:
@@ -47,6 +45,13 @@ jobs:
           curl -fsSL -o "$RUNNER_TEMP/apktool.jar" \
             "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar"
 
+      - name: Extract APK version from config
+        id: version
+        run: |
+          VERSION=$(grep "versionName:" APK/android/apktool.yml | awk '{print $2}')
+          echo "APK version found: $VERSION"
+          echo "val=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Build APK from APK/android (apktool)
         run: java -jar "$RUNNER_TEMP/apktool.jar" b APK/android -o "$RUNNER_TEMP/fresh-unsigned.apk"
 
@@ -59,6 +64,7 @@ jobs:
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          VERSION: ${{ steps.version.outputs.val }}
         run: |
           BT="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}"
           "$BT/zipalign" -f -p 4 "$RUNNER_TEMP/fresh-unsigned.apk" "$RUNNER_TEMP/fresh-aligned.apk"
@@ -66,28 +72,16 @@ jobs:
             --ks "$RUNNER_TEMP/release.keystore" \
             --ks-key-alias "$KEY_ALIAS" \
             --ks-pass "env:KS_PASS" --key-pass "env:KEY_PASS" \
-            --out "$RUNNER_TEMP/clashmanager.apk" "$RUNNER_TEMP/fresh-aligned.apk"
-          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/clashmanager.apk"
+            --out "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" "$RUNNER_TEMP/fresh-aligned.apk"
+          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/clashmanager-v${VERSION}.apk"
 
       - name: Native-layer integrity gate
         env:
           AAPT2: ${{ env.ANDROID_SDK_ROOT }}/build-tools/35.0.0/aapt2
+          VERSION: ${{ steps.version.outputs.val }}
         run: |
           export AAPT2="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}/aapt2"
-          node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager.apk"
-
-      - name: Drift guard (committed APK vs fresh build)
-        run: node APK/verify-apk-drift.mjs APK/build-apk-out/clashmanager.apk "$RUNNER_TEMP/fresh-unsigned.apk"
-
-      - name: Commit signed APK back to repository
-        run: |
-          cp "$RUNNER_TEMP/clashmanager.apk" APK/build-apk-out/clashmanager.apk
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add APK/build-apk-out/clashmanager.apk
-          git diff --cached --quiet \
-            && echo "No APK changes to commit" \
-            || (git commit -m "chore(apk): update signed release APK [skip ci]" && git push)
+          node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager-v${VERSION}.apk"
 
       - name: Remove decoded keystore
         if: always()
@@ -97,5 +91,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: clashmanager-signed-apk
-          path: ${{ runner.temp }}/clashmanager.apk
+          path: ${{ runner.temp }}/clashmanager-v${{ steps.version.outputs.val }}.apk
           if-no-files-found: error
