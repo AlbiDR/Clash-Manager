@@ -66,15 +66,15 @@ jobs:
             --ks "$RUNNER_TEMP/release.keystore" \
             --ks-key-alias "$KEY_ALIAS" \
             --ks-pass "env:KS_PASS" --key-pass "env:KEY_PASS" \
-            --out "$RUNNER_TEMP/fresh-signed.apk" "$RUNNER_TEMP/fresh-aligned.apk"
-          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/fresh-signed.apk"
+            --out "$RUNNER_TEMP/clashmanager.apk" "$RUNNER_TEMP/fresh-aligned.apk"
+          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/clashmanager.apk"
 
       - name: Native-layer integrity gate
         env:
           AAPT2: ${{ env.ANDROID_SDK_ROOT }}/build-tools/35.0.0/aapt2
         run: |
           export AAPT2="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}/aapt2"
-          node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/fresh-signed.apk"
+          node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager.apk"
 
       - name: Drift guard (committed APK vs fresh build)
         run: node APK/verify-apk-drift.mjs APK/build-apk-out/clashmanager.apk "$RUNNER_TEMP/fresh-unsigned.apk"
@@ -87,5 +87,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: clashmanager-signed-apk
-          path: ${{ runner.temp }}/fresh-signed.apk
+          path: ${{ runner.temp }}/clashmanager.apk
           if-no-files-found: error
