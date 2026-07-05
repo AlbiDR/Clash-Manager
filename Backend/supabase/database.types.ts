@@ -397,6 +397,32 @@ export type Database = {
         }
         Relationships: []
       }
+      player_voyage_history: {
+        Row: {
+          history: string
+          player_tag: string
+          updated_at: string
+        }
+        Insert: {
+          history?: string
+          player_tag: string
+          updated_at?: string
+        }
+        Update: {
+          history?: string
+          player_tag?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_voyage_history_player_tag_fkey"
+            columns: ["player_tag"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["player_tag"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           created_at: string | null
@@ -714,6 +740,7 @@ export type Database = {
     }
     Functions: {
       bench_underqualified_recruits: { Args: never; Returns: number }
+      consolidate_voyage_history: { Args: never; Returns: undefined }
       dismiss_recruit: {
         Args: { p_days_to_ban?: number; p_tag: string }
         Returns: undefined
@@ -727,6 +754,7 @@ export type Database = {
         Returns: Json
       }
       purge_expired_blacklist: { Args: never; Returns: number }
+      purge_stale_voyage_history: { Args: never; Returns: undefined }
       refresh_voyage_contributions: { Args: never; Returns: undefined }
     }
     Enums: {
