@@ -102,9 +102,20 @@ jobs:
           # Track the new APK file
           git add APK/build-apk-out/clashmanager-v${VERSION}.apk
           
-          git diff --cached --quiet \
-            && echo "No APK changes to commit" \
-            || (git commit -m "chore(apk): update signed release APK to v${VERSION} [skip ci]" && git push)
+          if git diff --cached --quiet; then
+            echo "No APK changes to commit"
+          else
+            git commit -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
+            # Pull with rebase to catch incoming pushes, then push. Handle lock races gracefully.
+            git pull --rebase origin Beta
+            git push origin Beta || {
+              echo "Push failed. Checking if target commit is already on remote..."
+              git fetch origin Beta
+              git log origin/Beta -1 --oneline | grep -q "update signed release APK to v${VERSION}" \
+                && echo "Target binary update already pushed by another process." \
+                || exit 1
+            }
+          fi
 
       - name: Remove decoded keystore
         if: always()
