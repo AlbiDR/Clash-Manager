@@ -1,6 +1,27 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-05] PR #1017: test(verify): add saturating coverage for HtmlEntry.ts
+**Commit**: `425101ce8a5834f7f54c42b46477e07db4dedc11`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1017)
+
+### Description
+I have addressed a zero-coverage gap in the core theme infrastructure by adding a comprehensive test suite for `Frontend-PWA/src/core/theme/HtmlEntry.ts`. 
+
+The new test file, `Frontend-PWA/src/core/theme/theme-tests/HtmlEntry.spec.ts`, provides 12 saturating logic proofs for the application's HTML entry point, including:
+- **Structural Integrity:** Verifying valid HTML5 document structure and the presence of critical `#app` and `#app-shell` containers.
+- **Security & Metadata:** Asserting the correctness of the Content Security Policy (CSP), mobile-first viewport meta tags, and PWA manifest/icon links.
+- **Resilience:** Validating the "boot-stuck guard" script which handles recovery if the JS bundle fails to mount the application.
+- **Theming:** Ensuring the early-execution theme preference script and bi-modal `theme-color` tags are correctly generated.
+- **Contract Accuracy:** Verifying correct version injection into the JSON-LD schema metadata.
+
+I have also updated the `.github/nightly-logs/02-verification-coverage.log` to record this progress. All 1368 tests in the `Frontend-PWA` package passed successfully.
+
+---
+*PR created automatically by Jules for task [3277699089010950753](https://jules.google.com/task/3277699089010950753) started by @AlbiDR*
+
+---
+
 ## [2026-07-04] PR #1016: chore(apk-integrity): no mismatch found
 **Commit**: `f58d6df092907cad5a343b9605a11163648b6f48`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1016)
