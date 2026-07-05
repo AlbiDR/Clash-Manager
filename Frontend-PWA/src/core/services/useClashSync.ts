@@ -63,18 +63,18 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /**
    * Internal helper to update reactive state and persist the result to the local cache.
    *
-   * @param payload - The new WebAppData to commit, or null to clear state.
+   * @param webAppDataSnapshot - The new WebAppData to commit, or null to clear state.
    * @param skipSave - If true, bypasses saving to the persistent cache.
    */
-  async function commitSyncResult(payload: WebAppData | null, skipSave = false) {
-    data.value = payload;
+  async function commitSyncResult(webAppDataSnapshot: WebAppData | null, skipSave = false) {
+    data.value = webAppDataSnapshot;
 
-    if (payload) {
-      lastSync.value = payload.timestamp;
-      dataSource.value = payload.dataSource || null;
-      remoteTimestamp.value = payload.remoteTimestamp || null;
-      lastCompiled.value = payload.lastCompiled || null;
-      lastFetched.value = payload.lastFetched || null;
+    if (webAppDataSnapshot) {
+      lastSync.value = webAppDataSnapshot.timestamp;
+      dataSource.value = webAppDataSnapshot.dataSource || null;
+      remoteTimestamp.value = webAppDataSnapshot.remoteTimestamp || null;
+      lastCompiled.value = webAppDataSnapshot.lastCompiled || null;
+      lastFetched.value = webAppDataSnapshot.lastFetched || null;
     } else {
       lastSync.value = 0;
       dataSource.value = null;
@@ -89,11 +89,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     if (skipSave) return;
 
     try {
-      if (payload) {
+      if (webAppDataSnapshot) {
         // [THREAT:] Persistence failure can lead to data loss on refresh.
         // [DECISION LOG] We log the error but do not block the UI, as the
         // reactive state is already updated in memory.
-        await saveCache(payload);
+        await saveCache(webAppDataSnapshot);
       }
     } catch (persistenceError: unknown) {
       console.error("[Sync] Commit persistence failed:", persistenceError instanceof Error ? persistenceError.message : String(persistenceError));
@@ -115,9 +115,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
         return;
       }
 
-      const cached = await loadCache();
+      const cachedWebAppData = await loadCache();
 
-      if (!cached) {
+      if (!cachedWebAppData) {
         console.debug("[Sync] No local cache found, starting fresh.");
         await commitSyncResult(null);
         return;
@@ -125,16 +125,16 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
       // [THREAT:] Corrupt or stale local cache can cause UI crashes.
       // [DECISION LOG] Enforce strict validation boundary via WebAppDataSchema.
-      const validation = v.safeParse(WebAppDataSchema, cached);
-      if (validation.success) {
-        if (data.value && data.value.timestamp >= validation.output.timestamp) {
+      const webAppDataValidation = v.safeParse(WebAppDataSchema, cachedWebAppData);
+      if (webAppDataValidation.success) {
+        if (data.value && data.value.timestamp >= webAppDataValidation.output.timestamp) {
           console.debug("[Sync] Local cache is older than already hydrated live data, skipping.");
           return;
         }
         console.debug("[Sync] Local cache hydrated successfully.");
-        await commitSyncResult(validation.output, true);
+        await commitSyncResult(webAppDataValidation.output, true);
       } else {
-        console.warn("[Sync] Local cache validation failed:", validation.issues);
+        console.warn("[Sync] Local cache validation failed:", webAppDataValidation.issues);
         if (!data.value) await commitSyncResult(null);
       }
     } catch (hydrationError: unknown) {
@@ -146,17 +146,17 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /**
    * Manually updates the service state with an external payload.
    *
-   * @param payload - Unvalidated data object matching WebAppData schema.
+   * @param webAppDataSnapshot - Unvalidated data object matching WebAppData schema.
    */
-  async function updateLocalData(payload: unknown) {
+  async function updateLocalData(webAppDataSnapshot: unknown) {
     // [DECISION LOG] External ingress must be validated before commitment.
-    const result = v.safeParse(WebAppDataSchema, payload);
-    if (!result.success) {
-      console.warn("[Sync] Local update rejected: Invalid WebAppData structure", result.issues);
+    const incomingDataValidation = v.safeParse(WebAppDataSchema, webAppDataSnapshot);
+    if (!incomingDataValidation.success) {
+      console.warn("[Sync] Local update rejected: Invalid WebAppData structure", incomingDataValidation.issues);
       return;
     }
 
-    await commitSyncResult(result.output);
+    await commitSyncResult(incomingDataValidation.output);
   }
 
   /**
@@ -185,14 +185,14 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
       // [THREAT:] Malformed remote payload could corrupt local state.
       // [DECISION LOG] Validation boundary protects the in-memory state.
-      const result = v.safeParse(WebAppDataSchema, remoteData);
-      if (!result.success) {
-        console.error("[Sync] Data Validation Failure Details:", JSON.stringify(result.issues, null, 2));
+      const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
+      if (!remoteDataValidation.success) {
+        console.error("[Sync] Data Validation Failure Details:", JSON.stringify(remoteDataValidation.issues, null, 2));
         throw new Error("Remote data validation failed");
       }
 
-      console.debug(`[Sync] Refresh successful. Source: ${result.output.dataSource}`);
-      await commitSyncResult(result.output);
+      console.debug(`[Sync] Refresh successful. Source: ${remoteDataValidation.output.dataSource}`);
+      await commitSyncResult(remoteDataValidation.output);
     } catch (supabaseRefreshError: unknown) {
       console.warn("[Sync] Supabase refresh failed:", supabaseRefreshError);
       syncFailed = true;
@@ -222,12 +222,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     try {
       const remoteData = await fetchRemote({ force });
 
-      const result = v.safeParse(WebAppDataSchema, remoteData);
-      if (!result.success) {
+      const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
+      if (!remoteDataValidation.success) {
         throw new Error("Remote data validation failed");
       }
 
-      await commitSyncResult(result.output);
+      await commitSyncResult(remoteDataValidation.output);
     } catch (backgroundSyncError: unknown) {
       consecutiveSyncFailures.value++;
       const errorMessage = backgroundSyncError instanceof Error ? backgroundSyncError.message : "Sync failed";
@@ -248,30 +248,30 @@ export function useClashSync(data: Ref<WebAppData | null>) {
    * Patches a specific player's data in the local state.
    *
    * @param playerTag - The unique identifier of the player to update.
-   * @param partial - The partial player data to merge.
+   * @param playerPartialUpdate - The partial player data to merge.
    */
-  function updatePlayerLocally(playerTag: PlayerTag, partial: unknown) {
+  function updatePlayerLocally(playerTag: PlayerTag, playerPartialUpdate: unknown) {
     if (!data.value) return;
 
     // [DECISION LOG] Partial validation: Ensure the patch adheres to MemberSchema.
-    const validation = v.safeParse(v.partial(MemberSchema), partial);
-    if (!validation.success) {
-      console.warn("[Sync] Local update rejected: Invalid partial data", validation.issues);
+    const partialUpdateValidation = v.safeParse(v.partial(MemberSchema), playerPartialUpdate);
+    if (!partialUpdateValidation.success) {
+      console.warn("[Sync] Local update rejected: Invalid partial data", partialUpdateValidation.issues);
       return;
     }
 
     const memberIndex = data.value.lb.findIndex(member => member.id === playerTag);
 
     if (memberIndex !== -1) {
-      const newLb = [...data.value.lb];
-      newLb[memberIndex] = {
-        ...newLb[memberIndex],
-        ...validation.output
+      const leaderboardSnapshot = [...data.value.lb];
+      leaderboardSnapshot[memberIndex] = {
+        ...leaderboardSnapshot[memberIndex],
+        ...partialUpdateValidation.output
       };
 
       const updatedData = {
         ...data.value,
-        lb: newLb
+        lb: leaderboardSnapshot
       };
 
       data.value = updatedData;

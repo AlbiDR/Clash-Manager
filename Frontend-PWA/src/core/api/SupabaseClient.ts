@@ -139,8 +139,8 @@ export async function fetchRemote(options?: {
   const blacklistData = v.parse(v.array(BlacklistRowSchema), blacklistResponse.data || []);
   const blacklistTags = blacklistData
     .map((blacklistRow) => {
-      const tag = blacklistRow.player_tag;
-      return tag ? (tag.startsWith("#") ? tag : `#${tag}`) : "";
+      const observedPlayerTag = blacklistRow.player_tag;
+      return observedPlayerTag ? (observedPlayerTag.startsWith("#") ? observedPlayerTag : `#${observedPlayerTag}`) : "";
     })
     .filter(Boolean);
 
