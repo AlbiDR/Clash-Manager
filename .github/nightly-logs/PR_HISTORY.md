@@ -1,6 +1,25 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-05] PR #1022: chore(version): no drift found
+**Commit**: `bd3df76248a5307e430b1a249e40d384329dbfa1`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1022)
+
+### Description
+This PR documents the results of a monorepo-wide version consistency audit. No version drift or catalog violations were detected; the repository is fully synchronized at the ground truth version v14.2.6 and adheres to the PNPM catalog protocol.
+
+Changes:
+- Updated `.github/nightly-logs/07-version-integrity-coverage.log` with the audit result.
+
+Verification:
+- Automated consistency scan using a custom Python auditor.
+- Full monorepo test suite (1368 passed) using Node 22 bypass flags.
+
+---
+*PR created automatically by Jules for task [18220310839964166093](https://jules.google.com/task/18220310839964166093) started by @AlbiDR*
+
+---
+
 ## [2026-07-05] PR #1021: docs(tsdoc): document Layer 1 core services
 **Commit**: `230c3009cb13d9a2ecf8fe5e62007a19d9e71439`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1021)
