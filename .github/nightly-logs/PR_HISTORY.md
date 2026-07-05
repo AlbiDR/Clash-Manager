@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-05] PR #1025: chore(apk-integrity): no mismatch found
+**Commit**: `79a7cacbe293b16b6657f02bc8ed2b256d153e91`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1025)
+
+### Description
+Conducted a monorepo-wide integrity audit of the APK and PWA wrapper on the Nightly branch. Verified version synchronization (v14.2.6), Digital Asset Links fingerprint parity, manifest alignment (theme colors, orientation, start URL), and security configurations (cleartext traffic and permissions). Confirmed the integrity of the custom native layer. No mismatches or vulnerabilities were found. Updated the audit log to document the successful verification.
+
+---
+*PR created automatically by Jules for task [5768345916413227652](https://jules.google.com/task/5768345916413227652) started by @AlbiDR*
+
+---
+
 ## [2026-07-05] PR #1024: refactor: extract leaderboard scouting to core api
 **Commit**: `d91e226cef6458c9515b1a61a837e3411a29e212`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1024)
