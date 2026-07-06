@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-06] PR #1030: perf(opt): centralize backend utilities and refactor edge functions
+**Commit**: `943801c164384f68d3bf063166a0575cf16135ba`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1030)
+
+### Description
+This PR centralizes backend normalization utilities and refactors several Supabase Edge Functions to improve code hygiene and domain clarity.
+
+Key changes:
+1.  **Centralized Utilities**: Created `Backend/supabase/functions/_shared/utils.ts` to house `normalizeTag` and `normalizeRarity` functions, which were previously duplicated across multiple functions.
+2.  **Refactored Edge Functions**: Updated `sync-player-cards`, `ingest-royale-data` (Discovery and Deep Depth stages), and `fetch-player-battlelog` to use the new shared utilities.
+3.  **Standardized Variable Naming**: Replaced anemic variable names (e.g., `req`, `res`, `payload`, `data`) with more descriptive, domain-aligned names (e.g., `syncRequest`, `syncPayload`, `storedSnapshotsRaw`) to improve readability and maintainability.
+4.  **Substrate Hygiene**: Re-verified that orphaned database views (`war_loyalty_view`, `war_performance_analytics_view`, `governance_report`, `view_pipeline_health`, `recruits_view`, `war_activity_view`) remain unreferenced by application logic.
+
+All changes have been verified against the monorepo test gate (1386 passed).
+
+---
+*PR created automatically by Jules for task [7500325802278693512](https://jules.google.com/task/7500325802278693512) started by @AlbiDR*
+
+---
+
 ## [2026-07-06] PR #1029: chore(baseline): fold new migrations into master baseline
 **Commit**: `d36c227df126797c0b950e6e0f00abbc56272b2c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1029)
