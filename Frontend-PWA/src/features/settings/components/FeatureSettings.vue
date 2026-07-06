@@ -68,17 +68,16 @@ function locateAccessibilitySettings() {
  * screen for this package.
  *
  * [DECISION LOG] There is no dedicated openOverlaySettings() bridge method.
- * The native startBlitz() implementation already navigates to
- * ACTION_MANAGE_OVERLAY_PERMISSION when canDrawOverlays is false, so we
- * leverage that existing path. When overlay is already granted, the native
- * side proceeds to the accessibility hint instead, which is equally useful.
+ * The native startBlitz() navigates to ACTION_MANAGE_OVERLAY_PERMISSION as a
+ * side-effect when canDrawOverlays is false. We leverage that path exclusively
+ * when the permission is missing — when it is already granted, calling
+ * startBlitz("") would reach the blitz execution path and crash on an empty
+ * payload, so the call is skipped entirely.
  */
 function locateOverlaySettings() {
+  if (isOverlayAllowed.value) return;
   const bridge = (window as WindowWithBridge).AndroidBridge;
   if (bridge?.startBlitz) {
-    // Trigger native overlay-settings navigation via the startBlitz side-effect.
-    // The empty payload is safe: the native code gates on canDrawOverlays first
-    // and never starts a blitz sequence when permission is missing.
     bridge.startBlitz("");
   }
 }

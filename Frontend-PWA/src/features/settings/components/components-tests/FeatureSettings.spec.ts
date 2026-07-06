@@ -234,7 +234,8 @@ describe("FeatureSettings.vue", () => {
       expect(mockBridge.openAccessibilitySettings).toHaveBeenCalledOnce();
     });
 
-    it("calls startBlitz('') to navigate to overlay settings via native side-effect", async () => {
+    it("calls startBlitz('') to navigate to overlay settings via native side-effect when permission is missing", async () => {
+      mockBridge.hasOverlayPermission.mockReturnValue(false);
       const wrapper = mountComponent();
       await wrapper.vm.$nextTick();
 
@@ -245,6 +246,17 @@ describe("FeatureSettings.vue", () => {
       // is missing it opens ACTION_MANAGE_OVERLAY_PERMISSION instead of starting
       // a blitz session. Calling with an empty payload is safe.
       expect(mockBridge.startBlitz).toHaveBeenCalledWith("");
+    });
+
+    it("does not call startBlitz('') when overlay permission is already allowed", async () => {
+      mockBridge.hasOverlayPermission.mockReturnValue(true);
+      const wrapper = mountComponent();
+      await wrapper.vm.$nextTick();
+
+      const rows = wrapper.findAll(".permission-row");
+      await rows[1].trigger("click");
+
+      expect(mockBridge.startBlitz).not.toHaveBeenCalled();
     });
 
     it("re-polls permissions on window focus", async () => {
