@@ -8,3 +8,13 @@
 - Status: Baseline fully synchronized with incremental history.
 - Verification: Monorepo test gate passed (1368 tests).
 - Note: Incremental migrations preserved in /migrations/ per audit trail policy.
+[2026-07-06T03:30:00Z] Baseline Consolidation Audit
+- Migrations Processed: 10 (Total newer than baseline)
+- Migrations Folded: 1 (20260705030000_voyage_history_pruning)
+- Migrations Re-verified: 9 (Already present in baseline)
+- Tables Consolidated: 1 (drivers.player_voyage_history - verified)
+- Functions Updated/Verified: 95
+- Views Recompiled: 3 (features.scoring_view, features.roster_view, features.voyage_contributions)
+- Status: Baseline fully synchronized with incremental history.
+- Verification: Monorepo test gate passed (1368 tests).
+- Note: Incremental migrations preserved in /migrations/ per audit trail policy.

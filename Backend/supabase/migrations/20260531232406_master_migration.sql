@@ -232,6 +232,20 @@ CREATE TABLE IF NOT EXISTS drivers.players (
 
 ALTER TABLE drivers.players ENABLE ROW LEVEL SECURITY;
 
+CREATE TABLE IF NOT EXISTS drivers.player_voyage_history (
+    player_tag  text        NOT NULL,
+    history     text        NOT NULL DEFAULT '',
+    updated_at  timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT player_voyage_history_pkey
+        PRIMARY KEY (player_tag),
+    CONSTRAINT player_voyage_history_player_tag_fkey
+        FOREIGN KEY (player_tag)
+        REFERENCES drivers.players (player_tag)
+        ON DELETE CASCADE
+);
+
+ALTER TABLE drivers.player_voyage_history ENABLE ROW LEVEL SECURITY;
+
 -- Authoritative registry of tracked clans and their operational requirements (trophies, etc.).
 CREATE TABLE IF NOT EXISTS drivers.clans (
     clan_tag text NOT NULL CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text) /* Official Clash Royale clan tag. Primary logic key. */,
@@ -556,7 +570,7 @@ ALTER TABLE IF EXISTS drivers.clan_voyage ADD CONSTRAINT clan_voyage_clan_tag_fk
 ALTER TABLE IF EXISTS drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_fkey;
 ALTER TABLE IF EXISTS drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_voyage_id_fkey FOREIGN KEY (voyage_id) REFERENCES drivers.clan_voyage (id) ON UPDATE CASCADE ON DELETE CASCADE;
 ALTER TABLE IF EXISTS drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_player_tag_fkey;
-ALTER TABLE IF EXISTS drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_player_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag);
+ALTER TABLE IF EXISTS drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_player_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
 
 -- FUNCTIONS
 -- Substrate Functions
@@ -1826,22 +1840,30 @@ BEGIN
     PERFORM substrate.purge_stale_discovery_cache();
     PERFORM substrate.purge_stale_heritage();
     PERFORM substrate.finalize_expired_voyages();
-    
-    -- L2 Domain Purges (Restored from May 3 / May 16 omissions)
+
+    -- Consolidate voyage history before player purges fire so that
+    -- contribution data is safely archived before cascade deletes run.
+    PERFORM drivers.consolidate_voyage_history();
+
+    -- L2 Domain Purges
     PERFORM drivers.purge_expired_blacklist();
     PERFORM substrate.purge_inactive_members();
     PERFORM substrate.purge_stale_battles();
     PERFORM substrate.purge_worst_recruits();
     PERFORM substrate.purge_orphan_players();
+
+    -- Safety-net: log any history rows that survived beyond the cascade.
+    PERFORM drivers.purge_stale_voyage_history();
+
     PERFORM substrate.purge_recruit_ledger();
     PERFORM substrate.purge_stale_recruits();
-    
+
     PERFORM substrate.rotate_recruits();
 
     UPDATE substrate.pipeline_heartbeat
     SET status          = 'COMPLETED',
         last_success_at = NOW(),
-        last_message    = 'Maintenance complete. Raw logs, ledgers, stale battles, and orphans pruned. Voyages finalized.',
+        last_message    = 'Maintenance complete. Raw logs, ledgers, stale battles, orphans, and voyage history pruned. Voyages finalized.',
         updated_at      = NOW()
     WHERE component_id = 'NIGHTLY_MAINTENANCE';
 
@@ -2224,6 +2246,145 @@ BEGIN
     RETURN v_deleted_count;
 END; $function$;
 
+CREATE OR REPLACE FUNCTION drivers.consolidate_voyage_history()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_anchor_id BIGINT;
+    v_count     INTEGER := 0;
+    v_rec       RECORD;
+    v_existing  TEXT;
+    v_merged    TEXT;
+BEGIN
+    -- 1. Determine the anchor voyage to keep as individual rows.
+    --    Prefer any non-completed voyage (ACTIVE or PENDING); fall back to
+    --    the most recently completed voyage.
+    SELECT id
+    INTO   v_anchor_id
+    FROM   drivers.clan_voyage
+    WHERE  status IN ('ACTIVE', 'PENDING')
+    ORDER  BY start_at DESC
+    LIMIT  1;
+
+    IF v_anchor_id IS NULL THEN
+        SELECT id
+        INTO   v_anchor_id
+        FROM   drivers.clan_voyage
+        WHERE  status = 'COMPLETED'
+        ORDER  BY end_at DESC
+        LIMIT  1;
+    END IF;
+
+    -- Nothing to consolidate when there are no voyages at all.
+    IF v_anchor_id IS NULL THEN
+        RETURN;
+    END IF;
+
+    -- 2. Process each player that has completed contribution rows outside the anchor.
+    FOR v_rec IN
+        SELECT
+            c.player_tag,
+            string_agg(
+                v.id::text          || '|' ||
+                c.total_voyage_crowns::text || '|' ||
+                v.target_crowns::text        || '|' ||
+                TO_CHAR(v.end_at, 'YYYY-MM-DD'),
+                ','
+                ORDER BY v.end_at DESC
+            ) AS new_entries
+        FROM   drivers.clan_voyage_contributions c
+        JOIN   drivers.clan_voyage v ON v.id = c.voyage_id
+        WHERE  c.voyage_id <> v_anchor_id
+          AND  v.status    =  'COMPLETED'
+        GROUP  BY c.player_tag
+    LOOP
+        -- Load any pre-existing history for this player.
+        SELECT history
+        INTO   v_existing
+        FROM   drivers.player_voyage_history
+        WHERE  player_tag = v_rec.player_tag;
+
+        -- Merge new entries with existing ones, then deduplicate by voyage_id
+        -- keeping the entry with the highest voyage_id in case of collision.
+        SELECT string_agg(entry, ',' ORDER BY (regexp_split_to_array(entry, '\|'))[1]::bigint DESC)
+        INTO   v_merged
+        FROM (
+            SELECT DISTINCT ON ((regexp_split_to_array(entry, '\|'))[1])
+                entry
+            FROM unnest(
+                string_to_array(
+                    v_rec.new_entries ||
+                    CASE
+                        WHEN v_existing IS NOT NULL AND v_existing <> ''
+                        THEN ',' || v_existing
+                        ELSE ''
+                    END,
+                    ','
+                )
+            ) AS entry
+            WHERE entry <> ''
+            ORDER BY (regexp_split_to_array(entry, '\|'))[1] DESC
+        ) deduped;
+
+        -- Upsert consolidated history. The DELETE below only runs if this succeeds.
+        INSERT INTO drivers.player_voyage_history (player_tag, history, updated_at)
+        VALUES (v_rec.player_tag, COALESCE(v_merged, ''), NOW())
+        ON CONFLICT (player_tag) DO UPDATE
+            SET history    = EXCLUDED.history,
+                updated_at = NOW();
+
+        -- Remove the individual source rows that were just archived.
+        DELETE FROM drivers.clan_voyage_contributions
+        WHERE  player_tag = v_rec.player_tag
+          AND  voyage_id  <> v_anchor_id
+          AND  voyage_id  IN (
+                  SELECT id FROM drivers.clan_voyage WHERE status = 'COMPLETED'
+              );
+
+        v_count := v_count + 1;
+    END LOOP;
+
+    IF v_count > 0 THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES (
+            'VOYAGE_CONSOLIDATION',
+            'INFO',
+            'Consolidated voyage history for ' || v_count || ' players into player_voyage_history.'
+        );
+    END IF;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION drivers.purge_stale_voyage_history()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    DELETE FROM drivers.player_voyage_history pvh
+    WHERE NOT EXISTS (
+        SELECT 1 FROM drivers.players p WHERE p.player_tag = pvh.player_tag
+    );
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+
+    IF v_count > 0 THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES (
+            'MAINTENANCE_PURGE',
+            'INFO',
+            'Purged ' || v_count || ' stale drivers.player_voyage_history rows (no matching player).'
+        );
+    END IF;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
  RETURNS numeric
  LANGUAGE plpgsql
@@ -2232,14 +2393,40 @@ CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
 AS $function$
 BEGIN
     RETURN (
-        SELECT COALESCE(AVG(percentage_voyage_crowns), 0)
+        SELECT COALESCE(AVG(pct), 0)
         FROM (
-            SELECT percentage_voyage_crowns
-            FROM drivers.clan_voyage_contributions
-            WHERE player_tag = p_tag
-            ORDER BY id DESC
+            SELECT pct
+            FROM (
+                -- Source A: individual rows still present in the contributions table.
+                SELECT
+                    percentage_voyage_crowns                             AS pct,
+                    voyage_id                                            AS sort_key
+                FROM drivers.clan_voyage_contributions
+                WHERE player_tag = p_tag
+
+                UNION ALL
+
+                -- Source B: entries parsed from the archived history string.
+                -- Percentage is derived from the stored crowns and target fields.
+                SELECT
+                    LEAST(
+                        ROUND(
+                            (regexp_split_to_array(entry, '\|'))[2]::numeric
+                            / NULLIF((regexp_split_to_array(entry, '\|'))[3]::numeric, 0)
+                            * 100,
+                            2
+                        ),
+                        100.0
+                    )                                                    AS pct,
+                    (regexp_split_to_array(entry, '\|'))[1]::bigint      AS sort_key
+                FROM   drivers.player_voyage_history pvh
+                CROSS  JOIN LATERAL unnest(string_to_array(pvh.history, ',')) AS entry
+                WHERE  pvh.player_tag = p_tag
+                  AND  pvh.history   <> ''
+            ) all_voyages
+            ORDER BY sort_key DESC
             LIMIT 3
-        ) sub
+        ) top3
     );
 END;
 $function$;
@@ -3476,23 +3663,49 @@ SELECT player_tag AS tag,
 DROP VIEW IF EXISTS features.scoring_view CASCADE;
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
-  -- -- Voyage pipeline (unchanged) ---------------------------------------------
+  -- -- Voyage pipeline -----------------------------------------------------------
   voyage_history AS (
-      SELECT c.player_tag,
-             c.total_voyage_crowns AS crowns,
-             v.target_crowns,
-             v.end_at,
-             row_number() OVER (
-                 PARTITION BY c.player_tag ORDER BY v.end_at DESC
-             ) AS recency_rank
+      -- Source A: individual rows still in the live contributions table.
+      SELECT
+          c.player_tag,
+          c.total_voyage_crowns                               AS crowns,
+          v.target_crowns,
+          v.end_at,
+          v.id                                                AS voyage_id
         FROM drivers.clan_voyage_contributions c
           JOIN drivers.clan_voyage v ON v.id = c.voyage_id
        WHERE v.status = 'COMPLETED'::text
+
+      UNION ALL
+
+      -- Source B: entries parsed from the consolidated history archive.
+      -- Format per entry: voyage_id|crowns|target_crowns|end_date (YYYY-MM-DD).
+      SELECT
+          pvh.player_tag,
+          (regexp_split_to_array(entry, '\|'))[2]::integer               AS crowns,
+          (regexp_split_to_array(entry, '\|'))[3]::integer               AS target_crowns,
+          ((regexp_split_to_array(entry, '\|'))[4]::date)::timestamptz  AS end_at,
+          (regexp_split_to_array(entry, '\|'))[1]::bigint                AS voyage_id
+        FROM   drivers.player_voyage_history pvh
+        CROSS  JOIN LATERAL unnest(string_to_array(pvh.history, ',')) AS entry
+       WHERE   pvh.history <> ''
+  ),
+  voyage_ranked AS (
+      SELECT
+          player_tag,
+          crowns,
+          target_crowns,
+          end_at,
+          voyage_id,
+          row_number() OVER (
+              PARTITION BY player_tag ORDER BY end_at DESC
+          ) AS recency_rank
+        FROM voyage_history
   ),
   voyage_factuals AS (
       SELECT vh.player_tag,
              sum(
-                 vh.crowns::numeric / vh.target_crowns::numeric
+                 vh.crowns::numeric / NULLIF(vh.target_crowns::numeric, 0)
                  * GREATEST(0.5, 1.0 - (vh.recency_rank - 1)::numeric * 0.05)
              ) AS weighted_voyage_index,
              ( SELECT string_agg(
@@ -3502,13 +3715,13 @@ CREATE OR REPLACE VIEW features.scoring_view AS
                        )
                FROM (
                    SELECT crowns, end_at
-                     FROM voyage_history vh_sub
+                     FROM voyage_ranked vh_sub
                     WHERE vh_sub.player_tag = vh.player_tag
                     ORDER BY end_at DESC
                     LIMIT 52
                ) sub
              ) AS v_hist
-        FROM voyage_history vh
+        FROM voyage_ranked vh
        GROUP BY vh.player_tag
   ),
 
