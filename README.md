@@ -160,28 +160,30 @@ flowchart TD
 ---
 <br />
 
-## Android Wrapper (TWA) Icons
+## Android Wrapper Application (APK)
 
-The Android APK is a **Trusted Web Activity** packaged with [Bubblewrap](https://github.com/GoogleChromeLabs/bubblewrap). The native project lives **outside this repo** at `~/bubblewrap-project`.
+The Android wrapper integrates a custom Kotlin native layer directly on top of the PWA shell. The decoded, rebuildable APK source tree is tracked directly in the repository at [APK/README.md](file:///Users/ADR/Documents/Github/Projects/clash-manager/APK/README.md).
 
-Bubblewrap's default adaptive icon is broken (solid-white background layer, empty foreground, no monochrome layer). [`gen-android-icons.mjs`](APK/gen-android-icons.mjs) replaces it with a correct, fully-native set generated from `logo.svg`:
+The launcher and theme assets are managed via a programmatic icon generation pipeline:
 
-| Layer | Source |
-| --- | --- |
+| Layer | Source Description |
+| :--- | :--- |
 | `background` | `@color/ic_launcher_background` - solid brand `#0B0E14` |
-| `foreground` | logo fitted by its **true height** into the 108dp safe zone (the mark is taller than wide) |
-| `monochrome` | white silhouette for Android 13+ themed icons |
-| legacy | pre-masked square + round PNGs for API < 26 |
+| `foreground` | Logo scaled to fit the 108dp safe zone based on vector dimensions |
+| `monochrome` | White silhouette for themed launcher support |
+| legacy | Pre-masked square and circular PNG fallbacks for legacy systems |
 
-**Workflow** - always regenerate icons immediately before building the APK, and **always after `bubblewrap update`** (which restores Bubblewrap's broken default):
+### Build and Invalidation Protocol
+
+Generate the icon set and compile the project using local scripts:
 
 ```bash
-pnpm icons:android                      # regenerate the adaptive icon set
-pnpm icons:android -- --preview         # also emit launcher previews to .icon-preview/
-cd ~/bubblewrap-project && bubblewrap build
+pnpm icons:android                      # Regenerate the adaptive icon set
+pnpm icons:android -- --preview         # Generate launcher preview templates
+pnpm apk:check                          # Build and run verification checks locally
 ```
 
-The script is idempotent and validates against the live res tree. Override the target with `ANDROID_RES_DIR=…`.
+The icon generator is idempotent and validates asset coordinates against the active res tree. The target root can be overridden with `ANDROID_RES_DIR`.
 
 ---
 <br />
