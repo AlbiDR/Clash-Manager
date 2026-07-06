@@ -4,20 +4,10 @@
 import * as v from "npm:valibot@1.4.2";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
-import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
+import { ScannerStats, AuditEntry, RecruitSyncRow } from "../../_shared/types.ts";
+import { calculateRpos } from "../../_shared/utils.ts";
+import { RESCAN_BATCH_LIMIT, CONCURRENCY_RESCAN } from "../../_shared/config.ts";
 import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
-
-interface SyncRecruitRow {
-    player_tag: string;
-    player_name: string;
-    trophies: number;
-    donations: number;
-    cards: number;
-    war_wins: number;
-    raw_potential_score: number;
-    source: string;
-    status: 'ACTIVE' | 'QUEUE';
-}
 
 /**
  * Stage: Stale Recruit Re-scan
@@ -70,7 +60,7 @@ export async function runRescan(
         // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
         // [DECISION LOG] Explicitly fetching and validating the shape of rawStaleRecruits before processing.
         const { data: rawStaleRecruits, error: rpcError } = await supabase
-            .rpc('get_stale_recruits', { p_limit: 250 });
+            .rpc('get_stale_recruits', { p_limit: RESCAN_BATCH_LIMIT });
 
         logAudit('RESCAN', 'run', { count: Array.isArray(rawStaleRecruits) ? rawStaleRecruits.length : 0, error: rpcError?.message });
 
@@ -103,7 +93,7 @@ export async function runRescan(
         const staleRecruits = staleValidation.output;
         console.log(`[RESCAN] Validated ${staleRecruits.length} stale recruits to process.`);
 
-        const refreshedRecruitBatch: SyncRecruitRow[] = [];
+        const refreshedRecruitBatch: RecruitSyncRow[] = [];
         const rescanProcessingQueue = staleRecruits.map((staleRecruitSnapshot) => async () => {
             const targetPlayerTag = staleRecruitSnapshot.player_tag;
             try {
@@ -153,12 +143,9 @@ export async function runRescan(
                     return;
                 }
 
-                // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
                 // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
-                // Metrics are weighted to prioritize active war participants and high trophies.
-                // This formula ensures that long-term competitive value (WarWins) is the primary
-                // driver of recruitment priority, while maintaining current skill (Trophies) relevance.
-                const rawScore = (playerProfile.trophies * 1.0) + (playerProfile.totalDonations * 0.1) + ((playerProfile.warDayWins + 500) * 20.0);
+                // Refactored to use centralized L1 Core utility to ensure formula consistency.
+                const rawScore = calculateRpos(playerProfile.trophies, playerProfile.totalDonations, playerProfile.warDayWins);
 
                 // Otherwise prepare their profile data for batch refresh
                 refreshedRecruitBatch.push({
@@ -183,7 +170,7 @@ export async function runRescan(
         });
 
         console.log(`[RESCAN] Batch processing ${staleRecruits.length} rescan tasks...`);
-        await processBatch(rescanProcessingQueue, 10);
+        await processBatch(rescanProcessingQueue, CONCURRENCY_RESCAN);
 
         if (refreshedRecruitBatch.length > 0) {
             console.log(`[RESCAN] Synchronizing ${refreshedRecruitBatch.length} refreshed profiles via RPC...`);
