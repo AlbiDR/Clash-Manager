@@ -1,77 +1,89 @@
-# `APK/` - the real Clash Manager Android app (recovered source + build tooling)
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 
-️ **This folder is the single source of truth for the APK. Do NOT rebuild the
-release with `bubblewrap`** - it produces a generic TWA that silently strips the
-custom native layer.
+# Android Application Package Substrate (APK)
 
-## Why this exists
+The Android wrapper layer. This directory serves as the authoritative repository for the decoded hybrid Android application package, combining a native Kotlin overlay with the core progressive web application.
 
-Clash Manager's APK is **not** a plain TWA. It carries a custom Kotlin native
-layer on top of the Bubblewrap TWA shell:
+---
+<br>
 
-| Component | Role |
-| --- | --- |
-| `com.albidr.clashmanager.BlitzService` | foreground service, `SYSTEM_ALERT_WINDOW` draw-over-apps overlay |
-| `com.albidr.clashmanager.ClashManagerAccessibilityService` | `BIND_ACCESSIBILITY_SERVICE`, automated tap gestures (`canPerformGestures`) |
-| `com.albidr.clashmanager.MainActivity` + `…$AndroidBridge` | launcher activity hosting the WebView `@JavascriptInterface` bridge |
-| `com.albidr.clashmanager.Application` | app-wide init |
+## Purpose
 
-The PWA talks to it via `window.AndroidBridge` (7 methods - see
-`Frontend-PWA/src/core/types/index.ts`). Presence of that object is also the
-app's only "running inside the native wrapper" signal.
+The application wrapper provides hardware-level access and background capabilities that are unavailable to standard browser environments. It integrates a native layer directly on top of the PWA shell, enabling high-precision automation and custom overlay services.
 
-**There was never a Kotlin/Gradle source project** (the app was built through an
-agentic IDE). The native layer existed only as compiled code inside the released
-V4 APK. `android/` below is that APK decoded with `apktool d -s`, so the repo
-(and GitHub) is now a durable source of truth for it.
+---
+<br>
 
-## Layout
+## Native Architecture
+
+The wrapper contains a custom native layer that communicates with the client PWA:
+
+| Service | Component Role |
+| :--- | :--- |
+| `com.albidr.clashmanager.BlitzService` | Foreground service managing the system alert window overlay. |
+| `com.albidr.clashmanager.ClashManagerAccessibilityService` | Accessibility service implementing automated gestures. |
+| `com.albidr.clashmanager.MainActivity` | Host activity containing the JavascriptInterface bridge. |
+| `com.albidr.clashmanager.Application` | Application-wide initialization entry point. |
+
+The PWA interfaces with the native layer via `window.AndroidBridge`. The presence of this object acts as the primary indicator that the client is executing inside the native wrapper environment.
+
+---
+<br>
+
+## Directory Layout
 
 ```
 APK/
-  README.md                  ← you are here
-  android/                   ← apktool project = THE recovered app (rebuildable)
-    AndroidManifest.xml       custom services/permissions/intent-filters
-    apktool.yml               version lives here (versionInfo)
-    classes.dex               compiled native layer, kept byte-for-byte
-    res/  assets/  unknown/   resources + packaged extras
-  build-apk.sh               canonical build: apktool b  zipalign  sign  verify
-  gen-android-icons.mjs      regenerates the adaptive launcher icons into android/res
-  verify-apk-integrity.mjs   release gate: asserts a built APK keeps the custom layer
-  verify-android-source.mjs  CI gate: asserts android/ still has the custom layer
-  reference/                 archives - original V4 APK + the Bubblewrap twa-manifest.json
+  README.md                  - Documentation kernel
+  android/                   - Decoded APK structure containing the active assets and layout
+    AndroidManifest.xml       - Service configurations, intents, and hardware permissions
+    apktool.yml               - Package metadata and version info
+    classes.dex               - Compiled Kotlin native layer binaries
+    res/                      - Application resources and theme variables
+  build-apk.sh               - Shell script for building, aligning, signing, and verifying the package
+  gen-android-icons.mjs      - Generator utility for adaptive launcher icons
+  verify-apk-integrity.mjs   - Release validation script asserting the integrity of built APKs
+  verify-android-source.mjs  - Integration check asserting the integrity of the android source tree
+  reference/                 - Static archives of reference manifestations
 ```
 
-## Releasing a new version
+---
+<br>
 
-1. Release builds are handled exclusively via GitHub Actions:
-   Trigger the `APK Release Build` workflow manually on the `Beta` branch via the Actions tab on GitHub.
-2. The workflow compiles, signs, verifies, and publishes the versioned installable APK (e.g. `clashmanager-v14.2.6.apk`) as a downloadable workflow run artifact.
-3. The repository does not track compiled APK files.
+## Release Integration
 
-## Local Development & Sanity Checks
+Release builds are orchestrated via GitHub Actions:
+1. The release workflow is triggered manually on the Beta branch.
+2. The pipeline compiles, signs, verifies, and packages the versioned installer.
+3. Compiled binaries are published as run artifacts and are not tracked directly in version control.
+
+---
+<br>
+
+## Verification and Diagnostics
+
+Local scripts are provided to verify the integrity of the build:
 
 ```bash
-pnpm apk:check            # local compile + verify integrity check (no signing)
-pnpm apk:verify:source    # assert that the local android/ tree still has the custom native layer
-pnpm apk:verify <apk>     # test integrity of any local .apk file
+pnpm apk:check            # Compile package and run verification checks without signing
+pnpm apk:verify:source    # Assert that the local source tree maintains the native layer
+pnpm apk:verify <path>    # Perform integrity checks on a specified package file
 ```
 
-## Make changes
+---
+<br>
 
-- **Version bump:** `android/apktool.yml`  `versionInfo.versionCode` / `versionName`.
-- **Icons:** `pnpm icons:android` regenerates into `android/res` from the brand
-  `logo.svg`. Adaptive icon = `@color/colorPrimary` (#0b0e14) bg +
-  `ic_launcher_foreground` + `ic_launcher_monochrome` (themed icons). New mipmap
-  symbols are pinned in `android/res/values/public.xml`; **do not delete
-  `ic_maskable`** (the compiled `R` class references its id).
-- **Native code (Kotlin):** not editable as smali here. To change it, run `jadx`
-  on `android/classes.dex` to recover readable Kotlin, rebuild a Gradle project,
-  then re-verify with `pnpm apk:verify`.
+## Customization and Modification
 
-## Never do
+- **Version Management**: Update version mappings in `android/apktool.yml` under `versionInfo`.
+- **Launcher Icons**: Execute `pnpm icons:android` to regenerate adaptive assets into `android/res` using the master vector logo. The configuration maps themed foregrounds and backgrounds.
+- **Native Implementation**: The native Kotlin layer is maintained within `android/classes.dex`. Modifying compiling structures requires de-compiling the binary, reconstructing the source project, and rebuilding the classes artifact.
 
--  `bubblewrap build` / `bubblewrap update` as the release path - a `PreToolUse`
-  hook (`.claude/settings.json`) blocks these.
--  delete `ic_maskable` resources, or the `<service>` / `<uses-permission>`
-  entries in `android/AndroidManifest.xml`.
+---
+<br>
+
+## Forbidden Actions
+
+- **Direct Bubblewrap Rebuilds**: Building directly via bubblewrap commands is prohibited as it overwrites the custom native layer with a generic shell.
+- **Resource Deletion**: Modifying or removing essential adaptive assets (such as maskable icons) or removing access permissions from `AndroidManifest.xml` is prohibited.
