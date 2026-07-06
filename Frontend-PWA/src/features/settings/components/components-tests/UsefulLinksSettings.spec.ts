@@ -38,7 +38,7 @@ describe("UsefulLinksSettings.vue", () => {
       }
     });
 
-    const links = wrapper.findAll("a");
+    const links = wrapper.findAll("button");
     const labels = links.map(link => link.find(".link-label").text());
 
     expect(labels).toContain("RoyaleAPI Blog");
