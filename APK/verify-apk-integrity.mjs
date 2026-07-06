@@ -51,6 +51,7 @@ const EXPECT = {
     "saveCoordinates",
     "getCoordinates",
     "isAccessibilityActive",
+    "hasOverlayPermission",
     "openAccessibilitySettings",
     "openPlayerProfile",
     "openExternalUrl",

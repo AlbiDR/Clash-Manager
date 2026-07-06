@@ -28,6 +28,19 @@ The wrapper contains a custom native layer that communicates with the client PWA
 
 The PWA interfaces with the native layer via `window.AndroidBridge`. The presence of this object acts as the primary indicator that the client is executing inside the native wrapper environment.
 
+### JSBridge Methods
+
+| Method | Return | Description |
+| :--- | :--- | :--- |
+| `isAccessibilityActive()` | `boolean` | Returns true if `ClashManagerAccessibilityService` is currently running. |
+| `hasOverlayPermission()` | `boolean` | Returns true if the app holds `SYSTEM_ALERT_WINDOW` permission. |
+| `openAccessibilitySettings()` | `void` | Navigates to the system Accessibility Settings screen. |
+| `openExternalUrl(url)` | `void` | Opens a URL via Android `ACTION_VIEW` intent. |
+| `openPlayerProfile(id)` | `void` | Deep-links to a Clash Royale player profile. |
+| `getCoordinates()` | `string` | Returns persisted Blitz Mode calibration coordinates as JSON. |
+| `saveCoordinates(ix, iy, cx, cy)` | `void` | Persists Blitz Mode calibration coordinates. |
+| `startBlitz(payload)` | `void` | Initiates a Blitz Mode sequence for the provided player tags. |
+
 ---
 <br>
 
