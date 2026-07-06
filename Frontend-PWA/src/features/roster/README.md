@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 # Roster -- Leadership Console
 
 The **Leaderboard**. A specialized Feature (Layer 3) responsible for analyzing clan member performance, visualizing historical trends, and orchestrating roster management operations.

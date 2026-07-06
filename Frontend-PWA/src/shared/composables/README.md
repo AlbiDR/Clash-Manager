@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 # Shared Composables (@shared/composables)
 
 The **Behavioral Engine Room**. A collection of stateful logic engines that manage component-level behaviors, hardware brokerage, and reactive UI states across the Clash Manager ecosystem.

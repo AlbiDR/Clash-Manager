@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 # Shared Directives (@shared/directives)
 
 The **DOM Catalyst Layer**. Low-level DOM manipulators that provide standardized interaction feedback and specialized rendering behaviors across the application.
