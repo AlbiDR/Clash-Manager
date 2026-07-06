@@ -9,3 +9,4 @@
 [2026-07-01] Modernized `VoyageSetupForm.vue` actions (Activate, Cancel, Set End) with brokered tactile feedback via `useHaptics` in `useVoyageForm.ts` to ensure consistent physical response in the Android WebView shell. Verified via monorepo test gate (1346 passed).
 [2026-07-02] Integrated brokered tactile feedback into NetworkSettings.vue interactive elements (Edit, Save, Cancel, Override Reset) to ensure consistent physical response in the hybrid shell.
 [2026-07-05] Integrated brokered tactile feedback into useBackendRefresher.ts manual refresh actions to ensure consistent tactile response in the hybrid shell.
+[2026-07-06] Integrated brokered tactile feedback into ErrorBoundary.vue action buttons (Copy Error, System Reset) to ensure consistent physical response in the hybrid shell.
