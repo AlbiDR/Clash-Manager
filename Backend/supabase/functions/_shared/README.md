@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Backend Kernel (_shared) -- Core Logic Substrate
+# Backend Kernel (_shared) : Core Logic Substrate
 
 The **System Kernel** for the distributed backend. A collection of pure logic engines, validation boundaries, and infrastructure brokers that form the foundational substrate for all Supabase Edge Functions.
 

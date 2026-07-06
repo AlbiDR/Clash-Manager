@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Shared Layer (@shared) -- Driver & Molecule Substrate
+# Shared Layer (@shared) : Driver & Molecule Substrate
 
 The **Substrate Layer**. A collection of domain-blind UI building blocks, interaction drivers, and stateful composables that define the visual and behavioral language of the Clash Manager ecosystem.
 

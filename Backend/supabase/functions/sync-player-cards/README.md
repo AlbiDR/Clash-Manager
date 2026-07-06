@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# User Proxy -- Player Profile Sync (`sync-player-cards`)
+# User Proxy : Player Profile Sync (`sync-player-cards`)
 
 The **User Proxy**. A specialized Deno Edge Function responsible for the high-fidelity synchronization of individual player profiles and card snapshots. It acts as an L5 Control Layer proxy to ensure data consistency between the Clash Royale API and the PWA client.
 

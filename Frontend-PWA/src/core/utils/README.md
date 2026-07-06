@@ -8,7 +8,7 @@ A collection of pure, stateless logic engines and formatting primitives that for
 ---
 
 ## Purpose
-Utility Kernels (Layer 1) provide the foundational logic required for data transformation, geometric calculation, and domain-specific normalization. These modules are designed to be "Pure" -- they should not maintain internal state or depend on external services.
+Utility Kernels (Layer 1) provide the foundational logic required for data transformation, geometric calculation, and domain-specific normalization. These modules are designed to be "Pure" : they should not maintain internal state or depend on external services.
 
 ## Architectural Context
 - **Layer**: Layer 1 (@core/utils)

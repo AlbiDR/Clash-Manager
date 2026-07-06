@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Core API (@core/api) -- Transport Layer
+# Core API (@core/api) : Transport Layer
 
 The **Data Gateway**. The authoritative transport layer responsible for brokering communication between the Clash Manager PWA and the Supabase Binary Stack.
 

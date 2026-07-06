@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Core Layer (@core) -- Agnostic Kernel
+# Core Layer (@core) : Agnostic Kernel
 
 The **System Kernel**. A collection of pure logic engines, infrastructure singletons, and agnostic utilities that form the foundational substrate of the Clash Manager client.
 

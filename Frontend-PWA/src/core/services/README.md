@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Core Services (@core/services) -- Infrastructure Singletons
+# Core Services (@core/services) : Infrastructure Singletons
 
 The **System Orchestrators**. A collection of framework-agnostic singletons and Layer 1 state managers that provide the foundational infrastructure for the Clash Manager ecosystem.
 

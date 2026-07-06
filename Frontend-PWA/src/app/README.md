@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# App Layer (@app) -- Orchestration & Shell
+# App Layer (@app) : Orchestration & Shell
 
 The **System Orchestrator**. The highest functional layer of the application, responsible for composing Layer 3 Features into a unified shell, managing global navigation, and orchestrating the Service Worker lifecycle.
 

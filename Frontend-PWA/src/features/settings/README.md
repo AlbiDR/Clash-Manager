@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Settings -- Configuration & Recovery Orchestrator
+# Settings : Configuration & Recovery Orchestrator
 
 The **Command Center**. A self-contained Feature (Layer 3) responsible for managing application-level configuration, hardware brokerage, and system recovery protocols.
 

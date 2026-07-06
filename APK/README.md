@@ -35,17 +35,17 @@ The PWA interfaces with the native layer via `window.AndroidBridge`. The presenc
 
 ```
 APK/
-  README.md                  - Documentation kernel
-  android/                   - Decoded APK structure containing the active assets and layout
-    AndroidManifest.xml       - Service configurations, intents, and hardware permissions
-    apktool.yml               - Package metadata and version info
-    classes.dex               - Compiled Kotlin native layer binaries
-    res/                      - Application resources and theme variables
-  build-apk.sh               - Shell script for building, aligning, signing, and verifying the package
-  gen-android-icons.mjs      - Generator utility for adaptive launcher icons
-  verify-apk-integrity.mjs   - Release validation script asserting the integrity of built APKs
-  verify-android-source.mjs  - Integration check asserting the integrity of the android source tree
-  reference/                 - Static archives of reference manifestations
+  README.md - Documentation kernel
+  android/ - Decoded APK structure containing the active assets and layout
+    AndroidManifest.xml - Service configurations, intents, and hardware permissions
+    apktool.yml - Package metadata and version info
+    classes.dex - Compiled Kotlin native layer binaries
+    res/ - Application resources and theme variables
+  build-apk.sh - Shell script for building, aligning, signing, and verifying the package
+  gen-android-icons.mjs - Generator utility for adaptive launcher icons
+  verify-apk-integrity.mjs - Release validation script asserting the integrity of built APKs
+  verify-android-source.mjs - Integration check asserting the integrity of the android source tree
+  reference/ - Static archives of reference manifestations
 ```
 
 ---

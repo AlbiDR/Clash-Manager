@@ -179,7 +179,7 @@ Generate the icon set and compile the project using local scripts:
 
 ```bash
 pnpm icons:android                      # Regenerate the adaptive icon set
-pnpm icons:android -- --preview         # Generate launcher preview templates
+pnpm icons:android : --preview         # Generate launcher preview templates
 pnpm apk:check                          # Build and run verification checks locally
 ```
 
