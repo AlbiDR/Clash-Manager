@@ -165,12 +165,12 @@ Bubblewrap's default adaptive icon is broken (solid-white background layer, empt
 
 | Layer | Source |
 | --- | --- |
-| `background` | `@color/ic_launcher_background` — solid brand `#0B0E14` |
+| `background` | `@color/ic_launcher_background` - solid brand `#0B0E14` |
 | `foreground` | logo fitted by its **true height** into the 108dp safe zone (the mark is taller than wide) |
 | `monochrome` | white silhouette for Android 13+ themed icons |
 | legacy | pre-masked square + round PNGs for API < 26 |
 
-**Workflow** — always regenerate icons immediately before building the APK, and **always after `bubblewrap update`** (which restores Bubblewrap's broken default):
+**Workflow** - always regenerate icons immediately before building the APK, and **always after `bubblewrap update`** (which restores Bubblewrap's broken default):
 
 ```bash
 pnpm icons:android                      # regenerate the adaptive icon set

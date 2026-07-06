@@ -14,8 +14,8 @@ The Ingestion Gatekeeper (Layer 5 Control) orchestrates the primary synchronizat
 - **Layer**: Layer 5 (Control) / Layer 4 (Orchestration)
 - **Role**: Gatekeeper & Ingestion Orchestrator.
 - **Import Boundaries**:
-    - **Allowed**: Can import from `@shared` (protocols, schemas, types).
-    - **Axiom**: Acts as the primary entry point for administrative data synchronization, triggered by the PWA or internal automated cycles.
+ - **Allowed**: Can import from `@shared` (protocols, schemas, types).
+ - **Axiom**: Acts as the primary entry point for administrative data synchronization, triggered by the PWA or internal automated cycles.
 
 ## The Clinical Hexa-Stage Protocol
 Ingestion is performed as a sequential pipeline, decomposed into six logical stages to maintain structural purity and facilitate granular audit logging. To optimize execution, these conceptual stages are orchestrated into three primary execution blocks in the `pipeline.ts` kernel.

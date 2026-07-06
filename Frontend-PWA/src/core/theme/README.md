@@ -14,8 +14,8 @@ The Theme Engine (Layer 1) provides the structural and aesthetic foundations of 
 - **Layer**: Layer 1 (@core/theme)
 - **Role**: Design System SSOT & Shell Architect.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 0 (@substrate) and other Layer 1 modules.
-  - **Forbidden**: Strictly forbidden from importing from any higher layers (Shared, Features, App).
+ - **Allowed**: Can import from Layer 0 (@substrate) and other Layer 1 modules.
+ - **Forbidden**: Strictly forbidden from importing from any higher layers (Shared, Features, App).
 
 ## Core Modules
 

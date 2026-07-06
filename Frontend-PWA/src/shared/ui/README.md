@@ -11,9 +11,9 @@ The Shared UI directory (Layer 2) contains reusable components that are agnostic
 - **Layer**: Layer 2 (@shared)
 - **Isolation**: Strictly decoupled. A Molecule **NEVER** imports from Layer 3 (Features) or Layer 4 (App).
 - **Dependencies**:
-  - `@core/theme`: Sovereign Design System tokens and injection.
-  - `@core/services`: Infrastructure singletons (Haptics, UI Coordinator).
-  - `@core/utils`: Pure utility primitives.
+ - `@core/theme`: Sovereign Design System tokens and injection.
+ - `@core/services`: Infrastructure singletons (Haptics, UI Coordinator).
+ - `@core/utils`: Pure utility primitives.
 
 ## Component Categories
 

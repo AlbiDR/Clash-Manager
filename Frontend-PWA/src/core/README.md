@@ -14,8 +14,8 @@ The Core Layer (Layer 1) provides the essential infrastructure required for the 
 - **Layer**: Layer 1 (@core)
 - **Role**: Agnostic Kernel. Zero dependencies on higher layers (Shared, Features, App).
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 0 (`@substrate`).
-  - **Forbidden**: Strictly forbidden from importing from Layer 2 (`@shared`), Layer 3 (`@features`), or Layer 4 (`@app`).
+ - **Allowed**: Can import from Layer 0 (`@substrate`).
+ - **Forbidden**: Strictly forbidden from importing from Layer 2 (`@shared`), Layer 3 (`@features`), or Layer 4 (`@app`).
 
 ## Directory Structure
 
@@ -23,10 +23,10 @@ The Core Layer (Layer 1) provides the essential infrastructure required for the 
 The authoritative transport layer for the Supabase binary stack.
 - **SupabaseClient.ts**: The infrastructure-level gateway for authentication and configuration.
 - **Specialized Clients**: Domain-specific orchestrators for RPC and Edge Function interactions:
-  - `VoyageClient.ts`: Manages Clan Voyage activations, ledger updates, and event completion.
-  - `RecruitClient.ts`: Manages headhunter recruitment, blacklist operations, and diagnostic scouting.
-  - `ProfileClient.ts`: Brokered access to player card synchronization.
-  - `MaintenanceClient.ts`: Triggers system-level maintenance cycles and manages push notification registration.
+ - `VoyageClient.ts`: Manages Clan Voyage activations, ledger updates, and event completion.
+ - `RecruitClient.ts`: Manages headhunter recruitment, blacklist operations, and diagnostic scouting.
+ - `ProfileClient.ts`: Brokered access to player card synchronization.
+ - `MaintenanceClient.ts`: Triggers system-level maintenance cycles and manages push notification registration.
 - **useApiState.ts**: Authoritative connectivity singleton for backend availability and handshake discovery.
 - **Data Schemas**: Decomposed domain-specific modules (e.g., `BaseSchemas.ts`, `VoyageSchemas.ts`, `MemberSchemas.ts`, `RecruitSchemas.ts`, `ProfileSchemas.ts`, `AppSchemas.ts`, `OfflineSchemas.ts`, `MaintenanceSchemas.ts`) providing strict Valibot validation for inbound database payloads. Aggregated via the `DataSchemas.ts` barrel.
 - **Data Mappers**: Transformation logic for converting raw Supabase rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for complex telemetry, including Voyage history, Heritage tenure, and `potential_score` fallback logic.

@@ -11,10 +11,10 @@ The Headhunter feature provides a real-time feed of candidates scanned from exte
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Strictly siloed. No imports from `Laboratory` or `Roster`.
 - **Dependencies**:
-  - `@core/api/SupabaseClient`: Backend communication (Dismissal/Scouting).
-  - `@core/services/useBadge`: External notification badges.
-  - `@core/services/useBroadcastChannel`: Cross-tab state synchronization.
-  - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
+ - `@core/api/SupabaseClient`: Backend communication (Dismissal/Scouting).
+ - `@core/services/useBadge`: External notification badges.
+ - `@core/services/useBroadcastChannel`: Cross-tab state synchronization.
+ - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
 
 ## Logic Subsystems
 

@@ -14,8 +14,8 @@ Utility Kernels (Layer 1) provide the foundational logic required for data trans
 - **Layer**: Layer 1 (@core/utils)
 - **Role**: Pure Logic Substrate.
 - **Import Boundaries**:
-  - **Allowed**: Can import from other Layer 1 utilities or Layer 0 substrate.
-  - **Forbidden**: Strictly forbidden from importing from any higher layer (Shared, Features, App) or Core Services.
+ - **Allowed**: Can import from other Layer 1 utilities or Layer 0 substrate.
+ - **Forbidden**: Strictly forbidden from importing from any higher layer (Shared, Features, App) or Core Services.
 
 ## Core Utilities
 

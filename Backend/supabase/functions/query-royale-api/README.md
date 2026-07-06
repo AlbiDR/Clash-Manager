@@ -28,7 +28,7 @@ The `query-royale-api` function acts as a secure proxy for the PWA, allowing it 
 > empty list for every location. The season-scoped form
 > (`/pathoflegend/{season}/rankings/players`) is `global`-only and exposes just
 > *completed* seasons. The season-less `/pathoflegend/players` form used here is
-> the only endpoint that serves the live, in-progress board — and it accepts both
+> the only endpoint that serves the live, in-progress board - and it accepts both
 > `global` and individual country IDs.
 
 ### Local Harvesting & Country Rotation

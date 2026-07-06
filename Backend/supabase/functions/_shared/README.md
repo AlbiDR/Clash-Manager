@@ -14,8 +14,8 @@ The Shared Layer (Layer 1) provides the essential infrastructure required for th
 - **Layer**: Layer 1 (@core)
 - **Role**: Backend Kernel. Zero dependencies on feature-specific logic or higher layers.
 - **Import Boundaries**:
-  - **Allowed**: Can import from sibling modules within `_shared/`.
-  - **Forbidden**: Strictly forbidden from importing from specific Edge Function implementations or higher-level business orchestration.
+ - **Allowed**: Can import from sibling modules within `_shared/`.
+ - **Forbidden**: Strictly forbidden from importing from specific Edge Function implementations or higher-level business orchestration.
 
 ## Core Modules
 

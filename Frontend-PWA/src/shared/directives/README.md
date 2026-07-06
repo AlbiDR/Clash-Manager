@@ -5,14 +5,14 @@ The **DOM Catalyst Layer**. Low-level DOM manipulators that provide standardized
 ---
 
 ## Purpose
-Shared Directives (Layer 2) are used to attach reusable behavioral logic directly to DOM elements. They ensure that common interactions — such as haptic feedback on tap or rich tooltip overlays — are applied consistently without polluting component-level logic.
+Shared Directives (Layer 2) are used to attach reusable behavioral logic directly to DOM elements. They ensure that common interactions - such as haptic feedback on tap or rich tooltip overlays - are applied consistently without polluting component-level logic.
 
 ## Architectural Context
 - **Layer**: Layer 2 (@shared/directives)
 - **Role**: DOM Interactions.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 1 (@core).
-  - **Forbidden**: Strictly forbidden from importing from Layer 3 (@features) or Layer 4 (@app).
+ - **Allowed**: Can import from Layer 1 (@core).
+ - **Forbidden**: Strictly forbidden from importing from Layer 3 (@features) or Layer 4 (@app).
 
 ## Directive Registry
 

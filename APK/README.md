@@ -1,7 +1,7 @@
-# `APK/` — the real Clash Manager Android app (recovered source + build tooling)
+# `APK/` - the real Clash Manager Android app (recovered source + build tooling)
 
-⚠️ **This folder is the single source of truth for the APK. Do NOT rebuild the
-release with `bubblewrap`** — it produces a generic TWA that silently strips the
+️ **This folder is the single source of truth for the APK. Do NOT rebuild the
+release with `bubblewrap`** - it produces a generic TWA that silently strips the
 custom native layer.
 
 ## Why this exists
@@ -16,7 +16,7 @@ layer on top of the Bubblewrap TWA shell:
 | `com.albidr.clashmanager.MainActivity` + `…$AndroidBridge` | launcher activity hosting the WebView `@JavascriptInterface` bridge |
 | `com.albidr.clashmanager.Application` | app-wide init |
 
-The PWA talks to it via `window.AndroidBridge` (7 methods — see
+The PWA talks to it via `window.AndroidBridge` (7 methods - see
 `Frontend-PWA/src/core/types/index.ts`). Presence of that object is also the
 app's only "running inside the native wrapper" signal.
 
@@ -35,11 +35,11 @@ APK/
     apktool.yml               version lives here (versionInfo)
     classes.dex               compiled native layer, kept byte-for-byte
     res/  assets/  unknown/   resources + packaged extras
-  build-apk.sh               canonical build: apktool b → zipalign → sign → verify
+  build-apk.sh               canonical build: apktool b  zipalign  sign  verify
   gen-android-icons.mjs      regenerates the adaptive launcher icons into android/res
   verify-apk-integrity.mjs   release gate: asserts a built APK keeps the custom layer
   verify-android-source.mjs  CI gate: asserts android/ still has the custom layer
-  reference/                 archives — original V4 APK + the Bubblewrap twa-manifest.json
+  reference/                 archives - original V4 APK + the Bubblewrap twa-manifest.json
 ```
 
 ## Releasing a new version
@@ -59,7 +59,7 @@ pnpm apk:verify <apk>     # test integrity of any local .apk file
 
 ## Make changes
 
-- **Version bump:** `android/apktool.yml` → `versionInfo.versionCode` / `versionName`.
+- **Version bump:** `android/apktool.yml`  `versionInfo.versionCode` / `versionName`.
 - **Icons:** `pnpm icons:android` regenerates into `android/res` from the brand
   `logo.svg`. Adaptive icon = `@color/colorPrimary` (#0b0e14) bg +
   `ic_launcher_foreground` + `ic_launcher_monochrome` (themed icons). New mipmap
@@ -71,7 +71,7 @@ pnpm apk:verify <apk>     # test integrity of any local .apk file
 
 ## Never do
 
-- ❌ `bubblewrap build` / `bubblewrap update` as the release path — a `PreToolUse`
+-  `bubblewrap build` / `bubblewrap update` as the release path - a `PreToolUse`
   hook (`.claude/settings.json`) blocks these.
-- ❌ delete `ic_maskable` resources, or the `<service>` / `<uses-permission>`
+-  delete `ic_maskable` resources, or the `<service>` / `<uses-permission>`
   entries in `android/AndroidManifest.xml`.

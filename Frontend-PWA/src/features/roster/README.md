@@ -11,10 +11,10 @@ The Roster feature provides an authoritative view of the clan's internal health.
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Domain-blind to `Laboratory`, `Headhunter`, and `Settings`. One deliberate exception: `RosterView.vue` composes the `VoyageBanner` component from `@shared` in its top slot.
 - **Dependencies**:
-  - `@core/utils/predictionMath`: Historical parsing and predictive algorithms.
-  - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
-  - `@shared/ui/BaseCard`: The foundational UI molecule for member profiles.
-  - `@shared/ui/VoyageBanner`: Promoted molecule for live event feedback.
+ - `@core/utils/predictionMath`: Historical parsing and predictive algorithms.
+ - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
+ - `@shared/ui/BaseCard`: The foundational UI molecule for member profiles.
+ - `@shared/ui/VoyageBanner`: Promoted molecule for live event feedback.
 
 ## Logic Subsystems
 

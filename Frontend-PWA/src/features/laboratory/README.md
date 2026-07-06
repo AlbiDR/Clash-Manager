@@ -11,8 +11,8 @@ The Laboratory allows users to project their future King Level and resource cons
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Strictly decoupled. Never imports from other Features (Headhunter, Roster, Settings).
 - **Dependencies**:
-  - `@core/utils/economy`: Branded currency arithmetic.
-  - `@core/api/ProfileClient`: Profile fetching.
+ - `@core/utils/economy`: Branded currency arithmetic.
+ - `@core/api/ProfileClient`: Profile fetching.
 
 ## Logic Subsystems
 
@@ -50,7 +50,7 @@ The feature logic is decomposed into several specialized modules to ensure Layer
 Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.
 
 ### Persistence & Hydration
-- **LocalStorage**: Settings (`laboratory_settings`) and the player Observation (`laboratory_observation`, the hydrated `PlayerData` input — not the computed result) are persisted to ensure session resilience. Inventory overrides use `laboratory_inventory`.
+- **LocalStorage**: Settings (`laboratory_settings`) and the player Observation (`laboratory_observation`, the hydrated `PlayerData` input - not the computed result) are persisted to ensure session resilience. Inventory overrides use `laboratory_inventory`.
 - **Migration Logic**: The store includes a migration layer to normalize legacy strategy names ('Target' -> 'Level Projection', 'Maximize' -> 'Resource Efficiency').
 
 ### Performance & Memoization
@@ -59,8 +59,8 @@ Managed via the `useLaboratoryStore` Pinia store. Following Section III of the A
 ### Behavioral Orchestration (useLaboratory.ts & useLaboratorySimulation.ts)
 The behavioral layer standardizes communication between the simulation logic and the UI.
 - **useLaboratory.ts**: Orchestrates high-level layout state and data ingestion.
-  - **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution and refresh logic.
-  - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
-  - **Memoization**: Exposes `getTrajectoryMemoKeys` for stable `v-memo` dependency arrays across the trajectory list.
+ - **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution and refresh logic.
+ - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
+ - **Memoization**: Exposes `getTrajectoryMemoKeys` for stable `v-memo` dependency arrays across the trajectory list.
 - **useLaboratorySimulation.ts**: Specialized orchestrator for simulation execution.
-  - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs (via `currentSimulationId`), and batched generator consumption within ~10ms `requestIdleCallback` budgets.
+ - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs (via `currentSimulationId`), and batched generator consumption within ~10ms `requestIdleCallback` budgets.

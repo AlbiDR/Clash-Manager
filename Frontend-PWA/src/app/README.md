@@ -14,8 +14,8 @@ The App Layer (Layer 4) serves as the "glue" of the application. It defines the 
 - **Layer**: Layer 4 (@app)
 - **Role**: Orchestration & Shell Layer.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 3 (`@features`), Layer 2 (`@shared`), Layer 1 (`@core`), and Layer 0 (`@substrate`).
-  - **Axiom**: Layer 4 is the only layer authorized to import from `@features`.
+ - **Allowed**: Can import from Layer 3 (`@features`), Layer 2 (`@shared`), Layer 1 (`@core`), and Layer 0 (`@substrate`).
+ - **Axiom**: Layer 4 is the only layer authorized to import from `@features`.
 
 ## Core Components
 

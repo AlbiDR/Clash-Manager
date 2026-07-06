@@ -11,8 +11,8 @@ Shared Composables (Layer 2) encapsulate complex, reusable logic that is agnosti
 - **Layer**: Layer 2 (@shared/composables)
 - **Role**: Behavioral Logic.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 1 (@core) and Layer 0 (@substrate).
-  - **Forbidden**: Strictly forbidden from importing from Layer 3 (@features) or Layer 4 (@app).
+ - **Allowed**: Can import from Layer 1 (@core) and Layer 0 (@substrate).
+ - **Forbidden**: Strictly forbidden from importing from Layer 3 (@features) or Layer 4 (@app).
 
 ## Composable Registry
 

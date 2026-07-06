@@ -14,8 +14,8 @@ The Battlelog Proxy (Layer 5 Control) provides a secure gateway for fetching rea
 - **Layer**: Layer 5 (Control)
 - **Role**: Secure Diagnostic Proxy.
 - **Import Boundaries**:
-    - **Allowed**: Can import from `@shared` (protocols, schemas).
-    - **Usage**: Primarily consumed by testing utilities and high-fidelity diagnostic dashboards in the PWA.
+ - **Allowed**: Can import from `@shared` (protocols, schemas).
+ - **Usage**: Primarily consumed by testing utilities and high-fidelity diagnostic dashboards in the PWA.
 
 ## Parallel Fan-Out Strategy
 To maximize the probability of surfacing the most recent battle data (bypassing stale proxy node caches), the engine implements a **Parallel Fan-Out Protocol**:

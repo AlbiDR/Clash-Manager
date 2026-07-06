@@ -14,8 +14,8 @@ Shared Utilities (Layer 2) provide specialized formatting and normalization logi
 - **Layer**: Layer 2 (@shared/utils)
 - **Role**: Presentation Helpers.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 1 (`@core`) and Layer 0 (`@substrate`).
-  - **Forbidden**: Strictly forbidden from importing from Layer 3 (`@features`) or Layer 4 (`@app`).
+ - **Allowed**: Can import from Layer 1 (`@core`) and Layer 0 (`@substrate`).
+ - **Forbidden**: Strictly forbidden from importing from Layer 3 (`@features`) or Layer 4 (`@app`).
 
 ## Utility Kernels
 

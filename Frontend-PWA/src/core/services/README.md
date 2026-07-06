@@ -11,8 +11,8 @@ Core Services (Layer 1) manage global application concerns such as persistence, 
 - **Layer**: Layer 1 (@core)
 - **Role**: Infrastructure Singletons.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 0 (@substrate) and Layer 1 (@core/api, @core/utils).
-  - **Forbidden**: Strictly forbidden from importing from Layer 2 (Shared), Layer 3 (Features), or Layer 4 (App).
+ - **Allowed**: Can import from Layer 0 (@substrate) and Layer 1 (@core/api, @core/utils).
+ - **Forbidden**: Strictly forbidden from importing from Layer 2 (Shared), Layer 3 (Features), or Layer 4 (App).
 
 ## Service Registry
 

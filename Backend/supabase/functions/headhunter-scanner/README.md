@@ -14,8 +14,8 @@ The Headhunter Scanner (Layer 5 Control) orchestrates the clinical identificatio
 - **Layer**: Layer 5 (Control) / Layer 4 (Orchestration)
 - **Role**: Discovery Engine.
 - **Import Boundaries**:
-    - **Allowed**: Can import from `@shared` (protocols, schemas, types).
-    - **Axiom**: Acts as a standalone orchestration service triggered by internal cron or manual L5 PWA requests.
+ - **Allowed**: Can import from `@shared` (protocols, schemas, types).
+ - **Axiom**: Acts as a standalone orchestration service triggered by internal cron or manual L5 PWA requests.
 
 ## The Clinical 5-Stage Pipeline
 The scanner operates as a sequential, atomic pipeline to maintain data integrity and prevent discovery overlaps.
@@ -28,7 +28,7 @@ The scanner operates as a sequential, atomic pipeline to maintain data integrity
 ### S1: Shadow Scout
 **Objective**: opportunistic ingestion.
 - Harvests leads from recent battle-log opponents of tracked players via the `get_shadow_discovery_targets` RPC (limited to 75 targets), which selects distinct recent opponents from `drivers.player_battles` (last 24h), excluding existing members, recruits, and blacklisted tags.
-- Identifies "Shadow" candidates—players who have interacted with the clan but are not yet formally tracked.
+- Identifies "Shadow" candidates - players who have interacted with the clan but are not yet formally tracked.
 
 ### S2: Tournament Discovery
 **Objective**: ecosystem expansion.
