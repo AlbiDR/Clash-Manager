@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { ref, onErrorCaptured } from "vue";
+import { useHaptics } from "../composables/useHaptics";
 
 /**
  * [GUARD] ERROR BOUNDARY
@@ -9,6 +10,7 @@ import { ref, onErrorCaptured } from "vue";
  */
 const error = ref<Error | null>(null);
 const copied = ref(false);
+const haptics = useHaptics();
 
 onErrorCaptured((err) => {
   error.value = err instanceof Error ? err : new Error(String(err));
@@ -21,6 +23,7 @@ onErrorCaptured((err) => {
  */
 async function copyError() {
   if (!error.value) return;
+  haptics.tap();
 
   const title = "System Resilience";
   const description =
@@ -42,6 +45,7 @@ async function copyError() {
  * Resets the application state and reloads the page.
  */
 function reset() {
+  haptics.tap();
   error.value = null;
   // Clear any potentially corrupted temporary state
   sessionStorage.clear();
