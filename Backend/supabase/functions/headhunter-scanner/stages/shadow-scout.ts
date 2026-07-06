@@ -3,6 +3,7 @@
 
 import { supabase } from "../client.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
+import { SHADOW_DISCOVERY_LIMIT } from "../../_shared/config.ts";
 import * as v from "npm:valibot@1.4.2";
 import { ShadowTargetSchema } from "../../_shared/schemas.ts";
 
@@ -22,7 +23,7 @@ export async function runShadowScout(
         logAudit('SHADOW_SCOUT', 'called');
         console.log(`[SHADOW_SCOUT] Fetching shadow discovery targets via RPC...`);
         const { data: rawShadowTargets, error: shadowError } = await supabase
-            .rpc('get_shadow_discovery_targets', { p_limit: 75 });
+            .rpc('get_shadow_discovery_targets', { p_limit: SHADOW_DISCOVERY_LIMIT });
         
         logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(rawShadowTargets) ? rawShadowTargets.length : 0, error: shadowError });
         if (!shadowError && rawShadowTargets) {

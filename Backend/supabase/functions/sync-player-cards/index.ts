@@ -4,6 +4,7 @@
 import * as v from "npm:valibot@1.4.2";
 import { fetchWithRotation } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
+import { normalizeTag, normalizeRarity } from "../_shared/utils.ts";
 import { RoyaleFullPlayerSchema, PlayerSyncPayloadSchema, PlayerCardSnapshotSchema } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 
@@ -44,30 +45,6 @@ interface NormalizedCard {
   api_level: number;
   api_max_level: number;
   count: number;
-}
-
-/**
- * Normalizes a player tag to a standard uppercase format with a hash prefix.
- * @param playerTag - The raw player tag from the request.
- */
-function normalizeTag(playerTag: string): string {
-  const clean = playerTag.trim().toUpperCase();
-  return clean.startsWith("#") ? clean : `#${clean}`;
-}
-
-/**
- * Maps raw rarity strings from the Royale API to standardized title-case names.
- * @param raw - The raw rarity string (e.g., "common").
- */
-function normalizeRarity(raw: string): string {
-  const rarityMap: Record<string, string> = {
-    common: "Common",
-    rare: "Rare",
-    epic: "Epic",
-    legendary: "Legendary",
-    champion: "Champion",
-  };
-  return rarityMap[raw?.toLowerCase()?.trim()] ?? "Common";
 }
 
 /**
@@ -127,26 +104,26 @@ function buildProfileResponse(
   };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (syncRequest) => {
   await syncVault();
 
   // [DEAD LOGIC REMOVAL] clinicalServe manages CORS, authorization (INTERNAL_BEARER_TOKEN / SUPABASE_ANON_KEY),
   // request validation (PlayerSyncPayloadSchema), and telemetry reporting internally.
   return await clinicalServe({
-    req,
+    req: syncRequest,
     supabase,
     bearerToken: [CONFIG.INTERNAL_BEARER_TOKEN, CONFIG.SUPABASE_ANON_KEY],
     eventType: "PLAYER_SYNC",
     componentId: "PLAYER_CARD_SYNC",
     schema: PlayerSyncPayloadSchema,
-    handler: async (payload, logAudit, heartbeat) => {
+    handler: async (syncPayload, logAudit, heartbeat) => {
       // [DECISION LOG] Tags are normalized to ensure cache hits regardless of user input casing/prefix.
-      const normalizedPlayerTag = normalizeTag(payload.tag);
+      const normalizedPlayerTag = normalizeTag(syncPayload.tag);
 
       // 1. [CACHE CHECK]
       // [DECISION LOG] The features.player_card_snapshots table acts as a Layer 2 cache.
       // We check for existing data to minimize Royale API quota consumption and improve response speed.
-      const { data: unvalidatedStoredSnapshots, error: fetchError } = await supabase
+      const { data: storedSnapshotsRaw, error: dbFetchError } = await supabase
         .schema("features")
         .from("player_card_snapshots")
         .select(
@@ -154,26 +131,26 @@ Deno.serve(async (req) => {
         )
         .eq("player_tag", normalizedPlayerTag);
 
-      if (fetchError) {
-        logAudit("CACHE_CHECK", "error", { message: fetchError.message });
+      if (dbFetchError) {
+        logAudit("CACHE_CHECK", "error", { message: dbFetchError.message });
       }
 
       // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
       // [THREAT:] Unvalidated data from the database can lead to downstream runtime crashes.
-      const snapshotValidation = v.safeParse(v.array(PlayerCardSnapshotSchema), unvalidatedStoredSnapshots ?? []);
-      if (!snapshotValidation.success) {
-        logAudit("CACHE_CHECK", "error", { message: "Validation failed", issues: snapshotValidation.issues });
+      const snapshotValidationResult = v.safeParse(v.array(PlayerCardSnapshotSchema), storedSnapshotsRaw ?? []);
+      if (!snapshotValidationResult.success) {
+        logAudit("CACHE_CHECK", "error", { message: "Validation failed", issues: snapshotValidationResult.issues });
         // Fail-safe: treat validation failure as a cache miss to allow re-fetching fresh data.
       }
 
-      const cardSnapshots: CardRow[] = snapshotValidation.success ? snapshotValidation.output : [];
-      const cutoff = Date.now() - CACHE_TTL_MS;
+      const cardSnapshots: CardRow[] = snapshotValidationResult.success ? snapshotValidationResult.output : [];
+      const cacheExpirationCutoff = Date.now() - CACHE_TTL_MS;
       // [DECISION LOG] Data is considered fresh if at least one card was fetched within the 12h TTL.
-      const isFresh =
+      const isCacheDataFresh =
         cardSnapshots.length > 0 &&
-        cardSnapshots.some((snapshot) => new Date(snapshot.fetched_at).getTime() > cutoff);
+        cardSnapshots.some((snapshot) => new Date(snapshot.fetched_at).getTime() > cacheExpirationCutoff);
 
-      if (isFresh) {
+      if (isCacheDataFresh) {
         logAudit("CACHE_CHECK", "terminated", { status: "HIT", count: cardSnapshots.length });
         return buildProfileResponse(cardSnapshots, normalizedPlayerTag, "cache");
       }
@@ -184,42 +161,42 @@ Deno.serve(async (req) => {
       logAudit("API_FETCH", "called", { tag: normalizedPlayerTag });
       const encodedTag = encodeURIComponent(normalizedPlayerTag);
       // [THREAT:] fetchWithRotation handles API key rotation to prevent IP/Token banning.
-      const royaleApiResponse = await fetchWithRotation(`/players/${encodedTag}`);
-      if (!royaleApiResponse.ok) {
-        const errorBody = await royaleApiResponse.text().catch(() => "");
-        logAudit("API_FETCH", "error", { status: royaleApiResponse.status, body: errorBody });
-        throw new Error(`Clash Royale API error: ${royaleApiResponse.status}`);
+      const playerApiResponse = await fetchWithRotation(`/players/${encodedTag}`);
+      if (!playerApiResponse.ok) {
+        const apiErrorBody = await playerApiResponse.text().catch(() => "");
+        logAudit("API_FETCH", "error", { status: playerApiResponse.status, body: apiErrorBody });
+        throw new Error(`Clash Royale API error: ${playerApiResponse.status}`);
       }
 
       // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
       // to enforce strict narrowing and prevent runtime crashes or logic corruption.
-      const rawRoyalePayload: unknown = await royaleApiResponse.json();
+      const playerRoyalePayload: unknown = await playerApiResponse.json();
 
       // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
       // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes.
-      const playerValidation = v.safeParse(RoyaleFullPlayerSchema, rawRoyalePayload);
+      const playerValidationResult = v.safeParse(RoyaleFullPlayerSchema, playerRoyalePayload);
 
-      if (!playerValidation.success) {
-        logAudit("API_FETCH", "error", { message: "Validation failed", issues: playerValidation.issues });
+      if (!playerValidationResult.success) {
+        logAudit("API_FETCH", "error", { message: "Validation failed", issues: playerValidationResult.issues });
         throw new Error("Invalid response from Clash Royale API");
       }
 
-      const playerProfile = playerValidation.output;
+      const playerProfileData = playerValidationResult.output;
       logAudit("API_FETCH", "run", { status: "SUCCESS" });
 
       // 3. [NORMALIZATION]
       logAudit("NORMALIZATION", "called");
-      const playerBaseCards = playerProfile.cards;
-      const playerTowerTroops = playerProfile.towerTroops ?? [];
-      const allPlayerCards = [...playerBaseCards, ...playerTowerTroops];
+      const baseCardCollection = playerProfileData.cards;
+      const towerTroopCollection = playerProfileData.towerTroops ?? [];
+      const completeCardCollection = [...baseCardCollection, ...towerTroopCollection];
 
       const baseMaxLevel =
-        allPlayerCards.reduce((max, card) => Math.max(max, card.maxLevel), 0) ||
+        completeCardCollection.reduce((max, card) => Math.max(max, card.maxLevel), 0) ||
         BASE_MAX_LEVEL;
 
-      const playerName = playerProfile.name;
-      const kingLevel = playerProfile.expLevel;
-      const xpIntoLevel = playerProfile.expPoints;
+      const playerName = playerProfileData.name;
+      const kingLevel = playerProfileData.expLevel;
+      const xpIntoLevel = playerProfileData.expPoints;
       const fetchedAt = new Date().toISOString();
 
       /**
@@ -244,8 +221,8 @@ Deno.serve(async (req) => {
       }
 
       const normalizedCards: NormalizedCard[] = [
-        ...playerBaseCards.map((royaleCardEntry) => processCard(royaleCardEntry, false)),
-        ...playerTowerTroops.map((royaleCardEntry) => processCard(royaleCardEntry, true)),
+        ...baseCardCollection.map((royaleCardEntry) => processCard(royaleCardEntry, false)),
+        ...towerTroopCollection.map((royaleCardEntry) => processCard(royaleCardEntry, true)),
       ];
       logAudit("NORMALIZATION", "run", { cardCount: normalizedCards.length });
 
@@ -253,16 +230,16 @@ Deno.serve(async (req) => {
       // [DECISION LOG] Upsert failures are logged but non-fatal to ensure service availability even if the cache layer is degraded.
       if (normalizedCards.length > 0) {
         logAudit("UPSERT", "called");
-        const upsertRows = normalizedCards.map((processedCardEntry) => ({
+        const upsertRows = normalizedCards.map((normalizedCardEntry) => ({
           player_tag: normalizedPlayerTag,
-          card_id: processedCardEntry.card_id,
-          card_name: processedCardEntry.card_name,
-          rarity: processedCardEntry.rarity,
-          is_tower_troop: processedCardEntry.is_tower_troop,
-          absolute_level: processedCardEntry.absolute_level,
-          api_level: processedCardEntry.api_level,
-          api_max_level: processedCardEntry.api_max_level,
-          count: processedCardEntry.count,
+          card_id: normalizedCardEntry.card_id,
+          card_name: normalizedCardEntry.card_name,
+          rarity: normalizedCardEntry.rarity,
+          is_tower_troop: normalizedCardEntry.is_tower_troop,
+          absolute_level: normalizedCardEntry.absolute_level,
+          api_level: normalizedCardEntry.api_level,
+          api_max_level: normalizedCardEntry.api_max_level,
+          count: normalizedCardEntry.count,
           player_name: playerName,
           king_level: kingLevel,
           xp_into_level: xpIntoLevel,
@@ -283,12 +260,12 @@ Deno.serve(async (req) => {
         }
       }
 
-      const freshRows: CardRow[] = normalizedCards.map((processedCardEntry) => ({
-        card_name: processedCardEntry.card_name,
-        rarity: processedCardEntry.rarity,
-        absolute_level: processedCardEntry.absolute_level,
-        count: processedCardEntry.count,
-        is_tower_troop: processedCardEntry.is_tower_troop,
+      const freshRows: CardRow[] = normalizedCards.map((normalizedCardEntry) => ({
+        card_name: normalizedCardEntry.card_name,
+        rarity: normalizedCardEntry.rarity,
+        absolute_level: normalizedCardEntry.absolute_level,
+        count: normalizedCardEntry.count,
+        is_tower_troop: normalizedCardEntry.is_tower_troop,
         fetched_at: fetchedAt,
         player_name: playerName,
         king_level: kingLevel,

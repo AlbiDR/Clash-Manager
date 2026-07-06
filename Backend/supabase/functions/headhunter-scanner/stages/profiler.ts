@@ -3,38 +3,15 @@
 
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
-import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
+import { ScannerStats, AuditEntry, RecruitSyncRow } from "../../_shared/types.ts";
+import { calculateRpos } from "../../_shared/utils.ts";
+import {
+    PROFILER_BATCH_CEILING,
+    RECENT_SCAN_THRESHOLD_MS,
+    CONCURRENCY_PROFILER
+} from "../../_shared/config.ts";
 import * as v from "npm:valibot@1.4.2";
 import { RoyalePlayerSchema, RecruitFateSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
-
-const PROFILER_BATCH_CEILING = 1000;
-const RECENT_SCAN_THRESHOLD_MS = 30 * 60 * 1000;
-
-/**
- * Represents a player candidate that has passed initial trophy and clan filters.
- * Acting as a temporary DTO (Data Transfer Object) for validated recruit data
- * before it is ingested into the database.
- */
-interface ValidRecruit {
-    /** Unique player identifier (e.g., #P9999) */
-    player_tag: string;
-    /** Current display name */
-    player_name: string;
-    /** Current trophy count */
-    trophies: number;
-    /** Lifetime donation count */
-    donations: number;
-    /** Challenge cards won metric */
-    cards: number;
-    /** Total war day wins */
-    war_wins: number;
-    /** Calculated recruitment priority score */
-    raw_potential_score: number;
-    /** Discovery source (SHADOW, TOURNAMENT, etc.) */
-    source: string;
-    /** Ingestion status (ACTIVE, BENCHED) */
-    status: string;
-}
 
 /**
  * STAGE: Profiling & Ingestion
@@ -106,7 +83,7 @@ export async function runProfiler(
 
         console.log(`[PROFILING] Pre-filtered: ${recentlyScannedTags.size} tags scanned in the last 30 minutes skipped. Remaining tags to fetch: ${tagsToFetch.length}`);
 
-        const validRecruits: ValidRecruit[] = [];
+        const validRecruits: RecruitSyncRow[] = [];
         let validCount = 0;
         let newCount = 0;
         let refreshCount = 0;
@@ -140,13 +117,9 @@ export async function runProfiler(
                             const warWins = playerProfile.warDayWins || 0;
                             const cards = playerProfile.challengeCardsWon || 0;
 
-                            // Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
                             // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
-                            // This formula prioritizes war experience (WarWins) as the primary indicator
-                            // of long-term value, while using Trophies and Donations as stability markers.
-                            // The +500 offset on WarWins ensures that even low-win players have a
-                            // base competitive score, while the 20x multiplier creates clear tier separation.
-                            const potentialRawScore = (trophies * 1.0) + (donations * 0.1) + ((warWins + 500) * 20.0);
+                            // Refactored to use centralized L1 Core utility to ensure formula consistency.
+                            const potentialRawScore = calculateRpos(trophies, donations, warWins);
 
                             validRecruits.push({
                                 player_tag: playerProfile.tag,
@@ -192,7 +165,7 @@ export async function runProfiler(
         });
         
         console.log(`[PROFILING] Batch processing ${tagsToFetch.length} profiles...`);
-        await processBatch(profileTasks, 40);
+        await processBatch(profileTasks, CONCURRENCY_PROFILER);
         console.log(`[PROFILING] Batch processing complete. Valid: ${validCount}, Invalid/Filtered: ${invalidCount}`);
 
         // Field health check: detect silent Royale API field renames or deprecations.
@@ -228,7 +201,7 @@ export async function runProfiler(
 
         if (validRecruits.length > 0) {
             // Group recruits by their discovery source for accurate attribution
-            const bySource = new Map<string, ValidRecruit[]>();
+            const bySource = new Map<string, RecruitSyncRow[]>();
             let maxRpos = -Infinity;
             let minRpos = Infinity;
             const sourceCounts: Record<string, number> = {};

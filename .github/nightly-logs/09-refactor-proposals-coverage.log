@@ -22,3 +22,4 @@ Structural Surgery (Domain Utility Centralization - Stage 9) June 21, 2026: Exec
 - Satisfied Layer 3 -> Layer 1 architectural alignment by removing direct 'fetch' from feature layer.
 - Updated 'useLeaderboardScraper.spec.ts' to mock the new core API.
 - Verified zero architectural violations via depcruise.
+2026-07-06 | Backend/supabase/functions/_shared | Structural Surgery: Centralized scanner logic, types, and configuration to the shared backend layer. Extracted calculateRpos to utils.ts, RecruitSyncRow to types.ts, and created config.ts for operational constants. Updated profiler, rescan, shadow-scout, and discovery stages.

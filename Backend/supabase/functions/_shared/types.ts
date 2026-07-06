@@ -93,3 +93,37 @@ export interface ScannerStats {
   /** Collection of non-fatal error messages encountered during scanning. */
   errors: string[];
 }
+
+/**
+ * Authoritative recruitment statuses.
+ */
+export type RecruitStatus = "ACTIVE" | "BENCHED" | "QUEUE";
+
+/**
+ * Standardized DTO for recruit synchronization via the 'sync_recruits' RPC.
+ *
+ * @remarks
+ * Satisfies ADR Section II: Structural Unitary Architecture.
+ * Ensures consistent data shape for bulk ingestion across discovery,
+ * profiling, and re-scanning stages.
+ */
+export interface RecruitSyncRow {
+  /** Unique player identifier (e.g., #P9999). */
+  player_tag: string;
+  /** Current display name. */
+  player_name: string;
+  /** Current trophy count. */
+  trophies: number;
+  /** Lifetime donation count. */
+  donations: number;
+  /** Challenge cards won metric. */
+  cards: number;
+  /** Total war day wins. */
+  war_wins: number;
+  /** Calculated recruitment priority score (RPoS). */
+  raw_potential_score: number;
+  /** Discovery source (SHADOW, TOURNAMENT, etc.). */
+  source: string;
+  /** Ingestion status (ACTIVE, BENCHED, QUEUE). */
+  status: RecruitStatus | string;
+}

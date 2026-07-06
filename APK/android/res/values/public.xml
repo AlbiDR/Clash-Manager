@@ -31,7 +31,6 @@
     <public type="animator" name="fragment_fade_exit" id="0x7f020003" />
     <public type="animator" name="fragment_open_enter" id="0x7f020004" />
     <public type="animator" name="fragment_open_exit" id="0x7f020005" />
-    <public type="array" name="display_override" id="0x7f030000" />
     <public type="attr" name="actionBarDivider" id="0x7f040000" />
     <public type="attr" name="actionBarItemBackground" id="0x7f040001" />
     <public type="attr" name="actionBarPopupTheme" id="0x7f040002" />
@@ -894,7 +893,6 @@
     <public type="mipmap" name="ic_launcher_foreground" id="0x7f0d0002" />
     <public type="mipmap" name="ic_launcher_monochrome" id="0x7f0d0003" />
     <public type="mipmap" name="ic_launcher_round" id="0x7f0d0004" />
-    <public type="raw" name="web_app_manifest" id="0x7f0e0000" />
     <public type="string" name="abc_action_bar_home_description" id="0x7f0f0000" />
     <public type="string" name="abc_action_bar_up_description" id="0x7f0f0001" />
     <public type="string" name="abc_action_menu_overflow_description" id="0x7f0f0002" />

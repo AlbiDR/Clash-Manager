@@ -3,6 +3,7 @@
 
 import * as v from "npm:valibot@1.4.2";
 import { clinicalServe } from "../_shared/protocol.ts";
+import { normalizeTag } from "../_shared/utils.ts";
 import { RoyaleBattleLogSchema, KeyPoolSchema } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 
@@ -127,9 +128,7 @@ Deno.serve(async (req) => {
       const { playerTag } = payload;
 
       // Normalize tag: ensure it starts with '#' regardless of client encoding.
-      const normalizedTag = playerTag.startsWith("#")
-        ? playerTag
-        : `#${playerTag}`;
+      const normalizedTag = normalizeTag(playerTag);
 
       const encodedTag = encodeURIComponent(normalizedTag);
       const keyPool = resolveKeyPool();

@@ -41,10 +41,22 @@ Secured access to the Supabase Vault.
 - **Prioritized Retrieval**: Brokers access to decrypted secrets via the `get_vault_secret` RPC, with a transparent fallback to Deno environment variables.
 - **Normalization**: Ensures all retrieved secrets are passed through a validation boundary before use.
 
+### Backend Utilities (`utils.ts`)
+Centralized normalization and text processing logic for the backend substrate.
+- **Tag Normalization**: Standardizes player and clan tags to uppercase format with a mandatory hash prefix to maximize cache hits and prevent substrate duplication.
+- **Rarity Mapping**: Maps raw lowercase rarity strings from the Royale API to standardized Title-Case names, ensuring relational schema and UI consistency.
+- **RPoS Calculation**: Implements the authoritative Raw Recruiter Point of Satisfaction (RPoS) formula used for recruitment prioritization.
+
 ### Universal Types (`types.ts`)
 Authoritative TypeScript interfaces used across the entire backend substrate.
 - **Audit Logging**: Defines the standard `AuditEntry` contract for clinical telemetry.
 - **Domain Models**: Centralizes definitions for ingestion results and scanner statistics.
+- **Recruit Synchronization**: Provides the `RecruitSyncRow` DTO for standardized bulk ingestion across pipelines.
+
+### Shared Configuration (`config.ts`)
+The authoritative source for backend business rules and operational thresholds.
+- **Batch Limits**: Defines hard caps for profiling (`PROFILER_BATCH_CEILING`) and re-scanning (`RESCAN_BATCH_LIMIT`) to ensure predictable execution.
+- **Discovery parameters**: Centralizes keywords and limits for tournament and battle-log harvesting.
 
 ---
 

@@ -113,3 +113,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-07-05 | Frontend-PWA/src/core/services/useSystemInfo.ts | Documented system info orchestrator and priority badge resolution logic with mandatory threat/decision logs.
 2026-07-05 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Documented header metadata orchestrator and synthetic mode handling with mandatory threat/decision logs.
 2026-07-05 | Frontend-PWA/src/core/services/useListFilter.ts | Documented optimized list engine, WeakMap-based caching rationale, and stable sorting guards.
+2026-07-06 | Frontend-PWA/src/shared/composables/useLongPress.ts | Documented long-press orchestrator with ADR mappings and mandatory threat/decision logs.

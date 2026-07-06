@@ -3,7 +3,13 @@
 
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
+import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
+import {
+    DISCOVERY_KEYWORDS,
+    CONCURRENCY_DISCOVERY_KEYWORDS,
+    CONCURRENCY_DISCOVERY_TOURNAMENTS
+} from "../../_shared/config.ts";
 import * as v from "npm:valibot@1.4.2";
 import { RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
 
@@ -20,7 +26,7 @@ export async function runDiscovery(
 ) {
     logAudit('S1_DISCOVERY', 'triggered');
     try {
-        const discoveryKeywords = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int"];
+        const discoveryKeywords = DISCOVERY_KEYWORDS;
         // [DECISION LOG] EPHEMERAL: intentionally resets on cold start to maintain memory hygiene.
         // [THREAT:] Native Discovery depends on in-memory state during the harvest phase;
         // instance termination will lead to partial harvest loss if not synchronized to DB.
@@ -28,15 +34,15 @@ export async function runDiscovery(
         
         const discoveryTasks = discoveryKeywords.map(keyword => async () => {
             try {
-                const tournamentListResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
-                if (!tournamentListResponse.ok) return;
+                const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
+                if (!tournamentListApiResponse.ok) return;
                 
-                const rawTournamentListData: unknown = await tournamentListResponse.json();
+                const tournamentListRoyalePayload: unknown = await tournamentListApiResponse.json();
 
                 // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
                 // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in tournament lists.
                 // [DECISION LOG] Ensuring that the tournament list matches the expected schema before processing targets.
-                const tournamentListValidation = v.safeParse(RoyaleTournamentListSchema, rawTournamentListData);
+                const tournamentListValidation = v.safeParse(RoyaleTournamentListSchema, tournamentListRoyalePayload);
                 if (!tournamentListValidation.success) {
                     logAudit('S1_DISCOVERY', 'error', { keyword, message: 'Tournament list validation failed' });
                     return;
@@ -82,7 +88,7 @@ export async function runDiscovery(
                 });
                 
                 // [DECISION LOG] Concurrency of 5 for tournament details per keyword to balance throughput and API rate limits.
-                await processBatch(tournamentTasks, 5);
+                await processBatch(tournamentTasks, CONCURRENCY_DISCOVERY_TOURNAMENTS);
             } catch (keywordDiscoveryError: unknown) {
                 const errorMessage = keywordDiscoveryError instanceof Error ? keywordDiscoveryError.message : String(keywordDiscoveryError);
                 logAudit('S1_DISCOVERY', 'error', { keyword, message: errorMessage });
@@ -90,19 +96,19 @@ export async function runDiscovery(
         });
         
         // [DECISION LOG] Concurrency of 3 for keywords (total concurrency ~15) to ensure aggressive but safe harvest.
-        await processBatch(discoveryTasks, 3);
+        await processBatch(discoveryTasks, CONCURRENCY_DISCOVERY_KEYWORDS);
 
         // Batch synchronize all discovered recruits
         // [THREAT:] Failure to synchronize the player registry before the recruitment registry
         // results in foreign key violations and data loss in the recruitment substrate.
         if (globalNewRecruits.size > 0) {
             const playerRegistryPayload = Array.from(globalNewRecruits.entries()).map(([playerTag, playerInfo]) => ({
-                player_tag: playerTag.startsWith('#') ? playerTag : `#${playerTag}`,
+                player_tag: normalizeTag(playerTag),
                 player_name: playerInfo.name
             }));
 
             const recruitRegistryPayload = Array.from(globalNewRecruits.entries()).map(([playerTag, playerInfo]) => ({
-                player_tag: playerTag.startsWith('#') ? playerTag : `#${playerTag}`,
+                player_tag: normalizeTag(playerTag),
                 player_name: playerInfo.name,
                 trophies: playerInfo.trophies,
                 source: 'TOURNAMENT_AUTO',
