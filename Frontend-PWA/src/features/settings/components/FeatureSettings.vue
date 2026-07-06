@@ -64,12 +64,23 @@ function locateAccessibilitySettings() {
 }
 
 /**
- * Deep-links the user to the "Display over other apps" overlay
- * permission screen, scoped directly to this package.
+ * Navigates the user to the "Display over other apps" overlay permission
+ * screen for this package.
+ *
+ * [DECISION LOG] There is no dedicated openOverlaySettings() bridge method.
+ * The native startBlitz() implementation already navigates to
+ * ACTION_MANAGE_OVERLAY_PERMISSION when canDrawOverlays is false, so we
+ * leverage that existing path. When overlay is already granted, the native
+ * side proceeds to the accessibility hint instead, which is equally useful.
  */
 function locateOverlaySettings() {
-  window.location.href =
-    "intent:#Intent;action=android.settings.action.MANAGE_OVERLAY_PERMISSION;package=com.albidr.clashmanager;end";
+  const bridge = (window as WindowWithBridge).AndroidBridge;
+  if (bridge?.startBlitz) {
+    // Trigger native overlay-settings navigation via the startBlitz side-effect.
+    // The empty payload is safe: the native code gates on canDrawOverlays first
+    // and never starts a blitz sequence when permission is missing.
+    bridge.startBlitz("");
+  }
 }
 
 // Calibration coordinates state
@@ -276,10 +287,10 @@ onUnmounted(() => {
 }
 
 .card-divider-s {
-  height: 1.5px;
+  height: 1px;
   background: var(--sys-color-outline-variant);
-  opacity: 0.1;
-  margin: var(--sys-space-20) 0;
+  opacity: 0.15;
+  margin: var(--sys-space-16) 0;
 }
 
 /* ── Permissions Section ── */

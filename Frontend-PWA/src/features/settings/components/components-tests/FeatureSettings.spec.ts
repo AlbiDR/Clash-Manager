@@ -234,19 +234,17 @@ describe("FeatureSettings.vue", () => {
       expect(mockBridge.openAccessibilitySettings).toHaveBeenCalledOnce();
     });
 
-    it("navigates to overlay settings intent when the overlay row is clicked", async () => {
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: { href: "" },
-      });
+    it("calls startBlitz('') to navigate to overlay settings via native side-effect", async () => {
       const wrapper = mountComponent();
       await wrapper.vm.$nextTick();
 
       const rows = wrapper.findAll(".permission-row");
       await rows[1].trigger("click");
 
-      expect(window.location.href).toContain("MANAGE_OVERLAY_PERMISSION");
-      expect(window.location.href).toContain("com.albidr.clashmanager");
+      // The native startBlitz() gates on canDrawOverlays first; when permission
+      // is missing it opens ACTION_MANAGE_OVERLAY_PERMISSION instead of starting
+      // a blitz session. Calling with an empty payload is safe.
+      expect(mockBridge.startBlitz).toHaveBeenCalledWith("");
     });
 
     it("re-polls permissions on window focus", async () => {

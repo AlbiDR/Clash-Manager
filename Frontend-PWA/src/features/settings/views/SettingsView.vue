@@ -48,9 +48,9 @@ const { isShowcaseMode } = useShowcaseMode();
 
 <style scoped>
 .settings-content {
-  padding: 0 16px; /* Standard horizontal inner padding */
+  padding: 0 var(--sys-space-16);
   display: flex;
   flex-direction: column;
-  gap: 12px; /* Uniform card spacing */
+  gap: var(--sys-space-12);
 }
 </style>
