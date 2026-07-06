@@ -39,6 +39,11 @@ const DEFAULT_FALLBACK_ID = 57000120;
 const PLAYER_LEADERBOARD_LIMIT = 1000;
 const INITIAL_ARRAY_INDEX = 0;
 
+// [DECISION LOG] Maximum number of country epochs attempted during Local harvest
+// when the clan is registered as International. Each epoch probes a unique country
+// from the shuffled catalog before yielding an empty result.
+const MAX_HARVEST_EPOCHS = 15;
+
 // EPHEMERAL: intentionally resets on cold start.
 // Top-level cache to minimize locations list roundtrips.
 let cachedCountries: { id: number; name: string }[] | null = null;
@@ -213,28 +218,59 @@ Deno.serve(async (request) => {
           }
 
           const rawLocationsList = locationsValidation.output.items;
-          
+
           cachedCountries = rawLocationsList
             .filter((locationCandidate) => locationCandidate.isCountry === true)
             .map((locationCandidate) => ({ id: locationCandidate.id, name: locationCandidate.name }));
         }
 
-        if (cachedCountries && cachedCountries.length > INITIAL_ARRAY_INDEX) {
-          const randomIndex = Math.floor(Math.random() * cachedCountries.length);
-          const selectedCountry = cachedCountries[randomIndex];
-          targetLocationId = selectedCountry.id;
-          targetLocationName = selectedCountry.name;
-          logAudit("ROTATION_SELECT", "run", { selected: targetLocationName });
-        } else {
-          targetLocationId = DEFAULT_FALLBACK_ID;
-          targetLocationName = DEFAULT_FALLBACK_COUNTRY;
+        if (!cachedCountries || cachedCountries.length === INITIAL_ARRAY_INDEX) {
+          // Catastrophic fallback: locations catalog is empty or unavailable.
+          logAudit("COUNTRIES_CATALOG_EMPTY_FALLBACK", "run");
+          const harvestResults = await harvestClanlessPlayers(String(DEFAULT_FALLBACK_ID), logAudit);
+          return { items: harvestResults, region: DEFAULT_FALLBACK_COUNTRY };
         }
+
+        // [DECISION LOG] SHUFFLED EPOCH LOOP
+        // Rationale: A single random pick almost always lands on a micro-territory
+        // (e.g. Antarctica, Anguilla) with zero Path of Legends participation.
+        // We perform a Fisher-Yates shuffle of the full catalog so that every
+        // country has an equal probability of being probed, then iterate up to
+        // MAX_HARVEST_EPOCHS unique countries, returning on the first non-empty result.
+        // This guarantees fair distribution across all locations while bounding
+        // the maximum number of API round-trips per request.
+        const shuffledCandidates = [...cachedCountries];
+        for (let shuffleIndex = shuffledCandidates.length - 1; shuffleIndex > 0; shuffleIndex--) {
+          const swapIndex = Math.floor(Math.random() * (shuffleIndex + 1));
+          [shuffledCandidates[shuffleIndex], shuffledCandidates[swapIndex]] =
+            [shuffledCandidates[swapIndex], shuffledCandidates[shuffleIndex]];
+        }
+
+        const epochLimit = Math.min(MAX_HARVEST_EPOCHS, shuffledCandidates.length);
+
+        for (let epoch = INITIAL_ARRAY_INDEX; epoch < epochLimit; epoch++) {
+          const epochCountry = shuffledCandidates[epoch];
+          logAudit("EPOCH_SELECT", "run", { epoch, country: epochCountry.name });
+
+          const epochResults = await harvestClanlessPlayers(String(epochCountry.id), logAudit);
+
+          if (epochResults.length > INITIAL_ARRAY_INDEX) {
+            logAudit("EPOCH_SUCCESS", "run", { epoch, country: epochCountry.name, count: epochResults.length });
+            return { items: epochResults, region: epochCountry.name };
+          }
+
+          logAudit("EPOCH_EMPTY", "run", { epoch, country: epochCountry.name });
+        }
+
+        // All epochs exhausted with no clanless players found.
+        logAudit("EPOCH_EXHAUSTED", "run", { epochs_tried: epochLimit });
+        return { items: [], region: "International" };
       }
 
       logAudit("LOCAL_HARVEST_CLANLESS_DISCOVERY", "called", { country: targetLocationName });
       const harvestResults = await harvestClanlessPlayers(String(targetLocationId), logAudit);
 
-      return { 
+      return {
         items: harvestResults,
         region: targetLocationName
       };
