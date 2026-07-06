@@ -5,6 +5,11 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
+import {
+    DISCOVERY_KEYWORDS,
+    CONCURRENCY_DISCOVERY_KEYWORDS,
+    CONCURRENCY_DISCOVERY_TOURNAMENTS
+} from "../../_shared/config.ts";
 import * as v from "npm:valibot@1.4.2";
 import { RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
 
@@ -21,7 +26,7 @@ export async function runDiscovery(
 ) {
     logAudit('S1_DISCOVERY', 'triggered');
     try {
-        const discoveryKeywords = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int"];
+        const discoveryKeywords = DISCOVERY_KEYWORDS;
         // [DECISION LOG] EPHEMERAL: intentionally resets on cold start to maintain memory hygiene.
         // [THREAT:] Native Discovery depends on in-memory state during the harvest phase;
         // instance termination will lead to partial harvest loss if not synchronized to DB.
@@ -83,7 +88,7 @@ export async function runDiscovery(
                 });
                 
                 // [DECISION LOG] Concurrency of 5 for tournament details per keyword to balance throughput and API rate limits.
-                await processBatch(tournamentTasks, 5);
+                await processBatch(tournamentTasks, CONCURRENCY_DISCOVERY_TOURNAMENTS);
             } catch (keywordDiscoveryError: unknown) {
                 const errorMessage = keywordDiscoveryError instanceof Error ? keywordDiscoveryError.message : String(keywordDiscoveryError);
                 logAudit('S1_DISCOVERY', 'error', { keyword, message: errorMessage });
@@ -91,7 +96,7 @@ export async function runDiscovery(
         });
         
         // [DECISION LOG] Concurrency of 3 for keywords (total concurrency ~15) to ensure aggressive but safe harvest.
-        await processBatch(discoveryTasks, 3);
+        await processBatch(discoveryTasks, CONCURRENCY_DISCOVERY_KEYWORDS);
 
         // Batch synchronize all discovered recruits
         // [THREAT:] Failure to synchronize the player registry before the recruitment registry

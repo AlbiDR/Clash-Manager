@@ -46,3 +46,22 @@ export function normalizeRarity(rawRarity: string): string {
   };
   return rarityMap[rawRarity?.toLowerCase()?.trim()] ?? "Common";
 }
+
+/**
+ * Calculates the Raw Recruiter Point of Satisfaction (RPoS) score for a player.
+ *
+ * @remarks
+ * [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
+ * Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
+ * This formula prioritizes war experience as the primary indicator of value,
+ * using Trophies and Donations as stability markers. The +500 offset on
+ * WarWins ensures a base competitive score for all candidates.
+ *
+ * @param trophies - Current trophy count.
+ * @param donations - Lifetime donation count.
+ * @param warWins - Total war day wins.
+ * @returns The calculated RPoS score.
+ */
+export function calculateRpos(trophies: number, donations: number, warWins: number): number {
+  return (trophies * 1.0) + (donations * 0.1) + ((warWins + 500) * 20.0);
+}
