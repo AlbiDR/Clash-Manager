@@ -41,6 +41,11 @@ Secured access to the Supabase Vault.
 - **Prioritized Retrieval**: Brokers access to decrypted secrets via the `get_vault_secret` RPC, with a transparent fallback to Deno environment variables.
 - **Normalization**: Ensures all retrieved secrets are passed through a validation boundary before use.
 
+### Backend Utilities (`utils.ts`)
+Centralized normalization and text processing logic for the backend substrate.
+- **Tag Normalization**: Standardizes player and clan tags to uppercase format with a mandatory hash prefix to maximize cache hits and prevent substrate duplication.
+- **Rarity Mapping**: Maps raw lowercase rarity strings from the Royale API to standardized Title-Case names, ensuring relational schema and UI consistency.
+
 ### Universal Types (`types.ts`)
 Authoritative TypeScript interfaces used across the entire backend substrate.
 - **Audit Logging**: Defines the standard `AuditEntry` contract for clinical telemetry.
