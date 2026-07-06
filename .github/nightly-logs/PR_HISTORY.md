@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-06] PR #1028: test(verify): add specs for app shell and base theme
+**Commit**: `d339b362daf0929ff5ac9fb514090161ce3ef17a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1028)
+
+### Description
+Closed zero-coverage gaps in theme infrastructure by adding saturating unit tests for AppShell.ts and base.ts. Verified via Vitest using Node 22 bypass flags.
+
+---
+*PR created automatically by Jules for task [10716497661404584160](https://jules.google.com/task/10716497661404584160) started by @AlbiDR*
+
+---
+
 ## [2026-07-05] PR #1027: fix(apk-ux): add tactile feedback to backend refresh actions
 **Commit**: `319036fe0395dbd59d79a2a7ae7643b7a0c51b20`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1027)
