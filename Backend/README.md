@@ -134,9 +134,3 @@ supabase functions deploy fetch-player-battlelog --no-verify-jwt
 
 ## VIII. Current State - Roadmap (v14.2.6)
 - [x] **Phase 1-7**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor, Full PWA integration).
-
----
-
-> [!NOTE]
-> This README is a live document reflecting the evolving state of the `Clash-Manager` backend.
-> *Compiled: 2026-07-03 by Jules (Stage 5 Archivist)*
