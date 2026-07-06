@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-06] PR #1034: chore(deps): bump vite and update major version watchlist [Stage 8]
+**Commit**: `48472010d42d3881186fd59ffb3a243a586f4d67`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1034)
+
+### Description
+This PR performs the Stage 8 Dependency Audit. It applies a Tier 1 patch bump to `vite` and updates the Tier 2 Major Version Watchlist with research on breaking changes for Vite 8, TypeScript 6, PNPM 11, and Vue-Router 5. All changes were verified via the monorepo test gate and version integrity audit. Temporary scratch scripts used during the audit were removed to maintain codebase cleanliness.
+
+---
+*PR created automatically by Jules for task [14672768165256819880](https://jules.google.com/task/14672768165256819880) started by @AlbiDR*
+
+---
+
 ## [2026-07-06] PR #1033: chore(version): no drift found
 **Commit**: `4afd71831633eb8f1b856bdce28150c61d521ee3`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1033)
