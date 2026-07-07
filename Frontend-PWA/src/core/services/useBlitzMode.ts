@@ -6,8 +6,7 @@ import { useExternalLink, buildDeepLink } from "@core/services/useExternalLink";
 import { useToast } from "@core/services/useToast";
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
-// [CYCLE GUARD] Direct source import, NOT the @core barrel (avoids TDZ eval cycle).
-import { type WindowWithBridge } from "@core/types";
+import { useNativeBridge } from "@core/services/useNativeBridge";
 
 interface BlitzOptions {
   throttleMs?: number;
@@ -55,6 +54,7 @@ export function useBlitzMode(
   const { error, info } = useToast();
   const { modules } = useAppSettings();
   const { openInGame } = useExternalLink();
+  const { isNativeWrapper, bridge: nativeBridge } = useNativeBridge();
 
   /** Indicates if a manual batch queue is currently being processed. */
   const isProcessing = computed(() => batchExecutionQueue.value.length > 0);
@@ -69,14 +69,6 @@ export function useBlitzMode(
    *
    * The native bridge path bypasses all web popup restrictions.
    */
-  const hasNativeBridge = computed(() => {
-    if (typeof window === "undefined") return false;
-    // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
-    // [DECISION LOG] Utilizing strict type narrowing for WindowWithBridge to
-    // ensure hardware bridge detection integrity in useBlitzMode.
-    return !!(window as WindowWithBridge).AndroidBridge;
-  });
-
   const isTrusted = computed(() => {
     if (typeof navigator === "undefined") return false;
     return true;
@@ -131,7 +123,7 @@ export function useBlitzMode(
       // Blitz is enabled when:
       // 1. The native AndroidBridge is present (TWA wrapper) - always available, no popup required.
       // 2. OR the user has manually enabled the blitzMode module flag in settings.
-      blitzEnabled: hasNativeBridge.value || (modules.blitzMode && isTrusted.value),
+      blitzEnabled: isNativeWrapper.value || (modules.blitzMode && isTrusted.value),
       dismissIcon: "trash",
     };
   });
@@ -210,9 +202,8 @@ export function useBlitzMode(
     // [DECISION LOG] Enforcing the WindowWithBridge contract for Blitz Mode delegation.
     // This allows the native Android app to handle the full batch in a single
     // high-performance loop, bypassing web-layer constraints.
-    const nativeBridge = (window as WindowWithBridge).AndroidBridge;
-    if (nativeBridge) {
-      nativeBridge.startBlitz(JSON.stringify(selectedIds.value));
+    if (nativeBridge.value) {
+      nativeBridge.value.startBlitz(JSON.stringify(selectedIds.value));
       return;
     }
 

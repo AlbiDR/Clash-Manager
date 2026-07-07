@@ -47,3 +47,6 @@
 2026-07-05 | Frontend-PWA/README.md | Reconciled Core Services list (removed useWakeLock)
 2026-07-05 | Frontend-PWA/src/features/settings/README.md | Reconciled UsefulLinksSettings, EventManagement orchestration, and useWakeLock import path
 2026-07-06 | Backend/supabase/functions/_shared/README.md | Reconciled Backend Utilities (utils.ts) normalization logic
+2026-07-07 | Frontend-PWA/src/core/utils/README.md | Reconciled locale.ts (added) and predictionMath.ts (removed)
+2026-07-07 | Frontend-PWA/src/core/README.md | Reconciled predictionMath.ts removal from utility registry
+2026-07-07 | Frontend-PWA/src/features/roster/README.md | Redirected prediction logic to @shared/composables/useHistoryChart.ts

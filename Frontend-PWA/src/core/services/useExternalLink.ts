@@ -2,11 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 
 import { useToast } from "./useToast";
+import { useNativeBridge } from "./useNativeBridge";
 // [CYCLE GUARD] Direct source imports, NOT the @core barrel (which re-exports this
 // module) — barrel self-imports form an evaluation cycle that TDZ-crashes the app
 // when the service worker serves all chunks at once.
 import { cleanTag } from "../utils/text";
-import { type WindowWithBridge } from "../types";
 
 /**
  * COMPOSABLE: useExternalLink
@@ -32,6 +32,7 @@ import { type WindowWithBridge } from "../types";
  */
 export function useExternalLink() {
   const { error } = useToast();
+  const { bridge: nativeBridge } = useNativeBridge();
 
   /**
    * Opens an external URL in a new browser tab.
@@ -44,9 +45,8 @@ export function useExternalLink() {
     // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
     // [DECISION LOG] Utilizing strict type narrowing for WindowWithBridge to
     // eliminate 'any' casts and ensure hardware bridge access integrity.
-    const bridge = (window as WindowWithBridge).AndroidBridge;
-    if (bridge?.openExternalUrl) {
-      bridge.openExternalUrl(url);
+    if (nativeBridge.value?.openExternalUrl) {
+      nativeBridge.value.openExternalUrl(url);
       return;
     }
 
@@ -76,9 +76,8 @@ export function useExternalLink() {
     // Calling the bridge method directly bypasses WebView routing entirely.
     // [THREAT:] Hardware desynchronization if calling 'any' methods on Window.
     // [DECISION LOG] Enforcing the WindowWithBridge contract to secure player profile navigation.
-    const bridge = (window as WindowWithBridge).AndroidBridge;
-    if (bridge?.openPlayerProfile) {
-      bridge.openPlayerProfile(id);
+    if (nativeBridge.value?.openPlayerProfile) {
+      nativeBridge.value.openPlayerProfile(id);
       return;
     }
 

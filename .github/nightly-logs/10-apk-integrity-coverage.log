@@ -93,3 +93,12 @@ November 2026: Synchronized APK/PWA orientation to 'natural' in strings.xml and 
 - Audited native configuration: verified targetSdkVersion 35 and cleartext traffic restriction.
 - Verified custom native layer integrity via apk:verify:source.
 - Validated system stability via monorepo test gate (1300+ passed) using Node 22 bypass.
+
+[2026-07-07] Stage 10: APK & PWA Wrapper Integrity Audit
+- Synchronized generatorApp in APK/reference/twa-manifest.json to "clash-manager-apk" to match strings.xml.
+- Updated targetSdkVersion to 36 in APK/android/apktool.yml to align with modern Android standards.
+- Verified monorepo-wide version synchronization at v14.2.6 (appVersionCode 14260) across PWA, Backend, Root, and APK wrappers.
+- Confirmed Digital Asset Links fingerprint (E5:6A:CA:67:08:CA:38:69:A6:0A:E0:81:4A:80:B7:69:3F:67:6F:91:B3:AE:6D:FD:DD:4C:68:5D:1A:2E:70:3A) parity in assetlinks.json and twa-manifest.json.
+- Verified security settings: confirmed forbidden cleartext traffic (android:usesCleartextTraffic="false") and sanitized permission set in AndroidManifest.xml.
+- Verified custom native layer integrity via apk:verify:source (PASS).
+- Validated system stability via monorepo test gate (1407 passed) using Node 22 bypass flags.

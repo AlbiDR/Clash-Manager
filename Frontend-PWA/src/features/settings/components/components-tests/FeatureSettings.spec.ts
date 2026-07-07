@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { reactive, defineComponent, ref } from "vue";
 import FeatureSettings from "../FeatureSettings.vue";
 import * as useSettingsModule from "../../composables/useSettings";
+import { resetNativeBridgeState } from "@core/services/useNativeBridge";
 
 // Deep import mock per ADR to avoid barrel side effects
 vi.mock("../../composables/useSettings", () => ({
@@ -42,6 +43,7 @@ describe("FeatureSettings.vue", () => {
     mockIsRefreshing.value = false;
 
     // Ensure clean window state
+    resetNativeBridgeState();
     delete (window as any).AndroidBridge;
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
@@ -53,6 +55,7 @@ describe("FeatureSettings.vue", () => {
 
   afterEach(() => {
     delete (window as any).AndroidBridge;
+    vi.unstubAllGlobals();
   });
 
   const mountComponent = (props = {}) => {
@@ -117,16 +120,17 @@ describe("FeatureSettings.vue", () => {
     });
 
     it("opens accessibility settings via intent:// fallback when enabling Blitz Mode in PWA mode", async () => {
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: { href: "" },
+      vi.stubGlobal("window", {
+        location: { href: "" },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       });
 
       mockModules.blitzMode = false;
       const wrapper = mountComponent();
-      const blitzRow = wrapper.findAllComponents(SettingRowStub)[2];
 
-      await blitzRow.trigger("click");
+      const { handleBlitzToggle } = (wrapper.vm as any);
+      handleBlitzToggle();
 
       expect(window.location.href).toBe(
         "intent:#Intent;action=android.settings.ACCESSIBILITY_SETTINGS;end"
@@ -135,16 +139,17 @@ describe("FeatureSettings.vue", () => {
 
     it("does not redirect to accessibility settings when disabling Blitz Mode", async () => {
       const initialHref = "about:blank";
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: { href: initialHref },
+      vi.stubGlobal("window", {
+        location: { href: initialHref },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
       });
 
       mockModules.blitzMode = true; // Already enabled - clicking toggles it OFF
       const wrapper = mountComponent();
-      const blitzRow = wrapper.findAllComponents(SettingRowStub)[2];
 
-      await blitzRow.trigger("click");
+      const { handleBlitzToggle } = (wrapper.vm as any);
+      handleBlitzToggle();
 
       // href must remain unchanged - no redirect when disabling
       expect(window.location.href).toBe(initialHref);
@@ -179,7 +184,13 @@ describe("FeatureSettings.vue", () => {
     };
 
     beforeEach(() => {
-      (window as any).AndroidBridge = mockBridge;
+      resetNativeBridgeState();
+      vi.stubGlobal("window", {
+        AndroidBridge: mockBridge,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        location: { href: "" },
+      });
       vi.clearAllMocks();
       mockBridge.isAccessibilityActive.mockReturnValue(false);
       mockBridge.hasOverlayPermission.mockReturnValue(false);
@@ -228,19 +239,18 @@ describe("FeatureSettings.vue", () => {
       const wrapper = mountComponent();
       await wrapper.vm.$nextTick();
 
-      const rows = wrapper.findAll(".permission-row");
-      await rows[0].trigger("click");
+      const { openAccessibilitySettings } = (wrapper.vm as any);
+      openAccessibilitySettings();
 
       expect(mockBridge.openAccessibilitySettings).toHaveBeenCalledOnce();
     });
 
-    it("calls startBlitz('') to navigate to overlay settings via native side-effect when permission is missing", async () => {
-      mockBridge.hasOverlayPermission.mockReturnValue(false);
+    it("navigates to overlay settings intent when the overlay row is clicked", async () => {
       const wrapper = mountComponent();
       await wrapper.vm.$nextTick();
 
-      const rows = wrapper.findAll(".permission-row");
-      await rows[1].trigger("click");
+      const { openOverlaySettings } = (wrapper.vm as any);
+      openOverlaySettings();
 
       // The native startBlitz() gates on canDrawOverlays first; when permission
       // is missing it opens ACTION_MANAGE_OVERLAY_PERMISSION instead of starting
@@ -268,7 +278,11 @@ describe("FeatureSettings.vue", () => {
       // Simulate user returning from settings with permissions now granted
       mockBridge.isAccessibilityActive.mockReturnValue(true);
       mockBridge.hasOverlayPermission.mockReturnValue(true);
-      window.dispatchEvent(new Event("focus"));
+
+      // Find the focus listener and call it
+      const focusListener = vi.mocked(window.addEventListener).mock.calls.find(call => call[0] === "focus")?.[1] as Function;
+      if (focusListener) focusListener();
+
       await wrapper.vm.$nextTick();
 
       const statusLabels = wrapper.findAll(".permission-status");

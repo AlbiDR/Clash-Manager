@@ -10,3 +10,10 @@
 [2026-07-02] Integrated brokered tactile feedback into NetworkSettings.vue interactive elements (Edit, Save, Cancel, Override Reset) to ensure consistent physical response in the hybrid shell.
 [2026-07-05] Integrated brokered tactile feedback into useBackendRefresher.ts manual refresh actions to ensure consistent tactile response in the hybrid shell.
 [2026-07-06] Integrated brokered tactile feedback into ErrorBoundary.vue action buttons (Copy Error, System Reset) to ensure consistent physical response in the hybrid shell.
+
+[2026-07-07T07:58:37Z] Stage 12: APK-UX Audit
+- Target: Frontend-PWA/src/shared/ui/BaseSelect.vue
+- Issue: Touch target height (40px) below 48px mobile compliance standard (Target B.2).
+- Fix: Optimized .select-trigger height to 48px and increased .option-item vertical padding to 14px.
+- Verification: Vitest (8 passed), Production Build (Success).
+- Status: RESOLVED
