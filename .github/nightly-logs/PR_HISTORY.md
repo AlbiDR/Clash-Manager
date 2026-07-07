@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-07] PR #1042: docs(tsdoc): document settings orchestrator and pwa lifecycle
+**Commit**: `8302073b79e27184a493965e2f95e11e9cdfa1cb`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1042)
+
+### Description
+Documented the `useSettings` orchestrator in `Frontend-PWA/src/features/settings/composables/useSettings.ts`. This includes expanding the TSDoc `@returns` block to cover all 38 exported properties and methods, and injecting mandatory `// [THREAT:]` and `// [DECISION LOG]` annotations to document architectural intent behind PWA initialization, destructive recovery actions, and brokered haptic feedback for Android WebView UX.
+
+---
+*PR created automatically by Jules for task [11441483246036955372](https://jules.google.com/task/11441483246036955372) started by @AlbiDR*
+
+---
+
 ## [2026-07-07] PR #1041: docs(readme): reconcile prediction logic and utility registry
 **Commit**: `9a0f3d5c8a70deed31d1616485ebb9b6f0a49f08`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1041)
