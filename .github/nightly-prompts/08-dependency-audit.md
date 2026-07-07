@@ -122,6 +122,8 @@ Major version bumps are **never applied autonomously**. For each major version d
 - Record the dependency name, current declared version, latest major available, and date first detected.
 - Assess breaking changes relevant to this specific codebase using Context7. Identify only changes affecting how this project uses the package.
 - Open a PR containing only the watchlist update and the impact analysis. No code changes.
+- **Intermediate Major Tracking**: If the current major version is N, and the latest available major version is N+2 or higher, meaning major version N+1 is now finalized because a newer major version is out, explicitly highlight this in the watchlist log notes and the PR. Add a tag like `[Migration Alert: v6 is now finalized as v7 is out]` to help developers identify when it is time to upgrade to the latest stable release of that intermediate major version.
+
 
 ### C. The Persistent Watchlist
 - **Location:** `.github/nightly-logs/08-dependency-audit-coverage.log`
@@ -154,7 +156,8 @@ Audit all `package.json` files across the monorepo. If no changes are needed, re
 
 ### Step 2: Safety and Impact Analysis
 - **For Tier 1:** Confirm the package is actually used, falls within the current major, and has no documented breaking changes in the patch/minor range.
-- **For Tier 2:** Use Context7 to extract the breaking changelog items that affect this specific codebase. Do not summarize irrelevant features.
+- **For Tier 2:** Use Context7 to extract the breaking changelog items that affect this specific codebase. Do not summarize irrelevant features. Audit whether the latest major version is two or more versions ahead of our current version (e.g., current is v5, latest is v7). If so, flag the intermediate major version (e.g., v6) as finalized in both the log notes and the PR description.
+
 
 ### Step 3: Execution
 - **Tier 1:** Modify the relevant `package.json`. Run `pnpm install` and then `pnpm test`. If tests pass, proceed. If tests fail, revert and escalate to the watchlist.
