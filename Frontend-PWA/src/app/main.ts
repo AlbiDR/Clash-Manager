@@ -17,6 +17,7 @@ import { registerVisibilityRefresh } from "@core";
 
 import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
+import { DataLoaderPlugin } from "vue-router/experimental";
 import { baseStyles } from "@core/theme/base";
 import { animationStyles } from "@core/theme/animations";
 import { skeletonStyles } from "@core/theme/skeletons";
@@ -92,6 +93,9 @@ async function bootstrap() {
     const pinia = createPinia();
     
     app.use(pinia);
+    // [VR5] DataLoaderPlugin must be registered BEFORE router so it can
+    // install its navigation guards ahead of any route-level guards.
+    app.use(DataLoaderPlugin, { router });
     app.use(router);
     app.component("Icon", Icon);
 
@@ -141,11 +145,10 @@ async function bootstrap() {
       const wakeLock = useWakeLock();
       const storagePersistence = useStoragePersistence();
 
-      // INSTANT BOOT & LIVE DATA FIRST: Load local cache and trigger remote hydration in parallel
-      // removing ping-latency delays on boot.
-      clashDataStore.loadLocal();
-      clashDataStore.refreshFromSupabase();
-
+      // [VR5] Data hydration (loadLocal + refreshFromSupabase) is now owned
+      // by the route-level DataLoaderPlugin. The loader fires on the very
+      // first navigation (/roster), ensuring the Pinia store is hydrated
+      // before the view renders without any imperative boot call here.
       apiState.init();
 
       // PERFORMANCE: High-Speed SUPABASE Fetch fallback

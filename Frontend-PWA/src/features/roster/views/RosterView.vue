@@ -19,15 +19,31 @@
  * - **v-memo Optimization:** Utilizes primitive status flags from `getCardMetadata`
  *   to ensure stable, shallow equality checks. This prevents expensive DOM
  *   re-renders of the 50-item list during global state updates.
+ *
+ * **Data Loading Strategy (Vue Router 5):**
+ * - `useClashDataLoader` is declared as a named export so the `DataLoaderPlugin`
+ *   discovers it during navigation and coordinates its lifecycle automatically.
+ * - `lazy: true` preserves Stale-While-Revalidate: the view renders immediately
+ *   from the IndexedDB cache while the Supabase refresh runs in the background.
  * ============================================================================
  */
+import { defineBasicLoader } from "vue-router/experimental";
 import {
   ConsoleLayout,
   ConsoleList
 } from "@shared";
+import { hydrateClashData } from "@core";
 import { useLeaderboard } from "../composables/useLeaderboard";
 import { MemberCard } from "../components";
 import { VoyageBanner } from "@shared";
+
+/**
+ * Route data loader - exported so the DataLoaderPlugin can discover it.
+ * Wraps `hydrateClashData` (L1) with the Vue Router 5 loader contract.
+ */
+export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: true });
+
+const { isLoading: isDataLoading } = useClashDataLoader();
 
 const {
   isShowcaseMode,

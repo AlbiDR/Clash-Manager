@@ -1,11 +1,22 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+/**
+ * ============================================================================
+ * [FEATURE] LABORATORY VIEW
+ * ----------------------------------------------------------------------------
+ * **Data Loading Strategy (Vue Router 5):**
+ * - `useClashDataLoader` exported as a named export for DataLoaderPlugin discovery.
+ * - `lazy: true` preserves Stale-While-Revalidate PWA topology.
+ * ============================================================================
+ */
+import { defineBasicLoader } from "vue-router/experimental";
 import {
   Icon,
   ConsoleLayout
 } from "@shared";
 import { useClashDataStore } from "@core";
+import { hydrateClashData } from "@core";
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
@@ -19,6 +30,14 @@ import {
   LaboratorySkeleton,
   TargetPicker
 } from "../components";
+
+/**
+ * Route data loader - exported so the DataLoaderPlugin can discover it.
+ * Wraps `hydrateClashData` (L1) with the Vue Router 5 loader contract.
+ */
+export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: true });
+
+const { isLoading: isDataLoading } = useClashDataLoader();
 
 const {
   observation,

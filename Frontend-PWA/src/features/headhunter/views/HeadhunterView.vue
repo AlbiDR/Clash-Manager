@@ -1,15 +1,32 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+/**
+ * ============================================================================
+ * [FEATURE] HEADHUNTER VIEW
+ * ----------------------------------------------------------------------------
+ * **Data Loading Strategy (Vue Router 5):**
+ * - `useClashDataLoader` exported as a named export for DataLoaderPlugin discovery.
+ * - `lazy: true` preserves Stale-While-Revalidate PWA topology.
+ * ============================================================================
+ */
+import { defineBasicLoader } from "vue-router/experimental";
 import {
   Icon,
   ConsoleLayout,
   ConsoleList
 } from "@shared";
+import { hydrateClashData } from "@core";
 import { useRecruiter } from "../composables/useRecruiter";
-
 import { RecruitCard } from "../components";
 
+/**
+ * Route data loader - exported so the DataLoaderPlugin can discover it.
+ * Wraps `hydrateClashData` (L1) with the Vue Router 5 loader contract.
+ */
+export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: true });
+
+const { isLoading: isDataLoading } = useClashDataLoader();
 
 const {
   visibleItems,

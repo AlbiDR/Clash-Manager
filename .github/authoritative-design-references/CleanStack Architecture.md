@@ -177,9 +177,23 @@ To maintain 100/100 Lighthouse scores, all performance-sensitive interactions fo
 - **Accessibility (A11y):** Unique IDs for automated testing and descriptive ARIA labels. Touch targets at 48×48px minimum.
 - **Resource Cleanup:** Functions must clean up their execution artifacts. No transient state should survive a function's lifecycle.
 
+### Route Data Loaders (Vue Router 5 Pattern)
+
+Feature views (Layer 3) are the canonical location for `defineBasicLoader` declarations from `vue-router/experimental`. This is architecturally correct because:
+
+1. **Pure hydration logic** resides at Layer 1 (`@core/services/`) as a plain async function (`hydrateClashData`). No framework routing imports; pure orchestration only.
+2. **The `defineBasicLoader` wrapper** is declared as a named export in the feature view's `<script setup>`. This co-location is required: the `DataLoaderPlugin` discovers loaders by inspecting the route component's named exports during navigation.
+3. **Layer 3 components may use `defineBasicLoader`** from `vue-router/experimental` for this purpose, consistent with their existing permitted use of other framework routing APIs (`useRoute`, `useRouter`, `RouterView`). The framework-as-a-detail principle applies to *business logic*, not to the navigation contract itself.
+
+**Naming contract:** The exported loader composable must be named `useClashDataLoader` in all data-driven feature views to ensure consistency and discoverability.
+
+**Options contract:** All route loaders must use `{ lazy: true }` to preserve the Stale-While-Revalidate PWA topology. Blocking loaders (lazy omitted or `false`) are forbidden for global data hydration, as they would prevent the view from rendering from cache.
+
+
 ### Shell Synchronization & Substrate Integrity
 
 1. **Title Mirroring:** Hardcoded `<h1 class="view-title">` in `index.html` must match the Feature label of the default route exactly (e.g., "Roster").
+
 2. **Hydration Parity:** `index.html` DOM structure must be a replica of the initial Vue render.
 3. **Manifest Connectivity:** Asset moves require synchronous updates to `manifest.json`.
 4. **Critical CSS:** Inline styles in the shell are reserved for Layout Primitives and CSS Variables only.

@@ -17,6 +17,7 @@ import {
 import { useHaptics } from "@shared";
 import { onMounted, computed, watch, ref } from "vue";
 import { RouterView, useRoute } from "vue-router";
+import { useIsDataLoading } from "vue-router/experimental";
 import { useHeadhunter } from "@features/headhunter";
 // import { registerSW } from "virtual:pwa-register";
 
@@ -32,8 +33,17 @@ const currentRoute = computed(() => route);
 // Initialize Headhunter (starts watchers for notifications/badge)
 useHeadhunter();
 
-// SYNC STATE ADAPTER: Mapping store loading/error to a unified status
+// [VR5] Navigation-phase loading signal from the DataLoaderPlugin.
+// Distinct from the background Supabase sync: isNavigationLoading is true only
+// while the router is awaiting data loaders before committing a navigation.
+const isNavigationLoading = useIsDataLoading();
+
+// SYNC STATE ADAPTER: Mapping store loading/error to a unified status.
+// Covers two independent async concerns:
+// 1. Navigation loading (router DataLoaderPlugin phase)
+// 2. Background Supabase refresh (post-navigation, ongoing)
 const syncState = computed(() => {
+  if (isNavigationLoading.value) return "syncing";
   if (clashDataStore.loading) return "syncing";
   if (clashDataStore.syncError) return "error";
   return "success";
