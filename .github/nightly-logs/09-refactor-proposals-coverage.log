@@ -23,3 +23,4 @@ Structural Surgery (Domain Utility Centralization - Stage 9) June 21, 2026: Exec
 - Updated 'useLeaderboardScraper.spec.ts' to mock the new core API.
 - Verified zero architectural violations via depcruise.
 2026-07-06 | Backend/supabase/functions/_shared | Structural Surgery: Centralized scanner logic, types, and configuration to the shared backend layer. Extracted calculateRpos to utils.ts, RecruitSyncRow to types.ts, and created config.ts for operational constants. Updated profiler, rescan, shadow-scout, and discovery stages.
+2026-07-07 | Frontend-PWA/src/core/services/useNativeBridge.ts | Structural Surgery: Centralized native Android JSBridge orchestration into Layer 1 service. Excised 220 lines of hardware-brokering logic from FeatureSettings.vue and refactored useBlitzMode.ts and useExternalLink.ts to consume the new broker. Verified via useNativeBridge.spec.ts (7 passed) and depcruise.
