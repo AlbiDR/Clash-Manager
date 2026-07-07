@@ -85,29 +85,29 @@ async function harvestClanlessPlayers(
     throw new Error(`Failed to fetch Path of Legends rankings: ${playerRankingsResponse.status}`);
   }
   
-  const rawPlayerRankingPayload: unknown = await playerRankingsResponse.json();
+  const rankingApiRaw: unknown = await playerRankingsResponse.json();
 
   // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
   // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in rankings.
   // [DECISION LOG] Transitioned to RoyaleRankingListSchema for strict structural enforcement.
-  const rankingValidation = v.safeParse(RoyaleRankingListSchema, rawPlayerRankingPayload);
+  const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
 
   logAudit("HARVEST_PLAYERS_INTEGRITY", "integrity_checked", {
-    passed: rankingValidation.success,
-    details: rankingValidation.success ? "Player rankings validated" : "Malformed player rankings payload"
+    passed: rankingIntegrity.success,
+    details: rankingIntegrity.success ? "Player rankings validated" : "Malformed player rankings payload"
   });
 
-  if (!rankingValidation.success) {
+  if (!rankingIntegrity.success) {
     throw new Error("Player rankings payload failed structural validation.");
   }
 
-  const rankingItems = rankingValidation.output.items;
+  const observedRankingItems = rankingIntegrity.output.items;
 
   // [DIAGNOSTIC] Surfaces the raw API item count in edge function logs to allow
   // distinguishing between an empty API response and a fully-filtered result set.
-  console.log(`[HARVEST] Raw players received from API: ${rankingItems.length}`);
+  console.log(`[HARVEST] Raw players received from API: ${observedRankingItems.length}`);
 
-  if (rankingItems.length === INITIAL_ARRAY_INDEX) {
+  if (observedRankingItems.length === INITIAL_ARRAY_INDEX) {
     return [];
   }
 
@@ -119,7 +119,7 @@ async function harvestClanlessPlayers(
   // for clanless players rather than omitting the key entirely. Checking !rankingItem.clan
   // alone is insufficient because !{} evaluates to false (truthy object).
   // [GUARD] We use strict schema validation to ensure clan.tag presence.
-  const clanlessPlayers = rankingItems.filter((rankingItem) => {
+  const clanlessPlayers = observedRankingItems.filter((rankingItem) => {
     const rankingClan = rankingItem.clan;
     return !rankingClan || !rankingClan.tag;
   });
@@ -179,8 +179,8 @@ Deno.serve(async (request) => {
         throw new Error(`Failed to retrieve clan details to identify region: ${clanResponse.status}`);
       }
 
-      const rawClanProfile: unknown = await clanResponse.json();
-      const clanProfileValidation = v.safeParse(RoyaleClanSchema, rawClanProfile);
+      const clanProfileRaw: unknown = await clanResponse.json();
+      const clanProfileValidation = v.safeParse(RoyaleClanSchema, clanProfileRaw);
 
       if (!clanProfileValidation.success) {
         throw new Error("Clan profile payload failed structural validation.");
@@ -210,16 +210,16 @@ Deno.serve(async (request) => {
             throw new Error(`Failed to retrieve locations catalog: ${locationsResponse.status}`);
           }
 
-          const rawLocationsPayload: unknown = await locationsResponse.json();
-          const locationsValidation = v.safeParse(RoyaleLocationListSchema, rawLocationsPayload);
+          const locationsCatalogRaw: unknown = await locationsResponse.json();
+          const locationsValidation = v.safeParse(RoyaleLocationListSchema, locationsCatalogRaw);
 
           if (!locationsValidation.success) {
             throw new Error("Locations catalog failed structural validation.");
           }
 
-          const rawLocationsList = locationsValidation.output.items;
+          const observedLocationsList = locationsValidation.output.items;
 
-          cachedCountries = rawLocationsList
+          cachedCountries = observedLocationsList
             .filter((locationCandidate) => locationCandidate.isCountry === true)
             .map((locationCandidate) => ({ id: locationCandidate.id, name: locationCandidate.name }));
         }
