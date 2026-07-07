@@ -13,8 +13,9 @@ permissions:
 
 env:
   # Matches the `packageManager` field in the root package.json.
-  # Pinning the version here prevents the pnpm v10/v11 layout mismatch warning
-  # that occurs when pnpm/action-setup@v6 detects a version change mid-run.
+  # Pinning ensures reproducible installs and prevents accidental pnpm version
+  # drift across runs. The v10/v11 layout WARN emitted by the runner shim is
+  # cosmetic only; the downgrade completes successfully regardless.
   PNPM_VERSION: "10.32.1"
 
 # ============================================================================
@@ -274,10 +275,14 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
       - name: Restore pnpm store cache
         uses: actions/cache@v4
         with:
-          path: ~/.local/share/pnpm/store
+          path: ${{ steps.pnpm-store.outputs.path }}
           key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             pnpm-store-${{ runner.os }}-
