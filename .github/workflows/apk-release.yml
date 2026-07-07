@@ -1,4 +1,4 @@
-# Reproducible APK release build — compiles the APK from the committed APK/android/
+# Reproducible APK release build, compiles the APK from the committed APK/android/
 # source and signs it with the release keystore.
 #
 # Signing material comes from repo Secrets (the keystore itself is NOT in the
@@ -9,6 +9,7 @@ name: APK Release Build
 on:
   workflow_dispatch:
   push:
+    branches: ["Beta", "Stable"]
     paths:
       - "APK/android/**"
       - "APK/verify-apk-integrity.mjs"
@@ -123,7 +124,7 @@ jobs:
               git commit --amend -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
             fi
             
-            git push origin Beta || {
+            git push origin HEAD:Beta || {
               echo "Push failed. Checking if target commit is already on remote..."
               git fetch origin Beta
               git log origin/Beta -1 --oneline | grep -q "update signed release APK to v${VERSION}" \
