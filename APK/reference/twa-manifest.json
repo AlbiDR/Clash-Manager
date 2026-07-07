@@ -46,7 +46,7 @@
       "chosenMaskableIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/pwa-maskable.png"
     }
   ],
-  "generatorApp": "bubblewrap-cli",
+  "generatorApp": "clash-manager-apk",
   "webManifestUrl": "https://albidr.github.io/Clash-Manager/manifest.json",
   "fallbackType": "customtabs",
   "features": {},
