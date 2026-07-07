@@ -22,6 +22,12 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  # Matches the `packageManager` field in the root package.json.
+  # Pinning ensures reproducible installs and prevents accidental pnpm version
+  # drift across runs.
+  PNPM_VERSION: "10.32.1"
+
 # ============================================================================
 # AUTOMATION ENGINE: Nightly PR Synchronization
 # ============================================================================
@@ -49,31 +55,38 @@ jobs:
           fetch-depth: 0
           ref: Nightly
 
-      - name: Ensure Nightly Branch Exists and Checkout
-        run: |
-          git fetch origin
-          if git show-ref --verify --quiet refs/remotes/origin/Nightly; then
-            echo "Branch 'Nightly' exists. Checking out..."
-            git checkout Nightly
-            git pull origin Nightly
-          else
-            echo "Branch 'Nightly' does not exist. Creating from current HEAD."
-            git checkout -b Nightly
-            git push origin Nightly
-          fi
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "24"
 
-        # ----------------------------------------------------------------------
-        # STEP 2: Execution Logic (Ultra-Robust)
-        # ----------------------------------------------------------------------
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ----------------------------------------------------------------------
+      # STEP 2: Execution Logic (Ultra-Robust)
+      # ----------------------------------------------------------------------
       - name: Run Merge Script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx tsx .github/scripts/merge-nightly-prs.ts
+        run: pnpm exec tsx .github/scripts/merge-nightly-prs.ts
 
       # ----------------------------------------------------------------------
       # STEP 3: Persistence & Documentation
