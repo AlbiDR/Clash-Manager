@@ -27,7 +27,7 @@ export async function executeScanner(
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
     heartbeat: (stage: string, currentResults: unknown) => Promise<void>
 ) {
-    const startTime = Date.now();
+    const startInstant = Temporal.Now.instant();
     const stats: ScannerStats = {
         discovery_targets: 0,
         discovery_shadow: 0,
@@ -167,6 +167,6 @@ export async function executeScanner(
 
     return {
         ...stats,
-        duration_ms: Date.now() - startTime
+        duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds')
     };
 }

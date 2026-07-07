@@ -27,7 +27,7 @@ export async function executePipeline(
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
     heartbeat: (stage: string, currentResults: unknown) => Promise<void>
 ): Promise<IngestionResult> {
-    const startTime = Date.now();
+    const startInstant = Temporal.Now.instant();
     
     const results: IngestionResult = { 
         discovery: { harvested: 0, duplicates: 0 },
@@ -98,6 +98,6 @@ export async function executePipeline(
     }
     await heartbeat('S6_BATTLES', results);
 
-    results.diagnostics.duration_ms = Date.now() - startTime;
+    results.diagnostics.duration_ms = Temporal.Now.instant().since(startInstant).total('milliseconds');
     return results;
 }

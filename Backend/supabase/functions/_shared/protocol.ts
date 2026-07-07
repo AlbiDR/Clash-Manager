@@ -74,11 +74,11 @@ export interface ProtocolOptions<T> {
  */
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     const { req, supabase, bearerToken, eventType, componentId, schema, handler } = options;
-    const startTime = Date.now();
+    const startInstant = Temporal.Now.instant();
     const audit_log: AuditEntry[] = [];
 
     const logAudit = (stage: string, action: AuditEntry['action'], details?: unknown) => {
-        audit_log.push({ timestamp: new Date().toISOString(), stage, action, details });
+        audit_log.push({ timestamp: Temporal.Now.instant().toString(), stage, action, details });
     };
 
     // 1. CORS Preflight
@@ -177,7 +177,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                     p_metadata: { 
                         ...(typeof currentResults === 'object' && currentResults !== null ? currentResults : { results: currentResults }),
                         stage, 
-                        current_duration: Date.now() - startTime,
+                        current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
                         audit_log
                     }
                 });
@@ -192,7 +192,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // [DECISION LOG] Final telemetry update aggregates all audit entries and
         // calculates total execution duration for performance monitoring.
         const audit_log_final = [...audit_log, { 
-            timestamp: new Date().toISOString(), 
+            timestamp: Temporal.Now.instant().toString(), 
             stage: 'COMPLETE', 
             action: 'terminated' as const, 
             details: { status: 'SUCCESS' } 
@@ -221,7 +221,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                     passed: validation.success ? validation.output.passed : false
                 };
             }),
-            total_duration: Date.now() - startTime
+            total_duration: Temporal.Now.instant().since(startInstant).total('milliseconds')
         };
         
         if (telemetry?.id) {
@@ -231,7 +231,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                 p_metadata: { 
                     ...(typeof results === 'object' && results !== null ? results : { results }),
                     stage: 'COMPLETE', 
-                    current_duration: Date.now() - startTime,
+                    current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
                     audit_log: audit_log_final,
                     is_data_perfect: isDataPerfect,
                     validation_report: validationReport
@@ -244,7 +244,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             p_status: 'COMPLETED',
             p_message: `Protocol execution completed. Data perfection: ${isDataPerfect}`,
             p_metadata: {
-                last_success_at: new Date().toISOString(),
+                last_success_at: Temporal.Now.instant().toString(),
                 last_validation_report: validationReport,
                 is_data_perfect: isDataPerfect
             }
@@ -254,8 +254,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             success: true,
             version: '14.2.6',
             data: results,
-            duration_ms: Date.now() - startTime,
-            timestamp: new Date().toISOString()
+            duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
+            timestamp: Temporal.Now.instant().toString()
         }), { 
             status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
         });
@@ -272,7 +272,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             p_status: 'FAILED',
             p_message: `Fatal protocol error: ${errorMessage}`,
             p_metadata: {
-                last_failure_at: new Date().toISOString(),
+                last_failure_at: Temporal.Now.instant().toString(),
                 is_data_perfect: false,
                 last_validation_report: {
                     error: errorMessage,
