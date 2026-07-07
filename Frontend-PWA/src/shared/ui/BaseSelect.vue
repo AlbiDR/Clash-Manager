@@ -122,7 +122,7 @@ const getSelectedLabel = () => {
 
 .select-trigger {
   width: 100%;
-  height: 40px;
+  height: 48px;
   padding: 0 14px;
   padding-right: 36px;
   background: var(--sys-surf-c, var(--sys-color-surface-container));
@@ -199,7 +199,7 @@ const getSelectedLabel = () => {
 }
 
 .option-item {
-  padding: 10px 12px;
+  padding: 14px 12px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
