@@ -35,11 +35,44 @@ import { computed, ref, onMounted } from "vue";
  * - FORBIDDEN from importing from other features (e.g., `@features/roster`).
  *
  * @returns
+ * - `modules`: Reactive object containing all feature flags and settings.
+ * - `theme`: Reactive current theme mode ('light', 'dark', 'auto').
+ * - `wakeLock`: Hardware bridge for preventing display sleep.
+ * - `isSyntheticMode`: Reactive flag for mock data simulation.
+ * - `isBlueprintMode`: Reactive flag for UI skeleton simulation.
+ * - `isShowcaseMode`: Reactive flag for branding/marketing mode.
+ * - `isHydrated`: Indicates if the clash data store is ready.
+ * - `isRefreshing`: Indicates if a data refresh is in progress.
+ * - `appVersion`: Authoritative application version string.
+ * - `footerBadgeText`: Active status badge for the system footer.
+ * - `apiStatusObject`: Computed status configuration for the app header.
  * - `layoutProps`: Reactive configuration for ConsoleLayout standardization.
  * - `layoutEvents`: Action handlers for ConsoleLayout (e.g., refresh).
- * - `forceUpdate`: Triggers a manual Service Worker update check.
+ * - `apiUrl`: Reactive current Supabase endpoint URL.
+ * - `apiStatus`: Connectivity status of the Supabase backend.
+ * - `pingData`: Reactive latency metrics for the active API connection.
+ * - `notificationPermission`: Status of the browser's Notification API.
+ * - `isPushSubscribed`: Indicates if the client has an active push subscription.
+ * - `lastSyncFormatted`: Human-readable localized last synchronization time.
+ * - `toggle`: Switches boolean feature flags in useAppSettings.
+ * - `setTheme`: Authoritative theme setter.
+ * - `handleThemeChange`: Brokered theme setter with tactile feedback.
+ * - `toggleSyntheticMode`: Toggles mock data simulation.
+ * - `toggleBlueprintMode`: Toggles UI skeleton simulation.
+ * - `toggleShowcaseMode`: Toggles branding/marketing mode.
+ * - `refresh`: Triggers a foreground data refresh from Supabase.
+ * - `updateServiceWorker`: Manual Service Worker update controller.
+ * - `forceUpdate`: Triggers an immediate Service Worker update check.
  * - `clearCache`: Purges the PWA asset cache and reloads.
  * - `factoryReset`: Destructive wipe of all local application state (IndexedDB, LocalStorage).
+ * - `initAppSettings`: Hydration routine for the settings persistence layer.
+ * - `haptics`: Access to the brokered haptic feedback engine.
+ * - `updateApiUrl`: Logic for changing the remote Supabase endpoint.
+ * - `resetApiUrl`: Reverts the API endpoint to the system default.
+ * - `requestNotificationPermission`: Brokered permission request with tactile feedback.
+ * - `subscribePush`: Logic for establishing a Supabase push subscription.
+ * - `sendTestNotification`: Diagnostic tool for verifying badge/push delivery.
+ * - `setNotificationThreshold`: Logic for configuring high-potential notification triggers.
  */
 export function useSettings() {
   const { modules, toggle, init: initAppSettings } = useAppSettings();
@@ -64,11 +97,11 @@ export function useSettings() {
   const currentTestCount = ref(1);
 
   onMounted(() => {
-    // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent 
-    // headless browser crashes during branding asset generation.
+    // [THREAT:] Bypassing PWA logic in development/showcase mode to prevent
+    // headless browser crashes during branding asset generation (Target B [4]).
     if (!import.meta.env.PROD) return;
 
-    // Rationale: Delaying execution avoids clashing with initial render/font loading
+    // [DECISION LOG] Delaying execution avoids clashing with initial render/font loading
     // which frequently causes 'Target crashed' errors in headless browser pipelines.
     setTimeout(async () => {
       // Initialize Service Worker
@@ -113,6 +146,8 @@ export function useSettings() {
   });
 
   function handleThemeChange(newTheme: "light" | "auto" | "dark") {
+    // [DECISION LOG] Brokered tactile feedback (haptics) ensures physical touch
+    // response for theme changes in the Android WebView shell.
     haptics.tap();
     setTheme(newTheme);
   }
@@ -121,6 +156,8 @@ export function useSettings() {
    * Purges the Service Worker and Cache API assets.
    */
   async function clearCache() {
+    // [DECISION LOG] Mandatory clearing of manifest caches via clearManifestCache
+    // ensures the next boot is fully clean and synchronized with the network.
     await clearPwaCache(() => clearManifestCache());
   }
 
@@ -128,6 +165,9 @@ export function useSettings() {
    * Performs a total wipe of local application data.
    */
   async function factoryReset() {
+    // [THREAT:] Destructive wipe risk: Unrecoverable data loss for local-only settings.
+    // [DECISION LOG] Total wipe strategy is required to guarantee a clean system state
+    // when unrecoverable persistence corruption is suspected.
     await performPwaReset(() => clearManifestCache());
   }
 
@@ -152,6 +192,8 @@ export function useSettings() {
   }
 
   async function requestNotificationPermission() {
+    // [DECISION LOG] Brokered tactile feedback (haptics) ensures physical touch
+    // response for permission requests in the Android WebView shell.
     haptics.tap();
     const permissionResult = await requestPermission();
     notificationPermission.value = permissionResult;
@@ -183,6 +225,8 @@ export function useSettings() {
   }
 
   function setNotificationThreshold(thresholdValue: 50 | 75) {
+    // [DECISION LOG] Brokered tactile feedback (haptics) ensures physical touch
+    // response for settings changes in the Android WebView shell.
     haptics.tap();
     modules.notificationThreshold = thresholdValue;
     startBackgroundSync();
