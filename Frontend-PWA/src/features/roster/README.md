@@ -14,7 +14,7 @@ The Roster feature provides an authoritative view of the clan's internal health.
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Domain-blind to `Laboratory`, `Headhunter`, and `Settings`. One deliberate exception: `RosterView.vue` composes the `VoyageBanner` component from `@shared` in its top slot.
 - **Dependencies**:
- - `@core/utils/predictionMath`: Historical parsing and predictive algorithms.
+ - `@shared/composables/useHistoryChart`: Historical parsing and predictive algorithms.
  - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
  - `@shared/ui/BaseCard`: The foundational UI molecule for member profiles.
  - `@shared/ui/VoyageBanner`: Promoted molecule for live event feedback.
@@ -36,7 +36,7 @@ The Roster feature utilizes a dual-metric model to distinguish between historica
 High-precision visualization engines for performance tracking, utilized from the `@shared` layer.
 - **Historical Parsing & Projection**: Logic for decompressing history logs and calculating weighted projections is centralized in the `@shared/composables/useHistoryChart.ts` composable.
 - **Trend Analysis**: Uses a Linear Best Fit algorithm (`generateLinearTrend` from `@core/utils/bezier.ts`) to calculate performance trajectories (Positive/Negative).
-- **Predictive Engine**: Implements a 10-week linear decay weighted average engine (via `@core/utils/predictionMath.ts`) to project next-week performance.
+- **Predictive Engine**: Implements a weighted decay average engine (centralized in `useHistoryChart.ts`) to project next-week performance.
 - **Hardware Acceleration**: Utilizes SVG overlays and CSS transforms for fluid, 60FPS interactions.
 
 ## Component Registry

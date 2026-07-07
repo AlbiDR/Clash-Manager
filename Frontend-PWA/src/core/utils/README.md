@@ -32,15 +32,15 @@ Low-level IndexedDB boilerplate and resilience logic.
 - **IDB Primitives**: Standardized wrappers for `openDB` and the `idbCore` operations (`get`, `set`, `del`, `clear`).
 - **Memory Fallback**: Orchestrates the transparent switch to in-memory storage if IndexedDB is blocked or unavailable.
 
-### Numerical Engines (`math.ts` & `predictionMath.ts`)
-Standardized sanitization, formatting, and projection logic.
+### Numerical Engines (`math.ts`)
+Standardized sanitization, formatting, and calculation logic.
 - **math.ts**: Authoritative SSOT for **standardized numeric formatting** (`formatNumber`), supporting locale-aware separators and custom options. Handles `null | undefined | NaN` cases (defaulting to '0') and utilizes a cached formatter for standard cases to reduce instantiation overhead. Handles basic numeric sanitization, trend momentum calculations (`calculateMomentum`), and time-unit conversion (`durationToSeconds`).
-- **predictionMath.ts**: Weighted-average engines for historical performance projection and crown forecasting.
 
-### Formatting Kernels (`time.ts` & `text.ts`)
-Stateless transformation logic for UI display.
+### Formatting Kernels (`time.ts`, `text.ts` & `locale.ts`)
+Stateless transformation logic for UI display and locale resolution.
 - **text.ts**: Centralized **tag normalization** (`cleanTag`) and **visual standardization** (`formatDisplayTag`) for player and clan tags. Implements a custom Markdown-like parsing pipeline for converting remote header descriptions into semantic HTML (supporting titles, bold text, and bulleted lists).
 - **time.ts**: Standardized relative-time/countdown formatting and recency parsing (`parseTimeAgoValue`).
+- **locale.ts**: Maps the browser's navigator language to Supercell-supported locale codes for building locale-aware external URLs.
 
 ### Sort Kernels (`sortOptions.ts` & `sortStrategies.ts`)
 Centralized logic for data orchestration in the Roster and Headhunter features.
