@@ -15,16 +15,21 @@
     "audit:version": "tsx .github/scripts/validate_project.ts",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
-    "knip": "knip --config .github/knip.json"
+    "knip": "knip --config .github/knip.json",
+    "prepare": "simple-git-hooks"
   },
   "devDependencies": {
     "@ast-grep/cli": "catalog:",
     "@types/node": "catalog:",
     "dependency-cruiser": "catalog:",
     "knip": "catalog:",
+    "simple-git-hooks": "catalog:",
     "supabase": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src"
   },
   "engines": {
     "node": ">=24.0.0",
