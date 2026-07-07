@@ -54,7 +54,7 @@ export async function runProfiler(
     logAudit('PROFILING', 'triggered', { count: tagsToProfile.length });
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
-        const thirtyMinutesAgo = new Date(Date.now() - RECENT_SCAN_THRESHOLD_MS).toISOString();
+        const thirtyMinutesAgo = Temporal.Now.instant().subtract({ milliseconds: RECENT_SCAN_THRESHOLD_MS }).toString();
         const { data: rawRecentScans, error: recentScansError } = await supabase
             .schema('drivers')
             .from('recruits')

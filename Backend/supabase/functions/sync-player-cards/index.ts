@@ -144,11 +144,11 @@ Deno.serve(async (syncRequest) => {
       }
 
       const cardSnapshots: CardRow[] = snapshotValidationResult.success ? snapshotValidationResult.output : [];
-      const cacheExpirationCutoff = Date.now() - CACHE_TTL_MS;
+      const cacheExpirationCutoff = Temporal.Now.instant().subtract({ milliseconds: CACHE_TTL_MS });
       // [DECISION LOG] Data is considered fresh if at least one card was fetched within the 12h TTL.
       const isCacheDataFresh =
         cardSnapshots.length > 0 &&
-        cardSnapshots.some((snapshot) => new Date(snapshot.fetched_at).getTime() > cacheExpirationCutoff);
+        cardSnapshots.some((snapshot) => Temporal.Instant.from(snapshot.fetched_at).epochMilliseconds > cacheExpirationCutoff.epochMilliseconds);
 
       if (isCacheDataFresh) {
         logAudit("CACHE_CHECK", "terminated", { status: "HIT", count: cardSnapshots.length });
@@ -197,7 +197,7 @@ Deno.serve(async (syncRequest) => {
       const playerName = playerProfileData.name;
       const kingLevel = playerProfileData.expLevel;
       const xpIntoLevel = playerProfileData.expPoints;
-      const fetchedAt = new Date().toISOString();
+      const fetchedAt = Temporal.Now.instant().toString();
 
       /**
        * Normalizes a single card's level from the relative Royale API scale to our absolute scale.
