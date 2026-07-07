@@ -1,6 +1,22 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-07] PR #1046: [Stage 10] APK & PWA Wrapper Integrity Audit
+**Commit**: `b719ecbe3f22cf8b89b28a6e2cd7f0a1985fd081`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1046)
+
+### Description
+Performed the Stage 10 APK & PWA Wrapper Integrity Audit on the Nightly branch.
+Synchronized `generatorApp` metadata and updated `targetSdkVersion` to 36.
+Verified manifest parity, Digital Asset Links, and security profiles.
+Confirmed that all systems are synchronized at v14.2.6 (14260).
+All automated integrity checks and test suites passed.
+
+---
+*PR created automatically by Jules for task [12051457821395812960](https://jules.google.com/task/12051457821395812960) started by @AlbiDR*
+
+---
+
 ## [2026-07-07] PR #1045: Refactor: Centralize Native Android Bridge Orchestration
 **Commit**: `536938ea054fb24cc2e7403dcb90a6d47460d1db`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1045)
