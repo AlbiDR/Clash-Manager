@@ -29,15 +29,7 @@ describe("useTheme", () => {
     localStorage.clear();
     document.documentElement.classList.remove("dark");
 
-    // Mocking style.setProperty
-    const styleMock = {
-      setProperty: vi.fn(),
-      removeProperty: vi.fn(),
-    };
-    Object.defineProperty(document.documentElement, "style", {
-      value: styleMock,
-      configurable: true,
-    });
+    document.documentElement.style.cssText = "";
 
     document.head.innerHTML = "";
 
@@ -136,19 +128,17 @@ describe("useTheme", () => {
 
     it("applies CSS variables to document root", () => {
       const { setTheme } = useTheme();
-      const spy = vi.spyOn(document.documentElement.style, "setProperty");
 
       setTheme("dark");
 
-      // Verify some key tokens are applied
-      expect(spy).toHaveBeenCalledWith("--sys-color-primary", "#a8c7fa");
-      expect(spy).toHaveBeenCalledWith("--sys-color-background", "#0b0e14");
-      expect(spy).toHaveBeenCalledWith("--sys-surface-glass-blur", "blur(24px) saturate(180%)");
+      // Verify some key tokens are applied natively using CSSOM
+      expect(document.documentElement.style.getPropertyValue("--sys-color-primary")).toBe("#a8c7fa");
+      expect(document.documentElement.style.getPropertyValue("--sys-color-background")).toBe("#0b0e14");
+      expect(document.documentElement.style.getPropertyValue("--sys-surface-glass-blur")).toBe("blur(24px) saturate(180%)");
 
-      spy.mockClear();
       setTheme("light");
-      expect(spy).toHaveBeenCalledWith("--sys-color-primary", "#0061a4");
-      expect(spy).toHaveBeenCalledWith("--sys-color-background", "#fdfcff");
+      expect(document.documentElement.style.getPropertyValue("--sys-color-primary")).toBe("#0061a4");
+      expect(document.documentElement.style.getPropertyValue("--sys-color-background")).toBe("#fdfcff");
     });
   });
 

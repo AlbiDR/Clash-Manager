@@ -11,6 +11,22 @@ describe("vTactile directive", () => {
   const mockOnLongPress = vi.fn();
   const vibrateSpy = vi.fn();
 
+  const dispatchPointerEvent = (
+    el: HTMLElement,
+    type: string,
+    options: PointerEventInit = {}
+  ) => {
+    const event = new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      clientX: 0,
+      clientY: 0,
+      ...options
+    });
+    el.dispatchEvent(event);
+  };
+
   const TestComponent = defineComponent({
     directives: { tactile: vTactile },
     props: ["onTap", "onLongPress"],
@@ -54,8 +70,8 @@ describe("vTactile directive", () => {
 
     const target = wrapper.find(".target");
 
-    await target.trigger("pointerdown", { button: 0, clientX: 10, clientY: 10 });
-    await target.trigger("pointerup");
+    dispatchPointerEvent(target.element, "pointerdown", { button: 0, clientX: 10, clientY: 10 });
+    dispatchPointerEvent(target.element, "pointerup");
 
     expect(mockOnTap).toHaveBeenCalled();
     expect(vibrateSpy).toHaveBeenCalledWith(12);
@@ -69,14 +85,14 @@ describe("vTactile directive", () => {
 
     const target = wrapper.find(".target");
 
-    await target.trigger("pointerdown", { button: 0, clientX: 10, clientY: 10 });
+    dispatchPointerEvent(target.element, "pointerdown", { button: 0, clientX: 10, clientY: 10 });
 
     vi.advanceTimersByTime(500);
 
     expect(mockOnLongPress).toHaveBeenCalled();
     expect(vibrateSpy).toHaveBeenCalledWith(65);
 
-    await target.trigger("pointerup");
+    dispatchPointerEvent(target.element, "pointerup");
     expect(mockOnTap).not.toHaveBeenCalled(); // Tap should be blocked after long press
   });
 
@@ -87,10 +103,10 @@ describe("vTactile directive", () => {
 
     const target = wrapper.find(".target");
 
-    await target.trigger("pointerdown", { button: 0, clientX: 10, clientY: 10 });
+    dispatchPointerEvent(target.element, "pointerdown", { button: 0, clientX: 10, clientY: 10 });
     // moveThreshold = 10 * 1 = 10. move to 21. dx = 11.
-    await target.trigger("pointermove", { clientX: 21, clientY: 10 });
-    await target.trigger("pointerup");
+    dispatchPointerEvent(target.element, "pointermove", { clientX: 21, clientY: 10 });
+    dispatchPointerEvent(target.element, "pointerup");
 
     expect(mockOnTap).not.toHaveBeenCalled();
     expect(vibrateSpy).not.toHaveBeenCalled();
@@ -102,18 +118,18 @@ describe("vTactile directive", () => {
     });
 
     const btn = wrapper.find(".btn-action");
-    await btn.trigger("pointerdown", { button: 0, clientX: 10, clientY: 10 });
-    await btn.trigger("pointerup");
+    dispatchPointerEvent(btn.element, "pointerdown", { button: 0, clientX: 10, clientY: 10 });
+    dispatchPointerEvent(btn.element, "pointerup");
     expect(mockOnTap).not.toHaveBeenCalled();
 
     const link = wrapper.find(".link");
-    await link.trigger("pointerdown", { button: 0, clientX: 10, clientY: 10 });
-    await link.trigger("pointerup");
+    dispatchPointerEvent(link.element, "pointerdown", { button: 0, clientX: 10, clientY: 10 });
+    dispatchPointerEvent(link.element, "pointerup");
     expect(mockOnTap).not.toHaveBeenCalled();
 
     const hit = wrapper.find(".hit-target");
-    await hit.trigger("pointerdown", { button: 0, clientX: 10, clientY: 10 });
-    await hit.trigger("pointerup");
+    dispatchPointerEvent(hit.element, "pointerdown", { button: 0, clientX: 10, clientY: 10 });
+    dispatchPointerEvent(hit.element, "pointerup");
     expect(mockOnTap).not.toHaveBeenCalled();
   });
 
@@ -124,8 +140,8 @@ describe("vTactile directive", () => {
 
     const target = wrapper.find(".target");
 
-    await target.trigger("pointerdown", { button: 1, clientX: 10, clientY: 10 });
-    await target.trigger("pointerup");
+    dispatchPointerEvent(target.element, "pointerdown", { button: 1, clientX: 10, clientY: 10 });
+    dispatchPointerEvent(target.element, "pointerup");
 
     expect(mockOnTap).not.toHaveBeenCalled();
   });

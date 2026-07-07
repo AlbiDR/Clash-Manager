@@ -20,7 +20,7 @@ catalogs:
     "@vue/test-utils": "^2.4.11"
     "@vue/tsconfig": "^0.9.1"
     dependency-cruiser: "^18.0.0"
-    jsdom: "^24.1.3"
+    jsdom: "^29.1.1"
     knip: "^6.24.0"
     p-limit: "^7.3.0"
     simple-git-hooks: "^2.11.1"
