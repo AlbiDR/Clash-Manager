@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-07] PR #1045: Refactor: Centralize Native Android Bridge Orchestration
+**Commit**: `536938ea054fb24cc2e7403dcb90a6d47460d1db`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1045)
+
+### Description
+This structural surgery refactor aligns the PWA's hardware interaction layer with the CleanStack ADR. By moving native bridge detection, permission management, and coordinate persistence into a dedicated Layer 1 service, we improve the maintainability and testability of the system while significantly reducing the complexity of the Settings feature UI.
+
+---
+*PR created automatically by Jules for task [17607766810188371041](https://jules.google.com/task/17607766810188371041) started by @AlbiDR*
+
+---
+
 ## [2026-07-07] PR #1044: chore(deps): bump vitest from 4.1.9 to 4.1.10
 **Commit**: `4f96bbcb21f95568e21efb10476063b63c1f6f3d`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1044)
