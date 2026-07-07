@@ -11,6 +11,12 @@ permissions:
   contents: write
   actions: write
 
+env:
+  # Matches the `packageManager` field in the root package.json.
+  # Pinning the version here prevents the pnpm v10/v11 layout mismatch warning
+  # that occurs when pnpm/action-setup@v6 detects a version change mid-run.
+  PNPM_VERSION: "10.32.1"
+
 # ============================================================================
 # JOB 0: Pre-sync Check
 # ============================================================================
@@ -102,9 +108,6 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Fetch all branches
-        run: git fetch origin
-
       - name: Merge Nightly into Beta
         id: merge
         run: |
@@ -153,9 +156,6 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Fetch all branches
-        run: git fetch origin
 
       - name: Merge Beta into Stable
         id: merge
@@ -228,9 +228,6 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Fetch all branches
-        run: git fetch origin
-
       - name: Merge Stable into Beta
         id: merge
         run: |
@@ -267,32 +264,38 @@ jobs:
           ref: Beta
           fetch-depth: 0
 
+      - name: Setup Git User
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "24"
-          cache: "pnpm"
 
       - name: Verify Beta Stability (Air Gap Guard)
         run: |
-          pnpm install --no-frozen-lockfile --prefer-offline
+          pnpm install --frozen-lockfile
           if ! pnpm test; then
              echo "### Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
              echo "Unit tests failed on Beta. Downstream sync to Nightly aborted to protect the automated environment from contaminated state." >> $GITHUB_STEP_SUMMARY
              exit 1
           fi
           echo "### Beta Stable: Proceeding with Downstream Sync" >> $GITHUB_STEP_SUMMARY
-
-      - name: Setup Git User
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Fetch all branches
-        run: git fetch origin
 
       - name: Merge Beta into Nightly
         run: |
