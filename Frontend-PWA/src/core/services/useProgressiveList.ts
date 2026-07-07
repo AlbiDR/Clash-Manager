@@ -44,16 +44,16 @@ export function useProgressiveList<T>(
    * SIDE EFFECTS
    * Manages scheduling and cancellation of frame-based chunk injections.
    */
-  let currentChunkTimer: number | null = null;
+  let progressiveChunkTimer: number | null = null;
 
   function clearTimer() {
-    if (currentChunkTimer !== null) {
+    if (progressiveChunkTimer !== null) {
       if (window.cancelIdleCallback) {
-        window.cancelIdleCallback(currentChunkTimer);
+        window.cancelIdleCallback(progressiveChunkTimer);
       } else {
-        cancelAnimationFrame(currentChunkTimer);
+        cancelAnimationFrame(progressiveChunkTimer);
       }
-      currentChunkTimer = null;
+      progressiveChunkTimer = null;
     }
   }
 
@@ -62,7 +62,7 @@ export function useProgressiveList<T>(
 
   watch(
     sourceList,
-    (newList, oldList) => {
+    (incomingList, previousList) => {
       /**
        * Logic: Churn Prevention (Bug #17)
        *
@@ -73,14 +73,14 @@ export function useProgressiveList<T>(
        * to prevent jarring scroll jumps or layout shifts.
        */
       const isRefresh =
-        oldList &&
-        oldList.length > 0 &&
-        Math.abs(newList.length - oldList.length) < 5;
+        previousList &&
+        previousList.length > 0 &&
+        Math.abs(incomingList.length - previousList.length) < 5;
 
       if (isRefresh && visibleItems.value.length >= initialSize) {
-        visibleItems.value = newList.slice(0, visibleItems.value.length) as T[];
-        if (visibleItems.value.length < newList.length) {
-          scheduleChunk(newList as T[], visibleItems.value.length);
+        visibleItems.value = incomingList.slice(0, visibleItems.value.length) as T[];
+        if (visibleItems.value.length < incomingList.length) {
+          scheduleChunk(incomingList as T[], visibleItems.value.length);
         }
         return;
       }
@@ -90,9 +90,9 @@ export function useProgressiveList<T>(
       clearTimer();
 
       // Initial render for immediate perceived performance
-      visibleItems.value = newList.slice(0, initialSize) as T[];
-      if (newList.length > initialSize) {
-        scheduleChunk(newList as T[], initialSize);
+      visibleItems.value = incomingList.slice(0, initialSize) as T[];
+      if (incomingList.length > initialSize) {
+        scheduleChunk(incomingList as T[], initialSize);
       }
     },
     { immediate: true },
@@ -109,8 +109,8 @@ export function useProgressiveList<T>(
     const scheduler =
       window.requestIdleCallback || window.requestAnimationFrame;
 
-    currentChunkTimer = (scheduler as (cb: (deadline?: IdleDeadline | number) => void) => number)((deadline) => {
-      let nextCount = renderedItemCount;
+    progressiveChunkTimer = (scheduler as (cb: (deadline?: IdleDeadline | number) => void) => number)((deadline) => {
+      let projectedItemCount = renderedItemCount;
 
       // [PERF] IDLE BUDGETING: If we have an idle deadline, we attempt to
       // process as many chunks as possible within the remaining time.
@@ -122,19 +122,19 @@ export function useProgressiveList<T>(
       // if the browser provides an IdleDeadline with sufficient time remaining.
       do {
         const chunkSize = fullSourceList.length > 100 ? 20 : 10;
-        nextCount = Math.min(nextCount + chunkSize, fullSourceList.length);
+        projectedItemCount = Math.min(projectedItemCount + chunkSize, fullSourceList.length);
 
         // Break early if we've reached the end of the list
-        if (nextCount >= fullSourceList.length) break;
+        if (projectedItemCount >= fullSourceList.length) break;
 
       } while (hasIdleDeadline && (deadline as IdleDeadline).timeRemaining() > 1 && !(deadline as IdleDeadline).didTimeout);
 
-      visibleItems.value = fullSourceList.slice(0, nextCount);
+      visibleItems.value = fullSourceList.slice(0, projectedItemCount);
 
-      if (nextCount < fullSourceList.length) {
-        scheduleChunk(fullSourceList, nextCount);
+      if (projectedItemCount < fullSourceList.length) {
+        scheduleChunk(fullSourceList, projectedItemCount);
       } else {
-        currentChunkTimer = null;
+        progressiveChunkTimer = null;
       }
     }) as unknown as number;
   }
