@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
@@ -114,14 +117,14 @@ export default defineConfig({
         return html; // Content already synthesized, this hook remains for future dynamic logic
       },
     },
-    ...(process.env.ANALYZE
-      ? [
-          visualizer({
-            filename: "dist/stats.html",
-            open: true,
-          }),
-        ]
-      : []),
+    visualizer({
+      filename: "dist/stats.html",
+      title: "Clash Manager PWA Bundle Analysis",
+      template: "treemap",
+      gzipSize: true,
+      brotliSize: true,
+      open: process.env.ANALYZE === "true",
+    }),
   ],
   test: {
     globals: true,
