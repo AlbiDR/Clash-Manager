@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "npm:valibot@1.4.2";
-import { fetchWithRotation } from "../_shared/muscle.ts";
+import { fetchWithRotation, processBatch } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import {
   RoyaleClanSchema,
@@ -39,14 +39,11 @@ const DEFAULT_FALLBACK_ID = 57000120;
 const PLAYER_LEADERBOARD_LIMIT = 1000;
 const INITIAL_ARRAY_INDEX = 0;
 
-// [DECISION LOG] Maximum number of country epochs attempted during Local harvest
-// when the clan is registered as International. Each epoch probes a unique country
-// from the shuffled catalog before yielding an empty result.
-// Raised from 15 to 30: the /rankings/players endpoint has better country coverage
-// than the previous /pathoflegend/players endpoint, but many micro-territories
-// still return 0 ranked players. A larger bound increases the probability of
-// hitting a populated leaderboard within a single request.
-const MAX_HARVEST_EPOCHS = 30;
+// [DECISION LOG] Maximum number of country searches attempted concurrently during
+// Local harvest when the clan is registered as International.
+// Reduced to 15: We query 15 random countries concurrently in a single batch to
+// guarantee fast responses under 3 seconds while maximizing geographic variety.
+const MAX_HARVEST_EPOCHS = 15;
 
 // Major country IDs for global harvest fallback during early-season PoL unpopulation
 const TOP_COUNTRY_IDS = [
@@ -135,7 +132,10 @@ async function harvestClanlessPlayers(
         return polResults;
       }
       
-      // Tier 2: Fall back to major country Trophy Road aggregations
+      // Tier 2: Fall back to country-specific Path of Legends leaderboards.
+      // NOTE: /rankings/players is retired and returns empty for all locations.
+      // Country PoL leaderboards are active and include clan data, so the
+      // clanless filter works correctly here.
       const aggregatedResults = new Map<string, any>();
       for (const item of polResults as any[]) {
         aggregatedResults.set(item.tag, item);
@@ -144,13 +144,13 @@ async function harvestClanlessPlayers(
       for (const countryId of TOP_COUNTRY_IDS) {
         if (aggregatedResults.size >= TARGET_HARVEST_FLOOR) break;
         try {
-          const countryPath = `/locations/${countryId}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
-          const countryResults = await fetchRankings(countryPath, logAudit);
+          const countryPolPath = `/locations/${countryId}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+          const countryResults = await fetchRankings(countryPolPath, logAudit);
           for (const item of countryResults as any[]) {
             aggregatedResults.set(item.tag, item);
           }
         } catch (countryError) {
-          console.warn(`[HARVEST] Failed to harvest fallback country ${countryId}:`, countryError);
+          console.warn(`[HARVEST] Failed country PoL ${countryId}:`, countryError instanceof Error ? countryError.message : String(countryError));
         }
       }
       
@@ -284,14 +284,10 @@ Deno.serve(async (request) => {
           return { items: harvestResults, region: DEFAULT_FALLBACK_COUNTRY };
         }
 
-        // [DECISION LOG] SHUFFLED EPOCH LOOP
-        // Rationale: A single random pick almost always lands on a micro-territory
-        // (e.g. Antarctica, Anguilla) with zero Path of Legends participation.
-        // We perform a Fisher-Yates shuffle of the full catalog so that every
-        // country has an equal probability of being probed, then iterate up to
-        // MAX_HARVEST_EPOCHS unique countries, returning on the first non-empty result.
-        // This guarantees fair distribution across all locations while bounding
-        // the maximum number of API round-trips per request.
+        // [DECISION LOG] CONCURRENT BATCH HARVEST
+        // Rationale: Sequential looping causes massive delays when hitting multiple empty countries.
+        // Instead, we shuffle the catalog, pick the top 15 random countries, and query them in parallel
+        // using processBatch. This keeps the execution time bounded to a single round-trip (~1-3 seconds).
         const shuffledCandidates = [...cachedCountries];
         for (let shuffleIndex = shuffledCandidates.length - 1; shuffleIndex > 0; shuffleIndex--) {
           const swapIndex = Math.floor(Math.random() * (shuffleIndex + 1));
@@ -299,25 +295,49 @@ Deno.serve(async (request) => {
             [shuffledCandidates[swapIndex], shuffledCandidates[shuffleIndex]];
         }
 
-        const epochLimit = Math.min(MAX_HARVEST_EPOCHS, shuffledCandidates.length);
+        const targetCountriesCount = Math.min(MAX_HARVEST_EPOCHS, shuffledCandidates.length);
+        const countriesToQuery = shuffledCandidates.slice(INITIAL_ARRAY_INDEX, targetCountriesCount);
 
-        for (let epoch = INITIAL_ARRAY_INDEX; epoch < epochLimit; epoch++) {
-          const epochCountry = shuffledCandidates[epoch];
-          logAudit("EPOCH_SELECT", "run", { epoch, country: epochCountry.name });
+        logAudit("CONCURRENT_BATCH_START", "run", { countries: countriesToQuery.map(c => c.name) });
 
-          const epochResults = await harvestClanlessPlayers(String(epochCountry.id), logAudit);
+        const batchTasks = countriesToQuery.map((country) => {
+          return async () => {
+            try {
+              const results = await harvestClanlessPlayers(String(country.id), logAudit);
+              return { country: country.name, players: results };
+            } catch (err) {
+              console.warn(`[HARVEST] Failed concurrent query for ${country.name}:`, err);
+              return { country: country.name, players: [] };
+            }
+          };
+        });
 
-          if (epochResults.length > INITIAL_ARRAY_INDEX) {
-            logAudit("EPOCH_SUCCESS", "run", { epoch, country: epochCountry.name, count: epochResults.length });
-            return { items: epochResults, region: epochCountry.name };
+        const batchResults = await processBatch(batchTasks);
+
+        const mergedPlayersMap = new Map<string, any>();
+        const queriedRegions: string[] = [];
+
+        for (const res of batchResults) {
+          if (res.players.length > INITIAL_ARRAY_INDEX) {
+            queriedRegions.push(res.country);
+            for (const player of res.players as any[]) {
+              mergedPlayersMap.set(player.tag, player);
+            }
           }
-
-          logAudit("EPOCH_EMPTY", "run", { epoch, country: epochCountry.name });
         }
 
-        // All epochs exhausted with no clanless players found.
-        logAudit("EPOCH_EXHAUSTED", "run", { epochs_tried: epochLimit });
-        return { items: [], region: "International" };
+        const mergedPlayers = Array.from(mergedPlayersMap.values());
+        logAudit("CONCURRENT_BATCH_SUCCESS", "run", {
+          total_harvested: mergedPlayers.length,
+          populated_regions: queriedRegions,
+        });
+
+        // Return the merged list. Region string displays populated countries found.
+        const regionLabel = queriedRegions.length > INITIAL_ARRAY_INDEX 
+          ? `International (${queriedRegions.join(", ")})` 
+          : "International (None Found)";
+
+        return { items: mergedPlayers, region: regionLabel };
       }
 
       logAudit("LOCAL_HARVEST_CLANLESS_DISCOVERY", "called", { country: targetLocationName });
