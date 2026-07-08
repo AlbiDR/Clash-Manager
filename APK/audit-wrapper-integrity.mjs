@@ -75,7 +75,8 @@ function checkSecurity() {
     'android.permission.SYSTEM_ALERT_WINDOW',
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
-    'android.permission.INTERNET'
+    'android.permission.INTERNET',
+    'android.permission.VIBRATE'
   ];
   required.forEach(p => {
     if (manifest.includes(`android:name="${p}"`)) ok(`Permission present: ${p}`);
