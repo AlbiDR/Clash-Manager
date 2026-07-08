@@ -115,8 +115,8 @@ async function harvestClanlessPlayers(
     return [];
   }
 
-  // Temporarily bypass filter for diagnostic inspection of Royale API payload
-  return observedRankingItems.slice(0, 15).map((rankingItem) => ({
+  // Diagnostic inspection of the full Royale API payload
+  return observedRankingItems.map((rankingItem) => ({
     tag: rankingItem.tag,
     name: rankingItem.name,
     clan: rankingItem.clan || null
