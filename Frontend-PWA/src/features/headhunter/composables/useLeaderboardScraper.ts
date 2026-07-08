@@ -103,7 +103,8 @@ export function useLeaderboardScraper(
       const clanlessPlayers = rawItems.filter((harvestedPlayer) => !harvestedPlayer.clan);
 
       if (clanlessPlayers.length === 0) {
-        info(`Harvest complete: zero clanless players found on the ${region} leaderboard.`);
+        const boardType = mode === "local" ? "local leaderboards" : "the Global leaderboard";
+        info(`Harvest complete: zero clanless players found on ${boardType}.`);
         updateFabState({
           isHarvesting: false,
           activeHarvester: null,
