@@ -1,5 +1,3 @@
-<!-- SPDX-License-Identifier: GPL-3.0-only -->
-<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { ref, onMounted, onUnmounted } from "vue";
@@ -18,9 +16,10 @@ const emit = defineEmits<{
 
 let timer: number | undefined;
 const isHandlingAction = ref(false);
+const showCopiedTick = ref(false);
 
 function startTimer() {
-  if (props.duration) {
+  if (props.duration && !showCopiedTick.value) {
     timer = window.setTimeout(() => {
       emit("dismiss", props.id);
     }, props.duration);
@@ -41,6 +40,20 @@ function triggerAction() {
   if (isHandlingAction.value) return;
   isHandlingAction.value = true;
   emit("action", props.id);
+}
+
+async function copyToClipboard() {
+  try {
+    await navigator.clipboard.writeText(props.message);
+    showCopiedTick.value = true;
+    clearTimer();
+    setTimeout(() => {
+      showCopiedTick.value = false;
+      startTimer();
+    }, 2000);
+  } catch (err) {
+    console.error("Failed to copy toast message:", err);
+  }
 }
 
 onMounted(startTimer);
@@ -68,6 +81,16 @@ onUnmounted(clearTimer);
 
     <div class="message">{{ message }}</div>
 
+    <!-- Copy Button for Error and Info notifications -->
+    <button 
+      v-if="type === 'error' || type === 'info'" 
+      class="copy-btn" 
+      title="Copy message"
+      @click.stop="copyToClipboard"
+    >
+      <Icon :name="showCopiedTick ? 'check' : 'copy'" size="16" />
+    </button>
+
     <button
       v-if="actionLabel"
       class="action-btn"
@@ -91,8 +114,8 @@ onUnmounted(clearTimer);
   background: var(--sys-surface-glass);
 
   color: var(--sys-color-on-surface);
-  padding: 10px 16px;
-  border-radius: 99px; /* Pill shape */
+  padding: 12px 16px;
+  border-radius: 24px; /* Adaptive rounded shape for multiline layout compatibility */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   min-width: 280px;
   max-width: 90vw;
@@ -101,7 +124,8 @@ onUnmounted(clearTimer);
   transition:
     transform 0.2s var(--sys-motion-spring),
     box-shadow 0.2s;
-  user-select: none;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .toast.is-actionable {
@@ -114,7 +138,6 @@ onUnmounted(clearTimer);
 /* Success State */
 .toast.success {
   background: var(--sys-color-success-container);
-  color: var(--sys-color-on-success-container); /* Check var usage if needed */
   color: #002105; /* Fallback high contrast */
   border-color: rgba(0, 0, 0, 0.05);
 }
@@ -149,9 +172,29 @@ onUnmounted(clearTimer);
   font-weight: 700;
   font-size: 14px;
   line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: pre-wrap;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, background 0.2s;
+  margin-left: 2px;
+}
+.copy-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .action-btn {
