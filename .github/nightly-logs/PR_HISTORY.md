@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-08] PR #1051: docs(readme): reconcile core service registry
+**Commit**: `b93ce544c380d7b36f401656cfae8ff0a12548f1`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1051)
+
+### Description
+Synchronized `Frontend-PWA/src/core/services/README.md` with implementation reality by adding missing services to the registry and updated the coverage log. Verified via test suite.
+
+---
+*PR created automatically by Jules for task [17393784393808986863](https://jules.google.com/task/17393784393808986863) started by @AlbiDR*
+
+---
+
 ## [2026-07-08] PR #1050: perf(opt): standardize variable naming for domain clarity
 **Commit**: `d401ce5fb8be6fabd972bcddee39803b52d1d480`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1050)
