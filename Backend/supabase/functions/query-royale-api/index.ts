@@ -335,7 +335,7 @@ Deno.serve(async (request) => {
         // Return the merged list. Region string displays populated countries found.
         const regionLabel = queriedRegions.length > INITIAL_ARRAY_INDEX 
           ? `International (${queriedRegions.join(", ")})` 
-          : "International (None Found)";
+          : "International";
 
         return { items: mergedPlayers, region: regionLabel };
       }

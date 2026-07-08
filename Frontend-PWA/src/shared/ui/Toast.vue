@@ -109,13 +109,13 @@ onUnmounted(clearTimer);
 <style scoped>
 .toast {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Align top for multiline compatibility */
   gap: 12px;
   background: var(--sys-surface-glass);
 
   color: var(--sys-color-on-surface);
   padding: 12px 16px;
-  border-radius: 24px; /* Adaptive rounded shape for multiline layout compatibility */
+  border-radius: 20px; /* Subtle rounded corners for multiline layout compatibility */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   min-width: 280px;
   max-width: 90vw;
@@ -161,6 +161,7 @@ onUnmounted(clearTimer);
   display: flex;
   align-items: center;
   opacity: 0.9;
+  margin-top: 1px; /* Align perfectly with first text line */
 }
 
 .undo-icon {
@@ -191,6 +192,7 @@ onUnmounted(clearTimer);
   justify-content: center;
   transition: opacity 0.2s, background 0.2s;
   margin-left: 2px;
+  margin-top: -1px; /* Align with first line */
 }
 .copy-btn:hover {
   opacity: 1;
@@ -237,6 +239,7 @@ onUnmounted(clearTimer);
   justify-content: center;
   transition: opacity 0.2s;
   margin-left: -4px;
+  margin-top: 1px; /* Align with first line */
 }
 .close-btn:hover {
   opacity: 1;
