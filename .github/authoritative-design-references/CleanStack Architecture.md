@@ -138,6 +138,7 @@ Guards for software stability, hardware interaction, and resource management.
 - **Principle of Least Privilege (PoLP):** A module or process should only access the resources necessary for its specific purpose.
 - **Zero-Trust Token Boundary:** All Supabase RPC and Edge Function calls must validate the user's identity and permissions. No internal caller is implicitly trusted.
 - **Error Propagation Contract:** Errors must never be thrown as raw strings. Every thrown value must conform to a typed error shape. Errors must propagate upward to the nearest Layer 5 control surface before classification.
+- **Error Readability Contract:** Error notifications and toasts must never truncate error messages or inhibit readability. All error text must be fully wrap-compatible (`white-space: pre-wrap`), selectable (`user-select: text`), and must provide a direct mechanism (such as a dedicated button) to copy the entire error message to the clipboard.
 
 ### Tiered Caching Protocol
 
