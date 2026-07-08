@@ -82,7 +82,8 @@ async function harvestClanlessPlayers(
   location: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
-  const playersPath = `/locations/${location}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  // Use US location (57000120) rankings to test if country rankings are populated
+  const playersPath = `/locations/57000120/rankings/players?limit=20`;
   logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath });
   const playerRankingsResponse = await fetchWithRotation(playersPath);
   if (!playerRankingsResponse.ok) {
