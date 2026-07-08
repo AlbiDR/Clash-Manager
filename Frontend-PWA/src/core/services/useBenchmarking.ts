@@ -120,26 +120,26 @@ const calculateStats = <T>(
 
   // Single Pass
   for (let i = 0; i < candidatePool.length; i++) {
-    const item = candidatePool[i];
+    const candidateItem = candidatePool[i];
     for (let j = 0; j < keys.length; j++) {
       const key = keys[j];
-      const metricValue = metricExtractors[key](item);
-      const accumulator = statAccumulators[key];
+      const observedMetricValue = metricExtractors[key](candidateItem);
+      const metricAccumulator = statAccumulators[key];
 
-      accumulator.sum += metricValue;
-      if (metricValue > accumulator.max) accumulator.max = metricValue;
-      if (metricValue < accumulator.min) accumulator.min = metricValue;
+      metricAccumulator.sum += observedMetricValue;
+      if (observedMetricValue > metricAccumulator.max) metricAccumulator.max = observedMetricValue;
+      if (observedMetricValue < metricAccumulator.min) metricAccumulator.min = observedMetricValue;
     }
   }
 
   const stats: StatsMap = {};
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    const accumulator = statAccumulators[key];
+    const metricAccumulator = statAccumulators[key];
     stats[key] = {
-      avg: accumulator.sum / candidatePool.length,
-      max: accumulator.max === -Infinity ? 0 : accumulator.max,
-      min: accumulator.min === Infinity ? 0 : accumulator.min,
+      avg: metricAccumulator.sum / candidatePool.length,
+      max: metricAccumulator.max === -Infinity ? 0 : metricAccumulator.max,
+      min: metricAccumulator.min === Infinity ? 0 : metricAccumulator.min,
     };
   }
 
