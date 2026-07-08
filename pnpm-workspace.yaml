@@ -23,7 +23,7 @@ catalogs:
     jsdom: "^29.1.1"
     knip: "^6.25.0"
     p-limit: "^7.3.0"
-    simple-git-hooks: "^2.11.1"
+    simple-git-hooks: "^2.13.1"
     supabase: "^2.109.1"
     pinia: "^3.0.4"
     rollup-plugin-visualizer: "^7.0.1"
@@ -41,6 +41,6 @@ catalogs:
     # Core Shared Dependencies (Consolidated)
     vue: "^3.5.39"
     vue-router: "^5.1.0"
-    vue-tsc: "^3.3.6"
+    vue-tsc: "^3.3.7"
     workbox-precaching: "^7.4.1"
     workbox-window: "^7.4.1"
