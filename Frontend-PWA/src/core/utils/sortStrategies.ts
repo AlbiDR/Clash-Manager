@@ -23,22 +23,22 @@ import { parseTimeAgoValue } from "./time";
 /**
  * Performs an ascending alphabetical sort by name.
  *
- * @param a - First item with a name property ('n').
- * @param b - Second item with a name property ('n').
+ * @param candidateA - First item with a name property ('n').
+ * @param candidateB - Second item with a name property ('n').
  * @returns Standard comparator result (-1, 0, 1).
  */
-export const sortByName = (a: { n: string }, b: { n: string }) =>
-  a.n.localeCompare(b.n);
+export const sortByName = (candidateA: { n: string }, candidateB: { n: string }) =>
+  candidateA.n.localeCompare(candidateB.n);
 
 /**
  * Performs a descending sort by trophies.
  *
- * @param a - First item with a trophies property ('t').
- * @param b - Second item with a trophies property ('t').
+ * @param candidateA - First item with a trophies property ('t').
+ * @param candidateB - Second item with a trophies property ('t').
  * @returns Standard comparator result.
  */
-export const sortByTrophies = (a: { t: number }, b: { t: number }) =>
-  (b.t || 0) - (a.t || 0);
+export const sortByTrophies = (candidateA: { t: number }, candidateB: { t: number }) =>
+  (candidateB.t || 0) - (candidateA.t || 0);
 
 /**
  * Performs a descending hybrid score sort (Performance or Potential).
@@ -48,17 +48,17 @@ export const sortByTrophies = (a: { t: number }, b: { t: number }) =>
  * 1. Normalized Score (0-100): The primary sort key.
  * 2. Raw Score: Used as a high-precision tie-breaker when normalized scores match.
  *
- * @param a - First item with score properties.
- * @param b - Second item with score properties.
+ * @param candidateA - First item with score properties.
+ * @param candidateB - Second item with score properties.
  * @returns Standard comparator result.
  */
 export const sortByScore = (
-  a: { score?: number; rawScore?: number },
-  b: { score?: number; rawScore?: number },
+  candidateA: { score?: number; rawScore?: number },
+  candidateB: { score?: number; rawScore?: number },
 ) => {
-  const diff = (b.score || 0) - (a.score || 0);
-  if (diff !== 0) return diff;
-  return (b.rawScore || 0) - (a.rawScore || 0);
+  const scoreDelta = (candidateB.score || 0) - (candidateA.score || 0);
+  if (scoreDelta !== 0) return scoreDelta;
+  return (candidateB.rawScore || 0) - (candidateA.rawScore || 0);
 };
 
 /**
@@ -68,33 +68,33 @@ export const sortByScore = (
  * Utilizes `parseTimeAgoValue` to convert human-readable time strings into
  * numeric minutes for O(1) comparison.
  *
- * @param a - First item with nested recency data.
- * @param b - Second item with nested recency data.
+ * @param candidateA - First item with nested recency data.
+ * @param candidateB - Second item with nested recency data.
  * @returns Standard comparator result.
  */
 export const sortByLastSeen = (
-  a: { d: { seen?: string; ago?: string } },
-  b: { d: { seen?: string; ago?: string } },
+  candidateA: { d: { seen?: string; ago?: string } },
+  candidateB: { d: { seen?: string; ago?: string } },
 ) => {
-  const valA = a.d.seen || a.d.ago;
-  const valB = b.d.seen || b.d.ago;
-  return parseTimeAgoValue(valA) - parseTimeAgoValue(valB);
+  const recencyValueA = candidateA.d.seen || candidateA.d.ago;
+  const recencyValueB = candidateB.d.seen || candidateB.d.ago;
+  return parseTimeAgoValue(recencyValueA) - parseTimeAgoValue(recencyValueB);
 };
 
 /**
  * Registry of sort strategies specifically for the Leaderboard (Roster).
  */
 export const LeaderboardSort = {
-  score: (a: LeaderboardMember, b: LeaderboardMember) =>
+  score: (candidateA: LeaderboardMember, candidateB: LeaderboardMember) =>
     sortByScore(
-      { score: a.performanceScore, rawScore: a.performanceRawScore },
-      { score: b.performanceScore, rawScore: b.performanceRawScore }
+      { score: candidateA.performanceScore, rawScore: candidateA.performanceRawScore },
+      { score: candidateB.performanceScore, rawScore: candidateB.performanceRawScore }
     ),
-  trend: (a: LeaderboardMember, b: LeaderboardMember) => (b.dt || 0) - (a.dt || 0),
+  trend: (candidateA: LeaderboardMember, candidateB: LeaderboardMember) => (candidateB.dt || 0) - (candidateA.dt || 0),
   trophies: sortByTrophies,
   name: sortByName,
-  donations_day: (a: LeaderboardMember, b: LeaderboardMember) => (b.d.avg || 0) - (a.d.avg || 0),
-  tenure: (a: LeaderboardMember, b: LeaderboardMember) => (b.d.days || 0) - (a.d.days || 0),
+  donations_day: (candidateA: LeaderboardMember, candidateB: LeaderboardMember) => (candidateB.d.avg || 0) - (candidateA.d.avg || 0),
+  tenure: (candidateA: LeaderboardMember, candidateB: LeaderboardMember) => (candidateB.d.days || 0) - (candidateA.d.days || 0),
   last_seen: sortByLastSeen,
 };
 
@@ -102,13 +102,13 @@ export const LeaderboardSort = {
  * Registry of sort strategies specifically for the Recruiter (Headhunter).
  */
 export const RecruiterSort = {
-  score: (a: Recruit, b: Recruit) =>
+  score: (candidateA: Recruit, candidateB: Recruit) =>
     sortByScore(
-      { score: a.potentialScore, rawScore: a.potentialRawScore },
-      { score: b.potentialScore, rawScore: b.potentialRawScore }
+      { score: candidateA.potentialScore, rawScore: candidateA.potentialRawScore },
+      { score: candidateB.potentialScore, rawScore: candidateB.potentialRawScore }
     ),
   trophies: sortByTrophies,
   name: sortByName,
-  time_found: (a: Recruit, b: Recruit) => parseTimeAgoValue(a.d.ago) - parseTimeAgoValue(b.d.ago),
-  donations: (a: Recruit, b: Recruit) => (b.d.don || 0) - (a.d.don || 0),
+  time_found: (candidateA: Recruit, candidateB: Recruit) => parseTimeAgoValue(candidateA.d.ago) - parseTimeAgoValue(candidateB.d.ago),
+  donations: (candidateA: Recruit, candidateB: Recruit) => (candidateB.d.don || 0) - (candidateA.d.don || 0),
 };

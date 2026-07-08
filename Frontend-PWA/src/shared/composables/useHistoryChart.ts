@@ -108,7 +108,7 @@ export function useHistoryChart(
     // most recent entry first (index 0). SVG-based charts require left-to-right
     // (oldest-to-newest) ordering for correct trend visualization.
     const chronologicalData = [...processedData].reverse();
-    const data = chronologicalData.map((h, i) => {
+    const historyChartSeries = chronologicalData.map((h, i) => {
       return {
         id: `${idPrefix}-${h.weekId}-${i}`,
         value: h.value,
@@ -121,7 +121,7 @@ export function useHistoryChart(
       tooltipLabel: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:${projColor}">Projected</span><br>${formatNumber(Math.round(nextValue))} ${unit}`
     };
 
-    return { data, projection, maxScale };
+    return { data: historyChartSeries, projection, maxScale };
   });
 
   return {
