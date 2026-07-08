@@ -115,25 +115,11 @@ async function harvestClanlessPlayers(
     return [];
   }
 
-  // [DECISION LOG] CLANLESS FILTERING
-  // Rationale: Only players without a clan are viable recruitment targets.
-  // We filter them out at the earliest possible point in the pipeline.
-  //
-  // [THREAT:] The Royale API rankings endpoint may return an empty clan object {}
-  // for clanless players rather than omitting the key entirely. Checking !rankingItem.clan
-  // alone is insufficient because !{} evaluates to false (truthy object).
-  // [GUARD] We use strict schema validation to ensure clan.tag presence.
-  const clanlessPlayers = observedRankingItems.filter((rankingItem) => {
-    const rankingClan = rankingItem.clan;
-    return !rankingClan || !rankingClan.tag;
-  });
-
-  console.log(`[HARVEST] Clanless players after filter: ${clanlessPlayers.length}`);
-
-  return clanlessPlayers.map((rankingItem) => ({
+  // Temporarily bypass filter for diagnostic inspection of Royale API payload
+  return observedRankingItems.slice(0, 15).map((rankingItem) => ({
     tag: rankingItem.tag,
     name: rankingItem.name,
-    clan: null
+    clan: rankingItem.clan || null
   }));
 }
 
