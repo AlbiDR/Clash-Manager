@@ -48,9 +48,58 @@ const INITIAL_ARRAY_INDEX = 0;
 // hitting a populated leaderboard within a single request.
 const MAX_HARVEST_EPOCHS = 30;
 
+// Major country IDs for global harvest fallback during early-season PoL unpopulation
+const TOP_COUNTRY_IDS = [
+  "57000120", // United States
+  "57000095", // Spain
+  "57000038", // Brazil
+  "57000117", // Japan
+  "57000085", // France
+  "57000091", // Germany
+];
+
+// Target target floors to satisfy SSOT and prevent magic numbers
+const TARGET_HARVEST_FLOOR = 80;
+const MIN_LOCAL_POL_FLOOR = 10;
+
 // EPHEMERAL: intentionally resets on cold start.
 // Top-level cache to minimize locations list roundtrips.
 let cachedCountries: { id: number; name: string }[] | null = null;
+
+/**
+ * Executes a single rankings query against the Royale API proxy and filters for clanless players.
+ */
+async function fetchRankings(
+  endpointPath: string,
+  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+): Promise<unknown[]> {
+  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: endpointPath });
+  const playerRankingsResponse = await fetchWithRotation(endpointPath);
+  if (!playerRankingsResponse.ok) {
+    throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
+  }
+  
+  const rankingApiRaw: unknown = await playerRankingsResponse.json();
+  const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
+
+  if (!rankingIntegrity.success) {
+    throw new Error("Player rankings payload failed structural validation.");
+  }
+
+  const observedRankingItems = rankingIntegrity.output.items;
+
+  // Filter for clanless players
+  const clanlessPlayers = observedRankingItems.filter((rankingItem) => {
+    const rankingClan = rankingItem.clan;
+    return !rankingClan || !rankingClan.tag;
+  });
+
+  return clanlessPlayers.map((rankingItem) => ({
+    tag: rankingItem.tag,
+    name: rankingItem.name,
+    clan: null
+  }));
+}
 
 /**
  * HARVESTER: Discovery Engine
@@ -61,18 +110,12 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  * @remarks
  * Satisfies ADR Section V: Edge Functions - Data Ingestion.
  *
- * Uses the live Path of Legends rankings endpoint:
- *   `/locations/{location}/pathoflegend/players`
- *
- * [DECISION LOG] This is the ONLY player leaderboard the official Clash Royale
- * API still serves. The legacy trophy ladder (`/rankings/players`) was retired
- * with the 2025 Trophy Road rework and now returns an empty list for every
- * location. The season-scoped form (`/pathoflegend/{season}/rankings/players`)
- * exists only for `global` and only for *completed* seasons, so it cannot
- * surface the live board. The season-less form used here returns the current,
- * in-progress standings (verified byte-for-byte against RoyaleAPI's public
- * leaderboard) for both `global` and individual country IDs — up to 1000 ranked
- * entries with the clan embedded as an object.
+ * Implements a resilient multi-tier harvesting strategy to handle season resets:
+ * 1. Global: Queries the worldwide Path of Legends leaderboard first. If unpopulated
+ *    (e.g. at the start of a season), falls back to querying and merging Trophy Road
+ *    rankings across major countries until the floor of 80 players is met.
+ * 2. Local: Queries the local Path of Legends leaderboard first. If empty or sparse,
+ *    falls back to the local Trophy Road rankings to guarantee results year-round.
  *
  * @param location - "global" or a numeric Royale API location ID as a string.
  * @param logAudit - Telemetry callback for clinical auditing.
@@ -82,46 +125,65 @@ async function harvestClanlessPlayers(
   location: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
-  // Use US location (57000120) rankings to test if country rankings are populated
-  const playersPath = `/locations/57000120/rankings/players?limit=20`;
-  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath });
-  const playerRankingsResponse = await fetchWithRotation(playersPath);
-  if (!playerRankingsResponse.ok) {
-    throw new Error(`Failed to fetch Path of Legends rankings: ${playerRankingsResponse.status}`);
+  if (location === "global") {
+    try {
+      // Tier 1: Global Path of Legends
+      const polPath = `/locations/global/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+      const polResults = await fetchRankings(polPath, logAudit);
+      
+      if (polResults.length >= TARGET_HARVEST_FLOOR) {
+        return polResults;
+      }
+      
+      // Tier 2: Fall back to major country Trophy Road aggregations
+      const aggregatedResults = new Map<string, any>();
+      for (const item of polResults as any[]) {
+        aggregatedResults.set(item.tag, item);
+      }
+      
+      for (const countryId of TOP_COUNTRY_IDS) {
+        if (aggregatedResults.size >= TARGET_HARVEST_FLOOR) break;
+        try {
+          const countryPath = `/locations/${countryId}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+          const countryResults = await fetchRankings(countryPath, logAudit);
+          for (const item of countryResults as any[]) {
+            aggregatedResults.set(item.tag, item);
+          }
+        } catch (countryError) {
+          console.warn(`[HARVEST] Failed to harvest fallback country ${countryId}:`, countryError);
+        }
+      }
+      
+      return Array.from(aggregatedResults.values());
+    } catch (globalPolError) {
+      console.error("[HARVEST] Global Path of Legends query failed:", globalPolError);
+      throw globalPolError;
+    }
+  } else {
+    // Local / Country Harvest
+    try {
+      // Tier 1: Local Path of Legends
+      const polPath = `/locations/${location}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+      const polResults = await fetchRankings(polPath, logAudit);
+      
+      if (polResults.length >= MIN_LOCAL_POL_FLOOR) {
+        return polResults;
+      }
+      
+      // Tier 2: Local Trophy Road rankings fallback
+      const rankingsPath = `/locations/${location}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+      const rankingsResults = await fetchRankings(rankingsPath, logAudit);
+      
+      const merged = new Map<string, any>();
+      for (const item of polResults as any[]) merged.set(item.tag, item);
+      for (const item of rankingsResults as any[]) merged.set(item.tag, item);
+      
+      return Array.from(merged.values());
+    } catch (localError) {
+      console.error(`[HARVEST] Local harvest failed for ${location}:`, localError);
+      throw localError;
+    }
   }
-  
-  const rankingApiRaw: unknown = await playerRankingsResponse.json();
-
-  // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
-  // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in rankings.
-  // [DECISION LOG] Transitioned to RoyaleRankingListSchema for strict structural enforcement.
-  const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
-
-  logAudit("HARVEST_PLAYERS_INTEGRITY", "integrity_checked", {
-    passed: rankingIntegrity.success,
-    details: rankingIntegrity.success ? "Player rankings validated" : "Malformed player rankings payload"
-  });
-
-  if (!rankingIntegrity.success) {
-    throw new Error("Player rankings payload failed structural validation.");
-  }
-
-  const observedRankingItems = rankingIntegrity.output.items;
-
-  // [DIAGNOSTIC] Surfaces the raw API item count in edge function logs to allow
-  // distinguishing between an empty API response and a fully-filtered result set.
-  console.log(`[HARVEST] Raw players received from API: ${observedRankingItems.length}`);
-
-  if (observedRankingItems.length === INITIAL_ARRAY_INDEX) {
-    return [];
-  }
-
-  // Diagnostic inspection of the full Royale API payload
-  return observedRankingItems.map((rankingItem) => ({
-    tag: rankingItem.tag,
-    name: rankingItem.name,
-    clan: rankingItem.clan || null
-  }));
 }
 
 /**
