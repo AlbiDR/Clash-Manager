@@ -19,20 +19,18 @@ The `query-royale-api` function acts as a secure proxy for the PWA, allowing it 
 ## Logic Subsystems
 
 ### Global Harvesting
-- **Endpoint**: `/locations/global/pathoflegend/players`
-- **Behavior**: Retrieves the live worldwide Path of Legends top 1000 in a single request.
+- **Endpoint**: `/locations/global/rankings/players`
+- **Behavior**: Retrieves the live worldwide player trophy leaderboard top 1000 in a single request.
 - **Validation**: Strict structural validation via `RoyaleRankingListSchema`.
 
-> **Why Path of Legends, not the trophy ladder?** The legacy `/rankings/players`
-> leaderboard was retired with the 2025 Trophy Road rework and now returns an
-> empty list for every location. The season-scoped form
-> (`/pathoflegend/{season}/rankings/players`) is `global`-only and exposes just
-> *completed* seasons. The season-less `/pathoflegend/players` form used here is
-> the only endpoint that serves the live, in-progress board - and it accepts both
-> `global` and individual country IDs.
+> **Why `/rankings/players` and not `/pathoflegend/players`?** The `/pathoflegend/players`
+> path is an undocumented, unofficial endpoint that proved unreliable in production:
+> it returned only 1 result globally and 0 results locally, regardless of the `limit`
+> parameter. The documented `/rankings/players` endpoint is stable, honors `limit=1000`,
+> and returns the current live leaderboard for both `global` and individual country IDs.
 
 ### Local Harvesting & Country Rotation
-- **Endpoint**: `/locations/{id}/pathoflegend/players`
+- **Endpoint**: `/locations/{id}/rankings/players`
 - **Identification**: Automatically identifies the clan's registered location by fetching clan details for the configured `CLAN_TAG`.
 - **International Rotation**: If the clan is registered as "International" (ID 57000101) or non-country, the function performs a **Dynamic Country Rotation**:
     1. Fetches the full locations catalog from `/locations`.
@@ -40,6 +38,7 @@ The `query-royale-api` function acts as a secure proxy for the PWA, allowing it 
     3. Randomly selects a country for the current request to ensure diverse discovery.
     4. **Rationale**: Rotating countries for International clans prevents stagnation in the recruitment pool by accessing distinct regional leaderboards that would otherwise be ignored.
 - **Ephemeral Caching**: The locations catalog is cached in-memory (`cachedCountries`) at the module level to minimize roundtrips during an execution instance lifecycle.
+- **Epoch Ceiling**: Up to 30 countries are probed per request (`MAX_HARVEST_EPOCHS`). Many micro-territories return 0 ranked players; a higher ceiling improves the probability of finding a populated leaderboard within a single invocation.
 
 ## Security & Validation Boundaries
 

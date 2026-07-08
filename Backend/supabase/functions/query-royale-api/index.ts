@@ -42,7 +42,11 @@ const INITIAL_ARRAY_INDEX = 0;
 // [DECISION LOG] Maximum number of country epochs attempted during Local harvest
 // when the clan is registered as International. Each epoch probes a unique country
 // from the shuffled catalog before yielding an empty result.
-const MAX_HARVEST_EPOCHS = 15;
+// Raised from 15 to 30: the /rankings/players endpoint has better country coverage
+// than the previous /pathoflegend/players endpoint, but many micro-territories
+// still return 0 ranked players. A larger bound increases the probability of
+// hitting a populated leaderboard within a single request.
+const MAX_HARVEST_EPOCHS = 30;
 
 // EPHEMERAL: intentionally resets on cold start.
 // Top-level cache to minimize locations list roundtrips.
@@ -57,18 +61,15 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  * @remarks
  * Satisfies ADR Section V: Edge Functions - Data Ingestion.
  *
- * Uses the live Path of Legends rankings endpoint:
- *   `/locations/{location}/pathoflegend/players`
+ * Uses the official player rankings endpoint:
+ *   `/locations/{location}/rankings/players`
  *
- * [DECISION LOG] This is the ONLY player leaderboard the official Clash Royale
- * API still serves. The legacy trophy ladder (`/rankings/players`) was retired
- * with the 2025 Trophy Road rework and now returns an empty list for every
- * location. The season-scoped form (`/pathoflegend/{season}/rankings/players`)
- * exists only for `global` and only for *completed* seasons, so it cannot
- * surface the live board. The season-less form used here returns the current,
- * in-progress standings (verified byte-for-byte against RoyaleAPI's public
- * leaderboard) for both `global` and individual country IDs — up to 1000 ranked
- * entries with the clan embedded as an object.
+ * [DECISION LOG] The `/pathoflegend/players` endpoint was previously used here
+ * but proved unreliable in production (1 result globally, 0 locally). The
+ * documented `/rankings/players` endpoint correctly honors `limit=1000` and
+ * returns the live leaderboard for both `global` and individual country IDs,
+ * with each entry including the player's current clan object (or omitting the
+ * key entirely for clanless players).
  *
  * @param location - "global" or a numeric Royale API location ID as a string.
  * @param logAudit - Telemetry callback for clinical auditing.
@@ -78,11 +79,16 @@ async function harvestClanlessPlayers(
   location: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<unknown[]> {
-  const playersPath = `/locations/${location}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  // [DECISION LOG] ENDPOINT SELECTION
+  // The previous /pathoflegend/players path is an undocumented, unofficial endpoint
+  // that proved unreliable: it returned only 1 result globally and 0 results locally.
+  // The documented, stable endpoint is /rankings/players, which correctly honors the
+  // limit parameter and returns up to 1000 entries for both global and country IDs.
+  const playersPath = `/locations/${location}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
   logAudit("HARVEST_PLAYERS_FETCH", "called", { path: playersPath });
   const playerRankingsResponse = await fetchWithRotation(playersPath);
   if (!playerRankingsResponse.ok) {
-    throw new Error(`Failed to fetch Path of Legends rankings: ${playerRankingsResponse.status}`);
+    throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
   }
   
   const rankingApiRaw: unknown = await playerRankingsResponse.json();
