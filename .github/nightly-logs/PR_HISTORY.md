@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-08] PR #1049: test(verify): add specs for useClashLoader
+**Commit**: `d9f005ea8a4651301fe0d2694b344ee00603d780`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1049)
+
+### Description
+Created 'Frontend-PWA/src/core/services/services-tests/useClashLoader.spec.ts' providing logic proofs for the Stale-While-Revalidate hydration sequence. Verified orchestration sequence and fire-and-forget behavior. Updated coverage logs.
+
+---
+*PR created automatically by Jules for task [8920694235450544721](https://jules.google.com/task/8920694235450544721) started by @AlbiDR*
+
+---
+
 ## [2026-07-07] PR #1048: fix(apk-ux): optimize BaseSelect touch targets for 48px compliance
 **Commit**: `a2664583cb2de0f50cdeeb7882549fd846b78e72`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1048)
