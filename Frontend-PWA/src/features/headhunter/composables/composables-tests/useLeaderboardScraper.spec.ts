@@ -93,7 +93,7 @@ describe("useLeaderboardScraper", () => {
 
     expect(selectionStore.selectedIds.value).toEqual([]);
     expect(mockBlitzTrigger).not.toHaveBeenCalled();
-    expect(mockInfo).toHaveBeenCalledWith("Harvest complete: zero clanless players found on the France leaderboard.");
+    expect(mockInfo).toHaveBeenCalledWith("Harvest complete: zero clanless players found on local leaderboards.");
   });
 
   it("handles fetch failure by showing toast error", async () => {
