@@ -35,6 +35,13 @@ let isInitialized = false;
 
 /**
  * Polls permission flags from the native bridge.
+ *
+ * @remarks
+ * [THREAT:] Polling hardware state on the main thread; impact is minimized
+ * by checking function existence before execution.
+ *
+ * [DECISION LOG] Permissions are re-checked on 'focus' to catch system-level
+ * changes made while the app was in the background.
  */
 function checkPermissions() {
   if (typeof window === "undefined") return;
@@ -51,6 +58,13 @@ function checkPermissions() {
 
 /**
  * Hydrates calibration coordinates from native persistence.
+ *
+ * @remarks
+ * [THREAT:] JSON parsing of untrusted native strings; guarded by try-catch
+ * and manual validation of parsed values.
+ *
+ * [DECISION LOG] COORDINATE RECONSTRUCTION: Coordinates are converted from
+ * decimal (0.0-1.0) back to percentage (0-100) for UI-layer compatibility.
  */
 function loadCoordinates() {
   if (typeof window === "undefined") return;
@@ -72,6 +86,10 @@ function loadCoordinates() {
 
 /**
  * Persists calibration coordinates to the native layer.
+ *
+ * @remarks
+ * [DECISION LOG] COORDINATE NORMALIZATION: Values are stored as floats (0.0-1.0)
+ * to remain resolution-independent across different device screen densities.
  */
 function saveCoordinates() {
   if (typeof window === "undefined") return;
@@ -92,6 +110,10 @@ function saveCoordinates() {
  * INITIALIZATION ENGINE
  *
  * @internal
+ * @remarks
+ * [DECISION LOG] Focus-based re-polling: Attaching to 'focus' ensures that
+ * when a user returns from Android System Settings (after granting permissions),
+ * the app state reflects these changes immediately.
  */
 function init() {
   if (isInitialized || typeof window === "undefined") return;
@@ -109,7 +131,24 @@ function init() {
 /**
  * COMPOSABLE: useNativeBridge
  *
- * @returns Reactive bridge state and hardware management methods.
+ * @remarks
+ * Satisfies ADR Section II (Structural Unitary Architecture) by providing a
+ * singleton interface to hardware capabilities and native Android orchestration.
+ *
+ * @returns An object containing:
+ * - `isNativeWrapper`: Computed boolean indicating if running inside the Android TWA.
+ * - `bridge`: Safe access to the `AndroidBridge` instance or undefined if unavailable.
+ * - `isAccessibilityAllowed`: Reactive boolean reflecting Accessibility permission status.
+ * - `isOverlayAllowed`: Reactive boolean reflecting Overlay (Draw Over Other Apps) permission status.
+ * - `inviteX`: Reactive percentage (0-100) for the Blitz 'Invite' button X-coordinate.
+ * - `inviteY`: Reactive percentage (0-100) for the Blitz 'Invite' button Y-coordinate.
+ * - `closeX`: Reactive percentage (0-100) for the Blitz 'Close' button X-coordinate.
+ * - `closeY`: Reactive percentage (0-100) for the Blitz 'Close' button Y-coordinate.
+ * - `checkPermissions`: Method to manually trigger a re-poll of native permission flags.
+ * - `openAccessibilitySettings`: Method to trigger a native intent for Accessibility settings.
+ * - `openOverlaySettings`: Method to trigger a native intent for Overlay permission settings.
+ * - `loadCoordinates`: Method to hydrate calibration state from the native bridge.
+ * - `saveCoordinates`: Method to persist current calibration state to the native bridge.
  */
 export function useNativeBridge() {
   init();
