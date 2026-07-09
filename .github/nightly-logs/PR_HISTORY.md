@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-09] PR #1062: chore(deps): bump @types/node and update major watchlist
+**Commit**: `831d8a2b713de38a321c072d7364d309d1e1b6f5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1062)
+
+### Description
+Executed monorepo-wide dependency audit. Applied Tier 1 patch update for @types/node and updated the Major Version Watchlist (Tier 2) with research findings for Vite 8, TypeScript 7, and PNPM 11. Verified integrity via test suite (1411 passed) and documentation audit.
+
+---
+*PR created automatically by Jules for task [12600404289199998684](https://jules.google.com/task/12600404289199998684) started by @AlbiDR*
+
+---
+
 ## [2026-07-09] PR #1061: fix(version): reconcile supabase-js drift to align with catalog
 **Commit**: `3dcdc2b8c44eb1f45bc16e22acec1c33ffcc5e17`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1061)
