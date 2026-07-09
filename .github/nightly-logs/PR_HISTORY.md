@@ -1,6 +1,22 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-09] PR #1063: Harden APK/PWA Integrity Auditor and Reconcile Logs
+**Commit**: `1890a9ecc373ab7bb3a5dc415b63d391daeb2065`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1063)
+
+### Description
+I have conducted a comprehensive integrity audit of the APK and PWA wrapper. To ensure long-term reliability and better documentation, I have hardened the automated auditor script (`APK/audit-wrapper-integrity.mjs`) by adding normalized color comparison, deep shortcut verification across manifests and resources, and strict validation of version codes and SDK versions.
+
+I also reconciled the audit logs (`.github/nightly-logs/10-apk-integrity-coverage.log`) to fix chronological inconsistencies and added a detailed record of today's successful audit.
+
+All systems are confirmed to be synchronized at v14.2.6 (14260) with no mismatches found. Verification was performed via the enhanced audit script, `verify-android-source.mjs`, and the monorepo test gate.
+
+---
+*PR created automatically by Jules for task [2456330155113530460](https://jules.google.com/task/2456330155113530460) started by @AlbiDR*
+
+---
+
 ## [2026-07-09] PR #1062: chore(deps): bump @types/node and update major watchlist
 **Commit**: `831d8a2b713de38a321c072d7364d309d1e1b6f5`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1062)
