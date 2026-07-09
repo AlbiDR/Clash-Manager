@@ -1,3 +1,12 @@
+## [2026-07-09]
+### Reconciled:
+- **Supabase Functions**: Synchronized all `npm:@supabase/supabase-js@2` imports in Edge Functions (`Backend/supabase/functions/`) from `@2.110.0` to `@2.110.1` to align with the `pnpm-workspace.yaml` catalog and eliminate unversioned substrate risks (Rule 2[A]).
+- **Deno Scripts**: Synchronized `https://esm.sh/@supabase/supabase-js@2.110.0` to `@2.110.1` in `.github/scripts/fetch_player_battles.ts` to maintain monorepo-wide consistency.
+- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at ground truth `v14.2.6` (14260). Verified PNPM 'catalog:' protocol adherence and substrate version consistency via `audit:version` and full monorepo test gate (1411 passed).
+
+### Logged Drift (Unresolved):
+- **None**.
+
 ## [2026-07-07]
 ### Reconciled:
 - **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6' (14260).
