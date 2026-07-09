@@ -17,3 +17,10 @@
 - Fix: Optimized .select-trigger height to 48px and increased .option-item vertical padding to 14px.
 - Verification: Vitest (8 passed), Production Build (Success).
 - Status: RESOLVED
+
+[2026-07-09T07:48:46Z] Stage 12: APK-UX Audit
+- Target: Frontend-PWA/src/features/settings/components/AppearanceSettings.vue
+- Issue: Theme option buttons missing brokered tactile feedback (Target A.2).
+- Fix: Integrated v-tactile directive into .theme-option buttons.
+- Verification: Vitest (5 passed), Production Build (Success).
+- Status: RESOLVED
