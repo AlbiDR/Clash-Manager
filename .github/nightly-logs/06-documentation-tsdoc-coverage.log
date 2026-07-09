@@ -116,3 +116,4 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-07-06 | Frontend-PWA/src/shared/composables/useLongPress.ts | Documented long-press orchestrator with ADR mappings and mandatory threat/decision logs.
 2026-07-07 | Frontend-PWA/src/features/settings/composables/useSettings.ts | Documented settings orchestrator, added detailed TSDoc for interface contracts, and injected mandatory threat/decision logs for PWA lifecycle and hardware brokering.
 2026-07-08 | Frontend-PWA/src/core/services/useNativeBridge.ts | Documented native bridge orchestrator, added comprehensive TSDoc for 13 return properties/methods, and injected mandatory threat/decision logs for hardware brokering.
+2026-07-09 | Frontend-PWA/src/core/services/useClashLoader.ts | Hardened TSDoc for SWR hydration logic and injected mandatory threat/decision logs.
