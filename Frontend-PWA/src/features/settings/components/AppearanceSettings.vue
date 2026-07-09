@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon, SettingRow, SettingsCard } from "@shared";
+import { Icon, SettingRow, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 defineProps<{
   initiallyExpanded?: boolean;
@@ -20,6 +20,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
 
       <div class="theme-switch-container">
         <button
+          v-tactile
           class="theme-option"
           :class="{ active: theme === 'light' }"
           @click="handleThemeChange('light')"
@@ -32,6 +33,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
         </button>
 
         <button
+          v-tactile
           class="theme-option"
           :class="{ active: theme === 'auto' }"
           @click="handleThemeChange('auto')"
@@ -44,6 +46,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
         </button>
 
         <button
+          v-tactile
           class="theme-option"
           :class="{ active: theme === 'dark' }"
           @click="handleThemeChange('dark')"
