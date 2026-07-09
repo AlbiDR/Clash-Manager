@@ -146,13 +146,13 @@ export function useAppSettings() {
 
     // Load local storage
     try {
-      const raw = localStorage.getItem(MODULES_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        Object.assign(modules, mergeStorage(parsed));
+      const rawSettingsPayload = localStorage.getItem(MODULES_KEY);
+      if (rawSettingsPayload) {
+        const parsedSettingsSnapshot = JSON.parse(rawSettingsPayload);
+        Object.assign(modules, mergeStorage(parsedSettingsSnapshot));
       }
-    } catch (e) {
-      console.warn("[Modules] Storage hydration failed", e);
+    } catch (settingsHydrationError) {
+      console.warn("[Modules] Storage hydration failed", settingsHydrationError);
     }
 
     // Sync across tabs
