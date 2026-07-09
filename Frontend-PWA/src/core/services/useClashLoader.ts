@@ -25,14 +25,26 @@ import { useClashDataStore } from "./useClashDataStore";
  * `vue-router/experimental`. Registering the result as a named export on the
  * `<script setup>` block allows the `DataLoaderPlugin` to discover and coordinate
  * it during navigation without blocking the view transition.
+ *
+ * @returns A Promise that resolves once the local cache hydration is complete.
  */
 export async function hydrateClashData(): Promise<void> {
   const store = useClashDataStore();
 
+  // [THREAT:] Awaiting the network request during navigation causes "Navigation Hang",
+  // where the UI remains frozen on the previous route until the API responds.
+  // [DECISION LOG] We only await the local cache (IndexedDB) hydration. This ensures
+  // the view transition is near-instant, satisfying ADR Section II: Performance & Perceived Speed.
+
   // Step 1: Hydrate from IndexedDB (instant - resolves from L2 cache)
   await store.loadLocal();
 
+  // [THREAT:] If the network refresh blocks the loader, slow connections will
+  // degrade the PWA experience to a legacy "waiting for data" pattern.
+  // [DECISION LOG] Trigger live Supabase refresh without awaiting (fire-and-forget).
+  // The store's reactive state updates automatically when the network resolves,
+  // preserving the Stale-While-Revalidate (SWR) topology.
+
   // Step 2: Trigger live Supabase refresh without awaiting (fire-and-forget).
-  // The store's reactive state updates automatically when the network resolves.
   store.refreshFromSupabase();
 }
