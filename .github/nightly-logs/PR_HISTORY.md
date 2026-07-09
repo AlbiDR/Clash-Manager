@@ -1,6 +1,32 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-09] PR #1056: fix(harden): resolve runtime crash and excise anemic variables in deep-depth stage
+**Commit**: `1444b6063d8e34ca2024103beb4bae2921b8f652`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1056)
+
+### Description
+### Reasoning:
+**[Threat Statement]:** If the ingestion pipeline reaches the Deep Depth stage, then the Edge Function crashes because it attempts to spread non-existent properties ('drivers.members'/'drivers.recruits') from the validated targets snapshot.
+**[Blast Radius]:** `Backend/supabase/functions/ingest-royale-data/pipeline.ts` (Stage 6 failure).
+**[Rationale]:** Corrected the property access to match the `IngestionTargetsSchema` defined in `rpcSchemas.ts`. Excised anemic variables to satisfy CleanStack naming conventions and improve domain clarity.
+
+### Changes:
+- **[Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts]:** Corrected `targets` access to `targetsSnapshot.members` and `targetsSnapshot.recruits`. Renamed `tag` and `data` in the shadow leads loop. Added architectural annotations.
+- **[.github/nightly-logs/01-hardening-coverage.log]:** Appended execution record.
+
+### Verification:
+- **[Automated]:** Full monorepo test gate passed (1411 passed).
+- **[Audit]:** Structural audit confirms the corrected keys match the Valibot schema contract.
+
+### Log Updates:
+- Updated .github/nightly-logs/01-hardening-coverage.log
+
+---
+*PR created automatically by Jules for task [3753966042194970854](https://jules.google.com/task/3753966042194970854) started by @AlbiDR*
+
+---
+
 ## [2026-07-08] PR #1055: perf(apk-optimization): optimize SW precache and prune orphaned resources
 **Commit**: `f68eb7d3d11f66100b7fb40790fb57cef3ce565b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1055)
