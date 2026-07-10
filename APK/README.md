@@ -49,12 +49,14 @@ The PWA interfaces with the native layer via `window.AndroidBridge`. The presenc
 ```
 APK/
   README.md - Documentation kernel
+  src/ - Clean human-readable Java source files (authoritative source of truth)
+    main/java/com/albidr/clashmanager/ - Native Java classes (BlitzService, MainActivity, etc.)
   android/ - Decoded APK structure containing the active assets and layout
     AndroidManifest.xml - Service configurations, intents, and hardware permissions
     apktool.yml - Package metadata and version info
-    classes.dex - Compiled Kotlin native layer binaries
+    classes.dex - Compiled Kotlin native layer binaries (generated from src/)
     res/ - Application resources and theme variables
-  build-apk.sh - Shell script for building, aligning, signing, and verifying the package
+  build-apk.sh - Orchestrates source compilation (src -> dex -> apk), alignment, signing, and verification
   gen-android-icons.mjs - Generator utility for adaptive launcher icons
   verify-apk-integrity.mjs - Release validation script asserting the integrity of built APKs
   verify-android-source.mjs - Integration check asserting the integrity of the android source tree
@@ -91,7 +93,7 @@ pnpm apk:verify <path>    # Perform integrity checks on a specified package file
 
 - **Version Management**: Update version mappings in `android/apktool.yml` under `versionInfo`.
 - **Launcher Icons**: Execute `pnpm icons:android` to regenerate adaptive assets into `android/res` using the master vector logo. The configuration maps themed foregrounds and backgrounds.
-- **Native Implementation**: The native Kotlin layer is maintained within `android/classes.dex`. Modifying compiling structures requires de-compiling the binary, reconstructing the source project, and rebuilding the classes artifact.
+- **Native Implementation**: Custom Java classes are modified directly under `APK/src/main/java/com/albidr/clashmanager/`. Running `./build-apk.sh` compiles these files, generates a Dalvik DEX payload, injects it into `android/classes.dex`, and triggers the repackage build automatically.
 
 ---
 <br>
