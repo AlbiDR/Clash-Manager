@@ -137,10 +137,11 @@
 | vue-tsc | ^3.3.6 | ^3.3.7 | 2026-07-08 | PASS |
 | simple-git-hooks | ^2.11.1 | ^2.13.1 | 2026-07-08 | PASS |
 | @types/node | ^26.1.0 | ^26.1.1 | 2026-07-09 | PASS |
+| @supabase/supabase-js | ^2.110.1 | ^2.110.2 | 2026-07-10 | PASS |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
 | vite | ^7.3.6 | 8.1.4 | 2026-06-18 | [Updated] Breaking: Single Rust-based bundler (Rolldown). Renames `build.rollupOptions` to `build.rolldownOptions`. CJS interop changes. |
 | typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure. |
-| pnpm | >=10.32.1 | 11.10.0 | 2026-06-18 | [Updated] Breaking: Node 22+ required. Significant changes for CI/Docker and workspace-level configuration. |
+| pnpm | >=10.32.1 | 11.11.0 | 2026-06-18 | [Updated] Breaking: Node 22+ required. Significant changes for CI/Docker and workspace-level configuration. |
