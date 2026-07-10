@@ -2,7 +2,7 @@
 #
 # build-apk.sh — Local Clash Manager APK compilation & sanity checks.
 #
-# Compiles the custom Java sources from APK/src/main/java/ into a DEX file,
+# Compiles the custom Java sources from APK/src/ into a DEX file,
 # merges them into the smali files extracted from the base APK, builds the
 # android/ directory, and runs apktool to verify build success and integrity.
 #
@@ -18,9 +18,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 ANDROID_DIR="${ROOT}/android"
-SRC_DIR="${ROOT}/src/main/java"
+SRC_DIR="${ROOT}/src"
 OUT="${ROOT}/build-apk-out"
-TMP_DIR="/tmp/clash-apk-build"
+TMP_DIR="${ROOT}/.build"
 
 mkdir -p "${OUT}"
 
@@ -72,8 +72,8 @@ apktool d -f "${OUT}/clashmanager-unsigned.apk" -o "${TMP_DIR}/smali-orig" 2>/de
 # Overwrite original Blitz/MainActivity/Accessibility smali files with our newly compiled clean smali classes
 echo "▶ Injecting new custom layer classes into smali tree..."
 # Remove any JADX-style synthetic lambda stubs that might linger in original smali
-rm -f "${TMP_DIR}/smali-orig"/smali/com/albidr/clashmanager/BlitzService\$\$ExternalSyntheticLambda*.smali
-rm -f "${TMP_DIR}/smali-orig"/smali/com/albidr/clashmanager/MainActivity\$AndroidBridge\$\$ExternalSyntheticLambda*.smali
+rm -f "${TMP_DIR}/smali-orig"/smali/com/albidr/clashmanager/BlitzService\$\$\$ExternalSyntheticLambda*.smali
+rm -f "${TMP_DIR}/smali-orig"/smali/com/albidr/clashmanager/MainActivity\$AndroidBridge\$\$\$ExternalSyntheticLambda*.smali
 
 # Copy new smali over
 cp "${TMP_DIR}/smali-new"/smali/com/albidr/clashmanager/*.smali "${TMP_DIR}/smali-orig/smali/com/albidr/clashmanager/"

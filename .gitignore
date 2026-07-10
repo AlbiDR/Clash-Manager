@@ -109,3 +109,4 @@ APK/build-apk-out/*
 !APK/build-apk-out/clashmanager-v*.apk
 
 
+APK/.build
