@@ -104,6 +104,13 @@
 - Verified security settings: confirmed forbidden cleartext traffic (android:usesCleartextTraffic="false") and sanitized permission set in AndroidManifest.xml.
 - Verified custom native layer integrity via apk:verify:source (PASS).
 
+[2026-07-10] Stage 10: APK & PWA Wrapper Integrity Audit
+- Synchronized TWA manifest dark mode and navigation colors (`themeColorDark`, `navigationColor`, `navigationColorDark`) in `twa-manifest.json` from `#000000` to brand theme `#0b0e14`.
+- Synchronized Android resource colors (`colorPrimaryDark`, `navigationColor`, `navigationColorDark`) in `colors.xml` to `#0b0e14` to ensure shell/navigation consistency.
+- Hardened `audit-wrapper-integrity.mjs` with automated advanced color parity checks across PWA, TWA, and Android resource substrate.
+- Verified monorepo-wide integrity and synchronization at v14.2.6 (appVersionCode 14260).
+- Validated via `audit:apk`, `apk:verify:source`, and monorepo test gate using Node 22 bypass flags.
+
 [2026-11-20] Stage 10: APK & PWA Wrapper Integrity Audit (Simulated)
 - Synchronized APK/reference/twa-manifest.json with PWA manifest (natural orientation, lowercase colors).
 - Injected authoritative SHA-256 fingerprint into twa-manifest.json for Digital Asset Link integrity.
