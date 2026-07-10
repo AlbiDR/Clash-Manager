@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { createClient } from "npm:@supabase/supabase-js@2.110.0";
+import { createClient } from "npm:@supabase/supabase-js@2.110.1";
 import { loadConfig } from "../_shared/vault.ts";
 import { setKeys } from "../_shared/muscle.ts";
 

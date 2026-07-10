@@ -3,6 +3,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import Icon from "./Icon.vue";
+import { vTactile } from "../directives/vTactile";
 import { useScoreSelector } from "../composables/useScoreSelector";
 
 /**
@@ -20,6 +21,9 @@ import { useScoreSelector } from "../composables/useScoreSelector";
  *
  * [DECISION LOG] Delegated complex UI orchestration (scroll, expansion, haptics)
  * to the useScoreSelector composable to maintain a clinical, presentational view.
+ *
+ * [DECISION LOG] Modernized touch targets (48px footprint) and integrated v-tactile
+ * for consistent physical response in the hybrid shell (Target B.2 / A.2).
  */
 
 const props = defineProps<{
@@ -62,6 +66,7 @@ defineExpose({
   <div class="score-pill-group" :class="{ expanded: isScoreExpanded, disabled: props.disabled }">
     <!-- Comparison Mode Toggle -->
     <button
+      v-tactile
       class="mode-toggle"
       @click="toggleMode"
       :disabled="props.disabled"
@@ -73,7 +78,7 @@ defineExpose({
     </button>
 
     <!-- Main Trigger / Label -->
-    <button class="sp-trigger" @click="toggleExpand" :disabled="props.disabled">
+    <button v-tactile class="sp-trigger" @click="toggleExpand" :disabled="props.disabled">
       <span class="sp-label">{{ props.value }}</span>
       <span class="sp-chevron" :class="{ rotated: isScoreExpanded }">
         <Icon name="chevron_down" size="14" />
@@ -85,6 +90,7 @@ defineExpose({
       <button
         v-for="threshold in thresholds"
         :key="threshold"
+        v-tactile
         class="val-opt"
         :class="{ active: props.value === threshold }"
         @click="selectValue(threshold)"
@@ -101,15 +107,17 @@ defineExpose({
   align-items: center;
   background: var(--sys-color-surface-container-highest);
   border-radius: 12px;
-  padding: 3px;
-  gap: 2px;
+  padding: 4px;
+  gap: 4px;
   transition: all 0.4s var(--sys-motion-spring);
   border: 1px solid var(--sys-color-outline-variant);
-  min-width: 84px;
+  min-width: 92px;
+  height: 48px; /* 48px Mobile Footprint (Target B.2) */
   position: relative;
   /* Default: Compact width, only what's needed */
   flex: 0 0 auto;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .score-pill-group.expanded {
@@ -129,9 +137,9 @@ defineExpose({
 }
 
 .mode-toggle {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   border: none;
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
@@ -148,7 +156,7 @@ defineExpose({
 }
 
 .mode-symbol {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
 }
@@ -158,16 +166,16 @@ defineExpose({
   border: none;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 6px;
-  height: 30px;
+  gap: 6px;
+  padding: 0 10px;
+  height: 40px;
   color: var(--sys-color-on-surface);
   cursor: pointer;
   justify-content: center;
 }
 
 .sp-label {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
   min-width: 24px;
@@ -188,7 +196,7 @@ defineExpose({
 .value-picker {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 0 4px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -215,14 +223,14 @@ defineExpose({
 }
 
 .val-opt {
-  height: 28px;
-  min-width: 36px;
-  padding: 0 6px;
-  border-radius: 7px;
+  height: 36px;
+  min-width: 44px;
+  padding: 0 8px;
+  border-radius: 8px;
   border: none;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 850;
   font-family: var(--sys-font-family-mono);
   cursor: pointer;

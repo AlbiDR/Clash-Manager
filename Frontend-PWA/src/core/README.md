@@ -40,6 +40,7 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **StorageService.ts**: The persistence engine. Brokers access to IndexedDB via the `idbKernel` and manages high-fidelity caching.
 - **useClashDataStore.ts**: The authoritative central store for high-integrity clan datasets. Delegates sync logic to `useClashSync.ts`.
 - **useClashSync.ts**: The specialized kernel for managing the lifecycle of the central data store, including hydration and background synchronization.
+- **useClashLoader.ts**: Orchestrates route-level hydration, ensuring a Stale-While-Revalidate (SWR) topology by awaiting local cache before firing background network refreshes.
 - **useConsoleController.ts**: The primary orchestrator for complex list views (Roster, Headhunter). Manages domain-blind infrastructure (filtering, sorting, progressive rendering) and delegates selection logic to `useConsoleSelection.ts`.
 - **useConsoleSelection.ts**: Orchestrates batch selection logic (Select All, Score-based thresholding) for console views, decoupling selection handlers from the main controller.
 - **useBlitzMode.ts**: Orchestrates the automated batch deep-linking ("Blitz") pipeline shared by console views.
@@ -47,7 +48,7 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useConnectionStatus.ts**: Unifies physical network status and logical API availability.
 - **useConsoleMetadata.ts**: Manages connectivity status and statistics badges for the list orchestrator.
 - **useProgressiveList.ts**: Time-sliced rendering engine for high-density list stability.
-- **useListFilter.ts**: High-performance engine for searching and sorting large datasets.
+- **useListFilter.ts**: High-performance engine for searching and sorting large datasets using `WeakMap` caching.
 - **useSelectionStore.ts**: Manages sets of selected item identifiers for batch operations.
 - **useUiCoordinator.ts**: Master arbiter of layout spacing and global FAB state.
 - **useToast.ts**: Global notification service.
@@ -61,6 +62,7 @@ Infrastructure singletons and Layer 1 state orchestrators.
 - **useStoragePersistence.ts**: Brokered access to prevent silent data eviction.
 - **useBackHandler.ts**: Orchestrates hardware back button interception.
 - **useBadge.ts**: Cross-platform application badging (Native vs Notification fallback).
+- **useNativeBridge.ts**: Central orchestrator for the Native Android JSBridge, brokering hardware permissions and Blitz Mode calibration coordinates for the TWA wrapper.
 - **useNetworkInfo.ts**: Layer 1 broker for network telemetry and degradation detection.
 - **useShare.ts / useShareTarget.ts / useExternalLink.ts**: Native sharing and OS intent brokerage.
 - **useBroadcastChannel.ts**: Cross-tab state synchronization.
@@ -75,7 +77,7 @@ The visual DNA of the application. Orchestrates a clinical, CSS-variable-driven 
 - **Theme Injection**: Logic for dynamic Light/Dark theme swapping and `theme-color` meta-tag orchestration.
 - **Icon Paths**: Centralized SVG path definitions for the `Icon.vue` primitive.
 
-### Domain Types (`/types`)
+### [Domain Types (`/types`)](./types/README.md)
 Authoritative TypeScript interfaces and enums used across the entire application.
 
 ### Utility Kernels (`/utils`)
@@ -90,6 +92,7 @@ Pure, stateless logic engines and formatting primitives.
 - **bezier.ts**: Geometric foundations for data visualization and smooth SVG path generation.
 - **sortOptions.ts & sortStrategies.ts**: Centralized logic for list orchestration, providing both UI metadata and clinical comparator functions.
 - **mockData.ts**: High-fidelity synthetic payload generator for the Synthetic Data engine, ensuring UI stability during demonstration and testing.
+- **locale.ts**: Maps browser navigator language to Supercell-supported locale codes for external URL generation.
 
 ---
 

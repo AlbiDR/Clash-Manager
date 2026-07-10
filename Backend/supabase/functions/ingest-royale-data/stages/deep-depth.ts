@@ -45,10 +45,15 @@ export async function runDeepDepth(
             throw new Error(`Failed to fetch ingestion targets: ${targetsError?.message || 'Validation failed'}`);
         }
 
-        const targets = targetsValidation.output;
+        const targetsSnapshot = targetsValidation.output;
+
+        // [THREAT:] Accessing non-existent properties 'drivers.members'/'drivers.recruits' on
+        // the validated targetsSnapshot would lead to a runtime crash when spreading undefined.
+        // [DECISION LOG] Corrected property access to 'members' and 'recruits' to match
+        // the IngestionTargetsSchema contract defined in Layer 1 (rpcSchemas.ts).
         const ingestionTargets = [
-            ...targets['drivers.members'],
-            ...targets['drivers.recruits']
+            ...targetsSnapshot.members,
+            ...targetsSnapshot.recruits
         ];
 
         if (ingestionTargets.length > 0) {
@@ -114,9 +119,11 @@ export async function runDeepDepth(
             // Batch synchronize collected shadow leads
             if (globalShadowLeads.size > 0) {
                 // [THREAT:] Standardizing leads payload to prevent 'undefined' pathogens in ingestion.
-                const validLeads = Array.from(globalShadowLeads.entries()).map(([tag, data]) => ({
-                    player_tag: normalizeTag(tag),
-                    player_name: data.name,
+                // [DECISION LOG] Renamed anemic variables 'tag' and 'data' to 'playerTag' and 'opponentMetadata'
+                // to satisfy domain-descriptive naming constraints in Layer 1.
+                const validLeads = Array.from(globalShadowLeads.entries()).map(([playerTag, opponentMetadata]) => ({
+                    player_tag: normalizeTag(playerTag),
+                    player_name: opponentMetadata.name,
                     trophies: 0 // Battle logs do not provide ladder metrics.
                 }));
 

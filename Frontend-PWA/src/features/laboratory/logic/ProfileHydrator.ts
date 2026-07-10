@@ -33,19 +33,19 @@ const ProfileHydrator = {
    * Target B [4]: The 'any Plague' is eliminated.
    */
   hydrate(raw: unknown): PlayerData {
-    const result = v.safeParse(ProfileInputSchema, raw);
+    const profileValidationResult = v.safeParse(ProfileInputSchema, raw);
 
-    if (!result.success) {
+    if (!profileValidationResult.success) {
       // THREAT: Corrupted or malicious data crashing the simulation engine.
       // Target B [1]: Fail loudly at the boundary to prevent silent state corruption.
       // Rationale: By throwing instead of returning a default, we ensure that
       // downstream simulation logic never executes on unvalidated or partial state.
-      const firstIssue = result.issues[0]?.message || "Invalid Profile Structure";
+      const firstIssue = profileValidationResult.issues[0]?.message || "Invalid Profile Structure";
       throw new Error(`Profile Extraction Failed: ${firstIssue}`);
     }
 
-    const data = result.output;
-    const isInternal = "profile" in data;
+    const profileDataSnapshot = profileValidationResult.output;
+    const isInternal = "profile" in profileDataSnapshot;
     
     let profile: PlayerProfile;
     // Internal mapping structures are typed based on schema outputs to avoid 'any'.
@@ -53,17 +53,17 @@ const ProfileHydrator = {
 
     if (isInternal) {
       // PATHOGEN: Anemic variable 'p' replaced with domain-descriptive 'rawProfile'.
-      const rawProfile = data.profile;
+      const rawProfile = profileDataSnapshot.profile;
       profile = {
         name: rawProfile.name || "Unknown",
         tag: rawProfile.tag || "0",
         kingLevel: rawProfile.kingLevel || 1,
         xpIntoLevel: asXP(rawProfile.xpIntoLevel || 0)
       };
-      cardsData = data.cards || [];
+      cardsData = profileDataSnapshot.cards || [];
     } else {
-      const currentLevel = data.expLevel || 1;
-      const totalExp = data.expPoints || 0;
+      const currentLevel = profileDataSnapshot.expLevel || 1;
+      const totalExp = profileDataSnapshot.expPoints || 0;
       
       // Target B [1]: Robust extraction of relative XP from cumulative API points.
       // Rationale: The Clash Royale API provides total cumulative XP in 'expPoints'.
@@ -73,12 +73,12 @@ const ProfileHydrator = {
       const xpIntoLevel = Math.max(0, totalExp - Number(kingLevelRow.cumulative));
 
       profile = {
-        name: data.name || "Unknown",
-        tag: data.tag || "0",
+        name: profileDataSnapshot.name || "Unknown",
+        tag: profileDataSnapshot.tag || "0",
         kingLevel: currentLevel,
         xpIntoLevel: asXP(xpIntoLevel)
       };
-      cardsData = [...(data.cards || []), ...(data.towerTroops || [])];
+      cardsData = [...(profileDataSnapshot.cards || []), ...(profileDataSnapshot.towerTroops || [])];
     }
 
     const cards: Card[] = cardsData.map((cardSnapshot) => {
@@ -97,19 +97,19 @@ const ProfileHydrator = {
         level: level,
         count: cardSnapshot.count || 0,
         // BUGFIX: Ensure boolean coercion is explicit to avoid 'undefined' leaks in domain models.
-        isTowerTroop: Boolean(cardSnapshot.isTowerTroop) || ( !isInternal && "towerTroops" in data && Array.isArray(data.towerTroops) && data.towerTroops.some((towerTroopSnapshot) => towerTroopSnapshot.name === cardSnapshot.name) ) || false
+        isTowerTroop: Boolean(cardSnapshot.isTowerTroop) || ( !isInternal && "towerTroops" in profileDataSnapshot && Array.isArray(profileDataSnapshot.towerTroops) && profileDataSnapshot.towerTroops.some((towerTroopSnapshot) => towerTroopSnapshot.name === cardSnapshot.name) ) || false
       };
     });
 
     const inventory: Inventory = {
-      gold: asGold(("inventory" in data ? data.inventory?.gold : 0) || 0),
-      gems: asGems(("inventory" in data ? data.inventory?.gems : 0) || 0),
+      gold: asGold(("inventory" in profileDataSnapshot ? profileDataSnapshot.inventory?.gold : 0) || 0),
+      gems: asGems(("inventory" in profileDataSnapshot ? profileDataSnapshot.inventory?.gems : 0) || 0),
       wildCards: {
-        Common: ("inventory" in data ? data.inventory?.wildCards?.Common : 0) || 0,
-        Rare: ("inventory" in data ? data.inventory?.wildCards?.Rare : 0) || 0,
-        Epic: ("inventory" in data ? data.inventory?.wildCards?.Epic : 0) || 0,
-        Legendary: ("inventory" in data ? data.inventory?.wildCards?.Legendary : 0) || 0,
-        Champion: ("inventory" in data ? data.inventory?.wildCards?.Champion : 0) || 0,
+        Common: ("inventory" in profileDataSnapshot ? profileDataSnapshot.inventory?.wildCards?.Common : 0) || 0,
+        Rare: ("inventory" in profileDataSnapshot ? profileDataSnapshot.inventory?.wildCards?.Rare : 0) || 0,
+        Epic: ("inventory" in profileDataSnapshot ? profileDataSnapshot.inventory?.wildCards?.Epic : 0) || 0,
+        Legendary: ("inventory" in profileDataSnapshot ? profileDataSnapshot.inventory?.wildCards?.Legendary : 0) || 0,
+        Champion: ("inventory" in profileDataSnapshot ? profileDataSnapshot.inventory?.wildCards?.Champion : 0) || 0,
       } as Record<Rarity, number>
     };
 

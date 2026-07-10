@@ -328,7 +328,6 @@
     <public type="color" name="abc_background_cache_hint_selector_material_light" id="0x7f060001" />
     <public type="color" name="abc_btn_colored_borderless_text_material" id="0x7f060002" />
     <public type="color" name="abc_btn_colored_text_material" id="0x7f060003" />
-    <public type="color" name="abc_color_highlight_material" id="0x7f060004" />
     <public type="color" name="abc_decor_view_status_guard" id="0x7f060005" />
     <public type="color" name="abc_decor_view_status_guard_light" id="0x7f060006" />
     <public type="color" name="abc_hint_foreground_material_dark" id="0x7f060007" />

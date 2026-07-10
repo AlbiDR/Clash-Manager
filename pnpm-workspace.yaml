@@ -13,8 +13,8 @@ catalogs:
     # Infrastructure
     "@ast-grep/cli": "^0.44.1"
     "@formkit/auto-animate": "^0.9.0"
-    "@supabase/supabase-js": "^2.110.1"
-    "@types/node": "^26.1.0"
+    "@supabase/supabase-js": "^2.110.2"
+    "@types/node": "^26.1.1"
     "@vite-pwa/assets-generator": "^1.0.2"
     "@vitejs/plugin-vue": "^6.0.7"
     "@vue/test-utils": "^2.4.11"
@@ -23,7 +23,7 @@ catalogs:
     jsdom: "^29.1.1"
     knip: "^6.25.0"
     p-limit: "^7.3.0"
-    simple-git-hooks: "^2.11.1"
+    simple-git-hooks: "^2.13.1"
     supabase: "^2.109.1"
     pinia: "^3.0.4"
     rollup-plugin-visualizer: "^7.0.1"
@@ -41,6 +41,6 @@ catalogs:
     # Core Shared Dependencies (Consolidated)
     vue: "^3.5.39"
     vue-router: "^5.1.0"
-    vue-tsc: "^3.3.6"
+    vue-tsc: "^3.3.7"
     workbox-precaching: "^7.4.1"
     workbox-window: "^7.4.1"

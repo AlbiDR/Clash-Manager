@@ -41,7 +41,7 @@ const CHANNEL_NAME = "clash_manager_broadcast";
  * - `post`: Function to broadcast a message to all other active tabs.
  */
 export function useBroadcastChannel(
-  onMessage?: (msg: BroadcastMessage) => void,
+  onMessage?: (incomingMessage: BroadcastMessage) => void,
 ) {
   let channel: BroadcastChannel | null = null;
 
@@ -78,12 +78,17 @@ export function useBroadcastChannel(
   /**
    * LIFECYCLE CLEANUP
    *
-   * Rationale: Explicitly closing the channel and removing listeners prevents
-   * memory leaks and ensures the browser can efficiently garbage collect
-   * the execution context when the component unmounts.
+   * @remarks
+   * [THREAT:] Memory Leak. Orphaned event listeners and open communication channels
+   * can prevent garbage collection and lead to performance degradation over time.
+   * [DECISION LOG] Explicit Cleanup: Closing the channel and removing listeners
+   * ensures the browser can efficiently garbage collect the execution context
+   * when the component unmounts.
    *
    * [GUARD] Logic: Safe lifecycle management.
-   * Rationale: Composables used in Pinia or services may not have a component instance.
+   * [DECISION LOG] Instance Check: Composables used in Pinia or services may not
+   * have a component instance. We only attach the `onUnmounted` hook if an
+   * active component instance is detected to prevent Vue runtime warnings.
    */
   const componentInstance = getCurrentInstance();
   if (componentInstance) {
@@ -96,7 +101,9 @@ export function useBroadcastChannel(
   }
 
   return {
+    /** Boolean indicating if the Broadcast Channel API is available in the runtime. */
     isSupported: !!channel,
+    /** Function to broadcast a message to all other active tabs. */
     post,
   };
 }

@@ -73,175 +73,58 @@ The application utilizes a custom-engineered **Sovereign Design System** built o
 
 The application kernel (@core) manages complex system-level behaviors through specialized Layer 1 services:
 
-### 1. Persistence Layer (`StorageService`)
-The resilient persistence engine for the application using IndexedDB with a robust in-memory fallback.
-- **Kernel Extraction**: Utilizes the `@core/utils/idbKernel.ts` utility to handle low-level IndexedDB boilerplate and memory-fallback logic.
-- **Clinical Isolation**: Abstracts the complexities of IndexedDB and provides a unified interface for CRUD operations.
-- **Fail-Safe Fallback**: Automatically switches to an ephemeral `memoryStore` if IndexedDB is unavailable (e.g., Private Browsing or restricted environments).
-- **Migration Protocol**: Implements an idempotent migration bridge to ensure data persistence during version upgrades.
+### Persistence & Data Lifecycle
+1. **Persistence Layer (`StorageService`)**: The authoritative persistence engine. Brokers access to IndexedDB via the `idbKernel` and manages high-fidelity caching with in-memory fallback.
+2. **Unified State & Sync (`useClashDataStore`)**: The central store for high-integrity clan datasets. Delegates sync logic to `useClashSync.ts`.
+3. **Synchronization Engine (`useClashSync`)**: Orchestrates the lifecycle of the central data store, including hydration from local cache and background synchronization.
+4. **Data Hydration Orchestrator (`useClashLoader`)**: Orchestrates route-level hydration, ensuring a Stale-While-Revalidate (SWR) topology by awaiting local cache before firing background network refreshes.
+5. **Storage Protection (`useStoragePersistence`)**: Brokered access to the Storage Manager API to prevent silent data eviction by explicitly requesting origin persistence.
+6. **Selection Orchestrator (`useSelectionStore`)**: Manages the persistence and synchronization of item selection states for batch operations.
 
-### 2. Unified State & Sync (`useClashDataStore`)
-The authoritative Layer 1 central store for high-integrity clan datasets.
-- **Sync Delegation**: Consumes the `useClashSync` service to manage reactive state mutation (data, timestamps, source), metadata sync, and IndexedDB persistence.
-- **Direct View Access**: Utilizes authoritative Supabase feature views (`roster_view`, `headhunter_view`) to bypass legacy RPC bottlenecks.
-- **High-Fidelity Metadata**: Preserves server-side lifecycle markers (`lastCompiledTime`, `lastFetchedTime`) to ensure accurate data age calculations across distributed environments.
-- **SWR Hydration Pattern**: Implements a zero-latency "Stale-While-Revalidate" hydration strategy by loading from IndexedDB on boot while updating from the Supabase backend in the background.
-- **Validation Boundary**: All inbound payloads are strictly validated against domain-specific schemas (e.g., `WebAppDataSchema` in `AppSchemas.ts`) to prevent "any" plague propagation.
+### Console & List Orchestration
+7. **List Orchestration (`useConsoleController`)**: The primary orchestrator for complex feature views. Manages domain-blind infrastructure (filtering, sorting, progressive rendering, selection).
+8. **Selection Logic Orchestrator (`useConsoleSelection`)**: Decouples batch selection logic (Select All, Score-based thresholding) from the main controller.
+9. **Optimized List Logic (`useListFilter`)**: High-performance engine for searching and sorting large datasets using `WeakMap` caching for O(1) field lookups.
+10. **Console Metadata (`useConsoleMetadata`)**: Decouples connectivity status and statistics badge logic from console controllers to maintain architectural purity.
+11. **Progressive Rendering Engine (`useProgressiveList`)**: Time-sliced rendering engine utilizing `requestIdleCallback` to maintain 60FPS UI stability.
+12. **Automated Batch Actions (`useBlitzMode`)**: Orchestrates the automated batch deep-linking ("Blitz") pipeline shared by console views.
 
-### 3. Selection Orchestrator (`useSelectionStore`)
-A domain-blind utility for managing a set of selected item identifiers.
-- **Selection Mode**: Facilitates multi-selection states and forced-selection overrides for batch operations.
-- **Atomic Operations**: Provides handlers for toggling individual items, bulk selection (`selectAll`), and clearing state.
+### Connectivity & System Health
+13. **Connectivity Hub Orchestrator (`useConnectivityManager`)**: Master arbiter of 8-tier system health and synchronization status confidence.
+14. **Connectivity Arbitrator (`useConnectionStatus`)**: Unifies physical network status and logical API availability into a single source of truth.
+15. **Advanced Network Telemetry (`useNetworkInfo`)**: Hardware broker for network telemetry (RTT, Downlink) and degradation detection.
+16. **Visibility Orchestrator (`useVisibilityRefresh`)**: Triggers background data refreshes based on document visibility changes.
+17. **Cross-Tab Synchronization (`useBroadcastChannel`)**: Facilitates cross-tab/window communication for synchronized state updates (e.g., settings).
+18. **Native Bridge Orchestrator (`useNativeBridge`)**: Central orchestrator for the Native Android JSBridge, brokering hardware permissions and Blitz Mode calibration coordinates for the TWA wrapper.
+19. **Cross-Platform Badging (`useBadge`)**: Centralized manager for application-level badges (Home Screen, Dock) with support for hardware-brokered native updates.
 
-### 4. List Orchestration (`useConsoleController`)
-The primary Layer 1 orchestrator for high-density list views (Roster, Headhunter, Laboratory).
-- **Layout Orchestration**: Centralizes communication with the `ConsoleLayout` component via standardized `layoutProps` and `layoutEvents` interfaces, reducing boilerplate in feature views.
-- **Domain Decoupling**: Bridges domain-blind infrastructure (filtering, sorting, progressive rendering, selection) with feature-level requirements.
-- **Metadata Integration**: Consumes `useConsoleMetadata` to provide consistent system health feedback and item statistics.
-- **Performance Orchestration**: Centralizes item metadata resolution and `v-memo` key generation to ensure consistent rendering optimizations across feature views.
-- **Lifecycle Management**: Monitors document visibility and triggers automatic background refreshes after extended inactivity (30m+) to ensure data currency.
+### Application Shell & Logic
+20. **Settings Store (`useAppSettings`)**: Multi-tier strategy for application configuration, mirrored across `LocalStorage` and `IndexedDB`.
+21. **PWA Lifecycle Manager (`usePwaManager`)**: Manages infrastructure-level PWA lifecycle (SW updates, recovery protocols).
+22. **UI Coordination (`useUiCoordinator`)**: Master arbiter of layout spacing and global FAB (Floating Action Button) state.
+23. **Hardware Navigation (`useBackHandler`)**: Orchestrates hardware back button behavior in hybrid environments, ensuring predictable navigation stack exit.
+24. **Statistical Benchmarking (`useBenchmarking`)**: Statistical engine for comparing individual metrics against clan averages using single-pass O(N) optimization.
+25. **Deep Link Navigation (`useDeepLinkHandler`)**: Manages item expansion and auto-scroll based on URL parameters.
+26. **Intent Orchestration (`useExternalLink`)**: Hardware broker for OS intents and browser navigation, implementing platform-specific deep-linking strategies.
+27. **Metadata Centralization (`useSystemInfo`)**: SSOT for application versioning and global modes (Showcase, Blueprint, Synthetic).
+28. **Audit Mode Orchestration (`useShowcaseMode`)**: Global UI simulation engine for high-fidelity demonstration and auditing.
+29. **Geometric Skeletons (`useBlueprintMode`)**: Orchestrates the "Blueprint" overlay for rapid UI prototyping and architectural review.
+30. **Synthetic Data Engine (`useSyntheticMode`)**: Enables synthetic data injection for stress-testing and zero-network development.
+31. **Native Share Broker (`useShare`)**: Unified hardware broker for the Web Share API, providing defensive error handling for native share interactions.
+32. **Share Intent Processor (`useShareTarget`)**: Orchestrates the Web Share Target API, extracting player tags from incoming OS share intents.
+33. **Haptic Notification System (`useToast`)**: Global notification service with semantic hardware haptic pairing via `@shared/composables/useHaptics`.
 
-### 5. Console Metadata (`useConsoleMetadata`)
-Extracts connectivity status and statistics badge logic from the list orchestrator to facilitate Layer 1 architectural purity.
-- **Status Tiering**: Resolves tiered system health (text/type) based on `useConnectivityManager` diagnostics.
-- **Dynamic Statistics**: Manages item counters in the header, supporting special display modes (Showcase, Blueprint).
+---
+<br />
 
-### 6. Visibility Orchestrator (`useVisibilityRefresh`)
-Triggers background refreshes based on document visibility changes.
-- **Threshold Enforcement**: Enforces a standardized time-based threshold (defined in core config) to prevent redundant network requests when switching between apps.
+## Shared Behavioral Logic (@shared/composables)
 
-### 7. PWA Lifecycle Manager (`usePwaManager`)
-Centralizes infrastructure-level PWA lifecycle and recovery logic.
-- **Update Orchestration**: Manages Service Worker updates and check-for-update triggers via the native `navigator.serviceWorker` API.
-- **Disaster Recovery**: Implements non-destructive cache purging and destructive factory resets to resolve deep state corruption.
-- **Layer 1 Purity**: Acts as a core service, decoupling infrastructure concerns from feature-level settings logic.
+The application utilizes stateful logic engines (Layer 2) to manage component-level behaviors and hardware brokerage:
 
-### 8. Settings Store (`useAppSettings`)
-A multi-tier strategy for application configuration and feature flags.
-- **Cross-Layer Visibility**: Settings are mirrored between `LocalStorage` (for main-thread UI) and `IndexedDB` (for Service Worker access).
-- **Tab Synchronization**: Listens for the global `storage` event to ensure configuration remains atomic and consistent across multiple open browser tabs.
-- **Validation Boundary**: Enforces strict Valibot schema validation on all data retrieved from storage to prevent UI instability.
-
-### 9. Progressive Rendering Engine (`useProgressiveList`)
-Maintains 60FPS UI performance when handling large datasets via a time-sliced rendering strategy.
-- **Idle Budgeting**: Utilizes `requestIdleCallback`'s `IdleDeadline` to process multiple items per frame without blocking the main interaction thread.
-- **Adaptive Chunking**: Implements a dynamic sizing strategy (10 vs 20 items per chunk depending on total list size) to balance rendering speed with frame stability.
-- **Churn Prevention**: Implements an incremental update strategy for minor dataset changes (< 5 items) to prevent jarring layout shifts and scroll jumps.
-- **Memory Safety**: Uses `shallowRef` to minimize reactive overhead and ensures deterministic cleanup via `onScopeDispose`.
-
-### 10. Haptic Notification System (`useToast`)
-A resilient, global notification service with integrated hardware feedback.
-- **Hardware Brokerage**: Pairs semantic notification types (Success, Error, Info) with specific haptic patterns via the `useHaptics` engine to provide physical confirmation.
-- **Interaction Safety**: Implements an 800ms debounce-locked action handler to prevent race conditions during rapid user input on high-consequence actions like "UNDO".
-
-### 11. Connectivity Singleton (`useApiState`)
-The authoritative Layer 1 arbiter of backend availability and handshake discovery (located in `@core/api/`).
-- **Handshake Discovery**: Orchestrates the initial handshake to detect Supabase availability and configuration status.
-
-### 12. Connectivity Arbitrator (`useConnectionStatus`)
-Unifies physical network status and logical API availability into a single source of truth.
-- **Priority Resolution**: Implements a 6-tier priority queue (Physical Offline -> Logical Offline -> Success -> Syncing -> Slow -> Online) to ensure the most critical status is always visible.
-- **Reactive Deltas**: Automatically manages window listeners and provides reactive feedback for network transitions and speed degradation.
-
-### 13. Connectivity Hub Orchestrator (`useConnectivityManager`)
-Orchestrates data provenance, synchronization health, and UI-level connectivity indicators.
-- **Confidence Scoring**: Calculates a health score based on network status, sync activity, and data age.
-- **8-Tier Health Hierarchy**: Implements a strict priority-based status resolver (SYNCING > Sync Error > Invalid API URL > OFFLINE > STALE > DB > LOCAL > INITIALIZING) to ensure the most critical system state is always prioritized in the UI.
-- **Metadata Normalization**: Bridges the gap between raw store metadata and human-readable temporal indicators (e.g., "10m ago").
-
-### 14. Synchronization Engine (`useClashSync`)
-The specialized Layer 1 kernel for managing the lifecycle of the central data store.
-- **Unified Sync Flow**: Orchestrates hydration from local cache (IndexedDB) and background synchronization from the Supabase backend.
-- **Persistence Management**: Manages high-fidelity dataset persistence and atomic local updates for individual player profiles.
-
-### 15. Statistical Benchmarking (`useBenchmarking`)
-A high-performance O(N) engine for comparing individual metrics against clan-wide averages.
-- **Single-Pass Optimization**: Aggregates mean, min, and max values across all metrics in a single traversal of the dataset to minimize CPU cycles.
-- **Tier Resolution**: Dynamically classifies performance into 4 tiers (Elite, Top Tier, Growing, Under) based on statistical deviations from the mean.
-- **Singleton Pattern**: Shares pre-calculated statistical models across all component instances via a module-level cache.
-
-### 16. UI Coordination (`useUiCoordinator`)
-The master arbiter of layout spacing and element visibility.
-- **Occlusion Prevention**: Dynamically calculates bottom offsets for the `FabIsland` and `ToastContainer` to ensure interactive elements never overlap.
-- **Singleton Control**: Manages a global FAB state, allowing different feature views to register actions and labels in a unified UI layer.
-
-### 17. Deep Link Navigation (`useDeepLinkHandler`)
-Manages item expansion and auto-scroll based on URL query parameters.
-- **Navigation Safety**: Implements a 'run-once' guard to prevent layout jumps during background data refreshes.
-- **Context Awareness**: Constructively scrolls specific roster or headhunter items into view upon landing via 'pin' parameters.
-
-### 18. Metadata Centralization (`useSystemInfo`)
-Provides a single source of truth for application versioning and specialized global modes (Showcase, Blueprint, Synthetic). Implements a priority queue for display badges (Showcase > Blueprint > Synthetic).
-
-### 19. Audit Mode Orchestration (`useShowcaseMode`)
-Acts as the master arbiter for the application's demonstration and auditing states.
-- **Master-Child Sync**: Implements a MASTER -> CHILD propagation pattern, ensuring that toggling Showcase Mode automatically synchronizes both Blueprint and Synthetic child modes.
-- **Reactive Resolution**: Utilizes a child-to-master watcher to automatically activate the Showcase status if both constituent modes are manually enabled.
-
-### 20. Geometric Skeletons (`useBlueprintMode`)
-Allows for layout stability auditing by forcing the application into a structural-only state.
-- **Visual Pruning**: Strips decorative elements from components, leaving only geometric skeletons to facilitate interaction design debugging.
-- **Singleton Persistence**: Ensures all components share a unified toggle status, persisted to `localStorage` for cross-session consistency.
-
-### 21. Synthetic Data Engine (`useSyntheticMode`)
-Decouples the UI from live backend dependencies for demonstration and testing.
-- **High-Fidelity Mocks**: Enables a global toggle that redirects data ingestion to high-fidelity synthetic payloads.
-- **Isolation**: Acts as a Layer 1 singleton to ensure data consistency across the entire application shell.
-
-### 22. Storage Protection (`useStoragePersistence`)
-Brokered access to the Storage Manager API to prevent silent data eviction.
-- **Origin Persistence**: Explicitly requests the browser to grant "persisted" status to the application's origin, ensuring IndexedDB and localStorage remain intact under device storage pressure.
-- **Status Monitoring**: Provides reactive signals for `isSupported` and `isPersisted` states.
-
-### 23. Hardware Navigation (`useBackHandler`)
-Orchestrates hardware back button interception for modal and overlay management.
-- **History Shimming**: Implements a "synthetic state" strategy by pushing temporary entries to the browser history stack, allowing 'popstate' events to close UI components rather than navigating away.
-- **Android Optimization**: Specifically designed to provide a native-feeling "back to close" experience on mobile devices.
-
-### 24. Share Intent Processor (`useShareTarget`)
-Infrastructure kernel for handling incoming Web Share Target API intents.
-- **Tag Extraction**: Utilizes specialized regex to identify player tags (#XXXX) from shared OS text, titles, or URLs.
-- **Intent Redirection**: Automatically cleans the history state and redirects to the Recruiter view with extracted tags applied as active filters.
-
-### 25. Adaptive Haptics Engine (`useHaptics`)
-Brokered access to device vibration hardware for tactical physical feedback.
-- **Battery Awareness**: Implements power-aware scaling, automatically reducing vibration intensity when the device is in low-power mode or below 20% battery.
-- **Interaction Security**: Enforces a strict user-gesture requirement before allowing hardware access to comply with browser security models.
-
-### 26. Cross-Platform Badging (`useBadge`)
-Orchestrates application-level notification badges across inconsistent platform APIs.
-- **Dual-Path Strategy**: Utilizes the native W3C Badge API for iOS/Desktop and a persistent notification fallback for Android.
-- **Flood Protection**: Implements a 1500ms debounce and exponential backoff retry mechanism to prevent API exhaustion and Service Worker instability.
-
-### 27. Intent Orchestration (`useExternalLink`)
-Specialized broker for deep-linking into external applications and the Clash Royale client.
-- **Hidden Anchor Pattern**: Employs a temporary DOM element with a 100ms cleanup lifecycle to trigger OS Intents without dropping PWA execution context.
-- **Android Intent Protocol**: Uses direct `intent://` schemes to ensure reliability when launching from sandboxed WebViews or Chrome Custom Tabs.
-
-### 28. Native Share Broker (`useShare`)
-Provides a unified interface for the Web Share API with defensive error management.
-- **Cancellation Handling**: Automatically silences `AbortError` exceptions to treat user cancellation as a successful termination of the UI flow.
-- **Capability Guard**: Proactively detects hardware sharing support before exposing interactive elements.
-
-### 29. Cross-Tab Synchronization (`useBroadcastChannel`)
-Ensures atomic state consistency across multiple open browser tabs/windows.
-- **Real-Time Events**: Dispatches high-priority messages for data synchronization success and recruit dismissal to prevent UI desynchronization.
-- **Memory Safety**: Implements deterministic cleanup of the communication channel on component unmount.
-
-### 30. Advanced Network Telemetry (`useNetworkInfo`)
-Layer 1 hardware broker for the Network Information API.
-- **Degradation Detection**: Proactively identifies "Slow" connection states based on high latency (>500ms RTT) or low bandwidth (<1Mbps downlink).
-- **Singleton Persistence**: Maintains a module-level state to ensure consistent connection metrics across all application call sites.
-
-### 31. Optimized List Logic (`useListFilter`)
-A domain-blind engine for high-performance searching and sorting of large datasets.
-- **WeakMap Caching**: Utilizes a module-level `WeakMap` to cache normalized search fields, achieving O(1) amortized lookup performance and maintaining 60FPS during active filtering.
-- **Stability Support**: Implements stable tie-breaking logic (Name -> ID) to ensure deterministic rendering order across sort transitions.
-
-### 32. Selection Logic Orchestrator (`useConsoleSelection`)
-Orchestrates batch selection logic for console views, decoupling complex selection handlers from the main controller.
-- **Domain Decoupling**: Provides a domain-agnostic interface for bulk selection and score-based thresholding.
-- **Thresholding Strategy**: Implements centralized logic for filtering items based on numeric performance scores (`ge` / `le`).
+- **Hardware & OS Brokerage**: Reactive interfaces for device vibration (`useHaptics`), screen wake locks (`useWakeLock`), and viewport-aware reactivity (`useViewport`).
+- **Interaction & Gesture Sensing**: High-performance gesture detection for long-press (`useLongPress`) and pull-to-refresh (`usePullToRefresh`).
+- **Data Visualization**: Mathematical foundations for translation of raw history data into visual structures (`useHistoryChart`, `useBaseHistoryChart`).
+- **Voyage Subsystem**: Specialized behavioral logic for Clan Voyage management (`useVoyageStore`, `useVoyageStatus`) promoted to Layer 2 for structural compliance.
 
 ---
 <br />

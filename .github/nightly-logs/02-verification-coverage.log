@@ -136,3 +136,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-07-06 | Frontend-PWA/src/core/theme/AppShell.ts | Zero Coverage gap closed; saturating tests for skeleton HTML and CSS variables
 2026-07-06 | Frontend-PWA/src/core/theme/base.ts | Zero Coverage gap closed; saturating tests for system tokens and gesture enforcement
 2026-07-07 | Frontend-PWA/src/core/utils/locale.ts | Zero Coverage gap closed; saturating tests for SSR fallback, BCP 47 normalization, and unsupported locales.
+2026-07-08 | Frontend-PWA/src/core/services/useClashLoader.ts | Zero Coverage gap closed; verified hydration orchestration and fire-and-forget refresh logic.

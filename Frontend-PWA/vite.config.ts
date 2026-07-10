@@ -101,8 +101,13 @@ export default defineConfig({
         // [OPTIMIZATION] Included webp for high-resolution game assets and screenshots.
         // Large branding screenshots and data-heavy game assets are excluded
         // to minimize SW cache footprint and update bandwidth.
+        // We also exclude the large variable font to prioritize the core app shell.
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
-        globIgnores: ["assets/branding/*.webp", "assets/game/*.webp"],
+        globIgnores: [
+          "assets/branding/*.webp",
+          "assets/game/*.webp",
+          "fonts/JetBrainsMono-Bold.woff2",
+        ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {

@@ -106,11 +106,11 @@ export function useToast() {
    * @param id - The ID of the toast to remove.
    */
   function remove(id: string) {
-    const idx = toasts.value.findIndex((t) => t.id === id);
-    if (idx !== -1) {
-      const toast = toasts.value[idx];
+    const toastIndex = toasts.value.findIndex((activeToast) => activeToast.id === id);
+    if (toastIndex !== -1) {
+      const toast = toasts.value[toastIndex];
       if (toast && toast.timer) clearTimeout(toast.timer);
-      toasts.value.splice(idx, 1);
+      toasts.value.splice(toastIndex, 1);
     }
   }
 
@@ -126,16 +126,16 @@ export function useToast() {
   function triggerAction(id: string) {
     if (processingIds.has(id)) return;
 
-    const idx = toasts.value.findIndex((t) => t.id === id);
-    if (idx !== -1) {
+    const toastIndex = toasts.value.findIndex((activeToast) => activeToast.id === id);
+    if (toastIndex !== -1) {
       processingIds.add(id);
-      const toast = toasts.value[idx];
+      const toast = toasts.value[toastIndex];
 
       // Stop dismissal timer immediately when user interacts.
       if (toast && toast.timer) clearTimeout(toast.timer);
       
       // Remove from UI before executing logic for better perceived performance.
-      toasts.value.splice(idx, 1);
+      toasts.value.splice(toastIndex, 1);
 
       if (toast && toast.onAction) {
         toast.onAction();
