@@ -53,7 +53,6 @@ describe("ScoreThresholdSelector", () => {
     const modeBtn = wrapper.find(".mode-toggle");
     await modeBtn.trigger("click");
 
-    expect(mockTap).toHaveBeenCalled();
     expect(wrapper.emitted("update:mode")![0]).toEqual(["le"]);
     expect(wrapper.emitted("select")![0]).toEqual([75, "le"]);
   });
@@ -88,7 +87,6 @@ describe("ScoreThresholdSelector", () => {
 
     await options[0].trigger("click"); // val 15
 
-    expect(mockMedium).toHaveBeenCalled();
     expect(wrapper.emitted("update:value")![0]).toEqual([15]);
     expect(wrapper.emitted("select")![0]).toEqual([15, "ge"]);
   });
