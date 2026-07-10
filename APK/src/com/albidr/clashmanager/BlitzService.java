@@ -391,7 +391,12 @@ public class BlitzService extends Service {
 
         // Modify / Lock toggle button (Pencil icon)
         final ImageButton modifyBtn = new ImageButton(this);
-        modifyBtn.setImageResource(android.R.drawable.ic_menu_edit);
+        int editResId = getResources().getIdentifier("ic_edit", "drawable", getPackageName());
+        if (editResId != 0) {
+            modifyBtn.setImageResource(editResId);
+        } else {
+            modifyBtn.setImageResource(android.R.drawable.ic_menu_edit);
+        }
         
         // Translucent circular background
         GradientDrawable modifyBg = new GradientDrawable();
