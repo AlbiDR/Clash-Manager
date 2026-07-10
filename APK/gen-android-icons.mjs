@@ -25,7 +25,7 @@
  *
  * It is IDEMPOTENT and writes into the committed android/ project's res tree
  * (the apktool-recovered source of truth). After regenerating, rebuild the APK
- * with `pnpm apk:build`. Do NOT point this at ~/bubblewrap-project (a decoy).
+ * with `pnpm apk:check`. Do NOT point this at ~/bubblewrap-project (a decoy).
  *
  *   pnpm icons:android                         # generate into android/res
  *   node gen-android-icons.mjs --preview       # also emit launcher previews

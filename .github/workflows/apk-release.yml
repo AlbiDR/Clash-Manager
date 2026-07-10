@@ -1,5 +1,7 @@
-# Reproducible APK release build, compiles the APK from the committed APK/android/
-# source and signs it with the release keystore.
+# Reproducible APK release build. The native Java source lives in APK/src/;
+# build-apk.sh compiles it into APK/android/classes.dex locally before pushing.
+# This workflow picks up committed changes to APK/android/ or APK/src/, builds,
+# signs, and publishes the versioned release APK.
 #
 # Signing material comes from repo Secrets (the keystore itself is NOT in the
 # repo): ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
@@ -12,6 +14,7 @@ on:
     branches: ["Beta", "Stable"]
     paths:
       - "APK/android/**"
+      - "APK/src/**"
       - "APK/verify-apk-integrity.mjs"
       - ".github/workflows/apk-release.yml"
 

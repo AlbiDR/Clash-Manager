@@ -50,7 +50,7 @@ The PWA interfaces with the native layer via `window.AndroidBridge`. The presenc
 APK/
   README.md - Documentation kernel
   src/ - Clean human-readable Java source files (authoritative source of truth)
-    main/java/com/albidr/clashmanager/ - Native Java classes (BlitzService, MainActivity, etc.)
+    com/albidr/clashmanager/ - Native Java classes (BlitzService, MainActivity, etc.)
   android/ - Decoded APK structure containing the active assets and layout
     AndroidManifest.xml - Service configurations, intents, and hardware permissions
     apktool.yml - Package metadata and version info
@@ -93,7 +93,7 @@ pnpm apk:verify <path>    # Perform integrity checks on a specified package file
 
 - **Version Management**: Update version mappings in `android/apktool.yml` under `versionInfo`.
 - **Launcher Icons**: Execute `pnpm icons:android` to regenerate adaptive assets into `android/res` using the master vector logo. The configuration maps themed foregrounds and backgrounds.
-- **Native Implementation**: Custom Java classes are modified directly under `APK/src/main/java/com/albidr/clashmanager/`. Running `./build-apk.sh` compiles these files, generates a Dalvik DEX payload, injects it into `android/classes.dex`, and triggers the repackage build automatically.
+- **Native Implementation**: Custom Java classes are modified directly under `APK/src/com/albidr/clashmanager/`. Running `./build-apk.sh` compiles these files, generates a Dalvik DEX payload, injects it into `android/classes.dex`, and triggers the repackage build automatically.
 
 ---
 <br>

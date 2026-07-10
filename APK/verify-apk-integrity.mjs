@@ -3,9 +3,10 @@
  * verify-apk-integrity.mjs — release gate that FAILS if an APK is missing the
  * custom native layer.
  *
- * WHY: the Clash Manager APK is NOT a plain TWA. It carries a custom Kotlin
+ * WHY: the Clash Manager APK is NOT a plain TWA. It carries a custom Java
  * native layer (Blitz overlay service, accessibility tap-gesture service, and a
- * WebView JS bridge) that exists ONLY as compiled code in the release APK.
+ * WebView JS bridge), authored in APK/src/com/albidr/clashmanager/ and compiled
+ * into android/classes.dex via build-apk.sh.
  * A generic `bubblewrap build` (or any rebuild from the decoy project) silently
  * produces a stripped app. This script makes that failure LOUD and automatic:
  * it inspects a built APK and exits non-zero unless every custom component is
@@ -135,7 +136,7 @@ function main() {
   }
   console.error(`\x1b[31m\x1b[1mFAIL\x1b[0m — ${problems.length} missing element(s): ${problems.join(", ")}`);
   console.error("This APK is STRIPPED of custom functionality. Do NOT ship it.");
-  console.error("Build the release with `pnpm apk:build` (from android/), not `bubblewrap build`.");
+  console.error("Build the release with `pnpm apk:check` (from APK/src/), not `bubblewrap build`.");
   process.exit(1);
 }
 

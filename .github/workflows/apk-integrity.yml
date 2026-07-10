@@ -1,8 +1,9 @@
 # Fails if a change strips the custom native layer from the recovered android/
 # project. The release APK's Blitz overlay service, accessibility tap-gesture
-# service and WebView bridge exist ONLY in android/classes.dex — there is no
-# Kotlin source. This gate makes "someone repackaged it as a generic TWA" a
-# red CI check instead of a silent production regression.
+# service and WebView bridge are authored in APK/src/com/albidr/clashmanager/
+# (clean Java source) and compiled into android/classes.dex by build-apk.sh.
+# This gate makes "someone repackaged it as a generic TWA" a red CI check
+# instead of a silent production regression.
 name: APK Native-Layer Integrity
 
 on:

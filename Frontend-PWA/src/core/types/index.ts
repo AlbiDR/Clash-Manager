@@ -13,12 +13,12 @@
  * Android wrapper (TWA).
  *
  * ⚠️ HARD NATIVE DEPENDENCY — DO NOT BREAK THIS CONTRACT.
- * These methods are implemented by a custom Kotlin layer
+ * These methods are implemented by a custom Java layer
  * (`MainActivity$AndroidBridge` + `BlitzService` + `ClashManagerAccessibilityService`)
- * that exists ONLY as compiled code inside the release APK — there is no Kotlin
- * source in this repo. The recovered, rebuildable project is `APK/android/`
- * (see `APK/README.md`); the release is built with `pnpm apk:build`, NOT
- * `bubblewrap build` (which produces a generic TWA that strips this bridge).
+ * authored in `APK/src/com/albidr/clashmanager/` and compiled into
+ * `APK/android/classes.dex` by `build-apk.sh`.
+ * The release is built with `pnpm apk:check`, NOT `bubblewrap build` (which
+ * produces a generic TWA that strips this bridge).
  * Renaming a method here requires a matching change in that native layer, or the
  * Blitz / accessibility / external-link features silently break on device.
  * `verify-apk-integrity.mjs` asserts every method below survives a build.
