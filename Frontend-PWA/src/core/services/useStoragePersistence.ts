@@ -61,8 +61,8 @@ export function useStoragePersistence() {
       navigator.storage.persist
     ) {
       isSupported.value = true;
-      const result = await navigator.storage.persist();
-      isPersisted.value = result;
+      const persistenceGranted = await navigator.storage.persist();
+      isPersisted.value = persistenceGranted;
     }
   }
 

@@ -41,7 +41,7 @@ const CHANNEL_NAME = "clash_manager_broadcast";
  * - `post`: Function to broadcast a message to all other active tabs.
  */
 export function useBroadcastChannel(
-  onMessage?: (msg: BroadcastMessage) => void,
+  onMessage?: (incomingMessage: BroadcastMessage) => void,
 ) {
   let channel: BroadcastChannel | null = null;
 

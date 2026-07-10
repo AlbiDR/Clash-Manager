@@ -34,23 +34,23 @@ export function useSelectionStore() {
 
   /**
    * Toggles the selection status of an item.
-   * @param id - The unique item identifier.
+   * @param targetItemId - The unique item identifier.
    */
-  function toggleSelect(id: string) {
-    const existingIndex = selectedIds.value.indexOf(id);
+  function toggleSelect(targetItemId: string) {
+    const existingIndex = selectedIds.value.indexOf(targetItemId);
     if (existingIndex !== -1) {
       selectedIds.value.splice(existingIndex, 1);
     } else {
-      selectedIds.value.push(id);
+      selectedIds.value.push(targetItemId);
     }
   }
 
   /**
    * Replaces the current selection with a new set of IDs.
-   * @param ids - The new set of identifiers.
+   * @param targetItemIds - The new set of identifiers.
    */
-  function selectAll(ids: readonly string[]) {
-    selectedIds.value = [...ids];
+  function selectAll(targetItemIds: readonly string[]) {
+    selectedIds.value = [...targetItemIds];
   }
 
   /**
