@@ -81,6 +81,11 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
       return;
     }
 
+    // Cancel native overscroll handling to prevent duplicate bounce animations in WebViews
+    if (rawDiff > 0 && e.cancelable) {
+      e.preventDefault();
+    }
+
     // Apply resistance (clamped logarithmic-like curve).
     // [DECISION LOG] ANDROID OPTIMIZATION: Using a sensitivity curve (0.9 exponent)
     // to provide a more responsive "rubber band" effect compared to linear scaling.
