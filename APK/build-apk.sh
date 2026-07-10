@@ -19,7 +19,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 ANDROID_DIR="${ROOT}/android"
 SRC_DIR="${ROOT}/src"
-OUT="${ROOT}/build-apk-out"
+OUT="${ROOT}/release"
 TMP_DIR="${ROOT}/.build"
 
 mkdir -p "${OUT}"

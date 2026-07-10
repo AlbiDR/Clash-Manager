@@ -105,8 +105,8 @@ functions_*.txt
 # Android build outputs (apktool b / build-apk.sh) — sources live in APK/android/
 APK/android/build/
 # Intermediates stay ignored; the versioned signed release APK is tracked (exception below).
-APK/build-apk-out/*
-!APK/build-apk-out/clashmanager-v*.apk
+APK/release/*
+!APK/release/clashmanager-v*.apk
 
 
 APK/.build

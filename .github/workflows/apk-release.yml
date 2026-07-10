@@ -96,15 +96,15 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           
-          # Clean any old versioned APK files from build-apk-out to maintain a single release binary
-          git rm -f APK/build-apk-out/clashmanager-v*.apk 2>/dev/null || true
+          # Clean any old versioned APK files from release to maintain a single release binary
+          git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
           
           # Copy the fresh signed build to the destination path
-          mkdir -p APK/build-apk-out
-          cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/build-apk-out/clashmanager-v${VERSION}.apk
+          mkdir -p APK/release
+          cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/release/clashmanager-v${VERSION}.apk
           
           # Track the new APK file
-          git add APK/build-apk-out/clashmanager-v${VERSION}.apk
+          git add APK/release/clashmanager-v${VERSION}.apk
           
           if git diff --cached --quiet; then
             echo "No APK changes to commit"
@@ -120,10 +120,10 @@ jobs:
               git reset --soft origin/Beta
               
               # Re-stage our fresh APK, ignoring any remote version binary
-              git rm -f APK/build-apk-out/clashmanager-v*.apk 2>/dev/null || true
-              mkdir -p APK/build-apk-out
-              cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/build-apk-out/clashmanager-v${VERSION}.apk
-              git add APK/build-apk-out/clashmanager-v${VERSION}.apk
+              git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
+              mkdir -p APK/release
+              cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/release/clashmanager-v${VERSION}.apk
+              git add APK/release/clashmanager-v${VERSION}.apk
               git commit --amend -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
             fi
             

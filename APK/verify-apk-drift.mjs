@@ -2,7 +2,7 @@
 /**
  * verify-apk-drift.mjs — fail if the committed release APK no longer matches a
  * freshly-built one (i.e. someone edited APK/android/ but forgot to rebuild +
- * re-commit APK/build-apk-out/clashmanager.apk).
+ * re-commit APK/release/clashmanager.apk).
  *
  * It deliberately ignores signatures and timestamps — those differ on every
  * sign — and compares only content that apktool copies VERBATIM, so there are
@@ -71,5 +71,5 @@ if (drift.length === 0) {
 }
 console.error(`\x1b[31m✗ committed APK has drifted from APK/android/ source:\x1b[0m`);
 for (const d of drift) console.error(`  ${d}`);
-console.error("\nRebuild and re-commit: pnpm apk:check  →  APK/build-apk-out/clashmanager-v<VERSION>.apk");
+console.error("\nRebuild and re-commit: pnpm apk:check  →  APK/release/clashmanager-v<VERSION>.apk");
 process.exit(1);
