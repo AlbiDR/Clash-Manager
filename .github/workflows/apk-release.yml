@@ -3,6 +3,14 @@
 # This workflow picks up committed changes to APK/android/ or APK/src/, builds,
 # signs, and publishes the versioned release APK.
 #
+# Path filter rules:
+#   Included : APK/src/** (Java source), APK/android/** (manifest, resources, dex)
+#   Included : APK/verify-apk-integrity.mjs (integrity gate used by this workflow)
+#   Excluded : APK/android/classes.dex  — committed by this workflow itself; excluding
+#              prevents the self-triggering loop after the build commits it back.
+#   Excluded : APK/release/**            — build output, never an input.
+#   Excluded : APK/**/*.md               — documentation only, no effect on the binary.
+#
 # Signing material comes from repo Secrets (the keystore itself is NOT in the
 # repo): ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
 # ANDROID_KEY_PASSWORD / ANDROID_KEY_ALIAS.
@@ -13,10 +21,13 @@ on:
   push:
     branches: ["Beta", "Stable"]
     paths:
-      - "APK/android/**"
       - "APK/src/**"
+      - "APK/android/**"
       - "APK/verify-apk-integrity.mjs"
       - ".github/workflows/apk-release.yml"
+      - "!APK/android/classes.dex"
+      - "!APK/release/**"
+      - "!APK/**/*.md"
 
 permissions:
   contents: write
