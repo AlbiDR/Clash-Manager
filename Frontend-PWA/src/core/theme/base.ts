@@ -229,9 +229,9 @@ img, video { max-width: 100%; height: auto; }
    NATIVE APP GESTURES
    ========================================= */
 body {
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
   overscroll-behavior-x: none;
-  touch-action: pan-y;
+  touch-action: auto;
 }
 
 * {
@@ -248,7 +248,7 @@ input, textarea, [contenteditable], .selectable {
 
 * { -webkit-touch-callout: none; }
 
-* {
+button, a, [role="button"], [role="link"], input, select, textarea {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -256,5 +256,10 @@ input, textarea, [contenteditable], .selectable {
 .view-container, .scrollable-area, .list-container {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: auto;
+}
+
+/* Enforce containment option for custom overlays */
+.prevent-overscroll {
+  overscroll-behavior-y: contain;
 }
 `;
