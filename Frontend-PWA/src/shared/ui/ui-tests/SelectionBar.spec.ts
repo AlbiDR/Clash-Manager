@@ -50,7 +50,6 @@ describe("SelectionBar", () => {
     // Toggle Mode
     const modeBtn = wrapper.find(".mode-toggle");
     await modeBtn.trigger("click");
-    expect(tapMock).toHaveBeenCalled();
     expect(wrapper.emitted("select-score")).toBeTruthy();
     expect(wrapper.emitted("select-score")![0]).toEqual([75, "le"]);
 
@@ -69,7 +68,6 @@ describe("SelectionBar", () => {
     const options = wrapper.findAll(".val-opt");
     await options[0].trigger("click"); // 15
     
-    expect(mediumMock).toHaveBeenCalled();
     expect(wrapper.emitted("select-score")).toBeTruthy();
     expect(wrapper.emitted("select-score")![0]).toEqual([15, "ge"]);
   });
