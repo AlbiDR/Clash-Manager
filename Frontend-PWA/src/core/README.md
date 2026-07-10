@@ -77,7 +77,7 @@ The visual DNA of the application. Orchestrates a clinical, CSS-variable-driven 
 - **Theme Injection**: Logic for dynamic Light/Dark theme swapping and `theme-color` meta-tag orchestration.
 - **Icon Paths**: Centralized SVG path definitions for the `Icon.vue` primitive.
 
-### Domain Types (`/types`)
+### [Domain Types (`/types`)](./types/README.md)
 Authoritative TypeScript interfaces and enums used across the entire application.
 
 ### Utility Kernels (`/utils`)

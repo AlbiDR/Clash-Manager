@@ -53,3 +53,4 @@
 2026-07-08 | Frontend-PWA/src/core/services/README.md | Reconciled missing services: useNativeBridge, useClashLoader, useConsoleMetadata, useExternalLink, useShare, and useShareTarget.
 2026-07-09 | Frontend-PWA/README.md | Reconciled Core Services registry (1-33), moved useHaptics to Shared Behavioral Logic, and injected missing Layer 1 services.
 2026-07-09 | Frontend-PWA/src/core/README.md | Reconciled Services registry (added useClashLoader and useNativeBridge) and Utility Kernels (added locale.ts).
+2026-07-10 | Frontend-PWA/src/core/types/README.md | Created: Documented domain types, native bridge contracts, and UI orchestration interfaces.
