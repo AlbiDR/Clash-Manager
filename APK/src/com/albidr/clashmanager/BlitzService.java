@@ -41,9 +41,8 @@ public class BlitzService extends Service {
     private static final String CHANNEL_ID = "BlitzServiceChannel";
 
     // Constants for modify button styling
-    private static final float MODIFY_BUTTON_SIZE_DP = 36.0f;
+    private static final float MODIFY_BUTTON_SIZE_DP = 28.0f;
     private static final int MODIFY_BUTTON_PADDING_DP = 4;
-    private static final float MODIFY_BUTTON_CORNER_RADIUS_DP = 9.0f;
     private static final String COLOR_ICON_LOCKED = "#ffb4ab";
     private static final String COLOR_ICON_UNLOCKED = "#0061a4";
 
@@ -389,50 +388,10 @@ public class BlitzService extends Service {
         textContainer.addView(subtitleView);
 
         headerRow.addView(textContainer);
-
-        // Modify / Lock toggle button (Pencil icon)
-        final ImageButton modifyBtn = new ImageButton(this);
-        int editResId = getResources().getIdentifier("ic_edit", "drawable", getPackageName());
-        if (editResId != 0) {
-            modifyBtn.setImageResource(editResId);
-        } else {
-            modifyBtn.setImageResource(android.R.drawable.ic_menu_edit);
-        }
-        
-        // Translucent squircle background
-        GradientDrawable modifyBg = new GradientDrawable();
-        modifyBg.setShape(GradientDrawable.RECTANGLE);
-        modifyBg.setCornerRadius(MODIFY_BUTTON_CORNER_RADIUS_DP * dp);
-        modifyBg.setColor(Color.argb(40, 255, 255, 255));
-        modifyBtn.setBackground(modifyBg);
-        
-        int btnSize = (int) (MODIFY_BUTTON_SIZE_DP * dp);
-        int btnPad = (int) (MODIFY_BUTTON_PADDING_DP * dp);
-        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(btnSize, btnSize);
-        modifyBtn.setLayoutParams(btnParams);
-        modifyBtn.setPadding(btnPad, btnPad, btnPad, btnPad);
-        modifyBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
-
-        modifyBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mIsCalibrationUnlocked = !mIsCalibrationUnlocked;
-                if (mIsCalibrationUnlocked) {
-                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_UNLOCKED));
-                } else {
-                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
-                    saveCoordinates(true);
-                }
-                updateWaitingOverlayTexts(titleView, subtitleView);
-                updateMarkerDraggability();
-            }
-        });
-        headerRow.addView(modifyBtn);
-
         container.addView(headerRow);
 
         updateWaitingOverlayTexts(titleView, subtitleView);
+
 
         // -- Button row --
         LinearLayout btnRow = new LinearLayout(this);
@@ -495,6 +454,43 @@ public class BlitzService extends Service {
 
         container.addView(btnRow);
 
+        // -- Gear (modify/lock) icon overlaid in the top-end corner of the container --
+        final ImageButton modifyBtn = new ImageButton(this);
+        int gearResId = getResources().getIdentifier("ic_edit", "drawable", getPackageName());
+        if (gearResId != 0) {
+            modifyBtn.setImageResource(gearResId);
+        } else {
+            modifyBtn.setImageResource(android.R.drawable.ic_menu_manage);
+        }
+        modifyBtn.setBackground(null);
+        int gearSize = (int) (MODIFY_BUTTON_SIZE_DP * dp);
+        int gearPad  = (int) (MODIFY_BUTTON_PADDING_DP * dp);
+        modifyBtn.setPadding(gearPad, gearPad, gearPad, gearPad);
+        modifyBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
+
+        modifyBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mIsCalibrationUnlocked = !mIsCalibrationUnlocked;
+                if (mIsCalibrationUnlocked) {
+                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_UNLOCKED));
+                } else {
+                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
+                    saveCoordinates(true);
+                }
+                updateWaitingOverlayTexts(titleView, subtitleView);
+                updateMarkerDraggability();
+            }
+        });
+
+        // Wrap container + gear in a FrameLayout so the gear floats over the top-end corner
+        FrameLayout wrapper = new FrameLayout(this);
+        wrapper.addView(container);
+        FrameLayout.LayoutParams gearParams = new FrameLayout.LayoutParams(gearSize, gearSize);
+        gearParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+        wrapper.addView(modifyBtn, gearParams);
+
         // -- Window params --
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -506,7 +502,7 @@ public class BlitzService extends Service {
         lp.x = 0;
         lp.y = (int) (dp * 40.0f);
 
-        mWaitingView = container;
+        mWaitingView = wrapper;
         try {
             mWindowManager.addView(mInviteMarker, mInviteMarker.getLayoutParams());
             mWindowManager.addView(mCloseMarker, mCloseMarker.getLayoutParams());
