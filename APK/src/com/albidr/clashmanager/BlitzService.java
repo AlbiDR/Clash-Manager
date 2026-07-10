@@ -43,6 +43,7 @@ public class BlitzService extends Service {
     // Constants for modify button styling
     private static final float MODIFY_BUTTON_SIZE_DP = 36.0f;
     private static final int MODIFY_BUTTON_PADDING_DP = 4;
+    private static final float MODIFY_BUTTON_CORNER_RADIUS_DP = 9.0f;
     private static final String COLOR_ICON_LOCKED = "#ffb4ab";
     private static final String COLOR_ICON_UNLOCKED = "#0061a4";
 
@@ -398,9 +399,10 @@ public class BlitzService extends Service {
             modifyBtn.setImageResource(android.R.drawable.ic_menu_edit);
         }
         
-        // Translucent circular background
+        // Translucent squircle background
         GradientDrawable modifyBg = new GradientDrawable();
-        modifyBg.setShape(GradientDrawable.OVAL);
+        modifyBg.setShape(GradientDrawable.RECTANGLE);
+        modifyBg.setCornerRadius(MODIFY_BUTTON_CORNER_RADIUS_DP * dp);
         modifyBg.setColor(Color.argb(40, 255, 255, 255));
         modifyBtn.setBackground(modifyBg);
         
