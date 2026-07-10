@@ -22,6 +22,8 @@ import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +37,12 @@ public class BlitzService extends Service {
 
     private static final long AUTO_ADVANCE_DELAY_MS = 850L;
     private static final String CHANNEL_ID = "BlitzServiceChannel";
+
+    // Constants for modify button styling
+    private static final float MODIFY_BUTTON_SIZE_DP = 36.0f;
+    private static final int MODIFY_BUTTON_PADDING_DP = 4;
+    private static final String COLOR_ICON_LOCKED = "#ffb4ab";
+    private static final String COLOR_ICON_UNLOCKED = "#0061a4";
     private static final long GESTURE_CLOSE_DELAY_MS = 1000L;
     private static final long GESTURE_LOAD_DELAY_MS = 950L;
     private static final long GESTURE_TOTAL_DELAY_MS = 1050L;
@@ -292,23 +300,26 @@ public class BlitzService extends Service {
         spacer1.setLayoutParams(new LinearLayout.LayoutParams(padH, 1));
         btnRow.addView(spacer1);
 
-        // Modify / Lock toggle button
-        final Button modifyBtn = new Button(this);
-        modifyBtn.setText("Modify");
-        modifyBtn.setTextColor(Color.parseColor("#ffb4ab"));
+        // Modify / Lock toggle button (Pencil icon)
+        final ImageButton modifyBtn = new ImageButton(this);
+        modifyBtn.setImageResource(android.R.drawable.ic_menu_edit);
         modifyBtn.setBackgroundColor(Color.TRANSPARENT);
-        modifyBtn.setTextSize(10.0f);
-        modifyBtn.setPadding(btnPadH, btnPadV, btnPadH, btnPadV);
+        int btnSize = (int) (MODIFY_BUTTON_SIZE_DP * dp);
+        int btnPad = (int) (MODIFY_BUTTON_PADDING_DP * dp);
+        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(btnSize, btnSize);
+        modifyBtn.setLayoutParams(btnParams);
+        modifyBtn.setPadding(btnPad, btnPad, btnPad, btnPad);
+        modifyBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
+
         modifyBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mIsCalibrationUnlocked = !mIsCalibrationUnlocked;
                 if (mIsCalibrationUnlocked) {
-                    modifyBtn.setText("Lock");
-                    modifyBtn.setTextColor(Color.parseColor("#0061a4"));
+                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_UNLOCKED));
                 } else {
-                    modifyBtn.setText("Modify");
-                    modifyBtn.setTextColor(Color.parseColor("#ffb4ab"));
+                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
                     saveCoordinates(true);
                 }
                 updateWaitingOverlayTexts(titleView, subtitleView);
