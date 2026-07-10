@@ -222,15 +222,49 @@ export interface ConsoleCardMetadata {
 }
 
 /**
- * Standardized provenance metadata from the Layer 1 ClashDataStore.
+ * Represents the unified health status of the connectivity hub.
  */
-interface HubInfo {
-  /** The authoritative source of the current dataset. */
-  source: "SUPABASE" | "WORKER" | "GAS";
-  /** Human-readable age of the data at the source. */
-  hubAge: string | null;
-  /** Standardized diagnostic code for sync failures. */
-  diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
+export interface HubHealth {
+  /** Visual classification for UI styling (color/icon). */
+  type: "success" | "warning" | "error" | "loading";
+  /** Short, human-readable status label. */
+  label: string;
+  /** Percentage indicating data reliability (0-100). */
+  confidence: number;
+  /** Detailed technical diagnosis or error message. */
+  diagnosis?: string;
+}
+
+/**
+ * Authoritative metadata regarding the origin and age of the current data.
+ */
+export interface HubMetadata {
+  /** The identified backend source (e.g., "SUPABASE", "LOCAL"). */
+  source: string;
+  /** Human-readable age of the data (e.g., "5m ago"). */
+  age: string | null;
+  /** Data age in minutes for logical thresholding. */
+  ageMinutes: number;
+  /** Formatted time when the remote dataset was last compiled. */
+  lastCompiled: string | null;
+  /** Formatted time when the backend last fetched raw API data. */
+  lastFetched: string | null;
+  /** Flag indicating if the data has exceeded the staleness threshold. */
+  isStale: boolean;
+}
+
+/**
+ * UI-focused metadata for the connectivity hub.
+ */
+export interface ConsoleRemoteInfo {
+  /** The identified backend source (e.g., "SUPABASE", "LOCAL"). */
+  source: string;
+  /** Human-readable age of the data (e.g., "5m ago"). */
+  dataAge: string | null;
+  /** Detailed technical diagnosis or error message. */
+  diagnosis?: string | null;
+  /** Formatted time when the remote dataset was last compiled. */
+  lastCompiled?: string | null;
 }
 
 /**
