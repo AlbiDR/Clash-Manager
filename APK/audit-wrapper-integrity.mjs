@@ -35,10 +35,17 @@ function checkManifestParity() {
   const twa = JSON.parse(fs.readFileSync(TWA_MANIFEST, 'utf8'));
 
   const fields = ['name', 'short_name', 'theme_color', 'background_color', 'start_url', 'orientation'];
+  const twaFields = {
+      'theme_color': 'themeColor',
+      'background_color': 'backgroundColor',
+      'short_name': 'shortName',
+      'start_url': 'startUrl'
+  };
+
   fields.forEach(f => {
     let pwaVal = pwa[f];
     let apkVal = apk[f];
-    let twaVal = twa[f === 'short_name' ? 'shortName' : f === 'background_color' ? 'backgroundColor' : f === 'theme_color' ? 'themeColor' : f === 'start_url' ? 'startUrl' : f];
+    let twaVal = twa[twaFields[f] || f];
 
     if (f.endsWith('_color')) {
       pwaVal = normalizeColor(pwaVal);
@@ -54,6 +61,25 @@ function checkManifestParity() {
         else if (f === 'start_url' && twaVal.endsWith(pwaVal)) ok(`Manifest start_url suffix matches (TWA=${twaVal})`);
         else fail(`Manifest ${f} mismatch: PWA=${pwaVal}, TWA=${twaVal}`);
     }
+  });
+
+  // Verify themeColorDark and Navigation Colors
+  info('Checking Advanced TWA/Resource Color Alignment...');
+  const colorsXml = fs.readFileSync('APK/android/res/values/colors.xml', 'utf8');
+  const colorChecks = [
+      { key: 'themeColorDark', expected: pwa.theme_color, res: 'colorPrimaryDark' },
+      { key: 'navigationColor', expected: pwa.theme_color, res: 'navigationColor' },
+      { key: 'navigationColorDark', expected: pwa.theme_color, res: 'navigationColorDark' }
+  ];
+
+  colorChecks.forEach(c => {
+      const val = normalizeColor(twa[c.key]);
+      const expected = normalizeColor(c.expected);
+      if (val === expected) ok(`TWA ${c.key} matches expected: ${val}`);
+      else fail(`TWA ${c.key} mismatch: ${val} vs ${expected}`);
+
+      if (colorsXml.includes(`<color name="${c.res}">${expected}</color>`)) ok(`colors.xml ${c.res} matches expected: ${expected}`);
+      else fail(`colors.xml ${c.res} mismatch or missing: expected ${expected}`);
   });
 }
 
