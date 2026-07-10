@@ -43,6 +43,8 @@ public class BlitzService extends Service {
     // Constants for modify button styling
     private static final float MODIFY_BUTTON_SIZE_DP = 28.0f;
     private static final int MODIFY_BUTTON_PADDING_DP = 4;
+    private static final float MODIFY_BUTTON_MARGIN_H_DP = 8.0f;
+    private static final float MODIFY_BUTTON_MARGIN_V_DP = 6.0f;
     private static final String COLOR_ICON_LOCKED = "#ffb4ab";
     private static final String COLOR_ICON_UNLOCKED = "#0061a4";
 
@@ -456,7 +458,7 @@ public class BlitzService extends Service {
 
         // -- Gear (modify/lock) icon overlaid in the top-end corner of the container --
         final ImageButton modifyBtn = new ImageButton(this);
-        int gearResId = getResources().getIdentifier("ic_edit", "drawable", getPackageName());
+        int gearResId = getResources().getIdentifier("ic_settings", "drawable", getPackageName());
         if (gearResId != 0) {
             modifyBtn.setImageResource(gearResId);
         } else {
@@ -489,6 +491,8 @@ public class BlitzService extends Service {
         wrapper.addView(container);
         FrameLayout.LayoutParams gearParams = new FrameLayout.LayoutParams(gearSize, gearSize);
         gearParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+        gearParams.topMargin  = (int) (MODIFY_BUTTON_MARGIN_V_DP * dp);
+        gearParams.rightMargin = (int) (MODIFY_BUTTON_MARGIN_H_DP * dp);
         wrapper.addView(modifyBtn, gearParams);
 
         // -- Window params --
