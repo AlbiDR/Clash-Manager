@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 package com.albidr.clashmanager;
 
 import android.animation.ObjectAnimator;
@@ -43,6 +45,55 @@ public class BlitzService extends Service {
     private static final int MODIFY_BUTTON_PADDING_DP = 4;
     private static final String COLOR_ICON_LOCKED = "#ffb4ab";
     private static final String COLOR_ICON_UNLOCKED = "#0061a4";
+
+    // Style constants for UI clean-up
+    private static final float TEXT_SIZE_TITLE_SP = 14.0f;
+    private static final float TEXT_SIZE_SUBTITLE_SP = 11.0f;
+    private static final float TEXT_SIZE_BUTTON_SP = 13.0f;
+    private static final float TEXT_SIZE_MARKER_LABEL_SP = 10.0f;
+    
+    private static final float PADDING_CONTAINER_H_DP = 16.0f;
+    private static final float PADDING_CONTAINER_V_DP = 12.0f;
+    private static final float PADDING_BUTTON_H_DP = 16.0f;
+    private static final float PADDING_BUTTON_V_DP = 8.0f;
+    private static final float PADDING_MARKER_LABEL_H_DP = 12.0f;
+    private static final float PADDING_MARKER_LABEL_V_DP = 4.0f;
+    private static final float MARGIN_MARKER_LABEL_B_DP = 4.0f;
+    private static final float MARGIN_HEADER_B_DP = 10.0f;
+    private static final float SPACER_WIDTH_DP = 12.0f;
+    private static final float CONTAINER_CORNER_RADIUS_DP = 16.0f;
+    private static final float BUTTON_CORNER_RADIUS_DP = 24.0f;
+    private static final float MARKER_LABEL_CORNER_RADIUS_DP = 6.0f;
+    private static final int BG_OPACITY_CONTAINER = 230;
+    private static final int BG_OPACITY_LABEL = 200;
+    private static final int STROKE_OPACITY_CONTAINER = 200;
+    
+    private static final String COLOR_BG_CONTAINER = "#12141c";
+    private static final String COLOR_STROKE_CONTAINER = "#0061a4";
+    private static final String COLOR_SUBTITLE = "#c4c6cf";
+    private static final String COLOR_BUTTON_CANCEL = "#ffb4ab";
+    private static final String COLOR_BUTTON_START = "#0061a4";
+    private static final String COLOR_BG_LABEL = "#1b1f27";
+
+    // Style constants for floating pill overlay
+    private static final float TEXT_SIZE_FLOATING_STATUS_SP = 14.0f;
+    private static final float TEXT_SIZE_FLOATING_COUNTDOWN_SP = 11.0f;
+    private static final float TEXT_SIZE_FLOATING_SKIP_SP = 12.0f;
+    private static final float TEXT_SIZE_FLOATING_CLOSE_SP = 14.0f;
+
+    private static final float PADDING_FLOATING_H_DP = 16.0f;
+    private static final float PADDING_FLOATING_V_DP = 8.0f;
+    private static final float PADDING_FLOATING_STATUS_R_DP = 12.0f;
+    private static final float PADDING_FLOATING_COUNTDOWN_R_DP = 12.0f;
+    private static final float PADDING_FLOATING_SKIP_H_DP = 16.0f;
+    private static final float PADDING_FLOATING_SKIP_V_DP = 6.0f;
+    private static final float PADDING_FLOATING_CLOSE_L_DP = 12.0f;
+    private static final float PADDING_FLOATING_CLOSE_R_DP = 8.0f;
+    private static final float PADDING_FLOATING_CLOSE_V_DP = 6.0f;
+
+    private static final float FLOATING_CORNER_RADIUS_DP = 100.0f;
+    private static final float FLOATING_INITIAL_Y_DP = 120.0f;
+
     private static final long GESTURE_CLOSE_DELAY_MS = 1000L;
     private static final long GESTURE_LOAD_DELAY_MS = 950L;
     private static final long GESTURE_TOTAL_DELAY_MS = 1050L;
@@ -199,21 +250,69 @@ public class BlitzService extends Service {
 
     private void updateWaitingOverlayTexts(TextView titleView, TextView subtitleView) {
         if (mIsCalibrationUnlocked) {
-            titleView.setText("BLITZ CALIBRATION");
+            titleView.setText("Blitz Calibration");
             subtitleView.setText("Drag markers, then press Start");
         } else {
-            titleView.setText("Blitz in progress");
+            titleView.setText("Blitz in Progress");
             subtitleView.setText(mTagsList.size() + " players found");
         }
     }
 
     private void updateMarkerDraggability() {
         float alpha = mIsCalibrationUnlocked ? 1.0f : 0.4f;
-        if (mInviteMarker != null) {
+        if (mInviteMarker instanceof LinearLayout) {
             mInviteMarker.setAlpha(alpha);
+            updateMarkerLabelState((LinearLayout) mInviteMarker);
         }
-        if (mCloseMarker != null) {
+        if (mCloseMarker instanceof LinearLayout) {
             mCloseMarker.setAlpha(alpha);
+            updateMarkerLabelState((LinearLayout) mCloseMarker);
+        }
+    }
+
+    private void updateMarkerLabelState(LinearLayout marker) {
+        if (marker == null) {
+            return;
+        }
+        View labelView = marker.getChildAt(0);
+        if (labelView == null) {
+            return;
+        }
+
+        int oldVisibility = labelView.getVisibility();
+        int newVisibility = mIsCalibrationUnlocked ? View.VISIBLE : View.GONE;
+        if (oldVisibility == newVisibility) {
+            return;
+        }
+
+        WindowManager.LayoutParams lp = (WindowManager.LayoutParams) marker.getLayoutParams();
+
+        // Calculate center using measured dimensions before visibility change
+        int w = marker.getMeasuredWidth() > 0 ? marker.getMeasuredWidth() : mCapturedMarkerWidth;
+        int h = marker.getMeasuredHeight() > 0 ? marker.getMeasuredHeight() : mCapturedMarkerHeight;
+        float dp = getResources().getDisplayMetrics().density;
+        int markerRadius = (int) (dp * 36.0f);
+        float halfRadius = markerRadius / 2.0f;
+        float cx = lp.x + (w / 2.0f);
+        float cy = lp.y + (h - halfRadius);
+
+        // Set the new visibility
+        labelView.setVisibility(newVisibility);
+
+        // Force-measure the layout to update sizes immediately
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        marker.measure(widthSpec, heightSpec);
+
+        int newW = marker.getMeasuredWidth();
+        int newH = marker.getMeasuredHeight();
+
+        // Update coordinates to anchor the crosshair center at (cx, cy)
+        lp.x = (int) (cx - (newW / 2.0f));
+        lp.y = (int) (cy - (newH - halfRadius));
+
+        if (mWindowManager != null) {
+            mWindowManager.updateViewLayout(marker, lp);
         }
     }
 
@@ -234,9 +333,9 @@ public class BlitzService extends Service {
         float screenH = dm.heightPixels;
         float dp = dm.density;
 
-        mInviteMarker = createDraggableMarker("", Color.parseColor("#0061a4"),
+        mInviteMarker = createDraggableMarker("Invite", Color.parseColor("#0061a4"),
             (int) (inviteXNorm * screenW), (int) (inviteYNorm * screenH));
-        mCloseMarker  = createDraggableMarker("", Color.parseColor("#ba1a1a"),
+        mCloseMarker  = createDraggableMarker("Close", Color.parseColor("#ba1a1a"),
             (int) (closeXNorm * screenW),  (int) (closeYNorm * screenH));
         updateMarkerDraggability();
 
@@ -244,66 +343,62 @@ public class BlitzService extends Service {
         LinearLayout container = new LinearLayout(this);
         container.setOrientation(LinearLayout.VERTICAL);
         container.setGravity(android.view.Gravity.CENTER);
-        int padH = (int) (16.0f * dp);
-        int padV = (int) (12.0f * dp);
+        int padH = (int) (PADDING_CONTAINER_H_DP * dp);
+        int padV = (int) (PADDING_CONTAINER_V_DP * dp);
         container.setPadding(padH, padV, padH, padV);
 
         GradientDrawable containerBg = new GradientDrawable();
-        containerBg.setCornerRadius(16.0f * dp);
-        containerBg.setColor(Color.argb(160, 27, 31, 39));
-        containerBg.setStroke((int) dp, Color.argb(180, 0, 97, 164));
+        containerBg.setCornerRadius(CONTAINER_CORNER_RADIUS_DP * dp);
+        containerBg.setColor(Color.argb(BG_OPACITY_CONTAINER, 18, 20, 28)); // #12141c theme
+        containerBg.setStroke((int) dp, Color.argb(STROKE_OPACITY_CONTAINER, 0, 97, 164));
         container.setBackground(containerBg);
+
+        // Header Row (horizontal layout)
+        LinearLayout headerRow = new LinearLayout(this);
+        headerRow.setOrientation(LinearLayout.HORIZONTAL);
+        headerRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams headerParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        headerParams.bottomMargin = (int) (MARGIN_HEADER_B_DP * dp);
+        headerRow.setLayoutParams(headerParams);
+
+        // Title & Subtitle container (vertical)
+        LinearLayout textContainer = new LinearLayout(this);
+        textContainer.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1.0f
+        );
+        textContainer.setLayoutParams(textParams);
 
         // Title
         final TextView titleView = new TextView(this);
         titleView.setTextColor(Color.WHITE);
-        titleView.setTextSize(11.0f);
+        titleView.setTextSize(TEXT_SIZE_TITLE_SP);
         titleView.setTypeface(null, android.graphics.Typeface.BOLD);
-        titleView.setPadding(0, 0, 0, (int) (4.0f * dp));
-        container.addView(titleView);
+        textContainer.addView(titleView);
 
         // Subtitle
         final TextView subtitleView = new TextView(this);
-        subtitleView.setTextColor(Color.parseColor("#c4c6cf"));
-        subtitleView.setTextSize(9.0f);
-        subtitleView.setGravity(android.view.Gravity.CENTER);
-        subtitleView.setPadding(0, 0, 0, (int) (10.0f * dp));
-        container.addView(subtitleView);
+        subtitleView.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        subtitleView.setTextSize(TEXT_SIZE_SUBTITLE_SP);
+        textContainer.addView(subtitleView);
 
-        updateWaitingOverlayTexts(titleView, subtitleView);
-
-        // -- Button row --
-        LinearLayout btnRow = new LinearLayout(this);
-        btnRow.setOrientation(LinearLayout.HORIZONTAL);
-        btnRow.setGravity(android.view.Gravity.CENTER);
-
-        int btnPadH = padV;
-        int btnPadV = (int) (6.0f * dp);
-
-        // Cancel button
-        Button cancelBtn = new Button(this);
-        cancelBtn.setText("Cancel");
-        cancelBtn.setTextColor(Color.parseColor("#ffb4ab"));
-        cancelBtn.setBackgroundColor(Color.TRANSPARENT);
-        cancelBtn.setTextSize(10.0f);
-        cancelBtn.setPadding(btnPadH, btnPadV, btnPadH, btnPadV);
-        cancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopSelf();
-            }
-        });
-        btnRow.addView(cancelBtn);
-
-        // Spacer
-        View spacer1 = new View(this);
-        spacer1.setLayoutParams(new LinearLayout.LayoutParams(padH, 1));
-        btnRow.addView(spacer1);
+        headerRow.addView(textContainer);
 
         // Modify / Lock toggle button (Pencil icon)
         final ImageButton modifyBtn = new ImageButton(this);
         modifyBtn.setImageResource(android.R.drawable.ic_menu_edit);
-        modifyBtn.setBackgroundColor(Color.TRANSPARENT);
+        
+        // Translucent circular background
+        GradientDrawable modifyBg = new GradientDrawable();
+        modifyBg.setShape(GradientDrawable.OVAL);
+        modifyBg.setColor(Color.argb(40, 255, 255, 255));
+        modifyBtn.setBackground(modifyBg);
+        
         int btnSize = (int) (MODIFY_BUTTON_SIZE_DP * dp);
         int btnPad = (int) (MODIFY_BUTTON_PADDING_DP * dp);
         LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(btnSize, btnSize);
@@ -326,23 +421,50 @@ public class BlitzService extends Service {
                 updateMarkerDraggability();
             }
         });
-        btnRow.addView(modifyBtn);
+        headerRow.addView(modifyBtn);
+
+        container.addView(headerRow);
+
+        updateWaitingOverlayTexts(titleView, subtitleView);
+
+        // -- Button row --
+        LinearLayout btnRow = new LinearLayout(this);
+        btnRow.setOrientation(LinearLayout.HORIZONTAL);
+        btnRow.setGravity(android.view.Gravity.CENTER);
+
+        int btnPadH = (int) (PADDING_BUTTON_H_DP * dp);
+        int btnPadV = (int) (PADDING_BUTTON_V_DP * dp);
+
+        // Cancel button
+        Button cancelBtn = new Button(this);
+        cancelBtn.setText("Cancel");
+        cancelBtn.setTextColor(Color.parseColor(COLOR_BUTTON_CANCEL));
+        cancelBtn.setBackgroundColor(Color.TRANSPARENT);
+        cancelBtn.setTextSize(TEXT_SIZE_BUTTON_SP);
+        cancelBtn.setPadding(btnPadH, btnPadV, btnPadH, btnPadV);
+        cancelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopSelf();
+            }
+        });
+        btnRow.addView(cancelBtn);
 
         // Spacer
-        View spacer2 = new View(this);
-        spacer2.setLayoutParams(new LinearLayout.LayoutParams(padH, 1));
-        btnRow.addView(spacer2);
+        View spacer1 = new View(this);
+        spacer1.setLayoutParams(new LinearLayout.LayoutParams((int) (SPACER_WIDTH_DP * dp), 1));
+        btnRow.addView(spacer1);
 
         // Start button
         Button startBtn = new Button(this);
         startBtn.setText("Start");
         startBtn.setTextColor(Color.WHITE);
-        startBtn.setTextSize(11.0f);
+        startBtn.setTextSize(TEXT_SIZE_BUTTON_SP);
         startBtn.setTypeface(null, android.graphics.Typeface.BOLD);
-        startBtn.setPadding(padH, btnPadV, padH, btnPadV);
+        startBtn.setPadding(btnPadH, btnPadV, btnPadH, btnPadV);
         GradientDrawable startBg = new GradientDrawable();
-        startBg.setCornerRadius(50.0f);
-        startBg.setColor(Color.parseColor("#0061a4"));
+        startBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
+        startBg.setColor(Color.parseColor(COLOR_BUTTON_START));
         startBtn.setBackground(startBg);
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -419,27 +541,36 @@ public class BlitzService extends Service {
         float dp = dm.density;
         final int markerSize = (int) (36.0f * dp);
 
-        // Label text (hidden by default - empty string passed in)
+        // Label text
         TextView labelView = new TextView(this);
         labelView.setText(label);
         labelView.setTextColor(Color.WHITE);
-        labelView.setTextSize(9.0f);
+        labelView.setTextSize(TEXT_SIZE_MARKER_LABEL_SP);
         labelView.setSingleLine(true);
         labelView.setMaxLines(1);
         labelView.setEllipsize(null);
-        int labelPadH = (int) (32.0f * dp);
-        int labelPadV = (int) (3.0f * dp);
+        int labelPadH = (int) (PADDING_MARKER_LABEL_H_DP * dp);
+        int labelPadV = (int) (PADDING_MARKER_LABEL_V_DP * dp);
         labelView.setPadding(labelPadH, labelPadV, labelPadH, labelPadV);
         labelView.setTypeface(null, android.graphics.Typeface.BOLD);
         labelView.setGravity(android.view.Gravity.CENTER);
 
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        labelParams.bottomMargin = (int) (MARGIN_MARKER_LABEL_B_DP * dp);
+        labelView.setLayoutParams(labelParams);
+
         GradientDrawable labelBg = new GradientDrawable();
-        float labelRadius = 6.0f * dp;
+        float labelRadius = MARKER_LABEL_CORNER_RADIUS_DP * dp;
         labelBg.setCornerRadius(labelRadius);
-        labelBg.setColor(Color.argb(200, 27, 31, 39));
+        labelBg.setColor(Color.argb(BG_OPACITY_LABEL, 27, 31, 39));
         int strokeW = (int) dp;
         labelBg.setStroke(strokeW, color);
         labelView.setBackground(labelBg);
+        
+        labelView.setVisibility(mIsCalibrationUnlocked ? View.VISIBLE : View.GONE);
         markerLayout.addView(labelView);
 
         // Crosshair frame
@@ -822,25 +953,33 @@ public class BlitzService extends Service {
             mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         }
 
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        float dp = dm.density;
+
         LinearLayout pill = new LinearLayout(this);
         mFloatingView = pill;
         pill.setOrientation(LinearLayout.HORIZONTAL);
         pill.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        pill.setPadding(32, 16, 32, 16);
+        pill.setPadding(
+            (int) (PADDING_FLOATING_H_DP * dp),
+            (int) (PADDING_FLOATING_V_DP * dp),
+            (int) (PADDING_FLOATING_H_DP * dp),
+            (int) (PADDING_FLOATING_V_DP * dp)
+        );
 
         GradientDrawable pillBg = new GradientDrawable();
-        pillBg.setCornerRadius(100.0f);
-        pillBg.setColor(Color.parseColor("#1b1f27"));
-        pillBg.setStroke(2, Color.parseColor("#44474f"));
+        pillBg.setCornerRadius(FLOATING_CORNER_RADIUS_DP * dp);
+        pillBg.setColor(Color.argb(BG_OPACITY_CONTAINER, 18, 20, 28)); // #12141c theme
+        pillBg.setStroke((int) dp, Color.argb(STROKE_OPACITY_CONTAINER, 0, 97, 164));
         pill.setBackground(pillBg);
 
         // Status "X / Y"
         TextView statusTv = new TextView(this);
         mStatusText = statusTv;
         statusTv.setTextColor(Color.WHITE);
-        statusTv.setTextSize(15.0f);
+        statusTv.setTextSize(TEXT_SIZE_FLOATING_STATUS_SP);
         statusTv.setTypeface(null, android.graphics.Typeface.BOLD);
-        statusTv.setPadding(0, 0, 20, 0);
+        statusTv.setPadding(0, 0, (int) (PADDING_FLOATING_STATUS_R_DP * dp), 0);
         statusTv.setText("1 / " + mTagsList.size());
         pill.addView(statusTv);
 
@@ -848,8 +987,8 @@ public class BlitzService extends Service {
         TextView countdownTv = new TextView(this);
         mCountdownText = countdownTv;
         countdownTv.setTextColor(Color.parseColor("#aac7ff"));
-        countdownTv.setTextSize(13.0f);
-        countdownTv.setPadding(0, 0, 20, 0);
+        countdownTv.setTextSize(TEXT_SIZE_FLOATING_COUNTDOWN_SP);
+        countdownTv.setPadding(0, 0, (int) (PADDING_FLOATING_COUNTDOWN_R_DP * dp), 0);
         countdownTv.setText("Auto-advancing");
         pill.addView(countdownTv);
 
@@ -857,11 +996,16 @@ public class BlitzService extends Service {
         Button skipBtn = new Button(this);
         skipBtn.setText("Skip");
         skipBtn.setTextColor(Color.WHITE);
-        skipBtn.setTextSize(12.0f);
-        skipBtn.setPadding(24, 8, 24, 8);
+        skipBtn.setTextSize(TEXT_SIZE_FLOATING_SKIP_SP);
+        skipBtn.setPadding(
+            (int) (PADDING_FLOATING_SKIP_H_DP * dp),
+            (int) (PADDING_FLOATING_SKIP_V_DP * dp),
+            (int) (PADDING_FLOATING_SKIP_H_DP * dp),
+            (int) (PADDING_FLOATING_SKIP_V_DP * dp)
+        );
         GradientDrawable skipBg = new GradientDrawable();
-        skipBg.setCornerRadius(50.0f);
-        skipBg.setColor(Color.parseColor("#0061a4"));
+        skipBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
+        skipBg.setColor(Color.parseColor(COLOR_BUTTON_START));
         skipBtn.setBackground(skipBg);
         skipBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -876,10 +1020,15 @@ public class BlitzService extends Service {
         // Close button
         Button closeBtn = new Button(this);
         closeBtn.setText("X");
-        closeBtn.setTextColor(Color.parseColor("#ffb4ab"));
+        closeBtn.setTextColor(Color.parseColor(COLOR_BUTTON_CANCEL));
         closeBtn.setBackgroundColor(Color.TRANSPARENT);
-        closeBtn.setTextSize(14.0f);
-        closeBtn.setPadding(16, 8, 8, 8);
+        closeBtn.setTextSize(TEXT_SIZE_FLOATING_CLOSE_SP);
+        closeBtn.setPadding(
+            (int) (PADDING_FLOATING_CLOSE_L_DP * dp),
+            (int) (PADDING_FLOATING_CLOSE_V_DP * dp),
+            (int) (PADDING_FLOATING_CLOSE_R_DP * dp),
+            (int) (PADDING_FLOATING_CLOSE_V_DP * dp)
+        );
         closeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -897,7 +1046,7 @@ public class BlitzService extends Service {
             android.graphics.PixelFormat.TRANSLUCENT);
         pillLp.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
         pillLp.x = 0;
-        pillLp.y = 120;
+        pillLp.y = (int) (FLOATING_INITIAL_Y_DP * dp);
 
         pill.setOnTouchListener(new View.OnTouchListener() {
             private float initTouchX;
