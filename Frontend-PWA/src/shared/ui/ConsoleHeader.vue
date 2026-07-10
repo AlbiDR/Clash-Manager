@@ -7,12 +7,13 @@ import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
 import BaseSelect from "./BaseSelect.vue";
+import type { ConsoleRemoteInfo, HubHealth } from "@core/types";
 
 const props = defineProps<{
   title: string;
   status?: {
-    type: "success" | "warning" | "error" | "loading";
-    text: string;
+    type: HubHealth["type"];
+    text: HubHealth["label"];
     nominal?: boolean;
   };
   showSearch?: boolean;
@@ -21,11 +22,7 @@ const props = defineProps<{
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
   currentSort?: string;
   loading?: boolean;
-  remoteInfo?: {
-    source: "SUPABASE";
-    dataAge: string | null;
-    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
-  };
+  remoteInfo?: ConsoleRemoteInfo;
   reserveExtraSpace?: boolean;
 }>();
 

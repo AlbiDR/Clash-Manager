@@ -30,37 +30,7 @@ import { DATA_STALENESS_MINUTES } from "../config";
  * - Import Boundaries: Restricted to other Layer 1 services and utils.
  */
 
-/**
- * Represents the unified health status of the connectivity hub.
- */
-export interface HubHealth {
-  /** Visual classification for UI styling (color/icon). */
-  type: "success" | "warning" | "error" | "loading";
-  /** Short, human-readable status label. */
-  label: string;
-  /** Percentage indicating data reliability (0-100). */
-  confidence: number;
-  /** Detailed technical diagnosis or error message. */
-  diagnosis?: string;
-}
-
-/**
- * Authoritative metadata regarding the origin and age of the current data.
- */
-export interface HubMetadata {
-  /** The identified backend source (e.g., "SUPABASE", "LOCAL"). */
-  source: string;
-  /** Human-readable age of the data (e.g., "5m ago"). */
-  age: string | null;
-  /** Data age in minutes for logical thresholding. */
-  ageMinutes: number;
-  /** Formatted time when the remote dataset was last compiled. */
-  lastCompiled: string | null;
-  /** Formatted time when the backend last fetched raw API data. */
-  lastFetched: string | null;
-  /** Flag indicating if the data has exceeded the staleness threshold. */
-  isStale: boolean;
-}
+import type { HubHealth, HubMetadata } from "../types";
 
 /**
  * Primary composable for managing and observing connectivity health.

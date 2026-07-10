@@ -6,6 +6,7 @@ import { useConnectivityManager } from "./useConnectivityManager";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
+import type { HubHealth, HubMetadata } from "../types";
 
 /**
  * COMPOSABLE: useConsoleMetadata
@@ -42,7 +43,11 @@ export function useConsoleMetadata(
    * @remarks
    * Maps complex `HubHealth` states into a simplified format for header pills.
    */
-  const status = computed(() => ({
+  const status = computed((): {
+    type: HubHealth["type"];
+    text: HubHealth["label"];
+    nominal: boolean;
+  } => ({
     type: hubHealth.value.type,
     text: hubHealth.value.label,
     nominal: hubHealth.value.type === "success",

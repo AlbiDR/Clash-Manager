@@ -10,18 +10,14 @@
  */
 
 import { useStatusPill } from "../composables/useStatusPill";
+import type { ConsoleRemoteInfo } from "@core/types";
 
 const props = withDefaults(defineProps<{
   type: "success" | "warning" | "error" | "loading";
   text: string;
   nominal?: boolean;
   direction?: "left" | "right";
-  remoteInfo?: {
-    source: string;
-    dataAge: string | null;
-    diagnosis?: string | null;
-    lastCompiled?: string | null;
-  };
+  remoteInfo?: ConsoleRemoteInfo;
 }>(), {
   direction: "right"
 });
