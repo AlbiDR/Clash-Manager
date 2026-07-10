@@ -57,14 +57,14 @@ export function useUiCoordinator() {
   /**
    * Call this from views when FabIsland visibility changes
    */
-  function setFabVisible(visible: boolean) {
-    isFabVisible.value = visible;
+  function setFabVisible(isFabIslandVisible: boolean) {
+    isFabVisible.value = isFabIslandVisible;
   }
 
   /**
    * Update the global FAB state from views
    */
-  function updateFabState(state: {
+  function updateFabState(incomingFabState: {
     label?: string;
     actionHref?: string;
     isProcessing?: boolean;
@@ -81,21 +81,13 @@ export function useUiCoordinator() {
     onLocalHarvest?: () => void;
     onAbortHarvest?: () => void;
   }) {
-    if (state.label !== undefined) fabState.label = state.label;
-    if (state.actionHref !== undefined) fabState.actionHref = state.actionHref;
-    if (state.isProcessing !== undefined) fabState.isProcessing = state.isProcessing;
-    if (state.isBlasting !== undefined) fabState.isBlasting = state.isBlasting;
-    if (state.isHarvesting !== undefined) fabState.isHarvesting = state.isHarvesting;
-    if (state.activeHarvester !== undefined) fabState.activeHarvester = state.activeHarvester;
-    if (state.selectionCount !== undefined) fabState.selectionCount = state.selectionCount;
-    if (state.blitzEnabled !== undefined) fabState.blitzEnabled = state.blitzEnabled;
-    if (state.dismissIcon !== undefined) fabState.dismissIcon = state.dismissIcon;
-    if (state.onAction !== undefined) fabState.onAction = state.onAction;
-    if (state.onBlitz !== undefined) fabState.onBlitz = state.onBlitz;
-    if (state.onDismiss !== undefined) fabState.onDismiss = state.onDismiss;
-    if (state.onGlobalHarvest !== undefined) fabState.onGlobalHarvest = state.onGlobalHarvest;
-    if (state.onLocalHarvest !== undefined) fabState.onLocalHarvest = state.onLocalHarvest;
-    if (state.onAbortHarvest !== undefined) fabState.onAbortHarvest = state.onAbortHarvest;
+    // [PERF] Optimized State Merging: Partially update the reactive fabState
+    // object while preserving undefined guards for optional inputs.
+    for (const [key, value] of Object.entries(incomingFabState)) {
+      if (value !== undefined) {
+        (fabState as any)[key] = value;
+      }
+    }
   }
 
   /**
