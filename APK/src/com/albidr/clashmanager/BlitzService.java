@@ -80,17 +80,13 @@ public class BlitzService extends Service {
     // Style constants for floating pill overlay
     private static final float TEXT_SIZE_FLOATING_STATUS_SP = 14.0f;
     private static final float TEXT_SIZE_FLOATING_COUNTDOWN_SP = 11.0f;
-    private static final float TEXT_SIZE_FLOATING_SKIP_SP = 12.0f;
-    private static final float TEXT_SIZE_FLOATING_CLOSE_SP = 14.0f;
+    private static final float TEXT_SIZE_FLOATING_CLOSE_SP = 13.0f;
 
     private static final float PADDING_FLOATING_H_DP = 16.0f;
     private static final float PADDING_FLOATING_V_DP = 8.0f;
     private static final float PADDING_FLOATING_STATUS_R_DP = 12.0f;
     private static final float PADDING_FLOATING_COUNTDOWN_R_DP = 12.0f;
-    private static final float PADDING_FLOATING_SKIP_H_DP = 16.0f;
-    private static final float PADDING_FLOATING_SKIP_V_DP = 6.0f;
-    private static final float PADDING_FLOATING_CLOSE_L_DP = 12.0f;
-    private static final float PADDING_FLOATING_CLOSE_R_DP = 8.0f;
+    private static final float PADDING_FLOATING_CLOSE_H_DP = 18.0f;
     private static final float PADDING_FLOATING_CLOSE_V_DP = 6.0f;
 
     private static final float FLOATING_CORNER_RADIUS_DP = 100.0f;
@@ -999,43 +995,22 @@ public class BlitzService extends Service {
         countdownTv.setText("Auto-advancing");
         pill.addView(countdownTv);
 
-        // Skip button
-        Button skipBtn = new Button(this);
-        skipBtn.setText("Skip");
-        skipBtn.setTextColor(Color.WHITE);
-        skipBtn.setTextSize(TEXT_SIZE_FLOATING_SKIP_SP);
-        skipBtn.setPadding(
-            (int) (PADDING_FLOATING_SKIP_H_DP * dp),
-            (int) (PADDING_FLOATING_SKIP_V_DP * dp),
-            (int) (PADDING_FLOATING_SKIP_H_DP * dp),
-            (int) (PADDING_FLOATING_SKIP_V_DP * dp)
-        );
-        GradientDrawable skipBg = new GradientDrawable();
-        skipBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
-        skipBg.setColor(Color.parseColor(COLOR_BUTTON_START));
-        skipBtn.setBackground(skipBg);
-        skipBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mHandler.removeCallbacks(mCountdownRunnable);
-                mCurrentIndex++;
-                openNextPlayerProfile();
-            }
-        });
-        pill.addView(skipBtn);
-
-        // Close button
+        // Stop / close button
         Button closeBtn = new Button(this);
-        closeBtn.setText("X");
-        closeBtn.setTextColor(Color.parseColor(COLOR_BUTTON_CANCEL));
-        closeBtn.setBackgroundColor(Color.TRANSPARENT);
+        closeBtn.setText("Stop");
+        closeBtn.setTextColor(Color.parseColor(COLOR_BG_CONTAINER));
+        closeBtn.setTypeface(null, android.graphics.Typeface.BOLD);
         closeBtn.setTextSize(TEXT_SIZE_FLOATING_CLOSE_SP);
         closeBtn.setPadding(
-            (int) (PADDING_FLOATING_CLOSE_L_DP * dp),
+            (int) (PADDING_FLOATING_CLOSE_H_DP * dp),
             (int) (PADDING_FLOATING_CLOSE_V_DP * dp),
-            (int) (PADDING_FLOATING_CLOSE_R_DP * dp),
+            (int) (PADDING_FLOATING_CLOSE_H_DP * dp),
             (int) (PADDING_FLOATING_CLOSE_V_DP * dp)
         );
+        GradientDrawable closeBg = new GradientDrawable();
+        closeBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
+        closeBg.setColor(Color.parseColor(COLOR_BUTTON_CANCEL));
+        closeBtn.setBackground(closeBg);
         closeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1051,7 +1026,7 @@ public class BlitzService extends Service {
             Build.VERSION.SDK_INT >= 26 ? 2038 : 2002,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             android.graphics.PixelFormat.TRANSLUCENT);
-        pillLp.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
+        pillLp.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
         pillLp.x = 0;
         pillLp.y = (int) (FLOATING_INITIAL_Y_DP * dp);
 
