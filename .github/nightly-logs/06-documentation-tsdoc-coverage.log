@@ -117,3 +117,7 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-07-07 | Frontend-PWA/src/features/settings/composables/useSettings.ts | Documented settings orchestrator, added detailed TSDoc for interface contracts, and injected mandatory threat/decision logs for PWA lifecycle and hardware brokering.
 2026-07-08 | Frontend-PWA/src/core/services/useNativeBridge.ts | Documented native bridge orchestrator, added comprehensive TSDoc for 13 return properties/methods, and injected mandatory threat/decision logs for hardware brokering.
 2026-07-09 | Frontend-PWA/src/core/services/useClashLoader.ts | Hardened TSDoc for SWR hydration logic and injected mandatory threat/decision logs.
+2026-07-10 | Frontend-PWA/src/core/services/useUiCoordinator.ts | Hardened TSDoc and injected mandatory threat/decision logs for UI occlusion and state merging.
+2026-07-10 | Frontend-PWA/src/core/services/useSelectionStore.ts | Hardened TSDoc and injected mandatory threat/decision logs for selection logic and desync threats.
+2026-07-10 | Frontend-PWA/src/core/services/useStoragePersistence.ts | Hardened TSDoc and injected mandatory threat/decision logs for storage eviction and persistence rationale.
+2026-07-10 | Frontend-PWA/src/core/services/useBroadcastChannel.ts | Hardened TSDoc and injected mandatory threat/decision logs for memory leaks and lifecycle cleanup.

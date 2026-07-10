@@ -24,16 +24,35 @@ export function useSelectionStore() {
   /** Reactive array of selected item identifiers. */
   const selectedIds = ref<string[]>([]);
 
-  // Selection Mode State
+  /**
+   * Internal flag to force the selection UI active even if zero items are selected.
+   * [DECISION LOG] This allows the UI to enter a "preparation" phase for selection
+   * before the first item is actually clicked.
+   */
   const isManualSelectionModeForced = ref(false);
 
-  /** Indicates if the UI should be in selection mode. */
+  /**
+   * Indicates if the UI should be in selection mode.
+   *
+   * @remarks
+   * [THREAT:] Logic Desync.
+   * [DECISION LOG] Authoritative Selection State: Selection mode is derived from
+   * either active selections or a manual override. This ensures the FAB and
+   * SelectionBar remain perfectly synchronized with the underlying data.
+   */
   const isSelectionMode = computed(
     () => selectedIds.value.length > 0 || isManualSelectionModeForced.value,
   );
 
   /**
    * Toggles the selection status of an item.
+   *
+   * @remarks
+   * [THREAT:] Duplicate Identifiers.
+   * [DECISION LOG] Item existence is checked via `indexOf` before mutation to
+   * prevent duplicate entries in the selection set, which would cause inaccurate
+   * batch processing counts.
+   *
    * @param targetItemId - The unique item identifier.
    */
   function toggleSelect(targetItemId: string) {
@@ -47,6 +66,11 @@ export function useSelectionStore() {
 
   /**
    * Replaces the current selection with a new set of IDs.
+   *
+   * @remarks
+   * [DECISION LOG] Immutability: The selection array is replaced via spreading
+   * to ensure Vue's reactivity system detects the change across all observers.
+   *
    * @param targetItemIds - The new set of identifiers.
    */
   function selectAll(targetItemIds: readonly string[]) {
@@ -55,6 +79,10 @@ export function useSelectionStore() {
 
   /**
    * Clears all selections and resets the selection mode.
+   *
+   * @remarks
+   * [DECISION LOG] Total Reset: Both the identifiers and the manual override
+   * are cleared to ensure a clean exit from selection-oriented UI states.
    */
   function clearSelection() {
     selectedIds.value = [];
@@ -72,7 +100,11 @@ export function useSelectionStore() {
     selectAll,
     /** Clears all selections. */
     clearSelection,
-    /** Manually overrides the selection mode state. */
+    /**
+     * Manually overrides the selection mode state.
+     *
+     * @param isForced - Whether to force selection mode active.
+     */
     setForceSelectionMode: (isForced: boolean) => {
       isManualSelectionModeForced.value = isForced;
     },
