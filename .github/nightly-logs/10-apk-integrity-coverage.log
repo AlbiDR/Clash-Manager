@@ -117,3 +117,10 @@
 - Audited native configuration: verified targetSdkVersion 35 and cleartext traffic restriction.
 - Verified custom native layer integrity via apk:verify:source.
 - Validated system stability via monorepo test gate (1300+ passed) using Node 22 bypass.
+
+[2026-07-11] Stage 10: APK & PWA Wrapper Integrity Audit
+- Synchronized navigation bar color in MainActivity.java to brand theme (#0b0e14) ensuring shell/navigation consistency.
+- Hardened theme colors in colors.xml: synchronized colorAccent and accent_material_dark to #a8c7fa (Dark Primary) to align with PWA dark theme.
+- Synchronized primary_material_dark and primary_dark_material_dark to #0b0e14 in colors.xml.
+- Verified monorepo-wide integrity and synchronization at v14.31.2 (appVersionCode 17120) across manifests and resources.
+- Validated via node APK/audit-wrapper-integrity.mjs, npm run apk:verify:source, and monorepo test gate (1411 passed) using Node 22 bypass flags.
