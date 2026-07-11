@@ -275,3 +275,16 @@ export const RoyaleRankingItemSchema = v.object({
 export const RoyaleRankingListSchema = v.object({
     items: v.array(RoyaleRankingItemSchema)
 });
+
+/**
+ * L1 Core: Harvested Player Schema.
+ *
+ * @remarks
+ * Represents a player discovered during the harvest process.
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
+export const HarvestedPlayerSchema = v.object({
+    tag: v.string(),
+    name: v.string(),
+    clan: v.nullable(v.string())
+});
