@@ -4,7 +4,7 @@
 import { computed } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
-import { useExternalLink, getSupercellLocale } from "@core";
+import { useExternalLink, getSupercellLocale, appVersion } from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 
 defineProps<{
@@ -55,8 +55,8 @@ const usefulLinks = computed(() => {
   if (!isNativeWrapper.value) {
     links.push({
       label: "Download Android App",
-      desc: "Install the native companion APK for automation features",
-      url: "https://github.com/AlbiDR/Clash-Manager/releases/latest",
+      desc: `Install the native companion APK (v${appVersion})`,
+      url: `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v${appVersion}.apk`,
       icon: "download",
     });
   }
