@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-11] PR #1076: docs(readme): reconcile query-royale-api harvesting logic
+**Commit**: `fb65469f5c9170611b57dbc3ca2a82fe66657f01`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1076)
+
+### Description
+Synchronized the `query-royale-api` documentation with its implementation. Updated harvest epoch counts, documented concurrent batch harvesting for international clans, and clarified the multi-tier fallback strategies for global and local recruitment discovery. Verified via monorepo test gate and project integrity audit.
+
+---
+*PR created automatically by Jules for task [12231510738280237826](https://jules.google.com/task/12231510738280237826) started by @AlbiDR*
+
+---
+
 ## [2026-07-11] PR #1075: perf(opt): standardize shared ui variable naming and audit substrate
 **Commit**: `a5ca0ac5f6ec13e457b3f662e12c6f146739bf23`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1075)
