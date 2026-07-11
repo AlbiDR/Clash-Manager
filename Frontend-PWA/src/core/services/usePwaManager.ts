@@ -5,6 +5,7 @@ import { ref } from "vue";
 import { useToast } from "./useToast";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
+import { appVersion } from "./useSystemInfo";
 
 /**
  * PWA MANAGER SERVICE (Layer 1)
@@ -55,28 +56,13 @@ export function usePwaManager() {
    * @remarks
    * Uses the native `navigator.serviceWorker` API. If a waiting worker is found,
    * it triggers an immediate skipWaiting via `updateServiceWorker(true)`.
+   * Runs for all clients, including the native Android wrapper, because the PWA
+   * content cached inside the WebView benefits from SW refreshes independently
+   * of the APK shell version.
    *
    * @returns A promise that resolves when the update check completes.
    */
   async function forceUpdate(): Promise<void> {
-    if (isNativeWrapper.value) {
-      const activeToastId = toast.info("Opening download page for the latest APK...");
-      try {
-        const downloadUrl = "https://github.com/AlbiDR/Clash-Manager/releases/latest";
-        if (nativeBridge.value?.openExternalUrl) {
-          nativeBridge.value.openExternalUrl(downloadUrl);
-        } else if (typeof window !== "undefined") {
-          window.location.href = downloadUrl;
-        }
-        toast.remove(activeToastId);
-        toast.success("Redirected to download page");
-      } catch (err: unknown) {
-        toast.remove(activeToastId);
-        toast.error("Failed to redirect to download page");
-      }
-      return;
-    }
-
     const activeToastId = toast.info("Checking for updates...");
 
     try {
@@ -119,6 +105,34 @@ export function usePwaManager() {
       console.error("Update check failed", errorMessage);
       toast.remove(activeToastId);
       toast.error("Update check failed");
+    }
+  }
+
+  /**
+   * Opens the versioned APK binary hosted in the repository for direct download.
+   *
+   * @remarks
+   * Intended exclusively for native Android wrapper users who need to update
+   * the APK shell. The URL is constructed from the build-time `appVersion`
+   * constant so it always resolves to the binary matching the running PWA.
+   *
+   * [DECISION LOG] Separated from `forceUpdate` to keep SW update and APK
+   * shell update concerns orthogonal.
+   */
+  async function downloadApk(): Promise<void> {
+    const activeToastId = toast.info("Opening APK download...");
+    try {
+      const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v${appVersion}.apk`;
+      if (nativeBridge.value?.openExternalUrl) {
+        nativeBridge.value.openExternalUrl(apkUrl);
+      } else if (typeof window !== "undefined") {
+        window.location.href = apkUrl;
+      }
+      toast.remove(activeToastId);
+      toast.success("APK download started");
+    } catch (err: unknown) {
+      toast.remove(activeToastId);
+      toast.error("Failed to open APK download");
     }
   }
 
@@ -219,6 +233,7 @@ export function usePwaManager() {
   return {
     updateServiceWorker,
     forceUpdate,
+    downloadApk,
     clearCache,
     factoryReset,
   };

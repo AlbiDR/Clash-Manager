@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { Icon, vTactile, SettingsCard } from "@shared";
 import { useSettings } from "../composables/useSettings";
+import { useNativeBridge } from "@core/services/useNativeBridge";
 
 defineProps<{
   initiallyExpanded?: boolean;
@@ -11,9 +12,12 @@ defineProps<{
 const {
   isRefreshing,
   forceUpdate,
+  downloadApk,
   clearCache,
   factoryReset,
 } = useSettings();
+
+const { isNativeWrapper } = useNativeBridge();
 </script>
 
 <template>
@@ -22,15 +26,20 @@ const {
       <span class="exp-badge">EXPERIMENTAL</span>
     </template>
 
-    <div class="trouble-grid">
+    <div class="trouble-grid" :class="{ 'has-apk': isNativeWrapper }">
       <button class="trouble-btn" @click="forceUpdate" v-tactile>
-        <Icon name="download_done" size="24" />
-        <span>Force Update</span>
+        <Icon name="refresh" size="24" />
+        <span>Refresh App</span>
       </button>
 
       <button class="trouble-btn" @click="clearCache" v-tactile>
         <Icon name="layers_clear" size="24" />
         <span>Purge Assets</span>
+      </button>
+
+      <button v-if="isNativeWrapper" class="trouble-btn" @click="downloadApk" v-tactile>
+        <Icon name="download" size="24" />
+        <span>Update APK</span>
       </button>
 
       <button class="trouble-btn danger" @click="factoryReset" v-tactile>
@@ -56,6 +65,9 @@ const {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+}
+.trouble-grid.has-apk {
+  grid-template-columns: repeat(4, 1fr);
 }
 .trouble-btn {
   display: flex;

@@ -86,7 +86,7 @@ export function useSettings() {
   const { isHydrated, isRefreshing, lastSyncTime } = storeToRefs(clashDataStore);
   const { refresh, startBackgroundSync } = clashDataStore;
   const { status: unifiedStatus } = useConnectionStatus();
-  const { updateServiceWorker, forceUpdate, clearCache: clearPwaCache, factoryReset: performPwaReset } = usePwaManager();
+  const { updateServiceWorker, forceUpdate, downloadApk, clearCache: clearPwaCache, factoryReset: performPwaReset } = usePwaManager();
   const toast = useToast();
   const { appVersion, activeBadge: footerBadgeText } = useSystemInfo();
   const { apiUrl, apiStatus, pingData } = useApiState();
@@ -277,6 +277,7 @@ export function useSettings() {
     refresh,
     updateServiceWorker: (reload?: boolean) => updateServiceWorker.value(reload),
     forceUpdate,
+    downloadApk,
     clearCache,
     factoryReset,
     initAppSettings,
