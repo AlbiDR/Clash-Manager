@@ -1,19 +1,38 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { ref, onMounted, onUnmounted } from "vue";
+
+/**
+ * [SHARED] TOAST NOTIFICATION
+ * ----------------------------------------------------------------------------
+ * Rationale: Standardized transient feedback molecule for system events.
+ * Features: Auto-dismissal, Action buttons, Clipboard integration.
+ * ----------------------------------------------------------------------------
+ */
+
 const props = defineProps<{
+  /** Unique identifier for the toast instance. */
   id: string;
+  /** The semantic type of the toast, determining its visual style. */
   type: "success" | "error" | "info" | "undo";
+  /** The message text to display. */
   message: string;
+  /** Visibility duration in milliseconds. Set to 0 for persistent toasts. */
   duration?: number;
+  /** Optional label for an action button (e.g., "UNDO"). */
   actionLabel?: string;
 }>();
 
 const emit = defineEmits<{
+  /** Emitted when the toast is dismissed (either manually or via timeout). */
   dismiss: [id: string];
+  /** Emitted when the user clicks the action button. */
   action: [id: string];
 }>();
 
+/** @internal Internal timer ID used for auto-dismissal cleanup. */
 let timer: number | undefined;
 const isHandlingAction = ref(false);
 const showCopiedTick = ref(false);
@@ -42,8 +61,13 @@ function triggerAction() {
   emit("action", props.id);
 }
 
+/**
+ * Copies the toast message to the system clipboard.
+ */
 async function copyToClipboard() {
   try {
+    // [DECISION LOG] Error and Info messages are explicitly selectable and
+    // copyable to satisfy the "Error Readability Contract" in ADR Section IV.
     await navigator.clipboard.writeText(props.message);
     showCopiedTick.value = true;
     clearTimer();
