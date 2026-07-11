@@ -12,8 +12,9 @@ import type {
 import {
   type Rarity,
   CARD_LEVEL_CAP,
-  KING_XP_TABLE,
-  normalizeRarity
+  normalizeRarity,
+  calculateXpIntoLevel,
+  calculateTotalXp
 } from '@core/utils/game';
 import * as v from "valibot";
 import { ProfileInputSchema } from "@core/api/ProfileSchemas";
@@ -64,19 +65,12 @@ const ProfileHydrator = {
     } else {
       const currentLevel = profileDataSnapshot.expLevel || 1;
       const totalExp = profileDataSnapshot.expPoints || 0;
-      
-      // Target B [1]: Robust extraction of relative XP from cumulative API points.
-      // Rationale: The Clash Royale API provides total cumulative XP in 'expPoints'.
-      // To maintain internal consistency with our state-based engine, we must
-      // subtract the base XP for the current level.
-      const kingLevelRow = KING_XP_TABLE.find(row => row.level === currentLevel) || KING_XP_TABLE[0];
-      const xpIntoLevel = Math.max(0, totalExp - Number(kingLevelRow.cumulative));
 
       profile = {
         name: profileDataSnapshot.name || "Unknown",
         tag: profileDataSnapshot.tag || "0",
         kingLevel: currentLevel,
-        xpIntoLevel: asXP(xpIntoLevel)
+        xpIntoLevel: asXP(calculateXpIntoLevel(totalExp, currentLevel))
       };
       cardsData = [...(profileDataSnapshot.cards || []), ...(profileDataSnapshot.towerTroops || [])];
     }
@@ -120,9 +114,7 @@ const ProfileHydrator = {
    * Initial seed for the simulation loop.
    */
   createInitialState(data: PlayerData): SimulationState {
-    // PATHOGEN: Anemic variable 'k' replaced with 'kingLevelRow'.
-    const kingLevelRow = KING_XP_TABLE.find(kingLevelEntry => kingLevelEntry.level === data.profile.kingLevel) || KING_XP_TABLE[0];
-    const cumulativeXp = addXP(kingLevelRow.cumulative, data.profile.xpIntoLevel);
+    const cumulativeXp = calculateTotalXp(data.profile.kingLevel, Number(data.profile.xpIntoLevel));
 
     return {
       roster: data.cards,
