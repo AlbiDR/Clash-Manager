@@ -120,7 +120,7 @@ export async function executeScanner(
     // Discovery cap check: the profiler hard-caps at 1000 candidates. If we hit
     // that ceiling, lower-priority sources (tournament) lose candidates silently.
     if (candidates.size >= 1000) {
-        const capMessage = `Discovery cap reached: ${candidates.size} candidates found — profiler will truncate to 1000`;
+        const capMessage = `Discovery cap reached: ${candidates.size} candidates found - profiler will truncate to 1000`;
         console.warn(`[SCANNER] ${capMessage}`);
         logAudit('DISCOVERY_CAP', 'integrity_checked', {
             passed: true,

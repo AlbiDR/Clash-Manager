@@ -6,10 +6,10 @@
 # Path filter rules:
 #   Included : APK/src/** (Java source), APK/android/** (manifest, resources, dex)
 #   Included : APK/verify-apk-integrity.mjs (integrity gate used by this workflow)
-#   Excluded : APK/android/classes.dex  — committed by this workflow itself; excluding
+#   Excluded : APK/android/classes.dex  - committed by this workflow itself; excluding
 #              prevents the self-triggering loop after the build commits it back.
-#   Excluded : APK/release/**            — build output, never an input.
-#   Excluded : APK/**/*.md               — documentation only, no effect on the binary.
+#   Excluded : APK/release/**            - build output, never an input.
+#   Excluded : APK/**/*.md               - documentation only, no effect on the binary.
 #
 # Signing material comes from repo Secrets (the keystore itself is NOT in the
 # repo): ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /

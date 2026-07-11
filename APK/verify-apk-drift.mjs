@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * verify-apk-drift.mjs — fail if the committed release APK no longer matches a
+ * verify-apk-drift.mjs - fail if the committed release APK no longer matches a
  * freshly-built one (i.e. someone edited APK/android/ but forgot to rebuild +
  * re-commit APK/release/clashmanager.apk).
  *
- * It deliberately ignores signatures and timestamps — those differ on every
- * sign — and compares only content that apktool copies VERBATIM, so there are
+ * It deliberately ignores signatures and timestamps - those differ on every
+ * sign - and compares only content that apktool copies VERBATIM, so there are
  * no aapt2-version false positives:
- *   • classes.dex      — the irreplaceable native layer (Blitz/a11y/bridge)
- *   • res/mipmap-* launcher icon PNGs — declared doNotCompress, copied as-is
+ *   • classes.dex      - the irreplaceable native layer (Blitz/a11y/bridge)
+ *   • res/mipmap-* launcher icon PNGs - declared doNotCompress, copied as-is
  *
  *   node verify-apk-drift.mjs <committed.apk> <freshly-built.apk>
  *

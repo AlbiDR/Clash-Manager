@@ -7,7 +7,7 @@ _agents
 .cursor
 .jules
 .mcp
-# Claude Code personal settings — contains API tokens; never commit
+# Claude Code personal settings - contains API tokens; never commit
 .claude/settings.local.json
 .claude
 
@@ -94,7 +94,7 @@ functions_*.txt
 *.aab
 *.keystore
 # ...but DO track the one ground-truth reference APK (the recovered native layer
-# is the irreplaceable IP — this is its proven, signed source-of-truth binary).
+# is the irreplaceable IP - this is its proven, signed source-of-truth binary).
 !APK/reference/clashmanager-v4.apk
 /assetlinks.json
 !Frontend-PWA/public/.well-known/assetlinks.json
@@ -102,7 +102,7 @@ functions_*.txt
 # Android icon-generator preview output (gen-android-icons.mjs --preview)
 .icon-preview/
 
-# Android build outputs (apktool b / build-apk.sh) — sources live in APK/android/
+# Android build outputs (apktool b / build-apk.sh) - sources live in APK/android/
 APK/android/build/
 # Intermediates stay ignored; the versioned signed release APK is tracked (exception below).
 APK/release/*

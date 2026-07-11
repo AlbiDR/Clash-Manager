@@ -3,7 +3,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { Icon } from "@shared";
-import { cleanTag } from "@core";
+import { normalizeTag } from "@core";
 import { useHaptics } from "@shared";
 
 const props = defineProps<{
@@ -28,8 +28,7 @@ function handleLockIn() {
   const tag = localTag.value.trim();
   haptics.tap();
   if (tag) {
-    const formattedTag = `#${cleanTag(tag)}`;
-    emit("lockIn", formattedTag);
+    emit("lockIn", normalizeTag(tag));
   } else {
     emit("lockIn", null);
   }

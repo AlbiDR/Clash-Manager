@@ -20,12 +20,13 @@ The `query-royale-api` function acts as a secure proxy for the PWA, allowing it 
 
 ### Global Harvesting
 - **Endpoint**: `/locations/global/pathoflegend/players`
-- **Behavior**: Retrieves the live worldwide Path of Legends top 1000 in a single request.
+- **Behavior**: Retrieves the live worldwide Path of Legends top 1000.
+- **Multi-Tier Fallback**: If the global Path of Legends is unpopulated (e.g. at the start of a season), the engine falls back to querying and merging Path of Legends rankings across major countries until a floor of 80 players is met.
 - **Validation**: Strict structural validation via `RoyaleRankingListSchema`.
 
 > **Why Path of Legends, not the trophy ladder?** The legacy `/rankings/players`
 > leaderboard was retired with the 2025 Trophy Road rework and now returns an
-> empty list for every location. The season-scoped form
+> empty list for most locations. The season-scoped form
 > (`/pathoflegend/{season}/rankings/players`) is `global`-only and exposes just
 > *completed* seasons. The season-less `/pathoflegend/players` form used here is
 > the only endpoint that serves the live, in-progress board - and it accepts both
@@ -34,13 +35,14 @@ The `query-royale-api` function acts as a secure proxy for the PWA, allowing it 
 ### Local Harvesting & Country Rotation
 - **Endpoint**: `/locations/{id}/pathoflegend/players`
 - **Identification**: Automatically identifies the clan's registered location by fetching clan details for the configured `CLAN_TAG`.
-- **International Rotation**: If the clan is registered as "International" (ID 57000101) or non-country, the function performs a **Dynamic Country Rotation**:
+- **Local Fallback**: If the local Path of Legends leaderboard is empty or sparse, the function falls back to the local Trophy Road rankings (`/rankings/players`) to guarantee results year-round.
+- **International Rotation**: If the clan is registered as "International" (ID 57000101) or non-country, the function performs a **Concurrent Batch Harvest**:
     1. Fetches the full locations catalog from `/locations`.
     2. Filters for valid country locations (`isCountry: true`).
-    3. Randomly selects a country for the current request to ensure diverse discovery.
-    4. **Rationale**: Rotating countries for International clans prevents stagnation in the recruitment pool by accessing distinct regional leaderboards that would otherwise be ignored.
+    3. **Concurrent Dispatch**: Shuffles the catalog and selects the top 15 random countries to query in parallel.
+    4. **Rationale**: Parallelizing discovery prevents massive delays when hitting empty regions and ensures geographic variety within a single execution cycle (~1-3 seconds).
 - **Ephemeral Caching**: The locations catalog is cached in-memory (`cachedCountries`) at the module level to minimize roundtrips during an execution instance lifecycle.
-- **Epoch Ceiling**: Up to 30 countries are probed per request (`MAX_HARVEST_EPOCHS`). Many micro-territories return 0 ranked players; a higher ceiling improves the probability of finding a populated leaderboard within a single invocation.
+- **Epoch Ceiling**: Up to 15 countries are probed per request (`MAX_HARVEST_EPOCHS`).
 
 ## Security & Validation Boundaries
 

@@ -29,23 +29,23 @@ const haptics = useHaptics();
 /**
  * Updates the active value with tactile feedback.
  */
-function selectOption(val: T) {
-  if (props.modelValue === val) return;
+function selectOption(targetValue: T) {
+  if (props.modelValue === targetValue) return;
   haptics.tap();
-  emit("update:modelValue", val);
+  emit("update:modelValue", targetValue);
 }
 </script>
 
 <template>
   <div class="segmented-control" :class="{ compact: props.compact }">
     <button
-      v-for="opt in props.options"
-      :key="String(opt.value)"
+      v-for="optionCandidate in props.options"
+      :key="String(optionCandidate.value)"
       class="segment-btn hit-target"
-      :class="{ active: props.modelValue === opt.value }"
-      @click.stop="selectOption(opt.value)"
+      :class="{ active: props.modelValue === optionCandidate.value }"
+      @click.stop="selectOption(optionCandidate.value)"
     >
-      <span>{{ opt.label }}</span>
+      <span>{{ optionCandidate.label }}</span>
     </button>
   </div>
 </template>

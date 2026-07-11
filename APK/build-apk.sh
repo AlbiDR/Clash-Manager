@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# build-apk.sh — Local Clash Manager APK compilation & sanity checks.
+# build-apk.sh - Local Clash Manager APK compilation & sanity checks.
 #
 # Compiles the custom Java sources from APK/src/ into a DEX file,
 # merges them into the smali files extracted from the base APK, builds the
@@ -10,7 +10,7 @@
 #   ./build-apk.sh                 # build + sign (only if local keystore is available)
 #
 # Env overrides:
-#   JAVA_HOME              (default: JDK 17 — Gradle/apktool reject the system JDK 26)
+#   JAVA_HOME              (default: JDK 17 - Gradle/apktool reject the system JDK 26)
 #   CLASHMANAGER_KEYSTORE  signing keystore (default: ~/.clash-manager-signing/android.keystore)
 #   CLASHMANAGER_KEY_ALIAS keystore alias   (default: android)
 #   CLASHMANAGER_KEY_PASS  keystore password (if set, signing runs non-interactively)
@@ -106,7 +106,7 @@ if [ -n "${CLASHMANAGER_KEY_PASS:-}" ]; then
     --ks-pass "pass:${CLASHMANAGER_KEY_PASS}" \
     --out "${OUT}/clashmanager.apk" "${OUT}/clashmanager-aligned.apk"
 else
-  echo "  (no CLASHMANAGER_KEY_PASS set — prompting interactively; set it in CI to avoid hanging)"
+  echo "  (no CLASHMANAGER_KEY_PASS set - prompting interactively; set it in CI to avoid hanging)"
   "${BT}/apksigner" sign --ks "${KEYSTORE}" --ks-key-alias "${KEY_ALIAS}" \
     --out "${OUT}/clashmanager.apk" "${OUT}/clashmanager-aligned.apk"
 fi

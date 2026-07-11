@@ -5,8 +5,8 @@
     <color name="abc_search_url_text_normal">#7fa87f</color>
     <color name="abc_search_url_text_pressed">@android:color/black</color>
     <color name="abc_search_url_text_selected">@android:color/black</color>
-    <color name="accent_material_dark">@color/material_deep_teal_200</color>
-    <color name="accent_material_light">@color/material_deep_teal_500</color>
+    <color name="accent_material_dark">#a8c7fa</color>
+    <color name="accent_material_light">#0061a4</color>
     <color name="androidx_core_ripple_material_light">#1f000000</color>
     <color name="androidx_core_secondary_text_default_material_light">#8a000000</color>
     <color name="backgroundColor">#0b0e14</color>
@@ -26,7 +26,7 @@
     <color name="browser_actions_title_color">#646464</color>
     <color name="button_material_dark">#ff5a595b</color>
     <color name="button_material_light">#ffd6d7d7</color>
-    <color name="colorAccent">#0061a4</color>
+    <color name="colorAccent">#a8c7fa</color>
     <color name="colorPrimary">#0b0e14</color>
     <color name="colorPrimaryDark">#0b0e14</color>
     <color name="dim_foreground_disabled_material_dark">#80bebebe</color>
@@ -57,9 +57,9 @@
     <color name="navigationDividerColorDark">#000000</color>
     <color name="notification_action_color_filter">@color/androidx_core_secondary_text_default_material_light</color>
     <color name="notification_icon_bg_color">#ff9e9e9e</color>
-    <color name="primary_dark_material_dark">@android:color/black</color>
+    <color name="primary_dark_material_dark">#0b0e14</color>
     <color name="primary_dark_material_light">@color/material_grey_600</color>
-    <color name="primary_material_dark">@color/material_grey_900</color>
+    <color name="primary_material_dark">#0b0e14</color>
     <color name="primary_material_light">@color/material_grey_100</color>
     <color name="primary_text_default_material_dark">#ffffffff</color>
     <color name="primary_text_default_material_light">#de000000</color>

@@ -190,7 +190,7 @@ export async function runProfiler(
             if (withDonations === 0) suspiciousFields.push('totalDonations');
 
             if (suspiciousFields.length > 0) {
-                console.warn(`[PROFILING] RPoS FIELD ANOMALY: [${suspiciousFields.join(', ')}] returned 0 across all ${validRecruits.length} profiles — possible Royale API field rename or deprecation`);
+                console.warn(`[PROFILING] RPoS FIELD ANOMALY: [${suspiciousFields.join(', ')}] returned 0 across all ${validRecruits.length} profiles - possible Royale API field rename or deprecation`);
                 logAudit('PROFILING', 'integrity_checked', {
                     passed: false,
                     details: `rpos_field_anomaly: ${suspiciousFields.join(', ')} missing across all profiles`,

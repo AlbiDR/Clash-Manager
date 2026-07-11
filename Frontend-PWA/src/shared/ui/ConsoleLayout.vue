@@ -114,7 +114,7 @@ watch(
         isHarvesting: state.isHarvesting,
         activeHarvester: state.activeHarvester,
         dismissIcon: state.dismissIcon,
-        onAction: (e: MouseEvent) => emit("fab-action", e),
+        onAction: (fabActionEvent: MouseEvent) => emit("fab-action", fabActionEvent),
         onBlitz: () => emit("fab-blitz"),
         onDismiss: () => emit("fab-dismiss"),
         onGlobalHarvest: () => emit("fab-global-harvest"),
@@ -171,8 +171,8 @@ onUnmounted(() => {
         :loading="displayLoading"
         :remote-info="props.remoteInfo"
         reserve-extra-space
-        @update:search="(val: string) => emit('update:search', val)"
-        @update:sort="(val: string) => emit('update:sort', val)"
+        @update:search="(searchQueryCandidate: string) => emit('update:search', searchQueryCandidate)"
+        @update:sort="(targetSortValue: string) => emit('update:sort', targetSortValue)"
         @refresh="emit('refresh')"
       >
         <template #filters>
@@ -188,7 +188,7 @@ onUnmounted(() => {
             @clear="emit('clear-selection')"
             @done="emit('clear-selection')"
             @select-score="
-              (t: number, m: 'ge' | 'le') => emit('select-score', t, m)
+              (thresholdValue: number, thresholdMode: 'ge' | 'le') => emit('select-score', thresholdValue, thresholdMode)
             "
           />
           <slot name="extra-header" v-else></slot>

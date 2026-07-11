@@ -45,13 +45,26 @@ describe("StatusPill", () => {
     }
   });
 
-  it("toggles expanded state and calls haptics on click", async () => {
+  it("toggles expanded state and calls haptics via v-tactile", async () => {
     const wrapper = mount(StatusPill, {
       props: { type: "success", text: "Ready", nominal: true },
+      global: {
+        directives: {
+          tactile: {
+            mounted(el) {
+              el.addEventListener("pointerdown", () => {});
+              el.addEventListener("pointerup", () => tapMock());
+            }
+          }
+        }
+      }
     });
     
     expect(wrapper.classes()).not.toContain("is-expanded");
     
+    // Simulate v-tactile interaction
+    await wrapper.trigger("pointerdown");
+    await wrapper.trigger("pointerup");
     await wrapper.trigger("click");
     
     expect(wrapper.classes()).toContain("is-expanded");

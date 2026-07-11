@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * verify-apk-integrity.mjs — release gate that FAILS if an APK is missing the
+ * verify-apk-integrity.mjs - release gate that FAILS if an APK is missing the
  * custom native layer.
  *
  * WHY: the Clash Manager APK is NOT a plain TWA. It carries a custom Java
@@ -126,15 +126,15 @@ function main() {
       else { fail(`MISSING bridge method ${m}()`); problems.push(`bridge:${m}`); }
     }
   } else {
-    console.warn("⚠ could not read dex strings (unzip/strings unavailable) — skipped bridge-method check");
+    console.warn("⚠ could not read dex strings (unzip/strings unavailable) - skipped bridge-method check");
   }
 
   console.log("");
   if (problems.length === 0) {
-    console.log(`\x1b[32m\x1b[1mPASS\x1b[0m — ${path.basename(APK)} contains the full custom native layer. Safe to ship.`);
+    console.log(`\x1b[32m\x1b[1mPASS\x1b[0m - ${path.basename(APK)} contains the full custom native layer. Safe to ship.`);
     process.exit(0);
   }
-  console.error(`\x1b[31m\x1b[1mFAIL\x1b[0m — ${problems.length} missing element(s): ${problems.join(", ")}`);
+  console.error(`\x1b[31m\x1b[1mFAIL\x1b[0m - ${problems.length} missing element(s): ${problems.join(", ")}`);
   console.error("This APK is STRIPPED of custom functionality. Do NOT ship it.");
   console.error("Build the release with `pnpm apk:check` (from APK/src/), not `bubblewrap build`.");
   process.exit(1);

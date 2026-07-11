@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * verify-android-source.mjs — fast, dependency-free integrity gate for the
+ * verify-android-source.mjs - fast, dependency-free integrity gate for the
  * committed android/ project (the apktool-recovered source of truth).
  *
  * Complements verify-apk-integrity.mjs (which inspects a built APK with aapt2):
  * this one only reads files, so it runs in CI with zero Android tooling and
- * catches the dominant regression — someone editing android/ and dropping the
+ * catches the dominant regression - someone editing android/ and dropping the
  * custom native layer or the compiled dex. Exits non-zero on any violation.
  *
  *   node verify-android-source.mjs            # checks ./android
@@ -38,7 +38,7 @@ const ok = (m) => console.log(`\x1b[32m✓ ${m}\x1b[0m`);
 const problems = [];
 
 if (!existsSync(manifestPath)) {
-  fail(`missing ${manifestPath} — android/ project is not intact`);
+  fail(`missing ${manifestPath} - android/ project is not intact`);
   process.exit(1);
 }
 const manifest = readFileSync(manifestPath, "utf8");
@@ -58,17 +58,17 @@ if (existsSync(publicPath)) {
 }
 
 if (existsSync(dexPath) && statSync(dexPath).size > 1_000_000) {
-  ok(`classes.dex present (${(statSync(dexPath).size / 1e6).toFixed(1)} MB — custom code intact)`);
+  ok(`classes.dex present (${(statSync(dexPath).size / 1e6).toFixed(1)} MB - custom code intact)`);
 } else {
-  fail("classes.dex missing or suspiciously small — native layer may be gone");
+  fail("classes.dex missing or suspiciously small - native layer may be gone");
   problems.push("classes.dex");
 }
 
 console.log("");
 if (problems.length === 0) {
-  console.log("\x1b[32m\x1b[1mPASS\x1b[0m — android/ retains the full custom native layer.");
+  console.log("\x1b[32m\x1b[1mPASS\x1b[0m - android/ retains the full custom native layer.");
   process.exit(0);
 }
-console.error(`\x1b[31m\x1b[1mFAIL\x1b[0m — ${problems.length} issue(s): ${problems.join(", ")}`);
+console.error(`\x1b[31m\x1b[1mFAIL\x1b[0m - ${problems.length} issue(s): ${problems.join(", ")}`);
 console.error("The android/ project has been stripped. See android/README.md.");
 process.exit(1);

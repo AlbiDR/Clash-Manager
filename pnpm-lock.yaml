@@ -10,8 +10,8 @@ catalogs:
       specifier: ^0.44.1
       version: 0.44.1
     '@formkit/auto-animate':
-      specifier: ^0.9.0
-      version: 0.9.0
+      specifier: ^0.10.0
+      version: 0.10.0
     '@supabase/supabase-js':
       specifier: ^2.110.2
       version: 2.110.2
@@ -40,8 +40,8 @@ catalogs:
       specifier: ^29.1.1
       version: 29.1.1
     knip:
-      specifier: ^6.25.0
-      version: 6.25.0
+      specifier: ^6.26.0
+      version: 6.26.0
     pinia:
       specifier: ^3.0.4
       version: 3.0.4
@@ -103,7 +103,7 @@ importers:
         version: 18.0.0
       knip:
         specifier: 'catalog:'
-        version: 6.25.0
+        version: 6.26.0
       simple-git-hooks:
         specifier: 'catalog:'
         version: 2.13.1
@@ -127,7 +127,7 @@ importers:
     dependencies:
       '@formkit/auto-animate':
         specifier: 'catalog:'
-        version: 0.9.0
+        version: 0.10.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.110.2
@@ -1023,8 +1023,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@formkit/auto-animate@0.9.0':
-    resolution: {integrity: sha512-VhP4zEAacXS3dfTpJpJ88QdLqMTcabMg0jwpOSxZ/VzfQVfl3GkZSCZThhGC5uhq/TxPHPzW0dzr4H9Bb1OgKA==}
+  '@formkit/auto-animate@0.10.0':
+    resolution: {integrity: sha512-KGomRttjUfORuPUaR/ZGQw+6xfMrTM+sxnILv7JAd9AmabU9rg9i6gF/iC0Ih+QpKCubJpCA/1DX9UHKE8cX+A==}
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -2695,8 +2695,8 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
-  knip@6.25.0:
-    resolution: {integrity: sha512-Q3n41VjOOB/aqsbxb8kallAcFKrUz3b2S5fD5pTODljVpP01t+rvAgy2x3j0Cq8yEpRRHNdar1vHuqFfGuIakQ==}
+  knip@6.26.0:
+    resolution: {integrity: sha512-e9eELEEpBpGTd4H4HB7818/DYj9dMzMyUqAddfYwUN/EbSkgIjOuWEF96W/xHsmV0SDrsdXjIM+oZ2xpPzPsBA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -4657,7 +4657,7 @@ snapshots:
     optionalDependencies:
       '@noble/hashes': 1.8.0
 
-  '@formkit/auto-animate@0.9.0': {}
+  '@formkit/auto-animate@0.10.0': {}
 
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
@@ -6241,7 +6241,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  knip@6.25.0:
+  knip@6.26.0:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.4)
       formatly: 0.3.0
