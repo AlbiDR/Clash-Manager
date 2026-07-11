@@ -5,6 +5,7 @@ import { computed } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { useExternalLink, getSupercellLocale } from "@core";
+import { useNativeBridge } from "@core/services/useNativeBridge";
 
 defineProps<{
   initiallyExpanded?: boolean;
@@ -12,12 +13,13 @@ defineProps<{
 
 const { isRefreshing } = useSettings();
 const { openExternal } = useExternalLink();
+const { isNativeWrapper } = useNativeBridge();
 
 // Locale-aware: Supercell URLs include a locale segment that must match the
 // user's browser language. Resolved once at mount via getSupercellLocale().
 const usefulLinks = computed(() => {
   const locale = getSupercellLocale();
-  return [
+  const links = [
     {
       label: "RoyaleAPI Blog",
       desc: "Latest news and articles about Clash Royale",
@@ -49,6 +51,17 @@ const usefulLinks = computed(() => {
       icon: "github",
     },
   ];
+
+  if (!isNativeWrapper.value) {
+    links.push({
+      label: "Download Android App",
+      desc: "Install the native companion APK for automation features",
+      url: "https://github.com/AlbiDR/Clash-Manager/releases/latest",
+      icon: "download",
+    });
+  }
+
+  return links;
 });
 </script>
 

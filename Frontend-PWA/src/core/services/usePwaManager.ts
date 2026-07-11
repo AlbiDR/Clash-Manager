@@ -4,6 +4,7 @@
 import { ref } from "vue";
 import { useToast } from "./useToast";
 import { idb } from "./StorageService";
+import { useNativeBridge } from "./useNativeBridge";
 
 /**
  * PWA MANAGER SERVICE (Layer 1)
@@ -36,6 +37,7 @@ import { idb } from "./StorageService";
  */
 export function usePwaManager() {
   const toast = useToast();
+  const { isNativeWrapper, bridge: nativeBridge } = useNativeBridge();
 
   /**
    * Function to trigger a Service Worker reload/update.
@@ -57,6 +59,24 @@ export function usePwaManager() {
    * @returns A promise that resolves when the update check completes.
    */
   async function forceUpdate(): Promise<void> {
+    if (isNativeWrapper.value) {
+      const activeToastId = toast.info("Opening download page for the latest APK...");
+      try {
+        const downloadUrl = "https://github.com/AlbiDR/Clash-Manager/releases/latest";
+        if (nativeBridge.value?.openExternalUrl) {
+          nativeBridge.value.openExternalUrl(downloadUrl);
+        } else if (typeof window !== "undefined") {
+          window.location.href = downloadUrl;
+        }
+        toast.remove(activeToastId);
+        toast.success("Redirected to download page");
+      } catch (err: unknown) {
+        toast.remove(activeToastId);
+        toast.error("Failed to redirect to download page");
+      }
+      return;
+    }
+
     const activeToastId = toast.info("Checking for updates...");
 
     try {
