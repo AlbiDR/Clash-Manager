@@ -17,12 +17,27 @@ import type { WebAppData, PlayerTag } from "../types";
  *
  * @remarks
  * **Architectural Context:**
- * - **Layer:** Layer 1 Core Service (@core)
+ * - **Layer:** Layer 1 Core Service (@core).
  * - **Role:** Decomposed logic for data synchronization and persistence.
  * - **Satisfaction:** ADR Section I (Core Services). Centralizes sync state and
  *   persistence logic away from the main Pinia store to satisfy SRP.
  *
  * @param data - Reactive reference to the authoritative WebAppData state.
+ *
+ * @returns
+ * - `loading`: Reactive flag to prevent concurrent synchronization cycles.
+ * - `lastSync`: Unix timestamp (ms) representing the authoritative age of the local data.
+ * - `syncError`: Stores the most recent sync error message.
+ * - `dataSource`: Indicates the provenance of the dataset (SUPABASE).
+ * - `remoteTimestamp`: Authoritative timestamp from the last successful Supabase fetch.
+ * - `syncStatus`: Authoritative diagnosis state from the last Supabase sync attempt.
+ * - `lastCompiled`: Server-side compilation marker.
+ * - `lastFetched`: Raw API fetch marker.
+ * - `loadLocal`: Hydrates the service state from the local IndexedDB cache.
+ * - `updateLocalData`: Manually updates the service state with an external payload.
+ * - `refreshFromSupabase`: Triggers a high-priority foreground synchronization from Supabase.
+ * - `startBackgroundSync`: Executes a non-blocking background synchronization.
+ * - `updatePlayerLocally`: Patches a specific player's data in the local state.
  */
 export function useClashSync(data: Ref<WebAppData | null>) {
   // --- STATE ---
