@@ -1,6 +1,34 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-11] PR #1077: docs(tsdoc): harden core service and shared UI contracts
+**Commit**: `057eadad8f7b4643c48f66d9f238b47af183f842`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1077)
+
+### Description
+This PR hardens the documentation substrate for the Layer 1 Core services and shared UI components on the `Nightly` branch.
+
+### Reasoning:
+- **[Recent-Change Priority]:** Audited `useClashDataStore.ts` and `useClashSync.ts` following Stage 4/9 refactoring to ensure their interface contracts are strictly documented and synchronized with current implementation logic.
+- **[Safety Checks]:** Confirmed ADR Section I (Kernel), Section III (Validation Boundaries), and Section IV (Operational Security) coherence. Enforced mandatory licensing headers and documented the "Error Readability Contract" in `Toast.vue`.
+
+### Changes:
+- **Frontend-PWA/src/core/services/useClashDataStore.ts**: Injected TSDoc for reactive state, computed getters, and the `triggerUpdate` action. Added `// [THREAT:]` and `// [DECISION LOG]` for Service Worker update logic.
+- **Frontend-PWA/src/core/services/useClashSync.ts**: Added comprehensive TSDoc for the composable's `@returns` contract and mapped it to ADR Section I.
+- **Frontend-PWA/src/shared/ui/Toast.vue**: Enforced GPL-3.0-only licensing and documented interface contracts for props and emits.
+
+### Verification:
+- **[Automated]:** Confirmed ADR alignment and stylistic compliance.
+- **[Automated/Audit]:** Verified via monorepo test gate (1411 passed) using Node 22 bypass flags.
+
+### Log Updates:
+- Updated .github/nightly-logs/06-documentation-tsdoc-coverage.log
+
+---
+*PR created automatically by Jules for task [5916882814416094254](https://jules.google.com/task/5916882814416094254) started by @AlbiDR*
+
+---
+
 ## [2026-07-11] PR #1076: docs(readme): reconcile query-royale-api harvesting logic
 **Commit**: `fb65469f5c9170611b57dbc3ca2a82fe66657f01`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1076)
