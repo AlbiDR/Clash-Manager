@@ -9,8 +9,8 @@ import type {
   OptimizationResult
 } from './Types';
 import {
-  KING_XP_TABLE,
-  calculateKingLevel as registryCalculateKingLevel
+  calculateKingLevel as registryCalculateKingLevel,
+  calculateXpIntoLevel
 } from '@core/utils/game';
 
 /**
@@ -31,14 +31,7 @@ export function mapStateToResult(
   initialXp: number
 ): OptimizationResult {
   const kingLevel = registryCalculateKingLevel(Number(state.totalXp));
-  let xpIntoLevel = 0;
-
-  for (const row of KING_XP_TABLE) {
-    if (row.level === kingLevel) {
-      xpIntoLevel = Number(state.totalXp) - Number(row.cumulative);
-      break;
-    }
-  }
+  const xpIntoLevel = calculateXpIntoLevel(Number(state.totalXp));
 
   return {
     actions: state.history as UpgradeAction[],

@@ -37,19 +37,19 @@ const { isScrolled } = useHeaderScroll(10);
 
 let debounceTimer: number | null = null;
 
-const handleInput = (e: Event) => {
-  const searchQuery = (e.target as HTMLInputElement).value;
+const handleInput = (inputEvent: Event) => {
+  const searchQueryCandidate = (inputEvent.target as HTMLInputElement).value;
   if (debounceTimer) window.clearTimeout(debounceTimer);
 
   debounceTimer = window.setTimeout(() => {
-    emit("update:search", searchQuery);
+    emit("update:search", searchQueryCandidate);
   }, 300);
 };
 
 const activeSortDescription = computed(() => {
   if (!props.sortOptions || !props.currentSort) return "";
-  const opt = props.sortOptions.find((o) => o.value === props.currentSort);
-  return opt?.desc || "";
+  const activeSortOption = props.sortOptions.find((optionCandidate) => optionCandidate.value === props.currentSort);
+  return activeSortOption?.desc || "";
 });
 
 const handleOpenDashboard = () => {
@@ -120,7 +120,7 @@ const handleOpenDashboard = () => {
             :model-value="props.currentSort"
             :options="props.sortOptions"
             aria-label="Sort by"
-            @update:model-value="(val) => emit('update:sort', val)"
+            @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
           />
           <span v-if="activeSortDescription" class="sort-desc">
             {{ activeSortDescription }}

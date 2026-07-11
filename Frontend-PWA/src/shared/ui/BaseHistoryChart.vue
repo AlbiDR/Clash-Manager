@@ -6,7 +6,7 @@ import { useBaseHistoryChart } from "../composables/useBaseHistoryChart";
 
 const props = defineProps<{
   /** Format: array of { value, tooltipLabel } (Oldest to Newest) */
-  data: { id: string; value: number; tooltipLabel: string }[];
+  historySeries: { id: string; value: number; tooltipLabel: string }[];
   /** Optional projected next value */
   projection: { value: number; tooltipLabel: string } | null;
   /** Whether data is loading */
@@ -20,7 +20,7 @@ const props = defineProps<{
 }>();
 
 const { chartData } = useBaseHistoryChart({
-  data: () => props.data,
+  data: () => props.historySeries,
   projection: () => props.projection,
   loading: () => props.loading,
   maxScale: () => props.maxScale,

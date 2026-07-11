@@ -522,3 +522,5 @@ Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
 
 ### Logged Drift (Unresolved):
 - **None**: No version drift or catalog violations detected. Verified via monorepo test gate (1346 passed).
+
+Version Integrity (Version Consistency Auditor - Stage 7) July 11, 2026: Performed exhaustive consistency audit and catalog alignment on the 'Nightly' branch. (1) Reconciled monorepo package version: identified ground truth `v14.31.2` (17120) and synchronized `appVersion` in `APK/reference/twa-manifest.json`. (2) Enforced catalog alignment for backend substrate: synchronized all `@supabase/supabase-js` imports in Edge Functions and Deno scripts from `2.110.1` to `2.110.2`. (3) Verified substrate version integrity in `protocol.ts` and `useProgressiveList.ts` (both already at `14.31.2`). (4) Validated via monorepo test gate (1411 passed) using Node 22 bypass flags.

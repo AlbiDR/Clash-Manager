@@ -29,8 +29,8 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 29) {
             WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         }
-        getWindow().setStatusBarColor(Color.parseColor("#0B0E14"));
-        getWindow().setNavigationBarColor(ViewCompat.MEASURED_STATE_MASK);
+        getWindow().setStatusBarColor(Color.parseColor("#0b0e14"));
+        getWindow().setNavigationBarColor(Color.parseColor("#0b0e14"));
         
         FrameLayout frameLayout = new FrameLayout(this);
         frameLayout.setFitsSystemWindows(true);
