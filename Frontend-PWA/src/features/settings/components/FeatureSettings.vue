@@ -76,7 +76,7 @@ function handleBlitzToggle() {
       />
     </div>
 
-    <!-- Android permissions panel — only shown inside the native TWA wrapper -->
+    <!-- Android permissions panel - only shown inside the native TWA wrapper -->
     <div v-if="isNativeWrapper" class="permissions-section">
       <div class="card-divider-s" />
       <h3 class="section-title">Android Permissions</h3>

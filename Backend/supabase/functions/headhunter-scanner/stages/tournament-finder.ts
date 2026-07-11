@@ -45,7 +45,7 @@ export async function runTournamentDiscovery(
         // [DECISION LOG] Anchors are keywords stored in the database to guide the discovery engine autonomously.
         // [SCHEMA] The data API only exposes the `public` schema to RPC. A thin
         // public.get_active_discovery_anchors wrapper (migration) delegates to the
-        // substrate implementation — same pattern as get_shadow_discovery_targets / get_discovery_cache.
+        // substrate implementation - same pattern as get_shadow_discovery_targets / get_discovery_cache.
         const { data: rawAnchors, error: anchorError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT });
 
         if (anchorError) {
@@ -140,7 +140,7 @@ export async function runTournamentDiscovery(
                         // [DECISION LOG] Auto-discovery of new tournament types ensures the system adapts to Royale API shifts.
                         // [THREAT:] Unknown types may require specialized parsing logic; we track them via telemetry for clinical auditing.
                         runtimeTypeRegistry.add(observedType);
-                        console.warn(`[TOURNAMENT_DISCOVERY] NEW TOURNAMENT TYPE DISCOVERED: '${observedType}' — added to runtime registry (now ${runtimeTypeRegistry.size} known types)`);
+                        console.warn(`[TOURNAMENT_DISCOVERY] NEW TOURNAMENT TYPE DISCOVERED: '${observedType}' - added to runtime registry (now ${runtimeTypeRegistry.size} known types)`);
                         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
                             passed: true,
                             details: `new_tournament_type_discovered: ${observedType}`,
@@ -173,7 +173,7 @@ export async function runTournamentDiscovery(
                                 if (tournamentDetails.membersList.length === 0) {
                                     const isUnknownType = !KNOWN_TOURNAMENT_TYPES.has(tournamentType);
                                     if (isUnknownType) {
-                                        console.warn(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag} type=${tournamentType} returned 0 members — unknown type may use a different member field name`);
+                                        console.warn(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag} type=${tournamentType} returned 0 members - unknown type may use a different member field name`);
                                         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
                                             passed: false,
                                             details: `empty_membersList_unknown_type: ${tournamentTarget.tag} type=${tournamentType}`,

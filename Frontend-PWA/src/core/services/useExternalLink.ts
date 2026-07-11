@@ -4,7 +4,7 @@
 import { useToast } from "./useToast";
 import { useNativeBridge } from "./useNativeBridge";
 // [CYCLE GUARD] Direct source imports, NOT the @core barrel (which re-exports this
-// module) — barrel self-imports form an evaluation cycle that TDZ-crashes the app
+// module) - barrel self-imports form an evaluation cycle that TDZ-crashes the app
 // when the service worker serves all chunks at once.
 import { cleanTag } from "../utils/text";
 

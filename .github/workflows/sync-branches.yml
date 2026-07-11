@@ -135,11 +135,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: "Air Gap Guard — BEFORE (Beta baseline)"
+      - name: "Air Gap Guard - BEFORE (Beta baseline)"
         id: test-before
         run: |
           echo "## Air Gap Guard" >> $GITHUB_STEP_SUMMARY
-          echo "### BEFORE — Beta baseline (pre-merge)" >> $GITHUB_STEP_SUMMARY
+          echo "### BEFORE - Beta baseline (pre-merge)" >> $GITHUB_STEP_SUMMARY
           if pnpm test; then
             echo "before=pass" >> $GITHUB_OUTPUT
             echo "Beta baseline: PASS" >> $GITHUB_STEP_SUMMARY
@@ -170,23 +170,23 @@ jobs:
           git push origin Beta
           echo "merged=true" >> $GITHUB_OUTPUT
 
-      - name: "Air Gap Guard — AFTER (Beta + Nightly combined)"
+      - name: "Air Gap Guard - AFTER (Beta + Nightly combined)"
         id: test-after
         run: |
-          echo "### AFTER — Beta + Nightly combined (post-merge)" >> $GITHUB_STEP_SUMMARY
+          echo "### AFTER - Beta + Nightly combined (post-merge)" >> $GITHUB_STEP_SUMMARY
           if pnpm test; then
             echo "after=pass" >> $GITHUB_OUTPUT
             echo "Combined state: PASS" >> $GITHUB_STEP_SUMMARY
           else
             echo "after=fail" >> $GITHUB_OUTPUT
-            echo "Combined state: FAIL — Nightly introduced a regression." >> $GITHUB_STEP_SUMMARY
+            echo "Combined state: FAIL - Nightly introduced a regression." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "> The merge has been pushed. Manual intervention required to revert" >> $GITHUB_STEP_SUMMARY
             echo "> the offending Nightly commit(s) before the next sync cycle." >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
-      - name: "Air Gap Guard — Regression Summary"
+      - name: "Air Gap Guard - Regression Summary"
         if: always()
         run: |
           BEFORE="${{ steps.test-before.outputs.before }}"

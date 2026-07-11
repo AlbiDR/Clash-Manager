@@ -12,7 +12,7 @@
  * Formalizes the contract for communication between the PWA and the native
  * Android wrapper (TWA).
  *
- * ⚠️ HARD NATIVE DEPENDENCY — DO NOT BREAK THIS CONTRACT.
+ * ⚠️ HARD NATIVE DEPENDENCY - DO NOT BREAK THIS CONTRACT.
  * These methods are implemented by a custom Java layer
  * (`MainActivity$AndroidBridge` + `BlitzService` + `ClashManagerAccessibilityService`)
  * authored in `APK/src/com/albidr/clashmanager/` and compiled into
