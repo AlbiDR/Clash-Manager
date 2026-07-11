@@ -24,25 +24,25 @@ const usefulLinks = computed(() => {
       label: "RoyaleAPI Blog",
       desc: "Latest news and articles about Clash Royale",
       url: "https://royaleapi.com/blog",
-      icon: "external-link",
+      logo: "https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png",
     },
     {
       label: "RoyaleAPI Giveaway",
       desc: "Claim free in-game cosmetics and perks",
       url: "https://royaleapi.com/free",
-      icon: "external-link",
+      logo: "https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png",
     },
     {
       label: "Supercell ID Rewards",
       desc: "Access your Supercell ID rewards and benefits",
       url: `https://id.supercell.com/${locale}/clashroyale/`,
-      icon: "external-link",
+      logo: "https://store.supercell.com/public/idr-icon-KFYSWK6N.svg",
     },
     {
       label: "Clash Royale Store",
       desc: "Official Supercell store specials and deals",
       url: `https://store.supercell.com/${locale}/clashroyale`,
-      icon: "external-link",
+      logo: "https://store.supercell.com/public/icon-nav-supercell-store-HDDWMNKU.png",
     },
     {
       label: "Clash Manager on GitHub",
@@ -84,7 +84,8 @@ const usefulLinks = computed(() => {
           <span class="link-label">{{ link.label }}</span>
           <span class="link-desc">{{ link.desc }}</span>
         </div>
-        <Icon :name="link.icon" size="18" class="link-icon" />
+        <img v-if="link.logo" :src="link.logo" class="link-logo" :alt="link.label" />
+        <Icon v-else-if="link.icon" :name="link.icon" size="18" class="link-icon" />
       </button>
     </div>
   </SettingsCard>
@@ -154,6 +155,18 @@ const usefulLinks = computed(() => {
 .link-row:hover .link-icon {
   color: var(--sys-color-primary);
   opacity: 1;
+}
+
+.link-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  filter: grayscale(1) opacity(0.6);
+  transition: opacity 0.25s, filter 0.25s;
+}
+
+.link-row:hover .link-logo {
+  filter: grayscale(0) opacity(1);
 }
 
 .tbd-badge {
