@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2026 AlbiDR
-
 <div align="center">
   <img src=".github/assets/logo.png" alt="Clash Manager Logo" width="500" />
 </div>
