@@ -499,7 +499,7 @@ function checkDatabaseBaseline() {
   // Formatting & character checks
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (line.includes('-')) {
+    if (line.includes('—')) {
       dbErrors.push(`Line ${i + 1} has em-dash`);
     }
     let hasAboveBMP = false;
