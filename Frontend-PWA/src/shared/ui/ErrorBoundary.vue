@@ -12,9 +12,9 @@ const error = ref<Error | null>(null);
 const copied = ref(false);
 const haptics = useHaptics();
 
-onErrorCaptured((err) => {
-  error.value = err instanceof Error ? err : new Error(String(err));
-  console.error("[GUARD] CAPTURED BY ERRORBOUNDARY:", err);
+onErrorCaptured((capturedError) => {
+  error.value = capturedError instanceof Error ? capturedError : new Error(String(capturedError));
+  console.error("[GUARD] CAPTURED BY ERRORBOUNDARY:", capturedError);
   return false; // Stop propagation to prevent app-wide crash
 });
 
@@ -36,8 +36,8 @@ async function copyError() {
     setTimeout(() => {
       copied.value = false;
     }, 2000);
-  } catch (err) {
-    console.error("[GUARD] FAILED TO COPY ERROR DETAILS:", err);
+  } catch (clipboardError) {
+    console.error("[GUARD] FAILED TO COPY ERROR DETAILS:", clipboardError);
   }
 }
 

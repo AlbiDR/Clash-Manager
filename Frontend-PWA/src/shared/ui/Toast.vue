@@ -51,8 +51,8 @@ async function copyToClipboard() {
       showCopiedTick.value = false;
       startTimer();
     }, 2000);
-  } catch (err) {
-    console.error("Failed to copy toast message:", err);
+  } catch (clipboardError) {
+    console.error("Failed to copy toast message:", clipboardError);
   }
 }
 
