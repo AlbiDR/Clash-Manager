@@ -56,6 +56,7 @@ describe("BaseSegmentedControl.vue", () => {
     });
 
     const buttons = wrapper.findAll(".segment-btn");
+    // Click 'Option B' (targetValue 'b')
     await buttons[1].trigger("click");
 
     expect(wrapper.emitted("update:modelValue")).toBeTruthy();

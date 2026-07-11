@@ -7,7 +7,7 @@ import BaseHistoryChart from "../BaseHistoryChart.vue";
 
 describe("BaseHistoryChart.vue", () => {
   const defaultProps = {
-    data: [
+    historySeries: [
       { id: "1", value: 10, tooltipLabel: "Point 1" },
       { id: "2", value: 50, tooltipLabel: "Point 2" },
       { id: "3", value: 100, tooltipLabel: "Point 3" },
@@ -36,7 +36,7 @@ describe("BaseHistoryChart.vue", () => {
     const wrapper = mount(BaseHistoryChart, {
       props: {
         ...defaultProps,
-        data: [
+        historySeries: [
           { id: "min", value: 0, tooltipLabel: "Min" },
           { id: "mid", value: 50, tooltipLabel: "Mid" },
           { id: "max", value: 100, tooltipLabel: "Max" },
@@ -80,7 +80,7 @@ describe("BaseHistoryChart.vue", () => {
     const negWrapper = mount(BaseHistoryChart, {
       props: {
         ...defaultProps,
-        data: [
+        historySeries: [
           { id: "1", value: 100, tooltipLabel: "Point 1" },
           { id: "2", value: 50, tooltipLabel: "Point 2" },
           { id: "3", value: 10, tooltipLabel: "Point 3" },
@@ -96,7 +96,7 @@ describe("BaseHistoryChart.vue", () => {
     const wrapper = mount(BaseHistoryChart, {
       props: {
         ...defaultProps,
-        data: [
+        historySeries: [
           { id: "miss", value: 0, tooltipLabel: "Miss" },
           { id: "hit", value: 40, tooltipLabel: "Hit" },
           { id: "win", value: 80, tooltipLabel: "Win" },
@@ -145,7 +145,7 @@ describe("BaseHistoryChart.vue", () => {
     const wrapper = mount(BaseHistoryChart, {
       props: {
         ...defaultProps,
-        data: [],
+        historySeries: [],
       },
       global,
     });

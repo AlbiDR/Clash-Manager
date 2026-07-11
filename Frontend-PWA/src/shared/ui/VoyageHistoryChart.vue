@@ -16,7 +16,7 @@ const { mappedData } = useHistoryChart(() => props.history, "voyage", () => prop
 <template>
   <BaseHistoryChart
     theme="voyage"
-    :data="mappedData.data"
+    :history-series="mappedData.data"
     :projection="mappedData.projection"
     :loading="loading"
     :maxScale="mappedData.maxScale"
