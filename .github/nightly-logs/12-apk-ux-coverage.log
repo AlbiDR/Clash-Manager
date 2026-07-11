@@ -31,3 +31,10 @@
 - Fix: Modernized ScoreThresholdSelector with 48px vertical footprint and integrated v-tactile directive. Synchronized useScoreSelector.ts to remove redundant haptic calls.
 - Verification: Vitest (6 passed), Production Build (Success), Playwright Visual Audit (Confirmed).
 - Status: RESOLVED
+
+[2026-07-11T08:17:24Z] Stage 12: APK-UX Audit
+- Target: Frontend-PWA/src/shared/ui/StatusPill.vue
+- Issue: Touch target height (28px) below 48px compliance standard; manual haptic triggers bypass standardized v-tactile directive (Target B.2 / A.2).
+- Fix: Modernized StatusPill with 48px vertical footprint and integrated v-tactile directive. Synchronized useStatusPill.ts by removing redundant haptic calls and locking interaction during sync.
+- Verification: Vitest (15 passed), Production Build (Success), Monorepo Gate (1381 passed).
+- Status: RESOLVED

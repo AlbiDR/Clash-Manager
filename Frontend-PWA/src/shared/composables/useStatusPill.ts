@@ -46,7 +46,8 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
     const p = toValue(props);
     if (p.type === "loading") return;
 
-    haptics.tap();
+    // [DECISION LOG] Synchronized with v-tactile in StatusPill.vue.
+    // Manual haptic call removed to prevent double-triggering (Target A.2).
     isExpanded.value = !isExpanded.value;
   };
 

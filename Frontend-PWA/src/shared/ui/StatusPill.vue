@@ -10,6 +10,7 @@
  */
 
 import { useStatusPill } from "../composables/useStatusPill";
+import { vTactile } from "../directives/vTactile";
 import type { ConsoleRemoteInfo } from "@core/types";
 
 const props = withDefaults(defineProps<{
@@ -34,6 +35,7 @@ const {
 
 <template>
   <div
+    v-tactile
     class="status-pill"
     :class="[
       props.type, 
@@ -98,9 +100,9 @@ const {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 4px;
-  border-radius: 14px;
+  min-height: 48px; /* 48px Mobile Footprint (Target B.2) */
+  padding: 0 8px;
+  border-radius: 24px;
   background: var(--sys-surface-container);
   border: 1px solid var(--sys-outline);
   cursor: pointer;
@@ -150,7 +152,11 @@ const {
 .status-pill.success { color: var(--sys-color-success); }
 .status-pill.warning { color: var(--sys-color-warning); border-color: var(--sys-color-warning); }
 .status-pill.error   { color: var(--sys-color-error); border-color: var(--sys-color-error); }
-.status-pill.loading { border-color: var(--sys-color-primary); color: var(--sys-color-primary); }
+.status-pill.loading {
+  border-color: var(--sys-color-primary);
+  color: var(--sys-color-primary);
+  pointer-events: none; /* Interaction Lock during Sync (Target A.2) */
+}
 
 .status-dot {
   position: relative;
@@ -217,7 +223,7 @@ const {
 
 .technical {
   font-family: var(--sys-font-family-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
