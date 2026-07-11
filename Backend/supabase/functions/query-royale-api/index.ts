@@ -7,7 +7,8 @@ import { clinicalServe } from "../_shared/protocol.ts";
 import {
   RoyaleClanSchema,
   RoyaleLocationListSchema,
-  RoyaleRankingListSchema
+  RoyaleRankingListSchema,
+  HarvestedPlayerSchema
 } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 import { AuditEntry } from "../_shared/types.ts";
@@ -65,11 +66,14 @@ let cachedCountries: { id: number; name: string }[] | null = null;
 
 /**
  * Executes a single rankings query against the Royale API proxy and filters for clanless players.
+ *
+ * @remarks
+ * [DECISION LOG] Ensuring strict validation of harvested player data to maintain structural integrity.
  */
 async function fetchRankings(
   endpointPath: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
-): Promise<unknown[]> {
+): Promise<v.InferOutput<typeof HarvestedPlayerSchema>[]> {
   logAudit("HARVEST_PLAYERS_FETCH", "called", { path: endpointPath });
   const playerRankingsResponse = await fetchWithRotation(endpointPath);
   if (!playerRankingsResponse.ok) {
@@ -77,6 +81,9 @@ async function fetchRankings(
   }
   
   const rankingApiRaw: unknown = await playerRankingsResponse.json();
+
+  // [GUARD] VALIDATION BOUNDARY: External API data must be validated.
+  // [THREAT:] Prevents runtime crashes from unexpected Royale API payload changes.
   const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
 
   if (!rankingIntegrity.success) {
@@ -121,7 +128,7 @@ async function fetchRankings(
 async function harvestClanlessPlayers(
   location: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
-): Promise<unknown[]> {
+): Promise<v.InferOutput<typeof HarvestedPlayerSchema>[]> {
   if (location === "global") {
     try {
       // Tier 1: Global Path of Legends
@@ -136,9 +143,10 @@ async function harvestClanlessPlayers(
       // NOTE: /rankings/players is retired and returns empty for all locations.
       // Country PoL leaderboards are active and include clan data, so the
       // clanless filter works correctly here.
-      const aggregatedResults = new Map<string, any>();
-      for (const item of polResults as any[]) {
-        aggregatedResults.set(item.tag, item);
+      // [DECISION LOG] Excising 'any' from the aggregation map to ensure type safety.
+      const aggregatedResults = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
+      for (const harvestedItem of polResults) {
+        aggregatedResults.set(harvestedItem.tag, harvestedItem);
       }
       
       for (const countryId of TOP_COUNTRY_IDS) {
@@ -146,8 +154,8 @@ async function harvestClanlessPlayers(
         try {
           const countryPolPath = `/locations/${countryId}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
           const countryResults = await fetchRankings(countryPolPath, logAudit);
-          for (const item of countryResults as any[]) {
-            aggregatedResults.set(item.tag, item);
+          for (const harvestedItem of countryResults) {
+            aggregatedResults.set(harvestedItem.tag, harvestedItem);
           }
         } catch (countryError) {
           console.warn(`[HARVEST] Failed country PoL ${countryId}:`, countryError instanceof Error ? countryError.message : String(countryError));
@@ -174,11 +182,11 @@ async function harvestClanlessPlayers(
       const rankingsPath = `/locations/${location}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
       const rankingsResults = await fetchRankings(rankingsPath, logAudit);
       
-      const merged = new Map<string, any>();
-      for (const item of polResults as any[]) merged.set(item.tag, item);
-      for (const item of rankingsResults as any[]) merged.set(item.tag, item);
+      const mergedResults = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
+      for (const harvestedItem of polResults) mergedResults.set(harvestedItem.tag, harvestedItem);
+      for (const harvestedItem of rankingsResults) mergedResults.set(harvestedItem.tag, harvestedItem);
       
-      return Array.from(merged.values());
+      return Array.from(mergedResults.values());
     } catch (localError) {
       console.error(`[HARVEST] Local harvest failed for ${location}:`, localError);
       throw localError;
@@ -298,30 +306,31 @@ Deno.serve(async (request) => {
         const targetCountriesCount = Math.min(MAX_HARVEST_EPOCHS, shuffledCandidates.length);
         const countriesToQuery = shuffledCandidates.slice(INITIAL_ARRAY_INDEX, targetCountriesCount);
 
-        logAudit("CONCURRENT_BATCH_START", "run", { countries: countriesToQuery.map(c => c.name) });
+        logAudit("CONCURRENT_BATCH_START", "run", { countries: countriesToQuery.map(countryCandidate => countryCandidate.name) });
 
-        const batchTasks = countriesToQuery.map((country) => {
+        const batchTasks = countriesToQuery.map((countryCandidate) => {
           return async () => {
             try {
-              const results = await harvestClanlessPlayers(String(country.id), logAudit);
-              return { country: country.name, players: results };
-            } catch (err) {
-              console.warn(`[HARVEST] Failed concurrent query for ${country.name}:`, err);
-              return { country: country.name, players: [] };
+              const harvestResults = await harvestClanlessPlayers(String(countryCandidate.id), logAudit);
+              return { country: countryCandidate.name, players: harvestResults };
+            } catch (harvestError) {
+              console.warn(`[HARVEST] Failed concurrent query for ${countryCandidate.name}:`, harvestError);
+              return { country: countryCandidate.name, players: [] };
             }
           };
         });
 
         const batchResults = await processBatch(batchTasks);
 
-        const mergedPlayersMap = new Map<string, any>();
+        // [DECISION LOG] Excising 'any' from the merged players map to satisfy CleanStack architecture.
+        const mergedPlayersMap = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
         const queriedRegions: string[] = [];
 
-        for (const res of batchResults) {
-          if (res.players.length > INITIAL_ARRAY_INDEX) {
-            queriedRegions.push(res.country);
-            for (const player of res.players as any[]) {
-              mergedPlayersMap.set(player.tag, player);
+        for (const batchResult of batchResults) {
+          if (batchResult.players.length > INITIAL_ARRAY_INDEX) {
+            queriedRegions.push(batchResult.country);
+            for (const harvestedPlayer of batchResult.players) {
+              mergedPlayersMap.set(harvestedPlayer.tag, harvestedPlayer);
             }
           }
         }
