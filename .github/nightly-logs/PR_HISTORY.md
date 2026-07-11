@@ -1,6 +1,36 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-11] PR #1074: test(verify): add saturating tests for backend shared utils
+**Commit**: `7bd174b807765a320b4e238e6d8e1fb274e0bfda`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1074)
+
+### Description
+This Pull Request closes a critical zero-coverage gap in the backend shared substrate on the `Nightly` branch.
+
+### Reasoning:
+**[Coverage Gap]:** `Backend/supabase/functions/_shared/utils.ts` had zero test coverage despite containing authoritative domain logic for tag normalization, rarity mapping, and the RPoS (Raw Potential Score) calculation.
+**[Scenarios Added]:**
+- **normalizeTag**: Verified trimming, uppercasing, and idempotent hash prefixing.
+- **normalizeRarity**: Verified case-insensitive mapping to Title Case and robust fallback to "Common" for invalid/null inputs.
+- **calculateRpos**: Provided a logic proof for the authoritative formula `Trophies(1x) + Donations(0.1x) + (WarWins+500)*20`, asserting correctness across zero, high, and negative bounds.
+**[Rationale]:** This target was prioritized from the "Validation Boundary" and "Zero Coverage" queues as identified in the `02-verification.md` mandate.
+
+### Changes:
+- **[Backend/supabase/functions/_shared/shared-tests/utils.spec.ts]:** New test suite with 16 assertions.
+
+### Verification:
+- **[Automated]:** Confirmed `vitest` passes against the target spec file (16/16 passed).
+- **[Automated/Audit]:** Verified monorepo integrity via full test gate (1411 passed) using Node 22 bypass flags.
+
+### Log Updates:
+- Updated `.github/nightly-logs/02-verification-coverage.log`
+
+---
+*PR created automatically by Jules for task [364706571602697489](https://jules.google.com/task/364706571602697489) started by @AlbiDR*
+
+---
+
 ## [2026-07-11] PR #1073: fix(harden): secure Royale API harvest boundary
 **Commit**: `fb029d1649269a7eacb8523f10dfd1138c37d184`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1073)
