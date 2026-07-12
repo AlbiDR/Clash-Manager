@@ -91,7 +91,7 @@ const ariaLabel = computed(() => {
     <template #score-section>
       <ScoreBadge
         :score="props.member.performanceScore"
-        :dt="props.member.dt"
+        :score-delta="props.member.dt"
         :performance-raw-score="props.member.performanceRawScore"
         context="lb"
       />

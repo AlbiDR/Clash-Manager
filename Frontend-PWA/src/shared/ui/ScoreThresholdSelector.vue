@@ -37,11 +37,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** Updates the comparison mode. */
-  (e: "update:mode", val: "ge" | "le"): void;
+  (e: "update:mode", thresholdMode: "ge" | "le"): void;
   /** Updates the threshold value. */
-  (e: "update:value", val: number): void;
+  (e: "update:value", thresholdValue: number): void;
   /** Emitted when a selection is finalized (value or mode changed). */
-  (e: "select", val: number, mode: "ge" | "le"): void;
+  (e: "select", thresholdValue: number, thresholdMode: "ge" | "le"): void;
 }>();
 
 // [THREAT:] Unsynchronized filter state.

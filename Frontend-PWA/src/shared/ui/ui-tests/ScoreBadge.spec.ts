@@ -42,7 +42,7 @@ describe("ScoreBadge.vue", () => {
         stubs: {
           MomentumPill: {
             template: '<div class="mock-momentum-pill"></div>',
-            props: ['dt', 'performanceRawScore']
+            props: ['scoreDelta', 'performanceRawScore']
           }
         },
         directives: {
@@ -84,18 +84,18 @@ describe("ScoreBadge.vue", () => {
     expect(call[1].value).toBe("Expected Tooltip Text");
   });
 
-  it("renders MomentumPill when context is 'lb' and dt is provided", () => {
-    const wrapper = createWrapper({ context: "lb", dt: 5 });
+  it("renders MomentumPill when context is 'lb' and scoreDelta is provided", () => {
+    const wrapper = createWrapper({ context: "lb", scoreDelta: 5 });
     expect(wrapper.find(".mock-momentum-pill").exists()).toBe(true);
   });
 
   it("does NOT render MomentumPill when context is 'hh'", () => {
-    const wrapper = createWrapper({ context: "hh", dt: 5 });
+    const wrapper = createWrapper({ context: "hh", scoreDelta: 5 });
     expect(wrapper.find(".mock-momentum-pill").exists()).toBe(false);
   });
 
-  it("does NOT render MomentumPill when dt is missing", () => {
-    const wrapper = createWrapper({ context: "lb", dt: undefined });
+  it("does NOT render MomentumPill when scoreDelta is missing", () => {
+    const wrapper = createWrapper({ context: "lb", scoreDelta: undefined });
     expect(wrapper.find(".mock-momentum-pill").exists()).toBe(false);
   });
 });

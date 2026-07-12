@@ -63,21 +63,21 @@ const { chartData } = useBaseHistoryChart({
 
       <!-- Bars -->
       <div
-        v-for="bar in chartData.bars"
-        :key="bar.id"
+        v-for="chartBar in chartData.bars"
+        :key="chartBar.id"
         class="bar hit-target"
         :class="{
           'bar-win':
-            !bar.isProjection && props.winThreshold != null && bar.value >= props.winThreshold,
+            !chartBar.isProjection && props.winThreshold != null && chartBar.value >= props.winThreshold,
           'bar-hit':
-            !bar.isProjection &&
-            bar.value > 0 &&
-            (props.winThreshold == null || bar.value < props.winThreshold),
-          'bar-miss': !bar.isProjection && bar.value === 0,
-          'bar-projected': bar.isProjection,
+            !chartBar.isProjection &&
+            chartBar.value > 0 &&
+            (props.winThreshold == null || chartBar.value < props.winThreshold),
+          'bar-miss': !chartBar.isProjection && chartBar.value === 0,
+          'bar-projected': chartBar.isProjection,
         }"
-        :style="{ height: bar.height }"
-        v-tooltip="bar.tooltip"
+        :style="{ height: chartBar.height }"
+        v-tooltip="chartBar.tooltip"
       />
     </div>
 

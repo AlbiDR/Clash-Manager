@@ -45,12 +45,12 @@ const CHART_MIN_HEIGHT = 15; // Percent
  */
 export function useBaseHistoryChart(options: UseBaseHistoryChartOptions) {
   const chartData = computed(() => {
-    const data = toValue(options.data);
+    const historySeriesSnapshot = toValue(options.data);
     const projection = toValue(options.projection);
     const loading = toValue(options.loading);
     const maxScale = toValue(options.maxScale);
 
-    if (loading || data.length === 0) {
+    if (loading || historySeriesSnapshot.length === 0) {
       return {
         bars: [] as ChartBarItem[],
         path: null as string | null,
@@ -63,7 +63,7 @@ export function useBaseHistoryChart(options: UseBaseHistoryChartOptions) {
     const bars: ChartBarItem[] = [];
 
     // 1. Process Actuals
-    data.forEach((entry) => {
+    historySeriesSnapshot.forEach((entry) => {
       bars.push({
         id: entry.id,
         value: entry.value,
