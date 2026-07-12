@@ -138,3 +138,4 @@ Frontend-PWA/src/shared/ui/LongevityBadge.vue
 2026-07-07 | Frontend-PWA/src/core/utils/locale.ts | Zero Coverage gap closed; saturating tests for SSR fallback, BCP 47 normalization, and unsupported locales.
 2026-07-08 | Frontend-PWA/src/core/services/useClashLoader.ts | Zero Coverage gap closed; verified hydration orchestration and fire-and-forget refresh logic.
 2026-07-11 | Backend/supabase/functions/_shared/utils.ts | Zero Coverage gap closed; saturating tests for tag normalization, rarity mapping, and authoritative RPoS formula.
+2026-07-12 | Backend/supabase/functions/_shared/royaleSchemas.ts | Zero Coverage gap closed; saturating tests for authoritative Royale API validation boundaries.
