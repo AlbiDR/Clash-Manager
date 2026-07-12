@@ -47,7 +47,7 @@ Atomic elements that form the basis of the design system.
 - **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling via the `@shared/composables/useCardMechanics.ts` broker.
 - **BaseCardSkeleton.vue**: Placeholder variant of the card for loading states.
 - **Icon.vue**: The authoritative SVG renderer. Centralizes vector path definitions in `@core/theme/icons` and ensures CSS variable consistency with `non-scaling-stroke` vector effects.
-- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata. Delegates expansion and interaction logic to the `@shared/composables/useStatusPill.ts` composable.
+- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates expansion and interaction logic to the `@shared/composables/useStatusPill.ts` composable.
 - **MomentumPill.vue**: Specialized indicator for performance trends and momentum metrics.
 - **StatisticItem.vue**: Labeled data point with standardized typography and spacing.
 - **StatsGrid.vue**: Responsive layout component for displaying player statistics in 2 or 3 columns.
@@ -69,7 +69,7 @@ Components that facilitate user interaction and state management.
 - **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
 - **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable.
-- **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
+- **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
 - **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers. Orchestrates `NavigationDock.vue` and `SelectionFab.vue`.
 - **NavigationDock.vue**: Internal UI component for rendering the primary app navigation items.
 - **SelectionFab.vue**: Internal UI component for rendering the selection-mode actions and FAB.

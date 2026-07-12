@@ -85,7 +85,7 @@ Pure, stateless logic engines and formatting primitives.
 - **idbKernel.ts**: Low-level IndexedDB boilerplate and memory-fallback logic.
 - **PriorityQueue.ts**: High-performance data structure implementing a binary heap for $O(\log N)$ priority-based selection in simulation engines.
 - **economy.ts**: Authoritative source for Clash Royale currency math, branded types (`Gold`, `Gems`, `XP`), and cost conversion logic.
-- **game.ts**: Authoritative Clash Royale domain logic, costs, and XP tables.
+- **game.ts**: Authoritative Clash Royale domain logic and centralized XP calculation utilities. Decomposed into `gameConstants.ts` (static tables) and `gameTypes.ts` (domain interfaces).
 - **time.ts, text.ts, math.ts**: Standardized sanitization, duration conversion, and high-performance numeric formatting logic.
 - **navigation.ts**: Single Source of Truth for application-level navigation items, paths, and icons.
 - **visibility.ts**: Lifecycle registry for orchestrating time-based revalidation triggers when the application regains focus.
