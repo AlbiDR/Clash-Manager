@@ -107,6 +107,7 @@ export default defineConfig({
           "assets/branding/*.webp",
           "assets/game/*.webp",
           "fonts/JetBrainsMono-Bold.woff2",
+          "fonts/Inter-Variable.woff2",
           "**/splash.png",
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
