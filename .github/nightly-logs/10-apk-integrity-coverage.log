@@ -124,3 +124,10 @@
 - Synchronized primary_material_dark and primary_dark_material_dark to #0b0e14 in colors.xml.
 - Verified monorepo-wide integrity and synchronization at v14.31.2 (appVersionCode 17120) across manifests and resources.
 - Validated via node APK/audit-wrapper-integrity.mjs, npm run apk:verify:source, and monorepo test gate (1411 passed) using Node 22 bypass flags.
+
+[2026-07-12] Stage 10: APK & PWA Wrapper Integrity Audit
+- Hardened APK/audit-wrapper-integrity.mjs with mandatory package name consistency checks across AssetLinks, TWA Manifest, and AndroidManifest.xml.
+- Synchronized and verified assetStatements site URL alignment in strings.xml with TWA host ground truth.
+- Injected PWA Manifest ID validation (clash-manager-v14) mapping to the major version (v14).
+- Verified 100% synchronization for com.albidr.clashmanager and SHA-256 fingerprints.
+- Validated via node APK/audit-wrapper-integrity.mjs (PASS), npm run apk:verify:source (PASS), and monorepo test gate (1381 PWA + 16 backend passed) using Node 22 bypass flags.
