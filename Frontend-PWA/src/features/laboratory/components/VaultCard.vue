@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { Icon } from "@shared";
+import { getCurrencyAsset, getWildcardAsset } from "@core";
 import { type Inventory } from "../logic";
 defineProps<{
   inventory: Inventory;
@@ -16,8 +17,6 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   const resourceValue = parseInt((inputEvent.target as HTMLInputElement).value) || 0;
   emit("update", resourceKey, resourceValue);
 };
-
-const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
@@ -32,7 +31,7 @@ const baseUrl = import.meta.env.BASE_URL;
         <!-- Primary Resources -->
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="`${baseUrl}assets/game/currency-gold.webp`" class="res-asset" alt="Gold" />
+            <img :src="getCurrencyAsset('gold')" class="res-asset" alt="Gold" />
             <span class="res-label">Gold</span>
           </div>
           <input 
@@ -45,7 +44,7 @@ const baseUrl = import.meta.env.BASE_URL;
 
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="`${baseUrl}assets/game/currency-gem.webp`" class="res-asset" alt="Gems" />
+            <img :src="getCurrencyAsset('gem')" class="res-asset" alt="Gems" />
             <span class="res-label">Gems</span>
           </div>
           <input 
@@ -71,9 +70,9 @@ const baseUrl = import.meta.env.BASE_URL;
             :class="rarity.toLowerCase()"
           >
             <img 
-              :src="`${baseUrl}assets/game/wildcard-${rarity.toLowerCase()}.webp`" 
+              :src="getWildcardAsset(rarity as string)"
               class="wc-asset" 
-              :alt="rarity" 
+              :alt="rarity as string"
             />
             <input 
               type="number" 

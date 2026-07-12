@@ -38,11 +38,12 @@ Low-level IndexedDB boilerplate and resilience logic.
 Standardized sanitization, formatting, and calculation logic.
 - **math.ts**: Authoritative SSOT for **standardized numeric formatting** (`formatNumber`), supporting locale-aware separators and custom options. Handles `null | undefined | NaN` cases (defaulting to '0') and utilizes a cached formatter for standard cases to reduce instantiation overhead. Handles basic numeric sanitization, trend momentum calculations (`calculateMomentum`), and time-unit conversion (`durationToSeconds`).
 
-### Formatting Kernels (`time.ts`, `text.ts` & `locale.ts`)
+### Formatting Kernels (`time.ts`, `text.ts`, `locale.ts` & `assets.ts`)
 Stateless transformation logic for UI display and locale resolution.
 - **text.ts**: Centralized **tag normalization** (`cleanTag` & `normalizeTag`) and **visual standardization** (`formatDisplayTag`) for player and clan tags. Implements a custom Markdown-like parsing pipeline for converting remote header descriptions into semantic HTML (supporting titles, bold text, and bulleted lists).
 - **time.ts**: Standardized relative-time/countdown formatting and recency parsing (`parseTimeAgoValue`).
 - **locale.ts**: Maps the browser's navigator language to Supercell-supported locale codes for building locale-aware external URLs.
+- **assets.ts**: Centralized **asset resolution** logic for game-specific icons (currencies, wildcards, tower levels), ensuring correct path construction relative to the application's base URL.
 
 ### Sort Kernels (`sortOptions.ts` & `sortStrategies.ts`)
 Centralized logic for data orchestration in the Roster and Headhunter features.
