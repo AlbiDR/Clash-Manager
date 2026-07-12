@@ -24,3 +24,4 @@
 - Action: Optimized PWA Service Worker caching.
 - Result: Added '**/splash.png' to 'globIgnores' in 'Frontend-PWA/vite.config.ts' to reduce SW precache footprint (~88K reduction).
 - Verification: Verified source tree integrity and confirmed 1381 PWA tests passing.
+- APK & Native Wrapper Optimization (Stage 11) July 12, 2026: Hardened WebView security and optimized PWA service worker caching on the 'Nightly' branch. (1) Hardened WebView in `MainActivity.java` by disabling local file access, content access, and geolocation to minimize attack surface in the hybrid shell. (2) Optimized Service Worker precaching in `Frontend-PWA/vite.config.ts` by adding `fonts/Inter-Variable.woff2` to `globIgnores`, reducing initial shell footprint. (3) Conducted exhaustive resource audit of `public.xml` to ensure zero orphaned entries. (4) Verified via `apk:verify:source`, production build, and monorepo test gate (1381 passed).
