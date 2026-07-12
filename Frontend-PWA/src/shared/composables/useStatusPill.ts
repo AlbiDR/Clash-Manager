@@ -43,8 +43,8 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   }, { immediate: true });
 
   const handleToggle = () => {
-    const p = toValue(props);
-    if (p.type === "loading") return;
+    const statusPillPropsSnapshot = toValue(props);
+    if (statusPillPropsSnapshot.type === "loading") return;
 
     // [DECISION LOG] Synchronized with v-tactile in StatusPill.vue.
     // Manual haptic call removed to prevent double-triggering (Target A.2).
@@ -57,22 +57,22 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   // to the last word to maintain UI stability in header clusters.
   const { isMobileNarrow } = useViewport();
   const displayText = computed(() => {
-    const p = toValue(props);
+    const statusPillPropsSnapshot = toValue(props);
     if (isMobileNarrow.value) {
-      const parts = p.text.split(' ');
-      return parts.length > 1 ? parts[parts.length - 1] : p.text;
+      const parts = statusPillPropsSnapshot.text.split(' ');
+      return parts.length > 1 ? parts[parts.length - 1] : statusPillPropsSnapshot.text;
     }
-    return p.text;
+    return statusPillPropsSnapshot.text;
   });
 
   const displaySource = computed(() => {
-    const p = toValue(props);
-    if (!p.remoteInfo?.source) return null;
+    const statusPillPropsSnapshot = toValue(props);
+    if (!statusPillPropsSnapshot.remoteInfo?.source) return null;
 
     // Redundancy check: if the primary label is 'DB', 'SUPABASE' as source is noise.
-    if (isDB.value && p.remoteInfo.source === 'SUPABASE') return null;
+    if (isDB.value && statusPillPropsSnapshot.remoteInfo.source === 'SUPABASE') return null;
 
-    return p.remoteInfo.source === 'SUPABASE' ? 'DB' : p.remoteInfo.source;
+    return statusPillPropsSnapshot.remoteInfo.source === 'SUPABASE' ? 'DB' : statusPillPropsSnapshot.remoteInfo.source;
   });
 
   return {

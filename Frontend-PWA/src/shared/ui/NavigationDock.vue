@@ -50,19 +50,19 @@ function onInteractionStart() {
 
 <template>
   <button
-    v-for="item in NAV_ITEMS"
-    :key="item.name"
+    v-for="navItemCandidate in NAV_ITEMS"
+    :key="navItemCandidate.name"
     class="dock-item"
-    :class="{ active: route.path === item.path }"
-    @click="goTo(item.path)"
+    :class="{ active: route.path === navItemCandidate.path }"
+    @click="goTo(navItemCandidate.path)"
     @pointerdown="onInteractionStart"
-    :aria-label="item.label"
-    v-bind="{ 'aria-current': route.path === item.path ? 'page' : undefined }"
+    :aria-label="navItemCandidate.label"
+    v-bind="{ 'aria-current': route.path === navItemCandidate.path ? 'page' : undefined }"
   >
-    <div v-if="route.path === item.path" class="capsule-bg"></div>
-    <Icon :name="item.icon" size="22" class="dock-icon" />
-    <span v-if="item.label" class="dock-label">
-      {{ item.label }}
+    <div v-if="route.path === navItemCandidate.path" class="capsule-bg"></div>
+    <Icon :name="navItemCandidate.icon" size="22" class="dock-icon" />
+    <span v-if="navItemCandidate.label" class="dock-label">
+      {{ navItemCandidate.label }}
     </span>
   </button>
 </template>

@@ -9,21 +9,24 @@ import { calculateMomentum } from "@core";
 /**
  * MomentumPill Component
  *
- * Extracts and displays the trend momentum (Raw Score Delta) for a player.
- * Automatically handles visibility and benchmarking tooltips.
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared UI (@shared/ui)
+ * - **Role:** Presentation. Extracts and displays the trend momentum (Raw Score Delta) for a player.
+ *   Automatically handles visibility and benchmarking tooltips.
  */
 
 const props = defineProps<{
-  /** Raw score delta (dt) */
-  dt: number | undefined;
+  /** Raw score delta (scoreDelta) */
+  scoreDelta: number | undefined;
   /** Current raw performance score */
   performanceRawScore: number | undefined;
 }>();
 
 const trendInfo = computed(() => {
-  const dt = Number(props.dt) || 0;
+  const scoreDelta = Number(props.scoreDelta) || 0;
   const currentRaw = Number(props.performanceRawScore) || 0;
-  return calculateMomentum(dt, currentRaw);
+  return calculateMomentum(scoreDelta, currentRaw);
 });
 
 const { benchmarkTooltipContent } = useBenchmarkedStat(

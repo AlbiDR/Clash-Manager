@@ -73,7 +73,7 @@ function onInteractionStart() {
         v-model:mode="filterMode"
         v-model:value="filterValue"
         :disabled="props.loading"
-        @select="(v, m) => emit('select-score', v, m)"
+        @select="(thresholdValue, thresholdMode) => emit('select-score', thresholdValue, thresholdMode)"
       />
     </div>
 
