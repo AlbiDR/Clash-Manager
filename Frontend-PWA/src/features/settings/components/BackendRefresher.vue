@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon, SettingsCard } from "@shared";
+import { Icon, SettingsCard, vTactile } from "@shared";
 import { useBackendRefresher } from "../composables/useBackendRefresher";
 
 defineProps<{
@@ -33,6 +33,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
         </div>
 
         <button
+          v-tactile
           class="action-btn"
           @click="refresh(target.key)"
           :disabled="target.status === 'loading' || target.cooldown > 0"
@@ -104,13 +105,13 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
   border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 0 20px;
+  border-radius: 12px;
   font-weight: 700;
   font-size: 11px;
   cursor: pointer;
   min-width: 80px;
-  height: 32px;
+  height: 48px; /* 48px Mobile Footprint (Target B.2) */
   transition: all 0.2s;
   position: relative; /* For skeleton overlay */
 }
@@ -124,7 +125,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   position: absolute;
   inset: 0;
   background: var(--sh-sk-secondary); /* Skeleton background */
-  border-radius: 8px;
+  border-radius: 12px;
   animation: pulse 1.5s infinite ease-in-out;
 }
 
