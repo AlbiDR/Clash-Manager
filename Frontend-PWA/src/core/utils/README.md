@@ -19,13 +19,15 @@ Utility Kernels (Layer 1) provide the foundational logic required for data trans
 
 ## Core Utilities
 
-### Domain Logic (`game.ts` & `economy.ts`)
+### Domain Logic (`game.ts`, `gameConstants.ts`, `gameTypes.ts` & `economy.ts`)
 The authoritative source of truth for Clash Royale game constants and logic.
 - **Economy Tables**: Gold costs, XP gains, and material requirements for card upgrades.
 - **Branded Currencies**: Implements `Gold`, `Gems`, and `XP` branded types to enforce compile-time currency isolation.
 - **Normalization**: Logic for converting relative card levels to absolute game levels.
+- **XP Calculation**: Centralized math utilities for calculating relative XP into a level (`calculateXpIntoLevel`) and total cumulative XP (`calculateTotalXp`).
 - **Upgrade Resolution**: SSOT for card upgrade data and material requirements, utilized by the Laboratory simulation engine to ensure domain synchronization.
 - **King Level Projection**: Tables and algorithms for calculating account level based on cumulative XP.
+- **Decomposition**: Domain logic is decomposed into `gameConstants.ts` (static tables) and `gameTypes.ts` (domain interfaces) to satisfy the Single Responsibility Principle.
 
 ### Persistence Primitives (`idbKernel.ts`)
 Low-level IndexedDB boilerplate and resilience logic.
@@ -38,7 +40,7 @@ Standardized sanitization, formatting, and calculation logic.
 
 ### Formatting Kernels (`time.ts`, `text.ts` & `locale.ts`)
 Stateless transformation logic for UI display and locale resolution.
-- **text.ts**: Centralized **tag normalization** (`cleanTag`) and **visual standardization** (`formatDisplayTag`) for player and clan tags. Implements a custom Markdown-like parsing pipeline for converting remote header descriptions into semantic HTML (supporting titles, bold text, and bulleted lists).
+- **text.ts**: Centralized **tag normalization** (`cleanTag` & `normalizeTag`) and **visual standardization** (`formatDisplayTag`) for player and clan tags. Implements a custom Markdown-like parsing pipeline for converting remote header descriptions into semantic HTML (supporting titles, bold text, and bulleted lists).
 - **time.ts**: Standardized relative-time/countdown formatting and recency parsing (`parseTimeAgoValue`).
 - **locale.ts**: Maps the browser's navigator language to Supercell-supported locale codes for building locale-aware external URLs.
 

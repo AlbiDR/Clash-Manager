@@ -55,3 +55,6 @@
 2026-07-09 | Frontend-PWA/src/core/README.md | Reconciled Services registry (added useClashLoader and useNativeBridge) and Utility Kernels (added locale.ts).
 2026-07-10 | Frontend-PWA/src/core/types/README.md | Created: Documented domain types, native bridge contracts, and UI orchestration interfaces.
 2026-07-11 | Backend/supabase/functions/query-royale-api/README.md | Reconciled Concurrent Batch Harvesting and multi-tier Path of Legends fallback
+2026-07-12 | Frontend-PWA/src/core/utils/README.md | Reconciled game.ts decomposition, XP math utilities, and normalizeTag.
+2026-07-12 | Frontend-PWA/src/shared/ui/README.md | Reconciled StatusPill and ScoreThresholdSelector modernization (48px/v-tactile).
+2026-07-12 | Frontend-PWA/src/core/README.md | Reconciled Utility Kernels registry for game.ts decomposition.
