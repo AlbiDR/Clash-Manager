@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-12] PR #1086: perf(opt): standardize shared UI naming and audit substrate
+**Commit**: `bdbafaf8fbd90eb98dae9c86977207956b0faca5`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1086)
+
+### Description
+Standardized variable naming across shared UI components and composables for domain clarity and audited substrate for orphaned database views.
+
+---
+*PR created automatically by Jules for task [15987157263468520889](https://jules.google.com/task/15987157263468520889) started by @AlbiDR*
+
+---
+
 ## [2026-07-12] PR #1085: chore(baseline): fold new migrations into master baseline
 **Commit**: `318d6625cf182b5f892000c21c561eba8508698c`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1085)
