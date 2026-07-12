@@ -121,6 +121,7 @@ function checkAssetLinks() {
   const al = JSON.parse(fs.readFileSync(ASSET_LINKS, 'utf8'));
   const twa = JSON.parse(fs.readFileSync(TWA_MANIFEST, 'utf8'));
   const strings = fs.readFileSync(STRINGS_XML, 'utf8');
+  const manifest = fs.readFileSync(ANDROID_MANIFEST, 'utf8');
 
   const alFingerprint = al[0].target.sha256_cert_fingerprints[0];
   const twaFingerprint = twa.fingerprints[0].sha256Fingerprint;
@@ -131,6 +132,22 @@ function checkAssetLinks() {
   const hostMatch = strings.match(/<string name="hostName">([^<]+)<\/string>/);
   if (hostMatch && hostMatch[1] === twa.host) ok(`Host matches strings.xml: ${twa.host}`);
   else fail(`Host mismatch: strings.xml=${hostMatch ? hostMatch[1] : 'NOT_FOUND'}, TWA=${twa.host}`);
+
+  // Verify Package Name Consistency
+  info('Checking Package Name Consistency...');
+  const packageId = twa.packageId;
+  if (al[0].target.package_name === packageId) ok(`Package name matches (AssetLinks): ${packageId}`);
+  else fail(`Package name mismatch (AssetLinks): ${al[0].target.package_name} vs ${packageId}`);
+
+  if (manifest.includes(`package="${packageId}"`)) ok(`Package name matches (AndroidManifest): ${packageId}`);
+  else fail(`Package name mismatch (AndroidManifest): ${packageId} not found`);
+
+  // Verify assetStatements site alignment
+  // Note: regex handles escaped quotes in strings.xml
+  const assetStatementsMatch = strings.match(/<string name="assetStatements">.*\\"site\\":\s*\\"([^"]+)\\".*<\/string>/);
+  const expectedSite = `https://${twa.host}`;
+  if (assetStatementsMatch && assetStatementsMatch[1] === expectedSite) ok(`assetStatements site matches: ${expectedSite}`);
+  else fail(`assetStatements site mismatch: expected ${expectedSite}, found ${assetStatementsMatch ? assetStatementsMatch[1] : 'NOT_FOUND'}`);
 }
 
 function checkVersionSync() {
@@ -138,6 +155,7 @@ function checkVersionSync() {
   const pkg = JSON.parse(fs.readFileSync(PACKAGE_JSON, 'utf8'));
   const twa = JSON.parse(fs.readFileSync(TWA_MANIFEST, 'utf8'));
   const apktool = fs.readFileSync(APKTOOL_YML, 'utf8');
+  const pwa = JSON.parse(fs.readFileSync(PWA_MANIFEST, 'utf8'));
 
   const version = pkg.version;
   // Calculate expected versionCode: e.g. 14.2.6 -> 14260
@@ -157,6 +175,12 @@ function checkVersionSync() {
   const apkCodeMatch = apktool.match(/versionCode: (\d+)/);
   if (apkCodeMatch && Number(apkCodeMatch[1]) === expectedCode) ok(`apktool.yml versionCode matches: ${expectedCode}`);
   else fail(`apktool.yml versionCode mismatch: ${apkCodeMatch ? apkCodeMatch[1] : 'not found'}`);
+
+  // Verify Manifest ID alignment with Major version
+  const majorVersion = parts[0];
+  const expectedId = `clash-manager-v${majorVersion}`;
+  if (pwa.id === expectedId) ok(`Manifest ID matches major version: ${expectedId}`);
+  else fail(`Manifest ID mismatch: expected ${expectedId}, found ${pwa.id}`);
 }
 
 function checkSecurity() {
