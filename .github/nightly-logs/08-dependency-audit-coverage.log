@@ -140,10 +140,11 @@
 | @supabase/supabase-js | ^2.110.1 | ^2.110.2 | 2026-07-10 | PASS |
 | knip | ^6.25.0 | ^6.26.0 | 2026-07-11 | PASS |
 | @formkit/auto-animate | ^0.9.0 | ^0.10.0 | 2026-07-11 | PASS |
+| [Audit] | - | - | 2026-07-12 | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 
 ## Section 2 - Major Version Watchlist
 | Package | Current | Latest Major | First Detected | Notes |
 |---------|---------|--------------|----------------|-------|
-| vite | ^7.3.6 | 8.1.4 | 2026-06-18 | [Updated] Breaking: Single Rust-based bundler (Rolldown). Renames `build.rollupOptions` to `build.rolldownOptions`. CJS interop changes. |
-| typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure. |
-| pnpm | >=10.32.1 | 11.11.0 | 2026-06-18 | [Updated] Breaking: Node 22+ required. Significant changes for CI/Docker and workspace-level configuration. |
+| vite | ^7.3.6 | 8.1.4 | 2026-06-18 | [Updated] Breaking: Replaces Rollup/esbuild with Rolldown (Rust). Renames `build.rollupOptions` to `build.rolldownOptions`. CJS interop changes. |
+| typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults (strict: true, module: esnext). |
+| pnpm | >=10.32.1 | 11.12.0 | 2026-06-18 | [Updated] Breaking: Node 22+ required. pure ESM. `.npmrc` restricted to auth. Environment variables use `pnpm_config_*` prefix. |
