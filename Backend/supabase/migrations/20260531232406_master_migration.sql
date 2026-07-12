@@ -8,6 +8,19 @@
  * - Provides a single, unified DDL file representing the entire current database structure
  *   as-is, without deleting the historical migrations trail to preserve audit logs.
  * - This baseline allows fresh, zero-touch deployment of the entire Modern Stack (Supabase + PWA).
+ *
+ * Folded Incremental Migrations:
+ * - 20260614082900_add_trail_battle_type.sql
+ * - 20260615004900_fix_zero_crown_voyage_contributions.sql
+ * - 20260617013100_add_public_vault_secret_wrapper.sql
+ * - 20260620113000_fix_duel_crown_calculation.sql
+ * - 20260620120000_revise_duel_crown_calculation.sql
+ * - 20260620142000_headhunter_epoch_guard.sql
+ * - 20260628003700_fix_discovery_cache_fractional_hours.sql
+ * - 20260628010500_add_public_get_active_discovery_anchors.sql
+ * - 20260629212000_fix_voyage_ingestion_targeting.sql
+ * - 20260705030000_voyage_history_pruning.sql
+ * - 20260707003200_rename_voyage_5_to_4.sql
  */
 
 BEGIN;
@@ -485,15 +498,39 @@ ALTER TABLE drivers.clan_voyage ALTER COLUMN id DROP IDENTITY;
 UPDATE drivers.clan_voyage SET id = 4 WHERE id = 5;
 ALTER TABLE drivers.clan_voyage ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
 
--- Synchronize identity sequence while protecting ID 1 on fresh installations.
+-- Synchronize identity sequences for all tables to prevent ID skipping on fresh installs.
 DO $$
 DECLARE
+    v_table RECORD;
     v_max_id bigint;
+    v_seq text;
 BEGIN
-    SELECT MAX(id) INTO v_max_id FROM drivers.clan_voyage;
-    IF v_max_id IS NOT NULL THEN
-        PERFORM setval(pg_get_serial_sequence('drivers.clan_voyage', 'id'), v_max_id);
-    END IF;
+    FOR v_table IN (
+        SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as full_name,
+               schemaname, tablename, column_name
+        FROM (VALUES
+            ('substrate', 'raw_clan_profile', 'id'),
+            ('substrate', 'raw_clan_members', 'id'),
+            ('substrate', 'raw_river_race', 'id'),
+            ('substrate', 'raw_war_log', 'id'),
+            ('drivers', 'clans', 'id'),
+            ('drivers', 'members', 'id'),
+            ('drivers', 'war_activity', 'id'),
+            ('drivers', 'war_history', 'id'),
+            ('drivers', 'player_battles', 'id'),
+            ('drivers', 'member_snapshots', 'id'),
+            ('drivers', 'recruit_ledger', 'id'),
+            ('drivers', 'push_subscriptions', 'id'),
+            ('drivers', 'clan_voyage', 'id'),
+            ('drivers', 'clan_voyage_contributions', 'id')
+        ) AS t(schemaname, tablename, column_name)
+    ) LOOP
+        EXECUTE format('SELECT MAX(%I) FROM %s', v_table.column_name, v_table.full_name) INTO v_max_id;
+        v_seq := pg_get_serial_sequence(v_table.full_name, v_table.column_name);
+        IF v_max_id IS NOT NULL AND v_seq IS NOT NULL THEN
+            PERFORM setval(v_seq, v_max_id);
+        END IF;
+    END LOOP;
 END $$;
 
 -- L2 Drivers: Per-member performance metrics for historical Clan Voyage events.

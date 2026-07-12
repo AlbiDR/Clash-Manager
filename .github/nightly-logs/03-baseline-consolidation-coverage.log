@@ -28,3 +28,13 @@
 - Status: Baseline fully synchronized with incremental history.
 - Verification: Monorepo test gate passed (1411 tests).
 - Note: Incremental migrations preserved in /migrations/ per audit trail policy.
+[2026-07-12T03:35:24Z] Baseline Consolidation Audit
+- Migrations Processed: 11 (Total newer than baseline)
+- Migrations Folded: 11 (Standardized markers and hardened logic)
+- Migrations Re-verified: 11 (Already logically present)
+- Tables Consolidated: 28 (RLS verified on all)
+- Functions Updated/Verified: 95 (search_path verified on all)
+- Views Recompiled: 0
+- Status: Baseline hardened with comprehensive identity sequence synchronization for 14 tables.
+- Verification: Monorepo test gate passed (1381 tests).
+- Note: Incremental migrations preserved in /migrations/ per audit trail policy.
