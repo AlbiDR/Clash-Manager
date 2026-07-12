@@ -41,6 +41,9 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Version & Monorepo Integrity (audit:version)
+        run: pnpm audit:version
+
       - name: Structural Search (ast-grep)
         run: npx ast-grep scan --config .github/sgconfig.yml
 
