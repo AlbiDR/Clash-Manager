@@ -38,6 +38,7 @@ export * from "./services/useSystemInfo";
 export * from "./services/useVisibilityRefresh";
 
 // Math & Utils
+export * from "./utils/assets";
 export * from "./utils/locale";
 export * from "./utils/PriorityQueue";
 export * from "./utils/economy";
