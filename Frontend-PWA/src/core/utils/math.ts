@@ -18,6 +18,13 @@ import type { MomentumInfo } from "@core/types";
  * MOMENTUM CALCULATOR
  * Analyzes the delta in Raw Score to produce a human-readable trend % and direction.
  *
+ * @remarks
+ * [DECISION LOG] MOMENTUM THRESHOLDS:
+ * - Minimum Baseline: 50 raw points. Below this, small fluctuations create
+ *   misleadingly high percentages.
+ * - Outlier Protection: Jumps > 1000% are ignored to protect against data
+ *   glitches or initial sync spikes.
+ *
  * @param scoreDelta - The numeric change (delta) in score.
  * @param currentRaw - The current raw score value.
  * @returns MomentumInfo containing direction and formatted percentage, or null if insignificant.
@@ -54,6 +61,11 @@ export function calculateMomentum(
  * Normalizes a potentially NaN value from an empty number input to 0.
  * Enforces a minimum value of 0.
  *
+ * @remarks
+ * [THREAT:] Empty or Malformed Input.
+ * Prevents logic crashes in downstream math operations (like division) by
+ * coercing all non-numeric or negative inputs to a safe zero baseline.
+ *
  * @param numericValue - The raw input value.
  * @returns A safe numeric representation.
  */
@@ -80,7 +92,12 @@ export function durationToSeconds(
 
 /**
  * Standardized numeric formatter instance for the application.
- * Cached at module level to reduce instantiation overhead for standard formatting.
+ *
+ * @remarks
+ * [DECISION LOG] CACHED FORMATTER:
+ * Reusing a single Intl.NumberFormat instance significantly improves performance
+ * in high-density list views (like Roster/Headhunter) by avoiding the high
+ * CPU overhead of repeated Intl object instantiation.
  */
 const DEFAULT_NUMBER_FORMATTER = new Intl.NumberFormat();
 
@@ -88,6 +105,11 @@ const DEFAULT_NUMBER_FORMATTER = new Intl.NumberFormat();
  * Standardized numeric formatter for the application.
  * Uses a cached Intl.NumberFormat for standard calls to provide locale-aware thousand separators.
  * Supports custom options and handles null/NaN/undefined by defaulting to 0.
+ *
+ * @remarks
+ * [THREAT:] Numeric Desync / Display Corruption.
+ * Ensures that null, undefined, or NaN values from remote APIs do not result
+ * in "NaN" or "undefined" appearing in the UI, defaulting to "0" instead.
  *
  * @param numericValue - The numeric value to format.
  * @param options - Optional Intl.NumberFormatOptions for custom formatting.
