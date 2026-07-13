@@ -133,7 +133,8 @@ You act as a truth-anchoring information architect. Your mandate is the absolute
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Deterministic Coverage Scan
-Identify the single highest-priority README gap using the following queue in strict order. If all targets are current, proceed directly to Step 3 to write only the log entry (skip all README refinement execution sub-steps in Step 3), then proceed to Step 4 to submit a no-gap PR. Do not exit early; performing the audit pass and logging it is required.
+- **Active Intelligence Check:** Before scanning, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (specifically Section III Scope Coverage Map and Section V Stage 5 context) and check the active T1 section in `PR_HISTORY.md`. Focus your README drift audits on modules/files recently changed in PR_HISTORY.md or flagged as undergoing active restructuring in Section III and V, ensuring API documentation reflects these exact shifts.
+- **Scan execution:** Identify the single highest-priority README gap using the following queue in strict order. If all targets are current, proceed directly to Step 3 to write only the log entry (skip all README refinement execution sub-steps in Step 3), then proceed to Step 4 to submit a no-gap PR. Do not exit early; performing the audit pass and logging it is required.
 - **Priority List:**
   1. **Drift Reconciler:** Locate any `README.md` whose examples, API shapes, or descriptions conflict with the codebase.
   2. **README Depth:** Identify existing README files that lack architectural context, system boundaries, or integration notes.

@@ -156,12 +156,14 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Compilation Scan
-- Load the master baseline `20260531232406_master_migration.sql` into the DDL parser.
-- Identify all newer migrations.
-- If no newer migrations exist:
-  1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
-  2. Parse and re-format the master migration to optimize query format, statement ordering, and comment consistency.
-  3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, terminate the execution loop cleanly without changes.
+- **Active Intelligence Check:** Before processing, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (specifically Section I migration folding cadence, Section II pitfalls, and Section V Stage 3 context). You must check the migration folding threshold constraint in Section I (operational debt warning if >3 migrations unfolded) and check Section II to ensure no soft-delete boolean flags or bad patterns are folded into the baseline migration.
+- **Scan execution:**
+  - Load the master baseline `20260531232406_master_migration.sql` into the DDL parser.
+  - Identify all newer migrations.
+  - If no newer migrations exist:
+    1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
+    2. Parse and re-format the master migration to optimize query format, statement ordering, and comment consistency.
+    3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, terminate the execution loop cleanly without changes.
 
 
 ### Step 2: DDL Folding Integration

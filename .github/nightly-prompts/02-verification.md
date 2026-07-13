@@ -138,7 +138,8 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Uncovered Gap Scan
-Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed directly to Step 3 to write only the log entry (skip all test-writing execution sub-steps in Step 3), then proceed to Step 4 to submit a no-blindspot PR. Do not exit early or skip the PR, as logging the audit pass is required.
+- **Active Intelligence Check:** Before selecting a test target, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (specifically Section V, Stage 2 context) and check the active T1 section in `PR_HISTORY.md`. Cross-reference identified gaps against recent change files in PR_HISTORY.md to prioritize writing tests for newly modified or added logic, and focus coverage work on target modules flagged under the Stage 2 Focus/Gaps area in Section V of the intelligence layer.
+- **Scan execution:** Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed directly to Step 3 to write only the log entry (skip all test-writing execution sub-steps in Step 3), then proceed to Step 4 to submit a no-blindspot PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Recent-Change Priority:** Inspect recent commits on the `Nightly` branch. If files modified by Stage 1 (Harden) in the current cycle, or by Stage 4 (Optimize) in the preceding cycle, lack corresponding specs, or their specs do not cover the changed logic, target them.
   2. **Validation Boundary:** Target functions processing external data (APIs, LocalStorage, user input) that have no tests covering the invalid/malformed input branch.

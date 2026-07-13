@@ -142,7 +142,8 @@ You act as a logic-annotating interface architect. Your mandate is mapping the i
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Inline Documentation Scan
-Identify the single highest-priority documentation gap using the following queue in strict order. If all targets are fully covered, proceed directly to Step 3 to write only the log entry (skip all annotation injection sub-steps in Step 3), then proceed to Step 4 to submit a no-gap PR. Do not exit early or skip the PR, as logging the audit pass is required.
+- **Active Intelligence Check:** Before selecting an annotation target, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (specifically Section V Stage 6 context) and check the active T1 section in `PR_HISTORY.md`. Prioritize targeting files recently modified by Stage 1 (Harden) or Stage 4 (Optimize) in T1, and reconcile contracts for core services marked under the Stage 6 Focus area in Section V.
+- **Scan execution:** Identify the single highest-priority documentation gap using the following queue in strict order. If all targets are fully covered, proceed directly to Step 3 to write only the log entry (skip all annotation injection sub-steps in Step 3), then proceed to Step 4 to submit a no-gap PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Recent-Change Priority:** Auditing files recently modified by preceding stages (Harden, Verify, Optimize) since the last merge cycle. Changes in code logic invalidate adjacent annotations.
   2. **Missing Interface Contracts:** Locate exported functions, stores, composables, or Edge Function entry points lacking JSDoc/TSDoc blocks.
