@@ -250,11 +250,7 @@ CREATE TABLE IF NOT EXISTS drivers.player_voyage_history (
     history     text        NOT NULL DEFAULT '',
     updated_at  timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT player_voyage_history_pkey
-        PRIMARY KEY (player_tag),
-    CONSTRAINT player_voyage_history_player_tag_fkey
-        FOREIGN KEY (player_tag)
-        REFERENCES drivers.players (player_tag)
-        ON DELETE CASCADE
+        PRIMARY KEY (player_tag)
 );
 
 ALTER TABLE drivers.player_voyage_history ENABLE ROW LEVEL SECURITY;
@@ -498,41 +494,6 @@ ALTER TABLE drivers.clan_voyage ALTER COLUMN id DROP IDENTITY;
 UPDATE drivers.clan_voyage SET id = 4 WHERE id = 5;
 ALTER TABLE drivers.clan_voyage ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
 
--- Synchronize identity sequences for all tables to prevent ID skipping on fresh installs.
-DO $$
-DECLARE
-    v_table RECORD;
-    v_max_id bigint;
-    v_seq text;
-BEGIN
-    FOR v_table IN (
-        SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as full_name,
-               schemaname, tablename, column_name
-        FROM (VALUES
-            ('substrate', 'raw_clan_profile', 'id'),
-            ('substrate', 'raw_clan_members', 'id'),
-            ('substrate', 'raw_river_race', 'id'),
-            ('substrate', 'raw_war_log', 'id'),
-            ('drivers', 'clans', 'id'),
-            ('drivers', 'members', 'id'),
-            ('drivers', 'war_activity', 'id'),
-            ('drivers', 'war_history', 'id'),
-            ('drivers', 'player_battles', 'id'),
-            ('drivers', 'member_snapshots', 'id'),
-            ('drivers', 'recruit_ledger', 'id'),
-            ('drivers', 'push_subscriptions', 'id'),
-            ('drivers', 'clan_voyage', 'id'),
-            ('drivers', 'clan_voyage_contributions', 'id')
-        ) AS t(schemaname, tablename, column_name)
-    ) LOOP
-        EXECUTE format('SELECT MAX(%I) FROM %s', v_table.column_name, v_table.full_name) INTO v_max_id;
-        v_seq := pg_get_serial_sequence(v_table.full_name, v_table.column_name);
-        IF v_max_id IS NOT NULL AND v_seq IS NOT NULL THEN
-            PERFORM setval(v_seq, v_max_id);
-        END IF;
-    END LOOP;
-END $$;
-
 -- L2 Drivers: Per-member performance metrics for historical Clan Voyage events.
 CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -580,6 +541,41 @@ WHERE v.status = 'COMPLETED'
   )
 ON CONFLICT (voyage_id, player_tag) DO NOTHING;
 
+-- Synchronize identity sequences for all tables to prevent ID skipping on fresh installs.
+DO $$
+DECLARE
+    v_table RECORD;
+    v_max_id bigint;
+    v_seq text;
+BEGIN
+    FOR v_table IN (
+        SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as full_name,
+               schemaname, tablename, column_name
+        FROM (VALUES
+            ('substrate', 'raw_clan_profile', 'id'),
+            ('substrate', 'raw_clan_members', 'id'),
+            ('substrate', 'raw_river_race', 'id'),
+            ('substrate', 'raw_war_log', 'id'),
+            ('drivers', 'clans', 'id'),
+            ('drivers', 'members', 'id'),
+            ('drivers', 'war_activity', 'id'),
+            ('drivers', 'war_history', 'id'),
+            ('drivers', 'player_battles', 'id'),
+            ('drivers', 'member_snapshots', 'id'),
+            ('drivers', 'recruit_ledger', 'id'),
+            ('drivers', 'push_subscriptions', 'id'),
+            ('drivers', 'clan_voyage', 'id'),
+            ('drivers', 'clan_voyage_contributions', 'id')
+        ) AS t(schemaname, tablename, column_name)
+    ) LOOP
+        EXECUTE format('SELECT MAX(%I) FROM %s', v_table.column_name, v_table.full_name) INTO v_max_id;
+        v_seq := pg_get_serial_sequence(v_table.full_name, v_table.column_name);
+        IF v_max_id IS NOT NULL AND v_seq IS NOT NULL THEN
+            PERFORM setval(v_seq, v_max_id);
+        END IF;
+    END LOOP;
+END $$;
+
 CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
     player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     CONSTRAINT drivers_exclusion_cache_pkey PRIMARY KEY (player_tag)
@@ -609,6 +605,8 @@ ALTER TABLE features.player_card_snapshots ENABLE ROW LEVEL SECURITY;
 
 
 -- Relational Foreign Key constraints
+ALTER TABLE IF EXISTS drivers.player_voyage_history DROP CONSTRAINT IF EXISTS player_voyage_history_player_tag_fkey;
+ALTER TABLE IF EXISTS drivers.player_voyage_history ADD CONSTRAINT player_voyage_history_player_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
 ALTER TABLE IF EXISTS drivers.members DROP CONSTRAINT IF EXISTS fk_members_player;
 ALTER TABLE IF EXISTS drivers.members ADD CONSTRAINT fk_members_player FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
 ALTER TABLE IF EXISTS drivers.war_activity DROP CONSTRAINT IF EXISTS fk_war_activity_player;
