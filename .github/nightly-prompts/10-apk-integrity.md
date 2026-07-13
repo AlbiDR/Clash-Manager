@@ -135,6 +135,7 @@ You act as a defensive packaging auditor. You verify the boundaries between the 
   2. Version codes/names sync with `package.json`.
   3. Redundant permissions in Android manifests.
   4. Non-HTTPS domains or cleartext permission blocks.
+- If no mismatches are found, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-mismatch PR. Do not exit early or skip the PR, as logging the audit pass is required.
 
 ### Step 2: Build Check
 - Run local build checks to verify configuration edits compile cleanly.

@@ -147,7 +147,7 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
   8. Input fields lacking viewport adjustment hooks for virtual keyboard views.
   9. Color schemes missing active prefers-color-scheme query support.
   10. Media elements missing dimensions or lazy-loading settings.
-- If no UX issues are found, output a final status confirmation: "No UX issues found. Exiting cleanly." and stop calling tools to complete your execution.
+- If no UX issues are found, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-ux-issues PR. Do not exit early or stop calling tools without submitting the PR, as logging the audit pass is required.
 
 ### Step 2: Surgical Fix
 - Apply exactly one fix to the highest-priority issue found.
