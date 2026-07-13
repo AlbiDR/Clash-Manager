@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# [Stage 9] Refactor- Structural Surgery Engineer
+# [Stage 9] Refactor - Structural Surgery Engineer
 
 ---
 role: Refactor
@@ -61,7 +61,6 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Commit Strategy:** Commit your changes directly to your local working branch.
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
-- **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
@@ -134,7 +133,7 @@ Scan the monorepo for refactor opportunities.
   1. **Duplicate Detection:** Scan features in `@features` for duplicate utility or business logic.
   2. **Size Audit:** Find modules exceeding line count thresholds (e.g., 400 lines).
   3. **Layer Violation:** Find logic that belongs in a lower infrastructure layer but is currently trapped in a higher layer.
-- Pick the single highest-priority, lowest-ambiguity issue. If no structural debt is found, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-refactor-required PR. Do not exit early or skip the PR, as logging the audit pass is required.
+- Pick the single highest-priority, lowest-ambiguity issue. If no structural debt is found, proceed directly to Step 3 to write only the log entry (skip all refactor execution sub-steps in Step 3), then proceed to Step 4 to submit a no-refactor-required PR. Do not exit early or skip the PR, as logging the audit pass is required.
 
 ### Step 2: Surgery Analysis
 - Define the structural debt: "Logic [X] in Feature [Y] violates Feature-to-Feature isolation."

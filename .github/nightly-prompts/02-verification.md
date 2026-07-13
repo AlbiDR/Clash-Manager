@@ -61,7 +61,6 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Commit Strategy:** Commit your changes directly to your local working branch.
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
-- **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
@@ -133,9 +132,9 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Uncovered Gap Scan
-Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-blindspot PR. Do not exit early or skip the PR, as logging the audit pass is required.
+Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed directly to Step 3 to write only the log entry (skip all test-writing execution sub-steps in Step 3), then proceed to Step 4 to submit a no-blindspot PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
-  1. **Recent-Change Priority:** Inspect recent commits on the `Nightly` branch. If files modified by Stage 1 (Harden) or Stage 4 (Optimize) lack corresponding specs, or their specs do not cover the changed logic, target them.
+  1. **Recent-Change Priority:** Inspect recent commits on the `Nightly` branch. If files modified by Stage 1 (Harden) in the current cycle, or by Stage 4 (Optimize) in the preceding cycle, lack corresponding specs, or their specs do not cover the changed logic, target them.
   2. **Validation Boundary:** Target functions processing external data (APIs, LocalStorage, user input) that have no tests covering the invalid/malformed input branch.
   3. **Zero Coverage:** Identify any complex `.ts` utility or `.vue` composable with zero `*.spec.ts` coverage.
   4. **Partial Coverage:** Locate existing `*.spec.ts` files missing edge cases or sad paths (such as API failures or boundary values).

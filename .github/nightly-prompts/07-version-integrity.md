@@ -61,7 +61,6 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Commit Strategy:** Commit your changes directly to your local working branch.
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
-- **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
@@ -132,8 +131,8 @@ Identify the highest declared version across these three `package.json` files. T
 
 ## 3. Daily Process (Execution Loop)
 
-### Step 1: Version consistency Scan
-Scan the codebase for version inconsistency using the following priority list. If no version drift is found, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-drift PR. Do not exit early or skip the PR, as logging the audit pass is required.
+### Step 1: Version Consistency Scan
+Scan the codebase for version inconsistency using the following priority list. If no version drift is found, proceed directly to Step 3 to write only the log entry (skip all reconciliation execution sub-steps in Step 3), then proceed to Step 4 to submit a no-drift PR. Do not exit early or skip the PR, as logging the audit pass is required. 
 - **Priority List:**
   1. **Catalog Scan:** Read `Frontend-PWA/package.json` and `Backend/package.json`. Identify any shared dependencies that are not using the `"catalog:"` protocol and apply the adherence rule.
   2. **Package Version Scan:** Read `package.json` at the root, in `Frontend-PWA/`, and in `Backend/`. Identify any disagreement in the `version` field and synchronize all to the highest declared value.
