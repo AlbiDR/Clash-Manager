@@ -51,7 +51,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly` to ensure your branch is based on the latest work of the preceding stages.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
-- **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications. For Stage 3, folding all outstanding migrations into the master baseline constitutes a single atomic operation and must be completed in full within one PR.
+- **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
 - **Clean Exit:** Once your Pull Request is created and pushed, your execution turn is complete. Do not attempt to merge your own Pull Request unless explicitly instructed.
 
 ---
@@ -62,6 +62,9 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
 - **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
+- **Branch Naming Schema:** The working branch created for your PR must follow the schema: `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]` (e.g., `nightly/stage-3-baseline-consolidation-a1b2c3d4`).
+- **Standard Log Format:** Every log entry written to `.github/nightly-logs/` must follow the format: `* [YYYY-MM-DD] [Stage N] Target: [file_path_or_scope] - [imperative action statement]` (e.g., `* [2026-07-13] [Stage 3] Target: master_migration.sql - Folded 3 new migrations.`).
+- **PR History Rotation:** At the start of your run, check the file size of `.github/nightly-logs/PR_HISTORY.md`. If it exceeds 1MB, rename the file to `PR_HISTORY_archive_[YYYY].md` (using the current year) to archive it, and create a new empty `.github/nightly-logs/PR_HISTORY.md` file.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
@@ -155,7 +158,7 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 - If no newer migrations exist:
   1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
   2. Parse and re-format the master migration to optimize query format, statement ordering, and comment consistency.
-  3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, proceed directly to Step 3 to write a log entry and Step 4 to submit a baseline-consolidation PR. Do not exit early or skip the PR, as logging the audit pass is required.
+  3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, terminate the execution loop cleanly without changes.
 
 
 ### Step 2: DDL Folding Integration

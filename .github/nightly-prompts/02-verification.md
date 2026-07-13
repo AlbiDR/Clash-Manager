@@ -61,9 +61,12 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Commit Strategy:** Commit your changes directly to your local working branch.
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
+- **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
+- **Branch Naming Schema:** The working branch created for your PR must follow the schema: `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]` (e.g., `nightly/stage-2-verification-a1b2c3d4`).
+- **Standard Log Format:** Every log entry written to `.github/nightly-logs/` must follow the format: `* [YYYY-MM-DD] [Stage N] Target: [file_path_or_scope] - [imperative action statement]` (e.g., `* [2026-07-13] [Stage 2] Target: useClashDataStore.spec.ts - Added boundary tests.`).
+- **PR History Rotation:** At the start of your run, check the file size of `.github/nightly-logs/PR_HISTORY.md`. If it exceeds 1MB, rename the file to `PR_HISTORY_archive_[YYYY].md` (using the current year) to archive it, and create a new empty `.github/nightly-logs/PR_HISTORY.md` file.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
-
 
 ---
 
