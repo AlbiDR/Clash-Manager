@@ -1,19 +1,19 @@
-* [2026-06-19] [Stage 5] Target: Codebase - | Frontend-PWA/src/features/voyage/README.md | Reconciled useVoyageStatus, setVoyageEnd, and countdown/progress delegation
-* [2026-06-20] [Stage 5] Target: Codebase - | Frontend-PWA/src/core/utils/README.md | Reconciled Sort Kernels, numeric formatting, tag normalization, and mock data.
-* [2026-06-21] [Stage 5] Target: Codebase - | Frontend-PWA/src/core/utils/README.md | Documented formatNumber optimizations for null/NaN and caching
-* [2026-06-23] [Stage 5] Target: Codebase - | Frontend-PWA/src/core/README.md | Reconciled utility kernels (PriorityQueue, economy, navigation, sorting, visibility, mockData)
-* [2026-06-25] [Stage 5] Target: Codebase - | Backend/README.md | Reconciled Headhunter Epoch safety, server-side crown/duel derivation, and centralized Valibot boundaries.
-* [2026-06-26] [Stage 5] Target: Codebase - | Frontend-PWA/src/core/README.md | Reconciled DataSchemas barrel and DataMappers telemetry normalization (Voyage/Heritage)
-* [2026-06-27] [Stage 5] Target: Codebase - | Frontend-PWA/src/shared/README.md | Reconciled v-tactile (Architectural Protection) and v-tooltip (Popover API/Delegation) constraints.
-* [2026-06-28] [Stage 5] Target: Codebase - | Backend/supabase/functions/sync-player-cards/README.md | Documented User Proxy 4-stage lifecycle, 12h TTL, and rarity-normalization
-* [2026-06-29] [Stage 5] Target: Codebase - | Frontend-PWA/src/shared/directives/README.md | Created: Documented DOM catalysts (v-tactile, v-tooltip) and architectural protection
-* [2026-06-30] [Stage 5] Target: Codebase - | Frontend-PWA/src/shared/composables/README.md | Reconciled voyageTypes.ts as domain SSOT for promoted subsystem
-* [2026-07-03] [Stage 5] Target: Codebase - | Backend/supabase/functions/headhunter-scanner/README.md | Reconciled 5-stage discovery pipeline and Safety Epoch Loop documentation
-* [2026-07-04] [Stage 5] Target: Codebase - | Frontend-PWA/src/core/services/README.md | Reconciled missing services: useBroadcastChannel, useBadge, useBackHandler, and UI Mode engines.
-* [2026-07-05] [Stage 5] Target: Codebase - | Frontend-PWA/src/features/settings/README.md | Reconciled UsefulLinksSettings, EventManagement orchestration, and useWakeLock import path
-* [2026-07-06] [Stage 5] Target: Codebase - | Backend/supabase/functions/_shared/README.md | Reconciled Backend Utilities (utils.ts) normalization logic
-* [2026-07-07] [Stage 5] Target: Codebase - | Frontend-PWA/src/features/roster/README.md | Redirected prediction logic to @shared/composables/useHistoryChart.ts
-* [2026-07-08] [Stage 5] Target: Codebase - | Frontend-PWA/src/core/services/README.md | Reconciled missing services: useNativeBridge, useClashLoader, useConsoleMetadata, useExternalLink, useShare, and useShareTarget.
-* [2026-07-09] [Stage 5] Target: Codebase - | Frontend-PWA/README.md | Reconciled Core Services registry (1-33), moved useHaptics to Shared Behavioral Logic, and injected missing Layer 1 services.
-* [2026-07-10] [Stage 5] Target: Codebase - | Frontend-PWA/src/core/types/README.md | Created: Documented domain types, native bridge contracts, and UI orchestration interfaces.
-* [2026-07-11] [Stage 5] Target: Codebase - | Backend/supabase/functions/query-royale-api/README.md | Reconciled Concurrent Batch Harvesting and multi-tier Path of Legends fallback
+* [2026-06-19] [Stage 5] Target: Codebase - Frontend-PWA/src/features/voyage/README.md | Reconciled useVoyageStatus, setVoyageEnd, and countdown/progress delegation
+* [2026-06-20] [Stage 5] Target: Codebase - Frontend-PWA/src/core/utils/README.md | Reconciled Sort Kernels, numeric formatting, tag normalization, and mock data.
+* [2026-06-21] [Stage 5] Target: Codebase - Frontend-PWA/src/core/utils/README.md | Documented formatNumber optimizations for null/NaN and caching
+* [2026-06-23] [Stage 5] Target: Codebase - Frontend-PWA/src/core/README.md | Reconciled utility kernels (PriorityQueue, economy, navigation, sorting, visibility, mockData)
+* [2026-06-25] [Stage 5] Target: Codebase - Backend/README.md | Reconciled Headhunter Epoch safety, server-side crown/duel derivation, and centralized Valibot boundaries.
+* [2026-06-26] [Stage 5] Target: Codebase - Frontend-PWA/src/core/README.md | Reconciled DataSchemas barrel and DataMappers telemetry normalization (Voyage/Heritage)
+* [2026-06-27] [Stage 5] Target: Codebase - Frontend-PWA/src/shared/README.md | Reconciled v-tactile (Architectural Protection) and v-tooltip (Popover API/Delegation) constraints.
+* [2026-06-28] [Stage 5] Target: Codebase - Backend/supabase/functions/sync-player-cards/README.md | Documented User Proxy 4-stage lifecycle, 12h TTL, and rarity-normalization
+* [2026-06-29] [Stage 5] Target: Codebase - Frontend-PWA/src/shared/directives/README.md | Created: Documented DOM catalysts (v-tactile, v-tooltip) and architectural protection
+* [2026-06-30] [Stage 5] Target: Codebase - Frontend-PWA/src/shared/composables/README.md | Reconciled voyageTypes.ts as domain SSOT for promoted subsystem
+* [2026-07-03] [Stage 5] Target: Codebase - Backend/supabase/functions/headhunter-scanner/README.md | Reconciled 5-stage discovery pipeline and Safety Epoch Loop documentation
+* [2026-07-04] [Stage 5] Target: Codebase - Frontend-PWA/src/core/services/README.md | Reconciled missing services: useBroadcastChannel, useBadge, useBackHandler, and UI Mode engines.
+* [2026-07-05] [Stage 5] Target: Codebase - Frontend-PWA/src/features/settings/README.md | Reconciled UsefulLinksSettings, EventManagement orchestration, and useWakeLock import path
+* [2026-07-06] [Stage 5] Target: Codebase - Backend/supabase/functions/_shared/README.md | Reconciled Backend Utilities (utils.ts) normalization logic
+* [2026-07-07] [Stage 5] Target: Codebase - Frontend-PWA/src/features/roster/README.md | Redirected prediction logic to @shared/composables/useHistoryChart.ts
+* [2026-07-08] [Stage 5] Target: Codebase - Frontend-PWA/src/core/services/README.md | Reconciled missing services: useNativeBridge, useClashLoader, useConsoleMetadata, useExternalLink, useShare, and useShareTarget.
+* [2026-07-09] [Stage 5] Target: Codebase - Frontend-PWA/README.md | Reconciled Core Services registry (1-33), moved useHaptics to Shared Behavioral Logic, and injected missing Layer 1 services.
+* [2026-07-10] [Stage 5] Target: Codebase - Frontend-PWA/src/core/types/README.md | Created: Documented domain types, native bridge contracts, and UI orchestration interfaces.
+* [2026-07-11] [Stage 5] Target: Codebase - Backend/supabase/functions/query-royale-api/README.md | Reconciled Concurrent Batch Harvesting and multi-tier Path of Legends fallback
