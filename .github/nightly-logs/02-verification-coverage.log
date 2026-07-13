@@ -1,32 +1,32 @@
 * [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/NotificationSettings.vue - Registered file under audit scope.
 * [2026-05-01] [Stage 2] Target: Codebase - Backend-GAS/Validation.ts
-* [2026-05-20] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
-* [2026-05-21] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/theme/tokens.ts | Saturating coverage for CSS variable transformation and shared token integration
-* [2026-05-22] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Saturating coverage for Voyage activation and validation boundary
-* [2026-05-23] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/DurationInput.vue | Saturating logic coverage for T2T input, clamping, and sanitization; identified negative-clamping bug.
-* [2026-05-24] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Zero Coverage gap closed; saturating tests for status and statsBadge logic.
-* [2026-05-25] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/components/EventManagement.vue | Zero Coverage gap closed; saturating tests for state-driven UI and live countdown logic.
-* [2026-05-26] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/components/VoyageBanner.vue | Zero Coverage gap closed; saturating tests for live progress and countdown logic.
-* [2026-05-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/BaseHistoryChart.vue | Saturating logic coverage for bar scaling, trend generation, and thematic rendering
-* [2026-05-28] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/laboratory/components/TargetPicker.vue | Zero Coverage gap closed; saturating tests for props, emits, formatting, and visual states.
-* [2026-05-29] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/SupabaseClient.ts | Added deep logic proofs for newly added validation bounds including blacklist tags and pipeline heartbeat data structure
-* [2026-05-30] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for sanitizeNumericInput and durationToSeconds (Layer 1 utilities)
-* [2026-06-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for t2tToTimestamp and formatCountdown edge cases
-* [2026-06-03] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/composables/useSelectionBar.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
-* [2026-06-16] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/usePwaManager.ts | Zero Coverage gap closed; saturating tests for SW updates, cache purging, and factory resets.
-* [2026-06-17] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/NavigationDock.vue | Zero Coverage gap closed; saturating tests for rendering, navigation, and haptics.
-* [2026-06-19] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useExternalLink.ts | Saturating coverage for Native Bridge delegation, Android intent protocol, and hardware boundary failure modes.
-* [2026-06-20] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Zero Coverage gap closed; saturating tests for countdown orchestration and progress normalization.
-* [2026-06-21] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/math.ts | Saturating coverage for formatNumber edge cases (null, undefined, NaN, and Intl options).
-* [2026-06-22] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/BaseSelect.vue | Zero Coverage gap closed; saturating tests for toggle, selection, disabled state, and semantic classes.
-* [2026-06-23] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/text.ts | Saturating coverage for formatDisplayTag and markdown edge cases
-* [2026-06-24] [Stage 2] Target: Codebase - | Backend/supabase/functions/_shared/schemas.ts | Zero Coverage gap closed; saturating tests for authoritative validation boundaries, key pool normalization, and vault secret resilience.
-* [2026-06-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/VoyageClient.ts | Saturating coverage for RPC functions, error paths, and validation boundaries
-* [2026-06-28] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/RecruitClient.ts | Extended Realtime and RPC validation coverage; confirmed removal of channel and Valibot boundary integrity.
-* [2026-06-29] [Stage 2] Target: Codebase - | Frontend-PWA/src/app/sw/swSchemas.ts | Zero Coverage gap closed; saturating tests for SW background sync and config validation boundaries.
-* [2026-07-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/MaintenanceSchemas.ts | Zero Coverage gap closed; saturating tests for maintenance response and push subscription validation boundaries.
-* [2026-07-05] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/theme/HtmlEntry.ts | Zero Coverage gap closed; saturating tests for the HTML5 entry point and boot-stuck guard.
-* [2026-07-06] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/theme/base.ts | Zero Coverage gap closed; saturating tests for system tokens and gesture enforcement
-* [2026-07-07] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/locale.ts | Zero Coverage gap closed; saturating tests for SSR fallback, BCP 47 normalization, and unsupported locales.
-* [2026-07-08] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useClashLoader.ts | Zero Coverage gap closed; verified hydration orchestration and fire-and-forget refresh logic.
-* [2026-07-11] [Stage 2] Target: Codebase - | Backend/supabase/functions/_shared/utils.ts | Zero Coverage gap closed; saturating tests for tag normalization, rarity mapping, and authoritative RPoS formula.
+* [2026-05-20] [Stage 2] Target: Codebase - Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
+* [2026-05-21] [Stage 2] Target: Codebase - Frontend-PWA/src/core/theme/tokens.ts | Saturating coverage for CSS variable transformation and shared token integration
+* [2026-05-22] [Stage 2] Target: Codebase - Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Saturating coverage for Voyage activation and validation boundary
+* [2026-05-23] [Stage 2] Target: Codebase - Frontend-PWA/src/shared/ui/DurationInput.vue | Saturating logic coverage for T2T input, clamping, and sanitization; identified negative-clamping bug.
+* [2026-05-24] [Stage 2] Target: Codebase - Frontend-PWA/src/core/services/useConsoleMetadata.ts | Zero Coverage gap closed; saturating tests for status and statsBadge logic.
+* [2026-05-25] [Stage 2] Target: Codebase - Frontend-PWA/src/features/voyage/components/EventManagement.vue | Zero Coverage gap closed; saturating tests for state-driven UI and live countdown logic.
+* [2026-05-26] [Stage 2] Target: Codebase - Frontend-PWA/src/features/voyage/components/VoyageBanner.vue | Zero Coverage gap closed; saturating tests for live progress and countdown logic.
+* [2026-05-27] [Stage 2] Target: Codebase - Frontend-PWA/src/shared/ui/BaseHistoryChart.vue | Saturating logic coverage for bar scaling, trend generation, and thematic rendering
+* [2026-05-28] [Stage 2] Target: Codebase - Frontend-PWA/src/features/laboratory/components/TargetPicker.vue | Zero Coverage gap closed; saturating tests for props, emits, formatting, and visual states.
+* [2026-05-29] [Stage 2] Target: Codebase - Frontend-PWA/src/core/api/SupabaseClient.ts | Added deep logic proofs for newly added validation bounds including blacklist tags and pipeline heartbeat data structure
+* [2026-05-30] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for sanitizeNumericInput and durationToSeconds (Layer 1 utilities)
+* [2026-06-01] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for t2tToTimestamp and formatCountdown edge cases
+* [2026-06-03] [Stage 2] Target: Codebase - Frontend-PWA/src/shared/composables/useSelectionBar.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
+* [2026-06-16] [Stage 2] Target: Codebase - Frontend-PWA/src/core/services/usePwaManager.ts | Zero Coverage gap closed; saturating tests for SW updates, cache purging, and factory resets.
+* [2026-06-17] [Stage 2] Target: Codebase - Frontend-PWA/src/shared/ui/NavigationDock.vue | Zero Coverage gap closed; saturating tests for rendering, navigation, and haptics.
+* [2026-06-19] [Stage 2] Target: Codebase - Frontend-PWA/src/core/services/useExternalLink.ts | Saturating coverage for Native Bridge delegation, Android intent protocol, and hardware boundary failure modes.
+* [2026-06-20] [Stage 2] Target: Codebase - Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Zero Coverage gap closed; saturating tests for countdown orchestration and progress normalization.
+* [2026-06-21] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/math.ts | Saturating coverage for formatNumber edge cases (null, undefined, NaN, and Intl options).
+* [2026-06-22] [Stage 2] Target: Codebase - Frontend-PWA/src/shared/ui/BaseSelect.vue | Zero Coverage gap closed; saturating tests for toggle, selection, disabled state, and semantic classes.
+* [2026-06-23] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/text.ts | Saturating coverage for formatDisplayTag and markdown edge cases
+* [2026-06-24] [Stage 2] Target: Codebase - Backend/supabase/functions/_shared/schemas.ts | Zero Coverage gap closed; saturating tests for authoritative validation boundaries, key pool normalization, and vault secret resilience.
+* [2026-06-27] [Stage 2] Target: Codebase - Frontend-PWA/src/core/api/VoyageClient.ts | Saturating coverage for RPC functions, error paths, and validation boundaries
+* [2026-06-28] [Stage 2] Target: Codebase - Frontend-PWA/src/core/api/RecruitClient.ts | Extended Realtime and RPC validation coverage; confirmed removal of channel and Valibot boundary integrity.
+* [2026-06-29] [Stage 2] Target: Codebase - Frontend-PWA/src/app/sw/swSchemas.ts | Zero Coverage gap closed; saturating tests for SW background sync and config validation boundaries.
+* [2026-07-01] [Stage 2] Target: Codebase - Frontend-PWA/src/core/api/MaintenanceSchemas.ts | Zero Coverage gap closed; saturating tests for maintenance response and push subscription validation boundaries.
+* [2026-07-05] [Stage 2] Target: Codebase - Frontend-PWA/src/core/theme/HtmlEntry.ts | Zero Coverage gap closed; saturating tests for the HTML5 entry point and boot-stuck guard.
+* [2026-07-06] [Stage 2] Target: Codebase - Frontend-PWA/src/core/theme/base.ts | Zero Coverage gap closed; saturating tests for system tokens and gesture enforcement
+* [2026-07-07] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/locale.ts | Zero Coverage gap closed; saturating tests for SSR fallback, BCP 47 normalization, and unsupported locales.
+* [2026-07-08] [Stage 2] Target: Codebase - Frontend-PWA/src/core/services/useClashLoader.ts | Zero Coverage gap closed; verified hydration orchestration and fire-and-forget refresh logic.
+* [2026-07-11] [Stage 2] Target: Codebase - Backend/supabase/functions/_shared/utils.ts | Zero Coverage gap closed; saturating tests for tag normalization, rarity mapping, and authoritative RPoS formula.
