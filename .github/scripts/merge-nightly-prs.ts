@@ -19,7 +19,7 @@ const CONFIG = {
   targetBranch: "Nightly",
   allowedAuthors: ["google-labs-jules", "AlbiDR"],
   token: process.env.GITHUB_TOKEN || "",
-  changelogPath: path.join(".github", "nightly-logs", "PR_HISTORY.md"),
+  changelogPath: path.join(".github", "nightly-logs", "pr-history.md"),
 };
 
 function log(message: string, type: "info" | "warn" | "error" | "success" = "info") {
