@@ -1,6 +1,26 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-13] PR #1095: test(verify): add specs for assets.ts and normalizeTag
+**Commit**: `52933228d5216d086fff0ae9aa2599d3f4e4cd24`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1095)
+
+### Description
+I have completed the logic integrity audit for Stage 2. 
+
+Key accomplishments:
+1. Created `Frontend-PWA/src/core/utils/utils-tests/assets.spec.ts` providing 100% coverage for asset resolution functions.
+2. Expanded `Frontend-PWA/src/core/utils/utils-tests/text.spec.ts` to include unit tests for the `normalizeTag` utility.
+3. Verified the changes by running the full Vitest suite in the `Frontend-PWA` workspace, with 1390 tests passing.
+4. Documented the new coverage in `.github/nightly-logs/02-verification-coverage.log`.
+
+The changes ensure that core utility functions, which serve as the foundation for game data and asset handling, are logically sound and resilient to malformed inputs.
+
+---
+*PR created automatically by Jules for task [17504070353678716098](https://jules.google.com/task/17504070353678716098) started by @AlbiDR*
+
+---
+
 ## [2026-07-12] PR #1094: fix(apk-ux): modernize BackendRefresher touch targets and haptics
 **Commit**: `31ee635a01e9aeb928d71c62d21e7f3e05229871`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1094)
