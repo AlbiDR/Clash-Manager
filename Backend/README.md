@@ -83,7 +83,7 @@ The `deploy-supabase.yml` workflow automates the following sequence:
  - `CLAN_TAG` and `PLAYER_TAG` repository variables are synced.
  - `ROYALE_API_KEYS` (The Key Farm) is injected into the Supabase environment.
 3. **Database DNA Sync**: SQL migrations are pushed if `SUPABASE_DB_PASSWORD` is present.
-4. **Edge Layer Deployment**: The workflow deploys `ingest-royale-data`, `headhunter-scanner`, and `sync-player-cards`; `query-royale-api` and `fetch-player-battlelog` are deployed manually via the Supabase CLI.
+4. **Edge Layer Deployment**: The workflow deploys all five Edge Functions (`ingest-royale-data`, `headhunter-scanner`, `sync-player-cards`, `query-royale-api`, and `fetch-player-battlelog`) ensuring a synchronized binary stack.
 
 ### Common CLI Operations
 ```bash

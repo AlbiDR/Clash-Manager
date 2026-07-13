@@ -60,7 +60,7 @@ All inbound data MUST be validated against a Valibot schema at the client entry 
  - `AppSchemas.ts`: Validation for global web application data and system-level payloads.
  - `OfflineSchemas.ts`: Schemas for hardening the offline queue and background synchronization boundary.
  - `MaintenanceSchemas.ts`: (Specialized) Internal validation for system maintenance and push subscription ingress. *Exempt from the DataSchemas barrel to maintain domain isolation.*
-- **Data Mappers**: Transformation logic for converting raw database rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for telemetry (Voyage history, Heritage tenure) and provides fallback logic for missing metrics (e.g., `potential_score`).
+- **Data Mappers**: Transformation logic for converting raw database rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for telemetry, including Voyage history (`v_hist`), Heritage tenure, and `potential_score` fallback logic.
 
 ---
 

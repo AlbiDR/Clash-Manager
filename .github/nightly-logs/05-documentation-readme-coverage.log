@@ -58,3 +58,6 @@
 2026-07-12 | Frontend-PWA/src/core/utils/README.md | Reconciled game.ts decomposition, XP math utilities, and normalizeTag.
 2026-07-12 | Frontend-PWA/src/shared/ui/README.md | Reconciled StatusPill and ScoreThresholdSelector modernization (48px/v-tactile).
 2026-07-12 | Frontend-PWA/src/core/README.md | Reconciled Utility Kernels registry for game.ts decomposition.
+2026-07-13 | Backend/README.md | Reconciled automated Edge Function deployment status
+2026-07-13 | Frontend-PWA/src/features/headhunter/README.md | Reconciled useBlitzMode core service delegation
+2026-07-13 | Frontend-PWA/src/core/api/README.md | Reconciled DataMappers v_hist and potential score fallback
