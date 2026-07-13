@@ -1,6 +1,25 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-13] PR #1096: chore(baseline): fold new migrations into master baseline
+**Commit**: `4128446fee83d7f69ef69397cf2ecdda8b26c9d0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1096)
+
+### Description
+This PR hardens the master baseline schema by decoupling constraints and optimizing the execution order of identity sequence synchronization.
+
+- Moved inline foreign key from `drivers.player_voyage_history` to the dedicated constraints block.
+- Reordered `drivers.clan_voyage_contributions` and its backfill to precede the identity sequence sync block.
+- Verified RLS compliance across all 28 tables.
+- Verified `search_path` isolation and `SECURITY DEFINER` for 95+ functions.
+- Ensured ASCII integrity and proper license headers.
+- Updated consolidation coverage logs.
+
+---
+*PR created automatically by Jules for task [17771629278754349036](https://jules.google.com/task/17771629278754349036) started by @AlbiDR*
+
+---
+
 ## [2026-07-13] PR #1095: test(verify): add specs for assets.ts and normalizeTag
 **Commit**: `52933228d5216d086fff0ae9aa2599d3f4e4cd24`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1095)
