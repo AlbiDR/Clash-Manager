@@ -1,133 +1,126 @@
-Frontend-PWA/src/core/services/useUiCoordinator.ts
-Frontend-PWA/src/core/services/useAppSettings.ts
-Frontend-PWA/src/core/services/useConnectionStatus.ts
-Frontend-PWA/src/core/services/StorageService.ts
-Frontend-PWA/src/core/services/useConsoleController.ts
-Frontend-PWA/src/core/services/useBatchQueue.ts
-Frontend-PWA/src/core/api/GasClient.ts
-Frontend-PWA/src/core/services/useBackHandler.ts
-Frontend-PWA/src/features/roster/views/RosterView.vue
-Frontend-PWA/src/features/roster/components/MemberCard.vue
-Backend-Worker/src/index.ts
-Backend-Worker/src/schemas.ts
-Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
-Frontend-PWA/src/core/services/useToast.ts
-Frontend-PWA/src/shared/composables/useCardMechanics.ts
-Frontend-PWA/src/core/services/useBenchmarking.ts
-Frontend-PWA/src/core/services/useShowcaseMode.ts
-Frontend-PWA/src/core/services/useProgressiveList.ts
-Frontend-PWA/src/features/laboratory/logic/ScoringStrategy.ts
-Frontend-PWA/src/core/services/useClashDataStore.ts
-Frontend-PWA/src/core/services/useWakeLock.ts
-Frontend-PWA/src/features/laboratory/logic/Registry.ts
-Frontend-PWA/src/core/services/useDeepLinkHandler.ts
-Frontend-PWA/src/core/services/useExternalLink.ts
-Frontend-PWA/src/core/services/useNetworkInfo.ts
-Frontend-PWA/src/core/utils/sortStrategies.ts
-Frontend-PWA/src/core/services/useShare.ts
-Frontend-PWA/src/core/services/useBroadcastChannel.ts
-Frontend-PWA/src/core/services/useShareTarget.ts
-Frontend-PWA/src/core/services/useBlueprintMode.ts
-Frontend-PWA/src/core/services/useStoragePersistence.ts
-Frontend-PWA/src/core/services/useSyntheticMode.ts
-Frontend-PWA/src/core/services/useBadge.ts
-Frontend-PWA/src/core/utils/formatters.ts
-Frontend-PWA/src/features/settings/composables/useSettings.ts
-Frontend-PWA/src/features/roster/composables/useLeaderboard.ts
-Backend-GAS/Webapp_Controller.ts
-Backend-GAS/Validation.ts
-Frontend-PWA/src/features/settings/components/NetworkSettings.vue
-Backend-GAS/API_Public.ts
-Backend-GAS/Headhunter_Store.ts
-Backend-Worker/src/services/RecruitmentService.ts
-Frontend-PWA/src/core/utils/warMath.ts
-Frontend-PWA/src/core/api/SupabaseClient.ts
-Backend/supabase/functions/ingest-royale-data/pipeline.ts
-Frontend-PWA/src/shared/ui/StatusPill.vue
-Backend/supabase/functions/_shared/protocol.ts
-Frontend-PWA/src/core/api/useApiState.ts
-Backend/supabase/functions/headhunter-scanner/scanner.ts
-Frontend-PWA/src/features/headhunter/composables/useRecruitBlacklist.ts
-Frontend-PWA/src/core/utils/bezier.ts
-Frontend-PWA/src/core/utils/economy.ts
-Backend/supabase/functions/ingest-royale-data/stages/discovery.ts
-Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
-Backend/supabase/functions/sync-player-cards/index.ts
-Backend/supabase/functions/sync-player-cards/client.ts
-Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts
-Frontend-PWA/src/core/api/SupabaseClient.ts
-Backend/supabase/functions/ingest-royale-data/pipeline.ts
-Frontend-PWA/src/features/laboratory/logic/Simulation.ts
-2026-05-18 | Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts | Documented Pinia store actions and added inline decision logs for strategy coupling.
-2026-05-19 | Frontend-PWA/src/core/services/useConnectivityManager.ts | Fully documented Layer 1 orchestrator, including interfaces and health hierarchy logic.
-2026-05-20 | Backend/supabase/functions/headhunter-scanner/stages/rescan.ts | Annotated runRescan with detailed TSDoc, including ADR section links and side effects.
-2026-05-21 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Documented reactive state, computed getters, and actions with ADR Section III/IV mappings and side-effect annotations.
-2026-05-22 | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Annotated event setup form with validation TSDoc and ADR Section III mappings.
-2026-08-07 | Frontend-PWA/src/shared/ui/SelectionBar.vue | Documented selection orchestrator, added ADR mappings, and implemented decision logs for deferred UI side-effects.
-2026-08-09 | Backend/supabase/functions/_shared/protocol.ts | Perfected clinical protocol interface contract and enhanced lifecycle decision logs.
-2026-08-11 | Frontend-PWA/src/core/api/VoyageClient.ts | Perfected interface contracts for the Layer 1 transport layer, including RPC activation and view hardening.
-2026-08-30 | Frontend-PWA/src/core/api/RecruitClient.ts | Reconciled interface contracts with connection-required architecture and added ADR Section III/IV mappings.
-2026-05-27 | Frontend-PWA/src/core/api/DataSchemas.ts | Documented authoritative validation boundaries and major exported schemas with TSDoc.
-2026-05-28 | Frontend-PWA/src/core/theme/tokens.ts | Documented theme token substrate and transformation logic with ADR Section I/II mappings and decision logs.
-2026-05-30 | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Documented interface contracts and side effects for the recently refactored form orchestrator.
-2026-09-02 | Frontend-PWA/src/core/api/MaintenanceClient.ts | Enhanced interface contracts with missing @param, @remarks (ADR link), and @sideeffects.
-2026-09-04 | Frontend-PWA/src/core/services/useConsoleController.ts | Documented orchestrator interface contracts and return types; added inline decision logs for revalidation and skeleton logic.
-2026-06-02 | Backend/supabase/functions/_shared/muscle.ts | Documented interface contracts for the Native Muscle core utility and added architectural decision logs for key rotation/backoff.
-2026-09-05 | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Documented interface contracts and architectural decision logs for the trend prediction orchestrator.
-2026-06-04 | Frontend-PWA/src/shared/composables/usePullToRefresh.ts | Refactored TSDoc with ADR Section II links and decision logs for the PTR orchestrator.
-2026-06-05 | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Documented interface contracts and side effects for the Voyage actions orchestrator.
-2026-09-06 | Frontend-PWA/src/core/services/useClashSync.ts | Documented orchestrator interface contracts and reactive state; added mandatory threat/decision logs for sync/persistence.
-2026-09-13 | Frontend-PWA/src/shared/composables/useScoreSelector.ts | Documented interface contracts and architectural side effects (haptics/DOM) for the score threshold orchestrator.
-2026-09-16 | Frontend-PWA/src/core/utils/idbKernel.ts | Fully documented Layer 1 core utility, including resilience patterns, tiered caching (ADR Sec IV), and environmental guards.
-2026-09-19 | Frontend-PWA/src/app/sw/swSync.ts | Documented interface contracts and mandatory threat/decision logs for background sync and push notifications.
-2026-09-19 | Frontend-PWA/src/app/sw/swKernel.ts | Enhanced interface contracts with ADR links and threat annotations for SW persistence primitives.
-2026-09-21 | Frontend-PWA/src/core/utils/predictionMath.ts | Documented interface contracts and weighted-decay prediction logic with ADR links and decision logs.
-2026-10-06 | Frontend-PWA/src/features/headhunter/composables/useLeaderboardScraper.ts | Documented leaderboard scraper composable and added threat/decision logs.
-2026-10-27 | Frontend-PWA/src/features/laboratory/logic/Simulation.ts | Documented interface contracts and added mandatory threat/decision logs for the optimized simulation engine.
-2026-06-13 | Backend/supabase/functions/query-royale-api/index.ts | Fully documented L5 API proxy, including harvest discovery engine and ADR Section V/II links.
-2026-06-14 | Backend/supabase/functions/headhunter-scanner/stages/profiler.ts | Fully documented L1 Profiler stage, including ValidRecruit DTO, RPoS decision logs, and backoff telemetry threats.
-2026-06-15 | Frontend-PWA/src/shared/ui/SelectionFab.vue | Documented SelectionFab component rationale, architectural context, and added decision/threat logs for action delegation and compact styling.
-2026-06-16 | Frontend-PWA/src/core/services/useConsoleSelection.ts | Documented orchestrator interface contracts and reactive state; added mandatory threat/decision logs for score thresholding and force-selection.
-2026-06-17 | Frontend-PWA/src/core/services/usePwaManager.ts | Fully documented Layer 1 core service, including PWA lifecycle, recovery logic, and mandatory threat/decision logs.
-2026-06-18 | Frontend-PWA/src/shared/ui/NavigationDock.vue | Documented NavigationDock component contracts, including architectural context, side effects, and mandatory threat/decision logs.
-2026-06-20 | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Documented Voyage status orchestrator and added mandatory threat/decision logs for countdown/progress logic.
-2026-06-21 | Frontend-PWA/src/core/api/MemberSchemas.ts | Documented member schemas and added mandatory threat/decision logs for validation boundaries.
-2026-06-21 | Frontend-PWA/src/core/services/useHaptics.ts | Documented adaptive haptics engine and added mandatory threat/decision logs for battery-aware scaling.
-2026-06-25 | Backend/supabase/functions/_shared/schemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
-2026-06-27 | Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue | Documented interactive molecule and logic delegation to useScoreSelector, adding ADR Section II/IV mappings and threat logs.
-2026-11-20 | Frontend-PWA/src/core/utils/sortOptions.ts | Documented interface contracts for sorting metadata and stabilized license header per ADR Section II.
-2026-06-25 | Frontend-PWA/src/core/services/useVisibilityRefresh.ts | Documented Layer 1 core service and added ADR Section II mappings for visibility-triggered revalidation.
-2026-06-25 | Frontend-PWA/src/core/services/useSelectionStore.ts | Documented Layer 1 core service and added ADR Section I/III mappings for centralized selection state.
-2026-06-28 | Frontend-PWA/src/core/api/RecruitSchemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
-2026-06-28 | Frontend-PWA/src/core/utils/navigation.ts | Documented navigation SSOT interface and registry with ADR Section II/IV mappings.
-2026-06-29 | Frontend-PWA/src/core/api/VoyageSchemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
-2026-06-29 | Frontend-PWA/src/core/api/BaseSchemas.ts | Documented core coercion pipes and structural guards with ADR Section III mappings and threat annotations.
-2026-06-30 | Frontend-PWA/src/core/api/ProfileSchemas.ts | Enhanced authoritative validation schemas with TSDoc and ADR mappings.
-2026-06-30 | Frontend-PWA/src/core/api/DataMappers.ts | Documented interface contracts and added mandatory decision logs for normalization.
-2026-07-01 | Frontend-PWA/src/core/api/AppSchemas.ts | Documented authoritative validation boundary for the full application state with TSDoc and ADR Section III mappings.
-2026-07-01 | Frontend-PWA/src/core/api/OfflineSchemas.ts | Documented offline queue schemas with TSDoc, ADR mappings, and mandatory threat/decision logs.
-2026-07-02 | Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts | Documented Layer 3 orchestrator and added mandatory threat/decision logs for Blitz and Scraper engines.
-2026-07-03 | Backend/supabase/functions/_shared/types.ts | Documented shared pipeline interfaces and added ADR Section II mappings.
-2026-07-03 | Frontend-PWA/src/shared/utils/game.ts | Documented role formatter and added architectural decision logs for display labels.
-2026-07-04 | Frontend-PWA/src/core/services/useBlitzMode.ts | Documented automated blitz orchestrator, added TSDoc for internal handlers and injected mandatory threat/decision logs for native bridge delegation.
-2026-07-05 | Frontend-PWA/src/core/services/useSystemInfo.ts | Documented system info orchestrator and priority badge resolution logic with mandatory threat/decision logs.
-2026-07-05 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Documented header metadata orchestrator and synthetic mode handling with mandatory threat/decision logs.
-2026-07-05 | Frontend-PWA/src/core/services/useListFilter.ts | Documented optimized list engine, WeakMap-based caching rationale, and stable sorting guards.
-2026-07-06 | Frontend-PWA/src/shared/composables/useLongPress.ts | Documented long-press orchestrator with ADR mappings and mandatory threat/decision logs.
-2026-07-07 | Frontend-PWA/src/features/settings/composables/useSettings.ts | Documented settings orchestrator, added detailed TSDoc for interface contracts, and injected mandatory threat/decision logs for PWA lifecycle and hardware brokering.
-2026-07-08 | Frontend-PWA/src/core/services/useNativeBridge.ts | Documented native bridge orchestrator, added comprehensive TSDoc for 13 return properties/methods, and injected mandatory threat/decision logs for hardware brokering.
-2026-07-09 | Frontend-PWA/src/core/services/useClashLoader.ts | Hardened TSDoc for SWR hydration logic and injected mandatory threat/decision logs.
-2026-07-10 | Frontend-PWA/src/core/services/useUiCoordinator.ts | Hardened TSDoc and injected mandatory threat/decision logs for UI occlusion and state merging.
-2026-07-10 | Frontend-PWA/src/core/services/useSelectionStore.ts | Hardened TSDoc and injected mandatory threat/decision logs for selection logic and desync threats.
-2026-07-10 | Frontend-PWA/src/core/services/useStoragePersistence.ts | Hardened TSDoc and injected mandatory threat/decision logs for storage eviction and persistence rationale.
-2026-07-10 | Frontend-PWA/src/core/services/useBroadcastChannel.ts | Hardened TSDoc and injected mandatory threat/decision logs for memory leaks and lifecycle cleanup.
-2026-07-11 | Frontend-PWA/src/core/services/useClashDataStore.ts | Hardened interface contracts, documented SWR strategy and Service Worker update logic with ADR mappings.
-2026-07-11 | Frontend-PWA/src/core/services/useClashSync.ts | Hardened interface contracts with comprehensive @returns documentation and threat/decision logs.
-2026-07-11 | Frontend-PWA/src/shared/ui/Toast.vue | Enforced licensing and documented interface contracts for props, emits, and clipboard logic.
-2026-07-12 | Frontend-PWA/src/core/utils/math.ts | Hardened TSDoc with threat/decision annotations for momentum thresholds and cached formatters.
-2026-07-12 | Frontend-PWA/src/core/utils/PriorityQueue.ts | Annotated high-performance heap utility with mandatory threat/decision logs for simulation efficiency.
-2026-07-13 | Frontend-PWA/src/features/roster/composables/useLeaderboard.ts | Hardened interface contracts with expanded @returns documentation for 20+ orchestrator properties and decision logs for Blitz integration.
-2026-07-13 | Frontend-PWA/src/shared/composables/useStatusPill.ts | Hardened interface contracts with expanded @returns documentation and threat/decision logs for viewport-aware truncation.
-2026-07-13 | Frontend-PWA/src/shared/composables/useBaseHistoryChart.ts | Hardened interface contracts with expanded @returns documentation and threat/decision logs for geometric scaling and linear trend rationale.
-2026-07-13 | Backend/supabase/functions/query-royale-api/index.ts | Hardened documentation for internal discovery functions, adding TSDoc for fetchRankings/harvestClanlessPlayers and threat logs for API quota exhaustion.
-2026-07-13 | Backend/supabase/functions/sync-player-cards/index.ts | Hardened documentation for profile response construction and normalization, adding decision logs for the absolute 1-16 scaling formula.
+* [2026-04-01] [Stage 6] Target: Backend-Worker/src/index.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Backend-Worker/src/schemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Backend-Worker/src/services/RecruitmentService.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/api/GasClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/api/SupabaseClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/api/SupabaseClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/api/useApiState.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/StorageService.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useAppSettings.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useBackHandler.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useBadge.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useBatchQueue.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useBenchmarking.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useBlueprintMode.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useBroadcastChannel.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useClashDataStore.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useConnectionStatus.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useConsoleController.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useDeepLinkHandler.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useExternalLink.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useNetworkInfo.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useProgressiveList.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useShare.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useShareTarget.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useShowcaseMode.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useStoragePersistence.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useSyntheticMode.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useToast.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useUiCoordinator.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/services/useWakeLock.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/utils/bezier.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/utils/economy.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/utils/formatters.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/utils/sortStrategies.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/core/utils/warMath.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/headhunter/components/RecruitCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/headhunter/composables/useRecruitBlacklist.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/laboratory/logic/Registry.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/laboratory/logic/ScoringStrategy.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/laboratory/logic/Simulation.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/roster/components/MemberCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/roster/composables/useLeaderboard.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/roster/views/RosterView.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/settings/components/NetworkSettings.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/features/settings/composables/useSettings.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/shared/composables/useCardMechanics.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 6] Target: Frontend-PWA/src/shared/ui/StatusPill.vue - Registered file under audit scope.
+* [2026-05-01] [Stage 6] Target: Codebase - Backend-GAS/API_Public.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend-GAS/Headhunter_Store.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend-GAS/Validation.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend-GAS/Webapp_Controller.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/_shared/protocol.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/headhunter-scanner/scanner.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/ingest-royale-data/pipeline.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/ingest-royale-data/pipeline.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/ingest-royale-data/stages/discovery.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/sync-player-cards/client.ts
+* [2026-05-01] [Stage 6] Target: Codebase - Backend/supabase/functions/sync-player-cards/index.ts
+* [2026-05-18] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts | Documented Pinia store actions and added inline decision logs for strategy coupling.
+* [2026-05-19] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useConnectivityManager.ts | Fully documented Layer 1 orchestrator, including interfaces and health hierarchy logic.
+* [2026-05-20] [Stage 6] Target: Codebase - | Backend/supabase/functions/headhunter-scanner/stages/rescan.ts | Annotated runRescan with detailed TSDoc, including ADR section links and side effects.
+* [2026-05-21] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Documented reactive state, computed getters, and actions with ADR Section III/IV mappings and side-effect annotations.
+* [2026-05-22] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Annotated event setup form with validation TSDoc and ADR Section III mappings.
+* [2026-05-27] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/DataSchemas.ts | Documented authoritative validation boundaries and major exported schemas with TSDoc.
+* [2026-05-28] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/theme/tokens.ts | Documented theme token substrate and transformation logic with ADR Section I/II mappings and decision logs.
+* [2026-05-30] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Documented interface contracts and side effects for the recently refactored form orchestrator.
+* [2026-06-02] [Stage 6] Target: Codebase - | Backend/supabase/functions/_shared/muscle.ts | Documented interface contracts for the Native Muscle core utility and added architectural decision logs for key rotation/backoff.
+* [2026-06-04] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/composables/usePullToRefresh.ts | Refactored TSDoc with ADR Section II links and decision logs for the PTR orchestrator.
+* [2026-06-05] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Documented interface contracts and side effects for the Voyage actions orchestrator.
+* [2026-06-13] [Stage 6] Target: Codebase - | Backend/supabase/functions/query-royale-api/index.ts | Fully documented L5 API proxy, including harvest discovery engine and ADR Section V/II links.
+* [2026-06-14] [Stage 6] Target: Codebase - | Backend/supabase/functions/headhunter-scanner/stages/profiler.ts | Fully documented L1 Profiler stage, including ValidRecruit DTO, RPoS decision logs, and backoff telemetry threats.
+* [2026-06-15] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/ui/SelectionFab.vue | Documented SelectionFab component rationale, architectural context, and added decision/threat logs for action delegation and compact styling.
+* [2026-06-16] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useConsoleSelection.ts | Documented orchestrator interface contracts and reactive state; added mandatory threat/decision logs for score thresholding and force-selection.
+* [2026-06-17] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/usePwaManager.ts | Fully documented Layer 1 core service, including PWA lifecycle, recovery logic, and mandatory threat/decision logs.
+* [2026-06-18] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/ui/NavigationDock.vue | Documented NavigationDock component contracts, including architectural context, side effects, and mandatory threat/decision logs.
+* [2026-06-20] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Documented Voyage status orchestrator and added mandatory threat/decision logs for countdown/progress logic.
+* [2026-06-21] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/MemberSchemas.ts | Documented member schemas and added mandatory threat/decision logs for validation boundaries.
+* [2026-06-21] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useHaptics.ts | Documented adaptive haptics engine and added mandatory threat/decision logs for battery-aware scaling.
+* [2026-06-25] [Stage 6] Target: Codebase - | Backend/supabase/functions/_shared/schemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
+* [2026-06-25] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useSelectionStore.ts | Documented Layer 1 core service and added ADR Section I/III mappings for centralized selection state.
+* [2026-06-25] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useVisibilityRefresh.ts | Documented Layer 1 core service and added ADR Section II mappings for visibility-triggered revalidation.
+* [2026-06-27] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue | Documented interactive molecule and logic delegation to useScoreSelector, adding ADR Section II/IV mappings and threat logs.
+* [2026-06-28] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/RecruitSchemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
+* [2026-06-28] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/utils/navigation.ts | Documented navigation SSOT interface and registry with ADR Section II/IV mappings.
+* [2026-06-29] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/BaseSchemas.ts | Documented core coercion pipes and structural guards with ADR Section III mappings and threat annotations.
+* [2026-06-29] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/VoyageSchemas.ts | Documented authoritative validation schemas and added mandatory threat/decision logs for normalization.
+* [2026-06-30] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/DataMappers.ts | Documented interface contracts and added mandatory decision logs for normalization.
+* [2026-06-30] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/ProfileSchemas.ts | Enhanced authoritative validation schemas with TSDoc and ADR mappings.
+* [2026-07-01] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/AppSchemas.ts | Documented authoritative validation boundary for the full application state with TSDoc and ADR Section III mappings.
+* [2026-07-01] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/OfflineSchemas.ts | Documented offline queue schemas with TSDoc, ADR mappings, and mandatory threat/decision logs.
+* [2026-07-02] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts | Documented Layer 3 orchestrator and added mandatory threat/decision logs for Blitz and Scraper engines.
+* [2026-07-03] [Stage 6] Target: Codebase - | Backend/supabase/functions/_shared/types.ts | Documented shared pipeline interfaces and added ADR Section II mappings.
+* [2026-07-03] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/utils/game.ts | Documented role formatter and added architectural decision logs for display labels.
+* [2026-07-04] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useBlitzMode.ts | Documented automated blitz orchestrator, added TSDoc for internal handlers and injected mandatory threat/decision logs for native bridge delegation.
+* [2026-07-05] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Documented header metadata orchestrator and synthetic mode handling with mandatory threat/decision logs.
+* [2026-07-05] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useListFilter.ts | Documented optimized list engine, WeakMap-based caching rationale, and stable sorting guards.
+* [2026-07-05] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useSystemInfo.ts | Documented system info orchestrator and priority badge resolution logic with mandatory threat/decision logs.
+* [2026-07-06] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/composables/useLongPress.ts | Documented long-press orchestrator with ADR mappings and mandatory threat/decision logs.
+* [2026-07-07] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/settings/composables/useSettings.ts | Documented settings orchestrator, added detailed TSDoc for interface contracts, and injected mandatory threat/decision logs for PWA lifecycle and hardware brokering.
+* [2026-07-08] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useNativeBridge.ts | Documented native bridge orchestrator, added comprehensive TSDoc for 13 return properties/methods, and injected mandatory threat/decision logs for hardware brokering.
+* [2026-07-09] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useClashLoader.ts | Hardened TSDoc for SWR hydration logic and injected mandatory threat/decision logs.
+* [2026-07-10] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useBroadcastChannel.ts | Hardened TSDoc and injected mandatory threat/decision logs for memory leaks and lifecycle cleanup.
+* [2026-07-10] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useSelectionStore.ts | Hardened TSDoc and injected mandatory threat/decision logs for selection logic and desync threats.
+* [2026-07-10] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useStoragePersistence.ts | Hardened TSDoc and injected mandatory threat/decision logs for storage eviction and persistence rationale.
+* [2026-07-10] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useUiCoordinator.ts | Hardened TSDoc and injected mandatory threat/decision logs for UI occlusion and state merging.
+* [2026-07-11] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useClashDataStore.ts | Hardened interface contracts, documented SWR strategy and Service Worker update logic with ADR mappings.
+* [2026-07-11] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useClashSync.ts | Hardened interface contracts with comprehensive @returns documentation and threat/decision logs.
+* [2026-07-11] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/ui/Toast.vue | Enforced licensing and documented interface contracts for props, emits, and clipboard logic.
+* [2026-08-07] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/ui/SelectionBar.vue | Documented selection orchestrator, added ADR mappings, and implemented decision logs for deferred UI side-effects.
+* [2026-08-09] [Stage 6] Target: Codebase - | Backend/supabase/functions/_shared/protocol.ts | Perfected clinical protocol interface contract and enhanced lifecycle decision logs.
+* [2026-08-11] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/VoyageClient.ts | Perfected interface contracts for the Layer 1 transport layer, including RPC activation and view hardening.
+* [2026-08-30] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/RecruitClient.ts | Reconciled interface contracts with connection-required architecture and added ADR Section III/IV mappings.
+* [2026-09-02] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/api/MaintenanceClient.ts | Enhanced interface contracts with missing @param, @remarks (ADR link), and @sideeffects.
+* [2026-09-04] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useConsoleController.ts | Documented orchestrator interface contracts and return types; added inline decision logs for revalidation and skeleton logic.
+* [2026-09-05] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Documented interface contracts and architectural decision logs for the trend prediction orchestrator.
+* [2026-09-06] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/services/useClashSync.ts | Documented orchestrator interface contracts and reactive state; added mandatory threat/decision logs for sync/persistence.
+* [2026-09-13] [Stage 6] Target: Codebase - | Frontend-PWA/src/shared/composables/useScoreSelector.ts | Documented interface contracts and architectural side effects (haptics/DOM) for the score threshold orchestrator.
+* [2026-09-16] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/utils/idbKernel.ts | Fully documented Layer 1 core utility, including resilience patterns, tiered caching (ADR Sec IV), and environmental guards.
+* [2026-09-19] [Stage 6] Target: Codebase - | Frontend-PWA/src/app/sw/swKernel.ts | Enhanced interface contracts with ADR links and threat annotations for SW persistence primitives.
+* [2026-09-19] [Stage 6] Target: Codebase - | Frontend-PWA/src/app/sw/swSync.ts | Documented interface contracts and mandatory threat/decision logs for background sync and push notifications.
+* [2026-09-21] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/utils/predictionMath.ts | Documented interface contracts and weighted-decay prediction logic with ADR links and decision logs.
+* [2026-10-06] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/headhunter/composables/useLeaderboardScraper.ts | Documented leaderboard scraper composable and added threat/decision logs.
+* [2026-10-27] [Stage 6] Target: Codebase - | Frontend-PWA/src/features/laboratory/logic/Simulation.ts | Documented interface contracts and added mandatory threat/decision logs for the optimized simulation engine.
+* [2026-11-20] [Stage 6] Target: Codebase - | Frontend-PWA/src/core/utils/sortOptions.ts | Documented interface contracts for sorting metadata and stabilized license header per ADR Section II.

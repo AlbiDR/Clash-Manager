@@ -1,528 +1,64 @@
-## [2026-07-10]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6' (14260).
-- **None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).
-- **None**: Verified system integrity via authoritative 'audit:version' script and comprehensive monorepo test gate using Node 22 bypass flags.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-09]
-### Reconciled:
-- **Supabase Functions**: Synchronized all `npm:@supabase/supabase-js@2` imports in Edge Functions (`Backend/supabase/functions/`) from `@2.110.0` to `@2.110.1` to align with the `pnpm-workspace.yaml` catalog and eliminate unversioned substrate risks (Rule 2[A]).
-- **Deno Scripts**: Synchronized `https://esm.sh/@supabase/supabase-js@2.110.0` to `@2.110.1` in `.github/scripts/fetch_player_battles.ts` to maintain monorepo-wide consistency.
-- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at ground truth `v14.2.6` (14260). Verified PNPM 'catalog:' protocol adherence and substrate version consistency via `audit:version` and full monorepo test gate (1411 passed).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-07]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6' (14260).
-- **None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).
-- **None**: Verified system integrity via authoritative 'audit:version' script and comprehensive monorepo test gate using Node 22 bypass flags.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-06]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6' (14260).
-- **None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).
-- **None**: Verified system integrity via authoritative 'audit:version' script and comprehensive monorepo test gate using Node 22 bypass flags.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-05]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6'.
-- **None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).
-- **None**: Verified system integrity via authoritative 'audit:version' script (with Node 22 bypass) and comprehensive monorepo test gate.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-05]
-### Reconciled:
-- **PNPM Catalog**: Migrated `p-limit` to the monorepo catalog (`pnpm-workspace.yaml`) at `^7.3.0` to establish a unified version ground truth for the ingestion engine.
-- **Backend Hardening**: Explicitly pinned `npm:p-limit@7.3.0` in `Backend/supabase/functions/_shared/muscle.ts` to align with the catalog and eliminate unversioned substrate risks (Rule 2[A]).
-- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6. Verified PNPM 'catalog:' protocol adherence and substrate version consistency via 'audit:version'.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-04]
-### Reconciled:
-- **Supabase Functions**: Synchronized all 'npm:@supabase/supabase-js@2' imports in Edge Functions to 'npm:@supabase/supabase-js@2.110.0' to align with the monorepo catalog ground truth (Rule 2[A]).
-- **Deno Scripts**: Updated 'https://esm.sh/@supabase/supabase-js@2' to 'https://esm.sh/@supabase/supabase-js@2.110.0' in '.github/scripts/fetch_player_battles.ts'.
-- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6. Verified PNPM 'catalog:' protocol adherence and substrate version consistency via 'audit:version'.
-- **Integrity Proof**: Verified system integrity via full monorepo test gate (1355 passed) using Node 22 bypass flags.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-03]
-### Reconciled:
-- **Supabase Functions**: Synchronized all pinned 'npm:valibot@1.4.1' imports in Edge Functions to 'npm:valibot@1.4.2' to align with the monorepo catalog ground truth (Rule 2[A]).
-- **Monorepo Audit**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6'.
-- **Integrity Proof**: Verified system integrity via full monorepo test gate (1335 passed).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-27]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), documentation (READMEs, migration plan), and APK artifacts (`apktool.yml`, `twa-manifest.json`). Monorepo is perfectly synchronized at ground truth `v14.1.4`.
-- **None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.
-- **None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests. Verified system integrity via monorepo test gate (1313 passed) and authoritative `audit:version` script.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-26]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.1.4`.
-- **None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.
-- **None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests. Verified system integrity via monorepo test gate (1300+ passed) using Node 22 bypass.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-28]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.1.4`.
-- **None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.
-- **None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests. Verified system integrity via monorepo test gate (1300 passed).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-25]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.
-- **None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-21]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.
-- **None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-20]
-### Reconciled:
-- **None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.
-- **None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-19]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-18]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-17]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-16]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-15]
-### Reconciled:
-- **PNPM Catalog**: Migrated the `supabase` CLI dependency from the root `package.json` to the monorepo catalog (`pnpm-workspace.yaml`) and enforced the `catalog:` protocol for consistency (Rule 2[A]).
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-14]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-13]
-### Reconciled:
-- **Auditor Utility**: Enhanced `scripts/version-auditor.ts` with comprehensive `packageManager` consistency enforcement across all manifests and implemented a structural verification check for the `HtmlEntry.ts` software version template.
-- **Backend Manifest**: Synchronized `packageManager` in `Backend/package.json` to match the root ground truth (`pnpm@10.32.1`) using the enhanced automated auditor.
-- **Log Hygiene**: Renumbered the Version Integrity log to `07-version-integrity-coverage.log` to align with the Nightly Stage 7 sequence and satisfy architectural consistency.
-
-### Logged Drift (Unresolved):
-- **None**: Monorepo is perfectly synchronized at ground truth `v14.0.0` following automated reconciliation and enhanced auditing.
-
-## [2026-06-12]
-### Reconciled:
-- **Auditor Utility**: Enhanced `scripts/version-auditor.ts` with automated reconciliation logic (`--fix` flag) to synchronize manifests, substrate files, and READMEs.
-- **Backend Manifest**: Created `Backend/package.json` to enable unified monorepo-wide version tracking and engine enforcement.
-- **Engine Synchronization**: Reconciled `engines` and `packageManager` fields across all manifests to match the root ground truth.
-- **PWA Manifest**: Synchronized `packageManager` in `Frontend-PWA/package.json` using the automated auditor.
-
-### Logged Drift (Unresolved):
-- **None**: Monorepo is perfectly synchronized at ground truth `v14.0.0` following automated reconciliation.
-
-## [2026-06-11]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-10]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-09]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-08]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-07]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-09-10]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-09-07]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-09-06]
-### Reconciled:
-- **Progressive List**: Updated stale version comment in `useProgressiveList.ts` from `v13.4` to `v14.0.0` to match ground truth.
-- **PWA Manifest**: Synchronized `id` in `manifest.json` from `clash-manager-v13` to `clash-manager-v14` to align with the major version.
-- **Auditor Utility**: Enhanced `scripts/version-auditor.ts` to include automated verification for the PWA manifest ID and the progressive list version comment.
-
-### Logged Drift (Unresolved):
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-
-## [2026-06-03]
-### Reconciled:
-- **Auditor Utility**: Enhanced `scripts/version-auditor.ts` with automated verification for README badges and roadmap versions.
-- **Monorepo Lifecycle**: Integrated the auditor into the root `package.json` as the `audit:version` script.
-
-### Logged Drift (Unresolved):
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
-
-## [2026-05-31]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-05-30]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-08-25]
-### Reconciled:
-- **PNPM Catalog**: Reconciled core infrastructure and UI dependencies (@ast-grep/cli, dependency-cruiser, knip, @formkit/auto-animate) by migrating them to the monorepo catalog (pnpm-workspace.yaml) and enforcing catalog: protocol in root package.json and Frontend-PWA/package.json (Rule 3[A]).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-05-24]
-### Reconciled:
-- **PNPM Catalog**: Reconciled `@supabase/supabase-js` by migrating it to the monorepo catalog (`pnpm-workspace.yaml`) and enforcing `catalog:` protocol in `Frontend-PWA/package.json` (Rule 3[A]).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-08-07]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-08-05]
-### Reconciled:
-- **Monorepo Version**: Synchronized all manifestations of the monorepo version to the ground truth `v14.0.0` (Rule 3[B]).
-- **PWA Manifest**: Updated `version` in `Frontend-PWA/package.json` and `softwareVersion` in `index.html`.
-- **Runtime Protocol**: Synchronized `protocol.ts` constant to `14.0.0-clinical` (Rule 2[B]).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-05-19]
-### Reconciled:
-- **None**: Detected a fundamental conflict between Root package.json (v14.0.0) and authoritative module constant protocol.ts (v13.3.0). Performed "Flag, Don't Guess" protocol.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **Conflict**: Root package.json declares `v14.0.0` (Rule 3[B] ground truth) while authoritative constant `protocol.ts` remains at `v13.3.0` (Rule 2[B] ground truth).
-
-## [2026-08-04]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is fully synchronized at ground truth `v13.3.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-27]
-### Reconciled:
-- **Backend (Roadmap)**: Synchronized roadmap version from `v1.8.0` to `v13.3.0` in `Backend/README.md` and `.github/supabase-plan.md` to match the monorepo ground truth.
-- **Backend (Protocol)**: Synchronized protocol bridge version from `v2.4.0-clinical` to `13.3.0-clinical` in `protocol.ts`.
-- **Root README**: Updated Backend badge to `v13.3.0`.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-05]
-### Reconciled:
-- **GAS - VALIDATION**: Updated manifest from `1.0.0` to `1.2.0` in `Configuration.ts` to match `Validation.ts` (Rule B).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-04]
-### Reconciled:
-- **GAS - CONTROLLER_WEBAPP**: Updated manifest from `13.1.0` to `13.1.2` in `Configuration.ts` to match `Webapp_Controller.ts` (Rule B).
-
-### Logged Drift (Unresolved):
-- **GAS - VALIDATION**: Manifest `1.0.0` vs Module `1.2.0` (Rule B).
-
-## [2026-05-18]
-### Reconciled:
-- **None**: Detected a fundamental conflict between Root package.json (v14.0.0) and authoritative module constant protocol.ts (v13.3.0).
-
-### Logged Drift (Unresolved):
-- **Conflict**: Root package.json declares `v14.0.0` (Rule 3[B] ground truth) while authoritative constant `protocol.ts` remains at `v13.3.0` (Rule 2[B] ground truth). Triggered "Flag, Don't Guess" protocol to prevent non-deterministic reconciliation.
-
-# Version Integrity Reconciliation Log
-
-## [2026-06-24]
-### Reconciled:
-- **Supabase Plan**: Synchronized version declaration in `.github/supabase-plan.md` from `v14.0.0` to `v14.1.4` to match the monorepo ground truth (Rule 3[B]).
-- **Authoritative Audit**: Verified monorepo consistency via `audit:version` and confirmed logic integrity via full test suite (1286 pass).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-03]
-### Reconciled:
-- **None**: Performed full consistency audit. Zero drift detected across all 25 GAS modules and Worker subsystem (v10.1.4).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-03]
-### Reconciled:
-- **None**: Performed full consistency audit. Zero drift detected across all 25 GAS modules and Worker subsystem (v10.1.4).
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-05-25]
-### Reconciled:
-- **None**: Both GAS and Worker subsystems are fully synchronized.
-
-### Logged Drift (Unresolved):
-- **None**: No version drift detected across 25 GAS modules or Worker string declarations (v10.1.4).
-
-## [2026-06-03]
-### Reconciled:
-- **None**: Both GAS and Worker subsystems are fully synchronized. Confirmed consistency across 25 GAS modules and all Worker version declarations.
-
-### Logged Drift (Unresolved):
-- **None**: No version drift detected.
-
-## [2026-05-25]
-### Reconciled:
-- **None**: Established `.github/prompts/version-integrity.md` as the authoritative blueprint for version consistency. Both GAS and Worker subsystems are already fully synchronized.
-
-### Logged Drift (Unresolved):
-- **None**: No version drift detected across 25 GAS modules or Worker string declarations (v10.1.4).
-
-## [2026-04-06]
-### Reconciled:
-- **Backend-Worker**: Synchronized version declarations across `package.json` (`10.0.0`), `/capabilities` (`10.1.1`), and `/scan` (`10.1.4`) to the ground truth of `10.1.4`.
-
-### Logged Drift (Unresolved):
-- **None**: Both GAS and Worker subsystems are now fully synchronized.
-
-## [2026-04-05]
-### Reconciled:
-- **GAS - NETWORK**: Updated manifest from `1.0.1` to `1.1.0` in `Configuration.ts` to match `Network.ts` (Rule B).
-
-### Logged Drift (Unresolved):
-- **Backend-Worker**: `package.json` version `10.0.0`, `/capabilities` `10.1.1` vs `/scan` metadata `10.1.4`. (Highest is `10.1.4`).
-
-## [2026-04-04]
-### Reconciled:
-- **GAS - HEADHUNTER**: Updated manifest from `14.3.4` to `14.3.5` to match `Headhunter.ts` (Rule B).
-
-### Logged Drift (Unresolved):
-- **GAS - NETWORK**: Manifest `1.0.1` vs Module `1.1.0` (Rule B).
-- **Backend-Worker**: `package.json` version `10.0.0`, `/capabilities` `10.1.1` vs `/scan` metadata `10.1.4`. (Highest is `10.1.4`).
-Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4
-
-## [2026-04-13]
-### Reconciled:
-- **GAS - CONFIGURATION**: Updated header VERSION from `10.0.20` to `13.1.0` to match `VER_CONFIGURATION` (Rule B/Consistency).
-- **GAS - API_PUBLIC**: Updated header VERSION from `11.0.1` to `13.1.0` to match `VER_API_PUBLIC` (Rule B/Consistency).
-- **GAS - REPORTING**: Updated header VERSION from `1.1.0` to `1.2.0` to match `VER_REPORTING` (Rule B/Consistency).
-- **Backend-Worker**: Synchronized version declaration in `PayloadKernel.ts` from `v1_hub` to `10.1.4` to match the ground truth.
-
-### Logged Drift (Unresolved):
-- **None**: Both GAS and Worker subsystems are now fully synchronized.
-
-## [2026-04-16]
-### Reconciled:
-- **None**: Both GAS and Worker subsystems are fully synchronized.
-
-### Logged Drift (Unresolved):
-- **None**: No version drift detected across 24 GAS modules or Worker string declarations.
-
-## [2026-04-23]
-### Reconciled:
-- **GAS - WAR_INTELLIGENCE**: Promoted internal VERSION ("12.4.1") to VER_WAR_INTELLIGENCE constant and integrated into CONFIG.SYSTEM.MANIFEST (Rule D). Registered module in Orchestrator.ts health check.
-
-### Logged Drift (Unresolved):
-- **None**: Both GAS and Worker subsystems are now fully synchronized.
-
-## [2026-05-19]
-### Reconciled:
-- **None**: Both GAS and Worker subsystems are fully synchronized.
-
-### Logged Drift (Unresolved):
-- **None**: No version drift detected across 24 GAS modules or Worker string declarations (v10.1.4).
-
-## [2026-04-18]
-### Reconciled:
-- **None**: Both GAS and Worker subsystems are fully synchronized.
-
-### Logged Drift (Unresolved):
-- **None**: No version drift detected across 25 GAS modules or Worker string declarations (v10.1.4).
-
-## [2026-09-04]
-### Reconciled:
-- **None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-09-04]
-### Reconciled:
-- **None**: Performed automated consistency audit using `scripts/version-auditor.ts`. Monorepo is perfectly synchronized at ground truth `v14.0.0`.
-- **None**: Verified PNPM `catalog:` protocol adherence across all manifests.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-09-04]
-### Reconciled:
-- **Runtime Protocol**: Synchronized `protocol.ts` constant to `14.0.0` by removing the `-clinical` suffix to align with the monorepo ground truth (Rule 2[B]).
-- **Auditor Utility**: Updated `scripts/version-auditor.ts` to expect the unified version string without the suffix.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-28]
-### Reconciled:
-- **APK Artifacts**: Updated `versionName` to `14.2.0` and `versionCode` to `14200` in `APK/android/apktool.yml` to synchronize with the monorepo ground truth (Rule 2[B]).
-- **Catalog Scan**: Confirmed monorepo-wide adherence to the PNPM `catalog:` protocol for all shared infrastructure dependencies in `Frontend-PWA/package.json` and `Backend/package.json` (Rule 2[A]).
-- **Substrate Audit**: Verified version consistency in `protocol.ts`, `HtmlEntry.ts`, and `twa-manifest.json`, which were already synchronized at `14.2.0`. Verified integrity via monorepo test gate using Node 22 bypass.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-06-29]
-### Reconciled:
-- **APK Artifacts**: Updated `versionName` to `14.2.6` and `versionCode` to `14260` in `APK/android/apktool.yml` and `APK/reference/twa-manifest.json` to synchronize with the monorepo ground truth (Rule 2[B]).
-- **Catalog Scan**: Re-verified monorepo-wide adherence to the PNPM `catalog:` protocol for all shared infrastructure dependencies in `Frontend-PWA/package.json` and `Backend/package.json` (Rule 2[A]).
-- **Substrate Audit**: Verified version consistency in `protocol.ts`, `HtmlEntry.ts`, and `manifest.json`, which were already synchronized at `14.2.6`. Verified integrity via monorepo test gate (1327 passed) using Node 22 bypass.
-
-### Logged Drift (Unresolved):
-- **None**.
-
-## [2026-07-03]
-### Reconciled:
-- **Substrate Sync**: Synchronized valibot version from @1.4.1 to @1.4.2 in .github/scripts/fetch_player_battles.ts to align with the monorepo catalog.
-- **Backend Hardening**: Explicitly pinned npm:valibot@1.4.2 in Backend/supabase/functions/_shared/muscle.ts and vault.ts to eliminate unversioned dependency risks and ensure clinical consistency with the PNPM catalog.
-- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6 and fully adhere to the catalog: protocol. Verified via monorepo test gate (1346 passed).
-
-### Logged Drift (Unresolved):
-- **None**.
-## [2026-07-02]
-### Reconciled:
-- **Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6 and fully adhere to the catalog: protocol.
-- **APK Artifacts**: Verified versionName '14.2.6' and versionCode 14260 in APK/android/apktool.yml and twa-manifest.json.
-- **Edge Functions**: Confirmed all valibot imports in Supabase Edge Functions are pinned to @1.4.2.
-
-### Logged Drift (Unresolved):
-- **None**: No version drift or catalog violations detected. Verified via monorepo test gate (1346 passed).
-
-Version Integrity (Version Consistency Auditor - Stage 7) July 11, 2026: Performed exhaustive consistency audit and catalog alignment on the 'Nightly' branch. (1) Reconciled monorepo package version: identified ground truth `v14.31.2` (17120) and synchronized `appVersion` in `APK/reference/twa-manifest.json`. (2) Enforced catalog alignment for backend substrate: synchronized all `@supabase/supabase-js` imports in Edge Functions and Deno scripts from `2.110.1` to `2.110.2`. (3) Verified substrate version integrity in `protocol.ts` and `useProgressiveList.ts` (both already at `14.31.2`). (4) Validated via monorepo test gate (1411 passed) using Node 22 bypass flags.
-Version Integrity (Version Consistency Auditor - Stage 7) July 12, 2026: Conducted exhaustive consistency audit on the 'Nightly' branch. (1) Verified monorepo package version ground truth at `v14.31.2` (17120) across root, Frontend-PWA, and Backend manifestations. (2) Confirmed 100% PNPM catalog adherence for shared infrastructure dependencies. (3) Validated backend Edge Function import versions against catalog ground truth. (4) Hardened project integrity by integrating `pnpm audit:version` into `.github/workflows/intel-checks.yml`. (5) Verified via monorepo test gate (1381 PWA, 16 backend passed) using Node 22 bypass flags. Updated `07-version-integrity-coverage.log`.
-Version Integrity (Version Consistency Auditor - Stage 7) July 13, 2026: Conducted exhaustive consistency audit on the 'Nightly' branch. (1) Verified monorepo package version ground truth at v14.31.2 (17120) across all manifests and substrate layers (protocol.ts, useProgressiveList.ts, apktool.yml, manifest.json). (2) Confirmed 100% PNPM catalog adherence for shared infrastructure dependencies and validated Edge Function import alignment. (3) Verified zero drift in documentation (READMEs) and APK wrapper configuration. (4) Validated via monorepo test gate (1390 passed) and authoritative 'audit:version' utility. No drift detected; all systems nominal.
+* [2026-04-04] [Stage 7] Target: Codebase - ### Reconciled: GAS - HEADHUNTER**: Updated manifest from `14.3.4` to `14.3.5` to match `Headhunter.ts` (Rule B). ### Logged Drift (Unresolved): GAS - NETWORK**: Manifest `1.0.1` vs Module `1.1.0` (Rule B). Backend-Worker**: `package.json` version `10.0.0`, `/capabilities` `10.1.1` vs `/scan` metadata `10.1.4`. (Highest is `10.1.4`). Backend-Worker/src/index.ts: Synchronized User-Agent strings to 10.1.4.
+* [2026-04-05] [Stage 7] Target: Codebase - ### Reconciled: GAS - NETWORK**: Updated manifest from `1.0.1` to `1.1.0` in `Configuration.ts` to match `Network.ts` (Rule B). ### Logged Drift (Unresolved): Backend-Worker**: `package.json` version `10.0.0`, `/capabilities` `10.1.1` vs `/scan` metadata `10.1.4`. (Highest is `10.1.4`).
+* [2026-04-06] [Stage 7] Target: Versions - Backend-Worker**: Synchronized version declarations across `package.json` (`10.0.0`), `/capabilities` (`10.1.1`), and `/scan` (`10.1.4`) to the ground truth of `10.1.4`.; None**: Both GAS and Worker subsystems are now fully synchronized.
+* [2026-04-13] [Stage 7] Target: Versions - GAS - CONFIGURATION**: Updated header VERSION from `10.0.20` to `13.1.0` to match `VER_CONFIGURATION` (Rule B/Consistency).; GAS - API_PUBLIC**: Updated header VERSION from `11.0.1` to `13.1.0` to match `VER_API_PUBLIC` (Rule B/Consistency).; GAS - REPORTING**: Updated header VERSION from `1.1.0` to `1.2.0` to match `VER_REPORTING` (Rule B/Consistency).; Backend-Worker**: Synchronized version declaration in `PayloadKernel.ts` from `v1_hub` to `10.1.4` to match the ground truth.; None**: Both GAS and Worker subsystems are now fully synchronized.
+* [2026-04-16] [Stage 7] Target: Versions - None**: Both GAS and Worker subsystems are fully synchronized.; None**: No version drift detected across 24 GAS modules or Worker string declarations.
+* [2026-04-18] [Stage 7] Target: Versions - None**: Both GAS and Worker subsystems are fully synchronized.; None**: No version drift detected across 25 GAS modules or Worker string declarations (v10.1.4).
+* [2026-04-23] [Stage 7] Target: Versions - GAS - WAR_INTELLIGENCE**: Promoted internal VERSION ("12.4.1") to VER_WAR_INTELLIGENCE constant and integrated into CONFIG.SYSTEM.MANIFEST (Rule D). Registered module in Orchestrator.ts health check.; None**: Both GAS and Worker subsystems are now fully synchronized.
+* [2026-05-18] [Stage 7] Target: Versions - None**: Detected a fundamental conflict between Root package.json (v14.0.0) and authoritative module constant protocol.ts (v13.3.0).; Conflict**: Root package.json declares `v14.0.0` (Rule 3[B] ground truth) while authoritative constant `protocol.ts` remains at `v13.3.0` (Rule 2[B] ground truth). Triggered "Flag, Don't Guess" protocol to prevent non-deterministic reconciliation.
+* [2026-05-19] [Stage 7] Target: Versions - None**: Both GAS and Worker subsystems are fully synchronized.; None**: No version drift detected across 24 GAS modules or Worker string declarations (v10.1.4).
+* [2026-05-19] [Stage 7] Target: Versions - None**: Detected a fundamental conflict between Root package.json (v14.0.0) and authoritative module constant protocol.ts (v13.3.0). Performed "Flag, Don't Guess" protocol.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; Conflict**: Root package.json declares `v14.0.0` (Rule 3[B] ground truth) while authoritative constant `protocol.ts` remains at `v13.3.0` (Rule 2[B] ground truth).
+* [2026-05-24] [Stage 7] Target: Codebase - ### Reconciled: PNPM Catalog**: Reconciled `@supabase/supabase-js` by migrating it to the monorepo catalog (`pnpm-workspace.yaml`) and enforcing `catalog:` protocol in `Frontend-PWA/package.json` (Rule 3[A]). ### Logged Drift (Unresolved): None**.
+* [2026-05-25] [Stage 7] Target: Versions - None**: Both GAS and Worker subsystems are fully synchronized.; None**: No version drift detected across 25 GAS modules or Worker string declarations (v10.1.4).
+* [2026-05-25] [Stage 7] Target: Versions - None**: Established `.github/prompts/version-integrity.md` as the authoritative blueprint for version consistency. Both GAS and Worker subsystems are already fully synchronized.; None**: No version drift detected across 25 GAS modules or Worker string declarations (v10.1.4).
+* [2026-05-30] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-05-31] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-03] [Stage 7] Target: Versions - Auditor Utility**: Enhanced `scripts/version-auditor.ts` with automated verification for README badges and roadmap versions.; Monorepo Lifecycle**: Integrated the auditor into the root `package.json` as the `audit:version` script.; None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
+* [2026-06-03] [Stage 7] Target: Versions - None**: Both GAS and Worker subsystems are fully synchronized. Confirmed consistency across 25 GAS modules and all Worker version declarations.; None**: No version drift detected.
+* [2026-06-03] [Stage 7] Target: Versions - None**: Performed full consistency audit. Zero drift detected across all 25 GAS modules and Worker subsystem (v10.1.4).; None**.
+* [2026-06-03] [Stage 7] Target: Versions - None**: Performed full consistency audit. Zero drift detected across all 25 GAS modules and Worker subsystem (v10.1.4).; None**.
+* [2026-06-04] [Stage 7] Target: Codebase - ### Reconciled: GAS - CONTROLLER_WEBAPP**: Updated manifest from `13.1.0` to `13.1.2` in `Configuration.ts` to match `Webapp_Controller.ts` (Rule B). ### Logged Drift (Unresolved): GAS - VALIDATION**: Manifest `1.0.0` vs Module `1.2.0` (Rule B).
+* [2026-06-05] [Stage 7] Target: Codebase - ### Reconciled: GAS - VALIDATION**: Updated manifest from `1.0.0` to `1.2.0` in `Configuration.ts` to match `Validation.ts` (Rule B). ### Logged Drift (Unresolved): None**.
+* [2026-06-07] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-08] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-09] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-10] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-11] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-12] [Stage 7] Target: Versions - Auditor Utility**: Enhanced `scripts/version-auditor.ts` with automated reconciliation logic (`--fix` flag) to synchronize manifests, substrate files, and READMEs.; Backend Manifest**: Created `Backend/package.json` to enable unified monorepo-wide version tracking and engine enforcement.; Engine Synchronization**: Reconciled `engines` and `packageManager` fields across all manifests to match the root ground truth.; PWA Manifest**: Synchronized `packageManager` in `Frontend-PWA/package.json` using the automated auditor.; None**: Monorepo is perfectly synchronized at ground truth `v14.0.0` following automated reconciliation.
+* [2026-06-13] [Stage 7] Target: Versions - Auditor Utility**: Enhanced `scripts/version-auditor.ts` with comprehensive `packageManager` consistency enforcement across all manifests and implemented a structural verification check for the `HtmlEntry.ts` software version template.; Backend Manifest**: Synchronized `packageManager` in `Backend/package.json` to match the root ground truth (`pnpm@10.32.1`) using the enhanced automated auditor.; Log Hygiene**: Renumbered the Version Integrity log to `07-version-integrity-coverage.log` to align with the Nightly Stage 7 sequence and satisfy architectural consistency.; None**: Monorepo is perfectly synchronized at ground truth `v14.0.0` following automated reconciliation and enhanced auditing.
+* [2026-06-14] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-15] [Stage 7] Target: Versions - PNPM Catalog**: Migrated the `supabase` CLI dependency from the root `package.json` to the monorepo catalog (`pnpm-workspace.yaml`) and enforced the `catalog:` protocol for consistency (Rule 2[A]).; None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.; None**.
+* [2026-06-16] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-17] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-18] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-19] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-06-20] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.; None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests.; None**.
+* [2026-06-21] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.; None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests.; None**.
+* [2026-06-24] [Stage 7] Target: Codebase - ### Reconciled: Supabase Plan**: Synchronized version declaration in `.github/supabase-plan.md` from `v14.0.0` to `v14.1.4` to match the monorepo ground truth (Rule 3[B]). Authoritative Audit**: Verified monorepo consistency via `audit:version` and confirmed logic integrity via full test suite (1286 pass). ### Logged Drift (Unresolved): None**.
+* [2026-06-25] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.; None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests.; None**.
+* [2026-06-26] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.1.4`.; None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.; None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests. Verified system integrity via monorepo test gate (1300+ passed) using Node 22 bypass.; None**.
+* [2026-06-27] [Stage 7] Target: Codebase - ### Reconciled: Backend (Roadmap)**: Synchronized roadmap version from `v1.8.0` to `v13.3.0` in `Backend/README.md` and `.github/supabase-plan.md` to match the monorepo ground truth. Backend (Protocol)**: Synchronized protocol bridge version from `v2.4.0-clinical` to `13.3.0-clinical` in `protocol.ts`. Root README**: Updated Backend badge to `v13.3.0`. ### Logged Drift (Unresolved): None**.
+* [2026-06-27] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), documentation (READMEs, migration plan), and APK artifacts (`apktool.yml`, `twa-manifest.json`). Monorepo is perfectly synchronized at ground truth `v14.1.4`.; None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.; None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests. Verified system integrity via monorepo test gate (1313 passed) and authoritative `audit:version` script.; None**.
+* [2026-06-28] [Stage 7] Target: Codebase - ### Reconciled: APK Artifacts**: Updated `versionName` to `14.2.0` and `versionCode` to `14200` in `APK/android/apktool.yml` to synchronize with the monorepo ground truth (Rule 2[B]). Catalog Scan**: Confirmed monorepo-wide adherence to the PNPM `catalog:` protocol for all shared infrastructure dependencies in `Frontend-PWA/package.json` and `Backend/package.json` (Rule 2[A]). Substrate Audit**: Verified version consistency in `protocol.ts`, `HtmlEntry.ts`, and `twa-manifest.json`, which were already synchronized at `14.2.0`. Verified integrity via monorepo test gate using Node 22 bypass. ### Logged Drift (Unresolved): None**.
+* [2026-06-28] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate (`protocol.ts`, `HtmlEntry.ts`, `manifest.json`, `useProgressiveList.ts`), and documentation (READMEs, migration plan). Monorepo is perfectly synchronized at ground truth `v14.1.4`.; None**: Verified PNPM `catalog:` protocol adherence for all 26 shared dependencies across all manifests. Checked `pnpm-workspace.yaml` against all `package.json` files.; None**: Confirmed consistency of `engines` and `packageManager` fields across all manifests. Verified system integrity via monorepo test gate (1300 passed).; None**.
+* [2026-06-29] [Stage 7] Target: Codebase - ### Reconciled: APK Artifacts**: Updated `versionName` to `14.2.6` and `versionCode` to `14260` in `APK/android/apktool.yml` and `APK/reference/twa-manifest.json` to synchronize with the monorepo ground truth (Rule 2[B]). Catalog Scan**: Re-verified monorepo-wide adherence to the PNPM `catalog:` protocol for all shared infrastructure dependencies in `Frontend-PWA/package.json` and `Backend/package.json` (Rule 2[A]). Substrate Audit**: Verified version consistency in `protocol.ts`, `HtmlEntry.ts`, and `manifest.json`, which were already synchronized at `14.2.6`. Verified integrity via monorepo test gate (1327 passed) using Node 22 bypass. ### Logged Drift (Unresolved): None**.
+* [2026-07-02] [Stage 7] Target: Versions - Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6 and fully adhere to the catalog: protocol.; APK Artifacts**: Verified versionName '14.2.6' and versionCode 14260 in APK/android/apktool.yml and twa-manifest.json.; Edge Functions**: Confirmed all valibot imports in Supabase Edge Functions are pinned to @1.4.2.; None**: No version drift or catalog violations detected. Verified via monorepo test gate (1346 passed).
+* [2026-07-03] [Stage 7] Target: Codebase - ### Reconciled: Substrate Sync**: Synchronized valibot version from @1.4.1 to @1.4.2 in .github/scripts/fetch_player_battles.ts to align with the monorepo catalog. Backend Hardening**: Explicitly pinned npm:valibot@1.4.2 in Backend/supabase/functions/_shared/muscle.ts and vault.ts to eliminate unversioned dependency risks and ensure clinical consistency with the PNPM catalog. Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6 and fully adhere to the catalog: protocol. Verified via monorepo test gate (1346 passed). ### Logged Drift (Unresolved): None**.
+* [2026-07-03] [Stage 7] Target: Codebase - ### Reconciled: Supabase Functions**: Synchronized all pinned 'npm:valibot@1.4.1' imports in Edge Functions to 'npm:valibot@1.4.2' to align with the monorepo catalog ground truth (Rule 2[A]). Monorepo Audit**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6'. Integrity Proof**: Verified system integrity via full monorepo test gate (1335 passed). ### Logged Drift (Unresolved): None**.
+* [2026-07-04] [Stage 7] Target: Codebase - ### Reconciled: Supabase Functions**: Synchronized all 'npm:@supabase/supabase-js@2' imports in Edge Functions to 'npm:@supabase/supabase-js@2.110.0' to align with the monorepo catalog ground truth (Rule 2[A]). Deno Scripts**: Updated 'https://esm.sh/@supabase/supabase-js@2' to 'https://esm.sh/@supabase/supabase-js@2.110.0' in '.github/scripts/fetch_player_battles.ts'. Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6. Verified PNPM 'catalog:' protocol adherence and substrate version consistency via 'audit:version'. Integrity Proof**: Verified system integrity via full monorepo test gate (1355 passed) using Node 22 bypass flags. ### Logged Drift (Unresolved): None**.
+* [2026-07-05] [Stage 7] Target: Codebase - ### Reconciled: PNPM Catalog**: Migrated `p-limit` to the monorepo catalog (`pnpm-workspace.yaml`) at `^7.3.0` to establish a unified version ground truth for the ingestion engine. Backend Hardening**: Explicitly pinned `npm:p-limit@7.3.0` in `Backend/supabase/functions/_shared/muscle.ts` to align with the catalog and eliminate unversioned substrate risks (Rule 2[A]). Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at v14.2.6. Verified PNPM 'catalog:' protocol adherence and substrate version consistency via 'audit:version'. ### Logged Drift (Unresolved): None**.
+* [2026-07-05] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6'.; None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).; None**: Verified system integrity via authoritative 'audit:version' script (with Node 22 bypass) and comprehensive monorepo test gate.; None**.
+* [2026-07-06] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6' (14260).; None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).; None**: Verified system integrity via authoritative 'audit:version' script and comprehensive monorepo test gate using Node 22 bypass flags.; None**.
+* [2026-07-07] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6' (14260).; None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).; None**: Verified system integrity via authoritative 'audit:version' script and comprehensive monorepo test gate using Node 22 bypass flags.; None**.
+* [2026-07-09] [Stage 7] Target: Codebase - ### Reconciled: Supabase Functions**: Synchronized all `npm:@supabase/supabase-js@2` imports in Edge Functions (`Backend/supabase/functions/`) from `@2.110.0` to `@2.110.1` to align with the `pnpm-workspace.yaml` catalog and eliminate unversioned substrate risks (Rule 2[A]). Deno Scripts**: Synchronized `https://esm.sh/@supabase/supabase-js@2.110.0` to `@2.110.1` in `.github/scripts/fetch_player_battles.ts` to maintain monorepo-wide consistency. Monorepo Audit**: Confirmed Root, PWA, and Backend manifests are synchronized at ground truth `v14.2.6` (14260). Verified PNPM 'catalog:' protocol adherence and substrate version consistency via `audit:version` and full monorepo test gate (1411 passed). ### Logged Drift (Unresolved): None**.
+* [2026-07-10] [Stage 7] Target: Versions - None**: Performed exhaustive consistency audit across manifests (Root, PWA, Backend), substrate ('protocol.ts', 'HtmlEntry.ts', 'manifest.json', 'useProgressiveList.ts'), edge functions, and documentation (READMEs). Monorepo is perfectly synchronized at ground truth 'v14.2.6' (14260).; None**: Verified PNPM 'catalog:' protocol adherence for all shared infrastructure dependencies in 'Frontend-PWA/package.json' and 'Backend/package.json' (Rule 2[A]).; None**: Verified system integrity via authoritative 'audit:version' script and comprehensive monorepo test gate using Node 22 bypass flags.; None**.
+* [2026-08-04] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is fully synchronized at ground truth `v13.3.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-08-05] [Stage 7] Target: Codebase - ### Reconciled: Monorepo Version**: Synchronized all manifestations of the monorepo version to the ground truth `v14.0.0` (Rule 3[B]). PWA Manifest**: Updated `version` in `Frontend-PWA/package.json` and `softwareVersion` in `index.html`. Runtime Protocol**: Synchronized `protocol.ts` constant to `14.0.0-clinical` (Rule 2[B]). ### Logged Drift (Unresolved): None**.
+* [2026-08-07] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-08-25] [Stage 7] Target: Codebase - ### Reconciled: PNPM Catalog**: Reconciled core infrastructure and UI dependencies (@ast-grep/cli, dependency-cruiser, knip, @formkit/auto-animate) by migrating them to the monorepo catalog (pnpm-workspace.yaml) and enforcing catalog: protocol in root package.json and Frontend-PWA/package.json (Rule 3[A]). ### Logged Drift (Unresolved): None**.
+* [2026-09-04] [Stage 7] Target: Codebase - ### Reconciled: Runtime Protocol**: Synchronized `protocol.ts` constant to `14.0.0` by removing the `-clinical` suffix to align with the monorepo ground truth (Rule 2[B]). Auditor Utility**: Updated `scripts/version-auditor.ts` to expect the unified version string without the suffix. ### Logged Drift (Unresolved): None**.
+* [2026-09-04] [Stage 7] Target: Versions - None**: Performed automated consistency audit using `scripts/version-auditor.ts`. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-09-04] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-09-06] [Stage 7] Target: Versions - Progressive List**: Updated stale version comment in `useProgressiveList.ts` from `v13.4` to `v14.0.0` to match ground truth.; PWA Manifest**: Synchronized `id` in `manifest.json` from `clash-manager-v13` to `clash-manager-v14` to align with the major version.; Auditor Utility**: Enhanced `scripts/version-auditor.ts` to include automated verification for the PWA manifest ID and the progressive list version comment.; None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0` across manifests, substrate, and documentation.
+* [2026-09-07] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.
+* [2026-09-10] [Stage 7] Target: Versions - None**: Performed full consistency audit. Monorepo is perfectly synchronized at ground truth `v14.0.0`.; None**: Verified PNPM `catalog:` protocol adherence across all manifests.; None**.

@@ -1,143 +1,140 @@
-Frontend-PWA/src/shared/directives/vTactile.ts
-Frontend-PWA/src/shared/directives/vTooltip.ts
-Frontend-PWA/src/shared/composables/useHeaderScroll.ts
-Frontend-PWA/src/core/api/GasClient.ts
-Frontend-PWA/src/core/utils/warMath.ts
-Frontend-PWA/src/core/services/StorageService.ts
-Frontend-PWA/src/shared/composables/useTheme.ts
-Frontend-PWA/src/features/laboratory/logic/ProfileHydrator.ts
-Frontend-PWA/src/shared/ui/ConsoleLayout.vue
-Frontend-PWA/src/core/api/api-tests/DataSchemas.spec.ts
-Frontend-PWA/src/shared/ui/ui-tests/SettingRow.spec.ts
-Frontend-PWA/src/shared/ui/ui-tests/StatisticItem.spec.ts
-Backend-Worker/src/schemas.ts
-Frontend-PWA/src/core/services/useDeepLinkHandler.ts
-Frontend-PWA/src/shared/ui/AppFooter.vue
-Frontend-PWA/src/shared/ui/BaseCard.vue
-Frontend-PWA/src/core/services/useSystemInfo.ts
-Frontend-PWA/src/shared/ui/Toast.vue
-Backend-Worker/src/controllers/WorkerHubController.ts
-Backend-Worker/src/schemas.ts
-Frontend-PWA/src/features/roster/components/MemberCard.vue
-Frontend-PWA/src/core/api/GasClient.ts
-Frontend-PWA/src/shared/ui/MomentumPill.vue
-Frontend-PWA/src/shared/ui/TrophyBadge.vue
-Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
-Frontend-PWA/src/shared/ui/ScoreBadge.vue
-Frontend-PWA/src/core/api/GasClient.ts
-Frontend-PWA/src/shared/ui/RoleBadge.vue
-Frontend-PWA/src/shared/ui/TenureBadge.vue
-Frontend-PWA/src/core/services/useConsoleController.ts
-Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
-Frontend-PWA/src/shared/ui/ToastContainer.vue
-Frontend-PWA/src/features/laboratory/components/TrajectoryItem.vue
-Frontend-PWA/src/features/laboratory/logic/Simulation.ts
-Frontend-PWA/src/core/services/useBadge.ts
-Frontend-PWA/src/features/laboratory/components/ParameterCard.vue
-Frontend-PWA/src/features/laboratory/components/VaultCard.vue
-Frontend-PWA/src/core/api/DataSchemas.ts
-Backend-Worker/src/index.ts
-Frontend-PWA/src/core/services/useProgressiveList.ts
-Frontend-PWA/src/features/laboratory/components/SummaryCard.vue
-Frontend-PWA/src/core/api/useApiState.ts
-Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts
-Frontend-PWA/src/core/services/useClashDataStore.ts
-Frontend-PWA/src/core/api/GasClient.ts
-Frontend-PWA/src/core/api/GasClient.ts
-Frontend-PWA/src/core/services/useConsoleController.ts
-Frontend-PWA/src/features/settings/components/SettingsCard.vue
-Frontend-PWA/src/features/settings/components/BackendRefresher.vue
-Frontend-PWA/src/core/services/useUiCoordinator.ts
-Frontend-PWA/src/features/settings/components/NetworkSettings.vue
-Backend-Worker/src/schemas.ts
-Frontend-PWA/src/shared/ui/BaseCardSkeleton.vue
-Frontend-PWA/src/features/settings/components/NotificationSettings.vue
-Frontend-PWA/src/core/services/useConsoleController.ts
-Backend-Worker/src/src-tests/index.spec.ts
-Backend-Worker/src/src-tests/schemas.spec.ts
-Backend-Worker/src/src-tests/AuthMiddleware.spec.ts
-Frontend-PWA/src/features/laboratory/components/TrajectoryList.vue
-Backend-Worker/src/src-tests/schemas.spec.ts
-Frontend-PWA/src/features/settings/components/AppearanceSettings.vue
-Backend-GAS/Validation.ts
-Frontend-PWA/src/features/settings/components/RecoverySettings.vue
-Frontend-PWA/src/features/settings/components/ModeSettings.vue
-Frontend-PWA/src/features/settings/components/FeatureSettings.vue
-Frontend-PWA/src/features/settings/components/SkeletonSettingsCard.vue
-Backend-Worker/src/schemas.ts
-Backend-Worker/src/services/RecruitmentService.ts
-Backend-Worker/src/services/RoyaleApiService.ts
-Frontend-PWA/src/core/api/SupabaseClient.ts
-Frontend-PWA/src/core/api/DataSchemas.ts
-Frontend-PWA/src/core/api/SupabaseClient.ts
-Frontend-PWA/src/core/api/DataSchemas.ts
-Frontend-PWA/src/core/api/SupabaseClient.ts
-Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts
-Frontend-PWA/src/features/laboratory/logic/Registry.ts
-Frontend-PWA/src/core/services/useAppSettings.ts
-Frontend-PWA/src/core/services/useListFilter.ts
-Frontend-PWA/src/core/services/useConnectivityManager.ts
-Frontend-PWA/src/core/utils/game.ts
-Frontend-PWA/src/core/utils/mockData.ts
-Frontend-PWA/src/shared/ui/TagBadge.vue
-Frontend-PWA/src/shared/ui/LongevityBadge.vue
-2026-08-04 | Frontend-PWA/src/core/api/DataMappers.ts | Saturating coverage for roster/headhunter mapping edge cases
-2026-08-04 | Frontend-PWA/src/core/api/SupabaseClient.ts | Hardened validation boundary stress-testing and mutation normalization
-2026-05-20 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
-2026-05-21 | Frontend-PWA/src/core/theme/tokens.ts | Saturating coverage for CSS variable transformation and shared token integration
-2026-05-22 | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Saturating coverage for Voyage activation and validation boundary
-2026-05-23 | Frontend-PWA/src/shared/ui/DurationInput.vue | Saturating logic coverage for T2T input, clamping, and sanitization; identified negative-clamping bug.
-2026-05-24 | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Zero Coverage gap closed; saturating tests for status and statsBadge logic.
-2026-05-25 | Frontend-PWA/src/features/voyage/components/EventManagement.vue | Zero Coverage gap closed; saturating tests for state-driven UI and live countdown logic.
-2026-05-26 | Frontend-PWA/src/features/voyage/components/VoyageBanner.vue | Zero Coverage gap closed; saturating tests for live progress and countdown logic.
-2026-05-27 | Frontend-PWA/src/shared/ui/BaseHistoryChart.vue | Saturating logic coverage for bar scaling, trend generation, and thematic rendering
-2026-05-28 | Frontend-PWA/src/features/laboratory/components/TargetPicker.vue | Zero Coverage gap closed; saturating tests for props, emits, formatting, and visual states.
-2026-05-29 | Frontend-PWA/src/core/api/ProfileClient.ts | Hardened validation boundary coverage testing direct/wrapped responses and default fallbacks
-2026-05-29 | Frontend-PWA/src/core/api/SupabaseClient.ts | Added deep logic proofs for newly added validation bounds including blacklist tags and pipeline heartbeat data structure
-2026-05-30 | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for sanitizeNumericInput and durationToSeconds (Layer 1 utilities)
-2026-09-02 | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Saturating logic coverage for computed state (pending/awaiting-end) and action orchestration.
-2026-09-02 | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Saturating logic coverage for form validation branches and action orchestration.
-2026-06-01 | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for t2tToTimestamp and formatCountdown edge cases
-2026-09-04 | Frontend-PWA/src/shared/composables/useTheme.ts | Enhanced coverage for dynamic manifest swapper, relative path resolution, and base manifest caching.
-2026-06-03 | Frontend-PWA/src/shared/composables/useSelectionBar.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
-2026-09-06 | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Zero Coverage gap closed; saturating tests for state, constants, and chronological reversal.
-2026-09-07 | Frontend-PWA/src/core/utils/idbKernel.ts | Zero Coverage gap closed; saturating tests for IndexedDB connection, memory fallback, and blocked-timeout logic.
-2026-09-08 | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Zero Coverage gap closed; saturating tests for RPC validation boundaries and error narrowing
-2026-09-11 | Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue | Zero Coverage gap closed; saturating tests for initial state, mode toggle, expansion, value selection, and disabled state.
-2026-09-14 | Frontend-PWA/src/core/services/useClashSync.ts | Zero Coverage gap closed; saturating tests for hydration, validation boundaries, concurrency guards, and failure resiliency.
-2026-09-18 | Frontend-PWA/src/app/sw/swKernel.ts | Zero Coverage gap closed; saturating tests for openDB, getValue, and setValue IndexedDB primitives.
-2026-09-18 | Frontend-PWA/src/app/sw/swSync.ts | Zero Coverage gap closed; saturating tests for push badge and background sync logic.
-2026-09-25 | Frontend-PWA/src/features/laboratory/composables/useLaboratorySimulation.ts | Zero Coverage gap closed; saturating tests for generator-based orchestration, batch budget, and cancellation logic.
-2026-09-27 | Frontend-PWA/src/shared/ui/SelectionFab.vue | Zero Coverage gap closed; saturating tests for dismiss/abort logic, blasting mode, and blitz orchestration.
-2026-10-27 | Frontend-PWA/src/features/laboratory/logic/SimulationCore.ts | Zero Coverage gap closed; saturating tests for resource evaluation and state transitions
-2026-10-27 | Frontend-PWA/src/features/laboratory/logic/SimulationMappers.ts | Zero Coverage gap closed; saturating tests for DTO mapping and XP projection
-2026-10-27 | Frontend-PWA/src/features/laboratory/logic/SimulationEngine.ts | Saturating coverage for generator-based progression and strategy-driven prioritization
-2026-10-27 | Frontend-PWA/src/shared/composables/useViewport.ts | Zero Coverage gap closed; saturating tests for state, computed, and lifecycle reactivity.
-2026-06-16 | Frontend-PWA/src/core/services/usePwaManager.ts | Zero Coverage gap closed; saturating tests for SW updates, cache purging, and factory resets.
-2026-06-17 | Frontend-PWA/src/shared/ui/NavigationDock.vue | Zero Coverage gap closed; saturating tests for rendering, navigation, and haptics.
-2026-06-19 | Frontend-PWA/src/core/services/useExternalLink.ts | Saturating coverage for Native Bridge delegation, Android intent protocol, and hardware boundary failure modes.
-2026-06-20 | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Zero Coverage gap closed; saturating tests for countdown orchestration and progress normalization.
-2026-06-21 | Frontend-PWA/src/core/utils/math.ts | Saturating coverage for formatNumber edge cases (null, undefined, NaN, and Intl options).
-2026-06-22 | Frontend-PWA/src/shared/ui/BaseSelect.vue | Zero Coverage gap closed; saturating tests for toggle, selection, disabled state, and semantic classes.
-2026-06-23 | Frontend-PWA/src/core/utils/text.ts | Saturating coverage for formatDisplayTag and markdown edge cases
-2026-06-24 | Backend/supabase/functions/_shared/schemas.ts | Zero Coverage gap closed; saturating tests for authoritative validation boundaries, key pool normalization, and vault secret resilience.
-2026-06-28 | Frontend-PWA/src/core/api/RecruitClient.ts | Extended Realtime and RPC validation coverage; confirmed removal of channel and Valibot boundary integrity.
-2026-06-28 | Frontend-PWA/src/core/api/RecruitSchemas.ts | Saturating coverage for DismissResponse, HarvestedPlayer, and LeaderboardHarvest validation boundaries.
-2026-06-27 | Frontend-PWA/src/core/api/VoyageClient.ts | Saturating coverage for RPC functions, error paths, and validation boundaries
-2026-07-01 | Frontend-PWA/src/core/api/DataMappers.ts | Extended coverage for v_hist normalization and potential_score fallback logic.
-2026-07-01 | Frontend-PWA/src/shared/ui/BaseBadge.vue | Zero Coverage gap closed; saturating tests for slot content and CSS classes.
-2026-07-01 | Frontend-PWA/src/features/laboratory/components/LaboratorySkeleton.vue | Zero Coverage gap closed; verified representation of the dashboard grid.
-2026-07-01 | Frontend-PWA/src/core/utils/navigation.ts | Zero Coverage gap closed; verified navigation SSOT integrity.
-2026-06-29 | Frontend-PWA/src/app/sw/swSchemas.ts | Zero Coverage gap closed; saturating tests for SW background sync and config validation boundaries.
-2026-06-29 | Frontend-PWA/src/app/sw/swSync.ts | Extended validation boundary coverage for malformed API responses.
-2026-07-01 | Frontend-PWA/src/core/api/MaintenanceSchemas.ts | Zero Coverage gap closed; saturating tests for maintenance response and push subscription validation boundaries.
-2026-07-01 | Frontend-PWA/src/core/services/useConnectionStatus.ts | Zero Coverage gap closed; saturating tests for physical and logical status priority
-2026-07-05 | Frontend-PWA/src/core/theme/HtmlEntry.ts | Zero Coverage gap closed; saturating tests for the HTML5 entry point and boot-stuck guard.
-2026-07-06 | Frontend-PWA/src/core/theme/AppShell.ts | Zero Coverage gap closed; saturating tests for skeleton HTML and CSS variables
-2026-07-06 | Frontend-PWA/src/core/theme/base.ts | Zero Coverage gap closed; saturating tests for system tokens and gesture enforcement
-2026-07-07 | Frontend-PWA/src/core/utils/locale.ts | Zero Coverage gap closed; saturating tests for SSR fallback, BCP 47 normalization, and unsupported locales.
-2026-07-08 | Frontend-PWA/src/core/services/useClashLoader.ts | Zero Coverage gap closed; verified hydration orchestration and fire-and-forget refresh logic.
-2026-07-11 | Backend/supabase/functions/_shared/utils.ts | Zero Coverage gap closed; saturating tests for tag normalization, rarity mapping, and authoritative RPoS formula.
-2026-07-12 | Backend/supabase/functions/_shared/royaleSchemas.ts | Zero Coverage gap closed; saturating tests for authoritative Royale API validation boundaries.
-2026-07-13 | Frontend-PWA/src/core/utils/assets.ts | Zero Coverage gap closed; saturating tests for asset resolution and path normalization.
-2026-07-13 | Frontend-PWA/src/core/utils/text.ts | Extended coverage for normalizeTag and tag standardization logic.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/controllers/WorkerHubController.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/index.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/schemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/schemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/schemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/schemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/services/RecruitmentService.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/services/RoyaleApiService.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/src-tests/AuthMiddleware.spec.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/src-tests/index.spec.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/src-tests/schemas.spec.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Backend-Worker/src/src-tests/schemas.spec.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/DataSchemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/DataSchemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/DataSchemas.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/GasClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/GasClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/GasClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/GasClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/GasClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/SupabaseClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/SupabaseClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/SupabaseClient.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/api-tests/DataSchemas.spec.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/api/useApiState.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/StorageService.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useAppSettings.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useBadge.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useClashDataStore.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useConnectivityManager.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useConsoleController.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useConsoleController.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useConsoleController.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useDeepLinkHandler.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useListFilter.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useProgressiveList.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useSystemInfo.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/services/useUiCoordinator.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/utils/game.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/utils/mockData.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/core/utils/warMath.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/headhunter/components/RecruitCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/components/ParameterCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/components/SummaryCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/components/TrajectoryItem.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/components/TrajectoryList.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/components/VaultCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/logic/ProfileHydrator.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/logic/Registry.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/logic/Simulation.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/roster/components/MemberCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/AppearanceSettings.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/BackendRefresher.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/FeatureSettings.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/ModeSettings.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/NetworkSettings.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/NotificationSettings.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/RecoverySettings.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/SettingsCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/features/settings/components/SkeletonSettingsCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/composables/useHeaderScroll.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/composables/useTheme.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/directives/vTactile.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/directives/vTooltip.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/AppFooter.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/BaseCard.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/BaseCardSkeleton.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/ConsoleLayout.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/LongevityBadge.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/MomentumPill.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/RoleBadge.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/ScoreBadge.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/TagBadge.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/TenureBadge.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/Toast.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/ToastContainer.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/TrophyBadge.vue - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/ui-tests/SettingRow.spec.ts - Registered file under audit scope.
+* [2026-04-01] [Stage 2] Target: Frontend-PWA/src/shared/ui/ui-tests/StatisticItem.spec.ts - Registered file under audit scope.
+* [2026-05-01] [Stage 2] Target: Codebase - Backend-GAS/Validation.ts
+* [2026-05-20] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
+* [2026-05-21] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/theme/tokens.ts | Saturating coverage for CSS variable transformation and shared token integration
+* [2026-05-22] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/components/VoyageSetupForm.vue | Saturating coverage for Voyage activation and validation boundary
+* [2026-05-23] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/DurationInput.vue | Saturating logic coverage for T2T input, clamping, and sanitization; identified negative-clamping bug.
+* [2026-05-24] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useConsoleMetadata.ts | Zero Coverage gap closed; saturating tests for status and statsBadge logic.
+* [2026-05-25] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/components/EventManagement.vue | Zero Coverage gap closed; saturating tests for state-driven UI and live countdown logic.
+* [2026-05-26] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/components/VoyageBanner.vue | Zero Coverage gap closed; saturating tests for live progress and countdown logic.
+* [2026-05-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/BaseHistoryChart.vue | Saturating logic coverage for bar scaling, trend generation, and thematic rendering
+* [2026-05-28] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/laboratory/components/TargetPicker.vue | Zero Coverage gap closed; saturating tests for props, emits, formatting, and visual states.
+* [2026-05-29] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/ProfileClient.ts | Hardened validation boundary coverage testing direct/wrapped responses and default fallbacks
+* [2026-05-29] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/SupabaseClient.ts | Added deep logic proofs for newly added validation bounds including blacklist tags and pipeline heartbeat data structure
+* [2026-05-30] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for sanitizeNumericInput and durationToSeconds (Layer 1 utilities)
+* [2026-06-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for t2tToTimestamp and formatCountdown edge cases
+* [2026-06-03] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/composables/useSelectionBar.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
+* [2026-06-16] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/usePwaManager.ts | Zero Coverage gap closed; saturating tests for SW updates, cache purging, and factory resets.
+* [2026-06-17] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/NavigationDock.vue | Zero Coverage gap closed; saturating tests for rendering, navigation, and haptics.
+* [2026-06-19] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useExternalLink.ts | Saturating coverage for Native Bridge delegation, Android intent protocol, and hardware boundary failure modes.
+* [2026-06-20] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageStatus.ts | Zero Coverage gap closed; saturating tests for countdown orchestration and progress normalization.
+* [2026-06-21] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/math.ts | Saturating coverage for formatNumber edge cases (null, undefined, NaN, and Intl options).
+* [2026-06-22] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/BaseSelect.vue | Zero Coverage gap closed; saturating tests for toggle, selection, disabled state, and semantic classes.
+* [2026-06-23] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/text.ts | Saturating coverage for formatDisplayTag and markdown edge cases
+* [2026-06-24] [Stage 2] Target: Codebase - | Backend/supabase/functions/_shared/schemas.ts | Zero Coverage gap closed; saturating tests for authoritative validation boundaries, key pool normalization, and vault secret resilience.
+* [2026-06-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/VoyageClient.ts | Saturating coverage for RPC functions, error paths, and validation boundaries
+* [2026-06-28] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/RecruitClient.ts | Extended Realtime and RPC validation coverage; confirmed removal of channel and Valibot boundary integrity.
+* [2026-06-28] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/RecruitSchemas.ts | Saturating coverage for DismissResponse, HarvestedPlayer, and LeaderboardHarvest validation boundaries.
+* [2026-06-29] [Stage 2] Target: Codebase - | Frontend-PWA/src/app/sw/swSchemas.ts | Zero Coverage gap closed; saturating tests for SW background sync and config validation boundaries.
+* [2026-06-29] [Stage 2] Target: Codebase - | Frontend-PWA/src/app/sw/swSync.ts | Extended validation boundary coverage for malformed API responses.
+* [2026-07-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/DataMappers.ts | Extended coverage for v_hist normalization and potential_score fallback logic.
+* [2026-07-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/MaintenanceSchemas.ts | Zero Coverage gap closed; saturating tests for maintenance response and push subscription validation boundaries.
+* [2026-07-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useConnectionStatus.ts | Zero Coverage gap closed; saturating tests for physical and logical status priority
+* [2026-07-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/navigation.ts | Zero Coverage gap closed; verified navigation SSOT integrity.
+* [2026-07-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/laboratory/components/LaboratorySkeleton.vue | Zero Coverage gap closed; verified representation of the dashboard grid.
+* [2026-07-01] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/BaseBadge.vue | Zero Coverage gap closed; saturating tests for slot content and CSS classes.
+* [2026-07-05] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/theme/HtmlEntry.ts | Zero Coverage gap closed; saturating tests for the HTML5 entry point and boot-stuck guard.
+* [2026-07-06] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/theme/AppShell.ts | Zero Coverage gap closed; saturating tests for skeleton HTML and CSS variables
+* [2026-07-06] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/theme/base.ts | Zero Coverage gap closed; saturating tests for system tokens and gesture enforcement
+* [2026-07-07] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/locale.ts | Zero Coverage gap closed; saturating tests for SSR fallback, BCP 47 normalization, and unsupported locales.
+* [2026-07-08] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useClashLoader.ts | Zero Coverage gap closed; verified hydration orchestration and fire-and-forget refresh logic.
+* [2026-07-11] [Stage 2] Target: Codebase - | Backend/supabase/functions/_shared/utils.ts | Zero Coverage gap closed; saturating tests for tag normalization, rarity mapping, and authoritative RPoS formula.
+* [2026-08-04] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/DataMappers.ts | Saturating coverage for roster/headhunter mapping edge cases
+* [2026-08-04] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/api/SupabaseClient.ts | Hardened validation boundary stress-testing and mutation normalization
+* [2026-09-02] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Saturating logic coverage for form validation branches and action orchestration.
+* [2026-09-02] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Saturating logic coverage for computed state (pending/awaiting-end) and action orchestration.
+* [2026-09-04] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/composables/useTheme.ts | Enhanced coverage for dynamic manifest swapper, relative path resolution, and base manifest caching.
+* [2026-09-06] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/composables/useHistoryChart.ts | Zero Coverage gap closed; saturating tests for state, constants, and chronological reversal.
+* [2026-09-07] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/utils/idbKernel.ts | Zero Coverage gap closed; saturating tests for IndexedDB connection, memory fallback, and blocked-timeout logic.
+* [2026-09-08] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Zero Coverage gap closed; saturating tests for RPC validation boundaries and error narrowing
+* [2026-09-11] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue | Zero Coverage gap closed; saturating tests for initial state, mode toggle, expansion, value selection, and disabled state.
+* [2026-09-14] [Stage 2] Target: Codebase - | Frontend-PWA/src/core/services/useClashSync.ts | Zero Coverage gap closed; saturating tests for hydration, validation boundaries, concurrency guards, and failure resiliency.
+* [2026-09-18] [Stage 2] Target: Codebase - | Frontend-PWA/src/app/sw/swKernel.ts | Zero Coverage gap closed; saturating tests for openDB, getValue, and setValue IndexedDB primitives.
+* [2026-09-18] [Stage 2] Target: Codebase - | Frontend-PWA/src/app/sw/swSync.ts | Zero Coverage gap closed; saturating tests for push badge and background sync logic.
+* [2026-09-25] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/laboratory/composables/useLaboratorySimulation.ts | Zero Coverage gap closed; saturating tests for generator-based orchestration, batch budget, and cancellation logic.
+* [2026-09-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/ui/SelectionFab.vue | Zero Coverage gap closed; saturating tests for dismiss/abort logic, blasting mode, and blitz orchestration.
+* [2026-10-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/laboratory/logic/SimulationCore.ts | Zero Coverage gap closed; saturating tests for resource evaluation and state transitions
+* [2026-10-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/laboratory/logic/SimulationEngine.ts | Saturating coverage for generator-based progression and strategy-driven prioritization
+* [2026-10-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/features/laboratory/logic/SimulationMappers.ts | Zero Coverage gap closed; saturating tests for DTO mapping and XP projection
+* [2026-10-27] [Stage 2] Target: Codebase - | Frontend-PWA/src/shared/composables/useViewport.ts | Zero Coverage gap closed; saturating tests for state, computed, and lifecycle reactivity.
