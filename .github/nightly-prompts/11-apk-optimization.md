@@ -136,8 +136,9 @@ You act as a performance auditor focused on compilation optimization, native ass
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Scan Performance Configurations
-- Scan wrapper configuration files, Gradle scripts, and bundle manifests.
-- Identify optimization points in:
+- **Active Intelligence Check:** Before selecting or auditing a wrapper configuration, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (specifically Section I, II, and IV) and check `PR_HISTORY.md` (T1/T2 active tiers). You must check Section I to verify whether specific configs (such as WebView cache topology) have already been optimized and established, and check Section IV to ensure your proposed change does not conflict with open wrapper or build constraints.
+- **Scan Execution:** Scan wrapper configuration files, Gradle scripts, and bundle manifests.
+- **Identify optimization points in:**
   1. Resource compression or optimization rules.
   2. ProGuard configurations and target compiler options.
   3. WebView cache and acceleration settings.

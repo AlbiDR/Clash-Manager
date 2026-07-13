@@ -135,7 +135,8 @@ You act as the project's structural architect and structural engine. Your mandat
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Structural Scan
-Scan the monorepo for refactor opportunities.
+- **Active Intelligence Check:** Before selecting a refactoring target, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (especially Section I, III, and V) and the T1 active section of `PR_HISTORY.md`. You must check Section I to verify whether a pattern or central utility has already been established (e.g. game asset resolution or timing constants) and check Section III (Scope Coverage Map) to avoid target collision with files Stage 4 (Optimization) has modified or cleaned in the last 7 days.
+- **Scan execution:** Scan the monorepo for refactor opportunities.
 - **Priority List:**
   1. **Duplicate Detection:** Scan features in `@features` for duplicate utility or business logic.
   2. **Size Audit:** Find modules exceeding line count thresholds (e.g., 400 lines).
