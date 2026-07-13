@@ -38,3 +38,13 @@
 - Status: Baseline hardened with comprehensive identity sequence synchronization for 14 tables.
 - Verification: Monorepo test gate passed (1381 tests).
 - Note: Incremental migrations preserved in /migrations/ per audit trail policy.
+[2026-07-13T03:17:20Z] Baseline Consolidation Audit
+- Migrations Processed: 11 (Total newer than baseline)
+- Migrations Folded: 11 (Standardized and hardened)
+- Migrations Re-verified: 11 (Already logically present)
+- Tables Consolidated: 28 (RLS verified on all)
+- Functions Updated/Verified: 95 (search_path and SECURITY DEFINER verified)
+- Views Recompiled: 5 (scoring_view, roster_view, voyage_contributions, governance_report, voyage_summary)
+- Status: Baseline hardened: moved inline FK from drivers.player_voyage_history to constraints block and optimized Identity Sequence Sync ordering.
+- Verification: Monorepo test gate passed (1381 tests).
+- Note: Incremental migrations preserved in /migrations/ per audit trail policy.
