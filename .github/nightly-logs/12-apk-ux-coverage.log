@@ -1,13 +1,13 @@
-* [2026-06-22] [Stage 12] Target: Codebase - [2026-06-22] - replaced native <select> elements in ConsoleHeader.vue and ParameterCard.vue with BaseSelect abstraction to ensure consistent hybrid shell UI.
-* [2026-06-26] [Stage 12] Target: Codebase - [2026-06-26] - Integrated v-tactile haptic feedback into SettingRow.vue to ensure consistent tactile response for settings toggles in Android WebView.
-* [2026-06-27] [Stage 12] Target: Codebase - [2026-06-27] Modernized BaseSelect.vue with brokered tactile feedback (tap on toggle, medium on select).
-* [2026-06-28] [Stage 12] Target: Codebase - [2026-06-28] Integrated brokered tactile feedback into ParameterCard.vue strategy selector and gem spending toggle to ensure consistent tactile response in the hybrid shell.
-* [2026-06-29] [Stage 12] Target: Codebase - [2026-06-29] Integrated brokered tactile feedback into CardActions.vue action buttons to ensure tactile consistency in the hybrid shell.
-* [2026-06-30] [Stage 12] Target: Codebase - [2026-06-30] - Integrated brokered tactile feedback into SettingsCard.vue header toggle to ensure consistent interaction response in the hybrid shell.
-* [2026-07-01] [Stage 12] Target: Codebase - [2026-07-01] Modernized `VoyageSetupForm.vue` actions (Activate, Cancel, Set End) with brokered tactile feedback via `useHaptics` in `useVoyageForm.ts` to ensure consistent physical response in the Android WebView shell. Verified via monorepo test gate (1346 passed).
-* [2026-07-02] [Stage 12] Target: Codebase - [2026-07-02] Integrated brokered tactile feedback into NetworkSettings.vue interactive elements (Edit, Save, Cancel, Override Reset) to ensure consistent physical response in the hybrid shell.
-* [2026-07-05] [Stage 12] Target: Codebase - [2026-07-05] Integrated brokered tactile feedback into useBackendRefresher.ts manual refresh actions to ensure consistent tactile response in the hybrid shell.
-* [2026-07-06] [Stage 12] Target: Codebase - [2026-07-06] Integrated brokered tactile feedback into ErrorBoundary.vue action buttons (Copy Error, System Reset) to ensure consistent physical response in the hybrid shell.
+* [2026-06-22] [Stage 12] Target: Codebase - - replaced native <select> elements in ConsoleHeader.vue and ParameterCard.vue with BaseSelect abstraction to ensure consistent hybrid shell UI.
+* [2026-06-26] [Stage 12] Target: Codebase - - Integrated v-tactile haptic feedback into SettingRow.vue to ensure consistent tactile response for settings toggles in Android WebView.
+* [2026-06-27] [Stage 12] Target: Codebase - Modernized BaseSelect.vue with brokered tactile feedback (tap on toggle, medium on select).
+* [2026-06-28] [Stage 12] Target: Codebase - Integrated brokered tactile feedback into ParameterCard.vue strategy selector and gem spending toggle to ensure consistent tactile response in the hybrid shell.
+* [2026-06-29] [Stage 12] Target: Codebase - Integrated brokered tactile feedback into CardActions.vue action buttons to ensure tactile consistency in the hybrid shell.
+* [2026-06-30] [Stage 12] Target: Codebase - - Integrated brokered tactile feedback into SettingsCard.vue header toggle to ensure consistent interaction response in the hybrid shell.
+* [2026-07-01] [Stage 12] Target: Codebase - Modernized `VoyageSetupForm.vue` actions (Activate, Cancel, Set End) with brokered tactile feedback via `useHaptics` in `useVoyageForm.ts` to ensure consistent physical response in the Android WebView shell. Verified via monorepo test gate (1346 passed).
+* [2026-07-02] [Stage 12] Target: Codebase - Integrated brokered tactile feedback into NetworkSettings.vue interactive elements (Edit, Save, Cancel, Override Reset) to ensure consistent physical response in the hybrid shell.
+* [2026-07-05] [Stage 12] Target: Codebase - Integrated brokered tactile feedback into useBackendRefresher.ts manual refresh actions to ensure consistent tactile response in the hybrid shell.
+* [2026-07-06] [Stage 12] Target: Codebase - Integrated brokered tactile feedback into ErrorBoundary.vue action buttons (Copy Error, System Reset) to ensure consistent physical response in the hybrid shell.
 * [2026-07-07] [Stage 12] Target: Frontend-PWA/src/shared/ui/BaseSelect.vue - Optimized .select-trigger height to 48px and increased .option-item vertical padding to 14px.
 * [2026-07-09] [Stage 12] Target: Frontend-PWA/src/features/settings/components/AppearanceSettings.vue - Integrated v-tactile directive into .theme-option buttons.
 * [2026-07-10] [Stage 12] Target: Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue - Modernized ScoreThresholdSelector with 48px vertical footprint and integrated v-tactile directive. Synchronized useScoreSelector.ts to remove redundant haptic calls.
