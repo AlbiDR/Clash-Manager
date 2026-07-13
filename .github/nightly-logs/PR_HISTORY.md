@@ -1,6 +1,18 @@
 # Nightly Pipeline Changelog
 
 
+## [2026-07-13] PR #1099: docs(tsdoc): harden interface contracts for roster and api layers
+**Commit**: `725a0bca704dfdf1a79ddc6bf7a4f43e78603f82`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1099)
+
+### Description
+Hardened interface contracts and logic annotations for the Roster composable and Royale API Edge Functions. Injected mandatory [THREAT:] and [DECISION LOG] annotations to preserve architectural intent and documented reactive return types to satisfy Interface Contract mandates. Verified via full test suite and production build.
+
+---
+*PR created automatically by Jules for task [9862500872742685273](https://jules.google.com/task/9862500872742685273) started by @AlbiDR*
+
+---
+
 ## [2026-07-13] PR #1098: docs(readme): reconcile backend deployment and core delegation
 **Commit**: `a2b8c2cc22cf01f1bade074c7c023c6492444877`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1098)
