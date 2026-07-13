@@ -86,50 +86,28 @@ export function useSettings() {
   const { isHydrated, isRefreshing, lastSyncTime } = storeToRefs(clashDataStore);
   const { refresh, startBackgroundSync } = clashDataStore;
   const { status: unifiedStatus } = useConnectionStatus();
-  const { updateServiceWorker, forceUpdate, downloadApk, clearCache: clearPwaCache, factoryReset: performPwaReset } = usePwaManager();
+  const {
+    notificationPermission,
+    isPushSubscribed,
+    updateServiceWorker,
+    initPwaLifecycle,
+    forceUpdate,
+    downloadApk,
+    clearCache: clearPwaCache,
+    factoryReset: performPwaReset
+  } = usePwaManager();
   const toast = useToast();
   const { appVersion, activeBadge: footerBadgeText } = useSystemInfo();
   const { apiUrl, apiStatus, pingData } = useApiState();
   const { requestPermission, sendLocalNotification } = useBadge();
 
-  const notificationPermission = ref<NotificationPermission | "unsupported">("default");
-  const isPushSubscribed = ref(false);
   const currentTestCount = ref(1);
 
   onMounted(() => {
-    // [THREAT:] Bypassing PWA logic in development/showcase mode to prevent
-    // headless browser crashes during branding asset generation (Target B [4]).
-    if (!import.meta.env.PROD) return;
-
-    // [DECISION LOG] Delaying execution avoids clashing with initial render/font loading
-    // which frequently causes 'Target crashed' errors in headless browser pipelines.
-    setTimeout(async () => {
-      // Initialize Service Worker
-      if ("serviceWorker" in navigator) {
-        try {
-          const { registerSW } = await import("virtual:pwa-register");
-          updateServiceWorker.value = registerSW({
-            onNeedRefresh() {
-              console.log("[PWA] Update available");
-            },
-          });
-        } catch (e) {
-          console.warn("[PWA] SW Registration failed", e);
-        }
-      }
-
-      if (typeof Notification !== "undefined") {
-        notificationPermission.value = Notification.permission;
-
-        if ("serviceWorker" in navigator) {
-          const swRegistration = await navigator.serviceWorker.ready;
-          const pushSubscription = await swRegistration.pushManager?.getSubscription();
-          if (pushSubscription) isPushSubscribed.value = true;
-        }
-      } else {
-        notificationPermission.value = "unsupported";
-      }
-    }, 1500);
+    // [DECISION LOG] Delegating PWA lifecycle orchestration to the Layer 1 manager.
+    // This ensures infrastructure boot logic is centralized and decoupled from
+    // the feature layer.
+    initPwaLifecycle();
   });
 
   const apiStatusObject = computed(() => {
