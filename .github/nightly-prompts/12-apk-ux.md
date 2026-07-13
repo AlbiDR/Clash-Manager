@@ -49,9 +49,10 @@ The pipeline operates in a 12-stage sequence where each stage runs as an atomic,
 
 To ensure clean execution and avoid conflict between consecutive stages, you must adhere to these unified protocols:
 - **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly` to ensure your branch is based on the latest work of the preceding stages.
+- **Real Date Mandate:** Before writing any log entry or PR record, run `date -u +"%Y-%m-%d"` and use the returned value as the date stamp. Never assume, infer, or hallucinate the current date. A log entry dated in the future or carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
-- **Atomic Commits:** Make exactly one change per run. Do not batch unrelated fixes or modifications.
+- **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
 - **Clean Exit:** Once your Pull Request is created and pushed, your execution turn is complete. Do not attempt to merge your own Pull Request unless explicitly instructed.
 
 ---

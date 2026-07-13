@@ -49,6 +49,7 @@ The pipeline operates in a 12-stage sequence where each stage runs as an atomic,
 
 To ensure clean execution and avoid conflict between consecutive stages, you must adhere to these unified protocols:
 - **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly` to ensure your branch is based on the latest work of the preceding stages.
+- **Real Date Mandate:** Before writing any log entry or PR record, run `date -u +"%Y-%m-%d"` and use the returned value as the date stamp. Never assume, infer, or hallucinate the current date. A log entry dated in the future or carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
 - **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
@@ -141,6 +142,7 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Threat Surface Scan
+- **Active Intelligence Check:** Before scanning, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (specifically Section I, II, and V) and look at the T1 active section of `.github/nightly-logs/PR_HISTORY.md` to see what files were modified in the last 7 days. You MUST exclude any files that have been modified or audited as CLEAN by Stage 1 in the past 7 days, or that are marked as saturated in Section III of the intelligence document, unless a critical vulnerability remains unaddressed.
 - **Substrate Audit:** Execute `get_advisors(type: "security")` via Supabase MCP first. High or Critical security advisory findings (such as missing RLS) are your highest priority.
 - **Priority List:**
   1. Unauthenticated privileged endpoints (Edge Function auth gap).

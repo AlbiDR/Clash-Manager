@@ -49,6 +49,7 @@ The pipeline operates in a 12-stage sequence where each stage runs as an atomic,
 
 To ensure clean execution and avoid conflict between consecutive stages, you must adhere to these unified protocols:
 - **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly` to ensure your branch is based on the latest work of the preceding stages.
+- **Real Date Mandate:** Before writing any log entry or PR record, run `date -u +"%Y-%m-%d"` and use the returned value as the date stamp. Never assume, infer, or hallucinate the current date. A log entry dated in the future or carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
 - **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
@@ -135,7 +136,8 @@ You act as a performance and efficiency engineer. You do not add new features or
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Bottleneck and Rot Scan
-Scan the codebase and substrate for a single high-impact, low-risk inefficiency using the following strict priority list. If no bottlenecks are found, proceed directly to Step 3 to write only the log entry (skip all optimization execution sub-steps in Step 3), then proceed to Step 4 to submit a no-bottleneck PR. Do not exit early or skip the PR, as logging the audit pass is required.
+- **Active Intelligence Check:** Before selecting a target, read `.github/nightly-logs/PIPELINE_INTELLIGENCE.md` (specifically Section I, II, and III) and check the active T1 section in `PR_HISTORY.md`. You must avoid modifying files recently refactored or proposed for refactoring by Stage 9 this week, and you must check the Scope Coverage Map (Section III) to prevent redundant work on files already optimized or marked clean in this cycle.
+- **Scan execution:** Scan the codebase and substrate for a single high-impact, low-risk inefficiency using the following strict priority list. If no bottlenecks are found, proceed directly to Step 3 to write only the log entry (skip all optimization execution sub-steps in Step 3), then proceed to Step 4 to submit a no-bottleneck PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Structural Rot:** Identify dead or orphaned logic, redundant helper files, or obsolete styles.
   2. **Substrate Hygiene:** Identify orphaned database views not referenced by Edge Functions, storage paths lacking database records, or redundant SQL indexes.

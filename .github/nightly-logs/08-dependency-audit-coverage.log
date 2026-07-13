@@ -1,11 +1,9 @@
 * [2026-03-14] [Stage 8] Target: Codebase - | vue | 3.5.27 | 3.5.30 | | PASS |
 * [2026-03-17] [Stage 8] Target: Codebase - | valibot | 1.2.0 | 1.3.0 | | PASS |
 * [2026-03-20] [Stage 8] Target: Codebase - | @types/node | 24.10.9 | 24.12.0 | | PASS |
-* [2026-03-20] [Stage 8] Target: Codebase - | valibot | 1.3.0 | 1.3.1 | | PASS |
 * [2026-03-23] [Stage 8] Target: Codebase - | @google/clasp | 3.1.0 | 3.3.0 | | PASS |
 * [2026-03-24] [Stage 8] Target: Codebase - | esbuild | 0.27.3 | 0.27.4 | | PASS |
 * [2026-03-25] [Stage 8] Target: Codebase - | @google/clasp | ^3.1.3 | ^3.3.0 | | PASS |
-* [2026-03-25] [Stage 8] Target: Codebase - | express | ^4.18.2 | ^4.22.1 | | PASS |
 * [2026-03-26] [Stage 8] Target: Codebase - | vue | 3.5.30 | 3.5.31 | | PASS |
 * [2026-03-27] [Stage 8] Target: Codebase - | vitest | 4.1.0 | 4.1.2 | | PASS |
 * [2026-03-28] [Stage 8] Target: Codebase - | knip | 6.0.2 | 6.0.6 | | PASS |
@@ -19,20 +17,13 @@
 * [2026-04-06] [Stage 8] Target: Codebase - | @ast-grep/cli | ^0.42.0 | ^0.42.1 | | PASS |
 * [2026-04-07] [Stage 8] Target: Codebase - | vue-tsc | ^3.2.5 | ^3.2.6 | | PASS |
 * [2026-04-12] [Stage 8] Target: Codebase - | @types/node | 24.12.0 | 24.12.2 | | FAIL |
-* [2026-04-12] [Stage 8] Target: Codebase - | vitest | ^4.1.2 | ^4.1.3 | | PASS |
 * [2026-04-13] [Stage 8] Target: Codebase - | @vitejs/plugin-vue| ^6.0.5 | ^6.0.6 | | FAIL |
 * [2026-04-15] [Stage 8] Target: Codebase - | @google/clasp | 3.3.0 | REMOVED | | PASS |
 * [2026-04-19] [Stage 8] Target: Codebase - | vitest | ^4.1.3 | ^4.1.4 | | PASS |
 * [2026-04-20] [Stage 8] Target: Codebase - | vue-tsc | ^3.2.6 | ^3.2.7 | | PASS |
 * [2026-04-22] [Stage 8] Target: Codebase - | knip | 6.3.0 | 6.4.0 | | FAIL |
 * [2026-04-26] [Stage 8] Target: Codebase - | @types/express | ^4.17.21 | ^4.17.25 | | PASS |
-* [2026-05-01] [Stage 8] Target: Codebase - # Dependency Audit Coverage Log
-* [2026-05-01] [Stage 8] Target: Codebase - ## Section 1 - Automated Fixes
-* [2026-05-01] [Stage 8] Target: Codebase - ## Section 2 - Major Version Watchlist
 * [2026-05-01] [Stage 8] Target: Codebase - | Package | Current | Latest Major | First Detected | Notes |
-* [2026-05-01] [Stage 8] Target: Codebase - | Package | Previous | New | Date Applied | Test Outcome |
-* [2026-05-01] [Stage 8] Target: Codebase - |---------|----------|-----|--------------|--------------|
-* [2026-05-01] [Stage 8] Target: Codebase - |---------|---------|--------------|----------------|-------|
 * [2026-05-04] [Stage 8] Target: Codebase - | dependency-cruiser | ^17.3.10 | ^17.4.0 | | PASS |
 * [2026-05-06] [Stage 8] Target: Codebase - | valibot | ^1.4.0 | ^1.4.0 | | PASS |
 * [2026-05-10] [Stage 8] Target: Codebase - | workbox-window | ^7.4.0 | ^7.4.1 | | PASS |
@@ -44,104 +35,44 @@
 * [2026-05-19] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.106.0 | ^2.106.1 | | PASS |
 * [2026-05-22] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.106.0 | ^2.106.1 | | PASS |
 * [2026-05-24] [Stage 8] Target: Codebase - | @vue/tsconfig | ^0.8.1 | ^0.9.1 | | PASS |
-* [2026-05-24] [Stage 8] Target: Codebase - | knip | ^6.14.1 | ^6.14.2 | | PASS |
 * [2026-05-25] [Stage 8] Target: Codebase - | jsdom | ^24.1.0 | ^24.1.3 | | PASS |
-* [2026-05-25] [Stage 8] Target: Codebase - | valibot | ^1.4.0 | ^1.4.1 | | PASS |
 * [2026-05-26] [Stage 8] Target: Codebase - | dependency-cruiser | ^17.4.2 | ^17.4.3 | | PASS |
 * [2026-05-27] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.106.1 | ^2.106.2 | | PASS |
 * [2026-05-31] [Stage 8] Target: Codebase - | @ast-grep/cli | ^0.42.2 | ^0.43.0 | | PASS |
 * [2026-06-01] [Stage 8] Target: Codebase - | dependency-cruiser | ^17.4.2 | ^17.4.3 | | PASS |
-* [2026-06-03] [Stage 8] Target: Codebase - | @types/google-apps-script | ^1.0.83 | ^1.0.100 | | PASS |
 * [2026-06-03] [Stage 8] Target: Codebase - | @types/google-apps-script | ^1.0.83 | catalog: (^1.0.100) | | PASS |
-* [2026-06-03] [Stage 8] Target: Codebase - | @vitest/coverage-v8 | ^4.1.4 | ^4.1.5 | | PASS |
-* [2026-06-03] [Stage 8] Target: Codebase - | @vitest/ui | ^4.1.4 | ^4.1.5 | | PASS |
-* [2026-06-03] [Stage 8] Target: Codebase - | vitest | ^4.1.4 | ^4.1.5 | | PASS |
-* [2026-06-03] [Stage 8] Target: Codebase - | vue | ^3.5.33 | ^3.5.34 | | PASS |
 * [2026-06-04] [Stage 8] Target: Codebase - | @vue/test-utils | ^2.4.6 | ^2.4.8 | | PASS |
-* [2026-06-05] [Stage 8] Target: Codebase - | @types/node | ^24.13.0 | ^24.13.1 | | PASS |
 * [2026-06-05] [Stage 8] Target: Codebase - | @vue/test-utils | ^2.4.10 | ^2.4.11 | | PASS |
-* [2026-06-05] [Stage 8] Target: Codebase - | @vue/test-utils | ^2.4.8 | ^2.4.9 | | PASS |
-* [2026-06-05] [Stage 8] Target: Codebase - | knip | ^6.3.0 | ^6.7.0 | | PASS |
 * [2026-06-06] [Stage 8] Target: Codebase - | @vue/test-utils | ^2.4.9 | ^2.4.10 | | PASS |
 * [2026-06-07] [Stage 8] Target: Codebase - | @types/node | ^24.13.0 | ^24.13.1 | | PASS |
-* [2026-06-07] [Stage 8] Target: Codebase - | knip | ^6.16.0 | ^6.16.1 | | PASS |
-* [2026-06-07] [Stage 8] Target: Codebase - | knip | ^6.7.0 | ^6.10.0 | | PASS |
-* [2026-06-07] [Stage 8] Target: Codebase - | vite | ^7.3.3 | ^7.3.5 | | PASS |
-* [2026-06-08] [Stage 8] Target: Codebase - | knip | ^6.10.0 | ^6.11.0 | | PASS |
 * [2026-06-08] [Stage 8] Target: Codebase - | vue-tsc | ^3.3.3 | ^3.3.4 | | PASS |
 * [2026-06-09] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.107.0 | ^2.108.0 | | PASS |
 * [2026-06-10] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.108.0 | ^2.108.1 | | PASS |
 * [2026-06-11] [Stage 8] Target: Codebase - | @types/node | ^24.13.1 | ^24.13.2 | | PASS |
-* [2026-06-11] [Stage 8] Target: Codebase - | vue | ^3.5.35 | ^3.5.37 | | PASS |
 * [2026-06-12] [Stage 8] Target: Codebase - | supabase | NEW | ^2.106.0 | | PASS |
-* [2026-06-12] [Stage 8] Target: Codebase - | vue | ^3.5.37 | ^3.5.38 | | PASS |
-* [2026-06-12] [Stage 8] Target: Codebase - | vue-tsc | ^3.2.7 | ^3.2.8 | | PASS |
 * [2026-06-14] [Stage 8] Target: Codebase - | @types/node | ALIGN | catalog: | | PASS |
-* [2026-06-14] [Stage 8] Target: Codebase - | vue-tsc | ^3.3.4 | ^3.3.5 | | PASS |
 * [2026-06-15] [Stage 8] Target: Codebase - | [Audit] | - | - | | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 * [2026-06-16] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.108.1 | ^2.108.2 | | PASS |
-* [2026-06-16] [Stage 8] Target: Codebase - | @vitest/coverage-v8 | ^4.1.8 | ^4.1.9 | | PASS |
-* [2026-06-16] [Stage 8] Target: Codebase - | knip | ^6.16.1 | ^6.17.0 | | PASS |
-* [2026-06-16] [Stage 8] Target: Codebase - | vitest | ^4.1.8 | ^4.1.9 | | PASS |
-* [2026-06-16] [Stage 8] Target: Codebase - | vue | ^3.5.33 | ^3.5.34 | | PASS |
 * [2026-06-17] [Stage 8] Target: Codebase - | knip | ^6.17.0 | ^6.17.1 | | PASS |
-* [2026-06-18] [Stage 8] Target: Codebase - | pnpm | >=10.32.1 | 11.11.0 | | [Updated] Breaking: Node 22+ required. Significant changes for CI/Docker and workspace-level configuration. |
-* [2026-06-18] [Stage 8] Target: Codebase - | supabase | ^2.106.0 | ^2.107.0 | | PASS |
 * [2026-06-18] [Stage 8] Target: Codebase - | typescript | ~5.9.3 | 7.0.2 | | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure. |
-* [2026-06-18] [Stage 8] Target: Codebase - | vite | ^7.3.6 | 8.1.4 | | [Updated] Breaking: Single Rust-based bundler (Rolldown). Renames `build.rollupOptions` to `build.rolldownOptions`. CJS interop changes. |
-* [2026-06-19] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.105.1 | ^2.105.3 | | PASS |
 * [2026-06-19] [Stage 8] Target: Codebase - | [Audit] | - | - | | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 * [2026-06-20] [Stage 8] Target: Codebase - | [Audit] | - | - | | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 * [2026-06-22] [Stage 8] Target: Codebase - | @ast-grep/cli | ^0.43.0 | ^0.44.0 | | PASS |
 * [2026-06-23] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.105.3 | ^2.105.4 | | PASS |
-* [2026-06-23] [Stage 8] Target: Codebase - | knip | ^6.17.1 | ^6.18.0 | | PASS |
 * [2026-06-24] [Stage 8] Target: Codebase - | [Audit] | - | - | | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 * [2026-06-26] [Stage 8] Target: Codebase - | Backend/./schemas.spec.ts | EXISTING | REMOVED | | PASS |
-* [2026-06-26] [Stage 8] Target: Codebase - | Frontend-PWA/./index.ts | EXISTING | REMOVED | | PASS |
-* [2026-06-26] [Stage 8] Target: Codebase - | supabase | ^2.107.0 | ^2.108.0 | | PASS |
-* [2026-06-26] [Stage 8] Target: Codebase - | vue | ^3.5.38 | ^3.5.39 | | PASS |
-* [2026-06-27] [Stage 8] Target: Codebase - | knip | ^6.20.0 | ^6.21.0 | | PASS |
 * [2026-06-27] [Stage 8] Target: Codebase - | workbox-precaching | ^7.4.0 | ^7.4.1 | | PASS |
 * [2026-06-28] [Stage 8] Target: Codebase - | Frontend-PWA/./voyage/index.ts | EXISTING | REMOVED | | PASS |
-* [2026-06-28] [Stage 8] Target: Codebase - | knip | ^6.18.0 | ^6.20.0 | | PASS |
-* [2026-06-28] [Stage 8] Target: Codebase - | knip | ^6.21.0 | ^6.22.0 | | PASS |
-* [2026-06-29] [Stage 8] Target: Codebase - | knip | ^6.22.0 | ^6.23.0 | | PASS |
 * [2026-06-29] [Stage 8] Target: Codebase - | valibot | ^1.4.1 | ^1.4.2 | | PASS |
 * [2026-06-30] [Stage 8] Target: Codebase - | [Audit] | - | - | | NO ACTION REQUIRED: All dependencies at latest Tier 1 |
 * [2026-07-01] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.108.2 | ^2.110.0 | | PASS |
-* [2026-07-01] [Stage 8] Target: Codebase - | supabase | ^2.108.0 | ^2.109.0 | | PASS |
-* [2026-07-01] [Stage 8] Target: Codebase - | vue-tsc | 3.3.5 | 3.3.6 | | PASS |
 * [2026-07-02] [Stage 8] Target: Codebase - | knip | ^6.23.0 | ^6.24.0 | | PASS |
 * [2026-07-03] [Stage 8] Target: Codebase - | tsx | ^4.22.4 | ^4.22.5 | | PASS |
 * [2026-07-04] [Stage 8] Target: Codebase - | tsx | ^4.22.5 | ^4.23.0 | | PASS |
 * [2026-07-05] [Stage 8] Target: Codebase - | @ast-grep/cli | ^0.44.0 | ^0.44.1 | | PASS |
 * [2026-07-06] [Stage 8] Target: Codebase - | vite | ^7.3.5 | ^7.3.6 | | PASS |
 * [2026-07-07] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.110.0 | ^2.110.1 | | PASS |
-* [2026-07-07] [Stage 8] Target: Codebase - | @vitest/coverage-v8 | ^4.1.9 | ^4.1.10 | | PASS |
-* [2026-07-07] [Stage 8] Target: Codebase - | knip | ^6.24.0 | ^6.25.0 | | PASS |
-* [2026-07-07] [Stage 8] Target: Codebase - | supabase | ^2.109.0 | ^2.109.1 | | PASS |
-* [2026-07-07] [Stage 8] Target: Codebase - | vitest | ^4.1.9 | ^4.1.10 | | PASS |
 * [2026-07-08] [Stage 8] Target: Codebase - | simple-git-hooks | ^2.11.1 | ^2.13.1 | | PASS |
-* [2026-07-08] [Stage 8] Target: Codebase - | vue-tsc | ^3.3.6 | ^3.3.7 | | PASS |
 * [2026-07-09] [Stage 8] Target: Codebase - | @types/node | ^26.1.0 | ^26.1.1 | | PASS |
 * [2026-07-10] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.110.1 | ^2.110.2 | | PASS |
 * [2026-07-11] [Stage 8] Target: Codebase - | @formkit/auto-animate | ^0.9.0 | ^0.10.0 | | PASS |
-* [2026-07-11] [Stage 8] Target: Codebase - | knip | ^6.25.0 | ^6.26.0 | | PASS |
-* [2026-08-04] [Stage 8] Target: Codebase - | knip | ^6.13.1 | ^6.14.0 | | PASS |
-* [2026-08-04] [Stage 8] Target: Codebase - | vitest | ^4.1.5 | ^4.1.6 | | PASS |
-* [2026-08-05] [Stage 8] Target: Codebase - | tsx | ^4.22.0 | ^4.22.3 | | PASS |
-* [2026-08-06] [Stage 8] Target: Codebase - | vitest | ^4.1.6 | ^4.1.7 | | PASS |
-* [2026-09-02] [Stage 8] Target: Codebase - | vite-plugin-pwa | ^1.2.0 | ^1.3.0 | | PASS |
-* [2026-09-02] [Stage 8] Target: Codebase - | vue | ^3.5.34 | ^3.5.35 | | PASS |
-* [2026-09-02] [Stage 8] Target: Codebase - | workbox-build | NEW | ^7.4.1 | | PASS |
-* [2026-09-04] [Stage 8] Target: Codebase - | knip | ^6.14.2 | ^6.15.0 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | @supabase/supabase-js | ^2.106.2 | ^2.107.0 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | @types/node | ^24.12.0 | ^24.12.4 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | @vitejs/plugin-vue | ^6.0.5 | ^6.0.7 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | @vitest/coverage-v8 | ^4.1.7 | ^4.1.8 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | rollup-plugin-visualizer | ^6.0.5 | ^6.0.11 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | tsx | ^4.22.3 | ^4.22.4 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | vite | ^7.3.1 | ^7.3.3 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | vitest | ^4.1.7 | ^4.1.8 | | PASS |
-* [2026-09-05] [Stage 8] Target: Codebase - | vue-tsc | ^3.2.8 | ^3.3.3 | | PASS |
-* [2026-09-11] [Stage 8] Target: Codebase - | knip | ^6.15.0 | ^6.16.0 | | PASS |
