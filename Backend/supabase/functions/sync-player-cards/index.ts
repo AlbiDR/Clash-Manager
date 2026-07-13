@@ -50,9 +50,16 @@ interface NormalizedCard {
 /**
  * Constructs the final standardized profile response from database snapshots.
  *
+ * @remarks
+ * Consolidates card and player metadata into a unified DTO for the frontend.
+ * Enforces a strict separation between standard cards and tower troops.
+ *
  * @param cardSnapshots - List of card snapshots from the database or fresh API fetch.
  * @param playerTag - The normalized player tag.
  * @param source - Indicates if the data originated from the "cache" (DB) or "api".
+ * @returns Standardized profile response object.
+ *
+ * @throws Error if the provided cardSnapshots array is empty.
  */
 function buildProfileResponse(
   cardSnapshots: CardRow[],
@@ -201,8 +208,17 @@ Deno.serve(async (syncRequest) => {
 
       /**
        * Normalizes a single card's level from the relative Royale API scale to our absolute scale.
-       * [DECISION LOG] The Royale API uses relative levels (e.g. Rare 11). We convert these to
+       *
+       * @remarks
+       * [DECISION LOG] ABSOLUTE SCALING FORMULA:
+       * The Royale API uses relative levels (e.g. Rare 11). We convert these to
        * an absolute 1-16 scale based on the distance from the card's maximum level.
+       * Formula: absoluteLevel = baseMaxLevel - (apiMaxLevel - apiLevel).
+       * This ensures consistent level representation across all rarities for simulation math.
+       *
+       * @param royaleCardEntry - Raw card entry from the Royale API.
+       * @param isTowerTroop - Whether the card is a tower troop.
+       * @returns NormalizedCard object.
        */
       function processCard(royaleCardEntry: v.InferOutput<typeof RoyaleFullPlayerSchema>["cards"][0], isTowerTroop: boolean): NormalizedCard {
         const apiLevel = royaleCardEntry.level;

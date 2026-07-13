@@ -41,7 +41,12 @@ const CHART_MIN_HEIGHT = 15; // Percent
  * @param options - Reactive chart configuration (data, projection, loading, maxScale).
  *
  * @returns
- * - `chartData`: Computed object containing processed bars, SVG path, projection point, and state flags.
+ * - `chartData`: Computed object containing:
+ *   - `bars`: Processed bar objects with scaled heights and tooltips.
+ *   - `path`: SVG 'd' attribute for the linear trend line.
+ *   - `projPoint`: X,Y coordinates for the projected data point dot.
+ *   - `isPositive`: Boolean indicating if the trend gradient is positive.
+ *   - `isEmpty`: Boolean indicating if the chart has no data to display.
  */
 export function useBaseHistoryChart(options: UseBaseHistoryChartOptions) {
   const chartData = computed(() => {
@@ -50,7 +55,11 @@ export function useBaseHistoryChart(options: UseBaseHistoryChartOptions) {
     const loading = toValue(options.loading);
     const maxScale = toValue(options.maxScale);
 
-    if (loading || historySeriesSnapshot.length === 0) {
+    // [THREAT:] DIVISION BY ZERO / NAN: If the dataset is empty or maxScale is zero,
+    // geometric scaling will produce NaN, crashing the SVG renderer.
+    // [DECISION LOG] EMPTY STATE GUARD: Returns a deterministic empty state to
+    // prevent downstream rendering pathogens and satisfy UX stability mandates.
+    if (loading || historySeriesSnapshot.length === 0 || maxScale === 0) {
       return {
         bars: [] as ChartBarItem[],
         path: null as string | null,
@@ -92,7 +101,10 @@ export function useBaseHistoryChart(options: UseBaseHistoryChartOptions) {
       y: (1 - Math.min(1, bar.value / maxScale)) * 100, // Invert Y for SVG
     }));
 
-    // Generate Linear Trend Line (Best Fit)
+    // [DECISION LOG] LINEAR TREND (BEST FIT):
+    // Uses a Least Squares regression to generate the trend path.
+    // This provides a stable visual indicator of performance trajectory
+    // without the erratic noise of raw spline interpolation.
     const trend = generateLinearTrend(curvePoints);
 
     // Identify key points for dots (These stay on the bars, not the line)

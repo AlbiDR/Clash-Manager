@@ -69,12 +69,23 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  *
  * @remarks
  * [DECISION LOG] Ensuring strict validation of harvested player data to maintain structural integrity.
+ *
+ * @param endpointPath - The Royale API endpoint to query (e.g., /locations/global/pathoflegend/players).
+ * @param logAudit - Telemetry callback for clinical auditing.
+ * @returns A filtered list of clanless players matching the internal HarvestedPlayerSchema.
+ *
+ * @throws Error if the API response is not OK or fails structural validation.
  */
 async function fetchRankings(
   endpointPath: string,
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<v.InferOutput<typeof HarvestedPlayerSchema>[]> {
   logAudit("HARVEST_PLAYERS_FETCH", "called", { path: endpointPath });
+
+  // [THREAT:] QUOTA EXHAUSTION / RATE LIMITING: Excessive calls to the Royale API
+  // can result in temporary IP bans or token exhaustion.
+  // [DECISION LOG] Utilizing fetchWithRotation (muscle.ts) to distribute requests
+  // across the available key pool, ensuring high availability and quota resilience.
   const playerRankingsResponse = await fetchWithRotation(endpointPath);
   if (!playerRankingsResponse.ok) {
     throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
@@ -114,6 +125,7 @@ async function fetchRankings(
  * @remarks
  * Satisfies ADR Section V: Edge Functions - Data Ingestion.
  *
+ * [DECISION LOG] MULTI-TIER HARVESTING STRATEGY:
  * Implements a resilient multi-tier harvesting strategy to handle season resets:
  * 1. Global: Queries the worldwide Path of Legends leaderboard first. If unpopulated
  *    (e.g. at the start of a season), falls back to querying and merging Trophy Road
@@ -124,6 +136,8 @@ async function fetchRankings(
  * @param location - "global" or a numeric Royale API location ID as a string.
  * @param logAudit - Telemetry callback for clinical auditing.
  * @returns An array of discovered clanless player objects.
+ *
+ * @throws Re-throws errors from `fetchRankings` if both primary and fallback tiers fail.
  */
 async function harvestClanlessPlayers(
   location: string,

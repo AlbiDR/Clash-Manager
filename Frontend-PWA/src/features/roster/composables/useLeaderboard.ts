@@ -24,8 +24,28 @@ import type { LeaderboardMember } from "@core/types";
  * infrastructure for the Roster domain.
  *
  * @returns
- * - All state and methods from `useConsoleController` (search, sort, selection).
- * - `sortOptions`: Configuration for the roster-specific sorting UI.
+ * - `searchQuery`: Reactive search string for filtering by name or tag.
+ * - `sortBy`: The active sorting strategy key.
+ * - `visibleItems`: Paginated slice of members for the UI.
+ * - `expandedIds`: Set of members with visible detail cards.
+ * - `selectedIds`: Array of member tags currently in the selection buffer.
+ * - `selectedSet`: Optimized Set for O(1) selection lookups.
+ * - `fabState`: Orchestrated state for the Batch Action FAB.
+ * - `isSelectionMode`: Boolean indicating if multi-select is active.
+ * - `status`: Unified connectivity and data health status.
+ * - `statsBadge`: Configuration for the list header item count.
+ * - `showSkeletons`: Whether to display loading state UI.
+ * - `layoutProps`: Consolidated props for the ConsoleLayout component.
+ * - `layoutEvents`: Consolidated event handlers for the ConsoleLayout component.
+ * - `refresh`: Triggers a manual revalidation from the backend.
+ * - `updateSort`: Changes the active sorting strategy.
+ * - `toggleSelect`: Toggles selection for a specific member.
+ * - `toggleExpand`: Toggles the detail view for a specific member.
+ * - `clearSelection`: Resets the selection buffer and exits selection mode.
+ * - `handleSelectAll`: Selects all filtered members.
+ * - `handleSelectScore`: Selects members exceeding a performance threshold.
+ * - `getCardMetadata`: Factory for per-card UI state.
+ * - `getMemoKeys`: Generates stable keys for Vue list memoization.
  *
  * @sideeffects
  * - Inherits side effects from `useConsoleController`, including UI coordination
@@ -42,6 +62,10 @@ export function useLeaderboard() {
   const selectionStore = useSelectionStore();
   const blitz = useBlitzMode(selectionStore);
 
+  // [DECISION LOG] BLITZ INTEGRATION:
+  // The Roster view adopts the same batch-action infrastructure as Headhunter.
+  // This satisfies ADR Section III by ensuring consistent interaction patterns
+  // for multi-member operations (e.g. mass opening profiles) across features.
   const controller = useConsoleController({
     data: members,
     filterFn: (member: LeaderboardMember) => [member.n, member.id],

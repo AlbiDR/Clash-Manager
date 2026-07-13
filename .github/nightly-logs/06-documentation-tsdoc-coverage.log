@@ -126,3 +126,8 @@ Frontend-PWA/src/features/laboratory/logic/Simulation.ts
 2026-07-11 | Frontend-PWA/src/shared/ui/Toast.vue | Enforced licensing and documented interface contracts for props, emits, and clipboard logic.
 2026-07-12 | Frontend-PWA/src/core/utils/math.ts | Hardened TSDoc with threat/decision annotations for momentum thresholds and cached formatters.
 2026-07-12 | Frontend-PWA/src/core/utils/PriorityQueue.ts | Annotated high-performance heap utility with mandatory threat/decision logs for simulation efficiency.
+2026-07-13 | Frontend-PWA/src/features/roster/composables/useLeaderboard.ts | Hardened interface contracts with expanded @returns documentation for 20+ orchestrator properties and decision logs for Blitz integration.
+2026-07-13 | Frontend-PWA/src/shared/composables/useStatusPill.ts | Hardened interface contracts with expanded @returns documentation and threat/decision logs for viewport-aware truncation.
+2026-07-13 | Frontend-PWA/src/shared/composables/useBaseHistoryChart.ts | Hardened interface contracts with expanded @returns documentation and threat/decision logs for geometric scaling and linear trend rationale.
+2026-07-13 | Backend/supabase/functions/query-royale-api/index.ts | Hardened documentation for internal discovery functions, adding TSDoc for fetchRankings/harvestClanlessPlayers and threat logs for API quota exhaustion.
+2026-07-13 | Backend/supabase/functions/sync-player-cards/index.ts | Hardened documentation for profile response construction and normalization, adding decision logs for the absolute 1-16 scaling formula.
