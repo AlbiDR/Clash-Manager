@@ -46,23 +46,23 @@ export async function executeScanner(
     };
 
     // --- CONTEXT BOOT: FETCH EXCLUSIONS AND THRESHOLDS ---
-    const { data: rawContextData, error: contextError } = await supabase.rpc('get_headhunter_context');
+    const { data: scannerContextRaw, error: scannerContextError } = await supabase.rpc('get_headhunter_context');
 
     // [GUARD] VALIDATION BOUNDARY: Target C [1]
     // Rationale: Ensure scanner parameters are valid before pipeline execution.
     // [THREAT:] Missing or malformed context would lead to invalid discovery logic.
-    const validation = v.safeParse(HeadhunterContextSchema, rawContextData);
+    const scannerContextIntegrity = v.safeParse(HeadhunterContextSchema, scannerContextRaw);
 
-    if (!validation.success || contextError) {
+    if (!scannerContextIntegrity.success || scannerContextError) {
         logAudit('CONTEXT_BOOT', 'error', {
             message: 'Failed to fetch or validate headhunter context',
-            error: contextError?.message,
-            issues: validation.success ? null : validation.issues
+            error: scannerContextError?.message,
+            issues: scannerContextIntegrity.success ? null : scannerContextIntegrity.issues
         });
         throw new Error('Scanner context initialization failed');
     }
 
-    const contextData = validation.output;
+    const contextData = scannerContextIntegrity.output;
     const requiredTrophies = contextData.required_trophies;
     const exclusionSet = new Set<string>(contextData.exclusion_tags);
 
@@ -86,8 +86,8 @@ export async function executeScanner(
             'S0_GHOST_PURGE'
         );
         stats.ghosts_purged = evicted;
-    } catch (ghostPurgeError: unknown) {
-        const message = ghostPurgeError instanceof Error ? ghostPurgeError.message : String(ghostPurgeError);
+    } catch (ghostPurgeExecutionError: unknown) {
+        const message = ghostPurgeExecutionError instanceof Error ? ghostPurgeExecutionError.message : String(ghostPurgeExecutionError);
         stats.errors.push(`S0_GHOST_PURGE: ${message}`);
         logAudit('GHOST_PURGE', 'error', { message });
     }
@@ -98,8 +98,8 @@ export async function executeScanner(
     // S1: Shadow Scouting
     try {
         await withTimeout(runShadowScout(candidates, exclusionSet, stats, logAudit), 'S1_SHADOW_SCOUT');
-    } catch (shadowScoutError: unknown) {
-        const message = shadowScoutError instanceof Error ? shadowScoutError.message : String(shadowScoutError);
+    } catch (shadowScoutExecutionError: unknown) {
+        const message = shadowScoutExecutionError instanceof Error ? shadowScoutExecutionError.message : String(shadowScoutExecutionError);
         stats.errors.push(`S1_SHADOW_SCOUT: ${message}`);
         logAudit('SHADOW_SCOUT', 'error', { message });
     }
@@ -110,8 +110,8 @@ export async function executeScanner(
         if (tournaments.includes("AUTO")) {
             await withTimeout(runTournamentDiscovery(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S2_TOURNAMENT_DISCOVERY');
         }
-    } catch (tournamentDiscoveryError: unknown) {
-        const message = tournamentDiscoveryError instanceof Error ? tournamentDiscoveryError.message : String(tournamentDiscoveryError);
+    } catch (tournamentDiscoveryExecutionError: unknown) {
+        const message = tournamentDiscoveryExecutionError instanceof Error ? tournamentDiscoveryExecutionError.message : String(tournamentDiscoveryExecutionError);
         stats.errors.push(`S2_TOURNAMENT_DISCOVERY: ${message}`);
         logAudit('TOURNAMENT_DISCOVERY', 'error', { message });
     }
@@ -133,8 +133,8 @@ export async function executeScanner(
     // S3: Profiling & Ingestion
     try {
         await withTimeout(runProfiler(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S3_PROFILING');
-    } catch (profilingError: unknown) {
-        const message = profilingError instanceof Error ? profilingError.message : String(profilingError);
+    } catch (profilingExecutionError: unknown) {
+        const message = profilingExecutionError instanceof Error ? profilingExecutionError.message : String(profilingExecutionError);
         stats.errors.push(`S3_PROFILING: ${message}`);
         logAudit('PROFILING', 'error', { message });
     }
@@ -145,8 +145,8 @@ export async function executeScanner(
     // S4: Stale Recruit Re-scan (refresh existing ACTIVE pool, evict newly-clanned players)
     try {
         await withTimeout(runRescan(exclusionSet, requiredTrophies, stats, logAudit), 'S4_RESCAN');
-    } catch (rescanError: unknown) {
-        const message = rescanError instanceof Error ? rescanError.message : String(rescanError);
+    } catch (rescanExecutionError: unknown) {
+        const message = rescanExecutionError instanceof Error ? rescanExecutionError.message : String(rescanExecutionError);
         stats.errors.push(`S4_RESCAN: ${message}`);
         logAudit('RESCAN', 'error', { message });
     }
@@ -159,8 +159,8 @@ export async function executeScanner(
     try {
         await supabase.rpc('update_epoch_state', { p_top50: stats.new_recruits_top50 ?? 0 });
         logAudit('EPOCH_GUARD', 'terminated', { new_recruits_top50: stats.new_recruits_top50 ?? 0 });
-    } catch (epochStateError: unknown) {
-        const message = epochStateError instanceof Error ? epochStateError.message : String(epochStateError);
+    } catch (epochStateExecutionError: unknown) {
+        const message = epochStateExecutionError instanceof Error ? epochStateExecutionError.message : String(epochStateExecutionError);
         stats.errors.push(`EPOCH_GUARD: ${message}`);
         logAudit('EPOCH_GUARD', 'error', { message });
     }

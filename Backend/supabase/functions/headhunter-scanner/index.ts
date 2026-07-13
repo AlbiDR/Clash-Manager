@@ -15,19 +15,19 @@ const PayloadSchema = v.object({
     tournaments: v.array(v.string())
 });
 
-Deno.serve(async (req) => {
+Deno.serve(async (scannerRequest) => {
     // Sync secrets from Vault before processing request
     await syncVault();
 
     return await clinicalServe({
-        req,
+        req: scannerRequest,
         supabase,
         bearerToken: CONFIG.INTERNAL_BEARER_TOKEN,
         eventType: 'HEADHUNTER_SCAN',
         componentId: 'HEADHUNTER_SCANNER',
         schema: PayloadSchema,
-        handler: async (payload, logAudit, heartbeat) => {
-            return await executeScanner(payload.tournaments, logAudit, heartbeat);
+        handler: async (scannerPayload, logAudit, heartbeat) => {
+            return await executeScanner(scannerPayload.tournaments, logAudit, heartbeat);
         }
     });
 });

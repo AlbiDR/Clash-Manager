@@ -58,16 +58,16 @@ export async function runRescan(
     try {
         // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
         // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
-        // [DECISION LOG] Explicitly fetching and validating the shape of rawStaleRecruits before processing.
-        const { data: rawStaleRecruits, error: rpcError } = await supabase
+        // [DECISION LOG] Explicitly fetching and validating the shape of staleRecruitsRaw before processing.
+        const { data: staleRecruitsRaw, error: staleRecruitsError } = await supabase
             .rpc('get_stale_recruits', { p_limit: RESCAN_BATCH_LIMIT });
 
-        logAudit('RESCAN', 'run', { count: Array.isArray(rawStaleRecruits) ? rawStaleRecruits.length : 0, error: rpcError?.message });
+        logAudit('RESCAN', 'run', { count: Array.isArray(staleRecruitsRaw) ? staleRecruitsRaw.length : 0, error: staleRecruitsError?.message });
 
-        if (rpcError || !rawStaleRecruits || (Array.isArray(rawStaleRecruits) && rawStaleRecruits.length === 0)) {
-            if (rpcError) {
-                logAudit('RESCAN', 'integrity_checked', { passed: false, details: rpcError.message });
-                console.error(`[RESCAN] RPC error: ${rpcError.message}`);
+        if (staleRecruitsError || !staleRecruitsRaw || (Array.isArray(staleRecruitsRaw) && staleRecruitsRaw.length === 0)) {
+            if (staleRecruitsError) {
+                logAudit('RESCAN', 'integrity_checked', { passed: false, details: staleRecruitsError.message });
+                console.error(`[RESCAN] RPC error: ${staleRecruitsError.message}`);
             } else {
                 console.log(`[RESCAN] No stale targets found to rescan.`);
             }
@@ -77,93 +77,93 @@ export async function runRescan(
 
         // [GUARD] VALIDATION BOUNDARY: RPC Response
         // [THREAT:] Malformed database view or RPC return could cause runtime errors in the loop.
-        const staleValidation = v.safeParse(v.array(StaleRecruitSchema), rawStaleRecruits);
+        const staleRecruitsIntegrity = v.safeParse(v.array(StaleRecruitSchema), staleRecruitsRaw);
 
-        logAudit('RESCAN', 'resulted_data', { count: staleValidation.success ? staleValidation.output.length : 0 });
+        logAudit('RESCAN', 'resulted_data', { count: staleRecruitsIntegrity.success ? staleRecruitsIntegrity.output.length : 0 });
         logAudit('RESCAN', 'integrity_checked', {
-            passed: staleValidation.success,
-            details: staleValidation.success ? 'Stale target list validated (Array<StaleRecruitSchema>)' : 'Unexpected data shape from get_stale_recruits'
+            passed: staleRecruitsIntegrity.success,
+            details: staleRecruitsIntegrity.success ? 'Stale target list validated (Array<StaleRecruitSchema>)' : 'Unexpected data shape from get_stale_recruits'
         });
 
-        if (!staleValidation.success) {
+        if (!staleRecruitsIntegrity.success) {
             logAudit('RESCAN', 'terminated', { error: 'Validation failed' });
             return;
         }
 
-        const staleRecruits = staleValidation.output;
+        const staleRecruits = staleRecruitsIntegrity.output;
         console.log(`[RESCAN] Validated ${staleRecruits.length} stale recruits to process.`);
 
         const refreshedRecruitBatch: RecruitSyncRow[] = [];
-        const rescanProcessingQueue = staleRecruits.map((staleRecruitSnapshot) => async () => {
-            const targetPlayerTag = staleRecruitSnapshot.player_tag;
+        const rescanProcessingQueue = staleRecruits.map((recruitSnapshot) => async () => {
+            const targetPlayerTag = recruitSnapshot.player_tag;
             try {
-                const royaleApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetPlayerTag)}`);
-                if (!royaleApiResponse.ok) {
-                    if (royaleApiResponse.status === 404) {
+                const playerProfileApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetPlayerTag)}`);
+                if (!playerProfileApiResponse.ok) {
+                    if (playerProfileApiResponse.status === 404) {
                         // [THREAT:] Silent RPC failures can leave "ghost" recruits in the database.
                         // [DECISION LOG] Capturing and logging RPC error to ensure visibility of purge failures.
-                        const { error: deadRecruitError } = await supabase.rpc('report_dead_recruit', { p_player_tag: targetPlayerTag });
-                        if (deadRecruitError) {
-                            logAudit('RESCAN', 'error', { tag: targetPlayerTag, message: 'Failed to report dead recruit', details: deadRecruitError });
+                        const { error: deadRecruitPurgeError } = await supabase.rpc('report_dead_recruit', { p_player_tag: targetPlayerTag });
+                        if (deadRecruitPurgeError) {
+                            logAudit('RESCAN', 'error', { tag: targetPlayerTag, message: 'Failed to report dead recruit', details: deadRecruitPurgeError });
                         }
                         logAudit('RESCAN', 'called', { tag: targetPlayerTag, action: 'purged_ghost' });
                         console.log(`[RESCAN] Player ${targetPlayerTag} is a ghost (404). Purged.`);
                     } else {
-                        logAudit('RESCAN', 'error', { tag: targetPlayerTag, status: royaleApiResponse.status });
-                        console.error(`[RESCAN] Player ${targetPlayerTag} fetch failed with HTTP ${royaleApiResponse.status}`);
+                        logAudit('RESCAN', 'error', { tag: targetPlayerTag, status: playerProfileApiResponse.status });
+                        console.error(`[RESCAN] Player ${targetPlayerTag} fetch failed with HTTP ${playerProfileApiResponse.status}`);
                     }
                     return;
                 }
 
-                const rawRoyaleProfile: unknown = await royaleApiResponse.json();
+                const playerProfileRaw: unknown = await playerProfileApiResponse.json();
 
                 // [GUARD] VALIDATION BOUNDARY: External API data
                 // [THREAT:] External Royale API data is un-trusted. Every ingress point is guarded by Valibot schemas.
-                const profileValidation = v.safeParse(RoyalePlayerSchema, rawRoyaleProfile);
+                const playerProfileIntegrity = v.safeParse(RoyalePlayerSchema, playerProfileRaw);
 
-                if (!profileValidation.success) {
-                    logAudit('RESCAN', 'error', { tag: targetPlayerTag, message: 'Invalid player profile shape', issues: profileValidation.issues });
+                if (!playerProfileIntegrity.success) {
+                    logAudit('RESCAN', 'error', { tag: targetPlayerTag, message: 'Invalid player profile shape', issues: playerProfileIntegrity.issues });
                     console.error(`[RESCAN] Player ${targetPlayerTag} returned invalid data shape.`);
                     return;
                 }
 
-                const playerProfile = profileValidation.output;
+                const playerProfileSnapshot = playerProfileIntegrity.output;
 
                 // [DECISION LOG] If player has joined a clan, remove them from the recruit pool.
                 // We only care about clanless players or players in our exclusion set (our own clan/family).
-                if (playerProfile.clan?.tag && !exclusionSet.has(playerProfile.tag)) {
+                if (playerProfileSnapshot.clan?.tag && !exclusionSet.has(playerProfileSnapshot.tag)) {
                     // [THREAT:] Silent RPC failures can leave clanned players in the recruitment pool.
                     // [DECISION LOG] Capturing and logging RPC error for purge accountability.
-                    const { error: purgeError } = await supabase.rpc('purge_recruits', { p_tags: [playerProfile.tag] });
-                    if (purgeError) {
-                        logAudit('RESCAN', 'error', { tag: playerProfile.tag, message: 'Failed to purge clanned recruit', details: purgeError });
+                    const { error: clannedRecruitPurgeError } = await supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] });
+                    if (clannedRecruitPurgeError) {
+                        logAudit('RESCAN', 'error', { tag: playerProfileSnapshot.tag, message: 'Failed to purge clanned recruit', details: clannedRecruitPurgeError });
                     }
-                    logAudit('RESCAN', 'called', { tag: playerProfile.tag, action: 'purged_clanned' });
-                    console.log(`[RESCAN] Player ${playerProfile.tag} joined clan ${playerProfile.clan.tag}. Purged from recruits.`);
+                    logAudit('RESCAN', 'called', { tag: playerProfileSnapshot.tag, action: 'purged_clanned' });
+                    console.log(`[RESCAN] Player ${playerProfileSnapshot.tag} joined clan ${playerProfileSnapshot.clan.tag}. Purged from recruits.`);
                     return;
                 }
 
                 // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
                 // Refactored to use centralized L1 Core utility to ensure formula consistency.
-                const rawScore = calculateRpos(playerProfile.trophies, playerProfile.totalDonations, playerProfile.warDayWins);
+                const rawScore = calculateRpos(playerProfileSnapshot.trophies, playerProfileSnapshot.totalDonations, playerProfileSnapshot.warDayWins);
 
                 // Otherwise prepare their profile data for batch refresh
                 refreshedRecruitBatch.push({
-                    player_tag: playerProfile.tag,
-                    player_name: playerProfile.name,
-                    trophies: playerProfile.trophies,
-                    donations: playerProfile.totalDonations,
-                    cards: playerProfile.challengeCardsWon,
-                    war_wins: playerProfile.warDayWins,
+                    player_tag: playerProfileSnapshot.tag,
+                    player_name: playerProfileSnapshot.name,
+                    trophies: playerProfileSnapshot.trophies,
+                    donations: playerProfileSnapshot.totalDonations,
+                    cards: playerProfileSnapshot.challengeCardsWon,
+                    war_wins: playerProfileSnapshot.warDayWins,
                     raw_potential_score: rawScore,
                     source: 'TOURNAMENT', // Fallback
-                    status: playerProfile.trophies >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
+                    status: playerProfileSnapshot.trophies >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
                 });
 
-                console.log(`[RESCAN] Player ${targetPlayerTag} prepared for refresh. trophies=${playerProfile.trophies}`);
+                console.log(`[RESCAN] Player ${targetPlayerTag} prepared for refresh. trophies=${playerProfileSnapshot.trophies}`);
                 stats.profiles_scanned++;
-            } catch (rescanError: unknown) {
-                const errorMessage = rescanError instanceof Error ? rescanError.message : String(rescanError);
+            } catch (rescanExecutionError: unknown) {
+                const errorMessage = rescanExecutionError instanceof Error ? rescanExecutionError.message : String(rescanExecutionError);
                 logAudit('RESCAN', 'error', { tag: targetPlayerTag, message: errorMessage });
                 console.error(`[RESCAN] Exception while processing ${targetPlayerTag}: ${errorMessage}`);
             }
@@ -176,10 +176,10 @@ export async function runRescan(
             console.log(`[RESCAN] Synchronizing ${refreshedRecruitBatch.length} refreshed profiles via RPC...`);
             // [THREAT:] Silent RPC failures during bulk sync could lead to stale data persisting despite successful API fetches.
             // [DECISION LOG] Capturing and logging sync errors for operational transparency.
-            const { error: syncError } = await supabase.rpc('sync_recruits', { p_recruits: refreshedRecruitBatch });
-            if (syncError) {
-                console.error(`[RESCAN] Sync failure: ${syncError.message}`);
-                logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: syncError });
+            const { error: rescanBatchSyncError } = await supabase.rpc('sync_recruits', { p_recruits: refreshedRecruitBatch });
+            if (rescanBatchSyncError) {
+                console.error(`[RESCAN] Sync failure: ${rescanBatchSyncError.message}`);
+                logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: rescanBatchSyncError });
             } else {
                 stats.rescans_processed = refreshedRecruitBatch.length;
                 stats.refreshed_recruits = (stats.refreshed_recruits || 0) + refreshedRecruitBatch.length;
@@ -188,8 +188,8 @@ export async function runRescan(
         }
         logAudit('RESCAN', 'terminated', { candidates: staleRecruits.length, rescanned: stats.rescans_processed });
         console.log(`[RESCAN] Terminated smoothly. Processed ${staleRecruits.length} candidates, refreshed ${stats.rescans_processed} successfully.`);
-    } catch (rescanError: unknown) {
-        const errorMessage = rescanError instanceof Error ? rescanError.message : String(rescanError);
+    } catch (rescanExecutionError: unknown) {
+        const errorMessage = rescanExecutionError instanceof Error ? rescanExecutionError.message : String(rescanExecutionError);
         stats.errors.push(`Rescan: ${errorMessage}`);
         logAudit('RESCAN', 'integrity_checked', { passed: false, details: errorMessage });
         logAudit('RESCAN', 'error', { message: errorMessage });
