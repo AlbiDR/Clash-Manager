@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { createSupabaseClient, NetworkError } from "./SupabaseClient";
+import {
+  createSupabaseClient,
+  getSupabaseUrl,
+  getSupabaseKey,
+  NetworkError,
+} from "./SupabaseClient";
 import type {
   ApiResponse,
   DismissResponse,
@@ -9,6 +14,12 @@ import type {
   Recruit,
 } from "@core/types";
 import { mapSbHeadhunterRow } from "./DataMappers";
+import * as v from "valibot";
+import {
+  DismissResponseSchema,
+  BlacklistEventSchema,
+  LeaderboardHarvestSchema,
+} from "./RecruitSchemas";
 
 /**
  * RECRUIT CLIENT (Layer 1)
@@ -29,27 +40,30 @@ import { mapSbHeadhunterRow } from "./DataMappers";
  * Requires an active network connection. Normalizes player tags before execution
  * (satisfies ADR Section III: Validation Boundaries).
  *
- * @param items - Array of dismissal requests containing player IDs.
+ * @param dismissalRequests - Array of dismissal requests containing player IDs.
  * @returns A Promise resolving to an ApiResponse.
  * @throws {NetworkError} If the network is unavailable or the RPC fails.
  */
 export async function dismissRecruits(
-  items: DismissalRequest[],
+  dismissalRequests: DismissalRequest[],
 ): Promise<ApiResponse<DismissResponse>> {
   const supabase = createSupabaseClient();
   // [ADR] Normalize IDs: Ensure all tags have the # prefix to satisfy drivers.recruit_blacklist CHECK constraints.
-  const normalizedItems = items.map(item => ({
-    ...item,
-    id: item.id.startsWith('#') ? item.id : `#${item.id}`
+  const normalizedItems = dismissalRequests.map(dismissalRequest => ({
+    ...dismissalRequest,
+    id: dismissalRequest.id.startsWith('#') ? dismissalRequest.id : `#${dismissalRequest.id}`
   }));
-  const { data, error } = await supabase.rpc('dismiss_recruits', { items: normalizedItems });
+
+  // [THREAT:] Unvalidated RPC results can cause logic corruption in the feature layer.
+  // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
+  const { data: dismissRpcResponse, error: dismissRpcError } = await supabase.rpc('dismiss_recruits', { items: normalizedItems });
 
   // [DESIGN] CONNECTION REQUIRED: Dismissal requires an active connection.
   // The offline queue has been removed. On any failure, throw immediately so
   // the caller can roll back the optimistic tombstone and inform the user.
-  if (error) throw new NetworkError(error.message);
+  if (dismissRpcError) throw new NetworkError(dismissRpcError.message);
 
-  return { success: true, data: data as DismissResponse };
+  return { success: true, data: v.parse(DismissResponseSchema, dismissRpcResponse) };
 }
 
 /**
@@ -59,21 +73,88 @@ export async function dismissRecruits(
  * Requires an active network connection. Normalizes player tags before execution
  * (satisfies ADR Section III: Validation Boundaries).
  *
- * @param ids - Array of player tags to restore.
+ * @param targetTags - Array of player tags to restore.
  * @returns A Promise resolving to an ApiResponse.
  * @throws {NetworkError} If the network is unavailable or the RPC fails.
  */
 export async function undismissRecruits(
-  ids: string[],
+  targetTags: string[],
 ): Promise<ApiResponse<DismissResponse>> {
   const supabase = createSupabaseClient();
-  const player_tags = ids.map(id => id.startsWith('#') ? id : `#${id}`);
-  const { data, error } = await supabase.rpc('undismiss_recruits', { player_tags });
+  const playerTagCandidates = targetTags.map(playerTagCandidate => playerTagCandidate.startsWith('#') ? playerTagCandidate : `#${playerTagCandidate}`);
+
+  // [THREAT:] Unvalidated RPC results can cause logic corruption in the feature layer.
+  // [DECISION LOG] Transitioned to strict Valibot validation to enforce data integrity.
+  const { data: undismissRpcResponse, error: undismissRpcError } = await supabase.rpc('undismiss_recruits', { player_tags: playerTagCandidates });
 
   // [DESIGN] CONNECTION REQUIRED: Undismissal requires an active connection.
-  if (error) throw new NetworkError(error.message);
+  if (undismissRpcError) throw new NetworkError(undismissRpcError.message);
 
-  return { success: true, data: data as DismissResponse };
+  return { success: true, data: v.parse(DismissResponseSchema, undismissRpcResponse) };
+}
+
+/**
+ * Executes a transient harvest of clanless players from global or local leaderboards.
+ *
+ * @remarks
+ * Communicates with the `query-royale-api` Edge Function. This is a read-only
+ * operation that does not persist data to the database.
+ *
+ * @param mode - The target leaderboard scope ('local' | 'global').
+ * @param signal - Optional AbortSignal for request cancellation.
+ * @returns A promise resolving to the validated harvest payload.
+ * @throws {NetworkError} If the network is unavailable or the Edge Function fails.
+ * @throws {v.ValiError} If the response fails schema validation.
+ */
+export async function scoutLeaderboard(
+  mode: "local" | "global",
+  signal?: AbortSignal,
+): Promise<v.InferOutput<typeof LeaderboardHarvestSchema>> {
+  const functionUrl = `${getSupabaseUrl()}/functions/v1/query-royale-api`;
+
+  const response = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getSupabaseKey()}`,
+    },
+    body: JSON.stringify({ endpoint: mode }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorDetails = await response
+      .json()
+      .catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new NetworkError(
+      errorDetails.error ?? `Query failed with status ${response.status}`,
+    );
+  }
+
+  const responseJson: unknown = await response.json();
+
+  // [GUARD] VALIDATION BOUNDARY: Enforce schema on Edge Function response.
+  const envelopeValidation = v.safeParse(
+    v.union([
+      v.object({ data: LeaderboardHarvestSchema }),
+      LeaderboardHarvestSchema,
+    ]),
+    responseJson,
+  );
+
+  if (!envelopeValidation.success) {
+    console.error("[Scout] Validation failed:", envelopeValidation.issues);
+    throw new Error("Invalid response structure from harvest engine.");
+  }
+
+  const payload =
+    "data" in envelopeValidation.output && envelopeValidation.output.data
+      ? envelopeValidation.output.data
+      : (envelopeValidation.output as v.InferOutput<
+          typeof LeaderboardHarvestSchema
+        >);
+
+  return payload;
 }
 
 /**
@@ -105,28 +186,38 @@ export function subscribeToBlacklist(
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'drivers', table: 'recruit_blacklist' },
-        (payload) => {
-          const playerTag = (payload.new as { player_tag?: string }).player_tag;
-          if (playerTag) onInsert(playerTag);
+        (realtimePayload: unknown) => {
+          // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
+          // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
+          // Valibot validation using BlacklistEventSchema to ensure data integrity.
+          const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
+          if (blacklistValidation.success && 'new' in blacklistValidation.output) {
+            onInsert(blacklistValidation.output.new.player_tag);
+          }
         },
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'drivers', table: 'recruit_blacklist' },
-        (payload) => {
-          const playerTag = (payload.old as { player_tag?: string }).player_tag;
-          if (playerTag) onDelete(playerTag);
+        (realtimePayload: unknown) => {
+          // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
+          // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
+          // Valibot validation using BlacklistEventSchema to ensure data integrity.
+          const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
+          if (blacklistValidation.success && 'old' in blacklistValidation.output) {
+            onDelete(blacklistValidation.output.old.player_tag);
+          }
         },
       )
-      .subscribe((status, err) => {
+      .subscribe((_status, err) => {
         if (err) {
           console.warn("[Realtime] Subscription error:", err);
         }
       });
 
     return () => { supabase.removeChannel(channel); };
-  } catch (e) {
-    console.warn("[Realtime] Failed to initialize subscription:", e);
+  } catch (realtimeSetupError) {
+    console.warn("[Realtime] Failed to initialize subscription:", realtimeSetupError);
     return () => {};
   }
 }
@@ -137,7 +228,7 @@ export function subscribeToBlacklist(
  */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase.from('headhunter_view').select('*').limit(20);
-  if (error || !data) return null;
-  return data.map(mapSbHeadhunterRow);
+  const { data: rawHeadhunterRows, error: headhunterFetchError } = await supabase.from('headhunter_view').select('*').limit(20);
+  if (headhunterFetchError || !rawHeadhunterRows) return null;
+  return rawHeadhunterRows.map(mapSbHeadhunterRow);
 }

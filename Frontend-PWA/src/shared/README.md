@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Shared Layer (@shared) -- Driver & Molecule Substrate
+# Shared Layer (@shared) : Driver & Molecule Substrate
 
 The **Substrate Layer**. A collection of domain-blind UI building blocks, interaction drivers, and stateful composables that define the visual and behavioral language of the Clash Manager ecosystem.
 
@@ -14,8 +14,8 @@ The Shared Layer (Layer 2) provides a standardized set of primitives and drivers
 - **Layer**: Layer 2 (@shared)
 - **Role**: Driver & Molecule Layer. Provides stateless UI or brokered access to external/shared state.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 1 (`@core`) and Layer 0 (`@substrate`).
-  - **Forbidden**: Strictly forbidden from importing from Layer 3 (`@features`) or Layer 4 (`@app`).
+ - **Allowed**: Can import from Layer 1 (`@core`) and Layer 0 (`@substrate`).
+ - **Forbidden**: Strictly forbidden from importing from Layer 3 (`@features`) or Layer 4 (`@app`).
 
 ## Logic Subsystems
 
@@ -28,7 +28,7 @@ Dumb or brokered components that receive data via props and emit events.
 
 ### Shared Composables (`/composables`)
 Stateful logic engines that manage component-level behaviors and hardware brokerage.
-- **useTheme.ts**: Master arbiter for dynamic manifest swapping and theme-aware asset resolution.
+- **useTheme.ts**: Master arbiter for theme-aware visual states - applies light/dark tokens as CSS variables on the document root, toggles the `dark` class, persists the preference to LocalStorage (`cm_theme_preference`), and rewrites the `theme-color` meta tag.
 - **useHistoryChart.ts**: Centralizes history parsing, slicing, and weighted trend prediction for visualization components.
 - **useSelectionBar.ts**: Encapsulates logic for score threshold selection and comparison mode toggling in bulk operation surfaces.
 - **useCountdown.ts**: High-performance interval timer for real-time expiration feedback (e.g., Voyage banners).
@@ -44,8 +44,8 @@ Stateful logic engines that manage component-level behaviors and hardware broker
 
 ### Interaction Directives (`/directives`)
 Low-level DOM manipulators for standardized user feedback.
-- **vTactile.ts**: Injects "squish" scale transformations and haptic pulses into interactive elements upon activation.
-- **vTooltip.ts**: Declarative interface for injecting accessible, theme-aware information overlays.
+- **vTactile.ts**: High-performance tap and long-press haptic engine. Implements an **Architectural Protection** rule that ignores interactions on actionable children (`.btn-action`, `a`, `.hit-target`) to prevent nested haptic conflicts. Features a 500ms long-press threshold and DPI-aware movement tolerance (10px baseline).
+- **vTooltip.ts**: Accessible, theme-aware rich information overlay utilizing the native **Popover API** for top-layer rendering. Employs a singleton delegation architecture on `document.body` to minimize DOM footprint by reusing a shared tooltip instance. Features a 400ms touch long-press trigger, 40ms haptic feedback, and automatic hide-on-scroll resilience.
 
 ### Shared Utilities (`/utils`)
 Domain-aware presentation helpers for UI formatting.

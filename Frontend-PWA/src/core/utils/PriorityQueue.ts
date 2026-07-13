@@ -4,9 +4,20 @@
  * Binary Heap based Priority Queue.
  *
  * @remarks
- * A high-performance collection used for O(log N) upgrade selection within the
- * Laboratory simulation engine. It ensures the most efficient upgrade candidates
- * are always processed first without the overhead of O(N log N) re-sorting.
+ * [DECISION LOG] ALGORITHMIC EFFICIENCY:
+ * A Binary Heap is utilized to provide O(log N) insertion and extraction, which
+ * is critical for the Laboratory simulation engine's iterative greedy optimizer.
+ * This avoids the O(N log N) cost of re-sorting an array on every state change.
+ *
+ * [THREAT:] HEAP INSTABILITY:
+ * The heap property is maintained through siftUp and siftDown operations.
+ * Ensuring the comparator is stable and deterministic is vital to prevent
+ * infinite loops or inconsistent simulation results.
+ *
+ * Architectural Context:
+ * - Layer: Layer 1 (@core)
+ * - Role: Mathematical Substrate.
+ * - Satisfaction: ADR Section IV (Resilience & Operational Security).
  */
 export class PriorityQueue<T> {
   private heap: T[] = [];

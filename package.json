@@ -1,25 +1,35 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.0.0",
+  "version": "14.31.2",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
     "deploy:pwa": "pnpm -F clash-manager-pwa build",
     "dev:pwa": "pnpm -F clash-manager-pwa dev",
+    "icons:android": "node APK/gen-android-icons.mjs",
+    "apk:check": "./APK/build-apk.sh --no-sign",
+    "apk:verify": "node APK/verify-apk-integrity.mjs",
+    "apk:verify:source": "node APK/verify-android-source.mjs APK/android",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "audit:version": "tsx scripts/version-auditor.ts",
+    "audit:version": "tsx .github/scripts/validate_project.ts",
+    "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
-    "knip": "knip --config .github/knip.json"
+    "knip": "knip --config .github/knip.json",
+    "prepare": "simple-git-hooks"
   },
   "devDependencies": {
     "@ast-grep/cli": "catalog:",
     "@types/node": "catalog:",
     "dependency-cruiser": "catalog:",
     "knip": "catalog:",
+    "simple-git-hooks": "catalog:",
     "supabase": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src"
   },
   "engines": {
     "node": ">=24.0.0",

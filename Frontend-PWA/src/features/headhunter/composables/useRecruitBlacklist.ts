@@ -4,7 +4,7 @@
 import { ref } from "vue";
 
 // Singleton in-memory state shared across components within this session.
-// Intentionally NOT persisted to localStorage — tombstones are ephemeral optimistic-UI
+// Intentionally NOT persisted to localStorage - tombstones are ephemeral optimistic-UI
 // state only. Authoritative dismissed state lives in drivers.recruit_blacklist (server SSOT),
 // propagated to the client via Supabase Realtime subscription in useHeadhunter.
 const tombstones = ref<Set<string>>(new Set());
@@ -15,7 +15,7 @@ const tombstones = ref<Set<string>>(new Set());
  * @remarks
  * Manages in-memory "tombstones" for recruits who have been optimistically
  * dismissed but whose removal from the server payload has not yet propagated
- * to the local store. This is a pure optimistic-UI primitive — tombstones hide
+ * to the local store. This is a pure optimistic-UI primitive - tombstones hide
  * a recruit for the ~200ms window between user action and Realtime confirmation.
  *
  * Tombstones reset on every page reload. Cross-device and cross-session state

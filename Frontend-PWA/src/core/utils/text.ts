@@ -38,6 +38,34 @@ export function cleanTag(tag: string | undefined): string {
 }
 
 /**
+ * NORMALIZE TAG
+ * Ensures a player or clan tag is standardized: uppercase, trimmed, and prefixed with '#'.
+ * Satisfies Backend substrate expectations for consistent indexing and caching.
+ *
+ * @param tag - The raw player or clan tag.
+ * @returns A normalized tag string (e.g., '#ABC123').
+ */
+export function normalizeTag(tag: string | undefined): string {
+  const cleaned = cleanTag(tag);
+  if (!cleaned) return "";
+  return `#${cleaned}`;
+}
+
+/**
+ * FORMAT DISPLAY TAG
+ * Standardizes the visual presentation of tags (e.g., '#ABC12').
+ * Truncates to 5 characters and ensures the '#' prefix is present.
+ *
+ * @param tag - The raw player or clan tag.
+ * @returns A formatted tag string for UI display.
+ */
+export function formatDisplayTag(tag: string | undefined): string {
+  const cleaned = cleanTag(tag);
+  if (!cleaned) return "";
+  return `#${cleaned.substring(0, 5)}`;
+}
+
+/**
  * DESCRIPTION FORMATTER
  * Converts markdown-ish strings from remote data sources into semantic HTML.
  *

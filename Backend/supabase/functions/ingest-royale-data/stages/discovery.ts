@@ -3,8 +3,14 @@
 
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
+import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
-import * as v from "npm:valibot";
+import {
+    DISCOVERY_KEYWORDS,
+    CONCURRENCY_DISCOVERY_KEYWORDS,
+    CONCURRENCY_DISCOVERY_TOURNAMENTS
+} from "../../_shared/config.ts";
+import * as v from "npm:valibot@1.4.2";
 import { RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
 
 /**
@@ -20,21 +26,23 @@ export async function runDiscovery(
 ) {
     logAudit('S1_DISCOVERY', 'triggered');
     try {
-        const keywords = ["cla", "roy", "gam", "pro", "top", "win", "cas", "lea", "tou", "int"];
+        const discoveryKeywords = DISCOVERY_KEYWORDS;
         // [DECISION LOG] EPHEMERAL: intentionally resets on cold start to maintain memory hygiene.
+        // [THREAT:] Native Discovery depends on in-memory state during the harvest phase;
+        // instance termination will lead to partial harvest loss if not synchronized to DB.
         const globalNewRecruits = new Map<string, { name: string, trophies: number }>();
         
-        const discoveryTasks = keywords.map(keyword => async () => {
+        const discoveryTasks = discoveryKeywords.map(keyword => async () => {
             try {
-                const tournamentListResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
-                if (!tournamentListResponse.ok) return;
+                const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
+                if (!tournamentListApiResponse.ok) return;
                 
-                const rawTournamentListData: unknown = await tournamentListResponse.json();
+                const tournamentListRoyalePayload: unknown = await tournamentListApiResponse.json();
 
                 // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
                 // [THREAT:] Prevents runtime crashes from unexpected Royale API structure changes in tournament lists.
                 // [DECISION LOG] Ensuring that the tournament list matches the expected schema before processing targets.
-                const tournamentListValidation = v.safeParse(RoyaleTournamentListSchema, rawTournamentListData);
+                const tournamentListValidation = v.safeParse(RoyaleTournamentListSchema, tournamentListRoyalePayload);
                 if (!tournamentListValidation.success) {
                     logAudit('S1_DISCOVERY', 'error', { keyword, message: 'Tournament list validation failed' });
                     return;
@@ -72,55 +80,61 @@ export async function runDiscovery(
                                 logAudit('S1_DISCOVERY', 'error', { tag: tournamentTarget.tag, message: 'Tournament details validation failed' });
                             }
                         }
-                    } catch (tournamentError: unknown) {
+                    } catch (tournamentDiscoveryError: unknown) {
                         // Silent fail for individual tournament to maintain pipeline progress
-                        const errorMessage = tournamentError instanceof Error ? tournamentError.message : String(tournamentError);
+                        const errorMessage = tournamentDiscoveryError instanceof Error ? tournamentDiscoveryError.message : String(tournamentDiscoveryError);
                         console.warn(`[S1_DISCOVERY] Individual tournament discovery failure: ${errorMessage}`);
                     }
                 });
                 
                 // [DECISION LOG] Concurrency of 5 for tournament details per keyword to balance throughput and API rate limits.
-                await processBatch(tournamentTasks, 5);
-            } catch (keywordError: unknown) {
-                const errorMessage = keywordError instanceof Error ? keywordError.message : String(keywordError);
+                await processBatch(tournamentTasks, CONCURRENCY_DISCOVERY_TOURNAMENTS);
+            } catch (keywordDiscoveryError: unknown) {
+                const errorMessage = keywordDiscoveryError instanceof Error ? keywordDiscoveryError.message : String(keywordDiscoveryError);
                 logAudit('S1_DISCOVERY', 'error', { keyword, message: errorMessage });
             }
         });
         
         // [DECISION LOG] Concurrency of 3 for keywords (total concurrency ~15) to ensure aggressive but safe harvest.
-        await processBatch(discoveryTasks, 3);
+        await processBatch(discoveryTasks, CONCURRENCY_DISCOVERY_KEYWORDS);
 
         // Batch synchronize all discovered recruits
+        // [THREAT:] Failure to synchronize the player registry before the recruitment registry
+        // results in foreign key violations and data loss in the recruitment substrate.
         if (globalNewRecruits.size > 0) {
             const playerRegistryPayload = Array.from(globalNewRecruits.entries()).map(([playerTag, playerInfo]) => ({
-                player_tag: playerTag.startsWith('#') ? playerTag : `#${playerTag}`,
+                player_tag: normalizeTag(playerTag),
                 player_name: playerInfo.name
             }));
 
             const recruitRegistryPayload = Array.from(globalNewRecruits.entries()).map(([playerTag, playerInfo]) => ({
-                player_tag: playerTag.startsWith('#') ? playerTag : `#${playerTag}`,
+                player_tag: normalizeTag(playerTag),
                 player_name: playerInfo.name,
                 trophies: playerInfo.trophies,
                 source: 'TOURNAMENT_AUTO',
                 status: 'ACTIVE'
             }));
 
-            await supabase.rpc('sync_players', { p_players: playerRegistryPayload });
-            const { error: recruitError } = await supabase.rpc('sync_recruits', { p_recruits: recruitRegistryPayload });
+            const { error: playerRegistryError } = await supabase.rpc('sync_players', { p_players: playerRegistryPayload });
+            if (playerRegistryError) {
+                logAudit('S1_DISCOVERY', 'error', { message: 'Player Registry Batch Sync Failure', details: playerRegistryError });
+            }
+
+            const { error: recruitRegistryError } = await supabase.rpc('sync_recruits', { p_recruits: recruitRegistryPayload });
             
-            if (!recruitError) {
+            if (!recruitRegistryError) {
                 results.discovery.harvested = globalNewRecruits.size;
             } else {
-                logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Batch Upsert Failure', details: recruitError });
+                logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Registry Batch Sync Failure', details: recruitRegistryError });
             }
         }
 
         logAudit('S1_DISCOVERY', 'terminated', { harvested: results.discovery.harvested });
-    } catch (pipelineError: unknown) {
-        const errorMessage = pipelineError instanceof Error ? pipelineError.message : String(pipelineError);
+    } catch (pipelineDiscoveryError: unknown) {
+        const errorMessage = pipelineDiscoveryError instanceof Error ? pipelineDiscoveryError.message : String(pipelineDiscoveryError);
         results.discovery.error = errorMessage;
         logAudit('S1_DISCOVERY', 'error', { message: errorMessage });
         logAudit('S1_DISCOVERY', 'terminated', { error: true });
-        throw pipelineError;
+        throw pipelineDiscoveryError;
     }
 }

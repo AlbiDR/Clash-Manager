@@ -16,7 +16,7 @@ vi.mock("../../../core/services/useUiCoordinator", () => ({
   }),
 }));
 
-vi.mock("../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({
     impact: vi.fn(),
     selection: vi.fn(),

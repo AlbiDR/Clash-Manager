@@ -146,13 +146,13 @@ export function useAppSettings() {
 
     // Load local storage
     try {
-      const raw = localStorage.getItem(MODULES_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        Object.assign(modules, mergeStorage(parsed));
+      const rawSettingsPayload = localStorage.getItem(MODULES_KEY);
+      if (rawSettingsPayload) {
+        const parsedSettingsSnapshot = JSON.parse(rawSettingsPayload);
+        Object.assign(modules, mergeStorage(parsedSettingsSnapshot));
       }
-    } catch (e) {
-      console.warn("[Modules] Storage hydration failed", e);
+    } catch (settingsHydrationError) {
+      console.warn("[Modules] Storage hydration failed", settingsHydrationError);
     }
 
     // Sync across tabs
@@ -182,11 +182,11 @@ export function useAppSettings() {
    * Toggle a boolean feature flag safely.
    */
   function toggle(key: keyof ModuleState) {
-    const val = modules[key];
-    if (typeof val === "boolean") {
+    const currentSettingValue = modules[key];
+    if (typeof currentSettingValue === "boolean") {
       // THREAT: The 'any Plague' (Target B [4]).
       // Rationale: Avoid explicit casting by using a type-safe assignment.
-      Object.assign(modules, { [key]: !val });
+      Object.assign(modules, { [key]: !currentSettingValue });
     }
   }
 

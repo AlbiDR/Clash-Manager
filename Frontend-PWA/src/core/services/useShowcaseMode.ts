@@ -47,7 +47,7 @@ export function useShowcaseMode() {
     isSyntheticMode.value = true;
     
     // [FLEXIBILITY] Only force blueprint if not explicitly disabled.
-    // This allows branding pipelines (like portfolio-stitch.html) to request 
+    // This allows branding pipelines (like scripts/portfolio-stitch.html) to request
     // Showcase orchestration without skeleton overlays.
     if (localStorage.getItem("clash_manager_blueprint_mode") !== "false") {
       isBlueprintMode.value = true;
@@ -95,14 +95,14 @@ export function useShowcaseMode() {
   /**
    * Sets the master Showcase state to a specific boolean value.
    */
-  function setShowcaseMode(val: boolean) {
-    if (isShowcaseMode.value === val) return;
-    isShowcaseMode.value = val;
-    localStorage.setItem(SHOWCASE_KEY, String(val));
+  function setShowcaseMode(targetState: boolean) {
+    if (isShowcaseMode.value === targetState) return;
+    isShowcaseMode.value = targetState;
+    localStorage.setItem(SHOWCASE_KEY, String(targetState));
 
     // [PROPAGATION] MASTER -> CHILD
-    setSyntheticMode(val);
-    setBlueprintMode(val);
+    setSyntheticMode(targetState);
+    setBlueprintMode(targetState);
   }
 
   return {

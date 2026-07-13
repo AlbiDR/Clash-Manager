@@ -1,0 +1,15 @@
+version: 3.0.2
+apkFileName: clashmanager.apk
+usesFramework:
+  ids:
+  - 1
+sdkInfo:
+  minSdkVersion: 21
+  targetSdkVersion: 36
+versionInfo:
+  versionCode: 17120
+  versionName: 14.31.2
+resourcesInfo:
+  packageId: 127
+doNotCompress:
+- arsc

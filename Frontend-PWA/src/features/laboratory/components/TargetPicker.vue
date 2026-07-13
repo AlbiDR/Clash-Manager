@@ -3,7 +3,8 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { Icon } from "@shared";
-import { useHaptics } from "@core";
+import { normalizeTag } from "@core";
+import { useHaptics } from "@shared";
 
 const props = defineProps<{
   modelValue: string | null;
@@ -27,8 +28,7 @@ function handleLockIn() {
   const tag = localTag.value.trim();
   haptics.tap();
   if (tag) {
-    const formattedTag = tag.startsWith('#') ? tag.toUpperCase() : `#${tag.toUpperCase()}`;
-    emit("lockIn", formattedTag);
+    emit("lockIn", normalizeTag(tag));
   } else {
     emit("lockIn", null);
   }
@@ -82,24 +82,24 @@ function handleKeydown(e: KeyboardEvent) {
 .input-box {
   position: relative;
   height: 40px;
-  background: var(--sys-surf-h);
-  border-radius: 14px;
+  background: var(--sys-color-surface-container-high);
+  border-radius: var(--sys-shape-corner-input);
   display: flex;
   align-items: center;
-  padding: 0 4px 0 12px;
-  gap: 8px;
+  padding: 0 var(--sys-space-4) 0 var(--sys-space-12);
+  gap: var(--sys-space-8);
   border: 1px solid rgba(128, 128, 128, 0.15);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
   flex: 1;
 }
 
 .input-box:focus-within {
-  border-color: var(--sys-primary-muted);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
 .prefix-icon {
-  color: var(--sys-text-tertiary);
+  color: var(--sys-color-on-surface-variant);
   flex-shrink: 0;
 }
 
@@ -107,17 +107,17 @@ function handleKeydown(e: KeyboardEvent) {
   flex: 1;
   background: none;
   border: none;
-  color: var(--sys-text-primary);
-  font-size: 13px;
+  color: var(--sys-color-on-surface);
+  font-size: var(--sys-typescale-body-sm);
   font-weight: 700;
-  font-family: var(--sys-font-mono);
+  font-family: var(--sys-font-family-mono);
   outline: none;
   width: 0; /* Allow flex to shrink */
   text-transform: uppercase;
 }
 
 .tag-input::placeholder {
-  color: var(--sys-text-tertiary);
+  color: var(--sys-color-on-surface-variant);
   font-weight: 500;
   opacity: 0.5;
 }
@@ -125,21 +125,21 @@ function handleKeydown(e: KeyboardEvent) {
 .lock-btn {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
-  background: var(--sys-primary);
+  border-radius: var(--sys-shape-corner-stat);
+  background: var(--sys-color-primary);
   border: none;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s var(--sys-motion-standard);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   flex-shrink: 0;
 }
 
 .lock-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--sys-primary-muted);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
 .lock-btn:active:not(:disabled) {
@@ -154,10 +154,10 @@ function handleKeydown(e: KeyboardEvent) {
 .player-label {
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 var(--sys-space-10);
   height: 40px;
-  background: var(--sys-surf-c);
-  border-radius: 12px;
+  background: var(--sys-color-surface-container);
+  border-radius: var(--sys-shape-corner-medium);
   border: 1px solid rgba(128, 128, 128, 0.1);
   white-space: nowrap;
   max-width: 120px;
@@ -165,17 +165,17 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .label-text {
-  font-size: 11px;
+  font-size: var(--sys-typescale-meta);
   font-weight: 800;
-  color: var(--sys-primary);
+  color: var(--sys-color-primary);
   text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .is-fetching .lock-btn {
-  background: var(--sys-surf-c);
-  color: var(--sys-text-tertiary);
+  background: var(--sys-color-surface-container);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .is-fetching .lock-btn :deep(svg) {

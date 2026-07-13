@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# App Layer (@app) -- Orchestration & Shell
+# App Layer (@app) : Orchestration & Shell
 
 The **System Orchestrator**. The highest functional layer of the application, responsible for composing Layer 3 Features into a unified shell, managing global navigation, and orchestrating the Service Worker lifecycle.
 
@@ -14,8 +14,8 @@ The App Layer (Layer 4) serves as the "glue" of the application. It defines the 
 - **Layer**: Layer 4 (@app)
 - **Role**: Orchestration & Shell Layer.
 - **Import Boundaries**:
-  - **Allowed**: Can import from Layer 3 (`@features`), Layer 2 (`@shared`), Layer 1 (`@core`), and Layer 0 (`@substrate`).
-  - **Axiom**: Layer 4 is the only layer authorized to import from `@features`.
+ - **Allowed**: Can import from Layer 3 (`@features`), Layer 2 (`@shared`), Layer 1 (`@core`), and Layer 0 (`@substrate`).
+ - **Axiom**: Layer 4 is the only layer authorized to import from `@features`.
 
 ## Core Components
 
@@ -33,11 +33,13 @@ The authoritative manager for navigation and view transitions.
 
 ### The Service Worker (`sw.ts` & `/sw`)
 The PWA kernel responsible for offline capability, asset delivery, and background tasks. Decomposed into specialized sub-modules for structural purity.
+- **index.ts**: Service Worker entry point and lifecycle orchestration.
 - **swKernel.ts**: Low-level IndexedDB primitives and environmental guards for the worker thread.
-- **swSync.ts**: Domain-specific logic for background synchronization and push notification management.
-- **Caching Topologies**: Enforces strict caching rules (Cache-First for assets, Stale-While-Revalidate for data).
+- **swSync.ts**: Domain-specific logic for background synchronization and push notification management. Orchestrates specialized sub-handlers for push-initiated (`handlePushBadge`) and Android-specific (`handleAndroidBadge`) badge updates.
+- **swSchemas.ts**: Authoritative Valibot schemas for hardening the background sync boundary against malformed API and configuration ingress. Enforces strict validation via `SwSupabaseRowSchema`, `SwSupabaseResponseSchema`, and `SwConfigSchema`.
+- **Caching Topologies**: Uses Workbox precaching (`precacheAndRoute`) for the app shell and assets. Implements a **Cache-First** navigation strategy for the core document (`index.html`) to achieve sub-second startup latency in hybrid shells. No runtime SWR strategies are applied to network requests.
 - **Update Orchestration**: Manages the "Prompt for Update" lifecycle to ensure clients are running the latest authoritative version.
-- **Background Sync**: Coordinates with Layer 1 services to ensure data integrity during offline operations.
+- **Background Sync**: A `periodicsync` handler (tag `update-recruit-badge`) refreshes the recruit badge by querying the `headhunter_view` directly via PostgREST from the worker thread (Direct View Access), independently of the @core/Layer-1 services.
 
 ---
 

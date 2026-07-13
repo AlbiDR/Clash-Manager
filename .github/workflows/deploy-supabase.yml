@@ -25,7 +25,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -120,3 +120,5 @@ jobs:
           supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID" --no-verify-jwt
           supabase functions deploy headhunter-scanner --project-ref "$PROJECT_ID" --no-verify-jwt
           supabase functions deploy sync-player-cards --project-ref "$PROJECT_ID" --no-verify-jwt
+          supabase functions deploy query-royale-api --project-ref "$PROJECT_ID" --no-verify-jwt
+          supabase functions deploy fetch-player-battlelog --project-ref "$PROJECT_ID" --no-verify-jwt

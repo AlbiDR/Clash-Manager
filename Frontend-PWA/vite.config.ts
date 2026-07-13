@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
@@ -40,23 +43,32 @@ export default defineConfig({
   base: "/Clash-Manager/",
   build: {
     outDir: "dist",
+    target: ["es2022", "edge112", "firefox112", "chrome112", "safari16.4"],
+    modulePreload: {
+      polyfill: false,
+    },
     sourcemap: false,
     cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            if (id.includes("vue") || id.includes("vue-router")) {
+            // Core Vue Ecosystem (Prioritized for fast PWA boot)
+            if (
+              id.includes("vue") ||
+              id.includes("vue-router") ||
+              id.includes("pinia")
+            ) {
               return "vendor-core";
             }
-            if (id.includes("valibot")) {
-              return "vendor-validation";
-            }
-            if (id.includes("workbox-")) {
-              return "vendor-pwa";
-            }
-            if (id.includes("@formkit")) {
-              return "vendor-ui-deps";
+            // Auxiliary Libraries (Consolidated to reduce HTTP overhead in WebView)
+            if (
+              id.includes("valibot") ||
+              id.includes("workbox-") ||
+              id.includes("@formkit") ||
+              id.includes("@supabase")
+            ) {
+              return "vendor-aux";
             }
             return "vendor-stable";
           }
@@ -86,7 +98,18 @@ export default defineConfig({
       filename: "sw.ts",
       manifest: false, // Already exists in public/manifest.json
       injectManifest: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // [OPTIMIZATION] Included webp for high-resolution game assets and screenshots.
+        // Large branding screenshots and data-heavy game assets are excluded
+        // to minimize SW cache footprint and update bandwidth.
+        // We also exclude the large variable font to prioritize the core app shell.
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        globIgnores: [
+          "assets/branding/*.webp",
+          "assets/game/*.webp",
+          "fonts/JetBrainsMono-Bold.woff2",
+          "fonts/Inter-Variable.woff2",
+          "**/splash.png",
+        ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {
@@ -101,14 +124,14 @@ export default defineConfig({
         return html; // Content already synthesized, this hook remains for future dynamic logic
       },
     },
-    ...(process.env.ANALYZE
-      ? [
-          visualizer({
-            filename: "dist/stats.html",
-            open: true,
-          }),
-        ]
-      : []),
+    visualizer({
+      filename: "dist/stats.html",
+      title: "Clash Manager PWA Bundle Analysis",
+      template: "treemap",
+      gzipSize: true,
+      brotliSize: true,
+      open: process.env.ANALYZE === "true",
+    }),
   ],
   test: {
     globals: true,

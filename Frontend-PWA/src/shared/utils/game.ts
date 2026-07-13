@@ -13,8 +13,16 @@
 /**
  * Normalizes a raw role string from the API into a display label and CSS class.
  *
- * @param roleStr - The raw role string (e.g., 'coleader', 'elder').
+ * @remarks
+ * Satisfies ADR Section II: Structural Unitary Architecture.
+ * Provides a standardized mapping for clan roles to ensure consistent terminology
+ * across the Roster, Laboratory, and Headhunter features.
+ *
+ * @param roleStr - The raw role string (e.g., 'coleader', 'elder', 'member').
  * @returns Object containing the formatted label and its associated CSS class.
+ *
+ * [DECISION LOG] Use 'Co-Lead' as the display label for 'coleader' to preserve
+ * horizontal space in compact mobile views while maintaining domain clarity.
  */
 export function formatRole(roleStr: string): { label: string; class: string } {
   const r = (roleStr || "").toLowerCase();

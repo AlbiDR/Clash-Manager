@@ -3,20 +3,50 @@
 // Copyright (C) 2026 AlbiDR
 
 import Icon from "./Icon.vue";
+import { vTactile } from "../directives/vTactile";
 import { useScoreSelector } from "../composables/useScoreSelector";
 
+/**
+ * SHARED UI: ScoreThresholdSelector (Layer 2)
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 (@shared/ui)
+ * - **Role:** Interactive Molecule. Provides a high-precision threshold selector
+ *   for score-based filtering in Roster and Headhunter views.
+ *
+ * **Satisfaction:**
+ * - ADR Section II: Structural Unitary Architecture (Logic Delegation).
+ * - ADR Section IV: Tactile Interaction (Hardware Brokering via useScoreSelector).
+ *
+ * [DECISION LOG] Delegated complex UI orchestration (scroll, expansion, haptics)
+ * to the useScoreSelector composable to maintain a clinical, presentational view.
+ *
+ * [DECISION LOG] Modernized touch targets (48px footprint) and integrated v-tactile
+ * for consistent physical response in the hybrid shell (Target B.2 / A.2).
+ */
+
 const props = defineProps<{
+  /** Comparison mode: 'ge' (Greater than or equal) or 'le' (Less than or equal). */
   mode: "ge" | "le";
+  /** Current active score threshold. */
   value: number;
+  /** Disables all interactions when true. */
   disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "update:mode", val: "ge" | "le"): void;
-  (e: "update:value", val: number): void;
-  (e: "select", val: number, mode: "ge" | "le"): void;
+  /** Updates the comparison mode. */
+  (e: "update:mode", thresholdMode: "ge" | "le"): void;
+  /** Updates the threshold value. */
+  (e: "update:value", thresholdValue: number): void;
+  /** Emitted when a selection is finalized (value or mode changed). */
+  (e: "select", thresholdValue: number, thresholdMode: "ge" | "le"): void;
 }>();
 
+// [THREAT:] Unsynchronized filter state.
+// [DECISION LOG] The useScoreSelector manages the interaction protocol. The 'select'
+// event ensures that higher-layer filters are immediately notified of changes.
 const {
   isScoreExpanded,
   valuePicker,
@@ -27,6 +57,7 @@ const {
 } = useScoreSelector(props, emit);
 
 defineExpose({
+  /** Expansion state for external visibility (e.g., automated tests or parent logic). */
   isExpanded: isScoreExpanded,
 });
 </script>
@@ -35,6 +66,7 @@ defineExpose({
   <div class="score-pill-group" :class="{ expanded: isScoreExpanded, disabled: props.disabled }">
     <!-- Comparison Mode Toggle -->
     <button
+      v-tactile
       class="mode-toggle"
       @click="toggleMode"
       :disabled="props.disabled"
@@ -46,7 +78,7 @@ defineExpose({
     </button>
 
     <!-- Main Trigger / Label -->
-    <button class="sp-trigger" @click="toggleExpand" :disabled="props.disabled">
+    <button v-tactile class="sp-trigger" @click="toggleExpand" :disabled="props.disabled">
       <span class="sp-label">{{ props.value }}</span>
       <span class="sp-chevron" :class="{ rotated: isScoreExpanded }">
         <Icon name="chevron_down" size="14" />
@@ -56,13 +88,14 @@ defineExpose({
     <!-- Dynamic Value Picker (Horizontal Scroll) -->
     <div v-if="isScoreExpanded" ref="valuePicker" class="value-picker">
       <button
-        v-for="val in thresholds"
-        :key="val"
+        v-for="threshold in thresholds"
+        :key="threshold"
+        v-tactile
         class="val-opt"
-        :class="{ active: props.value === val }"
-        @click="selectValue(val)"
+        :class="{ active: props.value === threshold }"
+        @click="selectValue(threshold)"
       >
-        {{ val }}
+        {{ threshold }}
       </button>
     </div>
   </div>
@@ -74,15 +107,17 @@ defineExpose({
   align-items: center;
   background: var(--sys-color-surface-container-highest);
   border-radius: 12px;
-  padding: 3px;
-  gap: 2px;
+  padding: 4px;
+  gap: 4px;
   transition: all 0.4s var(--sys-motion-spring);
   border: 1px solid var(--sys-color-outline-variant);
-  min-width: 84px;
+  min-width: 92px;
+  height: 48px; /* 48px Mobile Footprint (Target B.2) */
   position: relative;
   /* Default: Compact width, only what's needed */
   flex: 0 0 auto;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .score-pill-group.expanded {
@@ -102,9 +137,9 @@ defineExpose({
 }
 
 .mode-toggle {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   border: none;
   background: var(--sys-color-primary-container);
   color: var(--sys-color-on-primary-container);
@@ -121,7 +156,7 @@ defineExpose({
 }
 
 .mode-symbol {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
 }
@@ -131,16 +166,16 @@ defineExpose({
   border: none;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 6px;
-  height: 30px;
+  gap: 6px;
+  padding: 0 10px;
+  height: 40px;
   color: var(--sys-color-on-surface);
   cursor: pointer;
   justify-content: center;
 }
 
 .sp-label {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
   min-width: 24px;
@@ -161,7 +196,7 @@ defineExpose({
 .value-picker {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 0 4px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -188,14 +223,14 @@ defineExpose({
 }
 
 .val-opt {
-  height: 28px;
-  min-width: 36px;
-  padding: 0 6px;
-  border-radius: 7px;
+  height: 36px;
+  min-width: 44px;
+  padding: 0 8px;
+  border-radius: 8px;
   border: none;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 850;
   font-family: var(--sys-font-family-mono);
   cursor: pointer;

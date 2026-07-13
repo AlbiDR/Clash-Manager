@@ -1,18 +1,39 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /**
- * // SPDX-License-Identifier: GPL-3.0-only
- * // Copyright (C) 2026 AlbiDR
+ * MODULE: SORT OPTIONS METADATA (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: Authoritative Single Source of Truth for list sorting metadata.
+ * Facilitates deconstructed UI presentation by decoupling labels and logic.
+ * ----------------------------------------------------------------------------
  *
- * SHARED SORT DESCRIPTIONS (Deconstructed v6.8)
- *
- * Centralized documentation for list sorting strategies.
- * Split into 'short' (header summary) and 'full' (overlay details).
+ * @remarks
+ * Architectural Context:
+ * - Layer: Layer 1 (@core)
+ * - Role: Presentation Orchestration Metadata (ADR Section II).
+ * - Impact: Drives the header summary and detailed overlay documentation
+ *   for the Leaderboard and Recruiter views.
  */
 
+/**
+ * Represents a deconstructed description for a sorting strategy.
+ */
 export interface SortDescription {
+  /** Concise, single-sentence summary for header display. */
   short: string;
+  /** Detailed Markdown-enabled explanation for the info overlay. */
   full: string;
 }
 
+/**
+ * Authoritative registry of shared and feature-specific sort descriptions.
+ *
+ * @remarks
+ * Values are annotated with Markdown to support rich text rendering in the
+ * UI info overlays. Logic details are kept in sync with the actual
+ * comparator implementations in sortStrategies.ts.
+ */
 export const SORT_DESCRIPTIONS: Record<string, SortDescription> = {
   // --- SHARED ---
   name: {
@@ -70,6 +91,10 @@ export const SORT_DESCRIPTIONS: Record<string, SortDescription> = {
 
 /**
  * UI SORT OPTIONS: Leaderboard
+ *
+ * @remarks
+ * Defines the available sorting strategies for the Clan Roster.
+ * Links labels to their respective metadata in SORT_DESCRIPTIONS.
  */
 export const LEADERBOARD_SORT_OPTIONS = [
   { label: "Performance", value: "score", desc: SORT_DESCRIPTIONS.performance.short, fullDesc: SORT_DESCRIPTIONS.performance.full },
@@ -83,6 +108,10 @@ export const LEADERBOARD_SORT_OPTIONS = [
 
 /**
  * UI SORT OPTIONS: Recruiter
+ *
+ * @remarks
+ * Defines the available sorting strategies for the Headhunter pool.
+ * Links labels to their respective metadata in SORT_DESCRIPTIONS.
  */
 export const RECRUITER_SORT_OPTIONS = [
   { label: "Potential", value: "score", desc: SORT_DESCRIPTIONS.potential.short, fullDesc: SORT_DESCRIPTIONS.potential.full },

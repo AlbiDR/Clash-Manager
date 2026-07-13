@@ -3,10 +3,10 @@ import path from "path";
 
 /**
  * ============================================================================
- * 🛠️ SCRIPT: GENERATE ASSETLINKS (TypeScript Edition)
+ * SCRIPT: GENERATE ASSETLINKS (TypeScript Edition)
  * ----------------------------------------------------------------------------
- * 📝 DESCRIPTION: Generates the Android Assetlinks JSON for Digital Asset Links.
- * 🏷️ VERSION: 2.0.0
+ * DESCRIPTION: Generates the Android Assetlinks JSON for Digital Asset Links.
+ * VERSION: 2.1.0
  * ============================================================================
  */
 
@@ -24,7 +24,7 @@ interface AssetLink {
 const fingerprint = (process as any).argv[2];
 
 if (!fingerprint) {
-  console.error("❌ Please provide the SHA-256 fingerprint as an argument.");
+  console.error("[ERROR] Please provide the SHA-256 fingerprint as an argument.");
   (process as any).exit(1);
 }
 
@@ -48,8 +48,8 @@ if (!fs.existsSync(dirPath)) {
 
 try {
   fs.writeFileSync(outputPath, JSON.stringify(assetLinks, null, 2));
-  console.log(`✅ Generated assetlinks.json at ${outputPath}`);
+  console.log(`[OK] Generated assetlinks.json at ${outputPath}`);
 } catch (error: any) {
-  console.error(`❌ Failed to write assetlinks.json: ${error.message}`);
+  console.error(`[ERROR] Failed to write assetlinks.json: ${error.message}`);
   (process as any).exit(1);
 }

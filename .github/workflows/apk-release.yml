@@ -1,0 +1,163 @@
+# Reproducible APK release build. The native Java source lives in APK/src/;
+# build-apk.sh compiles it into APK/android/classes.dex locally before pushing.
+# This workflow picks up committed changes to APK/android/ or APK/src/, builds,
+# signs, and publishes the versioned release APK.
+#
+# Path filter rules:
+#   Included : APK/src/** (Java source), APK/android/** (manifest, resources, dex)
+#   Included : APK/verify-apk-integrity.mjs (integrity gate used by this workflow)
+#   Excluded : APK/android/classes.dex  - committed by this workflow itself; excluding
+#              prevents the self-triggering loop after the build commits it back.
+#   Excluded : APK/release/**            - build output, never an input.
+#   Excluded : APK/**/*.md               - documentation only, no effect on the binary.
+#
+# Signing material comes from repo Secrets (the keystore itself is NOT in the
+# repo): ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
+# ANDROID_KEY_PASSWORD / ANDROID_KEY_ALIAS.
+name: APK Release Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["Beta", "Stable"]
+    paths:
+      - "APK/src/**"
+      - "APK/android/**"
+      - "APK/verify-apk-integrity.mjs"
+      - ".github/workflows/apk-release.yml"
+      - "!APK/android/classes.dex"
+      - "!APK/release/**"
+      - "!APK/**/*.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-sign-verify:
+    runs-on: ubuntu-latest
+    env:
+      BT_VERSION: "35.0.0"
+      APKTOOL_VERSION: "3.0.2"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android build-tools ${{ env.BT_VERSION }}
+        run: sdkmanager "build-tools;${{ env.BT_VERSION }}"
+
+      - name: Download apktool ${{ env.APKTOOL_VERSION }}
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/apktool.jar" \
+            "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar"
+
+      - name: Extract APK version from config
+        id: version
+        run: |
+          VERSION=$(grep "versionName:" APK/android/apktool.yml | awk '{print $2}')
+          echo "APK version found: $VERSION"
+          echo "val=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build APK from APK/android (apktool)
+        run: java -jar "$RUNNER_TEMP/apktool.jar" b APK/android -o "$RUNNER_TEMP/fresh-unsigned.apk"
+
+      - name: Decode signing keystore from secret
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
+
+      - name: Zipalign + sign
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          VERSION: ${{ steps.version.outputs.val }}
+        run: |
+          BT="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}"
+          "$BT/zipalign" -f -p 4 "$RUNNER_TEMP/fresh-unsigned.apk" "$RUNNER_TEMP/fresh-aligned.apk"
+          "$BT/apksigner" sign \
+            --ks "$RUNNER_TEMP/release.keystore" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass "env:KS_PASS" --key-pass "env:KEY_PASS" \
+            --out "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" "$RUNNER_TEMP/fresh-aligned.apk"
+          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/clashmanager-v${VERSION}.apk"
+
+      - name: Native-layer integrity gate
+        env:
+          AAPT2: ${{ env.ANDROID_SDK_ROOT }}/build-tools/35.0.0/aapt2
+          VERSION: ${{ steps.version.outputs.val }}
+        run: |
+          export AAPT2="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}/aapt2"
+          node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager-v${VERSION}.apk"
+
+      - name: Commit signed APK back to repository
+        env:
+          VERSION: ${{ steps.version.outputs.val }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          
+          # Clean any old versioned APK files from release to maintain a single release binary
+          git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
+          
+          # Copy the fresh signed build to the destination path
+          mkdir -p APK/release
+          cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/release/clashmanager-v${VERSION}.apk
+          
+          # Track the new APK file
+          git add APK/release/clashmanager-v${VERSION}.apk
+          
+          if git diff --cached --quiet; then
+            echo "No APK changes to commit"
+          else
+            git commit -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
+            
+            # Fetch latest remote changes
+            git fetch origin Beta
+            
+            # If the remote has moved, reset branch pointer but keep our new APK file intact
+            if [ "$(git rev-parse HEAD~1)" != "$(git rev-parse origin/Beta)" ]; then
+              echo "Remote branch moved. Syncing and resolving conflict..."
+              git reset --soft origin/Beta
+              
+              # Re-stage our fresh APK, ignoring any remote version binary
+              git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
+              mkdir -p APK/release
+              cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/release/clashmanager-v${VERSION}.apk
+              git add APK/release/clashmanager-v${VERSION}.apk
+              git commit --amend -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
+            fi
+            
+            git push origin HEAD:Beta || {
+              echo "Push failed. Checking if target commit is already on remote..."
+              git fetch origin Beta
+              git log origin/Beta -1 --oneline | grep -q "update signed release APK to v${VERSION}" \
+                && echo "Target binary update already pushed by another process." \
+                || exit 1
+            }
+          fi
+
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+
+      - name: Upload signed APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clashmanager-signed-apk
+          path: ${{ runner.temp }}/clashmanager-v${{ steps.version.outputs.val }}.apk
+          if-no-files-found: error

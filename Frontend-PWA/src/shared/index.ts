@@ -3,6 +3,7 @@
 
 // [UI] UI Components
 export { default as Icon } from "./ui/Icon.vue";
+export { default as BaseSelect } from "./ui/BaseSelect.vue";
 export { default as BaseCard } from "./ui/BaseCard.vue";
 export { default as BaseCardSkeleton } from "./ui/BaseCardSkeleton.vue";
 export { default as SettingsCard } from "./ui/SettingsCard.vue";
@@ -34,9 +35,13 @@ export { default as FloatingDock } from "./ui/FloatingDock.vue";
 export { default as AppFooter } from "./ui/AppFooter.vue";
 export { default as HeaderInfoOverlay } from "./ui/HeaderInfoOverlay.vue";
 export { default as DurationInput } from "./ui/DurationInput.vue";
+export { default as BaseSegmentedControl } from "./ui/BaseSegmentedControl.vue";
 export { default as BaseHistoryChart } from "./ui/BaseHistoryChart.vue";
 export { default as WarHistoryChart } from "./ui/WarHistoryChart.vue";
 export { default as VoyageHistoryChart } from "./ui/VoyageHistoryChart.vue";
+export { default as EventManagement } from "./ui/EventManagement.vue";
+export { default as VoyageBanner } from "./ui/VoyageBanner.vue";
+export { default as VoyageSetupForm } from "./ui/VoyageSetupForm.vue";
 
 // Directives
 export { vTactile } from "./directives/vTactile";
@@ -59,6 +64,12 @@ export { useStatusPill } from "./composables/useStatusPill";
 export { useBenchmarkedStat } from "./composables/useBenchmarkedStat";
 
 export { useCardMechanics } from "./composables/useCardMechanics";
+export { useHaptics, resetHapticsState } from "./composables/useHaptics";
+export { useWakeLock } from "./composables/useWakeLock";
+export { useVoyageStatus } from "./composables/useVoyageStatus";
+export { useVoyageForm } from "./composables/useVoyageForm";
+export { useVoyageStore } from "./composables/useVoyageStore";
+export { useVoyageActions } from "./composables/useVoyageActions";
 
 // Utilities
 export { formatRole } from "./utils/game";

@@ -6,8 +6,8 @@
 
 # Clash Manager
 
-[![Backend](https://img.shields.io/badge/Backend-v14.0.0-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
-[![Client](https://img.shields.io/badge/Client-v14.0.0-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
+[![Backend](https://img.shields.io/badge/Backend-v14.31.2-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
+[![Client](https://img.shields.io/badge/Client-v14.31.2-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
 [![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](.github/authoritative-design-references/CleanStack%20Architecture.md)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 
@@ -62,7 +62,7 @@ The system replaces intuition with a **Complex Valuation Metric** that sorts pla
 <details>
 <summary><strong>Internal Metrics: Clan Roster (RPeS & PeS)</strong></summary>
 
-- **RPeS (Raw Performance Score)**: The absolute value derived from a member's contributions while being part of the clan (donations, war fame, war participation, trophies, tenure Clan Voyage participation).
+- **RPeS (Raw Performance Score)**: The absolute value derived from a member's contributions while being part of the clan (donations, war fame, war participation, trophies, tenure, Clan Voyage participation).
 - **PeS (Performance Score)**: A relative percentage (0-100%) normalized against active clan benchmarks and adjusted via Inertia & Heritage logic.
 - **Inertia & Heritage**: Algorithmic decay applied to stagnant profiles, balanced by momentum tracking for incoming recruits to eliminate historic stat bias.
 
@@ -122,6 +122,9 @@ The command center. A **Vue 3.5 Progressive Web Application** designed for admin
 
 ## Architectural Topology
 
+<details>
+<summary><strong>View System Data Flow</strong></summary>
+
 The system utilizes a linear, high-integrity data flow with sub-second interaction latency.
 
 ```mermaid
@@ -149,12 +152,42 @@ flowchart TD
     UI -->|Manual Trigger| Edge
 ```
 
+</details>
+
+---
+<br />
+
+## Android Wrapper Application (APK)
+
+The Android wrapper integrates a custom Kotlin native layer directly on top of the PWA shell. The decoded, rebuildable APK source tree is tracked directly in the repository at [APK/README.md](file:///Users/ADR/Documents/Github/Projects/clash-manager/APK/README.md).
+
+The launcher and theme assets are managed via a programmatic icon generation pipeline:
+
+| Layer | Source Description |
+| :--- | :--- |
+| `background` | `@color/ic_launcher_background` - solid brand `#0B0E14` |
+| `foreground` | Logo scaled to fit the 108dp safe zone based on vector dimensions |
+| `monochrome` | White silhouette for themed launcher support |
+| legacy | Pre-masked square and circular PNG fallbacks for legacy systems |
+
+### Build and Invalidation Protocol
+
+Generate the icon set and compile the project using local scripts:
+
+```bash
+pnpm icons:android                      # Regenerate the adaptive icon set
+pnpm icons:android : --preview         # Generate launcher preview templates
+pnpm apk:check                          # Build and run verification checks locally
+```
+
+The icon generator is idempotent and validates asset coordinates against the active res tree. The target root can be overridden with `ANDROID_RES_DIR`.
+
 ---
 <br />
 
 ## Nightly Pipeline
 
-The Nightly pipeline is an automated maintenance and optimization engine designed as a **9-stage multi-agent system** to enforce structural purity, optimize performance, and synchronize system documentation. Running nightly on the `Nightly` branch, this sequenced pipeline executes key phases to keep the monorepo pristine:
+The Nightly pipeline is an automated maintenance and optimization engine designed as a **12-stage multi-agent system** to enforce structural purity, optimize performance, and synchronize system documentation. Running nightly on the `Nightly` branch, this sequenced pipeline executes key phases to keep the monorepo pristine:
 
 1.  **Harden**: The Runtime Integrity Auditor. Secures validation boundaries and eliminates the "any" plague across the stack.
 2.  **Verify**: The Logic Integrity Auditor. Proves system integrity through automated test suite execution and logic proofs.
@@ -165,6 +198,9 @@ The Nightly pipeline is an automated maintenance and optimization engine designe
 7.  **Version Integrity**: The Version Consistency Auditor. Eliminates version drift and enforces semantic versioning across the monorepo.
 8.  **Dependency Audit**: The External Health Auditor. Monitors external dependency health and security.
 9.  **Refactor**: The Structural Surgery Engineer. Orchestrates large-scale structural improvements and architectural migrations.
+10. **APK & PWA Wrapper Integrity Auditor**: Secures shell configuration boundaries, runtime safety, and configuration drift.
+11. **APK & Native Wrapper Optimizations**: Optimizes compilation assets, native caches, and native webview performance bounds.
+12. **Hybrid Shell UX & UI Auditor**: Verifies fluid native-wrapper responsiveness, screen transitions, and gesture integration under webview contexts.
 
 ---
 <br />

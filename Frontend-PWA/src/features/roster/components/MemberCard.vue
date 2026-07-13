@@ -30,13 +30,14 @@ import {
   StatisticItem,
   WarHistoryChart,
   VoyageHistoryChart,
-  formatRole
+  BaseSegmentedControl,
+  formatRole,
 } from "@shared";
 import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
 import { formatTimeAgo, formatNumber } from "@core";
 
-const activeChart = ref<'war' | 'voyage'>('war');
+const activeChart = ref<"war" | "voyage">("war");
 
 const props = defineProps<ConsoleCardMetadata & {
   /** Unique player tag identifier. */
@@ -90,7 +91,7 @@ const ariaLabel = computed(() => {
     <template #score-section>
       <ScoreBadge
         :score="props.member.performanceScore"
-        :dt="props.member.dt"
+        :score-delta="props.member.dt"
         :performance-raw-score="props.member.performanceRawScore"
         context="lb"
       />
@@ -130,18 +131,15 @@ const ariaLabel = computed(() => {
         />
       </StatsGrid>
 
-      <div class="chart-toggle-container">
-        <button 
-          class="toggle-btn hit-target" 
-          :class="{ active: activeChart === 'war' }"
-          @click.stop="activeChart = 'war'"
-        >War</button>
-        <button 
-          class="toggle-btn hit-target" 
-          :class="{ active: activeChart === 'voyage' }"
-          @click.stop="activeChart = 'voyage'"
-        >Voyage</button>
-      </div>
+      <BaseSegmentedControl
+        v-model="activeChart"
+        :options="[
+          { label: 'War', value: 'war' },
+          { label: 'Voyage', value: 'voyage' }
+        ]"
+        compact
+        class="chart-toggle-margin"
+      />
 
       <WarHistoryChart v-if="activeChart === 'war'" :history="props.member.d.hist" :loading="props.appIsRefreshing" />
       <VoyageHistoryChart v-else :history="props.member.d.v_hist" :loading="props.appIsRefreshing" />
@@ -158,32 +156,8 @@ const ariaLabel = computed(() => {
 <style scoped>
 /* Content specific styles only */
 
-.chart-toggle-container {
-  display: flex;
+.chart-toggle-margin {
   margin-top: 16px;
-  background: var(--sys-color-surface-container);
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.toggle-btn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--sys-color-on-surface-variant);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toggle-btn.active {
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-on-surface);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .card-actions-margin {

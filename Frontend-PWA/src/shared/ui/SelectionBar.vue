@@ -28,6 +28,7 @@
 
 import ScoreThresholdSelector from "./ScoreThresholdSelector.vue";
 import { useSelectionBar } from "../composables/useSelectionBar";
+import { useHaptics } from "@shared/composables/useHaptics";
 
 const props = defineProps<{
   count: number;
@@ -48,6 +49,15 @@ const {
   isActive,
 } = useSelectionBar(props);
 
+const haptics = useHaptics();
+
+/**
+ * Triggers haptic feedback on interaction start.
+ */
+function onInteractionStart() {
+  haptics.tap();
+}
+
 </script>
 
 <template>
@@ -63,7 +73,7 @@ const {
         v-model:mode="filterMode"
         v-model:value="filterValue"
         :disabled="props.loading"
-        @select="(v, m) => emit('select-score', v, m)"
+        @select="(thresholdValue, thresholdMode) => emit('select-score', thresholdValue, thresholdMode)"
       />
     </div>
 
@@ -88,6 +98,7 @@ const {
             ? emit('clear')
             : emit('select-score', filterValue, filterMode)
         "
+        @pointerdown="onInteractionStart"
       >
         <Transition name="text-morph" mode="out-in">
           <span v-if="!isActive" key="select">Select</span>

@@ -10,12 +10,14 @@ import {
   vTactile,
   vTooltip,
   Icon,
+  useWakeLock,
 } from "@shared";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { registerVisibilityRefresh } from "@core";
 
 import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
+import { DataLoaderPlugin } from "vue-router/experimental";
 import { baseStyles } from "@core/theme/base";
 import { animationStyles } from "@core/theme/animations";
 import { skeletonStyles } from "@core/theme/skeletons";
@@ -91,6 +93,9 @@ async function bootstrap() {
     const pinia = createPinia();
     
     app.use(pinia);
+    // [VR5] DataLoaderPlugin must be registered BEFORE router so it can
+    // install its navigation guards ahead of any route-level guards.
+    app.use(DataLoaderPlugin, { router });
     app.use(router);
     app.component("Icon", Icon);
 
@@ -124,17 +129,26 @@ async function bootstrap() {
     import(
       /* webpackChunkName: "core-data" */
       "@core"
-    ).then(({ idb, useApiState, useClashDataStore, useStoragePersistence, useWakeLock }) => {
+    ).catch((coreLoadError) => {
+      console.error("[App] Core module failed to load - reloading:", coreLoadError);
+      const retries = parseInt(sessionStorage.getItem('cm_boot_retry') || '0');
+      if (retries < 2) {
+        sessionStorage.setItem('cm_boot_retry', String(retries + 1));
+        window.location.reload();
+      }
+      return null;
+    }).then((mod) => {
+      if (!mod) return;
+      const { idb, useApiState, useClashDataStore, useStoragePersistence } = mod as Awaited<typeof import("@core")>;
       const clashDataStore = useClashDataStore();
       const apiState = useApiState();
       const wakeLock = useWakeLock();
       const storagePersistence = useStoragePersistence();
 
-      // INSTANT BOOT & LIVE DATA FIRST: Load local cache and trigger remote hydration in parallel
-      // removing ping-latency delays on boot.
-      clashDataStore.loadLocal();
-      clashDataStore.refreshFromSupabase();
-
+      // [VR5] Data hydration (loadLocal + refreshFromSupabase) is now owned
+      // by the route-level DataLoaderPlugin. The loader fires on the very
+      // first navigation (/roster), ensuring the Pinia store is hydrated
+      // before the view renders without any imperative boot call here.
       apiState.init();
 
       // PERFORMANCE: High-Speed SUPABASE Fetch fallback

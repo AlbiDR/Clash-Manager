@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon } from "@shared";
+import { Icon, vTactile, useHaptics } from "@shared";
 import { ref } from "vue";
 const props = defineProps<{
   title: string;
@@ -11,9 +11,11 @@ const props = defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
+const haptics = useHaptics();
 const isCollapsed = ref(!props.initiallyExpanded);
 
 const toggleCollapse = () => {
+  haptics.tap();
   isCollapsed.value = !isCollapsed.value;
 };
 </script>
@@ -24,7 +26,7 @@ const toggleCollapse = () => {
     :class="{ collapsed: isCollapsed }"
     :aria-busy="loading ? 'true' : 'false'"
   >
-    <div class="card-header" @click="toggleCollapse">
+    <div class="card-header" @click="toggleCollapse" v-tactile>
       <div class="header-main">
         <Icon :name="icon" size="20" class="header-icon" />
         <h3>{{ title }}</h3>
@@ -47,30 +49,28 @@ const toggleCollapse = () => {
 <style scoped>
 .settings-card {
   background: var(--sys-color-surface-container);
-  border-radius: 24px;
+  border-radius: var(--sys-shape-corner-l);
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
-  margin: 0; /* Standardized to 0, handled by parent gap */
+  margin: 0;
   transition:
-    transform 0.2s var(--sys-motion-spring),
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.25s ease;
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    box-shadow var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
 }
 
 .settings-card:not(.collapsed) {
   background: var(--sys-color-surface-container-high);
   box-shadow: var(--sys-elevation-3);
-  transform: scale(1.02); /* Retain the 'pop' without the height jump */
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
 .card-header {
-  padding: 16px 20px;
+  padding: var(--sys-space-16) var(--sys-space-20);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--sys-space-12);
   cursor: pointer;
   user-select: none;
 }
@@ -82,12 +82,12 @@ const toggleCollapse = () => {
 .header-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .card-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--sys-typescale-player);
   font-weight: 850;
   color: var(--sys-color-on-surface);
 }
@@ -99,7 +99,7 @@ const toggleCollapse = () => {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .expand-btn {
@@ -109,9 +109,9 @@ const toggleCollapse = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: var(--sys-space-4);
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
   opacity: 0.5;
 }
 
@@ -122,13 +122,13 @@ const toggleCollapse = () => {
 }
 
 .card-body {
-  padding: 20px;
+  padding: var(--sys-space-20);
 }
 
 /* Collapse Transition */
 .collapse-enter-active,
 .collapse-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
   max-height: 1000px;
   opacity: 1;
 }

@@ -1,10 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ConsoleLayout, SkeletonSettingsCard } from "@shared";
+import { ConsoleLayout, SkeletonSettingsCard, EventManagement } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
-import { defineAsyncComponent } from "vue";
 
 // Settings Components
 import {
@@ -15,9 +14,8 @@ import {
   NetworkSettings,
   BackendRefresher,
   RecoverySettings,
+  UsefulLinksSettings,
 } from "../components";
-
-const EventManagement = defineAsyncComponent(() => import("../../voyage/components/EventManagement.vue"));
 
 const {
   modules,
@@ -42,6 +40,7 @@ const { isShowcaseMode } = useShowcaseMode();
       <ModeSettings :initially-expanded="isShowcaseMode" />
       <NetworkSettings :initially-expanded="isShowcaseMode" />
       <BackendRefresher v-if="modules.backendRefresher" :initially-expanded="isShowcaseMode" />
+      <UsefulLinksSettings :initially-expanded="isShowcaseMode" />
       <RecoverySettings :initially-expanded="isShowcaseMode" />
     </div>
   </ConsoleLayout>
@@ -49,9 +48,9 @@ const { isShowcaseMode } = useShowcaseMode();
 
 <style scoped>
 .settings-content {
-  padding: 0 16px; /* Standard horizontal inner padding */
+  padding: 0 var(--sys-space-16);
   display: flex;
   flex-direction: column;
-  gap: 12px; /* Uniform card spacing */
+  gap: var(--sys-space-12);
 }
 </style>

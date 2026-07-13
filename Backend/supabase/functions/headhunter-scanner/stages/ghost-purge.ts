@@ -4,7 +4,7 @@
 import { supabase } from "../client.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.2";
 import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
 /**
@@ -23,31 +23,31 @@ export async function runGhostPurge(
     console.log(`[GHOST_PURGE] Starting hot-zone audit of top 50 active recruits...`);
 
     // --- 1. Pull the top 50 active recruits by RPoS ---
-    const { data: rawHotZoneTargets, error: targetsError } = await supabase.rpc('get_hot_zone_recruits', { p_limit: 50 });
+    const { data: hotZoneTargetsRaw, error: hotZoneTargetsError } = await supabase.rpc('get_hot_zone_recruits', { p_limit: 50 });
 
-    if (targetsError) {
-        console.error(`[GHOST_PURGE] Failed to fetch hot-zone targets: ${targetsError.message}`);
-        logAudit('GHOST_PURGE', 'error', { message: targetsError.message });
+    if (hotZoneTargetsError) {
+        console.error(`[GHOST_PURGE] Failed to fetch hot-zone targets: ${hotZoneTargetsError.message}`);
+        logAudit('GHOST_PURGE', 'error', { message: hotZoneTargetsError.message });
         return 0;
     }
 
     // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
     // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists.
-    // [DECISION LOG] Explicitly validating the shape of rawHotZoneTargets before processing.
-    const targetsValidation = v.safeParse(v.array(StaleRecruitSchema), rawHotZoneTargets ?? []);
+    // [DECISION LOG] Explicitly validating the shape of hotZoneTargetsRaw before processing.
+    const hotZoneTargetsIntegrity = v.safeParse(v.array(StaleRecruitSchema), hotZoneTargetsRaw ?? []);
 
     logAudit('GHOST_PURGE', 'integrity_checked', {
         stage: 'TARGET_FETCH',
-        passed: targetsValidation.success,
-        details: targetsValidation.success ? 'Hot-zone targets validated' : 'Malformed hot-zone targets payload'
+        passed: hotZoneTargetsIntegrity.success,
+        details: hotZoneTargetsIntegrity.success ? 'Hot-zone targets validated' : 'Malformed hot-zone targets payload'
     });
 
-    if (!targetsValidation.success || targetsValidation.output.length === 0) {
+    if (!hotZoneTargetsIntegrity.success || hotZoneTargetsIntegrity.output.length === 0) {
         console.log(`[GHOST_PURGE] Pool is empty or malformed. Nothing to audit.`);
         return 0;
     }
 
-    const targets = targetsValidation.output;
+    const targets = hotZoneTargetsIntegrity.output;
     console.log(`[GHOST_PURGE] Auditing ${targets.length} high-priority recruits...`);
 
     let ghostsEvicted = 0;
@@ -56,14 +56,14 @@ export async function runGhostPurge(
     // --- 2. Batch processing to respect CoC API rate limits and Edge Function resource limits ---
     // [DECISION LOG] Refactored to use processBatch for consistent concurrency orchestration.
     // [THREAT:] Prevents Error 546 (Worker Resource Limit) by capping active fetch tasks.
-    const purgeTasks = targets.map((targetRecruit) => async () => {
+    const purgeTasks = targets.map((recruitCandidate) => async () => {
         try {
-            const royaleApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetRecruit.player_tag)}`);
-            if (!royaleApiResponse.ok) {
+            const playerProfileResponse = await fetchWithRotation(`/players/${encodeURIComponent(recruitCandidate.player_tag)}`);
+            if (!playerProfileResponse.ok) {
                 // [DECISION LOG] 404 indicates the player likely no longer exists (tag change/deleted).
                 // Purge immediately to clean the hot-zone.
-                if (royaleApiResponse.status === 404) {
-                    await supabase.rpc('purge_recruits', { p_tags: [targetRecruit.player_tag] });
+                if (playerProfileResponse.status === 404) {
+                    await supabase.rpc('purge_recruits', { p_tags: [recruitCandidate.player_tag] });
                     ghostsEvicted++;
                 }
                 return;
@@ -73,38 +73,38 @@ export async function runGhostPurge(
             // [THREAT:] External API data is un-trusted. Replacing implicit 'any' with 'unknown'
             // to enforce strict narrowing and prevent runtime crashes or logic corruption
             // from unexpected Royale API changes.
-            const unvalidatedPlayerProfile: unknown = await royaleApiResponse.json();
-            const profileValidation = v.safeParse(RoyalePlayerSchema, unvalidatedPlayerProfile);
+            const playerProfileRaw: unknown = await playerProfileResponse.json();
+            const playerProfileIntegrity = v.safeParse(RoyalePlayerSchema, playerProfileRaw);
 
-            if (!profileValidation.success) {
-                logAudit('GHOST_PURGE', 'error', { tag: targetRecruit.player_tag, message: 'Player profile validation failed' });
+            if (!playerProfileIntegrity.success) {
+                logAudit('GHOST_PURGE', 'error', { tag: recruitCandidate.player_tag, message: 'Player profile validation failed' });
                 return;
             }
 
-            const playerProfile = profileValidation.output;
+            const playerProfileSnapshot = playerProfileIntegrity.output;
             stats.profiles_scanned++;
 
             // [DECISION LOG] If the player has a clan tag and it's not ours (checked via exclusionSet),
             // they are considered a "ghost" in the recruitment view and must be evicted.
-            if (playerProfile.clan?.tag && !exclusionSet.has(playerProfile.tag)) {
+            if (playerProfileSnapshot.clan?.tag && !exclusionSet.has(playerProfileSnapshot.tag)) {
                 // Ghost confirmed: player has joined a clan that isn't ours
-                await supabase.rpc('purge_recruits', { p_tags: [playerProfile.tag] });
+                await supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] });
                 ghostsEvicted++;
                 logAudit('GHOST_PURGE', 'called', {
-                    tag: playerProfile.tag,
-                    clan: playerProfile.clan.tag,
+                    tag: playerProfileSnapshot.tag,
+                    clan: playerProfileSnapshot.clan.tag,
                     action: 'evicted_clanned_ghost'
                 });
-                console.log(`[GHOST_PURGE] Evicted ${playerProfile.tag} - joined clan ${playerProfile.clan.tag}`);
+                console.log(`[GHOST_PURGE] Evicted ${playerProfileSnapshot.tag} - joined clan ${playerProfileSnapshot.clan.tag}`);
             } else {
                 // Player is still clanless - refresh their last_scan timestamp so
                 // the stale-rescan (S4) does not redundantly re-check them this cycle
-                touchedTags.push(playerProfile.tag);
+                touchedTags.push(playerProfileSnapshot.tag);
             }
-        } catch (auditError: unknown) {
-            const errorMessage = auditError instanceof Error ? auditError.message : String(auditError);
-            console.warn(`[GHOST_PURGE] Could not audit ${targetRecruit.player_tag}: ${errorMessage}`);
-            stats.errors.push(`GHOST_PURGE:${targetRecruit.player_tag}: ${errorMessage}`);
+        } catch (ghostPurgeExecutionError: unknown) {
+            const errorMessage = ghostPurgeExecutionError instanceof Error ? ghostPurgeExecutionError.message : String(ghostPurgeExecutionError);
+            console.warn(`[GHOST_PURGE] Could not audit ${recruitCandidate.player_tag}: ${errorMessage}`);
+            stats.errors.push(`GHOST_PURGE:${recruitCandidate.player_tag}: ${errorMessage}`);
         }
     });
 

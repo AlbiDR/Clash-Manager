@@ -3,12 +3,12 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import {
-  useHaptics,
   useUiCoordinator,
   useShowcaseMode,
   useBlueprintMode,
   useSystemInfo,
 } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import EmptyState from "./EmptyState.vue";
@@ -114,7 +114,7 @@ watch(
         isHarvesting: state.isHarvesting,
         activeHarvester: state.activeHarvester,
         dismissIcon: state.dismissIcon,
-        onAction: (e: MouseEvent) => emit("fab-action", e),
+        onAction: (fabActionEvent: MouseEvent) => emit("fab-action", fabActionEvent),
         onBlitz: () => emit("fab-blitz"),
         onDismiss: () => emit("fab-dismiss"),
         onGlobalHarvest: () => emit("fab-global-harvest"),
@@ -171,8 +171,8 @@ onUnmounted(() => {
         :loading="displayLoading"
         :remote-info="props.remoteInfo"
         reserve-extra-space
-        @update:search="(val: string) => emit('update:search', val)"
-        @update:sort="(val: string) => emit('update:sort', val)"
+        @update:search="(searchQueryCandidate: string) => emit('update:search', searchQueryCandidate)"
+        @update:sort="(targetSortValue: string) => emit('update:sort', targetSortValue)"
         @refresh="emit('refresh')"
       >
         <template #filters>
@@ -188,7 +188,7 @@ onUnmounted(() => {
             @clear="emit('clear-selection')"
             @done="emit('clear-selection')"
             @select-score="
-              (t: number, m: 'ge' | 'le') => emit('select-score', t, m)
+              (thresholdValue: number, thresholdMode: 'ge' | 'le') => emit('select-score', thresholdValue, thresholdMode)
             "
           />
           <slot name="extra-header" v-else></slot>
@@ -247,13 +247,13 @@ onUnmounted(() => {
   padding-bottom: calc(112px + env(safe-area-inset-bottom));
 }
 .view-content {
-  transition: transform 0.2s var(--sys-motion-standard);
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 .view-content.is-pulling {
   transform: translateY(calc(var(--ptr-offset, 0px) / 2));
 }
 .list-container {
-  padding-bottom: 48px;
+  padding-bottom: var(--sys-space-48);
   position: relative;
 }
 .gpu-contain {
@@ -261,20 +261,20 @@ onUnmounted(() => {
 }
 .ptr-indicator {
   position: absolute;
-  top: -48px;
+  top: calc(-1 * var(--sys-space-48));
   left: 50%;
   transform: translateX(-50%);
-  z-index: 50;
+  z-index: var(--sys-z-sticky);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: var(--sys-space-40);
+  height: var(--sys-space-40);
   border-radius: 50%;
-  background: var(--sys-surf-c);
+  background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--sys-motion-duration-200) ease;
 }
 
 .is-pulling .ptr-indicator,
@@ -286,11 +286,11 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--sys-primary);
+  color: var(--sys-color-primary);
 }
 
 .ptr-icon {
-  transition: transform 0.2s ease;
+  transition: transform var(--sys-motion-duration-200) ease;
   transform: rotate(calc(var(--ptr-offset, 0px) * 2deg));
 }
 

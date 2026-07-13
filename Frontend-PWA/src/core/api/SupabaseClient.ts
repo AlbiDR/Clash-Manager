@@ -83,11 +83,11 @@ export function getApiUrl(): string {
 export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
   try {
     const supabase = createSupabaseClient();
-    const { data, error } = await supabase.rpc('ping');
-    if (error) return { status: 'error', message: error.message };
+    const { data: pingRpcResponse, error: pingRpcError } = await supabase.rpc('ping');
+    if (pingRpcError) return { status: 'error', message: pingRpcError.message };
     return { status: 'success', message: 'Pong' };
-  } catch (err) {
-    return { status: 'error', message: String(err) };
+  } catch (pingHandshakeError) {
+    return { status: 'error', message: String(pingHandshakeError) };
   }
 }
 
@@ -119,8 +119,8 @@ export async function fetchRemote(options?: {
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC 
   // to fetch high-fidelity datasets directly from the authoritative feature views.
   const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
-    supabase.from('roster_view').select('*').abortSignal(signal),
-    supabase.from('headhunter_view').select('*').limit(250).abortSignal(signal),
+    supabase.schema('features').from('roster_view').select('*').abortSignal(signal),
+    supabase.schema('features').from('headhunter_view').select('*').limit(250).abortSignal(signal),
     supabase.schema('substrate').from('pipeline_heartbeat').select('last_success_at').eq('component_id', 'ROYALE_DATA_INGESTOR').single().abortSignal(signal),
     supabase.schema('drivers').from('recruit_blacklist').select('player_tag').abortSignal(signal)
   ]);
@@ -138,9 +138,9 @@ export async function fetchRemote(options?: {
   });
   const blacklistData = v.parse(v.array(BlacklistRowSchema), blacklistResponse.data || []);
   const blacklistTags = blacklistData
-    .map((row) => {
-      const tag = row.player_tag;
-      return tag ? (tag.startsWith("#") ? tag : `#${tag}`) : "";
+    .map((blacklistRow) => {
+      const observedPlayerTag = blacklistRow.player_tag;
+      return observedPlayerTag ? (observedPlayerTag.startsWith("#") ? observedPlayerTag : `#${observedPlayerTag}`) : "";
     })
     .filter(Boolean);
 

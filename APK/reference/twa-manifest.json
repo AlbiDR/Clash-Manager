@@ -1,0 +1,95 @@
+{
+  "packageId": "com.albidr.clashmanager",
+  "host": "albidr.github.io",
+  "name": "Clash Manager",
+  "launcherName": "Clash Manager",
+  "display": "standalone",
+  "themeColor": "#0b0e14",
+  "themeColorDark": "#0b0e14",
+  "navigationColor": "#0b0e14",
+  "navigationColorDark": "#0b0e14",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0b0e14",
+  "enableNotifications": true,
+  "startUrl": "/Clash-Manager/#/roster",
+  "iconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/icon-512.png",
+  "maskableIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/pwa-maskable-192.png",
+  "monochromeIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/pwa-icon-monochrome.svg",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/Users/adr/bubblewrap-project/android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "14.31.2",
+  "appVersionCode": 17120,
+  "shortcuts": [
+    {
+      "name": "Roster",
+      "shortName": "Roster",
+      "url": "https://albidr.github.io/Clash-Manager/#/roster",
+      "chosenIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/icon-192.png",
+      "chosenMaskableIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/pwa-maskable.png"
+    },
+    {
+      "name": "Headhunter",
+      "shortName": "Headhunter",
+      "url": "https://albidr.github.io/Clash-Manager/#/headhunter",
+      "chosenIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/icon-192.png",
+      "chosenMaskableIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/pwa-maskable.png"
+    },
+    {
+      "name": "Settings",
+      "shortName": "Settings",
+      "url": "https://albidr.github.io/Clash-Manager/#/settings",
+      "chosenIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/icon-192.png",
+      "chosenMaskableIconUrl": "https://albidr.github.io/Clash-Manager/assets/icons/pwa-maskable.png"
+    }
+  ],
+  "generatorApp": "clash-manager-apk",
+  "webManifestUrl": "https://albidr.github.io/Clash-Manager/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://albidr.github.io/Clash-Manager/",
+  "minSdkVersion": 21,
+  "shareTarget": {
+    "action": "https://albidr.github.io/Clash-Manager/#/headhunter",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "orientation": "natural",
+  "fingerprints": [
+    {
+      "sha256Fingerprint": "E5:6A:CA:67:08:CA:38:69:A6:0A:E0:81:4A:80:B7:69:3F:67:6F:91:B3:AE:6D:FD:DD:4C:68:5D:1A:2E:70:3A"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [
+    {
+      "protocol": "web+clash",
+      "url": "https://albidr.github.io/Clash-Manager/#/headhunter?query=%s"
+    }
+  ],
+  "fileHandlers": [],
+  "launchHandlerClientMode": [
+    "navigate-existing",
+    "auto"
+  ],
+  "displayOverride": [
+    "standalone",
+    "minimal-ui",
+    "window-controls-overlay"
+  ],
+  "appVersion": "14.31.2"
+}

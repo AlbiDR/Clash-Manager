@@ -5,8 +5,15 @@ import * as v from "valibot";
 import { SafeStringPipe, SafeNumberPipe } from "./BaseSchemas";
 
 /**
- * [GUARD] RECRUIT SCHEMA
- * Domain-compliant schema for potential recruits.
+ * RECRUIT SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Domain-compliant validation schema for potential recruits.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
+ *
+ * [DECISION LOG] Implements strict Valibot piping for string/number safety.
  */
 export const RecruitSchema = v.object({
   id: SafeStringPipe,
@@ -24,8 +31,16 @@ export const RecruitSchema = v.object({
 });
 
 /**
- * [GUARD] SUPABASE HEADHUNTER ROW SCHEMA
- * Validates the raw shape of a row from the headhunter_view.
+ * SUPABASE HEADHUNTER ROW SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Validates the raw shape of a row from the headhunter_view.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
+ *
+ * [THREAT:] Inbound data from Supabase views may contain nulls or missing fields
+ * due to view join failures. This schema enforces defaults and safe pipes.
  */
 export const SbHeadhunterRowSchema = v.object({
   player_name: v.optional(SafeStringPipe, "Unknown"),
@@ -50,14 +65,42 @@ export const SbHeadhunterRowSchema = v.object({
 });
 
 /**
- * [GUARD] RECRUIT TOMBSTONE SCHEMA
- * Validates the collection of dismissed recruit IDs stored in LocalStorage.
+ * RECRUIT TOMBSTONE SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Validates the collection of dismissed recruit IDs stored in LocalStorage.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
  */
 export const RecruitTombstoneSchema = v.array(v.string());
 
 /**
- * [GUARD] HARVESTED PLAYER SCHEMA
- * Validates the shape of a single player harvested from the leaderboard proxy.
+ * DISMISS RESPONSE SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Validates the shape of dismissal RPC results.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
+ *
+ * [DECISION LOG] Replaced unsafe type assertions in RecruitClient with
+ * strict schema validation via this contract.
+ */
+export const DismissResponseSchema = v.object({
+  success: v.boolean(),
+  count: v.optional(SafeNumberPipe),
+  message: v.optional(SafeStringPipe),
+});
+
+/**
+ * HARVESTED PLAYER SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Validates the shape of a single player harvested from the leaderboard proxy.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
  */
 export const HarvestedPlayerSchema = v.object({
   tag: SafeStringPipe,
@@ -66,10 +109,32 @@ export const HarvestedPlayerSchema = v.object({
 });
 
 /**
- * [GUARD] LEADERBOARD HARVEST SCHEMA
- * Authoritative validation boundary for the query-royale-api response.
+ * LEADERBOARD HARVEST SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Authoritative validation boundary for the query-royale-api response.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
  */
 export const LeaderboardHarvestSchema = v.object({
   items: v.array(HarvestedPlayerSchema),
   region: v.optional(SafeStringPipe, "Unknown")
 });
+
+/**
+ * BLACKLIST EVENT SCHEMA
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core API (@core/api)
+ * - **Role:** Validates the shape of Realtime payloads from drivers.recruit_blacklist.
+ * - **Satisfies ADR Section III: Validation Boundaries.**
+ *
+ * [THREAT:] Unvalidated realtime payloads can cause runtime crashes in feature-layer
+ * subscribers if the database trigger or replication payload shape changes.
+ */
+export const BlacklistEventSchema = v.union([
+  v.object({ new: v.object({ player_tag: SafeStringPipe }) }),
+  v.object({ old: v.object({ player_tag: SafeStringPipe }) })
+]);

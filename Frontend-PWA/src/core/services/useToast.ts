@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { useHaptics } from "./useHaptics";
 import { ref } from "vue";
 
 /**
@@ -41,7 +40,7 @@ const processingIds = new Set<string>();
  * durations and semantic haptic feedback.
  *
  * [ARCHITECTURE] ADR LAYER: @core (Layer 1)
- * - Permitted Imports: Other @core services (e.g., useHaptics), Vue reactivity.
+ * - Permitted Imports: Other @core services, Vue reactivity.
  * - Forbidden Imports: Any component or service from @shared or @features.
  *
  * @returns
@@ -52,13 +51,10 @@ const processingIds = new Set<string>();
  * - `success/error/info/undo`: Semantic shorthand methods.
  *
  * @sideeffects
- * - TRIGGERS device haptics via `useHaptics`.
  * - SCHEDULES `setTimeout` for automatic dismissal.
  * - MUTATES the global `toasts` reactive state.
  */
 export function useToast() {
-  const haptics = useHaptics();
-
   /**
    * Internal helper to create and track a new toast notification.
    *
@@ -93,12 +89,6 @@ export function useToast() {
 
     toasts.value.push(toast);
 
-    // [GUARD] Logic: Semantic Haptics
-    // Rationale: Provides physical confirmation aligned with the notification type.
-    if (options.type === "error") haptics.error();
-    else if (options.type === "success") haptics.success();
-    else haptics.tap();
-
     // [GUARD] Logic: Memory-safe auto-dismiss (Memory #9)
     // Rationale: Automatically cleans up DOM elements and timer references.
     if (toast.duration !== 0) {
@@ -116,11 +106,11 @@ export function useToast() {
    * @param id - The ID of the toast to remove.
    */
   function remove(id: string) {
-    const idx = toasts.value.findIndex((t) => t.id === id);
-    if (idx !== -1) {
-      const toast = toasts.value[idx];
+    const toastIndex = toasts.value.findIndex((activeToast) => activeToast.id === id);
+    if (toastIndex !== -1) {
+      const toast = toasts.value[toastIndex];
       if (toast && toast.timer) clearTimeout(toast.timer);
-      toasts.value.splice(idx, 1);
+      toasts.value.splice(toastIndex, 1);
     }
   }
 
@@ -136,16 +126,16 @@ export function useToast() {
   function triggerAction(id: string) {
     if (processingIds.has(id)) return;
 
-    const idx = toasts.value.findIndex((t) => t.id === id);
-    if (idx !== -1) {
+    const toastIndex = toasts.value.findIndex((activeToast) => activeToast.id === id);
+    if (toastIndex !== -1) {
       processingIds.add(id);
-      const toast = toasts.value[idx];
+      const toast = toasts.value[toastIndex];
 
       // Stop dismissal timer immediately when user interacts.
       if (toast && toast.timer) clearTimeout(toast.timer);
       
       // Remove from UI before executing logic for better perceived performance.
-      toasts.value.splice(idx, 1);
+      toasts.value.splice(toastIndex, 1);
 
       if (toast && toast.onAction) {
         toast.onAction();

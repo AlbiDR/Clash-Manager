@@ -30,7 +30,10 @@ import type { WebAppData } from "../types";
 export const useClashDataStore = defineStore("clashData", () => {
   // --- PRIVATE STATE ---
 
-  /** The central dataset containing all clan and recruitment data. Null until hydration completes. */
+  /**
+   * The central dataset containing all clan and recruitment data.
+   * Initialized as null and hydrated via `loadLocal` or `refreshFromSupabase`.
+   */
   const data = ref<WebAppData | null>(null);
 
   // --- DEPENDENCIES ---
@@ -79,15 +82,22 @@ export const useClashDataStore = defineStore("clashData", () => {
    * [DIAGNOSTIC] TRIGGER UPDATE
    *
    * @remarks
+   * Satisfies ADR Section IV: Operational Security.
    * Forces the Service Worker to skip-waiting and activate the next version.
-   * This is used when the client detects a newer PWA version is available.
+   * This is used when the client detects a newer PWA version is available via
+   * the `updatefound` event.
    *
    * @sideeffects
    * - COMMUNICATES with the Service Worker via `postMessage`.
+   * - TRIGGERS a page reload via the SW's `controllerchange` listener.
    */
   async function triggerUpdate() {
     if (typeof navigator === 'undefined' || !navigator.serviceWorker) return;
     const registration = await navigator.serviceWorker.getRegistration();
+    // [THREAT:] Stale Service Workers can cause version mismatch pathogens where the
+    // client logic and backend schemas drift.
+    // [DECISION LOG] Manual trigger bypasses browser-controlled update timing to
+    // ensure the client transitions to the latest protocol immediately.
     if (registration?.waiting) {
       console.debug("[Store] Sending SKIP_WAITING to waiting worker...");
       registration.waiting.postMessage({ type: "SKIP_WAITING" });
@@ -95,13 +105,40 @@ export const useClashDataStore = defineStore("clashData", () => {
   }
 
   return {
-    // State
+    /**
+     * Authoritative reactive state containing the full validated dataset.
+     * @remarks Satisfies ADR Section III: Validation Boundaries.
+     */
     data,
+    /**
+     * Reactive flag indicating if a synchronization operation is in progress.
+     * Brokered from {@link useClashSync}.
+     */
     loading: sync.loading,
+    /**
+     * Unix timestamp (ms) representing the authoritative age of the local data.
+     * Brokered from {@link useClashSync}.
+     */
     lastSync: sync.lastSync,
+    /**
+     * The most recent synchronization error message, if any.
+     * Brokered from {@link useClashSync}.
+     */
     syncError: sync.syncError,
+    /**
+     * Indicates the provenance of the dataset (e.g., "SUPABASE").
+     * Brokered from {@link useClashSync}.
+     */
     dataSource: sync.dataSource,
+    /**
+     * Authoritative timestamp from the last successful Supabase fetch.
+     * Brokered from {@link useClashSync}.
+     */
     remoteTimestamp: sync.remoteTimestamp,
+    /**
+     * Detailed technical diagnosis from the last Supabase sync attempt.
+     * Brokered from {@link useClashSync}.
+     */
     syncStatus: sync.syncStatus,
 
     // Getters
@@ -110,9 +147,15 @@ export const useClashDataStore = defineStore("clashData", () => {
     lastUpdated,
     currentSource,
     remoteSyncTime,
-    /** Computed Unix timestamp (ms) of the server's dataset compilation. */
+    /**
+     * Computed Unix timestamp (ms) of the server's dataset compilation.
+     * Brokered from {@link useClashSync}.
+     */
     lastCompiledTime: computed(() => sync.lastCompiled.value),
-    /** Computed Unix timestamp (ms) of the server's last fetch from Supercell. */
+    /**
+     * Computed Unix timestamp (ms) of the server's last fetch from Supercell.
+     * Brokered from {@link useClashSync}.
+     */
     lastFetchedTime: computed(() => sync.lastFetched.value),
     isStale,
     isHydrated,
@@ -120,12 +163,32 @@ export const useClashDataStore = defineStore("clashData", () => {
     lastSyncTime,
 
     // Actions
+    /**
+     * Hydrates the store from the local IndexedDB cache.
+     * Brokered from {@link useClashSync}.
+     */
     loadLocal: sync.loadLocal,
+    /**
+     * Manually updates the service state with an external payload.
+     * Brokered from {@link useClashSync}.
+     */
     updateLocalData: sync.updateLocalData,
+    /**
+     * Executes a non-blocking background synchronization.
+     * Brokered from {@link useClashSync}.
+     */
     startBackgroundSync: sync.startBackgroundSync,
     /** Alias for refreshFromSupabase to satisfy generic controller contracts. */
     refresh: sync.refreshFromSupabase,
+    /**
+     * Triggers a high-priority foreground synchronization from Supabase.
+     * Brokered from {@link useClashSync}.
+     */
     refreshFromSupabase: sync.refreshFromSupabase,
+    /**
+     * Patches a specific player's data in the local state.
+     * Brokered from {@link useClashSync}.
+     */
     updatePlayerLocally: sync.updatePlayerLocally,
     triggerUpdate
   };

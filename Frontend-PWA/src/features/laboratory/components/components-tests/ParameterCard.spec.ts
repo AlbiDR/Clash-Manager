@@ -43,30 +43,27 @@ describe("ParameterCard.vue", () => {
   it("renders correctly with initial props", () => {
     const wrapper = createWrapper();
     expect(wrapper.find(".panel-header span").text()).toBe("Parameters");
-    expect(wrapper.find(".strategy-btn.active").text()).toBe("Level Projection");
-    expect(wrapper.find(".level-select").exists()).toBe(true);
+    expect(wrapper.findComponent({ name: "BaseSegmentedControl" }).props("modelValue")).toBe("Level Projection");
+    expect(wrapper.findComponent({ name: "BaseSelect" }).exists()).toBe(true);
   });
 
   it("emits update when a new strategy is selected", async () => {
     const wrapper = createWrapper();
-    const strategyBtns = wrapper.findAll(".strategy-btn");
+    const segmentedControl = wrapper.findComponent({ name: "BaseSegmentedControl" });
 
-    // Find the Resource Efficiency button
-    const resourceBtn = strategyBtns.find(btn => btn.text() === "Resource Efficiency");
-    await resourceBtn?.trigger("click");
+    await segmentedControl.vm.$emit("update:modelValue", "Resource Efficiency");
 
     expect(wrapper.emitted("update")).toBeTruthy();
     expect(wrapper.emitted("update")![0]).toEqual([{
-      ...defaultSettings,
       strategy: "Resource Efficiency"
     }]);
   });
 
   it("emits update when target level is changed", async () => {
     const wrapper = createWrapper();
-    const select = wrapper.find(".level-select");
+    const select = wrapper.findComponent({ name: "BaseSelect" });
 
-    await select.setValue("15");
+    await select.vm.$emit("update:modelValue", 15);
 
     expect(wrapper.emitted("update")).toBeTruthy();
     expect(wrapper.emitted("update")![0]).toEqual([{
@@ -90,13 +87,14 @@ describe("ParameterCard.vue", () => {
     const wrapper = createWrapper({
       settings: { ...defaultSettings, strategy: "Resource Efficiency" }
     });
-    expect(wrapper.find(".level-select").exists()).toBe(false);
+    expect(wrapper.findComponent({ name: "BaseSelect" }).exists()).toBe(false);
   });
 
-  it("filters levels correctly in the select dropdown", () => {
+  it("filters levels correctly in the select dropdown options", () => {
     const currentLevel = 50;
     const wrapper = createWrapper({ currentLevel });
-    const options = wrapper.findAll("option");
+    const select = wrapper.findComponent({ name: "BaseSelect" });
+    const options = select.props("options");
 
     // IMPORTANT_KING_LEVELS = [2, 3, 5, 7, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 75, 80, 85, 90]
     // For currentLevel 50:
@@ -104,7 +102,7 @@ describe("ParameterCard.vue", () => {
     // level 51-90: future -> shown
     // level 50: NOT a milestone and NOT > 50 -> NOT shown
 
-    const shownLevels = options.map(o => parseInt(o.element.value));
+    const shownLevels = options.map((o: any) => o.value);
     expect(shownLevels).toContain(14);
     expect(shownLevels).toContain(42);
     expect(shownLevels).toContain(54); // Milestone > 50
@@ -116,10 +114,10 @@ describe("ParameterCard.vue", () => {
     expect(shownLevels).not.toContain(13); // Not a milestone and < 50
 
     // Check if past levels are disabled
-    const level14Option = options.find(o => o.element.value === "14");
-    expect(level14Option?.element.disabled).toBe(true);
+    const level14Option = options.find((o: any) => o.value === 14);
+    expect(level14Option?.disabled).toBe(true);
 
-    const level51Option = options.find(o => o.element.value === "51");
-    expect(level51Option?.element.disabled).toBe(false);
+    const level51Option = options.find((o: any) => o.value === 51);
+    expect(level51Option?.disabled).toBe(false);
   });
 });

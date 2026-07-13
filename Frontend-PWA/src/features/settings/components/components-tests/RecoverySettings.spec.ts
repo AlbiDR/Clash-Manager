@@ -6,15 +6,22 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import RecoverySettings from "../RecoverySettings.vue";
 import { ref } from "vue";
 import * as useSettingsModule from "../../composables/useSettings";
+import * as useNativeBridgeModule from "@core/services/useNativeBridge";
+import { computed } from "vue";
 
 // Deep import mock per ADR to avoid barrel side effects
 vi.mock("../../composables/useSettings", () => ({
   useSettings: vi.fn()
 }));
 
+vi.mock("@core/services/useNativeBridge", () => ({
+  useNativeBridge: vi.fn()
+}));
+
 describe("RecoverySettings.vue", () => {
   const mockIsRefreshing = ref(false);
   const mockForceUpdate = vi.fn();
+  const mockDownloadApk = vi.fn();
   const mockClearCache = vi.fn();
   const mockFactoryReset = vi.fn();
 
@@ -25,8 +32,13 @@ describe("RecoverySettings.vue", () => {
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
       isRefreshing: mockIsRefreshing,
       forceUpdate: mockForceUpdate,
+      downloadApk: mockDownloadApk,
       clearCache: mockClearCache,
       factoryReset: mockFactoryReset
+    } as any);
+
+    vi.mocked(useNativeBridgeModule.useNativeBridge).mockReturnValue({
+      isNativeWrapper: computed(() => false),
     } as any);
   });
 
@@ -50,7 +62,7 @@ describe("RecoverySettings.vue", () => {
     expect(badge.text()).toBe("EXPERIMENTAL");
   });
 
-  it("calls forceUpdate when Force Update button is clicked", async () => {
+  it("calls forceUpdate when Refresh App button is clicked", async () => {
     const wrapper = mount(RecoverySettings, {
       global: {
         stubs: {
@@ -65,7 +77,7 @@ describe("RecoverySettings.vue", () => {
       }
     });
 
-    const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Force Update"));
+    const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Refresh App"));
     await btn?.trigger("click");
     expect(mockForceUpdate).toHaveBeenCalled();
   });

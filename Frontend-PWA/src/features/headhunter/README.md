@@ -1,4 +1,7 @@
-# Headhunter -- Recruitment Orchestrator
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+# Headhunter : Recruitment Orchestrator
 
 The **Scout Feed**. A specialized Feature (Layer 3) responsible for discovering, evaluating, and managing potential recruits. It bridges the gap between raw tournament data and clan recruitment decisions.
 
@@ -11,10 +14,10 @@ The Headhunter feature provides a real-time feed of candidates scanned from exte
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Strictly siloed. No imports from `Laboratory` or `Roster`.
 - **Dependencies**:
-  - `@core/api/SupabaseClient`: Backend communication (Dismissal/Scouting).
-  - `@core/services/useBadge`: External notification badges.
-  - `@core/services/useBroadcastChannel`: Cross-tab state synchronization.
-  - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
+ - `@core/api/SupabaseClient`: Backend communication (Dismissal/Scouting).
+ - `@core/services/useBadge`: External notification badges.
+ - `@core/services/useBroadcastChannel`: Cross-tab state synchronization.
+ - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
 
 ## Logic Subsystems
 
@@ -29,10 +32,10 @@ Orchestrates the dynamic, transient harvesting of clanless players from the Clas
 The primary behavioral engine for the Headhunter interface.
 - **Dual-Phase Sync**: Orchestrates **Manual Ingest** (manual sync trigger) and **Background Sync** (consistency check with the Supabase view).
 - **Blitz Orchestration**: Configures the `useBlitzMode` engine for automated batch recruitment processing.
-- **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Score, Trophies, Wins) and deep-linking.
+- **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Potential, Trophies, Donations, Recency, Name) and deep-linking.
 
-### Recruitment Pipeline (useBlitzMode.ts)
-Specialized engine for high-velocity recruitment processing.
+### Recruitment Pipeline (`useBlitzMode.ts`)
+Specialized engine for high-velocity recruitment processing. This feature delegates batch orchestration to the `@core/services/useBlitzMode` Layer 1 kernel to ensure structural purity and reuse across console views.
 - **Multi-Tier Deep Linking**: Manages a sequential queue for opening player profiles directly in the Clash Royale application.
 - **Automated Blitz**: Implements a throttle-controlled execution loop to cycle through selected recruits with safety delays.
 - **Environment Trust**: Proactively verifies the execution context before allowing hardware-level OS intents.

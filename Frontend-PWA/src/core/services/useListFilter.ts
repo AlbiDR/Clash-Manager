@@ -11,6 +11,12 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * strings, achieving O(N) lookup performance during active filtering by
  * decoupling normalization from the filter predicate.
  *
+ * Satisfies ADR Section I (Core Services) and ADR Section II (Presentation Orchestration).
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Performance:** Employs a module-level `WeakMap` for amortized O(1) normalization.
+ *
  * @param items - Reactive reference to the source array.
  * @param searchFields - Function to extract searchable strings from an item.
  * @param sortStrategies - Dictionary of comparator functions.
@@ -25,64 +31,73 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * @sideeffects
  * None. This composable manages internal reactive state only.
  */
+
 // PERFORMANCE: Cache normalized search strings to avoid O(N * F) work on every keystroke.
 // We use a persistent WeakMap to enable O(1) amortized normalization per item.
 // [PERF] MODULE SCOPE: Shared across instances (Roster/Headhunter) to avoid re-indexing.
+// [THREAT:] Memory exhaustion in long-lived sessions if using a standard Map.
+// [DECISION LOG] WeakMap is used to allow the garbage collector to reclaim
+// item-specific cache entries once the source item is no longer referenced.
 const searchCache = new WeakMap<object, string[]>();
 
+/**
+ * Orchestrates filtering and sorting logic for list-based datasets.
+ *
+ * @template T - The item type, which must include at least an `id` and optional `n` (name).
+ */
 export function useListFilter<T extends { id: string; n?: string }>(
   items: Ref<readonly T[]> | ComputedRef<readonly T[]>,
-  searchFields: (item: T) => string[],
-  sortStrategies: Record<string, (a: T, b: T) => number>,
+  searchFields: (candidateItem: T) => string[],
+  sortStrategies: Record<string, (itemA: T, itemB: T) => number>,
   defaultSort: string = "score",
 ) {
   const searchQuery = ref("");
   const sortBy = ref(defaultSort);
 
   const filteredItems = computed(() => {
-    let result: T[];
+    let filteredPool: T[];
 
     // 1. Search Filter (Optimized O(N) lookup)
     // Intent: Use a persistent cache to avoid redundant string normalization
     // during the filter pass, ensuring 60FPS even with large lists.
     if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-      result = (items.value || []).filter((item) => {
-        if (typeof item === "object" && item !== null) {
-          let normalizedFields = searchCache.get(item);
+      const searchCriteria = searchQuery.value.toLowerCase();
+      filteredPool = (items.value || []).filter((candidateItem) => {
+        if (typeof candidateItem === "object" && candidateItem !== null) {
+          let normalizedFields = searchCache.get(candidateItem);
           if (!normalizedFields) {
-            normalizedFields = searchFields(item).map((field) => field.toLowerCase());
-            searchCache.set(item, normalizedFields);
+            normalizedFields = searchFields(candidateItem).map((field) => field.toLowerCase());
+            searchCache.set(candidateItem, normalizedFields);
           }
-          return normalizedFields?.some((field) => field.includes(query));
+          return normalizedFields?.some((field) => field.includes(searchCriteria));
         }
         // Fallback for primitives or non-object types
-        return searchFields(item).some((field) =>
-          field.toLowerCase().includes(query),
+        return searchFields(candidateItem).some((field) =>
+          field.toLowerCase().includes(searchCriteria),
         );
       });
     } else {
-      result = [...(items.value || [])];
+      filteredPool = [...(items.value || [])];
     }
 
     // 2. Sorting
     // Intent: Apply the user-selected strategy. Note: stability depends on the strategy.
     const comparator = sortStrategies[sortBy.value];
     if (comparator) {
-      result.sort((a, b) => {
-        const comparisonResult = comparator(a, b);
+      filteredPool.sort((itemA, itemB) => {
+        const comparisonResult = comparator(itemA, itemB);
         if (comparisonResult !== 0) return comparisonResult;
         // [GUARD] Tie-breaker: Ensure stable sorting by Name, then ID
         // Target B [2]: Removed 'any' pathogens by enforcing T extends { id, n }.
-        const nameA = a.n || "";
-        const nameB = b.n || "";
+        const nameA = itemA.n || "";
+        const nameB = itemB.n || "";
         const nameRes = nameA.localeCompare(nameB);
         if (nameRes !== 0) return nameRes;
-        return a.id.localeCompare(b.id);
+        return itemA.id.localeCompare(itemB.id);
       });
     }
 
-    return result;
+    return filteredPool;
   });
 
   /**

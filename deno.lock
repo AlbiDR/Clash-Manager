@@ -20,12 +20,5 @@
     "https://esm.sh/tslib@2.8.1/denonext/tslib.mjs": "c38da5dd6da6281964435002ce204cd586634fe3bdfb24a0ee116f48cf3292e9",
     "https://esm.sh/valibot@1.4.1": "0b7314464dc425b0c381482243c310e71bf2dc941ad44cc083725608b35128a1",
     "https://esm.sh/valibot@1.4.1/denonext/valibot.mjs": "edf4fc24f4e67cf277dece6367910f2e65fa4813a3e9a28b773b921accefbff2"
-  },
-  "workspace": {
-    "packageJson": {
-      "dependencies": [
-        "npm:supabase@^2.106.0"
-      ]
-    }
   }
 }

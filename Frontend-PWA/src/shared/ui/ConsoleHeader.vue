@@ -2,16 +2,18 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed, unref } from "vue";
-import { useHaptics } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
+import BaseSelect from "./BaseSelect.vue";
+import type { ConsoleRemoteInfo, HubHealth } from "@core/types";
 
 const props = defineProps<{
   title: string;
   status?: {
-    type: "success" | "warning" | "error" | "loading";
-    text: string;
+    type: HubHealth["type"];
+    text: HubHealth["label"];
     nominal?: boolean;
   };
   showSearch?: boolean;
@@ -20,11 +22,7 @@ const props = defineProps<{
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
   currentSort?: string;
   loading?: boolean;
-  remoteInfo?: {
-    source: "SUPABASE";
-    dataAge: string | null;
-    diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
-  };
+  remoteInfo?: ConsoleRemoteInfo;
   reserveExtraSpace?: boolean;
 }>();
 
@@ -39,19 +37,19 @@ const { isScrolled } = useHeaderScroll(10);
 
 let debounceTimer: number | null = null;
 
-const handleInput = (e: Event) => {
-  const val = (e.target as HTMLInputElement).value;
+const handleInput = (inputEvent: Event) => {
+  const searchQueryCandidate = (inputEvent.target as HTMLInputElement).value;
   if (debounceTimer) window.clearTimeout(debounceTimer);
 
   debounceTimer = window.setTimeout(() => {
-    emit("update:search", val);
+    emit("update:search", searchQueryCandidate);
   }, 300);
 };
 
 const activeSortDescription = computed(() => {
   if (!props.sortOptions || !props.currentSort) return "";
-  const opt = props.sortOptions.find((o) => o.value === props.currentSort);
-  return opt?.desc || "";
+  const activeSortOption = props.sortOptions.find((optionCandidate) => optionCandidate.value === props.currentSort);
+  return activeSortOption?.desc || "";
 });
 
 const handleOpenDashboard = () => {
@@ -118,23 +116,12 @@ const handleOpenDashboard = () => {
         <slot name="filters"></slot>
 
         <div v-if="props.sortOptions" class="sort-box">
-          <div class="sort-select-wrapper">
-            <select
-              :value="props.currentSort"
-              class="sort-select"
-              aria-label="Sort by"
-              @change="(e) => emit('update:sort', (e.target as HTMLSelectElement).value)"
-            >
-              <option
-                v-for="opt in props.sortOptions"
-                :key="opt.value"
-                :value="opt.value"
-              >
-                {{ opt.label }}
-              </option>
-            </select>
-            <Icon name="chevron-down" size="14" class="sort-chevron" />
-          </div>
+          <BaseSelect
+            :model-value="props.currentSort"
+            :options="props.sortOptions"
+            aria-label="Sort by"
+            @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
+          />
           <span v-if="activeSortDescription" class="sort-desc">
             {{ activeSortDescription }}
           </span>
@@ -152,45 +139,45 @@ const handleOpenDashboard = () => {
 .console-header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--sys-z-header);
   background: var(--sys-surface-glass);
   backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
-  border-radius: 28px;
-  padding: 18px 18px 24px 18px;
-  margin-bottom: 24px;
-  transition: all 0.4s var(--sys-motion-standard);
+  border-radius: var(--sys-shape-corner-extra-large);
+  padding: var(--sys-space-18) var(--sys-space-18) var(--sys-space-24) var(--sys-space-18);
+  margin-bottom: var(--sys-space-24);
+  transition: all var(--sys-motion-duration-400) var(--sys-motion-spring);
   box-shadow: var(--sys-elevation-2);
 }
 
 .console-header.is-scrolled {
-  margin-top: 8px;
-  padding: 12px 18px 18px 18px;
-  border-radius: 20px;
+  margin-top: var(--sys-space-8);
+  padding: var(--sys-space-12) var(--sys-space-18) var(--sys-space-18) var(--sys-space-18);
+  border-radius: var(--sys-shape-corner-m);
 }
 
 .header-main {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .header-extra {
-  margin-top: 12px;
+  margin-top: var(--sys-space-12);
 }
 
 .title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .title-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
   flex: 1;
   min-width: 0;
 }
@@ -198,7 +185,7 @@ const handleOpenDashboard = () => {
 .title-main {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--sys-space-8);
   flex-wrap: nowrap;
   min-width: 0;
   flex: 1;
@@ -206,15 +193,15 @@ const handleOpenDashboard = () => {
 
 .view-title {
   margin: 0;
-  font-size: 24px;
-  line-height: 1; 
+  font-size: var(--sys-typescale-title-lg);
+  line-height: var(--sys-leading-none);
   font-weight: 900;
-  color: var(--sys-text-primary);
-  letter-spacing: -0.04em; /* Tighter tracking for premium feel */
+  color: var(--sys-color-on-surface);
+  letter-spacing: var(--sys-tracking-tight);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: all 0.2s var(--sys-motion-standard);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   min-width: 0;
   flex-shrink: 1;
 }
@@ -224,7 +211,7 @@ const handleOpenDashboard = () => {
 }
 
 .view-title.is-link:hover {
-  color: var(--sys-primary);
+  color: var(--sys-color-primary);
 }
 
 .view-title.is-link:active {
@@ -235,38 +222,38 @@ const handleOpenDashboard = () => {
 .title-label {
   display: flex;
   align-items: baseline;
-  gap: 4px;
-  padding: 2px 8px;
-  background: var(--sys-surf-c);
-  border-radius: 8px;
-  font-family: var(--sys-font-mono);
+  gap: var(--sys-space-4);
+  padding: var(--sys-space-2) var(--sys-space-8);
+  background: var(--sys-color-surface-container);
+  border-radius: var(--sys-shape-corner-small);
+  font-family: var(--sys-font-family-mono);
   flex-shrink: 0;
 }
 
 .count-value {
-  font-size: 14px;
+  font-size: var(--sys-typescale-body-md);
   font-weight: 800;
-  color: var(--sys-primary);
+  color: var(--sys-color-primary);
 }
 
 .count-label {
-  font-size: 10px;
+  font-size: var(--sys-typescale-label-md);
   text-transform: uppercase;
-  color: var(--sys-text-tertiary);
+  color: var(--sys-color-on-surface-variant);
   font-weight: 600;
 }
 
 .action-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   flex-shrink: 0;
 }
 
 .search-sort-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .search-bar {
@@ -277,31 +264,31 @@ const handleOpenDashboard = () => {
 .search-box {
   position: relative;
   height: 40px;
-  background: var(--sys-surf-h);
-  border-radius: 14px;
+  background: var(--sys-color-surface-container-high);
+  border-radius: var(--sys-shape-corner-input);
   display: flex;
   align-items: center;
-  padding: 0 14px;
-  gap: 12px;
+  padding: 0 var(--sys-space-14);
+  gap: var(--sys-space-12);
   border: 1px solid rgba(128, 128, 128, 0.15);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
 }
 
 .search-box:focus-within {
-  border-color: var(--sys-primary-muted);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
 .search-icon {
-  color: var(--sys-text-tertiary);
+  color: var(--sys-color-on-surface-variant);
 }
 
 .search-input {
   flex: 1;
   background: none;
   border: none;
-  color: var(--sys-text-primary);
-  font-size: 15px;
+  color: var(--sys-color-on-surface);
+  font-size: var(--sys-typescale-body-rg);
   outline: none;
 }
 
@@ -309,36 +296,6 @@ const handleOpenDashboard = () => {
   flex-shrink: 0;
   width: auto;
   min-width: 110px;
-}
-
-.sort-select-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.sort-select {
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  padding-right: 32px;
-  background: var(--sys-surf-c);
-  border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  border-radius: 10px;
-  appearance: none;
-  color: var(--sys-text-secondary);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.sort-chevron {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--sys-text-tertiary);
-  pointer-events: none;
 }
 
 .sort-desc {

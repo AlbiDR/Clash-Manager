@@ -42,28 +42,28 @@ const { isDesktop } = useViewport();
 .dock-container {
   position: fixed;
   /* Respect safe area insets for notched devices + Showcase Frame */
-  bottom: calc(24px + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
+  bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
   left: 50%;
   transform: translateX(-50%);
   background: var(--sys-surface-glass);
 
   border: 1px solid var(--sys-surface-glass-border);
-  padding: 6px;
+  padding: var(--sys-space-6);
   border-radius: var(--sys-shape-corner-full);
   display: flex;
-  gap: 6px;
-  box-shadow: 
+  gap: var(--sys-space-6);
+  box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.05);
-  z-index: 500;
+  z-index: var(--sys-z-dock);
   /* Disable double-tap zoom delay */
   touch-action: manipulation;
   /* Optimize transition timing for responsiveness */
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--sys-motion-duration-400) var(--sys-motion-easing-spring-overshoot);
 }
 
 .dock-container:hover {
-  bottom: calc(28px + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
+  bottom: calc(var(--sys-space-28) + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
 }
 
@@ -77,10 +77,10 @@ const { isDesktop } = useViewport();
 
 @media (max-width: 600px) {
   .dock-container {
-    width: calc(100% - 32px);
+    width: calc(100% - var(--sys-space-32));
     max-width: 460px;
-    padding: 4px;
-    gap: 4px;
+    padding: var(--sys-space-4);
+    gap: var(--sys-space-4);
   }
   /* Ensure FAB mode shrink-wraps on mobile to avoid empty space */
   .dock-container.fab-mode {

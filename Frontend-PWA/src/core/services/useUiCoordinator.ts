@@ -6,23 +6,45 @@ import { ref, computed, reactive } from "vue";
 // Global state to share across instances (Singleton pattern)
 const isFabVisible = ref(false);
 
-// Global FAB state for when selection mode is active
+/**
+ * Global FAB state for when selection mode is active.
+ *
+ * @remarks
+ * [DECISION LOG] Singleton Reactive State: Using a global reactive object ensures
+ * that FAB configuration (labels, actions, and loading states) remains synchronized
+ * across disparate feature views without prop-drilling or complex event buses.
+ */
 const fabState = reactive({
+  /** The primary label displayed on the FAB action button. */
   label: "Open",
+  /** Optional URL for the primary action; used for direct navigation. */
   actionHref: undefined as string | undefined,
+  /** Indicates if the primary action is currently in-flight. */
   isProcessing: false,
+  /** Indicates if the 'Blitz' (rapid processing) mode is active. */
   isBlasting: false,
+  /** Indicates if a data harvesting operation is active. */
   isHarvesting: false,
+  /** The scope of the current harvester ('global' API vs 'local' scraper). */
   activeHarvester: null as "global" | "local" | null,
+  /** The current number of items selected in the active view. */
   selectionCount: 0,
+  /** Indicates if the Blitz Mode feature is toggled on in settings. */
   blitzEnabled: false,
+  /** The icon name for the dismiss/close button. */
   dismissIcon: "close",
   // Callbacks - set by the view that owns the selection
+  /** Callback for the primary action button. */
   onAction: null as ((event: MouseEvent) => void) | null,
+  /** Callback to trigger the Blitz Mode engine. */
   onBlitz: null as (() => void) | null,
+  /** Callback to dismiss the FAB and clear selections. */
   onDismiss: null as (() => void) | null,
+  /** Callback to trigger a global data harvest (API). */
   onGlobalHarvest: null as (() => void) | null,
+  /** Callback to trigger a local data harvest (Scraper). */
   onLocalHarvest: null as (() => void) | null,
+  /** Callback to abort an active harvest operation. */
   onAbortHarvest: null as (() => void) | null,
 });
 
@@ -57,14 +79,14 @@ export function useUiCoordinator() {
   /**
    * Call this from views when FabIsland visibility changes
    */
-  function setFabVisible(visible: boolean) {
-    isFabVisible.value = visible;
+  function setFabVisible(isFabIslandVisible: boolean) {
+    isFabVisible.value = isFabIslandVisible;
   }
 
   /**
    * Update the global FAB state from views
    */
-  function updateFabState(state: {
+  function updateFabState(incomingFabState: {
     label?: string;
     actionHref?: string;
     isProcessing?: boolean;
@@ -81,21 +103,15 @@ export function useUiCoordinator() {
     onLocalHarvest?: () => void;
     onAbortHarvest?: () => void;
   }) {
-    if (state.label !== undefined) fabState.label = state.label;
-    if (state.actionHref !== undefined) fabState.actionHref = state.actionHref;
-    if (state.isProcessing !== undefined) fabState.isProcessing = state.isProcessing;
-    if (state.isBlasting !== undefined) fabState.isBlasting = state.isBlasting;
-    if (state.isHarvesting !== undefined) fabState.isHarvesting = state.isHarvesting;
-    if (state.activeHarvester !== undefined) fabState.activeHarvester = state.activeHarvester;
-    if (state.selectionCount !== undefined) fabState.selectionCount = state.selectionCount;
-    if (state.blitzEnabled !== undefined) fabState.blitzEnabled = state.blitzEnabled;
-    if (state.dismissIcon !== undefined) fabState.dismissIcon = state.dismissIcon;
-    if (state.onAction !== undefined) fabState.onAction = state.onAction;
-    if (state.onBlitz !== undefined) fabState.onBlitz = state.onBlitz;
-    if (state.onDismiss !== undefined) fabState.onDismiss = state.onDismiss;
-    if (state.onGlobalHarvest !== undefined) fabState.onGlobalHarvest = state.onGlobalHarvest;
-    if (state.onLocalHarvest !== undefined) fabState.onLocalHarvest = state.onLocalHarvest;
-    if (state.onAbortHarvest !== undefined) fabState.onAbortHarvest = state.onAbortHarvest;
+    // [THREAT:] Partial State Corruption.
+    // [DECISION LOG] Optimized State Merging: Partially update the reactive fabState
+    // object while preserving undefined guards for optional inputs. This prevents
+    // accidental resetting of unrelated state properties during view transitions.
+    for (const [key, value] of Object.entries(incomingFabState)) {
+      if (value !== undefined) {
+        (fabState as any)[key] = value;
+      }
+    }
   }
 
   /**
@@ -118,8 +134,9 @@ export function useUiCoordinator() {
    * Strategically shifts to stay visible above other interactive layers.
    */
   const toastOffset = computed(() => {
-    // THREAT: Occlusion. If Toast and FAB overlap, users cannot dismiss errors.
-    // Rationale: We dynamically stack the toast layer based on what's active below it.
+    // [THREAT:] UI Occlusion. If Toast and FAB overlap, users cannot dismiss errors.
+    // [DECISION LOG] Stacked Layering: We dynamically stack the toast layer based
+    // on what's active below it.
     if (isFabVisible.value) {
       // Positioned above the Fab Island layer (Base + Height of FAB + Margin)
       return fabOffset.value + 80;
@@ -138,4 +155,3 @@ export function useUiCoordinator() {
     updateFabState,
   };
 }
-

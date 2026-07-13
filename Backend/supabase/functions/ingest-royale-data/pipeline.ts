@@ -27,7 +27,7 @@ export async function executePipeline(
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
     heartbeat: (stage: string, currentResults: unknown) => Promise<void>
 ): Promise<IngestionResult> {
-    const startTime = Date.now();
+    const startInstant = Temporal.Now.instant();
     
     const results: IngestionResult = { 
         discovery: { harvested: 0, duplicates: 0 },
@@ -64,34 +64,40 @@ export async function executePipeline(
     // Stage 1: Discovery (Native Discovery via Tournaments)
     // [DECISION LOG] Harvests fresh recruits from the tournament substrate
     // before syncing the primary clan target.
+    // [THREAT:] Unhandled exceptions in individual stages must be trapped to prevent
+    // global pipeline collapse, ensuring diagnostic telemetry is persisted.
     try {
         await withTimeout(runDiscovery(results, logAudit), 'S1_DISCOVERY');
-    } catch (stageError: unknown) {
-        const errorMessage = stageError instanceof Error ? stageError.message : String(stageError);
+    } catch (stageIngestionError: unknown) {
+        const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
         logAudit('S1_DISCOVERY', 'error', { message: errorMessage });
     }
     await heartbeat('S1_DISCOVERY', results);
 
     // Stages 2-5: Clan Synchronization (Profile, Members, Race, WarLog)
     // [DECISION LOG] Unified stage for clan-specific domain synchronization.
+    // [THREAT:] Database ingestion or API failures during clan sync are non-fatal
+    // to the overall pipeline but are recorded for operational auditing.
     try {
         await withTimeout(runClanSync(targetTag, results, logAudit), 'S2_S5_CLAN');
-    } catch (stageError: unknown) {
-        const errorMessage = stageError instanceof Error ? stageError.message : String(stageError);
+    } catch (stageIngestionError: unknown) {
+        const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
         logAudit('CLAN_SYNC', 'error', { message: errorMessage });
     }
     await heartbeat('S2_S5_CLAN', results);
 
     // Stage 6: Deep Depth (Battle Logs)
     // [DECISION LOG] Final enrichment stage for competitive battle history.
+    // [THREAT:] Battle log ingestion is the most resource-intensive stage; failures
+    // here often indicate API rate-limiting or Edge Function memory constraints.
     try {
         await withTimeout(runDeepDepth(results, logAudit), 'S6_BATTLES');
-    } catch (stageError: unknown) {
-        const errorMessage = stageError instanceof Error ? stageError.message : String(stageError);
+    } catch (stageIngestionError: unknown) {
+        const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
         logAudit('DEEP_DEPTH', 'error', { message: errorMessage });
     }
     await heartbeat('S6_BATTLES', results);
 
-    results.diagnostics.duration_ms = Date.now() - startTime;
+    results.diagnostics.duration_ms = Temporal.Now.instant().since(startInstant).total('milliseconds');
     return results;
 }

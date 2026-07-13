@@ -3,25 +3,46 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
-import { useHaptics, NAV_ITEMS } from "@core";
+import { NAV_ITEMS } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 
 /**
- * [UI] NAVIGATION DOCK
- * ----------------------------------------------------------------------------
- * Rationale: Renders the primary application navigation items.
- * Layer: @shared/ui
- * ----------------------------------------------------------------------------
+ * COMPONENT: NavigationDock
+ *
+ * @remarks
+ * Renders the primary application navigation rail at the bottom of the viewport.
+ * Orchestrates route transitions and provides tactile feedback.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared UI (@shared/ui)
+ * - **Role:** Global Navigation Orchestration.
+ * - **Satisfaction:** ADR Section II: Structural Unitary Architecture.
+ *
+ * @sideeffects
+ * - Triggers haptic feedback via `useHaptics`.
+ * - Mutates browser history via `vue-router`.
  */
 
 const route = useRoute();
 const router = useRouter();
 const haptics = useHaptics();
 
+/**
+ * [DECISION LOG] IDEMPOTENT NAVIGATION: Guards against redundant router
+ * pushes if the user is already on the target route.
+ *
+ * [THREAT:] Redundant history entries if navigation guard is bypassed.
+ */
 function goTo(targetPath: string) {
   if (route.path === targetPath) return;
   router.push(targetPath);
 }
 
+/**
+ * [DECISION LOG] HAPTIC FEEDBACK: We trigger haptics on `pointerdown` rather
+ * than `click` to provide immediate tactile acknowledgment of the intent,
+ * improving perceived responsiveness.
+ */
 function onInteractionStart() {
   haptics.tap();
 }
@@ -29,19 +50,19 @@ function onInteractionStart() {
 
 <template>
   <button
-    v-for="item in NAV_ITEMS"
-    :key="item.name"
+    v-for="navItemCandidate in NAV_ITEMS"
+    :key="navItemCandidate.name"
     class="dock-item"
-    :class="{ active: route.path === item.path }"
-    @click="goTo(item.path)"
+    :class="{ active: route.path === navItemCandidate.path }"
+    @click="goTo(navItemCandidate.path)"
     @pointerdown="onInteractionStart"
-    :aria-label="item.label"
-    v-bind="{ 'aria-current': route.path === item.path ? 'page' : undefined }"
+    :aria-label="navItemCandidate.label"
+    v-bind="{ 'aria-current': route.path === navItemCandidate.path ? 'page' : undefined }"
   >
-    <div v-if="route.path === item.path" class="capsule-bg"></div>
-    <Icon :name="item.icon" size="22" class="dock-icon" />
-    <span v-if="item.label" class="dock-label">
-      {{ item.label }}
+    <div v-if="route.path === navItemCandidate.path" class="capsule-bg"></div>
+    <Icon :name="navItemCandidate.icon" size="22" class="dock-icon" />
+    <span v-if="navItemCandidate.label" class="dock-label">
+      {{ navItemCandidate.label }}
     </span>
   </button>
 </template>
@@ -49,20 +70,20 @@ function onInteractionStart() {
 <style scoped>
 .dock-item {
   position: relative;
-  height: 56px;
+  height: var(--sys-space-56);
   flex: 1;
   min-width: 64px;
-  padding: 0 12px;
+  padding: 0 var(--sys-space-12);
   border-radius: var(--sys-shape-corner-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  font-size: 15px;
+  gap: var(--sys-space-10);
+  font-size: var(--sys-typescale-body-rg);
   font-weight: 850;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   -webkit-tap-highlight-color: transparent;
   background: none;
   border: none;
@@ -95,13 +116,13 @@ function onInteractionStart() {
   );
   border-radius: var(--sys-shape-corner-full);
   z-index: -1;
-  animation: pop-in 0.3s cubic-bezier(0.2, 0, 0, 1.2);
+  animation: pop-in var(--sys-motion-duration-300) var(--sys-motion-easing-spring-nav);
   box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
 .dock-label {
-  transition: opacity 0.3s;
-  letter-spacing: -0.01em;
+  transition: opacity var(--sys-motion-duration-300);
+  letter-spacing: var(--sys-tracking-neg-1);
 }
 
 @media (max-width: 600px) {
@@ -109,8 +130,8 @@ function onInteractionStart() {
     flex: 1;
     min-width: 0;
     padding: 0;
-    gap: 4px;
-    font-size: 13px;
+    gap: var(--sys-space-4);
+    font-size: var(--sys-typescale-body-sm);
   }
   .dock-item .dock-label {
     display: none;

@@ -69,7 +69,7 @@ let isInitialized = false;
  * - `isSlowConnection`: Computed boolean for bandwidth/latency-throttled states.
  */
 export function useNetworkInfo() {
-  const connection =
+  const networkConnection =
     typeof navigator !== "undefined"
       ? navigator.connection ||
         navigator.mozConnection ||
@@ -77,11 +77,11 @@ export function useNetworkInfo() {
       : null;
 
   function updateConnectionStatus() {
-    if (connection) {
-      effectiveType.value = connection.effectiveType || "4g";
-      downlink.value = connection.downlink || 10;
-      saveData.value = connection.saveData || false;
-      rtt.value = connection.rtt || 0;
+    if (networkConnection) {
+      effectiveType.value = networkConnection.effectiveType || "4g";
+      downlink.value = networkConnection.downlink || 10;
+      saveData.value = networkConnection.saveData || false;
+      rtt.value = networkConnection.rtt || 0;
     }
   }
 
@@ -100,14 +100,14 @@ export function useNetworkInfo() {
     );
   });
 
-  if (!isInitialized && connection && typeof window !== "undefined") {
+  if (!isInitialized && networkConnection && typeof window !== "undefined") {
     updateConnectionStatus();
-    connection.addEventListener("change", updateConnectionStatus);
+    networkConnection.addEventListener("change", updateConnectionStatus);
     isInitialized = true;
   }
 
   return {
-    isSupported: !!connection,
+    isSupported: !!networkConnection,
     effectiveType: readonly(effectiveType),
     downlink: readonly(downlink),
     saveData: readonly(saveData),

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { ref, computed, type Ref } from "vue";
-import { useHaptics } from "../../core/services/useHaptics";
+import { useHaptics } from "./useHaptics";
 
 /**
  * Options for the pull-to-refresh composable.
@@ -79,6 +79,11 @@ export function usePullToRefresh(options: PullToRefreshOptions) {
       pullOffset.value = 0;
       isPulling.value = false;
       return;
+    }
+
+    // Cancel native overscroll handling to prevent duplicate bounce animations in WebViews
+    if (rawDiff > 0 && e.cancelable) {
+      e.preventDefault();
     }
 
     // Apply resistance (clamped logarithmic-like curve).

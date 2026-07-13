@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="interpolator" name="btn_radio_to_on_mtrl_animation_interpolator_0">@interpolator/btn_radio_to_off_mtrl_animation_interpolator_0</item>
+    <item type="interpolator" name="btn_checkbox_unchecked_mtrl_animation_interpolator_1">@interpolator/btn_checkbox_checked_mtrl_animation_interpolator_1</item>
+    <item type="interpolator" name="btn_checkbox_unchecked_mtrl_animation_interpolator_0">@interpolator/btn_checkbox_checked_mtrl_animation_interpolator_0</item>
+</resources>

@@ -25,7 +25,7 @@ describe("useRecruitBlacklist", () => {
     it("should NOT persist tombstones to localStorage", () => {
       const { hide } = useRecruitBlacklist();
       hide(["test-id"]);
-      // Tombstones are ephemeral — they must not appear in persistent storage.
+      // Tombstones are ephemeral - they must not appear in persistent storage.
       expect(localStorage.getItem("cm_recruit_tombstones")).toBeNull();
     });
   });

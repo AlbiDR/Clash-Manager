@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <drawable name="notification_template_icon_bg">#3333b5e5</drawable>
+    <drawable name="notification_template_icon_low_bg">#0cffffff</drawable>
+    <item type="drawable" name="shortcut_0_maskable">@drawable/shortcut_0</item>
+    <item type="drawable" name="shortcut_1">@drawable/shortcut_0</item>
+    <item type="drawable" name="shortcut_1_maskable">@drawable/shortcut_0</item>
+    <item type="drawable" name="shortcut_2">@drawable/shortcut_0</item>
+    <item type="drawable" name="shortcut_2_maskable">@drawable/shortcut_0</item>
+</resources>

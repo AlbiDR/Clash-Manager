@@ -30,37 +30,7 @@ import { DATA_STALENESS_MINUTES } from "../config";
  * - Import Boundaries: Restricted to other Layer 1 services and utils.
  */
 
-/**
- * Represents the unified health status of the connectivity hub.
- */
-export interface HubHealth {
-  /** Visual classification for UI styling (color/icon). */
-  type: "success" | "warning" | "error" | "loading";
-  /** Short, human-readable status label. */
-  label: string;
-  /** Percentage indicating data reliability (0-100). */
-  confidence: number;
-  /** Detailed technical diagnosis or error message. */
-  diagnosis?: string;
-}
-
-/**
- * Authoritative metadata regarding the origin and age of the current data.
- */
-export interface HubMetadata {
-  /** The identified backend source (e.g., "SUPABASE", "LOCAL"). */
-  source: string;
-  /** Human-readable age of the data (e.g., "5m ago"). */
-  age: string | null;
-  /** Data age in minutes for logical thresholding. */
-  ageMinutes: number;
-  /** Formatted time when the remote dataset was last compiled. */
-  lastCompiled: string | null;
-  /** Formatted time when the backend last fetched raw API data. */
-  lastFetched: string | null;
-  /** Flag indicating if the data has exceeded the staleness threshold. */
-  isStale: boolean;
-}
+import type { HubHealth, HubMetadata } from "../types";
 
 /**
  * Primary composable for managing and observing connectivity health.
@@ -84,15 +54,15 @@ export function useConnectivityManager() {
    * formatted strings and logical minutes.
    */
   const metadata = computed((): HubMetadata => {
-    const now = Date.now();
+    const currentTimeMs = Date.now();
     const lastSyncTs = unref(store.lastSyncTime);
-    const ageMs = lastSyncTs ? now - lastSyncTs : 0;
-    const ageMins = Math.floor(ageMs / 60000);
+    const dataAgeMs = lastSyncTs ? currentTimeMs - lastSyncTs : 0;
+    const dataAgeMinutes = Math.floor(dataAgeMs / 60000);
 
     return {
       source: unref(store.currentSource) || "LOCAL",
       age: lastSyncTs ? formatTimeAgo(lastSyncTs) : null,
-      ageMinutes: ageMins,
+      ageMinutes: dataAgeMinutes,
       lastCompiled: unref(store.lastCompiledTime) ? formatTimeAgo(unref(store.lastCompiledTime)) : null,
       lastFetched: unref(store.lastFetchedTime) ? formatTimeAgo(unref(store.lastFetchedTime)) : null,
       isStale: unref(store.isStale)

@@ -1,42 +1,46 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 const config = {
   forbidden: [
-    // 1. Frontend Modular Rules
+    // 1. Layer 1 (Core) Isolation
+    {
+      name: 'fe-no-higher-layer-import-in-core',
+      comment: 'Frontend Layer 1 (Core) must never depend on higher layers (Shared, Features, App).',
+      severity: 'error',
+      from: { path: '^Frontend-PWA/src/core/' },
+      to: { path: '^Frontend-PWA/src/(shared|features|app)/' }
+    },
+
+    // 2. Layer 2 (Shared) Isolation
+    {
+      name: 'fe-no-higher-layer-import-in-shared',
+      comment: 'Frontend Layer 2 (Shared) must never depend on higher layers (Features, App).',
+      severity: 'error',
+      from: { path: '^Frontend-PWA/src/shared/' },
+      to: { path: '^Frontend-PWA/src/(features|app)/' }
+    },
+
+    // 3. Layer 3 (Features) Isolation
+    {
+      name: 'fe-no-higher-layer-import-in-features',
+      comment: 'Frontend Layer 3 (Features) must never depend on higher layers (App).',
+      severity: 'error',
+      from: { path: '^Frontend-PWA/src/features/' },
+      to: { path: '^Frontend-PWA/src/app/' }
+    },
+
+    // 4. Feature-to-Feature Isolation
     {
       name: 'fe-no-cross-feature-import',
-      comment: 'Frontend Layer 3 Features must be decoupled.',
+      comment: 'Frontend Layer 3 Features must be strictly decoupled from other features.',
       severity: 'error',
       from: { path: '^Frontend-PWA/src/features/([^/]+)/' },
       to: {
         path: '^Frontend-PWA/src/features/([^/]+)/',
         pathNot: '^Frontend-PWA/src/features/$1/'
       }
-    },
-    {
-      name: 'fe-no-higher-layer-import-in-core',
-      comment: 'Frontend Layer 1 (Core) must never depend on higher layers.',
-      severity: 'error',
-      from: { path: '^Frontend-PWA/src/core/' },
-      to: { path: '^Frontend-PWA/src/(shared|features|app)/' }
-    },
-
-    // 2. GAS Flat Structure Rules (Underscore based)
-    {
-      name: 'gas-no-feature-to-feature-import',
-      comment: 'GAS Layer 3 (Features like Roster, Headhunter) should not import each other.',
-      severity: 'error',
-      from: { path: '^Backend-GAS/(Roster|Headhunter|Scoring|Laboratory|Settings)' },
-      to: {
-        path: '^Backend-GAS/(Roster|Headhunter|Scoring|Laboratory|Settings)',
-        pathNot: '^Backend-GAS/$1' // Assuming each is a group of files starting with the name
-      }
-    },
-    {
-      name: 'gas-kernel-isolation',
-      comment: 'GAS Layer 1 (Kernels/Core) must not import from higher layers.',
-      severity: 'error',
-      from: { path: '^Backend-GAS/(Core|Scoring_Kernel|Network|Time)' },
-      to: { path: '^Backend-GAS/(Roster|Headhunter|Database_View|Orchestrator|Registry|Webapp_Controller)' }
     }
   ],
   options: {

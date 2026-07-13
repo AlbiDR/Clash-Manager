@@ -11,18 +11,13 @@ const { tapMock } = vi.hoisted(() => ({
   tapMock: vi.fn(),
 }));
 
-// Mock @core to intercept useHaptics
-vi.mock("@core", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useHaptics: () => ({
-      tap: tapMock,
-      warning: vi.fn(),
-      error: vi.fn(),
-    }),
-  };
-});
+vi.mock("@shared/composables/useHaptics", () => ({
+  useHaptics: () => ({
+    tap: tapMock,
+    warning: vi.fn(),
+    error: vi.fn(),
+  }),
+}));
 
 describe("StatusPill", () => {
   it("renders correctly for each valid type", async () => {
@@ -42,19 +37,34 @@ describe("StatusPill", () => {
       expect(wrapper.classes()).toContain(type);
       expect(wrapper.find(".status-dot").exists()).toBe(true);
       
-      if (type !== "success") {
+      if (type === "loading") {
+        expect(wrapper.find(".spinner").exists()).toBe(true);
+      } else if (type !== "success") {
         expect(wrapper.find(".dot-nucleus.pulse").exists()).toBe(true);
       }
     }
   });
 
-  it("toggles expanded state and calls haptics on click", async () => {
+  it("toggles expanded state and calls haptics via v-tactile", async () => {
     const wrapper = mount(StatusPill, {
       props: { type: "success", text: "Ready", nominal: true },
+      global: {
+        directives: {
+          tactile: {
+            mounted(el) {
+              el.addEventListener("pointerdown", () => {});
+              el.addEventListener("pointerup", () => tapMock());
+            }
+          }
+        }
+      }
     });
     
     expect(wrapper.classes()).not.toContain("is-expanded");
     
+    // Simulate v-tactile interaction
+    await wrapper.trigger("pointerdown");
+    await wrapper.trigger("pointerup");
     await wrapper.trigger("click");
     
     expect(wrapper.classes()).toContain("is-expanded");

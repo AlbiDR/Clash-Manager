@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 # Shared UI - Molecule Layer
 
 The **Atomic Foundry**. A collection of domain-blind UI building blocks and layout orchestrators that define the visual language of the Clash Manager ecosystem.
@@ -11,9 +14,9 @@ The Shared UI directory (Layer 2) contains reusable components that are agnostic
 - **Layer**: Layer 2 (@shared)
 - **Isolation**: Strictly decoupled. A Molecule **NEVER** imports from Layer 3 (Features) or Layer 4 (App).
 - **Dependencies**:
-  - `@core/theme`: Sovereign Design System tokens and injection.
-  - `@core/services`: Infrastructure singletons (Haptics, UI Coordinator).
-  - `@core/utils`: Pure utility primitives.
+ - `@core/theme`: Sovereign Design System tokens and injection.
+ - `@core/services`: Infrastructure singletons (Haptics, UI Coordinator).
+ - `@core/utils`: Pure utility primitives.
 
 ## Component Categories
 
@@ -21,7 +24,7 @@ The Shared UI directory (Layer 2) contains reusable components that are agnostic
 Standardized containers that manage view-level states like loading, errors, and empty results.
 - **ConsoleLayout.vue**: The primary structural shell for feature views. Manages the `ConsoleHeader`, FAB synchronization, and `remoteInfo` orchestration. Delegates pull-to-refresh behavior to the `@shared/composables/usePullToRefresh.ts` composable.
 - **ConsoleHeader.vue**: Standardized view header. Handles search debouncing, sorting controls, and visual status indicators (StatusPill). Delegates scroll-aware styling to the `@shared/composables/useHeaderScroll.ts` composable.
-- **ConsoleList.vue**: Specialized list container with Showcase Mode support and `v-auto-animate` integration.
+- **ConsoleList.vue**: Specialized list container with Showcase Mode support and time-sliced (progressive) rendering.
 - **AppFooter.vue**: Global navigation anchor and legal/version information container.
 - **SettingsCard.vue**: Collapsible container for feature settings and configurations. Supports header slots, loading states, and smooth "spring" transition animations.
 - **SkeletonSettingsCard.vue**: Placeholder variant for settings cards with staggered skeleton animations to prevent layout shifts.
@@ -29,11 +32,14 @@ Standardized containers that manage view-level states like loading, errors, and 
 ### Data Visualization
 Generic, high-performance visualization components.
 - **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories and projected next values. Delegates geometric translation to the `@shared/composables/useBaseHistoryChart.ts` composable.
+- **WarHistoryChart.vue**: Domain-aware molecule for visualizing clan war performance. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
 
-### Domain-Aware Molecules (Promoted)
-Specialized components promoted to the shared layer to facilitate cross-feature performance auditing while maintaining domain-specific logic.
-- **WarHistoryChart.vue**: Visualizes clan war performance. Delegates history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
-- **VoyageHistoryChart.vue**: Visualizes Clan Voyage contributions. Delegates history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+### Voyage Management Molecules
+Specialized UI components for orchestrating and visualizing Clan Voyage events, promoted from Layer 3 to resolve structural dependency violations.
+- **VoyageBanner.vue**: A high-visibility, glassmorphism-styled progress banner for the active or upcoming Voyage event. Orchestrates real-time progress feedback and phase transitions (Active, Pending, Awaiting Promotion).
+- **VoyageHistoryChart.vue**: Domain-aware molecule for visualizing chronological Clan Voyage contributions. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+- **EventManagement.vue**: Administrative hub for managing the Voyage lifecycle, including event activation, ledger synchronization, and cancellation.
+- **VoyageSetupForm.vue**: Specialized configuration interface for initializing new Voyage events. Handles goal setting, end-time scheduling, and validation.
 
 ### UI Primitives
 Atomic elements that form the basis of the design system.
@@ -41,11 +47,11 @@ Atomic elements that form the basis of the design system.
 - **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling via the `@shared/composables/useCardMechanics.ts` broker.
 - **BaseCardSkeleton.vue**: Placeholder variant of the card for loading states.
 - **Icon.vue**: The authoritative SVG renderer. Centralizes vector path definitions in `@core/theme/icons` and ensures CSS variable consistency with `non-scaling-stroke` vector effects.
-- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata. Delegates expansion and interaction logic to the `@shared/composables/useStatusPill.ts` composable.
+- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates expansion and interaction logic to the `@shared/composables/useStatusPill.ts` composable.
 - **MomentumPill.vue**: Specialized indicator for performance trends and momentum metrics.
 - **StatisticItem.vue**: Labeled data point with standardized typography and spacing.
 - **StatsGrid.vue**: Responsive layout component for displaying player statistics in 2 or 3 columns.
-- **SettingRow.vue**: Unified molecule for feature settings, supporting toggles, loading states, and disabled variants.
+- **SettingRow.vue**: Unified molecule for feature settings, supporting toggles, loading states, and disabled variants. Integrates `v-tactile` for consistent haptic feedback during interactions.
 
 ### Player Identity Badges
 Standardized molecules for rendering player-specific metrics and metadata with integrated benchmarking powered by the `@shared/composables/useBenchmarkedStat.ts` composable.
@@ -58,10 +64,12 @@ Standardized molecules for rendering player-specific metrics and metadata with i
 
 ### Interactive Molecules
 Components that facilitate user interaction and state management.
+- **BaseSelect.vue**: A clinical, keyboard-accessible replacement for native HTML `<select>` elements, ensuring visual parity and interaction stability in Android WebViews. Supports generic types to prevent state corruption.
+- **BaseSegmentedControl.vue**: Standardized toggle/segment selector for switching between mutually exclusive options. Supports generic types and compact variants for high-density UI contexts.
 - **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
 - **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable.
-- **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
+- **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
 - **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers. Orchestrates `NavigationDock.vue` and `SelectionFab.vue`.
 - **NavigationDock.vue**: Internal UI component for rendering the primary app navigation items.
 - **SelectionFab.vue**: Internal UI component for rendering the selection-mode actions and FAB.
@@ -95,4 +103,4 @@ Components in this layer must adhere to the **Visual Purity** protocol:
 - **Accessibility**: Minimum touch targets of 48px and descriptive ARIA labels are mandatory.
 
 ## Testing Strategy
-Each component is verified via Vitest (`*.spec.ts`) located in the sibling `ui-tests/` directory. Tests focus on prop-driven rendering, event emission, and visual state transitions.
+Each component is verified via Vitest (`*.spec.ts`) located in the nested `ui-tests/` subdirectory (`src/shared/ui/ui-tests/`). Tests focus on prop-driven rendering, event emission, and visual state transitions.

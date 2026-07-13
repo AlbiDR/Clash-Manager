@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, watch, computed, toValue, type MaybeRefOrGetter } from "vue";
-import { useHaptics } from "@core";
+import { useHaptics } from "./useHaptics";
 import { useViewport } from "./useViewport";
 
 export interface StatusPillProps {
@@ -28,7 +28,12 @@ export interface StatusPillProps {
  * - **Role:** Presentation logic orchestrator for connectivity status.
  *
  * @param props - Component props as a reactive object or getter.
- * @returns State and computed properties for the StatusPill.
+ * @returns
+ * - `isExpanded`: Reactive toggle for the detailed metadata view.
+ * - `isDB`: True if the primary status label is "DB" (cached state).
+ * - `displayText`: Viewport-aware label for the pill.
+ * - `displaySource`: Normalized data source label.
+ * - `handleToggle`: Expansion orchestrator with haptic awareness.
  */
 export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   const haptics = useHaptics();
@@ -36,6 +41,7 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
 
   // [DECISION LOG] AUTO-EXPANSION: Automatically expand on critical states
   // (loading/error) to ensure user awareness of background sync or failures.
+  // This satisfies the "Zero-Silence" interaction mandate in the UI Bible.
   watch(() => toValue(props).type, (newType) => {
     if (newType === "loading" || newType === "error") {
       isExpanded.value = true;
@@ -43,35 +49,38 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   }, { immediate: true });
 
   const handleToggle = () => {
-    const p = toValue(props);
-    if (p.type === "loading") return;
+    const statusPillPropsSnapshot = toValue(props);
+    if (statusPillPropsSnapshot.type === "loading") return;
 
-    haptics.tap();
+    // [DECISION LOG] Synchronized with v-tactile in StatusPill.vue.
+    // Manual haptic call removed to prevent double-triggering (Target A.2).
     isExpanded.value = !isExpanded.value;
   };
 
   const isDB = computed(() => toValue(props).text === 'DB');
 
+  // [THREAT:] UI OCCLUSION - Large labels in header clusters cause layout shifts
+  // or overlap on narrow devices.
   // [DECISION LOG] RESPONSIVE TRUNCATION: On narrow viewports, truncate
   // to the last word to maintain UI stability in header clusters.
   const { isMobileNarrow } = useViewport();
   const displayText = computed(() => {
-    const p = toValue(props);
+    const statusPillPropsSnapshot = toValue(props);
     if (isMobileNarrow.value) {
-      const parts = p.text.split(' ');
-      return parts.length > 1 ? parts[parts.length - 1] : p.text;
+      const parts = statusPillPropsSnapshot.text.split(' ');
+      return parts.length > 1 ? parts[parts.length - 1] : statusPillPropsSnapshot.text;
     }
-    return p.text;
+    return statusPillPropsSnapshot.text;
   });
 
   const displaySource = computed(() => {
-    const p = toValue(props);
-    if (!p.remoteInfo?.source) return null;
+    const statusPillPropsSnapshot = toValue(props);
+    if (!statusPillPropsSnapshot.remoteInfo?.source) return null;
 
     // Redundancy check: if the primary label is 'DB', 'SUPABASE' as source is noise.
-    if (isDB.value && p.remoteInfo.source === 'SUPABASE') return null;
+    if (isDB.value && statusPillPropsSnapshot.remoteInfo.source === 'SUPABASE') return null;
 
-    return p.remoteInfo.source === 'SUPABASE' ? 'DB' : p.remoteInfo.source;
+    return statusPillPropsSnapshot.remoteInfo.source === 'SUPABASE' ? 'DB' : statusPillPropsSnapshot.remoteInfo.source;
   });
 
   return {

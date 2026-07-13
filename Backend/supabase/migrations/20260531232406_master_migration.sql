@@ -8,6 +8,19 @@
  * - Provides a single, unified DDL file representing the entire current database structure
  *   as-is, without deleting the historical migrations trail to preserve audit logs.
  * - This baseline allows fresh, zero-touch deployment of the entire Modern Stack (Supabase + PWA).
+ *
+ * Folded Incremental Migrations:
+ * - 20260614082900_add_trail_battle_type.sql
+ * - 20260615004900_fix_zero_crown_voyage_contributions.sql
+ * - 20260617013100_add_public_vault_secret_wrapper.sql
+ * - 20260620113000_fix_duel_crown_calculation.sql
+ * - 20260620120000_revise_duel_crown_calculation.sql
+ * - 20260620142000_headhunter_epoch_guard.sql
+ * - 20260628003700_fix_discovery_cache_fractional_hours.sql
+ * - 20260628010500_add_public_get_active_discovery_anchors.sql
+ * - 20260629212000_fix_voyage_ingestion_targeting.sql
+ * - 20260705030000_voyage_history_pruning.sql
+ * - 20260707003200_rename_voyage_5_to_4.sql
  */
 
 BEGIN;
@@ -102,6 +115,31 @@ CREATE TABLE IF NOT EXISTS substrate.config (
 
 ALTER TABLE substrate.config ENABLE ROW LEVEL SECURITY;
 
+INSERT INTO substrate.config (key, value, description) VALUES
+    (
+        'EPOCH_MAX_RETRIES',
+        '3',
+        'Maximum number of epoch retries the guard will fire per 30-minute main scan cycle.'
+    ),
+    (
+        'EPOCH_INTER_DELAY_S',
+        '300',
+        'Minimum seconds between epoch guard fires (must match or exceed the pg_cron tick interval of 5 min).'
+    ),
+    (
+        'EPOCH_WINDOW_S',
+        '900',
+        'Hard wall-clock deadline in seconds from last_main_scan_at beyond which the guard will not fire. '
+        'Must be strictly less than the main scanner cadence (1800 s / 30 min).'
+    ),
+    (
+        'MAX_ACTIVE_RECRUITS',
+        '50',
+        'Maximum number of recruits held in the ACTIVE rotation pool. High-PeS leads beyond this limit are benched.'
+    )
+ON CONFLICT (key) DO NOTHING;
+
+
 -- L0 Substrate: Central audit log for system events and error propagation.
 CREATE TABLE IF NOT EXISTS substrate.governance_telemetry (
     discovery_yield integer DEFAULT 0 /* Number of new unique recruits discovered in this cycle. */,
@@ -162,9 +200,44 @@ CREATE TABLE IF NOT EXISTS substrate.discovery_anchors (
 
 ALTER TABLE substrate.discovery_anchors ENABLE ROW LEVEL SECURITY;
 
+-- ============================================================
+-- EPOCH STATE TABLE
+-- Singleton row tracking the current epoch loop state.
+-- epoch_count is reset to 0 at the start of each new 30-min main cycle.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS substrate.headhunter_epoch_state (
+    id                 integer      NOT NULL DEFAULT 1,
+    last_main_scan_at  timestamptz,
+    epoch_count        integer      NOT NULL DEFAULT 0,
+    last_top50_count   integer      NOT NULL DEFAULT 0,
+    updated_at         timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT headhunter_epoch_state_pkey PRIMARY KEY (id),
+    CONSTRAINT headhunter_epoch_state_singleton CHECK (id = 1)
+);
+
+ALTER TABLE substrate.headhunter_epoch_state ENABLE ROW LEVEL SECURITY;
+
+COMMENT ON TABLE substrate.headhunter_epoch_state IS
+    'Singleton row tracking the headhunter top-50 epoch retry loop state. '
+    'Maintained by substrate.update_epoch_state() and consumed by '
+    'substrate.run_headhunter_epoch_guard().';
+
+COMMENT ON COLUMN substrate.headhunter_epoch_state.epoch_count IS
+    'Number of epoch retries fired in the current 30-minute cycle. '
+    'Resets to 0 when a scan succeeds (top50 >= 1) or the epoch window expires.';
+
+COMMENT ON COLUMN substrate.headhunter_epoch_state.last_top50_count IS
+    'The new_recruits_top50 value reported by the most recent scanner run.';
+
+-- Seed the singleton row (safe to run multiple times)
+INSERT INTO substrate.headhunter_epoch_state (id)
+VALUES (1)
+ON CONFLICT (id) DO NOTHING;
+
+
 -- L2 Drivers: The authoritative universal registry of all players encountered by the system.
 CREATE TABLE IF NOT EXISTS drivers.players (
-    player_tag text NOT NULL CHECK (player_tag ~* '^#[0289CGJLPQRUVY]+$'::text),
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     player_name text,
     updated_at timestamp with time zone DEFAULT now(),
     CONSTRAINT drivers_players_pkey PRIMARY KEY (player_tag)
@@ -172,9 +245,19 @@ CREATE TABLE IF NOT EXISTS drivers.players (
 
 ALTER TABLE drivers.players ENABLE ROW LEVEL SECURITY;
 
+CREATE TABLE IF NOT EXISTS drivers.player_voyage_history (
+    player_tag  text        NOT NULL,
+    history     text        NOT NULL DEFAULT '',
+    updated_at  timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT player_voyage_history_pkey
+        PRIMARY KEY (player_tag)
+);
+
+ALTER TABLE drivers.player_voyage_history ENABLE ROW LEVEL SECURITY;
+
 -- Authoritative registry of tracked clans and their operational requirements (trophies, etc.).
 CREATE TABLE IF NOT EXISTS drivers.clans (
-    clan_tag text NOT NULL CHECK (clan_tag ~* '^#[0289CGJLPQRUVY]+$'::text) /* Official Clash Royale clan tag. Primary logic key. */,
+    clan_tag text NOT NULL CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text) /* Official Clash Royale clan tag. Primary logic key. */,
     clan_name text NOT NULL,
     description text,
     badge_id integer,
@@ -224,8 +307,7 @@ CREATE TABLE IF NOT EXISTS drivers.members (
     is_active boolean DEFAULT true /* Soft-delete flag: FALSE indicates the member has left the clan but their record is preserved for history. */,
     next_poll_at timestamp with time zone /* Earliest timestamp at which this player's battle log should next be fetched. NULL means poll immediately on the next ingestion run. Computed by drivers.get_voyage_poll_interval_seconds() after each successful ingest_player_battles() call. */,
     CONSTRAINT drivers_members_pkey PRIMARY KEY (id),
-    CONSTRAINT members_tag_unique UNIQUE (player_tag),
-    CONSTRAINT fk_members_player FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE
+    CONSTRAINT members_tag_unique UNIQUE (player_tag)
 );
 
 ALTER TABLE drivers.members ENABLE ROW LEVEL SECURITY;
@@ -244,8 +326,7 @@ CREATE TABLE IF NOT EXISTS drivers.war_activity (
     recorded_at timestamp with time zone DEFAULT now(),
     CONSTRAINT drivers_war_activity_pkey PRIMARY KEY (id),
     CONSTRAINT war_activity_member_tag_week_id_key UNIQUE (player_tag, week_id),
-    CONSTRAINT war_activity_tag_week_section_unique UNIQUE (player_tag, week_id, section_index),
-    CONSTRAINT fk_war_activity_player FOREIGN KEY (player_tag) REFERENCES drivers.members (player_tag) ON DELETE CASCADE
+    CONSTRAINT war_activity_tag_week_section_unique UNIQUE (player_tag, week_id, section_index)
 );
 
 ALTER TABLE drivers.war_activity ENABLE ROW LEVEL SECURITY;
@@ -295,8 +376,7 @@ CREATE TABLE IF NOT EXISTS drivers.player_battles (
     fame_earned integer DEFAULT 0 /* Points contributed to the river race during this battle. */,
     player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     updated_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT drivers_player_battles_pkey PRIMARY KEY (id),
-    CONSTRAINT fk_player_battles_player FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE
+    CONSTRAINT drivers_player_battles_pkey PRIMARY KEY (id)
 );
 
 ALTER TABLE drivers.player_battles ENABLE ROW LEVEL SECURITY;
@@ -311,8 +391,7 @@ CREATE TABLE IF NOT EXISTS drivers.member_snapshots (
     last_seen timestamp with time zone,
     snapshot_at timestamp with time zone DEFAULT now(),
     player_tag text CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
-    CONSTRAINT drivers_member_snapshots_pkey PRIMARY KEY (id),
-    CONSTRAINT member_snapshots_member_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.members (player_tag) ON DELETE CASCADE
+    CONSTRAINT drivers_member_snapshots_pkey PRIMARY KEY (id)
 );
 
 ALTER TABLE drivers.member_snapshots ENABLE ROW LEVEL SECURITY;
@@ -332,8 +411,7 @@ CREATE TABLE IF NOT EXISTS drivers.recruits (
     player_name text NOT NULL,
     updated_at timestamp with time zone DEFAULT now(),
     target_clan_tag text CHECK (target_clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
-    CONSTRAINT drivers_recruits_pkey PRIMARY KEY (player_tag),
-    CONSTRAINT fk_recruits_player FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE
+    CONSTRAINT drivers_recruits_pkey PRIMARY KEY (player_tag)
 );
 
 ALTER TABLE drivers.recruits ENABLE ROW LEVEL SECURITY;
@@ -397,7 +475,7 @@ ALTER TABLE drivers.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- L2 Drivers: Registry of Clan Voyage events mirrored from in-game countdowns.
 CREATE TABLE IF NOT EXISTS drivers.clan_voyage (
-    clan_tag text NOT NULL,
+    clan_tag text NOT NULL CHECK (clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     target_crowns integer NOT NULL,
     start_at timestamp with time zone NOT NULL,
     status text NOT NULL DEFAULT 'PENDING'::text CHECK (status = ANY (ARRAY['PENDING'::text, 'ACTIVE'::text, 'COMPLETED'::text])),
@@ -405,17 +483,22 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage (
     updated_at timestamp with time zone DEFAULT now(),
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
     end_at timestamp with time zone,
-    CONSTRAINT drivers_clan_voyage_pkey PRIMARY KEY (id),
-    CONSTRAINT clan_voyage_clan_tag_fkey FOREIGN KEY (clan_tag) REFERENCES drivers.clans (clan_tag)
+    CONSTRAINT drivers_clan_voyage_pkey PRIMARY KEY (id)
 );
 
 ALTER TABLE drivers.clan_voyage ENABLE ROW LEVEL SECURITY;
+
+-- Gap correction: Rename Voyage ID 5 to 4 and sync identity sequence.
+-- ON UPDATE CASCADE on fk_voyage_id ensures contribution rows are preserved.
+ALTER TABLE drivers.clan_voyage ALTER COLUMN id DROP IDENTITY;
+UPDATE drivers.clan_voyage SET id = 4 WHERE id = 5;
+ALTER TABLE drivers.clan_voyage ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
 
 -- L2 Drivers: Per-member performance metrics for historical Clan Voyage events.
 CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
     voyage_id bigint NOT NULL,
-    player_tag text NOT NULL,
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     updated_at timestamp with time zone DEFAULT now(),
     total_voyage_crowns integer DEFAULT 0,
     player_name text,
@@ -423,15 +506,78 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
     manual_voyage_crowns_at timestamp with time zone,
     percentage_voyage_crowns numeric DEFAULT 0.0,
     CONSTRAINT drivers_clan_voyage_contributions_pkey PRIMARY KEY (id),
-    CONSTRAINT clan_voyage_contributions_voyage_id_player_tag_key UNIQUE (voyage_id, player_tag),
-    CONSTRAINT clan_voyage_contributions_voyage_id_fkey FOREIGN KEY (voyage_id) REFERENCES drivers.clan_voyage (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT clan_voyage_contributions_player_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag)
+    CONSTRAINT clan_voyage_contributions_voyage_id_player_tag_key UNIQUE (voyage_id, player_tag)
 );
 
 ALTER TABLE drivers.clan_voyage_contributions ENABLE ROW LEVEL SECURITY;
 
+-- =============================================================================
+-- Retroactive backfill for all completed voyages
+-- =============================================================================
+-- Insert 0-crown rows for every active member who has no contribution record
+-- for any completed voyage. ON CONFLICT ensures idempotency.
+INSERT INTO drivers.clan_voyage_contributions (
+    voyage_id,
+    player_tag,
+    player_name,
+    total_voyage_crowns,
+    percentage_voyage_crowns
+)
+SELECT
+    v.id,
+    m.player_tag,
+    m.player_name,
+    0,
+    0.0
+FROM drivers.clan_voyage v
+CROSS JOIN drivers.members m
+WHERE v.status = 'COMPLETED'
+  AND m.is_active = true
+  AND NOT EXISTS (
+      SELECT 1
+      FROM drivers.clan_voyage_contributions c
+      WHERE c.voyage_id = v.id
+        AND c.player_tag = m.player_tag
+  )
+ON CONFLICT (voyage_id, player_tag) DO NOTHING;
+
+-- Synchronize identity sequences for all tables to prevent ID skipping on fresh installs.
+DO $$
+DECLARE
+    v_table RECORD;
+    v_max_id bigint;
+    v_seq text;
+BEGIN
+    FOR v_table IN (
+        SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as full_name,
+               schemaname, tablename, column_name
+        FROM (VALUES
+            ('substrate', 'raw_clan_profile', 'id'),
+            ('substrate', 'raw_clan_members', 'id'),
+            ('substrate', 'raw_river_race', 'id'),
+            ('substrate', 'raw_war_log', 'id'),
+            ('drivers', 'clans', 'id'),
+            ('drivers', 'members', 'id'),
+            ('drivers', 'war_activity', 'id'),
+            ('drivers', 'war_history', 'id'),
+            ('drivers', 'player_battles', 'id'),
+            ('drivers', 'member_snapshots', 'id'),
+            ('drivers', 'recruit_ledger', 'id'),
+            ('drivers', 'push_subscriptions', 'id'),
+            ('drivers', 'clan_voyage', 'id'),
+            ('drivers', 'clan_voyage_contributions', 'id')
+        ) AS t(schemaname, tablename, column_name)
+    ) LOOP
+        EXECUTE format('SELECT MAX(%I) FROM %s', v_table.column_name, v_table.full_name) INTO v_max_id;
+        v_seq := pg_get_serial_sequence(v_table.full_name, v_table.column_name);
+        IF v_max_id IS NOT NULL AND v_seq IS NOT NULL THEN
+            PERFORM setval(v_seq, v_max_id);
+        END IF;
+    END LOOP;
+END $$;
+
 CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
-    player_tag text NOT NULL,
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     CONSTRAINT drivers_exclusion_cache_pkey PRIMARY KEY (player_tag)
 );
 
@@ -439,7 +585,7 @@ ALTER TABLE drivers.exclusion_cache ENABLE ROW LEVEL SECURITY;
 
 -- Per-player card snapshot fetched from the Clash Royale API. Populated by the sync-player-cards Edge Function. Drives the Laboratory simulation engine.
 CREATE TABLE IF NOT EXISTS features.player_card_snapshots (
-    player_tag text NOT NULL,
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
     card_id bigint NOT NULL,
     card_name text NOT NULL,
     rarity text NOT NULL CHECK (rarity = ANY (ARRAY['Common'::text, 'Rare'::text, 'Epic'::text, 'Legendary'::text, 'Champion'::text])),
@@ -456,6 +602,27 @@ CREATE TABLE IF NOT EXISTS features.player_card_snapshots (
 );
 
 ALTER TABLE features.player_card_snapshots ENABLE ROW LEVEL SECURITY;
+
+
+-- Relational Foreign Key constraints
+ALTER TABLE IF EXISTS drivers.player_voyage_history DROP CONSTRAINT IF EXISTS player_voyage_history_player_tag_fkey;
+ALTER TABLE IF EXISTS drivers.player_voyage_history ADD CONSTRAINT player_voyage_history_player_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS drivers.members DROP CONSTRAINT IF EXISTS fk_members_player;
+ALTER TABLE IF EXISTS drivers.members ADD CONSTRAINT fk_members_player FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS drivers.war_activity DROP CONSTRAINT IF EXISTS fk_war_activity_player;
+ALTER TABLE IF EXISTS drivers.war_activity ADD CONSTRAINT fk_war_activity_player FOREIGN KEY (player_tag) REFERENCES drivers.members (player_tag) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS drivers.player_battles DROP CONSTRAINT IF EXISTS fk_player_battles_player;
+ALTER TABLE IF EXISTS drivers.player_battles ADD CONSTRAINT fk_player_battles_player FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS drivers.member_snapshots DROP CONSTRAINT IF EXISTS member_snapshots_member_tag_fkey;
+ALTER TABLE IF EXISTS drivers.member_snapshots ADD CONSTRAINT member_snapshots_member_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.members (player_tag) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS drivers.recruits DROP CONSTRAINT IF EXISTS fk_recruits_player;
+ALTER TABLE IF EXISTS drivers.recruits ADD CONSTRAINT fk_recruits_player FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS drivers.clan_voyage DROP CONSTRAINT IF EXISTS clan_voyage_clan_tag_fkey;
+ALTER TABLE IF EXISTS drivers.clan_voyage ADD CONSTRAINT clan_voyage_clan_tag_fkey FOREIGN KEY (clan_tag) REFERENCES drivers.clans (clan_tag);
+ALTER TABLE IF EXISTS drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_voyage_id_fkey;
+ALTER TABLE IF EXISTS drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_voyage_id_fkey FOREIGN KEY (voyage_id) REFERENCES drivers.clan_voyage (id) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE IF EXISTS drivers.clan_voyage_contributions DROP CONSTRAINT IF EXISTS clan_voyage_contributions_player_tag_fkey;
+ALTER TABLE IF EXISTS drivers.clan_voyage_contributions ADD CONSTRAINT clan_voyage_contributions_player_tag_fkey FOREIGN KEY (player_tag) REFERENCES drivers.players (player_tag) ON DELETE CASCADE;
 
 -- FUNCTIONS
 -- Substrate Functions
@@ -723,14 +890,16 @@ CREATE OR REPLACE FUNCTION substrate.run_ingest_royale_data()
 AS $function$
 DECLARE
     v_token text;
+    v_anon  text;
 BEGIN
     v_token := substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
+    v_anon  := substrate.get_vault_secret('SUPABASE_ANON_KEY');
     
     PERFORM net.http_post(
         url := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/ingest-royale-data',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
+            'apikey', v_anon,
             'Authorization', 'Bearer ' || v_token
         )
     );
@@ -745,20 +914,207 @@ CREATE OR REPLACE FUNCTION substrate.run_headhunter_scanner()
 AS $function$
 DECLARE
     v_token text;
+    v_anon  text;
 BEGIN
     v_token := substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
+    v_anon  := substrate.get_vault_secret('SUPABASE_ANON_KEY');
     
     PERFORM net.http_post(
         url := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/headhunter-scanner',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
+            'apikey', v_anon,
             'Authorization', 'Bearer ' || v_token
         ),
         body := '{"tournaments": ["AUTO"]}'::jsonb
     );
 END;
 $function$;
+
+CREATE OR REPLACE FUNCTION substrate.update_epoch_state(p_top50 integer)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_state         substrate.headhunter_epoch_state%ROWTYPE;
+    v_window_s      integer;
+    v_in_window     boolean;
+BEGIN
+    -- Read the current epoch window config
+    SELECT value::integer INTO v_window_s
+    FROM substrate.config
+    WHERE key = 'EPOCH_WINDOW_S';
+
+    v_window_s := COALESCE(v_window_s, 900);
+
+    -- Lock and read the singleton state row
+    SELECT * INTO v_state
+    FROM substrate.headhunter_epoch_state
+    WHERE id = 1
+    FOR UPDATE;
+
+    -- Determine whether this run is within the current epoch window
+    v_in_window := (
+        v_state.last_main_scan_at IS NOT NULL
+        AND EXTRACT(EPOCH FROM (now() - v_state.last_main_scan_at)) <= v_window_s
+    );
+
+    IF NOT v_in_window THEN
+        -- [DECISION] This is a new main cycle start (first scan of the 30-min window).
+        -- Reset epoch_count and record the new cycle anchor.
+        UPDATE substrate.headhunter_epoch_state SET
+            last_main_scan_at = now(),
+            epoch_count       = 0,
+            last_top50_count  = p_top50,
+            updated_at        = now()
+        WHERE id = 1;
+
+        INSERT INTO substrate.governance_telemetry (event_type, status, message, metadata)
+        VALUES (
+            'HEADHUNTER_EPOCH',
+            'CYCLE_START',
+            'New epoch cycle started. epoch_count reset to 0.',
+            jsonb_build_object('new_recruits_top50', p_top50)
+        );
+    ELSE
+        -- [DECISION] This is an epoch retry completing within the window.
+        -- Update top50 result only; epoch_count is incremented by the guard before firing.
+        UPDATE substrate.headhunter_epoch_state SET
+            last_top50_count = p_top50,
+            updated_at       = now()
+        WHERE id = 1;
+
+        INSERT INTO substrate.governance_telemetry (event_type, status, message, metadata)
+        VALUES (
+            'HEADHUNTER_EPOCH',
+            CASE WHEN p_top50 >= 1 THEN 'EPOCH_SUCCESS' ELSE 'EPOCH_MISS' END,
+            CASE WHEN p_top50 >= 1
+                THEN 'Epoch scan found top-50 recruit(s). Guard armed disarmed for this cycle.'
+                ELSE 'Epoch scan found no top-50 recruits. Guard remains armed.'
+            END,
+            jsonb_build_object(
+                'new_recruits_top50', p_top50,
+                'epoch_count',        v_state.epoch_count
+            )
+        );
+    END IF;
+
+EXCEPTION WHEN OTHERS THEN
+    -- Non-fatal: telemetry failure must not abort the scanner run
+    INSERT INTO substrate.governance_telemetry (event_type, status, message)
+    VALUES ('HEADHUNTER_EPOCH', 'ERROR', 'update_epoch_state failed: ' || SQLERRM);
+END;
+$function$;
+
+COMMENT ON FUNCTION substrate.update_epoch_state(integer) IS
+    'Called by the headhunter-scanner Edge Function at the end of every scan run. '
+    'Classifies the run as a new main cycle or an epoch retry and updates '
+    'substrate.headhunter_epoch_state accordingly.';
+
+CREATE OR REPLACE FUNCTION substrate.run_headhunter_epoch_guard()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_state         substrate.headhunter_epoch_state%ROWTYPE;
+    v_max_retries   integer;
+    v_window_s      integer;
+    v_elapsed_s     numeric;
+    v_token         text;
+BEGIN
+    -- Read config (defaults protect against missing rows)
+    SELECT value::integer INTO v_max_retries FROM substrate.config WHERE key = 'EPOCH_MAX_RETRIES';
+    SELECT value::integer INTO v_window_s    FROM substrate.config WHERE key = 'EPOCH_WINDOW_S';
+
+    v_max_retries := COALESCE(v_max_retries, 3);
+    v_window_s    := COALESCE(v_window_s,    900);
+
+    -- Read and lock the singleton state row
+    SELECT * INTO v_state
+    FROM substrate.headhunter_epoch_state
+    WHERE id = 1
+    FOR UPDATE;
+
+    -- [GUARD] No-op conditions: bail early without logging noise
+    IF v_state.last_main_scan_at IS NULL THEN
+        -- No main scan has ever run; nothing to retry
+        RETURN;
+    END IF;
+
+    v_elapsed_s := EXTRACT(EPOCH FROM (now() - v_state.last_main_scan_at));
+
+    IF v_elapsed_s > v_window_s THEN
+        -- Outside the epoch window; the guard is idle until the next main scan
+        RETURN;
+    END IF;
+
+    IF v_state.last_top50_count >= 1 THEN
+        -- Previous scan already landed a top-50 recruit; guard is satisfied
+        RETURN;
+    END IF;
+
+    IF v_state.epoch_count >= v_max_retries THEN
+        -- Epoch budget exhausted for this cycle; guard is disarmed
+        INSERT INTO substrate.governance_telemetry (event_type, status, message, metadata)
+        VALUES (
+            'HEADHUNTER_EPOCH',
+            'BUDGET_EXHAUSTED',
+            'Epoch retry budget exhausted. Guard will remain idle until the next main scan cycle.',
+            jsonb_build_object(
+                'epoch_count',    v_state.epoch_count,
+                'max_retries',    v_max_retries,
+                'elapsed_s',      v_elapsed_s,
+                'window_s',       v_window_s
+            )
+        );
+        RETURN;
+    END IF;
+
+    -- [ACTION] All guards passed; pre-increment epoch_count and fire the scanner
+    UPDATE substrate.headhunter_epoch_state SET
+        epoch_count = epoch_count + 1,
+        updated_at  = now()
+    WHERE id = 1;
+
+    v_token := substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
+
+    PERFORM net.http_post(
+        url     := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/headhunter-scanner',
+        headers := jsonb_build_object(
+            'Content-Type',  'application/json',
+            'apikey',        substrate.get_vault_secret('SUPABASE_ANON_KEY'),
+            'Authorization', 'Bearer ' || v_token
+        ),
+        body    := '{"tournaments": ["AUTO"]}'::jsonb
+    );
+
+    INSERT INTO substrate.governance_telemetry (event_type, status, message, metadata)
+    VALUES (
+        'HEADHUNTER_EPOCH',
+        'EPOCH_FIRED',
+        'Epoch retry ' || (v_state.epoch_count + 1) || ' of ' || v_max_retries || ' fired.',
+        jsonb_build_object(
+            'epoch_number', v_state.epoch_count + 1,
+            'max_retries',  v_max_retries,
+            'elapsed_s',    v_elapsed_s,
+            'window_s',     v_window_s
+        )
+    );
+
+EXCEPTION WHEN OTHERS THEN
+    INSERT INTO substrate.governance_telemetry (event_type, status, message)
+    VALUES ('HEADHUNTER_EPOCH', 'ERROR', 'run_headhunter_epoch_guard failed: ' || SQLERRM);
+END;
+$function$;
+
+COMMENT ON FUNCTION substrate.run_headhunter_epoch_guard() IS
+    'pg_cron guard function. Ticks every 5 minutes and re-triggers the headhunter-scanner '
+    'Edge Function when the previous scan produced no top-50 recruits, subject to '
+    'EPOCH_MAX_RETRIES and EPOCH_WINDOW_S config constraints.';
 
 CREATE OR REPLACE FUNCTION substrate.purge_stale_heritage()
  RETURNS integer
@@ -1389,6 +1745,27 @@ BEGIN
     RETURN v_reset_count;
 END; $function$;
 
+CREATE OR REPLACE FUNCTION substrate.weighted_avg(
+    p_values numeric[],
+    p_decay  numeric DEFAULT 0.05,
+    p_floor  numeric DEFAULT 0.5
+)
+RETURNS numeric
+LANGUAGE sql
+IMMUTABLE STRICT SECURITY DEFINER
+SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $$
+    SELECT
+        SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
+        NULLIF(SUM(CASE WHEN val IS NOT NULL THEN GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay) END), 0)
+    FROM UNNEST(p_values) WITH ORDINALITY AS t(val, ord)
+$$;
+
+COMMENT ON FUNCTION substrate.weighted_avg(numeric[], numeric, numeric) IS
+    'Recency-decayed weighted average. Index 1 = most recent (full weight).
+     Each subsequent entry loses p_decay weight, floored at p_floor.
+     Default: 5% decay per entry, floor at 50% (matches voyage_factuals).';
+
 CREATE OR REPLACE FUNCTION substrate.format_tenure(p_days numeric)
  RETURNS text
  LANGUAGE plpgsql
@@ -1515,22 +1892,30 @@ BEGIN
     PERFORM substrate.purge_stale_discovery_cache();
     PERFORM substrate.purge_stale_heritage();
     PERFORM substrate.finalize_expired_voyages();
-    
-    -- L2 Domain Purges (Restored from May 3 / May 16 omissions)
+
+    -- Consolidate voyage history before player purges fire so that
+    -- contribution data is safely archived before cascade deletes run.
+    PERFORM drivers.consolidate_voyage_history();
+
+    -- L2 Domain Purges
     PERFORM drivers.purge_expired_blacklist();
     PERFORM substrate.purge_inactive_members();
     PERFORM substrate.purge_stale_battles();
     PERFORM substrate.purge_worst_recruits();
     PERFORM substrate.purge_orphan_players();
+
+    -- Safety-net: log any history rows that survived beyond the cascade.
+    PERFORM drivers.purge_stale_voyage_history();
+
     PERFORM substrate.purge_recruit_ledger();
     PERFORM substrate.purge_stale_recruits();
-    
+
     PERFORM substrate.rotate_recruits();
 
     UPDATE substrate.pipeline_heartbeat
     SET status          = 'COMPLETED',
         last_success_at = NOW(),
-        last_message    = 'Maintenance complete. Raw logs, ledgers, stale battles, and orphans pruned. Voyages finalized.',
+        last_message    = 'Maintenance complete. Raw logs, ledgers, stale battles, orphans, and voyage history pruned. Voyages finalized.',
         updated_at      = NOW()
     WHERE component_id = 'NIGHTLY_MAINTENANCE';
 
@@ -1706,6 +2091,7 @@ DECLARE
     v_current INT;
     v_end     TIMESTAMPTZ;
     v_name    TEXT;
+    v_earned  INT;
 BEGIN
     SELECT v.id, v.target_crowns, v.end_at
     INTO v_id, v_target, v_end
@@ -1716,7 +2102,6 @@ BEGIN
     LIMIT 1;
 
     IF v_id IS NOT NULL THEN
-        -- Only record voyage contribution if the player is currently an active clan member
         SELECT player_name INTO v_name
         FROM drivers.members
         WHERE player_tag = NEW.player_tag
@@ -1724,6 +2109,8 @@ BEGIN
         LIMIT 1;
 
         IF v_name IS NOT NULL THEN
+            v_earned := NEW.team_crowns + (3 - NEW.opponent_crowns);
+
             INSERT INTO drivers.clan_voyage_contributions (
                 voyage_id,
                 player_tag,
@@ -1735,11 +2122,11 @@ BEGIN
                 v_id,
                 NEW.player_tag,
                 v_name,
-                NEW.team_crowns,
-                LEAST(ROUND((NEW.team_crowns::numeric / NULLIF(v_target, 0)::numeric) * 100, 2), 100.0)
+                v_earned,
+                LEAST(ROUND((v_earned::numeric / NULLIF(v_target, 0)::numeric) * 100, 2), 100.0)
             )
             ON CONFLICT (voyage_id, player_tag)
-            DO UPDATE SET 
+            DO UPDATE SET
                 total_voyage_crowns = drivers.clan_voyage_contributions.total_voyage_crowns + EXCLUDED.total_voyage_crowns,
                 percentage_voyage_crowns = LEAST(ROUND(((drivers.clan_voyage_contributions.total_voyage_crowns + EXCLUDED.total_voyage_crowns)::numeric / NULLIF(v_target, 0)::numeric) * 100, 2), 100.0),
                 player_name = v_name,
@@ -1751,9 +2138,6 @@ BEGIN
         WHERE voyage_id = v_id;
 
         IF v_current >= v_target OR now() >= v_end THEN
-            -- [FIX] Pre-populate 0-crown rows for all non-participating active members
-            --       before transitioning to COMPLETED. This ensures every member has a
-            --       contribution record (even at 0) so their voyage history is complete.
             INSERT INTO drivers.clan_voyage_contributions (
                 voyage_id,
                 player_tag,
@@ -1780,9 +2164,6 @@ BEGIN
             WHERE id = v_id;
         END IF;
     ELSE
-        -- Handle the case where the voyage end_at has passed during battle processing.
-        -- Delegate to finalize_expired_voyages() which handles 0-crown insertion atomically,
-        -- avoiding code duplication and ensuring consistent behaviour.
         PERFORM substrate.finalize_expired_voyages();
     END IF;
 
@@ -1820,7 +2201,6 @@ BEGIN
       AND player_tag NOT IN (SELECT player_tag FROM drivers.members WHERE is_active = true);
 
     -- 2. Calculate and update the correct live scores.
-    --    We perform this in a clean UPDATE pass that handles both players with and without overrides.
     UPDATE drivers.clan_voyage_contributions c
     SET
         total_voyage_crowns = COALESCE(c.manual_voyage_crowns, 0) + COALESCE((
@@ -1830,10 +2210,8 @@ BEGIN
               AND b.battle_time <= v_window_end
               AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail')
               AND (
-                  -- If there's a manual override, only count subsequent battles
                   (c.manual_voyage_crowns IS NOT NULL AND b.battle_time > c.manual_voyage_crowns_at)
                   OR
-                  -- Otherwise, count everything since voyage start
                   (c.manual_voyage_crowns IS NULL AND b.battle_time >= v_start)
               )
         ), 0),
@@ -1920,6 +2298,145 @@ BEGIN
     RETURN v_deleted_count;
 END; $function$;
 
+CREATE OR REPLACE FUNCTION drivers.consolidate_voyage_history()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_anchor_id BIGINT;
+    v_count     INTEGER := 0;
+    v_rec       RECORD;
+    v_existing  TEXT;
+    v_merged    TEXT;
+BEGIN
+    -- 1. Determine the anchor voyage to keep as individual rows.
+    --    Prefer any non-completed voyage (ACTIVE or PENDING); fall back to
+    --    the most recently completed voyage.
+    SELECT id
+    INTO   v_anchor_id
+    FROM   drivers.clan_voyage
+    WHERE  status IN ('ACTIVE', 'PENDING')
+    ORDER  BY start_at DESC
+    LIMIT  1;
+
+    IF v_anchor_id IS NULL THEN
+        SELECT id
+        INTO   v_anchor_id
+        FROM   drivers.clan_voyage
+        WHERE  status = 'COMPLETED'
+        ORDER  BY end_at DESC
+        LIMIT  1;
+    END IF;
+
+    -- Nothing to consolidate when there are no voyages at all.
+    IF v_anchor_id IS NULL THEN
+        RETURN;
+    END IF;
+
+    -- 2. Process each player that has completed contribution rows outside the anchor.
+    FOR v_rec IN
+        SELECT
+            c.player_tag,
+            string_agg(
+                v.id::text          || '|' ||
+                c.total_voyage_crowns::text || '|' ||
+                v.target_crowns::text        || '|' ||
+                TO_CHAR(v.end_at, 'YYYY-MM-DD'),
+                ','
+                ORDER BY v.end_at DESC
+            ) AS new_entries
+        FROM   drivers.clan_voyage_contributions c
+        JOIN   drivers.clan_voyage v ON v.id = c.voyage_id
+        WHERE  c.voyage_id <> v_anchor_id
+          AND  v.status    =  'COMPLETED'
+        GROUP  BY c.player_tag
+    LOOP
+        -- Load any pre-existing history for this player.
+        SELECT history
+        INTO   v_existing
+        FROM   drivers.player_voyage_history
+        WHERE  player_tag = v_rec.player_tag;
+
+        -- Merge new entries with existing ones, then deduplicate by voyage_id
+        -- keeping the entry with the highest voyage_id in case of collision.
+        SELECT string_agg(entry, ',' ORDER BY (regexp_split_to_array(entry, '\|'))[1]::bigint DESC)
+        INTO   v_merged
+        FROM (
+            SELECT DISTINCT ON ((regexp_split_to_array(entry, '\|'))[1])
+                entry
+            FROM unnest(
+                string_to_array(
+                    v_rec.new_entries ||
+                    CASE
+                        WHEN v_existing IS NOT NULL AND v_existing <> ''
+                        THEN ',' || v_existing
+                        ELSE ''
+                    END,
+                    ','
+                )
+            ) AS entry
+            WHERE entry <> ''
+            ORDER BY (regexp_split_to_array(entry, '\|'))[1] DESC
+        ) deduped;
+
+        -- Upsert consolidated history. The DELETE below only runs if this succeeds.
+        INSERT INTO drivers.player_voyage_history (player_tag, history, updated_at)
+        VALUES (v_rec.player_tag, COALESCE(v_merged, ''), NOW())
+        ON CONFLICT (player_tag) DO UPDATE
+            SET history    = EXCLUDED.history,
+                updated_at = NOW();
+
+        -- Remove the individual source rows that were just archived.
+        DELETE FROM drivers.clan_voyage_contributions
+        WHERE  player_tag = v_rec.player_tag
+          AND  voyage_id  <> v_anchor_id
+          AND  voyage_id  IN (
+                  SELECT id FROM drivers.clan_voyage WHERE status = 'COMPLETED'
+              );
+
+        v_count := v_count + 1;
+    END LOOP;
+
+    IF v_count > 0 THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES (
+            'VOYAGE_CONSOLIDATION',
+            'INFO',
+            'Consolidated voyage history for ' || v_count || ' players into player_voyage_history.'
+        );
+    END IF;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION drivers.purge_stale_voyage_history()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    DELETE FROM drivers.player_voyage_history pvh
+    WHERE NOT EXISTS (
+        SELECT 1 FROM drivers.players p WHERE p.player_tag = pvh.player_tag
+    );
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+
+    IF v_count > 0 THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES (
+            'MAINTENANCE_PURGE',
+            'INFO',
+            'Purged ' || v_count || ' stale drivers.player_voyage_history rows (no matching player).'
+        );
+    END IF;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
  RETURNS numeric
  LANGUAGE plpgsql
@@ -1928,14 +2445,40 @@ CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
 AS $function$
 BEGIN
     RETURN (
-        SELECT COALESCE(AVG(percentage_voyage_crowns), 0)
+        SELECT COALESCE(AVG(pct), 0)
         FROM (
-            SELECT percentage_voyage_crowns
-            FROM drivers.clan_voyage_contributions
-            WHERE player_tag = p_tag
-            ORDER BY id DESC
+            SELECT pct
+            FROM (
+                -- Source A: individual rows still present in the contributions table.
+                SELECT
+                    percentage_voyage_crowns                             AS pct,
+                    voyage_id                                            AS sort_key
+                FROM drivers.clan_voyage_contributions
+                WHERE player_tag = p_tag
+
+                UNION ALL
+
+                -- Source B: entries parsed from the archived history string.
+                -- Percentage is derived from the stored crowns and target fields.
+                SELECT
+                    LEAST(
+                        ROUND(
+                            (regexp_split_to_array(entry, '\|'))[2]::numeric
+                            / NULLIF((regexp_split_to_array(entry, '\|'))[3]::numeric, 0)
+                            * 100,
+                            2
+                        ),
+                        100.0
+                    )                                                    AS pct,
+                    (regexp_split_to_array(entry, '\|'))[1]::bigint      AS sort_key
+                FROM   drivers.player_voyage_history pvh
+                CROSS  JOIN LATERAL unnest(string_to_array(pvh.history, ',')) AS entry
+                WHERE  pvh.player_tag = p_tag
+                  AND  pvh.history   <> ''
+            ) all_voyages
+            ORDER BY sort_key DESC
             LIMIT 3
-        ) sub
+        ) top3
     );
 END;
 $function$;
@@ -1953,14 +2496,12 @@ DECLARE
     v_window_end TIMESTAMPTZ;
 BEGIN
     IF NEW.manual_voyage_crowns IS DISTINCT FROM OLD.manual_voyage_crowns THEN
-        -- 1. Update the timestamp
         IF NEW.manual_voyage_crowns IS NOT NULL THEN
             NEW.manual_voyage_crowns_at := now();
         ELSE
             NEW.manual_voyage_crowns_at := NULL;
         END IF;
 
-        -- 2. Fetch voyage details
         SELECT start_at, end_at, target_crowns
         INTO v_start, v_end, v_target
         FROM drivers.clan_voyage
@@ -1968,7 +2509,6 @@ BEGIN
 
         v_window_end := COALESCE(v_end, now());
 
-        -- 3. Calculate total voyage crowns and percentage
         NEW.total_voyage_crowns := COALESCE(NEW.manual_voyage_crowns, 0) + COALESCE((
             SELECT SUM(b.team_crowns + (3 - b.opponent_crowns))
             FROM drivers.player_battles b
@@ -2477,6 +3017,38 @@ END;
 $function$;
 
 -- Public Functions
+CREATE OR REPLACE FUNCTION public.get_vault_secret(p_name text)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'substrate', 'vault', 'pg_temp'
+AS $$
+BEGIN
+    RETURN substrate.get_vault_secret(p_name);
+END;
+$$;
+
+COMMENT ON FUNCTION public.get_vault_secret(text) IS
+    'Public RPC bridge for substrate.get_vault_secret. '
+    'Required by Edge Function vault.ts which calls supabase.rpc() '
+    'and can only reach the public schema via PostgREST.';
+
+CREATE OR REPLACE FUNCTION public.update_epoch_state(p_top50 integer)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'substrate', 'pg_temp'
+AS $function$
+BEGIN
+    PERFORM substrate.update_epoch_state(p_top50);
+END;
+$function$;
+
+COMMENT ON FUNCTION public.update_epoch_state(integer) IS
+    'Public RPC bridge for substrate.update_epoch_state. '
+    'Required by headhunter-scanner Edge Function which calls supabase.rpc() '
+    'and can only reach the public schema via PostgREST.';
+
 CREATE OR REPLACE FUNCTION public.get_headhunter_context()
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2646,7 +3218,7 @@ BEGIN
 END;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.get_discovery_cache(p_hours integer)
+CREATE OR REPLACE FUNCTION public.get_discovery_cache(p_hours numeric)
  RETURNS TABLE(player_tag text)
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -2658,6 +3230,16 @@ BEGIN
     FROM substrate.discovery_cache c
     WHERE c.scanned_at >= (NOW() - (p_hours || ' hours')::INTERVAL);
 END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_active_discovery_anchors(p_limit integer DEFAULT 15)
+ RETURNS TABLE(keyword text)
+ LANGUAGE sql
+ STABLE
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+    SELECT keyword FROM substrate.get_active_discovery_anchors(p_limit);
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_stale_recruits(p_limit integer DEFAULT 20)
@@ -2865,24 +3447,8 @@ CREATE OR REPLACE FUNCTION public.bench_underqualified_recruits()
  SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
-DECLARE
-    v_count             INTEGER;
-    v_required_trophies INTEGER;
 BEGIN
-    SELECT COALESCE(required_trophies, 0) INTO v_required_trophies
-    FROM drivers.clans LIMIT 1;
-
-    WITH affected_rows AS (
-        UPDATE drivers.recruits
-        SET    status    = 'ARCHIVED'::drivers.recruit_status,
-               last_scan = NOW()
-        WHERE  trophies < v_required_trophies
-          AND  status != 'ARCHIVED'::drivers.recruit_status
-        RETURNING player_tag
-    )
-    SELECT count(*) INTO v_count FROM affected_rows;
-
-    RETURN v_count;
+    RETURN drivers.bench_underqualified_recruits();
 END;
 $function$;
 
@@ -2962,22 +3528,41 @@ DECLARE
     v_recruits               JSONB;
     v_members                JSONB;
     v_voyage_remaining_secs  BIGINT;
+    v_voyage_is_active       BOOLEAN;
 BEGIN
-    -- Resolve active voyage remaining time (NULL when no voyage is active).
-    SELECT GREATEST(0, EXTRACT(EPOCH FROM (end_at - now()))::BIGINT)
-    INTO v_voyage_remaining_secs
+    -- Resolve active voyage state and remaining time.
+    -- NULL remaining means no voyage is currently active.
+    SELECT
+        TRUE,
+        GREATEST(0, EXTRACT(EPOCH FROM (end_at - now()))::BIGINT)
+    INTO v_voyage_is_active, v_voyage_remaining_secs
     FROM drivers.clan_voyage
     WHERE status = 'ACTIVE'
     ORDER BY created_at DESC
     LIMIT 1;
 
-    -- Members: only those whose scheduled poll time has elapsed or is unset.
-    -- next_poll_at NULL means "never polled yet" - always include.
+    v_voyage_is_active := COALESCE(v_voyage_is_active, FALSE);
+
+    -- Members targeting logic:
+    --   [VOYAGE ACTIVE]  Bypass next_poll_at entirely. All active members
+    --                    must be polled on every pipeline run to guarantee
+    --                    zero battle-log gaps during the event window.
+    --                    The per-player adaptive ceiling is applied inside
+    --                    ingest_player_battles() once they are fetched.
+    --
+    --   [NO VOYAGE]      Normal schedule-based targeting: include only
+    --                    members whose poll window has elapsed or is unset.
+    --                    next_poll_at IS NULL means "never polled" - always
+    --                    include.
     SELECT jsonb_agg(player_tag)
     INTO v_members
     FROM drivers.members
     WHERE is_active = true
-      AND (next_poll_at IS NULL OR next_poll_at <= now());
+      AND (
+          v_voyage_is_active
+          OR next_poll_at IS NULL
+          OR next_poll_at <= now()
+      );
 
     SELECT jsonb_agg(player_tag)
     INTO v_recruits
@@ -3024,10 +3609,20 @@ BEGIN
                 item->>'battleTime'             AS bt,
                 item->>'type'                   AS type,
                 item->'team'->0->>'tag'         AS team_tag,
-                COALESCE((item->'team'->0->>'crowns')::INT, 0)     AS team_crowns,
+                CASE
+                    WHEN item->>'type' = 'riverRaceDuel' AND jsonb_typeof(item->'team'->0->'rounds') = 'array' THEN
+                        (SELECT (COALESCE(SUM((r->>'crowns')::INT), 0) + (3 * GREATEST(COUNT(r) - 1, 0)))::INT
+                         FROM jsonb_array_elements(item->'team'->0->'rounds') r)
+                    ELSE COALESCE((item->'team'->0->>'crowns')::INT, 0)
+                END AS team_crowns,
                 item->'opponent'->0->>'tag'     AS opponent_player_tag,
                 item->'opponent'->0->>'name'    AS opponent_player_name,
-                COALESCE((item->'opponent'->0->>'crowns')::INT, 0) AS opponent_crowns
+                CASE
+                    WHEN item->>'type' = 'riverRaceDuel' AND jsonb_typeof(item->'opponent'->0->'rounds') = 'array' THEN
+                        (SELECT COALESCE(SUM((r->>'crowns')::INT), 0)::INT
+                         FROM jsonb_array_elements(item->'opponent'->0->'rounds') r)
+                    ELSE COALESCE((item->'opponent'->0->>'crowns')::INT, 0)
+                END AS opponent_crowns
             FROM jsonb_array_elements(p_payload) item
             WHERE item->>'battleTime' IS NOT NULL
               AND item->'opponent' IS NOT NULL
@@ -3092,32 +3687,11 @@ BEGIN
         );
 
         UPDATE drivers.members
-        SET next_poll_at = now() + make_interval(secs => v_interval_secs)
+        SET next_poll_at = now() + make_interval(secs => v_interval_secs::double precision)
         WHERE player_tag = p_tag;
     END IF;
 END;
 $function$;
-
-CREATE OR REPLACE FUNCTION substrate.weighted_avg(
-    p_values numeric[],
-    p_decay  numeric DEFAULT 0.05,
-    p_floor  numeric DEFAULT 0.5
-)
-RETURNS numeric
-LANGUAGE sql
-IMMUTABLE STRICT SECURITY DEFINER
-SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
-AS $
-    SELECT
-        SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
-        NULLIF(SUM(CASE WHEN val IS NOT NULL THEN GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay) END), 0)
-    FROM UNNEST(p_values) WITH ORDINALITY AS t(val, ord)
-$;
-
-COMMENT ON FUNCTION substrate.weighted_avg(numeric[], numeric, numeric) IS
-    'Recency-decayed weighted average. Index 1 = most recent (full weight).
-     Each subsequent entry loses p_decay weight, floored at p_floor.
-     Default: 5% decay per entry, floor at 50% (matches voyage_factuals).';
 
 -- VIEWS
 DROP VIEW IF EXISTS drivers.recruits_view CASCADE;
@@ -3141,23 +3715,49 @@ SELECT player_tag AS tag,
 DROP VIEW IF EXISTS features.scoring_view CASCADE;
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
-  -- -- Voyage pipeline (unchanged) ---------------------------------------------
+  -- -- Voyage pipeline -----------------------------------------------------------
   voyage_history AS (
-      SELECT c.player_tag,
-             c.total_voyage_crowns AS crowns,
-             v.target_crowns,
-             v.end_at,
-             row_number() OVER (
-                 PARTITION BY c.player_tag ORDER BY v.end_at DESC
-             ) AS recency_rank
+      -- Source A: individual rows still in the live contributions table.
+      SELECT
+          c.player_tag,
+          c.total_voyage_crowns                               AS crowns,
+          v.target_crowns,
+          v.end_at,
+          v.id                                                AS voyage_id
         FROM drivers.clan_voyage_contributions c
           JOIN drivers.clan_voyage v ON v.id = c.voyage_id
        WHERE v.status = 'COMPLETED'::text
+
+      UNION ALL
+
+      -- Source B: entries parsed from the consolidated history archive.
+      -- Format per entry: voyage_id|crowns|target_crowns|end_date (YYYY-MM-DD).
+      SELECT
+          pvh.player_tag,
+          (regexp_split_to_array(entry, '\|'))[2]::integer               AS crowns,
+          (regexp_split_to_array(entry, '\|'))[3]::integer               AS target_crowns,
+          ((regexp_split_to_array(entry, '\|'))[4]::date)::timestamptz  AS end_at,
+          (regexp_split_to_array(entry, '\|'))[1]::bigint                AS voyage_id
+        FROM   drivers.player_voyage_history pvh
+        CROSS  JOIN LATERAL unnest(string_to_array(pvh.history, ',')) AS entry
+       WHERE   pvh.history <> ''
+  ),
+  voyage_ranked AS (
+      SELECT
+          player_tag,
+          crowns,
+          target_crowns,
+          end_at,
+          voyage_id,
+          row_number() OVER (
+              PARTITION BY player_tag ORDER BY end_at DESC
+          ) AS recency_rank
+        FROM voyage_history
   ),
   voyage_factuals AS (
       SELECT vh.player_tag,
              sum(
-                 vh.crowns::numeric / vh.target_crowns::numeric
+                 vh.crowns::numeric / NULLIF(vh.target_crowns::numeric, 0)
                  * GREATEST(0.5, 1.0 - (vh.recency_rank - 1)::numeric * 0.05)
              ) AS weighted_voyage_index,
              ( SELECT string_agg(
@@ -3167,13 +3767,13 @@ CREATE OR REPLACE VIEW features.scoring_view AS
                        )
                FROM (
                    SELECT crowns, end_at
-                     FROM voyage_history vh_sub
+                     FROM voyage_ranked vh_sub
                     WHERE vh_sub.player_tag = vh.player_tag
                     ORDER BY end_at DESC
                     LIMIT 52
                ) sub
              ) AS v_hist
-        FROM voyage_history vh
+        FROM voyage_ranked vh
        GROUP BY vh.player_tag
   ),
 
@@ -3747,6 +4347,18 @@ WITH latest_logs AS (
   ORDER BY (season_id)::integer DESC, (section_index)::integer DESC;
 
 -- TRIGGERS
+-- ============================================================
+-- 6. pg_cron SCHEDULE
+-- Ticks every 5 minutes. The guard function itself is idempotent
+-- and fast-exits when no action is required.
+-- ============================================================
+SELECT cron.schedule(
+    'headhunter-epoch-guard',
+    '*/5 * * * *',
+    $$SELECT substrate.run_headhunter_epoch_guard()$$
+);
+
+
 CREATE OR REPLACE TRIGGER handle_updated_at_members BEFORE UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
 CREATE OR REPLACE TRIGGER tr_heritage_snapshot AFTER DELETE OR UPDATE ON drivers.members FOR EACH ROW EXECUTE FUNCTION substrate.handle_heritage_snapshot();

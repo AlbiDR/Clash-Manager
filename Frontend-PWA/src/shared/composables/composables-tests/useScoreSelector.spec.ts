@@ -4,20 +4,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useScoreSelector } from "../useScoreSelector";
 
-// Mocking @core dependencies
-const mockTap = vi.fn();
-const mockMedium = vi.fn();
-const mockHeavy = vi.fn();
+
 
 vi.mock("@core", async (importOriginal) => {
   const actual = await importOriginal() as any;
   return {
     ...actual,
-    useHaptics: () => ({
-      tap: mockTap,
-      medium: mockMedium,
-      heavy: mockHeavy,
-    }),
     SCORE_SELECTION_STEPS: [15, 30, 45, 60, 75, 90, 100],
   };
 });
@@ -48,7 +40,6 @@ describe("useScoreSelector", () => {
 
     toggleMode();
     expect(emit).toHaveBeenCalledWith("update:mode", "le");
-    expect(mockTap).toHaveBeenCalled();
     expect(emit).toHaveBeenCalledWith("select", 75, "le");
 
     emit.mockClear();
@@ -66,14 +57,12 @@ describe("useScoreSelector", () => {
 
     selectValue(60);
     expect(emit).toHaveBeenCalledWith("update:value", 60);
-    expect(mockMedium).toHaveBeenCalled();
     expect(emit).toHaveBeenCalledWith("select", 60, "ge");
 
-    // Redundant selection should not trigger emit or haptics
+    // Redundant selection should not trigger emit
     vi.clearAllMocks();
     selectValue(75);
     expect(emit).not.toHaveBeenCalled();
-    expect(mockMedium).not.toHaveBeenCalled();
   });
 
   it("toggles expand and attempts scroll", () => {
@@ -90,7 +79,6 @@ describe("useScoreSelector", () => {
 
     toggleExpand();
     expect(isScoreExpanded.value).toBe(true);
-    expect(mockTap).toHaveBeenCalled();
 
     // Scroll is deferred via setTimeout(..., 50)
     expect(mockScrollTo).not.toHaveBeenCalled();

@@ -15,13 +15,17 @@
  * - **Satisfaction:** ADR Section II (Layer 1: Core) and Section IV (Tiered Caching Protocol).
  */
 
+import { STORAGE_DELETE_TIMEOUT } from "@core/config";
+
 /**
  * Fallback in-memory storage for environments where IndexedDB is unavailable or failing.
+ * // EPHEMERAL: intentionally resets on cold start
  */
 export const memoryStore = new Map<string, unknown>();
 
 /**
  * Global flag indicating if the kernel has fallen back to memory-only mode.
+ * // EPHEMERAL: intentionally resets on cold start
  */
 export let useMemoryStore = false;
 
@@ -29,23 +33,24 @@ export let useMemoryStore = false;
 // [THREAT:] Private browsing modes or restricted environments can expose the IndexedDB
 // global but throw security errors upon access, leading to unhandled runtime exceptions.
 // [DECISION LOG] We perform a proactive probe on initialization to detect these
-// failures early and force a graceful degradation to the memoryStore.
+// failures early and force a graceful degradation to the memoryStore. This protects
+// the higher layers (@core/services) from silent failures during the boot sequence.
 if (typeof indexedDB === "undefined") {
   useMemoryStore = true;
 } else {
   try {
     // Some private browsing modes expose the symbol but fail on open
-    const req = indexedDB.open("CM_KERNEL_CHECK");
-    req.onerror = () => {
+    const idbProbeRequest = indexedDB.open("CM_KERNEL_CHECK");
+    idbProbeRequest.onerror = () => {
       useMemoryStore = true;
     };
-    req.onsuccess = () => {
-      if (req.result && typeof req.result.close === "function") {
-        req.result.close();
+    idbProbeRequest.onsuccess = () => {
+      if (idbProbeRequest.result && typeof idbProbeRequest.result.close === "function") {
+        idbProbeRequest.result.close();
       }
       indexedDB.deleteDatabase("CM_KERNEL_CHECK");
     };
-  } catch (e) {
+  } catch (idbProbeError: unknown) {
     useMemoryStore = true;
   }
 }
@@ -68,20 +73,21 @@ export function deleteDatabasePromise(dbName: string): Promise<void> {
   return new Promise((resolve) => {
     try {
       if (typeof indexedDB === "undefined") return resolve();
-      const req = indexedDB.deleteDatabase(dbName);
-      req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
-      req.onblocked = () => {
+      const idbDeleteRequest = indexedDB.deleteDatabase(dbName);
+      idbDeleteRequest.onsuccess = () => resolve();
+      idbDeleteRequest.onerror = () => resolve();
+      idbDeleteRequest.onblocked = () => {
         // [DECISION LOG] Non-blocking timeout to prevent hanging the pipeline
         // during database migrations or concurrent access conflicts.
-        setTimeout(resolve, 1500);
+        setTimeout(resolve, STORAGE_DELETE_TIMEOUT);
       };
-    } catch (e) {
+    } catch (dbDeletionError: unknown) {
       resolve();
     }
   });
 }
 
+// EPHEMERAL: intentionally resets on cold start
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 /**
@@ -111,28 +117,31 @@ export async function openDB(
       return reject(new Error("IDB Unsupported"));
     }
 
-    const request = indexedDB.open(dbName, version);
+    const idbOpenRequest = indexedDB.open(dbName, version);
 
-    request.onupgradeneeded = (e) => {
-      const db = (e.target as IDBOpenDBRequest).result;
+    // [THREAT:] Race conditions or schema conflicts during upgrade can corrupt persistence.
+    // [DECISION LOG] Upgrade logic is encapsulated in a dedicated callback to ensure
+    // structural integrity before the connection is marked successful.
+    idbOpenRequest.onupgradeneeded = (dbUpgradeEvent) => {
+      const db = (dbUpgradeEvent.target as IDBOpenDBRequest).result;
       onUpgrade(db);
     };
 
-    request.onsuccess = async () => {
-      const db = request.result;
+    idbOpenRequest.onsuccess = async () => {
+      const db = idbOpenRequest.result;
       if (onSuccess) {
         try {
           await onSuccess(db);
-        } catch (err) {
-          console.warn("[IDB-Kernel] onSuccess hook failed:", err);
+        } catch (postConnectionHookError: unknown) {
+          console.warn("[IDB-Kernel] onSuccess hook failed:", postConnectionHookError);
         }
       }
       resolve(db);
     };
 
-    request.onerror = (e) => {
+    idbOpenRequest.onerror = (dbOpeningError) => {
       dbPromise = null;
-      reject(request.error || e);
+      reject(idbOpenRequest.error || dbOpeningError);
     };
   });
 
@@ -180,14 +189,15 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readonly");
-          const store = transaction.objectStore(storeName);
-          const request = store.get(key);
-          request.onsuccess = () => resolve((request.result as T) || null);
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readonly");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbGetRequest = idbStore.get(key);
+          idbGetRequest.onsuccess = () => resolve((idbGetRequest.result as T) || null);
+          idbGetRequest.onerror = () => reject(idbGetRequest.error);
+        } catch (readOperationError: unknown) { reject(readOperationError); }
       });
     } catch {
+      // [THREAT:] Silent runtime failures in IDB operations can stall the UI thread.
       // [DECISION LOG] Runtime failures in IDB trigger an immediate degradation
       // to memory-only mode to preserve application responsiveness.
       useMemoryStore = true;
@@ -209,14 +219,17 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readwrite");
-          const store = transaction.objectStore(storeName);
-          const request = store.put(value, key);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readwrite");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbSetRequest = idbStore.put(value, key);
+          idbSetRequest.onsuccess = () => resolve();
+          idbSetRequest.onerror = () => reject(idbSetRequest.error);
+        } catch (writeOperationError: unknown) { reject(writeOperationError); }
       });
     } catch {
+      // [THREAT:] Storage exhaustion or IO failures must not prevent UI state commitment.
+      // [DECISION LOG] Fall back to memoryStore to ensure that the user's latest interactions
+      // are captured even if persistence is failing.
       useMemoryStore = true;
       memoryStore.set(key, value);
     }
@@ -235,12 +248,12 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readwrite");
-          const store = transaction.objectStore(storeName);
-          const request = store.delete(key);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readwrite");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbDelRequest = idbStore.delete(key);
+          idbDelRequest.onsuccess = () => resolve();
+          idbDelRequest.onerror = () => reject(idbDelRequest.error);
+        } catch (deleteOperationError: unknown) { reject(deleteOperationError); }
       });
     } catch {
       useMemoryStore = true;
@@ -260,12 +273,12 @@ export const idbCore = {
       const db = await getDB();
       return new Promise((resolve, reject) => {
         try {
-          const transaction = db.transaction(storeName, "readwrite");
-          const store = transaction.objectStore(storeName);
-          const request = store.clear();
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        } catch (e) { reject(e); }
+          const idbTransaction = db.transaction(storeName, "readwrite");
+          const idbStore = idbTransaction.objectStore(storeName);
+          const idbClearRequest = idbStore.clear();
+          idbClearRequest.onsuccess = () => resolve();
+          idbClearRequest.onerror = () => reject(idbClearRequest.error);
+        } catch (clearOperationError: unknown) { reject(clearOperationError); }
       });
     } catch {
       useMemoryStore = true;

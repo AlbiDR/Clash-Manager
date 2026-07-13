@@ -103,8 +103,8 @@ describe("StorageService", () => {
       };
 
       const newStore = {
-        put: (val: any, key: any) => {
-          if (key === "migrated_key" && val === "migrated_value") {
+        put: (targetValue: any, storageKey: any) => {
+          if (storageKey === "migrated_key" && targetValue === "migrated_value") {
             legacyPutCalled = true;
           }
           return createMockRequest();
@@ -133,7 +133,7 @@ describe("StorageService", () => {
           const req = createMockRequest();
           if (name === "test-db") {
             req.result = { close: vi.fn() };
-          } else if (name === "clash_manager_v11") {
+          } else if (name === "clash_manager_v14") {
             req.result = newDb;
           } else if (name === "clash_manager_db") {
             req.result = legacyDb;

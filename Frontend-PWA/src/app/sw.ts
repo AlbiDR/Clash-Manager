@@ -5,7 +5,13 @@
 // Service Worker for Clash Manager
 // Optimized for Native System Compatibility (WebAPK)
 import { precacheAndRoute, matchPrecache } from "workbox-precaching";
-import { openDB, getValue, handlePushBadge, handleBackgroundSync } from "./sw/index";
+import {
+  openDB,
+  getValue,
+  handlePushBadge,
+  handleBackgroundSync,
+  handleAndroidBadge,
+} from "./sw/index";
 import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../core/config";
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] };
@@ -61,10 +67,35 @@ self.addEventListener("activate", (event) => {
         if (self.registration.navigationPreload) {
           await self.registration.navigationPreload.enable();
         }
-      } catch (e) {
-        console.warn("[SW] Navigation preload activation failed", e);
+      } catch (navigationPreloadError: unknown) {
+        console.warn("[SW] Navigation preload activation failed", navigationPreloadError);
       }
+
       await self.clients.claim();
+
+      // [SELF-HEAL] CRITICAL: force every controlled tab to reload once this new
+      // version activates. Navigation is cache-first (matchPrecache below), so a
+      // tab that was already open keeps rendering the STALE precached shell + stale
+      // chunks indefinitely - skipWaiting/claim alone never re-runs the document.
+      // Driving the reload from the SW is the ONLY mechanism that reaches clients
+      // still running an OLD shell (which predates any client-side update listener).
+      // This is what un-sticks browsers wedged on a prior broken deploy.
+      //
+      // Cost: a genuinely-fresh first install also reloads once here - standard,
+      // near-invisible PWA behavior (the app re-renders instantly from cache).
+      // It does NOT loop: a stable version never re-activates, so no further reload.
+      try {
+        const windowClients = await self.clients.matchAll({ type: "window" });
+        for (const client of windowClients) {
+          if ("navigate" in client && typeof client.navigate === "function") {
+            client.navigate(client.url).catch(() => {
+              /* client may be mid-unload; ignore */
+            });
+          }
+        }
+      } catch (selfHealError: unknown) {
+        console.warn("[SW] Client self-heal reload failed", selfHealError);
+      }
     })(),
   );
 });
@@ -76,22 +107,27 @@ self.addEventListener("activate", (event) => {
  */
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
+    /**
+     * [OPTIMIZATION] Native-Like Navigation Strategy (Cache-First)
+     * To achieve sub-second "native" startup latency in the hybrid shell, we
+     * prioritize the precached app shell (index.html) for all navigation requests.
+     * This bypasses the network completely for the initial document load.
+     */
     event.respondWith(
       (async () => {
+        const cachedShell = await matchPrecache("/Clash-Manager/index.html");
+        if (cachedShell) {
+          return cachedShell;
+        }
+
         try {
-          // Attempt to consume preloaded response if active
           const preloadResponse = await event.preloadResponse;
           if (preloadResponse) {
             return preloadResponse;
           }
           return await fetch(event.request);
-        } catch (error) {
-          // Offline/Network error fallback to precached HTML shell
-          const cachedShell = await matchPrecache("/Clash-Manager/index.html");
-          if (cachedShell) {
-            return cachedShell;
-          }
-          throw error;
+        } catch (fetchError: unknown) {
+          throw fetchError;
         }
       })(),
     );
@@ -104,80 +140,38 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", async (event: ExtendableMessageEvent) => {
   if (!event.data) return;
 
-  const data = event.data as MessageData;
+  const swMessagePayload = event.data as MessageData;
 
   // NON-ANDROID: Standard Badge API (Windows, macOS, iOS Safari)
-  if (data.type === "SET_BADGE") {
-    const count = data.count;
+  if (swMessagePayload.type === "SET_BADGE") {
+    const targetBadgeCount = swMessagePayload.count;
     try {
       if (self.navigator.setAppBadge) {
-        if (count > 0) await self.navigator.setAppBadge(count);
+        if (targetBadgeCount > 0) await self.navigator.setAppBadge(targetBadgeCount);
         else await self.navigator.clearAppBadge();
       }
-    } catch (e) {
-      console.warn("[SW] Badge update failed", e);
+    } catch (badgeUpdateError: unknown) {
+      console.warn("[SW] Badge update failed", badgeUpdateError);
     }
   }
 
   // ANDROID: Badge via persistent notification
-  if (data.type === "BADGE_NOTIFICATION_ANDROID") {
-    const { count = 0 } = data;
-    const countAboveThreshold = Math.max(0, count);
-
-    try {
-      const db = await openDB();
-      const enabled =
-        (await getValue(db, "cm_notifications_enabled")) !== false;
-
-      // Update badge
-      if (self.navigator.setAppBadge) {
-        if (countAboveThreshold > 0 && enabled) {
-          await self.navigator.setAppBadge(countAboveThreshold);
-        } else {
-          await self.navigator.clearAppBadge();
-        }
-      }
-
-      // Show/update notification
-      if (countAboveThreshold > 0 && enabled) {
-        await self.registration.showNotification("New Recruits Available", {
-          body: `You have ${countAboveThreshold} recruit${countAboveThreshold === 1 ? "" : "s"} above your threshold.`,
-          icon: "pwa-192.png",
-          badge: "pwa-64.png",
-          tag: NOTIFICATION_TAG_RECRUIT,
-          renotify: false,
-          silent: false,
-          requireInteraction: false,
-          data: {
-            type: "badge",
-            count: countAboveThreshold,
-            shortcutId: NOTIFICATION_SHORTCUT_ID,
-            url: "/#/headhunter",
-          },
-        } as NotificationOptions);
-      } else {
-        const notifications = await self.registration.getNotifications({
-          tag: NOTIFICATION_TAG_RECRUIT,
-        });
-        notifications.forEach((n) => n.close());
-      }
-    } catch (e) {
-      console.warn("[SW] Android badge notification failed", e);
-    }
+  if (swMessagePayload.type === "BADGE_NOTIFICATION_ANDROID") {
+    await handleAndroidBadge(swMessagePayload.count ?? 0);
   }
 
-  if (data.type === "SHOW_NOTIFICATION") {
-    const { title, options } = data;
+  if (swMessagePayload.type === "SHOW_NOTIFICATION") {
+    const { title, options } = swMessagePayload;
     await self.registration.showNotification(title, {
-      icon: "pwa-192.png",
-      badge: "pwa-64.png",
+      icon: "assets/icons/icon-192.png",
+      badge: "assets/icons/icon-64.png",
       tag: "clash-manager-alert",
       ...options,
     });
   }
 
   // FORCE UPDATE: Manual skipWaiting via message
-  if (data.type === ("SKIP_WAITING" as string)) {
+  if (swMessagePayload.type === ("SKIP_WAITING" as string)) {
     self.skipWaiting();
   }
 });
@@ -188,24 +182,24 @@ self.addEventListener("message", async (event: ExtendableMessageEvent) => {
 self.addEventListener("push", (event: PushEvent) => {
   if (!event.data) return;
 
-  const payload = (event.data.json?.() ?? {}) as PushPayload;
+  const pushEventPayload = (event.data.json?.() ?? {}) as PushPayload;
 
   event.waitUntil(
     (async (): Promise<void> => {
-      const db = await openDB();
-      const enabled =
-        (await getValue(db, "cm_notifications_enabled")) !== false;
-      if (!enabled) return;
+      const storageConnection = await openDB();
+      const notificationsAreEnabled =
+        (await getValue(storageConnection, "cm_notifications_enabled")) !== false;
+      if (!notificationsAreEnabled) return;
 
-      if (payload.badgeCount !== undefined) {
-        await handlePushBadge(payload);
-      } else if (payload.title) {
-        await self.registration.showNotification(payload.title, {
-          body: payload.body || "",
-          icon: "pwa-192.png",
-          badge: "pwa-64.png",
-          tag: payload.tag || "push-alert",
-          data: payload.data || {},
+      if (pushEventPayload.badgeCount !== undefined) {
+        await handlePushBadge(pushEventPayload);
+      } else if (pushEventPayload.title) {
+        await self.registration.showNotification(pushEventPayload.title, {
+          body: pushEventPayload.body || "",
+          icon: "assets/icons/icon-192.png",
+          badge: "assets/icons/icon-64.png",
+          tag: pushEventPayload.tag || "push-alert",
+          data: pushEventPayload.data || {},
         } as NotificationOptions);
       }
     })(),

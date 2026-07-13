@@ -26,10 +26,10 @@ import type { Ref, ComputedRef } from "vue";
  */
 export function useConsoleSelection<T>(
   filteredItems: Ref<readonly T[]> | ComputedRef<readonly T[]>,
-  batchIdMapper: (item: T) => string,
+  batchIdMapper: (candidateItem: T) => string,
   setForceSelectionMode: (forced: boolean) => void,
   selectAll: (ids: string[]) => void,
-  scoreGetter?: (item: T) => number
+  scoreGetter?: (candidateItem: T) => number
 ) {
   /** Action: Select all currently filtered items. */
   function handleSelectAll() {

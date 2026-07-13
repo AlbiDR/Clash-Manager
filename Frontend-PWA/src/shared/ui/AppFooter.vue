@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { vTactile } from "../directives/vTactile";
-import { useHaptics } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
   version: string;
@@ -38,26 +38,26 @@ const handleReload = () => {
 
 <style scoped>
 .footer-info {
-  padding: 40px 0;
+  padding: var(--sys-space-40) 0;
   text-align: center;
   user-select: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .brand {
-  font-size: 12px;
+  font-size: var(--sys-typescale-footer);
   font-weight: 950;
   opacity: 0.8;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--sys-tracking-widest);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity var(--sys-motion-duration-200);
 }
 
 .brand:active {
@@ -67,15 +67,15 @@ const handleReload = () => {
 .demo-tag {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
-  font-size: 8px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0;
+  font-size: var(--sys-typescale-label-xs);
+  padding: var(--sys-space-2) var(--sys-space-6);
+  border-radius: var(--sys-shape-corner-extra-small);
+  letter-spacing: var(--sys-tracking-none);
   opacity: 1;
 }
 
 .copy {
-  font-size: 10px;
+  font-size: var(--sys-typescale-label-md);
   opacity: 0.7;
 }
 </style>

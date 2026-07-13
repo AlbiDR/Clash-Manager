@@ -1,4 +1,7 @@
-# Laboratory -- Progression Engine
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+# Laboratory : Progression Engine
 
 The **Strategic Simulator**. A self-contained Feature (Layer 3) responsible for modeling player progression paths and optimizing card upgrades based on ROI or specific level targets.
 
@@ -11,8 +14,8 @@ The Laboratory allows users to project their future King Level and resource cons
 - **Layer**: Layer 3 (@features)
 - **Isolation**: Strictly decoupled. Never imports from other Features (Headhunter, Roster, Settings).
 - **Dependencies**:
-  - `@core/utils/economy`: Branded currency arithmetic.
-  - `@core/api/ProfileClient`: Profile fetching.
+ - `@core/utils/economy`: Branded currency arithmetic.
+ - `@core/api/ProfileClient`: Profile fetching.
 
 ## Logic Subsystems
 
@@ -24,6 +27,11 @@ A non-blocking, generator-based engine that coordinates core logic and scoring s
 - **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
 - **Priority Queue Optimization**: Utilizes the `@core/utils/PriorityQueue` to maintain an $O(\log N)$ selection loop for upgrade candidates.
 - **Greedy Optimization**: Identifies and executes the optimal upgrade step based on the active scoring strategy.
+
+### Strategy Pattern (ScoringStrategy.ts)
+Upgrade priorities are defined by interchangeable strategies:
+- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
+- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
 
 ### Simulation Core (SimulationCore.ts)
 Atomic evaluation and state transition logic.
@@ -37,21 +45,15 @@ Atomic evaluation and state transition logic.
 Renders the recommended upgrade path using a high-performance rendering strategy.
 - **Progressive Rendering**: Utilizes `useProgressiveList` (@core/services) to time-slice the injection of trajectory items into the DOM. This maintains 60FPS even when a simulation results in hundreds of recommended actions, replacing the legacy "Show More" manual expansion.
 
-### Strategy Pattern (ScoringStrategy.ts)
-Upgrade priorities are defined by interchangeable strategies:
-- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
-- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
-
-### Constants Registry (Registry.ts)
-Acts as a local feature-level engine for card-specific data and calibrations, consuming authoritative constants from the Layer 1 core substrate (`@core/utils/game.ts`).
-- **Feature Calibration**: Houses specific overrides and logic calibrations required exclusively by the Laboratory simulation engine.
-- **Upgrade Resolution**: Implements the `getUpgradeData` helper to resolve costs and gains for specific card rarities and levels by mapping core constants to simulation requirements.
+### Logic Subsystems
+The feature logic is decomposed into several specialized modules to ensure Layer 3 compliance and maintainability:
+- **Upgrade Resolution**: Delegates to the core `getUpgradeData` utility (Layer 1) to resolve costs and gains for specific card rarities and levels, ensuring domain synchronization across features.
 
 ## State Management
 Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.
 
 ### Persistence & Hydration
-- **LocalStorage**: Settings (`laboratory-settings`) and Simulation Results (`laboratory-observation`) are persisted to ensure session resilience.
+- **LocalStorage**: Settings (`laboratory_settings`) and the player Observation (`laboratory_observation`, the hydrated `PlayerData` input - not the computed result) are persisted to ensure session resilience. Inventory overrides use `laboratory_inventory`.
 - **Migration Logic**: The store includes a migration layer to normalize legacy strategy names ('Target' -> 'Level Projection', 'Maximize' -> 'Resource Efficiency').
 
 ### Performance & Memoization
@@ -60,8 +62,8 @@ Managed via the `useLaboratoryStore` Pinia store. Following Section III of the A
 ### Behavioral Orchestration (useLaboratory.ts & useLaboratorySimulation.ts)
 The behavioral layer standardizes communication between the simulation logic and the UI.
 - **useLaboratory.ts**: Orchestrates high-level layout state and data ingestion.
-  - **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution and refresh logic.
-  - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
+ - **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution and refresh logic.
+ - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
+ - **Memoization**: Exposes `getTrajectoryMemoKeys` for stable `v-memo` dependency arrays across the trajectory list.
 - **useLaboratorySimulation.ts**: Specialized orchestrator for simulation execution.
-  - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs, and progress reporting via reactive refs.
-  - **Performance Optimization**: Centralizes the `getTrajectoryMemoKeys` logic to ensure stable rendering performance across the trajectory list.
+ - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs (via `currentSimulationId`), and batched generator consumption within ~10ms `requestIdleCallback` budgets.

@@ -14,17 +14,15 @@
         "virtual:pwa-register/vue"
       ]
     },
+    "Backend": {
+      "entry": "supabase/functions/*/index.ts",
+      "project": "supabase/functions/**/*.ts"
+    },
     ".": {
-      "entry": [
-        "Backend/supabase/functions/*/index.ts",
-        ".github/scripts/*.ts"
-      ],
-      "project": [
-        "Backend/supabase/functions/**/*.ts",
-        ".github/scripts/*.ts"
-      ],
+      "entry": ".github/scripts/*.ts",
+      "project": ".github/scripts/*.ts",
       "ignoreDependencies": ["npm"],
-      "ignoreBinaries": ["wait-on"]
+      "ignoreBinaries": []
     }
   },
   "compilers": {

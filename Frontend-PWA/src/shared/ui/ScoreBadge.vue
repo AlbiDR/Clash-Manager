@@ -15,8 +15,8 @@ const props = defineProps<{
   score: number | undefined;
   /** Context for benchmarking ('lb' for Leaderboard, 'hh' for Headhunter) */
   context: "lb" | "hh";
-  /** Optional: Trend delta (dt) for momentum display */
-  dt?: number;
+  /** Optional: Trend delta (scoreDelta) for momentum display */
+  scoreDelta?: number;
   /** Optional: Raw performance score for momentum display */
   performanceRawScore?: number;
 }>();
@@ -38,8 +38,8 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
     </span>
 
     <MomentumPill
-      v-if="props.context === 'lb' && props.dt !== undefined"
-      :dt="props.dt"
+      v-if="props.context === 'lb' && props.scoreDelta !== undefined"
+      :score-delta="props.scoreDelta"
       :performance-raw-score="props.performanceRawScore"
       class="momentum-overlay"
     />
@@ -58,10 +58,10 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 18px;
+  font-size: var(--sys-typescale-score);
   font-weight: 900;
   font-family: var(--sys-font-family-mono);
-  line-height: 1;
+  line-height: var(--sys-leading-none);
 }
 
 .momentum-overlay {

@@ -7,6 +7,9 @@ _agents
 .cursor
 .jules
 .mcp
+# Claude Code personal settings - contains API tokens; never commit
+.claude/settings.local.json
+.claude
 
 # Dependencies
 node_modules
@@ -83,15 +86,27 @@ Backend/scripts/data/
 mcp_config.json
 test-stack.js
 Frontend-PWA/test-stack.js
+verification/
+functions_*.txt
 
 # Android Build Artifacts (keep out of repo)
 *.apk
 *.aab
 *.keystore
+# ...but DO track the one ground-truth reference APK (the recovered native layer
+# is the irreplaceable IP - this is its proven, signed source-of-truth binary).
+!APK/reference/clashmanager-v4.apk
 /assetlinks.json
 !Frontend-PWA/public/.well-known/assetlinks.json
-gen-maskable-icons.js
 
-# Android build outputs and intermediate files
+# Android icon-generator preview output (gen-android-icons.mjs --preview)
+.icon-preview/
+
+# Android build outputs (apktool b / build-apk.sh) - sources live in APK/android/
 APK/android/build/
-APK/.build/
+# Intermediates stay ignored; the versioned signed release APK is tracked (exception below).
+APK/release/*
+!APK/release/clashmanager-v*.apk
+
+
+APK/.build

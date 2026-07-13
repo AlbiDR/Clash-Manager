@@ -11,7 +11,7 @@ export const componentStyles = `
 .ptr-indicator {
   position: absolute; top: calc(-1 * var(--ptr-offset, 0px)); left: 0; right: 0;
   height: var(--ptr-offset, 0px); display: flex; align-items: center; justify-content: center;
-  opacity: var(--ptr-opacity, 0); pointer-events: none; z-index: 1001; transition: opacity 0.1s;
+  opacity: var(--ptr-opacity, 0); pointer-events: none; z-index: var(--sys-z-ptr); transition: opacity var(--sys-motion-duration-100);
 }
 
 .ptr-spinner {
@@ -20,15 +20,15 @@ export const componentStyles = `
 }
 
 .ptr-indicator.is-refreshing .ptr-spinner { animation: spin 0.8s linear infinite; }
-.ptr-icon { color: var(--sys-color-primary); transition: transform 0.2s; }
+.ptr-icon { color: var(--sys-color-primary); transition: transform var(--sys-motion-duration-200); }
 .is-pulling .ptr-icon { transform: rotate(var(--ptr-rotate, 0deg)); }
 
 /* =========================================
    GLOBAL TYPOGRAPHY
    ========================================= */
 .view-title {
-  margin: 0; font-size: 24px; font-weight: 900; color: var(--sys-color-on-surface);
-  letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0; font-size: var(--sys-typescale-title-lg); font-weight: 900; color: var(--sys-color-on-surface);
+  letter-spacing: var(--sys-tracking-snug); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-family: var(--sys-font-family-body);
 }
 
@@ -39,8 +39,8 @@ export const componentStyles = `
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: var(--sys-space-8);
+  padding: var(--sys-space-12) var(--sys-space-24);
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
@@ -49,13 +49,13 @@ export const componentStyles = `
   text-decoration: none;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 .btn-primary:active {
   transform: scale(0.95);
 }
 
-.header-wrapper.is-scrolled .view-title { font-size: 18px; }
+.header-wrapper.is-scrolled .view-title { font-size: var(--sys-typescale-title-sm); }
 
 /* =========================================
    LINKS & INTERACTION
@@ -64,27 +64,27 @@ a { text-decoration: underline; color: inherit; }
 .btn-action, .icon-button, .fab-btn, .dock-item { text-decoration: none !important; }
 
 .squish-interaction {
-  transition: transform 0.2s var(--sys-motion-spring), background-color 0.2s ease, border-color 0.2s ease;
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring), background-color var(--sys-motion-duration-200) ease, border-color var(--sys-motion-duration-200) ease;
 }
 .squish-interaction:active { transform: scale(0.96) translateY(1px); }
 .card:active, button:active { transform: scale(0.98); }
 
 .card, .hit-target, button, a, input, select, .icon-button {
   touch-action: manipulation;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15), opacity 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring), opacity var(--sys-motion-duration-200) ease, background-color var(--sys-motion-duration-200) ease, box-shadow var(--sys-motion-duration-200) ease;
 }
 
 /* =========================================
    RICH TOOLTIPS
    ========================================= */
 .rich-tooltip {
-  position: absolute; background: var(--sys-surface-glass);
-  color: var(--sys-color-on-surface); padding: 16px; border-radius: 20px; width: 180px;
-  pointer-events: none; opacity: 0; z-index: 10000;
+  position: fixed; background: var(--sys-surface-glass);
+  color: var(--sys-color-on-surface); padding: var(--sys-space-16); border-radius: var(--sys-shape-corner-m); width: 180px;
+  pointer-events: none; opacity: 0; z-index: var(--sys-z-tooltip);
   border: 0.5px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: opacity 0.2s ease, transform 0.25s var(--sys-motion-spring), top 0.2s ease, left 0.2s ease;
-  display: flex; flex-direction: column; gap: 10px; contain: content;
+  transition: opacity var(--sys-motion-duration-200) ease, transform var(--sys-motion-duration-250) var(--sys-motion-spring), top var(--sys-motion-duration-200) ease, left var(--sys-motion-duration-200) ease;
+  display: flex; flex-direction: column; gap: var(--sys-space-10); contain: content;
   transform: translateX(-50%) translateY(-100%) scale(0.9);
 }
 .rich-tooltip.visible { opacity: 1; transform: translateX(-50%) translateY(-100%) scale(1); }
@@ -95,24 +95,24 @@ a { text-decoration: underline; color: inherit; }
    SHARED CARD COMPONENTS
    ========================================= */
 .player-name {
-  font-size: 16px;
+  font-size: var(--sys-typescale-player);
   font-weight: 850;
   color: var(--sys-color-on-surface);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  letter-spacing: var(--sys-tracking-normal);
+  line-height: var(--sys-leading-tight);
 }
 
 .trophy-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--sys-space-4);
   color: var(--sys-color-on-surface-variant);
-  margin-top: 2px;
+  margin-top: var(--sys-space-2);
   width: fit-content;
-  font-size: 11px;
+  font-size: var(--sys-typescale-meta);
   font-weight: 700;
 }
 
@@ -122,14 +122,14 @@ a { text-decoration: underline; color: inherit; }
 }
 
 .badge {
-  height: 18px;
+  height: var(--sys-space-18);
   width: 100%;
   background: var(--sys-color-surface-container-highest);
-  border-radius: 6px;
+  border-radius: var(--sys-shape-corner-badge);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--sys-typescale-label-md);
   font-weight: 800;
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
@@ -137,32 +137,32 @@ a { text-decoration: underline; color: inherit; }
 }
 
 .stat-score {
-  font-size: 19px;
+  font-size: var(--sys-typescale-score);
   font-weight: 950;
   font-family: var(--sys-font-family-mono);
-  letter-spacing: -0.05em;
+  letter-spacing: var(--sys-tracking-tightest);
   z-index: 1;
 }
 
 .btn-action {
   flex: 1;
-  height: 44px;
-  border-radius: 12px;
+  height: var(--sys-space-44);
+  border-radius: var(--sys-shape-corner-medium);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   font-weight: 700;
   text-decoration: none;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s, background-color 0.2s;
+  transition: transform var(--sys-motion-duration-200), background-color var(--sys-motion-duration-200);
 }
 .btn-action:active { transform: scale(0.98); }
 .btn-action.primary { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
-.btn-action.compact { font-size: 13px; }
+.btn-action.compact { font-size: var(--sys-typescale-body-sm); }
 
 .role-leader { background: var(--sys-color-primary); color: var(--sys-color-on-primary); }
 .role-coleader { background: var(--sys-color-primary-container); color: var(--sys-color-on-primary-container); border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2); }
@@ -176,20 +176,20 @@ a { text-decoration: underline; color: inherit; }
   background: var(--sys-surface-glass);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-l);
-  padding: 20px;
+  padding: var(--sys-space-20);
   box-shadow: var(--sys-elevation-2);
-  transition: opacity 0.3s ease, transform 0.2s ease;
+  transition: opacity var(--sys-motion-duration-300) ease, transform var(--sys-motion-duration-200) ease;
 }
 
 .panel-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: var(--sys-space-8);
+  font-size: var(--sys-typescale-body-sm);
   font-weight: 850;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--sys-tracking-wide);
   opacity: 0.7;
-  margin-bottom: 20px;
+  margin-bottom: var(--sys-space-20);
 }
 `;

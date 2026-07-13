@@ -8,20 +8,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { ref, nextTick } from "vue";
 
-// Use 'mock' prefix for Vitest to allow use in vi.mock factories
-const mockTap = vi.fn();
+const { mockTap } = vi.hoisted(() => ({ mockTap: vi.fn() }));
 const mockIsScrolled = ref(false);
 
-// Mock @core for useHaptics
-vi.mock("@core", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    useHaptics: () => ({
-      tap: mockTap,
-    }),
-  };
-});
+vi.mock("@shared/composables/useHaptics", () => ({
+  useHaptics: () => ({ tap: mockTap }),
+}));
 
 // Mock useHeaderScroll - MUST return an object that can be destructured while retaining reactivity
 vi.mock("../composables/useHeaderScroll", () => ({
@@ -93,8 +85,8 @@ describe("ConsoleHeader", () => {
       props: { title: "Sort Test", showSearch: true, sortOptions, currentSort: "name" },
     });
 
-    const select = wrapper.find(".sort-select");
-    await select.setValue("level");
+    const select = wrapper.findComponent({ name: "BaseSelect" });
+    await select.vm.$emit("update:modelValue", "level");
 
     expect(wrapper.emitted("update:sort")?.[0]).toEqual(["level"]);
   });

@@ -8,6 +8,10 @@ import { mount } from "@vue/test-utils";
 import MemberCard from "../MemberCard.vue";
 import type { LeaderboardMember } from "@core/types";
 
+vi.mock("@shared/composables/useHaptics", () => ({
+  useHaptics: () => ({ tap: vi.fn() }),
+}));
+
 // Mock Layer 1 services via deep imports to avoid Barrel side effects (ADR Section II)
 vi.mock("../../../../core/services/useBenchmarking", () => ({
   useBenchmarking: () => ({

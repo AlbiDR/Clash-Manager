@@ -111,8 +111,8 @@ export function useHeadhunter() {
 
   // REALTIME SYNCHRONIZATION
   // Subscribe to server-authoritative INSERT/DELETE events on drivers.recruit_blacklist.
-  // INSERT: a recruit was dismissed (on this or another device) — apply local removal.
-  // DELETE: a recruit was undismissed — trigger a full pool refresh to restore their data.
+  // INSERT: a recruit was dismissed (on this or another device) - apply local removal.
+  // DELETE: a recruit was undismissed - trigger a full pool refresh to restore their data.
   // The returned cleanup function removes the Supabase channel on component unmount.
   const stopBlacklistSync = subscribeToBlacklist(
     (playerTag) => {

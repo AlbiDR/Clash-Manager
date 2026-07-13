@@ -12,10 +12,10 @@ describe('useConsoleSelection', () => {
     { id: '3', score: 95 },
   ];
   const items = ref(mockItems);
-  const batchIdMapper = (item: any) => item.id;
+  const batchIdMapper = (candidateItem: any) => candidateItem.id;
   const setForceSelectionMode = vi.fn();
   const selectAll = vi.fn();
-  const scoreGetter = (item: any) => item.score;
+  const scoreGetter = (candidateItem: any) => candidateItem.score;
 
   it('selects all items correctly', () => {
     const { handleSelectAll } = useConsoleSelection(
@@ -85,7 +85,7 @@ describe('useConsoleSelection', () => {
       scoreGetter
     );
 
-    const customScoreGetter = (item: any) => item.id === '2' ? 100 : 0;
+    const customScoreGetter = (candidateItem: any) => candidateItem.id === '2' ? 100 : 0;
     handleSelectScore(100, 'ge', customScoreGetter);
 
     expect(selectAll).toHaveBeenCalledWith(['2']);

@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 export { default as ProfileHydrator } from './ProfileHydrator';
-export * from './Registry';
 export * from './ScoringStrategy';
 export * from './SimulationEngine';
 export * from './Types';

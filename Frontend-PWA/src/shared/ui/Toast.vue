@@ -3,24 +3,42 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { ref, onMounted, onUnmounted } from "vue";
+
+/**
+ * [SHARED] TOAST NOTIFICATION
+ * ----------------------------------------------------------------------------
+ * Rationale: Standardized transient feedback molecule for system events.
+ * Features: Auto-dismissal, Action buttons, Clipboard integration.
+ * ----------------------------------------------------------------------------
+ */
+
 const props = defineProps<{
+  /** Unique identifier for the toast instance. */
   id: string;
+  /** The semantic type of the toast, determining its visual style. */
   type: "success" | "error" | "info" | "undo";
+  /** The message text to display. */
   message: string;
+  /** Visibility duration in milliseconds. Set to 0 for persistent toasts. */
   duration?: number;
+  /** Optional label for an action button (e.g., "UNDO"). */
   actionLabel?: string;
 }>();
 
 const emit = defineEmits<{
+  /** Emitted when the toast is dismissed (either manually or via timeout). */
   dismiss: [id: string];
+  /** Emitted when the user clicks the action button. */
   action: [id: string];
 }>();
 
+/** @internal Internal timer ID used for auto-dismissal cleanup. */
 let timer: number | undefined;
 const isHandlingAction = ref(false);
+const showCopiedTick = ref(false);
 
 function startTimer() {
-  if (props.duration) {
+  if (props.duration && !showCopiedTick.value) {
     timer = window.setTimeout(() => {
       emit("dismiss", props.id);
     }, props.duration);
@@ -41,6 +59,25 @@ function triggerAction() {
   if (isHandlingAction.value) return;
   isHandlingAction.value = true;
   emit("action", props.id);
+}
+
+/**
+ * Copies the toast message to the system clipboard.
+ */
+async function copyToClipboard() {
+  try {
+    // [DECISION LOG] Error and Info messages are explicitly selectable and
+    // copyable to satisfy the "Error Readability Contract" in ADR Section IV.
+    await navigator.clipboard.writeText(props.message);
+    showCopiedTick.value = true;
+    clearTimer();
+    setTimeout(() => {
+      showCopiedTick.value = false;
+      startTimer();
+    }, 2000);
+  } catch (clipboardError) {
+    console.error("Failed to copy toast message:", clipboardError);
+  }
 }
 
 onMounted(startTimer);
@@ -68,6 +105,16 @@ onUnmounted(clearTimer);
 
     <div class="message">{{ message }}</div>
 
+    <!-- Copy Button for Error and Info notifications -->
+    <button 
+      v-if="type === 'error' || type === 'info'" 
+      class="copy-btn" 
+      title="Copy message"
+      @click.stop="copyToClipboard"
+    >
+      <Icon :name="showCopiedTick ? 'check' : 'copy'" size="16" />
+    </button>
+
     <button
       v-if="actionLabel"
       class="action-btn"
@@ -86,13 +133,13 @@ onUnmounted(clearTimer);
 <style scoped>
 .toast {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Align top for multiline compatibility */
   gap: 12px;
   background: var(--sys-surface-glass);
 
   color: var(--sys-color-on-surface);
-  padding: 10px 16px;
-  border-radius: 99px; /* Pill shape */
+  padding: 12px 16px;
+  border-radius: 20px; /* Subtle rounded corners for multiline layout compatibility */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   min-width: 280px;
   max-width: 90vw;
@@ -101,7 +148,8 @@ onUnmounted(clearTimer);
   transition:
     transform 0.2s var(--sys-motion-spring),
     box-shadow 0.2s;
-  user-select: none;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .toast.is-actionable {
@@ -114,7 +162,6 @@ onUnmounted(clearTimer);
 /* Success State */
 .toast.success {
   background: var(--sys-color-success-container);
-  color: var(--sys-color-on-success-container); /* Check var usage if needed */
   color: #002105; /* Fallback high contrast */
   border-color: rgba(0, 0, 0, 0.05);
 }
@@ -138,6 +185,7 @@ onUnmounted(clearTimer);
   display: flex;
   align-items: center;
   opacity: 0.9;
+  margin-top: 1px; /* Align perfectly with first text line */
 }
 
 .undo-icon {
@@ -149,9 +197,30 @@ onUnmounted(clearTimer);
   font-weight: 700;
   font-size: 14px;
   line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+  white-space: pre-wrap;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, background 0.2s;
+  margin-left: 2px;
+  margin-top: -1px; /* Align with first line */
+}
+.copy-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .action-btn {
@@ -194,6 +263,7 @@ onUnmounted(clearTimer);
   justify-content: center;
   transition: opacity 0.2s;
   margin-left: -4px;
+  margin-top: 1px; /* Align with first line */
 }
 .close-btn:hover {
   opacity: 1;

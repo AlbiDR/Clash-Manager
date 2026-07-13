@@ -97,49 +97,49 @@ const BENCHMARK_LABELS: Record<
  * metrics in one traversal. This is critical for maintaining 60FPS when
  * processing large member lists.
  *
- * @param items - Readonly array of items to analyze.
- * @param extractors - Dictionary of functions to pull numeric values from items.
+ * @param candidatePool - Readonly array of items to analyze.
+ * @param metricExtractors - Dictionary of functions to pull numeric values from items.
  * @returns A map of calculated statistics (avg, max, min) per metric.
  */
 const calculateStats = <T>(
-  items: readonly T[],
-  extractors: Record<string, (item: T) => number>,
+  candidatePool: readonly T[],
+  metricExtractors: Record<string, (item: T) => number>,
 ): StatsMap | null => {
-  if (!items.length) return null;
+  if (!candidatePool.length) return null;
 
-  const keys = Object.keys(extractors);
-  const accumulators: Record<
+  const keys = Object.keys(metricExtractors);
+  const statAccumulators: Record<
     string,
     { sum: number; max: number; min: number }
   > = {};
 
   // Initialize
   for (let i = 0; i < keys.length; i++) {
-    accumulators[keys[i]] = { sum: 0, max: -Infinity, min: Infinity };
+    statAccumulators[keys[i]] = { sum: 0, max: -Infinity, min: Infinity };
   }
 
   // Single Pass
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+  for (let i = 0; i < candidatePool.length; i++) {
+    const candidateItem = candidatePool[i];
     for (let j = 0; j < keys.length; j++) {
       const key = keys[j];
-      const val = extractors[key](item);
-      const acc = accumulators[key];
+      const observedMetricValue = metricExtractors[key](candidateItem);
+      const metricAccumulator = statAccumulators[key];
 
-      acc.sum += val;
-      if (val > acc.max) acc.max = val;
-      if (val < acc.min) acc.min = val;
+      metricAccumulator.sum += observedMetricValue;
+      if (observedMetricValue > metricAccumulator.max) metricAccumulator.max = observedMetricValue;
+      if (observedMetricValue < metricAccumulator.min) metricAccumulator.min = observedMetricValue;
     }
   }
 
   const stats: StatsMap = {};
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
-    const acc = accumulators[key];
+    const metricAccumulator = statAccumulators[key];
     stats[key] = {
-      avg: acc.sum / items.length,
-      max: acc.max === -Infinity ? 0 : acc.max,
-      min: acc.min === Infinity ? 0 : acc.min,
+      avg: metricAccumulator.sum / candidatePool.length,
+      max: metricAccumulator.max === -Infinity ? 0 : metricAccumulator.max,
+      min: metricAccumulator.min === Infinity ? 0 : metricAccumulator.min,
     };
   }
 
@@ -172,35 +172,35 @@ function getBenchmark(
   const stats = context === "lb" ? lbStats?.value : hhStats?.value;
   if (!stats) return null;
 
-  const m = stats[metric];
-  if (!m) return null;
+  const metricStats = stats[metric];
+  if (!metricStats) return null;
 
-  const diff = value - m.avg;
-  const percent = Math.abs(Math.round((diff / (m.avg || 1)) * 100));
-  const isBetter = diff >= 0;
+  const scoreDelta = value - metricStats.avg;
+  const deviationPercentage = Math.abs(Math.round((scoreDelta / (metricStats.avg || 1)) * 100));
+  const isAboveAverage = scoreDelta >= 0;
 
   const labelRaw = BENCHMARK_LABELS[metric];
   const label =
     typeof labelRaw === "function" ? labelRaw(context) : labelRaw || metric;
 
-  const tier =
-    value >= m.max * 0.9
+  const performanceTier =
+    value >= metricStats.max * 0.9
       ? "ELITE"
-      : isBetter
+      : isAboveAverage
         ? "TOP TIER"
-        : value < m.avg * 0.5
+        : value < metricStats.avg * 0.5
           ? "UNDER"
           : "GROWING";
 
   return {
     label,
-    tier: tier as BenchmarkData["tier"],
+    tier: performanceTier as BenchmarkData["tier"],
     value,
-    avg: m.avg,
-    min: m.min,
-    max: m.max,
-    percent,
-    isBetter,
+    avg: metricStats.avg,
+    min: metricStats.min,
+    max: metricStats.max,
+    percent: deviationPercentage,
+    isBetter: isAboveAverage,
   };
 }
 

@@ -164,7 +164,7 @@ const threshold = computed(() => modules.notificationThreshold);
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  transition: 0.2s var(--sys-motion-standard);
+  transition: var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 /* Toggles Grid */

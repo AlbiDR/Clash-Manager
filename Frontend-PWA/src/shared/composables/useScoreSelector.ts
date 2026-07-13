@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, type Ref } from "vue";
-import { useHaptics, SCORE_SELECTION_STEPS } from "@core";
+import { ref } from "vue";
+import { SCORE_SELECTION_STEPS } from "@core";
 
 /**
  * COMPOSABLE: useScoreSelector
  *
  * @remarks
  * Encapsulates the UI logic for the score threshold picker, including
- * expansion state, haptic feedback on interaction, and smooth scrolling.
+ * expansion state, and smooth scrolling.
  *
  * **Architectural Context:**
  * - **Layer:** Layer 2 Shared Composable (@shared)
@@ -30,19 +30,16 @@ import { useHaptics, SCORE_SELECTION_STEPS } from "@core";
  * - `toggleExpand`: Function to open/close the picker with scroll logic.
  *
  * @sideeffects
- * - Triggers hardware haptic feedback via `useHaptics`.
  * - Manipulates DOM scroll position via `scrollTo` when expanded.
  */
 export function useScoreSelector(
   props: { mode: "ge" | "le"; value: number },
   emit: {
-    (e: "update:mode", val: "ge" | "le"): void;
-    (e: "update:value", val: number): void;
-    (e: "select", val: number, mode: "ge" | "le"): void;
+    (e: "update:mode", thresholdMode: "ge" | "le"): void;
+    (e: "update:value", thresholdValue: number): void;
+    (e: "select", thresholdValue: number, thresholdMode: "ge" | "le"): void;
   }
 ) {
-  const haptics = useHaptics();
-
   // UI State
   const isScoreExpanded = ref(false);
   const valuePicker = ref<HTMLElement | null>(null);
@@ -57,7 +54,9 @@ export function useScoreSelector(
   function toggleMode() {
     const newMode = props.mode === "ge" ? "le" : "ge";
     emit("update:mode", newMode);
-    haptics.tap();
+    // [DECISION LOG] Haptic delegation: Manual haptics removed to favor
+    // v-tactile directive in the view, preventing double-triggering.
+
     // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when mode is toggled
     // to ensure UI state remains synchronized with the active list filter.
     emit("select", props.value, newMode);
@@ -65,14 +64,16 @@ export function useScoreSelector(
 
   /**
    * Updates the active score threshold and triggers a selection update.
-   * @param val - The new score threshold.
+   * @param thresholdValue - The new score threshold.
    */
-  function selectValue(val: number) {
-    if (props.value === val) return;
-    emit("update:value", val);
-    haptics.medium();
+  function selectValue(thresholdValue: number) {
+    if (props.value === thresholdValue) return;
+    emit("update:value", thresholdValue);
+    // [DECISION LOG] Haptic delegation: Manual haptics removed to favor
+    // v-tactile directive in the view, preventing double-triggering.
+
     // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when a threshold is clicked.
-    emit("select", val, props.mode);
+    emit("select", thresholdValue, props.mode);
   }
 
   /**
@@ -81,7 +82,9 @@ export function useScoreSelector(
    */
   function toggleExpand() {
     isScoreExpanded.value = !isScoreExpanded.value;
-    haptics.tap();
+    // [DECISION LOG] Haptic delegation: Manual haptics removed to favor
+    // v-tactile directive in the view, preventing double-triggering.
+
     if (isScoreExpanded.value) {
       // [DECISION LOG] DEFERRED SCROLL
       setTimeout(() => {

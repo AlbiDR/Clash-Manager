@@ -10,7 +10,7 @@ import { reactive } from "vue";
 
 // Mock haptics
 const mockTap = vi.fn();
-vi.mock("@core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({
     tap: mockTap
   })

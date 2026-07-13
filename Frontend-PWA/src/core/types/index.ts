@@ -5,6 +5,50 @@
  * TypeScript interfaces for Clash Royale Manager
  */
 
+/**
+ * Interface for the Native Android JSBridge.
+ *
+ * @remarks
+ * Formalizes the contract for communication between the PWA and the native
+ * Android wrapper (TWA).
+ *
+ * ⚠️ HARD NATIVE DEPENDENCY - DO NOT BREAK THIS CONTRACT.
+ * These methods are implemented by a custom Java layer
+ * (`MainActivity$AndroidBridge` + `BlitzService` + `ClashManagerAccessibilityService`)
+ * authored in `APK/src/com/albidr/clashmanager/` and compiled into
+ * `APK/android/classes.dex` by `build-apk.sh`.
+ * The release is built with `pnpm apk:check`, NOT `bubblewrap build` (which
+ * produces a generic TWA that strips this bridge).
+ * Renaming a method here requires a matching change in that native layer, or the
+ * Blitz / accessibility / external-link features silently break on device.
+ * `verify-apk-integrity.mjs` asserts every method below survives a build.
+ */
+export interface AndroidBridge {
+  /** Opens a URL using the native Android ACTION_VIEW intent. */
+  openExternalUrl(url: string): void;
+  /** Directs the native app to open a specific player profile in Clash Royale. */
+  openPlayerProfile(id: string): void;
+  /** Retrieves persisted Blitz Mode calibration coordinates as a JSON string. */
+  getCoordinates(): string;
+  /** Persists Blitz Mode calibration coordinates to native storage. */
+  saveCoordinates(ix: number, iy: number, cx: number, cy: number): void;
+  /** Directs the native app to open the System Accessibility Settings. */
+  openAccessibilitySettings(): void;
+  /** Checks if the native accessibility service is currently active. */
+  isAccessibilityActive(): boolean;
+  /** Checks if the app has draw-over-other-apps overlay permission. */
+  hasOverlayPermission(): boolean;
+  /** Initiates a Blitz Mode sequence for the provided list of player tags. */
+  startBlitz(payload: string): void;
+}
+
+/**
+ * Extended Window interface to include the Native Android Bridge.
+ */
+export interface WindowWithBridge extends Window {
+  AndroidBridge?: AndroidBridge;
+}
+
 // API Response Envelope
 export interface ApiResponse<T> {
   success: boolean;
@@ -84,7 +128,7 @@ export interface PingResponse {
 
 // Momentum / Trend Calculation Result
 export interface MomentumInfo {
-  val: string;
+  momentumLabel: string;
   dir: "up" | "down";
   raw: number;
 }
@@ -178,15 +222,49 @@ export interface ConsoleCardMetadata {
 }
 
 /**
- * Standardized provenance metadata from the Layer 1 ClashDataStore.
+ * Represents the unified health status of the connectivity hub.
  */
-interface HubInfo {
-  /** The authoritative source of the current dataset. */
-  source: "SUPABASE" | "WORKER" | "GAS";
-  /** Human-readable age of the data at the source. */
-  hubAge: string | null;
-  /** Standardized diagnostic code for sync failures. */
-  diagnosis?: "TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null;
+export interface HubHealth {
+  /** Visual classification for UI styling (color/icon). */
+  type: "success" | "warning" | "error" | "loading";
+  /** Short, human-readable status label. */
+  label: string;
+  /** Percentage indicating data reliability (0-100). */
+  confidence: number;
+  /** Detailed technical diagnosis or error message. */
+  diagnosis?: string;
+}
+
+/**
+ * Authoritative metadata regarding the origin and age of the current data.
+ */
+export interface HubMetadata {
+  /** The identified backend source (e.g., "SUPABASE", "LOCAL"). */
+  source: string;
+  /** Human-readable age of the data (e.g., "5m ago"). */
+  age: string | null;
+  /** Data age in minutes for logical thresholding. */
+  ageMinutes: number;
+  /** Formatted time when the remote dataset was last compiled. */
+  lastCompiled: string | null;
+  /** Formatted time when the backend last fetched raw API data. */
+  lastFetched: string | null;
+  /** Flag indicating if the data has exceeded the staleness threshold. */
+  isStale: boolean;
+}
+
+/**
+ * UI-focused metadata for the connectivity hub.
+ */
+export interface ConsoleRemoteInfo {
+  /** The identified backend source (e.g., "SUPABASE", "LOCAL"). */
+  source: string;
+  /** Human-readable age of the data (e.g., "5m ago"). */
+  dataAge: string | null;
+  /** Detailed technical diagnosis or error message. */
+  diagnosis?: string | null;
+  /** Formatted time when the remote dataset was last compiled. */
+  lastCompiled?: string | null;
 }
 
 /**

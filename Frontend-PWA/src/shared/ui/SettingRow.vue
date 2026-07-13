@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import { vTactile } from "../directives/vTactile";
+
 /**
  * COMPONENT: SettingRow
  *
@@ -33,6 +35,7 @@ defineEmits<{
       'disabled': disabled
     }"
     @click="!disabled && $emit('click')"
+    v-tactile
   >
     <div class="row-info">
       <div class="row-label">
@@ -60,7 +63,7 @@ defineEmits<{
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: all 0.2s var(--sys-motion-standard);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .setting-row.disabled {
@@ -71,25 +74,25 @@ defineEmits<{
 .row-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sys-space-4);
   flex: 1;
 }
 
 .row-label {
   font-weight: 800;
-  font-size: 15px;
+  font-size: var(--sys-typescale-body-rg);
   color: var(--sys-color-outline);
   opacity: 0.5;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
   display: flex;
   align-items: center;
 }
 
 .row-desc {
-  font-size: 13px;
+  font-size: var(--sys-typescale-body-sm);
   opacity: 0.5;
   color: var(--sys-color-outline);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
 }
 
 .setting-row.active-row .row-label {
@@ -136,17 +139,17 @@ defineEmits<{
 
 /* Mini Variant */
 .setting-row.mini {
-  padding-left: 8px;
-  margin-bottom: -4px;
+  padding-left: var(--sys-space-8);
+  margin-bottom: calc(-1 * var(--sys-space-4));
 }
 
 .setting-row.mini .row-label {
-  font-size: 14px;
+  font-size: var(--sys-typescale-body-md);
   font-weight: 700;
 }
 
 .setting-row.mini .row-desc {
-  font-size: 12px;
+  font-size: var(--sys-typescale-footer);
 }
 
 .setting-row.mini .switch {

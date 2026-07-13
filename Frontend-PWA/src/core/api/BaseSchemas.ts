@@ -4,43 +4,58 @@
 import * as v from "valibot";
 
 /**
- * [GUARD] CORE COERCION PIPES
- * Rationale: Matrix data is often heterogeneous (e.g., numbers for tags).
+ * [GUARD] SAFE NUMBER PIPE
+ * Authoritative coercion boundary for numeric data.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Matrix data is often heterogeneous (e.g., numbers for tags).
  * We coerce at the boundary but reject total garbage to maintain test integrity.
+ *
+ * [THREAT:] Missing matrix columns causing validation failure.
+ * [DECISION LOG] Defaulting to 0 for missing numeric fields ensures
+ * that the PWA can still display a partial roster if the backend
+ * schema is slightly out of sync or if optional columns are omitted.
  */
 export const SafeNumberPipe = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (typeof val === "number") return val;
+  v.transform((candidateValue) => {
+    if (typeof candidateValue === "number") return candidateValue;
     // THREAT: Missing matrix columns causing validation failure.
     // Rationale: Defaulting to 0 for missing numeric fields ensures
     // that the PWA can still display a partial roster if the backend
     // schema is slightly out of sync or if optional columns are omitted.
-    if (val === null || val === undefined) return 0;
-    if (typeof val === "string") {
+    if (candidateValue === null || candidateValue === undefined) return 0;
+    if (typeof candidateValue === "string") {
       // Handle comma-separated or percentage-based strings from remote sources
-      const cleaned = val.replace(/,/g, "").replace(/%/g, "").trim();
+      const cleaned = candidateValue.replace(/,/g, "").replace(/%/g, "").trim();
       if (cleaned === "") return 0;
       const n = parseFloat(cleaned);
       // Only return the number if it's actually numeric
       if (!isNaN(n)) return n;
     }
-    return val; // Pass through to v.number() for rejection
+    return candidateValue; // Pass through to v.number() for rejection
   }),
   v.number() // The final gatekeeper
 );
 
 /**
- * [GUARD] LAX NUMBER PIPE: Metadata Resilience
- * Rationale: Metadata fields like timestamps must NEVER trigger a full
+ * [GUARD] LAX NUMBER PIPE
+ * Resilient boundary for non-critical metadata.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Metadata fields like timestamps must NEVER trigger a full
  * validation failure, as missing metadata should not block UI hydration.
+ *
+ * [THREAT:] Corrupted or missing metadata triggering hydration stalls.
  */
 export const LaxNumberPipe = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (typeof val === "number") return val;
-    if (typeof val === "string") {
-      const n = parseFloat(val);
+  v.transform((candidateValue) => {
+    if (typeof candidateValue === "number") return candidateValue;
+    if (typeof candidateValue === "string") {
+      const n = parseFloat(candidateValue);
       return isNaN(n) ? 0 : n;
     }
     return 0;
@@ -48,27 +63,45 @@ export const LaxNumberPipe = v.pipe(
   v.number() // The final gatekeeper
 );
 
+/**
+ * [GUARD] SAFE STRING PIPE
+ * Authoritative coercion boundary for string data.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Ensures consistent string representation for identifiers and labels.
+ *
+ * [THREAT:] Heterogeneous identifiers (numbers/booleans) causing runtime
+ * property access failures.
+ */
 export const SafeStringPipe = v.pipe(
   v.unknown(),
-  v.transform((val) => {
-    if (val === null || val === undefined) return "";
-    if (typeof val === "string") return val;
-    if (typeof val === "number" || typeof val === "boolean") return String(val);
-    return val; // Pass through to v.string() for rejection
+  v.transform((candidateValue) => {
+    if (candidateValue === null || candidateValue === undefined) return "";
+    if (typeof candidateValue === "string") return candidateValue;
+    if (typeof candidateValue === "number" || typeof candidateValue === "boolean") return String(candidateValue);
+    return candidateValue; // Pass through to v.string() for rejection
   }),
   v.string() // The final gatekeeper
 );
 
 /**
  * [GUARD] RARITY SCHEMA
- * Normalizes and validates rarity strings.
+ * Normalizes and validates card rarity strings.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Synchronizes external rarity naming conventions with internal domain models.
+ *
+ * [THREAT:] Case-sensitivity or naming drift in external APIs.
+ * [DECISION LOG] Utilizing v.fallback to 'Common' to ensure UI stability.
  */
 export const RaritySchema = v.fallback(
   v.pipe(
     v.string(),
     v.trim(),
     v.toLowerCase(),
-    v.transform((val) => {
+    v.transform((rawRarity) => {
       const map: Record<string, string> = {
         "common": "Common",
         "rare": "Rare",
@@ -76,7 +109,7 @@ export const RaritySchema = v.fallback(
         "legendary": "Legendary",
         "champion": "Champion"
       };
-      return map[val] || "Common";
+      return map[rawRarity] || "Common";
     }),
     v.picklist(["Common", "Rare", "Epic", "Legendary", "Champion"])
   ),
@@ -85,7 +118,13 @@ export const RaritySchema = v.fallback(
 
 /**
  * [GUARD] RAW CARD SCHEMA
- * Validates card objects from various external sources.
+ * Authoritative validation boundary for card objects.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Validates card objects from various external sources (Royale API, Supabase).
+ *
+ * [THREAT:] Structural drift in card metadata breaking the Laboratory.
  */
 export const RawCardSchema = v.object({
   name: v.optional(v.string(), "Unknown Card"),
@@ -98,7 +137,13 @@ export const RawCardSchema = v.object({
 
 /**
  * [GUARD] INVENTORY SCHEMA
- * Strictly validates currency and wildcard counts.
+ * Authoritative validation boundary for player currency and inventory.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Strictly validates currency and wildcard counts across all rarities.
+ *
+ * [THREAT:] Unvalidated gold/gem counts causing overflow or display errors.
  */
 export const RawInventorySchema = v.object({
   gold: v.optional(v.number(), 0),

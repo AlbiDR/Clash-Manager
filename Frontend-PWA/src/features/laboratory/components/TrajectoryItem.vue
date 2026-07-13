@@ -18,7 +18,7 @@
  */
 import { Icon } from "@shared";
 import { type UpgradeAction } from "../logic";
-import { formatNumber } from "@core";
+import { formatNumber, getCurrencyAsset, getWildcardAsset } from "@core";
 
 defineProps<{
   /** The upgrade action data to display. */
@@ -27,7 +27,6 @@ defineProps<{
   index: number;
 }>();
 
-const baseUrl = import.meta.env.BASE_URL;
 </script>
 
 <template>
@@ -64,19 +63,19 @@ const baseUrl = import.meta.env.BASE_URL;
     <div class="cost-stack">
       <div v-if="upgrade.gemsUsed > 0" class="cost-item gem">
         <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
-        <img :src="`${baseUrl}assets/game/currency-gem.webp`" class="res-icon" alt="Gems" />
+        <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" />
       </div>
       <div v-else-if="upgrade.wildCardsUsed > 0" class="cost-item wild">
         <span class="val">{{ formatNumber(upgrade.wildCardsUsed) }}</span>
-        <img :src="`${baseUrl}assets/game/wildcard-${upgrade.rarity.toLowerCase()}.webp`" class="res-icon" alt="WildCards" />
+        <img :src="getWildcardAsset(upgrade.rarity)" class="res-icon" alt="WildCards" />
       </div>
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <img :src="`${baseUrl}assets/game/currency-gold.webp`" class="res-icon" alt="Gold" />
+        <img :src="getCurrencyAsset('gold')" class="res-icon" alt="Gold" />
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <img :src="`${baseUrl}assets/game/currency-xp.webp`" class="res-icon sm" alt="XP" />
+        <img :src="getCurrencyAsset('xp')" class="res-icon sm" alt="XP" />
       </div>
     </div>
   </div>

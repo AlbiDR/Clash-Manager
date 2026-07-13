@@ -2,7 +2,8 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useHaptics, useUiCoordinator } from "@core";
+import { useUiCoordinator } from "@core";
+import { useHaptics } from "../composables/useHaptics";
 
 /**
  * COMPONENT: SelectionFab

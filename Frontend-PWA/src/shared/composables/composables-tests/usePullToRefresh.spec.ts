@@ -3,10 +3,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
 import { usePullToRefresh } from "../usePullToRefresh";
-import { useHaptics } from "../../../core/services/useHaptics";
+import { useHaptics } from "@shared/composables/useHaptics";
 
 // Mock useHaptics using deep import (Frontend Bible Section 9)
-vi.mock("../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(),
 }));
 

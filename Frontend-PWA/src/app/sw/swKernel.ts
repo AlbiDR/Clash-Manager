@@ -28,16 +28,16 @@ import { STORAGE_DB_NAME, STORAGE_STORE_NAME, STORAGE_DB_VERSION } from "../../c
  */
 export function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(STORAGE_DB_NAME, STORAGE_DB_VERSION);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
+    const idbRequest = indexedDB.open(STORAGE_DB_NAME, STORAGE_DB_VERSION);
+    idbRequest.onerror = () => reject(idbRequest.error);
+    idbRequest.onsuccess = () => resolve(idbRequest.result);
   });
 }
 
 /**
  * Retrieves a value from the IndexedDB store.
  *
- * @param db - The active IDBDatabase connection.
+ * @param storageConnection - The active IDBDatabase connection.
  * @param key - The record key.
  * @returns A promise resolving to the value or null.
  *
@@ -46,30 +46,30 @@ export function openDB(): Promise<IDBDatabase> {
  * [DECISION LOG] We use a dedicated transaction per request to ensure isolation
  * and minimize the risk of "Transaction inactive" errors during async orchestration.
  */
-export function getValue(db: IDBDatabase, key: string): Promise<unknown> {
+export function getValue(storageConnection: IDBDatabase, key: string): Promise<unknown> {
   return new Promise((resolve) => {
-    const transaction = db.transaction([STORAGE_STORE_NAME], "readonly");
-    const store = transaction.objectStore(STORAGE_STORE_NAME);
-    const request = store.get(key);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => resolve(null);
+    const idbTransaction = storageConnection.transaction([STORAGE_STORE_NAME], "readonly");
+    const idbStore = idbTransaction.objectStore(STORAGE_STORE_NAME);
+    const idbRequest = idbStore.get(key);
+    idbRequest.onsuccess = () => resolve(idbRequest.result);
+    idbRequest.onerror = () => resolve(null);
   });
 }
 
 /**
  * Persists a value to the IndexedDB store.
  *
- * @param db - The active IDBDatabase connection.
+ * @param storageConnection - The active IDBDatabase connection.
  * @param key - The record key.
  * @param value - The value to persist.
  * @returns A promise that resolves when the value is saved.
  */
-export function setValue(db: IDBDatabase, key: string, value: unknown): Promise<void> {
+export function setValue(storageConnection: IDBDatabase, key: string, value: unknown): Promise<void> {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORAGE_STORE_NAME], "readwrite");
-    const store = transaction.objectStore(STORAGE_STORE_NAME);
-    const request = store.put(value, key);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+    const idbTransaction = storageConnection.transaction([STORAGE_STORE_NAME], "readwrite");
+    const idbStore = idbTransaction.objectStore(STORAGE_STORE_NAME);
+    const idbRequest = idbStore.put(value, key);
+    idbRequest.onsuccess = () => resolve();
+    idbRequest.onerror = () => reject(idbRequest.error);
   });
 }

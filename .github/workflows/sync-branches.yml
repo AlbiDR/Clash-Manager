@@ -11,6 +11,13 @@ permissions:
   contents: write
   actions: write
 
+env:
+  # Matches the `packageManager` field in the root package.json.
+  # Pinning ensures reproducible installs and prevents accidental pnpm version
+  # drift across runs. The v10/v11 layout WARN emitted by the runner shim is
+  # cosmetic only; the downgrade completes successfully regardless.
+  PNPM_VERSION: "10.32.1"
+
 # ============================================================================
 # JOB 0: Pre-sync Check
 # ============================================================================
@@ -95,6 +102,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: Beta
           fetch-depth: 0
 
       - name: Setup Git User
@@ -102,14 +110,48 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Fetch all branches
-        run: git fetch origin
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: "Air Gap Guard - BEFORE (Beta baseline)"
+        id: test-before
+        run: |
+          echo "## Air Gap Guard" >> $GITHUB_STEP_SUMMARY
+          echo "### BEFORE - Beta baseline (pre-merge)" >> $GITHUB_STEP_SUMMARY
+          if pnpm test; then
+            echo "before=pass" >> $GITHUB_OUTPUT
+            echo "Beta baseline: PASS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "before=fail" >> $GITHUB_OUTPUT
+            echo "Beta baseline: FAIL" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Merge Nightly into Beta
         id: merge
         run: |
-          git checkout Beta
-          git pull origin Beta
+          git fetch origin
 
           # ----------------------------------------------------------------
           # Robustness: If branches have diverged, use `-X theirs` to prefer
@@ -128,6 +170,33 @@ jobs:
           git push origin Beta
           echo "merged=true" >> $GITHUB_OUTPUT
 
+      - name: "Air Gap Guard - AFTER (Beta + Nightly combined)"
+        id: test-after
+        run: |
+          echo "### AFTER - Beta + Nightly combined (post-merge)" >> $GITHUB_STEP_SUMMARY
+          if pnpm test; then
+            echo "after=pass" >> $GITHUB_OUTPUT
+            echo "Combined state: PASS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "after=fail" >> $GITHUB_OUTPUT
+            echo "Combined state: FAIL - Nightly introduced a regression." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "> The merge has been pushed. Manual intervention required to revert" >> $GITHUB_STEP_SUMMARY
+            echo "> the offending Nightly commit(s) before the next sync cycle." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: "Air Gap Guard - Regression Summary"
+        if: always()
+        run: |
+          BEFORE="${{ steps.test-before.outputs.before }}"
+          AFTER="${{ steps.test-after.outputs.after }}"
+          echo "### Regression Delta" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Beta baseline (before) | $BEFORE |" >> $GITHUB_STEP_SUMMARY
+          echo "| Beta + Nightly (after) | ${AFTER:-blocked} |" >> $GITHUB_STEP_SUMMARY
+
   # ============================================================================
   # JOB 2: (Upstream) Beta → Stable
   # ============================================================================
@@ -143,6 +212,7 @@ jobs:
       merged: ${{ steps.merge.outputs.merged }}
       pwa_changed: ${{ steps.detect.outputs.pwa_changed }}
       backend_changed: ${{ steps.detect.outputs.backend_changed }}
+      apk_changed: ${{ steps.detect.outputs.apk_changed }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -153,9 +223,6 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Fetch all branches
-        run: git fetch origin
 
       - name: Merge Beta into Stable
         id: merge
@@ -199,9 +266,21 @@ jobs:
             else
               echo "backend_changed=false" >> $GITHUB_OUTPUT
             fi
+
+            # APK: APK/src/** or APK/android/** (excluding build outputs and docs)
+            # Mirrors the path filter defined in apk-release.yml.
+            if git diff --name-only $BEFORE $AFTER \
+                | grep -E "^APK/(src|android)/|^\.github/workflows/apk-release\.yml|^APK/verify-apk-integrity\.mjs" \
+                | grep -vE "^APK/android/classes\.dex$|^APK/release/|^APK/.*\.md$" \
+                > /dev/null; then
+              echo "apk_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "apk_changed=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "pwa_changed=false" >> $GITHUB_OUTPUT
             echo "backend_changed=false" >> $GITHUB_OUTPUT
+            echo "apk_changed=false" >> $GITHUB_OUTPUT
           fi
 
   # ============================================================================
@@ -227,9 +306,6 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Fetch all branches
-        run: git fetch origin
 
       - name: Merge Stable into Beta
         id: merge
@@ -264,43 +340,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: Beta
           fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          cache: "pnpm"
-
-      - name: Verify Beta Stability (Air Gap Guard)
-        run: |
-          git checkout Beta
-          git pull origin Beta
-          pnpm install --no-frozen-lockfile
-          if ! pnpm test; then
-             echo "### Sync Blocked: Beta Unstable" >> $GITHUB_STEP_SUMMARY
-             echo "Unit tests failed on Beta. Downstream sync to Nightly aborted to protect the automated environment from contaminated state." >> $GITHUB_STEP_SUMMARY
-             exit 1
-          fi
-          echo "### Beta Stable: Proceeding with Downstream Sync" >> $GITHUB_STEP_SUMMARY
 
       - name: Setup Git User
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Fetch all branches
-        run: git fetch origin
-
       - name: Merge Beta into Nightly
         run: |
           git checkout Nightly
           git pull origin Nightly
-          # Downstream hotfix content from Beta/Stable should integrate cleanly.
-          # Use -X theirs so that Stable-origin hotfixes propagate without friction.
+          # Code flowing in was already verified by the Air Gap Guard in
+          # JOB 1 (Nightly → Beta). A second test run here would be
+          # redundant by transitivity.
           git merge origin/Beta -X theirs --no-edit
           git push origin Nightly
 
@@ -333,3 +387,18 @@ jobs:
           echo "Triggering Supabase Deployment (System: Nominal)..."
           gh workflow run deploy-supabase.yml --ref Stable -R ${{ github.repository }}
 
+  # ============================================================================
+  # JOB 6: (Deploy) APK - Conditional
+  # ============================================================================
+  deploy-apk:
+    name: "(Deploy) APK"
+    needs: beta-to-stable
+    if: always() && needs.beta-to-stable.outputs.apk_changed == 'true' && needs.beta-to-stable.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger APK Release Build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Triggering APK Release Build (System: Nominal)..."
+          gh workflow run apk-release.yml --ref Stable -R ${{ github.repository }}

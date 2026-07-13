@@ -11,7 +11,7 @@ describe("useListFilter", () => {
     { id: "p3", n: "Bobi", score: 90 },
   ];
 
-  const searchFields = (item: typeof mockItems[0]) => [item.n || "", item.id];
+  const searchFields = (candidateItem: typeof mockItems[0]) => [candidateItem.n || "", candidateItem.id];
   const sortStrategies = {
     score: (a: any, b: any) => b.score - a.score,
     name: (a: any, b: any) => (a.n || "").localeCompare(b.n || ""),
@@ -110,7 +110,7 @@ describe("useListFilter", () => {
     const items = ref<any[] | null>(null);
     const { filteredItems } = useListFilter(
       items as any,
-      (item: any) => [item.id],
+      (candidateItem: any) => [candidateItem.id],
       {},
       "score"
     );
@@ -130,7 +130,7 @@ describe("useListFilter", () => {
     const items = ref(tieItems as any);
     const { filteredItems } = useListFilter(
       items,
-      (item: any) => [item.id],
+      (candidateItem: any) => [candidateItem.id],
       { score: (a: any, b: any) => b.score - a.score },
       "score"
     );

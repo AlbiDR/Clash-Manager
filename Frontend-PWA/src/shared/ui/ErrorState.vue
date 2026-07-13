@@ -16,11 +16,11 @@ defineEmits<{
   retry: [];
 }>();
 
-const isActive = ref(false);
+const isRetryInteractionActive = ref(false);
 </script>
 
 <template>
-  <div class="error-state animate-pulse-glow" @mousedown="isActive = true" @mouseup="isActive = false">
+  <div class="error-state animate-pulse-glow" @mousedown="isRetryInteractionActive = true" @mouseup="isRetryInteractionActive = false">
     <div class="error-icon-box">
       <!-- Custom Crafted Warning SVG -->
       <Icon name="warning" size="48" class="svg-warning" />
@@ -38,7 +38,7 @@ const isActive = ref(false);
     
     <button 
       class="btn-error" 
-      :class="{ active: isActive }"
+      :class="{ active: isRetryInteractionActive }"
       @click="$emit('retry')"
     >
       <Icon name="refresh" size="18" class="svg-refresh" />

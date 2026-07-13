@@ -2,7 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 
 import { useToast } from "./useToast";
-import { cleanTag } from "@core";
+import { useNativeBridge } from "./useNativeBridge";
+// [CYCLE GUARD] Direct source imports, NOT the @core barrel (which re-exports this
+// module) - barrel self-imports form an evaluation cycle that TDZ-crashes the app
+// when the service worker serves all chunks at once.
+import { cleanTag } from "../utils/text";
 
 /**
  * COMPOSABLE: useExternalLink
@@ -28,6 +32,7 @@ import { cleanTag } from "@core";
  */
 export function useExternalLink() {
   const { error } = useToast();
+  const { bridge: nativeBridge } = useNativeBridge();
 
   /**
    * Opens an external URL in a new browser tab.
@@ -37,9 +42,11 @@ export function useExternalLink() {
   async function openExternal(url: string) {
     // [STRATEGY] Native Bridge: Inside the Android WebView, window.open is blocked.
     // Delegate to the native bridge which calls startActivity(ACTION_VIEW) directly.
-    const bridge = (window as any).AndroidBridge;
-    if (bridge?.openExternalUrl) {
-      bridge.openExternalUrl(url);
+    // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
+    // [DECISION LOG] Utilizing strict type narrowing for WindowWithBridge to
+    // eliminate 'any' casts and ensure hardware bridge access integrity.
+    if (nativeBridge.value?.openExternalUrl) {
+      nativeBridge.value.openExternalUrl(url);
       return;
     }
 
@@ -48,8 +55,9 @@ export function useExternalLink() {
       if (!newWindow) {
         console.warn("External link blocked or failed to open");
       }
-    } catch (e) {
-      console.error("Failed to open external link:", e);
+    } catch (externalLinkError: unknown) {
+      const errorMessage = externalLinkError instanceof Error ? externalLinkError.message : String(externalLinkError);
+      console.error("Failed to open external link:", errorMessage);
       error("Could not open link");
     }
   }
@@ -66,9 +74,10 @@ export function useExternalLink() {
     // [STRATEGY] Native Bridge: The custom WebView intercepts shouldOverrideUrlLoading
     // for intent:// only for direct navigations, not for anchor target=_blank clicks.
     // Calling the bridge method directly bypasses WebView routing entirely.
-    const bridge = (window as any).AndroidBridge;
-    if (bridge?.openPlayerProfile) {
-      bridge.openPlayerProfile(id);
+    // [THREAT:] Hardware desynchronization if calling 'any' methods on Window.
+    // [DECISION LOG] Enforcing the WindowWithBridge contract to secure player profile navigation.
+    if (nativeBridge.value?.openPlayerProfile) {
+      nativeBridge.value.openPlayerProfile(id);
       return;
     }
 
@@ -82,8 +91,9 @@ export function useExternalLink() {
         `end`;
       try {
         window.location.href = intentUrl;
-      } catch (err) {
-        console.error("[openInGame] intent href failed:", err);
+      } catch (deepLinkError: unknown) {
+        const errorMessage = deepLinkError instanceof Error ? deepLinkError.message : String(deepLinkError);
+        console.error("[openInGame] intent href failed:", errorMessage);
         error("Failed to open game - app may not be installed");
       }
       return;
@@ -92,8 +102,9 @@ export function useExternalLink() {
     // iOS / Desktop fallback
     try {
       window.location.href = `clashroyale://playerInfo?id=${id}`;
-    } catch (err) {
-      console.error("[openInGame] clashroyale:// failed:", err);
+    } catch (deepLinkError: unknown) {
+      const errorMessage = deepLinkError instanceof Error ? deepLinkError.message : String(deepLinkError);
+      console.error("[openInGame] clashroyale:// failed:", errorMessage);
       error("Failed to open game - app may not be installed");
     }
   }

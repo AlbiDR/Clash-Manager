@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import * as v from "npm:valibot";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2.110.2";
+import * as v from "npm:valibot@1.4.2";
 import { AuditEntry } from "./types.ts";
+import { IntegrityCheckDetailsSchema, TelemetrySchema } from "./schemas.ts";
 
 /**
  * CONFIGURATION: ProtocolOptions
@@ -73,11 +74,11 @@ export interface ProtocolOptions<T> {
  */
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     const { req, supabase, bearerToken, eventType, componentId, schema, handler } = options;
-    const startTime = Date.now();
+    const startInstant = Temporal.Now.instant();
     const audit_log: AuditEntry[] = [];
 
     const logAudit = (stage: string, action: AuditEntry['action'], details?: unknown) => {
-        audit_log.push({ timestamp: new Date().toISOString(), stage, action, details });
+        audit_log.push({ timestamp: Temporal.Now.instant().toString(), stage, action, details });
     };
 
     // 1. CORS Preflight
@@ -114,7 +115,10 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             });
         }
 
-        const rawBody = await req.json().catch(() => ({}));
+        // [THREAT:] Implicit 'any' from request JSON can lead to logic corruption or runtime crashes.
+        // [DECISION LOG] Replacing implicit 'any' with 'unknown' and enforcing a strict validation boundary.
+        const rawBody: unknown = await req.json().catch(() => ({}));
+
         // [GUARD] VALIDATION BOUNDARY: Satisfies ADR Section III.
         // Rejects malformed or hostile payloads before they reach business logic.
         const parsed = v.safeParse(schema, rawBody);
@@ -128,12 +132,26 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // 4. Governance: Initial Heartbeat & Telemetry Boot
         // [DECISION LOG] Telemetry is initiated at the BOOT stage to track the full
         // lifecycle of the request, including duration and audit logs.
-        const { data: telemetryData } = await supabase.rpc('report_telemetry', {
+        // [THREAT:] Unvalidated RPC responses can mask database connectivity issues or schema drift.
+        // [DECISION LOG] Explicitly validating the telemetry registration result to ensure persistence availability.
+        const { data: rawTelemetryData, error: telemetryError } = await supabase.rpc('report_telemetry', {
             p_event_type: eventType,
             p_status: 'IN_PROGRESS',
             p_metadata: { stage: 'BOOT', payload: parsed.output }
         });
-        const telemetry = telemetryData && Array.isArray(telemetryData) ? telemetryData[0] : telemetryData;
+
+        if (telemetryError) {
+            console.error(`[Protocol] Telemetry registration failed: ${telemetryError.message}`);
+        }
+
+        const telemetryValidation = v.safeParse(TelemetrySchema, rawTelemetryData);
+        const telemetry = telemetryValidation.success
+            ? (Array.isArray(telemetryValidation.output) ? telemetryValidation.output[0] : telemetryValidation.output)
+            : null;
+
+        if (!telemetryValidation.success && rawTelemetryData !== null) {
+            console.warn(`[Protocol] Telemetry response failed structural validation for ${componentId}.`);
+        }
 
         logAudit('BOOT', 'triggered', { payload: parsed.output });
 
@@ -159,7 +177,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                     p_metadata: { 
                         ...(typeof currentResults === 'object' && currentResults !== null ? currentResults : { results: currentResults }),
                         stage, 
-                        current_duration: Date.now() - startTime,
+                        current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
                         audit_log
                     }
                 });
@@ -174,35 +192,36 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // [DECISION LOG] Final telemetry update aggregates all audit entries and
         // calculates total execution duration for performance monitoring.
         const audit_log_final = [...audit_log, { 
-            timestamp: new Date().toISOString(), 
+            timestamp: Temporal.Now.instant().toString(), 
             stage: 'COMPLETE', 
             action: 'terminated' as const, 
             details: { status: 'SUCCESS' } 
         }];
 
         const integrityChecks = audit_log_final.filter(entry => entry.action === 'integrity_checked');
+
+        // [GUARD] VALIDATION BOUNDARY: isDataPerfect Calculation
         // [THREAT:] False positives in data perfection reporting can mask silent validation failures.
-        // [DECISION LOG] Replacing unsafe type assertion with strict narrowing to ensure 'isDataPerfect'
-        // accurately reflects that ALL integrity checks passed.
+        // [DECISION LOG] Replacing manual typeof narrowing and unsafe 'as' type assertions with a
+        // strict v.safeParse() validation boundary using IntegrityCheckDetailsSchema.
+        // This ensures that 'isDataPerfect' accurately reflects that ALL integrity checks passed
+        // based on a validated structural contract.
         const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(check => {
-            const details = check.details;
-            return (
-                typeof details === 'object' &&
-                details !== null &&
-                'passed' in details &&
-                (details as Record<string, unknown>).passed === true
-            );
+            const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
+            return validation.success && validation.output.passed === true;
         });
 
         const validationReport = {
             stages_called: audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage),
             stages_run: audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage),
             integrity_checks: integrityChecks.map(check => {
-                const details = check.details;
-                const passed = typeof details === 'object' && details !== null && 'passed' in details && (details as Record<string, unknown>).passed === true;
-                return { stage: check.stage, passed };
+                const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
+                return {
+                    stage: check.stage,
+                    passed: validation.success ? validation.output.passed : false
+                };
             }),
-            total_duration: Date.now() - startTime
+            total_duration: Temporal.Now.instant().since(startInstant).total('milliseconds')
         };
         
         if (telemetry?.id) {
@@ -212,7 +231,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                 p_metadata: { 
                     ...(typeof results === 'object' && results !== null ? results : { results }),
                     stage: 'COMPLETE', 
-                    current_duration: Date.now() - startTime,
+                    current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
                     audit_log: audit_log_final,
                     is_data_perfect: isDataPerfect,
                     validation_report: validationReport
@@ -225,7 +244,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             p_status: 'COMPLETED',
             p_message: `Protocol execution completed. Data perfection: ${isDataPerfect}`,
             p_metadata: {
-                last_success_at: new Date().toISOString(),
+                last_success_at: Temporal.Now.instant().toString(),
                 last_validation_report: validationReport,
                 is_data_perfect: isDataPerfect
             }
@@ -233,10 +252,10 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         return new Response(JSON.stringify({
             success: true,
-            version: '14.0.0',
+            version: '14.31.2',
             data: results,
-            duration_ms: Date.now() - startTime,
-            timestamp: new Date().toISOString()
+            duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
+            timestamp: Temporal.Now.instant().toString()
         }), { 
             status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
         });
@@ -253,7 +272,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             p_status: 'FAILED',
             p_message: `Fatal protocol error: ${errorMessage}`,
             p_metadata: {
-                last_failure_at: new Date().toISOString(),
+                last_failure_at: Temporal.Now.instant().toString(),
                 is_data_perfect: false,
                 last_validation_report: {
                     error: errorMessage,

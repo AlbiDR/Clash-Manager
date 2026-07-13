@@ -33,7 +33,16 @@ vi.mock('@shared', () => ({
   SettingsCard: {
     template: "<div class='settings-card' :aria-busy=\"loading ? 'true' : 'false'\"><slot /></div>",
     props: ["title", "icon", "initiallyExpanded", "loading", "bodyClass"],
-  }
+  },
+  vTactile: {
+    beforeMount: vi.fn(),
+    updated: vi.fn()
+  },
+  useHaptics: () => ({
+    tap: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn()
+  })
 }));
 
 describe('BackendRefresher.vue', () => {

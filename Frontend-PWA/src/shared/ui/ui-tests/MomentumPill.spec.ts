@@ -38,7 +38,7 @@ describe("MomentumPill.vue", () => {
   const createWrapper = (props = {}) => {
     return mount(MomentumPill, {
       props: {
-        dt: 10,
+        scoreDelta: 10,
         performanceRawScore: 100,
         ...props
       },
@@ -58,7 +58,7 @@ describe("MomentumPill.vue", () => {
 
   it("renders correctly for 'up' trend", () => {
     mockCalculateMomentum.mockReturnValue({
-      val: "10.0%",
+      momentumLabel: "10.0%",
       dir: "up",
       raw: 10
     });
@@ -73,12 +73,12 @@ describe("MomentumPill.vue", () => {
 
   it("renders correctly for 'down' trend", () => {
     mockCalculateMomentum.mockReturnValue({
-      val: "5.5%",
+      momentumLabel: "5.5%",
       dir: "down",
       raw: -5
     });
 
-    const wrapper = createWrapper({ dt: -5 });
+    const wrapper = createWrapper({ scoreDelta: -5 });
 
     expect(wrapper.classes()).toContain("down");
     expect(wrapper.find(".trend-val").text()).toBe("5.5%");
@@ -99,7 +99,7 @@ describe("MomentumPill.vue", () => {
 
     const wrapper = mount(MomentumPill, {
       props: {
-        dt: undefined,
+        scoreDelta: undefined,
         performanceRawScore: undefined
       },
       global: {

@@ -5,10 +5,12 @@ import { useLeaderboardScraper } from "../useLeaderboardScraper";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockUpdateFabState = vi.fn();
-const mockInfo = vi.fn();
-const mockError = vi.fn();
-const mockTap = vi.fn();
+const { mockUpdateFabState, mockInfo, mockError, mockTap } = vi.hoisted(() => ({
+  mockUpdateFabState: vi.fn(),
+  mockInfo: vi.fn(),
+  mockError: vi.fn(),
+  mockTap: vi.fn(),
+}));
 
 vi.mock("@core/services/useUiCoordinator", () => ({
   useUiCoordinator: () => ({
@@ -23,15 +25,14 @@ vi.mock("@core/services/useToast", () => ({
   }),
 }));
 
-vi.mock("@core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({
     tap: mockTap,
   }),
 }));
 
-vi.mock("@core/api/SupabaseClient", () => ({
-  getSupabaseUrl: () => "https://mock.supabase.co",
-  getSupabaseKey: () => "mock-publishable-key",
+vi.mock("@core/api/RecruitClient", () => ({
+  scoutLeaderboard: vi.fn(),
 }));
 
 describe("useLeaderboardScraper", () => {
@@ -40,21 +41,21 @@ describe("useLeaderboardScraper", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
     selectionStore = useSelectionStore();
     mockBlitzTrigger = vi.fn();
   });
 
   it("handles successful global harvest and triggers Blitz", async () => {
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
     const mockItems = [
       { tag: "#PRO1", name: "Pro One", clan: { name: "Some Clan" } },
       { tag: "#FREE1", name: "Free One" }, // Clanless
     ];
-    
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: { items: mockItems, region: "Global" } }),
-    } as Response);
+
+    vi.mocked(scoutLeaderboard).mockResolvedValue({
+      items: mockItems,
+      region: "Global",
+    });
 
     const { executeHarvest } = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
 
@@ -76,14 +77,15 @@ describe("useLeaderboardScraper", () => {
   });
 
   it("handles empty harvest gracefully", async () => {
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
     const mockItems = [
       { tag: "#PRO1", name: "Pro One", clan: { name: "Some Clan" } },
     ];
-    
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: { items: mockItems, region: "France" } }),
-    } as Response);
+
+    vi.mocked(scoutLeaderboard).mockResolvedValue({
+      items: mockItems,
+      region: "France",
+    });
 
     const { executeHarvest } = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
 
@@ -91,15 +93,14 @@ describe("useLeaderboardScraper", () => {
 
     expect(selectionStore.selectedIds.value).toEqual([]);
     expect(mockBlitzTrigger).not.toHaveBeenCalled();
-    expect(mockInfo).toHaveBeenCalledWith("Harvest complete: zero clanless players found on the France leaderboard.");
+    expect(mockInfo).toHaveBeenCalledWith("Harvest complete: zero clanless players found on local leaderboards.");
   });
 
   it("handles fetch failure by showing toast error", async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => ({ error: "Internal Server Error" }),
-    } as Response);
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
+    vi.mocked(scoutLeaderboard).mockRejectedValue(
+      new Error("Internal Server Error"),
+    );
 
     const { executeHarvest } = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
 
@@ -116,7 +117,8 @@ describe("useLeaderboardScraper", () => {
   });
 
   it("supports harvest abort mechanism", async () => {
-    vi.mocked(global.fetch).mockImplementation(() => {
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
+    vi.mocked(scoutLeaderboard).mockImplementation(() => {
       return new Promise((_, reject) => {
         const err = new Error("The user aborted a request.");
         err.name = "AbortError";

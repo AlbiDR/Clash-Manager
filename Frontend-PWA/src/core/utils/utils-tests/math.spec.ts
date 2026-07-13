@@ -30,7 +30,7 @@ describe("math utilities", () => {
       // previousRaw = 100, dt = 10 => 10%
       const result = calculateMomentum(10, 110);
       expect(result).toEqual({
-        val: "10%",
+        momentumLabel: "10%",
         dir: "up",
         raw: 10,
       });
@@ -40,7 +40,7 @@ describe("math utilities", () => {
       // previousRaw = 100, dt = -5 => -5%
       const result = calculateMomentum(-5, 95);
       expect(result).toEqual({
-        val: "5.0%",
+        momentumLabel: "5.0%",
         dir: "down",
         raw: -5,
       });
@@ -49,13 +49,13 @@ describe("math utilities", () => {
     it("formats small percentages as <0.1%", () => {
       // previousRaw = 10000, dt = 5 => 0.05%
       const result = calculateMomentum(5, 10005);
-      expect(result?.val).toBe("<0.1%");
+      expect(result?.momentumLabel).toBe("<0.1%");
     });
 
     it("formats percentages < 10% with one decimal", () => {
       // previousRaw = 100, dt = 5.5 => 5.5%
       const result = calculateMomentum(5.5, 105.5);
-      expect(result?.val).toBe("5.5%");
+      expect(result?.momentumLabel).toBe("5.5%");
     });
   });
 
@@ -110,6 +110,20 @@ describe("math utilities", () => {
       const val = 1234567.89;
       const expected = new Intl.NumberFormat().format(val);
       expect(formatNumber(val)).toBe(expected);
+    });
+
+    it("handles null, undefined, and NaN by defaulting to 0", () => {
+      const expectedZero = new Intl.NumberFormat().format(0);
+      expect(formatNumber(null)).toBe(expectedZero);
+      expect(formatNumber(undefined)).toBe(expectedZero);
+      expect(formatNumber(NaN)).toBe(expectedZero);
+    });
+
+    it("supports custom Intl.NumberFormatOptions", () => {
+      const val = 0.1234;
+      const options: Intl.NumberFormatOptions = { style: "percent", minimumFractionDigits: 2 };
+      const expected = new Intl.NumberFormat(undefined, options).format(val);
+      expect(formatNumber(val, options)).toBe(expected);
     });
   });
 });

@@ -3,8 +3,9 @@
 
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
+import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.2";
 import { RoyaleBattleLogSchema, IngestionTargetsSchema } from "../../_shared/schemas.ts";
 
 /**
@@ -44,10 +45,15 @@ export async function runDeepDepth(
             throw new Error(`Failed to fetch ingestion targets: ${targetsError?.message || 'Validation failed'}`);
         }
 
-        const targets = targetsValidation.output;
+        const targetsSnapshot = targetsValidation.output;
+
+        // [THREAT:] Accessing non-existent properties 'drivers.members'/'drivers.recruits' on
+        // the validated targetsSnapshot would lead to a runtime crash when spreading undefined.
+        // [DECISION LOG] Corrected property access to 'members' and 'recruits' to match
+        // the IngestionTargetsSchema contract defined in Layer 1 (rpcSchemas.ts).
         const ingestionTargets = [
-            ...targets.members,
-            ...targets.recruits
+            ...targetsSnapshot.members,
+            ...targetsSnapshot.recruits
         ];
 
         if (ingestionTargets.length > 0) {
@@ -60,30 +66,30 @@ export async function runDeepDepth(
 
             const battleTasks = ingestionTargets.map(targetTag => async () => {
                 try {
-                    const battleLogResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetTag)}/battlelog`);
-                    if (battleLogResponse.ok) {
-                        const rawBattleLogPayload: unknown = await battleLogResponse.json();
+                    const battleLogApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetTag)}/battlelog`);
+                    if (battleLogApiResponse.ok) {
+                        const battleLogRoyalePayload: unknown = await battleLogApiResponse.json();
                         
                         // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
                         // [THREAT:] Prevents database corruption or runtime crashes from unexpected Royale API changes in battle logs.
-                        const validation = v.safeParse(RoyaleBattleLogSchema, rawBattleLogPayload);
+                        const battleLogValidationResult = v.safeParse(RoyaleBattleLogSchema, battleLogRoyalePayload);
 
                         logAudit('S6_BATTLES', 'integrity_checked', {
                             tag: targetTag,
-                            passed: validation.success,
-                            details: validation.success ? 'Battle log validated via Valibot' : 'Malformed battle log payload'
+                            passed: battleLogValidationResult.success,
+                            details: battleLogValidationResult.success ? 'Battle log validated via Valibot' : 'Malformed battle log payload'
                         });
 
-                        if (validation.success && validation.output.length > 0) {
-                            const battleLog = validation.output;
+                        if (battleLogValidationResult.success && battleLogValidationResult.output.length > 0) {
+                            const battleLog = battleLogValidationResult.output;
                             // Ingest battles
-                            const { error: rpcErr } = await supabase.rpc('ingest_player_battles', { 
+                            const { error: rpcIngestionError } = await supabase.rpc('ingest_player_battles', {
                                 p_tag: targetTag,
                                 p_payload: battleLog
                             });
                             
-                            if (rpcErr) {
-                                logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'RPC Failure', details: rpcErr });
+                            if (rpcIngestionError) {
+                                logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'RPC Failure', details: rpcIngestionError });
                             }
 
                             // Extract potential recruits (leads) from opponents
@@ -96,7 +102,7 @@ export async function runDeepDepth(
                                 });
                             });
                         }
-                    } else if (battleLogResponse.status === 404) {
+                    } else if (battleLogApiResponse.status === 404) {
                         await supabase.rpc('report_dead_recruit', { p_player_tag: targetTag });
                         logAudit('S6_BATTLES', 'called', { tag: targetTag, action: 'purged_ghost' });
                     }
@@ -113,9 +119,11 @@ export async function runDeepDepth(
             // Batch synchronize collected shadow leads
             if (globalShadowLeads.size > 0) {
                 // [THREAT:] Standardizing leads payload to prevent 'undefined' pathogens in ingestion.
-                const validLeads = Array.from(globalShadowLeads.entries()).map(([tag, data]) => ({
-                    player_tag: tag.startsWith('#') ? tag : `#${tag}`,
-                    player_name: data.name,
+                // [DECISION LOG] Renamed anemic variables 'tag' and 'data' to 'playerTag' and 'opponentMetadata'
+                // to satisfy domain-descriptive naming constraints in Layer 1.
+                const validLeads = Array.from(globalShadowLeads.entries()).map(([playerTag, opponentMetadata]) => ({
+                    player_tag: normalizeTag(playerTag),
+                    player_name: opponentMetadata.name,
                     trophies: 0 // Battle logs do not provide ladder metrics.
                 }));
 

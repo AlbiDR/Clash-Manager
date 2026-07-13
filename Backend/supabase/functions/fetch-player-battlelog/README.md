@@ -14,13 +14,13 @@ The Battlelog Proxy (Layer 5 Control) provides a secure gateway for fetching rea
 - **Layer**: Layer 5 (Control)
 - **Role**: Secure Diagnostic Proxy.
 - **Import Boundaries**:
-    - **Allowed**: Can import from `@shared` (protocols, schemas).
-    - **Usage**: Primarily consumed by testing utilities and high-fidelity diagnostic dashboards in the PWA.
+ - **Allowed**: Can import from `@shared` (protocols, schemas).
+ - **Usage**: Primarily consumed by testing utilities and high-fidelity diagnostic dashboards in the PWA.
 
 ## Parallel Fan-Out Strategy
 To maximize the probability of surfacing the most recent battle data (bypassing stale proxy node caches), the engine implements a **Parallel Fan-Out Protocol**:
 
-1. **Key Farm Resolution**: Dynamically resolves the full pool of available Royale API keys from the secure vault.
+1. **Key Farm Resolution**: Dynamically resolves the full pool of available Royale API keys from the secure vault, utilizing the standardized `KeyPoolSchema` for authoritative resolution.
 2. **Concurrent Dispatch**: Executes the battle log request across **all** resolved keys simultaneously.
 3. **Freshness Arbitration**: Each proxy node (assigned to a specific key) may return a different cache state. The engine parses the `battleTime` of every successful response.
 4. **Authoritative Selection**: Selects and returns the single most recent battle log identified across the entire fan-out pool.

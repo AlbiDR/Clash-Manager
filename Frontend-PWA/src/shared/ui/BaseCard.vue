@@ -30,9 +30,9 @@ const {
   onSelect: () => emit("toggle-select"),
 });
 
-function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
-  internalScoreClick(scoreClickEvent);
-  emit("score-click", scoreClickEvent as Event);
+function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
+  internalScoreClick(cardScoreClickEvent);
+  emit("score-click", cardScoreClickEvent as Event);
 }
 </script>
 
@@ -91,9 +91,9 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
 <style scoped>
 .card {
   background: var(--sys-color-surface-container);
-  border-radius: 20px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
+  border-radius: var(--sys-shape-corner-m);
+  padding: var(--sys-space-12) var(--sys-space-16);
+  margin-bottom: var(--sys-space-8);
   border: 1.5px solid transparent;
   cursor: pointer;
   position: relative;
@@ -104,11 +104,11 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
   touch-action: pan-y;
   /* [PERF] OPTIMIZED: Removed 'all', strictly animates composited properties + colors */
   transition:
-    transform 0.2s var(--sys-motion-spring),
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.25s ease,
-    margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform var(--sys-motion-duration-200) var(--sys-motion-spring),
+    background-color var(--sys-motion-duration-200) ease,
+    border-color var(--sys-motion-duration-200) ease,
+    box-shadow var(--sys-motion-duration-250) ease,
+    margin var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
   box-shadow: 0 0 0 rgba(0, 0, 0, 0);
 
   /* [PERF] PERFORMANCE: Removed 'paint' containment to allow shadow/scale bleed */
@@ -119,8 +119,8 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
 .card.expanded {
   background: var(--sys-color-surface-container-high);
   box-shadow: var(--sys-elevation-3);
-  margin-top: 16px;
-  margin-bottom: 16px;
+  margin-top: var(--sys-space-16);
+  margin-bottom: var(--sys-space-16);
   transform: scale(1.02);
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
   z-index: 10;
@@ -167,7 +167,7 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
   ) !important;
   color: var(--sys-color-on-primary-container) !important;
   border: 1px solid transparent !important;
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
 }
 .card.selected :deep(.badge:not(.role)) {
   background: rgba(
@@ -182,19 +182,19 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 .identity-group {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--sys-space-14);
   flex: 1;
   min-width: 0;
 }
 .meta-stack {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sys-space-4);
   width: 60px;
   flex-shrink: 0;
 }
@@ -206,16 +206,16 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--sys-space-4);
 }
 
 .expand-btn {
   background: none;
   border: none;
-  padding: 8px;
+  padding: var(--sys-space-8);
   color: var(--sys-color-outline);
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
 }
 .expand-btn.is-active {
   transform: rotate(180deg);
@@ -224,8 +224,8 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
 
 .stat-pod {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: var(--sys-space-48);
+  height: var(--sys-space-48);
   /* [LOGIC] SEMANTIC CONTAINER SCALING:
      Using primary-container ensures mathematical contrast 
      coherence across themes:
@@ -241,13 +241,13 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
     rgba(255, 255, 255, 0.05) 0%,
     transparent 60%
   );
-  border-radius: 14px;
+  border-radius: var(--sys-shape-corner-input);
   display: flex;
   align-items: center;
   justify-content: center;
   transition:
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-    background-color 0.3s ease;
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-spring-overshoot),
+    background-color var(--sys-motion-duration-300) ease;
   contain: layout;
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
@@ -265,10 +265,10 @@ function handleScoreClick(scoreClickEvent: MouseEvent | TouchEvent) {
 }
 
 .card-body {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: var(--sys-space-16);
+  padding-top: var(--sys-space-16);
   border-top: 1px solid rgba(0, 0, 0, 0.05);
-  animation: fade-in 0.3s ease;
+  animation: fade-in var(--sys-motion-duration-300) ease;
 }
 @keyframes fade-in {
   from {

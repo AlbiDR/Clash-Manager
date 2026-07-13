@@ -10,12 +10,14 @@ import {
   useClashDataStore,
   useShowcaseMode,
   useConnectionStatus,
-  useHaptics,
   useUiCoordinator,
   useSystemInfo,
+  useShareTarget,
 } from "@core";
+import { useHaptics } from "@shared";
 import { onMounted, computed, watch, ref } from "vue";
 import { RouterView, useRoute } from "vue-router";
+import { useIsDataLoading } from "vue-router/experimental";
 import { useHeadhunter } from "@features/headhunter";
 // import { registerSW } from "virtual:pwa-register";
 
@@ -31,8 +33,17 @@ const currentRoute = computed(() => route);
 // Initialize Headhunter (starts watchers for notifications/badge)
 useHeadhunter();
 
-// SYNC STATE ADAPTER: Mapping store loading/error to a unified status
+// [VR5] Navigation-phase loading signal from the DataLoaderPlugin.
+// Distinct from the background Supabase sync: isNavigationLoading is true only
+// while the router is awaiting data loaders before committing a navigation.
+const isNavigationLoading = useIsDataLoading();
+
+// SYNC STATE ADAPTER: Mapping store loading/error to a unified status.
+// Covers two independent async concerns:
+// 1. Navigation loading (router DataLoaderPlugin phase)
+// 2. Background Supabase refresh (post-navigation, ongoing)
 const syncState = computed(() => {
+  if (isNavigationLoading.value) return "syncing";
   if (clashDataStore.loading) return "syncing";
   if (clashDataStore.syncError) return "error";
   return "success";
@@ -69,17 +80,26 @@ watch(isOnline, (online, wasOnline) => {
 const updateServiceWorker = ref(() => {});
 
 onMounted(() => {
-  // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent 
+  // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent
   // headless browser crashes during branding asset generation.
   if (!import.meta.env.PROD) return;
+
+  // SHARE TARGET: Process any incoming Web Share Target API parameters.
+  // Must run before the PWA registration so the router is already mounted.
+  // [ADR II] L4 is the only layer permitted to orchestrate cross-service entry.
+  const { handleShareTarget } = useShareTarget();
+  handleShareTarget();
 
   setTimeout(async () => {
     try {
       const { registerSW } = await import("virtual:pwa-register");
       const update = registerSW({
         immediate: true,
-        onRegistered(r: any) {
-          r && setInterval(() => r.update(), 60 * 60 * 1000);
+        onRegistered(registration: ServiceWorkerRegistration | undefined) {
+          // [THREAT:] Silent failure to check for updates can lead to stale app versions.
+          // [DECISION LOG] Implementing an hourly background check for Service Worker
+          // updates to ensure clients are not stuck on legacy code.
+          registration && setInterval(() => registration.update(), 60 * 60 * 1000);
         },
         onNeedRefresh() {
           console.log("[PWA] Update available");
@@ -141,7 +161,7 @@ onMounted(() => {
   background-color: var(--sys-color-background);
   color: var(--sys-color-on-surface);
   overflow-x: hidden;
-  transition: outline 0.3s ease;
+  transition: outline var(--sys-motion-duration-300) ease;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -153,7 +173,7 @@ onMounted(() => {
   --sys-safe-frame-offset: 1px;
   outline: 1px solid #000000;
   outline-offset: -1px;
-  z-index: 9999;
+  z-index: var(--sys-z-frame);
 }
 :root.dark .app-shell.showcase-frame {
   outline: 1px solid #ffffff;
@@ -162,8 +182,8 @@ onMounted(() => {
 .app-container {
   width: 100%;
   max-width: var(--sys-layout-max-width);
-  padding: 0 12px;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  padding: 0 var(--sys-space-12);
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -175,9 +195,9 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 3px;
-  z-index: 3000;
+  z-index: var(--sys-z-strip);
   opacity: 0;
-  transition: all 0.4s ease;
+  transition: all var(--sys-motion-duration-400) ease;
   pointer-events: none;
 }
 .connectivity-strip.offline {

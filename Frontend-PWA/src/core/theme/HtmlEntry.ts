@@ -14,7 +14,7 @@ export function generateHtmlEntry(version: string): string {
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://*.google.com https://*.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googletagmanager.com https://*.google-analytics.com; connect-src 'self' https://*.google.com https://*.googleusercontent.com https://*.supabase.co https://*.googleapis.com;" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders." />
     
     <!-- Open Graph / Facebook -->
@@ -61,6 +61,8 @@ export function generateHtmlEntry(version: string): string {
     <!-- Critical Origin Preconnect -->
     <link rel="preconnect" href="https://hucktamloykszinwbtuh.supabase.co" crossorigin />
 
+    <!-- [OPTIMIZATION] Critical Asset Preloads for Hybrid Shell LCP -->
+    <link rel="preload" href="assets/branding/logo.svg" as="image" type="image/svg+xml" />
     <link rel="preload" href="./fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 
@@ -72,6 +74,28 @@ export function generateHtmlEntry(version: string): string {
           document.documentElement.classList.add("dark");
         } else {
           document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
+    <script>
+      (function() {
+        // Boot-stuck guard: if Vue hasn't replaced the static app shell after 10s,
+        // the JS bundle failed to load/execute (stale cache, 404 chunk, network error).
+        // Reload up to 2x to recover; the SW self-heal (reload-on-activate) handles the
+        // stale-but-mounted case, so this only covers a genuinely failed boot.
+        var retryKey = 'cm_boot_retry';
+        var retries = parseInt(sessionStorage.getItem(retryKey) || '0');
+        if (retries < 2) {
+          setTimeout(function() {
+            if (document.getElementById('app-shell')) {
+              sessionStorage.setItem(retryKey, String(retries + 1));
+              window.location.reload();
+            } else {
+              sessionStorage.removeItem(retryKey);
+            }
+          }, 10000);
+        } else {
+          sessionStorage.removeItem(retryKey);
         }
       })();
     </script>

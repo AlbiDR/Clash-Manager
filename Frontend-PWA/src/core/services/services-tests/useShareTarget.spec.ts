@@ -65,7 +65,7 @@ describe("useShareTarget", () => {
     expect(mockSuccess).toHaveBeenCalledWith("Shared Tag Found: #ABC12345");
     expect(mockReplaceState).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith({
-      path: "/recruiter",
+      path: "/headhunter",
       query: { pin: "ABC12345" },
     });
   });
@@ -77,7 +77,7 @@ describe("useShareTarget", () => {
 
     expect(mockSuccess).toHaveBeenCalledWith("Shared Tag Found: #XYZ987");
     expect(mockPush).toHaveBeenCalledWith({
-      path: "/recruiter",
+      path: "/headhunter",
       query: { pin: "XYZ987" },
     });
   });

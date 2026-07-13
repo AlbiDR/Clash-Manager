@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import * as v from "npm:valibot";
+import * as v from "npm:valibot@1.4.2";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
@@ -9,9 +9,23 @@ import { DiscoveryAnchorSchema, DiscoveryCacheItemSchema, RoyaleTournamentListSc
 
 const ANCHOR_LIMIT = 36;
 const CACHE_HOURS = 5 / 60; // 5 minutes cache window
-const TOURNAMENT_SEARCH_LIMIT = 10;
+const TOURNAMENT_SEARCH_LIMIT = 50;
 const BATCH_TOURNAMENTS = 25;
-const BATCH_KEYWORDS = 15;
+const BATCH_KEYWORDS = 30;
+
+// Canonical tournament types as documented by the Royale API.
+const KNOWN_TOURNAMENT_TYPES = new Set([
+    'openTournament',
+    'invitatioTournament',
+]);
+
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Runtime registry is volatile and will reset on cold start.
+// [DECISION LOG] Keeping registry in-memory for performance; types are rediscovered lazily.
+// Runtime registry seeded from KNOWN_TOURNAMENT_TYPES.
+// Unknown types are added on first encounter and kept for the lifetime of the
+// function instance (persists across warm-start re-invocations).
+const runtimeTypeRegistry = new Set(KNOWN_TOURNAMENT_TYPES);
 
 /**
  * Stage: Tournament Discovery
@@ -29,46 +43,49 @@ export async function runTournamentDiscovery(
     try {
         // 1. Fetch Autonomous Anchors
         // [DECISION LOG] Anchors are keywords stored in the database to guide the discovery engine autonomously.
-        const { data: rawAnchors, error: anchorError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT });
+        // [SCHEMA] The data API only exposes the `public` schema to RPC. A thin
+        // public.get_active_discovery_anchors wrapper (migration) delegates to the
+        // substrate implementation - same pattern as get_shadow_discovery_targets / get_discovery_cache.
+        const { data: discoveryAnchorsRaw, error: discoveryAnchorsError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT });
 
-        if (anchorError) {
-            logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${anchorError.message}` });
-            console.error(`[TOURNAMENT_DISCOVERY] Anchor fetch error: ${anchorError.message}. Falling back to hardcoded keywords.`);
+        if (discoveryAnchorsError) {
+            logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${discoveryAnchorsError.message}` });
+            console.error(`[TOURNAMENT_DISCOVERY] Anchor fetch error: ${discoveryAnchorsError.message}. Falling back to hardcoded keywords.`);
         }
 
         // [GUARD] VALIDATION BOUNDARY: Supabase RPC results must be validated.
         // [THREAT:] Malformed RPC return or database view corruption could cause runtime errors.
-        const anchorValidation = v.safeParse(v.array(DiscoveryAnchorSchema), rawAnchors ?? []);
+        const discoveryAnchorsIntegrity = v.safeParse(v.array(DiscoveryAnchorSchema), discoveryAnchorsRaw ?? []);
         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
             stage: 'ANCHOR_FETCH',
-            passed: anchorValidation.success,
-            details: anchorValidation.success ? 'Anchors validated' : 'Anchor validation failed'
+            passed: discoveryAnchorsIntegrity.success,
+            details: discoveryAnchorsIntegrity.success ? 'Anchors validated' : 'Anchor validation failed'
         });
 
         const FALLBACK_KEYWORDS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
-        const anchors = anchorValidation.success ? anchorValidation.output : [];
+        const anchors = discoveryAnchorsIntegrity.success ? discoveryAnchorsIntegrity.output : [];
         const keywords = anchors.length > 0 ? anchors.map((anchor) => anchor.keyword) : FALLBACK_KEYWORDS;
         const isUsingFallback = keywords === FALLBACK_KEYWORDS;
 
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
-        const { data: rawCached, error: cacheError } = await supabase.rpc('get_discovery_cache', { p_hours: CACHE_HOURS });
-        if (cacheError) {
-            logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Cache fetch failed: ${cacheError.message}` });
+        const { data: discoveryCacheRaw, error: discoveryCacheError } = await supabase.rpc('get_discovery_cache', { p_hours: CACHE_HOURS });
+        if (discoveryCacheError) {
+            logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Cache fetch failed: ${discoveryCacheError.message}` });
         }
 
         // [GUARD] VALIDATION BOUNDARY: Discovery cache validation.
         // [THREAT:] Prevents runtime errors if the discovery cache view structure changes.
-        const cacheValidation = v.safeParse(v.array(DiscoveryCacheItemSchema), rawCached ?? []);
+        const discoveryCacheIntegrity = v.safeParse(v.array(DiscoveryCacheItemSchema), discoveryCacheRaw ?? []);
         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
             stage: 'CACHE_FETCH',
-            passed: cacheValidation.success,
-            details: cacheValidation.success ? 'Cache validated' : 'Cache validation failed'
+            passed: discoveryCacheIntegrity.success,
+            details: discoveryCacheIntegrity.success ? 'Cache validated' : 'Cache validation failed'
         });
 
-        const cachedItems = cacheValidation.success ? cacheValidation.output : [];
-        const blacklist = new Set(cachedItems.map((item) => item.player_tag));
+        const discoveryCacheSnapshot = discoveryCacheIntegrity.success ? discoveryCacheIntegrity.output : [];
+        const blacklist = new Set(discoveryCacheSnapshot.map((cacheItemCandidate) => cacheItemCandidate.player_tag));
         console.log(`[TOURNAMENT_DISCOVERY] Loaded ${blacklist.size} cached tournaments to blacklist`);
         let discoveryCount = 0;
 
@@ -78,62 +95,100 @@ export async function runTournamentDiscovery(
             let keywordYield = 0;
             try {
                 // [THREAT:] fetchWithRotation handles API key rotation to prevent IP/Token banning.
-                const tournamentListResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=${TOURNAMENT_SEARCH_LIMIT}`);
-                logAudit('TOURNAMENT_DISCOVERY', 'run', { keyword, status: tournamentListResponse.status });
-                console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' returned HTTP ${tournamentListResponse.status}`);
-                if (!tournamentListResponse.ok) {
-                    logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: `HTTP_${tournamentListResponse.status}` });
-                    console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' failed due to HTTP ${tournamentListResponse.status}`);
+                const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=${TOURNAMENT_SEARCH_LIMIT}`);
+                logAudit('TOURNAMENT_DISCOVERY', 'run', { keyword, status: tournamentListApiResponse.status });
+                console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' returned HTTP ${tournamentListApiResponse.status}`);
+                if (!tournamentListApiResponse.ok) {
+                    logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: `HTTP_${tournamentListApiResponse.status}` });
+                    console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' failed due to HTTP ${tournamentListApiResponse.status}`);
                     return;
                 }
                 
-                const rawTournamentListData: unknown = await tournamentListResponse.json();
+                const tournamentListRaw: unknown = await tournamentListApiResponse.json();
 
                 // [GUARD] VALIDATION BOUNDARY: External API data must match our internal schema.
                 // [THREAT:] Prevents runtime crashes from unexpected Royale API changes in tournament search results.
-                const listValidation = v.safeParse(RoyaleTournamentListSchema, rawTournamentListData);
+                const tournamentListIntegrity = v.safeParse(RoyaleTournamentListSchema, tournamentListRaw);
 
-                logAudit('TOURNAMENT_DISCOVERY', 'resulted_data', { keyword, items: listValidation.success ? listValidation.output.items.length : 0 });
+                logAudit('TOURNAMENT_DISCOVERY', 'resulted_data', { keyword, items: tournamentListIntegrity.success ? tournamentListIntegrity.output.items.length : 0 });
                 logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { 
                     keyword, 
-                    passed: listValidation.success,
-                    details: listValidation.success ? 'Tournament list shape validated' : 'Malformed tournament list'
+                    passed: tournamentListIntegrity.success,
+                    details: tournamentListIntegrity.success ? 'Tournament list shape validated' : 'Malformed tournament list'
                 });
                 
-                if (!listValidation.success) {
+                if (!tournamentListIntegrity.success) {
                     console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' received invalid data shape`);
                     return;
                 }
 
-                const tournamentList = [...listValidation.output.items].sort(
+                const tournamentList = [...tournamentListIntegrity.output.items].sort(
                     (firstTournament, secondTournament) => secondTournament.capacity - firstTournament.capacity
                 );
 
-                const tournamentDetailTasks = tournamentList.map((tournamentTarget) => async () => {
-                    if (blacklist.has(tournamentTarget.tag)) {
-                        console.log(`[TOURNAMENT_DISCOVERY] Skipping tournament ${tournamentTarget.tag}: blacklisted/cached`);
+                // [DECISION LOG] Calculating type distribution to monitor API behavior and discovery health.
+                // [THREAT:] Anemic variables ('acc', 't', 't_type') can lead to logic corruption during refactoring.
+                const typeDistribution = tournamentList.reduce((typeDistributionAccumulator, tournamentItemCandidate) => {
+                    const tournamentTypeCandidate = tournamentItemCandidate.type ?? 'unknown';
+                    typeDistributionAccumulator[tournamentTypeCandidate] = (typeDistributionAccumulator[tournamentTypeCandidate] ?? 0) + 1;
+                    return typeDistributionAccumulator;
+                }, {} as Record<string, number>);
+                console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' list: ${tournamentList.length} tournaments, types=${JSON.stringify(typeDistribution)}`);
+
+                for (const observedType of Object.keys(typeDistribution)) {
+                    if (observedType !== 'unknown' && !runtimeTypeRegistry.has(observedType)) {
+                        // [DECISION LOG] Auto-discovery of new tournament types ensures the system adapts to Royale API shifts.
+                        // [THREAT:] Unknown types may require specialized parsing logic; we track them via telemetry for clinical auditing.
+                        runtimeTypeRegistry.add(observedType);
+                        console.warn(`[TOURNAMENT_DISCOVERY] NEW TOURNAMENT TYPE DISCOVERED: '${observedType}' - added to runtime registry (now ${runtimeTypeRegistry.size} known types)`);
+                        logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
+                            passed: true,
+                            details: `new_tournament_type_discovered: ${observedType}`,
+                            known_types: [...runtimeTypeRegistry]
+                        });
+                    }
+                }
+
+                const tournamentDetailTasks = tournamentList.map((tournamentTargetCandidate) => async () => {
+                    if (blacklist.has(tournamentTargetCandidate.tag)) {
+                        console.log(`[TOURNAMENT_DISCOVERY] Skipping tournament ${tournamentTargetCandidate.tag}: blacklisted/cached`);
                         return;
                     }
                     try {
-                        const tournamentDetailResponse = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTarget.tag)}`);
-                        if (tournamentDetailResponse.ok) {
-                            const rawTournamentDetails: unknown = await tournamentDetailResponse.json();
+                        const tournamentDetailApiResponse = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTargetCandidate.tag)}`);
+                        if (tournamentDetailApiResponse.ok) {
+                            const tournamentDetailsRaw: unknown = await tournamentDetailApiResponse.json();
 
                             // [GUARD] VALIDATION BOUNDARY: Tournament details validation.
                             // [THREAT:] Prevents errors when processing members if the Royale API structure shifts.
-                            const detailsValidation = v.safeParse(RoyaleTournamentSchema, rawTournamentDetails);
+                            const tournamentDetailsIntegrity = v.safeParse(RoyaleTournamentSchema, tournamentDetailsRaw);
 
-                            if (detailsValidation.success) {
-                                const tournamentDetails = detailsValidation.output;
+                            if (tournamentDetailsIntegrity.success) {
+                                const tournamentDetailsSnapshot = tournamentDetailsIntegrity.output;
+                                const tournamentType = tournamentDetailsSnapshot.type ?? 'unknown';
                                 let foundInTournament = 0;
                                 let skippedClanned = 0;
+                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag} type=${tournamentType} members=${tournamentDetailsSnapshot.membersList.length}`);
 
-                                tournamentDetails.membersList.forEach((tournamentMember) => {
+                                if (tournamentDetailsSnapshot.membersList.length === 0) {
+                                    const isUnknownType = !KNOWN_TOURNAMENT_TYPES.has(tournamentType);
+                                    if (isUnknownType) {
+                                        console.warn(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag} type=${tournamentType} returned 0 members - unknown type may use a different member field name`);
+                                        logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
+                                            passed: false,
+                                            details: `empty_membersList_unknown_type: ${tournamentTargetCandidate.tag} type=${tournamentType}`,
+                                        });
+                                    } else {
+                                        console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag} is empty (0 members).`);
+                                    }
+                                }
+
+                                tournamentDetailsSnapshot.membersList.forEach((memberCandidate) => {
                                     // NOTE: tournamentMember.trophies here is the player's tournament score,
                                     // NOT their ladder trophy count. Trophy gating is delegated
                                     // to the profiler stage which fetches the full player profile.
-                                    if (!tournamentMember.clan?.tag && !exclusionSet.has(tournamentMember.tag)) {
-                                        candidates.set(tournamentMember.tag, "TOURNAMENT");
+                                    if (!memberCandidate.clan?.tag && !exclusionSet.has(memberCandidate.tag)) {
+                                        candidates.set(memberCandidate.tag, "TOURNAMENT");
                                         discoveryCount++;
                                         keywordYield++;
                                         foundInTournament++;
@@ -141,27 +196,27 @@ export async function runTournamentDiscovery(
                                         skippedClanned++;
                                     }
                                 });
-                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag}: ${foundInTournament} candidates added, ${skippedClanned} players skipped (clanned or excluded)`);
+                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag}: ${foundInTournament} candidates added, ${skippedClanned} players skipped (clanned or excluded)`);
                                 logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { 
-                                    tournament: tournamentTarget.tag,
+                                    tournament: tournamentTargetCandidate.tag,
                                     found: foundInTournament, 
                                     skipped: skippedClanned 
                                 });
                             } else {
-                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTarget.tag} validation failed`);
+                                console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag} validation failed`);
                                 logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
-                                    tournament: tournamentTarget.tag,
+                                    tournament: tournamentTargetCandidate.tag,
                                     passed: false,
                                     details: 'Malformed tournament details'
                                 });
                             }
-                            await supabase.rpc('upsert_discovery_cache', { p_tag: tournamentTarget.tag, p_type: 'TOURNAMENT' });
+                            await supabase.rpc('upsert_discovery_cache', { p_tag: tournamentTargetCandidate.tag, p_type: 'TOURNAMENT' });
                         } else {
-                            console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${tournamentTarget.tag} failed with HTTP ${tournamentDetailResponse.status}`);
+                            console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${tournamentTargetCandidate.tag} failed with HTTP ${tournamentDetailApiResponse.status}`);
                         }
-                    } catch (discoveryError: unknown) {
-                        const errorMessage = discoveryError instanceof Error ? discoveryError.message : String(discoveryError);
-                        console.error(`[TOURNAMENT_DISCOVERY] Exception while fetching tournament ${tournamentTarget.tag}: ${errorMessage}`);
+                    } catch (discoveryExecutionError: unknown) {
+                        const errorMessage = discoveryExecutionError instanceof Error ? discoveryExecutionError.message : String(discoveryExecutionError);
+                        console.error(`[TOURNAMENT_DISCOVERY] Exception while fetching tournament ${tournamentTargetCandidate.tag}: ${errorMessage}`);
                     }
                 });
                 await processBatch(tournamentDetailTasks, BATCH_TOURNAMENTS);
@@ -174,8 +229,8 @@ export async function runTournamentDiscovery(
                 });
                 console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' complete. Total yield: ${keywordYield}`);
 
-            } catch (discoveryError: unknown) {
-                const errorMessage = discoveryError instanceof Error ? discoveryError.message : String(discoveryError);
+            } catch (discoveryExecutionError: unknown) {
+                const errorMessage = discoveryExecutionError instanceof Error ? discoveryExecutionError.message : String(discoveryExecutionError);
                 stats.errors.push(`Discovery(${keyword}): ${errorMessage}`);
                 logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: errorMessage });
                 logAudit('TOURNAMENT_DISCOVERY', 'error', { keyword, message: errorMessage });
@@ -188,12 +243,12 @@ export async function runTournamentDiscovery(
         stats.discovery_targets += discoveryCount;
         if (stats.discovery_tournament !== undefined) stats.discovery_tournament += discoveryCount;
         logAudit('TOURNAMENT_DISCOVERY', 'terminated', { candidates: discoveryCount });
-    } catch (discoveryError: unknown) {
-        const errorMessage = discoveryError instanceof Error ? discoveryError.message : String(discoveryError);
+    } catch (discoveryExecutionError: unknown) {
+        const errorMessage = discoveryExecutionError instanceof Error ? discoveryExecutionError.message : String(discoveryExecutionError);
         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: errorMessage });
         logAudit('TOURNAMENT_DISCOVERY', 'error', { message: errorMessage });
         logAudit('TOURNAMENT_DISCOVERY', 'terminated', { error: true });
         console.error(`[TOURNAMENT_DISCOVERY] Fatal error in pipeline: ${errorMessage}`);
-        throw discoveryError;
+        throw discoveryExecutionError;
     }
 }

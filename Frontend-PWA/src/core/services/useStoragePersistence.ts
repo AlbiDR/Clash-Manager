@@ -6,8 +6,10 @@ import { ref, readonly, onMounted } from "vue";
 /**
  * STORAGE PERSISTENCE SERVICE (Layer 1)
  * ----------------------------------------------------------------------------
- * Rationale: Prevents the browser from clearing IndexedDB/localStorage
+ * DESCRIPTION: Prevents the browser from clearing IndexedDB/localStorage
  * under storage pressure, ensuring the integrity of synchronized game data.
+ *
+ * ARCHITECTURE: Layer 1 (@core) hardware broker.
  * ----------------------------------------------------------------------------
  */
 
@@ -38,6 +40,7 @@ export function useStoragePersistence() {
    * Updates the global `isPersisted` state.
    */
   async function check() {
+    // [GUARD] Environmental Check: Ensure browser APIs are available in the current context.
     if (
       typeof navigator !== "undefined" &&
       navigator.storage &&
@@ -51,8 +54,10 @@ export function useStoragePersistence() {
    * Requests the browser to grant persistent storage to the application.
    *
    * @remarks
-   * Browsers may grant this automatically based on usage heuristics or
-   * prompt the user depending on the platform and install state.
+   * [THREAT:] Data Eviction. Without persistence, critical local data (sync snapshots,
+   * settings) can be wiped by the browser to free up space.
+   * [DECISION LOG] Explicit Request: Browsers may grant this automatically based
+   * on usage heuristics or prompt the user depending on the platform and install state.
    */
   async function requestPersistence() {
     if (
@@ -61,15 +66,18 @@ export function useStoragePersistence() {
       navigator.storage.persist
     ) {
       isSupported.value = true;
-      const result = await navigator.storage.persist();
-      isPersisted.value = result;
+      const persistenceGranted = await navigator.storage.persist();
+      isPersisted.value = persistenceGranted;
     }
   }
 
   /**
    * INITIALIZATION: Auto-check on mount.
-   * Ensures the UI state reflects the current storage status as soon as
-   * a component using this service is instantiated.
+   *
+   * @remarks
+   * [DECISION LOG] Immediate Hydration: Ensures the UI state reflects the
+   * current storage status as soon as a component using this service is
+   * instantiated, enabling proactive messaging to the user if data is at risk.
    */
   onMounted(() => {
     if (typeof navigator !== "undefined" && "storage" in navigator) {
@@ -79,8 +87,11 @@ export function useStoragePersistence() {
   });
 
   return {
+    /** Readonly reactive boolean indicating if the Storage Manager API is available. */
     isSupported: readonly(isSupported),
+    /** Readonly reactive boolean indicating if storage persistence is currently granted. */
     isPersisted: readonly(isPersisted),
+    /** Function to trigger the browser's persistence request flow. */
     requestPersistence,
   };
 }

@@ -4,14 +4,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import TargetPicker from "../TargetPicker.vue";
-import { useHaptics } from "../../../../core/services/useHaptics";
+import { useHaptics } from "@shared/composables/useHaptics";
 
 // Mock dependencies
 const mockHaptics = {
   tap: vi.fn(),
 };
 
-vi.mock("../../../../core/services/useHaptics", () => ({
+vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => mockHaptics),
 }));
 
@@ -22,6 +22,7 @@ vi.mock("@shared", () => ({
     template: '<div class="mock-icon" :data-name="name" :data-size="size"></div>',
     props: ["name", "size"],
   },
+  useHaptics: vi.fn(() => mockHaptics),
 }));
 
 describe("TargetPicker.vue", () => {
