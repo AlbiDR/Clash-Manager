@@ -3,6 +3,7 @@
 import { describe, it, expect } from "vitest";
 import {
   cleanTag,
+  normalizeTag,
   formatDisplayTag,
   formatHeaderDescription,
 } from "../text";
@@ -20,6 +21,23 @@ describe("text utilities", () => {
     it("handles undefined/empty input", () => {
       expect(cleanTag(undefined)).toBe("");
       expect(cleanTag("")).toBe("");
+    });
+  });
+
+  describe("normalizeTag", () => {
+    it("ensures tag is uppercase and prefixed with #", () => {
+      expect(normalizeTag("abc123")).toBe("#ABC123");
+      expect(normalizeTag("#xyz")).toBe("#XYZ");
+    });
+
+    it("handles whitespace", () => {
+      expect(normalizeTag("#abc  ")).toBe("#ABC");
+      expect(normalizeTag("  xyz  ")).toBe("#XYZ");
+    });
+
+    it("handles undefined/empty input", () => {
+      expect(normalizeTag(undefined)).toBe("");
+      expect(normalizeTag("")).toBe("");
     });
   });
 
