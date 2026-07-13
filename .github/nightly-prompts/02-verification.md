@@ -132,7 +132,7 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Uncovered Gap Scan
-Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed to Step 4 and record a "No Blindspot Found" run.
+Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-blindspot PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Recent-Change Priority:** Inspect recent commits on the `Nightly` branch. If files modified by Stage 1 (Harden) or Stage 4 (Optimize) lack corresponding specs, or their specs do not cover the changed logic, target them.
   2. **Validation Boundary:** Target functions processing external data (APIs, LocalStorage, user input) that have no tests covering the invalid/malformed input branch.

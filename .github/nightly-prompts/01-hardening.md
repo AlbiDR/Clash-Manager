@@ -142,7 +142,7 @@ You act as an adversarial security and failure-mode auditor. You do not view the
   3. Missing Valibot validation at an external data boundary.
   4. Dead or misleading code in a critical execution path.
   5. Cross-layer architectural boundary violations.
-- Pick the single highest-severity, lowest-ambiguity issue. If no threats exist, proceed to Step 4 and record a "No Threat Found" run.
+- Pick the single highest-severity, lowest-ambiguity issue. If no threats exist, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-threat PR. Do not exit early or skip the PR, as logging the audit pass is required.
 
 ### Step 2: Threat Analysis
 - Formulate a precise Threat Statement: "If [condition] occurs, then [system] fails because [vulnerability]."

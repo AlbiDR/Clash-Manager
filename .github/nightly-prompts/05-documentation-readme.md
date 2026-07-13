@@ -126,7 +126,7 @@ You act as a truth-anchoring information architect. Your mandate is the absolute
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Deterministic Coverage Scan
-Identify the single highest-priority README gap using the following queue in strict order. If all targets are current, proceed to Step 4 and record a "No Gap Found" run.
+Identify the single highest-priority README gap using the following queue in strict order. If all targets are current, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-gap PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Drift Reconciler:** Locate any `README.md` whose examples, API shapes, or descriptions conflict with the codebase.
   2. **README Depth:** Identify existing README files that lack architectural context, system boundaries, or integration notes.

@@ -129,7 +129,7 @@ You act as a performance and efficiency engineer. You do not add new features or
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Bottleneck and Rot Scan
-Scan the codebase and substrate for a single high-impact, low-risk inefficiency using the following strict priority list. If no bottlenecks are found, proceed to Step 4 and record a "No Bottleneck Found" run.
+Scan the codebase and substrate for a single high-impact, low-risk inefficiency using the following strict priority list. If no bottlenecks are found, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-bottleneck PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Structural Rot:** Identify dead or orphaned logic, redundant helper files, or obsolete styles.
   2. **Substrate Hygiene:** Identify orphaned database views not referenced by Edge Functions, storage paths lacking database records, or redundant SQL indexes.

@@ -133,7 +133,7 @@ Scan the monorepo for refactor opportunities.
   1. **Duplicate Detection:** Scan features in `@features` for duplicate utility or business logic.
   2. **Size Audit:** Find modules exceeding line count thresholds (e.g., 400 lines).
   3. **Layer Violation:** Find logic that belongs in a lower infrastructure layer but is currently trapped in a higher layer.
-- Pick the single highest-priority, lowest-ambiguity issue. If no structural debt is found, proceed to Step 4 and record a "No Refactor Required" run.
+- Pick the single highest-priority, lowest-ambiguity issue. If no structural debt is found, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-refactor-required PR. Do not exit early or skip the PR, as logging the audit pass is required.
 
 ### Step 2: Surgery Analysis
 - Define the structural debt: "Logic [X] in Feature [Y] violates Feature-to-Feature isolation."

@@ -154,7 +154,7 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 - If no newer migrations exist:
   1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
   2. Parse and re-format the master migration to optimize query format, statement ordering, and comment consistency.
-  3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, terminate the execution loop cleanly without changes.
+  3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, proceed directly to Step 3 to write a log entry and Step 4 to submit a baseline-consolidation PR. Do not exit early or skip the PR, as logging the audit pass is required.
 
 
 ### Step 2: DDL Folding Integration

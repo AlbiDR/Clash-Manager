@@ -132,7 +132,7 @@ Identify the highest declared version across these three `package.json` files. T
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Version consistency Scan
-Scan the codebase for version inconsistency using the following priority list. If no version drift is found, proceed to Step 4 and record a "No Drift Found" run.
+Scan the codebase for version inconsistency using the following priority list. If no version drift is found, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-drift PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Catalog Scan:** Read `Frontend-PWA/package.json` and `Backend/package.json`. Identify any shared dependencies that are not using the `"catalog:"` protocol and apply the adherence rule.
   2. **Package Version Scan:** Read `package.json` at the root, in `Frontend-PWA/`, and in `Backend/`. Identify any disagreement in the `version` field and synchronize all to the highest declared value.

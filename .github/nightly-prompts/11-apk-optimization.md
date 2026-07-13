@@ -135,9 +135,11 @@ You act as a performance auditor focused on compilation optimization, native ass
   2. ProGuard configurations and target compiler options.
   3. WebView cache and acceleration settings.
   4. Local asset size metrics.
+- If no optimization targets are found, skip Step 2 and proceed directly to Step 3 to write a log entry and Step 4 to submit a no-optimization-required PR. Do not exit early or skip the PR, as logging the audit pass is required.
 
 ### Step 2: Optimization Verification
 - Run a compilation check to verify the optimization changes are correct and build cleanly.
+- Skip this step entirely if Step 1 found no optimization targets.
 
 ### Step 3: Write Logs
 - Append a log record to `.github/nightly-logs/11-apk-optimization-coverage.log`.

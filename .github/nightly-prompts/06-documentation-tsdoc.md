@@ -135,7 +135,7 @@ You act as a logic-annotating interface architect. Your mandate is mapping the i
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Inline Documentation Scan
-Identify the single highest-priority documentation gap using the following queue in strict order. If all targets are fully covered, proceed to Step 4 and record a "No Gap Found" run.
+Identify the single highest-priority documentation gap using the following queue in strict order. If all targets are fully covered, proceed directly to Step 3 to write a log entry and Step 4 to submit a no-gap PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Recent-Change Priority:** Auditing files recently modified by preceding stages (Harden, Verify, Optimize) since the last merge cycle. Changes in code logic invalidate adjacent annotations.
   2. **Missing Interface Contracts:** Locate exported functions, stores, composables, or Edge Function entry points lacking JSDoc/TSDoc blocks.
