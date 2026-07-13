@@ -51,7 +51,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly` to ensure your branch is based on the latest work of the preceding stages.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
-- **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
+- **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications. For Stage 3, folding all outstanding migrations into the master baseline constitutes a single atomic operation and must be completed in full within one PR.
 - **Clean Exit:** Once your Pull Request is created and pushed, your execution turn is complete. Do not attempt to merge your own Pull Request unless explicitly instructed.
 
 ---
@@ -61,6 +61,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Commit Strategy:** Commit your changes directly to your local working branch.
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
+- **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
