@@ -125,7 +125,7 @@ Operational boundaries discovered at runtime that are not explicitly stated in t
   point.** Any migration added without being folded in will cause the baseline to
   diverge from the applied schema.
 
-* **Stage 1 is responsible for the pr-history.md aging pass.** If Stage 1 is
+* **Stage 1 is responsible for the 00-pr-history.md aging pass.** If Stage 1 is
   skipped or fails, the aging pass does not run. No other stage should attempt
   to perform aging to avoid concurrent write conflicts.
 
@@ -137,7 +137,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 
 ### Stage 1 -- Hardening
 * Current focus: Layer boundary enforcement, security header validation.
-* Pre-flight responsibility: pr-history.md aging pass (runs before all other work).
+* Pre-flight responsibility: 00-pr-history.md aging pass (runs before all other work).
 * Flagged for next pass: Backend-Worker RPC boundary validation.
 
 ### Stage 2 -- Verification

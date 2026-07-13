@@ -5,7 +5,7 @@ TIER_CONFIG:
   T1_ACTIVE_DAYS:     7   # Full detail block; pipeline context for current week
   T2_RECENT_DAYS:     30  # Lean one-liner; avoid duplication reference
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
-  T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds pipeline-intelligence.md
+  T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
 LAST_AGED:   2026-07-13
 -->
@@ -599,7 +599,7 @@ LAST_AGED:   2026-07-13
 
 ## T4 -- Archive (90+ days)
 
-> Monthly domain summaries. Proven patterns extracted to pipeline-intelligence.md.
+> Monthly domain summaries. Proven patterns extracted to 00-pipeline-intelligence.md.
 
 #### April 2026
 * 13 PRs [Dependencies]
