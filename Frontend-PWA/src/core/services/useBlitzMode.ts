@@ -7,6 +7,13 @@ import { useToast } from "@core/services/useToast";
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useNativeBridge } from "@core/services/useNativeBridge";
+import {
+  BLITZ_THROTTLE_DEFAULT,
+  BLITZ_SAFETY_DELAY,
+  BLITZ_RECOVERY_DELAY,
+  BLITZ_COMPLETION_DELAY,
+  BLITZ_BATCH_SHIFT_DELAY
+} from "@core/config";
 
 interface BlitzOptions {
   throttleMs?: number;
@@ -38,7 +45,7 @@ export function useBlitzMode(
   selectionStore: ReturnType<typeof useSelectionStore>,
   options: BlitzOptions = {}
 ) {
-  const { throttleMs = 850 } = options;
+  const { throttleMs = BLITZ_THROTTLE_DEFAULT } = options;
   const { selectedIds, isSelectionMode, clearSelection } = selectionStore;
 
   /** Sequential queue of tags remaining to be opened. */
@@ -164,9 +171,9 @@ export function useBlitzMode(
       openInGame(activeRecruitId);
 
       // [THREAT:] Rapid intent firing can lead to OS-level queue saturation or battery drain.
-      // [DECISION LOG] Implemented a 4000ms minimum safety delay for automated blitz
+      // [DECISION LOG] Implemented a safety delay for automated blitz
       // to ensure stable deep-link resolution in the native wrapper.
-      const safetyDelay = Math.max(throttleMs, 4000);
+      const safetyDelay = Math.max(throttleMs, BLITZ_SAFETY_DELAY);
       if (blitzCurrentItemIndex.value < selectedIds.value.length - 1) {
         blitzOperationTimer = setTimeout(() => {
           blitzCurrentItemIndex.value++;
@@ -176,7 +183,7 @@ export function useBlitzMode(
         blitzOperationTimer = setTimeout(() => {
           stopBlitz();
           info("Blitz complete");
-        }, 1500);
+        }, BLITZ_COMPLETION_DELAY);
       }
     } else {
       if (blitzCurrentItemIndex.value < selectedIds.value.length - 1) {
@@ -242,7 +249,7 @@ export function useBlitzMode(
           // [THREAT:] Accidental double-clicks triggering overlapping intent calls.
           // [DECISION LOG] Resetting the auto-advance timer to prevent race conditions
           // between manual and automated progression.
-          blitzOperationTimer = setTimeout(advanceBlitz, Math.max(throttleMs, 2000));
+          blitzOperationTimer = setTimeout(advanceBlitz, Math.max(throttleMs, BLITZ_RECOVERY_DELAY));
         }
       }
       return;
@@ -273,7 +280,7 @@ export function useBlitzMode(
       if (batchExecutionQueue.value.length === 0) {
         info("Batch complete");
       }
-    }, 150);
+    }, BLITZ_BATCH_SHIFT_DELAY);
   }
 
   if (getCurrentInstance()) {

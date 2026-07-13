@@ -21,6 +21,7 @@
 import { useAppSettings } from "./useAppSettings";
 import { useBroadcastChannel } from "./useBroadcastChannel";
 import { ref } from "vue";
+import { BADGE_UPDATE_DEBOUNCE, BADGE_RETRY_BASE_DELAY } from "@core/config";
 
 /**
  * Global persistent state to track debounce across multiple useBadge() instances.
@@ -136,7 +137,7 @@ export function useBadge() {
    * Main entry point for updating the application badge.
    *
    * @remarks
-   * Implements a 1500ms debounce to prevent API flooding and excessive
+   * Implements a debounced update sequence to prevent API flooding and excessive
    * Service Worker wake-ups. Includes a retry mechanism for transient failures.
    *
    * @param count - The target badge count.
@@ -154,7 +155,7 @@ export function useBadge() {
     // Rationale: Rapid changes in recruit counts could lead to race conditions in the SW
     // and browser-level rate limiting of the Badge API.
     const now = Date.now();
-    if (now - lastUpdate.value < 1500) return;
+    if (now - lastUpdate.value < BADGE_UPDATE_DEBOUNCE) return;
     lastUpdate.value = now;
 
     const safeCount = Math.max(0, Math.floor(count));
@@ -177,7 +178,7 @@ export function useBadge() {
       } catch (badgeUpdateError) {
         if (attempts < MAX_RETRIES) {
           attempts++;
-          setTimeout(trySet, 800 * attempts);
+          setTimeout(trySet, BADGE_RETRY_BASE_DELAY * attempts);
         } else {
           console.warn("[Badge] Persistent failure", badgeUpdateError);
         }

@@ -48,6 +48,31 @@ export const VOYAGE_DEFAULT_TARGET = 1600;
 export const VOYAGE_MAX_TARGET = 9999;
 
 /**
+ * CORE TIMING CONSTANTS (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: Centralizes UI/UX stability delays and orchestration timeouts.
+ */
+
+/** Delay to avoid clashing with initial render/font loading in headless environments. */
+export const UI_STABILITY_DELAY = 1500;
+/** Minimum interval between badge updates to prevent API flooding. */
+export const BADGE_UPDATE_DEBOUNCE = 1500;
+/** Base delay for exponential backoff during failed badge updates. */
+export const BADGE_RETRY_BASE_DELAY = 800;
+/** Default throttle for manual deep-link clicks. */
+export const BLITZ_THROTTLE_DEFAULT = 850;
+/** Safety delay for automated blitz to ensure stable deep-link resolution. */
+export const BLITZ_SAFETY_DELAY = 4000;
+/** Reset timer for auto-advance after manual interaction in Blitz Mode. */
+export const BLITZ_RECOVERY_DELAY = 2000;
+/** Delay before concluding the Blitz sequence. */
+export const BLITZ_COMPLETION_DELAY = 1500;
+/** Micro-delay for processing the internal batch queue. */
+export const BLITZ_BATCH_SHIFT_DELAY = 150;
+/** Non-blocking timeout for blocked IndexedDB deletions. */
+export const STORAGE_DELETE_TIMEOUT = 1500;
+
+/**
  * Notification tag used to deduplicate and manage recruit push notifications.
  * Must be kept in sync with the PWA manifest shortcut and sw.ts routing.
  */

@@ -15,6 +15,8 @@
  * - **Satisfaction:** ADR Section II (Layer 1: Core) and Section IV (Tiered Caching Protocol).
  */
 
+import { STORAGE_DELETE_TIMEOUT } from "@core/config";
+
 /**
  * Fallback in-memory storage for environments where IndexedDB is unavailable or failing.
  * // EPHEMERAL: intentionally resets on cold start
@@ -77,7 +79,7 @@ export function deleteDatabasePromise(dbName: string): Promise<void> {
       idbDeleteRequest.onblocked = () => {
         // [DECISION LOG] Non-blocking timeout to prevent hanging the pipeline
         // during database migrations or concurrent access conflicts.
-        setTimeout(resolve, 1500);
+        setTimeout(resolve, STORAGE_DELETE_TIMEOUT);
       };
     } catch (dbDeletionError: unknown) {
       resolve();

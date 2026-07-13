@@ -6,6 +6,7 @@ import { useToast } from "./useToast";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
 import { appVersion } from "./useSystemInfo";
+import { UI_STABILITY_DELAY } from "@core/config";
 
 /**
  * PWA MANAGER SERVICE (Layer 1)
@@ -31,14 +32,20 @@ import { appVersion } from "./useSystemInfo";
  * COMPOSABLE: usePwaManager
  *
  * @returns
+ * - `notificationPermission`: Status of the browser's Notification API.
+ * - `isPushSubscribed`: Indicates if the client has an active push subscription.
  * - `updateServiceWorker`: Ref containing the SW registration update function.
+ * - `initPwaLifecycle`: Orchestrates SW registration and permission probing.
  * - `forceUpdate`: Triggers a manual Service Worker update check.
  * - `clearCache`: Purges the PWA asset cache and reloads.
  * - `factoryReset`: Destructive wipe of all local application state.
  */
 export function usePwaManager() {
   const toast = useToast();
-  const { isNativeWrapper, bridge: nativeBridge } = useNativeBridge();
+  const { bridge: nativeBridge } = useNativeBridge();
+
+  const notificationPermission = ref<NotificationPermission | "unsupported">("default");
+  const isPushSubscribed = ref(false);
 
   /**
    * Function to trigger a Service Worker reload/update.
@@ -49,6 +56,51 @@ export function usePwaManager() {
   const updateServiceWorker = ref((reload?: boolean) => {
     console.log("[PWA] SW Update check initiated (no-op stub)", reload);
   });
+
+  /**
+   * Orchestrates the PWA lifecycle initialization.
+   * Handles Service Worker registration and notification permission probing.
+   */
+  async function initPwaLifecycle() {
+    // [THREAT:] Bypassing PWA logic in development/showcase mode to prevent
+    // headless browser crashes during branding asset generation.
+    if (!import.meta.env.PROD) return;
+
+    // [DECISION LOG] Delaying execution avoids clashing with initial render/font loading
+    // which frequently causes 'Target crashed' errors in headless browser pipelines.
+    setTimeout(async () => {
+      // Initialize Service Worker
+      if ("serviceWorker" in navigator) {
+        try {
+          const { registerSW } = await import("virtual:pwa-register");
+          updateServiceWorker.value = registerSW({
+            onNeedRefresh() {
+              console.log("[PWA] Update available");
+            },
+          });
+        } catch (swInitError) {
+          console.warn("[PWA] SW Registration failed", swInitError);
+        }
+      }
+
+      // Notification Probing
+      if (typeof Notification !== "undefined") {
+        notificationPermission.value = Notification.permission;
+
+        if ("serviceWorker" in navigator) {
+          try {
+            const swRegistration = await navigator.serviceWorker.ready;
+            const pushSubscription = await swRegistration.pushManager?.getSubscription();
+            if (pushSubscription) isPushSubscribed.value = true;
+          } catch (pushProbeError) {
+            console.warn("[PWA] Push subscription probe failed", pushProbeError);
+          }
+        }
+      } else {
+        notificationPermission.value = "unsupported";
+      }
+    }, UI_STABILITY_DELAY);
+  }
 
   /**
    * Triggers an explicit check for Service Worker updates.
@@ -231,7 +283,10 @@ export function usePwaManager() {
   }
 
   return {
+    notificationPermission,
+    isPushSubscribed,
     updateServiceWorker,
+    initPwaLifecycle,
     forceUpdate,
     downloadApk,
     clearCache,
