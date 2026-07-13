@@ -1,930 +1,635 @@
-# Nightly Pipeline Changelog
+# Nightly Pipeline -- PR History
 
-> All entries are compacted. Full reasoning, changes, and verification details are
-> available on GitHub via the linked Pull Request.
+<!--
+TIER_CONFIG:
+  T1_ACTIVE_DAYS:     7   # Full detail block; pipeline context for current week
+  T2_RECENT_DAYS:     30  # Lean one-liner; avoid duplication reference
+  T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
+  T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds PIPELINE_INTELLIGENCE.md
+AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
+LAST_AGED:   2026-07-13
+-->
+
+> **Format:** Entries age through four tiers as time passes. Stage 1 performs
+> the aging pass at the start of every run. New entries are always written in
+> T1 full-block format by the stage that opened the PR.
 
 ---
 
-* [2026-07-13] PR #1103: perf(apk-optimization): optimize WebView cache mode for sub-second startup (Commit: df303147) [View](https://github.com/AlbiDR/Clash-Manager/pull/1103)
-* [2026-07-13] PR #1102: refactor: centralize timing constants and PWA lifecycle logic (Commit: a5b144b1) [View](https://github.com/AlbiDR/Clash-Manager/pull/1102)
-* [2026-07-13] PR #1101: chore(deps): bump tsx and dependency-cruiser; update major watchlist (Commit: 6b8762de) [View](https://github.com/AlbiDR/Clash-Manager/pull/1101)
-* [2026-07-13] PR #1100: chore(version): no drift found (Commit: 3028c6ad) [View](https://github.com/AlbiDR/Clash-Manager/pull/1100)
-* [2026-07-13] PR #1099: docs(tsdoc): harden interface contracts for roster and api layers (Commit: 725a0bca) [View](https://github.com/AlbiDR/Clash-Manager/pull/1099)
-* [2026-07-13] PR #1098: docs(readme): reconcile backend deployment and core delegation (Commit: a2b8c2cc) [View](https://github.com/AlbiDR/Clash-Manager/pull/1098)
-* [2026-07-13] PR #1097: refactor(opt): standardize headhunter scanner naming (Commit: ad4a533f) [View](https://github.com/AlbiDR/Clash-Manager/pull/1097)
-* [2026-07-13] PR #1096: chore(baseline): fold new migrations into master baseline (Commit: 4128446f) [View](https://github.com/AlbiDR/Clash-Manager/pull/1096)
-* [2026-07-13] PR #1095: test(verify): add specs for assets.ts and normalizeTag (Commit: 52933228) [View](https://github.com/AlbiDR/Clash-Manager/pull/1095)
-* [2026-07-12] PR #1094: fix(apk-ux): modernize BackendRefresher touch targets and haptics (Commit: 31ee635a) [View](https://github.com/AlbiDR/Clash-Manager/pull/1094)
-* [2026-07-12] PR #1093: perf(apk-optimization): harden webview and optimize sw cache (Commit: 33273b43) [View](https://github.com/AlbiDR/Clash-Manager/pull/1093)
-* [2026-07-12] PR #1092: fix(apk-integrity): harden wrapper consistency checks (Commit: fe4e397b) [View](https://github.com/AlbiDR/Clash-Manager/pull/1092)
-* [2026-07-12] PR #1091: refactor: centralize game asset resolution and standardize laboratory UI (Commit: 3262403a) [View](https://github.com/AlbiDR/Clash-Manager/pull/1091)
-* [2026-07-12] PR #1090: chore(deps): update major version watchlist (Commit: 21b5971a) [View](https://github.com/AlbiDR/Clash-Manager/pull/1090)
-* [2026-07-12] PR #1089: chore(version): harden project integrity and reconcile log (Commit: 89ef122d) [View](https://github.com/AlbiDR/Clash-Manager/pull/1089)
-* [2026-07-12] PR #1088: docs(tsdoc): harden core math and priority queue contracts (Commit: 610a9d89) [View](https://github.com/AlbiDR/Clash-Manager/pull/1088)
-* [2026-07-12] PR #1087: docs(readme): reconcile utility and shared UI drift (Commit: c1ba5fc2) [View](https://github.com/AlbiDR/Clash-Manager/pull/1087)
-* [2026-07-12] PR #1086: perf(opt): standardize shared UI naming and audit substrate (Commit: bdbafaf8) [View](https://github.com/AlbiDR/Clash-Manager/pull/1086)
-* [2026-07-12] PR #1085: chore(baseline): fold new migrations into master baseline (Commit: 318d6625) [View](https://github.com/AlbiDR/Clash-Manager/pull/1085)
-* [2026-07-12] PR #1084: test(verify): add specs for backend royale schemas (Commit: c52598bb) [View](https://github.com/AlbiDR/Clash-Manager/pull/1084)
-* [2026-07-11] PR #1083: fix(apk-ux): modernize StatusPill for hybrid shell compliance (Commit: 8dd26cd8) [View](https://github.com/AlbiDR/Clash-Manager/pull/1083)
-* [2026-07-11] PR #1082: perf(apk-optimization): consolidate redundant assets and optimize SW cache (Commit: b68139d6) [View](https://github.com/AlbiDR/Clash-Manager/pull/1082)
-* [2026-07-11] PR #1081: fix(apk-integrity): sync navigation color and harden theme colors (Commit: fbc28334) [View](https://github.com/AlbiDR/Clash-Manager/pull/1081)
-* [2026-07-11] PR #1080: refactor: decompose monolithic game utility and centralize XP math (Commit: 7db6f9e5) [View](https://github.com/AlbiDR/Clash-Manager/pull/1080)
-* [2026-07-11] PR #1079: chore(deps): bump knip and @formkit/auto-animate (Commit: af028b4b) [View](https://github.com/AlbiDR/Clash-Manager/pull/1079)
-* [2026-07-11] PR #1078: fix(version): reconcile version drift and enforce catalog alignment (Commit: 1603bf5e) [View](https://github.com/AlbiDR/Clash-Manager/pull/1078)
-* [2026-07-11] PR #1077: docs(tsdoc): harden core service and shared UI contracts (Commit: 057eadad) [View](https://github.com/AlbiDR/Clash-Manager/pull/1077)
-* [2026-07-11] PR #1076: docs(readme): reconcile query-royale-api harvesting logic (Commit: fb65469f) [View](https://github.com/AlbiDR/Clash-Manager/pull/1076)
-* [2026-07-11] PR #1075: perf(opt): standardize shared ui variable naming and audit substrate (Commit: a5ca0ac5) [View](https://github.com/AlbiDR/Clash-Manager/pull/1075)
-* [2026-07-11] PR #1074: test(verify): add saturating tests for backend shared utils (Commit: 7bd174b8) [View](https://github.com/AlbiDR/Clash-Manager/pull/1074)
-* [2026-07-11] PR #1073: fix(harden): secure Royale API harvest boundary (Commit: fb029d16) [View](https://github.com/AlbiDR/Clash-Manager/pull/1073)
-* [2026-07-10] PR #1072: fix(apk-ux): modernize score selector for mobile compliance (Commit: 4c6b3e21) [View](https://github.com/AlbiDR/Clash-Manager/pull/1072)
-* [2026-07-10] PR #1071: fix(apk-integrity): sync brand theme and navigation colors (Commit: 7d151633) [View](https://github.com/AlbiDR/Clash-Manager/pull/1071)
-* [2026-07-10] PR #1070: refactor: centralize hub-related interfaces to core types (Commit: a243faa5) [View](https://github.com/AlbiDR/Clash-Manager/pull/1070)
-* [2026-07-10] PR #1069: chore(deps): bump @supabase/supabase-js from 2.110.1 to 2.110.2 (Commit: a7b77ad2) [View](https://github.com/AlbiDR/Clash-Manager/pull/1069)
-* [2026-07-10] PR #1068: chore(version): no drift found (Commit: c49bd322) [View](https://github.com/AlbiDR/Clash-Manager/pull/1068)
-* [2026-07-10] PR #1067: docs(tsdoc): harden interface contracts for Layer 1 core services (Commit: dbbe5fdd) [View](https://github.com/AlbiDR/Clash-Manager/pull/1067)
-* [2026-07-10] PR #1066: docs(readme): reconcile domain types documentation (Commit: a0f379cf) [View](https://github.com/AlbiDR/Clash-Manager/pull/1066)
-* [2026-07-10] PR #1065: refactor(opt): standardize core service variable naming (Commit: 558ead3f) [View](https://github.com/AlbiDR/Clash-Manager/pull/1065)
-* [2026-07-09] PR #1064: fix(apk-ux): add tactile feedback to theme options in AppearanceSettings (Commit: 10fba68d) [View](https://github.com/AlbiDR/Clash-Manager/pull/1064)
-* [2026-07-09] PR #1063: Harden APK/PWA Integrity Auditor and Reconcile Logs (Commit: 1890a9ec) [View](https://github.com/AlbiDR/Clash-Manager/pull/1063)
-* [2026-07-09] PR #1062: chore(deps): bump @types/node and update major watchlist (Commit: 831d8a2b) [View](https://github.com/AlbiDR/Clash-Manager/pull/1062)
-* [2026-07-09] PR #1061: fix(version): reconcile supabase-js drift to align with catalog (Commit: 3dcdc2b8) [View](https://github.com/AlbiDR/Clash-Manager/pull/1061)
-* [2026-07-09] PR #1060: docs(tsdoc): harden useClashLoader interface contract (Commit: 5789ccf1) [View](https://github.com/AlbiDR/Clash-Manager/pull/1060)
-* [2026-07-09] PR #1059: docs(readme): reconcile core service registry and utilities (Commit: 8ab1829a) [View](https://github.com/AlbiDR/Clash-Manager/pull/1059)
-* [2026-07-09] PR #1058: refactor(opt): standardize variable naming in core services (Commit: 1c0b566b) [View](https://github.com/AlbiDR/Clash-Manager/pull/1058)
-* [2026-07-09] PR #1057: chore(baseline): fold new migrations into master baseline (Commit: c2874760) [View](https://github.com/AlbiDR/Clash-Manager/pull/1057)
-* [2026-07-09] PR #1056: fix(harden): resolve runtime crash and excise anemic variables in deep-depth stage (Commit: 1444b606) [View](https://github.com/AlbiDR/Clash-Manager/pull/1056)
-* [2026-07-08] PR #1055: perf(apk-optimization): optimize SW precache and prune orphaned resources (Commit: f68eb7d3) [View](https://github.com/AlbiDR/Clash-Manager/pull/1055)
-* [2026-07-08] PR #1054: fix(apk-integrity): harden security audit and verify manifest parity (Commit: 9339b393) [View](https://github.com/AlbiDR/Clash-Manager/pull/1054)
-* [2026-07-08] PR #1053: chore(deps): update dependencies and major version watchlist [Stage 8] (Commit: 5a18e9dd) [View](https://github.com/AlbiDR/Clash-Manager/pull/1053)
-* [2026-07-08] PR #1052: docs(tsdoc): document native bridge orchestrator interface contracts (Commit: 3d3d642c) [View](https://github.com/AlbiDR/Clash-Manager/pull/1052)
-* [2026-07-08] PR #1051: docs(readme): reconcile core service registry (Commit: b93ce544) [View](https://github.com/AlbiDR/Clash-Manager/pull/1051)
-* [2026-07-08] PR #1050: perf(opt): standardize variable naming for domain clarity (Commit: d401ce5f) [View](https://github.com/AlbiDR/Clash-Manager/pull/1050)
-* [2026-07-08] PR #1049: test(verify): add specs for useClashLoader (Commit: d9f005ea) [View](https://github.com/AlbiDR/Clash-Manager/pull/1049)
-* [2026-07-07] PR #1048: fix(apk-ux): optimize BaseSelect touch targets for 48px compliance (Commit: a2664583) [View](https://github.com/AlbiDR/Clash-Manager/pull/1048)
-* [2026-07-07] PR #1047: perf(apk-optimization): prune redundant shortcut assets and xml overrides (Commit: a1cb307e) [View](https://github.com/AlbiDR/Clash-Manager/pull/1047)
-* [2026-07-07] PR #1046: [Stage 10] APK & PWA Wrapper Integrity Audit (Commit: b719ecbe) [View](https://github.com/AlbiDR/Clash-Manager/pull/1046)
-* [2026-07-07] PR #1045: Refactor: Centralize Native Android Bridge Orchestration (Commit: 536938ea) [View](https://github.com/AlbiDR/Clash-Manager/pull/1045)
-* [2026-07-07] PR #1044: chore(deps): bump vitest from 4.1.9 to 4.1.10 (Commit: 4f96bbcb) [View](https://github.com/AlbiDR/Clash-Manager/pull/1044)
-* [2026-07-07] PR #1043: chore(version): no drift found (Commit: 0b7d9b04) [View](https://github.com/AlbiDR/Clash-Manager/pull/1043)
-* [2026-07-07] PR #1042: docs(tsdoc): document settings orchestrator and pwa lifecycle (Commit: 8302073b) [View](https://github.com/AlbiDR/Clash-Manager/pull/1042)
-* [2026-07-07] PR #1041: docs(readme): reconcile prediction logic and utility registry (Commit: 9a0f3d5c) [View](https://github.com/AlbiDR/Clash-Manager/pull/1041)
-* [2026-07-07] PR #1040: refactor(opt): standardize variable naming for domain clarity (Commit: 76cf646a) [View](https://github.com/AlbiDR/Clash-Manager/pull/1040)
-* [2026-07-07] PR #1039: test(verify): add specs for locale utility (Commit: 65224fa6) [View](https://github.com/AlbiDR/Clash-Manager/pull/1039)
-* [2026-07-06] PR #1038: fix(apk-ux): add tactile feedback to ErrorBoundary actions (Commit: e0297109) [View](https://github.com/AlbiDR/Clash-Manager/pull/1038)
-* [2026-07-06] PR #1037: perf(apk-optimization): prune orphaned resources and optimize SW cache (Commit: 4e8e643e) [View](https://github.com/AlbiDR/Clash-Manager/pull/1037)
-* [2026-07-06] PR #1036: chore(apk-integrity): monorepo integrity audit passed (Commit: b73c6033) [View](https://github.com/AlbiDR/Clash-Manager/pull/1036)
-* [2026-07-06] PR #1035: refactor: centralize scanner logic and configuration to shared layer (Commit: 047b6c60) [View](https://github.com/AlbiDR/Clash-Manager/pull/1035)
-* [2026-07-06] PR #1034: chore(deps): bump vite and update major version watchlist [Stage 8] (Commit: 48472010) [View](https://github.com/AlbiDR/Clash-Manager/pull/1034)
-* [2026-07-06] PR #1033: chore(version): no drift found (Commit: 4afd7183) [View](https://github.com/AlbiDR/Clash-Manager/pull/1033)
-* [2026-07-06] PR #1032: docs(tsdoc): document useLongPress gesture orchestrator (Commit: 30a85292) [View](https://github.com/AlbiDR/Clash-Manager/pull/1032)
-* [2026-07-06] PR #1031: docs(readme): reconcile backend API boundaries (Commit: 733d47da) [View](https://github.com/AlbiDR/Clash-Manager/pull/1031)
-* [2026-07-06] PR #1030: perf(opt): centralize backend utilities and refactor edge functions (Commit: 943801c1) [View](https://github.com/AlbiDR/Clash-Manager/pull/1030)
-* [2026-07-06] PR #1029: chore(baseline): fold new migrations into master baseline (Commit: d36c227d) [View](https://github.com/AlbiDR/Clash-Manager/pull/1029)
-* [2026-07-06] PR #1028: test(verify): add specs for app shell and base theme (Commit: d339b362) [View](https://github.com/AlbiDR/Clash-Manager/pull/1028)
-* [2026-07-05] PR #1027: fix(apk-ux): add tactile feedback to backend refresh actions (Commit: 319036fe) [View](https://github.com/AlbiDR/Clash-Manager/pull/1027)
-* [2026-07-05] PR #1026: perf(apk-optimization): consolidate redundant XML resources into aliases (Commit: 4c98aeda) [View](https://github.com/AlbiDR/Clash-Manager/pull/1026)
-* [2026-07-05] PR #1025: chore(apk-integrity): no mismatch found (Commit: 79a7cacb) [View](https://github.com/AlbiDR/Clash-Manager/pull/1025)
-* [2026-07-05] PR #1024: refactor: extract leaderboard scouting to core api (Commit: d91e226c) [View](https://github.com/AlbiDR/Clash-Manager/pull/1024)
-* [2026-07-05] PR #1023: chore(deps): bump @ast-grep/cli from 0.44.0 to 0.44.1 (Commit: d5bbbab0) [View](https://github.com/AlbiDR/Clash-Manager/pull/1023)
-* [2026-07-05] PR #1022: chore(version): no drift found (Commit: bd3df762) [View](https://github.com/AlbiDR/Clash-Manager/pull/1022)
-* [2026-07-05] PR #1021: docs(tsdoc): document Layer 1 core services (Commit: 230c3009) [View](https://github.com/AlbiDR/Clash-Manager/pull/1021)
-* [2026-07-05] PR #1020: docs(readme): reconcile architectural drift across monorepo (Commit: fcdb326c) [View](https://github.com/AlbiDR/Clash-Manager/pull/1020)
-* [2026-07-05] PR #1019: refactor(opt): standardize core api and service variable naming (Commit: 5caaddda) [View](https://github.com/AlbiDR/Clash-Manager/pull/1019)
-* [2026-07-05] PR #1018: chore(baseline): fold new migrations into master baseline (Commit: 1ae9984c) [View](https://github.com/AlbiDR/Clash-Manager/pull/1018)
-* [2026-07-05] PR #1017: test(verify): add saturating coverage for HtmlEntry.ts (Commit: 425101ce) [View](https://github.com/AlbiDR/Clash-Manager/pull/1017)
-* [2026-07-04] PR #1016: chore(apk-integrity): no mismatch found (Commit: f58d6df0) [View](https://github.com/AlbiDR/Clash-Manager/pull/1016)
-* [2026-07-04] PR #1015: refactor: decompose monolithic schemas.ts into domain modules (Commit: 0d75a767) [View](https://github.com/AlbiDR/Clash-Manager/pull/1015)
-* [2026-07-04] PR #1014: fix(apk-ux): add tactile feedback to NetworkSettings controls (Commit: 5dcbf011) [View](https://github.com/AlbiDR/Clash-Manager/pull/1014)
-* [2026-07-04] PR #1013: chore(deps): bump tsx and update major version watchlist (Commit: c7d96cba) [View](https://github.com/AlbiDR/Clash-Manager/pull/1013)
-* [2026-07-04] PR #1012: fix(version): reconcile version drift in backend engine (Commit: c3524abe) [View](https://github.com/AlbiDR/Clash-Manager/pull/1012)
-* [2026-07-04] PR #1011: docs(tsdoc): document automated blitz orchestrator (Commit: 65a0ed51) [View](https://github.com/AlbiDR/Clash-Manager/pull/1011)
-* [2026-07-04] PR #1010: docs(readme): reconcile core service and api documentation gaps (Commit: ba956c39) [View](https://github.com/AlbiDR/Clash-Manager/pull/1010)
-* [2026-07-04] PR #1009: chore(baseline): fold new migrations into master baseline (Commit: 3102f672) [View](https://github.com/AlbiDR/Clash-Manager/pull/1009)
-* [2026-07-04] PR #1008: perf(opt): standardize variable naming for domain clarity (Commit: 8001d437) [View](https://github.com/AlbiDR/Clash-Manager/pull/1008)
-* [2026-07-04] PR #1007: fix(harden): harden persistence substrate (Commit: c66004df) [View](https://github.com/AlbiDR/Clash-Manager/pull/1007)
-* [2026-07-03] PR #1006: docs(tsdoc): document shared types and game utilities (Commit: 0c147d4a) [View](https://github.com/AlbiDR/Clash-Manager/pull/1006)
-* [2026-07-03] PR #1005: fix(version): reconcile version drift in Supabase Functions and Deno scripts (Commit: 42e271e8) [View](https://github.com/AlbiDR/Clash-Manager/pull/1005)
-* [2026-07-03] PR #1004: fix(apk-integrity): automate wrapper parity checks and synchronize logs (Commit: 035a9f9c) [View](https://github.com/AlbiDR/Clash-Manager/pull/1004)
-* [2026-07-03] PR #1003: chore(deps): update tsx and major version watchlist research (Commit: dea93493) [View](https://github.com/AlbiDR/Clash-Manager/pull/1003)
-* [2026-07-03] PR #1002: perf(apk-optimization): consolidate assets and update SW paths (Commit: 0afd06e4) [View](https://github.com/AlbiDR/Clash-Manager/pull/1002)
-* [2026-07-03] PR #1001: docs(readme): reconcile architectural drift and hexa-stage mapping (Commit: 3c3f515c) [View](https://github.com/AlbiDR/Clash-Manager/pull/1001)
-* [2026-07-03] PR #1000: refactor(opt): standardize anemic variables in service worker substrate (Commit: b9c118f6) [View](https://github.com/AlbiDR/Clash-Manager/pull/1000)
-* [2026-07-03] PR #999: test(verify): add saturating coverage for useConnectionStatus service (Commit: 7183c672) [View](https://github.com/AlbiDR/Clash-Manager/pull/999)
-* [2026-07-03] PR #998: fix(harden): profiler runtime integrity and anemic variable excision (Commit: 65b85b19) [View](https://github.com/AlbiDR/Clash-Manager/pull/998)
-* [2026-07-02] PR #997: docs(tsdoc): document useRecruiter orchestrator (Commit: 92cf1c8a) [View](https://github.com/AlbiDR/Clash-Manager/pull/997)
-* [2026-07-02] PR #996: fix(apk-integrity): audit and verify manifest synchronization (Commit: 15d0091a) [View](https://github.com/AlbiDR/Clash-Manager/pull/996)
-* [2026-07-02] PR #995: fix(harden): secure tournament discovery nomenclature and state lifecycle (Commit: fc2184b4) [View](https://github.com/AlbiDR/Clash-Manager/pull/995)
-* [2026-07-02] PR #994: perf(apk-optimization): prune redundant resources and relocate non-production assets (Commit: 8e3e8a41) [View](https://github.com/AlbiDR/Clash-Manager/pull/994)
-* [2026-07-02] PR #993: chore(version): no drift found (Commit: a882a0ea) [View](https://github.com/AlbiDR/Clash-Manager/pull/993)
-* [2026-07-02] PR #992: Standardize Variable Naming for Domain Clarity (Commit: bd8edd6a) [View](https://github.com/AlbiDR/Clash-Manager/pull/992)
-* [2026-07-02] PR #991: docs(readme): reconcile monorepo architecture and theme drift (Commit: a32d0218) [View](https://github.com/AlbiDR/Clash-Manager/pull/991)
-* [2026-07-02] PR #990: chore(deps): Stage 8 Dependency Audit - July 2026 (Commit: d4280fa0) [View](https://github.com/AlbiDR/Clash-Manager/pull/990)
-* [2026-07-01] PR #989: fix(apk-ux): modernize VoyageSetupForm actions with tactile feedback (Commit: 68230b00) [View](https://github.com/AlbiDR/Clash-Manager/pull/989)
-* [2026-07-01] PR #988: perf(apk-optimization): prune redundant AppCompat and legacy resources (Commit: e23c7d85) [View](https://github.com/AlbiDR/Clash-Manager/pull/988)
-* [2026-07-01] PR #987: chore(apk-integrity): update audit log for July 3, 2026 (Commit: 27c7df27) [View](https://github.com/AlbiDR/Clash-Manager/pull/987)
-* [2026-07-01] PR #986: chore(deps): Stage 8 Dependency Audit - Tier 1 Updates and Watchlist Reconciler (Commit: 5aa2831a) [View](https://github.com/AlbiDR/Clash-Manager/pull/986)
-* [2026-07-01] PR #985: fix(version): reconcile version drift in valibot substrate (Commit: e3f134c9) [View](https://github.com/AlbiDR/Clash-Manager/pull/985)
-* [2026-07-01] PR #984: docs(tsdoc): document core app and offline schemas (Commit: 51f50d61) [View](https://github.com/AlbiDR/Clash-Manager/pull/984)
-* [2026-07-01] PR #983: docs(readme): reconcile architecture drift across core and backend (Commit: f0220361) [View](https://github.com/AlbiDR/Clash-Manager/pull/983)
-* [2026-07-01] PR #982: perf(opt): standardize variable naming and audit substrate hygiene (Commit: 2bddbead) [View](https://github.com/AlbiDR/Clash-Manager/pull/982)
-* [2026-07-01] PR #981: chore(baseline): fold new migrations into master baseline (Commit: c48d190f) [View](https://github.com/AlbiDR/Clash-Manager/pull/981)
-* [2026-07-01] PR #980: test(verify): add specs for MaintenanceSchemas (Commit: 387644e0) [View](https://github.com/AlbiDR/Clash-Manager/pull/980)
-* [2026-07-01] PR #979: fix(harden): secure voyage api boundary and state lifecycle (Commit: 61ab03d0) [View](https://github.com/AlbiDR/Clash-Manager/pull/979)
-* [2026-06-30] PR #978: fix(apk-ux): integrate tactile feedback into SettingsCard header (Commit: a1c3064c) [View](https://github.com/AlbiDR/Clash-Manager/pull/978)
-* [2026-06-30] PR #977: perf(apk-optimization): prune redundant test resources (Commit: 7606ab04) [View](https://github.com/AlbiDR/Clash-Manager/pull/977)
-* [2026-06-30] PR #976: chore(apk-integrity): audit and sync manifest integrity (Commit: 7ab59672) [View](https://github.com/AlbiDR/Clash-Manager/pull/976)
-* [2026-06-30] PR #975: chore(deps): dependency audit and hygiene [Stage 8] (Commit: aff2639b) [View](https://github.com/AlbiDR/Clash-Manager/pull/975)
-* [2026-06-30] PR #974: fix(version): reconcile version drift in Supabase Functions (Commit: 3f87f878) [View](https://github.com/AlbiDR/Clash-Manager/pull/974)
-* [2026-06-30] PR #973: docs(tsdoc): enhance ProfileSchemas and DataMappers interface contracts (Commit: 89a28d4f) [View](https://github.com/AlbiDR/Clash-Manager/pull/973)
-* [2026-06-30] PR #972: docs(readme): reconcile voyage promotion and theme engine blueprints (Commit: 5fd5f6a4) [View](https://github.com/AlbiDR/Clash-Manager/pull/972)
-* [2026-06-30] PR #971: perf(opt): standardize service worker naming and refactor android badge logic (Commit: 3932d230) [View](https://github.com/AlbiDR/Clash-Manager/pull/971)
-* [2026-06-30] PR #970: fix(harden): secure maintenance and push subscription boundaries (Commit: cf271b60) [View](https://github.com/AlbiDR/Clash-Manager/pull/970)
-* [2026-06-29] PR #969: perf(apk-optimization): prune redundant assets and metadata (Commit: 3a8a9466) [View](https://github.com/AlbiDR/Clash-Manager/pull/969)
-* [2026-06-29] PR #968: fix(apk-integrity): synchronize app_name and verify wrapper integrity (Commit: 80457277) [View](https://github.com/AlbiDR/Clash-Manager/pull/968)
-* [2026-06-29] PR #967: refactor: extract BaseSegmentedControl generic molecule (Commit: 31f2f179) [View](https://github.com/AlbiDR/Clash-Manager/pull/967)
-* [2026-06-29] PR #966: chore(deps): monorepo-wide dependency audit [Stage 8] (Commit: 067fb2df) [View](https://github.com/AlbiDR/Clash-Manager/pull/966)
-* [2026-06-29] PR #965: fix(version): reconcile version drift in APK artifacts (Commit: 3feb1249) [View](https://github.com/AlbiDR/Clash-Manager/pull/965)
-* [2026-06-29] PR #964: docs(tsdoc): document Voyage and Base schemas (Commit: 01b00c30) [View](https://github.com/AlbiDR/Clash-Manager/pull/964)
-* [2026-06-29] PR #963: docs(readme): reconcile architectural drift and document core subsystems (Commit: 2127b01d) [View](https://github.com/AlbiDR/Clash-Manager/pull/963)
-* [2026-06-29] PR #962: chore(baseline): fold new migrations into master baseline (Commit: 6397977f) [View](https://github.com/AlbiDR/Clash-Manager/pull/962)
-* [2026-06-29] PR #961: test(verify): saturating coverage for swSchemas and swSync boundaries (Commit: 9feba4fd) [View](https://github.com/AlbiDR/Clash-Manager/pull/961)
-* [2026-06-29] PR #960: fix(harden): secure battlelog proxy and recruitment realtime boundary (Commit: ae8f495f) [View](https://github.com/AlbiDR/Clash-Manager/pull/960)
-* [2026-06-28] PR #959: perf(apk-optimization): prune redundant assets and optimize manifest (Commit: 4fe6b771) [View](https://github.com/AlbiDR/Clash-Manager/pull/959)
-* [2026-06-28] PR #958: fix(apk-integrity): complete monorepo-wide integrity audit (Commit: 45468a56) [View](https://github.com/AlbiDR/Clash-Manager/pull/958)
-* [2026-06-28] PR #957: chore(deps): bump knip from 6.21.0 to 6.22.0 (Commit: 80e598ac) [View](https://github.com/AlbiDR/Clash-Manager/pull/957)
-* [2026-06-28] PR #956: fix(version): reconcile version drift in APK/android (Commit: 48da0392) [View](https://github.com/AlbiDR/Clash-Manager/pull/956)
-* [2026-06-28] PR #955: docs(tsdoc): document navigation SSOT interface (Commit: 1b202b40) [View](https://github.com/AlbiDR/Clash-Manager/pull/955)
-* [2026-06-28] PR #954: docs(readme): reconcile backend proxy boundaries and UI molecules (Commit: 8d418676) [View](https://github.com/AlbiDR/Clash-Manager/pull/954)
-* [2026-06-28] PR #953: perf(opt): standardize core variable naming and verify substrate hygiene (Commit: b1346024) [View](https://github.com/AlbiDR/Clash-Manager/pull/953)
-* [2026-06-28] PR #952: test(verify): extend coverage for data mappers and core components (Commit: eed2dbcc) [View](https://github.com/AlbiDR/Clash-Manager/pull/952)
-* [2026-06-28] PR #951: fix(harden): secure ingest-royale-data pipeline and discovery stage (Commit: f8648885) [View](https://github.com/AlbiDR/Clash-Manager/pull/951)
-* [2026-06-27] PR #949: perf(apk-optimization): prune redundant resources and metadata (Commit: c65d698c) [View](https://github.com/AlbiDR/Clash-Manager/pull/949)
-* [2026-06-27] PR #948: fix(apk-ux): add brokered tactile feedback to SelectionBar morph button (Commit: 9c16d3d2) [View](https://github.com/AlbiDR/Clash-Manager/pull/948)
-* [2026-06-27] PR #947: fix(apk-integrity): sync orientation and verify wrapper integrity (Commit: 6e9a4c11) [View](https://github.com/AlbiDR/Clash-Manager/pull/947)
-* [2026-06-27] PR #946: chore(deps): bump knip and update major version watchlist (Commit: 680a2393) [View](https://github.com/AlbiDR/Clash-Manager/pull/946)
-* [2026-06-27] PR #945: chore(version): no drift found (Commit: f535b106) [View](https://github.com/AlbiDR/Clash-Manager/pull/945)
-* [2026-06-27] PR #944: docs(tsdoc): document authoritative validation schemas (Commit: 7bb3a28b) [View](https://github.com/AlbiDR/Clash-Manager/pull/944)
-* [2026-06-27] PR #943: chore(baseline): fold new migrations into master baseline (Commit: 842ab6dd) [View](https://github.com/AlbiDR/Clash-Manager/pull/943)
-* [2026-06-27] PR #942: Substrate Hygiene: Variable Naming Standardization and View Audit (Commit: 532c53f3) [View](https://github.com/AlbiDR/Clash-Manager/pull/942)
-* [2026-06-27] PR #941: fix(harden): secure rescan stage and excise anemic pathogens (Commit: 436aab77) [View](https://github.com/AlbiDR/Clash-Manager/pull/941)
-* [2026-06-27] PR #940: test(verify): saturate coverage for VoyageClient (Commit: 35e0eba7) [View](https://github.com/AlbiDR/Clash-Manager/pull/940)
-* [2026-06-26] PR #939: fix(apk-ux): add tactile feedback to CardActions (Commit: a25b1074) [View](https://github.com/AlbiDR/Clash-Manager/pull/939)
-* [2026-06-26] PR #938: perf(apk-optimization): prune redundant resources and debug metadata (Commit: 9a163f99) [View](https://github.com/AlbiDR/Clash-Manager/pull/938)
-* [2026-06-26] PR #937: fix(apk-integrity): sync manifest and verify integrity (Commit: 75380c5d) [View](https://github.com/AlbiDR/Clash-Manager/pull/937)
-* [2026-06-26] PR #936: chore(deps): dependency audit and hygiene [Stage 8] (Commit: 8a47f858) [View](https://github.com/AlbiDR/Clash-Manager/pull/936)
-* [2026-06-26] PR #935: chore(version): no drift found (Commit: 994c226d) [View](https://github.com/AlbiDR/Clash-Manager/pull/935)
-* [2026-06-26] PR #934: docs(readme): reconcile architectural drift in core, app, and utils (Commit: 919ab958) [View](https://github.com/AlbiDR/Clash-Manager/pull/934)
-* [2026-06-26] PR #933: perf(opt): standardize variable naming for domain clarity (Commit: 71117c77) [View](https://github.com/AlbiDR/Clash-Manager/pull/933)
-* [2026-06-26] PR #932: fix(harden): secure service worker background sync boundary (Commit: e7fb9407) [View](https://github.com/AlbiDR/Clash-Manager/pull/932)
-* [2026-06-25] PR #931: fix(apk-ux): enhance MemberCard tactile feedback and touch targets (Commit: c2979ebc) [View](https://github.com/AlbiDR/Clash-Manager/pull/931)
-* [2026-06-25] PR #930: perf(apk-optimization): prune redundant resources and refine SW cache policy (Commit: 546da855) [View](https://github.com/AlbiDR/Clash-Manager/pull/930)
-* [2026-06-25] PR #929: fix(apk-integrity): sync manifest and restore assetlinks integrity (Commit: 84015577) [View](https://github.com/AlbiDR/Clash-Manager/pull/929)
-* [2026-06-25] PR #928: chore(deps): bump knip and update major version watchlist (Commit: b421c85b) [View](https://github.com/AlbiDR/Clash-Manager/pull/928)
-* [2026-06-25] PR #927: chore(version): no drift found (Commit: dd5b7882) [View](https://github.com/AlbiDR/Clash-Manager/pull/927)
-* [2026-06-25] PR #926: docs(tsdoc): document core selection and visibility services (Commit: 9b798fb7) [View](https://github.com/AlbiDR/Clash-Manager/pull/926)
-* [2026-06-25] PR #925: docs(readme): reconcile backend kernel and pwa service registry (Commit: e00ac464) [View](https://github.com/AlbiDR/Clash-Manager/pull/925)
-* [2026-06-25] PR #924: perf(opt): standardize variable naming for domain clarity (Commit: 80570973) [View](https://github.com/AlbiDR/Clash-Manager/pull/924)
-* [2026-06-25] PR #923: chore(baseline): fold new migrations into master baseline (Commit: 710ec506) [View](https://github.com/AlbiDR/Clash-Manager/pull/923)
-* [2026-06-25] PR #922: [Stage 2] Verification - Logic Integrity Auditor (Commit: 296fecaf) [View](https://github.com/AlbiDR/Clash-Manager/pull/922)
-* [2026-06-25] PR #921: fix(harden): secure recruitment boundary and excise anemic pathogens (Commit: bea06320) [View](https://github.com/AlbiDR/Clash-Manager/pull/921)
-* [2026-06-24] PR #920: fix(apk-ux): add tactile feedback to BaseSelect (Commit: 2be5f2f0) [View](https://github.com/AlbiDR/Clash-Manager/pull/920)
-* [2026-06-24] PR #919: perf(apk-optimization): enable asset compression and prune locales (Commit: 7e9a02b3) [View](https://github.com/AlbiDR/Clash-Manager/pull/919)
-* [2026-06-24] PR #918: fix(apk-integrity): synchronize versioning and harden network security (Commit: 4ffc664a) [View](https://github.com/AlbiDR/Clash-Manager/pull/918)
-* [2026-06-24] PR #917: chore(deps): update major version watchlist (Commit: cc6e38fc) [View](https://github.com/AlbiDR/Clash-Manager/pull/917)
-* [2026-06-24] PR #916: docs(tsdoc): document sort options metadata (Commit: 54a9d9bc) [View](https://github.com/AlbiDR/Clash-Manager/pull/916)
-* [2026-06-24] PR #915: chore(version): reconcile version drift in supabase plan (Commit: c57ab4b7) [View](https://github.com/AlbiDR/Clash-Manager/pull/915)
-* [2026-06-24] PR #914: docs(readme): reconcile shared interaction directive constraints (Commit: 4429e8dc) [View](https://github.com/AlbiDR/Clash-Manager/pull/914)
-* [2026-06-24] PR #913: test(verify): add logic proofs for backend shared schemas (Commit: 36298c37) [View](https://github.com/AlbiDR/Clash-Manager/pull/913)
-* [2026-06-24] PR #912: fix(harden): excise any pathogens from vTooltip and App lifecycle (Commit: f745366f) [View](https://github.com/AlbiDR/Clash-Manager/pull/912)
-* [2026-06-23] PR #911: fix(apk-ux): integrate v-tactile haptics into SettingRow (Commit: 750052ab) [View](https://github.com/AlbiDR/Clash-Manager/pull/911)
-* [2026-06-23] PR #910: perf(apk-optimization): enable hardware acceleration and prune locale resources (Commit: b88197f6) [View](https://github.com/AlbiDR/Clash-Manager/pull/910)
-* [2026-06-23] PR #909: chore(deps): bump knip from 6.17.1 to 6.18.0 (Commit: a99f31b3) [View](https://github.com/AlbiDR/Clash-Manager/pull/909)
-* [2026-06-23] PR #908: chore(version): no drift found in monorepo v14.0.0 (Commit: a7a10828) [View](https://github.com/AlbiDR/Clash-Manager/pull/908)
-* [2026-06-23] PR #907: docs(tsdoc): document ScoreThresholdSelector component (Commit: 4dda289e) [View](https://github.com/AlbiDR/Clash-Manager/pull/907)
-* [2026-06-23] PR #906: docs(readme): reconcile shared ui and core utility drift (Commit: 675cac7e) [View](https://github.com/AlbiDR/Clash-Manager/pull/906)
-* [2026-06-23] PR #905: perf(opt): substrate hygiene and naming standardization (Commit: 1cae3978) [View](https://github.com/AlbiDR/Clash-Manager/pull/905)
-* [2026-06-23] PR #904: chore(baseline): fold new migrations into master baseline (Commit: 043e70ae) [View](https://github.com/AlbiDR/Clash-Manager/pull/904)
-* [2026-06-23] PR #903: test(verify): add specs for formatDisplayTag (Commit: 95161272) [View](https://github.com/AlbiDR/Clash-Manager/pull/903)
-* [2026-06-23] PR #902: fix(harden): implement generics in BaseSelect.vue (Commit: 7169de7c) [View](https://github.com/AlbiDR/Clash-Manager/pull/902)
-* [2026-06-22] PR #901: perf(apk-optimization): harden hybrid shell and reduce startup latency (Commit: 0c727f51) [View](https://github.com/AlbiDR/Clash-Manager/pull/901)
-* [2026-06-22] PR #900: fix(apk-integrity): synchronize assetlinks package name (Commit: 6c22368a) [View](https://github.com/AlbiDR/Clash-Manager/pull/900)
-* [2026-06-22] PR #899: chore(deps): bump @ast-grep/cli from ^0.43.0 to ^0.44.0 (Commit: b2ece544) [View](https://github.com/AlbiDR/Clash-Manager/pull/899)
-* [2026-06-22] PR #898: chore(version): no drift found in monorepo v14.0.0 (Commit: e3f7998c) [View](https://github.com/AlbiDR/Clash-Manager/pull/898)
-* [2026-06-22] PR #897: docs(tsdoc): document authoritative validation schemas in _shared (Commit: f3947dbb) [View](https://github.com/AlbiDR/Clash-Manager/pull/897)
-* [2026-06-22] PR #896: docs(readme): reconcile backend substrate and ingestion drift (Commit: 4e492ba0) [View](https://github.com/AlbiDR/Clash-Manager/pull/896)
-* [2026-06-22] PR #895: refactor(opt): Optimization (Substrate Hygiene - Stage 4) - Standardize variable naming for domain clarity (Commit: f1739095) [View](https://github.com/AlbiDR/Clash-Manager/pull/895)
-* [2026-06-22] PR #894: chore(baseline): fold new migrations into master baseline (Commit: a9dd40e3) [View](https://github.com/AlbiDR/Clash-Manager/pull/894)
-* [2026-06-22] PR #893: test(verify): add specs for BaseSelect component (Commit: 2175d03b) [View](https://github.com/AlbiDR/Clash-Manager/pull/893)
-* [2026-06-22] PR #892: fix(harden): backend substrate integrity (Commit: 97f467da) [View](https://github.com/AlbiDR/Clash-Manager/pull/892)
-* [2026-06-21] PR #891: fix(apk-ux): replace native select elements with BaseSelect abstraction (Commit: d2bc3c2d) [View](https://github.com/AlbiDR/Clash-Manager/pull/891)
-* [2026-06-21] PR #890: perf(apk-optimization): optimize SW precaching and consolidate vendor chunks (Commit: 0c8cdda7) [View](https://github.com/AlbiDR/Clash-Manager/pull/890)
-* [2026-06-21] PR #889: fix(apk-integrity): sync package identity and storage versioning (Commit: d17b150e) [View](https://github.com/AlbiDR/Clash-Manager/pull/889)
-* [2026-06-21] PR #888: chore(deps): update major version watchlist (Commit: 65447910) [View](https://github.com/AlbiDR/Clash-Manager/pull/888)
-* [2026-06-21] PR #887: chore(version): no drift found (Commit: 6436d99c) [View](https://github.com/AlbiDR/Clash-Manager/pull/887)
-* [2026-06-21] PR #886: docs(tsdoc): document adaptive haptics engine (Commit: e4896f74) [View](https://github.com/AlbiDR/Clash-Manager/pull/886)
-* [2026-06-21] PR #885: docs(readme): reconcile architectural and infrastructure drift (Commit: 1e4da844) [View](https://github.com/AlbiDR/Clash-Manager/pull/885)
-* [2026-06-21] PR #884: refactor(opt): centralize player tag presentation logic (Commit: db53e899) [View](https://github.com/AlbiDR/Clash-Manager/pull/884)
-* [2026-06-21] PR #883: chore(baseline): fold new migrations into master baseline (Commit: 296eb9bc) [View](https://github.com/AlbiDR/Clash-Manager/pull/883)
-* [2026-06-21] PR #882: test(verify): saturating coverage for formatNumber edge cases (Commit: 157830ad) [View](https://github.com/AlbiDR/Clash-Manager/pull/882)
-* [2026-06-21] PR #881: fix(harden): excise 'any' pathogens in Laboratory ParameterCard (Commit: 5e51fdc6) [View](https://github.com/AlbiDR/Clash-Manager/pull/881)
-* [2026-06-20] PR #880: chore(deps): update major version watchlist (Commit: bb786720) [View](https://github.com/AlbiDR/Clash-Manager/pull/880)
-* [2026-06-20] PR #879: chore(version): no drift found in monorepo v14.0.0 (Commit: 2868a102) [View](https://github.com/AlbiDR/Clash-Manager/pull/879)
-* [2026-06-20] PR #878: docs(tsdoc): document MemberSchemas.ts validation boundaries (Commit: 124136f3) [View](https://github.com/AlbiDR/Clash-Manager/pull/878)
-* [2026-06-20] PR #877: docs(readme): reconcile core utility drift (Commit: 9fe639ce) [View](https://github.com/AlbiDR/Clash-Manager/pull/877)
-* [2026-06-20] PR #876: refactor(opt): centralize tag normalization via cleanTag utility (Commit: 596e141d) [View](https://github.com/AlbiDR/Clash-Manager/pull/876)
-* [2026-06-20] PR #875: chore(baseline): fold new migrations into master baseline (Commit: f4ae331f) [View](https://github.com/AlbiDR/Clash-Manager/pull/875)
-* [2026-06-20] PR #874: test(verify): add saturating specs for useVoyageStatus (Commit: f07d79df) [View](https://github.com/AlbiDR/Clash-Manager/pull/874)
-* [2026-06-20] PR #873: fix(harden): secured Royale discovery boundary in query-royale-api (Commit: 53140d3e) [View](https://github.com/AlbiDR/Clash-Manager/pull/873)
-* [2026-06-19] PR #872: refactor: centralize upgrade resolution logic to core domain (Commit: 964e3676) [View](https://github.com/AlbiDR/Clash-Manager/pull/872)
-* [2026-06-19] PR #871: chore(deps): update major version watchlist (Commit: 96aa0a40) [View](https://github.com/AlbiDR/Clash-Manager/pull/871)
-* [2026-06-19] PR #870: chore(version): no drift found (Commit: 4462b082) [View](https://github.com/AlbiDR/Clash-Manager/pull/870)
-* [2026-06-19] PR #869: Document Voyage Status Orchestrator (Stage 6) (Commit: bc14597a) [View](https://github.com/AlbiDR/Clash-Manager/pull/869)
-* [2026-06-19] PR #868: docs(readme): reconcile voyage feature drift (Commit: b986989e) [View](https://github.com/AlbiDR/Clash-Manager/pull/868)
-* [2026-06-19] PR #867: Centralize Voyage Status Logic (Commit: 14a9469e) [View](https://github.com/AlbiDR/Clash-Manager/pull/867)
-* [2026-06-19] PR #866: chore(baseline): fold new migrations into master baseline (Commit: df74a779) [View](https://github.com/AlbiDR/Clash-Manager/pull/866)
-* [2026-06-19] PR #865: test(verify): saturate coverage for useExternalLink hardware boundary (Commit: 170adaf7) [View](https://github.com/AlbiDR/Clash-Manager/pull/865)
-* [2026-06-19] PR #864: fix(harden): secure isDataPerfect validation boundary (Commit: 9c474c7a) [View](https://github.com/AlbiDR/Clash-Manager/pull/864)
-* [2026-06-18] PR #863: chore(deps): bump supabase from 2.106.0 to 2.107.0 (Commit: f8c864e0) [View](https://github.com/AlbiDR/Clash-Manager/pull/863)
-* [2026-06-18] PR #862: chore(version): no drift found (Commit: 1b5ac402) [View](https://github.com/AlbiDR/Clash-Manager/pull/862)
-* [2026-06-18] PR #861: docs(tsdoc): document NavigationDock component contracts (Commit: d7adf860) [View](https://github.com/AlbiDR/Clash-Manager/pull/861)
-* [2026-06-18] PR #860: chore(baseline): fold new migrations into master baseline (Commit: a03bf2a7) [View](https://github.com/AlbiDR/Clash-Manager/pull/860)
-* [2026-06-18] PR #859: fix(harden): secure native bridge access in useBlitzMode (Commit: 800a4a46) [View](https://github.com/AlbiDR/Clash-Manager/pull/859)
-* [2026-06-17] PR #858: chore(deps): bump knip and update major version watchlist (Commit: e6393bff) [View](https://github.com/AlbiDR/Clash-Manager/pull/858)
-* [2026-06-17] PR #857: chore(version): no drift found (Commit: 28114345) [View](https://github.com/AlbiDR/Clash-Manager/pull/857)
-* [2026-06-17] PR #856: docs(tsdoc): document PWA manager core service (Commit: 430e314f) [View](https://github.com/AlbiDR/Clash-Manager/pull/856)
-* [2026-06-17] PR #855: docs(readme): reconcile settings feature documentation (Commit: 5e79fdc8) [View](https://github.com/AlbiDR/Clash-Manager/pull/855)
-* [2026-06-17] PR #854: chore(baseline): fold new migrations into master baseline (Commit: dc0ebc7c) [View](https://github.com/AlbiDR/Clash-Manager/pull/854)
-* [2026-06-17] PR #853: test(verify): add coverage for NavigationDock component (Commit: e92fca6d) [View](https://github.com/AlbiDR/Clash-Manager/pull/853)
-* [2026-06-17] PR #852: fix(harden): secure native bridge boundary and excise any pathogens (Commit: 7800643a) [View](https://github.com/AlbiDR/Clash-Manager/pull/852)
-* [2026-06-16] PR #851: refactor: centralize KING_LEVEL_MAX and eliminate magic number 90 (Commit: 78da64ea) [View](https://github.com/AlbiDR/Clash-Manager/pull/851)
-* [2026-06-16] PR #850: chore(deps): apply Tier 1 maintenance updates (Commit: 70b6bdd9) [View](https://github.com/AlbiDR/Clash-Manager/pull/850)
-* [2026-06-16] PR #849: chore(version): no drift found (Commit: b0c37b53) [View](https://github.com/AlbiDR/Clash-Manager/pull/849)
-* [2026-06-16] PR #848: docs(tsdoc): document console selection orchestrator (Commit: 7c38c98f) [View](https://github.com/AlbiDR/Clash-Manager/pull/848)
-* [2026-06-16] PR #847: docs(readme): reconcile useConsoleSelection service drift (Commit: ae50c85c) [View](https://github.com/AlbiDR/Clash-Manager/pull/847)
-* [2026-06-16] PR #846: refactor(opt): decouple selection logic and standardize viewport sensing (Commit: b72b138c) [View](https://github.com/AlbiDR/Clash-Manager/pull/846)
-* [2026-06-16] PR #845: chore(baseline): fold new migrations into master baseline (Commit: 47961b49) [View](https://github.com/AlbiDR/Clash-Manager/pull/845)
-* [2026-06-16] PR #844: test(verify): add specs for usePwaManager service (Commit: f691e86c) [View](https://github.com/AlbiDR/Clash-Manager/pull/844)
-* [2026-06-16] PR #843: fix(harden): implement validation boundary for leaderboard scraper (Commit: 4abb50e4) [View](https://github.com/AlbiDR/Clash-Manager/pull/843)
-* [2026-06-15] PR #842: chore(deps): no action required (Commit: 0103adc7) [View](https://github.com/AlbiDR/Clash-Manager/pull/842)
-* [2026-06-15] PR #841: fix(version): reconcile version drift and catalog adherence (Commit: 2409facc) [View](https://github.com/AlbiDR/Clash-Manager/pull/841)
-* [2026-06-15] PR #840: docs(tsdoc): document SelectionFab interface and logic intent (Commit: 4e95d4fa) [View](https://github.com/AlbiDR/Clash-Manager/pull/840)
-* [2026-06-15] PR #839: docs(readme): reconcile backend engine count and battlelog proxy (Commit: 22166413) [View](https://github.com/AlbiDR/Clash-Manager/pull/839)
-* [2026-06-15] PR #838: perf(opt): standardize numeric formatting and prune redundant styles (Commit: 2d3ffbed) [View](https://github.com/AlbiDR/Clash-Manager/pull/838)
-* [2026-06-15] PR #837: chore(baseline): fold new migrations into master baseline (Commit: 412cc7c8) [View](https://github.com/AlbiDR/Clash-Manager/pull/837)
-* [2026-06-15] PR #836: fix(harden): secure battlelog proxy (Commit: 22eaa05a) [View](https://github.com/AlbiDR/Clash-Manager/pull/836)
-* [2026-06-14] PR #835: refactor: relocate role formatting and standardize numeric display (Commit: d28a89d2) [View](https://github.com/AlbiDR/Clash-Manager/pull/835)
-* [2026-06-14] PR #834: chore(deps): align @types/node and bump vue-tsc (Commit: 580c1390) [View](https://github.com/AlbiDR/Clash-Manager/pull/834)
-* [2026-06-14] PR #833: chore(version): no drift found (Commit: 32f9564c) [View](https://github.com/AlbiDR/Clash-Manager/pull/833)
-* [2026-06-14] PR #832: docs(tsdoc): document headhunter-scanner profiler stage (Commit: c2b6e112) [View](https://github.com/AlbiDR/Clash-Manager/pull/832)
-* [2026-06-14] PR #831: docs(readme): reconcile pwa service registry and document user proxy engine (Commit: 217b351f) [View](https://github.com/AlbiDR/Clash-Manager/pull/831)
-* [2026-06-14] PR #830: chore(baseline): harden declarative schema and fix ingestion logic (Commit: cb7fe49e) [View](https://github.com/AlbiDR/Clash-Manager/pull/830)
-* [2026-06-14] PR #829: test(verify): add specs for useViewport composable (Commit: 99a58455) [View](https://github.com/AlbiDR/Clash-Manager/pull/829)
-* [2026-06-14] PR #828: fix(harden): secure wake lock engine and excise any pathogens (Commit: fab0dcd0) [View](https://github.com/AlbiDR/Clash-Manager/pull/828)
-* [2026-06-13] PR #827: refactor: extract PWA management to core service (Commit: a117b0cf) [View](https://github.com/AlbiDR/Clash-Manager/pull/827)
-* [2026-06-13] PR #826: chore(deps): update major version watchlist (Commit: 1f3cbab7) [View](https://github.com/AlbiDR/Clash-Manager/pull/826)
-* [2026-06-13] PR #825: fix(version): reconcile version drift and enhance auditor (Commit: efc19927) [View](https://github.com/AlbiDR/Clash-Manager/pull/825)
-* [2026-06-13] PR #824: docs(tsdoc): document query-royale-api edge function (Commit: 79f4e5fe) [View](https://github.com/AlbiDR/Clash-Manager/pull/824)
-* [2026-06-13] PR #823: docs(readme): create ingest-royale-data documentation (Commit: 85f4edb7) [View](https://github.com/AlbiDR/Clash-Manager/pull/823)
-* [2026-06-13] PR #822: chore(baseline): fold new migrations into master baseline (Commit: e8d55462) [View](https://github.com/AlbiDR/Clash-Manager/pull/822)
-* [2026-06-13] PR #821: test(verify): saturate laboratory simulation logic coverage (Commit: b0949740) [View](https://github.com/AlbiDR/Clash-Manager/pull/821)
-* [2026-06-13] PR #820: fix(harden): secure query-royale-api boundary and pathogens (Commit: c2030022) [View](https://github.com/AlbiDR/Clash-Manager/pull/820)
-* [2026-06-12] PR #819: refactor: decompose monolithic Simulation logic (Commit: b944431d) [View](https://github.com/AlbiDR/Clash-Manager/pull/819)
-* [2026-06-12] PR #818: fix(version): reconcile version drift and enhance auditor (Commit: 4a14b1f3) [View](https://github.com/AlbiDR/Clash-Manager/pull/818)
-* [2026-06-12] PR #817: chore(deps): dependency audit and hygiene cleanup (Commit: 3b33d6d8) [View](https://github.com/AlbiDR/Clash-Manager/pull/817)
-* [2026-06-12] PR #816: docs(tsdoc): document laboratory simulation engine contracts (Commit: ed99ca68) [View](https://github.com/AlbiDR/Clash-Manager/pull/816)
-* [2026-06-12] PR #815: docs(readme): reconcile architectural drift across monorepo (Commit: 3088c6d4) [View](https://github.com/AlbiDR/Clash-Manager/pull/815)
-* [2026-06-12] PR #814: perf(opt): optimize laboratory simulation and numeric formatting (Commit: ee29bcfa) [View](https://github.com/AlbiDR/Clash-Manager/pull/814)
-* [2026-06-12] PR #813: chore(baseline): fold new migrations into master baseline (Commit: e4c91884) [View](https://github.com/AlbiDR/Clash-Manager/pull/813)
-* [2026-06-12] PR #812: test(verify): add saturating tests for SelectionFab.vue (Commit: 45222a87) [View](https://github.com/AlbiDR/Clash-Manager/pull/812)
-* [2026-06-12] PR #811: fix(harden): secure haptics engine and hardware boundaries (Commit: bf8b174e) [View](https://github.com/AlbiDR/Clash-Manager/pull/811)
-* [2026-06-11] PR #810: refactor: structural surgery on FloatingDock component (Commit: 8d65772a) [View](https://github.com/AlbiDR/Clash-Manager/pull/810)
-* [2026-06-11] PR #809: chore(deps): update vue and @types/node (Commit: ea137fdc) [View](https://github.com/AlbiDR/Clash-Manager/pull/809)
-* [2026-06-11] PR #808: chore(version): no drift found (Commit: ee8c9c0d) [View](https://github.com/AlbiDR/Clash-Manager/pull/808)
-* [2026-06-11] PR #807: docs(tsdoc): document leaderboard scraper composable (Commit: 5cc84de0) [View](https://github.com/AlbiDR/Clash-Manager/pull/807)
-* [2026-06-11] PR #806: docs(readme): reconcile query-royale-api and leaderboard harvesting (Commit: 8336a9bf) [View](https://github.com/AlbiDR/Clash-Manager/pull/806)
-* [2026-06-11] PR #805: perf(opt): centralize haptic interactions (Commit: 4e2557ef) [View](https://github.com/AlbiDR/Clash-Manager/pull/805)
-* [2026-06-11] PR #804: test(verify): add specs for useLaboratorySimulation (Commit: b408000a) [View](https://github.com/AlbiDR/Clash-Manager/pull/804)
-* [2026-06-11] PR #803: fix(harden): secure Royale API proxy validation boundaries (Commit: d1d3fb8b) [View](https://github.com/AlbiDR/Clash-Manager/pull/803)
-* [2026-06-10] PR #802: refactor: extract numeric formatting and decompose laboratory simulation (Commit: 106dc558) [View](https://github.com/AlbiDR/Clash-Manager/pull/802)
-* [2026-06-10] PR #801: chore(deps): bump @supabase/supabase-js from 2.108.0 to 2.108.1 (Commit: c9ecaf92) [View](https://github.com/AlbiDR/Clash-Manager/pull/801)
-* [2026-06-10] PR #800: chore(version): no drift found (Commit: ccd4486f) [View](https://github.com/AlbiDR/Clash-Manager/pull/800)
-* [2026-06-10] PR #799: docs(tsdoc): document prediction math orchestrator (Commit: 7cf0c892) [View](https://github.com/AlbiDR/Clash-Manager/pull/799)
-* [2026-06-10] PR #798: docs(readme): reconcile core and app layer drift (Commit: 2a304cf6) [View](https://github.com/AlbiDR/Clash-Manager/pull/798)
-* [2026-06-10] PR #797: perf(opt): decompose visibility refresh logic (Commit: d74fa58c) [View](https://github.com/AlbiDR/Clash-Manager/pull/797)
-* [2026-06-10] PR #796: test(verify): add saturating coverage for swSync module (Commit: a9a27342) [View](https://github.com/AlbiDR/Clash-Manager/pull/796)
-* [2026-06-10] PR #795: fix(harden): eliminate any pathogens and anemic variables in console orchestrator (Commit: d41a89be) [View](https://github.com/AlbiDR/Clash-Manager/pull/795)
-* [2026-06-09] PR #794: refactor: decompose monolithic formatters utility (Commit: 3015b16d) [View](https://github.com/AlbiDR/Clash-Manager/pull/794)
-* [2026-06-09] PR #793: chore(deps): bump @supabase/supabase-js from 2.107.0 to 2.108.0 (Commit: aa6f5a79) [View](https://github.com/AlbiDR/Clash-Manager/pull/793)
-* [2026-06-09] PR #792: chore(version): no drift found (Commit: f0cc4119) [View](https://github.com/AlbiDR/Clash-Manager/pull/792)
-* [2026-06-09] PR #791: docs(tsdoc): document Service Worker sub-modules (Commit: 299a61e0) [View](https://github.com/AlbiDR/Clash-Manager/pull/791)
-* [2026-06-09] PR #790: docs(readme): create headhunter-scanner documentation (Commit: bf6689e0) [View](https://github.com/AlbiDR/Clash-Manager/pull/790)
-* [2026-06-09] PR #789: test(verify): add saturating tests for swKernel (Commit: b22c34d2) [View](https://github.com/AlbiDR/Clash-Manager/pull/789)
-* [2026-06-09] PR #788: fix(harden): secure hot-zone audit boundary in ghost-purge stage (Commit: 4a93d997) [View](https://github.com/AlbiDR/Clash-Manager/pull/788)
-* [2026-06-08] PR #787: perf(opt): eliminate redundant cache writes and identify orphaned view (Commit: 9f50d071) [View](https://github.com/AlbiDR/Clash-Manager/pull/787)
-* [2026-06-08] PR #786: refactor: decompose monolithic sw.ts and centralize storage config (Commit: 86eac073) [View](https://github.com/AlbiDR/Clash-Manager/pull/786)
-* [2026-06-08] PR #785: chore(deps): Stage 8 Dependency Audit - June 8, 2026 (Commit: bea4f0f8) [View](https://github.com/AlbiDR/Clash-Manager/pull/785)
-* [2026-06-08] PR #784: chore(version): no drift found (Commit: 393df430) [View](https://github.com/AlbiDR/Clash-Manager/pull/784)
-* [2026-06-08] PR #783: docs(tsdoc): document core IDB kernel substrate (Commit: bd993548) [View](https://github.com/AlbiDR/Clash-Manager/pull/783)
-* [2026-06-08] PR #782: docs(readme): reconcile app layer and backend ingestion drift (Commit: 78573ab3) [View](https://github.com/AlbiDR/Clash-Manager/pull/782)
-* [2026-06-08] PR #781: chore(baseline): fold new migrations into master baseline (Commit: 871f0eee) [View](https://github.com/AlbiDR/Clash-Manager/pull/781)
-* [2026-06-08] PR #780: fix(harden): secured clan sync boundary and excised pathogens (Commit: 8d1dd63d) [View](https://github.com/AlbiDR/Clash-Manager/pull/780)
-* [2026-06-08] PR #779: test(verify): add saturating tests for useClashSync core service (Commit: 59428743) [View](https://github.com/AlbiDR/Clash-Manager/pull/779)
-* [2026-06-07] PR #778: chore(deps): Stage 8 - Dependency Audit Maintenance (Commit: b09eb51c) [View](https://github.com/AlbiDR/Clash-Manager/pull/778)
-* [2026-06-07] PR #777: chore(version): no drift found in monorepo v14.0.0 (Commit: 6e1cdc1c) [View](https://github.com/AlbiDR/Clash-Manager/pull/777)
-* [2026-06-07] PR #776: docs(tsdoc): document useScoreSelector interface contract (Commit: a0e36f66) [View](https://github.com/AlbiDR/Clash-Manager/pull/776)
-* [2026-06-07] PR #775: docs(readme): reconcile shared and core layer documentation (Commit: 95bcf7ff) [View](https://github.com/AlbiDR/Clash-Manager/pull/775)
-* [2026-06-07] PR #774: refactor(opt): decompose BaseHistoryChart logic into shared composable (Commit: 5e05ec2d) [View](https://github.com/AlbiDR/Clash-Manager/pull/774)
-* [2026-06-07] PR #773: test(verify): add saturating coverage for ScoreThresholdSelector (Commit: 9d0b2d05) [View](https://github.com/AlbiDR/Clash-Manager/pull/773)
-* [2026-06-07] PR #772: fix(harden): secure player card sync validation boundary (Commit: 7426fb8a) [View](https://github.com/AlbiDR/Clash-Manager/pull/772)
-* [2026-06-06] PR #771: chore(baseline): fold new migrations into master baseline (Commit: 75822e62) [View](https://github.com/AlbiDR/Clash-Manager/pull/771)
-* [2026-06-06] PR #770: refactor: decompose monolithic SelectionBar component (Commit: b23bddee) [View](https://github.com/AlbiDR/Clash-Manager/pull/770)
-* [2026-06-06] PR #769: chore(deps): bump knip and update major version watchlist (Commit: 5d88a392) [View](https://github.com/AlbiDR/Clash-Manager/pull/769)
-* [2026-06-06] PR #768: chore(version): no drift found (Commit: b9983b04) [View](https://github.com/AlbiDR/Clash-Manager/pull/768)
-* [2026-06-06] PR #767: docs(tsdoc): document clash sync orchestrator (Commit: b906e5a2) [View](https://github.com/AlbiDR/Clash-Manager/pull/767)
-* [2026-06-06] PR #766: docs(readme): reconcile shared layer documentation drift (Commit: c20d890e) [View](https://github.com/AlbiDR/Clash-Manager/pull/766)
-* [2026-06-06] PR #765: perf(opt): extract useBenchmarkedStat shared composable (Commit: 6de3bba2) [View](https://github.com/AlbiDR/Clash-Manager/pull/765)
-* [2026-06-06] PR #764: test(verify): add saturating coverage for useVoyageActions (Commit: a038191c) [View](https://github.com/AlbiDR/Clash-Manager/pull/764)
-* [2026-06-06] PR #763: fix(harden): secure Voyage RPC validation boundary (Commit: 4ac5d616) [View](https://github.com/AlbiDR/Clash-Manager/pull/763)
-* [2026-06-05] PR #762: chore(baseline): fold new migrations into master baseline (Commit: f075f104) [View](https://github.com/AlbiDR/Clash-Manager/pull/762)
-* [2026-06-05] PR #761: test(verify): add saturating specs for idbKernel (Commit: 97220d75) [View](https://github.com/AlbiDR/Clash-Manager/pull/761)
-* [2026-06-05] PR #760: refactor: extract useStatusPill shared composable (Commit: 66a4084e) [View](https://github.com/AlbiDR/Clash-Manager/pull/760)
-* [2026-06-05] PR #759: chore(deps): bump @types/node and @vue/test-utils (Commit: fca4e59d) [View](https://github.com/AlbiDR/Clash-Manager/pull/759)
-* [2026-06-05] PR #758: chore(version): no drift found (Commit: c9f1a9e2) [View](https://github.com/AlbiDR/Clash-Manager/pull/758)
-* [2026-06-05] PR #757: docs(tsdoc): document useVoyageActions interface contracts (Commit: 1ed91a8a) [View](https://github.com/AlbiDR/Clash-Manager/pull/757)
-* [2026-06-05] PR #756: Reconcile Architectural Drift (Core & Voyage) (Commit: c7077d52) [View](https://github.com/AlbiDR/Clash-Manager/pull/756)
-* [2026-06-05] PR #755: refactor(opt): decompose Voyage store actions to satisfy SRP (Commit: 2d4a7036) [View](https://github.com/AlbiDR/Clash-Manager/pull/755)
-* [2026-06-05] PR #754: fix(harden): secure muscle engine runtime integrity (Commit: 19c1ea4b) [View](https://github.com/AlbiDR/Clash-Manager/pull/754)
-* [2026-06-04] PR #753: refactor: decompose monolithic useClashDataStore (Commit: c477a82d) [View](https://github.com/AlbiDR/Clash-Manager/pull/753)
-* [2026-06-04] PR #752: chore(deps): update major version watchlist (Commit: 533eb78d) [View](https://github.com/AlbiDR/Clash-Manager/pull/752)
-* [2026-06-04] PR #751: fix(version): reconcile version drift in progressive list and manifest (Commit: 39031c96) [View](https://github.com/AlbiDR/Clash-Manager/pull/751)
-* [2026-06-04] PR #750: docs(tsdoc): document pull-to-refresh interface contract (Commit: 2f5da400) [View](https://github.com/AlbiDR/Clash-Manager/pull/750)
-* [2026-06-04] PR #749: docs(readme): reconcile core kernel and substrate drift (Commit: 86aa3b18) [View](https://github.com/AlbiDR/Clash-Manager/pull/749)
-* [2026-06-04] PR #748: perf(opt): decompose StorageService and extract idbKernel (Commit: 2b618bbd) [View](https://github.com/AlbiDR/Clash-Manager/pull/748)
-* [2026-06-04] PR #747: chore(baseline): fold new migrations into master baseline (Commit: efe1b40c) [View](https://github.com/AlbiDR/Clash-Manager/pull/747)
-* [2026-06-04] PR #746: test(verify): add saturating logic coverage for useHistoryChart (Commit: ed113d16) [View](https://github.com/AlbiDR/Clash-Manager/pull/746)
-* [2026-06-04] PR #745: fix(harden): secure database ingress boundaries in profiler.ts (Commit: f9ead996) [View](https://github.com/AlbiDR/Clash-Manager/pull/745)
-* [2026-06-03] PR #744: Refactor: Decompose Monolithic DataSchemas into Domain Modules (Commit: b487397e) [View](https://github.com/AlbiDR/Clash-Manager/pull/744)
-* [2026-06-03] PR #743: fix(version): enhance monorepo version auditor and integration (Commit: 4991875b) [View](https://github.com/AlbiDR/Clash-Manager/pull/743)
-* [2026-06-03] PR #742: chore(deps): Stage 8 Dependency Audit - Sept 5 (Commit: 15671b46) [View](https://github.com/AlbiDR/Clash-Manager/pull/742)
-* [2026-06-03] PR #741: docs(tsdoc): document useHistoryChart interface contract (Commit: 71a34513) [View](https://github.com/AlbiDR/Clash-Manager/pull/741)
-* [2026-06-03] PR #740: docs(readme): reconcile architectural drift across features and shared layer (Commit: e01b40e4) [View](https://github.com/AlbiDR/Clash-Manager/pull/740)
-* [2026-06-03] PR #739: refactor(opt): extract useHistoryChart logic to shared composable (Commit: bb9fddc6) [View](https://github.com/AlbiDR/Clash-Manager/pull/739)
-* [2026-06-03] PR #738: test(verify): add specs for useSelectionBar composable (Commit: d2ad5e88) [View](https://github.com/AlbiDR/Clash-Manager/pull/738)
-* [2026-06-03] PR #737: fix(harden): secure protocol integrity and vault resolution (Commit: efb1bedb) [View](https://github.com/AlbiDR/Clash-Manager/pull/737)
-* [2026-06-02] PR #736: docs(readme): synchronize Nightly Pipeline section to 9-stage system (Commit: e85a914e) [View](https://github.com/AlbiDR/Clash-Manager/pull/736)
-* [2026-06-02] PR #735: refactor: extract useSelectionBar shared composable (Commit: c018f298) [View](https://github.com/AlbiDR/Clash-Manager/pull/735)
-* [2026-06-02] PR #734: chore(deps): bump knip from 6.14.2 to 6.15.0 (Commit: aa679e57) [View](https://github.com/AlbiDR/Clash-Manager/pull/734)
-* [2026-06-02] PR #733: fix(version): reconcile version drift in protocol.ts (Commit: aeb8e3a9) [View](https://github.com/AlbiDR/Clash-Manager/pull/733)
-* [2026-06-02] PR #732: docs(tsdoc): document native muscle core utilities (Commit: 3eb93085) [View](https://github.com/AlbiDR/Clash-Manager/pull/732)
-* [2026-06-02] PR #731: docs(readme): reconcile architectural drift and DeepNet nomenclature (Commit: 028078f1) [View](https://github.com/AlbiDR/Clash-Manager/pull/731)
-* [2026-06-02] PR #730: perf(opt): prune structural rot and identify orphaned views (Commit: 7130092e) [View](https://github.com/AlbiDR/Clash-Manager/pull/730)
-* [2026-06-02] PR #729: test(verify): add logic proofs for useTheme manifest swapper (Commit: a2ced071) [View](https://github.com/AlbiDR/Clash-Manager/pull/729)
-* [2026-06-02] PR #728: fix(harden): runtime integrity for theme management (Commit: 0e9ddf38) [View](https://github.com/AlbiDR/Clash-Manager/pull/728)
-* [2026-06-01] PR #727: refactor: extract useCountdown shared composable (Commit: c6bfd147) [View](https://github.com/AlbiDR/Clash-Manager/pull/727)
-* [2026-06-01] PR #726: chore(deps): bump dependency-cruiser and update major watchlist (Commit: 7344bd6a) [View](https://github.com/AlbiDR/Clash-Manager/pull/726)
-* [2026-06-01] PR #725: chore(version): no drift found (Commit: f7cb9d2d) [View](https://github.com/AlbiDR/Clash-Manager/pull/725)
-* [2026-06-01] PR #724: docs(tsdoc): document console controller interface contracts (Commit: 16c0484b) [View](https://github.com/AlbiDR/Clash-Manager/pull/724)
-* [2026-06-01] PR #723: docs(readme): reconcile architectural drift in voyage and backend substrates (Commit: 987e9f84) [View](https://github.com/AlbiDR/Clash-Manager/pull/723)
-* [2026-06-01] PR #722: perf(opt): excise orphaned voyage poll logic and sync migrations (Commit: a037b5ff) [View](https://github.com/AlbiDR/Clash-Manager/pull/722)
-* [2026-06-01] PR #721: chore(baseline): fold new migrations into master baseline (Commit: 6b800692) [View](https://github.com/AlbiDR/Clash-Manager/pull/721)
-* [2026-06-01] PR #720: test(verify): establish saturating coverage for t2tToTimestamp (Commit: 1edd520c) [View](https://github.com/AlbiDR/Clash-Manager/pull/720)
-* [2026-06-01] PR #719: fix(harden): enforce strict unknown narrowing in ghost-purge (Commit: 0b810cb9) [View](https://github.com/AlbiDR/Clash-Manager/pull/719)
-* [2026-05-31] PR #718: Optimization [Stage 3] - Performance Hygiene Refinement (Commit: d8f0f4a6) [View](https://github.com/AlbiDR/Clash-Manager/pull/718)
-* [2026-05-31] PR #717: refactor: centralize voyage time utility and heal form logic crack (Commit: b2bb0dbe) [View](https://github.com/AlbiDR/Clash-Manager/pull/717)
-* [2026-05-31] PR #716: chore(deps): bump @ast-grep/cli from ^0.42.2 to ^0.43.0 (Commit: 7b6fad86) [View](https://github.com/AlbiDR/Clash-Manager/pull/716)
-* [2026-05-31] PR #715: chore(version): no drift found (Commit: 5d7557d9) [View](https://github.com/AlbiDR/Clash-Manager/pull/715)
-* [2026-05-31] PR #714: docs(tsdoc): enhance MaintenanceClient interface contracts (Commit: 9167431f) [View](https://github.com/AlbiDR/Clash-Manager/pull/714)
-* [2026-05-31] PR #713: docs(readme): reconcile voyage feature lifecycle drift (Commit: 86f6cc04) [View](https://github.com/AlbiDR/Clash-Manager/pull/713)
-* [2026-05-31] PR #712: test(verify): saturating logic coverage for voyage feature (Commit: 2f51801b) [View](https://github.com/AlbiDR/Clash-Manager/pull/712)
-* [2026-05-31] PR #711: fix(harden): eliminate any and anemic pathogens in useVoyageStore (Commit: 0676bc5e) [View](https://github.com/AlbiDR/Clash-Manager/pull/711)
-* [2026-05-30] PR #710: chore(deps): bump vite-plugin-pwa from ^1.2.0 to ^1.3.0 (Commit: 7d5b1238) [View](https://github.com/AlbiDR/Clash-Manager/pull/710)
-* [2026-05-30] PR #709: chore(version): no drift found (Commit: 9b26b054) [View](https://github.com/AlbiDR/Clash-Manager/pull/709)
-* [2026-05-30] PR #708: docs(tsdoc): perfect useVoyageForm interface contracts (Commit: f14cc07c) [View](https://github.com/AlbiDR/Clash-Manager/pull/708)
-* [2026-05-30] PR #707: docs(readme): reconcile voyage and laboratory feature drift (Commit: 6c720fe2) [View](https://github.com/AlbiDR/Clash-Manager/pull/707)
-* [2026-05-30] PR #706: refactor(opt): optimize voyage components and substrate hygiene (Commit: b1fa1ba1) [View](https://github.com/AlbiDR/Clash-Manager/pull/706)
-* [2026-05-30] PR #705: test(verify): saturating coverage for formatters logic (Commit: fef2433c) [View](https://github.com/AlbiDR/Clash-Manager/pull/705)
-* [2026-05-30] PR #704: fix(harden): secure player card sync validation boundaries and excise anemic pathogens (Commit: e93cede8) [View](https://github.com/AlbiDR/Clash-Manager/pull/704)
-* [2026-05-30] PR #703: refactor: extract voyage form logic to composable and centralize utils (Commit: 541badf3) [View](https://github.com/AlbiDR/Clash-Manager/pull/703)
-* [2026-05-29] PR #702: test(verify): harden and verify validation boundaries for profile and supabase clients (Commit: cec77308) [View](https://github.com/AlbiDR/Clash-Manager/pull/702)
-* [2026-05-28] PR #701: refactor: excise redundant re-exports in laboratory logic (Commit: c9c1dc81) [View](https://github.com/AlbiDR/Clash-Manager/pull/701)
-* [2026-05-28] PR #700: chore(deps): bump vue from 3.5.34 to 3.5.35 (Commit: 7a69f97c) [View](https://github.com/AlbiDR/Clash-Manager/pull/700)
-* [2026-05-28] PR #699: docs(tsdoc): perfect theme token transformation contracts (Commit: f7aeb7c1) [View](https://github.com/AlbiDR/Clash-Manager/pull/699)
-* [2026-05-28] PR #698: docs(readme): document promoted history chart molecules (Commit: ba0601db) [View](https://github.com/AlbiDR/Clash-Manager/pull/698)
-* [2026-05-28] PR #697: perf(opt): migrate static design tokens to CSS substrate (Commit: afa624f5) [View](https://github.com/AlbiDR/Clash-Manager/pull/697)
-* [2026-05-28] PR #696: test(verify): saturating coverage for TargetPicker.vue (Commit: 16ef6c4f) [View](https://github.com/AlbiDR/Clash-Manager/pull/696)
-* [2026-05-28] PR #695: fix(harden): secure S1 Discovery stage logic (Commit: 09c2e2ab) [View](https://github.com/AlbiDR/Clash-Manager/pull/695)
-* [2026-05-27] PR #694: refactor: promote history visualization components to shared layer (Commit: 259fd175) [View](https://github.com/AlbiDR/Clash-Manager/pull/694)
-* [2026-05-27] PR #693: chore(deps): bump @supabase/supabase-js from ^2.106.1 to ^2.106.2 (Commit: 0e991871) [View](https://github.com/AlbiDR/Clash-Manager/pull/693)
-* [2026-05-27] PR #692: Document authoritative validation boundaries in DataSchemas.ts (Commit: aac45c6f) [View](https://github.com/AlbiDR/Clash-Manager/pull/692)
-* [2026-05-27] PR #691: docs(readme): reconcile laboratory and roster drift (Commit: 6d8c7eab) [View](https://github.com/AlbiDR/Clash-Manager/pull/691)
-* [2026-05-27] PR #690: perf(opt): export and harden triggerUpdate in clash data store (Commit: 3cdbcef3) [View](https://github.com/AlbiDR/Clash-Manager/pull/690)
-* [2026-05-27] PR #689: test(verify): saturating logic coverage for BaseHistoryChart.vue (Commit: b6ed7be3) [View](https://github.com/AlbiDR/Clash-Manager/pull/689)
-* [2026-05-27] PR #688: fix(harden): secure profiling and ingestion logic in headhunter-scanner (Commit: c0013113) [View](https://github.com/AlbiDR/Clash-Manager/pull/688)
-* [2026-05-26] PR #687: chore(deps): bump dependency-cruiser from 17.4.0 to 17.4.2 (Commit: 05d6f136) [View](https://github.com/AlbiDR/Clash-Manager/pull/687)
-* [2026-05-26] PR #686: docs(tsdoc): reconcile RecruitClient contracts with connection-required architecture (Commit: 476f78e6) [View](https://github.com/AlbiDR/Clash-Manager/pull/686)
-* [2026-05-26] PR #685: docs(readme): reconcile architectural drift in Shared UI (Commit: a10b524f) [View](https://github.com/AlbiDR/Clash-Manager/pull/685)
-* [2026-05-26] PR #684: perf(opt): centralize shape design tokens (Commit: 4b940ad9) [View](https://github.com/AlbiDR/Clash-Manager/pull/684)
-* [2026-05-26] PR #683: test(verify): saturating coverage for VoyageBanner.vue (Commit: 973776bc) [View](https://github.com/AlbiDR/Clash-Manager/pull/683)
-* [2026-05-26] PR #682: Hardening: Secure Shadow Scout Discovery & Validation Boundary (Commit: 9246698a) [View](https://github.com/AlbiDR/Clash-Manager/pull/682)
-* [2026-05-25] PR #681: refactor: promote BaseHistoryChart to @shared/ui (Commit: 75ee15a6) [View](https://github.com/AlbiDR/Clash-Manager/pull/681)
-* [2026-05-25] PR #680: chore(deps): bump valibot from 1.4.0 to 1.4.1 (Commit: 1549bd77) [View](https://github.com/AlbiDR/Clash-Manager/pull/680)
-* [2026-05-25] PR #679: fix(version): reconcile catalog adherence for shared infrastructure (Commit: 94f4bff2) [View](https://github.com/AlbiDR/Clash-Manager/pull/679)
-* [2026-05-25] PR #678: docs(readme): reconcile pwa infrastructure drift (Commit: 2b6e93c2) [View](https://github.com/AlbiDR/Clash-Manager/pull/678)
-* [2026-05-25] PR #677: docs(tsdoc): perfect interface contracts for VoyageClient (Commit: e8a117e1) [View](https://github.com/AlbiDR/Clash-Manager/pull/677)
-* [2026-05-25] PR #676: perf(opt): centralize inline SVGs and harden icon substrate (Commit: 4aef9224) [View](https://github.com/AlbiDR/Clash-Manager/pull/676)
-* [2026-05-25] PR #675: test(verify): saturating logic coverage for EventManagement.vue (Commit: dc2f0631) [View](https://github.com/AlbiDR/Clash-Manager/pull/675)
-* [2026-05-25] PR #674: Hardening (Player Card Sync): Reinforced Auth and Data Integrity (Commit: f8f118d4) [View](https://github.com/AlbiDR/Clash-Manager/pull/674)
-* [2026-05-24] PR #673: Structural Surgery: API Client Decomposition (Commit: 6cc3cc96) [View](https://github.com/AlbiDR/Clash-Manager/pull/673)
-* [2026-05-24] PR #672: chore(deps): bump knip from 6.14.1 to 6.14.2 (Commit: 51fe0f6e) [View](https://github.com/AlbiDR/Clash-Manager/pull/672)
-* [2026-05-24] PR #671: fix(version): reconcile version drift in Frontend-PWA (Commit: 7d2e6d97) [View](https://github.com/AlbiDR/Clash-Manager/pull/671)
-* [2026-05-24] PR #670: docs(tsdoc): perfect clinical protocol interface contract (Commit: 2030ffb6) [View](https://github.com/AlbiDR/Clash-Manager/pull/670)
-* [2026-05-24] PR #669: docs(readme): reconcile selection and metadata drift in PWA core (Commit: d25ee09f) [View](https://github.com/AlbiDR/Clash-Manager/pull/669)
-* [2026-05-24] PR #668: chore(opt): prune unused exports and resolve knip false positives (Commit: 6701b9e2) [View](https://github.com/AlbiDR/Clash-Manager/pull/668)
-* [2026-05-24] PR #667: test(verify): saturating coverage for useConsoleMetadata (Commit: bf391a4f) [View](https://github.com/AlbiDR/Clash-Manager/pull/667)
-* [2026-05-24] PR #666: fix(harden): secure clinical protocol and ingestion pipeline (Commit: 6f322f16) [View](https://github.com/AlbiDR/Clash-Manager/pull/666)
-* [2026-05-23] PR #665: Decouple Console Selection & Split Monolithic Controller (Commit: 7b232e62) [View](https://github.com/AlbiDR/Clash-Manager/pull/665)
-* [2026-05-23] PR #664: chore(deps): bump knip from 6.14.1 to 6.14.2 (Commit: 0d916f9d) [View](https://github.com/AlbiDR/Clash-Manager/pull/664)
-* [2026-05-23] PR #663: chore(version): no drift found (Commit: 3953809d) [View](https://github.com/AlbiDR/Clash-Manager/pull/663)
-* [2026-05-23] PR #662: docs(tsdoc): document selection bar orchestrator and adr mappings (Commit: 5e95d10b) [View](https://github.com/AlbiDR/Clash-Manager/pull/662)
-* [2026-05-23] PR #661: docs(readme): reconcile roster feature documentation (Commit: 1305766a) [View](https://github.com/AlbiDR/Clash-Manager/pull/661)
-* [2026-05-23] PR #660: refactor(opt): centralize pop-in animation keyframes (Commit: d2daf78f) [View](https://github.com/AlbiDR/Clash-Manager/pull/660)
-* [2026-05-23] PR #659: test(verify): establish unit test coverage for DurationInput.vue (Commit: 4d1a675f) [View](https://github.com/AlbiDR/Clash-Manager/pull/659)
-* [2026-05-23] PR #658: Harden Deep-Depth Ingestion & Fix Lead Pathogens (Commit: 22996f83) [View](https://github.com/AlbiDR/Clash-Manager/pull/658)
-* [2026-05-22] PR #657: Refactor: Voyage Duration Extraction & Constant Centralization (Commit: 09aac25b) [View](https://github.com/AlbiDR/Clash-Manager/pull/657)
-* [2026-05-22] PR #656: chore(deps): bump @supabase/supabase-js from ^2.106.0 to ^2.106.1 (Commit: a7dbe92f) [View](https://github.com/AlbiDR/Clash-Manager/pull/656)
-* [2026-05-22] PR #655: docs(tsdoc): annotate voyage setup form logic contracts (Commit: 89a85310) [View](https://github.com/AlbiDR/Clash-Manager/pull/655)
-* [2026-05-22] PR #654: docs(readme): reconcile voyage feature modularity drift (Commit: ddcc2599) [View](https://github.com/AlbiDR/Clash-Manager/pull/654)
-* [2026-05-22] PR #653: perf(opt): centralize redundant voyage countdown logic (Commit: 08b2c4d9) [View](https://github.com/AlbiDR/Clash-Manager/pull/653)
-* [2026-05-22] PR #652: test(verify): saturate coverage for VoyageSetupForm.vue (Commit: 4052b745) [View](https://github.com/AlbiDR/Clash-Manager/pull/652)
-* [2026-05-22] PR #651: fix(harden): secure sync-player-cards data boundaries (Commit: d36395bf) [View](https://github.com/AlbiDR/Clash-Manager/pull/651)
-* [2026-05-21] PR #650: Refactor: Split EventManagement Component (Commit: 1a9d668b) [View](https://github.com/AlbiDR/Clash-Manager/pull/650)
-* [2026-05-21] PR #649: chore(deps): bump vitest from ^4.1.6 to ^4.1.7 (Commit: 1af78d8d) [View](https://github.com/AlbiDR/Clash-Manager/pull/649)
-* [2026-05-21] PR #648: docs(tsdoc): annotate voyage store and verify logic contracts (Commit: d1539d31) [View](https://github.com/AlbiDR/Clash-Manager/pull/648)
-* [2026-05-21] PR #647: docs(readme): create voyage feature documentation (Commit: b47b613b) [View](https://github.com/AlbiDR/Clash-Manager/pull/647)
-* [2026-05-21] PR #646: refactor(opt): harden voyage data flow and resolve layer violations (Commit: f3d45592) [View](https://github.com/AlbiDR/Clash-Manager/pull/646)
-* [2026-05-21] PR #645: test(verify): saturate coverage for theme tokens logic (Commit: 3ee832fc) [View](https://github.com/AlbiDR/Clash-Manager/pull/645)
-* [2026-05-21] PR #644: fix(harden): secure headhunter-scanner orchestrator boundary (Commit: 73b5d43f) [View](https://github.com/AlbiDR/Clash-Manager/pull/644)
-* [2026-05-20] PR #643: chore(deps): bump tsx from ^4.22.0 to ^4.22.3 (Commit: 41b2223e) [View](https://github.com/AlbiDR/Clash-Manager/pull/643)
-* [2026-05-20] PR #642: fix(version): reconcile monorepo version drift to v14.0.0 (Commit: dfa9ac1e) [View](https://github.com/AlbiDR/Clash-Manager/pull/642)
-* [2026-05-20] PR #641: docs(tsdoc): document runRescan stage in headhunter-scanner (Commit: d49f3ba8) [View](https://github.com/AlbiDR/Clash-Manager/pull/641)
-* [2026-05-20] PR #640: docs(readme): reconcile Backend with v14.0.0 and Voyage substrate (Commit: 385834c7) [View](https://github.com/AlbiDR/Clash-Manager/pull/640)
-* [2026-05-20] PR #639: refactor(opt): de-export internal sharedTokens in theme kernel (Commit: ea18ebae) [View](https://github.com/AlbiDR/Clash-Manager/pull/639)
-* [2026-05-20] PR #638: Establish full coverage for useVoyageStore (Commit: 2064bb1c) [View](https://github.com/AlbiDR/Clash-Manager/pull/638)
-* [2026-05-20] PR #637: fix(harden): secure tournament discovery data boundary (Commit: a9280774) [View](https://github.com/AlbiDR/Clash-Manager/pull/637)
-* [2026-05-19] PR #636: refactor: [Logic Injection] Centralized business thresholds (Commit: 01fabdd9) [View](https://github.com/AlbiDR/Clash-Manager/pull/636)
-* [2026-05-19] PR #635: chore(deps): bump @supabase/supabase-js from ^2.105.4 to ^2.106.0 (Commit: 23787e0f) [View](https://github.com/AlbiDR/Clash-Manager/pull/635)
-* [2026-05-19] PR #634: fix(version): flag fundamental version drift conflict (Commit: 67d00b7d) [View](https://github.com/AlbiDR/Clash-Manager/pull/634)
-* [2026-05-19] PR #633: docs(tsdoc): document useConnectivityManager orchestrator (Commit: 7a3ba430) [View](https://github.com/AlbiDR/Clash-Manager/pull/633)
-* [2026-05-19] PR #632: docs(readme): reconcile Frontend-PWA drift (Commit: 87bdb370) [View](https://github.com/AlbiDR/Clash-Manager/pull/632)
-* [2026-05-19] PR #631: refactor(opt): refine time formatting and excise any assertions (Commit: d29be959) [View](https://github.com/AlbiDR/Clash-Manager/pull/631)
-* [2026-05-19] PR #630: test(verify): saturate Layer 1 API logic coverage (Commit: 7d6d7cb5) [View](https://github.com/AlbiDR/Clash-Manager/pull/630)
-* [2026-05-19] PR #629: fix(harden): secure Ghost Purge data boundary and excise 'any' plague (Commit: bf0ba270) [View](https://github.com/AlbiDR/Clash-Manager/pull/629)
-* [2026-05-18] PR #628: chore(deps): bump @ast-grep/cli from ^0.42.1 to ^0.42.2 (Commit: b0b19abe) [View](https://github.com/AlbiDR/Clash-Manager/pull/628)
-* [2026-05-18] PR #627: chore(version): flag version drift conflict in monorepo ground truth (Commit: e6dab59d) [View](https://github.com/AlbiDR/Clash-Manager/pull/627)
-* [2026-05-18] PR #626: docs(tsdoc): document laboratory store actions and architectural roles (Commit: c421529b) [View](https://github.com/AlbiDR/Clash-Manager/pull/626)
-* [2026-05-18] PR #625: docs(readme): synchronize root version badges (Commit: ec30c0f2) [View](https://github.com/AlbiDR/Clash-Manager/pull/625)
-* [2026-05-18] PR #624: Substrate Hygiene: Prune Dead CSS and Consolidate Trophy Styles (Commit: c5aa9b88) [View](https://github.com/AlbiDR/Clash-Manager/pull/624)
-* [2026-05-18] PR #623: test(verify): establish coverage for LongevityBadge.vue (Commit: 32dfaa89) [View](https://github.com/AlbiDR/Clash-Manager/pull/623)
-* [2026-05-18] PR #622: fix(harden): secure stale recruit rescan boundary (Commit: 2bfa5fb9) [View](https://github.com/AlbiDR/Clash-Manager/pull/622)
-* [2026-05-17] PR #621: Refactor: Extract Data Mappers from SupabaseClient (Commit: c771e417) [View](https://github.com/AlbiDR/Clash-Manager/pull/621)
-* [2026-05-17] PR #620: chore(deps): bump knip from ^6.14.0 to ^6.14.1 (Commit: bb8fa20b) [View](https://github.com/AlbiDR/Clash-Manager/pull/620)
-* [2026-05-17] PR #619: docs(tsdoc): document Laboratory simulation engine (Commit: 16615b10) [View](https://github.com/AlbiDR/Clash-Manager/pull/619)
-* [2026-05-17] PR #618: docs(readme): reconcile shared ui drift (Commit: fe7b28fc) [View](https://github.com/AlbiDR/Clash-Manager/pull/618)
-* [2026-05-17] PR #617: perf(opt): prune vestigial score logic and dead props (Commit: cd074bc2) [View](https://github.com/AlbiDR/Clash-Manager/pull/617)
-* [2026-05-17] PR #616: test(verify): establish unit test coverage for TagBadge.vue (Commit: 3d3b7c0f) [View](https://github.com/AlbiDR/Clash-Manager/pull/616)
-* [2026-05-17] PR #615: Harden battle log ingestion in deep-depth stage (Commit: 12cb1ba4) [View](https://github.com/AlbiDR/Clash-Manager/pull/615)
-* [2026-05-16] PR #614: Standardize Domain Badges in @shared/ui (Commit: a78ffd7c) [View](https://github.com/AlbiDR/Clash-Manager/pull/614)
-* [2026-05-16] PR #613: chore(deps): bump knip and update major version watchlist (Commit: 7fa87f21) [View](https://github.com/AlbiDR/Clash-Manager/pull/613)
-* [2026-05-16] PR #612: Version Consistency Audit - No Drift Found (Commit: 6106bfff) [View](https://github.com/AlbiDR/Clash-Manager/pull/612)
-* [2026-05-16] PR #611: docs(tsdoc): document executePipeline orchestrator (Commit: 4e7fc387) [View](https://github.com/AlbiDR/Clash-Manager/pull/611)
-* [2026-05-16] PR #610: docs(readme): reconcile laboratory constants registry drift (Commit: 75310661) [View](https://github.com/AlbiDR/Clash-Manager/pull/610)
-* [2026-05-16] PR #609: test(verify): implement coverage for mockData utility (Commit: 43fa047b) [View](https://github.com/AlbiDR/Clash-Manager/pull/609)
-* [2026-05-16] PR #608: fix(harden): implement strict validation boundary in profiler stage (Commit: 85995037) [View](https://github.com/AlbiDR/Clash-Manager/pull/608)
-* [2026-05-15] PR #607: refactor: resolve stale layering violation in vTooltip.ts (Commit: 061e2931) [View](https://github.com/AlbiDR/Clash-Manager/pull/607)
-* [2026-05-15] PR #606: chore(deps): bump tsx from ^4.21.0 to ^4.22.0 (Commit: 72c7a971) [View](https://github.com/AlbiDR/Clash-Manager/pull/606)
-* [2026-05-15] PR #605: docs(tsdoc): document SupabaseClient interface contract (Commit: 4d2efa9d) [View](https://github.com/AlbiDR/Clash-Manager/pull/605)
-* [2026-05-15] PR #604: docs(readme): reconcile Shared UI drift (Commit: c120c9c1) [View](https://github.com/AlbiDR/Clash-Manager/pull/604)
-* [2026-05-15] PR #603: refactor(opt): prune unused laboratory lookahead constants (Commit: a3899e8e) [View](https://github.com/AlbiDR/Clash-Manager/pull/603)
-* [2026-05-15] PR #602: test(verify): provide defensive saturation for game core utilities (Commit: 71a11462) [View](https://github.com/AlbiDR/Clash-Manager/pull/602)
-* [2026-05-15] PR #601: Enforce Validation Boundaries and Excise 'any' in SupabaseClient (Commit: 42aba27b) [View](https://github.com/AlbiDR/Clash-Manager/pull/601)
-* [2026-05-14] PR #600: Structural Surgery: Core Game Domain Centralization (Commit: 42210182) [View](https://github.com/AlbiDR/Clash-Manager/pull/600)
-* [2026-05-14] PR #599: chore(deps): bump vitest from 4.1.5 to 4.1.6 (Commit: 7c4ab6a7) [View](https://github.com/AlbiDR/Clash-Manager/pull/599)
-* [2026-05-14] PR #598: chore(version): no drift found (Commit: dd6360a2) [View](https://github.com/AlbiDR/Clash-Manager/pull/598)
-* [2026-05-14] PR #597: docs(readme): reconcile backend roadmap and provenance truth (Commit: 54bca4c6) [View](https://github.com/AlbiDR/Clash-Manager/pull/597)
-* [2026-05-14] PR #596: perf(opt): excise redundant calculateKingLevel in Simulation.ts (Commit: 34b39410) [View](https://github.com/AlbiDR/Clash-Manager/pull/596)
-* [2026-05-14] PR #595: test(verify): add useConnectivityManager unit tests (Commit: 897ef02e) [View](https://github.com/AlbiDR/Clash-Manager/pull/595)
-* [2026-05-14] PR #594: fix(harden): secure Royale discovery boundary in discovery.ts (Commit: 94167482) [View](https://github.com/AlbiDR/Clash-Manager/pull/594)
-* [2026-05-13] PR #593: Structural Alignment of Core List Services (Commit: 4d65bda8) [View](https://github.com/AlbiDR/Clash-Manager/pull/593)
-* [2026-05-13] PR #592: fix(version): reconcile version drift in Backend (Commit: 7b0db519) [View](https://github.com/AlbiDR/Clash-Manager/pull/592)
-* [2026-05-13] PR #591: chore(deps): bump knip from 6.12.2 to 6.13.1 (Commit: df5484d7) [View](https://github.com/AlbiDR/Clash-Manager/pull/591)
-* [2026-05-13] PR #590: docs(tsdoc): document useHeadhunter internal logic (Commit: 9fe3e1f9) [View](https://github.com/AlbiDR/Clash-Manager/pull/590)
-* [2026-05-13] PR #589: docs(readme): reconcile nightly pipeline drift and deepen service manifest (Commit: 2ecdc4c1) [View](https://github.com/AlbiDR/Clash-Manager/pull/589)
-* [2026-05-13] PR #588: perf(opt): deduplicate svg icon registry paths (Commit: 2716a688) [View](https://github.com/AlbiDR/Clash-Manager/pull/588)
-* [2026-05-13] PR #587: fix(harden): secure clan synchronization boundary and excise any pathogens (Commit: 9fe98dab) [View](https://github.com/AlbiDR/Clash-Manager/pull/587)
-* [2026-05-12] PR #586: chore(deps): bump knip from 6.11.0 to 6.12.2 (Commit: 66d9e5d0) [View](https://github.com/AlbiDR/Clash-Manager/pull/586)
-* [2026-05-12] PR #585: docs(tsdoc): document sync-player-cards edge function (Commit: 1b6e0c45) [View](https://github.com/AlbiDR/Clash-Manager/pull/585)
-* [2026-05-12] PR #584: docs(readme): reconcile Backend architecture and ingestion protocol (Commit: 07e0228f) [View](https://github.com/AlbiDR/Clash-Manager/pull/584)
-* [2026-05-12] PR #583: Standardize Badge UI System and Resolve Logic Duplication (Commit: 75b18f8e) [View](https://github.com/AlbiDR/Clash-Manager/pull/583)
-* [2026-05-12] PR #582: test(verify): extend useListFilter defensive coverage (Commit: 0237b393) [View](https://github.com/AlbiDR/Clash-Manager/pull/582)
-* [2026-05-12] PR #581: fix(harden): implement clinical protocol for sync-player-cards (Commit: 46f02942) [View](https://github.com/AlbiDR/Clash-Manager/pull/581)
-* [2026-05-11] PR #580: chore(deps): bump workbox-precaching from ^7.4.0 to ^7.4.1 (Commit: 01cdd0a6) [View](https://github.com/AlbiDR/Clash-Manager/pull/580)
-* [2026-05-11] PR #579: docs(readme): reconcile Shared UI technical blueprints (Commit: 6c2abdf9) [View](https://github.com/AlbiDR/Clash-Manager/pull/579)
-* [2026-05-11] PR #578: docs(tsdoc): document tournament discovery stage (Commit: 14198cb0) [View](https://github.com/AlbiDR/Clash-Manager/pull/578)
-* [2026-05-11] PR #577: fix(harden): secure tournament discovery ingress and eliminate anemic variables (Commit: eaf1ddad) [View](https://github.com/AlbiDR/Clash-Manager/pull/577)
-* [2026-05-10] PR #576: chore(deps): bump workbox-window from 7.4.0 to 7.4.1 (Commit: 9357fe45) [View](https://github.com/AlbiDR/Clash-Manager/pull/576)
-* [2026-05-10] PR #575: docs(tsdoc): enhance discovery stage documentation (Commit: a899d055) [View](https://github.com/AlbiDR/Clash-Manager/pull/575)
-* [2026-05-10] PR #574: docs(readme): reconcile backend technical blueprints (Commit: 90d3c5a3) [View](https://github.com/AlbiDR/Clash-Manager/pull/574)
-* [2026-05-10] PR #573: Centralize Navigation Metadata and Stabilize Substrate (Commit: 535168b9) [View](https://github.com/AlbiDR/Clash-Manager/pull/573)
-* [2026-05-10] PR #572: test(verify): extend useAppSettings coverage for sync and robustness (Commit: 162123b7) [View](https://github.com/AlbiDR/Clash-Manager/pull/572)
-* [2026-05-10] PR #571: fix(harden): secure Royale discovery data boundary (Commit: 92fd1036) [View](https://github.com/AlbiDR/Clash-Manager/pull/571)
-* [2026-05-09] PR #570: chore(deps): bump @supabase/supabase-js from ^2.105.3 to ^2.105.4 (Commit: 668c0cf8) [View](https://github.com/AlbiDR/Clash-Manager/pull/570)
-* [2026-05-09] PR #569: docs(tsdoc): document economy utilities and branded types (Commit: d04c8145) [View](https://github.com/AlbiDR/Clash-Manager/pull/569)
-* [2026-05-09] PR #568: Reconcile root README.md synchronization drift (Commit: 97bfa523) [View](https://github.com/AlbiDR/Clash-Manager/pull/568)
-* [2026-05-09] PR #567: refactor(opt): implement domain-descriptive naming in useBatchQueue.ts (Commit: f061fcb0) [View](https://github.com/AlbiDR/Clash-Manager/pull/567)
-* [2026-05-09] PR #566: test(verify): extend laboratory registry logic coverage (Commit: dfa04687) [View](https://github.com/AlbiDR/Clash-Manager/pull/566)
-* [2026-05-09] PR #565: fix(harden): secure headhunter-scanner context boundary (Commit: c9ca51d2) [View](https://github.com/AlbiDR/Clash-Manager/pull/565)
-* [2026-05-08] PR #564: chore(deps): bump @supabase/supabase-js from 2.105.1 to 2.105.3 (Commit: ac881a55) [View](https://github.com/AlbiDR/Clash-Manager/pull/564)
-* [2026-05-08] PR #563: docs(tsdoc): document bezier utility (Commit: 3723504b) [View](https://github.com/AlbiDR/Clash-Manager/pull/563)
-* [2026-05-08] PR #562: test(verify): extend validation boundary coverage for LaboratoryStore (Commit: a9fb0dc3) [View](https://github.com/AlbiDR/Clash-Manager/pull/562)
-* [2026-05-08] PR #561: refactor(opt): optimize laboratory progression engine and registry (Commit: 0a1c7b92) [View](https://github.com/AlbiDR/Clash-Manager/pull/561)
-* [2026-05-08] PR #560: fix(harden): secure Stage 6 Deep Depth ingestion boundary (Commit: 0ce4746e) [View](https://github.com/AlbiDR/Clash-Manager/pull/560)
-* [2026-05-07] PR #559: chore(deps): bump vue from ^3.5.33 to ^3.5.34 (Commit: d702fb1d) [View](https://github.com/AlbiDR/Clash-Manager/pull/559)
-* [2026-05-07] PR #558: docs(tsdoc): enhance headhunter blacklist documentation (Commit: de49a15e) [View](https://github.com/AlbiDR/Clash-Manager/pull/558)
-* [2026-05-07] PR #557: docs(readme): reconcile laboratory architectural drift (Commit: eae9dd98) [View](https://github.com/AlbiDR/Clash-Manager/pull/557)
-* [2026-05-07] PR #556: refactor(opt): standardize sync timestamp naming and align laboratory orchestration (Commit: 7f2be71d) [View](https://github.com/AlbiDR/Clash-Manager/pull/556)
-* [2026-05-07] PR #555: test(verify): extend SupabaseClient sad path coverage (Commit: c2095b14) [View](https://github.com/AlbiDR/Clash-Manager/pull/555)
-* [2026-05-07] PR #554: fix(harden): secure headhunter-scanner validation boundaries (Commit: 0196948c) [View](https://github.com/AlbiDR/Clash-Manager/pull/554)
-* [2026-05-06] PR #553: chore(deps): bump valibot from ^1.3.1 to ^1.4.0 (Commit: c97e029b) [View](https://github.com/AlbiDR/Clash-Manager/pull/553)
-* [2026-05-06] PR #552: docs(tsdoc): document headhunter scanner orchestrator (Commit: 76bb4e4f) [View](https://github.com/AlbiDR/Clash-Manager/pull/552)
-* [2026-05-06] PR #551: docs(readme): reconcile core pwa orchestration logic (Commit: 957689e4) [View](https://github.com/AlbiDR/Clash-Manager/pull/551)
-* [2026-05-06] PR #550: perf(opt): hoist static assets in useBenchmarking (Commit: e54a1086) [View](https://github.com/AlbiDR/Clash-Manager/pull/550)
-* [2026-05-06] PR #549: test(verify): extend DataSchemas coverage for offline operations (Commit: 7c3e2f14) [View](https://github.com/AlbiDR/Clash-Manager/pull/549)
-* [2026-05-05] PR #548: chore(deps): bump vue-tsc from 3.2.7 to 3.2.8 (Commit: 554e7dfc) [View](https://github.com/AlbiDR/Clash-Manager/pull/548)
-* [2026-05-05] PR #547: docs(tsdoc): document api state broker lifecycle (Commit: 7b9f5df7) [View](https://github.com/AlbiDR/Clash-Manager/pull/547)
-* [2026-05-05] PR #546: standardize hub provenance reporting (Commit: 453b14c0) [View](https://github.com/AlbiDR/Clash-Manager/pull/546)
-* [2026-05-05] PR #545: docs(readme): reconcile backend maintenance routine drift (Commit: 1a5db0b5) [View](https://github.com/AlbiDR/Clash-Manager/pull/545)
-* [2026-05-05] PR #544: test(verify): extend SupabaseClient coverage for edge cases (Commit: b25d9d6a) [View](https://github.com/AlbiDR/Clash-Manager/pull/544)
-* [2026-05-05] PR #543: fix(harden): secure persistence boundary for offline_queue (Commit: 6f0efdbf) [View](https://github.com/AlbiDR/Clash-Manager/pull/543)
-* [2026-05-04] PR #542: chore(deps): bump dependency-cruiser from ^17.3.10 to ^17.4.0 (Commit: 6c281331) [View](https://github.com/AlbiDR/Clash-Manager/pull/542)
-* [2026-05-04] PR #541: docs(tsdoc): document L5 Control Clinical Protocol orchestrator (Commit: b6022fac) [View](https://github.com/AlbiDR/Clash-Manager/pull/541)
-* [2026-05-04] PR #540: docs(readme): synchronize Settings feature with Supabase infrastructure (Commit: 7b0d3e98) [View](https://github.com/AlbiDR/Clash-Manager/pull/540)
-* [2026-05-04] PR #539: fix(harden): secure L5 protocol boundary and eliminate any pathogens (Commit: 5c6a420f) [View](https://github.com/AlbiDR/Clash-Manager/pull/539)
-* [2026-05-03] PR #538: chore(deps): bump knip from 6.10.0 to 6.11.0 (Commit: 35666ae1) [View](https://github.com/AlbiDR/Clash-Manager/pull/538)
-* [2026-05-03] PR #537: docs(tsdoc): enhance StatusPill.vue with contextual documentation (Commit: 7d5f735f) [View](https://github.com/AlbiDR/Clash-Manager/pull/537)
-* [2026-05-03] PR #536: docs(readme): reconcile backend technical specifications (Commit: c7807435) [View](https://github.com/AlbiDR/Clash-Manager/pull/536)
-* [2026-05-03] PR #535: refactor(opt): standardize hub architecture and provenance reporting (Commit: 302277c0) [View](https://github.com/AlbiDR/Clash-Manager/pull/535)
-* [2026-05-03] PR #534: test(verify): extend DataSchemas coverage for Supabase boundaries (Commit: 340b080a) [View](https://github.com/AlbiDR/Clash-Manager/pull/534)
-* [2026-05-03] PR #533: fix(harden): secure recruit blacklist validation boundary (Commit: 1941456c) [View](https://github.com/AlbiDR/Clash-Manager/pull/533)
-* [2026-05-02] PR #532: chore(deps): bump knip from 6.8.0 to 6.10.0 (Commit: 086878b7) [View](https://github.com/AlbiDR/Clash-Manager/pull/532)
-* [2026-05-02] PR #531: docs(tsdoc): enhance ingestion pipeline orchestrator documentation (Commit: 856678a7) [View](https://github.com/AlbiDR/Clash-Manager/pull/531)
-* [2026-05-02] PR #530: docs(readme): reconcile headhunter with supabase architecture (Commit: 4becb6e5) [View](https://github.com/AlbiDR/Clash-Manager/pull/530)
-* [2026-05-02] PR #529: refactor(opt): standardize domain-descriptive naming in shared card infrastructure (Commit: c5667d12) [View](https://github.com/AlbiDR/Clash-Manager/pull/529)
-* [2026-05-02] PR #528: fix(harden): secure royale api ingress via valibot (Commit: 23979e9d) [View](https://github.com/AlbiDR/Clash-Manager/pull/528)
-* [2026-05-01] PR #527: chore(deps): bump @vue/test-utils from ^2.4.9 to ^2.4.10 (Commit: 6e1ac3ba) [View](https://github.com/AlbiDR/Clash-Manager/pull/527)
-* [2026-05-01] PR #526: docs(tsdoc): document SupabaseClient public contract (Commit: aaaef7ae) [View](https://github.com/AlbiDR/Clash-Manager/pull/526)
-* [2026-05-01] PR #525: docs(readme): reconcile PWA transport and sync logic drift (Commit: 52fce21c) [View](https://github.com/AlbiDR/Clash-Manager/pull/525)
-* [2026-05-01] PR #524: refactor(opt): improve type safety and naming in SW registration (Commit: a0a853d7) [View](https://github.com/AlbiDR/Clash-Manager/pull/524)
-* [2026-05-01] PR #523: test(verify): implement comprehensive coverage for SupabaseClient (Commit: f63581ea) [View](https://github.com/AlbiDR/Clash-Manager/pull/523)
-* [2026-05-01] PR #522: fix(harden): secure Supabase data ingress and eliminate any pathogens (Commit: e860d8f7) [View](https://github.com/AlbiDR/Clash-Manager/pull/522)
-* [2026-04-29] PR #520: chore(deps): bump knip from ^6.3.0 to ^6.7.0 (Commit: 4fbf1b27) [View](https://github.com/AlbiDR/Clash-Manager/pull/520)
-* [2026-04-29] PR #519: docs(tsdoc): enhance warMath context (Commit: c20a9be4) [View](https://github.com/AlbiDR/Clash-Manager/pull/519)
-* [2026-04-29] PR #518: docs(readme): reconcile GAS architecture and worker diagnostics (Commit: d9b3ba4f) [View](https://github.com/AlbiDR/Clash-Manager/pull/518)
-* [2026-04-29] PR #517: refactor(opt): deduplicate worker pool in RecruitmentService (Commit: c29ce537) [View](https://github.com/AlbiDR/Clash-Manager/pull/517)
-* [2026-04-29] PR #516: test(verify): implement RoyaleApiService unit tests (Commit: 727e3c9a) [View](https://github.com/AlbiDR/Clash-Manager/pull/516)
-* [2026-04-29] PR #515: fix(harden): secure recruitment pipeline diagnostics (Commit: 955b4792) [View](https://github.com/AlbiDR/Clash-Manager/pull/515)
-* [2026-04-28] PR #514: chore(deps): bump @vue/test-utils from ^2.4.8 to ^2.4.9 (Commit: 50c7f99f) [View](https://github.com/AlbiDR/Clash-Manager/pull/514)
-* [2026-04-28] PR #513: docs(readme): reconcile worker documentation with refactor (Commit: d1031154) [View](https://github.com/AlbiDR/Clash-Manager/pull/513)
-* [2026-04-28] PR #512: docs(tsdoc): document recruitment orchestrator interface and logic (Commit: ccc72b3d) [View](https://github.com/AlbiDR/Clash-Manager/pull/512)
-* [2026-04-28] PR #511: test(verify): add defensive coverage for RecruitmentService (Commit: 4c62d93b) [View](https://github.com/AlbiDR/Clash-Manager/pull/511)
-* [2026-04-28] PR #510: fix(harden): secure PWA matrix re-hydration and Worker bridge (Commit: 55b6c17a) [View](https://github.com/AlbiDR/Clash-Manager/pull/510)
-* [2026-04-27] PR #509: chore(deps): update major version watchlist (Commit: 498f6cfa) [View](https://github.com/AlbiDR/Clash-Manager/pull/509)
-* [2026-04-27] PR #508: docs(tsdoc): document Headhunter_Store.ts architectural role and logic (Commit: 2c64e76e) [View](https://github.com/AlbiDR/Clash-Manager/pull/508)
-* [2026-04-27] PR #507: docs(readme): create settings feature documentation (Commit: d03442a9) [View](https://github.com/AlbiDR/Clash-Manager/pull/507)
-* [2026-04-27] PR #506: Refactor Backend-Worker monolithic entry point into services (Commit: 3a272b17) [View](https://github.com/AlbiDR/Clash-Manager/pull/506)
-* [2026-04-27] PR #505: test(verify): extend schema validation coverage for Backend-Worker (Commit: 6592c499) [View](https://github.com/AlbiDR/Clash-Manager/pull/505)
-* [2026-04-27] PR #504: fix(harden): eliminate pathogens in HeadhunterStore (Commit: c22c5db5) [View](https://github.com/AlbiDR/Clash-Manager/pull/504)
-* [2026-04-26] PR #503: chore(deps): bump @types/express from ^4.17.21 to ^4.17.25 (Commit: 285cfbad) [View](https://github.com/AlbiDR/Clash-Manager/pull/503)
-* [2026-04-26] PR #502: fix(version): reconcile VALIDATION version drift (Commit: 4ceb8b74) [View](https://github.com/AlbiDR/Clash-Manager/pull/502)
-* [2026-04-26] PR #501: docs(tsdoc): document API_Public interface and normalization logic (Commit: bbe6d600) [View](https://github.com/AlbiDR/Clash-Manager/pull/501)
-* [2026-04-26] PR #500: docs(readme): reconcile core service orchestration (Commit: 7132fc77) [View](https://github.com/AlbiDR/Clash-Manager/pull/500)
-* [2026-04-26] PR #499: refactor(opt): standardize core services naming and types (Commit: ed9bf10a) [View](https://github.com/AlbiDR/Clash-Manager/pull/499)
-* [2026-04-26] PR #498: fix(harden): align tag validation boundary with GAS standard (Commit: 829080ee) [View](https://github.com/AlbiDR/Clash-Manager/pull/498)
-* [2026-04-26] PR #497: test(verify): add coverage for SkeletonSettingsCard.vue (Commit: 5cc8381c) [View](https://github.com/AlbiDR/Clash-Manager/pull/497)
-* [2026-04-25] PR #496: chore(deps): bump @vue/test-utils from ^2.4.6 to ^2.4.8 (Commit: 409e8bd2) [View](https://github.com/AlbiDR/Clash-Manager/pull/496)
-* [2026-04-25] PR #495: fix(version): reconcile CONTROLLER_WEBAPP version drift (Commit: b8418f95) [View](https://github.com/AlbiDR/Clash-Manager/pull/495)
-* [2026-04-25] PR #494: docs(tsdoc): document NetworkSettings.vue and enforce licensing (Commit: 11c2eb6d) [View](https://github.com/AlbiDR/Clash-Manager/pull/494)
-* [2026-04-25] PR #493: docs(readme): reconcile worker technical drifts and deepen architecture (Commit: 1bdf04b8) [View](https://github.com/AlbiDR/Clash-Manager/pull/493)
-* [2026-04-25] PR #492: fix(harden): Royale API validation boundaries in GAS (Commit: 04513877) [View](https://github.com/AlbiDR/Clash-Manager/pull/492)
-* [2026-04-25] PR #491: test(verify): add coverage for FeatureSettings.vue (Commit: 7626eec3) [View](https://github.com/AlbiDR/Clash-Manager/pull/491)
-* [2026-04-24] PR #490: chore(deps): align @types/google-apps-script to catalog in Backend-GAS (Commit: 1f7a16fc) [View](https://github.com/AlbiDR/Clash-Manager/pull/490)
-* [2026-04-24] PR #489: chore(version): no drift found (Commit: 8671f79e) [View](https://github.com/AlbiDR/Clash-Manager/pull/489)
-* [2026-04-24] PR #488: docs(tsdoc): document validation schemas in Backend-GAS (Commit: 10a0ccb0) [View](https://github.com/AlbiDR/Clash-Manager/pull/488)
-* [2026-04-24] PR #487: docs(readme): reconcile Backend-Worker limits and bounds (Commit: ed0cef43) [View](https://github.com/AlbiDR/Clash-Manager/pull/487)
-* [2026-04-24] PR #486: Add defensive coverage for ModeSettings.vue (Commit: 36671541) [View](https://github.com/AlbiDR/Clash-Manager/pull/486)
-* [2026-04-24] PR #485: Harden Roster Data Layer and Validation Boundaries (Commit: e2be6165) [View](https://github.com/AlbiDR/Clash-Manager/pull/485)
-* [2026-04-23] PR #484: chore(deps): bump vue from 3.5.32 to 3.5.33 (Commit: ff22a53d) [View](https://github.com/AlbiDR/Clash-Manager/pull/484)
-* [2026-04-23] PR #483: chore(version): no drift found (Commit: f9ec2623) [View](https://github.com/AlbiDR/Clash-Manager/pull/483)
-* [2026-04-23] PR #482: docs(tsdoc): document Webapp_Controller orchestration logic (Commit: 5c0d32fd) [View](https://github.com/AlbiDR/Clash-Manager/pull/482)
-* [2026-04-23] PR #481: docs(readme): reconcile Frontend-PWA structural truth (Commit: f3620061) [View](https://github.com/AlbiDR/Clash-Manager/pull/481)
-* [2026-04-23] PR #480: refactor(opt): standardize Settings feature orchestration (Commit: cefdc1c1) [View](https://github.com/AlbiDR/Clash-Manager/pull/480)
-* [2026-04-23] PR #479: test(verify): implement coverage for RecoverySettings component (Commit: 4a35857e) [View](https://github.com/AlbiDR/Clash-Manager/pull/479)
-* [2026-04-23] PR #478: fix(harden): secure external API boundary in Backend-GAS (Commit: dbbfca08) [View](https://github.com/AlbiDR/Clash-Manager/pull/478)
-* [2026-04-22] PR #477: chore(deps): bump vitest suite from 4.1.4 to 4.1.5 (Commit: 3cfdcc33) [View](https://github.com/AlbiDR/Clash-Manager/pull/477)
-* [2026-04-22] PR #476: docs(tsdoc): enhance useLeaderboard architectural context (Commit: 33828001) [View](https://github.com/AlbiDR/Clash-Manager/pull/476)
-* [2026-04-22] PR #475: docs(readme): reconcile gas architecture and version drift (Commit: d86604a9) [View](https://github.com/AlbiDR/Clash-Manager/pull/475)
-* [2026-04-22] PR #474: test(verify): add comprehensive coverage for GAS validation schemas (Commit: 8a8fb64b) [View](https://github.com/AlbiDR/Clash-Manager/pull/474)
-* [2026-04-22] PR #473: Harden Backend-GAS Raw Feed Boundary (Commit: 5d3f74a8) [View](https://github.com/AlbiDR/Clash-Manager/pull/473)
-* [2026-04-21] PR #472: chore(deps): bump @types/google-apps-script from 1.0.83 to 1.0.100 (Commit: 0179f1bb) [View](https://github.com/AlbiDR/Clash-Manager/pull/472)
-* [2026-04-21] PR #471: Version Integrity Audit - 2026-06-03 (No Drift Found) (Commit: 183573fa) [View](https://github.com/AlbiDR/Clash-Manager/pull/471)
-* [2026-04-21] PR #470: docs(tsdoc): enhance useSettings architectural context (Commit: 8dfeb23e) [View](https://github.com/AlbiDR/Clash-Manager/pull/470)
-* [2026-04-21] PR #469: docs(readme): reconcile laboratory technical blueprints (Commit: 126b4131) [View](https://github.com/AlbiDR/Clash-Manager/pull/469)
-* [2026-04-21] PR #468: test(verify): implement coverage for AppearanceSettings.vue (Commit: bfa2d3e3) [View](https://github.com/AlbiDR/Clash-Manager/pull/468)
-* [2026-04-20] PR #467: chore(deps): bump vue-tsc from 3.2.6 to 3.2.7 (Commit: 1d7f0e1d) [View](https://github.com/AlbiDR/Clash-Manager/pull/467)
-* [2026-04-20] PR #466: docs(tsdoc): document core formatters and enforce licensing (Commit: e7f2b772) [View](https://github.com/AlbiDR/Clash-Manager/pull/466)
-* [2026-04-20] PR #465: docs(readme): synchronize Backend-GAS version badge to v14.3.2 (Commit: c3bca333) [View](https://github.com/AlbiDR/Clash-Manager/pull/465)
-* [2026-04-20] PR #464: perf(opt): standardize laboratory orchestration and naming (Commit: c573c6d5) [View](https://github.com/AlbiDR/Clash-Manager/pull/464)
-* [2026-04-20] PR #463: test(verify): extend schemas coverage for hardening constraints (Commit: 79dcce13) [View](https://github.com/AlbiDR/Clash-Manager/pull/463)
-* [2026-04-20] PR #462: fix(harden): secure Backend-GAS write boundaries and eliminate pathogens (Commit: 22f84f9d) [View](https://github.com/AlbiDR/Clash-Manager/pull/462)
-* [2026-04-19] PR #461: chore(deps): bump jsdom from 24.1.0 to 24.1.3 (Commit: 76c84516) [View](https://github.com/AlbiDR/Clash-Manager/pull/461)
-* [2026-04-19] PR #460: chore(version): no drift found (Commit: 10e9c99c) [View](https://github.com/AlbiDR/Clash-Manager/pull/460)
-* [2026-04-19] PR #459: docs(tsdoc): document useBadge hardware broker (Commit: b5fc9494) [View](https://github.com/AlbiDR/Clash-Manager/pull/459)
-* [2026-04-19] PR #458: docs(readme): reconcile Backend-Worker drifts (Commit: 5194d393) [View](https://github.com/AlbiDR/Clash-Manager/pull/458)
-* [2026-04-19] PR #457: perf(opt): standardize Roster and Headhunter features (Commit: 2b0753c0) [View](https://github.com/AlbiDR/Clash-Manager/pull/457)
-* [2026-04-19] PR #456: Hardening: Backend-Worker Input Bounding & Resource Limits (Commit: 696b7f79) [View](https://github.com/AlbiDR/Clash-Manager/pull/456)
-* [2026-04-19] PR #455: test(verify): implement coverage for TrajectoryList.vue (Commit: 7c87be2c) [View](https://github.com/AlbiDR/Clash-Manager/pull/455)
-* [2026-04-18] PR #454: chore(deps): bump @vue/tsconfig from ^0.8.1 to ^0.9.1 (Commit: 8b543171) [View](https://github.com/AlbiDR/Clash-Manager/pull/454)
-* [2026-04-18] PR #453: chore(version): no drift found (Commit: 1646b54b) [View](https://github.com/AlbiDR/Clash-Manager/pull/453)
-* [2026-04-18] PR #452: docs(tsdoc): document and harden useSyntheticMode.ts (Commit: cc2ecb16) [View](https://github.com/AlbiDR/Clash-Manager/pull/452)
-* [2026-04-18] PR #451: docs(readme): reconcile pwa service drift (Commit: 2ef9c520) [View](https://github.com/AlbiDR/Clash-Manager/pull/451)
-* [2026-04-18] PR #450: perf(opt): refactor laboratory trajectory rendering and clean up pathogens (Commit: 40eca930) [View](https://github.com/AlbiDR/Clash-Manager/pull/450)
-* [2026-04-18] PR #449: test(verify): backend-worker defensive coverage expansion (Commit: 76526c6e) [View](https://github.com/AlbiDR/Clash-Manager/pull/449)
-* [2026-04-18] PR #448: fix(harden): eliminate anemic variable pathogens in PWA core (Commit: 15a367f3) [View](https://github.com/AlbiDR/Clash-Manager/pull/448)
-* [2026-04-17] PR #447: chore(deps): update major version watchlist (Commit: ca098a6a) [View](https://github.com/AlbiDR/Clash-Manager/pull/447)
-* [2026-04-17] PR #446: docs(tsdoc): document useStoragePersistence service (Commit: ede49043) [View](https://github.com/AlbiDR/Clash-Manager/pull/446)
-* [2026-04-17] PR #445: docs(readme): reconcile technical drift in Backend-Worker (Commit: 49e36184) [View](https://github.com/AlbiDR/Clash-Manager/pull/445)
-* [2026-04-17] PR #444: perf(opt): refactor settings feature for structural integrity (Commit: 7782b779) [View](https://github.com/AlbiDR/Clash-Manager/pull/444)
-* [2026-04-17] PR #443: fix(harden): secure push subscription memory boundary (Commit: 6ccdb732) [View](https://github.com/AlbiDR/Clash-Manager/pull/443)
-* [2026-04-16] PR #442: chore(deps): update major version watchlist (Commit: b38ecdd1) [View](https://github.com/AlbiDR/Clash-Manager/pull/442)
-* [2026-04-16] PR #441: docs(tsdoc): document useBlueprintMode and enforce licensing (Commit: ebe2f510) [View](https://github.com/AlbiDR/Clash-Manager/pull/441)
-* [2026-04-16] PR #440: docs(readme): synchronize useConsoleController layout orchestration (Commit: e9e0bb8f) [View](https://github.com/AlbiDR/Clash-Manager/pull/440)
-* [2026-04-16] PR #439: test(verify): enhance useConsoleController stale logic and metadata coverage (Commit: ba61eff1) [View](https://github.com/AlbiDR/Clash-Manager/pull/439)
-* [2026-04-16] PR #438: fix(harden): secure /fetch endpoint with robust SSRF validation (Commit: 734b568a) [View](https://github.com/AlbiDR/Clash-Manager/pull/438)
-* [2026-04-15] PR #437: chore(deps): remove redundant @google/clasp dependency (Commit: 66b7826c) [View](https://github.com/AlbiDR/Clash-Manager/pull/437)
-* [2026-04-15] PR #436: chore(version): no drift found (Commit: de5c873b) [View](https://github.com/AlbiDR/Clash-Manager/pull/436)
-* [2026-04-15] PR #435: docs(tsdoc): document useShareTarget service (Commit: c270498b) [View](https://github.com/AlbiDR/Clash-Manager/pull/435)
-* [2026-04-15] PR #434: docs(readme): reconcile worker error classification (Commit: 597448f7) [View](https://github.com/AlbiDR/Clash-Manager/pull/434)
-* [2026-04-15] PR #433: refactor(opt): standardize card orchestration and prune feature controllers (Commit: 5c53487c) [View](https://github.com/AlbiDR/Clash-Manager/pull/433)
-* [2026-04-15] PR #432: test(verify): implement defensive coverage for NotificationSettings (Commit: 0af42cbc) [View](https://github.com/AlbiDR/Clash-Manager/pull/432)
-* [2026-04-15] PR #431: fix(harden): structural error reporting in worker (Commit: b5e3f439) [View](https://github.com/AlbiDR/Clash-Manager/pull/431)
-* [2026-04-14] PR #430: chore(deps): update major version watchlist for Vite 8.0 (Commit: 1719ffb3) [View](https://github.com/AlbiDR/Clash-Manager/pull/430)
-* [2026-04-14] PR #429: docs(readme): deepen core service documentation in PWA (Commit: 9e51117f) [View](https://github.com/AlbiDR/Clash-Manager/pull/429)
-* [2026-04-14] PR #428: docs(tsdoc): document useBroadcastChannel hardware broker (Commit: 7b1c036b) [View](https://github.com/AlbiDR/Clash-Manager/pull/428)
-* [2026-04-14] PR #427: refactor(opt): standardize card metadata and harden PWA core types (Commit: a8ce9eff) [View](https://github.com/AlbiDR/Clash-Manager/pull/427)
-* [2026-04-14] PR #426: fix(harden): secure laboratory persistence boundaries (Commit: 58453d9a) [View](https://github.com/AlbiDR/Clash-Manager/pull/426)
-* [2026-04-13] PR #425: chore(deps): update major version watchlist (Commit: e52161d1) [View](https://github.com/AlbiDR/Clash-Manager/pull/425)
-* [2026-04-13] PR #424: fix(version): reconcile Backend-GAS header drift (Commit: d1d82d45) [View](https://github.com/AlbiDR/Clash-Manager/pull/424)
-* [2026-04-13] PR #423: docs(tsdoc): document useShare hardware broker (Commit: d5012083) [View](https://github.com/AlbiDR/Clash-Manager/pull/423)
-* [2026-04-13] PR #422: docs(readme): reconcile worker hardening and security boundaries (Commit: ee7bc8fd) [View](https://github.com/AlbiDR/Clash-Manager/pull/422)
-* [2026-04-13] PR #421: refactor(opt): deduplicate synchronization logic in clash data store (Commit: 116f1fb2) [View](https://github.com/AlbiDR/Clash-Manager/pull/421)
-* [2026-04-13] PR #420: test(verify): implement defensive coverage for BaseCardSkeleton (Commit: 96306e9b) [View](https://github.com/AlbiDR/Clash-Manager/pull/420)
-* [2026-04-13] PR #419: Harden Worker Auth Boundary and Royale API Quota Protection (Commit: 9ab80fab) [View](https://github.com/AlbiDR/Clash-Manager/pull/419)
-* [2026-04-12] PR #418: chore(deps): update major version watchlist (Commit: 580fd2aa) [View](https://github.com/AlbiDR/Clash-Manager/pull/418)
-* [2026-04-12] PR #417: Reconcile War Intelligence into system manifest (Commit: 33917421) [View](https://github.com/AlbiDR/Clash-Manager/pull/417)
-* [2026-04-12] PR #416: docs(tsdoc): enhance sort strategies documentation and enforce licensing (Commit: 4b7fd487) [View](https://github.com/AlbiDR/Clash-Manager/pull/416)
-* [2026-04-12] PR #415: Reconcile worker hardening boundaries in README (Commit: 98325216) [View](https://github.com/AlbiDR/Clash-Manager/pull/415)
-* [2026-04-12] PR #414: test(verify): harden worker schema validation boundaries (Commit: b40f0036) [View](https://github.com/AlbiDR/Clash-Manager/pull/414)
-* [2026-04-12] PR #413: fix(harden): enforce array length limits on scan schemas (Commit: d1b8bea7) [View](https://github.com/AlbiDR/Clash-Manager/pull/413)
-* [2026-04-11] PR #412: chore(deps): update major version watchlist (Commit: 00215df7) [View](https://github.com/AlbiDR/Clash-Manager/pull/412)
-* [2026-04-11] PR #411: docs(tsdoc): document useNetworkInfo hardware broker (Commit: d767614e) [View](https://github.com/AlbiDR/Clash-Manager/pull/411)
-* [2026-04-11] PR #410: Document Capacity-Aware Scouting and Scoring Logic (Commit: 449d837f) [View](https://github.com/AlbiDR/Clash-Manager/pull/410)
-* [2026-04-11] PR #409: test(verify): add defensive coverage for NetworkSettings component (Commit: ebee66f6) [View](https://github.com/AlbiDR/Clash-Manager/pull/409)
-* [2026-04-10] PR #408: chore(deps): bump vitest suite from 4.1.3 to 4.1.4 (Commit: 71774dde) [View](https://github.com/AlbiDR/Clash-Manager/pull/408)
-* [2026-04-10] PR #407: docs(tsdoc): document useExternalLink core service (Commit: 860df9c7) [View](https://github.com/AlbiDR/Clash-Manager/pull/407)
-* [2026-04-10] PR #406: docs(readme): reconcile core service documentation (Commit: e167aa76) [View](https://github.com/AlbiDR/Clash-Manager/pull/406)
-* [2026-04-10] PR #405: refactor(opt): centralize card metadata in console controller (Commit: e1e5b22f) [View](https://github.com/AlbiDR/Clash-Manager/pull/405)
-* [2026-04-10] PR #404: test(verify): implement useUiCoordinator coverage (Commit: 11f94001) [View](https://github.com/AlbiDR/Clash-Manager/pull/404)
-* [2026-04-10] PR #403: Harden GasClient Validation Boundary & Pathogen Elimination (Commit: 6e62e986) [View](https://github.com/AlbiDR/Clash-Manager/pull/403)
-* [2026-04-09] PR #402: chore(version): no drift found (Commit: 5e90fbf0) [View](https://github.com/AlbiDR/Clash-Manager/pull/402)
-* [2026-04-09] PR #401: docs(tsdoc): document useDeepLinkHandler.ts (Commit: 71a12915) [View](https://github.com/AlbiDR/Clash-Manager/pull/401)
-* [2026-04-09] PR #400: docs(readme): reconcile hub state schema and quota guard (Commit: dcc9f0ca) [View](https://github.com/AlbiDR/Clash-Manager/pull/400)
-* [2026-04-09] PR #399: refactor(opt): extract BackendRefresher behavioral logic into composable (Commit: 69d0ed37) [View](https://github.com/AlbiDR/Clash-Manager/pull/399)
-* [2026-04-09] PR #398: test(verify): cover BackendRefresher component (Commit: 959f46a4) [View](https://github.com/AlbiDR/Clash-Manager/pull/398)
-* [2026-04-09] PR #397: fix(harden): remove CleanStack pathogens (any, redundant casts, anemic variables) (Commit: 14dcc234) [View](https://github.com/AlbiDR/Clash-Manager/pull/397)
-* [2026-04-08] PR #396: chore(deps): bump vitest suite from 4.1.2 to 4.1.3 (Commit: 6b7d3792) [View](https://github.com/AlbiDR/Clash-Manager/pull/396)
-* [2026-04-08] PR #395: fix(version): reconcile PayloadKernel version drift (Commit: 2e99d771) [View](https://github.com/AlbiDR/Clash-Manager/pull/395)
-* [2026-04-08] PR #394: docs(tsdoc): document laboratory registry constants (Commit: ed4f4afd) [View](https://github.com/AlbiDR/Clash-Manager/pull/394)
-* [2026-04-08] PR #393: docs(readme): reconcile transport drift in PWA (Commit: 0fd2d4e8) [View](https://github.com/AlbiDR/Clash-Manager/pull/393)
-* [2026-04-08] PR #392: perf(opt): optimize laboratory trajectory rendering (Commit: 430f1594) [View](https://github.com/AlbiDR/Clash-Manager/pull/392)
-* [2026-04-08] PR #391: test(verify): add comprehensive unit tests for SettingsCard.vue (Commit: b2cd857a) [View](https://github.com/AlbiDR/Clash-Manager/pull/391)
-* [2026-04-08] PR #390: fix(harden): resolve failure-mode deadlock in refreshWorker (Commit: 31d2b7b1) [View](https://github.com/AlbiDR/Clash-Manager/pull/390)
-* [2026-04-07] PR #389: chore(deps): bump vue-tsc from ^3.2.5 to ^3.2.6 (Commit: 8728b8bd) [View](https://github.com/AlbiDR/Clash-Manager/pull/389)
-* [2026-04-07] PR #388: fix(version): reconcile Backend-Worker version drift (Commit: c7181f28) [View](https://github.com/AlbiDR/Clash-Manager/pull/388)
-* [2026-04-07] PR #387: Document useWakeLock composable and enforce licensing (Commit: 14a31f3f) [View](https://github.com/AlbiDR/Clash-Manager/pull/387)
-* [2026-04-07] PR #386: docs(readme): reconcile versioning and security drift v10.1.4 (Commit: 30a19811) [View](https://github.com/AlbiDR/Clash-Manager/pull/386)
-* [2026-04-07] PR #385: test(verify): expand useConsoleController coverage (Commit: 3016ed9b) [View](https://github.com/AlbiDR/Clash-Manager/pull/385)
-* [2026-04-07] PR #384: fix(harden): validate manual sync config and correct hub doc (Commit: b9ae078b) [View](https://github.com/AlbiDR/Clash-Manager/pull/384)
-* [2026-04-06] PR #383: chore(deps): bump @ast-grep/cli from 0.42.0 to 0.42.1 (Commit: cb44f766) [View](https://github.com/AlbiDR/Clash-Manager/pull/383)
-* [2026-04-06] PR #382: fix(version): reconcile Backend-Worker version drift (Commit: 30409c5b) [View](https://github.com/AlbiDR/Clash-Manager/pull/382)
-* [2026-04-06] PR #381: docs(tsdoc): document architectural context and actions for useClashDataStore (Commit: eb013c2e) [View](https://github.com/AlbiDR/Clash-Manager/pull/381)
-* [2026-04-06] PR #380: docs(readme): reconcile Backend-GAS version badge (Commit: 1a5f4fbc) [View](https://github.com/AlbiDR/Clash-Manager/pull/380)
-* [2026-04-06] PR #379: perf(opt): centralize v-memo keys and optimize card metadata (Commit: fb8d36b1) [View](https://github.com/AlbiDR/Clash-Manager/pull/379)
-* [2026-04-06] PR #378: test(verify): extend GasClient resilience and sad path coverage (Commit: 76401b1a) [View](https://github.com/AlbiDR/Clash-Manager/pull/378)
-* [2026-04-06] PR #377: fix(harden): close unauthenticated privileged endpoint gap (Commit: 227e00a2) [View](https://github.com/AlbiDR/Clash-Manager/pull/377)
-* [2026-04-05] PR #376: chore(deps): bump dependency-cruiser from ^17.3.9 to ^17.3.10 (Commit: 727608bb) [View](https://github.com/AlbiDR/Clash-Manager/pull/376)
-* [2026-04-05] PR #375: fix(version): reconcile GAS NETWORK version drift (Commit: 1e9bae44) [View](https://github.com/AlbiDR/Clash-Manager/pull/375)
-* [2026-04-05] PR #374: docs(tsdoc): annotate laboratory scoring strategy logic (Commit: 3f47bfec) [View](https://github.com/AlbiDR/Clash-Manager/pull/374)
-* [2026-04-05] PR #373: docs(readme): synchronize system version to v14.3.5 (Commit: ca067e0a) [View](https://github.com/AlbiDR/Clash-Manager/pull/373)
-* [2026-04-05] PR #372: test(verify): expand GasClient defensive coverage (Commit: 56dfa401) [View](https://github.com/AlbiDR/Clash-Manager/pull/372)
-* [2026-04-05] PR #371: fix(harden): introduce 30s timeout to Worker Hub sync daemon (Commit: a226b13a) [View](https://github.com/AlbiDR/Clash-Manager/pull/371)
-* [2026-04-04] PR #370: chore(deps): bump vue from 3.5.31 to 3.5.32 (Commit: 73d18e9e) [View](https://github.com/AlbiDR/Clash-Manager/pull/370)
-* [2026-04-04] PR #369: fix(version): reconcile HEADHUNTER version drift (Commit: 818dd8d9) [View](https://github.com/AlbiDR/Clash-Manager/pull/369)
-* [2026-04-04] PR #368: docs(tsdoc): document useProgressiveList architectural role and logic (Commit: c9b4aaf5) [View](https://github.com/AlbiDR/Clash-Manager/pull/368)
-* [2026-04-04] PR #367: docs(readme): reconcile GAS version drift and refine laboratory strategy documentation (Commit: ff93cb39) [View](https://github.com/AlbiDR/Clash-Manager/pull/367)
-* [2026-04-04] PR #366: test(verify): extend useClashDataStore coverage and identify logic cracks (Commit: 099627e7) [View](https://github.com/AlbiDR/Clash-Manager/pull/366)
-* [2026-04-04] PR #365: Harden Backend-Worker Key Rotation and Auth Boundary (Commit: 746f0ee7) [View](https://github.com/AlbiDR/Clash-Manager/pull/365)
-* [2026-04-03] PR #364: chore(deps): bump knip from 6.2.0 to 6.3.0 (Commit: e4498141) [View](https://github.com/AlbiDR/Clash-Manager/pull/364)
-* [2026-04-03] PR #363: test(verify): add sad path coverage for useLaboratory.ts (Commit: 2986e094) [View](https://github.com/AlbiDR/Clash-Manager/pull/363)
-* [2026-04-03] PR #362: Document useShowcaseMode logic and side effects (Commit: 16b0ccc0) [View](https://github.com/AlbiDR/Clash-Manager/pull/362)
-* [2026-04-03] PR #361: docs(readme): reconcile core orchestration and infrastructure (Commit: 5165b209) [View](https://github.com/AlbiDR/Clash-Manager/pull/361)
-* [2026-04-03] PR #360: refactor(opt): consolidate console orchestration and optimize filter caching (Commit: 3f65b389) [View](https://github.com/AlbiDR/Clash-Manager/pull/360)
-* [2026-04-03] PR #359: fix(harden): enforce strict laboratory validation boundary (Commit: fdfbfce6) [View](https://github.com/AlbiDR/Clash-Manager/pull/359)
-* [2026-04-02] PR #358: chore(deps): bump knip from 6.1.1 to 6.2.0 (Commit: a65448ee) [View](https://github.com/AlbiDR/Clash-Manager/pull/358)
-* [2026-04-02] PR #357: test(verify): enhance useApiState defensive coverage (Commit: 68e7ac67) [View](https://github.com/AlbiDR/Clash-Manager/pull/357)
-* [2026-04-02] PR #356: docs(tsdoc): annotate useBenchmarking service and internal logic (Commit: 5abcf672) [View](https://github.com/AlbiDR/Clash-Manager/pull/356)
-* [2026-04-02] PR #355: docs(readme): reconcile status resolver priority tiers (Commit: 581be0c0) [View](https://github.com/AlbiDR/Clash-Manager/pull/355)
-* [2026-04-02] PR #354: test(verify): add component tests for SummaryCard.vue (Commit: 6be1a62d) [View](https://github.com/AlbiDR/Clash-Manager/pull/354)
-* [2026-04-02] PR #353: fix(harden): remove any pathogens from useBenchmarking (Commit: 7976b689) [View](https://github.com/AlbiDR/Clash-Manager/pull/353)
-* [2026-04-01] PR #352: chore(deps): bump knip from 6.1.0 to 6.1.1 (Commit: 85765090) [View](https://github.com/AlbiDR/Clash-Manager/pull/352)
-* [2026-04-01] PR #351: test(verify): enhance useProgressiveList coverage for idle budgeting and cleanup (Commit: 9adfe5fe) [View](https://github.com/AlbiDR/Clash-Manager/pull/351)
-* [2026-04-01] PR #350: docs(tsdoc): annotate useCardMechanics with architectural context (Commit: b761f153) [View](https://github.com/AlbiDR/Clash-Manager/pull/350)
-* [2026-04-01] PR #349: docs(readme): reconcile worker api and matrix schemas (Commit: 969e5d90) [View](https://github.com/AlbiDR/Clash-Manager/pull/349)
-* [2026-04-01] PR #348: refactor(opt): internalize store fallbacks in useConsoleController (Commit: d09468d3) [View](https://github.com/AlbiDR/Clash-Manager/pull/348)
-* [2026-04-01] PR #347: fix(harden): RoyaleClanMemberSchema integrity (missing trophies) (Commit: 5679ad15) [View](https://github.com/AlbiDR/Clash-Manager/pull/347)
-* [2026-04-01] PR #346: test(verify): add comprehensive tests for worker core logic (Commit: 8fc7152f) [View](https://github.com/AlbiDR/Clash-Manager/pull/346)
-* [2026-03-31] PR #345: chore(deps): bump @vitejs/plugin-vue from 6.0.3 to 6.0.5 (Commit: 48ea6c94) [View](https://github.com/AlbiDR/Clash-Manager/pull/345)
-* [2026-03-31] PR #344: test(verify): implement defensive coverage for DataSchemas (Commit: 85dca00d) [View](https://github.com/AlbiDR/Clash-Manager/pull/344)
-* [2026-03-31] PR #343: docs(tsdoc): document useToast service and enforce licensing (Commit: 0381a6d1) [View](https://github.com/AlbiDR/Clash-Manager/pull/343)
-* [2026-03-31] PR #342: docs(readme): reconcile hub state response example (Commit: f91d8820) [View](https://github.com/AlbiDR/Clash-Manager/pull/342)
-* [2026-03-31] PR #341: test(verify): add defensive coverage for VaultCard component (Commit: df417ed6) [View](https://github.com/AlbiDR/Clash-Manager/pull/341)
-* [2026-03-31] PR #340: fix(harden): purge any plague and dead state from useApiState (Commit: c1150eb5) [View](https://github.com/AlbiDR/Clash-Manager/pull/340)
-* [2026-03-30] PR #339: chore(deps): bump knip from 6.0.6 to 6.1.0 (Commit: 7f92dbf6) [View](https://github.com/AlbiDR/Clash-Manager/pull/339)
-* [2026-03-30] PR #338: docs(tsdoc): annotate RecruitCard feature component (Commit: c7727651) [View](https://github.com/AlbiDR/Clash-Manager/pull/338)
-* [2026-03-30] PR #337: docs(readme): reconcile worker hub schema and resource management (Commit: c55fdf39) [View](https://github.com/AlbiDR/Clash-Manager/pull/337)
-* [2026-03-30] PR #336: refactor(opt): optimize useProgressiveList rendering engine (Commit: e000b522) [View](https://github.com/AlbiDR/Clash-Manager/pull/336)
-* [2026-03-30] PR #335: test(verify): add coverage for ParameterCard.vue (Commit: 65658c0e) [View](https://github.com/AlbiDR/Clash-Manager/pull/335)
-* [2026-03-30] PR #334: fix(harden): purge any plague from useToast timer (Commit: a39262f7) [View](https://github.com/AlbiDR/Clash-Manager/pull/334)
-* [2026-03-29] PR #333: chore(deps): remove redundant ts-node dependency (Commit: 8c39b684) [View](https://github.com/AlbiDR/Clash-Manager/pull/333)
-* [2026-03-29] PR #332: test(verify): increase defensive coverage for useBadge service (Commit: a849917d) [View](https://github.com/AlbiDR/Clash-Manager/pull/332)
-* [2026-03-29] PR #331: docs(tsdoc): document validation schemas in backend worker (Commit: 29513aaf) [View](https://github.com/AlbiDR/Clash-Manager/pull/331)
-* [2026-03-29] PR #330: docs(readme): Reconcile Worker Hub Metadata Drift (Commit: f1c48517) [View](https://github.com/AlbiDR/Clash-Manager/pull/330)
-* [2026-03-29] PR #329: test(verify): extend laboratory simulation logic coverage (Commit: c34b1639) [View](https://github.com/AlbiDR/Clash-Manager/pull/329)
-* [2026-03-29] PR #328: fix(harden): enforce runtime tag normalization and prune redundant logic (Commit: c91dba8a) [View](https://github.com/AlbiDR/Clash-Manager/pull/328)
-* [2026-03-28] PR #327: chore(deps): bump knip from 6.0.2 to 6.0.6 (Commit: 13e7820c) [View](https://github.com/AlbiDR/Clash-Manager/pull/327)
-* [2026-03-28] PR #326: test(verify): add coverage for TrajectoryItem component (Commit: ece8b3e1) [View](https://github.com/AlbiDR/Clash-Manager/pull/326)
-* [2026-03-28] PR #325: docs(tsdoc): align worker entry point with ADR standards (Commit: cf6244ee) [View](https://github.com/AlbiDR/Clash-Manager/pull/325)
-* [2026-03-28] PR #324: docs(readme): synchronize and deepen structural documentation (Commit: a4b5d247) [View](https://github.com/AlbiDR/Clash-Manager/pull/324)
-* [2026-03-28] PR #323: test(verify): add coverage for ToastContainer (Commit: 5caf8141) [View](https://github.com/AlbiDR/Clash-Manager/pull/323)
-* [2026-03-28] PR #322: fix(harden): integrate quota guarding for high-volume operations (Commit: d67d2850) [View](https://github.com/AlbiDR/Clash-Manager/pull/322)
-* [2026-03-27] PR #321: chore(deps): bump vitest from 4.1.0 to 4.1.2 (Commit: 36817d77) [View](https://github.com/AlbiDR/Clash-Manager/pull/321)
-* [2026-03-27] PR #320: test(verify): add coverage for HeaderInfoOverlay (Commit: 01ebdf01) [View](https://github.com/AlbiDR/Clash-Manager/pull/320)
-* [2026-03-27] PR #319: docs(tsdoc): annotate MemberCard with architectural context and licensing (Commit: 17f93226) [View](https://github.com/AlbiDR/Clash-Manager/pull/319)
-* [2026-03-27] PR #318: docs(readme): reconcile RPeS scoring weights in GAS core (Commit: 3beb18a9) [View](https://github.com/AlbiDR/Clash-Manager/pull/318)
-* [2026-03-27] PR #317: refactor(opt): extract StatsGrid to shared UI (Commit: b45f3d88) [View](https://github.com/AlbiDR/Clash-Manager/pull/317)
-* [2026-03-27] PR #316: test(verify): extend useConsoleController coverage (Commit: c50fabb4) [View](https://github.com/AlbiDR/Clash-Manager/pull/316)
-* [2026-03-27] PR #315: fix(harden): prune redundant logic and annotate state in worker (Commit: 03da758b) [View](https://github.com/AlbiDR/Clash-Manager/pull/315)
-* [2026-03-26] PR #314: chore(deps): bump vue from 3.5.30 to 3.5.31 (Commit: 13d65471) [View](https://github.com/AlbiDR/Clash-Manager/pull/314)
-* [2026-03-26] PR #313: test(verify): harden data boundaries and UI badges (Nightly) (Commit: fedac8e2) [View](https://github.com/AlbiDR/Clash-Manager/pull/313)
-* [2026-03-26] PR #312: docs(tsdoc): annotate RosterView with architectural context and licensing (Commit: c6a75d89) [View](https://github.com/AlbiDR/Clash-Manager/pull/312)
-* [2026-03-26] PR #311: docs(readme): add player identity badges to shared ui documentation (Commit: 005a4200) [View](https://github.com/AlbiDR/Clash-Manager/pull/311)
-* [2026-03-26] PR #310: refactor(opt): unify console card state resolution (Commit: 6041ebb4) [View](https://github.com/AlbiDR/Clash-Manager/pull/310)
-* [2026-03-26] PR #309: test(verify): add unit tests for ScoreBadge.vue (Commit: 3d2f8858) [View](https://github.com/AlbiDR/Clash-Manager/pull/309)
-* [2026-03-26] PR #308: fix(harden): enforce Valibot validation for Worker Hub response (Commit: 396caa48) [View](https://github.com/AlbiDR/Clash-Manager/pull/308)
-* [2026-03-25] PR #306: fix: resolve worker data integrity and sync drift (Commit: 378951b4) [View](https://github.com/AlbiDR/Clash-Manager/pull/306)
-* [2026-03-25] PR #305: chore(deps): bump express from 4.18.2 to 4.22.1 (Commit: d63b5f8c) [View](https://github.com/AlbiDR/Clash-Manager/pull/305)
-* [2026-03-25] PR #304: test(verify): add RecruitCard component tests (Commit: 509bf7ef) [View](https://github.com/AlbiDR/Clash-Manager/pull/304)
-* [2026-03-25] PR #303: docs(readme): synchronize worker api specifications (Commit: f63b01e0) [View](https://github.com/AlbiDR/Clash-Manager/pull/303)
-* [2026-03-25] PR #302: docs(tsdoc): document architectural context and constraints in useBackHandler (Commit: a70450ce) [View](https://github.com/AlbiDR/Clash-Manager/pull/302)
-* [2026-03-25] PR #301: refactor(opt): standardize player identity badges in roster (Commit: bb1ce13d) [View](https://github.com/AlbiDR/Clash-Manager/pull/301)
-* [2026-03-25] PR #300: test(verify): add unit tests for TrophyBadge component (Commit: 27ab4308) [View](https://github.com/AlbiDR/Clash-Manager/pull/300)
-* [2026-03-24] PR #299: fix(harden): secure worker boundaries and purge pathogens (Commit: 846bfd3f) [View](https://github.com/AlbiDR/Clash-Manager/pull/299)
-* [2026-03-24] PR #298: perf(opt): deduplicate player stat rendering via shared badge components (Commit: fdf2c992) [View](https://github.com/AlbiDR/Clash-Manager/pull/298)
-* [2026-03-24] PR #297: chore(deps): align @google/clasp to catalog (Commit: 0e91f510) [View](https://github.com/AlbiDR/Clash-Manager/pull/297)
-* [2026-03-24] PR #296: test(verify): add comprehensive unit tests for MomentumPill.vue (Commit: 1c104fad) [View](https://github.com/AlbiDR/Clash-Manager/pull/296)
-* [2026-03-24] PR #295: fix: resolve recruit truncation and sync issues (Commit: 67a26a78) [View](https://github.com/AlbiDR/Clash-Manager/pull/295)
-* [2026-03-24] PR #294: docs(tsdoc): enhance GasClient architectural context and licensing (Commit: 708e8b77) [View](https://github.com/AlbiDR/Clash-Manager/pull/294)
-* [2026-03-24] PR #293: docs(readme): synchronize and deepen Frontend-PWA Technical Specifications (Commit: c6eacf33) [View](https://github.com/AlbiDR/Clash-Manager/pull/293)
-* [2026-03-24] PR #292: test(verify): expand GasClient coverage and Worker Hub fallbacks (Commit: dff6d1c3) [View](https://github.com/AlbiDR/Clash-Manager/pull/292)
-* [2026-03-23] PR #291: chore(deps): bump @google/clasp from 3.1.0 to 3.3.0 (Commit: e2d65004) [View](https://github.com/AlbiDR/Clash-Manager/pull/291)
-* [2026-03-23] PR #290: test(verify): add unit tests for MemberCard component (Commit: 949004e1) [View](https://github.com/AlbiDR/Clash-Manager/pull/290)
-* [2026-03-23] PR #289: Enhance useBatchQueue TSDoc and Logic Annotations (Commit: 8884185b) [View](https://github.com/AlbiDR/Clash-Manager/pull/289)
-* [2026-03-23] PR #288: docs(readme): sync client version with package.json (Commit: 69a2adb1) [View](https://github.com/AlbiDR/Clash-Manager/pull/288)
-* [2026-03-23] PR #287: Consolidate Console Layout Events and Fix Batch Queue State Leaks (Commit: 3765dd87) [View](https://github.com/AlbiDR/Clash-Manager/pull/287)
-* [2026-03-23] PR #286: test(verify): extend validation boundary coverage for Worker Hub schemas (Commit: 93ecb2fe) [View](https://github.com/AlbiDR/Clash-Manager/pull/286)
-* [2026-03-23] PR #285: fix(harden): secure worker hub auth boundary and enforce validation (Commit: 583bb487) [View](https://github.com/AlbiDR/Clash-Manager/pull/285)
-* [2026-03-22] PR #284: chore(deps): bump esbuild from 0.27.3 to 0.27.4 (Commit: dc251a5a) [View](https://github.com/AlbiDR/Clash-Manager/pull/284)
-* [2026-03-22] PR #283: Implement defensive coverage for WorkerHubController (Commit: e8c26eec) [View](https://github.com/AlbiDR/Clash-Manager/pull/283)
-* [2026-03-22] PR #282: docs(tsdoc): enhance useConsoleController documentation and enforce licensing (Commit: b55c4203) [View](https://github.com/AlbiDR/Clash-Manager/pull/282)
-* [2026-03-22] PR #281: docs(readme): create roster feature documentation (Commit: 9dccbc9d) [View](https://github.com/AlbiDR/Clash-Manager/pull/281)
-* [2026-03-22] PR #280: Optimization: Centralize Recruitment Engine and Refine Console Orchestration (Commit: a6430ea5) [View](https://github.com/AlbiDR/Clash-Manager/pull/280)
-* [2026-03-22] PR #279: test(verify): add comprehensive unit tests for Toast.vue (Commit: 9a6845b9) [View](https://github.com/AlbiDR/Clash-Manager/pull/279)
-* [2026-03-22] PR #278: fix(harden): enforce validation boundary for Worker Hub data (Commit: af3439af) [View](https://github.com/AlbiDR/Clash-Manager/pull/278)
-* [2026-03-21] PR #277: chore(deps): align @types/node across monorepo (Commit: 9ad5e9a7) [View](https://github.com/AlbiDR/Clash-Manager/pull/277)
-* [2026-03-21] PR #276: test(verify): add defensive coverage for useSystemInfo.ts (Commit: b7be5d4d) [View](https://github.com/AlbiDR/Clash-Manager/pull/276)
-* [2026-03-21] PR #275: docs(tsdoc): annotate StorageService with architectural context and licensing (Commit: b9ba7362) [View](https://github.com/AlbiDR/Clash-Manager/pull/275)
-* [2026-03-21] PR #274: docs(readme): deepen pwa architectural documentation (Commit: c1aeeafc) [View](https://github.com/AlbiDR/Clash-Manager/pull/274)
-* [2026-03-21] PR #273: Centralize Application Metadata and Badge Logic (Commit: 61083599) [View](https://github.com/AlbiDR/Clash-Manager/pull/273)
-* [2026-03-21] PR #272: test(verify): add comprehensive coverage for BaseCard.vue (Commit: abbc369f) [View](https://github.com/AlbiDR/Clash-Manager/pull/272)
-* [2026-03-21] PR #271: Harden Background Sync Validation Boundary (Commit: 8afd3c4c) [View](https://github.com/AlbiDR/Clash-Manager/pull/271)
-* [2026-03-20] PR #270: test(verify): add defensive coverage for AppFooter.vue (Commit: 8d207b33) [View](https://github.com/AlbiDR/Clash-Manager/pull/270)
-* [2026-03-20] PR #269: docs(tsdoc): annotate connection status service with architectural context (Commit: bf9bb85b) [View](https://github.com/AlbiDR/Clash-Manager/pull/269)
-* [2026-03-20] PR #268: docs(readme): reconcile versioning drift in Backend-Worker (Commit: 2b136f6d) [View](https://github.com/AlbiDR/Clash-Manager/pull/268)
-* [2026-03-20] PR #267: Structural Optimization of Laboratory Feature (Commit: 1f00498b) [View](https://github.com/AlbiDR/Clash-Manager/pull/267)
-* [2026-03-20] PR #266: test(verify): add comprehensive coverage for useDeepLinkHandler (Commit: 99449f0e) [View](https://github.com/AlbiDR/Clash-Manager/pull/266)
-* [2026-03-20] PR #265: fix(harden): enforce validation boundaries and eliminate any plague in GasClient.ts (Commit: b439ed93) [View](https://github.com/AlbiDR/Clash-Manager/pull/265)
-* [2026-03-19] PR #263: Merge Nightly into Beta (Resolve Conflicts) (Commit: 10a62cb1) [View](https://github.com/AlbiDR/Clash-Manager/pull/263)
-* [2026-03-19] PR #262: chore(deps): bump valibot from 1.3.0 to 1.3.1 (Commit: e1757232) [View](https://github.com/AlbiDR/Clash-Manager/pull/262)
-* [2026-03-19] PR #261: test(verify): implement validation boundary tests for Backend-Worker schemas (Commit: b5980a04) [View](https://github.com/AlbiDR/Clash-Manager/pull/261)
-* [2026-03-19] PR #260: docs(tsdoc): annotate useAppSettings with architectural context (Commit: 2552475b) [View](https://github.com/AlbiDR/Clash-Manager/pull/260)
-* [2026-03-19] PR #259: docs(readme): reconcile Backend-Worker architectural context (Commit: 60a6fd75) [View](https://github.com/AlbiDR/Clash-Manager/pull/259)
-* [2026-03-19] PR #258: refactor(opt): standardize console layout props (Commit: c2c8f372) [View](https://github.com/AlbiDR/Clash-Manager/pull/258)
-* [2026-03-19] PR #257: test(verify): add logic coverage for StatisticItem component (Commit: f1c41db0) [View](https://github.com/AlbiDR/Clash-Manager/pull/257)
-* [2026-03-18] PR #256: chore(deps): bump valibot from 1.2.0 to 1.3.0 (Commit: d024d5eb) [View](https://github.com/AlbiDR/Clash-Manager/pull/256)
-* [2026-03-18] PR #255: test(verify): add unit tests for SettingRow.vue (Commit: 65fa42a4) [View](https://github.com/AlbiDR/Clash-Manager/pull/255)
-* [2026-03-18] PR #254: docs(tsdoc): annotate useUiCoordinator with intent and constraints (Commit: 6fa4b241) [View](https://github.com/AlbiDR/Clash-Manager/pull/254)
-* [2026-03-18] PR #253: docs(readme): reconcile backend-worker api and versions (Commit: 401baa7b) [View](https://github.com/AlbiDR/Clash-Manager/pull/253)
-* [2026-03-18] PR #252: test(verify): add coverage for WebAppDataSchema validation boundary (Commit: 497fdb1d) [View](https://github.com/AlbiDR/Clash-Manager/pull/252)
-* [2026-03-18] PR #251: fix(harden): Enforce validation and persistence in clashDataStore (Commit: 772128d7) [View](https://github.com/AlbiDR/Clash-Manager/pull/251)
-* [2026-03-17] PR #250: refactor(opt): centralize AppFooter orchestration (Commit: e769b023) [View](https://github.com/AlbiDR/Clash-Manager/pull/250)
-* [2026-03-17] PR #249: chore(deps): bump vue from 3.5.27 to 3.5.30 (Commit: 8474a45d) [View](https://github.com/AlbiDR/Clash-Manager/pull/249)
-* [2026-03-17] PR #248: test(verify): extend validation boundary coverage for useAppSettings (Commit: e686a05c) [View](https://github.com/AlbiDR/Clash-Manager/pull/248)
-* [2026-03-17] PR #247: docs(tsdoc): annotate laboratory simulation engine (Commit: 1446a9dd) [View](https://github.com/AlbiDR/Clash-Manager/pull/247)
-* [2026-03-17] PR #246: docs(readme): synchronize root version badges (Commit: 40eb34a8) [View](https://github.com/AlbiDR/Clash-Manager/pull/246)
-* [2026-03-17] PR #245: test(verify): implement defensive coverage for core data schemas (Commit: 39def069) [View](https://github.com/AlbiDR/Clash-Manager/pull/245)
-* [2026-03-17] PR #244: fix(harden): enforce validation boundary for app settings (Commit: 4f20df85) [View](https://github.com/AlbiDR/Clash-Manager/pull/244)
-* [2026-03-16] PR #243: docs(readme): synchronize and deepen structural blueprints (Commit: 6c47ab36) [View](https://github.com/AlbiDR/Clash-Manager/pull/243)
-* [2026-03-16] PR #242: docs: clarify scoring metrics (RPeS, PeS, RPoS, PoS) (Commit: e9ed07bb) [View](https://github.com/AlbiDR/Clash-Manager/pull/242)
-* [2026-03-16] PR #241: chore(deps): align @types/node across monorepo (Commit: 524caf52) [View](https://github.com/AlbiDR/Clash-Manager/pull/241)
-* [2026-03-16] PR #240: docs(readme): synchronize blueprints with implementation state (Commit: d62c2233) [View](https://github.com/AlbiDR/Clash-Manager/pull/240)
-* [2026-03-16] PR #239: test(verify): implement laboratory store unit tests (Commit: 6c70bf54) [View](https://github.com/AlbiDR/Clash-Manager/pull/239)
-* [2026-03-16] PR #238: docs(tsdoc): document useHeadhunter composable and actions (Commit: 37e3767b) [View](https://github.com/AlbiDR/Clash-Manager/pull/238)
-* [2026-03-16] PR #237: docs(readme): reconcile root readme drift and pipeline order (Commit: d6d77ad6) [View](https://github.com/AlbiDR/Clash-Manager/pull/237)
-* [2026-03-16] PR #236: refactor(opt): migrate laboratory toggle to shared SettingRow (Commit: f1fa8048) [View](https://github.com/AlbiDR/Clash-Manager/pull/236)
-* [2026-03-16] PR #235: Verify Headhunter Orchestration Logic (Commit: 647aefee) [View](https://github.com/AlbiDR/Clash-Manager/pull/235)
-* [2026-03-16] PR #234: fix(harden): eliminate anemic variables and any plague in useHeadhunter (Commit: 5547034c) [View](https://github.com/AlbiDR/Clash-Manager/pull/234)
-* [2026-03-15] PR #233: chore(deps): remove redundant @types/google-apps-script dependency (Commit: 2fff94dd) [View](https://github.com/AlbiDR/Clash-Manager/pull/233)
-* [2026-03-15] PR #232: test(verify): add unit tests for laboratory registry (Commit: 8e6e911a) [View](https://github.com/AlbiDR/Clash-Manager/pull/232)
-* [2026-03-15] PR #231: docs(tsdoc): annotate useLaboratoryStore with architectural context (Commit: 0be1b690) [View](https://github.com/AlbiDR/Clash-Manager/pull/231)
-* [2026-03-15] PR #230: docs(readme): reconcile laboratory state management with pinia migration (Commit: 6adc93d1) [View](https://github.com/AlbiDR/Clash-Manager/pull/230)
-* [2026-03-15] PR #229: refactor(opt): migrate laboratory state to pinia store (Commit: af7b31d3) [View](https://github.com/AlbiDR/Clash-Manager/pull/229)
-* [2026-03-15] PR #228: test(verify): implement useClashDataStore unit tests (Commit: 17d4a769) [View](https://github.com/AlbiDR/Clash-Manager/pull/228)
-* [2026-03-15] PR #227: fix(harden): secure state update boundary in clash data store (Commit: 3da15d12) [View](https://github.com/AlbiDR/Clash-Manager/pull/227)
-* [2026-03-08] PR #198: docs(core): document economy utility primitives (Commit: 48cfae75) [View](https://github.com/AlbiDR/Clash-Manager/pull/198)
-* [2026-03-08] PR #197: refactor(theme): centralize shared card primitive styles (Commit: 073da250) [View](https://github.com/AlbiDR/Clash-Manager/pull/197)
-* [2026-03-08] PR #196: test(shared): add ConsoleLayout coverage & sync naming law (Commit: a5b6018c) [View](https://github.com/AlbiDR/Clash-Manager/pull/196)
-* [2026-03-08] PR #195: fix(reliability): harden worker key management and state lifecycle (Commit: a2c4abe8) [View](https://github.com/AlbiDR/Clash-Manager/pull/195)
-* [2026-03-07] PR #194: docs(api): update GasClient architecture and contracts (Commit: 13187be4) [View](https://github.com/AlbiDR/Clash-Manager/pull/194)
-* [2026-03-07] PR #193: refactor(pwa): resolve structural rot in app entry points (Commit: b5abe1db) [View](https://github.com/AlbiDR/Clash-Manager/pull/193)
-* [2026-03-07] PR #192: test(laboratory): add validation boundary coverage for ProfileHydrator (Commit: fd5f2491) [View](https://github.com/AlbiDR/Clash-Manager/pull/192)
-* [2026-03-07] PR #191: fix(validation): enforce strict validation for Royale API data (Commit: fe611f6e) [View](https://github.com/AlbiDR/Clash-Manager/pull/191)
-* [2026-03-06] PR #190: docs(core): document PriorityQueue utility (Commit: cdc2fa61) [View](https://github.com/AlbiDR/Clash-Manager/pull/190)
-* [2026-03-06] PR #189: refactor(features): synchronize barrel imports for structural integrity (Commit: 0f5489bf) [View](https://github.com/AlbiDR/Clash-Manager/pull/189)
-* [2026-03-06] PR #188: test(shared): extend useTheme coverage and sync naming (Commit: e0fa204d) [View](https://github.com/AlbiDR/Clash-Manager/pull/188)
-* [2026-03-06] PR #187: fix(validation): enforce boundary for clan snapshots (Commit: 7d914eed) [View](https://github.com/AlbiDR/Clash-Manager/pull/187)
-* [2026-03-05] PR #186: docs(laboratory): document progression engine and isolation boundaries (Commit: d2fc2159) [View](https://github.com/AlbiDR/Clash-Manager/pull/186)
-* [2026-03-05] PR #185: refactor(core): promote laboratory utilities to core layer (Commit: ea5adefd) [View](https://github.com/AlbiDR/Clash-Manager/pull/185)
-* [2026-03-05] PR #184: test(pwa): extend StorageService spec and synchronize naming (Commit: eca98074) [View](https://github.com/AlbiDR/Clash-Manager/pull/184)
-* [2026-03-05] PR #183: fix(validation): enforce strict boundary for Royale API responses (Commit: af0dc17a) [View](https://github.com/AlbiDR/Clash-Manager/pull/183)
-* [2026-03-04] PR #182: docs(api): document useApiState composable (Commit: 5a80d0fb) [View](https://github.com/AlbiDR/Clash-Manager/pull/182)
-* [2026-03-04] PR #181: refactor(shared): enforce barrel protocol in ui components (Commit: c744d35e) [View](https://github.com/AlbiDR/Clash-Manager/pull/181)
-* [2026-03-04] PR #180: fix(validation): enforce strict worker validation boundaries (Commit: 03100d30) [View](https://github.com/AlbiDR/Clash-Manager/pull/180)
-* [2026-03-04] PR #179: test(core): enhance warMath coverage and sync naming law (Commit: 955569ae) [View](https://github.com/AlbiDR/Clash-Manager/pull/179)
-* [2026-03-03] PR #178: Document useHeaderScroll Composable (Commit: 8f39a09d) [View](https://github.com/AlbiDR/Clash-Manager/pull/178)
-* [2026-03-03] PR #177: refactor(ui): centralize btn-primary primitive and resolve DRY violation (Commit: a8773f7d) [View](https://github.com/AlbiDR/Clash-Manager/pull/177)
-* [2026-03-03] PR #176: test(core): improve GasClient worker coverage and sync naming (Commit: 0fe6fc44) [View](https://github.com/AlbiDR/Clash-Manager/pull/176)
-* [2026-03-03] PR #175: fix(validation): enforce schema boundary on worker scan response (Commit: e888da10) [View](https://github.com/AlbiDR/Clash-Manager/pull/175)
-* [2026-03-02] PR #174: docs(shared): enrich useTheme TSDoc and side effects (Commit: 76eb6c1a) [View](https://github.com/AlbiDR/Clash-Manager/pull/174)
-* [2026-03-02] PR #173: refactor(settings): migrate to ConsoleLayout for structural integrity (Commit: 2845c244) [View](https://github.com/AlbiDR/Clash-Manager/pull/173)
-* [2026-03-02] PR #172: test(shared): add useHeaderScroll unit tests (Commit: 3a8f813d) [View](https://github.com/AlbiDR/Clash-Manager/pull/172)
-* [2026-03-02] PR #171: fix(integrity): resolve version manifest drift for Core module (Commit: 530a26de) [View](https://github.com/AlbiDR/Clash-Manager/pull/171)
-* [2026-03-01] PR #170: docs(shared): reconcile vTooltip with Clerk archetype and remove emojis (Commit: 01ba903f) [View](https://github.com/AlbiDR/Clash-Manager/pull/170)
-* [2026-03-01] PR #169: refactor(feature-views): enforce barrel protocol and extract laboratory view logic (Commit: ffd48453) [View](https://github.com/AlbiDR/Clash-Manager/pull/169)
-* [2026-03-01] PR #168: test(shared): cover vTooltip directive (Commit: 2b6b4183) [View](https://github.com/AlbiDR/Clash-Manager/pull/168)
-* [2026-03-01] PR #167: fix(validation): implement boundary for laboratory profile hydration (Commit: 156509f5) [View](https://github.com/AlbiDR/Clash-Manager/pull/167)
-* [2026-02-28] PR #166: docs(shared): reconcile vTactile with Clerk archetype and remove emojis (Commit: 7fda74f8) [View](https://github.com/AlbiDR/Clash-Manager/pull/166)
-* [2026-02-28] PR #165: refactor(laboratory): centralize glass-panel primitives and prune dead styles (Commit: facd9c49) [View](https://github.com/AlbiDR/Clash-Manager/pull/165)
-* [2026-02-28] PR #164: test(shared): add unit tests for vTactile directive (Commit: eccb6f5f) [View](https://github.com/AlbiDR/Clash-Manager/pull/164)
-* [2026-02-28] PR #163: fix(validation): implement runtime validation boundaries for Worker API (Commit: 4eb20aee) [View](https://github.com/AlbiDR/Clash-Manager/pull/163)
-* [2026-02-27] PR #162: docs(pwa): synchronize readme to v13.1.0 (Commit: b83cab20) [View](https://github.com/AlbiDR/Clash-Manager/pull/162)
-* [2026-02-27] PR #161: Refactor: Laboratory Logic Co-location & Barrel Protocol (Commit: 1da3ae77) [View](https://github.com/AlbiDR/Clash-Manager/pull/161)
-* [2026-02-27] PR #160: test(settings): add comprehensive tests for useSettings composable (Commit: bd04f0df) [View](https://github.com/AlbiDR/Clash-Manager/pull/160)
-* [2026-02-27] PR #159: chore(prune): unify key management and fix redundant rotation logic (Commit: c6720faa) [View](https://github.com/AlbiDR/Clash-Manager/pull/159)
-* [2026-02-26] PR #157: fix(reliability): annotate state lifecycle in worker (Commit: d2f0d6cb) [View](https://github.com/AlbiDR/Clash-Manager/pull/157)
-* [2026-02-26] PR #158: docs(worker): synchronize README with implementation truth (Commit: 1de9c344) [View](https://github.com/AlbiDR/Clash-Manager/pull/158)
-* [2026-02-26] PR #156: docs(gas): sync README with v13.1.0 implementation and architecture (Commit: 880f0eb2) [View](https://github.com/AlbiDR/Clash-Manager/pull/156)
-* [2026-03-11] PR #207: fix(harden): reconcile gas version manifest and bridge global constants (Commit: unknown) [View](https://github.com/AlbiDR/Clash-Manager/pull/207)
-* [2026-03-11] PR #208: test(verify): add unit tests for ErrorBoundary.vue (Commit: unknown) [View](https://github.com/AlbiDR/Clash-Manager/pull/208)
-* [2026-03-11] PR #209: refactor(opt): resolve structural rot in BaseCard.vue (Commit: unknown) [View](https://github.com/AlbiDR/Clash-Manager/pull/209)
-* [2026-03-11] PR #210: docs(docs): synchronize worker readme with implementation drift (Commit: unknown) [View](https://github.com/AlbiDR/Clash-Manager/pull/210)
-* [2026-03-14] PR #211: docs(pwa): sync README with Pinia state and theme architecture (Commit: unknown) [View](https://github.com/AlbiDR/Clash-Manager/pull/211)
-* [2026-03-14] PR #212: docs(docs): create Molecule Layer documentation (Commit: unknown) [View](https://github.com/AlbiDR/Clash-Manager/pull/212)
-* [2026-03-14] PR #213: docs(docs): synchronize Shared UI documentation (Commit: unknown) [View](https://github.com/AlbiDR/Clash-Manager/pull/213)
+## T1 -- Active (last 7 days)
+
+> Full context. Read these before acting to avoid duplicating recent work.
+
+### [2026-07-13] PR #1103: perf(apk-optimization): optimize WebView cache mode for sub-second startup
+**Domain:** APK Optimization | **Commit:** `df303147` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1103)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1102: refactor: centralize timing constants and PWA lifecycle logic
+**Domain:** Refactor/Optimization | **Commit:** `a5b144b1` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1102)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1101: chore(deps): bump tsx and dependency-cruiser; update major watchlist
+**Domain:** Dependencies | **Commit:** `6b8762de` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1101)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1100: chore(version): no drift found
+**Domain:** Version Integrity | **Commit:** `3028c6ad` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1100)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1099: docs(tsdoc): harden interface contracts for roster and api layers
+**Domain:** TSDoc | **Commit:** `725a0bca` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1099)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1098: docs(readme): reconcile backend deployment and core delegation
+**Domain:** README | **Commit:** `a2b8c2cc` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1098)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1097: refactor(opt): standardize headhunter scanner naming
+**Domain:** Refactor/Optimization | **Commit:** `ad4a533f` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1097)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1096: chore(baseline): fold new migrations into master baseline
+**Domain:** Baseline | **Commit:** `4128446f` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1096)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-13] PR #1095: test(verify): add specs for assets.ts and normalizeTag
+**Domain:** Verification | **Commit:** `52933228` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1095)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1094: fix(apk-ux): modernize BackendRefresher touch targets and haptics
+**Domain:** APK UX | **Commit:** `31ee635a` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1094)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1093: perf(apk-optimization): harden webview and optimize sw cache
+**Domain:** APK Optimization | **Commit:** `33273b43` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1093)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1092: fix(apk-integrity): harden wrapper consistency checks
+**Domain:** APK Integrity | **Commit:** `fe4e397b` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1092)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1091: refactor: centralize game asset resolution and standardize laboratory UI
+**Domain:** Refactor/Optimization | **Commit:** `3262403a` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1091)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1090: chore(deps): update major version watchlist
+**Domain:** Dependencies | **Commit:** `21b5971a` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1090)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1089: chore(version): harden project integrity and reconcile log
+**Domain:** Version Integrity | **Commit:** `89ef122d` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1089)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1088: docs(tsdoc): harden core math and priority queue contracts
+**Domain:** TSDoc | **Commit:** `610a9d89` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1088)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1087: docs(readme): reconcile utility and shared UI drift
+**Domain:** README | **Commit:** `c1ba5fc2` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1087)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1086: perf(opt): standardize shared UI naming and audit substrate
+**Domain:** Performance | **Commit:** `bdbafaf8` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1086)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1085: chore(baseline): fold new migrations into master baseline
+**Domain:** Baseline | **Commit:** `318d6625` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1085)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-12] PR #1084: test(verify): add specs for backend royale schemas
+**Domain:** Verification | **Commit:** `c52598bb` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1084)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1083: fix(apk-ux): modernize StatusPill for hybrid shell compliance
+**Domain:** APK UX | **Commit:** `8dd26cd8` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1083)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1082: perf(apk-optimization): consolidate redundant assets and optimize SW cache
+**Domain:** APK Optimization | **Commit:** `b68139d6` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1082)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1081: fix(apk-integrity): sync navigation color and harden theme colors
+**Domain:** APK Integrity | **Commit:** `fbc28334` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1081)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1080: refactor: decompose monolithic game utility and centralize XP math
+**Domain:** Refactor/Optimization | **Commit:** `7db6f9e5` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1080)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1079: chore(deps): bump knip and @formkit/auto-animate
+**Domain:** Dependencies | **Commit:** `af028b4b` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1079)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1078: fix(version): reconcile version drift and enforce catalog alignment
+**Domain:** Version Integrity | **Commit:** `1603bf5e` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1078)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1077: docs(tsdoc): harden core service and shared UI contracts
+**Domain:** TSDoc | **Commit:** `057eadad` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1077)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1076: docs(readme): reconcile query-royale-api harvesting logic
+**Domain:** README | **Commit:** `fb65469f` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1076)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1075: perf(opt): standardize shared ui variable naming and audit substrate
+**Domain:** Performance | **Commit:** `a5ca0ac5` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1075)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1074: test(verify): add saturating tests for backend shared utils
+**Domain:** Verification | **Commit:** `7bd174b8` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1074)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-11] PR #1073: fix(harden): secure Royale API harvest boundary
+**Domain:** Hardening | **Commit:** `fb029d16` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1073)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1072: fix(apk-ux): modernize score selector for mobile compliance
+**Domain:** APK UX | **Commit:** `4c6b3e21` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1072)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1071: fix(apk-integrity): sync brand theme and navigation colors
+**Domain:** APK Integrity | **Commit:** `7d151633` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1071)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1070: refactor: centralize hub-related interfaces to core types
+**Domain:** Refactor/Optimization | **Commit:** `a243faa5` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1070)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1069: chore(deps): bump @supabase/supabase-js from 2.110.1 to 2.110.2
+**Domain:** Dependencies | **Commit:** `a7b77ad2` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1069)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1068: chore(version): no drift found
+**Domain:** Version Integrity | **Commit:** `c49bd322` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1068)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1067: docs(tsdoc): harden interface contracts for Layer 1 core services
+**Domain:** TSDoc | **Commit:** `dbbe5fdd` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1067)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1066: docs(readme): reconcile domain types documentation
+**Domain:** README | **Commit:** `a0f379cf` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1066)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-10] PR #1065: refactor(opt): standardize core service variable naming
+**Domain:** Refactor/Optimization | **Commit:** `558ead3f` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1065)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1064: fix(apk-ux): add tactile feedback to theme options in AppearanceSettings
+**Domain:** APK UX | **Commit:** `10fba68d` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1064)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1063: Harden APK/PWA Integrity Auditor and Reconcile Logs
+**Domain:** Hardening | **Commit:** `1890a9ec` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1063)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1062: chore(deps): bump @types/node and update major watchlist
+**Domain:** Dependencies | **Commit:** `831d8a2b` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1062)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1061: fix(version): reconcile supabase-js drift to align with catalog
+**Domain:** Version Integrity | **Commit:** `3dcdc2b8` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1061)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1060: docs(tsdoc): harden useClashLoader interface contract
+**Domain:** TSDoc | **Commit:** `5789ccf1` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1060)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1059: docs(readme): reconcile core service registry and utilities
+**Domain:** README | **Commit:** `8ab1829a` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1059)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1058: refactor(opt): standardize variable naming in core services
+**Domain:** Refactor/Optimization | **Commit:** `1c0b566b` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1058)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1057: chore(baseline): fold new migrations into master baseline
+**Domain:** Baseline | **Commit:** `c2874760` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1057)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-09] PR #1056: fix(harden): resolve runtime crash and excise anemic variables in deep-depth stage
+**Domain:** Hardening | **Commit:** `1444b606` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1056)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-08] PR #1055: perf(apk-optimization): optimize SW precache and prune orphaned resources
+**Domain:** APK Optimization | **Commit:** `f68eb7d3` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1055)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-08] PR #1054: fix(apk-integrity): harden security audit and verify manifest parity
+**Domain:** APK Integrity | **Commit:** `9339b393` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1054)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-08] PR #1053: chore(deps): update dependencies and major version watchlist [Stage 8]
+**Domain:** Dependencies | **Commit:** `5a18e9dd` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1053)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-08] PR #1052: docs(tsdoc): document native bridge orchestrator interface contracts
+**Domain:** TSDoc | **Commit:** `3d3d642c` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1052)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-08] PR #1051: docs(readme): reconcile core service registry
+**Domain:** README | **Commit:** `b93ce544` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1051)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-08] PR #1050: perf(opt): standardize variable naming for domain clarity
+**Domain:** Performance | **Commit:** `d401ce5f` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1050)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-08] PR #1049: test(verify): add specs for useClashLoader
+**Domain:** Verification | **Commit:** `d9f005ea` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1049)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1048: fix(apk-ux): optimize BaseSelect touch targets for 48px compliance
+**Domain:** APK UX | **Commit:** `a2664583` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1048)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1047: perf(apk-optimization): prune redundant shortcut assets and xml overrides
+**Domain:** APK Optimization | **Commit:** `a1cb307e` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1047)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1046: [Stage 10] APK & PWA Wrapper Integrity Audit
+**Domain:** General | **Commit:** `b719ecbe` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1046)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1045: Refactor: Centralize Native Android Bridge Orchestration
+**Domain:** Refactor/Optimization | **Commit:** `536938ea` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1045)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1044: chore(deps): bump vitest from 4.1.9 to 4.1.10
+**Domain:** Dependencies | **Commit:** `4f96bbcb` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1044)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1043: chore(version): no drift found
+**Domain:** Version Integrity | **Commit:** `0b7d9b04` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1043)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1042: docs(tsdoc): document settings orchestrator and pwa lifecycle
+**Domain:** TSDoc | **Commit:** `8302073b` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1042)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1041: docs(readme): reconcile prediction logic and utility registry
+**Domain:** README | **Commit:** `9a0f3d5c` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1041)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1040: refactor(opt): standardize variable naming for domain clarity
+**Domain:** Refactor/Optimization | **Commit:** `76cf646a` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1040)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+### [2026-07-07] PR #1039: test(verify): add specs for locale utility
+**Domain:** Verification | **Commit:** `65224fa6` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1039)
+**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
+
+
+## T2 -- Recent (8-30 days)
+
+> Lean reference. Sufficient for deduplication and scope awareness.
+
+* [2026-07-06] PR #1038 [APK UX]: fix(apk-ux): add tactile feedback to ErrorBoundary actions (`e029710`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1038)
+* [2026-07-06] PR #1037 [APK Optimization]: perf(apk-optimization): prune orphaned resources and optimize SW cache (`4e8e643`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1037)
+* [2026-07-06] PR #1036 [APK Integrity]: chore(apk-integrity): monorepo integrity audit passed (`b73c603`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1036)
+* [2026-07-06] PR #1035 [Refactor/Optimization]: refactor: centralize scanner logic and configuration to shared layer (`047b6c6`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1035)
+* [2026-07-06] PR #1034 [Dependencies]: chore(deps): bump vite and update major version watchlist [Stage 8] (`4847201`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1034)
+* [2026-07-06] PR #1033 [Version Integrity]: chore(version): no drift found (`4afd718`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1033)
+* [2026-07-06] PR #1032 [TSDoc]: docs(tsdoc): document useLongPress gesture orchestrator (`30a8529`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1032)
+* [2026-07-06] PR #1031 [README]: docs(readme): reconcile backend API boundaries (`733d47d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1031)
+* [2026-07-06] PR #1030 [Refactor/Optimization]: perf(opt): centralize backend utilities and refactor edge functions (`943801c`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1030)
+* [2026-07-06] PR #1029 [Baseline]: chore(baseline): fold new migrations into master baseline (`d36c227`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1029)
+* [2026-07-06] PR #1028 [Verification]: test(verify): add specs for app shell and base theme (`d339b36`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1028)
+* [2026-07-05] PR #1027 [APK UX]: fix(apk-ux): add tactile feedback to backend refresh actions (`319036f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1027)
+* [2026-07-05] PR #1026 [APK Optimization]: perf(apk-optimization): consolidate redundant XML resources into aliases (`4c98aed`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1026)
+* [2026-07-05] PR #1025 [APK Integrity]: chore(apk-integrity): no mismatch found (`79a7cac`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1025)
+* [2026-07-05] PR #1024 [Refactor/Optimization]: refactor: extract leaderboard scouting to core api (`d91e226`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1024)
+* [2026-07-05] PR #1023 [Dependencies]: chore(deps): bump @ast-grep/cli from 0.44.0 to 0.44.1 (`d5bbbab`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1023)
+* [2026-07-05] PR #1022 [Version Integrity]: chore(version): no drift found (`bd3df76`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1022)
+* [2026-07-05] PR #1021 [TSDoc]: docs(tsdoc): document Layer 1 core services (`230c300`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1021)
+* [2026-07-05] PR #1020 [README]: docs(readme): reconcile architectural drift across monorepo (`fcdb326`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1020)
+* [2026-07-05] PR #1019 [Refactor/Optimization]: refactor(opt): standardize core api and service variable naming (`5caaddd`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1019)
+* [2026-07-05] PR #1018 [Baseline]: chore(baseline): fold new migrations into master baseline (`1ae9984`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1018)
+* [2026-07-05] PR #1017 [Verification]: test(verify): add saturating coverage for HtmlEntry.ts (`425101c`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1017)
+* [2026-07-04] PR #1016 [APK Integrity]: chore(apk-integrity): no mismatch found (`f58d6df`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1016)
+* [2026-07-04] PR #1015 [Refactor/Optimization]: refactor: decompose monolithic schemas.ts into domain modules (`0d75a76`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1015)
+* [2026-07-04] PR #1014 [APK UX]: fix(apk-ux): add tactile feedback to NetworkSettings controls (`5dcbf01`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1014)
+* [2026-07-04] PR #1013 [Dependencies]: chore(deps): bump tsx and update major version watchlist (`c7d96cb`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1013)
+* [2026-07-04] PR #1012 [Version Integrity]: fix(version): reconcile version drift in backend engine (`c3524ab`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1012)
+* [2026-07-04] PR #1011 [TSDoc]: docs(tsdoc): document automated blitz orchestrator (`65a0ed5`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1011)
+* [2026-07-04] PR #1010 [README]: docs(readme): reconcile core service and api documentation gaps (`ba956c3`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1010)
+* [2026-07-04] PR #1009 [Baseline]: chore(baseline): fold new migrations into master baseline (`3102f67`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1009)
+* [2026-07-04] PR #1008 [Performance]: perf(opt): standardize variable naming for domain clarity (`8001d43`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1008)
+* [2026-07-04] PR #1007 [Hardening]: fix(harden): harden persistence substrate (`c66004d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1007)
+* [2026-07-03] PR #1006 [TSDoc]: docs(tsdoc): document shared types and game utilities (`0c147d4`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1006)
+* [2026-07-03] PR #1005 [Version Integrity]: fix(version): reconcile version drift in Supabase Functions and Deno scripts (`42e271e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1005)
+* [2026-07-03] PR #1004 [APK Integrity]: fix(apk-integrity): automate wrapper parity checks and synchronize logs (`035a9f9`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1004)
+* [2026-07-03] PR #1003 [Dependencies]: chore(deps): update tsx and major version watchlist research (`dea9349`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1003)
+* [2026-07-03] PR #1002 [APK Optimization]: perf(apk-optimization): consolidate assets and update SW paths (`0afd06e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1002)
+* [2026-07-03] PR #1001 [README]: docs(readme): reconcile architectural drift and hexa-stage mapping (`3c3f515`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1001)
+* [2026-07-03] PR #1000 [Refactor/Optimization]: refactor(opt): standardize anemic variables in service worker substrate (`b9c118f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1000)
+* [2026-07-03] PR #999 [Verification]: test(verify): add saturating coverage for useConnectionStatus service (`7183c67`) [View](https://github.com/AlbiDR/Clash-Manager/pull/999)
+* [2026-07-03] PR #998 [Hardening]: fix(harden): profiler runtime integrity and anemic variable excision (`65b85b1`) [View](https://github.com/AlbiDR/Clash-Manager/pull/998)
+* [2026-07-02] PR #997 [TSDoc]: docs(tsdoc): document useRecruiter orchestrator (`92cf1c8`) [View](https://github.com/AlbiDR/Clash-Manager/pull/997)
+* [2026-07-02] PR #996 [APK Integrity]: fix(apk-integrity): audit and verify manifest synchronization (`15d0091`) [View](https://github.com/AlbiDR/Clash-Manager/pull/996)
+* [2026-07-02] PR #995 [Hardening]: fix(harden): secure tournament discovery nomenclature and state lifecycle (`fc2184b`) [View](https://github.com/AlbiDR/Clash-Manager/pull/995)
+* [2026-07-02] PR #994 [APK Optimization]: perf(apk-optimization): prune redundant resources and relocate non-production assets (`8e3e8a4`) [View](https://github.com/AlbiDR/Clash-Manager/pull/994)
+* [2026-07-02] PR #993 [Version Integrity]: chore(version): no drift found (`a882a0e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/993)
+* [2026-07-02] PR #992 [General]: Standardize Variable Naming for Domain Clarity (`bd8edd6`) [View](https://github.com/AlbiDR/Clash-Manager/pull/992)
+* [2026-07-02] PR #991 [README]: docs(readme): reconcile monorepo architecture and theme drift (`a32d021`) [View](https://github.com/AlbiDR/Clash-Manager/pull/991)
+* [2026-07-02] PR #990 [Dependencies]: chore(deps): Stage 8 Dependency Audit - July 2026 (`d4280fa`) [View](https://github.com/AlbiDR/Clash-Manager/pull/990)
+* [2026-07-01] PR #989 [APK UX]: fix(apk-ux): modernize VoyageSetupForm actions with tactile feedback (`68230b0`) [View](https://github.com/AlbiDR/Clash-Manager/pull/989)
+* [2026-07-01] PR #988 [APK Optimization]: perf(apk-optimization): prune redundant AppCompat and legacy resources (`e23c7d8`) [View](https://github.com/AlbiDR/Clash-Manager/pull/988)
+* [2026-07-01] PR #987 [APK Integrity]: chore(apk-integrity): update audit log for July 3, 2026 (`27c7df2`) [View](https://github.com/AlbiDR/Clash-Manager/pull/987)
+* [2026-07-01] PR #986 [Dependencies]: chore(deps): Stage 8 Dependency Audit - Tier 1 Updates and Watchlist Reconciler (`5aa2831`) [View](https://github.com/AlbiDR/Clash-Manager/pull/986)
+* [2026-07-01] PR #985 [Version Integrity]: fix(version): reconcile version drift in valibot substrate (`e3f134c`) [View](https://github.com/AlbiDR/Clash-Manager/pull/985)
+* [2026-07-01] PR #984 [TSDoc]: docs(tsdoc): document core app and offline schemas (`51f50d6`) [View](https://github.com/AlbiDR/Clash-Manager/pull/984)
+* [2026-07-01] PR #983 [README]: docs(readme): reconcile architecture drift across core and backend (`f022036`) [View](https://github.com/AlbiDR/Clash-Manager/pull/983)
+* [2026-07-01] PR #982 [Performance]: perf(opt): standardize variable naming and audit substrate hygiene (`2bddbea`) [View](https://github.com/AlbiDR/Clash-Manager/pull/982)
+* [2026-07-01] PR #981 [Baseline]: chore(baseline): fold new migrations into master baseline (`c48d190`) [View](https://github.com/AlbiDR/Clash-Manager/pull/981)
+* [2026-07-01] PR #980 [Verification]: test(verify): add specs for MaintenanceSchemas (`387644e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/980)
+* [2026-07-01] PR #979 [Hardening]: fix(harden): secure voyage api boundary and state lifecycle (`61ab03d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/979)
+* [2026-06-30] PR #978 [APK UX]: fix(apk-ux): integrate tactile feedback into SettingsCard header (`a1c3064`) [View](https://github.com/AlbiDR/Clash-Manager/pull/978)
+* [2026-06-30] PR #977 [APK Optimization]: perf(apk-optimization): prune redundant test resources (`7606ab0`) [View](https://github.com/AlbiDR/Clash-Manager/pull/977)
+* [2026-06-30] PR #976 [APK Integrity]: chore(apk-integrity): audit and sync manifest integrity (`7ab5967`) [View](https://github.com/AlbiDR/Clash-Manager/pull/976)
+* [2026-06-30] PR #975 [Dependencies]: chore(deps): dependency audit and hygiene [Stage 8] (`aff2639`) [View](https://github.com/AlbiDR/Clash-Manager/pull/975)
+* [2026-06-30] PR #974 [Version Integrity]: fix(version): reconcile version drift in Supabase Functions (`3f87f87`) [View](https://github.com/AlbiDR/Clash-Manager/pull/974)
+* [2026-06-30] PR #973 [TSDoc]: docs(tsdoc): enhance ProfileSchemas and DataMappers interface contracts (`89a28d4`) [View](https://github.com/AlbiDR/Clash-Manager/pull/973)
+* [2026-06-30] PR #972 [README]: docs(readme): reconcile voyage promotion and theme engine blueprints (`5fd5f6a`) [View](https://github.com/AlbiDR/Clash-Manager/pull/972)
+* [2026-06-30] PR #971 [Refactor/Optimization]: perf(opt): standardize service worker naming and refactor android badge logic (`3932d23`) [View](https://github.com/AlbiDR/Clash-Manager/pull/971)
+* [2026-06-30] PR #970 [Hardening]: fix(harden): secure maintenance and push subscription boundaries (`cf271b6`) [View](https://github.com/AlbiDR/Clash-Manager/pull/970)
+* [2026-06-29] PR #969 [APK Optimization]: perf(apk-optimization): prune redundant assets and metadata (`3a8a946`) [View](https://github.com/AlbiDR/Clash-Manager/pull/969)
+* [2026-06-29] PR #968 [APK Integrity]: fix(apk-integrity): synchronize app_name and verify wrapper integrity (`8045727`) [View](https://github.com/AlbiDR/Clash-Manager/pull/968)
+* [2026-06-29] PR #967 [Refactor/Optimization]: refactor: extract BaseSegmentedControl generic molecule (`31f2f17`) [View](https://github.com/AlbiDR/Clash-Manager/pull/967)
+* [2026-06-29] PR #966 [Dependencies]: chore(deps): monorepo-wide dependency audit [Stage 8] (`067fb2d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/966)
+* [2026-06-29] PR #965 [Version Integrity]: fix(version): reconcile version drift in APK artifacts (`3feb124`) [View](https://github.com/AlbiDR/Clash-Manager/pull/965)
+* [2026-06-29] PR #964 [TSDoc]: docs(tsdoc): document Voyage and Base schemas (`01b00c3`) [View](https://github.com/AlbiDR/Clash-Manager/pull/964)
+* [2026-06-29] PR #963 [README]: docs(readme): reconcile architectural drift and document core subsystems (`2127b01`) [View](https://github.com/AlbiDR/Clash-Manager/pull/963)
+* [2026-06-29] PR #962 [Baseline]: chore(baseline): fold new migrations into master baseline (`6397977`) [View](https://github.com/AlbiDR/Clash-Manager/pull/962)
+* [2026-06-29] PR #961 [Verification]: test(verify): saturating coverage for swSchemas and swSync boundaries (`9feba4f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/961)
+* [2026-06-29] PR #960 [Hardening]: fix(harden): secure battlelog proxy and recruitment realtime boundary (`ae8f495`) [View](https://github.com/AlbiDR/Clash-Manager/pull/960)
+* [2026-06-28] PR #959 [APK Optimization]: perf(apk-optimization): prune redundant assets and optimize manifest (`4fe6b77`) [View](https://github.com/AlbiDR/Clash-Manager/pull/959)
+* [2026-06-28] PR #958 [APK Integrity]: fix(apk-integrity): complete monorepo-wide integrity audit (`45468a5`) [View](https://github.com/AlbiDR/Clash-Manager/pull/958)
+* [2026-06-28] PR #957 [Dependencies]: chore(deps): bump knip from 6.21.0 to 6.22.0 (`80e598a`) [View](https://github.com/AlbiDR/Clash-Manager/pull/957)
+* [2026-06-28] PR #956 [Version Integrity]: fix(version): reconcile version drift in APK/android (`48da039`) [View](https://github.com/AlbiDR/Clash-Manager/pull/956)
+* [2026-06-28] PR #955 [TSDoc]: docs(tsdoc): document navigation SSOT interface (`1b202b4`) [View](https://github.com/AlbiDR/Clash-Manager/pull/955)
+* [2026-06-28] PR #954 [README]: docs(readme): reconcile backend proxy boundaries and UI molecules (`8d41867`) [View](https://github.com/AlbiDR/Clash-Manager/pull/954)
+* [2026-06-28] PR #953 [Verification]: perf(opt): standardize core variable naming and verify substrate hygiene (`b134602`) [View](https://github.com/AlbiDR/Clash-Manager/pull/953)
+* [2026-06-28] PR #952 [Verification]: test(verify): extend coverage for data mappers and core components (`eed2dbc`) [View](https://github.com/AlbiDR/Clash-Manager/pull/952)
+* [2026-06-28] PR #951 [Hardening]: fix(harden): secure ingest-royale-data pipeline and discovery stage (`f864888`) [View](https://github.com/AlbiDR/Clash-Manager/pull/951)
+* [2026-06-27] PR #949 [APK Optimization]: perf(apk-optimization): prune redundant resources and metadata (`c65d698`) [View](https://github.com/AlbiDR/Clash-Manager/pull/949)
+* [2026-06-27] PR #948 [APK UX]: fix(apk-ux): add brokered tactile feedback to SelectionBar morph button (`9c16d3d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/948)
+* [2026-06-27] PR #947 [APK Integrity]: fix(apk-integrity): sync orientation and verify wrapper integrity (`6e9a4c1`) [View](https://github.com/AlbiDR/Clash-Manager/pull/947)
+* [2026-06-27] PR #946 [Dependencies]: chore(deps): bump knip and update major version watchlist (`680a239`) [View](https://github.com/AlbiDR/Clash-Manager/pull/946)
+* [2026-06-27] PR #945 [Version Integrity]: chore(version): no drift found (`f535b10`) [View](https://github.com/AlbiDR/Clash-Manager/pull/945)
+* [2026-06-27] PR #944 [TSDoc]: docs(tsdoc): document authoritative validation schemas (`7bb3a28`) [View](https://github.com/AlbiDR/Clash-Manager/pull/944)
+* [2026-06-27] PR #943 [Baseline]: chore(baseline): fold new migrations into master baseline (`842ab6d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/943)
+* [2026-06-27] PR #942 [General]: Substrate Hygiene: Variable Naming Standardization and View Audit (`532c53f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/942)
+* [2026-06-27] PR #941 [Hardening]: fix(harden): secure rescan stage and excise anemic pathogens (`436aab7`) [View](https://github.com/AlbiDR/Clash-Manager/pull/941)
+* [2026-06-27] PR #940 [Verification]: test(verify): saturate coverage for VoyageClient (`35e0eba`) [View](https://github.com/AlbiDR/Clash-Manager/pull/940)
+* [2026-06-26] PR #939 [APK UX]: fix(apk-ux): add tactile feedback to CardActions (`a25b107`) [View](https://github.com/AlbiDR/Clash-Manager/pull/939)
+* [2026-06-26] PR #938 [APK Optimization]: perf(apk-optimization): prune redundant resources and debug metadata (`9a163f9`) [View](https://github.com/AlbiDR/Clash-Manager/pull/938)
+* [2026-06-26] PR #937 [APK Integrity]: fix(apk-integrity): sync manifest and verify integrity (`75380c5`) [View](https://github.com/AlbiDR/Clash-Manager/pull/937)
+* [2026-06-26] PR #936 [Dependencies]: chore(deps): dependency audit and hygiene [Stage 8] (`8a47f85`) [View](https://github.com/AlbiDR/Clash-Manager/pull/936)
+* [2026-06-26] PR #935 [Version Integrity]: chore(version): no drift found (`994c226`) [View](https://github.com/AlbiDR/Clash-Manager/pull/935)
+* [2026-06-26] PR #934 [README]: docs(readme): reconcile architectural drift in core, app, and utils (`919ab95`) [View](https://github.com/AlbiDR/Clash-Manager/pull/934)
+* [2026-06-26] PR #933 [Performance]: perf(opt): standardize variable naming for domain clarity (`71117c7`) [View](https://github.com/AlbiDR/Clash-Manager/pull/933)
+* [2026-06-26] PR #932 [Hardening]: fix(harden): secure service worker background sync boundary (`e7fb940`) [View](https://github.com/AlbiDR/Clash-Manager/pull/932)
+* [2026-06-25] PR #931 [APK UX]: fix(apk-ux): enhance MemberCard tactile feedback and touch targets (`c2979eb`) [View](https://github.com/AlbiDR/Clash-Manager/pull/931)
+* [2026-06-25] PR #930 [APK Optimization]: perf(apk-optimization): prune redundant resources and refine SW cache policy (`546da85`) [View](https://github.com/AlbiDR/Clash-Manager/pull/930)
+* [2026-06-25] PR #929 [APK Integrity]: fix(apk-integrity): sync manifest and restore assetlinks integrity (`8401557`) [View](https://github.com/AlbiDR/Clash-Manager/pull/929)
+* [2026-06-25] PR #928 [Dependencies]: chore(deps): bump knip and update major version watchlist (`b421c85`) [View](https://github.com/AlbiDR/Clash-Manager/pull/928)
+* [2026-06-25] PR #927 [Version Integrity]: chore(version): no drift found (`dd5b788`) [View](https://github.com/AlbiDR/Clash-Manager/pull/927)
+* [2026-06-25] PR #926 [TSDoc]: docs(tsdoc): document core selection and visibility services (`9b798fb`) [View](https://github.com/AlbiDR/Clash-Manager/pull/926)
+* [2026-06-25] PR #925 [README]: docs(readme): reconcile backend kernel and pwa service registry (`e00ac46`) [View](https://github.com/AlbiDR/Clash-Manager/pull/925)
+* [2026-06-25] PR #924 [Performance]: perf(opt): standardize variable naming for domain clarity (`8057097`) [View](https://github.com/AlbiDR/Clash-Manager/pull/924)
+* [2026-06-25] PR #923 [Baseline]: chore(baseline): fold new migrations into master baseline (`710ec50`) [View](https://github.com/AlbiDR/Clash-Manager/pull/923)
+* [2026-06-25] PR #922 [Verification]: [Stage 2] Verification - Logic Integrity Auditor (`296feca`) [View](https://github.com/AlbiDR/Clash-Manager/pull/922)
+* [2026-06-25] PR #921 [Hardening]: fix(harden): secure recruitment boundary and excise anemic pathogens (`bea0632`) [View](https://github.com/AlbiDR/Clash-Manager/pull/921)
+* [2026-06-24] PR #920 [APK UX]: fix(apk-ux): add tactile feedback to BaseSelect (`2be5f2f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/920)
+* [2026-06-24] PR #919 [APK Optimization]: perf(apk-optimization): enable asset compression and prune locales (`7e9a02b`) [View](https://github.com/AlbiDR/Clash-Manager/pull/919)
+* [2026-06-24] PR #918 [APK Integrity]: fix(apk-integrity): synchronize versioning and harden network security (`4ffc664`) [View](https://github.com/AlbiDR/Clash-Manager/pull/918)
+* [2026-06-24] PR #917 [Dependencies]: chore(deps): update major version watchlist (`cc6e38f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/917)
+* [2026-06-24] PR #916 [TSDoc]: docs(tsdoc): document sort options metadata (`54a9d9b`) [View](https://github.com/AlbiDR/Clash-Manager/pull/916)
+* [2026-06-24] PR #915 [Version Integrity]: chore(version): reconcile version drift in supabase plan (`c57ab4b`) [View](https://github.com/AlbiDR/Clash-Manager/pull/915)
+* [2026-06-24] PR #914 [README]: docs(readme): reconcile shared interaction directive constraints (`4429e8d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/914)
+* [2026-06-24] PR #913 [Verification]: test(verify): add logic proofs for backend shared schemas (`36298c3`) [View](https://github.com/AlbiDR/Clash-Manager/pull/913)
+* [2026-06-24] PR #912 [Hardening]: fix(harden): excise any pathogens from vTooltip and App lifecycle (`f745366`) [View](https://github.com/AlbiDR/Clash-Manager/pull/912)
+* [2026-06-23] PR #911 [APK UX]: fix(apk-ux): integrate v-tactile haptics into SettingRow (`750052a`) [View](https://github.com/AlbiDR/Clash-Manager/pull/911)
+* [2026-06-23] PR #910 [APK Optimization]: perf(apk-optimization): enable hardware acceleration and prune locale resources (`b88197f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/910)
+* [2026-06-23] PR #909 [Dependencies]: chore(deps): bump knip from 6.17.1 to 6.18.0 (`a99f31b`) [View](https://github.com/AlbiDR/Clash-Manager/pull/909)
+* [2026-06-23] PR #908 [Version Integrity]: chore(version): no drift found in monorepo v14.0.0 (`a7a1082`) [View](https://github.com/AlbiDR/Clash-Manager/pull/908)
+* [2026-06-23] PR #907 [TSDoc]: docs(tsdoc): document ScoreThresholdSelector component (`4dda289`) [View](https://github.com/AlbiDR/Clash-Manager/pull/907)
+* [2026-06-23] PR #906 [README]: docs(readme): reconcile shared ui and core utility drift (`675cac7`) [View](https://github.com/AlbiDR/Clash-Manager/pull/906)
+* [2026-06-23] PR #905 [Performance]: perf(opt): substrate hygiene and naming standardization (`1cae397`) [View](https://github.com/AlbiDR/Clash-Manager/pull/905)
+* [2026-06-23] PR #904 [Baseline]: chore(baseline): fold new migrations into master baseline (`043e70a`) [View](https://github.com/AlbiDR/Clash-Manager/pull/904)
+* [2026-06-23] PR #903 [Verification]: test(verify): add specs for formatDisplayTag (`9516127`) [View](https://github.com/AlbiDR/Clash-Manager/pull/903)
+* [2026-06-23] PR #902 [Hardening]: fix(harden): implement generics in BaseSelect.vue (`7169de7`) [View](https://github.com/AlbiDR/Clash-Manager/pull/902)
+* [2026-06-22] PR #901 [APK Optimization]: perf(apk-optimization): harden hybrid shell and reduce startup latency (`0c727f5`) [View](https://github.com/AlbiDR/Clash-Manager/pull/901)
+* [2026-06-22] PR #900 [APK Integrity]: fix(apk-integrity): synchronize assetlinks package name (`6c22368`) [View](https://github.com/AlbiDR/Clash-Manager/pull/900)
+* [2026-06-22] PR #899 [Dependencies]: chore(deps): bump @ast-grep/cli from ^0.43.0 to ^0.44.0 (`b2ece54`) [View](https://github.com/AlbiDR/Clash-Manager/pull/899)
+* [2026-06-22] PR #898 [Version Integrity]: chore(version): no drift found in monorepo v14.0.0 (`e3f7998`) [View](https://github.com/AlbiDR/Clash-Manager/pull/898)
+* [2026-06-22] PR #897 [TSDoc]: docs(tsdoc): document authoritative validation schemas in _shared (`f3947db`) [View](https://github.com/AlbiDR/Clash-Manager/pull/897)
+* [2026-06-22] PR #896 [README]: docs(readme): reconcile backend substrate and ingestion drift (`4e492ba`) [View](https://github.com/AlbiDR/Clash-Manager/pull/896)
+* [2026-06-22] PR #895 [Refactor/Optimization]: refactor(opt): Optimization (Substrate Hygiene - Stage 4) - Standardize variable naming for domain clarity (`f173909`) [View](https://github.com/AlbiDR/Clash-Manager/pull/895)
+* [2026-06-22] PR #894 [Baseline]: chore(baseline): fold new migrations into master baseline (`a9dd40e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/894)
+* [2026-06-22] PR #893 [Verification]: test(verify): add specs for BaseSelect component (`2175d03`) [View](https://github.com/AlbiDR/Clash-Manager/pull/893)
+* [2026-06-22] PR #892 [Hardening]: fix(harden): backend substrate integrity (`97f467d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/892)
+* [2026-06-21] PR #891 [APK UX]: fix(apk-ux): replace native select elements with BaseSelect abstraction (`d2bc3c2`) [View](https://github.com/AlbiDR/Clash-Manager/pull/891)
+* [2026-06-21] PR #890 [APK Optimization]: perf(apk-optimization): optimize SW precaching and consolidate vendor chunks (`0c8cdda`) [View](https://github.com/AlbiDR/Clash-Manager/pull/890)
+* [2026-06-21] PR #889 [APK Integrity]: fix(apk-integrity): sync package identity and storage versioning (`d17b150`) [View](https://github.com/AlbiDR/Clash-Manager/pull/889)
+* [2026-06-21] PR #888 [Dependencies]: chore(deps): update major version watchlist (`6544791`) [View](https://github.com/AlbiDR/Clash-Manager/pull/888)
+* [2026-06-21] PR #887 [Version Integrity]: chore(version): no drift found (`6436d99`) [View](https://github.com/AlbiDR/Clash-Manager/pull/887)
+* [2026-06-21] PR #886 [TSDoc]: docs(tsdoc): document adaptive haptics engine (`e4896f7`) [View](https://github.com/AlbiDR/Clash-Manager/pull/886)
+* [2026-06-21] PR #885 [README]: docs(readme): reconcile architectural and infrastructure drift (`1e4da84`) [View](https://github.com/AlbiDR/Clash-Manager/pull/885)
+* [2026-06-21] PR #884 [Refactor/Optimization]: refactor(opt): centralize player tag presentation logic (`db53e89`) [View](https://github.com/AlbiDR/Clash-Manager/pull/884)
+* [2026-06-21] PR #883 [Baseline]: chore(baseline): fold new migrations into master baseline (`296eb9b`) [View](https://github.com/AlbiDR/Clash-Manager/pull/883)
+* [2026-06-21] PR #882 [Verification]: test(verify): saturating coverage for formatNumber edge cases (`157830a`) [View](https://github.com/AlbiDR/Clash-Manager/pull/882)
+* [2026-06-21] PR #881 [Hardening]: fix(harden): excise 'any' pathogens in Laboratory ParameterCard (`5e51fdc`) [View](https://github.com/AlbiDR/Clash-Manager/pull/881)
+* [2026-06-20] PR #880 [Dependencies]: chore(deps): update major version watchlist (`bb78672`) [View](https://github.com/AlbiDR/Clash-Manager/pull/880)
+* [2026-06-20] PR #879 [Version Integrity]: chore(version): no drift found in monorepo v14.0.0 (`2868a10`) [View](https://github.com/AlbiDR/Clash-Manager/pull/879)
+* [2026-06-20] PR #878 [TSDoc]: docs(tsdoc): document MemberSchemas.ts validation boundaries (`124136f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/878)
+* [2026-06-20] PR #877 [README]: docs(readme): reconcile core utility drift (`9fe639c`) [View](https://github.com/AlbiDR/Clash-Manager/pull/877)
+* [2026-06-20] PR #876 [Refactor/Optimization]: refactor(opt): centralize tag normalization via cleanTag utility (`596e141`) [View](https://github.com/AlbiDR/Clash-Manager/pull/876)
+* [2026-06-20] PR #875 [Baseline]: chore(baseline): fold new migrations into master baseline (`f4ae331`) [View](https://github.com/AlbiDR/Clash-Manager/pull/875)
+* [2026-06-20] PR #874 [Verification]: test(verify): add saturating specs for useVoyageStatus (`f07d79d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/874)
+* [2026-06-20] PR #873 [Hardening]: fix(harden): secured Royale discovery boundary in query-royale-api (`53140d3`) [View](https://github.com/AlbiDR/Clash-Manager/pull/873)
+* [2026-06-19] PR #872 [Refactor/Optimization]: refactor: centralize upgrade resolution logic to core domain (`964e367`) [View](https://github.com/AlbiDR/Clash-Manager/pull/872)
+* [2026-06-19] PR #871 [Dependencies]: chore(deps): update major version watchlist (`96aa0a4`) [View](https://github.com/AlbiDR/Clash-Manager/pull/871)
+* [2026-06-19] PR #870 [Version Integrity]: chore(version): no drift found (`4462b08`) [View](https://github.com/AlbiDR/Clash-Manager/pull/870)
+* [2026-06-19] PR #869 [General]: Document Voyage Status Orchestrator (Stage 6) (`bc14597`) [View](https://github.com/AlbiDR/Clash-Manager/pull/869)
+* [2026-06-19] PR #868 [README]: docs(readme): reconcile voyage feature drift (`b986989`) [View](https://github.com/AlbiDR/Clash-Manager/pull/868)
+* [2026-06-19] PR #867 [General]: Centralize Voyage Status Logic (`14a9469`) [View](https://github.com/AlbiDR/Clash-Manager/pull/867)
+* [2026-06-19] PR #866 [Baseline]: chore(baseline): fold new migrations into master baseline (`df74a77`) [View](https://github.com/AlbiDR/Clash-Manager/pull/866)
+* [2026-06-19] PR #865 [Verification]: test(verify): saturate coverage for useExternalLink hardware boundary (`170adaf`) [View](https://github.com/AlbiDR/Clash-Manager/pull/865)
+* [2026-06-19] PR #864 [Hardening]: fix(harden): secure isDataPerfect validation boundary (`9c474c7`) [View](https://github.com/AlbiDR/Clash-Manager/pull/864)
+* [2026-06-18] PR #863 [Dependencies]: chore(deps): bump supabase from 2.106.0 to 2.107.0 (`f8c864e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/863)
+* [2026-06-18] PR #862 [Version Integrity]: chore(version): no drift found (`1b5ac40`) [View](https://github.com/AlbiDR/Clash-Manager/pull/862)
+* [2026-06-18] PR #861 [TSDoc]: docs(tsdoc): document NavigationDock component contracts (`d7adf86`) [View](https://github.com/AlbiDR/Clash-Manager/pull/861)
+* [2026-06-18] PR #860 [Baseline]: chore(baseline): fold new migrations into master baseline (`a03bf2a`) [View](https://github.com/AlbiDR/Clash-Manager/pull/860)
+* [2026-06-18] PR #859 [Hardening]: fix(harden): secure native bridge access in useBlitzMode (`800a4a4`) [View](https://github.com/AlbiDR/Clash-Manager/pull/859)
+* [2026-06-17] PR #858 [Dependencies]: chore(deps): bump knip and update major version watchlist (`e6393bf`) [View](https://github.com/AlbiDR/Clash-Manager/pull/858)
+* [2026-06-17] PR #857 [Version Integrity]: chore(version): no drift found (`2811434`) [View](https://github.com/AlbiDR/Clash-Manager/pull/857)
+* [2026-06-17] PR #856 [TSDoc]: docs(tsdoc): document PWA manager core service (`430e314`) [View](https://github.com/AlbiDR/Clash-Manager/pull/856)
+* [2026-06-17] PR #855 [README]: docs(readme): reconcile settings feature documentation (`5e79fdc`) [View](https://github.com/AlbiDR/Clash-Manager/pull/855)
+* [2026-06-17] PR #854 [Baseline]: chore(baseline): fold new migrations into master baseline (`dc0ebc7`) [View](https://github.com/AlbiDR/Clash-Manager/pull/854)
+* [2026-06-17] PR #853 [Verification]: test(verify): add coverage for NavigationDock component (`e92fca6`) [View](https://github.com/AlbiDR/Clash-Manager/pull/853)
+* [2026-06-17] PR #852 [Hardening]: fix(harden): secure native bridge boundary and excise any pathogens (`7800643`) [View](https://github.com/AlbiDR/Clash-Manager/pull/852)
+* [2026-06-16] PR #851 [Refactor/Optimization]: refactor: centralize KING_LEVEL_MAX and eliminate magic number 90 (`78da64e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/851)
+* [2026-06-16] PR #850 [Dependencies]: chore(deps): apply Tier 1 maintenance updates (`70b6bdd`) [View](https://github.com/AlbiDR/Clash-Manager/pull/850)
+* [2026-06-16] PR #849 [Version Integrity]: chore(version): no drift found (`b0c37b5`) [View](https://github.com/AlbiDR/Clash-Manager/pull/849)
+* [2026-06-16] PR #848 [TSDoc]: docs(tsdoc): document console selection orchestrator (`7c38c98`) [View](https://github.com/AlbiDR/Clash-Manager/pull/848)
+* [2026-06-16] PR #847 [README]: docs(readme): reconcile useConsoleSelection service drift (`ae50c85`) [View](https://github.com/AlbiDR/Clash-Manager/pull/847)
+* [2026-06-16] PR #846 [Refactor/Optimization]: refactor(opt): decouple selection logic and standardize viewport sensing (`b72b138`) [View](https://github.com/AlbiDR/Clash-Manager/pull/846)
+* [2026-06-16] PR #845 [Baseline]: chore(baseline): fold new migrations into master baseline (`47961b4`) [View](https://github.com/AlbiDR/Clash-Manager/pull/845)
+* [2026-06-16] PR #844 [Verification]: test(verify): add specs for usePwaManager service (`f691e86`) [View](https://github.com/AlbiDR/Clash-Manager/pull/844)
+* [2026-06-16] PR #843 [Hardening]: fix(harden): implement validation boundary for leaderboard scraper (`4abb50e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/843)
+* [2026-06-15] PR #842 [Dependencies]: chore(deps): no action required (`0103adc`) [View](https://github.com/AlbiDR/Clash-Manager/pull/842)
+* [2026-06-15] PR #841 [Version Integrity]: fix(version): reconcile version drift and catalog adherence (`2409fac`) [View](https://github.com/AlbiDR/Clash-Manager/pull/841)
+* [2026-06-15] PR #840 [TSDoc]: docs(tsdoc): document SelectionFab interface and logic intent (`4e95d4f`) [View](https://github.com/AlbiDR/Clash-Manager/pull/840)
+* [2026-06-15] PR #839 [README]: docs(readme): reconcile backend engine count and battlelog proxy (`2216641`) [View](https://github.com/AlbiDR/Clash-Manager/pull/839)
+* [2026-06-15] PR #838 [Performance]: perf(opt): standardize numeric formatting and prune redundant styles (`2d3ffbe`) [View](https://github.com/AlbiDR/Clash-Manager/pull/838)
+* [2026-06-15] PR #837 [Baseline]: chore(baseline): fold new migrations into master baseline (`412cc7c`) [View](https://github.com/AlbiDR/Clash-Manager/pull/837)
+* [2026-06-15] PR #836 [Hardening]: fix(harden): secure battlelog proxy (`22eaa05`) [View](https://github.com/AlbiDR/Clash-Manager/pull/836)
+* [2026-06-14] PR #835 [Refactor/Optimization]: refactor: relocate role formatting and standardize numeric display (`d28a89d`) [View](https://github.com/AlbiDR/Clash-Manager/pull/835)
+* [2026-06-14] PR #834 [Dependencies]: chore(deps): align @types/node and bump vue-tsc (`580c139`) [View](https://github.com/AlbiDR/Clash-Manager/pull/834)
+* [2026-06-14] PR #833 [Version Integrity]: chore(version): no drift found (`32f9564`) [View](https://github.com/AlbiDR/Clash-Manager/pull/833)
+* [2026-06-14] PR #832 [TSDoc]: docs(tsdoc): document headhunter-scanner profiler stage (`c2b6e11`) [View](https://github.com/AlbiDR/Clash-Manager/pull/832)
+* [2026-06-14] PR #831 [README]: docs(readme): reconcile pwa service registry and document user proxy engine (`217b351`) [View](https://github.com/AlbiDR/Clash-Manager/pull/831)
+* [2026-06-14] PR #830 [Baseline]: chore(baseline): harden declarative schema and fix ingestion logic (`cb7fe49`) [View](https://github.com/AlbiDR/Clash-Manager/pull/830)
+* [2026-06-14] PR #829 [Verification]: test(verify): add specs for useViewport composable (`99a5845`) [View](https://github.com/AlbiDR/Clash-Manager/pull/829)
+* [2026-06-14] PR #828 [Hardening]: fix(harden): secure wake lock engine and excise any pathogens (`fab0dcd`) [View](https://github.com/AlbiDR/Clash-Manager/pull/828)
+
+## T3 -- Historical (31-90 days)
+
+> Grouped by week and domain. Use for pattern recognition.
+
+#### 2026-W24
+* 3 PRs [Baseline]: #781, #813, #822
+* 6 PRs [Dependencies]: #785, #793, #801, #809, #817, #826
+* 6 PRs [Hardening]: #780, #788, #795, #803, #811, #820
+* 4 PRs [Performance]: #787, #797, #805, #814
+* 6 PRs [README]: #782, #790, #798, #806, #815, #823
+* 6 PRs [Refactor/Optimization]: #786, #794, #802, #810, #819, #827
+* 6 PRs [TSDoc]: #783, #791, #799, #807, #816, #824
+* 6 PRs [Verification]: #779, #789, #796, #804, #812, #821
+* 6 PRs [Version Integrity]: #784, #792, #800, #808, #818, #825
+
+#### 2026-W23
+* 4 PRs [Baseline]: #721, #747, #762, #771
+* 7 PRs [Dependencies]: #726, #734, #742, #752, #759, #769, #778
+* 1 PR [General]: #756
+* 7 PRs [Hardening]: #719, #728, #737, #745, #754, #763, #772
+* 4 PRs [Performance]: #722, #730, #748, #765
+* 7 PRs [README]: #723, #731, #736, #740, #749, #766, #775
+* 9 PRs [Refactor/Optimization]: #727, #735, #739, #744, #753, #755, #760, #770, #774
+* 7 PRs [TSDoc]: #724, #732, #741, #750, #757, #767, #776
+* 7 PRs [Verification]: #720, #729, #738, #746, #761, #764, #773
+* 7 PRs [Version Integrity]: #725, #733, #743, #751, #758, #768, #777
+
+#### 2026-W22
+* 6 PRs [Dependencies]: #680, #687, #693, #700, #710, #716
+* 4 PRs [General]: #674, #682, #692, #718
+* 6 PRs [Hardening]: #676, #688, #690, #695, #704, #711
+* 2 PRs [Performance]: #684, #697
+* 6 PRs [README]: #678, #685, #691, #698, #707, #713
+* 6 PRs [Refactor/Optimization]: #681, #694, #701, #703, #706, #717
+* 5 PRs [TSDoc]: #677, #686, #699, #708, #714
+* 7 PRs [Verification]: #675, #683, #689, #696, #702, #705, #712
+* 3 PRs [Version Integrity]: #679, #709, #715
+
+#### 2026-W21
+* 1 PR [Chore]: #668
+* 7 PRs [Dependencies]: #628, #635, #643, #649, #656, #664, #672
+* 4 PRs [General]: #624, #638, #665, #673
+* 8 PRs [Hardening]: #622, #629, #637, #644, #646, #651, #658, #666
+* 1 PR [Performance]: #653
+* 6 PRs [README]: #632, #640, #647, #654, #661, #669
+* 6 PRs [Refactor/Optimization]: #631, #636, #639, #650, #657, #660
+* 7 PRs [TSDoc]: #626, #633, #641, #648, #655, #662, #670
+* 6 PRs [Verification]: #623, #630, #645, #652, #659, #667
+* 6 PRs [Version Integrity]: #625, #627, #634, #642, #663, #671
+
+#### 2026-W20
+* 7 PRs [Dependencies]: #580, #586, #591, #599, #606, #613, #620
+* 5 PRs [General]: #583, #593, #600, #601, #614
+* 6 PRs [Hardening]: #577, #581, #587, #594, #608, #615
+* 3 PRs [Performance]: #588, #596, #617
+* 7 PRs [README]: #579, #584, #589, #597, #604, #610, #618
+* 3 PRs [Refactor/Optimization]: #603, #607, #621
+* 6 PRs [TSDoc]: #578, #585, #590, #605, #611, #619
+* 5 PRs [Verification]: #582, #595, #602, #609, #616
+* 3 PRs [Version Integrity]: #592, #598, #612
+
+#### 2026-W19
+* 7 PRs [Dependencies]: #542, #548, #553, #559, #564, #570, #576
+* 2 PRs [General]: #546, #573
+* 6 PRs [Hardening]: #539, #543, #554, #560, #565, #571
+* 1 PR [Performance]: #550
+* 6 PRs [README]: #540, #545, #551, #557, #568, #574
+* 3 PRs [Refactor/Optimization]: #556, #561, #567
+* 7 PRs [TSDoc]: #541, #547, #552, #558, #563, #569, #575
+* 6 PRs [Verification]: #544, #549, #555, #562, #566, #572
+
+#### 2026-W18
+* 6 PRs [Dependencies]: #509, #514, #520, #527, #532, #538
+* 6 PRs [Hardening]: #504, #510, #515, #522, #528, #533
+* 6 PRs [README]: #507, #513, #518, #525, #530, #536
+* 5 PRs [Refactor/Optimization]: #506, #517, #524, #529, #535
+* 6 PRs [TSDoc]: #508, #512, #519, #526, #531, #537
+* 5 PRs [Verification]: #505, #511, #516, #523, #534
+
+#### 2026-W17
+* 7 PRs [Dependencies]: #467, #472, #477, #484, #490, #496, #503
+* 1 PR [General]: #486
+* 6 PRs [Hardening]: #462, #473, #478, #485, #492, #498
+* 1 PR [Performance]: #464
+* 5 PRs [README]: #469, #481, #487, #493, #500
+* 2 PRs [Refactor/Optimization]: #480, #499
+* 7 PRs [TSDoc]: #466, #470, #476, #482, #488, #494, #501
+* 6 PRs [Verification]: #463, #468, #474, #479, #491, #497
+* 7 PRs [Version Integrity]: #465, #471, #475, #483, #489, #495, #502
+
+#### 2026-W16
+* 5 PRs [Dependencies]: #437, #442, #447, #454, #461
+* 1 PR [General]: #456
+* 4 PRs [Hardening]: #431, #438, #443, #448
+* 1 PR [Performance]: #457
+* 5 PRs [README]: #434, #440, #445, #451, #458
+* 3 PRs [Refactor/Optimization]: #433, #444, #450
+* 5 PRs [TSDoc]: #435, #441, #446, #452, #459
+* 4 PRs [Verification]: #432, #439, #449, #455
+* 3 PRs [Version Integrity]: #436, #453, #460
+
+## T4 -- Archive (90+ days)
+
+> Monthly domain summaries. Proven patterns extracted to PIPELINE_INTELLIGENCE.md.
+
+#### April 2026
+* 13 PRs [Dependencies]
+* 4 PRs [General]
+* 14 PRs [Hardening]
+* 2 PRs [Performance]
+* 10 PRs [README]
+* 5 PRs [Refactor/Optimization]
+* 12 PRs [TSDoc]
+* 15 PRs [Verification]
+* 10 PRs [Version Integrity]
+
+#### March 2026
+* 16 PRs [Dependencies]
+* 9 PRs [Documentation]
+* 9 PRs [Fix]
+* 6 PRs [General]
+* 16 PRs [Hardening]
+* 1 PR [Performance]
+* 19 PRs [README]
+* 17 PRs [Refactor/Optimization]
+* 18 PRs [TSDoc]
+* 8 PRs [Testing]
+* 33 PRs [Verification]
+* 4 PRs [Version Integrity]
+
+#### February 2026
+* 1 PR [Documentation]
+* 3 PRs [Fix]
+* 3 PRs [README]
+* 2 PRs [Refactor/Optimization]
+* 2 PRs [Testing]
+
