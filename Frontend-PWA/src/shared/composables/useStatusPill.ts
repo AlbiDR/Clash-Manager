@@ -28,7 +28,12 @@ export interface StatusPillProps {
  * - **Role:** Presentation logic orchestrator for connectivity status.
  *
  * @param props - Component props as a reactive object or getter.
- * @returns State and computed properties for the StatusPill.
+ * @returns
+ * - `isExpanded`: Reactive toggle for the detailed metadata view.
+ * - `isDB`: True if the primary status label is "DB" (cached state).
+ * - `displayText`: Viewport-aware label for the pill.
+ * - `displaySource`: Normalized data source label.
+ * - `handleToggle`: Expansion orchestrator with haptic awareness.
  */
 export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   const haptics = useHaptics();
@@ -36,6 +41,7 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
 
   // [DECISION LOG] AUTO-EXPANSION: Automatically expand on critical states
   // (loading/error) to ensure user awareness of background sync or failures.
+  // This satisfies the "Zero-Silence" interaction mandate in the UI Bible.
   watch(() => toValue(props).type, (newType) => {
     if (newType === "loading" || newType === "error") {
       isExpanded.value = true;
@@ -53,6 +59,8 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
 
   const isDB = computed(() => toValue(props).text === 'DB');
 
+  // [THREAT:] UI OCCLUSION - Large labels in header clusters cause layout shifts
+  // or overlap on narrow devices.
   // [DECISION LOG] RESPONSIVE TRUNCATION: On narrow viewports, truncate
   // to the last word to maintain UI stability in header clusters.
   const { isMobileNarrow } = useViewport();
