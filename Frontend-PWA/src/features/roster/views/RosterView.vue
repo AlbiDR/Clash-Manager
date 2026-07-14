@@ -80,23 +80,23 @@ const {
       :items="visibleItems"
       :is-showcase-mode="isShowcaseMode"
     >
-      <template #item="{ item, index }">
+      <template #item="{ item: memberSnapshot, index }">
         <MemberCard
-          :key="item.id"
-          v-memo="getMemoKeys(item.id, [
-            item.performanceScore,
-            item.dt,
-            item.d.rate,
-            item.d.wfame,
-            item.d.avg,
-            item.d.seen
+          :key="memberSnapshot.id"
+          v-memo="getMemoKeys(memberSnapshot.id, [
+            memberSnapshot.performanceScore,
+            memberSnapshot.dt,
+            memberSnapshot.d.rate,
+            memberSnapshot.d.wfame,
+            memberSnapshot.d.avg,
+            memberSnapshot.d.seen
           ])"
-          :id="`member-${item.id}`"
-          :member="item"
-          v-bind="getCardMetadata(item.id)"
+          :id="`member-${memberSnapshot.id}`"
+          :member="memberSnapshot"
+          v-bind="getCardMetadata(memberSnapshot.id)"
           :style="{ '--i': index }"
-          @toggle="toggleExpand(item.id)"
-          @toggle-select="toggleSelect(item.id)"
+          @toggle="toggleExpand(memberSnapshot.id)"
+          @toggle-select="toggleSelect(memberSnapshot.id)"
         />
       </template>
     </ConsoleList>

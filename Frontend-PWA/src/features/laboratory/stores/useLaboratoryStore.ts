@@ -94,11 +94,11 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
    * "Clinical" simulation state survives session restarts or accidental
    * navigation by caching the authoritative PlayerData in LocalStorage.
    *
-   * @param data - The player data to persist, or null to clear the cache.
+   * @param playerDataSnapshot - The player data to persist, or null to clear the cache.
    */
-  function persistObservation(data: PlayerData | null) {
-    if (data) {
-      localStorage.setItem(STORAGE_KEY_OBSERVATION, JSON.stringify(data));
+  function persistObservation(playerDataSnapshot: PlayerData | null) {
+    if (playerDataSnapshot) {
+      localStorage.setItem(STORAGE_KEY_OBSERVATION, JSON.stringify(playerDataSnapshot));
     } else {
       localStorage.removeItem(STORAGE_KEY_OBSERVATION);
     }
@@ -113,10 +113,10 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
    * with hypothetical resources while ensuring the resulting Inventory
    * remains structurally valid via Valibot schema enforcement.
    *
-   * @param profileData - The base player data containing the default inventory.
+   * @param playerDataSnapshot - The base player data containing the default inventory.
    * @returns The merged inventory with overrides applied.
    */
-  function loadPersistedInventory(profileData: PlayerData): Inventory {
+  function loadPersistedInventory(playerDataSnapshot: PlayerData): Inventory {
     const stored = localStorage.getItem(STORAGE_KEY_INVENTORY);
     if (stored) {
       try {
@@ -126,12 +126,12 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
         if (result.success) {
           const persisted = result.output;
           return {
-            ...profileData.inventory,
+            ...playerDataSnapshot.inventory,
             ...persisted,
-            gold: asGold(persisted.gold ?? Number(profileData.inventory.gold)),
-            gems: asGems(persisted.gems ?? Number(profileData.inventory.gems)),
+            gold: asGold(persisted.gold ?? Number(playerDataSnapshot.inventory.gold)),
+            gems: asGems(persisted.gems ?? Number(playerDataSnapshot.inventory.gems)),
             wildCards: {
-              ...profileData.inventory.wildCards,
+              ...playerDataSnapshot.inventory.wildCards,
               ...(persisted.wildCards || {})
             }
           };
@@ -140,7 +140,7 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
         console.warn("[LaboratoryStore] Failed to parse persisted inventory");
       }
     }
-    return profileData.inventory;
+    return playerDataSnapshot.inventory;
   }
 
   /**
@@ -207,11 +207,11 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
    * "Source of Truth" for the simulation engine by injecting validated
    * PlayerData into the feature state.
    *
-   * @param data - The player data to set.
+   * @param playerDataSnapshot - The player data to set.
    */
-  function setObservation(data: PlayerData | null) {
-    state.value.observation = data;
-    persistObservation(data);
+  function setObservation(playerDataSnapshot: PlayerData | null) {
+    state.value.observation = playerDataSnapshot;
+    persistObservation(playerDataSnapshot);
   }
 
   /**

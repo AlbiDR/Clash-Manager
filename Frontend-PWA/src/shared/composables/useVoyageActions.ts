@@ -51,12 +51,12 @@ export function useVoyageActions(
    */
   async function handleRpcResponse(
     operation: string,
-    response: { success: boolean; data?: unknown; error?: unknown }
+    voyageRpcResponse: { success: boolean; data?: unknown; error?: unknown }
   ) {
     // [THREAT:] Unvalidated RPC responses can mask database failures or inject malformed state.
     // [DECISION LOG] Ensuring both transport success and logical success via Valibot boundaries.
-    if (response.success) {
-      const validation = v.safeParse(VoyageRpcResultSchema, response.data);
+    if (voyageRpcResponse.success) {
+      const validation = v.safeParse(VoyageRpcResultSchema, voyageRpcResponse.data);
 
       if (!validation.success) {
         console.error(`[Voyage] ${operation} response validation failed:`, validation.issues);
@@ -72,8 +72,8 @@ export function useVoyageActions(
         throw new Error(rpcResult.error ?? `${operation} failed`);
       }
     } else {
-      console.error(`[Voyage] ${operation} failed (network/auth):`, response.error);
-      throw new Error(String(response.error) ?? `${operation} failed`);
+      console.error(`[Voyage] ${operation} failed (network/auth):`, voyageRpcResponse.error);
+      throw new Error(String(voyageRpcResponse.error) ?? `${operation} failed`);
     }
   }
 
@@ -92,12 +92,12 @@ export function useVoyageActions(
     loading.value = true;
     try {
       await action();
-    } catch (err: unknown) {
+    } catch (capturedError: unknown) {
       // [THREAT:] Unhandled 'any' exceptions can leak internal stack traces.
       // [DECISION LOG] Narrowing 'unknown' error to ensure safe logging and propagation.
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const errorMessage = capturedError instanceof Error ? capturedError.message : String(capturedError);
       console.error(`[Voyage] ${operation} action error:`, errorMessage);
-      throw err;
+      throw capturedError;
     } finally {
       loading.value = false;
     }
@@ -115,8 +115,8 @@ export function useVoyageActions(
   async function scheduleVoyage(target: number, startsIn: T2TInput) {
     await executeAction("Schedule", async () => {
       const start_at = t2tToTimestamp(startsIn);
-      const response = await apiScheduleVoyageEvent(target, start_at);
-      await handleRpcResponse("Scheduling", response);
+      const voyageRpcResponse = await apiScheduleVoyageEvent(target, start_at);
+      await handleRpcResponse("Scheduling", voyageRpcResponse);
     });
   }
 
@@ -135,8 +135,8 @@ export function useVoyageActions(
 
     await executeAction("Set end time", async () => {
       const end_at = t2tToTimestamp(endsIn);
-      const response = await apiSetVoyageEnd(voyageId, end_at);
-      await handleRpcResponse("Setting end time", response);
+      const voyageRpcResponse = await apiSetVoyageEnd(voyageId, end_at);
+      await handleRpcResponse("Setting end time", voyageRpcResponse);
     });
   }
 
@@ -153,8 +153,8 @@ export function useVoyageActions(
     if (!voyageId) throw new Error("No scheduled voyage is active.");
 
     await executeAction("Cancel schedule", async () => {
-      const response = await apiCancelScheduledVoyageEvent(voyageId);
-      await handleRpcResponse("Cancellation", response);
+      const voyageRpcResponse = await apiCancelScheduledVoyageEvent(voyageId);
+      await handleRpcResponse("Cancellation", voyageRpcResponse);
     });
   }
 
@@ -178,8 +178,8 @@ export function useVoyageActions(
       const start_at = t2tToTimestamp(startsIn);
       const end_at = t2tToTimestamp(endsIn);
 
-      const response = await apiInitializeVoyage(target, start_at, end_at);
-      await handleRpcResponse("Activation", response);
+      const voyageRpcResponse = await apiInitializeVoyage(target, start_at, end_at);
+      await handleRpcResponse("Activation", voyageRpcResponse);
     });
   }
 
