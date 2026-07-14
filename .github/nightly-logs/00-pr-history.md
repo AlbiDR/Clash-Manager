@@ -174,6 +174,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-14] PR #PENDING [Stage 9]: refactor(structural): decompose harvester and standardize haptics
+**Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/query-royale-api/index.ts, Backend/supabase/functions/query-royale-api/harvester.ts, Backend/supabase/functions/_shared/config.ts, Frontend-PWA/src/shared/ui/BaseSelect.vue
+**Why:** The query-royale-api function had grown too complex, and BaseSelect was using an anti-pattern for haptics.
+**Change:** Extracted multi-tier harvesting logic to a new module, centralized operational constants, and integrated the v-tactile directive in BaseSelect.
+**Result:** Improved backend maintainability (SRP) and standardized frontend interaction brokering (ADR Section IV).
+
 ### [2026-07-14] PR #PENDING [Stage 7]: chore(version): no drift found
 **Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log

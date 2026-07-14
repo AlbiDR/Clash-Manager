@@ -187,3 +187,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### Stage 12 -- APK UX
 * Current focus: Touch target compliance, haptics brokering.
 * Recurring: New interactive components frequently miss 48px minimum.
+
+### Frontend-PWA and Testing
+
+* **Synthetic Data Bypass:** The Frontend-PWA supports a `?synthetic=true` URL parameter to bypass live backend dependencies and use high-fidelity mock data for showcase and testing. However, local development still requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to be defined (even with dummy values) in a `.env` file to prevent top-level initialization errors in `SupabaseClient.ts` during dev server startup. *(Finding: Stage 9, 2026-07-14)*

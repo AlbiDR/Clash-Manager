@@ -47,3 +47,28 @@ export const CONCURRENCY_PROFILER = 40;
 export const CONCURRENCY_RESCAN = 10;
 export const CONCURRENCY_DISCOVERY_KEYWORDS = 3;
 export const CONCURRENCY_DISCOVERY_TOURNAMENTS = 5;
+
+/**
+ * HARVESTER: Maximum number of country searches attempted concurrently during
+ * International harvest.
+ */
+export const MAX_HARVEST_EPOCHS = 15;
+
+/**
+ * HARVESTER: Major country IDs for global harvest fallback during early-season
+ * Path of Legends unpopulation.
+ */
+export const TOP_COUNTRY_IDS = [
+  "57000120", // United States
+  "57000095", // Spain
+  "57000038", // Brazil
+  "57000117", // Japan
+  "57000085", // France
+  "57000091", // Germany
+];
+
+/**
+ * HARVESTER: Target player floors for discovery results.
+ */
+export const TARGET_HARVEST_FLOOR = 80;
+export const MIN_LOCAL_POL_FLOOR = 10;

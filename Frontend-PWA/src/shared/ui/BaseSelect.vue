@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts" generic="T">
 import { ref, onMounted, onUnmounted } from "vue";
-import { useHaptics } from "../composables/useHaptics";
+import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 
 /**
@@ -16,6 +16,8 @@ import Icon from "./Icon.vue";
  *
  * [DECISION LOG] Transitioned to generic <T> to eliminate 'any' pathogens
  * in value handling. Renamed anemic 'o' to 'option' for domain clarity.
+ *
+ * [DECISION LOG] Integrated v-tactile directive for brokered haptics.
  */
 
 interface Option<V> {
@@ -36,20 +38,17 @@ const emit = defineEmits<{
   "update:modelValue": [T];
 }>();
 
-const haptics = useHaptics();
 const isOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
-  haptics.tap();
 };
 
 const selectOption = (option: Option<T>) => {
   if (option.disabled) return;
   // [THREAT:] Emitting unvalidated 'any' values can corrupt higher-layer state.
   // [DECISION LOG] Generics ensure that the emitted value strictly matches the T type.
-  haptics.medium();
   emit("update:modelValue", option.value);
   isOpen.value = false;
 };
@@ -78,6 +77,7 @@ const getSelectedLabel = () => {
 <template>
   <div class="custom-select" ref="selectRef">
     <button
+      v-tactile
       type="button"
       class="select-trigger"
       :aria-label="props.ariaLabel"
@@ -94,6 +94,7 @@ const getSelectedLabel = () => {
           <li
             v-for="option in props.options"
             :key="option.value"
+            v-tactile
             role="option"
             :aria-selected="option.value === props.modelValue"
             class="option-item"
