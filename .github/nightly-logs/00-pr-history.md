@@ -107,6 +107,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-14] PR #PENDING [Stage 6]: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts, Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts, Frontend-PWA/src/shared/composables/useVoyageActions.ts
+**Why:** Recent refactors in the Laboratory and Voyage domains necessitated a synchronization of their interface contracts and logic annotations to satisfy ADR maintainability constraints.
+**Change:** Injected comprehensive TSDoc and mandatory logic intent annotations (threat/decision logs) across core feature composables and stores.
+**Result:** 100% contract alignment for laboratory and voyage orchestration modules.
+
 ### [2026-07-14] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline
 **Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log

@@ -35,3 +35,8 @@
 * [2026-07-09] [Stage 6] Target: Codebase - Frontend-PWA/src/core/services/useClashLoader.ts | Hardened TSDoc for SWR hydration logic and injected mandatory threat/decision logs.
 * [2026-07-10] [Stage 6] Target: Codebase - Frontend-PWA/src/core/services/useStoragePersistence.ts | Hardened TSDoc and injected mandatory threat/decision logs for storage eviction and persistence rationale.
 * [2026-07-11] [Stage 6] Target: Codebase - Frontend-PWA/src/core/services/useClashDataStore.ts | Hardened interface contracts, documented SWR strategy and Service Worker update logic with ADR mappings.
+* [2026-07-14] [Stage 6] CHANGED: Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts -- Hardened interface contracts and logic annotations.
+* [2026-07-14] [Stage 6] CHANGED: Frontend-PWA/src/features/laboratory/stores/useLaboratoryStore.ts -- Hardened TSDoc and added logic intent annotations.
+* [2026-07-14] [Stage 6] CHANGED: Frontend-PWA/src/shared/composables/useVoyageActions.ts -- Hardened async boundaries and orchestrated actions.
+* [2026-07-14] [Stage 6] CLEAN: Frontend-PWA/src/features/laboratory/ -- All files in domain verified for licensing headers.
+* [2026-07-14] [Stage 6] CLEAN: Frontend-PWA/src/shared/composables/ -- All files in domain verified for licensing headers.

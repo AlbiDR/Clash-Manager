@@ -43,8 +43,19 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
   // --- STATE ---
 
   /**
-   * RECTIVE STATE ENGINE: Unified container for Laboratory feature state.
-   * Rationale: Simplifies state access by eliminating .value references in actions.
+   * REACTIVE STATE ENGINE: Unified container for Laboratory feature state.
+   *
+   * @remarks
+   * Simplifies state access by eliminating .value references in internal actions.
+   *
+   * **State Properties:**
+   * - `observation`: Authoritative hydrated player profile and inventory.
+   * - `operation`: Computed results from the last successful simulation run.
+   * - `isSimulating`: Boolean flag for active progression math computation.
+   * - `isFetching`: Boolean flag for active API profile retrieval.
+   * - `fetchError`: Error message if profile retrieval or hydration fails.
+   * - `settings`: Configuration parameters for the optimization strategy.
+   * - `trackedPlayerTag`: Persistent identifier for the currently observed player.
    */
   const state = ref({
     observation: null as PlayerData | null,
@@ -221,10 +232,13 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
    * Maps the output of the Layer 3 Simulation Engine back to the
    * reactive state container for UI projection.
    *
-   * @param result - The optimization result.
+   * [DECISION LOG] This is the final stage of the "Analyze" pipeline.
+   * The result object contains the prioritized upgrade list (trajectory).
+   *
+   * @param resultSnapshot - The optimization result.
    */
-  function setOperation(result: OptimizationResult | null) {
-    state.value.operation = result;
+  function setOperation(resultSnapshot: OptimizationResult | null) {
+    state.value.operation = resultSnapshot;
   }
 
   /**

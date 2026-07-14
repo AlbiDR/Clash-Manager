@@ -44,19 +44,33 @@ import { useLaboratorySimulation } from "./useLaboratorySimulation";
 /**
  * Primary composable for Laboratory operations.
  *
- * @returns {Object} Laboratory state and methods.
+ * @remarks
+ * Orchestrates the full lifecycle of the Laboratory feature, from player
+ * ingestion and inventory management to complex progression simulations.
  *
- * **Reactive State (Proxied from Store):**
- * - `observation`: Current hydrated player profile and inventory.
- * - `operation`: The result of the current simulation run.
- * - `settings`: User-defined optimization constraints.
- * - `isSimulating`: Boolean indicating if simulation logic is running.
- * - `isFetching`: Boolean indicating if a profile fetch is in progress.
- * - `fetchError`: Error message if the profile fetch fails.
+ * [ARCHITECTURE] Satisfies ADR Section III: Presentation Orchestration.
+ * Delegates state management to `useLaboratoryStore` and simulation math
+ * to `useLaboratorySimulation`, acting as the authoritative interface for
+ * the Laboratory view layer.
  *
- * **Behavioral Logic:**
- * - Triggers asynchronous simulation via `useLaboratorySimulation`.
- * - Fetches data from the Supabase backend when `playerTag` changes.
+ * @returns
+ * - `observation`: Computed reference to the hydrated PlayerData snapshot.
+ * - `operation`: Computed reference to the most recent OptimizationResult.
+ * - `settings`: Computed reference to the active OptimizationSettings.
+ * - `isSimulating`: Reactive flag indicating active simulation computation.
+ * - `isFetching`: Reactive flag indicating active API profile retrieval.
+ * - `fetchError`: Reactive error message from the most recent fetch attempt.
+ * - `layoutProps`: Unified computed object for driving `ConsoleLayout.vue`.
+ * - `layoutEvents`: Standardized event handlers for `ConsoleLayout.vue`.
+ * - `ingest`: Method to process raw API data into the laboratory domain.
+ * - `updateInventory`: Method to merge partial inventory overrides.
+ * - `analyze`: Triggers a manual re-run of the simulation engine.
+ * - `setSettings`: Updates optimization strategy and constraints.
+ * - `handleVaultUpdate`: High-level entry point for vault-specific UI updates.
+ * - `refresh`: Triggers a fresh profile fetch from the backend.
+ * - `setTrackedPlayerTag`: Updates the persistent player filter.
+ * - `trackedPlayerTag`: Reactive reference to the currently filtered tag.
+ * - `getTrajectoryMemoKeys`: Stability helper for `v-memo` trajectory lists.
  */
 export function useLaboratory() {
   const store = useLaboratoryStore();
@@ -97,23 +111,29 @@ export function useLaboratory() {
 
     // If rawInventory is provided, merge it into the data before loading persisted overrides
     if (rawInventory) {
-       const inventoryValidation = v.safeParse(RawInventorySchema, rawInventory);
-       if (inventoryValidation.success) {
-          const validatedInventory = inventoryValidation.output;
-          hydratedData.inventory = {
-            ...hydratedData.inventory,
-            gold: asGold(validatedInventory.gold ?? Number(hydratedData.inventory.gold)),
-            gems: asGems(validatedInventory.gems ?? Number(hydratedData.inventory.gems)),
-            wildCards: {
-              ...hydratedData.inventory.wildCards,
-              ...validatedInventory.wildCards
-            }
-          };
-       } else {
-          console.warn("[Laboratory] rawInventory validation failed", inventoryValidation.issues);
-       }
+      // [THREAT:] Unvalidated external inventory ingress.
+      // [DECISION LOG] Ensuring structural integrity via RawInventorySchema before
+      // permitting the merge into the hydrated domain model.
+      const inventoryValidation = v.safeParse(RawInventorySchema, rawInventory);
+      if (inventoryValidation.success) {
+        const validatedInventory = inventoryValidation.output;
+        hydratedData.inventory = {
+          ...hydratedData.inventory,
+          gold: asGold(validatedInventory.gold ?? Number(hydratedData.inventory.gold)),
+          gems: asGems(validatedInventory.gems ?? Number(hydratedData.inventory.gems)),
+          wildCards: {
+            ...hydratedData.inventory.wildCards,
+            ...validatedInventory.wildCards
+          }
+        };
+      } else {
+        console.warn("[Laboratory] rawInventory validation failed", inventoryValidation.issues);
+      }
     }
 
+    // [DECISION LOG] LocalStorage overrides take precedence over API-sourced inventory.
+    // This enables the "Hypothetical Simulation" use case where a user modifies
+    // their local gold/gems to see the impact on their trajectory.
     hydratedData.inventory = store.loadPersistedInventory(hydratedData);
 
     const currentLevel = hydratedData.profile.kingLevel;
@@ -151,6 +171,9 @@ export function useLaboratory() {
 
   // Initial hydration from Cache
   if (!observation.value) {
+    // [DECISION LOG] Bootstrapping from LocalStorage to achieve sub-second TTI.
+    // We hydrate the previous observation immediately while waiting for any
+    // background re-syncs to complete.
     const cached = localStorage.getItem(STORAGE_KEY_OBSERVATION);
     if (cached) {
       try {
@@ -158,14 +181,16 @@ export function useLaboratory() {
         const currentTag = trackedPlayerTag.value || clashData.value?.playerTag;
         if (parsed && (!currentTag || parsed.profile.tag === currentTag)) {
           // Re-hydrate to ensure branded types and new structure
-          // THREAT: Corrupted LocalStorage state causing silent boot failure.
+          // [THREAT:] Corrupted or stale LocalStorage state causing silent engine failure.
+          // [DECISION LOG] Passing through ProfileHydrator ensures that even cached
+          // data adheres to the latest authoritative domain structure.
           const hydrated = ProfileHydrator.hydrate(parsed);
           store.setObservation(hydrated);
           // Only trigger analysis if tags match or no tag filter applied
           analyze();
         }
       } catch (capturedError: unknown) {
-        // Target B [4]: The 'any' plague eliminated.
+        // [THREAT:] JSON parse or hydration failure from corrupt storage.
         console.warn("[Laboratory] Cache hydration failed:", capturedError instanceof Error ? capturedError.message : String(capturedError));
       }
     } else {

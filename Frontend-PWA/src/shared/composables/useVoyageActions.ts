@@ -28,7 +28,11 @@ import * as v from "valibot";
  * @param loading - Reactive boolean flag to track active RPC operations.
  * @param refresh - Async callback to trigger a full dataset re-hydration upon successful mutations.
  *
- * @returns Object containing the primary Voyage orchestration actions.
+ * @returns
+ * - `scheduleVoyage`: Schedules a new PENDING Voyage event in the future.
+ * - `setVoyageEnd`: Sets the end time on an already-ACTIVE Voyage event.
+ * - `cancelSchedule`: Cancels the currently scheduled PENDING Voyage event.
+ * - `activateVoyage`: Activates a new Voyage event (Direct IMMEDIATE ACTIVE).
  */
 export function useVoyageActions(
   summary: Ref<VoyageSummary | null>,
@@ -114,6 +118,8 @@ export function useVoyageActions(
    */
   async function scheduleVoyage(target: number, startsIn: T2TInput) {
     await executeAction("Schedule", async () => {
+      // [DECISION LOG] Converting relative time input to absolute ISO timestamp
+      // via Layer 1 utility to satisfy the backend RPC contract.
       const start_at = t2tToTimestamp(startsIn);
       const voyageRpcResponse = await apiScheduleVoyageEvent(target, start_at);
       await handleRpcResponse("Scheduling", voyageRpcResponse);
@@ -130,6 +136,7 @@ export function useVoyageActions(
    * @throws Error if no active voyage is found in the `summary` ref or the operation fails.
    */
   async function setVoyageEnd(endsIn: T2TInput) {
+    // [GUARD] Logic: Ensure an event ID exists before triggering the RPC.
     const voyageId = summary.value?.event.id;
     if (!voyageId) throw new Error("No active voyage found.");
 
@@ -175,6 +182,8 @@ export function useVoyageActions(
     endsIn: T2TInput
   ) {
     await executeAction("Activation", async () => {
+      // [DECISION LOG] Immediate activation requires both start and end bounds
+      // to be calculated and transmitted in a single atomic RPC.
       const start_at = t2tToTimestamp(startsIn);
       const end_at = t2tToTimestamp(endsIn);
 
