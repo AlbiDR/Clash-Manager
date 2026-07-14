@@ -85,11 +85,11 @@ export function useLaboratory() {
     let hydratedData: PlayerData;
     try {
       hydratedData = ProfileHydrator.hydrate(rawSnapshot);
-    } catch (err: unknown) {
+    } catch (capturedError: unknown) {
       // THREAT: Malformed player profile causing simulation engine crash.
       // Rationale: Explicitly catching hydration failures prevents the engine
       // from running on invalid state and provides feedback to the store.
-      const message = err instanceof Error ? err.message : String(err);
+      const message = capturedError instanceof Error ? capturedError.message : String(capturedError);
       console.error("[Laboratory] Ingestion Failed:", message);
       store.setFetchError(message);
       return;
@@ -139,9 +139,9 @@ export function useLaboratory() {
     try {
       const profile = await getPlayerProfile(tag);
       ingest(profile);
-    } catch (err: unknown) {
+    } catch (capturedError: unknown) {
       // THREAT: Network or API failure on profile retrieval.
-      const message = err instanceof Error ? err.message : String(err);
+      const message = capturedError instanceof Error ? capturedError.message : String(capturedError);
       console.error("[Laboratory] Fetch Failed:", message);
       store.setFetchError(message);
     } finally {
@@ -164,9 +164,9 @@ export function useLaboratory() {
           // Only trigger analysis if tags match or no tag filter applied
           analyze();
         }
-      } catch (err: unknown) {
+      } catch (capturedError: unknown) {
         // Target B [4]: The 'any' plague eliminated.
-        console.warn("[Laboratory] Cache hydration failed:", err instanceof Error ? err.message : String(err));
+        console.warn("[Laboratory] Cache hydration failed:", capturedError instanceof Error ? capturedError.message : String(capturedError));
       }
     } else {
       const initialTag = trackedPlayerTag.value || clashData.value?.playerTag;
