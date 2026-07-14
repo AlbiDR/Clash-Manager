@@ -17,6 +17,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-14] PR #PENDING [Stage 2]: test(verify): extend saturating coverage for game utility kernel
+**Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/utils/utils-tests/game.spec.ts, .github/nightly-logs/02-verification-coverage.log
+**Why:** Critical functions in the game utility kernel lacked saturating logic proofs for boundary conditions and currency conversion.
+**Change:** Extended the game spec file with 23 tests covering level normalization, rarity mapping, and gem/xp math.
+**Result:** 100% logic coverage for the core game utility substrate.
+
 
 > Full context. Read these before acting to avoid duplicating recent work.
 
