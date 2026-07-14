@@ -1753,7 +1753,7 @@ CREATE OR REPLACE FUNCTION substrate.weighted_avg(
 RETURNS numeric
 LANGUAGE sql
 IMMUTABLE STRICT SECURITY DEFINER
-SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $$
     SELECT
         SUM(val * GREATEST(p_floor, 1.0 - (ord - 1)::numeric * p_decay)) /
@@ -3021,7 +3021,7 @@ CREATE OR REPLACE FUNCTION public.get_vault_secret(p_name text)
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public', 'substrate', 'vault', 'pg_temp'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $$
 BEGIN
     RETURN substrate.get_vault_secret(p_name);
@@ -3037,7 +3037,7 @@ CREATE OR REPLACE FUNCTION public.update_epoch_state(p_top50 integer)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public', 'substrate', 'pg_temp'
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     PERFORM substrate.update_epoch_state(p_top50);
