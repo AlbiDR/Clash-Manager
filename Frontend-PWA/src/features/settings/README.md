@@ -22,17 +22,18 @@ Brokers access to device-level capabilities through Layer 2 drivers.
 - **Theme Engine**: Interfaces with `@shared/composables/useTheme` to apply hex/RGB design tokens as CSS variables for Light, Dark, and Auto modes.
 - **Wake Lock**: Coordinates with `@shared/composables/useWakeLock` to prevent device sleep during intensive operations, ensuring synchronization integrity.
 
+### Feature Configuration (FeatureSettings.vue)
+Brokers access to advanced application behaviors and hardware-delegated services.
+- **Blitz Mode Calibration**: Provides a calibration interface for the native Android wrapper's foreground service coordinates.
+- **Hardware Bridge Detection**: Automatically detects the presence of the `AndroidBridge` JSBridge to toggle between PWA-driven and hardware-delegated Blitz Mode.
+- **APK Updates**: Orchestrates native Android shell updates by brokering download intents through the `@core/services/usePwaManager` kernel.
+- **Benchmarking Toggles**: Manages visibility for cross-feature performance auditing tooltips.
+
 ### Environment & Audit Controls (ModeSettings.vue)
 Manages specialized application modes used for auditing and demonstration.
 - **Showcase Mode**: Acts as a master toggle that synchronizes Blueprint (structural) and Synthetic (data) modes.
 - **Blueprint Mode**: Interfaces with `@core/services/useBlueprintMode` to force geometric skeleton rendering for layout auditing.
 - **Synthetic Mode**: Interfaces with `@core/services/useSyntheticMode` to redirect data ingestion to high-fidelity mock payloads.
-
-### Application Features (FeatureSettings.vue)
-Brokers access to advanced application behaviors and hardware-delegated services.
-- **Blitz Mode Calibration**: Provides a calibration interface for the native Android wrapper's foreground service coordinates.
-- **Hardware Bridge Detection**: Automatically detects the presence of the `AndroidBridge` JSBridge to toggle between PWA-driven and hardware-delegated Blitz Mode.
-- **Benchmarking Toggles**: Manages visibility for cross-feature performance auditing tooltips.
 
 ### Backend Maintenance (BackendRefresher.vue)
 Orchestrates manual maintenance triggers for the distributed backend engines.
@@ -46,6 +47,7 @@ The primary interface for managing the distributed backend lifecycle.
 
 ### Notifications & Push Alerts (NotificationSettings.vue)
 Orchestrates the application's reactive feedback loop.
+- **Permission Lifecycle**: Interfaces with `@core/services/usePwaManager` to probe and manage `notificationPermission` and `isPushSubscribed` states.
 - **Web Push**: VAPID-based cloud push is not yet implemented. The `subscribePush` handler is currently a placeholder that surfaces a "coming soon" notice pending Edge Function setup.
 - **Badging**: Interfaces with `@core/services/useBadge` to manage application-level notification badges across inconsistent platform APIs (iOS vs Android).
 
@@ -55,8 +57,8 @@ Brokers access to authoritative external domain resources.
 - **Open Source**: Provides direct access to the Clash Manager GitHub repository.
 
 ### System Recovery & Lifecycle (RecoverySettings.vue)
-Provides failsafe mechanisms for resolving structural or state corruption.
-- **Atomic Updates**: Triggers explicit Service Worker update checks via `virtual:pwa-register` to ensure the client is running the latest authoritative version.
+Provides failsafe mechanisms for resolving structural or state corruption. All recovery actions are delegated to the `@core/services/usePwaManager` kernel to ensure infrastructure concerns remain orthogonal to the feature layer.
+- **Atomic Updates**: Triggers explicit Service Worker update checks to ensure the client is running the latest authoritative version.
 - **Cache Purging**: Executes a non-destructive wipe of the Cache API and Service Worker registrations to resolve asset delivery failures.
 - **Factory Reset**: A destructive wipe of all local persistence (IndexedDB, LocalStorage) to resolve deep state corruption.
 

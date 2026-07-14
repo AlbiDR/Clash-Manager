@@ -46,7 +46,7 @@ Core Services (Layer 1) manage global application concerns such as persistence, 
 
 ### Application Shell & Logic
 - **useAppSettings.ts**: Multi-tier strategy for application configuration, mirrored across `LocalStorage` and `IndexedDB`.
-- **usePwaManager.ts**: Manages infrastructure-level PWA lifecycle (SW updates, recovery protocols).
+- **usePwaManager.ts**: Central orchestrator for infrastructure-level PWA lifecycle (SW updates, recovery protocols) and native APK shell updates (brokering the download URL).
 - **useUiCoordinator.ts**: Master arbiter of layout spacing and global FAB (Floating Action Button) state.
 - **useBackHandler.ts**: Orchestrates hardware back button behavior in hybrid environments, ensuring predictable navigation stack exit.
 - **useBenchmarking.ts**: Statistical engine for comparing individual metrics against clan averages using single-pass O(N) optimization.
