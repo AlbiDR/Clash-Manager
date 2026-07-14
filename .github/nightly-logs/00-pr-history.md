@@ -107,6 +107,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-14] PR #PENDING [Stage 5]: docs(readme): reconcile PWA manager delegation and config kernel
+**Domain:** README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/settings/README.md, Frontend-PWA/src/core/services/README.md, Frontend-PWA/src/core/config/README.md
+**Why:** Documentation for PWA recovery actions and global constants had drifted from the implementation truth.
+**Change:** Reconciled delegation of SW/recovery logic to the usePwaManager kernel and created authoritative documentation for the Layer 1 configuration kernel.
+**Result:** 100% synchronization between implementation ground truth and architectural documentation for core infrastructure.
+
 ### [2026-07-14] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline
 **Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log
