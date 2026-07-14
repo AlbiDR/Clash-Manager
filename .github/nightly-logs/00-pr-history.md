@@ -214,6 +214,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-14] PR #PENDING [Stage 11]: perf(apk-optimization): optimize webview rendering and sw precache
+**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/vite.config.ts, APK/src/com/albidr/clashmanager/MainActivity.java
+**Why:** Optimized the hybrid shell for better runtime performance and reduced installation footprint.
+**Change:** Enabled offscreen pre-rasterization in the native WebView and excluded iOS-specific icons from the Service Worker precache.
+**Result:** Improved scrolling smoothness in the hybrid shell and reduced Service Worker manifest size by ~1.5KB.
+
 ### [2026-07-14] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js and update major watchlist
 **Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
 **Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log

@@ -18,6 +18,10 @@ Approaches that have been validated through execution. Follow these when applica
   mode for the Android WebView. Produces sub-second cold boot startup. Do not
   revert to `LOAD_DEFAULT`. *(Established: PR #1103, 2026-07-13)*
 
+* **WebView Rendering:** `setOffscreenPreRaster(true)` improves scrolling
+  performance by pre-rendering off-screen content. Should be enabled for SDK >= 23.
+  *(Pattern: PR #PENDING, 2026-07-14)*
+
 * **SW cache consolidation:** Duplicate route registrations in `sw.ts` are a
   recurring source of cache bloat. Each Stage 11 run should verify that no route
   is registered more than once. *(Pattern: PR #1082, #1093)*

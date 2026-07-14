@@ -49,6 +49,9 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(false);
         settings.setGeolocationEnabled(false);
         settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        if (Build.VERSION.SDK_INT >= 23) {
+            settings.setOffscreenPreRaster(true);
+        }
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         settings.setSupportMultipleWindows(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
