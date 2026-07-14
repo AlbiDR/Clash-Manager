@@ -52,6 +52,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-14] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline
+**Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Minor formatting drift and non-canonical search_path declarations were detected in the master baseline.
+**Change:** Standardized all 95 function search_path declarations to the canonical monorepo form and verified RLS/topological compliance.
+**Result:** Hardened declarative database substrate with 100% search_path isolation consistency.
+
 ### [2026-07-14] PR #PENDING [Stage 2]: test(verify): extend saturating coverage for game utility kernel
 **Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/core/utils/utils-tests/game.spec.ts, .github/nightly-logs/02-verification-coverage.log
