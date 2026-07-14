@@ -59,6 +59,11 @@ Approaches that have been validated through execution. Follow these when applica
   catalog multiple times (PR #1061, #1069). This package requires extra attention
   on each Stage 8 dependency audit. *(Pattern: PR #1061, #1069)*
 
+* **Pinned backend imports:** Backend services often use pinned `npm:` imports
+  (e.g., `npm:p-limit@7.3.0`) which may result in `knip` reporting the equivalent
+  catalog entry as unused. Verify usage in `Backend/` before pruning catalog.
+  *(Pattern: PR #PENDING, 2026-07-14)*
+
 * **Migration folding cadence:** New migrations accumulate rapidly. Stage 3
   should fold them into `master_migration.sql` on every run rather than
   letting them accumulate. Allowing more than three unfolded migrations

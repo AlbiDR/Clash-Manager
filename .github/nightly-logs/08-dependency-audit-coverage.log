@@ -76,3 +76,11 @@
 * [2026-07-09] [Stage 8] Target: Codebase - @types/node | ^26.1.0 | ^26.1.1 | | PASS |
 * [2026-07-10] [Stage 8] Target: Codebase - @supabase/supabase-js | ^2.110.1 | ^2.110.2 | | PASS |
 * [2026-07-11] [Stage 8] Target: Codebase - @formkit/auto-animate | ^0.9.0 | ^0.10.0 | | PASS |
+* [2026-07-14] [Stage 8] CHANGED: pnpm-workspace.yaml -- Bumped @supabase/supabase-js to ^2.110.3 and removed unused p-limit catalog entry.
+* [2026-07-14] [Stage 8] CLEAN: package.json -- Monorepo root dependencies aligned with catalog.
+* [2026-07-14] [Stage 8] CLEAN: Frontend-PWA/package.json -- PWA dependencies aligned with catalog.
+* [2026-07-14] [Stage 8] CLEAN: Backend/package.json -- Backend devDependencies aligned with catalog.
+* [2026-07-14] [Stage 8] Target: Codebase - @supabase/supabase-js | ^2.110.2 | ^2.110.3 | | PASS |
+* [2026-07-14] [Stage 8] Target: Codebase - p-limit | ^7.3.0 | REMOVED | | PASS |
+* [2026-07-14] [Stage 8] Target: Codebase - vite | ^7.3.6 | 8.1.4 | 2026-07-14 | Breaking: Unified bundler (Rolldown), build.rollupOptions renamed to build.rolldownOptions, CJS interop changes. |
+* [2026-07-14] [Stage 8] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure. |
