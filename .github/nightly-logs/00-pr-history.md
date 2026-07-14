@@ -1,6 +1,30 @@
 # Nightly Pipeline -- PR History
 
 
+## [2026-07-14] MERGE FAILED: PR #1113: perf(apk-optimization): optimize webview rendering and sw precache
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1113)
+
+---
+
+## [2026-07-14] MERGE FAILED: PR #1111: refactor(structural): decompose harvester and standardize haptics
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1111)
+
+---
+
+## [2026-07-14] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
+
+---
+
 ## [2026-07-14] PR #1112: chore(apk-integrity): no mismatch found
 **Commit**: `67591b78d2a86f99f870778f2896f9afc590f3ef`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1112)
