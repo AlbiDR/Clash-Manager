@@ -174,6 +174,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-14] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js and update major watchlist
+**Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
+**Why:** Conducted a dependency audit to apply safe maintenance updates and research high-risk major version transitions.
+**Change:** Bumped @supabase/supabase-js to ^2.110.3 via the catalog, removed unused p-limit catalog entry, and updated the major version watchlist with Vite 8 and TypeScript 7 impact analysis.
+**Result:** Monorepo dependencies hardened against rot; ecosystem research documented for architectural planning.
+
 ### [2026-07-14] PR #PENDING [Stage 7]: chore(version): no drift found
 **Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
