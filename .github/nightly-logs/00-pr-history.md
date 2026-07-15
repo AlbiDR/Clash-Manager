@@ -379,6 +379,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-15] PR #1117 [Stage 7]: fix(version): reconcile version drift in backend and scripts
+**Domain:** Version Integrity | **Commit:** ac9c8a1fd1b528a4922e19e16639c6a4e68ebcba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1117)
+**Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
+**Why:** `@supabase/supabase-js` in backend edge functions and Deno scripts had drifted from the monorepo catalog version (v2.110.3).
+**Change:** Synchronized all occurrences of `@supabase/supabase-js` in backend functions and scripts to v2.110.3 and verified monorepo-wide consistency.
+**Result:** 100% synchronization of the Supabase client library across all substrate layers and verified monorepo integrity.
+
 ### [2026-07-15] PR #PENDING [Stage 6]: docs(tsdoc): harden backend edge function and utility contracts
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/fetch-player-battlelog/index.ts, Backend/supabase/functions/_shared/utils.ts, .github/nightly-logs/06-documentation-tsdoc-coverage.log
