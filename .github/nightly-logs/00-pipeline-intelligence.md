@@ -192,3 +192,8 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### Stage 12 -- APK UX
 * Current focus: Touch target compliance, haptics brokering.
 * Recurring: New interactive components frequently miss 48px minimum.
+
+### Runtime and Security
+* **Temporal parsing safety:** External battleTime strings must be validated via
+  regex and wrapped in explicit try-catch blocks for Temporal.Instant.from
+  narrowing to prevent unhandled runtime crashes. *(Pattern: PR #PENDING, 2026-07-15)*

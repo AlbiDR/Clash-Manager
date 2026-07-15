@@ -50,25 +50,6 @@
 - Updated .github/nightly-logs/00-pr-history.md
 
 ---
-*PR created automatically by Jules for task [17259072072391311714](https://jules.google.com/task/17259072072391311714) started by @AlbiDR*
-
----
-
-## [2026-07-14] MERGE FAILED: PR #1111: refactor(structural): decompose harvester and standardize haptics
-> [!CAUTION]
-> **Status**: Auto-merge aborted.
-> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
-> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1111)
-
----
-
-## [2026-07-14] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
-> [!CAUTION]
-> **Status**: Auto-merge aborted.
-> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
-> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
-
----
 
 ## [2026-07-14] PR #1110: chore(deps): bump @supabase/supabase-js and update major watchlist
 **Commit**: `35da94de546fc0663467f36b6224d0cb80e81aaa`
@@ -98,17 +79,6 @@
 - Updated .github/nightly-logs/00-pr-history.md
 
 ---
-*PR created automatically by Jules for task [6827799339589664274](https://jules.google.com/task/6827799339589664274) started by @AlbiDR*
-
----
-
-## [2026-07-14] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
-> [!CAUTION]
-> **Status**: Auto-merge aborted.
-> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
-> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
-
----
 
 ## [2026-07-14] PR #1109: chore(version): no drift found
 **Commit**: `0ac65e8f9a0e9c8f5c6d1b602b4d546f4d58c892`
@@ -133,17 +103,6 @@
 ### Log Updates:
 - Updated .github/nightly-logs/07-version-integrity-coverage.log
 - Updated .github/nightly-logs/00-pr-history.md
-
----
-*PR created automatically by Jules for task [11017543357590488839](https://jules.google.com/task/11017543357590488839) started by @AlbiDR*
-
----
-
-## [2026-07-14] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
-> [!CAUTION]
-> **Status**: Auto-merge aborted.
-> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
-> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
 
 ---
 
@@ -171,9 +130,6 @@
 ### Log Updates:
 - Updated .github/nightly-logs/05-documentation-readme-coverage.log
 - Updated .github/nightly-logs/00-pr-history.md
-
----
-*PR created automatically by Jules for task [3017389517989638416](https://jules.google.com/task/3017389517989638416) started by @AlbiDR*
 
 ---
 
@@ -204,9 +160,6 @@
 - Updated .github/nightly-logs/04-optimization-coverage.log
 
 ---
-*PR created automatically by Jules for task [9091608276814738019](https://jules.google.com/task/9091608276814738019) started by @AlbiDR*
-
----
 
 ## [2026-07-14] PR #1105: chore(baseline): fold new migrations into master baseline
 **Commit**: `029fa821e36d4727d2a2fa2f265860dc54719d30`
@@ -226,9 +179,6 @@ Hardened the master baseline database schema by standardizing function search_pa
 
 ### Verification:
 - Local workspace vitest verification: pass (1409 passed, 1 skipped)
-
----
-*PR created automatically by Jules for task [6889902009871738368](https://jules.google.com/task/6889902009871738368) started by @AlbiDR*
 
 ---
 
@@ -263,9 +213,6 @@ Hardened the master baseline database schema by standardizing function search_pa
 - Updated .github/nightly-logs/00-pr-history.md
 
 ---
-*PR created automatically by Jules for task [1344522691291957148](https://jules.google.com/task/1344522691291957148) started by @AlbiDR*
-
----
 <!--
 TIER_CONFIG:
   T1_ACTIVE_DAYS:     7   # Full detail block; pipeline context for current week
@@ -273,7 +220,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-07-13
+LAST_AGED:   2026-07-15
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -283,6 +230,13 @@ LAST_AGED:   2026-07-13
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-15] PR #PENDING [Stage 1]: fix(harden): secure battlelog fetch and excise anemic pathogens
+**Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/fetch-player-battlelog/index.ts, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Malformed battleTime strings from the Royale API could trigger unhandled exceptions in the Temporal parsing logic.
+**Change:** Hardened the fetch-player-battlelog Edge Function by implementing defensive regex validation and explicit error narrowing for Temporal.Instant.from. Excised anemic variable pathogens (req, payload) to satisfy ADR domain-descriptive naming constraints.
+**Result:** Deterministic runtime protection against malformed external API payloads at the battlelog boundary.
+
 ### [2026-07-14] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
@@ -533,7 +487,7 @@ LAST_AGED:   2026-07-13
 **Context:** *(Entry migrated from compact index -- full detail available via PR link)*
 
 ### [2026-07-08] PR #1052: docs(tsdoc): document native bridge orchestrator interface contracts
-**Domain:** TSDoc | **Commit:** `3d3d642c` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1052)
+**Domain:** TSDoc | **Commit:** `3d3d642c" | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1052)
 **Context:** *(Entry migrated from compact index -- full detail available via PR link)*
 
 ### [2026-07-08] PR #1051: docs(readme): reconcile core service registry
@@ -548,51 +502,21 @@ LAST_AGED:   2026-07-13
 **Domain:** Verification | **Commit:** `d9f005ea` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1049)
 **Context:** *(Entry migrated from compact index -- full detail available via PR link)*
 
-### [2026-07-07] PR #1048: fix(apk-ux): optimize BaseSelect touch targets for 48px compliance
-**Domain:** APK UX | **Commit:** `a2664583` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1048)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1047: perf(apk-optimization): prune redundant shortcut assets and xml overrides
-**Domain:** APK Optimization | **Commit:** `a1cb307e` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1047)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1046: [Stage 10] APK & PWA Wrapper Integrity Audit
-**Domain:** General | **Commit:** `b719ecbe` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1046)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1045: Refactor: Centralize Native Android Bridge Orchestration
-**Domain:** Refactor/Optimization | **Commit:** `536938ea` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1045)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1044: chore(deps): bump vitest from 4.1.9 to 4.1.10
-**Domain:** Dependencies | **Commit:** `4f96bbcb` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1044)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1043: chore(version): no drift found
-**Domain:** Version Integrity | **Commit:** `0b7d9b04` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1043)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1042: docs(tsdoc): document settings orchestrator and pwa lifecycle
-**Domain:** TSDoc | **Commit:** `8302073b` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1042)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1041: docs(readme): reconcile prediction logic and utility registry
-**Domain:** README | **Commit:** `9a0f3d5c` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1041)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1040: refactor(opt): standardize variable naming for domain clarity
-**Domain:** Refactor/Optimization | **Commit:** `76cf646a` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1040)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
-### [2026-07-07] PR #1039: test(verify): add specs for locale utility
-**Domain:** Verification | **Commit:** `65224fa6` | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1039)
-**Context:** *(Entry migrated from compact index -- full detail available via PR link)*
-
 
 ## T2 -- Recent (8-30 days)
 
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-07] PR #1048 [APK UX]: fix(apk-ux): optimize BaseSelect touch targets for 48px compliance (`a266458`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1048)
+* [2026-07-07] PR #1047 [APK Optimization]: perf(apk-optimization): prune redundant shortcut assets and xml overrides (`a1cb307`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1047)
+* [2026-07-07] PR #1046 [General]: [Stage 10] APK & PWA Wrapper Integrity Audit (`b719ecb`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1046)
+* [2026-07-07] PR #1045 [Refactor/Optimization]: Refactor: Centralize Native Android Bridge Orchestration (`536938e`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1045)
+* [2026-07-07] PR #1044 [Dependencies]: chore(deps): bump vitest from 4.1.9 to 4.1.10 (`4f96bbc`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1044)
+* [2026-07-07] PR #1043 [Version Integrity]: chore(version): no drift found (`0b7d9b0`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1043)
+* [2026-07-07] PR #1042 [TSDoc]: docs(tsdoc): document settings orchestrator and pwa lifecycle (`8302073`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1042)
+* [2026-07-07] PR #1041 [README]: docs(readme): reconcile prediction logic and utility registry (`9a0f3d5`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1041)
+* [2026-07-07] PR #1040 [Refactor/Optimization]: refactor(opt): standardize variable naming for domain clarity (`76cf646`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1040)
+* [2026-07-07] PR #1039 [Verification]: test(verify): add specs for locale utility (`65224fa`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1039)
 * [2026-07-06] PR #1038 [APK UX]: fix(apk-ux): add tactile feedback to ErrorBoundary actions (`e029710`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1038)
 * [2026-07-06] PR #1037 [APK Optimization]: perf(apk-optimization): prune orphaned resources and optimize SW cache (`4e8e643`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1037)
 * [2026-07-06] PR #1036 [APK Integrity]: chore(apk-integrity): monorepo integrity audit passed (`b73c603`) [View](https://github.com/AlbiDR/Clash-Manager/pull/1036)
@@ -800,7 +724,7 @@ LAST_AGED:   2026-07-13
 * [2026-06-14] PR #833 [Version Integrity]: chore(version): no drift found (`32f9564`) [View](https://github.com/AlbiDR/Clash-Manager/pull/833)
 * [2026-06-14] PR #832 [TSDoc]: docs(tsdoc): document headhunter-scanner profiler stage (`c2b6e11`) [View](https://github.com/AlbiDR/Clash-Manager/pull/832)
 * [2026-06-14] PR #831 [README]: docs(readme): reconcile pwa service registry and document user proxy engine (`217b351`) [View](https://github.com/AlbiDR/Clash-Manager/pull/831)
-* [2026-06-14] PR #830 [Baseline]: chore(baseline): harden declarative schema and fix ingestion logic (`cb7fe49`) [View](https://github.com/AlbiDR/Clash-Manager/pull/830)
+* [2026-06-14] PR #830 [Baseline]: chore(baseline): fold new migrations into master baseline (`cb7fe49`) [View](https://github.com/AlbiDR/Clash-Manager/pull/830)
 * [2026-06-14] PR #829 [Verification]: test(verify): add specs for useViewport composable (`99a5845`) [View](https://github.com/AlbiDR/Clash-Manager/pull/829)
 * [2026-06-14] PR #828 [Hardening]: fix(harden): secure wake lock engine and excise any pathogens (`fab0dcd`) [View](https://github.com/AlbiDR/Clash-Manager/pull/828)
 
@@ -928,7 +852,7 @@ LAST_AGED:   2026-07-13
 * 16 PRs [Hardening]
 * 1 PR [Performance]
 * 19 PRs [README]
-* 17 PRs [Refactor/Optimization]
+* 17 PRs #Refactor/Optimization]
 * 18 PRs [TSDoc]
 * 8 PRs [Testing]
 * 33 PRs [Verification]
@@ -940,4 +864,3 @@ LAST_AGED:   2026-07-13
 * 3 PRs [README]
 * 2 PRs [Refactor/Optimization]
 * 2 PRs [Testing]
-

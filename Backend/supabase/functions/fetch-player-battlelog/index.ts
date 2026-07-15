@@ -92,15 +92,31 @@ async function fetchBattlelogWithKey(
  * Parses a Royale API battleTime string into a comparable timestamp number.
  * Format: "20260614T093152.000Z"
  *
+ * [THREAT:] Malformed battleTime strings from external API can cause Temporal parsing to crash.
+ * [DECISION LOG] Implemented defensive reformatting with regex and explicit error narrowing.
+ *
  * @param battleTime - Raw battleTime string from the Royale API.
+ * @throws Error if the battleTime format is invalid.
  */
 function parseBattleTime(battleTime: string): number {
+  const timeFormatRegex = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/;
+
+  if (!timeFormatRegex.test(battleTime)) {
+    throw new Error(`Invalid battleTime format received: ${battleTime}`);
+  }
+
   // Reformat from "20260614T093152.000Z" to "2026-06-14T09:31:52.000Z"
   const reformatted = battleTime.replace(
-    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
+    timeFormatRegex,
     "$1-$2-$3T$4:$5:$6",
   );
-  return Temporal.Instant.from(reformatted).epochMilliseconds;
+
+  try {
+    return Temporal.Instant.from(reformatted).epochMilliseconds;
+  } catch (parseError: unknown) {
+    const message = parseError instanceof Error ? parseError.message : String(parseError);
+    throw new Error(`Temporal parsing failed for ${reformatted}: ${message}`);
+  }
 }
 
 /**
@@ -114,18 +130,19 @@ function parseBattleTime(battleTime: string): number {
  * Authentication accepts both the internal bearer token and the
  * Supabase anon key to support direct browser-side testing calls.
  */
-Deno.serve(async (req) => {
+Deno.serve(async (battlelogRequest) => {
   await syncVault();
 
   return await clinicalServe({
-    req,
+    req: battlelogRequest,
     supabase,
     bearerToken: [CONFIG.INTERNAL_BEARER_TOKEN, CONFIG.SUPABASE_ANON_KEY],
     eventType: "PLAYER_BATTLELOG_FETCH",
     componentId: "FETCH_PLAYER_BATTLELOG",
     schema: PayloadSchema,
-    handler: async (payload, logAudit) => {
-      const { playerTag } = payload;
+    handler: async (battlelogPayload, logAudit) => {
+      // [DECISION LOG] Tags are normalized to ensure consistency across proxy nodes.
+      const { playerTag } = battlelogPayload;
 
       // Normalize tag: ensure it starts with '#' regardless of client encoding.
       const normalizedTag = normalizeTag(playerTag);
