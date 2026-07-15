@@ -28,7 +28,9 @@ To maximize the probability of surfacing the most recent battle data (bypassing 
 ---
 
 ## Technical Standards & Safety
-- **Validation Boundary**: Enforces strict `v.safeParse` validation using the `RoyaleBattleLogSchema` to ensure external API ingress remains type-safe.
+- **Validation Boundary**: Enforces zero-trust boundaries via strict `v.safeParse` validation using the `RoyaleBattleLogSchema` and `PayloadSchema` to ensure both ingress and external API data remains type-safe.
+- **BattleTime Engine**: Implements a defensive `parseBattleTime` engine utilizing regex validation (`/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/`) and explicit error narrowing for `Temporal.Instant.from`, preventing runtime crashes from malformed external payloads.
+- **Key Farm Resolution**: Leverages the standardized `KeyPoolSchema` for clinical normalization of the Royale API key pool.
 - **Sanitized Rotation**: Automatically handles key formatting and bearer token sanitization to ensure reliable communication with the Royale API proxy.
 - **Clinical Protocol**: Wrapped in the `clinicalServe` utility for standardized authorization (Bearer/Anon), error handling, and telemetry.
-- **Threat Mitigation**: Hardened against key pool exhaustion and malformed API responses via descriptive error granularity and [THREAT:] / [DECISION LOG] annotations.
+- **Threat Mitigation**: Hardened against key pool exhaustion and malformed API responses via descriptive error granularity and mandatory [THREAT:] / [DECISION LOG] annotations.

@@ -20,3 +20,11 @@
 * [2026-07-14] [Stage 5] CHANGED: Frontend-PWA/src/features/settings/README.md -- Reconciled delegation to usePwaManager kernel
 * [2026-07-14] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled usePwaManager APK update role
 * [2026-07-14] [Stage 5] CHANGED: Frontend-PWA/src/core/config/README.md -- Created authoritative constant kernel documentation
+* [2026-07-15] [Stage 5] CHANGED: Backend/supabase/functions/fetch-player-battlelog/README.md -- Reconciled parseBattleTime engine and hardening boundaries
+* [2026-07-15] [Stage 5] CHANGED: Frontend-PWA/README.md -- Reconciled usePwaManager APK update role
+* [2026-07-15] [Stage 5] CHANGED: Backend/supabase/functions/query-royale-api/README.md -- Reconciled legacy fallback context
+* [2026-07-15] [Stage 5] CLEAN: README.md -- No action required
+* [2026-07-15] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-07-15] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
+* [2026-07-15] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
+* [2026-07-15] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required

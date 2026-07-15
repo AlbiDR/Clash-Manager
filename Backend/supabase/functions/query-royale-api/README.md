@@ -36,6 +36,7 @@ The `query-royale-api` function acts as a secure proxy for the PWA, allowing it 
 - **Endpoint**: `/locations/{id}/pathoflegend/players`
 - **Identification**: Automatically identifies the clan's registered location by fetching clan details for the configured `CLAN_TAG`.
 - **Local Fallback**: If the local Path of Legends leaderboard is empty or sparse, the function falls back to the local Trophy Road rankings (`/rankings/players`) to guarantee results year-round.
+    - **Note on Legacy Endpoints**: The standalone `/rankings/players` leaderboard was largely retired following the 2025 Trophy Road rework. It is maintained here as a **Legacy Fallback** for specific regions where Path of Legends data may be unpopulated.
 - **International Rotation**: If the clan is registered as "International" (ID 57000101) or non-country, the function performs a **Concurrent Batch Harvest**:
     1. Fetches the full locations catalog from `/locations`.
     2. Filters for valid country locations (`isCountry: true`).
