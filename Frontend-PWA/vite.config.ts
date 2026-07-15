@@ -106,6 +106,8 @@ export default defineConfig({
         globIgnores: [
           "assets/branding/*.webp",
           "assets/game/*.webp",
+          "assets/icons/pwa-apple.png",
+          "assets/icons/icon-512.png",
           "fonts/JetBrainsMono-Bold.woff2",
           "fonts/Inter-Variable.woff2",
           "**/splash.png",

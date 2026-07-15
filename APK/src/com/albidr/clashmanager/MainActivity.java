@@ -48,6 +48,12 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setGeolocationEnabled(false);
+        if (Build.VERSION.SDK_INT >= 23) {
+            settings.setOffscreenPreRaster(true);
+        }
+        if (Build.VERSION.SDK_INT >= 26) {
+            settings.setSafeBrowsingEnabled(false);
+        }
         settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         settings.setSupportMultipleWindows(true);
