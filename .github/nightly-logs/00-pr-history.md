@@ -1,6 +1,42 @@
 # Nightly Pipeline -- PR History
 
 
+## [2026-07-15] PR #1116: docs(tsdoc): harden backend edge function and utility contracts
+**Commit**: `3bc0aa6458b20986075b33b28b6e29fe86deb4c0`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1116)
+
+### Description
+Hardened backend interface contracts and logic annotations on the `Nightly` branch. (1) Injected comprehensive TSDoc (`@returns`, `@throws`, `@remarks`) into `fetch-player-battlelog/index.ts` and `_shared/utils.ts`. (2) Mapped backend utilities (`normalizeTag`, `normalizeRarity`, `calculateRpos`) to authoritative ADR Section III and VII boundaries. (3) Injected mandatory `// [THREAT:]` and `// [DECISION LOG]` annotations for edge-case battlelog freshness logic. (4) Verified via Vitest (`utils.spec.ts`, 151 core API tests) using Node 22 bypass flags. Updated `06-documentation-tsdoc-coverage.log` and `00-pr-history.md`.
+
+---
+*PR created automatically by Jules for task [13671947701322393500](https://jules.google.com/task/13671947701322393500) started by @AlbiDR*
+
+---
+
+## [2026-07-15] MERGE FAILED: PR #1113: perf(apk-optimization): optimize webview rendering and sw precache
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1113)
+
+---
+
+## [2026-07-15] MERGE FAILED: PR #1111: refactor(structural): decompose harvester and standardize haptics
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1111)
+
+---
+
+## [2026-07-15] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
+
+---
+
 ## [2026-07-15] PR #1115: docs(readme): reconcile battlelog hardening and pwa manager drift
 **Commit**: `6220332b25abbf7919b3d077e794e2f9f1221ade`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1115)
