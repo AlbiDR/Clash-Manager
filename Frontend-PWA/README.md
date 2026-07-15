@@ -100,7 +100,7 @@ The application kernel (@core) manages complex system-level behaviors through sp
 
 ### Application Shell & Logic
 20. **Settings Store (`useAppSettings`)**: Multi-tier strategy for application configuration, mirrored across `LocalStorage` and `IndexedDB`.
-21. **PWA Lifecycle Manager (`usePwaManager`)**: Manages infrastructure-level PWA lifecycle (SW updates, recovery protocols).
+21. **PWA Lifecycle Manager (`usePwaManager`)**: Manages infrastructure-level PWA lifecycle (SW updates, recovery protocols) and native APK shell updates (brokering the download URL).
 22. **UI Coordination (`useUiCoordinator`)**: Master arbiter of layout spacing and global FAB (Floating Action Button) state.
 23. **Hardware Navigation (`useBackHandler`)**: Orchestrates hardware back button behavior in hybrid environments, ensuring predictable navigation stack exit.
 24. **Statistical Benchmarking (`useBenchmarking`)**: Statistical engine for comparing individual metrics against clan averages using single-pass O(N) optimization.

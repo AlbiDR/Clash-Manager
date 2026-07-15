@@ -288,6 +288,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-15] PR #PENDING [Stage 5]: docs(readme): reconcile battlelog hardening and pwa manager drift
+**Domain:** README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/fetch-player-battlelog/README.md, Frontend-PWA/README.md, Backend/supabase/functions/query-royale-api/README.md, .github/nightly-logs/05-documentation-readme-coverage.log
+**Why:** Documentation for the battlelog proxy, PWA manager, and API fallback logic had drifted from the implementation ground truth and recent hardening passes.
+**Change:** Reconciled the parseBattleTime engine and hardening boundaries in the battlelog proxy, synchronized the PWA manager's APK update role in the client core, and documented the legacy status of the Trophy Road fallback.
+**Result:** 100% synchronization between architectural documentation and substrate reality for core backend and frontend infrastructure.
+
 ### [2026-07-15] PR #PENDING [Stage 1]: fix(harden): secure battlelog fetch and excise anemic pathogens
 **Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/fetch-player-battlelog/index.ts, .github/nightly-logs/01-hardening-coverage.log
