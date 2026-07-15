@@ -489,6 +489,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-15] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
+**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Conducted a comprehensive audit to ensure version, manifest, and security synchronization between the PWA and native Android wrappers.
+**Change:** Verified monorepo-wide synchronization at v14.31.2 (17120) across manifests, resources, and native configuration.
+**Result:** 100% integrity and alignment verified across all PWA and APK wrapper boundaries.
+
 ### [2026-07-15] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js and update major version watchlist
 **Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
 **Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
