@@ -435,6 +435,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-15] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js and update major version watchlist
+**Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
+**Why:** Conducted a dependency audit to apply safe maintenance updates and research high-risk major version transitions for Pinia 4, Vite 8, and TypeScript 7.
+**Change:** Bumped @supabase/supabase-js to ^2.110.5 and @vitejs/plugin-vue to ^6.0.8 via the catalog, and updated the major version watchlist with Pinia 4.0.1 impact analysis.
+**Result:** Monorepo dependencies hardened against rot; ecosystem research documented for architectural planning.
+
 ### [2026-07-15] PR #1117 [Stage 7]: fix(version): reconcile version drift in backend and scripts
 **Domain:** Version Integrity | **Commit:** ac9c8a1fd1b528a4922e19e16639c6a4e68ebcba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1117)
 **Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
