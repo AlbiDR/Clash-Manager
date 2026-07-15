@@ -543,6 +543,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-15] PR #PENDING [Stage 11]: perf(apk-optimization): optimize webview performance and sw precache
+**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/src/com/albidr/clashmanager/MainActivity.java, Frontend-PWA/vite.config.ts, .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Unoptimized WebView rendering and redundant SW precache entries were bloating the installation and initialization lifecycle.
+**Change:** Enabled offscreen pre-rastering (SDK 23+) and disabled Safe Browsing (SDK 26+) in the native wrapper, and excluded non-essential icons from the SW manifest.
+**Result:** Improved UI responsiveness in the hybrid shell and reduced SW precache manifest size.
+
 ### [2026-07-15] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
