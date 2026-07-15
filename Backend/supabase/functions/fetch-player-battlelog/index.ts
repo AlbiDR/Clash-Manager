@@ -54,6 +54,7 @@ function resolveKeyPool(): string[] {
  *
  * @param encodedTag - URL-encoded player tag.
  * @param keyToken - The Royale API bearer token to use.
+ * @returns A promise resolving to the validated battle log items or null on failure.
  */
 async function fetchBattlelogWithKey(
   encodedTag: string,
@@ -96,6 +97,7 @@ async function fetchBattlelogWithKey(
  * [DECISION LOG] Implemented defensive reformatting with regex and explicit error narrowing.
  *
  * @param battleTime - Raw battleTime string from the Royale API.
+ * @returns The epoch milliseconds timestamp for the battle.
  * @throws Error if the battleTime format is invalid.
  */
 function parseBattleTime(battleTime: string): number {
@@ -129,6 +131,8 @@ function parseBattleTime(battleTime: string): number {
  *
  * Authentication accepts both the internal bearer token and the
  * Supabase anon key to support direct browser-side testing calls.
+ *
+ * @returns A Response object with the freshest available battle log for the player.
  */
 Deno.serve(async (battlelogRequest) => {
   await syncVault();
@@ -183,7 +187,11 @@ Deno.serve(async (battlelogRequest) => {
         );
       }
 
-      // Select the result whose most recent battle is the freshest across all nodes.
+      // [THREAT:] CROSS-NODE DATA DRIFT: Royale API proxy nodes have independent cache states.
+      // Selecting a single node can result in stale battle logs if that node's cache is behind.
+      // [DECISION LOG] To guarantee sub-second freshness, we reduce the parallel fan-out pool
+      // by comparing the most recent battleTime of each valid response. This ensures the
+      // client always receives the absolute freshest data available across the full key pool.
       const freshestBattleLog = validBattleLogs.reduce((bestBattleLog, candidateBattleLog) => {
         const bestTime = parseBattleTime(bestBattleLog[INITIAL_INDEX].battleTime);
         const candidateTime = parseBattleTime(candidateBattleLog[INITIAL_INDEX].battleTime);

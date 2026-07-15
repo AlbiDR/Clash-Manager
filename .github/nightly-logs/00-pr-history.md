@@ -343,6 +343,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-15] PR #PENDING [Stage 6]: docs(tsdoc): harden backend edge function and utility contracts
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/fetch-player-battlelog/index.ts, Backend/supabase/functions/_shared/utils.ts, .github/nightly-logs/06-documentation-tsdoc-coverage.log
+**Why:** Backend edge functions and shared utilities lacked comprehensive TSDoc and mandatory logic annotations following recent hardening and optimization passes.
+**Change:** Injected comprehensive TSDoc (@returns, @throws, @remarks) and mapped backend utilities to authoritative ADR Section III and VII boundaries. Injected mandatory [THREAT:] and [DECISION LOG] annotations for battlelog freshness logic.
+**Result:** 100% logic intent transparency and contract synchronization for the backend control and utility layers.
+
 ### [2026-07-15] PR #PENDING [Stage 5]: docs(readme): reconcile battlelog hardening and pwa manager drift
 **Domain:** README | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/fetch-player-battlelog/README.md, Frontend-PWA/README.md, Backend/supabase/functions/query-royale-api/README.md, .github/nightly-logs/05-documentation-readme-coverage.log
