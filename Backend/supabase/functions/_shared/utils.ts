@@ -15,6 +15,7 @@
  * Normalizes a player or clan tag to a standard uppercase format with a hash prefix.
  *
  * @remarks
+ * Satisfies ADR Section VII: Naming Conventions (Identifiers).
  * [DECISION LOG] Ensuring all tags used across the backend substrate are
  * consistent to maximize cache hits and prevent duplicate database entries.
  *
@@ -30,6 +31,7 @@ export function normalizeTag(tag: string): string {
  * Maps raw rarity strings from the Royale API to standardized title-case names.
  *
  * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
  * [DECISION LOG] The Royale API returns lowercase rarities. We standardize
  * these to Title Case to match our relational schema and UI expectations.
  *
@@ -51,6 +53,7 @@ export function normalizeRarity(rawRarity: string): string {
  * Calculates the Raw Recruiter Point of Satisfaction (RPoS) score for a player.
  *
  * @remarks
+ * Satisfies ADR Section III: Business Logic Kernels.
  * [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
  * Authoritative formula: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
  * This formula prioritizes war experience as the primary indicator of value,
