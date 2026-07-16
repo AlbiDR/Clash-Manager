@@ -111,6 +111,8 @@ export default defineConfig({
           "fonts/JetBrainsMono-Bold.woff2",
           "fonts/Inter-Variable.woff2",
           "**/splash.png",
+          "assets/branding/logo.svg",
+          "assets/branding/favicon.ico",
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
