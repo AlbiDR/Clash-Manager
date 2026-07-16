@@ -205,3 +205,11 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 * **Safe Browsing:** `setSafeBrowsingEnabled(false)` is used for SDK >= 26 to reduce initialization overhead and privacy-related network calls, as the wrapper targets a known, internal PWA origin. *(Established: PR #PENDING, 2026-07-15)*
 
 * **WebView Hardening:** Disabling form data saving (`setSaveFormData(false)`), zoom controls (`setSupportZoom(false)`), and deprecated Web SQL (`setDatabaseEnabled(false)`) is established to minimize wrapper footprint and lock the hybrid UI. *(Established: PR #PENDING, 2026-07-16)*
+### [2026-07-16] [Stage 12] SelectionBar Modernization
+* Integrated  directive for declarative haptic feedback on the primary `.morph-btn`.
+* Increased `.selection-bar` height to 56px and interactive elements (`.morph-btn`, `.count-pill`) to 48px (Target B.2).
+* Verified zero layout regressions via `depcruise` and production PWA build. [SUPERSEDED by PR #PENDING]
+### [2026-07-16] [Stage 12] SelectionBar Modernization
+* Integrated `v-tactile` directive for declarative haptic feedback on the primary `.morph-btn`.
+* Increased `.selection-bar` height to 56px and interactive elements (`.morph-btn`, `.count-pill`) to 48px (Target B.2).
+* Verified zero layout regressions via `depcruise` and production PWA build. [SUPERSEDED by PR #PENDING]
