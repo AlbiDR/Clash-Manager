@@ -203,3 +203,5 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 * **WebView Rendering:** `setOffscreenPreRaster(true)` is established for SDK >= 23 to improve scrolling fluidity in the hybrid wrapper. *(Established: PR #PENDING, 2026-07-15)*
 
 * **Safe Browsing:** `setSafeBrowsingEnabled(false)` is used for SDK >= 26 to reduce initialization overhead and privacy-related network calls, as the wrapper targets a known, internal PWA origin. *(Established: PR #PENDING, 2026-07-15)*
+
+* **WebView Hardening:** Disabling form data saving (`setSaveFormData(false)`), zoom controls (`setSupportZoom(false)`), and deprecated Web SQL (`setDatabaseEnabled(false)`) is established to minimize wrapper footprint and lock the hybrid UI. *(Established: PR #PENDING, 2026-07-16)*

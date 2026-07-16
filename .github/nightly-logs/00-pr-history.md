@@ -892,6 +892,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-16] PR #PENDING [Stage 11]: perf(apk-optimization): harden webview settings and refine sw precache
+**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/src/com/albidr/clashmanager/MainActivity.java, Frontend-PWA/vite.config.ts, .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
+**Why:** Unoptimized WebView settings and redundant SW precache entries were bloating the installation lifecycle and security surface.
+**Change:** Hardened WebView in the native wrapper by disabling form data saving, zoom controls, and Web SQL; refined SW precaching by excluding 'logo.svg' and 'favicon.ico'.
+**Result:** Reduced initial cache footprint and hardened hybrid shell security and UI lock verified via monorepo test gate (1409 passed).
+
 ### [2026-07-16] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
