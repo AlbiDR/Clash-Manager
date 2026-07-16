@@ -78,12 +78,12 @@ export function* calculateProgressionPath(
   );
 
   const targetLevel = settings.targetLevel || KING_LEVEL_MAX;
-  const targetXpRow = KING_XP_TABLE.find(r => r.level === targetLevel) ?? KING_XP_TABLE[KING_XP_TABLE.length - 1];
+  const targetXpRow = KING_XP_TABLE.find(xpRowCandidate => xpRowCandidate.level === targetLevel) ?? KING_XP_TABLE[KING_XP_TABLE.length - 1];
   const targetXp = Number(targetXpRow.cumulative);
 
   // Initialize Priority Queue with a strategy-based comparator.
-  const queue = new PriorityQueue<ResolvedCandidate>((a, b) =>
-    scoringStrategy.calculateScore(a, settings) - scoringStrategy.calculateScore(b, settings)
+  const queue = new PriorityQueue<ResolvedCandidate>((candidateA, candidateB) =>
+    scoringStrategy.calculateScore(candidateA, settings) - scoringStrategy.calculateScore(candidateB, settings)
   );
 
   // Initial population of the queue.

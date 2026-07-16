@@ -103,9 +103,9 @@ export function useHeadhunter() {
     return added;
   }
 
-  const { post: broadcast } = useBroadcastChannel((msg) => {
-    if (msg.type === "RECRUIT_DISMISSAL") {
-      applyLocalDismissal(msg.ids);
+  const { post: broadcast } = useBroadcastChannel((broadcastMessage) => {
+    if (broadcastMessage.type === "RECRUIT_DISMISSAL") {
+      applyLocalDismissal(broadcastMessage.ids);
     }
   });
 
