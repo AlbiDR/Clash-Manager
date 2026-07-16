@@ -671,6 +671,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-16] PR #PENDING [Stage 6]: docs(tsdoc): harden core configuration contracts and logic annotations
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/config/index.ts, .github/nightly-logs/06-documentation-tsdoc-coverage.log
+**Why:** Layer 1 core configuration constants lacked formal TSDoc and architectural logic annotations, leading to potential ambiguity in threshold rationale and timing behaviors.
+**Change:** Injected comprehensive TSDoc blocks and mandatory [THREAT:] / [DECISION LOG] annotations to document the rationale behind business thresholds and UI stability delays.
+**Result:** 100% logic intent transparency and hardened interface contracts for the application's configuration substrate.
+
 ### [2026-07-15] PR #PENDING [Stage 11]: perf(apk-optimization): optimize webview performance and sw precache
 **Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/src/com/albidr/clashmanager/MainActivity.java, Frontend-PWA/vite.config.ts, .github/nightly-logs/11-apk-optimization-coverage.log
