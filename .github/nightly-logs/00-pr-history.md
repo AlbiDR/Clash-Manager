@@ -5,6 +5,30 @@
 **Change:** Synchronized all occurrences of `@supabase/supabase-js` in backend functions and scripts to v2.110.5 and verified monorepo-wide consistency.
 **Result:** 100% catalog adherence and system stability verified via monorepo test gate (1409 passed).
 
+
+## [2026-07-16] MERGE FAILED: PR #1113: perf(apk-optimization): optimize webview rendering and sw precache
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1113)
+
+---
+
+## [2026-07-16] MERGE FAILED: PR #1111: refactor(structural): decompose harvester and standardize haptics
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1111)
+
+---
+
+## [2026-07-16] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `GitHub API Error: 405 Method Not Allowed - {"message":"Pull Request has merge conflicts","documentation_url":"https://docs.github.com/rest/pulls/pulls#merge-a-pull-request","status":"405"}`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
+
+---
 # Nightly Pipeline -- PR History
 
 
