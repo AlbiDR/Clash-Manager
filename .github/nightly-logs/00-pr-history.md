@@ -1,3 +1,10 @@
+### [2026-07-16] PR #PENDING [Stage 7]: fix(version): reconcile @supabase/supabase-js drift in backend functions
+**Domain:** Infrastructure/Backend | **Commit:** 252a867 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/PENDING)
+**Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
+**Why:** `@supabase/supabase-js` in backend edge functions and Deno scripts had drifted from the monorepo catalog version (v2.110.5).
+**Change:** Synchronized all occurrences of `@supabase/supabase-js` in backend functions and scripts to v2.110.5 and verified monorepo-wide consistency.
+**Result:** 100% catalog adherence and system stability verified via monorepo test gate (1409 passed).
+
 # Nightly Pipeline -- PR History
 
 
