@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { SupabaseClient } from "npm:@supabase/supabase-js@2.110.3";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2.110.5";
 import * as v from "npm:valibot@1.4.2";
 import { VaultSecretSchema } from "./schemas.ts";
 
