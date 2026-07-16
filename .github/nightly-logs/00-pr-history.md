@@ -1,3 +1,10 @@
+### [2026-07-16] PR #PENDING [Stage 12]: fix(apk-ux): modernize SelectionBar touch targets and haptics
+**Domain:** Shared UI | **Commit:** 83eb7a9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/PENDING)
+**Files:** Frontend-PWA/src/shared/ui/SelectionBar.vue
+**Why:** SelectionBar primary actions were below the 48px touch target threshold and used legacy haptic hooks.
+**Change:** Increased interactive heights to 48px/56px and integrated `v-tactile` directive for brokered feedback.
+**Result:** Improved Hybrid Shell ergonomics and interaction consistency verified via Vitest and production build.
+
 ### [2026-07-16] PR #PENDING [Stage 7]: fix(version): reconcile @supabase/supabase-js drift in backend functions
 **Domain:** Infrastructure/Backend | **Commit:** 252a867 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/PENDING)
 **Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts

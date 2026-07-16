@@ -12,3 +12,4 @@
 * [2026-07-09] [Stage 12] Target: Frontend-PWA/src/features/settings/components/AppearanceSettings.vue - Integrated v-tactile directive into .theme-option buttons.
 * [2026-07-10] [Stage 12] Target: Frontend-PWA/src/shared/ui/ScoreThresholdSelector.vue - Modernized ScoreThresholdSelector with 48px vertical footprint and integrated v-tactile directive. Synchronized useScoreSelector.ts to remove redundant haptic calls.
 * [2026-07-11] [Stage 12] Target: Frontend-PWA/src/shared/ui/StatusPill.vue - Modernized StatusPill with 48px vertical footprint and integrated v-tactile directive. Synchronized useStatusPill.ts by removing redundant haptic calls and locking interaction during sync.
+* [2026-07-16] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/SelectionBar.vue -- Modernized touch targets to 48px and integrated v-tactile haptic brokering.

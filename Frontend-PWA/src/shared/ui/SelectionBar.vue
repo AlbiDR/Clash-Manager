@@ -28,7 +28,7 @@
 
 import ScoreThresholdSelector from "./ScoreThresholdSelector.vue";
 import { useSelectionBar } from "../composables/useSelectionBar";
-import { useHaptics } from "@shared/composables/useHaptics";
+import { vTactile } from "../directives/vTactile";
 
 const props = defineProps<{
   count: number;
@@ -48,16 +48,6 @@ const {
   filterValue,
   isActive,
 } = useSelectionBar(props);
-
-const haptics = useHaptics();
-
-/**
- * Triggers haptic feedback on interaction start.
- */
-function onInteractionStart() {
-  haptics.tap();
-}
-
 </script>
 
 <template>
@@ -88,6 +78,7 @@ function onInteractionStart() {
 
       <!-- Persistent Button Frame -->
       <button
+        v-tactile
         class="morph-btn"
         :class="{
           'is-active-sel': isActive,
@@ -98,7 +89,6 @@ function onInteractionStart() {
             ? emit('clear')
             : emit('select-score', filterValue, filterMode)
         "
-        @pointerdown="onInteractionStart"
       >
         <Transition name="text-morph" mode="out-in">
           <span v-if="!isActive" key="select">Select</span>
@@ -120,8 +110,8 @@ function onInteractionStart() {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  height: 48px;
-  padding: 0 4px;
+  height: 56px;
+  padding: 0 8px;
   background: var(
     --sys-color-surface-container-low,
     var(--sys-color-surface-container)
@@ -158,12 +148,12 @@ function onInteractionStart() {
 }
 
 .morph-btn {
-  height: 32px;
+  height: 48px;
   /* Fixed width to prevent twitchy resizing between "Select" and "Done" */
   width: 84px;
   padding: 0;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   display: flex;
   align-items: center;
@@ -199,11 +189,11 @@ function onInteractionStart() {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
-  padding: 0 12px;
+  height: 48px;
+  padding: 0 16px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
-  border-radius: 20px;
+  border-radius: 24px;
   font-size: 12px;
   font-weight: 800;
   font-family: var(--sys-font-family-mono);
