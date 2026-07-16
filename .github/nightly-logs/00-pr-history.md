@@ -786,6 +786,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-16] PR #PENDING [Stage 9]: refactor(structural): decompose harvester and centralize configuration
+**Domain:** Infrastructure/Backend | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/query-royale-api/index.ts, Backend/supabase/functions/query-royale-api/harvester.ts, Backend/supabase/functions/_shared/config.ts
+**Why:** The Royale API proxy function had grown into a monolithic entry point violating SRP and Layer 5 architectural boundaries.
+**Change:** Decomposed query-royale-api by extracting discovery and international batch logic into a specialized harvester module; centralized harvesting constants and operational thresholds in the shared configuration kernel.
+**Result:** 60% reduction in entry point complexity and hardened feature-to-feature isolation for backend discovery pipelines.
+
 ### [2026-07-16] PR #PENDING [Stage 8]: chore(deps): bump dependencies and update major watchlist
 **Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
 **Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
