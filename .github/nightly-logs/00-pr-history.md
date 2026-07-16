@@ -5,6 +5,30 @@
 **Change:** Increased interactive heights to 48px/56px and integrated `v-tactile` directive for brokered feedback.
 **Result:** Improved Hybrid Shell ergonomics and interaction consistency verified via Vitest and production build.
 
+
+## [2026-07-16] MERGE FAILED: PR #1113: perf(apk-optimization): optimize webview rendering and sw precache
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1113)
+
+---
+
+## [2026-07-16] MERGE FAILED: PR #1111: refactor(structural): decompose harvester and standardize haptics
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1111)
+
+---
+
+## [2026-07-16] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
+
+---
 ### [2026-07-16] PR #PENDING [Stage 7]: fix(version): reconcile @supabase/supabase-js drift in backend functions
 **Domain:** Infrastructure/Backend | **Commit:** 252a867 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/PENDING)
 **Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
