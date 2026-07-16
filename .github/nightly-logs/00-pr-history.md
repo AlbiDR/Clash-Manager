@@ -843,6 +843,13 @@ LAST_AGED:   2026-07-15
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-16] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
+**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Conducted a comprehensive audit to ensure version, manifest, and security synchronization between the PWA and native Android wrappers.
+**Change:** Verified monorepo-wide synchronization at v14.31.2 (17120) across manifests, resources, and native configuration; confirmed Digital Asset Links fingerprint parity.
+**Result:** 100% integrity and alignment verified across all PWA and APK wrapper boundaries.
+
 ### [2026-07-16] PR #PENDING [Stage 9]: refactor(structural): decompose harvester and centralize configuration
 **Domain:** Infrastructure/Backend | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/query-royale-api/index.ts, Backend/supabase/functions/query-royale-api/harvester.ts, Backend/supabase/functions/_shared/config.ts
