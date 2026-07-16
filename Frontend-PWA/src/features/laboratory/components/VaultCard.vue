@@ -64,7 +64,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
         </div>
         <div class="wildcards-row">
           <div 
-            v-for="(val, rarity) in inventory.wildCards" 
+            v-for="(wildCardCount, rarity) in inventory.wildCards"
             :key="rarity"
             class="wc-item"
             :class="rarity.toLowerCase()"
@@ -76,7 +76,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
             />
             <input 
               type="number" 
-              :value="val" 
+              :value="wildCardCount"
               class="wc-input"
               @input="handleInput($event, `wc_${rarity.toLowerCase()}`)"
             >
