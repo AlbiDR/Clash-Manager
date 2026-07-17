@@ -5,6 +5,30 @@
 **Change:** Updated MainActivity.java to set hapticFeedbackEnabled(true) on the WebView view layer, loadsImagesAutomatically(true) on WebSettings, and mediaPlaybackRequiresUserGesture(false).
 **Result:** Sub-second interaction response times and robust asset rendering across various Android target versions.
 
+
+## [2026-07-17] MERGE FAILED: PR #1113: perf(apk-optimization): optimize webview rendering and sw precache
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1113)
+
+---
+
+## [2026-07-17] MERGE FAILED: PR #1111: refactor(structural): decompose harvester and standardize haptics
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1111)
+
+---
+
+## [2026-07-17] MERGE FAILED: PR #1108: docs(tsdoc): harden interface contracts for laboratory and voyage orchestration
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR has hard merge conflicts (State: dirty). Cannot auto-merge.`  
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1108)
+
+---
 ### [2026-07-17] PR #PENDING [Stage 6]: docs(tsdoc): enforce licensing headers and audit code contract coverage
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/roster/views/RosterView.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
