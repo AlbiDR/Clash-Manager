@@ -37,3 +37,6 @@
 * [2026-07-11] [Stage 6] Target: Codebase - Frontend-PWA/src/core/services/useClashDataStore.ts | Hardened interface contracts, documented SWR strategy and Service Worker update logic with ADR mappings.
 * [2026-07-15] [Stage 6] Target: Codebase - Backend/supabase/functions/fetch-player-battlelog/index.ts, Backend/supabase/functions/_shared/utils.ts | Hardened backend interface contracts and logic annotations. Injected comprehensive TSDoc and mandatory threat/decision logs for battlelog freshness.
 * [2026-07-16] [Stage 6] CHANGED: Frontend-PWA/src/core/config/index.ts -- Hardened interface contracts and logic annotations for Layer 1 business thresholds and timing constants.
+* [2026-07-17] [Stage 6] CHANGED: Frontend-PWA/src/features/roster/views/RosterView.vue -- Added standard SPDX licensing and copyright header blocks.
+* [2026-07-17] [Stage 6] CLEAN: Backend/supabase/functions/sync-player-cards/index.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 1 hardening.
+* [2026-07-17] [Stage 6] CLEAN: Backend/supabase/functions/fetch-player-battlelog/index.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 2 verification.
