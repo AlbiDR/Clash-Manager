@@ -13,3 +13,6 @@
 * [2026-07-16] [Stage 9] CHANGED: Backend/supabase/functions/query-royale-api/index.ts -- Decomposed monolithic entry point by extracting harvesting logic.
 * [2026-07-16] [Stage 9] CHANGED: Backend/supabase/functions/query-royale-api/harvester.ts -- Created new specialized harvester module for Royale API discovery.
 * [2026-07-16] [Stage 9] CHANGED: Backend/supabase/functions/_shared/config.ts -- Relocated harvesting constants and standardized array indexing.
+* [2026-07-17] [Stage 9] CLEAN: Frontend-PWA/src/features/roster/views/RosterView.vue -- Audited for structural alignment and module size; no action required
+* [2026-07-17] [Stage 9] CLEAN: Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue -- Audited for structural alignment and module size; no action required
+* [2026-07-17] [Stage 9] CLEAN: Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue -- Audited for structural alignment and module size; no action required
