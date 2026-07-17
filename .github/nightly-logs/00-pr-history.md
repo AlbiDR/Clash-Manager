@@ -1259,6 +1259,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-17] PR #PENDING [Stage 7]: fix(version): reconcile @supabase/supabase-js drift in backend functions
+**Domain:** Infrastructure/Backend | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
+**Why:** `@supabase/supabase-js` in backend edge functions and Deno scripts had drifted from the monorepo catalog version (v2.110.6).
+**Change:** Synchronized all occurrences of `@supabase/supabase-js` in backend functions and Deno scripts to v2.110.6 and verified monorepo-wide consistency.
+**Result:** 100% catalog adherence and system stability verified via monorepo test gate (1409 passed).
+
 ### [2026-07-17] PR #PENDING [Stage 1]: fix(harden): secure player card cache check and protect against Temporal crashes
 **Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/sync-player-cards/index.ts, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md
