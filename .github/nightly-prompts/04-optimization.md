@@ -10,7 +10,7 @@ target branch: Nightly
 mindset: Performance Refiner
 identity: stage-4-refiner
 core-task: substrate-and-logic-efficiency
-primary-tools: [get_advisors, list_tables, pnpm-test]
+primary-tools: [list_tables, pnpm-test]
 forbidden-actions: [apply_migration, execute_sql, visual-regressions]
 ---
 

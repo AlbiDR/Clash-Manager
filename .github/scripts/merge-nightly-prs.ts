@@ -289,8 +289,14 @@ ${pr.body ? "### Description\n" + pr.body : ""}
       } catch (error: any) {
         console.error(`FAILED: PR #${pr.number}: ${error.message}`);
         const date = new Date().toISOString().split("T")[0];
-        changelogUpdates =
-          `
+        const failMarker = `MERGE FAILED: PR #${pr.number}:`;
+        const changelogExists = fs.existsSync(CONFIG.changelogPath);
+        const changelogContent = changelogExists ? fs.readFileSync(CONFIG.changelogPath, "utf8") : "";
+        if (changelogContent.includes(failMarker)) {
+          log(`Skipping changelog append: Failure log for PR #${pr.number} already exists.`, "info");
+        } else {
+          changelogUpdates =
+            `
 ## [${date}] MERGE FAILED: PR #${pr.number}: ${pr.title}
 > [!CAUTION]
 > **Status**: Auto-merge aborted.
@@ -299,6 +305,7 @@ ${pr.body ? "### Description\n" + pr.body : ""}
 
 ---
 ` + changelogUpdates;
+        }
       }
     }
 
