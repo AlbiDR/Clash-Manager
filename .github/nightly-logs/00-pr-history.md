@@ -1376,6 +1376,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-17] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js and update major watchlist
+**Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
+**Why:** Conducted a dependency audit to apply safe maintenance updates and research high-risk major version transitions for Pinia 4, Vite 8, and TypeScript 7.
+**Change:** Bumped @supabase/supabase-js to ^2.110.7 via the catalog, and updated the major version watchlist with Pinia 4.0.2 impact analysis.
+**Result:** Monorepo dependencies hardened against rot; ecosystem research documented for architectural planning.
+
 ### [2026-07-17] PR #PENDING [Stage 7]: fix(version): reconcile @supabase/supabase-js drift in backend functions
 **Domain:** Infrastructure/Backend | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
