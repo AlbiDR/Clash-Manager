@@ -48,6 +48,13 @@ Approaches that have been validated through execution. Follow these when applica
   in multiple passes (PR #1080, #1091). When a utility file exceeds its single
   responsibility, Stage 9 is the correct stage to propose extraction.
 
+### Testing and Verification
+
+* **Mocking Deno inside Node/Vitest:** Edge functions targeting the Deno/Supabase
+  runtime can be fully executed and tested under Node/Vitest by injecting a
+  simulated `globalThis.Deno` environment and creating temporary `node_modules` symlinks
+  for `npm:` prefixed specs, avoiding logic/environment divergence. *(Established: PR #PENDING, 2026-07-17)*
+
 ### Version and Dependency Management
 
 * **Catalog protocol is mandatory:** All internal package references must use
