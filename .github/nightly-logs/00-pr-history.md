@@ -1,3 +1,10 @@
+### [2026-07-17] PR #PENDING [Stage 2]: test(verify): add saturating coverage for fetch-player-battlelog Edge Function
+**Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/fetch-player-battlelog/index.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
+**Why:** The fetch-player-battlelog Edge Function lacked dedicated test coverage, presenting a logical and environment validation gap.
+**Change:** Created a comprehensive Vitest suite covering CORS, authentication guards, payload schema validation, parallel key pool extraction, failure scenarios, date-time parsing safety, and data freshness selection.
+**Result:** 100% logic and branch coverage verified with 8 newly introduced tests running natively in the Node/Vitest workspace.
+
 ### [2026-07-16] PR #PENDING [Stage 12]: fix(apk-ux): modernize SelectionBar touch targets and haptics
 **Domain:** Shared UI | **Commit:** 83eb7a9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/PENDING)
 **Files:** Frontend-PWA/src/shared/ui/SelectionBar.vue
