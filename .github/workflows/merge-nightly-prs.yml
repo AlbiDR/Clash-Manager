@@ -6,8 +6,8 @@ name: Sync Nightly PRs
 
 on:
   schedule:
-    # 10:00 AM CET
-    - cron: "0 9 * * *"
+    # 11:30 AM CEST
+    - cron: "30 9 * * *"
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
