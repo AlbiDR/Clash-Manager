@@ -111,6 +111,26 @@ function buildProfileResponse(
   };
 }
 
+/**
+ * Safely parses a fetched_at timestamp string into epoch milliseconds.
+ *
+ * [THREAT:] Malformed fetched_at strings from database can cause Temporal parsing to crash.
+ * [DECISION LOG] Wraps Temporal.Instant.from in a defensive try-catch block and falls back to 0 on failure,
+ * treating any malformed timestamp as an expired cache entry rather than causing a runtime crash.
+ *
+ * @param fetchedAt - The timestamp string to parse.
+ * @returns The epoch milliseconds timestamp, or 0 on parsing failure.
+ */
+function parseFetchedAt(fetchedAt: string): number {
+  try {
+    return Temporal.Instant.from(fetchedAt).epochMilliseconds;
+  } catch (parseError: unknown) {
+    const message = parseError instanceof Error ? parseError.message : String(parseError);
+    console.warn(`[sync-player-cards] Temporal parsing failed for fetched_at '${fetchedAt}': ${message}`);
+    return 0;
+  }
+}
+
 Deno.serve(async (syncRequest) => {
   await syncVault();
 
@@ -153,9 +173,11 @@ Deno.serve(async (syncRequest) => {
       const cardSnapshots: CardRow[] = snapshotValidationResult.success ? snapshotValidationResult.output : [];
       const cacheExpirationCutoff = Temporal.Now.instant().subtract({ milliseconds: CACHE_TTL_MS });
       // [DECISION LOG] Data is considered fresh if at least one card was fetched within the 12h TTL.
+      // [THREAT:] If the database contains malformed fetched_at values, parsing throws unhandled exceptions.
+      // We safely delegate parsing to parseFetchedAt to prevent runtime crashes.
       const isCacheDataFresh =
         cardSnapshots.length > 0 &&
-        cardSnapshots.some((snapshot) => Temporal.Instant.from(snapshot.fetched_at).epochMilliseconds > cacheExpirationCutoff.epochMilliseconds);
+        cardSnapshots.some((snapshot) => parseFetchedAt(snapshot.fetched_at) > cacheExpirationCutoff.epochMilliseconds);
 
       if (isCacheDataFresh) {
         logAudit("CACHE_CHECK", "terminated", { status: "HIT", count: cardSnapshots.length });
