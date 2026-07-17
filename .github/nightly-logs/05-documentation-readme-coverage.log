@@ -28,3 +28,8 @@
 * [2026-07-15] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
 * [2026-07-15] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
 * [2026-07-15] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
+* [2026-07-17] [Stage 5] CHANGED: Backend/supabase/functions/sync-player-cards/README.md -- Reconciled defensive Temporal parsing helper and try-catch safety patterns
+* [2026-07-17] [Stage 5] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Reconciled modernized SelectionBar layout and tactile brokered haptics
+* [2026-07-17] [Stage 5] CLEAN: README.md -- No action required
+* [2026-07-17] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-07-17] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required

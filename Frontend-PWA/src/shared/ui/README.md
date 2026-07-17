@@ -68,7 +68,7 @@ Components that facilitate user interaction and state management.
 - **BaseSegmentedControl.vue**: Standardized toggle/segment selector for switching between mutually exclusive options. Supports generic types and compact variants for high-density UI contexts.
 - **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
 - **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
-- **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable.
+- **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable. Modernized with a 56px height, 48px mobile touch target footprint compliance on primary actions and counts, and the integrated `v-tactile` directive for declarative brokered haptic feedback.
 - **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
 - **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers. Orchestrates `NavigationDock.vue` and `SelectionFab.vue`.
 - **NavigationDock.vue**: Internal UI component for rendering the primary app navigation items.
