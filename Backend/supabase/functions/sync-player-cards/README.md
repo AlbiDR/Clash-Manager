@@ -31,10 +31,12 @@ The Clash Royale API provides card levels relative to their specific rarity (e.g
 To ensure system stability and API quota health, the engine enforces a **12-hour cache TTL**. This is an internal database-freshness cutoff compared against each snapshot's `fetched_at`, not an HTTP `Cache-Control` header.
 - **Cache Hit**: Returns a standardized profile immediately from the database substrate without consuming API rotation slots.
 - **Cache Miss**: Triggers a fresh extraction and updates the persistence layer for subsequent requests.
+- **Temporal Defensive Safety**: Standardizes the parsing of snapshot `fetched_at` timestamps using the defensive `parseFetchedAt` helper. This helper wraps the `Temporal.Instant.from` call in a robust try-catch boundary and falls back to 0 epoch milliseconds on error. This treats any malformed or corrupted timestamp as an expired cache entry rather than causing a runtime crash, protecting the engine's execution lifecycle.
 
 ### Validation Boundaries
-The function enforces zero-trust boundaries using strictly inferred **Valibot** schemas:
+The function enforces zero-trust boundaries using strictly inferred **Valibot** schemas to validate and parse data across all ingress, egress, and database boundaries:
 - **Ingress Validation**: Incoming player tags are normalized and validated against `PlayerSyncPayloadSchema`.
+- **Substrate Cache Validation**: Database cached data loaded from the snapshots table is validated against an array of `PlayerCardSnapshotSchema` to prevent corrupted database records from propagating into runtime logic.
 - **Egress Validation**: External Royale API payloads are validated against `RoyaleFullPlayerSchema` before processing to prevent substrate corruption.
 
 ## Integration Standards

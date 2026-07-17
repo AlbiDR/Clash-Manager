@@ -1,3 +1,10 @@
+### [2026-07-17] PR #PENDING [Stage 5]: docs(readme): reconcile player card sync and shared ui documentation gaps
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/sync-player-cards/README.md, Frontend-PWA/src/shared/ui/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Documentation for player card caching strategy and selection bar layout had drifted from recent security hardening and hybrid UX modernization passes.
+**Change:** Updated sync-player-cards README to document defensive Temporal parsing try-catch boundaries and snapshot schema validation, and updated shared UI README to document SelectionBar 56px/48px WebView touch target and haptic feedback modernizations.
+**Result:** 100% synchronization between architectural intent and substrate reality for client-side and backend infrastructure.
+
 ### [2026-07-17] PR #PENDING [Stage 2]: test(verify): add saturating coverage for fetch-player-battlelog Edge Function
 **Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/fetch-player-battlelog/index.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
