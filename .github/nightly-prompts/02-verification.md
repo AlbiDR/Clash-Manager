@@ -20,7 +20,7 @@ forbidden-actions: [modify-application-code, modify-database-schema]
 
 ## [Base 1] Nightly Pipeline Sequence
 
-The pipeline operates in a 12-stage sequence where each stage runs as an atomic, self-contained run:
+The pipeline operates in a 13-stage sequence where each stage runs as an atomic, self-contained run:
 1. **Harden (Stage 1):** Security and Runtime Integrity.
 2. **Verify (Stage 2):** Test Suite and Logic Proof.
 3. **Baseline-Consolidation (Stage 3):** Database Schema Baselining.
@@ -33,6 +33,7 @@ The pipeline operates in a 12-stage sequence where each stage runs as an atomic,
 10. **APK-Integrity (Stage 10):** APK and PWA Wrapper Integrity.
 11. **APK-Optimization (Stage 11):** APK and Native Wrapper Optimizations.
 12. **APK-UX (Stage 12):** Hybrid Shell UX and UI Auditor.
+13. **Self-Healing Protocol (Stage 13):** Pipeline Health Audit and Self-Improvement Plan.
 
 ---
 
