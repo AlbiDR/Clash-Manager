@@ -1,3 +1,10 @@
+### [2026-07-17] PR #PENDING [Stage 11]: perf(apk-optimization): optimize webview haptics and media playback gesture requirements
+**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/src/com/albidr/clashmanager/MainActivity.java, .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
+**Why:** Enabled native view-level haptic feedback and WebSettings optimizations to improve hybrid shell responsiveness, tactile propagation speed, and image loading reliability.
+**Change:** Updated MainActivity.java to set hapticFeedbackEnabled(true) on the WebView view layer, loadsImagesAutomatically(true) on WebSettings, and mediaPlaybackRequiresUserGesture(false).
+**Result:** Sub-second interaction response times and robust asset rendering across various Android target versions.
+
 ### [2026-07-17] PR #PENDING [Stage 6]: docs(tsdoc): enforce licensing headers and audit code contract coverage
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/roster/views/RosterView.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md

@@ -38,6 +38,7 @@ public class MainActivity extends Activity {
         
         WebView webView = new WebView(this);
         this.mWebView = webView;
+        this.mWebView.setHapticFeedbackEnabled(true);
         frameLayout.addView(webView);
         setContentView(frameLayout);
         
@@ -52,6 +53,8 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setGeolocationEnabled(false);
+        settings.setLoadsImagesAutomatically(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
         if (Build.VERSION.SDK_INT >= 23) {
             settings.setOffscreenPreRaster(true);
         }

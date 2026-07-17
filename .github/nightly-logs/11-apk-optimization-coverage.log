@@ -17,3 +17,6 @@
 * [2026-07-16] [Stage 11] CHANGED: APK/src/com/albidr/clashmanager/MainActivity.java -- Hardened WebView settings: disabled form data saving, zoom controls, and Web SQL to minimize wrapper footprint and lock UI.
 * [2026-07-16] [Stage 11] CHANGED: Frontend-PWA/vite.config.ts -- Refined Service Worker precaching by excluding 'logo.svg' and 'favicon.ico' from the precache manifest to reduce initial install weight.
 * [2026-07-16] [Stage 11] CLEAN: APK/android/res/ -- Audited for duplicate assets via checksum audit; no new duplicates found following previous consolidation passes.
+* [2026-07-17] [Stage 11] CHANGED: APK/src/com/albidr/clashmanager/MainActivity.java -- Optimized WebView haptics and loading latency: enabled view-level haptic feedback and WebSettings loadsImagesAutomatically, and disabled media playback user gesture requirement.
+* [2026-07-17] [Stage 11] CLEAN: Frontend-PWA/vite.config.ts -- Audited Service Worker caching configuration; current exclusions are fully optimized with zero cache bloat or redundant routes.
+* [2026-07-17] [Stage 11] CLEAN: APK/android/res/ -- Audited resource directory; asset aliases and resource tables are fully pruned and consolidated with zero redundant or duplicate items.
