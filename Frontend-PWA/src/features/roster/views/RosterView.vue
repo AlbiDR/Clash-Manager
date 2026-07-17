@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
+
 <!-- [VR5] Plain script block: module-level export required by DataLoaderPlugin.
      Vue SFC compiler forbids `export` inside <script setup>; the non-setup
      block is the canonical location for named exports on SFC components. -->
