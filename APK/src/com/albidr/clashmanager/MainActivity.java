@@ -15,7 +15,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
-import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 
 public class MainActivity extends Activity {
