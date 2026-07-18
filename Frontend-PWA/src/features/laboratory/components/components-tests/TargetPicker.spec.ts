@@ -4,12 +4,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import TargetPicker from "../TargetPicker.vue";
-import { useHaptics } from "@shared/composables/useHaptics";
 
-// Mock dependencies
-const mockHaptics = {
-  tap: vi.fn(),
-};
+const { mockHaptics, mockVTactile } = vi.hoisted(() => {
+  const tap = vi.fn();
+  return {
+    mockHaptics: {
+      tap,
+    },
+    mockVTactile: {
+      mounted(el: any) {
+        el.addEventListener("pointerdown", () => {});
+        el.addEventListener("pointerup", () => tap());
+      }
+    }
+  };
+});
 
 vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => mockHaptics),
@@ -23,6 +32,7 @@ vi.mock("@shared", () => ({
     props: ["name", "size"],
   },
   useHaptics: vi.fn(() => mockHaptics),
+  vTactile: mockVTactile,
 }));
 
 describe("TargetPicker.vue", () => {
@@ -120,7 +130,10 @@ describe("TargetPicker.vue", () => {
       },
     });
 
-    await wrapper.find(".lock-btn").trigger("click");
+    const lockBtn = wrapper.find(".lock-btn");
+    await lockBtn.trigger("pointerdown");
+    await lockBtn.trigger("pointerup");
+    await lockBtn.trigger("click");
     expect(mockHaptics.tap).toHaveBeenCalled();
   });
 

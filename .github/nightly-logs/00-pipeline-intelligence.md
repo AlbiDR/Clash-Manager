@@ -55,6 +55,8 @@ Approaches that have been validated through execution. Follow these when applica
   simulated `globalThis.Deno` environment and creating temporary `node_modules` symlinks
   for `npm:` prefixed specs, avoiding logic/environment divergence. *(Established: PR #PENDING, 2026-07-17)*
 
+* **Deno `npm:` package resolution:** For testing Deno Edge Functions natively under Node/Vitest, map `npm:` prefixed packages in `/app/node_modules/` (such as `npm:valibot@1.4.2` and nested structures like `npm:@supabase/supabase-js@2.110.6`) via symlinks to their workspace counterparts. This resolves package loading smoothly without altering production source imports. *(Established: PR #PENDING, 2026-07-18)*
+
 ### Version and Dependency Management
 
 * **Catalog protocol is mandatory:** All internal package references must use
@@ -119,6 +121,7 @@ detect drift, avoid duplication, and understand current saturation.
 * `Frontend-PWA/src/core/` -- Stage 6, recurring -- TSDoc interface contracts
 * `pnpm-workspace.yaml` + `package.json` -- Stage 7 + 8, recurring -- version and dep management
 * `Frontend-PWA/src/features/headhunter/` -- Stage 4 + 9, 2026-07-13 -- naming + decomposition
+* `Frontend-PWA/src/features/laboratory/components/TargetPicker.vue` -- Stage 12, 2026-07-18 -- Modernized target-picker (48px footprint) and integrated v-tactile haptic feedback.
 
 ---
 
@@ -222,3 +225,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 * Integrated `v-tactile` directive for declarative haptic feedback on the primary `.morph-btn`.
 * Increased `.selection-bar` height to 56px and interactive elements (`.morph-btn`, `.count-pill`) to 48px (Target B.2).
 * Verified zero layout regressions via `depcruise` and production PWA build. [SUPERSEDED by PR #PENDING]
+
+### [2026-07-18] [Stage 12] TargetPicker Modernization
+* Modernized TargetPicker heights (.input-box, .player-label) to 48px, lock-btn to 40px, applied user-select containment, and integrated v-tactile directive.
+* Verified zero layout regressions via `depcruise` and production PWA build.

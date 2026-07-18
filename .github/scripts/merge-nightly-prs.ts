@@ -6,7 +6,7 @@ import path from "path";
  * SCRIPT: MERGE NIGHTLY PRS
  * ----------------------------------------------------------------------------
  * DESCRIPTION: Automates the merging of PRs from machine authors.
- * VERSION: 3.3.0
+ * VERSION: 3.4.0
  * ============================================================================
  */
 
@@ -289,8 +289,18 @@ ${pr.body ? "### Description\n" + pr.body : ""}
       } catch (error: any) {
         console.error(`FAILED: PR #${pr.number}: ${error.message}`);
         const date = new Date().toISOString().split("T")[0];
-        changelogUpdates =
-          `
+        const failMarker = `MERGE FAILED: PR #${pr.number}:`;
+        // Re-read from disk immediately before the duplicate check so that
+        // concurrent runs (or a revived run after a rebase) see the latest
+        // committed state rather than the stale in-memory snapshot captured
+        // at checkout time.
+        const changelogExists = fs.existsSync(CONFIG.changelogPath);
+        const changelogContent = changelogExists ? fs.readFileSync(CONFIG.changelogPath, "utf8") : "";
+        if (changelogContent.includes(failMarker)) {
+          log(`Skipping changelog append: Failure log for PR #${pr.number} already exists.`, "info");
+        } else {
+          changelogUpdates =
+            `
 ## [${date}] MERGE FAILED: PR #${pr.number}: ${pr.title}
 > [!CAUTION]
 > **Status**: Auto-merge aborted.
@@ -299,6 +309,7 @@ ${pr.body ? "### Description\n" + pr.body : ""}
 
 ---
 ` + changelogUpdates;
+        }
       }
     }
 

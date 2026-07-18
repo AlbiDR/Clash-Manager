@@ -10,7 +10,7 @@ target branch: Nightly
 mindset: Performance Refiner
 identity: stage-4-refiner
 core-task: substrate-and-logic-efficiency
-primary-tools: [get_advisors, list_tables, pnpm-test]
+primary-tools: [pnpm-test]
 forbidden-actions: [apply_migration, execute_sql, visual-regressions]
 ---
 
@@ -141,8 +141,8 @@ You act as a performance and efficiency engineer. You do not add new features or
 - **Scan execution:** Scan the codebase and substrate for a single high-impact, low-risk inefficiency using the following strict priority list. If no bottlenecks are found, proceed directly to Step 3 to write only the log entry (skip all optimization execution sub-steps in Step 3), then proceed to Step 4 to submit a no-bottleneck PR. Do not exit early or skip the PR, as logging the audit pass is required.
 - **Priority List:**
   1. **Structural Rot:** Identify dead or orphaned logic, redundant helper files, or obsolete styles.
-  2. **Substrate Hygiene:** Identify orphaned database views not referenced by Edge Functions, storage paths lacking database records, or redundant SQL indexes.
-  3. **Duplicate Logic Extraction:** Locate Blatant duplicate logic blocks in Vue components and propose extracting them to a shared `@shared/utils` composable or `@core` provider. Keep abstractions simple; do not over-engineer.
+  2. **Substrate Hygiene (Best-Effort):** Identify orphaned database views not referenced by Edge Functions, storage paths lacking database records, or redundant SQL indexes. Attempt `list_tables` via Supabase MCP for substrate discovery. If the tool is unavailable or returns a connection error, fall back to code-level detection: scan Edge Function source files for SQL view references and compare against migration history to identify unreferenced views. Do not halt the stage on MCP tool unavailability. Note: the six known orphaned views (war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view) have been repeatedly confirmed unreferenced. Log a CLEAN entry for them if no new orphans are found rather than repeating the re-verification loop.
+  3. **Duplicate Logic Extraction:** Locate blatant duplicate logic blocks in Vue components and propose extracting them to a shared `@shared/utils` composable or `@core` provider. Keep abstractions simple; do not over-engineer.
 - **Log Reference:** Append optimized file paths to `.github/nightly-logs/04-optimization-coverage.log` to avoid repeating recent targets for items 2 and 3.
 
 ### Step 2: Efficiency and Safety Analysis

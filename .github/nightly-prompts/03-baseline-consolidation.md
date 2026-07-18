@@ -10,7 +10,7 @@ target branch: Nightly
 mindset: Declarative State-Based Architect
 identity: stage-3-consolidator
 core-task: database-schema-baselining
-primary-tools: [execute_sql, list_migrations]
+primary-tools: [pnpm-test]
 forbidden-actions: [cosmetic-changes]
 ---
 
@@ -164,7 +164,8 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
   - If no newer migrations exist:
     1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
     2. Parse and re-format the master migration to optimize query format, statement ordering, and comment consistency.
-    3. If any structural or formatting deviations are detected, resolve them directly in the master migration. Otherwise, terminate the execution loop cleanly without changes.
+    3. If any structural or formatting deviations are detected, resolve them directly in the master migration.
+    4. **Zero-Fold Exit Protocol (Audit-Pass PR Exception applies unconditionally):** Even when no migrations are folded and no deviations are corrected, you must still write a CLEAN log entry to `.github/nightly-logs/03-baseline-consolidation-coverage.log` and open a Pull Request titled `chore(baseline): no migrations to fold -- audit pass`. The Zero-Diff rule does NOT apply here. A log entry is always a valid diff and a PR must always be opened. Do not exit without a log entry and PR under any circumstances.
 
 
 ### Step 2: DDL Folding Integration

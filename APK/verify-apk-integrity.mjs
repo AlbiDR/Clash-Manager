@@ -20,11 +20,32 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-const APK = process.argv[2] || "clashmanager.apk";
+let defaultApk = "clashmanager.apk";
+if (!process.argv[2]) {
+  try {
+    const pkgPath = path.join(process.cwd(), "package.json");
+    if (existsSync(pkgPath)) {
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+      const versionedApk = `APK/release/clashmanager-v${pkg.version}.apk`;
+      if (existsSync(path.join(process.cwd(), versionedApk))) {
+        defaultApk = versionedApk;
+      } else {
+        const unsignedApk = "APK/release/clashmanager-unsigned.apk";
+        if (existsSync(path.join(process.cwd(), unsignedApk))) {
+          defaultApk = unsignedApk;
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore and fallback
+  }
+}
+
+const APK = process.argv[2] || defaultApk;
 
 // Hard timeout per child process: prevents aapt2 or unzip from hanging the pipeline.
 const EXEC_TIMEOUT_MS = 120_000;

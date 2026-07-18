@@ -56,7 +56,8 @@ Authoritative TypeScript interfaces used across the entire backend substrate.
 ### Shared Configuration (`config.ts`)
 The authoritative source for backend business rules and operational thresholds.
 - **Batch Limits**: Defines hard caps for profiling (`PROFILER_BATCH_CEILING`) and re-scanning (`RESCAN_BATCH_LIMIT`) to ensure predictable execution.
-- **Discovery parameters**: Centralizes keywords and limits for tournament and battle-log harvesting.
+- **Discovery Parameters**: Centralizes keywords and limits for tournament and battle-log harvesting.
+- **Harvesting Thresholds**: Centralizes operational constants for query-royale-api leaderboards, including target floor (`TARGET_HARVEST_FLOOR`), query limit (`PLAYER_LEADERBOARD_LIMIT`), concurrent epoch limit (`MAX_HARVEST_EPOCHS`), and top geographic country lists (`TOP_COUNTRY_IDS`).
 
 ---
 
