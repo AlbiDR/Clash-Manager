@@ -1751,6 +1751,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-18] PR #PENDING [Stage 12]: fix(apk-ux): modernize TargetPicker touch targets and haptics
+**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/laboratory/components/TargetPicker.vue, Frontend-PWA/src/features/laboratory/components/components-tests/TargetPicker.spec.ts, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** TargetPicker inputs and labels were below the 48px touch target threshold and lacked declarative haptic feedback brokering in the WebView shell.
+**Change:** Modernized TargetPicker heights to 48px, lock-btn to 40px, applied user-select containment, and integrated `v-tactile` directive for brokered haptics.
+**Result:** Improved mobile touch targets and interaction feedback consistency with 100% test pass.
+
 ### [2026-07-18] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md

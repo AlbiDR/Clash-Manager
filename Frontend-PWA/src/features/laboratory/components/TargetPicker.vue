@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { Icon } from "@shared";
+import { Icon, vTactile } from "@shared";
 import { normalizeTag } from "@core";
 import { useHaptics } from "@shared";
 
@@ -26,7 +26,6 @@ watch(() => props.modelValue, (newVal) => {
 
 function handleLockIn() {
   const tag = localTag.value.trim();
-  haptics.tap();
   if (tag) {
     emit("lockIn", normalizeTag(tag));
   } else {
@@ -59,6 +58,7 @@ function handleKeydown(e: KeyboardEvent) {
         class="lock-btn" 
         :disabled="props.isFetching"
         @click="handleLockIn"
+        v-tactile
       >
         <Icon :name="props.isFetching ? 'loader' : 'check'" :size="16" />
       </button>
@@ -81,7 +81,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 .input-box {
   position: relative;
-  height: 40px;
+  height: 48px; /* 48px Mobile Footprint (Target B.2) */
   background: var(--sys-color-surface-container-high);
   border-radius: var(--sys-shape-corner-input);
   display: flex;
@@ -123,8 +123,8 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 .lock-btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--sys-shape-corner-stat);
   background: var(--sys-color-primary);
   border: none;
@@ -155,13 +155,15 @@ function handleKeydown(e: KeyboardEvent) {
   display: flex;
   align-items: center;
   padding: 0 var(--sys-space-10);
-  height: 40px;
+  height: 48px;
   background: var(--sys-color-surface-container);
   border-radius: var(--sys-shape-corner-medium);
   border: 1px solid rgba(128, 128, 128, 0.1);
   white-space: nowrap;
   max-width: 120px;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .label-text {
@@ -171,6 +173,8 @@ function handleKeydown(e: KeyboardEvent) {
   text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .is-fetching .lock-btn {
