@@ -13,6 +13,18 @@
 **Result:** 100% monorepo-wide consistency and catalog synchronization of @supabase/supabase-js dependency.
 
 
+## [2026-07-18] PR #1144: perf(apk-optimization): remove unused ViewCompat import from native main activity
+**Commit**: `e5cd5e8595ddece5e7a302f7e7b2b6d192b9012a`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1144)
+
+### Description
+This PR completes the Stage 11 APK and PWA wrapper optimizations by cleaning up the native Java source files, removing unused imports to improve code health and compilation. Additionally, the Service Worker configuration and asset footprint have been audited, confirming optimal cache settings and chunk splitting with zero duplicate resources or routes. All monorepo build, test, and integrity checks pass successfully.
+
+---
+*PR created automatically by Jules for task [7603153212190196376](https://jules.google.com/task/7603153212190196376) started by @AlbiDR*
+
+---
+
 ## [2026-07-18] PR #1143: chore(apk-integrity): no mismatch found
 **Commit**: `c364ddbf92693066c8cca08081c5eda27f4caefc`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1143)
