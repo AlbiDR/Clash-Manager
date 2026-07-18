@@ -142,7 +142,12 @@ You act as the project's structural architect and structural engine. Your mandat
   1. **Duplicate Detection:** Scan features in `@features` for duplicate utility or business logic.
   2. **Size Audit:** Find modules exceeding line count thresholds (e.g., 400 lines).
   3. **Layer Violation:** Find logic that belongs in a lower infrastructure layer but is currently trapped in a higher layer.
-- Pick the single highest-priority, lowest-ambiguity issue. If no structural debt is found, proceed directly to Step 3 to write only the log entry (skip all refactor execution sub-steps in Step 3), then proceed to Step 4 to submit a no-refactor-required PR. Do not exit early or skip the PR, as logging the audit pass is required.
+- Pick the single highest-priority, lowest-ambiguity issue.
+- **Zero-Diff Exit Protocol:** If no structural debt is found after completing the full scan, you must execute the following numbered steps in order before exiting. Do NOT exit silently. Do NOT skip the PR.
+  1. For each file audited, write a `* [YYYY-MM-DD] [Stage 9] CLEAN: path/to/file -- No structural debt found; all modules within line-count threshold and layer boundaries respected.` entry in `.github/nightly-logs/09-refactor-proposals-coverage.log`.
+  2. Open a Pull Request targeting `Nightly` with the title `chore(refactor): no action required`.
+  3. Write the standard T1 block into `00-pr-history.md`.
+  4. Exit. The Audit-Pass PR Exception in Base 4 applies unconditionally. A log entry is always a valid diff. A PR is always required.
 
 ### Step 2: Surgery Analysis
 - Define the structural debt: "Logic [X] in Feature [Y] violates Feature-to-Feature isolation."

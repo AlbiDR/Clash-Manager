@@ -6,13 +6,12 @@ name: Sync Nightly PRs
 
 on:
   schedule:
-    # 11:30 AM CEST
+    # 11:30 AM CEST -- runs after Jules completes its morning session.
+    # The pull_request trigger was intentionally removed: it caused concurrent
+    # workflow runs (one per Jules PR) that produced duplicate merge failure
+    # blocks in 00-pr-history.md via stacked rebases.
     - cron: "30 9 * * *"
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches:
-      - Nightly
 
 concurrency:
   group: merge-nightly
@@ -37,15 +36,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # ----------------------------------------------------------------------
-      # STEP 0: Event Buffer (Ensures Jules has finished PR setup)
-      # ----------------------------------------------------------------------
-      - name: Wait for PR Finalization
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "Triggered by PR event. Holding for 60s to allow GitHub indexing and PR finalization..."
-          sleep 60
-
       # ----------------------------------------------------------------------
       # STEP 1: Environment Setup
       # ----------------------------------------------------------------------
