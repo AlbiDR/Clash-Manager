@@ -55,6 +55,8 @@ Approaches that have been validated through execution. Follow these when applica
   simulated `globalThis.Deno` environment and creating temporary `node_modules` symlinks
   for `npm:` prefixed specs, avoiding logic/environment divergence. *(Established: PR #PENDING, 2026-07-17)*
 
+* **Deno `npm:` package resolution:** For testing Deno Edge Functions natively under Node/Vitest, map `npm:` prefixed packages in `/app/node_modules/` (such as `npm:valibot@1.4.2` and nested structures like `npm:@supabase/supabase-js@2.110.6`) via symlinks to their workspace counterparts. This resolves package loading smoothly without altering production source imports. *(Established: PR #PENDING, 2026-07-18)*
+
 ### Version and Dependency Management
 
 * **Catalog protocol is mandatory:** All internal package references must use

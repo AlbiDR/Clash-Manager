@@ -1568,6 +1568,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-18] PR #PENDING [Stage 2]: test(verify): add saturating tests for sync-player-cards Edge Function
+**Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/sync-player-cards/index.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
+**Why:** The sync-player-cards Edge Function lacked unit/integration testing, representing a logical and environment validation gap on recent cache hardening changes.
+**Change:** Created a comprehensive Vitest suite covering CORS, authorization guards, validation payload boundaries, cache hits/misses, absolute level scaling, standard/tower-troop collection separation, and graceful recovery from malformed timestamps.
+**Result:** 100% logic and branch coverage verified with 9 newly introduced tests running natively in the monorepo Vitest workspace.
+
 ### [2026-07-17] PR #PENDING [Stage 9]: chore(refactor): no action required
 **Domain:** Refactor/Structural | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
