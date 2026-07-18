@@ -40,3 +40,7 @@
 * [2026-07-17] [Stage 6] CHANGED: Frontend-PWA/src/features/roster/views/RosterView.vue -- Added standard SPDX licensing and copyright header blocks.
 * [2026-07-17] [Stage 6] CLEAN: Backend/supabase/functions/sync-player-cards/index.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 1 hardening.
 * [2026-07-17] [Stage 6] CLEAN: Backend/supabase/functions/fetch-player-battlelog/index.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 2 verification.
+* [2026-07-18] [Stage 6] CLEAN: Backend/supabase/functions/query-royale-api/harvester.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 9 decomposition.
+* [2026-07-18] [Stage 6] CLEAN: Backend/supabase/functions/query-royale-api/index.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 9 refactoring.
+* [2026-07-18] [Stage 6] CLEAN: Backend/supabase/functions/_shared/config.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 9 configuration centralization.
+* [2026-07-18] [Stage 6] CLEAN: Frontend-PWA/src/shared/ui/SelectionBar.vue -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 12 SelectionBar modernization.
