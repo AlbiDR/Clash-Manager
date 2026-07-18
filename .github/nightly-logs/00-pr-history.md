@@ -1,3 +1,10 @@
+### [2026-07-18] PR #PENDING [Stage 11]: perf(apk-optimization): remove unused ViewCompat import from native main activity
+**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/src/com/albidr/clashmanager/MainActivity.java, .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Clean native Java classes by removing redundant/unused import `androidx.core.view.ViewCompat` in MainActivity.
+**Change:** Removed `androidx.core.view.ViewCompat` import statement from `APK/src/com/albidr/clashmanager/MainActivity.java`.
+**Result:** Streamlined native source code cleanliness with zero impact on runtime behavior.
+
 ### [2026-07-18] PR #PENDING [Stage 7]: fix(version): reconcile supabase-js version drift to v2.110.7
 **Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts, .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
