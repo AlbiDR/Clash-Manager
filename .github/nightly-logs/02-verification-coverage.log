@@ -32,3 +32,4 @@
 * [2026-07-11] [Stage 2] Target: Codebase - Backend/supabase/functions/_shared/utils.ts | Zero Coverage gap closed; saturating tests for tag normalization, rarity mapping, and authoritative RPoS formula.
 * [2026-07-14] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/game.ts | Saturating coverage for King XP math, card level normalization, rarity mapping, and currency conversion logic.
 * [2026-07-17] [Stage 2] Target: Codebase - Backend/supabase/functions/fetch-player-battlelog/index.ts | Zero Coverage gap closed; saturating tests for secure battlelog fetching, parallel fan-out, date-time parsing, and error boundaries.
+* [2026-07-18] [Stage 2] CHANGED: Backend/supabase/functions/sync-player-cards/index.spec.ts -- Closed zero-coverage gap in sync-player-cards Edge Function with saturating unit/integration tests.
