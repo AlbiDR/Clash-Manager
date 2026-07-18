@@ -1703,6 +1703,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-18] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
+**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Conducted a comprehensive audit to ensure version, manifest, and security synchronization between the PWA and native Android wrappers.
+**Change:** Verified monorepo-wide synchronization at v14.31.2 (17120) across manifests, resources, and native configuration; confirmed Digital Asset Links fingerprint parity.
+**Result:** 100% integrity and alignment verified across all PWA and APK wrapper boundaries.
+
 ### [2026-07-18] PR #PENDING [Stage 2]: test(verify): add saturating tests for sync-player-cards Edge Function
 **Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/sync-player-cards/index.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
