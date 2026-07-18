@@ -33,3 +33,11 @@
 * [2026-07-17] [Stage 5] CLEAN: README.md -- No action required
 * [2026-07-17] [Stage 5] CLEAN: Backend/README.md -- No action required
 * [2026-07-17] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-07-18] [Stage 5] CHANGED: Backend/supabase/functions/query-royale-api/README.md -- Reconciled harvester module decomposition and centralized config constants
+* [2026-07-18] [Stage 5] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconciled centralized harvesting parameters and limits in config.ts
+* [2026-07-18] [Stage 5] CLEAN: README.md -- No action required
+* [2026-07-18] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-07-18] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-07-18] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
+* [2026-07-18] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
+* [2026-07-18] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required

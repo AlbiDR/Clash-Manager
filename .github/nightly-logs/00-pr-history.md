@@ -1,3 +1,10 @@
+### [2026-07-18] PR #PENDING [Stage 5]: docs(readme): reconcile harvester module decomposition and centralized config constants
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/query-royale-api/README.md, Backend/supabase/functions/_shared/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** The Royale API proxy was structurally decomposed and its configuration constants centralized to resolve SRP debt, causing adjacent architectural documentation to drift.
+**Change:** Updated query-royale-api README to document the harvester.ts decomposition and updated the backend _shared README to map centralized configuration thresholds.
+**Result:** 100% synchronization between implementation substrate reality and system-wide architectural intent.
+
 ### [2026-07-17] PR #PENDING [Stage 11]: perf(apk-optimization): optimize webview haptics and media playback gesture requirements
 **Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/src/com/albidr/clashmanager/MainActivity.java, .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
