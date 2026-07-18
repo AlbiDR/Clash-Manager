@@ -3,7 +3,7 @@
 
 # Royale API Proxy (`query-royale-api`)
 
-The **Leaderboard Harvesting Gate**. A specialized Edge Function (Layer 1) responsible for performing secure, transient queries against the Clash Royale API leaderboards.
+The **Leaderboard Harvesting Gate**. A specialized Edge Function (Layer 5) responsible for performing secure, transient queries against the Clash Royale API leaderboards.
 
 ---
 
@@ -11,10 +11,16 @@ The **Leaderboard Harvesting Gate**. A specialized Edge Function (Layer 1) respo
 The `query-royale-api` function acts as a secure proxy for the PWA, allowing it to harvest potential recruits from Global and Local leaderboards without exposing API keys to the client or polluting the persistent database substrate with transient candidates.
 
 ## Architectural Context
-- **Layer**: Layer 1 (@core / @kernel)
+- **Layer**: Layer 5 (@features)
 - **Role**: L5 Control Layer Proxy
 - **Runtime**: Deno (Supabase Edge Functions)
 - **Security**: Requires an Internal Bearer Token or a valid Supabase Anon Key.
+
+## Decomposed System Architecture
+To adhere to the Single Responsibility Principle (SRP) and ensure robust maintainability, the proxy is decoupled into highly focused modules:
+- **Lean Orchestration (`index.ts`)**: Standardizes the function entry point. It handles Supabase Vault synchronization, performs inbound request validation against `PayloadSchema`, checks location details, and delegates actual harvesting tasks.
+- **Specialized Discovery Engine (`harvester.ts`)**: Encapsulates all downstream Clash Royale API query endpoints, filters out players belonging to clans, and coordinates high-concurrency international discovery loops.
+- **Centralized Configuration**: Operational parameters and discovery limits are imported directly from the shared backend configuration kernel (`../_shared/config.ts`), eliminating inline magic numbers.
 
 ## Logic Subsystems
 
