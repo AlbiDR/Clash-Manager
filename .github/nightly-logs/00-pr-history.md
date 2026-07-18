@@ -12,6 +12,23 @@
 **Change:** Conducted a comprehensive audit of query-royale-api (harvester.ts/index.ts), shared config.ts, and SelectionBar.vue, certifying full TSDoc coverage, inline decision logs, and GPL-3.0-only copyright headers (CLEAN status).
 **Result:** 100% licensing compliance and documented interface contract synchronization with zero logical mutations.
 
+
+## [2026-07-18] PR #1141: fix(version): reconcile supabase-js version drift to v2.110.7
+**Commit**: `99fa76b029b3ae436f9f567db56ca8f45e58fc81`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1141)
+
+### Description
+This PR reconciles version drift of the @supabase/supabase-js package across all Deno Edge Functions and auxiliary scripts to align with the pnpm-workspace.yaml catalog's updated version of v2.110.7.
+
+- Updated Deno Edge Functions to import npm:@supabase/supabase-js@2.110.7
+- Updated github helper script to import https://esm.sh/@supabase/supabase-js@2.110.7
+- Generated comprehensive execution and verification records in `07-version-integrity-coverage.log` and `00-pr-history.md`
+- Confirmed full system correctness and integrity checks using `pnpm test` (1409 passed) and `pnpm audit:version` (PASS)
+
+---
+*PR created automatically by Jules for task [3150374077983374298](https://jules.google.com/task/3150374077983374298) started by @AlbiDR*
+
+---
 ### [2026-07-18] PR #PENDING [Stage 5]: docs(readme): reconcile harvester module decomposition and centralized config constants
 **Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/query-royale-api/README.md, Backend/supabase/functions/_shared/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
