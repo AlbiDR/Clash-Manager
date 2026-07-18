@@ -1,3 +1,10 @@
+### [2026-07-18] PR #PENDING [Stage 7]: fix(version): reconcile supabase-js version drift to v2.110.7
+**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts, .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Reconcile version drift of @supabase/supabase-js package across all Deno edge functions and GitHub scripts to match the updated pnpm-workspace.yaml catalog version of v2.110.7.
+**Change:** Updated imports of @supabase/supabase-js from v2.110.6 to v2.110.7 in 7 Backend Supabase Edge Functions and the fetch_player_battles.ts utility script.
+**Result:** 100% monorepo-wide consistency and catalog synchronization of @supabase/supabase-js dependency.
+
 ### [2026-07-18] PR #PENDING [Stage 6]: docs(tsdoc): audit code contract coverage and verify documentation integrity
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/query-royale-api/harvester.ts, Backend/supabase/functions/query-royale-api/index.ts, Backend/supabase/functions/_shared/config.ts, Frontend-PWA/src/shared/ui/SelectionBar.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
