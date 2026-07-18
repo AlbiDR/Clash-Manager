@@ -60,7 +60,13 @@ function handleOpenInGame() {
         :class="{ compact: compact }"
         aria-label="View on RoyaleAPI"
       >
-        <Icon name="analytics" :size="iconSize" />
+        <img
+          src="https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png"
+          :width="iconSize"
+          :height="iconSize"
+          alt="RoyaleAPI"
+          class="royaleapi-logo"
+        />
         <span>RoyaleAPI</span>
       </button>
       <button
@@ -82,4 +88,15 @@ function handleOpenInGame() {
   gap: var(--sys-space-8);
   width: 100%;
 }
+
+.royaleapi-logo {
+  object-fit: contain;
+  filter: grayscale(1) opacity(0.6);
+  transition: filter var(--sys-motion-duration-200) var(--sys-motion-spring);
+}
+
+.btn-action:hover .royaleapi-logo {
+  filter: grayscale(0) opacity(1);
+}
+
 </style>
