@@ -60,7 +60,7 @@ function onInteractionStart() {
     v-bind="{ 'aria-current': route.path === navItemCandidate.path ? 'page' : undefined }"
   >
     <div v-if="route.path === navItemCandidate.path" class="capsule-bg"></div>
-    <Icon :name="navItemCandidate.icon" size="22" class="dock-icon" />
+    <Icon :name="navItemCandidate.icon" size="22" :viewBox="navItemCandidate.viewBox" class="dock-icon" />
     <span v-if="navItemCandidate.label" class="dock-label">
       {{ navItemCandidate.label }}
     </span>

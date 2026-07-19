@@ -23,6 +23,8 @@ export interface NavItem {
   label: string;
   /** Identifier for the icon associated with the route. */
   icon: string;
+  /** Optional SVG viewBox override when the icon coordinate space differs from the default 0 0 24 24. */
+  viewBox?: string;
 }
 
 /**
@@ -44,12 +46,14 @@ export const NAV_ITEMS: NavItem[] = [
     name: "headhunter",
     label: "Headhunter",
     icon: "headhunter",
+    viewBox: "0 0 512 512",
   },
   {
     path: "/laboratory",
     name: "laboratory",
     label: "Laboratory",
-    icon: "flask",
+    icon: "laboratory",
+    viewBox: "0 0 23 24",
   },
   {
     path: "/settings",
