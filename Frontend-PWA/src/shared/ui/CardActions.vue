@@ -77,7 +77,7 @@ function handleOpenInGame() {
         aria-label="Open in Game"
       >
         <ClashRoyaleIcon
-          :size="iconSize"
+          :size="iconSize + 4"
           class="clashroyale-icon"
         />
         <span>Open Game</span>
