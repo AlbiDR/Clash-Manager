@@ -105,6 +105,8 @@ function handleOpenInGame() {
 
 .clashroyale-icon {
   filter: grayscale(1) opacity(0.6);
+  transform: translateZ(0);
+  will-change: filter;
   transition: filter var(--sys-motion-duration-200) var(--sys-motion-spring),
               transform var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
