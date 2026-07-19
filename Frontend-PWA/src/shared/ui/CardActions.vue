@@ -76,7 +76,7 @@ function handleOpenInGame() {
         aria-label="Open in Game"
       >
         <img
-          src="/assets/branding/clash-royale-logo.png"
+          src="/assets/branding/clash-royale-logo.svg"
           :width="iconSize"
           :height="iconSize"
           alt="Clash Royale"
