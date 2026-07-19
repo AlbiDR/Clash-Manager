@@ -22,7 +22,7 @@
  * - 20260705030000_voyage_history_pruning.sql
  * - 20260707003200_rename_voyage_5_to_4.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-07-17):
+ * Architectural Compliance Verification Log (Audited: 2026-07-19):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.

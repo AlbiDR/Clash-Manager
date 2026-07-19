@@ -15,3 +15,17 @@
 * [2026-07-17] [Stage 3] CLEAN: Backend/supabase/migrations/20260629212000_fix_voyage_ingestion_targeting.sql -- Preserved historical incremental migration per audit trail policy.
 * [2026-07-17] [Stage 3] CLEAN: Backend/supabase/migrations/20260705030000_voyage_history_pruning.sql -- Preserved historical incremental migration per audit trail policy.
 * [2026-07-17] [Stage 3] CLEAN: Backend/supabase/migrations/20260707003200_rename_voyage_5_to_4.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CHANGED: .github/nightly-logs/03-baseline-consolidation-coverage.log -- Appended daily run record.
+* [2026-07-19] [Stage 3] CHANGED: Backend/supabase/migrations/20260531232406_master_migration.sql -- Updated audit pass verification timestamp to 2026-07-19.
+* [2026-07-19] [Stage 3] CHANGED: .github/nightly-logs/00-pr-history.md -- Appended daily Stage 3 run record.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260614082900_add_trail_battle_type.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260615004900_fix_zero_crown_voyage_contributions.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260617013100_add_public_vault_secret_wrapper.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260620113000_fix_duel_crown_calculation.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260620120000_revise_duel_crown_calculation.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260620142000_headhunter_epoch_guard.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260628003700_fix_discovery_cache_fractional_hours.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260628010500_add_public_get_active_discovery_anchors.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260629212000_fix_voyage_ingestion_targeting.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260705030000_voyage_history_pruning.sql -- Preserved historical incremental migration per audit trail policy.
+* [2026-07-19] [Stage 3] CLEAN: Backend/supabase/migrations/20260707003200_rename_voyage_5_to_4.sql -- Preserved historical incremental migration per audit trail policy.
