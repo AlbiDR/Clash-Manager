@@ -36,7 +36,7 @@ const sizePx = computed(() => {
     <path fill="currentColor" fill-opacity=".9" d="m533 591-37 4q-5 2-7-3s-4-7 5-9c11-1 52-6 55-5 7 1 8 11-1 12z"/>
     <path fill="currentColor" d="M600 851v-36c1-6 12-8 12 4v38c0 8-7 7-8 6q-6-3-4-12"/>
     <!-- Vertical dividers (top and bottom) -->
-    <path fill="currentColor" d="M597 122h6v128h-6zM597 782h6v68h-6z"/>
+    <path fill="currentColor" d="M599 120h2v130h-2zM599 715h2v47h-2z"/>
   </svg>
 </template>
 
