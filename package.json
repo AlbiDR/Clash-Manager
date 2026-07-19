@@ -23,6 +23,7 @@
     "@types/node": "catalog:",
     "dependency-cruiser": "catalog:",
     "knip": "catalog:",
+    "p-limit": "7.3.0",
     "simple-git-hooks": "catalog:",
     "supabase": "catalog:",
     "tsx": "catalog:",

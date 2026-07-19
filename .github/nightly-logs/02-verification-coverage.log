@@ -9,7 +9,7 @@
 * [2026-05-26] [Stage 2] Target: Codebase - Frontend-PWA/src/features/voyage/components/VoyageBanner.vue | Zero Coverage gap closed; saturating tests for live progress and countdown logic.
 * [2026-05-27] [Stage 2] Target: Codebase - Frontend-PWA/src/shared/ui/BaseHistoryChart.vue | Saturating logic coverage for bar scaling, trend generation, and thematic rendering
 * [2026-05-28] [Stage 2] Target: Codebase - Frontend-PWA/src/features/laboratory/components/TargetPicker.vue | Zero Coverage gap closed; saturating tests for props, emits, formatting, and visual states.
-* [2026-05-29] [Stage 2] Target: Codebase - Frontend-PWA/src/core/api/SupabaseClient.ts | Added deep logic proofs for newly added validation bounds including blacklist tags and pipeline heartbeat data structure
+* [2026-05-29] [Stage 2] Target: Codebase - Frontend-PWA/src/core/api/SupabaseClient.ts | Added logic proofs for newly added validation bounds including blacklist tags and pipeline heartbeat data structure
 * [2026-05-30] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for sanitizeNumericInput and durationToSeconds (Layer 1 utilities)
 * [2026-06-01] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/formatters.ts | Saturating coverage for t2tToTimestamp and formatCountdown edge cases
 * [2026-06-03] [Stage 2] Target: Codebase - Frontend-PWA/src/shared/composables/useSelectionBar.ts | Zero Coverage gap closed; saturating tests for state, computed, and actions.
@@ -33,3 +33,4 @@
 * [2026-07-14] [Stage 2] Target: Codebase - Frontend-PWA/src/core/utils/game.ts | Saturating coverage for King XP math, card level normalization, rarity mapping, and currency conversion logic.
 * [2026-07-17] [Stage 2] Target: Codebase - Backend/supabase/functions/fetch-player-battlelog/index.ts | Zero Coverage gap closed; saturating tests for secure battlelog fetching, parallel fan-out, date-time parsing, and error boundaries.
 * [2026-07-18] [Stage 2] CHANGED: Backend/supabase/functions/sync-player-cards/index.spec.ts -- Closed zero-coverage gap in sync-player-cards Edge Function with saturating unit/integration tests.
+* [2026-07-19] [Stage 2] CHANGED: Backend/supabase/functions/query-royale-api/index.spec.ts -- Closed zero-coverage gap in query-royale-api Edge Function with saturating unit/integration tests.
