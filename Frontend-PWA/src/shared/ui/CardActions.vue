@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
+import ClashRoyaleIcon from "./ClashRoyaleIcon.vue";
 import { useExternalLink } from "@core/services/useExternalLink";
 import { useHaptics } from "@shared/composables/useHaptics";
 
@@ -75,10 +76,8 @@ function handleOpenInGame() {
         :class="{ compact: compact }"
         aria-label="Open in Game"
       >
-        <Icon
-          name="clash_royale"
+        <ClashRoyaleIcon
           :size="iconSize"
-          viewBox="0 0 1200 1200"
           class="clashroyale-icon"
         />
         <span>Open Game</span>
