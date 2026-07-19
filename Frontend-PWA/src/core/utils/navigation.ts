@@ -46,7 +46,7 @@ export const NAV_ITEMS: NavItem[] = [
     name: "headhunter",
     label: "Headhunter",
     icon: "headhunter",
-    viewBox: "0 0 512 512",
+    viewBox: "42 30 440 440",
   },
   {
     path: "/laboratory",
