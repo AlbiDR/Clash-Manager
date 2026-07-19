@@ -57,6 +57,8 @@ Approaches that have been validated through execution. Follow these when applica
 
 * **Deno `npm:` package resolution:** For testing Deno Edge Functions natively under Node/Vitest, map `npm:` prefixed packages in `/app/node_modules/` (such as `npm:valibot@1.4.2` and nested structures like `npm:@supabase/supabase-js@2.110.6`) via symlinks to their workspace counterparts. This resolves package loading smoothly without altering production source imports. *(Established: PR #PENDING, 2026-07-18)*
 
+* **Dynamic url-matching mock routing:** When writing unit/integration tests for complex Edge Functions in Vitest, use a route-matching map in `mockFetch` sorted by pattern length descending rather than sequential `.mockResolvedValueOnce()` to dynamically route concurrent requests and prevent transient 5000ms test timeouts on parallel/fallback queries. *(Established: Stage 2, 2026-07-19)*
+
 ### Version and Dependency Management
 
 * **Catalog protocol is mandatory:** All internal package references must use
