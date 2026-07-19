@@ -45,6 +45,25 @@ Atomic evaluation and state transition logic.
 Renders the recommended upgrade path using a high-performance rendering strategy.
 - **Progressive Rendering**: Utilizes `useProgressiveList` (@core/services) to time-slice the injection of trajectory items into the DOM. This maintains 60FPS even when a simulation results in hundreds of recommended actions, replacing the legacy "Show More" manual expansion.
 
+## UI Components & Presentation Layer
+The Laboratory features highly optimized Vue Single File Components (SFCs) designed to render complex simulations while adhering to standard mobile touch targets and custom styling:
+
+### Target Input & Lock-In (TargetPicker.vue)
+An interactive entry point that allows users to input and lock in player tags for simulation tracking.
+- **Input Normalization**: Inbound player tags are sanitized and normalized using `@core/utils` (`normalizeTag`) prior to dispatching events to the parent orchestrator.
+- **Mobile Touch Footprint**: Employs a strict `48px` minimum layout footprint for all interactive regions (input container, player identifier label) to ensure optimal usability in WebView and TWA shells.
+- **Brokered Haptics**: Bypasses legacy direct navigator triggers and consumes the standard `v-tactile` directive for brokered native tactile feedback during lock-in actions.
+- **Containment Styling**: Enforces strict `user-select: none; -webkit-user-select: none;` containment on player label strings and static text elements to prevent system text-selection overrides during mobile gestures.
+
+### Configuration Parameters (ParameterCard.vue)
+Enables interactive tuning of active strategies and simulation settings (Target King Level, Target Card Levels).
+
+### Profile Summary (SummaryCard.vue)
+Renders a high-fidelity diagnostic card of the active player's King Level, experience progression, and gold totals.
+
+### Inventory Override (VaultCard.vue)
+Renders available inventory counts and supports interactive overrides of current wild card and gold reserves.
+
 ### Logic Subsystems
 The feature logic is decomposed into several specialized modules to ensure Layer 3 compliance and maintainability:
 - **Upgrade Resolution**: Delegates to the core `getUpgradeData` utility (Layer 1) to resolve costs and gains for specific card rarities and levels, ensuring domain synchronization across features.

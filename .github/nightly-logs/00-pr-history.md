@@ -1811,6 +1811,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-19] PR #PENDING [Stage 5]: docs(readme): reconcile modernized TargetPicker and laboratory UI components
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/laboratory/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** The TargetPicker UI component was modernized to enforce mobile touch targets and brokered haptics, creating a documentation drift in the adjacent laboratory architecture blueprint.
+**Change:** Updated the laboratory feature README to document the TargetPicker layout footprint, input normalization, user-select containment, and brokered haptic specifications.
+**Result:** 100% synchronization between the presentation layer's UX reality and the feature's architectural truth.
+
 ### [2026-07-18] PR #PENDING [Stage 12]: fix(apk-ux): modernize TargetPicker touch targets and haptics
 **Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/laboratory/components/TargetPicker.vue, Frontend-PWA/src/features/laboratory/components/components-tests/TargetPicker.spec.ts, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
