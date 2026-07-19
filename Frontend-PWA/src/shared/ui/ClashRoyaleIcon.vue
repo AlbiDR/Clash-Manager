@@ -18,7 +18,7 @@ const sizePx = computed(() => {
     class="clash-royale-icon"
     :width="sizePx"
     :height="sizePx"
-    viewBox="0 0 1200 1200"
+    viewBox="140 100 920 980"
     xmlns="http://www.w3.org/2000/svg"
     xml:space="preserve"
     fill-rule="evenodd"
