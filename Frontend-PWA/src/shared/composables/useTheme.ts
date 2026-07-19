@@ -79,8 +79,8 @@ export function useTheme() {
     const variables = generateCssVariables(targetTokens);
     
     // Inject tokens as style properties on root
-    Object.entries(variables).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
+    Object.entries(variables).forEach(([variableName, tokenValue]) => {
+      root.style.setProperty(variableName, tokenValue);
     });
 
     if (isDark) {
@@ -92,7 +92,7 @@ export function useTheme() {
     // 3. Update theme-color meta tags (NUCLEAR OPTION: Single Source of Truth)
     // Remove all existing theme-color tags to prevent browser confusion or OS overrides.
     const existingTags = document.querySelectorAll('meta[name="theme-color"]');
-    existingTags.forEach((tag) => tag.remove());
+    existingTags.forEach((metaTagElement) => metaTagElement.remove());
 
     // Create a fresh, authoritative meta tag
     const meta = document.createElement("meta");
