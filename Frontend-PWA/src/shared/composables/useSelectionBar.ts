@@ -19,10 +19,16 @@ import { DEFAULT_SCORE_THRESHOLD } from "@core";
  */
 export function useSelectionBar(props: { count: number }) {
   // Shared Filter State
+  // [DECISION LOG] Standardize reactive selection bar filter properties to align with
+  // the Layer 2 component layout and ADR Section III validation boundaries.
   const filterMode = ref<"ge" | "le">("ge");
   const filterValue = ref(DEFAULT_SCORE_THRESHOLD);
 
   // Computed state
+  // [THREAT:] Memory and state leaks during route transitions.
+  // [DECISION LOG] The computed 'isActive' property evaluates reactive selection
+  // counts dynamically to control the visibility of the absolute-positioned floating bar,
+  // preventing residual state leaks when the collection view is unmounted.
   const isActive = computed(() => props.count > 0);
 
   return {

@@ -23,17 +23,25 @@ import { ref, onMounted, onUnmounted } from "vue";
 export function useHeaderScroll(threshold = 20) {
   const isScrolled = ref(false);
 
+  // [THREAT:] Layout thrashing and rendering thread blocking during rapid scrolling.
+  // [DECISION LOG] Use a highly efficient, single-line comparative logic to toggle the reactive
+  // boolean. This minimizes style recalcs and ensures zero impact on scroll performance.
   const handleScroll = () => {
     isScrolled.value = window.scrollY > threshold;
   };
 
   onMounted(() => {
+    // [THREAT:] Excessive main-thread overhead causing scroll stutter on low-end Android WebViews.
+    // [DECISION LOG] Register scroll listener with passive: true option, letting the browser
+    // perform optimal compositor-driven scrolling without blocking on JS execution.
     window.addEventListener("scroll", handleScroll, { passive: true });
     // Initial check in case page is already scrolled
     handleScroll();
   });
 
   onUnmounted(() => {
+    // [THREAT:] Memory leak by leaving detached scroll listeners active in the global context.
+    // [DECISION LOG] Explicitly prune the window event scroll listener during lifecycle destruction.
     window.removeEventListener("scroll", handleScroll);
   });
 

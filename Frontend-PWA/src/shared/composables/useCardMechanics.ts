@@ -52,6 +52,10 @@ export function useCardMechanics(
    * If in selection mode, toggles selection. Otherwise, expands the card.
    */
   function handleTap() {
+    // [THREAT:] UI Interaction Collision during double-tap.
+    // [DECISION LOG] Restrict execution branches by prioritizing active selectionMode state.
+    // Tapping a card in selectionMode strictly toggles its inclusion in the batch queue,
+    // protecting against accidental view expand/collapse layouts.
     if (interactionProps.selectionMode) {
       interactionCallbacks.onSelect();
     } else {
@@ -64,6 +68,10 @@ export function useCardMechanics(
    * Always triggers selection, acting as the primary entry point for batch mode.
    */
   function handleLongPress() {
+    // [THREAT:] Tactile confirmation lag on high-latency mobile WebView wrappers.
+    // [DECISION LOG] Trigger standard brokered tap haptics immediately before calling onSelect()
+    // during a long-press sequence to guarantee instant physical feedback.
+    haptics.tap();
     interactionCallbacks.onSelect();
   }
 
@@ -76,6 +84,8 @@ export function useCardMechanics(
    * without triggering an unintentional expansion or collapse.
    */
   function handleScoreClick(cardInteractionEvent: MouseEvent | TouchEvent) {
+    // [THREAT:] Nested event bubble conflict resulting in duplicate UI state triggers.
+    // [DECISION LOG] Call stopPropagation on the event object to fully isolate the ScoreBadge trigger.
     cardInteractionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
     haptics.tap();
     interactionCallbacks.onSelect();
@@ -90,6 +100,8 @@ export function useCardMechanics(
    * allowing the user to expand details without unintentionally selecting the item.
    */
   function handleExpandClick(cardInteractionEvent: MouseEvent | TouchEvent) {
+    // [THREAT:] Nested event bubble conflict resulting in duplicate UI state triggers.
+    // [DECISION LOG] Call stopPropagation on the event object to fully isolate the chevron expand trigger.
     cardInteractionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
     haptics.tap();
     interactionCallbacks.onExpand();

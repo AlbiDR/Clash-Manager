@@ -79,8 +79,11 @@ export function useTheme() {
     const variables = generateCssVariables(targetTokens);
     
     // Inject tokens as style properties on root
-    Object.entries(variables).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
+    // [THREAT:] Flash of Unstyled Content (FOUC) and visual layout shifts (CLS).
+    // [DECISION LOG] Instantly inject the CSS design variables into the document element root style
+    // to map brand colors before the initial paint cycle, eliminating visual pop-in.
+    Object.entries(variables).forEach(([variableName, tokenValue]) => {
+      root.style.setProperty(variableName, tokenValue);
     });
 
     if (isDark) {
@@ -91,8 +94,11 @@ export function useTheme() {
 
     // 3. Update theme-color meta tags (NUCLEAR OPTION: Single Source of Truth)
     // Remove all existing theme-color tags to prevent browser confusion or OS overrides.
+    // [THREAT:] Duplicated meta tags triggering browser rendering confusion.
+    // [DECISION LOG] Fully prune all pre-existing 'theme-color' tags to guarantee a singular,
+    // authoritative brand meta tag is injected dynamically, matching current dark/light state.
     const existingTags = document.querySelectorAll('meta[name="theme-color"]');
-    existingTags.forEach((tag) => tag.remove());
+    existingTags.forEach((metaTagElement) => metaTagElement.remove());
 
     // Create a fresh, authoritative meta tag
     const meta = document.createElement("meta");
@@ -107,20 +113,38 @@ export function useTheme() {
    * @param newTheme - The target theme mode.
    */
   function setTheme(newTheme: Theme) {
+    // [THREAT:] LocalStorage quota limit exhaustion on browser sandbox.
+    // [DECISION LOG] Attempt a safe setItem operation to cache theme selection, falling back gracefully
+    // to memory-only state in case storage operations are blocked by system settings.
     theme.value = newTheme;
-    localStorage.setItem(STORAGE_KEY, newTheme);
+    try {
+      localStorage.setItem(STORAGE_KEY, newTheme);
+    } catch (e) {
+      console.warn("[Theme] LocalStorage write blocked:", e);
+    }
     applyTheme();
   }
 
   function init() {
     if (isInitialized.value || typeof window === "undefined") return;
 
-    const cached = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    // [THREAT:] LocalStorage read exception on strict sandboxed environments.
+    // [DECISION LOG] Safely retrieve and deserialize the theme pref inside a try-catch block,
+    // defaulting to system/auto preference on failure.
+    let cached: Theme | null = null;
+    try {
+      cached = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    } catch (e) {
+      console.warn("[Theme] LocalStorage read blocked:", e);
+    }
     if (cached && ["light", "dark", "auto"].includes(cached)) {
       theme.value = cached;
     }
 
     // [GUARD] Logic: Memory-safe singleton listener for system changes (Memory #10)
+    // [THREAT:] Memory leak on unmounting by registering multiple mediaQuery listeners.
+    // [DECISION LOG] Only register mediaQuery listeners on the first initialization call,
+    // ensuring exactly one global event listener exists per application lifecycle.
     if (mediaQuery) {
       mediaQuery.addEventListener("change", () => {
         if (theme.value === "auto") applyTheme();

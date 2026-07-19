@@ -67,8 +67,8 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   const displayText = computed(() => {
     const statusPillPropsSnapshot = toValue(props);
     if (isMobileNarrow.value) {
-      const parts = statusPillPropsSnapshot.text.split(' ');
-      return parts.length > 1 ? parts[parts.length - 1] : statusPillPropsSnapshot.text;
+      const textSegments = statusPillPropsSnapshot.text.split(' ');
+      return textSegments.length > 1 ? textSegments[textSegments.length - 1] : statusPillPropsSnapshot.text;
     }
     return statusPillPropsSnapshot.text;
   });

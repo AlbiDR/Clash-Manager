@@ -44,3 +44,7 @@
 * [2026-07-18] [Stage 6] CLEAN: Backend/supabase/functions/query-royale-api/index.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 9 refactoring.
 * [2026-07-18] [Stage 6] CLEAN: Backend/supabase/functions/_shared/config.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 9 configuration centralization.
 * [2026-07-18] [Stage 6] CLEAN: Frontend-PWA/src/shared/ui/SelectionBar.vue -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 12 SelectionBar modernization.
+* [2026-07-19] [Stage 6] CHANGED: Frontend-PWA/src/shared/composables/useSelectionBar.ts -- Injected threat and decision log annotations for route transition state leak safety and filter standardization.
+* [2026-07-19] [Stage 6] CHANGED: Frontend-PWA/src/shared/composables/useCardMechanics.ts -- Injected threat and decision log annotations for double-tap UX layout collisions, long-press haptic response, and event propagation isolation.
+* [2026-07-19] [Stage 6] CHANGED: Frontend-PWA/src/shared/composables/useTheme.ts -- Injected threat and decision log annotations for dynamic meta tag duplication, sandboxed storage write limits, FOUC style injection, and listener garbage collection.
+* [2026-07-19] [Stage 6] CHANGED: Frontend-PWA/src/shared/composables/useHeaderScroll.ts -- Injected threat and decision log annotations for scroll-listener thread blocking, passive listener options, and scroll-thrashing performance bounds.

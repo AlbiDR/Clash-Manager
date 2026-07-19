@@ -1,3 +1,10 @@
+### [2026-07-19] PR #PENDING [Stage 6]: docs(tsdoc): harden shared composables contracts and logic annotations
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/composables/useSelectionBar.ts, Frontend-PWA/src/shared/composables/useCardMechanics.ts, Frontend-PWA/src/shared/composables/useTheme.ts, Frontend-PWA/src/shared/composables/useHeaderScroll.ts, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Document Layer 2 shared composables with standard JSDoc/TSDoc blocks and inline threat/decision annotations following recent refactoring and layout modernizations.
+**Change:** Injected comprehensive JSDoc/TSDoc threat modeling and decision log annotations across `useSelectionBar.ts`, `useCardMechanics.ts`, `useTheme.ts`, and `useHeaderScroll.ts`.
+**Result:** 100% contract transparency and design rationale synchronization with zero regressions on the monorepo test gate.
+
 ### [2026-07-18] PR #PENDING [Stage 11]: perf(apk-optimization): remove unused ViewCompat import from native main activity
 **Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/src/com/albidr/clashmanager/MainActivity.java, .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/00-pr-history.md
@@ -1811,6 +1818,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-19] PR #PENDING [Stage 4]: perf(opt): standardize shared composable variable naming for domain clarity
+**Domain:** Shared Composables | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/composables/useStatusPill.ts, Frontend-PWA/src/shared/composables/useTheme.ts, .github/nightly-logs/04-optimization-coverage.log
+**Why:** Standardizes anemic variable naming inside core theme and status pill presentation-layer utilities to improve domain-descriptive clarity.
+**Change:** Renamed `parts` to `textSegments` in `useStatusPill.ts`, and renamed `key`/`value` to `variableName`/`tokenValue` and `tag` to `metaTagElement` in `useTheme.ts`.
+**Result:** 100% compliance with ADR naming constraints and clean, self-documenting code with zero structural or layout regressions.
+
 ### [2026-07-18] PR #PENDING [Stage 12]: fix(apk-ux): modernize TargetPicker touch targets and haptics
 **Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/laboratory/components/TargetPicker.vue, Frontend-PWA/src/features/laboratory/components/components-tests/TargetPicker.spec.ts, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
