@@ -155,7 +155,13 @@ async function run() {
 
     log(`Found ${prs.length} total open PRs.`);
 
-    // 2. Filter for Nightly PRs and Sort by Number ASC
+    // Helper to extract stage number from branch name (e.g., nightly/stage-3-...)
+    const getStageNumber = (ref: string): number => {
+      const match = ref.match(/nightly\/stage-(\d+)/i);
+      return match ? parseInt(match[1], 10) : 999;
+    };
+
+    // 2. Filter for Nightly PRs and Sort by Stage Number ASC
     const targetPrs = prs
       .filter((pr: GitHubPR) => {
         const login = pr.user.login.toLowerCase();
@@ -171,7 +177,14 @@ async function run() {
 
         return isAllowedAuthor && isTargetBranch;
       })
-      .sort((a: GitHubPR, b: GitHubPR) => a.number - b.number); // Preserve pipeline sequence
+      .sort((a: GitHubPR, b: GitHubPR) => {
+        const stageA = getStageNumber(a.head.ref);
+        const stageB = getStageNumber(b.head.ref);
+        if (stageA !== stageB) {
+          return stageA - stageB;
+        }
+        return a.number - b.number;
+      }); // Preserve pipeline sequence
 
     if (targetPrs.length === 0) {
       log("No matching Nightly PRs found.", "success");
