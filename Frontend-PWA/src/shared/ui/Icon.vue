@@ -8,6 +8,7 @@ const props = defineProps<{
   name: string;
   size?: number | string;
   filled?: boolean;
+  viewBox?: string;
 }>();
 
 const sizePx = computed(() => {
@@ -21,7 +22,7 @@ const sizePx = computed(() => {
     class="icon"
     :width="sizePx"
     :height="sizePx"
-    viewBox="0 0 24 24"
+    :viewBox="viewBox || '0 0 24 24'"
     role="img"
     v-bind="{ 'aria-hidden': 'true' }"
     :style="{ width: sizePx, height: sizePx }"
