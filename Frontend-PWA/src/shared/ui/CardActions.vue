@@ -75,12 +75,10 @@ function handleOpenInGame() {
         :class="{ compact: compact }"
         aria-label="Open in Game"
       >
-        <img
-          src="/assets/branding/clash-royale-logo.svg"
-          :width="iconSize"
-          :height="iconSize"
-          alt="Clash Royale"
-          class="clashroyale-logo"
+        <Icon
+          name="clash_royale"
+          :size="iconSize"
+          class="clashroyale-icon"
         />
         <span>Open Game</span>
       </button>
@@ -105,14 +103,7 @@ function handleOpenInGame() {
   filter: grayscale(0) opacity(1);
 }
 
-.clashroyale-logo {
-  object-fit: contain;
-  filter: grayscale(1) opacity(0.6);
-  transition: filter var(--sys-motion-duration-200) var(--sys-motion-spring);
+.clashroyale-icon {
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
-
-.btn-action:hover .clashroyale-logo {
-  filter: grayscale(0) opacity(1);
-}
-
 </style>
