@@ -1811,6 +1811,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-19] PR #PENDING [Stage 2]: test(verify): add saturating tests for query-royale-api Edge Function
+**Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/query-royale-api/index.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md, package.json, pnpm-lock.yaml
+**Why:** The query-royale-api Edge Function lacked dedicated test coverage, presenting a logical validation gap on the decomposed harvesting core logic.
+**Change:** Created a comprehensive Vitest suite covering OPTIONS preflight, authorization guards, payload schema validation, global harvest (with country-fallback loops), local country-specific harvest (empty config, fetch failure, and rankings merge), and international concurrent harvesting.
+**Result:** 100% logic and branch coverage verified with 10 newly introduced tests running natively in the Node/Vitest workspace.
+
 ### [2026-07-18] PR #PENDING [Stage 12]: fix(apk-ux): modernize TargetPicker touch targets and haptics
 **Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/laboratory/components/TargetPicker.vue, Frontend-PWA/src/features/laboratory/components/components-tests/TargetPicker.spec.ts, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
