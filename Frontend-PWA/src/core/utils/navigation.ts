@@ -40,7 +40,6 @@ export const NAV_ITEMS: NavItem[] = [
     name: "roster",
     label: "Roster",
     icon: "roster",
-    viewBox: "0 0 99 89",
   },
   {
     path: "/headhunter",

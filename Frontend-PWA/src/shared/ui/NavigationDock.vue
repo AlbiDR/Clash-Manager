@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
+import RosterIcon from "./RosterIcon.vue";
 import LaboratoryIcon from "./LaboratoryIcon.vue";
 import HeadhunterIcon from "./HeadhunterIcon.vue";
 import { NAV_ITEMS } from "@core";
@@ -63,21 +64,22 @@ function onInteractionStart() {
   >
     <div v-if="route.path === navItemCandidate.path" class="capsule-bg"></div>
     
+    <RosterIcon
+      v-if="navItemCandidate.name === 'roster'"
+      class="dock-icon dock-icon-custom"
+    />
     <LaboratoryIcon
-      v-if="navItemCandidate.name === 'laboratory'"
-      class="dock-icon"
-      style="width: 22px; height: 22px;"
+      v-else-if="navItemCandidate.name === 'laboratory'"
+      class="dock-icon dock-icon-custom"
     />
     <HeadhunterIcon
       v-else-if="navItemCandidate.name === 'headhunter'"
-      class="dock-icon"
-      style="width: 22px; height: 22px;"
+      class="dock-icon dock-icon-custom"
     />
     <Icon
       v-else
       :name="navItemCandidate.icon"
       size="22"
-      :viewBox="navItemCandidate.viewBox"
       class="dock-icon"
     />
     
@@ -88,6 +90,10 @@ function onInteractionStart() {
 </template>
 
 <style scoped>
+.dock-icon-custom {
+  width: 22px;
+  height: 22px;
+}
 .dock-item {
   position: relative;
   height: var(--sys-space-56);
