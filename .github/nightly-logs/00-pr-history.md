@@ -1811,6 +1811,13 @@ LAST_AGED:   2026-07-17
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-19] PR #PENDING [Stage 8]: chore(deps): update major version watchlist
+**Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Conducted a dependency audit to ensure third-party packages are secure and documented high-risk major version upgrades for Vite, Pinia, and TypeScript.
+**Change:** Logged clean audits for Tier 1 dependencies and recorded detailed impact analysis for Pinia 4.0.2, Vite 8.1.5, and TypeScript 7.0.2 in the major version watchlist.
+**Result:** Hardened ecosystem documentation against rot and provided critical migration alerts for intermediate versions.
+
 ### [2026-07-18] PR #PENDING [Stage 12]: fix(apk-ux): modernize TargetPicker touch targets and haptics
 **Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/laboratory/components/TargetPicker.vue, Frontend-PWA/src/features/laboratory/components/components-tests/TargetPicker.spec.ts, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
