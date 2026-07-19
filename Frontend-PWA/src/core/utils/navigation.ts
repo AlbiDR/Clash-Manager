@@ -40,20 +40,19 @@ export const NAV_ITEMS: NavItem[] = [
     name: "roster",
     label: "Roster",
     icon: "roster",
+    viewBox: "0 0 99 89",
   },
   {
     path: "/headhunter",
     name: "headhunter",
     label: "Headhunter",
     icon: "headhunter",
-    viewBox: "42 30 440 440",
   },
   {
     path: "/laboratory",
     name: "laboratory",
     label: "Laboratory",
     icon: "laboratory",
-    viewBox: "0 0 23 24",
   },
   {
     path: "/settings",

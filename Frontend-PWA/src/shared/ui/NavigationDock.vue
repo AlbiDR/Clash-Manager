@@ -3,6 +3,8 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
+import LaboratoryIcon from "./LaboratoryIcon.vue";
+import HeadhunterIcon from "./HeadhunterIcon.vue";
 import { NAV_ITEMS } from "@core";
 import { useHaptics } from "../composables/useHaptics";
 
@@ -60,7 +62,25 @@ function onInteractionStart() {
     v-bind="{ 'aria-current': route.path === navItemCandidate.path ? 'page' : undefined }"
   >
     <div v-if="route.path === navItemCandidate.path" class="capsule-bg"></div>
-    <Icon :name="navItemCandidate.icon" size="22" :viewBox="navItemCandidate.viewBox" class="dock-icon" />
+    
+    <LaboratoryIcon
+      v-if="navItemCandidate.name === 'laboratory'"
+      class="dock-icon"
+      style="width: 22px; height: 22px;"
+    />
+    <HeadhunterIcon
+      v-else-if="navItemCandidate.name === 'headhunter'"
+      class="dock-icon"
+      style="width: 22px; height: 22px;"
+    />
+    <Icon
+      v-else
+      :name="navItemCandidate.icon"
+      size="22"
+      :viewBox="navItemCandidate.viewBox"
+      class="dock-icon"
+    />
+    
     <span v-if="navItemCandidate.label" class="dock-label">
       {{ navItemCandidate.label }}
     </span>
