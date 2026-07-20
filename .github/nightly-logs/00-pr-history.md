@@ -1972,6 +1972,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-20] PR #PENDING [Stage 5]: docs(readme): reconcile scanner validation guards and laboratory target picker
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/headhunter-scanner/README.md, Frontend-PWA/src/features/laboratory/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Scanner RPC checks and laboratory target picker touch targets were modernized, causing adjacent architectural documentation to drift.
+**Change:** Updated headhunter-scanner README to document the S1 defensive nullish coalescing check and updated the laboratory README to document TargetPicker 48px touch footprint and haptic feedback.
+**Result:** 100% synchronization between substrate reality and system-wide architectural intent.
+
 ### [2026-07-20] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- audit pass
 **Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md
