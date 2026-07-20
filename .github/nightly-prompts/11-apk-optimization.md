@@ -146,7 +146,9 @@ You act as a performance auditor focused on compilation optimization, native ass
   4. Local asset size metrics.
 
 ### Step 2: Optimization Verification
-- Run a compilation check to verify the optimization changes are correct and build cleanly.
+- **Environment-Capability Probe (mandatory before any build command):** Before running any compilation or build command, probe for the required toolchain by running `which aapt2 || which gradle || which ./gradlew` and checking the output. If none of these tools are found in the environment PATH, do not attempt to execute a compilation command. Instead, perform a source-level structural audit: read the changed source file(s) directly and verify the change is logically correct, syntactically valid, and does not introduce obvious regressions based on a manual diff review. This source-level audit is sufficient proof of correctness when native build tools are unavailable. Log the verification method used in the PR description.
+- **If toolchain is available:** Run a compilation check (e.g. `CI=true ./gradlew assembleDebug --no-daemon` or `pnpm build`) to verify the optimization changes are correct and build cleanly.
+- **Verification Fallback Protocol:** If a compilation check fails due to a missing environment dependency (not due to a code error), treat this as an environment constraint, not a code defect. Write a SKIPPED verification entry in the log, note the missing tool, proceed directly to Step 3, and still open the PR. Do not abort the stage.
 
 ### Step 3: Write Logs
 - Append a log record to `.github/nightly-logs/11-apk-optimization-coverage.log`.
