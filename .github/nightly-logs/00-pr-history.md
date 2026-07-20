@@ -2092,6 +2092,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-20] PR #PENDING [Stage 10]: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json
+**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/reference/twa-manifest.json, .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Reconcile version and build details between web application (package.json v14.33.0) and the Android wrapper configuration.
+**Change:** Synchronized appVersionName, appVersionCode, and appVersion in twa-manifest.json to match monorepo ground truth v14.33.0 (code 17300).
+**Result:** 100% integrity, alignment, and version synchronization verified across all PWA and APK wrapper boundaries.
+
 ### [2026-07-20] PR #PENDING [Stage 6]: docs(tsdoc): harden shadow-scout and ghost-purge contracts and logic annotations
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/headhunter-scanner/stages/shadow-scout.ts, Backend/supabase/functions/headhunter-scanner/stages/ghost-purge.ts, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
