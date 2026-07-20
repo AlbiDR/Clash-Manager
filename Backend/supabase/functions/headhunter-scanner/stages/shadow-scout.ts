@@ -10,6 +10,32 @@ import { ShadowTargetSchema } from "../../_shared/schemas.ts";
 /**
  * Stage: Shadow Scouting
  * Discovers potential recruits from recent battle logs of known players.
+ *
+ * @remarks
+ * This function handles the Layer 1 core Deno edge function execution for the Shadow Scout stage.
+ * It queries the database via RPC, validates the returned payload shape against the authoritative
+ * schema boundary, and populates the scanner's shared candidates registry.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core / Kernel (`@core`)
+ * - **Satisfaction:** Satisfies ADR Section IV: Deep Delegation Strategy by executing scouter pipelines
+ *   on server-side resources instead of the hybrid frontend environment.
+ * - **Validation:** Satisfies ADR Section III: Validation Boundaries by enforcing Valibot checks
+ *   on inbound database targets.
+ *
+ * @param candidates - The shared scanner candidates Map to be populated with discovered tags.
+ * @param exclusionSet - Set of player tags to be filtered out (e.g., family clan members, clanned/stale recruits).
+ * @param stats - Transitive statistics accumulator for scanner metrics.
+ * @param logAudit - Auditing delegate callback for recording stage step history.
+ *
+ * @returns Resolves once scouting, validation, and candidate registration are completed.
+ *
+ * @throws Never throws directly; encapsulates and logs database or validation failures to stats.errors.
+ *
+ * @sideeffects
+ * - Modifies `candidates` Map.
+ * - Increments metrics in `stats`.
+ * - Invokes external Supabase RPC endpoints (`get_shadow_discovery_targets`).
  */
 export async function runShadowScout(
     candidates: Map<string, string>,
