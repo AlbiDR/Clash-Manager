@@ -25,14 +25,15 @@ export async function runShadowScout(
         const { data: shadowTargetsRaw, error: shadowTargetsError } = await supabase
             .rpc('get_shadow_discovery_targets', { p_limit: SHADOW_DISCOVERY_LIMIT });
         
-        logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(shadowTargetsRaw) ? shadowTargetsRaw.length : 0, error: shadowTargetsError });
-        if (!shadowTargetsError && shadowTargetsRaw) {
-            console.log(`[SHADOW_SCOUT] Found ${Array.isArray(shadowTargetsRaw) ? shadowTargetsRaw.length : 0} potential shadow targets. Validating...`);
+        const shadowTargets = shadowTargetsRaw ?? [];
+        logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(shadowTargets) ? shadowTargets.length : 0, error: shadowTargetsError });
+        if (!shadowTargetsError) {
+            console.log(`[SHADOW_SCOUT] Found ${Array.isArray(shadowTargets) ? shadowTargets.length : 0} potential shadow targets. Validating...`);
 
             // [GUARD] VALIDATION BOUNDARY: Target B [1]
             // Rationale: Ensure RPC results match the expected domain shape before processing.
             // THREAT: Malformed database view or RPC return could cause runtime errors in the loop.
-            const shadowTargetsIntegrity = v.safeParse(v.array(ShadowTargetSchema), shadowTargetsRaw);
+            const shadowTargetsIntegrity = v.safeParse(v.array(ShadowTargetSchema), shadowTargets);
             
             logAudit('SHADOW_SCOUT', 'resulted_data', {
                 count: shadowTargetsIntegrity.success ? shadowTargetsIntegrity.output.length : 0,
@@ -61,7 +62,7 @@ export async function runShadowScout(
                 console.log(`[SHADOW_SCOUT] Added ${addedCount} new shadow candidates (filtered out ${shadowTargetsIntegrity.output.length - addedCount} via exclusion set)`);
             }
         } else {
-            console.error(`[SHADOW_SCOUT] RPC error or no data: ${shadowTargetsError?.message || 'Unknown RPC error'}`);
+            console.error(`[SHADOW_SCOUT] RPC error: ${shadowTargetsError?.message || 'Unknown RPC error'}`);
             logAudit('SHADOW_SCOUT', 'integrity_checked', { passed: false, details: shadowTargetsError?.message || 'Unknown RPC error' });
         }
         logAudit('SHADOW_SCOUT', 'terminated');
