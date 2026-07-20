@@ -61,15 +61,17 @@ pnpm rebuild esbuild sharp 2>/dev/null || true
 
 # 7. DENO npm: SYMLINKS
 # Versions resolved dynamically from installed packages, never hardcoded.
-# Hardcoded strings break silently when Stage 7 or 8 bumps a dependency.
-NODE_MODULES="/app/node_modules"
+# valibot and supabase-js live in Frontend-PWA/node_modules (PWA dependencies).
+# p-limit lives in the root node_modules (root devDependency).
+NODE_MODULES="/app/Frontend-PWA/node_modules"
+ROOT_MODULES="/app/node_modules"
 VALIBOT_VER=$(node -e "try{console.log(require('${NODE_MODULES}/valibot/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
 SUPABASE_VER=$(node -e "try{console.log(require('${NODE_MODULES}/@supabase/supabase-js/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
-PLIMIT_VER=$(node -e "try{console.log(require('${NODE_MODULES}/p-limit/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
+PLIMIT_VER=$(node -e "try{console.log(require('${ROOT_MODULES}/p-limit/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
 ln -sfn "${NODE_MODULES}/valibot" "${NODE_MODULES}/npm:valibot@${VALIBOT_VER}" 2>/dev/null || true
 mkdir -p "${NODE_MODULES}/npm:@supabase"
 ln -sfn "${NODE_MODULES}/@supabase/supabase-js" "${NODE_MODULES}/npm:@supabase/supabase-js@${SUPABASE_VER}" 2>/dev/null || true
-ln -sfn "${NODE_MODULES}/p-limit" "${NODE_MODULES}/npm:p-limit@${PLIMIT_VER}" 2>/dev/null || true
+ln -sfn "${ROOT_MODULES}/p-limit" "${ROOT_MODULES}/npm:p-limit@${PLIMIT_VER}" 2>/dev/null || true
 
 # 8. NIGHTLY CONTEXT FILES
 # /tmp/nightly/ is shared across all 13 stage tasks.
