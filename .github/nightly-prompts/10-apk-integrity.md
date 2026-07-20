@@ -145,8 +145,11 @@ You act as a defensive packaging auditor. You verify the boundaries between the 
   3. Redundant permissions in Android manifests.
   4. Non-HTTPS domains or cleartext permission blocks.
 
-### Step 2: Build Check
-- Run local build checks to verify configuration edits compile cleanly.
+### Step 2: Verification
+- **Environment-Capability Probe (mandatory before any build command):** Before running any compilation or build command, probe for the required toolchain by running `which aapt2 || (which gradle && [ -n "${ANDROID_HOME:-}" ]) || (test -f ./gradlew && [ -n "${ANDROID_HOME:-}" ])` and checking the output. If none of these resolve — or if `ANDROID_HOME` is not set — do not attempt to execute a compilation command. Instead, perform a source-level configuration audit: re-read each modified file directly and verify that JSON, XML, and manifest values are syntactically valid and logically consistent with the change intent. This source-level audit is sufficient proof of correctness when native build tools are unavailable.
+- **If toolchain is NOT available (expected in Jules):** Run `CI=true pnpm test --run` to verify no PWA-level breakage was introduced by the configuration change. If `pnpm test` also fails due to an environment constraint (not a code error), treat this as an environment issue and proceed to Step 3. Do not abort the stage.
+- **If toolchain IS available:** Run `CI=true ./gradlew assembleDebug --no-daemon` or `pnpm build` to verify the configuration change builds cleanly.
+- **Log the verification method used** in the PR description.
 
 ### Step 3: Write Logs
 - Append a log record to `.github/nightly-logs/10-apk-integrity-coverage.log`.

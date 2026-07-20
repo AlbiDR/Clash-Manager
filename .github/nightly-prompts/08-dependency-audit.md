@@ -169,7 +169,7 @@ Audit all package.json files across the monorepo. If no changes are needed, proc
 
 
 ### Step 3: Execution
-- **Tier 1:** Modify the relevant `package.json`. Run `pnpm install` and then `pnpm test`. If tests pass, proceed. If tests fail, revert and escalate to the watchlist.
+- **Tier 1:** Modify the relevant `package.json`. Run `pnpm install` and then `pnpm test`. If tests pass, proceed. If tests fail, revert the package.json change and escalate the package to the Tier 2 watchlist. If `pnpm install` itself fails (e.g., network restriction prevents downloading the new version), treat this as an environment constraint — revert the package.json change, record the package in the Tier 2 watchlist with a note `[INSTALL FAILED: environment constraint]`, and open a watchlist-only PR. Do not abort the stage.
 - **Tier 2:** Update the table in `.github/nightly-logs/08-dependency-audit-coverage.log`. Do not modify other files.
 - **Log Updates:** Update `.github/nightly-logs/08-dependency-audit-coverage.log`.
 

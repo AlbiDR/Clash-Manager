@@ -152,7 +152,7 @@ Tracks stages with zero project file changes across multiple consecutive runs. F
 ### Step 1: Anchor Time and Environment
 
 1. Run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and store as `SESSION_START`.
-2. Run `date -u +"%Y-%m-%d"` and store as `TODAY`. This is the only valid date for log entries. Never use any other date.
+2. Execute `TODAY=$(cat /tmp/nightly/TODAY)` and store as `TODAY`. This is the canonical date pre-computed by the setup script and shared across all 13 stages. Never run `date -u` to derive the log date — it may differ from the pipeline run date if the stage executes near midnight. Use this value for all log entries.
 3. Execute `git pull origin Nightly` to ensure the local branch reflects all preceding stages' commits from today's run.
 
 ### Step 2: Read the Existing Plan
