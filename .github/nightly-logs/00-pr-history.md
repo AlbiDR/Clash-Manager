@@ -1,3 +1,10 @@
+### [2026-07-20] PR #PENDING [Stage 7]: fix(version): synchronize version drift across manifests and documentation
+**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/android/apktool.yml, Backend/README.md, Backend/supabase/functions/_shared/protocol.ts, Frontend-PWA/README.md, Frontend-PWA/src/core/services/useProgressiveList.ts, README.md, .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** The latest PWA deploy failed due to project version drift across the monorepo.
+**Change:** Synchronized versionName and versionCode in apktool.yml, version constant in protocol.ts, and README documentation badges to the ground truth version of 14.33.3.
+**Result:** Monorepo version audit passes and PWA builds and deploys successfully.
+
 ### [2026-07-20] PR #PENDING [Stage 9]: chore(refactor): no action required
 **Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
