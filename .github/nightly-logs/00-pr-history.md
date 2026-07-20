@@ -1948,6 +1948,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-20] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- audit pass
+**Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Maintain a clean, zero-touch deployable master baseline database schema with fully synchronized compliance.
+**Change:** Audited and verified all 11 incremental migrations are fully folded into baseline with 100% RLS compliance, search_path isolation, and formatting; updated audited date stamp in baseline header.
+**Result:** Safe, fully validated, and 100% compliant master baseline database schema with zero debt.
+
 ### [2026-07-19] PR #PENDING [Stage 2]: test(verify): add saturating tests for query-royale-api Edge Function
 **Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/query-royale-api/index.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md, package.json, pnpm-lock.yaml
