@@ -120,10 +120,9 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 
 ### A. Target A: Chronological Migration Folding
 - **Scouting Boundary:** Scan the migrations folder to compile a sorted list of all migrations executed after the baseline prefix `20260531232406`.
-- **Preferred Tooling and AST Parsers:**
-  - **Native Compiler Approach (Preferred):** Spin up a clean, isolated Postgres instance (using Docker or Deno Postgres bindings), apply all migrations sequentially, and query the system catalogs (`pg_class`, `pg_proc`, `pg_trigger`) or use `pg_dump --schema-only` to dump the compiled DDL state.
-  - **Diff Tools:** Leverage `supabase db diff` or schema-comparison tools like `migra` or `atlas` to isolate state changes.
-  - **Code-Level Parsing:** If manipulating SQL syntax directly in Node, use `@pg-query/parser` (which uses the actual PostgreSQL source code parser) or `pg-query-emscripten`. Avoid regex or custom string matching for complex DDL transformation.
+- **Tooling:**
+  - **Text-Based Folding (Primary):** The Jules sandbox does not have Docker, a live Postgres instance, or native SQL parser binaries. Perform all DDL folding at the text level: read each post-baseline migration file as UTF-8 text, trace every DDL statement (`CREATE TABLE`, `ALTER TABLE ADD COLUMN`, `ALTER TABLE DROP COLUMN`, `ALTER TABLE ALTER COLUMN`, `DROP TABLE`, `CREATE OR REPLACE FUNCTION`, `CREATE OR REPLACE VIEW`, `CREATE INDEX`, `DROP INDEX`) in chronological file order, and apply each as a direct text-level patch to `20260531232406_master_migration.sql`. Verify correctness by re-reading the modified baseline and confirming the SQL is well-formed: correct keyword ordering, balanced parentheses, no dangling commas, every statement ends with a semicolon.
+  - **supabase CLI (Opportunistic):** If the `supabase` CLI is present (`which supabase 2>/dev/null`), run `supabase db diff` as a cross-check after folding. Do not wait for it or depend on it; it is a secondary signal only.
 - **AST Transition Resolution (Folding):**
   - Trace migrations in chronological order.
   - If a table or view is dropped, remove its corresponding definition from the master baseline.
@@ -169,13 +168,14 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 
 
 ### Step 2: DDL Folding Integration
-- Parse the incremental SQL files using `@pg-query/parser` or via local database schema compile/dump.
+- Parse the incremental SQL migration files as UTF-8 text and apply each DDL statement as a text-level patch to the master baseline.
 - Apply modifications directly to the baseline tables, functions, views, and triggers.
 - Resolve conflicts programmatically (e.g., compile final column datatypes, default values, check constraints, and unique indexes).
 
 ### Step 3: Local Compilation and Verification
-- Update `20260531232406_master_migration.sql` with the newly folded AST.
-- Run `pnpm test` in the monorepo workspace to guarantee complete compilation integrity.
+- Update `20260531232406_master_migration.sql` with the newly folded content.
+- Re-read the updated baseline file in full. Confirm: every statement ends with a semicolon, parentheses are balanced, no `ALTER TABLE` stubs remain for tables that were folded, RLS is present for every modified table.
+- If `supabase` CLI is available, run `supabase db diff` as an additional check. If unavailable, the re-read review above is sufficient.
 - Write run metrics (number of migrations folded, schema elements modified) to `.github/nightly-logs/03-baseline-consolidation-coverage.log`.
 
 ### Step 4: Submission

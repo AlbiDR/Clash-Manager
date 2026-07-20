@@ -18,9 +18,11 @@ live Jules UI configuration must be reflected here in the same commit.
 set -euo pipefail
 
 # 1. BRANCH CORRECTION
-git remote prune origin
-git fetch origin Nightly:Nightly --depth 1
+git remote prune origin 2>/dev/null || true
+git fetch origin Nightly --depth 1
 git checkout Nightly
+git pull origin Nightly
+echo "Branch: $(git branch --show-current) @ $(git rev-parse --short HEAD)"
 
 # 2. NON-INTERACTIVE MODE
 export CI=true
@@ -34,7 +36,6 @@ export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 nvm install 24 --no-progress
 nvm alias default 24
 nvm use 24
-echo "Node: $(node --version)"
 
 # 4. PNPM + DEPENDENCY INSTALL
 npm install -g pnpm@10.32.1 --silent
@@ -44,18 +45,27 @@ pnpm install --frozen-lockfile
 pnpm rebuild esbuild sharp 2>/dev/null || true
 
 # 6. DENO npm: SYMLINKS
+# Versions are resolved dynamically from installed packages to prevent drift.
+# Never hardcode version strings here; they must always match what pnpm installed.
 NODE_MODULES="/app/node_modules"
-ln -sfn "${NODE_MODULES}/valibot" \
-  "${NODE_MODULES}/npm:valibot@1.4.2" 2>/dev/null || true
-mkdir -p "${NODE_MODULES}/npm:@supabase"
-ln -sfn "${NODE_MODULES}/@supabase/supabase-js" \
-  "${NODE_MODULES}/npm:@supabase/supabase-js@2.110.7" 2>/dev/null || true
-ln -sfn "${NODE_MODULES}/p-limit" \
-  "${NODE_MODULES}/npm:p-limit@7.3.0" 2>/dev/null || true
+VALIBOT_VER=$(node -e "try{console.log(require('${NODE_MODULES}/valibot/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
+SUPABASE_VER=$(node -e "try{console.log(require('${NODE_MODULES}/@supabase/supabase-js/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
+PLIMIT_VER=$(node -e "try{console.log(require('${NODE_MODULES}/p-limit/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
 
-# 7. ENVIRONMENT VALIDATION
-echo "Validating environment..."
-pnpm test --reporter=verbose --run 2>&1 | tail -6
+ln -sfn "${NODE_MODULES}/valibot"              "${NODE_MODULES}/npm:valibot@${VALIBOT_VER}"               2>/dev/null || true
+mkdir -p "${NODE_MODULES}/npm:@supabase"
+ln -sfn "${NODE_MODULES}/@supabase/supabase-js" "${NODE_MODULES}/npm:@supabase/supabase-js@${SUPABASE_VER}" 2>/dev/null || true
+ln -sfn "${NODE_MODULES}/p-limit"              "${NODE_MODULES}/npm:p-limit@${PLIMIT_VER}"               2>/dev/null || true
+
+# 7. TOOLCHAIN VERIFICATION
+# Environment-only check. Code validation (tests, builds) is each stage's own responsibility.
+# This step must never fail; it only surfaces diagnostic information.
+echo "Toolchain ready:"
+echo "  node   $(node --version)"
+echo "  pnpm   $(pnpm --version)"
+echo "  git    $(git --version)"
+echo "  HEAD   $(git rev-parse --short HEAD) on $(git branch --show-current)"
+echo "  Deno symlinks: valibot@${VALIBOT_VER} | @supabase/supabase-js@${SUPABASE_VER} | p-limit@${PLIMIT_VER}"
 
 echo "Setup complete. Environment is ready for snapshotting."
 ```

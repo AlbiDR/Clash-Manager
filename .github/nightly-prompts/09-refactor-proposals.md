@@ -160,7 +160,8 @@ You act as the project's structural architect and structural engine. Your mandat
 - Move files and update barrel exports (`index.ts`) in the parent directory.
 - Prepend the licensing copyright header on newly created `.ts` or `.vue` files.
 - Update import references monorepo-wide.
-- Execute `pnpm test` and `npx depcruise` to verify structural validity and ensure no cyclical dependencies exist.
+- Execute `pnpm test` to verify correctness.
+- **Dependency graph validation (environment-aware):** Probe for depcruise first: run `which npx && npx --yes depcruise --version 2>/dev/null`. If available, run `npx depcruise Frontend-PWA/src --no-cache --output-type err-long` to catch cyclical and cross-layer violations. If depcruise is unavailable or times out, fall back to a manual import scan: use `grep -rn "from '@features'" Frontend-PWA/src/@shared Frontend-PWA/src/@core 2>/dev/null` and equivalent patterns to surface cross-layer violations manually. Log which verification method was used in the PR description.
 - **Log Updates:** Append your execution record to `.github/nightly-logs/09-refactor-proposals-coverage.log`.
 
 ### Step 4: Presentation (Pull Request)
@@ -183,7 +184,7 @@ Create a Pull Request targeting the `Nightly` branch.
   - **[Layering]:** Corrected Layer 3 -> Layer 2 alignment.
 
   ### Verification:
-  - **[Automated]:** Confirm pnpm test and npx depcruise pass successfully.
+  - **[Automated]:** Confirm pnpm test passes. Confirm dependency graph validation ran (depcruise or manual grep fallback -- state which was used).
 
   ### Log Updates:
   - Updated .github/nightly-logs/09-refactor-proposals-coverage.log

@@ -10,7 +10,7 @@ target branch: Nightly
 mindset: Pipeline Surgeon
 identity: stage-13-healer
 core-task: pipeline-self-healing-audit
-primary-tools: [read_file, list_sessions, get_file_contents]
+primary-tools: [read_file, get_file_contents]
 forbidden-actions: [modify-prompt-files, apply_migration, execute_sql, modify-source-code]
 ---
 
@@ -167,16 +167,15 @@ Read all evidence in this order. Do not skip any source.
 5. Read `00-pr-history.md`: the T1 section (last 7 days) in full, then scan the full file for any MERGE FAILED or merge conflict entries regardless of age.
 6. Read `00-pipeline-intelligence.md` in full.
 7. Read all 13 coverage logs in full (`.github/nightly-logs/01-hardening-coverage.log` through `.github/nightly-logs/13-self-healing-protocol-coverage.log` if it exists). The most recent entries carry the highest signal weight; older entries provide pattern depth.
-8. Introspect Jules session state: call the session-listing tool to retrieve the state (COMPLETED, FAILED, or absent) and session ID for each of the 13 stages from today's run. Record all states before proceeding.
-9. Check for today-dated log entries: for each of the 12 preceding coverage logs, confirm whether a `TODAY`-dated entry exists. Any stage with no `TODAY`-dated entry in its coverage log is treated as a missing-run event and logged in Section 1.
-10. Read all 13 prompt files in `.github/nightly-prompts/` -- both the shared Base instruction blocks and the stage-specific sections. Read them to understand what each stage is supposed to do, to identify instruction defects, and to evaluate whether the Base blocks contain language that may be contributing to Jules failures or pipeline incoherence.
+8. Determine session outcomes from log evidence: for each of the 12 preceding coverage logs, confirm whether a `TODAY`-dated entry exists. A stage is COMPLETED if its log contains a `TODAY`-dated entry. A stage is FAILED or MISSING if its log has no `TODAY`-dated entry. Do not attempt to call any session-listing tool -- this determination is made entirely from the coverage log files, which are the authoritative observable record. Record all 12 states before proceeding.
+9. Read all 13 prompt files in `.github/nightly-prompts/` -- both the shared Base instruction blocks and the stage-specific sections. Read them to understand what each stage is supposed to do, to identify instruction defects, and to evaluate whether the Base blocks contain language that may be contributing to Jules failures or pipeline incoherence.
 
 ### Step 4: Analyse
 
 Take the time required. Do not rush to write. The analytical phase is the most demanding part of this stage.
 
 **For Section 1 (Stability Failures):**
-- For each FAILED or missing session today: record the session ID, the stage, and the observed symptom exactly as it appears in the evidence. Determine the root cause from the available evidence. If the root cause cannot be determined from the available logs and session data, state this explicitly -- do not speculate. Write a concrete recommended fix: exact proposed wording addition or structural change to the relevant prompt file (Base block or stage-specific section) that would address this class of failure.
+- For each FAILED or missing stage today (identified in Step 8 as having no TODAY-dated log entry): record the stage number, its expected role, and the observed symptom exactly as it appears in the evidence. Determine the root cause from the available evidence. If the root cause cannot be determined from the available logs, state this explicitly -- do not speculate. Write a concrete recommended fix: exact proposed wording addition or structural change to the relevant prompt file (Base block or stage-specific section) that would address this class of failure.
 - Compare today's failures against the existing Section 1 entries. Promote any failure that has now recurred to `[RECURRING]`. Mark any previously logged failure that has not reappeared in the available historical evidence as `[RESOLVED - monitor]`.
 - Check for correlated failures: if two or more stages from the same functional area failed on the same day, evaluate whether they share a root cause and consolidate into a single shared-environment pattern entry.
 
