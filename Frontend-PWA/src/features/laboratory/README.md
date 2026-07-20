@@ -67,3 +67,10 @@ The behavioral layer standardizes communication between the simulation logic and
  - **Memoization**: Exposes `getTrajectoryMemoKeys` for stable `v-memo` dependency arrays across the trajectory list.
 - **useLaboratorySimulation.ts**: Specialized orchestrator for simulation execution.
  - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs (via `currentSimulationId`), and batched generator consumption within ~10ms `requestIdleCallback` budgets.
+
+### Custom UI Components & Mobile Ergonomics
+- **TargetPicker (`TargetPicker.vue`)**: Modernized input and target delegation selector supporting tactical player targeting.
+  - **Touch Target Compliance**: Implements a mobile-compliant 48px height footprint for input container boxes and player labels, with a 40px action lock button.
+  - **Tactile Feedback**: Integrates the `v-tactile` directive for declarative haptic feedback brokering in the WebView shell on key-press actions.
+  - **Normalization Boundary**: Automatically trims and normalizes player tags (`normalizeTag`) at the lock-in boundary prior to dispatching events.
+  - **User Experience**: Employs CSS user-select containment and a responsive ellipsis-truncated label layout to prevent mobile layout clipping.

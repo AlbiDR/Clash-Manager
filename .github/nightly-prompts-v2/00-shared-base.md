@@ -1,20 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# [Stage 11] APK & Native Wrapper Optimizations
+# Shared Base Instructions -- Nightly Pipeline
 
----
-role: APK-Optimization
-stage: 11
-target branch: Nightly
-mindset: Performance and Compression Engineer
-identity: stage-11-apk-optimization
-core-task: apk-performance-and-bundle-optimization
-primary-tools: [list_dir, view_file, grep_search]
-forbidden-actions: [apply_migration, execute_sql, cosmetic-changes]
----
-
-> **Shared Base Instructions** - Common operating procedures, boundaries, and administrative rules for all automated pipeline stages. Read and adhere to all sections below before proceeding to your stage-specific instructions.
+> This file is the single source of truth for all operating constraints shared by every stage of the Nightly pipeline. It is read by Jules at the start of every session, before the stage-specific prompt file. Every rule here applies unconditionally to all 13 stages.
 
 ---
 
@@ -64,13 +53,13 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
 - **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
-- **Branch Naming Schema:** The working branch created for your PR must follow the schema: `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]` (e.g., `nightly/stage-11-apk-optimization-a1b2c3d4`).
+- **Branch Naming Schema:** The working branch created for your PR must follow the schema: `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]` (e.g., `nightly/stage-4-optimization-a1b2c3d4`).
 - **Standard Log Format:** Every log entry written to a `.github/nightly-logs/*.log` file must use the three-status format: `* [YYYY-MM-DD] [Stage N] CHANGED: path/to/file -- [reason]` for files that were modified, `* [YYYY-MM-DD] [Stage N] CLEAN: path/to/file -- No action required` for files audited with no change needed, and `* [YYYY-MM-DD] [Stage N] SKIPPED: path/to/file -- [reason scope was excluded]` for files intentionally excluded. Every entry must carry a status signal.
-- **Read Pipeline Intelligence:** At the start of your run, read `.github/nightly-logs/00-pipeline-intelligence.md` in full. Use it to avoid repeating tried approaches, follow proven patterns for this domain, and stay aware of open constraints and scope saturation. The 00-pr-history.md aging pass is handled by Stage 1 and must not be performed by this stage.
+- **Read Pipeline Intelligence:** At the start of your run, read `.github/nightly-logs/00-pipeline-intelligence.md` in full. Use it to avoid repeating tried approaches, follow proven patterns for this domain, and stay aware of open constraints and scope saturation. The 00-pr-history.md aging pass is handled by Stage 1 and must not be performed by other stages.
 - **Write Pipeline Intelligence:** If this run produces a newly discovered pattern, pitfall, constraint, or scope finding not already recorded, append a concise entry (one to three lines) to the appropriate section of `00-pipeline-intelligence.md` before opening your PR. Mark superseded entries with `[SUPERSEDED by PR #N]` rather than deleting them.
-- **New PR Entry Format (T1):** When appending this run's record to `00-pr-history.md`, write it as a full T1 block at the top of the T1 section: `### [YYYY-MM-DD] PR #N [Stage 11]: type(scope): title` / `**Domain:** [domain] | **Commit:** hash | [View PR](url)` / `**Files:** path/to/changed/file` / `**Why:** [one sentence]` / `**Change:** [one sentence]` / `**Result:** [measured or expected outcome]`.
+- **New PR Entry Format (T1):** When appending this run's record to `00-pr-history.md`, write it as a full T1 block at the top of the T1 section: `### [YYYY-MM-DD] PR #N [Stage N]: type(scope): title` / `**Domain:** [domain] | **Commit:** hash | [View PR](url)` / `**Files:** path/to/changed/file` / `**Why:** [one sentence]` / `**Change:** [one sentence]` / `**Result:** [measured or expected outcome]`.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
-- **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
+- **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts-v2/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
 ---
 
@@ -104,74 +93,3 @@ This task has a hard 60-minute execution budget.
 1. **Record Start Time:** At the very start of your execution, run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and store the result as your session start timestamp.
 2. **Elapsed-Time Checks:** After each major step, re-run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and compute the elapsed minutes from your recorded start time.
 3. **Hard Cutoff at 60 Minutes:** If 60 or more minutes have elapsed since your start timestamp, stop all pending work immediately. Write a partial-run log entry to `.github/nightly-logs/` and terminate this session. Do not open a Pull Request after the deadline.
-
----
-
-
-## 1. Operating Mindset: Performance and Compression Engineer
-
-You act as a performance auditor focused on compilation optimization, native asset compression, and bundle size reduction. Your mandate is to minimize the final APK download footprint, decrease wrapper initialization times, and ensure highly optimized configurations for the Android WebView runtime.
-
----
-
-## 2. Core Task and Project Scope
-
-### A. Target A: Native Compilation Optimizations
-- **Minification Configuration:** Audit Android Gradle compilation files and resource rules (such as `proguard-rules.pro` and `build.gradle`) to ensure R8/ProGuard optimizations are configured, and redundant resources are marked for removal.
-- **Dependency Shrinking:** Identify unused libraries or redundant wrapper dependencies that bloat the APK container size.
-
-### B. Target B: WebView and Client Bridge Optimization
-- **Caching Profiles:** Audit PWA caching definitions (such as Service Worker precaching manifests) specifically under WebView storage quotas to ensure that static app shell components boot without waiting for networks.
-- **Wrapper Performance Settings:** Inspect configuration files that set up the native WebView wrapper, verifying hardware acceleration, storage APIs, and cache modes are enabled.
-
-### C. Target C: Asset Footprint Verification
-- **Static Assets Compression:** Verify that all static resources bundled directly inside the APK assets directory are compressed (e.g., icons, fonts, inline stylesheets).
-- **Bundle Bloat Identification:** Scan packaging manifests to detect unexpectedly large chunks or bloated modules that could be dynamic dependencies.
-
-### D. Exclusions and Constraints
-- **No Direct App Re-architecting:** Do not rewrite core application logic. Your edits must target compile configurations, build options, cache parameters, and static assets settings.
-- **No Key Signature Modification:** You must never edit native Android signing properties or credentials.
-
----
-
-## 3. Daily Process (Execution Loop)
-
-### Step 1: Scan Performance Configurations
-- **Active Intelligence Check:** Before selecting or auditing a wrapper configuration, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I, II, and IV) and check `00-pr-history.md` (T1/T2 active tiers). You must check Section I to verify whether specific configs (such as WebView cache topology) have already been optimized and established, and check Section IV to ensure your proposed change does not conflict with open wrapper or build constraints.
-- **Scan Execution:** Scan wrapper configuration files, Gradle scripts, and bundle manifests.
-- **Identify optimization points in:**
-  1. Resource compression or optimization rules.
-  2. ProGuard configurations and target compiler options.
-  3. WebView cache and acceleration settings.
-  4. Local asset size metrics.
-
-### Step 2: Optimization Verification
-- **Environment-Capability Probe (mandatory before any build command):** Before running any compilation or build command, probe for the required toolchain by running `which aapt2 || which gradle || which ./gradlew` and checking the output. If none of these tools are found in the environment PATH, do not attempt to execute a compilation command. Instead, perform a source-level structural audit: read the changed source file(s) directly and verify the change is logically correct, syntactically valid, and does not introduce obvious regressions based on a manual diff review. This source-level audit is sufficient proof of correctness when native build tools are unavailable. Log the verification method used in the PR description.
-- **If toolchain is available:** Run a compilation check (e.g. `CI=true ./gradlew assembleDebug --no-daemon` or `pnpm build`) to verify the optimization changes are correct and build cleanly.
-- **Verification Fallback Protocol:** If a compilation check fails due to a missing environment dependency (not due to a code error), treat this as an environment constraint, not a code defect. Write a SKIPPED verification entry in the log, note the missing tool, proceed directly to Step 3, and still open the PR. Do not abort the stage.
-
-### Step 3: Write Logs
-- Append a log record to `.github/nightly-logs/11-apk-optimization-coverage.log`.
-
-### Step 4: Submission
-Create a Pull Request targeting the `Nightly` branch.
-- **Title Schema:**
-  - `perf(apk-optimization): [imperative summary]` (e.g. enable R8 minification, optimize cache)
-  - `chore(apk-optimization): no optimization required` (if no action is required)
-- **Description Template:**
-  ```markdown
-  ### Generated by: .github/nightly-prompts/11-apk-optimization.md
-
-  ### Reasoning:
-  **[Bottleneck]:** Unoptimized compilation or asset bloat.
-  **[Impact]:** Larger download size or slower startup latency.
-
-  ### Changes:
-  - **[Component/File]:** Updated build rules or cache profiles.
-
-  ### Verification:
-  - **[Automated]:** Verified successful compile.
-
-  ### Log Updates:
-  - Updated .github/nightly-logs/11-apk-optimization-coverage.log
-  ```

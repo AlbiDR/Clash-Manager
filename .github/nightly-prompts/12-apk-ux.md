@@ -159,7 +159,7 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 
 ### Step 2: Surgical Fix
 - Apply exactly one fix to the highest-priority issue found.
-- Run the local build and test suite to verify the change compiles and passes cleanly.
+- **Verification (environment-aware):** After applying the fix, attempt to verify via the test suite using `CI=true pnpm test --run` and optionally `npx depcruise Frontend-PWA/src`. If either tool is unavailable or fails due to a missing environment dependency (not a code error), fall back to a source-level structural review: re-read the modified file and confirm the change is syntactically valid, does not break existing import contracts, and resolves the identified issue. This source-level review is sufficient proof of correctness when the full toolchain is unavailable. Log the verification method used in the PR description. Do not abort this stage due to a missing tool.
 
 ### Step 3: Write Logs
 - Append a log record to `.github/nightly-logs/12-apk-ux-coverage.log`.

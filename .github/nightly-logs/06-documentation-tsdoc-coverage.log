@@ -44,3 +44,5 @@
 * [2026-07-18] [Stage 6] CLEAN: Backend/supabase/functions/query-royale-api/index.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 9 refactoring.
 * [2026-07-18] [Stage 6] CLEAN: Backend/supabase/functions/_shared/config.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 9 configuration centralization.
 * [2026-07-18] [Stage 6] CLEAN: Frontend-PWA/src/shared/ui/SelectionBar.vue -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 12 SelectionBar modernization.
+* [2026-07-20] [Stage 6] CHANGED: Backend/supabase/functions/headhunter-scanner/stages/shadow-scout.ts -- Hardened interface contracts and logic annotations for Layer 1 shadow scout discovery.
+* [2026-07-20] [Stage 6] CHANGED: Backend/supabase/functions/headhunter-scanner/stages/ghost-purge.ts -- Hardened interface contracts and logic annotations for Layer 1 ghost purge hot-zone audits.

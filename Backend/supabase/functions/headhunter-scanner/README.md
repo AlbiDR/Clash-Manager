@@ -28,6 +28,8 @@ The scanner operates as a sequential, atomic pipeline to maintain data integrity
 ### S1: Shadow Scout
 **Objective**: opportunistic ingestion.
 - Harvests leads from recent battle-log opponents of tracked players via the `get_shadow_discovery_targets` RPC (limited to 75 targets), which selects distinct recent opponents from `drivers.player_battles` (last 24h), excluding existing members, recruits, and blacklisted tags.
+- **Defensive Robustness & Validation Boundary**: Secured against empty or null responses via a defensive nullish coalescing check (`shadowTargetsRaw ?? []`).
+- Enforces strict runtime data verification at the database boundary, passing all RPC results through `ShadowTargetSchema` (Valibot safe parsing) to certify structural data integrity before further candidate processing.
 - Identifies "Shadow" candidates - players who have interacted with the clan but are not yet formally tracked.
 
 ### S2: Tournament Discovery

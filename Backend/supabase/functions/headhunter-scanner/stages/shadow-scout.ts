@@ -10,6 +10,32 @@ import { ShadowTargetSchema } from "../../_shared/schemas.ts";
 /**
  * Stage: Shadow Scouting
  * Discovers potential recruits from recent battle logs of known players.
+ *
+ * @remarks
+ * This function handles the Layer 1 core Deno edge function execution for the Shadow Scout stage.
+ * It queries the database via RPC, validates the returned payload shape against the authoritative
+ * schema boundary, and populates the scanner's shared candidates registry.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core / Kernel (`@core`)
+ * - **Satisfaction:** Satisfies ADR Section IV: Deep Delegation Strategy by executing scouter pipelines
+ *   on server-side resources instead of the hybrid frontend environment.
+ * - **Validation:** Satisfies ADR Section III: Validation Boundaries by enforcing Valibot checks
+ *   on inbound database targets.
+ *
+ * @param candidates - The shared scanner candidates Map to be populated with discovered tags.
+ * @param exclusionSet - Set of player tags to be filtered out (e.g., family clan members, clanned/stale recruits).
+ * @param stats - Transitive statistics accumulator for scanner metrics.
+ * @param logAudit - Auditing delegate callback for recording stage step history.
+ *
+ * @returns Resolves once scouting, validation, and candidate registration are completed.
+ *
+ * @throws Never throws directly; encapsulates and logs database or validation failures to stats.errors.
+ *
+ * @sideeffects
+ * - Modifies `candidates` Map.
+ * - Increments metrics in `stats`.
+ * - Invokes external Supabase RPC endpoints (`get_shadow_discovery_targets`).
  */
 export async function runShadowScout(
     candidates: Map<string, string>,
@@ -25,14 +51,15 @@ export async function runShadowScout(
         const { data: shadowTargetsRaw, error: shadowTargetsError } = await supabase
             .rpc('get_shadow_discovery_targets', { p_limit: SHADOW_DISCOVERY_LIMIT });
         
-        logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(shadowTargetsRaw) ? shadowTargetsRaw.length : 0, error: shadowTargetsError });
-        if (!shadowTargetsError && shadowTargetsRaw) {
-            console.log(`[SHADOW_SCOUT] Found ${Array.isArray(shadowTargetsRaw) ? shadowTargetsRaw.length : 0} potential shadow targets. Validating...`);
+        const shadowTargets = shadowTargetsRaw ?? [];
+        logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(shadowTargets) ? shadowTargets.length : 0, error: shadowTargetsError });
+        if (!shadowTargetsError) {
+            console.log(`[SHADOW_SCOUT] Found ${Array.isArray(shadowTargets) ? shadowTargets.length : 0} potential shadow targets. Validating...`);
 
             // [GUARD] VALIDATION BOUNDARY: Target B [1]
             // Rationale: Ensure RPC results match the expected domain shape before processing.
             // THREAT: Malformed database view or RPC return could cause runtime errors in the loop.
-            const shadowTargetsIntegrity = v.safeParse(v.array(ShadowTargetSchema), shadowTargetsRaw);
+            const shadowTargetsIntegrity = v.safeParse(v.array(ShadowTargetSchema), shadowTargets);
             
             logAudit('SHADOW_SCOUT', 'resulted_data', {
                 count: shadowTargetsIntegrity.success ? shadowTargetsIntegrity.output.length : 0,
@@ -61,7 +88,7 @@ export async function runShadowScout(
                 console.log(`[SHADOW_SCOUT] Added ${addedCount} new shadow candidates (filtered out ${shadowTargetsIntegrity.output.length - addedCount} via exclusion set)`);
             }
         } else {
-            console.error(`[SHADOW_SCOUT] RPC error or no data: ${shadowTargetsError?.message || 'Unknown RPC error'}`);
+            console.error(`[SHADOW_SCOUT] RPC error: ${shadowTargetsError?.message || 'Unknown RPC error'}`);
             logAudit('SHADOW_SCOUT', 'integrity_checked', { passed: false, details: shadowTargetsError?.message || 'Unknown RPC error' });
         }
         logAudit('SHADOW_SCOUT', 'terminated');

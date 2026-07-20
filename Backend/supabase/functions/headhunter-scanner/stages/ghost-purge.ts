@@ -13,7 +13,32 @@ import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts
  * stays free of players who have since joined a clan. Any clanned player in the
  * top 50 is wasting a visible slot - purge first, discover second.
  *
- * Returns the number of ghosts evicted.
+ * @remarks
+ * This function handles the Layer 1 core Deno edge function execution for the Ghost Purge stage.
+ * It fetches high-priority active recruits from the hot-zone, performs batched checks via the Royale API,
+ * validates profiles against schemas, and evicts clanned players using the `purge_recruits` RPC procedure.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core / Kernel (`@core`)
+ * - **Satisfaction:** Satisfies ADR Section IV: Deep Delegation Strategy by executing automated scouter
+ *   audit logic in the serverless edge environment rather than local user devices.
+ * - **Validation:** Satisfies ADR Section III: Validation Boundaries by enforcing rigid schema checks
+ *   (using Valibot) on both database query results and external Royale API player records.
+ * - **Data Lifecycle:** Satisfies ADR Section XI: Data Lifecycle Management (Smart Pruning) by actively
+ *   purging stale clanned targets from active recruitment indexes.
+ *
+ * @param exclusionSet - Set of player tags that are excluded from scouter audits (e.g., family clan members).
+ * @param stats - Transitive statistics accumulator for logging scanner metrics.
+ * @param logAudit - Auditing delegate callback for recording stage step history.
+ *
+ * @returns A promise resolving to the number of clanned ghost players successfully evicted from the hot-zone.
+ *
+ * @throws Never throws directly; captures and logs operational database or batch errors into `stats.errors`.
+ *
+ * @sideeffects
+ * - Updates metrics in `stats` (e.g., profiles_scanned).
+ * - Modifies the database by invoking Supabase RPCs (`purge_recruits`, `touch_recruits`).
+ * - Dispatches concurrent network requests to the external Royale API server.
  */
 export async function runGhostPurge(
     exclusionSet: Set<string>,
