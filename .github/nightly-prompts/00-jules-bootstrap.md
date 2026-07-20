@@ -7,6 +7,61 @@ This document records the exact prompt instructions configured in the Jules UI f
 
 ---
 
+## Shared Setup Script
+
+The script below is entered verbatim in the Jules UI "Setup Script" field for
+every stage. It is identical across all 13 stages. Any change applied to the
+live Jules UI configuration must be reflected here in the same commit.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1. BRANCH CORRECTION
+git remote prune origin
+git fetch origin Nightly:Nightly --depth 1
+git checkout Nightly
+
+# 2. NON-INTERACTIVE MODE
+export CI=true
+export DEBIAN_FRONTEND=noninteractive
+
+# 3. NODE 24 VIA NVM
+# Jules's container uses nvm. Load it, install Node 24, and set it as default
+# so every subsequent session in this snapshot uses the correct version.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+nvm install 24 --no-progress
+nvm alias default 24
+nvm use 24
+echo "Node: $(node --version)"
+
+# 4. PNPM + DEPENDENCY INSTALL
+npm install -g pnpm@10.32.1 --silent
+pnpm install --frozen-lockfile
+
+# 5. NATIVE BINARY COMPILATION
+pnpm rebuild esbuild sharp 2>/dev/null || true
+
+# 6. DENO npm: SYMLINKS
+NODE_MODULES="/app/node_modules"
+ln -sfn "${NODE_MODULES}/valibot" \
+  "${NODE_MODULES}/npm:valibot@1.4.2" 2>/dev/null || true
+mkdir -p "${NODE_MODULES}/npm:@supabase"
+ln -sfn "${NODE_MODULES}/@supabase/supabase-js" \
+  "${NODE_MODULES}/npm:@supabase/supabase-js@2.110.7" 2>/dev/null || true
+ln -sfn "${NODE_MODULES}/p-limit" \
+  "${NODE_MODULES}/npm:p-limit@7.3.0" 2>/dev/null || true
+
+# 7. ENVIRONMENT VALIDATION
+echo "Validating environment..."
+pnpm test --reporter=verbose --run 2>&1 | tail -6
+
+echo "Setup complete. Environment is ready for snapshotting."
+```
+
+---
+
 ## [Stage 1] Hardening - Runtime Integrity Auditor
 
 - **Fetch from:** `Nightly`
