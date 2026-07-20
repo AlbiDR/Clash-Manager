@@ -50,7 +50,7 @@ The pipeline operates in a 13-stage sequence where each stage runs as an atomic,
 
 To ensure clean execution and avoid conflict between consecutive stages, you must adhere to these unified protocols:
 - **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly` to ensure your branch is based on the latest work of the preceding stages.
-- **Real Date Mandate:** Before writing any log entry or PR record, run `date -u +"%Y-%m-%d"` and use the returned value as the date stamp. Never assume, infer, or hallucinate the current date. A log entry dated in the future or carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
+- **Real Date Mandate:** The canonical date for this pipeline run is pre-computed by the setup script and stored at `/tmp/nightly/TODAY`. As your very first shell action, execute `TODAY=$(cat /tmp/nightly/TODAY)` and use this value for all log entries and PR records. Never run `date -u` independently or infer the date from any other source. A log entry carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
 - **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
@@ -64,6 +64,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
 - **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
 - **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written.
+- **Nightly Context Directory:** The setup script pre-generates a shared context directory at `/tmp/nightly/` before any stage runs. Files available to every stage: `TODAY` (canonical date — already read above), `recent-commits.txt` (last 50 git log entries), `changed-files.txt` (files modified in the last 30 commits), `pending-migrations.txt` (pending SQL migration filenames), `baseline-test-state.txt` (`PASS` or `FAIL`), `baseline-test-output.txt` (full test suite output), `dep-violations.txt` (dependency violation baseline from `depcruise`), and `toolchain.txt` (installed tool versions and baseline state). Read from `/tmp/nightly/` instead of re-running expensive scans — the data is already correct for this snapshot. These files are ephemeral and are never committed.
 - **Branch Naming Schema:** The working branch created for your PR must follow the schema: `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]` (e.g., `nightly/stage-3-baseline-consolidation-a1b2c3d4`).
 - **Standard Log Format:** Every log entry written to a `.github/nightly-logs/*.log` file must use the three-status format: `* [YYYY-MM-DD] [Stage N] CHANGED: path/to/file -- [reason]` for files that were modified, `* [YYYY-MM-DD] [Stage N] CLEAN: path/to/file -- No action required` for files audited with no change needed, and `* [YYYY-MM-DD] [Stage N] SKIPPED: path/to/file -- [reason scope was excluded]` for files intentionally excluded. Every entry must carry a status signal.
 - **Read Pipeline Intelligence:** At the start of your run, read `.github/nightly-logs/00-pipeline-intelligence.md` in full. Use it to avoid repeating tried approaches, follow proven patterns for this domain, and stay aware of open constraints and scope saturation. The 00-pr-history.md aging pass is handled by Stage 1 and must not be performed by this stage.
@@ -119,7 +120,7 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 ## 2. Core Task and Project Scope
 
 ### A. Target A: Chronological Migration Folding
-- **Scouting Boundary:** Scan the migrations folder to compile a sorted list of all migrations executed after the baseline prefix `20260531232406`.
+- **Scouting Boundary:** Read `/tmp/nightly/pending-migrations.txt` (pre-computed by setup — do not re-scan the migrations directory). This file contains a sorted list of all migration filenames added after the baseline prefix `20260531232406`, one per line. An empty file means no newer migrations exist.
 - **Tooling:**
   - **Text-Based Folding (Primary):** The Jules sandbox does not have Docker, a live Postgres instance, or native SQL parser binaries. Perform all DDL folding at the text level: read each post-baseline migration file as UTF-8 text, trace every DDL statement (`CREATE TABLE`, `ALTER TABLE ADD COLUMN`, `ALTER TABLE DROP COLUMN`, `ALTER TABLE ALTER COLUMN`, `DROP TABLE`, `CREATE OR REPLACE FUNCTION`, `CREATE OR REPLACE VIEW`, `CREATE INDEX`, `DROP INDEX`) in chronological file order, and apply each as a direct text-level patch to `20260531232406_master_migration.sql`. Verify correctness by re-reading the modified baseline and confirming the SQL is well-formed: correct keyword ordering, balanced parentheses, no dangling commas, every statement ends with a semicolon.
   - **supabase CLI (Opportunistic):** If the `supabase` CLI is present (`which supabase 2>/dev/null`), run `supabase db diff` as a cross-check after folding. Do not wait for it or depend on it; it is a secondary signal only.
@@ -159,8 +160,8 @@ Your mind functions as a DDL AST compiler. You do not write fragile regular expr
 - **Active Intelligence Check:** Before processing, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I migration folding cadence, Section II pitfalls, and Section V Stage 3 context). You must check the migration folding threshold constraint in Section I (operational debt warning if >3 migrations unfolded) and check Section II to ensure no soft-delete boolean flags or bad patterns are folded into the baseline migration.
 - **Scan execution:**
   - Load the master baseline `20260531232406_master_migration.sql` into the DDL parser.
-  - Identify all newer migrations.
-  - If no newer migrations exist:
+  - Identify all newer migrations from `/tmp/nightly/pending-migrations.txt` (pre-computed; do not rescan the directory).
+  - If `/tmp/nightly/pending-migrations.txt` is empty (no newer migrations exist):
     1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
     2. Parse and re-format the master migration to optimize query format, statement ordering, and comment consistency.
     3. If any structural or formatting deviations are detected, resolve them directly in the master migration.
