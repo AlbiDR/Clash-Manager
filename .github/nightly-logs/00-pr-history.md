@@ -13,6 +13,32 @@
 **Result:** Codebase compliance with line-count threshold and layer boundaries confirmed with zero structural debt.
 
 
+## [2026-07-20] PR #1166: fix(version): synchronize version drift across manifests and documentation
+**Commit**: `2d1a5ce8fe664d84a47882f275387a954c5ceb24`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1166)
+
+### Description
+The latest PWA deploy failed due to project version drift across the monorepo (specifically in useProgressiveList.ts, protocol.ts, apktool.yml, and various README files).
+
+This PR runs the project validation script with `--fix` to synchronize the version numbers and documentation badges back to the ground truth version `14.33.3` (17330), ensuring clean verification, builds, and deploys.
+
+### Changes:
+- `APK/android/apktool.yml`: Update `versionName` to `14.33.3` and `versionCode` to `17330`.
+- `Backend/README.md`: Update Roadmap version to `14.33.3`.
+- `Backend/supabase/functions/_shared/protocol.ts`: Synchronize version constant to `14.33.3`.
+- `Frontend-PWA/README.md`: Update Vue client badge to `v14.33.3`.
+- `Frontend-PWA/src/core/services/useProgressiveList.ts`: Synchronize optimization comment version to `14.33.3`.
+- `README.md`: Update backend/client version badges to `v14.33.3`.
+- `.github/nightly-logs/07-version-integrity-coverage.log`: Appended stage logs.
+- `.github/nightly-logs/00-pr-history.md`: Prepend T1 run history block.
+
+Verified locally:
+- `npx tsx .github/scripts/validate_project.ts` successfully passes.
+- `pnpm test` (all 1409 tests passed).
+- `pnpm run build` (successful production build).
+
+---
+
 ## [2026-07-20] PR #1160: chore(version): no drift found
 **Commit**: `0df0ae9a3d2fc32d2178576a8cef8175169fe821`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1160)
