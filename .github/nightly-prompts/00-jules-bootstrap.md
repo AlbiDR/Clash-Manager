@@ -17,7 +17,6 @@ live Jules UI configuration must be reflected here in the same commit.
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ═══════════════════════════════════════════════════════════════
 # NIGHTLY PIPELINE SETUP SCRIPT
 # Runs once per Jules environment snapshot. Every tool installed
 # and every file generated here is available to all 13 stage tasks.
@@ -27,68 +26,65 @@ set -euo pipefail
 #     Only genuine environment failures are valid exit reasons.
 #   - /tmp/nightly/ is ephemeral. Never commit those files.
 #   - pnpm global tool versions must be bumped deliberately.
-# ═══════════════════════════════════════════════════════════════
 
-# ── 1. BRANCH CORRECTION ────────────────────────────────────
+# 1. CONTEXT DIRECTORY - must exist before any writes below
+mkdir -p /tmp/nightly
+
+# 2. BRANCH CORRECTION
+# Jules clones --depth 1 -b Stable. Nightly does not exist as a local branch.
+# git checkout -B creates or resets the local branch to the fetched FETCH_HEAD.
 git remote prune origin 2>/dev/null || true
 git fetch origin Nightly --depth 100
-git checkout Nightly
+git checkout -B Nightly FETCH_HEAD
 git pull origin Nightly
 echo "Branch: $(git branch --show-current) @ $(git rev-parse --short HEAD)"
 
-# ── 2. NON-INTERACTIVE MODE ──────────────────────────────────
+# 3. NON-INTERACTIVE MODE
 export CI=true
 export DEBIAN_FRONTEND=noninteractive
 
-# ── 3. NODE 24 VIA NVM ──────────────────────────────────────
+# 4. NODE 24 VIA NVM
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 nvm install 24 --no-progress
 nvm alias default 24
 nvm use 24
 
-# ── 4. PNPM + DEPENDENCY INSTALL ────────────────────────────
+# 5. PNPM + DEPENDENCY INSTALL
 # dependency-cruiser (depcruise binary) is a catalog devDependency.
-# After this step, all stages invoke it as: pnpm exec depcruise
+# All stages invoke it as: pnpm exec depcruise
 npm install -g pnpm@10.32.1 --silent
 pnpm install --frozen-lockfile
 
-# ── 5. NATIVE BINARY COMPILATION ────────────────────────────
+# 6. NATIVE BINARY COMPILATION
 pnpm rebuild esbuild sharp 2>/dev/null || true
 
-# ── 6. DENO npm: SYMLINKS ───────────────────────────────────
-# Versions resolved dynamically from installed packages — never hardcode.
+# 7. DENO npm: SYMLINKS
+# Versions resolved dynamically from installed packages, never hardcoded.
 # Hardcoded strings break silently when Stage 7 or 8 bumps a dependency.
 NODE_MODULES="/app/node_modules"
 VALIBOT_VER=$(node -e "try{console.log(require('${NODE_MODULES}/valibot/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
 SUPABASE_VER=$(node -e "try{console.log(require('${NODE_MODULES}/@supabase/supabase-js/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
 PLIMIT_VER=$(node -e "try{console.log(require('${NODE_MODULES}/p-limit/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
-ln -sfn "${NODE_MODULES}/valibot"               "${NODE_MODULES}/npm:valibot@${VALIBOT_VER}"               2>/dev/null || true
+ln -sfn "${NODE_MODULES}/valibot" "${NODE_MODULES}/npm:valibot@${VALIBOT_VER}" 2>/dev/null || true
 mkdir -p "${NODE_MODULES}/npm:@supabase"
-ln -sfn "${NODE_MODULES}/@supabase/supabase-js"  "${NODE_MODULES}/npm:@supabase/supabase-js@${SUPABASE_VER}" 2>/dev/null || true
-ln -sfn "${NODE_MODULES}/p-limit"               "${NODE_MODULES}/npm:p-limit@${PLIMIT_VER}"               2>/dev/null || true
+ln -sfn "${NODE_MODULES}/@supabase/supabase-js" "${NODE_MODULES}/npm:@supabase/supabase-js@${SUPABASE_VER}" 2>/dev/null || true
+ln -sfn "${NODE_MODULES}/p-limit" "${NODE_MODULES}/npm:p-limit@${PLIMIT_VER}" 2>/dev/null || true
 
-# ── 7. NIGHTLY CONTEXT DIRECTORY ────────────────────────────
-# /tmp/nightly/ is generated fresh on every snapshot and shared
-# across all 13 stage tasks. Stages read from here instead of
-# recomputing the same information 13 times independently.
-mkdir -p /tmp/nightly
+# 8. NIGHTLY CONTEXT FILES
+# /tmp/nightly/ is shared across all 13 stage tasks.
+# Stages read from here instead of recomputing the same data independently.
 
-# 7a. CANONICAL DATE
-# The single source of date truth for the entire pipeline run.
-# All stages read this file; no stage ever runs `date -u` on its own.
+# 8a. CANONICAL DATE - single source of date truth for the entire pipeline run
 date -u +"%Y-%m-%d" > /tmp/nightly/TODAY
 echo "Today: $(cat /tmp/nightly/TODAY)"
 
-# 7b. GIT CONTEXT
-# Recent commits and changed files — used by stage intelligence checks.
+# 8b. GIT CONTEXT
 git log --format="%h %ad %s" --date=short -50 > /tmp/nightly/recent-commits.txt
 git diff --name-only HEAD~30 HEAD 2>/dev/null | sort -u > /tmp/nightly/changed-files.txt || touch /tmp/nightly/changed-files.txt
 echo "Git context: $(wc -l < /tmp/nightly/recent-commits.txt) commits | $(wc -l < /tmp/nightly/changed-files.txt) changed files"
 
-# 7c. PENDING MIGRATIONS
-# Pre-computed list of migration files newer than the baseline for Stage 3.
-# Stage 3 reads this instead of scanning the migrations directory manually.
+# 8c. PENDING MIGRATIONS - pre-computed for Stage 3
 BASELINE_PREFIX="20260531232406"
 if [ -d "Backend/supabase/migrations" ]; then
   ls Backend/supabase/migrations/ | grep -v "${BASELINE_PREFIX}" | sort > /tmp/nightly/pending-migrations.txt
@@ -97,13 +93,10 @@ else
 fi
 MIGRATION_COUNT=$(wc -l < /tmp/nightly/pending-migrations.txt | tr -d ' ')
 echo "Pending migrations: ${MIGRATION_COUNT}"
-[ "${MIGRATION_COUNT}" -gt 0 ] && cat /tmp/nightly/pending-migrations.txt | sed 's/^/  - /' || true
+[ "${MIGRATION_COUNT}" -gt 0 ] && sed 's/^/  - /' /tmp/nightly/pending-migrations.txt || true
 
-# 7d. BASELINE TEST STATE
-# Run the full test suite ONCE here. Stages reference this result file
-# rather than re-running the entire suite. Stages that modify code then
-# run `pnpm test --run` again on their own after making changes.
-# This block never causes setup to fail regardless of test outcome.
+# 8d. BASELINE TEST STATE
+# Run the suite once here. Result never causes setup to fail.
 echo "Running baseline test suite..."
 if pnpm test --run > /tmp/nightly/baseline-test-output.txt 2>&1; then
   echo "PASS" > /tmp/nightly/baseline-test-state.txt
@@ -113,19 +106,14 @@ fi
 echo "Baseline tests: $(cat /tmp/nightly/baseline-test-state.txt)"
 tail -5 /tmp/nightly/baseline-test-output.txt
 
-# 7e. DEPENDENCY VIOLATIONS BASELINE
-# Pre-computed using the project's own depcruise config.
-# Stage 9 reads dep-violations.txt to understand the pre-existing violation
-# state before its refactor, then re-runs depcruise after to confirm no regression.
+# 8e. DEPENDENCY VIOLATIONS BASELINE - pre-computed for Stage 9
 echo "Computing dependency violation baseline..."
 pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src \
   --output-type err-long > /tmp/nightly/dep-violations.txt 2>&1 || true
 DEP_LINES=$(wc -l < /tmp/nightly/dep-violations.txt | tr -d ' ')
 echo "Dependency violations file: ${DEP_LINES} lines"
 
-# 7f. TOOLCHAIN MANIFEST
-# Authoritative record of what was installed in this snapshot.
-# Stage 13 reads this during evidence gathering.
+# 8f. TOOLCHAIN MANIFEST - authoritative record read by Stage 13
 {
   echo "snapshot-date: $(cat /tmp/nightly/TODAY)"
   echo "node: $(node --version)"
@@ -141,10 +129,8 @@ echo "Dependency violations file: ${DEP_LINES} lines"
 } > /tmp/nightly/toolchain.txt
 
 echo ""
-echo "══════════════════════════════════════════════════════"
-echo " Setup complete. Environment is ready for snapshotting."
-echo " Nightly context written to /tmp/nightly/"
-echo "══════════════════════════════════════════════════════"
+echo "Setup complete. Environment is ready for snapshotting."
+echo "Nightly context written to /tmp/nightly/"
 cat /tmp/nightly/toolchain.txt
 ```
 
