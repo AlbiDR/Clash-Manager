@@ -92,3 +92,10 @@
 * [2026-07-20] [Stage 7] CLEAN: Frontend-PWA/package.json -- No action required
 * [2026-07-20] [Stage 7] CLEAN: Backend/package.json -- No action required
 * [2026-07-20] [Stage 7] CLEAN: pnpm-workspace.yaml -- No action required
+* [2026-07-20] [Stage 7] CHANGED: APK/android/apktool.yml -- Synchronized versionName to 14.33.3 and versionCode to 17330
+* [2026-07-20] [Stage 7] CHANGED: Backend/README.md -- Synchronized roadmap version to v14.33.3
+* [2026-07-20] [Stage 7] CHANGED: Backend/supabase/functions/_shared/protocol.ts -- Synchronized version constant to 14.33.3
+* [2026-07-20] [Stage 7] CHANGED: Frontend-PWA/README.md -- Synchronized client version badge to v14.33.3
+* [2026-07-20] [Stage 7] CHANGED: Frontend-PWA/src/core/services/useProgressiveList.ts -- Synchronized version comment to v14.33.3
+* [2026-07-20] [Stage 7] CHANGED: README.md -- Synchronized backend and client version badges to v14.33.3
+
