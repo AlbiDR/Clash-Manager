@@ -6,6 +6,18 @@
 **Result:** Streamlined native source code cleanliness with zero impact on runtime behavior.
 
 
+## [2026-07-20] PR #1158: docs(readme): reconcile scanner validation guards and laboratory target picker
+**Commit**: `4967bb9130fda18db22f6c1412d9d0fa08786329`
+**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1158)
+
+### Description
+This PR synchronizes the Headhunter Scanner and Laboratory Feature documentation (README.md) with database null/empty schema validation and mobile 48px tactile haptic target picker implementation details.
+
+---
+*PR created automatically by Jules for task [12506277582331335712](https://jules.google.com/task/12506277582331335712) started by @AlbiDR*
+
+---
+
 ## [2026-07-20] PR #1157: chore(baseline): fold new migrations into master baseline -- audit pass
 **Commit**: `0163e45bdd3d04364a6ccf7855b9146493fe403b`
 **Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1157)
