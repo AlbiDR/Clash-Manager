@@ -1,3 +1,10 @@
+### [2026-07-21] PR #PENDING [Stage 12]: fix(apk-ux): integrate tactile feedback into HeadhunterView empty-action button
+**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** The "Scan Again" primary action button on HeadhunterView lacked haptic feedback and mobile touch ergonomics.
+**Change:** Imported and applied the `v-tactile` directive to the `.btn-primary` empty-action button to ensure consistent physical haptic response in the hybrid shell.
+**Result:** Unified haptic brokering across all prominent feature views and verified successful production build.
+
 ### [2026-07-21] PR #PENDING [Stage 7]: fix(version): synchronize version drift across manifests and documentation
 **Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/android/apktool.yml, Backend/README.md, Backend/supabase/functions/_shared/protocol.ts, Frontend-PWA/README.md, Frontend-PWA/src/core/services/useProgressiveList.ts, README.md, .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md

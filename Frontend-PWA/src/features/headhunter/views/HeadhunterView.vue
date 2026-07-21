@@ -26,7 +26,8 @@ export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: tr
 import {
   Icon,
   ConsoleLayout,
-  ConsoleList
+  ConsoleList,
+  vTactile
 } from "@shared";
 import { useRecruiter } from "../composables/useRecruiter";
 import { RecruitCard } from "../components";
@@ -55,7 +56,7 @@ const {
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>
-      <button class="btn-primary" @click="refresh">
+      <button v-tactile class="btn-primary" @click="refresh">
         <Icon name="refresh" size="18" />
         <span>Scan Again</span>
       </button>
