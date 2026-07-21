@@ -11,7 +11,7 @@ mindset: Defensive Adversary
 identity: stage-1-antigen
 core-task: runtime-security-auditing
 primary-tools: [pnpm-test]
-forbidden-actions: [apply_migration, execute_sql, cosmetic-changes]
+forbidden-actions: [apply_migration, execute_sql, cosmetic-changes, list_tables, search_docs, get_advisors]
 ---
 
 > **Shared Base Instructions** - Common operating procedures, boundaries, and administrative rules for all automated pipeline stages. Read and adhere to all sections below before proceeding to your stage-specific instructions.
@@ -145,6 +145,7 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 
 ### Step 1: Threat Surface Scan
 - **Active Intelligence Check:** Before scanning, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I, II, and V) and look at the T1 active section of `.github/nightly-logs/00-pr-history.md` to see what files were modified in the last 7 days. You MUST exclude any files that have been modified or audited as CLEAN by Stage 1 in the past 7 days, or that are marked as saturated in Section III of the intelligence document, unless a critical vulnerability remains unaddressed.
+- **MCP Tool Prohibition:** Do not call any Supabase MCP tools during this stage. `list_tables`, `search_docs`, `get_advisors`, and all other Supabase MCP tools are explicitly forbidden even though they may be available in this environment. This stage operates entirely on source code — Edge Function files, TypeScript, Vue components. Database schema inspection via MCP is not required and will consume your entire time budget processing schema payloads that are irrelevant to the threat scan.
 - **Priority List:**
   1. Unauthenticated privileged endpoints (Edge Function auth gap).
   2. In-memory state with no persistence strategy or ephemeral annotation.
