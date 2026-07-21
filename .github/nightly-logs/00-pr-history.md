@@ -2234,6 +2234,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-21] PR #PENDING [Stage 8]: chore(deps): bump p-limit to 7.3.1 and update major version watchlist
+**Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
+**Files:** package.json, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Apply safe patch update for p-limit and maintain ecosystem research on high-risk major version transitions.
+**Change:** Bumped p-limit from 7.3.0 to 7.3.1 in root package.json and registered TypeScript 7 intermediate finalized major alert and Pinia/Vite watchlist updates.
+**Result:** 100% dependency substrate hygiene verified with 1409 passed tests and zero regressions.
+
 ### [2026-07-21] PR #PENDING [Stage 7]: fix(version): synchronize version drift across manifests and documentation
 **Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/android/apktool.yml, Backend/README.md, Backend/supabase/functions/_shared/protocol.ts, Frontend-PWA/README.md, Frontend-PWA/src/core/services/useProgressiveList.ts, README.md, .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
