@@ -13,7 +13,7 @@ import { ref, watch, type Ref, shallowRef, onScopeDispose } from "vue";
  * items at once, it breaks the list into manageable chunks and schedules their
  * injection during idle browser frames.
  *
- * [PERF] Optimized for v14.33.3:
+ * [PERF] Optimized for v14.33.4:
  * - Uses shallowRef to reduce reactive overhead of the visible list.
  * - Utilizes IdleDeadline to process multiple chunks per idle frame.
  * - Implements automated cleanup via onScopeDispose.

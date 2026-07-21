@@ -1,8 +1,8 @@
-### [2026-07-20] PR #PENDING [Stage 7]: fix(version): synchronize version drift across manifests and documentation
+### [2026-07-21] PR #PENDING [Stage 7]: fix(version): synchronize version drift across manifests and documentation
 **Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/android/apktool.yml, Backend/README.md, Backend/supabase/functions/_shared/protocol.ts, Frontend-PWA/README.md, Frontend-PWA/src/core/services/useProgressiveList.ts, README.md, .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
 **Why:** The latest PWA deploy failed due to project version drift across the monorepo.
-**Change:** Synchronized versionName and versionCode in apktool.yml, version constant in protocol.ts, and README documentation badges to the ground truth version of 14.33.3.
+**Change:** Synchronized versionName and versionCode in apktool.yml, version constant in protocol.ts, and README documentation badges to the ground truth version of 14.33.4.
 **Result:** Monorepo version audit passes and PWA builds and deploys successfully.
 
 
@@ -2202,6 +2202,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-21] PR #PENDING [Stage 7]: fix(version): synchronize version drift across manifests and documentation
+**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/android/apktool.yml, Backend/README.md, Backend/supabase/functions/_shared/protocol.ts, Frontend-PWA/README.md, Frontend-PWA/src/core/services/useProgressiveList.ts, README.md, .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** The latest PWA deploy failed due to project version drift across the monorepo.
+**Change:** Synchronized versionName and versionCode in apktool.yml, version constant in protocol.ts, and README documentation badges to the ground truth version of 14.33.4.
+**Result:** Monorepo version audit passes and PWA builds and deploys successfully.
+
 ### [2026-07-21] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- audit pass
 **Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md
