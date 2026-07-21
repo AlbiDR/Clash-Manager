@@ -3,14 +3,13 @@
 
 name: Sync Nightly PRs
 
-
 on:
   schedule:
-    # 11:30 AM CEST -- runs after Jules completes its morning session.
+    # 11:30 AM CEST -- safety-net run after Jules completes its morning session.
     - cron: "30 9 * * *"
   workflow_dispatch:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review]
     branches:
       - Nightly
 
@@ -22,66 +21,28 @@ permissions:
   contents: write
   pull-requests: write
 
-env:
-  # Matches the `packageManager` field in the root package.json.
-  # Pinning ensures reproducible installs and prevents accidental pnpm version
-  # drift across runs.
-  PNPM_VERSION: "10.32.1"
-
-# ============================================================================
-# AUTOMATION ENGINE: Nightly PR Synchronization
-# ============================================================================
 jobs:
   merge-prs:
     name: "Merge Google Jules PRs"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # ----------------------------------------------------------------------
-      # STEP 1: Environment Setup
-      # ----------------------------------------------------------------------
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: Nightly
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Resolve pnpm store path
-        id: pnpm-store
-        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Restore pnpm store cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-
-
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
 
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ----------------------------------------------------------------------
-      # STEP 2: Execution Logic (Ultra-Robust)
-      # ----------------------------------------------------------------------
       - name: Run Merge Script
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm exec tsx .github/scripts/merge-nightly-prs.ts
+        run: node .github/scripts/merge-nightly-prs.mjs
 
-      # ----------------------------------------------------------------------
-      # STEP 3: Persistence & Documentation
-      # ----------------------------------------------------------------------
       - name: Commit and Push History
         run: |
           if [[ `git status --porcelain .github/nightly-logs/00-pr-history.md` ]]; then
