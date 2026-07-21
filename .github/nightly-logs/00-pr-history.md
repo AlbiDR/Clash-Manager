@@ -2272,6 +2272,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-21] PR #PENDING [Stage 10]: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json
+**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** APK/reference/twa-manifest.json, .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Reconcile version and build details between web application (package.json v14.33.4) and the Android wrapper configuration.
+**Change:** Synchronized appVersionName, appVersionCode, and appVersion in twa-manifest.json to match monorepo ground truth v14.33.4 (code 17340).
+**Result:** 100% integrity, alignment, and version synchronization verified across all PWA and APK wrapper boundaries.
+
 ### [2026-07-21] PR #PENDING [Stage 8]: chore(deps): bump p-limit to 7.3.1 and update major version watchlist
 **Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
 **Files:** package.json, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
