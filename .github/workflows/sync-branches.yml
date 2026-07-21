@@ -33,7 +33,7 @@ jobs:
       beta_nightly_diff: ${{ steps.check.outputs.beta_nightly_diff }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -100,7 +100,7 @@ jobs:
       merged: ${{ steps.merge.outputs.merged }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           ref: Beta
           fetch-depth: 0
@@ -128,7 +128,7 @@ jobs:
             pnpm-store-${{ runner.os }}-
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
 
@@ -215,7 +215,7 @@ jobs:
       apk_changed: ${{ steps.detect.outputs.apk_changed }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -298,7 +298,7 @@ jobs:
       merged: ${{ steps.merge.outputs.merged }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -338,7 +338,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           ref: Beta
           fetch-depth: 0

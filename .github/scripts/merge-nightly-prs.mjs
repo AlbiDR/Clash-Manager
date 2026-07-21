@@ -114,10 +114,15 @@ async function run() {
       const allowed = CONFIG.allowedAuthors.some(a =>
         login === a.toLowerCase() || login === `${a.toLowerCase()}[bot]`
       );
-      if (pr.base.ref === CONFIG.targetBranch && !allowed) {
+      const isTargetBranch = pr.base.ref === CONFIG.targetBranch;
+      const isNightlyBranch = pr.head.ref.startsWith("nightly/");
+      if (isTargetBranch && !allowed) {
         log(`Skipping PR #${pr.number} by ${login} — author not on allowlist.`, "warn");
       }
-      return allowed && pr.base.ref === CONFIG.targetBranch;
+      if (isTargetBranch && allowed && !isNightlyBranch) {
+        log(`Skipping PR #${pr.number} — head '${pr.head.ref}' is not a nightly/* branch.`, "warn");
+      }
+      return allowed && isTargetBranch && isNightlyBranch;
     })
     .sort((a, b) => {
       const diff = stageNumber(a.head.ref) - stageNumber(b.head.ref);
