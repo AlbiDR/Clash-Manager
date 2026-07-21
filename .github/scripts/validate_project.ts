@@ -367,6 +367,32 @@ function reconcileOtherFiles(groundTruth: string): string[] {
     }
   }
 
+  // Sync APK/reference/twa-manifest.json
+  const twaManifestPath = path.join(ROOT_DIR, 'APK', 'reference', 'twa-manifest.json');
+  if (fs.existsSync(twaManifestPath)) {
+    const twaParts = groundTruth.split('.').map(Number);
+    const twaCode = twaParts[0] * 1000 + twaParts[1] * 100 + twaParts[2] * 10;
+    const twaManifest = JSON.parse(fs.readFileSync(twaManifestPath, 'utf-8'));
+    let twaModified = false;
+
+    if (twaManifest.appVersionName !== groundTruth) {
+      issues.push(`[DRIFT] twa-manifest.json appVersionName mismatch: expected ${groundTruth}`);
+      if (IS_FIX_MODE) { twaManifest.appVersionName = groundTruth; twaModified = true; }
+    }
+    if (twaManifest.appVersion !== groundTruth) {
+      issues.push(`[DRIFT] twa-manifest.json appVersion mismatch: expected ${groundTruth}`);
+      if (IS_FIX_MODE) { twaManifest.appVersion = groundTruth; twaModified = true; }
+    }
+    if (twaManifest.appVersionCode !== twaCode) {
+      issues.push(`[DRIFT] twa-manifest.json appVersionCode mismatch: expected ${twaCode}`);
+      if (IS_FIX_MODE) { twaManifest.appVersionCode = twaCode; twaModified = true; }
+    }
+
+    if (twaModified) {
+      fs.writeFileSync(twaManifestPath, JSON.stringify(twaManifest, null, 2) + '\n');
+    }
+  }
+
   return issues;
 }
 
