@@ -2178,7 +2178,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
-<<<<<<< HEAD
+### [2026-07-21] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- audit pass
+**Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Maintain a clean, zero-touch deployable master baseline database schema with fully synchronized compliance.
+**Change:** Audited and verified all 11 incremental migrations are fully folded into baseline with 100% RLS compliance, search_path isolation, and formatting; updated audited date stamp in baseline header.
+**Result:** Safe, fully validated, and 100% compliant master baseline database schema with zero debt.
+
 ### [2026-07-20] PR #PENDING [Stage 10]: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/reference/twa-manifest.json, .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
@@ -2199,14 +2205,6 @@ LAST_AGED:   2026-07-20
 **Why:** Interface contracts and internal decision logs for shadow-scout and ghost-purge stages lacked comprehensive JSDoc/TSDoc specifications following recent hardening passes.
 **Change:** Injected comprehensive JSDoc blocks (including `@remarks`, `@param`, `@returns`, `@throws`, `@sideeffects`, and links to CleanStack ADR Section III, IV, and XI) and inline annotations.
 **Result:** 100% logic intent transparency and contract synchronization for the scouter backend stages substrate.
-=======
-### [2026-07-20] PR #PENDING [Stage 7]: chore(version): no version drift found in monorepo v14.33.0
-**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** A monorepo-wide audit was conducted to ensure version consistency and PNPM catalog adherence.
-**Change:** Performed an exhaustive consistency audit across root, PWA, and backend manifests, confirming synchronization at v14.33.0.
-**Result:** 100% version alignment and catalog protocol adherence verified across the entire monorepo.
->>>>>>> c7ed4ee1 (chore(version): no drift found)
 
 ### [2026-07-20] PR #PENDING [Stage 5]: docs(readme): reconcile scanner validation guards and laboratory target picker
 **Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
