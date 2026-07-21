@@ -27,9 +27,16 @@
   * Resolution Details: Resolved in today's run. Stage 12 executed cleanly and logged a CHANGED pass for TargetPicker.vue on 2026-07-18.
 
 * Missing-Run Events (Stage 1, Stage 3, Stage 4, Stage 9) on 2026-07-18:
-  * State: PENDING - monitor
+  * State: [RESOLVED - monitor] (July 20, 2026)
   * Symptom: No log entries for 2026-07-18 in 01-hardening-coverage.log, 03-baseline-consolidation-coverage.log, 04-optimization-coverage.log, or 09-refactor-proposals-coverage.log.
   * Root Cause: These stages were not triggered or execution did not complete during today's automation cycle, possibly skipped due to zero-diff preconditions or trigger scheduling.
+  * Recommended Fix: Monitor tomorrow's pipeline execution to ensure these stages recover and resume logging correctly.
+
+* Missing-Run / Failed Events on 2026-07-21:
+  * Stages: Stage 1, Stage 2, Stage 4, Stage 6, Stage 11.
+  * State: PENDING - monitor
+  * Symptom: No log entries for 2026-07-21 in 01-hardening-coverage.log, 02-verification-coverage.log, 04-optimization-coverage.log, 06-documentation-tsdoc-coverage.log, or 11-apk-optimization-coverage.log.
+  * Root Cause: These stages were not triggered, skipped, or failed to complete their execution cycles during today's automated pipeline sequence. Since they left no observable trace or PR in the history, the exact root cause cannot be determined from the logs.
   * Recommended Fix: Monitor tomorrow's pipeline execution to ensure these stages recover and resume logging correctly.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
@@ -45,22 +52,36 @@
   * Recommended Fix: Reconcile Stage 2 and Stage 4 prompts with the standard log format prefix instructions.
   * State: [RESOLVED] (Stage 2 successfully logged standard "CHANGED:" prefix on July 18, 2026. Stage 4 prompt instructions have been reconciled).
 
+* Concurrent Shared-File Conflicts Leading to Merge Failures (July 21, 2026):
+  * Symptom: Stage 5 (PR #1169) and Stage 9 (PR #1171) failed to auto-merge today due to hard merge conflicts (State: dirty).
+  * Root Cause: Multiple automated stages execute and open PRs in parallel or rapid succession. Each stage appends its run record to shared files such as `00-pr-history.md` and their respective coverage logs. When one stage's PR is merged, `Nightly` advances, causing all other outstanding PRs that modified the same lines in `00-pr-history.md` to instantly develop hard merge conflicts, aborting their auto-merge workflows.
+  * Recommended Fix: Update the CI/CD pipeline to serialize the execution of the 13 stages to run sequentially instead of concurrently (so each stage pulls the latest merged work from the previous stage before starting). Alternatively, update the auto-merge workflow to automatically rebase outstanding stage PRs on the latest `Nightly` HEAD and resolve conflicts programmatically before attempting auto-merge.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 10 (APK-Integrity):
-  * Consecutive No-Diff Days: 4 (July 14, 15, 16, 18)
-  * Analysis: Genuinely stable manifest and wrapper files with zero drift detected. This represents expected saturation by design; no corrective action required.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-20 and 2026-07-21).
+  * Analysis: The stage has been actively synchronized to v14.33.4.
 
 * Stage 8 (Dependency Audit):
-  * Consecutive No-Diff Days: 1 (July 18)
-  * Analysis: Codebase dependencies are fully aligned with the central catalogs. Intermediate watchlist updated appropriately. Expect normal active/clean oscillation.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-21).
+  * Analysis: Bumped p-limit to 7.3.1 today. Expect normal active/clean oscillation.
 
 * Stage 6 (TSDoc):
   * Consecutive No-Diff Days: 1 (July 18)
   * Analysis: High interface contract coverage achieved. Expect active/clean oscillation following refactoring phases.
 
-* Stage 1 (Harden), Stage 3 (Baseline), Stage 4 (Optimize), Stage 9 (Refactor):
-  * Consecutive No-Diff Days: 0 (Missing runs/skipped today, no reset on counter but tracked under Section 1).
+* Stage 12 (APK-UX):
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-21).
+  * Analysis: Active changes logged for HeadhunterView haptics today.
 
-* Stage 2 (Verify), Stage 5 (README), Stage 7 (Version), Stage 11 (APK-Opt), Stage 12 (APK-UX):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-18).
+* Stage 7 (Version Integrity):
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-21).
+  * Analysis: Reconciled version drift to match v14.33.4 today.
+
+* Stage 3 (Baseline Consolidation):
+  * Consecutive No-Diff Days: 0 (Audit-pass / date stamp update logged on 2026-07-21).
+  * Analysis: Verification check executed, only date stamp updated in migrations file.
+
+* Stage 1 (Harden), Stage 2 (Verify), Stage 4 (Optimize), Stage 5 (README), Stage 9 (Refactor), Stage 11 (APK-Opt):
+  * Consecutive No-Diff Days: 0 (Missing runs/skipped/merge failures today, tracked under Section 1).
