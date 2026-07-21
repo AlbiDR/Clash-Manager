@@ -2202,6 +2202,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-21] PR #PENDING [Stage 5]: docs(readme): reconcile NavigationDock brand icons and direct coordinate transform housing
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Brand-new RosterIcon was introduced to the bottom NavigationDock layout and custom icon layout properties were standardized, causing adjacent documentation to drift.
+**Change:** Updated the Shared UI README to document RosterIcon, LaboratoryIcon, and HeadhunterIcon as specialized branded SVG components, and clarified their direct coordinate transform housing design decision.
+**Result:** Architectural documentation is fully synchronized with implementation reality, ensuring visual design patterns and design decisions are transparent.
+
 ### [2026-07-21] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- audit pass
 **Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md
