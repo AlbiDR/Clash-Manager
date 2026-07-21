@@ -145,7 +145,6 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 
 ### Step 1: Threat Surface Scan
 - **Active Intelligence Check:** Before scanning, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I, II, and V) and look at the T1 active section of `.github/nightly-logs/00-pr-history.md` to see what files were modified in the last 7 days. You MUST exclude any files that have been modified or audited as CLEAN by Stage 1 in the past 7 days, or that are marked as saturated in Section III of the intelligence document, unless a critical vulnerability remains unaddressed.
-- **Substrate Audit (Best-Effort):** Attempt `get_advisors(type: "security")` via Supabase MCP. If the tool is unavailable or returns a connection error, skip it silently and proceed to the code-level scan immediately. Do not halt the stage on a tool availability failure.
 - **Priority List:**
   1. Unauthenticated privileged endpoints (Edge Function auth gap).
   2. In-memory state with no persistence strategy or ephemeral annotation.

@@ -98,9 +98,10 @@ echo "Pending migrations: ${MIGRATION_COUNT}"
 [ "${MIGRATION_COUNT}" -gt 0 ] && sed 's/^/  - /' /tmp/nightly/pending-migrations.txt || true
 
 # 8d. BASELINE TEST STATE
-# Run the suite once here. Result never causes setup to fail.
-echo "Running baseline test suite..."
-if pnpm test --run > /tmp/nightly/baseline-test-output.txt 2>&1; then
+# Capped at 5 minutes. A hanging test suite must not block the snapshot.
+# Result never causes setup to fail regardless of exit code or timeout.
+echo "Running baseline test suite (5m cap)..."
+if timeout 300 pnpm test --run > /tmp/nightly/baseline-test-output.txt 2>&1; then
   echo "PASS" > /tmp/nightly/baseline-test-state.txt
 else
   echo "FAIL" > /tmp/nightly/baseline-test-state.txt
@@ -109,8 +110,9 @@ echo "Baseline tests: $(cat /tmp/nightly/baseline-test-state.txt)"
 tail -5 /tmp/nightly/baseline-test-output.txt
 
 # 8e. DEPENDENCY VIOLATIONS BASELINE - pre-computed for Stage 9
-echo "Computing dependency violation baseline..."
-pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src \
+# Capped at 2 minutes. Failure or timeout writes an empty file; Stage 9 handles it.
+echo "Computing dependency violation baseline (2m cap)..."
+timeout 120 pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src \
   --output-type err-long > /tmp/nightly/dep-violations.txt 2>&1 || true
 DEP_LINES=$(wc -l < /tmp/nightly/dep-violations.txt | tr -d ' ')
 echo "Dependency violations file: ${DEP_LINES} lines"
