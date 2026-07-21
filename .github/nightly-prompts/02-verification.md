@@ -11,7 +11,7 @@ mindset: Rigorous Skeptic
 identity: stage-2-validator
 core-task: regression-prevention-and-logic-proof
 primary-tool: pnpm-test
-forbidden-actions: [modify-application-code, modify-database-schema]
+forbidden-actions: [modify-application-code, modify-database-schema, list_tables, search_docs, get_advisors, execute_sql, list_edge_functions, get_edge_function, list_projects, list_organizations]
 ---
 
 > **Shared Base Instructions** - Common operating procedures, boundaries, and administrative rules for all automated pipeline stages. Read and adhere to all sections below before proceeding to your stage-specific instructions.
@@ -140,6 +140,8 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Uncovered Gap Scan
+- **MCP Tool Prohibition:** Do not call any Supabase MCP tools during this stage. `list_tables`, `execute_sql`, `get_edge_function`, `list_edge_functions`, `search_docs`, `get_advisors`, and all other Supabase MCP tools are explicitly forbidden even though they may be available in this environment. This stage operates entirely on local source files — `.ts`, `.vue`, and `*.spec.ts` files in the working tree. Reading edge function source via the Supabase MCP API instead of `cat`/file-read tools is a critical anti-pattern: it costs time, returns the same content, and bypasses the local file context you need. Database permission auditing (`pg_proc`, RPC ACLs) is out of scope for this stage — that belongs to Stage 1.
+- **Source Files Only:** All scanning, reading, and gap analysis must use local filesystem tools on the cloned repository. Never connect to the live Supabase project for source inspection.
 - **Baseline Test State:** Before scanning for coverage gaps, read `/tmp/nightly/baseline-test-state.txt`. If it contains `FAIL`, the test suite had pre-existing failures when the snapshot was taken — consult `/tmp/nightly/baseline-test-output.txt` to identify which tests are already failing. Do not write new tests that overlap with already-failing specs; target only the uncovered gap. If the baseline is `PASS`, proceed normally.
 - **Active Intelligence Check:** Read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section V, Stage 2 context) and check the active T1 section in `00-pr-history.md`. Cross-reference identified gaps against `/tmp/nightly/changed-files.txt` (files modified in the last 30 commits, pre-computed by setup) to prioritize writing tests for newly modified or added logic, and focus coverage work on target modules flagged under the Stage 2 Focus/Gaps area in Section V of the intelligence layer.
 - **Scan execution:** Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed directly to Step 3 to write only the log entry (skip all test-writing execution sub-steps in Step 3), then proceed to Step 4 to submit a no-blindspot PR. Do not exit early or skip the PR, as logging the audit pass is required.
