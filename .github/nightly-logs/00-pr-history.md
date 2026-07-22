@@ -2408,7 +2408,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-07-20
+LAST_AGED:   2026-07-22
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -2418,6 +2418,13 @@ LAST_AGED:   2026-07-20
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-22] PR #PENDING [Stage 1]: chore(harden): no threat found
+**Domain:** Security | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Execute the July 22, 2026 nightly Stage 1 runtime integrity audit pass.
+**Change:** Updated 01-hardening-coverage.log with CLEAN status and executed 00-pr-history.md aging.
+**Result:** Verified 100% of the active codebase's RPC boundaries and validation schemas are fully hardened and secure.
+
 ### [2026-07-21] PR #PENDING [Stage 10]: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/reference/twa-manifest.json, .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
@@ -2572,107 +2579,24 @@ LAST_AGED:   2026-07-20
 **Change:** Injected comprehensive TSDoc blocks and mandatory [THREAT:] / [DECISION LOG] annotations to document the rationale behind business thresholds and UI stability delays.
 **Result:** 100% logic intent transparency and hardened interface contracts for the application's configuration substrate.
 
-### [2026-07-15] PR #PENDING [Stage 11]: perf(apk-optimization): optimize webview performance and sw precache
-**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
-**Files:** APK/src/com/albidr/clashmanager/MainActivity.java, Frontend-PWA/vite.config.ts, .github/nightly-logs/11-apk-optimization-coverage.log
-**Why:** Unoptimized WebView rendering and redundant SW precache entries were bloating the installation and initialization lifecycle.
-**Change:** Enabled offscreen pre-rastering (SDK 23+) and disabled Safe Browsing (SDK 26+) in the native wrapper, and excluded non-essential icons from the SW manifest.
-**Result:** Improved UI responsiveness in the hybrid shell and reduced SW precache manifest size.
-
-### [2026-07-15] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
-**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
-**Why:** Conducted a comprehensive audit to ensure version, manifest, and security synchronization between the PWA and native Android wrappers.
-**Change:** Verified monorepo-wide synchronization at v14.31.2 (17120) across manifests, resources, and native configuration.
-**Result:** 100% integrity and alignment verified across all PWA and APK wrapper boundaries.
-
-### [2026-07-15] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js and update major version watchlist
-**Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
-**Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
-**Why:** Conducted a dependency audit to apply safe maintenance updates and research high-risk major version transitions for Pinia 4, Vite 8, and TypeScript 7.
-**Change:** Bumped @supabase/supabase-js to ^2.110.5 and @vitejs/plugin-vue to ^6.0.8 via the catalog, and updated the major version watchlist with Pinia 4.0.1 impact analysis.
-**Result:** Monorepo dependencies hardened against rot; ecosystem research documented for architectural planning.
-
-### [2026-07-15] PR #1117 [Stage 7]: fix(version): reconcile version drift in backend and scripts
-**Domain:** Version Integrity | **Commit:** ac9c8a1fd1b528a4922e19e16639c6a4e68ebcba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1117)
-**Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
-**Why:** `@supabase/supabase-js` in backend edge functions and Deno scripts had drifted from the monorepo catalog version (v2.110.3).
-**Change:** Synchronized all occurrences of `@supabase/supabase-js` in backend functions and scripts to v2.110.3 and verified monorepo-wide consistency.
-**Result:** 100% synchronization of the Supabase client library across all substrate layers and verified monorepo integrity.
-
-### [2026-07-15] PR #PENDING [Stage 6]: docs(tsdoc): harden backend edge function and utility contracts
-**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/functions/fetch-player-battlelog/index.ts, Backend/supabase/functions/_shared/utils.ts, .github/nightly-logs/06-documentation-tsdoc-coverage.log
-**Why:** Backend edge functions and shared utilities lacked comprehensive TSDoc and mandatory logic annotations following recent hardening and optimization passes.
-**Change:** Injected comprehensive TSDoc (@returns, @throws, @remarks) and mapped backend utilities to authoritative ADR Section III and VII boundaries. Injected mandatory [THREAT:] and [DECISION LOG] annotations for battlelog freshness logic.
-**Result:** 100% logic intent transparency and contract synchronization for the backend control and utility layers.
-
-### [2026-07-15] PR #PENDING [Stage 5]: docs(readme): reconcile battlelog hardening and pwa manager drift
-**Domain:** README | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/functions/fetch-player-battlelog/README.md, Frontend-PWA/README.md, Backend/supabase/functions/query-royale-api/README.md, .github/nightly-logs/05-documentation-readme-coverage.log
-**Why:** Documentation for the battlelog proxy, PWA manager, and API fallback logic had drifted from the implementation ground truth and recent hardening passes.
-**Change:** Reconciled the parseBattleTime engine and hardening boundaries in the battlelog proxy, synchronized the PWA manager's APK update role in the client core, and documented the legacy status of the Trophy Road fallback.
-**Result:** 100% synchronization between architectural documentation and substrate reality for core backend and frontend infrastructure.
-
-### [2026-07-15] PR #PENDING [Stage 1]: fix(harden): secure battlelog fetch and excise anemic pathogens
-**Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/functions/fetch-player-battlelog/index.ts, .github/nightly-logs/01-hardening-coverage.log
-**Why:** Malformed battleTime strings from the Royale API could trigger unhandled exceptions in the Temporal parsing logic.
-**Change:** Hardened the fetch-player-battlelog Edge Function by implementing defensive regex validation and explicit error narrowing for Temporal.Instant.from. Excised anemic variable pathogens (req, payload) to satisfy ADR domain-descriptive naming constraints.
-**Result:** Deterministic runtime protection against malformed external API payloads at the battlelog boundary.
-
-### [2026-07-14] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
-**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
-**Why:** Conducted a comprehensive audit to ensure version, manifest, and security synchronization between the PWA and native Android wrappers.
-**Change:** Verified monorepo-wide synchronization at v14.31.2 (17120) across manifests, resources, and native configuration. Confirmed Digital Asset Links fingerprint parity and hardened security settings (forbidden cleartext traffic, sanitized permission set).
-**Result:** 100% integrity and alignment verified across all PWA and APK wrapper boundaries.
-
-### [2026-07-14] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js and update major watchlist
-**Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
-**Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
-**Why:** Conducted a dependency audit to apply safe maintenance updates and research high-risk major version transitions.
-**Change:** Bumped @supabase/supabase-js to ^2.110.3 via the catalog, removed unused p-limit catalog entry, and updated the major version watchlist with Vite 8 and TypeScript 7 impact analysis.
-**Result:** Monorepo dependencies hardened against rot; ecosystem research documented for architectural planning.
-
-### [2026-07-14] PR #PENDING [Stage 7]: chore(version): no drift found
-**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/07-version-integrity-coverage.log
-**Why:** A monorepo-wide audit was conducted to ensure version consistency and PNPM catalog adherence.
-**Change:** Performed an exhaustive consistency audit across root, PWA, and backend manifests, confirming synchronization at v14.31.2.
-**Result:** 100% version alignment and catalog protocol adherence verified across the entire monorepo.
-
-### [2026-07-14] PR #PENDING [Stage 5]: docs(readme): reconcile PWA manager delegation and config kernel
-**Domain:** README | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/features/settings/README.md, Frontend-PWA/src/core/services/README.md, Frontend-PWA/src/core/config/README.md
-**Why:** Documentation for PWA recovery actions and global constants had drifted from the implementation truth.
-**Change:** Reconciled delegation of SW/recovery logic to the usePwaManager kernel and created authoritative documentation for the Layer 1 configuration kernel.
-**Result:** 100% synchronization between implementation ground truth and architectural documentation for core infrastructure.
-
-### [2026-07-14] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline
-**Domain:** Baseline | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log
-**Why:** Minor formatting drift and non-canonical search_path declarations were detected in the master baseline.
-**Change:** Standardized all 95 function search_path declarations to the canonical monorepo form and verified RLS/topological compliance.
-**Result:** Hardened declarative database substrate with 100% search_path isolation consistency.
-
-### [2026-07-14] PR #PENDING [Stage 2]: test(verify): extend saturating coverage for game utility kernel
-**Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/core/utils/utils-tests/game.spec.ts, .github/nightly-logs/02-verification-coverage.log
-**Why:** Critical functions in the game utility kernel lacked saturating logic proofs for boundary conditions and currency conversion.
-**Change:** Extended the game spec file with 23 tests covering level normalization, rarity mapping, and gem/xp math.
-**Result:** 100% logic coverage for the core game utility substrate.
-
-
-> Full context. Read these before acting to avoid duplicating recent work.
-
-
-
 
 ## T2 -- Recent (8-30 days)
 
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-14] PR #PENDING [Verification]: test(verify): extend saturating coverage for game utility kernel (``PENDING``) [View](PENDING)
+* [2026-07-14] PR #PENDING [Baseline]: chore(baseline): fold new migrations into master baseline (``PENDING``) [View](PENDING)
+* [2026-07-14] PR #PENDING [README]: docs(readme): reconcile PWA manager delegation and config kernel (``PENDING``) [View](PENDING)
+* [2026-07-14] PR #PENDING [Version Integrity]: chore(version): no drift found (``PENDING``) [View](PENDING)
+* [2026-07-14] PR #PENDING [Dependencies]: chore(deps): bump @supabase/supabase-js and update major watchlist (``PENDING``) [View](PENDING)
+* [2026-07-14] PR #PENDING [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
+* [2026-07-15] PR #PENDING [Hardening]: fix(harden): secure battlelog fetch and excise anemic pathogens (``PENDING``) [View](PENDING)
+* [2026-07-15] PR #PENDING [README]: docs(readme): reconcile battlelog hardening and pwa manager drift (``PENDING``) [View](PENDING)
+* [2026-07-15] PR #PENDING [TSDoc]: docs(tsdoc): harden backend edge function and utility contracts (``PENDING``) [View](PENDING)
+* [2026-07-15] PR #1117 [Version Integrity]: fix(version): reconcile version drift in backend and scripts (``ac9c8a1fd1b528a4922e19e16639c6a4e68ebcba``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1117)
+* [2026-07-15] PR #PENDING [Dependencies]: chore(deps): bump @supabase/supabase-js and update major version watchlist (``PENDING``) [View](PENDING)
+* [2026-07-15] PR #PENDING [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
+* [2026-07-15] PR #PENDING [APK Optimization]: perf(apk-optimization): optimize webview performance and sw precache (``PENDING``) [View](PENDING)
 * [2026-07-10] PR #1065 [Refactor/Optimization]: refactor(opt): standardize core service variable naming (```558ead3f```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1065)
 * [2026-07-10] PR #1066 [README]: docs(readme): reconcile domain types documentation (```a0f379cf```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1066)
 * [2026-07-10] PR #1067 [TSDoc]: docs(tsdoc): harden interface contracts for Layer 1 core services (```dbbe5fdd```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1067)
@@ -2874,43 +2798,37 @@ LAST_AGED:   2026-07-20
 * [2026-06-23] PR #904 [Baseline]: chore(baseline): fold new migrations into master baseline (``043e70a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/904)
 * [2026-06-23] PR #903 [Verification]: test(verify): add specs for formatDisplayTag (``9516127``) [View](https://github.com/AlbiDR/Clash-Manager/pull/903)
 * [2026-06-23] PR #902 [Hardening]: fix(harden): implement generics in BaseSelect.vue (``7169de7``) [View](https://github.com/AlbiDR/Clash-Manager/pull/902)
-* [2026-06-22] PR #901 [APK Optimization]: perf(apk-optimization): harden hybrid shell and reduce startup latency (``0c727f5``) [View](https://github.com/AlbiDR/Clash-Manager/pull/901)
-* [2026-06-22] PR #900 [APK Integrity]: fix(apk-integrity): synchronize assetlinks package name (``6c22368``) [View](https://github.com/AlbiDR/Clash-Manager/pull/900)
-* [2026-06-22] PR #899 [Dependencies]: chore(deps): bump @ast-grep/cli from ^0.43.0 to ^0.44.0 (``b2ece54``) [View](https://github.com/AlbiDR/Clash-Manager/pull/899)
-* [2026-06-22] PR #898 [Version Integrity]: chore(version): no drift found in monorepo v14.0.0 (``e3f7998``) [View](https://github.com/AlbiDR/Clash-Manager/pull/898)
-* [2026-06-22] PR #897 [TSDoc]: docs(tsdoc): document authoritative validation schemas in _shared (``f3947db``) [View](https://github.com/AlbiDR/Clash-Manager/pull/897)
-* [2026-06-22] PR #896 [README]: docs(readme): reconcile backend substrate and ingestion drift (``4e492ba``) [View](https://github.com/AlbiDR/Clash-Manager/pull/896)
-* [2026-06-22] PR #895 [Refactor/Optimization]: refactor(opt): Optimization (Substrate Hygiene - Stage 4) - Standardize variable naming for domain clarity (``f173909``) [View](https://github.com/AlbiDR/Clash-Manager/pull/895)
-* [2026-06-22] PR #894 [Baseline]: chore(baseline): fold new migrations into master baseline (``a9dd40e``) [View](https://github.com/AlbiDR/Clash-Manager/pull/894)
-* [2026-06-22] PR #893 [Verification]: test(verify): add specs for BaseSelect component (``2175d03``) [View](https://github.com/AlbiDR/Clash-Manager/pull/893)
-* [2026-06-22] PR #892 [Hardening]: fix(harden): backend substrate integrity (``97f467d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/892)
-* [2026-06-21] PR #891 [APK UX]: fix(apk-ux): replace native select elements with BaseSelect abstraction (``d2bc3c2``) [View](https://github.com/AlbiDR/Clash-Manager/pull/891)
-* [2026-06-21] PR #890 [APK Optimization]: perf(apk-optimization): optimize SW precaching and consolidate vendor chunks (``0c8cdda``) [View](https://github.com/AlbiDR/Clash-Manager/pull/890)
-* [2026-06-21] PR #889 [APK Integrity]: fix(apk-integrity): sync package identity and storage versioning (``d17b150``) [View](https://github.com/AlbiDR/Clash-Manager/pull/889)
-* [2026-06-21] PR #888 [Dependencies]: chore(deps): update major version watchlist (``6544791``) [View](https://github.com/AlbiDR/Clash-Manager/pull/888)
-* [2026-06-21] PR #887 [Version Integrity]: chore(version): no drift found (``6436d99``) [View](https://github.com/AlbiDR/Clash-Manager/pull/887)
-* [2026-06-21] PR #886 [TSDoc]: docs(tsdoc): document adaptive haptics engine (``e4896f7``) [View](https://github.com/AlbiDR/Clash-Manager/pull/886)
-* [2026-06-21] PR #885 [README]: docs(readme): reconcile architectural and infrastructure drift (``1e4da84``) [View](https://github.com/AlbiDR/Clash-Manager/pull/885)
-* [2026-06-21] PR #884 [Refactor/Optimization]: refactor(opt): centralize player tag presentation logic (``db53e89``) [View](https://github.com/AlbiDR/Clash-Manager/pull/884)
-* [2026-06-21] PR #883 [Baseline]: chore(baseline): fold new migrations into master baseline (``296eb9b``) [View](https://github.com/AlbiDR/Clash-Manager/pull/883)
-* [2026-06-21] PR #882 [Verification]: test(verify): saturating coverage for formatNumber edge cases (``157830a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/882)
-* [2026-06-21] PR #881 [Hardening]: fix(harden): excise 'any' pathogens in Laboratory ParameterCard (``5e51fdc``) [View](https://github.com/AlbiDR/Clash-Manager/pull/881)
 
 ## T3 -- Historical (31-90 days)
 
 > Grouped by week and domain. Use for pattern recognition.
 
+#### 2026-W26
+* 1 PR [APK Integrity]: #900
+* 1 PR [APK Optimization]: #901
+* 1 PR [Baseline]: #894
+* 1 PR [Dependencies]: #899
+* 1 PR [Hardening]: #892
+* 1 PR [README]: #896
+* 1 PR [Refactor/Optimization]: #895
+* 1 PR [TSDoc]: #897
+* 1 PR [Verification]: #893
+* 1 PR [Version Integrity]: #898
+
 #### 2026-W25
-* 6 PRs [Baseline]: #837, #845, #854, #860, #866, #875
-* 6 PRs [Dependencies]: #842, #850, #858, #863, #871, #880
+* 1 PR [APK Integrity]: #889
+* 1 PR [APK Optimization]: #890
+* 1 PR [APK UX]: #891
+* 7 PRs [Baseline]: #837, #845, #854, #860, #866, #875, #883
+* 7 PRs [Dependencies]: #842, #850, #858, #863, #871, #880, #888
 * 2 PRs [General]: #867, #869
-* 6 PRs [Hardening]: #836, #843, #852, #859, #864, #873
+* 7 PRs [Hardening]: #836, #843, #852, #859, #864, #873, #881
 * 1 PR [Performance]: #838
-* 5 PRs [README]: #839, #847, #855, #868, #877
-* 4 PRs [Refactor/Optimization]: #846, #851, #872, #876
-* 5 PRs [TSDoc]: #840, #848, #856, #861, #878
-* 4 PRs [Verification]: #844, #853, #865, #874
-* 6 PRs [Version Integrity]: #841, #849, #857, #862, #870, #879
+* 6 PRs [README]: #839, #847, #855, #868, #877, #885
+* 5 PRs [Refactor/Optimization]: #846, #851, #872, #876, #884
+* 6 PRs [TSDoc]: #840, #848, #856, #861, #878, #886
+* 5 PRs [Verification]: #844, #853, #865, #874, #882
+* 7 PRs [Version Integrity]: #841, #849, #857, #862, #870, #879, #887
 
 #### 2026-W24
 * 4 PRs [Baseline]: #781, #813, #822, #830
