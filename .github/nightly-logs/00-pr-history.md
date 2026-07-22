@@ -1,3 +1,10 @@
+### [2026-07-22] PR #PENDING [Stage 5]: docs(readme): reconcile custom brand icons and dock layout constraints
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Custom brand icon components and specific visual boundary classes were added to the Navigation Dock, causing adjacent shared UI documentation to drift.
+**Change:** Reconciled Shared UI README to document custom brand components (RosterIcon, LaboratoryIcon, HeadhunterIcon, ClashRoyaleIcon) and their explicit 22px layout constraints.
+**Result:** 100% synchronization between substrate layout reality and system-wide architectural intent.
+
 ### [2026-07-22] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- audit pass
 **Domain:** Database | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md

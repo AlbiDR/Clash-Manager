@@ -62,6 +62,13 @@ Standardized molecules for rendering player-specific metrics and metadata with i
 - **LongevityBadge.vue**: Displays discovery or activity duration (e.g., '2h 15m').
 - **TagBadge.vue**: Standardized component for displaying player tags with consistent truncation (#ABC12).
 
+### Custom Brand Icons (Navigation Elements)
+Dedicated vector-based brand components compiled with precise native viewBox coordinates and transform matrices for original SVG sizes and proportions.
+- **RosterIcon.vue**: Precise reference coordinates and coordinate space (0 0 99 89).
+- **LaboratoryIcon.vue**: Native coordinates and dimensions (0 0 23 24) optimized for the laboratory flask shape.
+- **HeadhunterIcon.vue**: Original high-density scouter-targeting vectors (0 0 512 512).
+- **ClashRoyaleIcon.vue**: Authoritative Clash Royale brand emblem compiled to a dedicated GPU-promoted vector layer to eliminate layout/hover jitter.
+
 ### Interactive Molecules
 Components that facilitate user interaction and state management.
 - **BaseSelect.vue**: A clinical, keyboard-accessible replacement for native HTML `<select>` elements, ensuring visual parity and interaction stability in Android WebViews. Supports generic types to prevent state corruption.
@@ -71,7 +78,7 @@ Components that facilitate user interaction and state management.
 - **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable. Modernized with a 56px height, 48px mobile touch target footprint compliance on primary actions and counts, and the integrated `v-tactile` directive for declarative brokered haptic feedback.
 - **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
 - **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers. Orchestrates `NavigationDock.vue` and `SelectionFab.vue`.
-- **NavigationDock.vue**: Internal UI component for rendering the primary app navigation items.
+- **NavigationDock.vue**: Internal UI component for rendering the primary app navigation items. Conditionally injects `RosterIcon.vue`, `LaboratoryIcon.vue`, and `HeadhunterIcon.vue` components to enforce brand-accurate proportions, utilizing the `.dock-icon-custom` class for an explicit 22px boundary layout to prevent icon collapse.
 - **SelectionFab.vue**: Internal UI component for rendering the selection-mode actions and FAB.
 - **HeaderInfoOverlay.vue**: Accessible detail layer for explaining view-specific metrics or statuses.
 
