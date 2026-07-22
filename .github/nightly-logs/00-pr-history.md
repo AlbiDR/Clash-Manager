@@ -2448,6 +2448,13 @@ LAST_AGED:   2026-07-22
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-22] PR #PENDING [Stage 4]: perf(opt): standardize loop index and callback variables in laboratory parameters
+**Domain:** Refactor/Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue, .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Standardize generic loop index and callbacks to eliminate anemic pathogens (`i`, `val`) and ensure naming compliance with CleanStack ADR.
+**Change:** Renamed `i` to `levelIndex` and `val` to `strategyValue`/`levelValue` in ParameterCard.vue; executed daily substrate database view hygiene re-verification audit.
+**Result:** Improved domain clarity and 100% monorepo-wide version integrity verified via project validation and full test gate.
+
 ### [2026-07-22] PR #PENDING [Stage 1]: chore(harden): no threat found
 **Domain:** Security | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md

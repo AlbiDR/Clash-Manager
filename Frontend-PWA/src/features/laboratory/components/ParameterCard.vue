@@ -38,7 +38,7 @@ const toggleGemSpending = () => {
 };
 
 const levelOptions = computed(() => {
-  return Array.from({ length: KING_LEVEL_MAX }, (_, i) => i + 1)
+  return Array.from({ length: KING_LEVEL_MAX }, (_, levelIndex) => levelIndex + 1)
     .filter(level => {
       // Current and future levels are always shown
       if (level >= props.currentLevel) return true;
@@ -76,7 +76,7 @@ const levelOptions = computed(() => {
             { label: 'Level Projection', value: 'Level Projection' },
             { label: 'Resource Efficiency', value: 'Resource Efficiency' }
           ]"
-          @update:model-value="(val) => emit('update', { strategy: val })"
+          @update:model-value="(strategyValue) => emit('update', { strategy: strategyValue })"
         />
         <div class="strategy-desc">
           <template v-if="settings.strategy === 'Level Projection'">
@@ -96,7 +96,7 @@ const levelOptions = computed(() => {
         <BaseSelect
           :model-value="settings.targetLevel || KING_LEVEL_MAX"
           :options="levelOptions"
-          @update:model-value="(val) => emit('update', { targetLevel: val })"
+          @update:model-value="(levelValue) => emit('update', { targetLevel: levelValue })"
         />
         
         <div v-if="operation && settings.targetLevel && operation.projectedKingLevel < settings.targetLevel" class="limit-warning">
