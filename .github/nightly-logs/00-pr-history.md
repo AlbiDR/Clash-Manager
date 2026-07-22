@@ -2707,6 +2707,13 @@ LAST_AGED:   2026-07-22
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-22] PR #PENDING [Stage 12]: fix(apk-ux): modernize BaseSelect haptic interaction and remove legacy useHaptics
+**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/BaseSelect.vue
+**Why:** The BaseSelect component used manual imperative haptic triggers which bypassed the standard declarative v-tactile interaction model.
+**Change:** Refactored the component to utilize the centralized v-tactile directive on the select trigger and option items and eliminated imperative haptic hook dependencies.
+**Result:** Unified haptic feedback behavior across all shared selectors, verified cleanly through unit tests (1409 passed) and depcruise validation.
+
 ### [2026-07-22] PR #PENDING [Stage 10]: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** APK/reference/twa-manifest.json, .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
