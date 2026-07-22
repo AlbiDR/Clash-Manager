@@ -1,136 +1,106 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Clash Manager - Backend (Supabase Binary Stack)
+# Clash Manager Backend
 
-This directory serves as the **Single Source of Truth** for the `Clash-Manager` backend infrastructure, leveraging a **Binary Unitary Architecture** to consolidate ingestion and scoring logic into a clinical, high-performance substrate.
+[![Backend](https://img.shields.io/badge/Backend-v14.33.10-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
+[![Deno](https://img.shields.io/badge/Edge-Deno-000000?style=flat-square&logo=deno&logoColor=white)](supabase/functions)
+[![Postgres 17](https://img.shields.io/badge/Postgres-17-4169E1?style=flat-square&logo=postgresql&logoColor=white)](supabase/migrations)
 
----
+The Supabase project behind Clash Manager. It pulls clan, war, and battle data from the Clash Royale API, stores a permanent history, and computes the performance and potential scores the app reads.
 
-## I. Architectural Vision
-The backend has transitioned from a distributed model (GAS/Node.js) into a streamlined **Supabase-native** environment.
-- **Structural Coherence**: Database organization mirrors the **CleanStack ADR** (L0-L5) for perfect technical purity.
-- **Edge-Native Ingestion**: Deno-powered Edge Functions (Supabase Functions) replace legacy workers.
-- **Realtime Orchestration**: Native Postgres broadcasting for instant PWA dashboard updates.
+> New here? The [root README](../README.md) explains what the product does and how the scores work. This document is the backend's technical map.
 
 ---
 
-## II. Directory Structure
-| Path | Role | Description |
+## What it does
+
+- **Ingests** clan profiles, rosters, river-race standings, war history, and per-player battle logs from the Clash Royale API on a schedule.
+- **Stores history.** Raw payloads land in one schema, get shredded into a normalized model, and are kept as a rolling window (battles) or a permanent ledger (wars).
+- **Scores** members (performance) and recruits (potential) with Postgres views computed on read, so scores always reflect the latest data.
+- **Discovers recruits** by continuously scanning tournaments and leaderboards for strong clanless players.
+- **Serves** the PWA through row-level-secured views and a small set of RPCs, and maintains itself with scheduled pruning and health checks.
+
+---
+
+## Edge Functions
+
+Five Deno functions live in [`supabase/functions/`](supabase/functions). All share the request handler, key-rotation, and secret-loading code in [`_shared/`](supabase/functions/_shared/README.md), authenticate service-to-service calls with an internal bearer token, and route every Clash Royale API request through a rotating pool of keys (the "Key Farm") behind the RoyaleAPI static-IP proxy.
+
+| Function | Trigger | Purpose |
 | :--- | :--- | :--- |
-| `supabase/functions/` | **Edge Layer** | Deno-native business logic and ingestion gates. |
-| `supabase/migrations/` | **Substrate Layer** | Relational DNA, triggers, and clinical schema definitions. |
-| `supabase/config.toml` | **Orchestration** | Supabase project configuration and identity mapping. |
+| [`ingest-royale-data`](supabase/functions/ingest-royale-data/README.md) | Scheduled + manual | The main sync pipeline: discover recruits, sync the clan and roster, and fetch battle logs. |
+| [`headhunter-scanner`](supabase/functions/headhunter-scanner/README.md) | Scheduled (5-min guard) + manual | Discovers, profiles, and refreshes recruit candidates. |
+| [`query-royale-api`](supabase/functions/query-royale-api/README.md) | On demand from the PWA | Harvests clanless players from the Path of Legends leaderboard without persisting them. |
+| [`fetch-player-battlelog`](supabase/functions/fetch-player-battlelog/README.md) | On demand | Fetches one player's freshest battle log by querying every key in parallel. |
+| [`sync-player-cards`](supabase/functions/sync-player-cards/README.md) | On demand from the Laboratory | Syncs a player's card collection, normalized to a 1-16 level scale. |
 
 ---
 
-## III. Database Substrate (CleanStack Mapping)
-The project employs a strictly segmented schema strategy to maintain domain isolation:
+## Data model
 
-### 1. `substrate` (L0 - Raw Data)
-- **Role**: Ingestion gatekeeper and orchestration state.
-- **Logic**: Receives volatile raw state from Edge Functions. No processing logic.
-- **Core Models**:
- - `substrate.headhunter_epoch_state`: Singleton state table for managing the Headhunter Top-50 Safety Epoch Loop.
-- **Privacy**: Service-role internal only; strictly isolated from public access.
+Four schemas are exposed through PostgREST (`public`, `substrate`, `drivers`, `features`). Data flows strictly one way through them.
 
-### 2. `drivers` (L2 - Domain Storage)
-- **Role**: Persistence-ignorant domain objects and historical archives.
-- **Core Models**:
- - `drivers.members`: The single authoritative source for active player telemetry.
- - `drivers.war_history`: **Infinite Career Ledger** tracking every week since first sync (Unlimited History).
- - `drivers.player_battles`: **100-Sample Rolling Window** per resident for deep performance scoring. Includes server-side `riverRaceDuel` and crown metrics derived at ingestion.
- - `drivers.war_activity`: Daily deck usage and participation logs.
+| Schema | Role | Holds |
+| :--- | :--- | :--- |
+| `substrate` | Raw landing and orchestration | Raw JSON payloads (short retention), system config, telemetry, pipeline heartbeats, and the recruit-scan epoch state. Service-role only. |
+| `drivers` | Normalized domain | Players and members, war activity and permanent war history, the 100-battle rolling window per player, daily snapshots, the recruit queue and blacklist, veteran heritage, and Clan Voyage data. |
+| `features` | Presentation | The scoring and roster views, headhunter view, Voyage summaries, war analytics, and the player card snapshots for the Laboratory. This is what the app reads. |
+| `public` | RPC bridge | The thin functions the Edge Functions and PWA actually call (raw ingest, player/recruit sync, telemetry, and PWA data reads). |
 
-### 3. `features` (L3 - Business Presentation)
-- **Role**: Materialized views and API-ready logic for frontend consumption.
-- **Interfaces**:
- - `features.roster_view`: Deeply sorted roster with dynamic tenure labeling.
- - `features.voyage_summary`: SSOT for active Clan Voyage status and progress.
- - `features.voyage_contributions`: High-resolution ledger of individual voyage performance.
- - `features.war_activity_view`: Realtime clan activity and presence tracking.
- - `features.governance_report`: Consolidated system audit trail and pipeline health logs.
+The pipeline moves data in four steps:
+
+1. **Fetch.** An Edge Function calls the Clash Royale API and validates every payload against a Valibot schema.
+2. **Land.** The raw JSON is inserted into a `substrate.raw_*` table.
+3. **Shred.** An `AFTER INSERT` trigger decomposes the JSON and upserts it into the normalized `drivers` tables.
+4. **Project.** The `features` views compute scores and aggregates on read; the app queries those views and a few RPCs.
+
+The scoring formulas (RPeS/PeS for members, RPoS/PoS for recruits) are summarized in the [root README](../README.md#the-scoring-engine). RPoS is computed in TypeScript (`_shared/utils.ts`); everything else is computed in SQL views in the master migration.
 
 ---
 
-## IV. The Clinical Ingestion Pipeline
-Ingestion is performed via a **Hexa-Engine Edge Architecture**, supported by automated database shredders and the authoritative maintenance orchestrator.
+## Security
 
-1. **Gatekeeper (`ingest-royale-data`)**: The primary Deno Edge Function responsible for the clinical synchronization protocol. Features strict Valibot-enforced structural validation and a clinical Hexa-Stage synchronization protocol. While implemented as a unified pipeline for efficiency, it conceptually covers 6 stages:
- - **S1 (Discovery)**: Harvests new recruits from high-fidelity tournament anchors.
- - **S2 (Clan Profile)**: Atomic synchronization of clan-level telemetry (trophies, location, requirements).
- - **S3 (Roster Sync)**: Full-pool synchronization of active member telemetry and joins/leaves.
- - **S4 (River Race)**: Extraction of current standings and task completion. Performs server-side `riverRaceDuel` and crown derivation for the current week.
- - **S5 (War History)**: Infinite Career Ledger synchronization (most recent 12 war weeks).
- - **S6 (Deep Depth)**: Extracts the rolling battle-log window (capped by the Royale API at ~25 battles) for every resident. Implements server-side crown derivation for historical battle logs.
-2. **The Headhunter (`headhunter-scanner`)**: A highly concurrent discovery engine featuring a 5-stage pipeline (S0: Ghost Purge, S1: Shadow Scout, S2: Tournament Discovery, S3: Profiler, S4: Rescan). Relies on the Key Farm to handle concurrent batching without throttling. Implements the **Safety Epoch Loop** via `substrate.headhunter_epoch_state` to prevent redundant Top-50 leaderboard scans.
-3. **Royale API Proxy (`query-royale-api`)**: A secure L5 Control Layer proxy for transient leaderboard harvesting. Features a dynamic country rotation strategy for International clans to ensure diverse recruit discovery without polluting the database substrate.
-4. **Battlelog Proxy (`fetch-player-battlelog`)**: A specialized L5 Control Layer proxy for fetching live player battle logs. Features a parallel fan-out strategy across the Key Farm to maximize data freshness across distributed proxy nodes.
-5. **User Proxy (`sync-player-cards`)**: L5 Control Layer responsible for authenticated player profile and card synchronization. Utilizes inferred Valibot schemas for rarity-relative normalization and backend persistence, enforcing a zero-trust boundary for client-supplied snapshots.
-6. **Voyage Orchestrator (`initialize_voyage`)**: SQL-based L5 Control Layer (RPC) responsible for activating and configuring Clan Voyage events.
-7. **Shredder (`drivers` layer)**: Automated SQL triggers and functions in the database substrate that decompose raw JSON payloads into relational telemetry.
-8. **Nightly Orchestrator (`execute_nightly_maintenance`)**: Authoritative SQL system janitor (pg_cron) responsible for pruning volatile state and maintaining substrate health.
+- **Row-level security is on for every table**, deny-by-default. The `anon` role can only `SELECT` from `features` views.
+- **Zero-trust ingress.** Every inbound payload passes a Valibot schema before it touches the database.
+- **Secrets** are loaded from Supabase Vault at function start. Service-to-service calls require the internal bearer token; tag columns are `CHECK`-constrained to valid Clash Royale tag characters.
 
 ---
 
-## V. Development & Deployment
-The backend lifecycle is governed by the **Supabase CLI** and **GitHub Actions**.
+## Development
 
-### Deployment Sequence
-The `deploy-supabase.yml` workflow automates the following sequence:
-1. **Context Initialization**: Changes within `Backend/**` trigger the pipeline.
-2. **Secret Sync**:
- - `CLAN_TAG` and `PLAYER_TAG` repository variables are synced.
- - `ROYALE_API_KEYS` (The Key Farm) is injected into the Supabase environment.
-3. **Database DNA Sync**: SQL migrations are pushed if `SUPABASE_DB_PASSWORD` is present.
-4. **Edge Layer Deployment**: The workflow deploys all five Edge Functions (`ingest-royale-data`, `headhunter-scanner`, `sync-player-cards`, `query-royale-api`, and `fetch-player-battlelog`) ensuring a synchronized binary stack.
+The backend is managed with the Supabase CLI.
 
-### Common CLI Operations
 ```bash
-# Start local development stack
-supabase start
-
-# Create a new migration file
-supabase migration new <name>
-
-# Local function testing
-supabase functions serve ingest-royale-data --no-verify-jwt
-
-# Deploy Edge Functions
-supabase functions deploy ingest-royale-data --no-verify-jwt
-supabase functions deploy headhunter-scanner --no-verify-jwt
-supabase functions deploy sync-player-cards --no-verify-jwt
-supabase functions deploy query-royale-api --no-verify-jwt
-supabase functions deploy fetch-player-battlelog --no-verify-jwt
+supabase start                                              # local stack
+supabase migration new <name>                              # new migration
+supabase functions serve ingest-royale-data --no-verify-jwt # run a function locally
+supabase test db                                           # run pgTAP tests
 ```
 
----
+Migrations are the single source of truth: change the schema in a migration file, never in the dashboard. After any schema or RPC change, regenerate the TypeScript types.
 
-## VI. Environment & Secret Registry
-| Constant | Source | Scope | Role |
-| :--- | :--- | :--- | :--- |
-| `ROYALE_API_KEYS` | GitHub Secret | Edge Function | The Key Farm (pool of Supercell JWTs, comma-separated/JSON; ~20 per the deploy workflow). |
-| `CLAN_TAG` | GitHub Variable | Edge/Pipeline | The Targeted Clan Identifier (SSOT). |
-| `PLAYER_TAG` | GitHub Variable | Edge/Pipeline | The Targeted Player Identifier (SSOT). |
+### Deployment
 
-### Pipeline Secrets (Infrastructure)
-| Secret | Role |
-| :--- | :--- |
-| `SUPABASE_ACCESS_TOKEN` | Authoritative CLI authentication. |
-| `SUPABASE_DB_PASSWORD` | Database DNA (Migration) synchronization password. |
-| `INTERNAL_BEARER_TOKEN` | Shared internal bearer token for service-to-service Edge Function auth (also synced to the Vault). |
-
-> [!NOTE]
-> `SUPABASE_PROJECT_ID` is a GitHub repository **Variable** (`vars.SUPABASE_PROJECT_ID`, value `hucktamloykszinwbtuh`) - the Project Reference ID - not a Secret.
+`.github/workflows/deploy-supabase.yml` runs on pushes to `Beta` or `Stable` that touch `Backend/**`. It syncs secrets and the Vault, pushes migrations, and deploys all five Edge Functions.
 
 ---
 
-## VII. Operational Security (Clinical Protocol)
-- **RLS Lockdown**: Deny-by-default on all tables. Only specifically authorized `view` operations are permitted for the `anon` role.
-- **Zero-Trust Boundary**: High-fidelity validation of all inbound payloads at the Ingestion Gate level. Enforces strict Valibot schemas (`TelemetrySchema`, `KeyPoolSchema`, `VaultSecretSchema`) centralized in `_shared/schemas.ts`.
-- **Quota Guarding**: Proactive management of free-tier storage (500MB) via the automated janitor cycle.
+## Environment
+
+| Name | Kind | Role |
+| :--- | :--- | :--- |
+| `ROYALE_API_KEYS` | Secret | The Key Farm: a pool of Clash Royale API keys, rotated per request. |
+| `INTERNAL_BEARER_TOKEN` | Secret | Service-to-service auth for the Edge Functions. |
+| `SUPABASE_ACCESS_TOKEN` | Secret | CLI authentication for deploys. |
+| `SUPABASE_DB_PASSWORD` | Secret | Migration push authentication. |
+| `CLAN_TAG` / `PLAYER_TAG` | Variable | The clan and player the backend tracks. |
+| `SUPABASE_PROJECT_ID` | Variable | The Supabase project reference. |
 
 ---
 
-## VIII. Current State - Roadmap (v14.33.9)
-- [x] **Phase 1-7**: Complete (Substrate, Domain Schema, Binary Heartbeat, Hardening, Deep Ingestion, Janitor, Full PWA integration).
+## See also
+
+- [`supabase/functions/_shared/`](supabase/functions/_shared/README.md) - the shared kernel every function builds on
+- [Root README](../README.md) - product overview and scoring
+- [CleanStack Architecture](../.github/authoritative-design-references/CleanStack%20Architecture.md) - the governing design rules

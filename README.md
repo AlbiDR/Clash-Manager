@@ -1,212 +1,290 @@
 <div align="center">
-  <img src=".github/assets/logo.png" alt="Clash Manager Logo" width="500" />
+  <img src=".github/assets/logo.png" alt="Clash Manager" width="240" />
+
+  <h1>Clash Manager</h1>
+
+  <p><strong>Professional recruitment and performance analytics for Clash Royale clan leaders.</strong></p>
+
+  <p>Stop guessing who to keep and who to recruit. Clash Manager scores your whole roster, scouts elite free agents across the game, plans every card upgrade, and sends clan invites straight into Clash Royale, all from one installable app.</p>
+
+  [![Live App](https://img.shields.io/badge/Live-albidr.github.io%2FClash--Manager-0061A4?style=flat-square&logo=pwa&logoColor=white)](https://albidr.github.io/Clash-Manager/)
+  [![Client](https://img.shields.io/badge/Client-v14.33.10-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
+  [![Backend](https://img.shields.io/badge/Backend-v14.33.10-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
+  [![Android](https://img.shields.io/badge/Android-Wrapper-3DDC84?style=flat-square&logo=android&logoColor=white)](APK/README.md)
+  [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
+
+  <a href="#features">Features</a> |
+  <a href="#how-you-use-it">How you use it</a> |
+  <a href="#the-scoring-engine">Scoring engine</a> |
+  <a href="#architecture">Architecture</a> |
+  <a href="#getting-started">Getting started</a>
 </div>
 
 ---
-
-# Clash Manager
-
-[![Backend](https://img.shields.io/badge/Backend-v14.33.9-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
-[![Client](https://img.shields.io/badge/Client-v14.33.9-0066CC?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
-[![Docs](https://img.shields.io/badge/Docs-Architecture%20%7C%20Deployment-blue?style=flat-square)](.github/authoritative-design-references/CleanStack%20Architecture.md)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
-
-**An engineered ecosystem for high-precision clan leadership.**
-
-Clash Manager is a production-grade, distributed architecture designed to automate the administrative complexities of competitive Clash Royale clans. It orchestrates a synchronized **Supabase Binary Stack** comprising an edge-native ingestion engine and a live-synchronized, persistence-backed progressive web application.
-
----
-<br />
 
 ## Screenshots
 
-<div align="left">
-  <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #f6f8fa;">
-    <summary style="cursor: pointer; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
-      <strong>Light Mode</strong>
-    </summary>
-    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; padding: 10px; background-color: #ffffff; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-      <img src="Frontend-PWA/public/assets/branding/roster-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="Frontend-PWA/public/assets/branding/headhunter-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="Frontend-PWA/public/assets/branding/laboratory-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="Frontend-PWA/public/assets/branding/settings-light.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-    </div>
-  </details>
+<div align="center">
 
-  <details style="margin-bottom: 16px; border: 1px solid #3178C6; border-radius: 10px; background-color: #161b22;">
-    <summary style="cursor: pointer; color: #3178C6; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
-      <strong>Dark Mode</strong>
-    </summary>
-    <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; padding: 10px; background-color: #0d1117; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-      <img src="Frontend-PWA/public/assets/branding/roster-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="Frontend-PWA/public/assets/branding/headhunter-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="Frontend-PWA/public/assets/branding/laboratory-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-      <img src="Frontend-PWA/public/assets/branding/settings-dark.webp?v=1778945289" width="49%" style="border: 1.5px solid #3178C6; border-radius: 8px;" />
-    </div>
-  </details>
+<details open>
+  <summary><strong>Dark mode</strong></summary>
+  <br />
+  <img src="Frontend-PWA/public/assets/branding/roster-dark.webp" width="46%" alt="Roster" />
+  <img src="Frontend-PWA/public/assets/branding/headhunter-dark.webp" width="46%" alt="Headhunter" />
+  <img src="Frontend-PWA/public/assets/branding/laboratory-dark.webp" width="46%" alt="Laboratory" />
+  <img src="Frontend-PWA/public/assets/branding/settings-dark.webp" width="46%" alt="Settings" />
+</details>
+
+<details>
+  <summary><strong>Light mode</strong></summary>
+  <br />
+  <img src="Frontend-PWA/public/assets/branding/roster-light.webp" width="46%" alt="Roster" />
+  <img src="Frontend-PWA/public/assets/branding/headhunter-light.webp" width="46%" alt="Headhunter" />
+  <img src="Frontend-PWA/public/assets/branding/laboratory-light.webp" width="46%" alt="Laboratory" />
+  <img src="Frontend-PWA/public/assets/branding/settings-light.webp" width="46%" alt="Settings" />
+</details>
+
 </div>
 
 ---
-<br />
 
-## Mission Architecture
+## Why Clash Manager
 
-Most clan tools rely on ephemeral API fetches-displaying a snapshot of the present moment that vanishes upon refresh. **Clash Manager is different.**
+Most clan tools show you a snapshot: the numbers as they are right now, gone the moment you refresh. Clash Manager keeps history.
 
-### Persistence vs. Ephemerality
-The system builds a **Persistent Clan Database** in Supabase. By archiving every war, every donation cycle, and every member interaction, the system constructs a rich historical tapestry. This allows for deep trend analysis, "heritage" tracking for long-term members, and the ability to spot performance decay before it becomes a problem.
+Every sync archives your clan's wars, donations, trophies, and battle logs into a persistent database, so the app can do things a live API read never could:
 
-### The Scoring Engine
-The system replaces intuition with a **Complex Valuation Metric** that sorts players by their true worth across two distinct dimensions.
+- **Rank people by what they actually contribute**, not by a single stat, using a self-calibrating score that adapts to your clan.
+- **Spot decline before it costs you** with per-member trend lines and inactivity decay.
+- **Remember your veterans.** A returning member's history follows them back.
+- **Find recruits who fit**, scored against your current roster, not against nothing.
 
-<details>
-<summary><strong>Internal Metrics: Clan Roster (RPeS & PeS)</strong></summary>
-
-- **RPeS (Raw Performance Score)**: The absolute value derived from a member's contributions while being part of the clan (donations, war fame, war participation, trophies, tenure, Clan Voyage participation).
-- **PeS (Performance Score)**: A relative percentage (0-100%) normalized against active clan benchmarks and adjusted via Inertia & Heritage logic.
-- **Inertia & Heritage**: Algorithmic decay applied to stagnant profiles, balanced by momentum tracking for incoming recruits to eliminate historic stat bias.
-
-
-</details>
-
-<details>
-<summary><strong>External Metrics: Headhunter Scouting (RPoS & PoS)</strong></summary>
-
-- **RPoS (Raw Potential Score)**: Calculated from a recruit's lifetime external battle logs, donations and war consistency.
-- **PoS (Potential Score)**: A relative percentage (0-100%) normalized against the last month of scouted recruits and compared against the current internal clan performance for coherency.
-
-</details>
-
-### The Headhunter Protocol
-Recruitment is no longer passive. The **Headhunter Engine** continuously scans global tournament brackets and active members' battle logs via Supabase Edge Functions to identify elite, clanless recruits.
-- **Edge-Native Discovery**: High-concurrency Deno functions scan tournaments and active member battles around the clock.
-- **Smart Filtering**: Valibot-enforced validation ensures only top-tier candidates reach the UI.
-- **Batch Operations**: Sequence-driven blitzing allows leaders to invite recruits in minutes.
+It runs as an installable web app on any device, and the Android build adds one trick a browser cannot: it taps "Invite" inside Clash Royale for you.
 
 ---
-<br />
 
-## Dictionary
+## Features
 
-- **DeepNet**: The high-performance, sovereign PWA infrastructure featuring intelligent local caching and live synchronization for administrative clan operations.
-- **Headhunter**: The global discovery engine that autonomously scans tournaments and active members' battles to identify elite, clanless recruits.
-- **Nightly**: The automated, multi-stage maintenance pipeline that ensures monorepo-wide structural integrity and synchronization.
+Clash Manager is organized as four consoles. You move between them from a floating dock at the bottom of the screen.
+
+### Roster: know exactly where your clan stands
+
+The Roster ranks every member by a **Performance Score (0-100)** and lets you drill into the story behind each number.
+
+- **Ranked member cards** sorted by Performance, Momentum, Trophies, Donations, Tenure, Name, or Last Seen, with instant search by name or tag.
+- **Expand any member** for war rate, average fame, average daily donations, and last-seen, each with a tooltip comparing that player to the clan average.
+- **Trend charts** drawn from real history, with a best-fit line and a predicted next value, toggleable between War and Voyage performance.
+- **Momentum indicator** showing whether a member is climbing or slipping.
+- **Bulk actions**: select many members at once (or everyone above a score threshold) and open their profiles, or fire them all into game in sequence through Blitz mode.
+
+### Headhunter: recruit elite free agents on autopilot
+
+The Headhunter is a live feed of clanless players discovered from tournaments and leaderboards, each scored by **Potential Score (0-100)** against your own roster so you know a prospect is genuinely an upgrade.
+
+- **Top prospects, continuously scouted** by the backend and ranked by potential; expand a card for donations, war wins, cards won, and the raw potential score, each benchmarked against your clan and against all other prospects.
+- **Dismiss with one tap and undo.** Rejections hide instantly, sync across your devices and browser tabs, and stay hidden for 30 days.
+- **Leaderboard harvest**: pull clanless players straight off the global or your local Path of Legends leaderboard on demand.
+- **Blitz recruiting**: multi-select prospects and Clash Manager opens each one's profile in Clash Royale back to back. On Android it goes further and automatically invites the prospect for you (see [Blitz Mode](#the-android-app-blitz-mode)).
+- **Alerts**: get a notification and an app badge when new recruits cross the score threshold you set, even with the app closed.
+
+### Laboratory: plan every upgrade before you spend a gem
+
+The Laboratory simulates the cheapest path to a target King Level so you never waste gold or wild cards on the wrong card.
+
+- **Load any player** by tag; their card collection is fetched live and normalized to a common 1-16 level scale.
+- **The Vault**: enter your real gold, gems, and wild cards per rarity.
+- **Two strategies**: *Level Projection* (reach a target King Level assuming you can farm the resources) or *Resource Efficiency* (the best experience-per-gold return using only what you own right now), with an optional gem-spending toggle.
+- **Instant projection**: current vs projected King Level, plus total XP gained and gold and gems spent.
+- **A step-by-step trajectory**: the exact upgrade order to follow, each step showing the card, level jump, cost, and efficiency.
+
+### Command Center: configure, track events, recover
+
+Settings is where you tune the app and run clan-wide operations.
+
+- **Clan Voyage tracker**: schedule and monitor a live Clan Voyage event with a target, countdowns, completion percentage, and per-member contributions. It surfaces as a banner on the Roster while active.
+- **Appearance**: Light, Dark, or Auto theme, plus keep-screen-awake during long sync sessions.
+- **Notifications**: recruit-alert threshold, app badges, and a test notification.
+- **Display modes**: Showcase (a curated demo), Blueprint (skeleton layouts for design review), and Synthetic (mock data for offline development).
+- **Network**: live API status and a switchable Supabase endpoint.
+- **Recovery**: force an update, clear caches non-destructively, or factory-reset the app.
 
 ---
-<br />
 
-## System Ecosystem
+## How you use it
 
-<details>
-<summary><strong>Supabase Backend (Binary Stack)</strong></summary>
+Four everyday flows show how the consoles work together.
 
-The central nervous system. A high-performance infrastructure hosted on **Supabase**.
-- **Role**: Orchestrates ingestion pipelines, manages persistent state, and exposes materialized features.
-- **Architecture**: Unitary Database with isolated `substrate`, `drivers`, and `features` schemas.
-- **Documentation**: [Read Technical Specifications](Backend/README.md)
+**Audit your clan**
+Open the app; it lands on the Roster and shows your cached members instantly while a fresh sync runs in the background. Sort by Performance, expand the bottom few, and check their trend lines and inactivity. The scores tell you who to coach and who to cut.
 
-</details>
+**Scout and recruit**
+Switch to Headhunter. Skim the top-scored prospects, dismiss the ones who do not fit (with undo if you misfire), then multi-select the keepers and hit Blitz. On Android, sit back while it opens each profile and taps invite; on any other device it opens each profile for you to send the request.
 
-<details>
-<summary><strong>Client Core (PWA)</strong></summary>
+**Plan a player's upgrades**
+Open the Laboratory, load a player tag, and enter your current gold, gems, and wild cards. Pick a target King Level or optimize for efficiency, and read off the exact upgrade order and the total cost before committing a single resource.
 
-The command center. A **Vue 3.5 Progressive Web Application** designed for administrative operations.
-- **Role**: Provides a fluid, low-latency interface for data visualization and deeper analytics.
-- **Features**: Sovereign Design System, Persistent Caching (IndexedDB), and Hardware Haptics.
-- **Documentation**: [Read Technical Specifications](Frontend-PWA/README.md)
-
-</details>
+**Run a Clan Voyage**
+From the Command Center, schedule a Voyage with a crown target and end time. Track progress live from the banner on your Roster, and see exactly which members are carrying the event.
 
 ---
-<br />
 
-## Architectural Topology
+## The scoring engine
 
-<details>
-<summary><strong>View System Data Flow</strong></summary>
+Clash Manager replaces gut feeling with two scoring families. Both are **self-calibrating**: they normalize against your live clan and recruit data rather than hard-coded thresholds, so they stay meaningful as the game and your roster evolve.
 
-The system utilizes a linear, high-integrity data flow with sub-second interaction latency.
+### Members: Performance Score
+
+| Metric | What it is |
+| :--- | :--- |
+| **RPeS** (Raw Performance Score) | An absolute, recency-weighted sum of a member's contribution: current and average war fame, daily donations, trophies, and war participation, adjusted by a loyalty bonus for tenure and an inactivity decay that compounds after a few idle days. Veterans' returning history contributes a heritage bonus. |
+| **PeS** (Performance Score, 0-100) | RPeS expressed as a percentage of your clan's top performer. This is the number on each member card. |
+
+### Recruits: Potential Score
+
+| Metric | What it is |
+| :--- | :--- |
+| **RPoS** (Raw Potential Score) | An absolute decaying score for a prospect built from trophies, donations, war-win consistency, and a huge bonus for recent clan war battles. |
+| **PoS** (Potential Score, 0-100) | RPoS as a percentage of the strongest prospect currently scouted, with a small bonus for returning veterans the clan already knows. Prospects are tiered Elite, High, or Mid. |
+
+Because a member's score is partailly relative to the current roster and a recruit's score is relative to the current recruit pool, a "90" always means "near the top of what you have right now," today and next season alike without drifting from stale targets.
+
+---
+
+## Architecture
+
+Clash Manager is a monorepo with three deployable parts and a data pipeline that turns raw game telemetry into scored, ready-to-read views.
 
 ```mermaid
-flowchart TD
-    subgraph Upstream
-        CRAPI["Clash Royale API"]
+flowchart LR
+    CR["Clash Royale API"]
+
+    subgraph Backend["Supabase Backend"]
+        direction TB
+        Edge["Edge Functions (Deno)<br/>ingest | headhunter | proxies"]
+        Raw["substrate<br/>raw landing + orchestration"]
+        Dom["drivers<br/>normalized domain"]
+        Views["features<br/>scoring + API views"]
+        Edge --> Raw --> Dom --> Views
     end
 
-    subgraph "Supabase Backend"
-        Edge["Edge Functions<br/>(Deno / Ingestion)"]
-        DB["Postgres Substrate<br/>(Storage & Logic)"]
-        Views["Feature Views<br/>(API Ready)"]
+    subgraph Client["Clients"]
+        direction TB
+        PWA["Vue 3.5 PWA"]
+        APK["Android wrapper<br/>(Blitz automation)"]
     end
 
-    subgraph "Client Layer (PWA)"
-        UI["Vue 3 Interface<br/>(Sovereign Design)"]
-        Cache[(IndexedDB)]
-    end
-
-    Edge <-->|Round-Robin Fetch| CRAPI
-    Edge -->|Ingest| DB
-    DB -->|Project| Views
-    UI <-->|RPC & Query| Views
-    UI <-->|Hydration| Cache
-    UI -->|Manual Trigger| Edge
+    CR <-->|key-rotated proxy| Edge
+    Views -->|RPC + realtime| PWA
+    PWA -->|manual sync trigger| Edge
+    PWA --- APK
+    APK -->|deep link + auto-tap| CR
 ```
 
-</details>
+The frontend follows a strict four-layer **CleanStack** model, enforced automatically by dependency-cruiser on every commit:
+
+| Layer | Scope | May import |
+| :--- | :--- | :--- |
+| `@core` | Framework-agnostic infrastructure: API clients, services, theme tokens, utilities | (nothing above it) |
+| `@shared` | Domain-blind UI building blocks, composables, directives | `@core` |
+| `@features` | Self-contained feature silos: roster, headhunter, laboratory, settings | `@shared`, `@core` |
+| `@app` | Shell, router, and service worker that wire it all together | everything below |
+
+A feature never imports another feature. Shared logic lives in `@shared` or `@core`. The full ruleset is the [CleanStack Architecture reference](.github/authoritative-design-references/CleanStack%20Architecture.md).
+
+On the backend, data flows one way: Edge Functions fetch and validate game data, land it as raw JSON in the `substrate` schema, database triggers shred that JSON into the normalized `drivers` schema, and the `features` schema computes scores and roster views on read. Nothing enters the database without passing a Valibot schema check, and every table is locked down with row-level security.
 
 ---
-<br />
 
-## Android Wrapper Application (APK)
+## Tech stack
 
-The Android wrapper integrates a custom Kotlin native layer directly on top of the PWA shell. The decoded, rebuildable APK source tree is tracked directly in the repository at [APK/README.md](file:///Users/ADR/Documents/Github/Projects/clash-manager/APK/README.md).
-
-The launcher and theme assets are managed via a programmatic icon generation pipeline:
-
-| Layer | Source Description |
+| Area | Technology |
 | :--- | :--- |
-| `background` | `@color/ic_launcher_background` - solid brand `#0B0E14` |
-| `foreground` | Logo scaled to fit the 108dp safe zone based on vector dimensions |
-| `monochrome` | White silhouette for themed launcher support |
-| legacy | Pre-masked square and circular PNG fallbacks for legacy systems |
+| **Client** | Vue 3.5, TypeScript (strict), Vue Router 5 (experimental data loaders), Pinia, Vite 7 |
+| **PWA** | vite-plugin-pwa, Workbox (custom service worker), IndexedDB with in-memory fallback |
+| **Validation** | Valibot schema boundaries on all external data, client and server |
+| **Backend** | Supabase, Postgres 17, Deno Edge Functions, pg_cron, pg_net, Vault, row-level security |
+| **Android** | Custom Java WebView wrapper with an accessibility-driven automation service |
+| **Design** | Custom "Neo-Material" system: zero third-party UI, icon, or charting libraries; hand-built SVG icons and charts; self-hosted Inter and JetBrains Mono |
+| **Tooling** | pnpm workspace with a version catalog, dependency-cruiser, ast-grep, knip, Vitest, pgTAP |
 
-### Build and Invalidation Protocol
+No component library, no icon pack, no charting dependency. Every icon and chart is drawn by hand in SVG for full control and a perfect performance budget.
 
-Generate the icon set and compile the project using local scripts:
+---
+
+## The platform
+
+### Progressive Web App
+
+Clash Manager installs like a native app and is built to survive a hostile network.
+
+- **Offline-ready shell.** The service worker precaches the app and serves it cache-first, so it opens in under a second even offline. Clan data uses a stale-while-revalidate flow: you see cached data instantly, and a background refresh updates it.
+- **Live and cross-device.** Recruit dismissals and Voyage state sync in realtime through Supabase and stay consistent across open tabs.
+- **OS integration.** App shortcuts, a Web Share target that accepts a shared player tag straight into Headhunter, a `web+clash` protocol handler, desktop side-panel support, app badges, and haptic feedback.
+- **Deep game links.** Every player card can open that player's profile directly in Clash Royale.
+
+### The Android app: Blitz Mode
+
+The Android build is a custom WebView wrapper around the same PWA, plus a native layer that does what a browser cannot. In **Blitz Mode**, a foreground overlay service and an accessibility service work together to open each selected recruit in Clash Royale and tap the invite button automatically, using coordinates you calibrate once. The PWA drives it through a JavaScript bridge, so multi-select recruiting in the app becomes hands-free invites in the game. See [APK/README.md](APK/README.md).
+
+### Backend
+
+A Supabase project running five Deno Edge Functions behind a rotating pool of ~20 Clash Royale API keys (routed through the RoyaleAPI static-IP proxy). It ingests clan, war, and battle data, discovers recruits, proxies leaderboard and battle-log lookups, and syncs player card collections for the Laboratory. See [Backend/README.md](Backend/README.md).
+
+---
+
+## Autonomous nightly pipeline
+
+This repository maintains itself. Every night an external coding agent runs a **13-stage pipeline** that opens one pull request per stage against the `Nightly` branch: hardening runtime safety, running the test suite, consolidating database migrations, optimizing, refreshing documentation and TSDoc, reconciling versions, auditing dependencies, refactoring, checking the Android wrapper's integrity, optimization, and UX, and finally auditing its own health. Passing work is merged and promoted `Nightly` to `Beta` to `Stable` behind an automated test gate. The rules the agent operates under live in [AGENTS.md](AGENTS.md).
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 24+
+- pnpm 10+
+
+### Run the app
 
 ```bash
-pnpm icons:android                      # Regenerate the adaptive icon set
-pnpm icons:android : --preview         # Generate launcher preview templates
-pnpm apk:check                          # Build and run verification checks locally
+git clone https://github.com/albidr/Clash-Manager.git
+cd Clash-Manager
+pnpm install
+
+pnpm dev:pwa          # start the PWA at http://localhost:5173
 ```
 
-The icon generator is idempotent and validates asset coordinates against the active res tree. The target root can be overridden with `ANDROID_RES_DIR`.
+Point the client at a Supabase project with a `.env` file in `Frontend-PWA/`:
+
+```ini
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+### Common commands
+
+```bash
+pnpm build            # build every workspace package
+pnpm test             # run the full test suite
+pnpm apk:check        # compile and verify the Android wrapper (unsigned)
+pnpm audit:version    # check version consistency across the monorepo
+```
+
+### Repository layout
+
+| Path | What it is |
+| :--- | :--- |
+| [`Frontend-PWA/`](Frontend-PWA/README.md) | The Vue 3.5 progressive web app |
+| [`Backend/`](Backend/README.md) | Supabase database, migrations, and Deno Edge Functions |
+| [`APK/`](APK/README.md) | The Android WebView wrapper and its native automation layer |
+| [`.github/`](.github/) | CI/CD workflows, quality gates, and the nightly pipeline |
+| [`AGENTS.md`](AGENTS.md) | The operating rules for the autonomous pipeline |
+| [`DESIGN.md`](DESIGN.md) | The Neo-Material design system |
 
 ---
-<br />
-
-## Nightly Pipeline
-
-The Nightly pipeline is an automated maintenance and optimization engine designed as a **12-stage multi-agent system** to enforce structural purity, optimize performance, and synchronize system documentation. Running nightly on the `Nightly` branch, this sequenced pipeline executes key phases to keep the monorepo pristine:
-
-1.  **Harden**: The Runtime Integrity Auditor. Secures validation boundaries and eliminates the "any" plague across the stack.
-2.  **Verify**: The Logic Integrity Auditor. Proves system integrity through automated test suite execution and logic proofs.
-3.  **Baseline Consolidation**: The Declarative Schema Hardener. Hardens database schemas and consolidates incremental migrations into the master baseline.
-4.  **Optimize**: The Substrate Hygiene Engineer. Refines code structures, enforces DRY principles, and prunes dead code.
-5.  **Document (README)**: The Architecture Truth Architect. Synchronizes technical blueprints with the implementation state (reconciles documentation drift).
-6.  **Document (TSDoc)**: The Interface Contract Architect. Hardens interface contracts and architectural remarks via TSDoc.
-7.  **Version Integrity**: The Version Consistency Auditor. Eliminates version drift and enforces semantic versioning across the monorepo.
-8.  **Dependency Audit**: The External Health Auditor. Monitors external dependency health and security.
-9.  **Refactor**: The Structural Surgery Engineer. Orchestrates large-scale structural improvements and architectural migrations.
-10. **APK & PWA Wrapper Integrity Auditor**: Secures shell configuration boundaries, runtime safety, and configuration drift.
-11. **APK & Native Wrapper Optimizations**: Optimizes compilation assets, native caches, and native webview performance bounds.
-12. **Hybrid Shell UX & UI Auditor**: Verifies fluid native-wrapper responsiveness, screen transitions, and gesture integration under webview contexts.
-
----
-<br />
 
 ## License
 
-**GNU GPL v3**.
-Copyright (c) 2026 AlbiDR.
-This project is free software and available under the [GPL v3 License](LICENSE).
+Clash Manager is free software under the [GNU GPL v3](LICENSE).
+Copyright (C) 2026 AlbiDR.

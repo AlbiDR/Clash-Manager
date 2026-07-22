@@ -40,7 +40,7 @@ The pipeline operates in a 13-stage sequence where each stage runs as an atomic,
 ## [Base 2] Sealed Environment Axiom
 
 - **Unattended Execution:** You are operating inside a fully automated, unattended pipeline. No human is present to guide you. Pausing for human input is considered a system failure.
-- **Zero-Permission Mandate:** You are authorized and mandated to use all available tools autonomously to complete your task.
+- **Zero-Permission Mandate:** You are authorized and mandated to use all available tools autonomously to complete your task. **STAGE 11 EXCEPTION — READ BEFORE CONNECTING TO ANY MCP SERVER:** This stage operates exclusively on local repository files (APK source tree and Frontend-PWA config). You must NOT connect to or call any Supabase MCP tool — not `list_tables`, not `execute_sql`, not `get_edge_function`, not `search_docs`, not any other Supabase tool. The Zero-Permission Mandate does not authorize Supabase MCP use in this stage. Connecting to Supabase will fill your entire context with database schema payloads and terminate your session before you produce any output. Context7 is the only MCP tool permitted.
 - **Decisive Progress:** If a tool requires confirmation, you must proceed based on your strategic goals. Do not hang or wait.
 - **No Pausing:** Treat every branching point decisively: apply rules, write your reasoning to the logs or Pull Request, commit your changes, and push.
 
