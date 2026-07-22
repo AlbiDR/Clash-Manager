@@ -2611,6 +2611,13 @@ LAST_AGED:   2026-07-22
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-22] PR #PENDING [Stage 8]: chore(deps): bump @supabase/supabase-js to ^2.110.8 and update major watchlist
+**Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Apply safe maintenance bump to @supabase/supabase-js and track outstanding major versions of typescript, vite, and pinia in the watchlist.
+**Change:** Bumped @supabase/supabase-js from ^2.110.7 to ^2.110.8 in central catalog and recorded today's run in the dependency audit coverage log.
+**Result:** 100% dependency hygiene and workspace-wide catalog compliance verified with all tests passing cleanly.
+
 ### [2026-07-22] PR #PENDING [Stage 6]: docs(tsdoc): harden ParameterCard interface contracts and logic annotations
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
