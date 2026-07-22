@@ -2508,6 +2508,13 @@ LAST_AGED:   2026-07-22
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-22] PR #PENDING [Stage 6]: docs(tsdoc): harden ParameterCard interface contracts and logic annotations
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** The ParameterCard component was recently modified by Stage 4 (Optimize), causing adjacent interface contracts to require re-verification and hardening under Stage 6 Focus area.
+**Change:** Injected comprehensive component-level JSDoc/TSDoc specifications mapping properties (`settings`, `currentLevel`, `operation`), emits (`update`), side effects, decision logs, and CleanStack ADR Section III references.
+**Result:** 100% logic intent transparency and contract synchronization for the modernized laboratory feature substrate.
+
 ### [2026-07-22] PR #PENDING [Stage 4]: perf(opt): standardize loop index and callback variables in laboratory parameters
 **Domain:** Refactor/Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue, .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/00-pr-history.md
