@@ -5,8 +5,13 @@
  * COMPONENT: ParameterCard
  *
  * @remarks
- * Manages simulation parameters for the Laboratory engine.
- * Following Layer 3 (@features) isolation rules.
+ * Manages simulation parameters and strategy selection for the Laboratory engine.
+ * Handles the configuration of optimization thresholds, level milestones, and gem spending toggles.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 Features (`@features`)
+ * - **Satisfaction:** Satisfies ADR Section III: Data Flow and ADR Section VII: Naming Conventions.
+ * - **Interface Boundaries:** Excises any implicit `any` pathogens by enforcing typed properties and emissions.
  */
 import { Icon, SettingRow, BaseSelect, BaseSegmentedControl } from "@shared";
 import { useHaptics } from "@shared/composables/useHaptics";
@@ -17,17 +22,37 @@ import { IMPORTANT_KING_LEVELS, KING_LEVEL_MAX } from "@core";
 const haptics = useHaptics();
 
 /**
+ * Component properties interface representing optimization parameters.
+ *
+ * @remarks
+ * - **settings**: The current active optimization strategy and settings object.
+ * - **currentLevel**: The player's current King Level, used to disable/filter past non-milestone levels.
+ * - **operation**: The optional transient optimization output, checked for feasibility warnings.
+ *
  * [DECISION LOG] Prop types are strictly enforced to satisfy the CleanStack
  * Architecture's mandate to excise 'any' pathogens at component boundaries.
  */
 const props = defineProps<{
+  /** Active optimization strategy configurations */
   settings: OptimizationSettings;
+  /** Player's baseline account level */
   currentLevel: number;
-  // [THREAT:] External simulation result is un-trusted. Replacing implicit 'any'
-  // with 'OptimizationResult' to ensure structural contract enforcement.
+  /**
+   * Transient simulation execution result
+   * [THREAT:] External simulation result is un-trusted. Replacing implicit 'any'
+   * with 'OptimizationResult' to ensure structural contract enforcement.
+   */
   operation?: OptimizationResult;
 }>();
 
+/**
+ * Component emission descriptors.
+ *
+ * @remarks
+ * Defines structured events transmitted upwards to parent containers to trigger settings updates.
+ *
+ * @param update - Emits a partial settings object when parameters are updated by user actions.
+ */
 const emit = defineEmits<{
   update: [newSettings: Partial<OptimizationSettings>];
 }>();
