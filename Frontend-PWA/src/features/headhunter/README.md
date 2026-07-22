@@ -1,64 +1,41 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Headhunter : Recruitment Orchestrator
+# Headhunter (@features/headhunter)
 
-The **Scout Feed**. A specialized Feature (Layer 3) responsible for discovering, evaluating, and managing potential recruits. It bridges the gap between raw tournament data and clan recruitment decisions.
+> The scout feed: a live, scored list of clanless recruits, with one-tap dismissal and batch recruiting.
 
----
+**Layer 3 (@features)** | imports `@shared`, `@core` | never another feature.
 
-## Purpose
-The Headhunter feature provides a real-time feed of candidates scanned from external tournaments. It allows recruiters to perform bulk evaluations, dismiss non-fits with zero latency, and receive notifications for "elite" potentials.
+## What it does
 
-## Architectural Context
-- **Layer**: Layer 3 (@features)
-- **Isolation**: Strictly siloed. No imports from `Laboratory` or `Roster`.
-- **Dependencies**:
- - `@core/api/SupabaseClient`: Backend communication (Dismissal/Scouting).
- - `@core/services/useBadge`: External notification badges.
- - `@core/services/useBroadcastChannel`: Cross-tab state synchronization.
- - `@core/services/useConsoleController`: Standardized list orchestration (Search/Sort/Selection).
+- Shows the top prospects (windowed to the 50 highest potential), sortable by Potential, Trophies, Donations, Recency, or Name, with expandable stats benchmarked against the clan.
+- Dismisses a recruit instantly with an undo toast; dismissals persist for 30 days and sync across devices (Supabase realtime) and browser tabs (BroadcastChannel).
+- Harvests clanless players from the global or local leaderboard on demand and queues them for recruiting.
+- Blitzes selected recruits: opens each profile in Clash Royale in sequence, and on Android taps invite automatically.
+- Raises a notification and app badge when new recruits cross the score threshold.
 
-## Logic Subsystems
+## Contents
 
-### Leaderboard Harvesting (useLeaderboardScraper.ts)
-Orchestrates the dynamic, transient harvesting of clanless players from the Clash Royale global and local leaderboards.
-- **Transient Harvesting**: Queries the `query-royale-api` Edge Function to retrieve live leaderboard data without persistent writes.
-- **Client-Side Filtering**: Filters harvested players to identify those without a clan.
-- **Queue Injection**: Injects sanitized player tags directly into the `useSelectionStore` to trigger immediate Recruitment Blitz loops.
-- **UI Coordination**: Manages the harvesting state in the UI Coordinator, including abort logic for long-running fetches.
+| Path | Role |
+| :--- | :--- |
+| `views/HeadhunterView.vue` | The console view and empty-state "Scan Again" action. |
+| `components/RecruitCard.vue` | A recruit row: identity, potential score, expandable stats. |
+| `composables/useRecruiter.ts` | The main engine: list config, manual and background sync, Blitz setup. |
+| `composables/useHeadhunter.ts` | The dismissal lifecycle and realtime/broadcast sync. |
+| `composables/useLeaderboardScraper.ts` | On-demand global/local leaderboard harvesting via `query-royale-api`. |
+| `composables/useRecruitBlacklist.ts` | In-memory tombstones that hide a recruit between the tap and realtime confirmation. |
 
-### Recruitment Orchestrator (useRecruiter.ts)
-The primary behavioral engine for the Headhunter interface.
-- **Dual-Phase Sync**: Orchestrates **Manual Ingest** (manual sync trigger) and **Background Sync** (consistency check with the Supabase view).
-- **Blitz Orchestration**: Configures the `useBlitzMode` engine for automated batch recruitment processing.
-- **Console Integration**: Configures the `useConsoleController` with recruitment-specific sorting (Potential, Trophies, Donations, Recency, Name) and deep-linking.
+## How it works, and why
 
-### Recruitment Pipeline (`useBlitzMode.ts`)
-Specialized engine for high-velocity recruitment processing. This feature delegates batch orchestration to the `@core/services/useBlitzMode` Layer 1 kernel to ensure structural purity and reuse across console views.
-- **Multi-Tier Deep Linking**: Manages a sequential queue for opening player profiles directly in the Clash Royale application.
-- **Automated Blitz**: Implements a throttle-controlled execution loop to cycle through selected recruits with safety delays.
-- **Environment Trust**: Proactively verifies the execution context before allowing hardware-level OS intents.
+1. `useRecruiter` syncs the recruit pool (scored server-side in the headhunter view).
+2. Recruits are filtered against local tombstones and rendered in the shared list layout.
+3. Dismissing a recruit injects a tombstone, sends the Supabase request, and broadcasts to other tabs.
 
-### Dismissal Engine (useHeadhunter.ts)
-Handles the lifecycle of recruit rejection and realtime synchronization.
-- **Zero Latency Pattern**: Implements optimistic UI updates. Recruits are hidden instantly from the user's view while the network request is processed in the background.
-- **Realtime Synchronization**: Subscribes to the `drivers.recruit_blacklist` table to ensure dismissals performed on other devices are instantly reflected in the local UI.
-- **Broadcast Sync**: Dispatches "dismiss" events via `BroadcastChannel` to ensure recruits hidden in one tab are instantly removed from all other open instances of the PWA.
+- **Why manual ingest?** The backend scans around the clock, but a manual trigger lets leadership force a full-pool refresh on demand.
+- **Why in-memory tombstones, not LocalStorage?** A dismissed recruit must never flash back if a stale background payload arrives first. Authoritative state is the realtime subscription, so tombstones intentionally reset on reload.
+- **No cross-feature imports.** Headhunter knows about recruits, not clan members; comparison against the clan happens server-side.
 
-### Resilience & Persistence (useRecruitBlacklist.ts)
-Manages ephemeral "tombstones" for dismissed recruits to bridge the sync gap.
-- **Ephemeral Tombstones**: Maintains a reactive in-memory `Set` of dismissed IDs to hide recruits during the ~200ms window between user action and Realtime confirmation.
-- **SSOT Delegation**: Intentionally avoids `LocalStorage` persistence; tombstones reset on reload, delegating authoritative state to the Supabase Realtime subscription.
+## See also
 
-## Key Constraints & Why Not X?
-
-- **Why Manual Ingest?**: While the **Headhunter Edge Function** discovers recruits around the clock, manual ingest triggers allow leadership to force a high-priority sync of the entire pool on demand.
-- **Why Tombstones?**: To ensure "Visual Purity". If a user dismisses a recruit, they should never see it again, even if a subsequent background refresh returns a stale payload before the backend state has fully converged.
-- **No Cross-Feature Imports**: Headhunter must remain context-agnostic. It knows about "Recruits" but nothing about "Clan Members". Evaluation against internal benchmarks is handled server-side in the `Scoring_Kernel`.
-
-## Data Flow
-1. **Ingestion**: `useRecruiter` triggers a sync.
-2. **Scoring**: Candidates are scored server-side using the **Hybrid Benchmark** (PeS/PoS logic).
-3. **Display**: Recruits are filtered against the local **Blacklist** (tombstones) and rendered via the `ConsoleLayout`.
-4. **Action**: User dismisses a recruit -> Tombstone injected -> Supabase request dispatched -> Broadcast sent to other tabs.
+- [`@features`](../) | [`headhunter-scanner`](../../../../Backend/supabase/functions/headhunter-scanner/README.md) | [`query-royale-api`](../../../../Backend/supabase/functions/query-royale-api/README.md)

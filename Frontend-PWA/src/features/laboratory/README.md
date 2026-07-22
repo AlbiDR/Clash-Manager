@@ -1,76 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Laboratory : Progression Engine
+# Laboratory (@features/laboratory)
 
-The **Strategic Simulator**. A self-contained Feature (Layer 3) responsible for modeling player progression paths and optimizing card upgrades based on ROI or specific level targets.
+> The upgrade planner: simulates the cheapest path to a target King Level and shows the exact order and cost.
 
----
+**Layer 3 (@features)** | imports `@shared`, `@core` | never another feature.
 
-## Purpose
-The Laboratory allows users to project their future King Level and resource consumption by simulating optimal upgrade sequences. It handles the complexity of XP gain, gold costs, and wild card usage across all rarities.
+## What it does
 
-## Architectural Context
-- **Layer**: Layer 3 (@features)
-- **Isolation**: Strictly decoupled. Never imports from other Features (Headhunter, Roster, Settings).
-- **Dependencies**:
- - `@core/utils/economy`: Branded currency arithmetic.
- - `@core/api/ProfileClient`: Profile fetching.
+- Loads any player by tag (card levels fetched via the `sync-player-cards` Edge Function, normalized to a 1-16 scale).
+- Takes your real inventory: gold, gems, and wild cards per rarity.
+- Runs one of two strategies: **Level Projection** (reach a target King Level, assuming resources can be farmed) or **Resource Efficiency** (best XP-per-gold using only what you own, with a heavy penalty on gem spending).
+- Shows current vs projected King Level, total XP gained, and gold and gems spent.
+- Lists the recommended upgrade order, step by step, rendered progressively so hundreds of steps stay smooth.
 
-## Logic Subsystems
+## Contents
 
-### Validation Boundary (ProfileHydrator.ts)
-The Laboratory implements a strict validation boundary. Raw data from the Supabase backend or external RoyaleAPI payloads is passed through `ProfileInputSchema` (Valibot) before being transformed into domain-specific types.
+| Path | Role |
+| :--- | :--- |
+| `views/LaboratoryView.vue` | The console view. |
+| `components/` | The input and result cards: `TargetPicker`, `VaultCard`, `ParameterCard`, `SummaryCard`, `TrajectoryList`, `TrajectoryItem`, `LaboratorySkeleton`. |
+| `composables/useLaboratory.ts` | Layout state, profile ingestion, and inventory merging. |
+| `composables/useLaboratorySimulation.ts` | Runs the engine without blocking the UI and cancels stale runs. |
+| `logic/` | The simulation engine (see below). |
+| `stores/useLaboratoryStore.ts` | Pinia store; persists settings, the observed player, and inventory overrides to LocalStorage. |
 
-### Progression Engine (SimulationEngine.ts)
-A non-blocking, generator-based engine that coordinates core logic and scoring strategies to calculate optimal upgrade paths.
-- **Generator Pattern**: Processes upgrades in 10ms chunks to maintain 60FPS UI responsiveness.
-- **Priority Queue Optimization**: Utilizes the `@core/utils/PriorityQueue` to maintain an $O(\log N)$ selection loop for upgrade candidates.
-- **Greedy Optimization**: Identifies and executes the optimal upgrade step based on the active scoring strategy.
+## The engine (`logic/`)
 
-### Strategy Pattern (ScoringStrategy.ts)
-Upgrade priorities are defined by interchangeable strategies:
-- **Level Projection (`ProjectionStrategy`)**: Aggressively prioritizes Card Level milestones (15, 16) to maximize XP gain. Selecting this strategy automatically enables **Infinite Resources** mode to find the fastest theoretical path to King Level milestones.
-- **Resource Efficiency (`InventoryStrategy`)**: Strictly optimizes for XP ROI (Experience per Gold). This strategy is designed for realistic progression based on current gold and card inventory, penalizing gem spending by a factor of 50x.
+A generator-based simulator that processes upgrades in ~10ms chunks to stay at 60fps. `SimulationEngine` drives the loop; `SimulationCore` evaluates and applies each upgrade; `ScoringStrategy` provides the interchangeable Level-Projection and Resource-Efficiency strategies; candidates are selected from a binary-heap `PriorityQueue` (O(log N)); `ProfileHydrator` validates input through a Valibot schema; `SimulationMappers` shapes the result for the UI.
 
-### Simulation Core (SimulationCore.ts)
-Atomic evaluation and state transition logic.
-- **getUpgradeCandidate**: Evaluates card upgrade viability against resource constraints.
-- **applyUpgrade**: Executes immutable state transitions for chosen upgrades.
+## See also
 
-### Simulation Mappers (SimulationMappers.ts)
-- **mapStateToResult**: Transformer that converts internal simulation state to UI-ready DTOs.
-
-### Trajectory Rendering (TrajectoryList.vue)
-Renders the recommended upgrade path using a high-performance rendering strategy.
-- **Progressive Rendering**: Utilizes `useProgressiveList` (@core/services) to time-slice the injection of trajectory items into the DOM. This maintains 60FPS even when a simulation results in hundreds of recommended actions, replacing the legacy "Show More" manual expansion.
-
-### Logic Subsystems
-The feature logic is decomposed into several specialized modules to ensure Layer 3 compliance and maintainability:
-- **Upgrade Resolution**: Delegates to the core `getUpgradeData` utility (Layer 1) to resolve costs and gains for specific card rarities and levels, ensuring domain synchronization across features.
-
-## State Management
-Managed via the `useLaboratoryStore` Pinia store. Following Section III of the ADR, feature-specific state (observations, simulation results, and settings) is private to the silo and managed via centralized state.
-
-### Persistence & Hydration
-- **LocalStorage**: Settings (`laboratory_settings`) and the player Observation (`laboratory_observation`, the hydrated `PlayerData` input - not the computed result) are persisted to ensure session resilience. Inventory overrides use `laboratory_inventory`.
-- **Migration Logic**: The store includes a migration layer to normalize legacy strategy names ('Target' -> 'Level Projection', 'Maximize' -> 'Resource Efficiency').
-
-### Performance & Memoization
-- **Stability Support**: Implements `getTrajectoryMemoKeys` to provide stable dependency arrays for Vue's `v-memo` directive. This ensures that trajectory items only re-render when critical metrics (Efficiency Index, Upgrade Type) actually change, maintaining 60FPS during active simulations.
-
-### Behavioral Orchestration (useLaboratory.ts & useLaboratorySimulation.ts)
-The behavioral layer standardizes communication between the simulation logic and the UI.
-- **useLaboratory.ts**: Orchestrates high-level layout state and data ingestion.
- - **Layout Orchestration**: Provides standardized `layoutProps` and `layoutEvents` for direct binding to `ConsoleLayout`, centralizing status resolution and refresh logic.
- - **Data Ingestion**: Handles the hydration of raw profiles and merging of persisted inventory overrides.
- - **Memoization**: Exposes `getTrajectoryMemoKeys` for stable `v-memo` dependency arrays across the trajectory list.
-- **useLaboratorySimulation.ts**: Specialized orchestrator for simulation execution.
- - **Simulation Lifecycle**: Manages the non-blocking execution of the progression engine, cancellation of stale runs (via `currentSimulationId`), and batched generator consumption within ~10ms `requestIdleCallback` budgets.
-
-### Custom UI Components & Mobile Ergonomics
-- **TargetPicker (`TargetPicker.vue`)**: Modernized input and target delegation selector supporting tactical player targeting.
-  - **Touch Target Compliance**: Implements a mobile-compliant 48px height footprint for input container boxes and player labels, with a 40px action lock button.
-  - **Tactile Feedback**: Integrates the `v-tactile` directive for declarative haptic feedback brokering in the WebView shell on key-press actions.
-  - **Normalization Boundary**: Automatically trims and normalizes player tags (`normalizeTag`) at the lock-in boundary prior to dispatching events.
-  - **User Experience**: Employs CSS user-select containment and a responsive ellipsis-truncated label layout to prevent mobile layout clipping.
+- [`@features`](../) | [`sync-player-cards`](../../../../Backend/supabase/functions/sync-player-cards/README.md) | game math in [`@core/utils`](../../core/utils/README.md)

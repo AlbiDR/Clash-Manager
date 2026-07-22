@@ -1,104 +1,88 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Android Application Package Substrate (APK)
+# Android Wrapper (APK)
 
-The Android wrapper layer. This directory serves as the authoritative repository for the decoded hybrid Android application package, combining a native Kotlin overlay with the core progressive web application.
+> The Android build of Clash Manager: a custom WebView wrapper around the PWA, plus a native layer that automates sending clan invites inside Clash Royale.
 
----
-<br>
+This is a hand-written WebView app scaffolded on a Bubblewrap/TWA base. The Trusted Web Activity plumbing is left in place but dormant; the app actually launches through a custom `MainActivity` WebView so it can expose a native bridge and run background automation the browser cannot. The source of truth is the Java in [`src/`](src); the shipped binary is `android/classes.dex`.
 
-## Purpose
+## Blitz Mode
 
-The application wrapper provides hardware-level access and background capabilities that are unavailable to standard browser environments. It integrates a native layer directly on top of the PWA shell, enabling high-precision automation and custom overlay services.
+The headline native feature. When you multi-select recruits in the app and hit Blitz, the wrapper:
 
----
-<br>
+1. Opens each recruit's profile in Clash Royale via a deep link.
+2. Uses an overlay service and an accessibility service to tap the invite button automatically, at coordinates you calibrate once.
+3. Cycles through the whole queue, so batch recruiting in the PWA becomes hands-free invites in the game.
 
-## Native Architecture
+The PWA drives this through the `window.AndroidBridge` object; the presence of that object is how the PWA knows it is running inside the wrapper.
 
-The wrapper contains a custom native layer that communicates with the client PWA:
+## Native components
 
-| Service | Component Role |
+Java classes in [`src/com/albidr/clashmanager/`](src/com/albidr/clashmanager):
+
+| Class | Role |
 | :--- | :--- |
-| `com.albidr.clashmanager.BlitzService` | Foreground service managing the system alert window overlay. |
-| `com.albidr.clashmanager.ClashManagerAccessibilityService` | Accessibility service implementing automated gestures. |
-| `com.albidr.clashmanager.MainActivity` | Host activity containing the JavascriptInterface bridge. |
-| `com.albidr.clashmanager.Application` | Application-wide initialization entry point. |
+| `MainActivity` | The WebView host and the `AndroidBridge` JavaScript interface. Hardens the WebView and handles Clash Royale deep links. |
+| `BlitzService` | Foreground service that draws the calibration overlay and drives the invite queue. |
+| `ClashManagerAccessibilityService` | Dispatches the synthetic taps that press invite/close in-game. |
+| `Application` | App initialization entry point. |
+| `LauncherActivity`, `DelegationService` | Dormant TWA scaffolding, retained but not the launcher. |
 
-The PWA interfaces with the native layer via `window.AndroidBridge`. The presence of this object acts as the primary indicator that the client is executing inside the native wrapper environment.
+Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `VIBRATE`, `INTERNET`.
 
-### JSBridge Methods
+## The JavaScript bridge
 
-| Method | Return | Description |
+| Method | Returns | Purpose |
 | :--- | :--- | :--- |
-| `isAccessibilityActive()` | `boolean` | Returns true if `ClashManagerAccessibilityService` is currently running. |
-| `hasOverlayPermission()` | `boolean` | Returns true if the app holds `SYSTEM_ALERT_WINDOW` permission. |
-| `openAccessibilitySettings()` | `void` | Navigates to the system Accessibility Settings screen. |
-| `openExternalUrl(url)` | `void` | Opens a URL via Android `ACTION_VIEW` intent. |
-| `openPlayerProfile(id)` | `void` | Deep-links to a Clash Royale player profile. |
-| `getCoordinates()` | `string` | Returns persisted Blitz Mode calibration coordinates as JSON. |
-| `saveCoordinates(ix, iy, cx, cy)` | `void` | Persists Blitz Mode calibration coordinates. |
-| `startBlitz(payload)` | `void` | Initiates a Blitz Mode sequence for the provided player tags. |
+| `isAndroidWrapper()` | boolean | True when running inside the wrapper. |
+| `isAccessibilityActive()` | boolean | Whether the accessibility service is running. |
+| `hasOverlayPermission()` | boolean | Whether `SYSTEM_ALERT_WINDOW` is granted. |
+| `openAccessibilitySettings()` | void | Opens the system accessibility settings. |
+| `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
+| `startBlitz(tagsJson)` | void | Starts a Blitz sequence for the given player tags. |
+| `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
+| `openExternalUrl(url)` | void | Opens a URL via an Android intent. |
 
----
-<br>
+The PWA-side contract for these methods lives in [`core/types`](../Frontend-PWA/src/core/types/README.md); changing a signature here means changing it there too.
 
-## Directory Layout
+## Contents
 
-```
-APK/
-  README.md - Documentation kernel
-  src/ - Clean human-readable Java source files (authoritative source of truth)
-    com/albidr/clashmanager/ - Native Java classes (BlitzService, MainActivity, etc.)
-  android/ - Decoded APK structure containing the active assets and layout
-    AndroidManifest.xml - Service configurations, intents, and hardware permissions
-    apktool.yml - Package metadata and version info
-    classes.dex - Compiled Kotlin native layer binaries (generated from src/)
-    res/ - Application resources and theme variables
-  build-apk.sh - Orchestrates source compilation (src -> dex -> apk), alignment, signing, and verification
-  gen-android-icons.mjs - Generator utility for adaptive launcher icons
-  verify-apk-integrity.mjs - Release validation script asserting the integrity of built APKs
-  verify-android-source.mjs - Integration check asserting the integrity of the android source tree
-  reference/ - Static archives of reference manifestations
-```
+| Path | Role |
+| :--- | :--- |
+| `src/` | Java source (the authoritative source of truth). |
+| `android/` | Decoded APK: `AndroidManifest.xml`, `apktool.yml` (version), `classes.dex` (built from `src/`), `res/`. |
+| `release/` | The signed release APK, committed by CI. |
+| `reference/` | Reference archives (twa-manifest, web app manifest). |
+| `build-apk.sh` | Compiles `src/` to DEX, merges it into `android/`, then aligns, signs, and verifies. |
+| `gen-android-icons.mjs` | Adaptive launcher-icon generator. |
+| `verify-apk-integrity.mjs`, `verify-android-source.mjs`, `verify-apk-drift.mjs`, `audit-wrapper-integrity.mjs` | The guardrails (see below). |
 
----
-<br>
-
-## Release Integration
-
-Release builds are orchestrated via GitHub Actions:
-1. The release workflow is triggered manually on the Beta branch.
-2. The pipeline compiles, signs, verifies, and packages the versioned installer.
-3. Compiled binaries are published as run artifacts and are not tracked directly in version control.
-
----
-<br>
-
-## Verification and Diagnostics
-
-Local scripts are provided to verify the integrity of the build:
+## Build
 
 ```bash
-pnpm apk:check            # Compile package and run verification checks without signing
-pnpm apk:verify:source    # Assert that the local source tree maintains the native layer
-pnpm apk:verify <path>    # Perform integrity checks on a specified package file
+pnpm apk:check            # compile from src/ and verify integrity, unsigned (typical dev flow)
+pnpm icons:android        # regenerate adaptive launcher icons
 ```
 
----
-<br>
+`build-apk.sh` requires JDK 17 (it rejects newer system JDKs) and the Android build-tools under `~/.bubblewrap/android_sdk`. Running it without `--no-sign` also signs, if a local keystore is present.
 
-## Customization and Modification
+Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>.apk` back to Beta.
 
-- **Version Management**: Update version mappings in `android/apktool.yml` under `versionInfo`.
-- **Launcher Icons**: Execute `pnpm icons:android` to regenerate adaptive assets into `android/res` using the master vector logo. The configuration maps themed foregrounds and backgrounds.
-- **Native Implementation**: Custom Java classes are modified directly under `APK/src/com/albidr/clashmanager/`. Running `./build-apk.sh` compiles these files, generates a Dalvik DEX payload, injects it into `android/classes.dex`, and triggers the repackage build automatically.
+## Guardrails
 
----
-<br>
+| Check | Command / trigger | What it protects |
+| :--- | :--- | :--- |
+| `verify-android-source.mjs` | `pnpm apk:verify:source`; runs on every `APK/**` push | The native layer is present in the source tree. |
+| `verify-apk-integrity.mjs` | `pnpm apk:verify <path>`; release gate | A built APK still contains every custom component, permission, and bridge method (catches stripped builds). |
+| `audit-wrapper-integrity.mjs` | `pnpm audit:apk` | Manifest, color, shortcut, and version parity across the PWA manifest, `apktool.yml`, and friends. |
+| `verify-apk-drift.mjs` | manual | The committed APK matches a fresh build (catches "edited `android/` but forgot to rebuild"). |
 
-## Forbidden Actions
+## Do not
 
-- **Direct Bubblewrap Rebuilds**: Building directly via bubblewrap commands is prohibited as it overwrites the custom native layer with a generic shell.
-- **Resource Deletion**: Modifying or removing essential adaptive assets (such as maskable icons) or removing access permissions from `AndroidManifest.xml` is prohibited.
+- Rebuild with `bubblewrap build`. It overwrites the custom native layer with a generic TWA shell. Use `build-apk.sh`.
+- Delete maskable icons or remove permissions from `AndroidManifest.xml`. The guardrails will fail the build.
+
+## See also
+
+- [Root README](../README.md) | [`core/types` bridge contract](../Frontend-PWA/src/core/types/README.md)

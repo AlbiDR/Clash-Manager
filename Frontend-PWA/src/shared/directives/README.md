@@ -1,39 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Shared Directives (@shared/directives)
+# shared/directives
 
-The **DOM Catalyst Layer**. Low-level DOM manipulators that provide standardized interaction feedback and specialized rendering behaviors across the application.
+> Two Vue directives that attach consistent interaction feedback to any element.
 
----
+**Layer 2 (@shared)** | may import `@core` | never imports `@features` or `@app`. Registered globally at startup.
 
-## Purpose
-Shared Directives (Layer 2) are used to attach reusable behavioral logic directly to DOM elements. They ensure that common interactions - such as haptic feedback on tap or rich tooltip overlays - are applied consistently without polluting component-level logic.
+## Contents
 
-## Architectural Context
-- **Layer**: Layer 2 (@shared/directives)
-- **Role**: DOM Interactions.
-- **Import Boundaries**:
- - **Allowed**: Can import from Layer 1 (@core).
- - **Forbidden**: Strictly forbidden from importing from Layer 3 (@features) or Layer 4 (@app).
+| Directive | Role |
+| :--- | :--- |
+| `vTactile.ts` | Tap and long-press haptics. Ignores actionable children (`.btn-action`, `a`, `.hit-target`) to avoid nested triggers. 500ms long-press threshold, 10px DPI-aware movement tolerance. |
+| `vTooltip.ts` | An accessible rich tooltip built on the native Popover API, rendered from a single reused instance on `document.body`. 400ms touch long-press to open, hides on scroll. |
 
-## Directive Registry
+## Gotchas
 
-### v-tactile (`vTactile.ts`)
-The high-performance tap and long-press haptic engine.
-- **Architectural Protection**: Automatically ignores interactions on actionable children (`.btn-action`, `a`, `.hit-target`) to prevent nested haptic conflicts and redundant triggers.
-- **Thresholds**: Implements a 500ms long-press threshold and a 10px DPI-aware movement tolerance to distinguish between intent and accidental movement.
-- **Hardware Integration**: Directly interfaces with the brokered haptics service to trigger physical vibrations.
+- Both guard for a missing `window` so they are safe in non-browser environments.
+- Keep directives to DOM and feedback only; business logic belongs in composables or services.
 
-### v-tooltip (`vTooltip.ts`)
-An accessible, theme-aware rich information overlay engine.
-- **Popover API**: Utilizes the native web Popover API for efficient top-layer rendering, ensuring tooltips always appear above other UI elements without z-index conflicts.
-- **Singleton Delegation**: Employs a singleton architecture on `document.body`. A single shared tooltip instance is reused across the entire application to minimize memory footprint and DOM clutter.
-- **Interaction Logic**: Activated by a 400ms touch long-press (integrated with 40ms haptic feedback for confirmation). Automatically dismisses on scroll to maintain visual focus.
+## See also
 
----
-
-## Integration Standards
-- **Global Registration**: Directives are registered globally in the application entry point to ensure they are available to all components.
-- **Clinical Purity**: Directives should focus strictly on DOM manipulation and interaction feedback. Business logic should always be delegated to Composables or Services.
-- **SSR Safety**: Directive implementations must account for Server-Side Rendering (SSR) or non-browser environments by checking for the presence of the `window` object.
+- [`@shared`](../README.md) | [`useHaptics`](../composables/README.md)

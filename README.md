@@ -8,8 +8,8 @@
   <p>Stop guessing who to keep and who to recruit. Clash Manager scores your whole roster, scouts elite free agents across the game, plans every card upgrade, and sends clan invites straight into Clash Royale, all from one installable app.</p>
 
   [![Live App](https://img.shields.io/badge/Live-albidr.github.io%2FClash--Manager-0061A4?style=flat-square&logo=pwa&logoColor=white)](https://albidr.github.io/Clash-Manager/)
-  [![Client](https://img.shields.io/badge/Client-v14.33.10-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
-  [![Backend](https://img.shields.io/badge/Backend-v14.33.10-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
+  [![Client](https://img.shields.io/badge/Client-v14.33.11-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
+  [![Backend](https://img.shields.io/badge/Backend-v14.33.11-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
   [![Android](https://img.shields.io/badge/Android-Wrapper-3DDC84?style=flat-square&logo=android&logoColor=white)](APK/README.md)
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 
@@ -97,7 +97,7 @@ The Laboratory simulates the cheapest path to a target King Level so you never w
 - **Instant projection**: current vs projected King Level, plus total XP gained and gold and gems spent.
 - **A step-by-step trajectory**: the exact upgrade order to follow, each step showing the card, level jump, cost, and efficiency.
 
-### Command Center: configure, track events, recover
+### Settings: configure, track events, recover
 
 Settings is where you tune the app and run clan-wide operations.
 
@@ -118,7 +118,7 @@ Four everyday flows show how the consoles work together.
 Open the app; it lands on the Roster and shows your cached members instantly while a fresh sync runs in the background. Sort by Performance, expand the bottom few, and check their trend lines and inactivity. The scores tell you who to coach and who to cut.
 
 **Scout and recruit**
-Switch to Headhunter. Skim the top-scored prospects, dismiss the ones who do not fit (with undo if you misfire), then multi-select the keepers and hit Blitz. On Android, sit back while it opens each profile and taps invite; on any other device it opens each profile for you to send the request.
+Switch to Headhunter. Skim the top-scored prospects, dismiss the ones who do not fit (with undo if you misfire), then multi-select the keepers and hit Blitz to fire off invites: hands-free on Android, profile-by-profile everywhere else.
 
 **Plan a player's upgrades**
 Open the Laboratory, load a player tag, and enter your current gold, gems, and wild cards. Pick a target King Level or optimize for efficiency, and read off the exact upgrade order and the total cost before committing a single resource.
@@ -207,7 +207,7 @@ On the backend, data flows one way: Edge Functions fetch and validate game data,
 | **Design** | Custom "Neo-Material" system: zero third-party UI, icon, or charting libraries; hand-built SVG icons and charts; self-hosted Inter and JetBrains Mono |
 | **Tooling** | pnpm workspace with a version catalog, dependency-cruiser, ast-grep, knip, Vitest, pgTAP |
 
-No component library, no icon pack, no charting dependency. Every icon and chart is drawn by hand in SVG for full control and a perfect performance budget.
+No component library, no icon pack, no charting dependency. Every icon and chart is drawn by hand in SVG, which keeps full control over styling and the shipped bundle small.
 
 ---
 

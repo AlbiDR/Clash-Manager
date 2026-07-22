@@ -1,72 +1,30 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Royale API Proxy (`query-royale-api`)
+# query-royale-api
 
-The **Leaderboard Harvesting Gate**. A specialized Edge Function (Layer 5) responsible for performing secure, transient queries against the Clash Royale API leaderboards.
+> Harvests clanless players from the Path of Legends leaderboard on demand, without saving them to the database.
 
----
+**Trigger:** on demand from the PWA (Headhunter's Global/Local harvest) | **Auth:** internal bearer or Supabase anon key | **Persists:** nothing (results are returned to the caller)
 
-## Purpose
-The `query-royale-api` function acts as a secure proxy for the PWA, allowing it to harvest potential recruits from Global and Local leaderboards without exposing API keys to the client or polluting the persistent database substrate with transient candidates.
+## What it does
 
-## Architectural Context
-- **Layer**: Layer 5 (@features)
-- **Role**: L5 Control Layer Proxy
-- **Runtime**: Deno (Supabase Edge Functions)
-- **Security**: Requires an Internal Bearer Token or a valid Supabase Anon Key.
+- **Global harvest** reads the live worldwide Path of Legends board. If it is empty early in a season, it merges rankings across major countries until it has enough candidates.
+- **Local harvest** resolves the clan's registered location from `CLAN_TAG` and reads that country's board. If the clan is registered as International, it shuffles the country catalog and queries up to 15 countries in parallel for geographic variety.
+- Both paths filter out players who are already in a clan and validate every API response before returning.
 
-## Decomposed System Architecture
-To adhere to the Single Responsibility Principle (SRP) and ensure robust maintainability, the proxy is decoupled into highly focused modules:
-- **Lean Orchestration (`index.ts`)**: Standardizes the function entry point. It handles Supabase Vault synchronization, performs inbound request validation against `PayloadSchema`, checks location details, and delegates actual harvesting tasks.
-- **Specialized Discovery Engine (`harvester.ts`)**: Encapsulates all downstream Clash Royale API query endpoints, filters out players belonging to clans, and coordinates high-concurrency international discovery loops.
-- **Centralized Configuration**: Operational parameters and discovery limits are imported directly from the shared backend configuration kernel (`../_shared/config.ts`), eliminating inline magic numbers.
+## Contents
 
-## Logic Subsystems
+| File | Role |
+| :--- | :--- |
+| `index.ts` | Entry point: validates the request, syncs the Vault, and delegates to the harvester. |
+| `harvester.ts` | The leaderboard query endpoints, clan-status filtering, and the concurrent country-rotation loop. |
+| `client.ts` | Supabase service client. |
 
-### Global Harvesting
-- **Endpoint**: `/locations/global/pathoflegend/players`
-- **Behavior**: Retrieves the live worldwide Path of Legends top 1000.
-- **Multi-Tier Fallback**: If the global Path of Legends is unpopulated (e.g. at the start of a season), the engine falls back to querying and merging Path of Legends rankings across major countries until a floor of 80 players is met.
-- **Validation**: Strict structural validation via `RoyaleRankingListSchema`.
+## Why Path of Legends, not the trophy ladder?
 
-> **Why Path of Legends, not the trophy ladder?** The legacy `/rankings/players`
-> leaderboard was retired with the 2025 Trophy Road rework and now returns an
-> empty list for most locations. The season-scoped form
-> (`/pathoflegend/{season}/rankings/players`) is `global`-only and exposes just
-> *completed* seasons. The season-less `/pathoflegend/players` form used here is
-> the only endpoint that serves the live, in-progress board - and it accepts both
-> `global` and individual country IDs.
+The legacy `/rankings/players` leaderboard was retired with the 2025 Trophy Road rework and now returns an empty list for most locations. The season-scoped form (`/pathoflegend/{season}/rankings/players`) is global-only and exposes only completed seasons. The season-less `/pathoflegend/players` form used here is the only endpoint that serves the live, in-progress board, and it accepts both `global` and individual country IDs. The old ladder is kept only as a per-region fallback.
 
-### Local Harvesting & Country Rotation
-- **Endpoint**: `/locations/{id}/pathoflegend/players`
-- **Identification**: Automatically identifies the clan's registered location by fetching clan details for the configured `CLAN_TAG`.
-- **Local Fallback**: If the local Path of Legends leaderboard is empty or sparse, the function falls back to the local Trophy Road rankings (`/rankings/players`) to guarantee results year-round.
-    - **Note on Legacy Endpoints**: The standalone `/rankings/players` leaderboard was largely retired following the 2025 Trophy Road rework. It is maintained here as a **Legacy Fallback** for specific regions where Path of Legends data may be unpopulated.
-- **International Rotation**: If the clan is registered as "International" (ID 57000101) or non-country, the function performs a **Concurrent Batch Harvest**:
-    1. Fetches the full locations catalog from `/locations`.
-    2. Filters for valid country locations (`isCountry: true`).
-    3. **Concurrent Dispatch**: Shuffles the catalog and selects the top 15 random countries to query in parallel.
-    4. **Rationale**: Parallelizing discovery prevents massive delays when hitting empty regions and ensures geographic variety within a single execution cycle (~1-3 seconds).
-- **Ephemeral Caching**: The locations catalog is cached in-memory (`cachedCountries`) at the module level to minimize roundtrips during an execution instance lifecycle.
-- **Epoch Ceiling**: Up to 15 countries are probed per request (`MAX_HARVEST_EPOCHS`).
+## See also
 
-## Security & Validation Boundaries
-
-### Inbound Validation
-All requests are validated against `PayloadSchema` to ensure they specify a valid endpoint (`local` or `global`).
-
-### Outbound Validation (Zero-Trust)
-External data from the Clash Royale API is treated as untrusted. Every response is parsed and validated using Valibot schemas before being returned to the client:
-- `RoyaleRankingListSchema`: Validates player rankings.
-- `RoyaleClanSchema`: Validates clan profile details for location identification.
-- `RoyaleLocationListSchema`: Validates the locations catalog.
-
-### Error Handling
-The function utilizes `clinicalServe` for standardized error reporting and audit logging. Failures in external API calls or structural validation result in a direct rejection to protect the PWA from malformed data.
-
-## Environment Dependencies
-- `SUPABASE_URL` / `SUPABASE_ANON_KEY`: Infrastructure identity.
-- `INTERNAL_BEARER_TOKEN`: Secure function-to-function communication.
-- `CLAN_TAG`: Targeted clan for local harvesting.
-- `ROYALE_API_KEYS`: Injected via the Key Farm (`muscle.ts`) for authenticated Royale API access.
+- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md)

@@ -1,45 +1,31 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# User Proxy : Player Profile Sync (`sync-player-cards`)
+# sync-player-cards
 
-The **User Proxy**. A specialized Deno Edge Function responsible for the high-fidelity synchronization of individual player profiles and card snapshots. It acts as an L5 Control Layer proxy to ensure data consistency between the Clash Royale API and the PWA client.
+> Syncs a player's profile and card collection for the Laboratory, normalized to a common level scale and cached to protect the API.
 
----
+**Trigger:** on demand from the Laboratory | **Auth:** internal bearer or Supabase anon key | **Persists:** `features.player_card_snapshots`
 
-## Purpose
-The `sync-player-cards` function provides an authenticated, safe boundary for refreshing player-specific data. It handles the complexity of rarity-relative card level normalization and implements a multi-tier caching strategy to protect the Clash Royale API from redundant requests.
+## What it does
 
-## Architectural Context
-- **Layer**: L5 Control Layer (Supabase Edge Function)
-- **Role**: Domain-specific proxy and normalization engine.
-- **Protocol**: Clinical Serve Protocol (Standardized CORS, Auth, and Telemetry).
+1. **Cache check** - looks for a snapshot in `features.player_card_snapshots` less than 12 hours old and returns it on a hit.
+2. **Fetch** - on a miss, fetches the player's profile through the Key Farm.
+3. **Normalize** - converts each card's rarity-relative level to an absolute 1-16 scale (`absolute = baseMax - (apiMax - apiLevel)`), so cards of different rarities can be compared and scored consistently.
+4. **Persist** - upserts the snapshot with a fresh `fetched_at` timestamp.
 
-## Core Logic & Features
+## Contents
 
-### Clinical Synchronization Protocol
-The function implements a strictly ordered, four-stage lifecycle:
-1.  **Cache Discovery (S1)**: Checks the `features.player_card_snapshots` substrate for a valid, fresh snapshot (<12h old). Returns a standardized response on hit.
-2.  **API Extraction (S2)**: On cache miss, performs an authenticated fetch from the Clash Royale API via the **Native Muscle** key rotation engine (`fetchWithRotation`).
-3.  **Clinical Normalization (S3)**: Transforms relative Royale API card levels into the authoritative 1-16 absolute scale based on distance from `maxLevel`.
-4.  **Substrate Persistence (S4)**: Upserts the standardized payload into the database while maintaining the 12-hour TTL boundary via the `fetched_at` column.
+| File | Role |
+| :--- | :--- |
+| `index.ts` | The four-step sync, behind the shared handler. |
+| `client.ts` | Supabase service client. |
 
-### High-Fidelity Normalization
-The Clash Royale API provides card levels relative to their specific rarity (e.g., Rare Level 11). This engine normalizes all cards to a unified **Absolute Scale** (1-16) based on the distance from the card's maximum level, ensuring consistent performance scoring across the Roster and Laboratory features.
+## Gotchas
 
-### Cache Strategy & TTL
-To ensure system stability and API quota health, the engine enforces a **12-hour cache TTL**. This is an internal database-freshness cutoff compared against each snapshot's `fetched_at`, not an HTTP `Cache-Control` header.
-- **Cache Hit**: Returns a standardized profile immediately from the database substrate without consuming API rotation slots.
-- **Cache Miss**: Triggers a fresh extraction and updates the persistence layer for subsequent requests.
-- **Temporal Defensive Safety**: Standardizes the parsing of snapshot `fetched_at` timestamps using the defensive `parseFetchedAt` helper. This helper wraps the `Temporal.Instant.from` call in a robust try-catch boundary and falls back to 0 epoch milliseconds on error. This treats any malformed or corrupted timestamp as an expired cache entry rather than causing a runtime crash, protecting the engine's execution lifecycle.
+- The 12-hour TTL is a database-freshness cutoff compared against `fetched_at`, not an HTTP `Cache-Control` header.
+- A snapshot with an unreadable `fetched_at` is treated as expired rather than trusted, so a corrupt timestamp can never serve stale data.
 
-### Validation Boundaries
-The function enforces zero-trust boundaries using strictly inferred **Valibot** schemas to validate and parse data across all ingress, egress, and database boundaries:
-- **Ingress Validation**: Incoming player tags are normalized and validated against `PlayerSyncPayloadSchema`.
-- **Substrate Cache Validation**: Database cached data loaded from the snapshots table is validated against an array of `PlayerCardSnapshotSchema` to prevent corrupted database records from propagating into runtime logic.
-- **Egress Validation**: External Royale API payloads are validated against `RoyaleFullPlayerSchema` before processing to prevent substrate corruption.
+## See also
 
-## Integration Standards
-- **Nomenclature Compliance**: Strictly adheres to domain-descriptive naming conventions, avoiding anemic variable pathogens.
-- **Telemetry Reporting**: Utilizes the standard `logAudit` and `heartbeat` primitives to provide real-time visibility into the synchronization lifecycle.
-- **Zero-Trust**: Enforces internal bearer token and Supabase anon key authorization via the clinical protocol.
+- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md) | consumed by the [Laboratory](../../../../Frontend-PWA/src/features/laboratory/README.md)

@@ -1,70 +1,36 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Core API (@core/api) : Transport Layer
+# core/api
 
-The **Data Gateway**. The authoritative transport layer responsible for brokering communication between the Clash Manager PWA and the Supabase Binary Stack.
+> The transport layer between the app and Supabase: one client, a set of domain clients, and the schemas that validate every payload.
 
----
+**Layer 1 (@core)** | imports nothing above it.
 
-## Purpose
-The Core API directory (Layer 1) centralizes the logic for data ingestion, remote procedure calls (RPC), and Edge Function interactions. It enforces clinical validation at the system boundary to ensure that external data is safely transformed into persistent domain models.
+## Responsibilities
 
-## Architectural Context
-- **Layer**: Layer 1 (@core)
-- **Role**: Data Transport & Validation.
-- **Import Boundaries**:
- - **Allowed**: Can import from Layer 0 (@substrate).
- - **Forbidden**: Strictly forbidden from importing from any higher layers (Shared, Features, App).
+- Own the Supabase client and read clan data from the feature views.
+- Wrap each domain's RPCs and Edge Function calls behind a small client.
+- Validate all inbound data and map raw rows into clean domain models.
 
-## Specialized Domain Clients
+## Contents
 
-### Supabase Client (`SupabaseClient.ts`)
-The foundational infrastructure gateway.
-- **Client Initialization**: Manages the singleton instance of the Supabase client.
-- **Auth & Connectivity**: Handles internal authentication and provides the underlying transport for all specialized clients.
-- **fetchRemote**: High-fidelity data orchestrator that performs parallel fetching from authoritative feature views (Direct View Access) and enforces strict validation boundaries.
-- **useApiState.ts**: Authoritative connectivity singleton for backend availability and handshake discovery.
+| File | Role |
+| :--- | :--- |
+| `SupabaseClient.ts` | The singleton client and `fetchRemote`, which reads the feature views in parallel and validates them. |
+| `useApiState.ts` | Reactive backend availability and handshake state. |
+| `VoyageClient.ts` | Clan Voyage activation, scheduling, and completion RPCs, plus summary and contribution reads. |
+| `RecruitClient.ts` | Recruit dismiss/undismiss RPCs and the realtime blacklist subscription. |
+| `ProfileClient.ts` | Calls the `sync-player-cards` Edge Function for the Laboratory. |
+| `MaintenanceClient.ts` | Manual backend maintenance triggers and web-push subscription registration. |
+| `DataMappers.ts` | Raw Supabase rows to domain models (Voyage history, heritage tenure, score fallbacks). |
+| `*Schemas.ts` | Valibot schemas per domain (`Base`, `Member`, `Recruit`, `Profile`, `Voyage`, `App`, `Offline`, `Maintenance`), aggregated by `DataSchemas.ts`. |
 
-### Voyage Client (`VoyageClient.ts`)
-The transport orchestrator for the Clan Voyage subsystem.
-- **RPC Lifecycle**: Manages voyage activation (`initialize_voyage`), ledger updates (`scheduleVoyageEvent`), event cancellation (`cancelScheduledVoyageEvent`), and completion (`set_voyage_end`).
-- **Data Fetching**: Provides high-performance methods for retrieving voyage summaries and contribution ledgers from authoritative database views.
+## Gotchas
 
-### Recruit Client (`RecruitClient.ts`)
-The transport orchestrator for Headhunter recruitment operations.
-- **Blacklist Management**: Interfaces with RPCs (`dismiss_recruits`, `undismiss_recruits`) to manage recruit rejection state.
-- **Realtime Sync**: Orchestrates Postgres Realtime subscriptions to ensure cross-device consistency for the recruitment blacklist.
-- **Scouting**: Provides diagnostic direct-query methods (`scanRecruitsDirect`) for pool auditing.
+- Prefer reading the feature views (`roster_view`, `headhunter_view`) over building client-side joins.
+- `MaintenanceClient` can register a browser `PushSubscription`, but server-side push dispatch is not implemented yet (see [settings](../../features/settings/README.md)). Local notifications and app badges do work.
 
-### Profile Client (`ProfileClient.ts`)
-The transport orchestrator for player card synchronization.
-- **Edge Proxy**: Interfaces with the `sync-player-cards` Edge Function to perform rarity-relative normalization and backend persistence.
+## See also
 
-### Maintenance Client (`MaintenanceClient.ts`)
-The transport orchestrator for system-level administrative tasks.
-- **Nightly Triggers**: Provides an interface for manually triggering the nightly maintenance and database janitor cycles.
-- **Push Registration**: Manages the registration of browser `PushSubscription` objects for server-side notification dispatch.
-
----
-
-## Validation Boundaries (`DataSchemas.ts`)
-
-All inbound data MUST be validated against a Valibot schema at the client entry point to prevent state corruption.
-- **Schema Modules**: Decomposed by domain for high-granularity validation. Most are aggregated via the `DataSchemas.ts` barrel for external consumption:
- - `BaseSchemas.ts`: Foundational validation primitives and shared domain constraints.
- - `MemberSchemas.ts`: Authoritative schemas for active clan residents.
- - `RecruitSchemas.ts`: Validation for discovery candidates and recruitment status.
- - `ProfileSchemas.ts`: High-fidelity schemas for player card snapshots and Royale profiles.
- - `VoyageSchemas.ts`: Schemas for Clan Voyage events and contribution ledgers.
- - `AppSchemas.ts`: Validation for global web application data and system-level payloads.
- - `OfflineSchemas.ts`: Schemas for hardening the offline queue and background synchronization boundary.
- - `MaintenanceSchemas.ts`: (Specialized) Internal validation for system maintenance and push subscription ingress. *Exempt from the DataSchemas barrel to maintain domain isolation.*
-- **Data Mappers**: Transformation logic for converting raw database rows into Persistence-Ignorant Domain Models. Enforces clinical normalization for telemetry, including Voyage history (`v_hist`), Heritage tenure, and `potential_score` fallback logic.
-
----
-
-## Integration Standards
-- **Clinical Purity**: Logic here must focus strictly on transport and validation. Domain-specific business logic belongs in Feature stores or services.
-- **Fail-Fast**: Utilize `v.safeParse()` to identify and halt malformed data ingress at the earliest opportunity.
-- **Direct View Access**: Prefer querying authoritative feature views (`roster_view`, `headhunter_view`) over complex client-side joins.
+- [`@core`](../README.md) | [Backend Edge Functions](../../../../Backend/supabase/functions)

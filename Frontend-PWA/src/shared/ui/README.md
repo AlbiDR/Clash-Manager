@@ -1,106 +1,79 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Shared UI - Molecule Layer
+# shared/ui
 
-The **Atomic Foundry**. A collection of domain-blind UI building blocks and layout orchestrators that define the visual language of the Clash Manager ecosystem.
+> The component library: every reusable, domain-blind Vue component, from the Console shell to badges, charts, and feedback states.
 
----
+**Layer 2 (@shared)** | may import `@core` | never imports `@features` or `@app`.
 
-## Purpose
-The Shared UI directory (Layer 2) contains reusable components that are agnostic of specific business logic. These components are designed to be "dumb" or brokered, receiving data via props and emitting events for higher-layer orchestration.
+## The Console pattern
 
-## Architectural Context
-- **Layer**: Layer 2 (@shared)
-- **Isolation**: Strictly decoupled. A Molecule **NEVER** imports from Layer 3 (Features) or Layer 4 (App).
-- **Dependencies**:
- - `@core/theme`: Sovereign Design System tokens and injection.
- - `@core/services`: Infrastructure singletons (Haptics, UI Coordinator).
- - `@core/utils`: Pure utility primitives.
+The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleList`, driven by `useConsoleController` in `@core`, give every list view the same search, sort, progressive rendering, selection, status pill, and empty/error/skeleton handling. Roster and Headhunter are thin configurations of it.
 
-## Component Categories
+## Layout and shell
 
-### Layout Orchestration
-Standardized containers that manage view-level states like loading, errors, and empty results.
-- **ConsoleLayout.vue**: The primary structural shell for feature views. Manages the `ConsoleHeader`, FAB synchronization, and `remoteInfo` orchestration. Delegates pull-to-refresh behavior to the `@shared/composables/usePullToRefresh.ts` composable.
-- **ConsoleHeader.vue**: Standardized view header. Handles search debouncing, sorting controls, and visual status indicators (StatusPill). Delegates scroll-aware styling to the `@shared/composables/useHeaderScroll.ts` composable.
-- **ConsoleList.vue**: Specialized list container with Showcase Mode support and time-sliced (progressive) rendering.
-- **AppFooter.vue**: Global navigation anchor and legal/version information container.
-- **SettingsCard.vue**: Collapsible container for feature settings and configurations. Supports header slots, loading states, and smooth "spring" transition animations.
-- **SkeletonSettingsCard.vue**: Placeholder variant for settings cards with staggered skeleton animations to prevent layout shifts.
+| Component | Role |
+| :--- | :--- |
+| `ConsoleLayout.vue` | The feature-view shell: header, FAB sync, pull-to-refresh, empty/error orchestration. |
+| `ConsoleHeader.vue` | Search (debounced), sort controls, and the status pill. |
+| `ConsoleList.vue` | Time-sliced list container with Showcase support. |
+| `SettingsCard.vue` / `SkeletonSettingsCard.vue` | Collapsible settings container and its skeleton. |
+| `AppFooter.vue` | Version and legal footer. |
 
-### Data Visualization
-Generic, high-performance visualization components.
-- **BaseHistoryChart.vue**: A domain-blind charting engine for visualizing chronological trends. Supports linear best-fit trajectories and projected next values. Delegates geometric translation to the `@shared/composables/useBaseHistoryChart.ts` composable.
-- **WarHistoryChart.vue**: Domain-aware molecule for visualizing clan war performance. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
+## Cards, primitives and stats
 
-### Voyage Management Molecules
-Specialized UI components for orchestrating and visualizing Clan Voyage events, promoted from Layer 3 to resolve structural dependency violations.
-- **VoyageBanner.vue**: A high-visibility, glassmorphism-styled progress banner for the active or upcoming Voyage event. Orchestrates real-time progress feedback and phase transitions (Active, Pending, Awaiting Promotion).
-- **VoyageHistoryChart.vue**: Domain-aware molecule for visualizing chronological Clan Voyage contributions. Orchestrates `BaseHistoryChart` by delegating history parsing and projection logic to the `@shared/composables/useHistoryChart.ts` composable.
-- **EventManagement.vue**: Administrative hub for managing the Voyage lifecycle, including event activation, ledger synchronization, and cancellation.
-- **VoyageSetupForm.vue**: Specialized configuration interface for initializing new Voyage events. Handles goal setting, end-time scheduling, and validation.
+| Component | Role |
+| :--- | :--- |
+| `BaseCard.vue` / `BaseCardSkeleton.vue` | The foundational card (squish, selection) and its skeleton. |
+| `BaseBadge.vue` | The atomic badge. |
+| `Icon.vue` | The SVG renderer; paths come from `@core/theme/icons`. |
+| `StatusPill.vue` / `MomentumPill.vue` | System-health pill and trend indicator. |
+| `StatsGrid.vue` / `StatisticItem.vue` | Responsive stat grid and a labeled data point. |
+| `SettingRow.vue` | A settings row (toggle, loading, disabled). |
 
-### UI Primitives
-Atomic elements that form the basis of the design system.
-- **BaseBadge.vue**: Low-level atomic component for all badge-like UI elements. Standardizes the 'badge' class styling and provides a consistent interface for metadata display.
-- **BaseCard.vue**: The foundational card unit. Implements "squish-interactions," selection states, and semantic container scaling via the `@shared/composables/useCardMechanics.ts` broker.
-- **BaseCardSkeleton.vue**: Placeholder variant of the card for loading states.
-- **Icon.vue**: The authoritative SVG renderer. Centralizes vector path definitions in `@core/theme/icons` and ensures CSS variable consistency with `non-scaling-stroke` vector effects.
-- **StatusPill.vue**: Interactive system health indicator. Supports 4-tier status categories and expands to reveal `remoteInfo` metadata. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates expansion and interaction logic to the `@shared/composables/useStatusPill.ts` composable.
-- **MomentumPill.vue**: Specialized indicator for performance trends and momentum metrics.
-- **StatisticItem.vue**: Labeled data point with standardized typography and spacing.
-- **StatsGrid.vue**: Responsive layout component for displaying player statistics in 2 or 3 columns.
-- **SettingRow.vue**: Unified molecule for feature settings, supporting toggles, loading states, and disabled variants. Integrates `v-tactile` for consistent haptic feedback during interactions.
+## Identity badges
 
-### Player Identity Badges
-Standardized molecules for rendering player-specific metrics and metadata with integrated benchmarking powered by the `@shared/composables/useBenchmarkedStat.ts` composable.
-- **TrophyBadge.vue**: Displays trophy counts with context-aware benchmarking tooltips (LB: Leaderboard vs HH: Headhunter).
-- **ScoreBadge.vue**: Renders PeS (Performance Score) / PoS (Potential Score) with integrated benchmarking and optional `MomentumPill` support.
-- **RoleBadge.vue**: Semantic-colored indicator for clan roles (Leader, Co-Leader, Elder, Member).
-- **TenureBadge.vue**: High-density display for "Days in Clan" tracking.
-- **LongevityBadge.vue**: Displays discovery or activity duration (e.g., '2h 15m').
-- **TagBadge.vue**: Standardized component for displaying player tags with consistent truncation (#ABC12).
+| Component | Role |
+| :--- | :--- |
+| `ScoreBadge.vue` | Performance (PeS) / Potential (PoS) score with benchmarking. |
+| `TrophyBadge.vue` | Trophy count with benchmark tooltip. |
+| `RoleBadge.vue` / `TenureBadge.vue` | Clan role and days-in-clan. |
+| `LongevityBadge.vue` / `TagBadge.vue` | Discovery duration and player tag. |
 
-### Interactive Molecules
-Components that facilitate user interaction and state management.
-- **BaseSelect.vue**: A clinical, keyboard-accessible replacement for native HTML `<select>` elements, ensuring visual parity and interaction stability in Android WebViews. Supports generic types to prevent state corruption.
-- **BaseSegmentedControl.vue**: Standardized toggle/segment selector for switching between mutually exclusive options. Supports generic types and compact variants for high-density UI contexts.
-- **DurationInput.vue**: Specialized input molecule for relative Time-to-Timestamp (T2T) configuration. Provides a standardized Days/Hours/Minutes interface with auto-clamping.
-- **CardActions.vue**: Extensible action bar for card-level operations (Dismiss, Promote, etc.).
-- **SelectionBar.vue**: Contextual bottom bar for bulk operations in multi-select modes. Orchestrates score filtering via `ScoreThresholdSelector.vue` and delegates lifecycle logic to the `@shared/composables/useSelectionBar.ts` composable. Modernized with a 56px height, 48px mobile touch target footprint compliance on primary actions and counts, and the integrated `v-tactile` directive for declarative brokered haptic feedback.
-- **ScoreThresholdSelector.vue**: Interactive score threshold picker with comparison mode toggling. Modernized for mobile touch target compliance (48px) and integrates `v-tactile` for brokered haptic feedback. Delegates UI logic to the `@shared/composables/useScoreSelector.ts` composable.
-- **FloatingDock.vue**: Dynamic action hub for global or view-specific high-priority triggers. Orchestrates `NavigationDock.vue` and `SelectionFab.vue`.
-- **NavigationDock.vue**: Internal UI component for rendering the primary app navigation items.
-- **SelectionFab.vue**: Internal UI component for rendering the selection-mode actions and FAB.
-- **HeaderInfoOverlay.vue**: Accessible detail layer for explaining view-specific metrics or statuses.
+## Charts
 
-### Resilience & Feedback
-Components responsible for system stability and user notifications.
-- **ErrorBoundary.vue**: Captures runtime anomalies and provides a graceful recovery path.
-- **ErrorState.vue**: Specialized view for displaying handled error messages and recovery actions.
-- **ToastContainer.vue / Toast.vue**: Global notification system for transient system messages.
-- **EmptyState.vue**: Declarative feedback for empty data sets with custom icon and hint support.
+| Component | Role |
+| :--- | :--- |
+| `BaseHistoryChart.vue` | Domain-blind trend chart with best-fit line and projection. |
+| `WarHistoryChart.vue` / `VoyageHistoryChart.vue` | War and Voyage variants. |
 
----
+## Interactive
 
-## Layout Orchestration Details
+| Component | Role |
+| :--- | :--- |
+| `BaseSelect.vue` / `BaseSegmentedControl.vue` | Accessible replacements for native select and segmented controls, hardened for Android WebViews. |
+| `DurationInput.vue` | Days/hours/minutes input with clamping. |
+| `CardActions.vue` | Card-level action bar. |
+| `SelectionBar.vue` / `ScoreThresholdSelector.vue` | Bulk-operation bar and its score-threshold picker. |
+| `FloatingDock.vue` / `NavigationDock.vue` / `SelectionFab.vue` | The bottom dock that morphs into contextual selection actions. |
+| `HeaderInfoOverlay.vue` | Explains a view's metrics. |
 
-### Empty-State Orchestration
-`ConsoleLayout.vue` provides a declarative interface for managing empty states, eliminating the need for local boilerplate in feature views. When the `isEmpty` prop is true, it automatically renders the `EmptyState.vue` component using the following orchestration props:
+## Voyage and feedback
 
-- `emptyMessage`: The primary headline (e.g., "No Recruits Found").
-- `emptyHint`: Supporting text or action guidance (e.g., "Try adjusting your filters").
-- `emptyIcon`: The name of the icon to display (must correspond to a valid key in `icons.ts`).
+| Component | Role |
+| :--- | :--- |
+| `VoyageBanner.vue` / `EventManagement.vue` / `VoyageSetupForm.vue` | Voyage progress banner, admin hub, and setup form. |
+| `ErrorBoundary.vue` / `ErrorState.vue` | Runtime error capture and recovery UI. |
+| `ToastContainer.vue` / `Toast.vue` | Global transient notifications. |
+| `EmptyState.vue` | Empty-data feedback. |
 
-### Provenance Orchestration (remoteInfo)
-The Molecule Layer centralizes backend provenance reporting. `ConsoleLayout.vue` accepts a `remoteInfo` prop (Standardized in Layer 1 `@core/types`) and propagates it to the `ConsoleHeader` (via `StatusPill`). This ensures that users always have visibility into the data source (Supabase) and its authoritative age across all feature consoles.
+## Conventions
 
-## Integration Standards
-Components in this layer must adhere to the **Visual Purity** protocol:
-- **No Third-Party Libraries**: All icons and styles are custom-crafted.
-- **CSS Variable Driven**: Styles must consume `--sys-color-*` variables injected by the Core Theme engine.
-- **Accessibility**: Minimum touch targets of 48px and descriptive ARIA labels are mandatory.
+- No third-party UI, icon, or charting libraries; styles consume `--sys-*` variables.
+- Minimum 48px touch targets and descriptive ARIA labels.
+- Tests live in `ui-tests/`.
 
-## Testing Strategy
-Each component is verified via Vitest (`*.spec.ts`) located in the nested `ui-tests/` subdirectory (`src/shared/ui/ui-tests/`). Tests focus on prop-driven rendering, event emission, and visual state transitions.
+## See also
+
+- [`@shared`](../README.md) | [`@core/theme`](../../core/theme/README.md)
