@@ -35,7 +35,7 @@ function getMonthOfISOWeek(weekStr) {
 }
 
 function runAging() {
-  const todayStr = "2026-07-20";
+  const todayStr = process.env.TODAY || (fs.existsSync('/tmp/nightly/TODAY') ? fs.readFileSync('/tmp/nightly/TODAY', 'utf8').trim() : "2026-07-22");
   const today = new Date(todayStr + "T00:00:00Z");
 
   function getDaysDiff(dateStr) {
@@ -47,7 +47,7 @@ function runAging() {
   let content = fs.readFileSync(prHistoryPath, 'utf8');
 
   // Update LAST_AGED
-  content = content.replace(/LAST_AGED:\s+\d{4}-\d{2}-\d{2}/, 'LAST_AGED:   2026-07-20');
+  content = content.replace(/LAST_AGED:\s+\d{4}-\d{2}-\d{2}/, 'LAST_AGED:   ' + todayStr);
 
   // Markers
   const t1Marker = '## T1 -- Active (last 7 days)';
