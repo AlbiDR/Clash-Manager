@@ -209,9 +209,9 @@ export function subscribeToBlacklist(
           }
         },
       )
-      .subscribe((_status, err) => {
-        if (err) {
-          console.warn("[Realtime] Subscription error:", err);
+      .subscribe((_status, realtimeSubscriptionError) => {
+        if (realtimeSubscriptionError) {
+          console.warn("[Realtime] Subscription error:", realtimeSubscriptionError);
         }
       });
 

@@ -2794,6 +2794,13 @@ LAST_AGED:   2026-07-23
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-23] PR #PENDING [Stage 4]: perf(opt): standardize callback parameter naming in recruit client
+**Domain:** Refactor/Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/api/RecruitClient.ts, .github/nightly-logs/04-optimization-coverage.log
+**Why:** The realtime blacklist subscription callback in `RecruitClient.ts` contained an anemic variable `err`, violating CleanStack naming and domain clarity standards.
+**Change:** Standardized the realtime subscription error callback parameter variable from `err` to `realtimeSubscriptionError` to eliminate anemic variable pathogens in Layer 1 Core.
+**Result:** Improved domain-descriptive naming clarity across Layer 1 PostgreSQL subscription boundary with 100% test pass.
+
 ### [2026-07-22] PR #PENDING [Stage 12]: fix(apk-ux): modernize BaseSelect haptic interaction and remove legacy useHaptics
 **Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/shared/ui/BaseSelect.vue
