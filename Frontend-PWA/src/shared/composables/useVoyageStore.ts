@@ -21,7 +21,7 @@
  * ============================================================================
  */
 import { defineStore } from "pinia";
-import { ref, computed, onUnmounted } from "vue";
+import { ref, computed, getCurrentInstance, onUnmounted } from "vue";
 import type { VoyageSummary, VoyageStatus } from "./voyageTypes";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { 
@@ -147,9 +147,11 @@ export const useVoyageStore = defineStore("voyage", () => {
     }
   }
 
-  onUnmounted(() => {
-    cleanupListeners();
-  });
+  if (getCurrentInstance()) {
+    onUnmounted(() => {
+      cleanupListeners();
+    });
+  }
 
   // --- ACTIONS ---
 

@@ -10,7 +10,7 @@ import { useClashDataStore, DEFAULT_SCORE_THRESHOLD } from "@core";
 import { storeToRefs } from "pinia";
 import { useSyntheticMode } from "@core/services/useSyntheticMode";
 import { useToast } from "@core/services/useToast";
-import { onUnmounted, watch } from "vue";
+import { getCurrentInstance, onUnmounted, watch } from "vue";
 import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
 
 // Module-level state/references
@@ -122,7 +122,9 @@ export function useHeadhunter() {
     },
     () => { clashDataStore.refreshFromSupabase(); },
   );
-  onUnmounted(stopBlacklistSync);
+  if (getCurrentInstance()) {
+    onUnmounted(stopBlacklistSync);
+  }
 
   /**
    * BADGE SYNCHRONIZATION
