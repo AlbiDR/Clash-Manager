@@ -1,3 +1,10 @@
+### [2026-07-23] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- search path standardization
+**Domain:** Database | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** To maintain a clean, fully-synchronized, zero-touch deployable master baseline schema of the database.
+**Change:** Standardized the search path for public.get_vault_secret in the master baseline to ensure perfect Postgres 17 alignment.
+**Result:** 100% RLS compliance, search_path isolation, and standard formatting verified with zero regressions.
+
 ### [2026-07-22] PR #PENDING [Stage 9]: chore(refactor): no action required
 **Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
