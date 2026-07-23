@@ -47,6 +47,9 @@ vi.mock("@shared", () => ({
   SettingsCard: {
     template: "<div class='settings-card' :aria-busy=\"loading ? 'true' : 'false'\"><slot /></div>",
     props: ["title", "icon", "initiallyExpanded", "loading", "bodyClass"],
+  },
+  vTactile: {
+    beforeMount() {},
   }
 }));
 
