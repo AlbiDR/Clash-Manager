@@ -3,7 +3,7 @@
 
 # shared/utils
 
-> Presentation helpers that sit between raw domain data and the UI: too UI-specific for `@core/utils`, too general for one feature.
+> Presentation helpers that sit between raw domain data and the UI: too UI-specific for [`@core/utils`](../../core/utils/README.md), too general for one feature.
 
 **Layer 2 (@shared)** | may import `@core` | never imports `@features` or `@app`.
 

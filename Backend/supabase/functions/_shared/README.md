@@ -5,7 +5,7 @@
 
 > The common kernel every Edge Function is built on: the request handler, Clash Royale API access, secret loading, and validation schemas.
 
-**Imported by:** all five Edge Functions. Imports nothing from them.
+**Imported by:** [`ingest-royale-data`](../ingest-royale-data/README.md), [`headhunter-scanner`](../headhunter-scanner/README.md), [`query-royale-api`](../query-royale-api/README.md), [`fetch-player-battlelog`](../fetch-player-battlelog/README.md), and [`sync-player-cards`](../sync-player-cards/README.md) - all five Edge Functions. Imports nothing from them.
 
 ## Responsibilities
 

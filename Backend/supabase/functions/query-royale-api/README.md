@@ -5,7 +5,7 @@
 
 > Harvests clanless players from the Path of Legends leaderboard on demand, without saving them to the database.
 
-**Trigger:** on demand from the PWA (Headhunter's Global/Local harvest) | **Auth:** internal bearer or Supabase anon key | **Persists:** nothing (results are returned to the caller)
+**Trigger:** on demand from the [PWA](../../../../Frontend-PWA/README.md) ([Headhunter](../../../../Frontend-PWA/src/features/headhunter/README.md)'s Global/Local harvest) | **Auth:** internal bearer or Supabase anon key | **Persists:** nothing (results are returned to the caller)
 
 ## What it does
 

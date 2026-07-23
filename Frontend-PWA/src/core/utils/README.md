@@ -11,7 +11,7 @@
 
 | File | Role |
 | :--- | :--- |
-| `game.ts`, `gameConstants.ts`, `gameTypes.ts` | Clash Royale card data, XP and King-level math, level normalization. Used by the Laboratory. |
+| `game.ts`, `gameConstants.ts`, `gameTypes.ts` | Clash Royale card data, XP and King-level math, level normalization. Used by the [Laboratory](../../features/laboratory/README.md). |
 | `economy.ts` | Currency math and branded `Gold` / `Gems` / `XP` types. |
 | `PriorityQueue.ts` | A binary heap (O(log N)) for upgrade selection in the simulator. |
 | `idbKernel.ts` | Low-level IndexedDB wrapper with in-memory fallback. |
@@ -20,7 +20,7 @@
 | `text.ts` | Tag cleaning and display formatting, plus a small Markdown parser for clan descriptions. |
 | `locale.ts` | Maps the browser language to a Supercell-supported locale for external links. |
 | `assets.ts` | Resolves game-asset icon paths relative to the app base URL. |
-| `sortOptions.ts`, `sortStrategies.ts` | Sort labels/descriptions and the comparator functions for Roster and Headhunter. |
+| `sortOptions.ts`, `sortStrategies.ts` | Sort labels/descriptions and the comparator functions for [Roster](../../features/roster/README.md) and [Headhunter](../../features/headhunter/README.md). |
 | `bezier.ts` | Cubic-bezier math for smooth chart trend lines. |
 | `navigation.ts` | The source of truth for the nav items and their icons. |
 | `visibility.ts` | Registry for focus-based revalidation triggers. |

@@ -9,7 +9,7 @@
 
 ## The Console pattern
 
-The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleList`, driven by `useConsoleController` in `@core`, give every list view the same search, sort, progressive rendering, selection, status pill, and empty/error/skeleton handling. Roster and Headhunter are thin configurations of it.
+The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleList`, driven by `useConsoleController` in [`@core`](../../core/services/README.md), give every list view the same search, sort, progressive rendering, selection, status pill, and empty/error/skeleton handling. [Roster](../../features/roster/README.md) and [Headhunter](../../features/headhunter/README.md) are thin configurations of it.
 
 ## Layout and shell
 

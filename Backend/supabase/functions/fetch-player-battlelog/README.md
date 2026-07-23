@@ -5,7 +5,7 @@
 
 > Fetches a single player's freshest battle log by querying every API key in parallel and returning the most recent result.
 
-**Trigger:** on demand (diagnostics, PWA lookups) | **Auth:** internal bearer or Supabase anon key | **Persists:** nothing
+**Trigger:** on demand (diagnostics, [PWA](../../../../Frontend-PWA/README.md) lookups) | **Auth:** internal bearer or Supabase anon key | **Persists:** nothing
 
 ## What it does
 

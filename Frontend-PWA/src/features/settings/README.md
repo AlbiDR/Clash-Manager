@@ -11,10 +11,10 @@
 
 Each concern is a collapsible card:
 
-- **Event management** - schedule and track a Clan Voyage (target, countdowns, live progress). Composed from the shared `EventManagement` component.
+- **Event management** - schedule and track a Clan Voyage (target, countdowns, live progress). Composed from the shared [`EventManagement`](../../shared/ui/README.md) component.
 - **Appearance** - Light / Dark / Auto theme and a keep-screen-awake toggle.
 - **Notifications** - recruit-alert threshold, app badges, and a test notification.
-- **Feature flags** - Blitz Mode calibration, Android bridge detection, APK update download, and benchmark-tooltip visibility.
+- **Feature flags** - Blitz Mode calibration, [Android bridge](../../../../APK/README.md) detection, APK update download, and benchmark-tooltip visibility.
 - **Display modes** - Showcase (demo), Blueprint (skeletons), and Synthetic (mock data).
 - **Network** - live API status and a switchable Supabase endpoint.
 - **Backend maintenance** - manual, cooldown-guarded triggers for the database, scanner, and Key Farm.
@@ -32,7 +32,7 @@ Each concern is a collapsible card:
 
 ## Gotchas
 
-- Settings keeps no private config state; it delegates everything to the `useAppSettings` singleton in `@core`, so preferences are shared with other features and the service worker.
+- Settings keeps no private config state; it delegates everything to the `useAppSettings` singleton in [`@core`](../../core/services/README.md), so preferences are shared with other features and the service worker.
 - **Web push is not implemented yet.** `subscribePush` shows a "coming soon" notice pending VAPID and an Edge Function. Local notifications and app badges do work.
 
 ## See also

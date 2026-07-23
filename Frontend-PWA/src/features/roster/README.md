@@ -5,7 +5,7 @@
 
 > The leadership console: ranks every clan member by performance and shows the history behind each score.
 
-**Layer 3 (@features)** | imports `@shared`, `@core` | never another feature. One deliberate exception: `RosterView` composes the shared `VoyageBanner` in its top slot.
+**Layer 3 (@features)** | imports [`@shared`](../../shared/README.md), [`@core`](../../core/README.md) | never another feature. One deliberate exception: `RosterView` composes the shared [`VoyageBanner`](../../shared/ui/README.md) in its top slot.
 
 ## What it does
 
@@ -29,7 +29,7 @@
 
 ## How it works
 
-`useLeaderboard` observes the `members` store in `@core`, configures the shared list controller, and renders cards through progressive time-slicing. Charts and prediction come from `@shared/composables/useHistoryChart`. The Roster only reads: every persistent change goes through a `@core` API service.
+`useLeaderboard` observes the `members` store in [`@core`](../../core/README.md), configures the shared list controller, and renders cards through progressive time-slicing. Charts and prediction come from [`@shared/composables/useHistoryChart`](../../shared/composables/README.md). The Roster only reads: every persistent change goes through a [`@core` API service](../../core/api/README.md).
 
 ## See also
 

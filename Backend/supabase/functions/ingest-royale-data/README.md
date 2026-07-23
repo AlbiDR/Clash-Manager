@@ -21,7 +21,7 @@ Each stage runs under a 10-minute timeout and reports progress to the governance
 
 | File | Role |
 | :--- | :--- |
-| `index.ts` | Entry point; loads secrets and runs the pipeline behind the shared handler. |
+| `index.ts` | Entry point; loads secrets and runs the pipeline behind the [shared handler](../_shared/README.md). |
 | `pipeline.ts` | Orchestrates the three stages. |
 | `client.ts` | Supabase service client for database calls. |
 | `stages/discovery.ts` | Recruit harvesting from tournaments. |

@@ -5,7 +5,7 @@
 
 > Layer 4: the shell, router, and service worker that compose the features into a single working PWA.
 
-**Layer 4 (@app)** | may import `@features`, `@shared`, `@core` | nothing may import from it. This is the only layer allowed to import features.
+**Layer 4 (@app)** | may import [`@features`](../features/README.md), [`@shared`](../shared/README.md), [`@core`](../core/README.md) | nothing may import from it. This is the only layer allowed to import features.
 
 ## Responsibilities
 
@@ -19,7 +19,7 @@
 | :--- | :--- |
 | `App.vue` | Root shell: connectivity strip, `RouterView` inside an error boundary, the floating dock, and toasts. |
 | `main.ts` | Bootstrap: validate config, init settings and theme, register Pinia, the router, directives, and the global `Icon`, then mount. |
-| `router/` | Routes (`/roster`, `/headhunter`, `/laboratory`, `/settings`), View Transitions, scroll restoration, and chunk-load recovery. |
+| `router/` | Routes ([`/roster`](../features/roster/README.md), [`/headhunter`](../features/headhunter/README.md), [`/laboratory`](../features/laboratory/README.md), [`/settings`](../features/settings/README.md)), View Transitions, scroll restoration, and chunk-load recovery. |
 | `sw.ts`, `sw/` | The service worker: precaching, cache-first navigation, background sync, and the update lifecycle. |
 
 ## How it works

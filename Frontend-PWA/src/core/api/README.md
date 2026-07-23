@@ -21,7 +21,7 @@
 | `useApiState.ts` | Reactive backend availability and handshake state. |
 | `VoyageClient.ts` | Clan Voyage activation, scheduling, and completion RPCs, plus summary and contribution reads. |
 | `RecruitClient.ts` | Recruit dismiss/undismiss RPCs, realtime blacklist subscriptions, and direct leaderboard scouting. |
-| `ProfileClient.ts` | Calls the `sync-player-cards` Edge Function for the Laboratory. |
+| `ProfileClient.ts` | Calls the [`sync-player-cards`](../../../../Backend/supabase/functions/sync-player-cards/README.md) Edge Function for the [Laboratory](../../features/laboratory/README.md). |
 | `MaintenanceClient.ts` | Manual backend maintenance triggers and web-push subscription registration. |
 | `DataMappers.ts` | Raw Supabase rows to domain models (Voyage history, heritage tenure, score fallbacks). |
 | `*Schemas.ts` | Valibot schemas per domain (`Base`, `Member`, `Recruit`, `Profile`, `Voyage`, `App`, `Offline`, `Maintenance`), aggregated by `DataSchemas.ts`. |

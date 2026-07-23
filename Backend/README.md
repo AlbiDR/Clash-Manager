@@ -19,7 +19,7 @@ The Supabase project behind Clash Manager. It pulls clan, war, and battle data f
 - **Stores history.** Raw payloads land in one schema, get shredded into a normalized model, and are kept as a rolling window (battles) or a permanent ledger (wars).
 - **Scores** members (performance) and recruits (potential) with Postgres views computed on read, so scores always reflect the latest data.
 - **Discovers recruits** by continuously scanning tournaments and leaderboards for strong clanless players.
-- **Serves** the PWA through row-level-secured views and a small set of RPCs, and maintains itself with scheduled pruning and health checks.
+- **Serves** the [PWA](../Frontend-PWA/README.md) through row-level-secured views and a small set of RPCs, and maintains itself with scheduled pruning and health checks.
 
 ---
 
@@ -55,7 +55,7 @@ The pipeline moves data in four steps:
 3. **Shred.** An `AFTER INSERT` trigger decomposes the JSON and upserts it into the normalized `drivers` tables.
 4. **Project.** The `features` views compute scores and aggregates on read; the app queries those views and a few RPCs.
 
-The scoring formulas (RPeS/PeS for members, RPoS/PoS for recruits) are summarized in the [root README](../README.md#the-scoring-engine). RPoS is computed in TypeScript (`_shared/utils.ts`); everything else is computed in SQL views in the master migration.
+The scoring formulas (RPeS/PeS for members, RPoS/PoS for recruits) are summarized in the [root README](../README.md#the-scoring-engine). RPoS is computed in TypeScript in [`_shared/utils.ts`](supabase/functions/_shared/README.md); everything else is computed in SQL views in the master migration.
 
 ---
 

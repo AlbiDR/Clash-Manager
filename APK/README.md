@@ -15,7 +15,7 @@ The headline native feature. When you multi-select recruits in the app and hit B
 2. Uses an overlay service and an accessibility service to tap the invite button automatically, at coordinates you calibrate once.
 3. Cycles through the whole queue, so batch recruiting in the PWA becomes hands-free invites in the game.
 
-The PWA drives this through the `window.AndroidBridge` object; the presence of that object is how the PWA knows it is running inside the wrapper.
+The [PWA](../Frontend-PWA/README.md) drives this through the [`window.AndroidBridge`](../Frontend-PWA/src/core/types/README.md) object; the presence of that object is how the PWA knows it is running inside the wrapper.
 
 ## Native components
 

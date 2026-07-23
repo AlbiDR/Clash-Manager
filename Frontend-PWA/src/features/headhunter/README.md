@@ -12,7 +12,7 @@
 - Shows the top prospects (windowed to the 50 highest potential), sortable by Potential, Trophies, Donations, Recency, or Name, with expandable stats benchmarked against the clan.
 - Dismisses a recruit instantly with an undo toast; dismissals persist for 30 days and sync across devices (Supabase realtime) and browser tabs (BroadcastChannel).
 - Harvests clanless players from the global or local leaderboard on demand and queues them for recruiting.
-- Blitzes selected recruits: opens each profile in Clash Royale in sequence, and on Android taps invite automatically.
+- Blitzes selected recruits: opens each profile in Clash Royale in sequence, and on [Android](../../../../APK/README.md) taps invite automatically.
 - Raises a notification and app badge when new recruits cross the score threshold.
 
 ## Contents
@@ -23,7 +23,7 @@
 | `components/RecruitCard.vue` | A recruit row: identity, potential score, expandable stats. |
 | `composables/useRecruiter.ts` | The main engine: list config, manual and background sync, Blitz setup. |
 | `composables/useHeadhunter.ts` | The dismissal lifecycle and realtime/broadcast sync. |
-| `composables/useLeaderboardScraper.ts` | On-demand global/local leaderboard harvesting via `query-royale-api`. |
+| `composables/useLeaderboardScraper.ts` | On-demand global/local leaderboard harvesting via [`query-royale-api`](../../../../Backend/supabase/functions/query-royale-api/README.md). |
 | `composables/useRecruitBlacklist.ts` | In-memory tombstones that hide a recruit between the tap and realtime confirmation. |
 
 ## How it works, and why

@@ -17,7 +17,7 @@
 ## Gotchas
 
 - Both guard for a missing `window` so they are safe in non-browser environments.
-- Keep directives to DOM and feedback only; business logic belongs in composables or services.
+- Keep directives to DOM and feedback only; business logic belongs in [composables](../composables/README.md) or [services](../../core/services/README.md).
 
 ## See also
 

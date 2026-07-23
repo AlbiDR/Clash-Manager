@@ -5,7 +5,7 @@
 
 > Layer 1: the framework-agnostic foundation. Data transport, persistence, services, theme, types, and pure utilities that everything else builds on.
 
-**Layer 1 (@core)** | imports nothing above it | imported by `@shared`, `@features`, and `@app`.
+**Layer 1 (@core)** | imports nothing above it | imported by [`@shared`](../shared/README.md), [`@features`](../features/README.md), and [`@app`](../app/README.md).
 
 ## Responsibilities
 

@@ -5,7 +5,7 @@
 
 > Layer 1 singletons and state orchestrators: persistence, sync, the reusable list "Console" engine, connectivity, platform bridges, and the PWA lifecycle.
 
-**Layer 1 (@core)** | may import `@core/api` and `@core/utils` | imports nothing above it.
+**Layer 1 (@core)** | may import [`@core/api`](../api/README.md) and [`@core/utils`](../utils/README.md) | imports nothing above it.
 
 This is the single registry for these services; higher-layer READMEs link here rather than re-listing them.
 
@@ -24,7 +24,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 
 | Service | Role |
 | :--- | :--- |
-| `useConsoleController.ts` | Drives the list views (Roster, Headhunter): filtering, sorting, progressive rendering. |
+| `useConsoleController.ts` | Drives the list views ([Roster](../../features/roster/README.md), [Headhunter](../../features/headhunter/README.md)): filtering, sorting, progressive rendering. |
 | `useConsoleSelection.ts` | Batch selection logic (select all, select by score). |
 | `useConsoleMetadata.ts` | Connectivity and statistics badges for a console. |
 | `useListFilter.ts` | Search and sort over large datasets, cached with `WeakMap`. |
@@ -40,7 +40,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useNetworkInfo.ts` | Network telemetry (RTT, downlink) and degradation detection. |
 | `useVisibilityRefresh.ts` | Refreshes data when the document regains focus. |
 | `useBroadcastChannel.ts` | Cross-tab state sync (settings, dismissals). |
-| `useNativeBridge.ts` | Brokers the Android bridge: permissions and Blitz calibration for the wrapper. |
+| `useNativeBridge.ts` | Brokers the [Android bridge](../../../../APK/README.md): permissions and Blitz calibration for the wrapper. |
 | `useExternalLink.ts` | OS intents and Clash Royale deep links. |
 | `useShare.ts` / `useShareTarget.ts` | Web Share API and inbound shared player tags. |
 | `useBadge.ts` | App badges, native or notification-based. |

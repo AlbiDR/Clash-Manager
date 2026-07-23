@@ -45,7 +45,7 @@ The client follows the four-layer CleanStack model, enforced by dependency-cruis
 | :--- | :--- | :--- |
 | L1 Core | [`src/core/`](src/core/README.md) | Framework-agnostic infrastructure: [api](src/core/api/README.md), [config](src/core/config/README.md), [services](src/core/services/README.md), [theme](src/core/theme/README.md), [types](src/core/types/README.md), [utils](src/core/utils/README.md). |
 | L2 Shared | [`src/shared/`](src/shared/README.md) | Domain-blind [ui](src/shared/ui/README.md), [composables](src/shared/composables/README.md), [directives](src/shared/directives/README.md), and [utils](src/shared/utils/README.md). |
-| L3 Features | `src/features/` | The feature silos: [roster](src/features/roster/README.md), [headhunter](src/features/headhunter/README.md), [laboratory](src/features/laboratory/README.md), [settings](src/features/settings/README.md). |
+| L3 Features | [`src/features/`](src/features/README.md) | The feature silos: [roster](src/features/roster/README.md), [headhunter](src/features/headhunter/README.md), [laboratory](src/features/laboratory/README.md), [settings](src/features/settings/README.md). |
 | L4 App | [`src/app/`](src/app/README.md) | Shell, router, and service worker. |
 
 Dependencies point inward only: a feature never imports another feature, and only the app layer may import features. The full ruleset is the [CleanStack Architecture reference](../.github/authoritative-design-references/CleanStack%20Architecture.md).

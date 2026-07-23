@@ -3,7 +3,7 @@
 
 # headhunter-scanner
 
-> Discovers strong clanless players, profiles them, scores their potential, and keeps the recruit pool fresh.
+> Discovers strong clanless players, profiles them, scores their potential, and keeps the [recruit pool](../../../../Frontend-PWA/src/features/headhunter/README.md) fresh.
 
 **Trigger:** scheduled (a 5-minute pg_cron guard re-fires it when the last run found no new top candidates) and manual (`run-headhunter.yml`) | **Auth:** internal bearer | **Persists:** `drivers.recruits`
 
@@ -25,7 +25,7 @@ It reports the outcome of each run into `substrate.headhunter_epoch_state`, whic
 
 | File | Role |
 | :--- | :--- |
-| `index.ts` | Entry point behind the shared handler. |
+| `index.ts` | Entry point behind the [shared handler](../_shared/README.md). |
 | `scanner.ts` | Orchestrates the five stages. |
 | `client.ts` | Supabase service client for database calls. |
 | `stages/` | One file per stage (see the table above). |

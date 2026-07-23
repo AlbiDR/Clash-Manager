@@ -5,7 +5,7 @@
 
 > Syncs a player's profile and card collection for the Laboratory, normalized to a common level scale and cached to protect the API.
 
-**Trigger:** on demand from the Laboratory | **Auth:** internal bearer or Supabase anon key | **Persists:** `features.player_card_snapshots`
+**Trigger:** on demand from the [Laboratory](../../../../Frontend-PWA/src/features/laboratory/README.md) | **Auth:** internal bearer or Supabase anon key | **Persists:** `features.player_card_snapshots`
 
 ## What it does
 

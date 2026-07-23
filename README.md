@@ -59,7 +59,7 @@ Every sync archives your clan's wars, donations, trophies, and battle logs into 
 - **Remember your veterans.** A returning member's history follows them back.
 - **Find recruits who fit**, scored against your current roster, not against nothing.
 
-It runs as an installable web app on any device, and the Android build adds one trick a browser cannot: it taps "Invite" inside Clash Royale for you.
+It runs as an installable web app on any device, and the [Android build](APK/README.md) adds one trick a browser cannot: it taps "Invite" inside Clash Royale for you.
 
 ---
 

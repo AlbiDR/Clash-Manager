@@ -44,7 +44,7 @@
 
 ## Clan Voyage
 
-Kept here (not in a feature) so Roster and Settings can share it.
+Kept here (not in a feature) so [Roster](../../features/roster/README.md) and [Settings](../../features/settings/README.md) can share it.
 
 | File | Role |
 | :--- | :--- |
