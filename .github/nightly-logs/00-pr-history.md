@@ -2854,6 +2854,13 @@ LAST_AGED:   2026-07-23
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-23] PR #PENDING [Stage 6]: docs(tsdoc): harden interface contracts for recruit client and progressive list
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/api/RecruitClient.ts, Frontend-PWA/src/core/services/useProgressiveList.ts, Frontend-PWA/src/shared/ui/BaseSelect.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Standardize and map core interface contracts and inline decision logs to ensure absolute logic intent transparency without introducing logical mutations.
+**Change:** Injected complete generic types (`@typeParam T`), property/parameter descriptors, and callback inline decision log comments to RecruitClient, useProgressiveList, and BaseSelect.
+**Result:** 100% synchronized and compliant TSDoc API documentation and license blocks with zero code or layout regressions.
+
 ### [2026-07-23] PR #PENDING [Stage 4]: perf(opt): standardize callback parameter naming in recruit client
 **Domain:** Refactor/Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/core/api/RecruitClient.ts, .github/nightly-logs/04-optimization-coverage.log
