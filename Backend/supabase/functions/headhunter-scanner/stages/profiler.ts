@@ -89,7 +89,7 @@ export async function runProfiler(
         let refreshCount = 0;
         let invalidCount = 0;
         
-        const profileTasks = tagsToProfile.map(playerTag => async () => {
+        const profileTasks = tagsToFetch.map(playerTag => async () => {
             logAudit('PROFILING', 'called', { tag: playerTag });
             try {
                 const playerProfileApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(playerTag)}`);
