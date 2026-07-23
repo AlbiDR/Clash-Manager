@@ -19,21 +19,41 @@ import Icon from "./Icon.vue";
  * in value handling. Renamed anemic 'o' to 'option' for domain clarity.
  */
 
+/**
+ * Interface contract for select options.
+ *
+ * @typeParam V - The type of value stored in the option.
+ */
 interface Option<V> {
+  /** The display text for the option. */
   label: string;
+  /** The underlying raw value of the option. */
   value: V;
+  /** Whether this option is disabled and cannot be selected. */
   disabled?: boolean;
+  /** Custom CSS classes to apply to this option. */
   class?: string;
 }
 
+/**
+ * Component-level properties for BaseSelect.
+ */
 const props = defineProps<{
+  /** The active selected value of type T. */
   modelValue: T;
+  /** The array of option contracts of type Option<T>. */
   options: Option<T>[];
+  /** The default fallback placeholder text. */
   placeholder?: string;
+  /** Accessibility label for screen-readers. */
   ariaLabel?: string;
 }>();
 
+/**
+ * Component-level custom event emissions.
+ */
 const emit = defineEmits<{
+  /** Emitted when an option selection changes. */
   "update:modelValue": [T];
 }>();
 

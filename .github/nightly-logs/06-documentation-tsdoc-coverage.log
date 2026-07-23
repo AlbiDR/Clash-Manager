@@ -47,3 +47,8 @@
 * [2026-07-20] [Stage 6] CHANGED: Backend/supabase/functions/headhunter-scanner/stages/shadow-scout.ts -- Hardened interface contracts and logic annotations for Layer 1 shadow scout discovery.
 * [2026-07-20] [Stage 6] CHANGED: Backend/supabase/functions/headhunter-scanner/stages/ghost-purge.ts -- Hardened interface contracts and logic annotations for Layer 1 ghost purge hot-zone audits.
 * [2026-07-22] [Stage 6] CHANGED: Frontend-PWA/src/features/laboratory/components/ParameterCard.vue -- Hardened interface contracts and logic annotations for Layer 3 simulation parameters after optimization standardizations.
+* [2026-07-23] [Stage 6] CHANGED: Frontend-PWA/src/core/api/RecruitClient.ts -- Hardened interface contracts and added decision logs for subscription error callback boundaries.
+* [2026-07-23] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useProgressiveList.ts -- Added typeParam T and JSDoc annotations to formalize time-sliced rendering interface contract.
+* [2026-07-23] [Stage 6] CHANGED: Frontend-PWA/src/shared/ui/BaseSelect.vue -- Documented properties, custom option interface, and event emissions for full TSDoc compliance.
+* [2026-07-23] [Stage 6] CLEAN: Backend/supabase/functions/_shared/protocol.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after schema validation checks.
+* [2026-07-23] [Stage 6] CLEAN: Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after haptic modernizations.
