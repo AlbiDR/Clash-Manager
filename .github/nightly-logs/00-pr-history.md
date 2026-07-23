@@ -1,3 +1,10 @@
+### [2026-07-23] PR #PENDING [Stage 12]: fix(apk-ux): modernize Notification Engine mobile touch targets and haptic interactions
+**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/settings/components/NotificationSettings.vue
+**Why:** Button elements in the Notification settings were below the 48px touch target standard and lacked declarative haptic feedback.
+**Change:** Modernized threshold, enable, and action buttons to 48px footprint compliance and integrated the `v-tactile` haptic feedback directive.
+**Result:** Unified hybrid shell touch target compliance and consistent physical touch feedback in Android WebView.
+
 ### [2026-07-23] PR #PENDING [Stage 9]: chore(refactor): no action required
 **Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
