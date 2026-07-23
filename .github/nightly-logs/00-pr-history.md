@@ -1,3 +1,11 @@
+### [2026-07-23] PR #PENDING [Stage 5]: docs(readme): reconcile realtime subscriptions and error callback parameter renaming
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/api/README.md, .github/nightly-logs/05-documentation-readme-coverage.log
+**Why:** The realtime blacklist subscription callback error parameter in `RecruitClient.ts` was standardized, causing adjacent core API documentation to drift.
+**Change:** Reconciled `core/api/README.md` to document standard `realtimeSubscriptionError` error parameters, strict realtime validation boundaries via `BlacklistEventSchema`, and synchronous cleanup contracts.
+**Result:** 100% synchronization between substrate realtime implementation standards and system-wide architectural intent.
+
+
 ### [2026-07-23] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- search path standardization
 **Domain:** Database | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md

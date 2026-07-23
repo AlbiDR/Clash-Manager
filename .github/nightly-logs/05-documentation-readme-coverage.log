@@ -57,3 +57,11 @@
 * [2026-07-22] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
 * [2026-07-22] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
 * [2026-07-22] [Stage 5] CLEAN: Frontend-PWA/src/features/settings/README.md -- No action required
+* [2026-07-23] [Stage 5] CHANGED: Frontend-PWA/src/core/api/README.md -- Reconciled realtime blacklisting subscriptions, error callback parameter standardization, validation boundaries, and resource cleanup contracts.
+* [2026-07-23] [Stage 5] CLEAN: README.md -- No action required
+* [2026-07-23] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
+* [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
+* [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
+* [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/src/features/settings/README.md -- No action required
