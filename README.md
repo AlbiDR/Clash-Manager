@@ -67,7 +67,7 @@ It runs as an installable web app on any device, and the Android build adds one 
 
 Clash Manager is organized as four consoles. You move between them from a floating dock at the bottom of the screen.
 
-### Roster: know exactly where your clan stands
+### [Roster](Frontend-PWA/src/features/roster/README.md): know exactly where your clan stands
 
 The Roster ranks every member by a **Performance Score (0-100)** and lets you drill into the story behind each number.
 
@@ -77,7 +77,7 @@ The Roster ranks every member by a **Performance Score (0-100)** and lets you dr
 - **Momentum indicator** showing whether a member is climbing or slipping.
 - **Bulk actions**: select many members at once (or everyone above a score threshold) and open their profiles, or fire them all into game in sequence through Blitz mode.
 
-### Headhunter: recruit elite free agents on autopilot
+### [Headhunter](Frontend-PWA/src/features/headhunter/README.md): recruit elite free agents on autopilot
 
 The Headhunter is a live feed of clanless players discovered from tournaments and leaderboards, each scored by **Potential Score (0-100)** against your own roster so you know a prospect is genuinely an upgrade.
 
@@ -87,7 +87,7 @@ The Headhunter is a live feed of clanless players discovered from tournaments an
 - **Blitz recruiting**: multi-select prospects and Clash Manager opens each one's profile in Clash Royale back to back. On Android it goes further and automatically invites the prospect for you (see [Blitz Mode](#the-android-app-blitz-mode)).
 - **Alerts**: get a notification and an app badge when new recruits cross the score threshold you set, even with the app closed.
 
-### Laboratory: plan every upgrade before you spend a gem
+### [Laboratory](Frontend-PWA/src/features/laboratory/README.md): plan every upgrade before you spend a gem
 
 The Laboratory simulates the cheapest path to a target King Level so you never waste gold or wild cards on the wrong card.
 
@@ -97,7 +97,7 @@ The Laboratory simulates the cheapest path to a target King Level so you never w
 - **Instant projection**: current vs projected King Level, plus total XP gained and gold and gems spent.
 - **A step-by-step trajectory**: the exact upgrade order to follow, each step showing the card, level jump, cost, and efficiency.
 
-### Settings: configure, track events, recover
+### [Settings](Frontend-PWA/src/features/settings/README.md): configure, track events, recover
 
 Settings is where you tune the app and run clan-wide operations.
 
@@ -143,7 +143,7 @@ Clash Manager replaces gut feeling with two scoring families. Both are **self-ca
 
 | Metric | What it is |
 | :--- | :--- |
-| **RPoS** (Raw Potential Score) | An absolute decaying score for a prospect built from trophies, donations, war-win consistency, and a huge bonus for recent clan war battles. |
+| **[RPoS](Backend/supabase/functions/_shared/README.md)** (Raw Potential Score) | An absolute decaying score for a prospect built from trophies, donations, war-win consistency, and a huge bonus for recent clan war battles. Computed in `_shared/utils.ts`. |
 | **PoS** (Potential Score, 0-100) | RPoS as a percentage of the strongest prospect currently scouted, with a small bonus for returning veterans the clan already knows. Prospects are tiered Elite, High, or Mid. |
 
 Because a member's score is partailly relative to the current roster and a recruit's score is relative to the current recruit pool, a "90" always means "near the top of what you have right now," today and next season alike without drifting from stale targets.
@@ -184,10 +184,10 @@ The frontend follows a strict four-layer **CleanStack** model, enforced automati
 
 | Layer | Scope | May import |
 | :--- | :--- | :--- |
-| `@core` | Framework-agnostic infrastructure: API clients, services, theme tokens, utilities | (nothing above it) |
-| `@shared` | Domain-blind UI building blocks, composables, directives | `@core` |
-| `@features` | Self-contained feature silos: roster, headhunter, laboratory, settings | `@shared`, `@core` |
-| `@app` | Shell, router, and service worker that wire it all together | everything below |
+| [`@core`](Frontend-PWA/src/core/README.md) | Framework-agnostic infrastructure: API clients, services, theme tokens, utilities | (nothing above it) |
+| [`@shared`](Frontend-PWA/src/shared/README.md) | Domain-blind UI building blocks, composables, directives | `@core` |
+| [`@features`](Frontend-PWA/src/features/README.md) | Self-contained feature silos: roster, headhunter, laboratory, settings | `@shared`, `@core` |
+| [`@app`](Frontend-PWA/src/app/README.md) | Shell, router, and service worker that wire it all together | everything below |
 
 A feature never imports another feature. Shared logic lives in `@shared` or `@core`. The full ruleset is the [CleanStack Architecture reference](.github/authoritative-design-references/CleanStack%20Architecture.md).
 
