@@ -2755,7 +2755,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-07-22
+LAST_AGED:   2026-07-23
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -2926,46 +2926,16 @@ LAST_AGED:   2026-07-22
 **Change:** Hardened the sync-player-cards Edge Function by extracting Temporal parsing into a defensive parseFetchedAt helper with try-catch block and fallback to 0 epoch milliseconds.
 **Result:** Deterministic runtime protection against malformed or corrupted database timestamps at the cache check boundary.
 
-### [2026-07-16] PR #PENDING [Stage 11]: perf(apk-optimization): harden webview settings and refine sw precache
-**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
-**Files:** APK/src/com/albidr/clashmanager/MainActivity.java, Frontend-PWA/vite.config.ts, .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/00-pipeline-intelligence.md, .github/nightly-logs/00-pr-history.md
-**Why:** Unoptimized WebView settings and redundant SW precache entries were bloating the installation lifecycle and security surface.
-**Change:** Hardened WebView in the native wrapper by disabling form data saving, zoom controls, and Web SQL; refined SW precaching by excluding 'logo.svg' and 'favicon.ico'.
-**Result:** Reduced initial cache footprint and hardened hybrid shell security and UI lock verified via monorepo test gate (1409 passed).
-
-### [2026-07-16] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
-**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Conducted a comprehensive audit to ensure version, manifest, and security synchronization between the PWA and native Android wrappers.
-**Change:** Verified monorepo-wide synchronization at v14.31.2 (17120) across manifests, resources, and native configuration; confirmed Digital Asset Links fingerprint parity.
-**Result:** 100% integrity and alignment verified across all PWA and APK wrapper boundaries.
-
-### [2026-07-16] PR #PENDING [Stage 9]: refactor(structural): decompose harvester and centralize configuration
-**Domain:** Infrastructure/Backend | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/functions/query-royale-api/index.ts, Backend/supabase/functions/query-royale-api/harvester.ts, Backend/supabase/functions/_shared/config.ts
-**Why:** The Royale API proxy function had grown into a monolithic entry point violating SRP and Layer 5 architectural boundaries.
-**Change:** Decomposed query-royale-api by extracting discovery and international batch logic into a specialized harvester module; centralized harvesting constants and operational thresholds in the shared configuration kernel.
-**Result:** 60% reduction in entry point complexity and hardened feature-to-feature isolation for backend discovery pipelines.
-
-### [2026-07-16] PR #PENDING [Stage 8]: chore(deps): bump dependencies and update major watchlist
-**Domain:** Dependencies | **Commit:** PENDING | [View PR](PENDING)
-**Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
-**Why:** Conducted a dependency audit to apply safe maintenance updates and research high-risk major version transitions for Pinia 4, Vite 8, and TypeScript 7.
-**Change:** Bumped @supabase/supabase-js to ^2.110.6, vue to ^3.5.40, knip to ^6.27.0, and vue-router to ^5.2.0 via the catalog, and updated the major version watchlist with Pinia 4.0.2 impact analysis.
-**Result:** Monorepo dependencies hardened against rot; ecosystem research documented for architectural planning.
-
-### [2026-07-16] PR #PENDING [Stage 6]: docs(tsdoc): harden core configuration contracts and logic annotations
-**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/core/config/index.ts, .github/nightly-logs/06-documentation-tsdoc-coverage.log
-**Why:** Layer 1 core configuration constants lacked formal TSDoc and architectural logic annotations, leading to potential ambiguity in threshold rationale and timing behaviors.
-**Change:** Injected comprehensive TSDoc blocks and mandatory [THREAT:] / [DECISION LOG] annotations to document the rationale behind business thresholds and UI stability delays.
-**Result:** 100% logic intent transparency and hardened interface contracts for the application's configuration substrate.
-
 
 ## T2 -- Recent (8-30 days)
 
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-16] PR #PENDING [TSDoc]: docs(tsdoc): harden core configuration contracts and logic annotations (``PENDING``) [View](PENDING)
+* [2026-07-16] PR #PENDING [Dependencies]: chore(deps): bump dependencies and update major watchlist (``PENDING``) [View](PENDING)
+* [2026-07-16] PR #PENDING [Infrastructure/Backend]: refactor(structural): decompose harvester and centralize configuration (``PENDING``) [View](PENDING)
+* [2026-07-16] PR #PENDING [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
+* [2026-07-16] PR #PENDING [APK Optimization]: perf(apk-optimization): harden webview settings and refine sw precache (``PENDING``) [View](PENDING)
 * [2026-07-14] PR #PENDING [Verification]: test(verify): extend saturating coverage for game utility kernel (``PENDING``) [View](PENDING)
 * [2026-07-14] PR #PENDING [Baseline]: chore(baseline): fold new migrations into master baseline (``PENDING``) [View](PENDING)
 * [2026-07-14] PR #PENDING [README]: docs(readme): reconcile PWA manager delegation and config kernel (``PENDING``) [View](PENDING)
@@ -3170,16 +3140,6 @@ LAST_AGED:   2026-07-22
 * [2026-06-24] PR #914 [README]: docs(readme): reconcile shared interaction directive constraints (``4429e8d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/914)
 * [2026-06-24] PR #913 [Verification]: test(verify): add logic proofs for backend shared schemas (``36298c3``) [View](https://github.com/AlbiDR/Clash-Manager/pull/913)
 * [2026-06-24] PR #912 [Hardening]: fix(harden): excise any pathogens from vTooltip and App lifecycle (``f745366``) [View](https://github.com/AlbiDR/Clash-Manager/pull/912)
-* [2026-06-23] PR #911 [APK UX]: fix(apk-ux): integrate v-tactile haptics into SettingRow (``750052a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/911)
-* [2026-06-23] PR #910 [APK Optimization]: perf(apk-optimization): enable hardware acceleration and prune locale resources (``b88197f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/910)
-* [2026-06-23] PR #909 [Dependencies]: chore(deps): bump knip from 6.17.1 to 6.18.0 (``a99f31b``) [View](https://github.com/AlbiDR/Clash-Manager/pull/909)
-* [2026-06-23] PR #908 [Version Integrity]: chore(version): no drift found in monorepo v14.0.0 (``a7a1082``) [View](https://github.com/AlbiDR/Clash-Manager/pull/908)
-* [2026-06-23] PR #907 [TSDoc]: docs(tsdoc): document ScoreThresholdSelector component (``4dda289``) [View](https://github.com/AlbiDR/Clash-Manager/pull/907)
-* [2026-06-23] PR #906 [README]: docs(readme): reconcile shared ui and core utility drift (``675cac7``) [View](https://github.com/AlbiDR/Clash-Manager/pull/906)
-* [2026-06-23] PR #905 [Performance]: perf(opt): substrate hygiene and naming standardization (``1cae397``) [View](https://github.com/AlbiDR/Clash-Manager/pull/905)
-* [2026-06-23] PR #904 [Baseline]: chore(baseline): fold new migrations into master baseline (``043e70a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/904)
-* [2026-06-23] PR #903 [Verification]: test(verify): add specs for formatDisplayTag (``9516127``) [View](https://github.com/AlbiDR/Clash-Manager/pull/903)
-* [2026-06-23] PR #902 [Hardening]: fix(harden): implement generics in BaseSelect.vue (``7169de7``) [View](https://github.com/AlbiDR/Clash-Manager/pull/902)
 
 ## T3 -- Historical (31-90 days)
 
@@ -3187,15 +3147,17 @@ LAST_AGED:   2026-07-22
 
 #### 2026-W26
 * 1 PR [APK Integrity]: #900
-* 1 PR [APK Optimization]: #901
-* 1 PR [Baseline]: #894
-* 1 PR [Dependencies]: #899
-* 1 PR [Hardening]: #892
-* 1 PR [README]: #896
+* 2 PRs [APK Optimization]: #901, #910
+* 1 PR [APK UX]: #911
+* 2 PRs [Baseline]: #894, #904
+* 2 PRs [Dependencies]: #899, #909
+* 2 PRs [Hardening]: #892, #902
+* 1 PR [Performance]: #905
+* 2 PRs [README]: #896, #906
 * 1 PR [Refactor/Optimization]: #895
-* 1 PR [TSDoc]: #897
-* 1 PR [Verification]: #893
-* 1 PR [Version Integrity]: #898
+* 2 PRs [TSDoc]: #897, #907
+* 2 PRs [Verification]: #893, #903
+* 2 PRs [Version Integrity]: #898, #908
 
 #### 2026-W25
 * 1 PR [APK Integrity]: #889
