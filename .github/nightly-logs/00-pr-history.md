@@ -2951,6 +2951,13 @@ LAST_AGED:   2026-07-23
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-23] PR #PENDING [Stage 8]: chore(deps): bump dependencies and update major watchlist
+**Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Apply safe maintenance bump to knip and vue-tsc, and track TypeScript 7, Vite 8, and Pinia 4 intermediate/finalized major versions in the watchlist.
+**Change:** Bumped knip to ^6.29.0 and vue-tsc to ^3.3.8 in the central workspace catalog and updated the persistent watchlist.
+**Result:** 100% dependency hygiene and catalog compliance verified with all monorepo tests passing successfully.
+
 ### [2026-07-23] PR #PENDING [Stage 7]: chore(version): no version drift found in monorepo v14.33.11
 **Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
