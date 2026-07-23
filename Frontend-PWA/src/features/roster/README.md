@@ -33,4 +33,8 @@
 
 ## See also
 
-- [`@features`](../) | [`@shared/ui`](../../shared/ui/README.md) | [scoring in the backend](../../../../Backend/README.md)
+- [Frontend README](../../../README.md) | [`@features`](../README.md) | [`@shared/ui`](../../shared/ui/README.md) | [scoring in the backend](../../../../Backend/README.md)
+- [`@shared/composables`](../../shared/composables/README.md) - `useHistoryChart` and `useBaseHistoryChart` power the per-member trend charts
+- [`@core/services`](../../core/services/README.md) - `useConsoleController`, `useConsoleSelection`, and `useBlitzMode` are the list engine used here
+- [`@features/settings`](../settings/README.md) - `RosterView` composes the `VoyageBanner` configured in Settings (the one deliberate cross-feature dependency)
+- Backend: [`ingest-royale-data`](../../../../Backend/supabase/functions/ingest-royale-data/README.md) - the upstream pipeline that produces all data the Roster displays

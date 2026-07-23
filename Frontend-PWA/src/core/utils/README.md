@@ -33,4 +33,6 @@
 
 ## See also
 
-- [`@core`](../README.md)
+- [Frontend README](../../../README.md) | [`@core`](../README.md)
+- [`@core/services`](../services/README.md) - `StorageService` is built on `idbKernel.ts` from this directory
+- Feature consumers: [`@features/laboratory`](../../features/laboratory/README.md) - uses `game.ts`, `gameConstants.ts`, `gameTypes.ts`, `economy.ts`, and `PriorityQueue.ts` | [`@features/roster`](../../features/roster/README.md) - `sortOptions.ts` and `sortStrategies.ts` drive the Roster sort controls | [`@features/headhunter`](../../features/headhunter/README.md) - the same sort files drive the Headhunter sort controls

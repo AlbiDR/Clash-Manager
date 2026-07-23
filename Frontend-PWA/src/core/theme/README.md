@@ -32,4 +32,6 @@
 
 ## See also
 
-- [`@core`](../README.md) | [DESIGN.md](../../../../DESIGN.md)
+- [Frontend README](../../../README.md) | [`@core`](../README.md) | [DESIGN.md](../../../../DESIGN.md)
+- [`@shared/ui`](../../shared/ui/README.md) - all shared UI components consume the `--sys-*` CSS variables this engine produces
+- [`@shared/composables`](../../shared/composables/README.md) - `useTheme` (runtime theme switching) lives here; this directory only defines the token system

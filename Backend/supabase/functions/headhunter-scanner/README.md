@@ -41,4 +41,6 @@ Via the Key Farm proxy: `/tournaments*`, `/players/{tag}`, and `/players/{tag}/b
 
 ## See also
 
-- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md)
+- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md) | [Root README](../../../../README.md) - the RPoS/PoS scoring formula this scanner computes
+- Related functions: [`ingest-royale-data`](../ingest-royale-data/README.md) - the scheduled pipeline that also discovers recruit leads in its discovery stage | [`query-royale-api`](../query-royale-api/README.md) - the on-demand leaderboard harvest (vs this scanner's tournament harvest)
+- Frontend consumer: [`@features/headhunter`](../../../../Frontend-PWA/src/features/headhunter/README.md) - the PWA feature that reads and surfaces this scanner's recruit pool

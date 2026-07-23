@@ -39,4 +39,5 @@ Via the Key Farm proxy: `/clans/{tag}`, `/clans/{tag}/members`, `/clans/{tag}/cu
 
 ## See also
 
-- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md)
+- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md) | [Root README](../../../../README.md) - the scoring engine this pipeline feeds
+- Related functions: [`headhunter-scanner`](../headhunter-scanner/README.md) - the scheduled counterpart for deep recruit profiling | [`fetch-player-battlelog`](../fetch-player-battlelog/README.md) - the on-demand variant for single-player battle-log lookups

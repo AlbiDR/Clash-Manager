@@ -38,4 +38,8 @@
 
 ## See also
 
-- [`@features`](../) | [`headhunter-scanner`](../../../../Backend/supabase/functions/headhunter-scanner/README.md) | [`query-royale-api`](../../../../Backend/supabase/functions/query-royale-api/README.md)
+- [Frontend README](../../../README.md) | [`@features`](../README.md) | [`@shared/ui`](../../shared/ui/README.md)
+- Backend: [`headhunter-scanner`](../../../../Backend/supabase/functions/headhunter-scanner/README.md) - the scheduled scanner that builds the recruit pool | [`query-royale-api`](../../../../Backend/supabase/functions/query-royale-api/README.md) - the on-demand leaderboard harvest triggered from this feature
+- [`@core/services`](../../core/services/README.md) - `useConsoleController`, `useBlitzMode`, and `useBroadcastChannel` come from here
+- [`@core/api`](../../core/api/README.md) - `RecruitClient` handles dismiss/undismiss RPCs and the realtime blacklist subscription
+- [APK](../../../../APK/README.md) - Blitz Mode's automatic invite tapping is an Android-only capability implemented in the native layer

@@ -27,3 +27,4 @@ Each owns its own README; this file is the map.
 ## See also
 
 - [Frontend README](../../README.md) | [CleanStack Architecture](../../../.github/authoritative-design-references/CleanStack%20Architecture.md)
+- [`@core`](../core/README.md) - Layer 1, the foundation this layer imports from

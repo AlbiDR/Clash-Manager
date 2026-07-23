@@ -37,4 +37,5 @@
 ## See also
 
 - [Backend README](../../../README.md) - how the functions fit together
+- Imported by: [`ingest-royale-data`](../ingest-royale-data/README.md) | [`headhunter-scanner`](../headhunter-scanner/README.md) | [`query-royale-api`](../query-royale-api/README.md) | [`fetch-player-battlelog`](../fetch-player-battlelog/README.md) | [`sync-player-cards`](../sync-player-cards/README.md)
 - Tests: [`shared-tests/`](shared-tests)

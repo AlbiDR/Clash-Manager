@@ -21,4 +21,4 @@
 
 ## See also
 
-- [`@shared`](../README.md) | [`useHaptics`](../composables/README.md)
+- [Frontend README](../../../README.md) | [`@shared`](../README.md) | [`useHaptics`](../composables/README.md)

@@ -28,4 +28,6 @@
 
 ## See also
 
-- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md) | consumed by the [Laboratory](../../../../Frontend-PWA/src/features/laboratory/README.md)
+- [`_shared`](../_shared/README.md) | [Backend README](../../../README.md)
+- Frontend consumer: [`@features/laboratory`](../../../../Frontend-PWA/src/features/laboratory/README.md) - the upgrade planner that triggers this sync and renders the card collection
+- PWA client: [`@core/api`](../../../../Frontend-PWA/src/core/api/README.md) - `ProfileClient.ts` is the specific client that calls this Edge Function

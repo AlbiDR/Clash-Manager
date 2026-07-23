@@ -103,4 +103,6 @@ Migrations are the single source of truth: change the schema in a migration file
 
 - [`supabase/functions/_shared/`](supabase/functions/_shared/README.md) - the shared kernel every function builds on
 - [Root README](../README.md) - product overview and scoring
+- [Frontend PWA](../Frontend-PWA/README.md) - the downstream consumer of all backend RPCs and realtime subscriptions
+- [APK](../APK/README.md) - the Android wrapper that drives features through the same backend (indirectly via the PWA bridge)
 - [CleanStack Architecture](../.github/authoritative-design-references/CleanStack%20Architecture.md) - the governing design rules

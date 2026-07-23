@@ -61,4 +61,6 @@ This is the single registry for these services; higher-layer READMEs link here r
 
 ## See also
 
-- [`@core`](../README.md) | [`@core/api`](../api/README.md) | [`@core/utils`](../utils/README.md)
+- [Frontend README](../../../README.md) | [`@core`](../README.md) | [`@core/api`](../api/README.md) | [`@core/utils`](../utils/README.md)
+- [`@shared`](../../shared/README.md) - Layer 2 composables wrap several services (e.g. `useHaptics` delegates to the platform bridge; Voyage composables read from `@core` stores)
+- [APK](../../../../APK/README.md) - `useNativeBridge.ts` brokers the Android bridge; its native contract is defined in the APK layer

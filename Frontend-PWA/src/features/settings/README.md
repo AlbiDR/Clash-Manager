@@ -37,4 +37,8 @@ Each concern is a collapsible card:
 
 ## See also
 
-- [`@features`](../) | [`@core/services`](../../core/services/README.md) | [Voyage composables](../../shared/composables/README.md)
+- [Frontend README](../../../README.md) | [`@features`](../README.md) | [`@core/services`](../../core/services/README.md) | [Voyage composables](../../shared/composables/README.md)
+- [`@core/api`](../../core/api/README.md) - `MaintenanceClient` (manual backend triggers, push subscription) is Settings' primary external-call entry point
+- [APK](../../../../APK/README.md) - Settings hosts Blitz Mode calibration and Android bridge detection; it is the configuration surface for the native layer
+- [Backend](../../../../Backend/README.md) - the maintenance triggers (database, scanner, Key Farm) fired from Settings are documented on the backend side
+- [`@features/roster`](../roster/README.md) - Settings produces the Voyage configuration that surfaces as the `VoyageBanner` inside `RosterView`

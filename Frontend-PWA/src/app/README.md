@@ -30,5 +30,7 @@
 
 ## See also
 
-- [`@core`](../core/README.md) | [`@shared`](../shared/README.md) | [`@features`](../features)
+- [Frontend README](../../README.md) | [`@core`](../core/README.md) | [`@shared`](../shared/README.md) | [`@features`](../features/README.md)
+- Feature views: [`roster`](../features/roster/README.md) | [`headhunter`](../features/headhunter/README.md) | [`laboratory`](../features/laboratory/README.md) | [`settings`](../features/settings/README.md)
+- [APK](../../../../APK/README.md) - the Android wrapper that embeds this PWA and is the only other consumer of the service worker's background badge sync
 - Tests: `sw/sw-tests/`

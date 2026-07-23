@@ -20,4 +20,6 @@
 
 ## See also
 
-- [`@core`](../README.md) | [APK native bridge](../../../../APK/README.md)
+- [Frontend README](../../../README.md) | [`@core`](../README.md) | [APK native bridge](../../../../APK/README.md)
+- [`@core/api`](../api/README.md) - the mappers and schemas here consume `LeaderboardMember`, `Recruit`, and `WebAppData`
+- Feature consumers: [`@features/roster`](../../features/roster/README.md) - `LeaderboardMember` (with `performanceScore`) is the Roster's core data model | [`@features/headhunter`](../../features/headhunter/README.md) - `Recruit` (with `potentialScore`) is the Headhunter's core data model

@@ -76,4 +76,6 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 
 ## See also
 
-- [`@shared`](../README.md) | [`@core/theme`](../../core/theme/README.md)
+- [Frontend README](../../../README.md) | [`@shared`](../README.md) | [`@core/theme`](../../core/theme/README.md)
+- [`@shared/composables`](../composables/README.md) - chart components consume chart composables; interactive components use gesture composables
+- [`@core/services`](../../core/services/README.md) - `ConsoleLayout` and `ConsoleList` are driven by `useConsoleController` from here

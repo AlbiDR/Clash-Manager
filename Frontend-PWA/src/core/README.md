@@ -35,3 +35,5 @@ Each subdirectory owns its own README; this file is just the map.
 ## See also
 
 - [Frontend README](../../README.md) | [CleanStack Architecture](../../../.github/authoritative-design-references/CleanStack%20Architecture.md)
+- [Backend](../../../Backend/README.md) - the Supabase project this layer talks to
+- [`@shared`](../shared/README.md) - Layer 2, the direct consumer of `@core`

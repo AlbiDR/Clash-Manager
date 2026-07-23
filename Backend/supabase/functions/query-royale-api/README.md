@@ -28,3 +28,5 @@ The legacy `/rankings/players` leaderboard was retired with the 2025 Trophy Road
 ## See also
 
 - [`_shared`](../_shared/README.md) | [Backend README](../../../README.md)
+- Frontend caller: [`@features/headhunter`](../../../../Frontend-PWA/src/features/headhunter/README.md) - the PWA feature that triggers Global/Local harvest and renders the results
+- Scheduled counterpart: [`headhunter-scanner`](../headhunter-scanner/README.md) - automated tournament-based discovery vs this function's on-demand leaderboard harvest

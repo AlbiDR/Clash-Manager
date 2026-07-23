@@ -40,4 +40,6 @@ Realtime event consumption is a critical boundary where malformed payloads could
 
 ## See also
 
-- [`@core`](../README.md) | [Backend Edge Functions](../../../../Backend/supabase/functions)
+- [Frontend README](../../../README.md) | [`@core`](../README.md)
+- Backend: [Backend README](../../../../Backend/README.md) | [`sync-player-cards`](../../../../Backend/supabase/functions/sync-player-cards/README.md) - the Edge Function `ProfileClient.ts` calls directly
+- Downstream: [`@core/services`](../services/README.md) - services consume what this layer fetches | [`@core/types`](../types/README.md) - domain models (`LeaderboardMember`, `Recruit`, `WebAppData`) used by the mappers and schemas here

@@ -60,4 +60,6 @@ Kept here (not in a feature) so Roster and Settings can share it.
 
 ## See also
 
-- [`@shared`](../README.md) | [`@shared/directives`](../directives/README.md)
+- [Frontend README](../../../README.md) | [`@shared`](../README.md) | [`@shared/directives`](../directives/README.md) | [`@shared/ui`](../ui/README.md)
+- [`@core/services`](../../core/services/README.md) - composables import from `@core` (e.g. `useHaptics` delegates to the platform bridge; Voyage composables read from `@core` stores)
+- Feature consumers: [`@features/roster`](../../features/roster/README.md) - consumes Voyage composables for the `VoyageBanner` | [`@features/settings`](../../features/settings/README.md) - uses the same Voyage composables for the Event Management card

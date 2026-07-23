@@ -20,4 +20,5 @@
 
 ## See also
 
-- [`@shared`](../README.md)
+- [Frontend README](../../../README.md) | [`@shared`](../README.md)
+- [`@core/utils`](../../core/utils/README.md) - the sibling this directory deliberately differs from: `@core/utils` holds game logic and pure data utilities; `@shared/utils` holds presentation helpers that are too UI-specific for `@core`

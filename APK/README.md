@@ -85,4 +85,7 @@ Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decode
 
 ## See also
 
-- [Root README](../README.md) | [`core/types` bridge contract](../Frontend-PWA/src/core/types/README.md)
+- [Root README](../README.md) | [Frontend PWA](../Frontend-PWA/README.md) - the PWA this wrapper embeds
+- [`core/types` bridge contract](../Frontend-PWA/src/core/types/README.md) - the `AndroidBridge` interface that must stay in sync with the native methods above
+- [`@core/services`](../Frontend-PWA/src/core/services/README.md) - `useNativeBridge.ts` is the PWA-side broker for this native layer
+- Feature consumers: [`@features/headhunter`](../Frontend-PWA/src/features/headhunter/README.md) - the feature that drives `startBlitz` | [`@features/settings`](../Frontend-PWA/src/features/settings/README.md) - the feature that exposes Blitz calibration (`saveCoordinates`/`getCoordinates`) and bridge detection

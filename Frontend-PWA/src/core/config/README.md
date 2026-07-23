@@ -20,4 +20,6 @@
 
 ## See also
 
-- [`@core`](../README.md)
+- [Frontend README](../../../README.md) | [`@core`](../README.md)
+- [`@app`](../../app/README.md) - the service worker (`sw.ts`) uses the recruit notification tag constant exported here
+- [APK](../../../../APK/README.md) - the Android bridge references the same Blitz timing and storage values; changing them here means updating native consumers too

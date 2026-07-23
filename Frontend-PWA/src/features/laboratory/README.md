@@ -32,4 +32,7 @@ A generator-based simulator that processes upgrades in ~10ms chunks to stay at 6
 
 ## See also
 
-- [`@features`](../) | [`sync-player-cards`](../../../../Backend/supabase/functions/sync-player-cards/README.md) | game math in [`@core/utils`](../../core/utils/README.md)
+- [Frontend README](../../../README.md) | [`@features`](../README.md)
+- Backend: [`sync-player-cards`](../../../../Backend/supabase/functions/sync-player-cards/README.md) - the Edge Function that fetches and normalizes the player's card collection
+- [`@core/api`](../../core/api/README.md) - `ProfileClient.ts` is the client that calls `sync-player-cards`; Laboratory uses it through that client
+- Game math in [`@core/utils`](../../core/utils/README.md) - `game.ts`, `economy.ts`, and `PriorityQueue.ts` are the engine this feature runs on

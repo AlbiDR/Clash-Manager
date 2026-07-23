@@ -30,3 +30,4 @@ The RoyaleAPI proxy caches responses per node, so different keys can return diff
 ## See also
 
 - [`_shared`](../_shared/README.md) | [Backend README](../../../README.md)
+- Related functions: [`ingest-royale-data`](../ingest-royale-data/README.md) - the pipeline's deep-depth stage also fetches battle logs for all tracked members on a schedule | [`headhunter-scanner`](../headhunter-scanner/README.md) - the shadow-scout stage (S1) also calls `/players/{tag}/battlelog` for lead discovery
