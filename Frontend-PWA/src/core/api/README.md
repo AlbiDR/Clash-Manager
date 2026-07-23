@@ -11,7 +11,7 @@
 
 - Own the Supabase client and read clan data from the feature views.
 - Wrap each domain's RPCs and Edge Function calls behind a small client.
-- Validate all inbound data and map raw rows into clean domain models.
+- Validate all inbound data (both REST responses and Realtime subscription payloads) and map raw rows into clean domain models.
 
 ## Contents
 
@@ -20,11 +20,18 @@
 | `SupabaseClient.ts` | The singleton client and `fetchRemote`, which reads the feature views in parallel and validates them. |
 | `useApiState.ts` | Reactive backend availability and handshake state. |
 | `VoyageClient.ts` | Clan Voyage activation, scheduling, and completion RPCs, plus summary and contribution reads. |
-| `RecruitClient.ts` | Recruit dismiss/undismiss RPCs and the realtime blacklist subscription. |
+| `RecruitClient.ts` | Recruit dismiss/undismiss RPCs, realtime blacklist subscriptions, and direct leaderboard scouting. |
 | `ProfileClient.ts` | Calls the `sync-player-cards` Edge Function for the Laboratory. |
 | `MaintenanceClient.ts` | Manual backend maintenance triggers and web-push subscription registration. |
 | `DataMappers.ts` | Raw Supabase rows to domain models (Voyage history, heritage tenure, score fallbacks). |
 | `*Schemas.ts` | Valibot schemas per domain (`Base`, `Member`, `Recruit`, `Profile`, `Voyage`, `App`, `Offline`, `Maintenance`), aggregated by `DataSchemas.ts`. |
+
+## Realtime Subscription & Validation Boundaries
+
+Realtime event consumption is a critical boundary where malformed payloads could degrade system stability. To mitigate this threat:
+- **Strict Realtime Validation:** The `subscribeToBlacklist` method on `RecruitClient.ts` intercepts all insertion/deletion events and subjects them to strict schema parsing using the `BlacklistEventSchema`.
+- **Descriptive Error Naming:** All realtime callback execution errors must conform to CleanStack naming rules and are explicitly bound to the `realtimeSubscriptionError` parameter to avoid ambiguous or anemic names (such as `err`).
+- **Resource Lifecycle Management:** Realtime subscriptions must return a clean, synchronous unsubscribe handler function that should be invoked on caller unmount to prevent lingering connection memory leaks.
 
 ## Gotchas
 

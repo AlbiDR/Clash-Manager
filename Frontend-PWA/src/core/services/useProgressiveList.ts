@@ -23,6 +23,7 @@ import { ref, watch, type Ref, shallowRef, onScopeDispose } from "vue";
  * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
  *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  *
+ * @typeParam T - The type of elements contained in the progressive list.
  * @param sourceList - The full reactive list of items to be rendered.
  * @param initialSize - The number of items to render immediately on first load.
  *
@@ -104,6 +105,10 @@ export function useProgressiveList<T>(
    * @remarks
    * Utilizes requestIdleCallback where available to minimize impact on
    * user interaction threads. Falls back to requestAnimationFrame.
+   *
+   * @param fullSourceList - The full source array of type T to render from.
+   * @param renderedItemCount - The number of items currently rendered in the visible list.
+   * @returns Void.
    */
   function scheduleChunk(fullSourceList: T[], renderedItemCount: number) {
     const scheduler =

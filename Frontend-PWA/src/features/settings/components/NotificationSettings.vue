@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon, SettingRow, SettingsCard } from "@shared";
+import { Icon, SettingRow, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { computed } from "vue";
 
@@ -50,6 +50,7 @@ const threshold = computed(() => modules.notificationThreshold);
         aria-label="Notification Threshold"
       >
         <button
+          v-tactile
           v-for="thresholdValue in [50, 75] as const"
           :key="thresholdValue"
           :class="{ active: threshold === thresholdValue }"
@@ -72,7 +73,7 @@ const threshold = computed(() => modules.notificationThreshold);
           when the app is closed.</span
         >
       </div>
-      <button class="enable-btn" @click="requestNotificationPermission">
+      <button v-tactile class="enable-btn" @click="requestNotificationPermission">
         Enable Notifications & Badges
       </button>
     </div>
@@ -108,7 +109,7 @@ const threshold = computed(() => modules.notificationThreshold);
     <!-- Actions Row -->
     <div class="actions-row" v-if="notificationPermission === 'granted'">
       <!-- Improvement #9: Test Notification -->
-      <button class="action-btn" @click="sendTestNotification">
+      <button v-tactile class="action-btn" @click="sendTestNotification">
         <Icon name="bell" size="14" />
         <span>Test Alert</span>
       </button>
@@ -156,7 +157,7 @@ const threshold = computed(() => modules.notificationThreshold);
 
 .enable-btn {
   width: 100%;
-  height: 40px;
+  height: 48px; /* 48px touch target compliance */
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
@@ -189,7 +190,7 @@ const threshold = computed(() => modules.notificationThreshold);
 }
 
 .action-btn {
-  height: 32px;
+  height: 48px; /* 48px touch target compliance */
   padding: 0 16px;
   border-radius: 99px;
   border: 1px solid var(--sys-color-outline-variant);
@@ -229,7 +230,7 @@ const threshold = computed(() => modules.notificationThreshold);
 .threshold-btn {
   flex: 1;
   min-width: 80px;
-  height: 40px;
+  height: 48px; /* 48px touch target compliance */
   padding: 0 18px;
   border: none;
   background: transparent;

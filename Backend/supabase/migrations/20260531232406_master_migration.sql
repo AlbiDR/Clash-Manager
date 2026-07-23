@@ -3027,7 +3027,7 @@ CREATE OR REPLACE FUNCTION public.get_vault_secret(p_name text)
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
- SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+SET search_path TO 'public', 'substrate', 'vault', 'pg_temp'
 AS $$
 BEGIN
     RETURN substrate.get_vault_secret(p_name);

@@ -209,9 +209,12 @@ export function subscribeToBlacklist(
           }
         },
       )
-      .subscribe((_status, err) => {
-        if (err) {
-          console.warn("[Realtime] Subscription error:", err);
+      .subscribe((_status, realtimeSubscriptionError) => {
+        // [DECISION LOG] Renamed callback parameter from 'err' to 'realtimeSubscriptionError'
+        // to eliminate anemic variable pathogens and satisfy ADR Section VII (Naming Conventions)
+        // at callback boundaries in Layer 1 Core.
+        if (realtimeSubscriptionError) {
+          console.warn("[Realtime] Subscription error:", realtimeSubscriptionError);
         }
       });
 
@@ -223,8 +226,13 @@ export function subscribeToBlacklist(
 }
 
 /**
- * [DIAGNOSTIC] Performs a direct query of the headhunter pool.
- * @returns A Promise resolving to an array of Recruits or null on failure.
+ * Performs a direct query of the headhunter pool for diagnostic verification.
+ *
+ * @remarks
+ * Directly queries the `headhunter_view` table up to a limit of 20 items.
+ * Satisfies Layer 1 Core Diagnostic queries and bypasses caching pipelines.
+ *
+ * @returns A Promise resolving to an array of Recruits or `null` if the query or mapping fails.
  */
 export async function scanRecruitsDirect(): Promise<Recruit[] | null> {
   const supabase = createSupabaseClient();

@@ -16,3 +16,4 @@
 * [2026-07-18] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/TargetPicker.vue -- Modernized input-box, player-label (48px footprint), lock-btn (40px) and integrated v-tactile haptic feedback.
 * [2026-07-21] [Stage 12] CHANGED: Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue -- Integrated v-tactile directive into .btn-primary empty-action button to ensure consistent physical haptic response in the hybrid shell.
 * [2026-07-22] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/BaseSelect.vue -- Refactored to use v-tactile directive for declarative brokered haptic feedback on select triggers and option elements.
+* [2026-07-23] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/NotificationSettings.vue -- Modernized threshold-btn, enable-btn, and action-btn to 48px touch footprint and integrated v-tactile haptic feedback directive.

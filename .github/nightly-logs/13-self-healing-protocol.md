@@ -46,6 +46,13 @@
   * Root Cause: These stages failed to log or execute their nightly run. Since they left no trace in the logs or PR history, the exact failure modes are unobservable. Stage 2 and Stage 11 have now missed multiple consecutive runs, indicating a scheduling or environment blocker.
   * Recommended Fix: Re-verify scheduling and webhook triggers in CI configurations, and audit local build wrappers or dependency constraints for any silent environment crashes.
 
+* Missing-Run / Failed Events on 2026-07-23:
+  * Stages: Stage 2 (Verify), Stage 11 (APK-Optimization).
+  * State: [RECURRING] (July 23, 2026)
+  * Symptom: No log entries for 2026-07-23 in 02-verification-coverage.log or 11-apk-optimization-coverage.log.
+  * Root Cause: These stages failed to log or execute their nightly runs today. However, a major discovery was made: during pre-flight loading, when Jules is initialized, connecting to the Supabase MCP server caused massive context explosions and silent crashes before any output could be written. This blocked both stages completely.
+  * Recommended Fix: AlbiDR applied a critical pipeline hardening fix in commit `b81469c` on July 22, 2026, moving the MCP prohibition exception directly into the Base 2 instructions so that the prohibition is read at the very start of tool initialization, preventing silent crashes. Subsequent runs should be monitored closely to ensure Stage 2 and Stage 11 recover successfully now that the Base 2 MCP prohibition is active.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -67,44 +74,44 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  * Consecutive No-Diff Days: 2 (CLEAN logged on 2026-07-21 and 2026-07-22)
+  * Consecutive No-Diff Days: 3 (CLEAN logged on 2026-07-21, 2026-07-22, and 2026-07-23)
   * Analysis: Codebase endpoints are fully hardened with zero active threats detected.
 
 * Stage 3 (Baseline Consolidation):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-22)
-  * Analysis: Modified and validated master baseline database schema.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-23)
+  * Analysis: Standardized search_path for public.get_vault_secret in the master baseline to ensure perfect Postgres 17 alignment.
 
 * Stage 4 (Optimization):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-22)
-  * Analysis: Optimized ParameterCard.vue naming parameters.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-23)
+  * Analysis: Standardized realtime subscription error callback parameter naming in RecruitClient.ts.
 
 * Stage 5 (README):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-22)
-  * Analysis: Synchronized Custom brand icon specifications in Frontend-PWA Shared UI README.md.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-23)
+  * Analysis: Reconciled RecruitClient README to document realtime subscription parameter standardizations.
 
 * Stage 6 (TSDoc):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-22)
-  * Analysis: Hardened ParameterCard interface contracts and logic comments.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-23)
+  * Analysis: Hardened RecruitClient, useProgressiveList, and BaseSelect interface contracts and JSDoc annotations.
 
 * Stage 7 (Version Integrity):
-  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-22)
-  * Analysis: Audited manifests; confirmed monorepo-wide synchronization at v14.33.9.
+  * Consecutive No-Diff Days: 2 (CLEAN logged on 2026-07-22 and 2026-07-23)
+  * Analysis: Audited manifests; confirmed monorepo-wide version synchronization at v14.33.11.
 
 * Stage 8 (Dependency Audit):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-22)
-  * Analysis: Bumped @supabase/supabase-js to ^2.110.8.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-23)
+  * Analysis: Bumped knip to ^6.29.0 and vue-tsc to ^3.3.8 in the central catalog.
 
 * Stage 9 (Refactor):
-  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-22)
-  * Analysis: Audited RosterView, HeadhunterView, and LaboratoryView modules; structural health certified.
+  * Consecutive No-Diff Days: 2 (CLEAN logged on 2026-07-22 and 2026-07-23)
+  * Analysis: Audited features feature views and structural health boundaries; certified zero structural debt.
 
 * Stage 10 (APK-Integrity):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-22)
-  * Analysis: Synchronized appVersionName, appVersionCode, and appVersion in twa-manifest.json to match v14.33.9.
+  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-23)
+  * Analysis: Audited manifest parity, Digital Asset Links fingerprints, and Android native layer security configurations.
 
 * Stage 12 (APK-UX):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-22)
-  * Analysis: Refactored BaseSelect.vue to use v-tactile haptic brokering.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-23)
+  * Analysis: Modernized threshold-btn, enable-btn, and action-btn sizes and integrated v-tactile directive in NotificationSettings.vue.
 
 * Stage 2 (Verify), Stage 11 (APK-Opt):
   * Consecutive No-Diff Days: 0 (Failed/missing today, tracked under Section 1).
