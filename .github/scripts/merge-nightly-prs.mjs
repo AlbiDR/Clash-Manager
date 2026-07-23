@@ -219,13 +219,28 @@ async function run() {
       }
 
       const date = new Date().toISOString().split("T")[0];
-      changelogUpdates =
-        `\n## [${date}] PR #${pr.number}: ${pr.title}\n` +
-        `**Commit**: \`${pr.head.sha}\`\n` +
-        `**Original PR**: [Link](${pr.html_url})\n` +
-        (pr.body ? `\n### Description\n${pr.body}\n` : "") +
-        `\n---\n` +
-        changelogUpdates;
+      const stage = stageNumber(pr.head.ref);
+      
+      if (fs.existsSync(CONFIG.changelogPath)) {
+        let content = fs.readFileSync(CONFIG.changelogPath, "utf8");
+        const pendingRegex = new RegExp(`### \\\\[.*?\\\\] PR #PENDING \\\\[Stage ${stage}\\\\]:.*\\n\\*\\*Domain:\\*\\* .*? \\| \\*\\*Commit:\\*\\* PENDING \\| \\\\[View PR\\\\]\\(PENDING\\)`, 'g');
+        
+        let matchFound = false;
+        content = content.replace(pendingRegex, (match) => {
+          matchFound = true;
+          return match
+            .replace('PR #PENDING', `PR #${pr.number}`)
+            .replace('**Commit:** PENDING', `**Commit:** ${pr.head.sha}`)
+            .replace('[View PR](PENDING)', `[View PR](${pr.html_url})`);
+        });
+
+        if (matchFound) {
+          fs.writeFileSync(CONFIG.changelogPath, content);
+          log(`Updated PENDING block for PR #${pr.number} in changelog.`);
+        } else {
+          log(`Warning: No PENDING block found for Stage ${stage} in changelog.`, "warn");
+        }
+      }
 
     } catch (e) {
       log(`FAILED PR #${pr.number}: ${e.message}`, "error");
@@ -243,25 +258,24 @@ async function run() {
           `> **Status**: Auto-merge aborted.\n` +
           `> **Error**: \`${e.message}\`\n` +
           `> **PR Link**: [Link](${pr.html_url})\n` +
-          `\n---\n` +
           changelogUpdates;
       }
     }
   }
 
   // Write changelog
-  if (changelogUpdates) {
-    let content = fs.existsSync(CONFIG.changelogPath)
-      ? fs.readFileSync(CONFIG.changelogPath, "utf8")
-      : "# Changelog\n\nAutomated changelog of Nightly merges.\n\n";
-
-    const split = content.indexOf("\n\n");
-    content = split !== -1
-      ? content.slice(0, split + 2) + changelogUpdates + content.slice(split + 2)
-      : content + "\n" + changelogUpdates;
-
-    fs.writeFileSync(CONFIG.changelogPath, content);
-    log("Changelog updated.", "success");
+  if (changelogUpdates && fs.existsSync(CONFIG.changelogPath)) {
+    let content = fs.readFileSync(CONFIG.changelogPath, "utf8");
+    const t1Marker = "## T1 -- Active (last 7 days)\n";
+    const insertIdx = content.indexOf(t1Marker);
+    
+    if (insertIdx !== -1) {
+      content = content.slice(0, insertIdx + t1Marker.length) + changelogUpdates + content.slice(insertIdx + t1Marker.length);
+      fs.writeFileSync(CONFIG.changelogPath, content);
+      log("Changelog updated with failed merges.", "success");
+    } else {
+      log("Failed to find T1 marker to insert merge failures.", "warn");
+    }
   }
 }
 

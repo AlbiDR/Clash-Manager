@@ -154,6 +154,7 @@ This task has a hard 60-minute execution budget.
   `**Why:** [one sentence]`
   `**Change:** [one sentence]`
   `**Result:** [measured or expected outcome]`
+  **CRITICAL:** `00-pr-history.md` is a massive file. Do NOT rewrite or overwrite the entire file using your file editing tools, as this causes severe truncation and loss of history. You MUST use a targeted replacement or a script (e.g., `sed -i.bak '/## T1 -- Active/a \\n### ...'`) to safely insert your block.
 - **One PR Per Run:** Limit your output to exactly one Pull Request per execution cycle.
 - **Team Awareness:** You may read `.github/nightly-prompts/` to understand the
   wider pipeline context. You are strictly forbidden from modifying any file within
