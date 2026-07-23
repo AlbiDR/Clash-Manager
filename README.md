@@ -136,15 +136,15 @@ Clash Manager replaces gut feeling with two scoring families. Both are **self-ca
 
 | Metric | What it is |
 | :--- | :--- |
-| **RPeS** (Raw Performance Score) | An absolute, recency-weighted sum of a member's contribution: current and average war fame, daily donations, trophies, and war participation, adjusted by a loyalty bonus for tenure and an inactivity decay that compounds after a few idle days. Veterans' returning history contributes a heritage bonus. |
-| **PeS** (Performance Score, 0-100) | RPeS expressed as a percentage of your clan's top performer. This is the number on each member card. |
+| **[RPeS](Backend/README.md)** (Raw Performance Score) | An absolute, recency-weighted sum of a member's contribution: current and average war fame, daily donations, trophies, and war participation, adjusted by a loyalty bonus for tenure and an inactivity decay that compounds after a few idle days. Veterans' returning history contributes a heritage bonus. Computed in SQL views in the `features` schema. |
+| **[PeS](Frontend-PWA/src/features/roster/README.md)** (Performance Score, 0-100) | RPeS expressed as a percentage of your clan's top performer. This is the number on each member card. |
 
 ### Recruits: Potential Score
 
 | Metric | What it is |
 | :--- | :--- |
 | **[RPoS](Backend/supabase/functions/_shared/README.md)** (Raw Potential Score) | An absolute decaying score for a prospect built from trophies, donations, war-win consistency, and a huge bonus for recent clan war battles. Computed in `_shared/utils.ts`. |
-| **PoS** (Potential Score, 0-100) | RPoS as a percentage of the strongest prospect currently scouted, with a small bonus for returning veterans the clan already knows. Prospects are tiered Elite, High, or Mid. |
+| **[PoS](Frontend-PWA/src/features/headhunter/README.md)** (Potential Score, 0-100) | RPoS as a percentage of the strongest prospect currently scouted, with a small bonus for returning veterans the clan already knows. Prospects are tiered Elite, High, or Mid. |
 
 Because a member's score is partailly relative to the current roster and a recruit's score is relative to the current recruit pool, a "90" always means "near the top of what you have right now," today and next season alike without drifting from stale targets.
 
