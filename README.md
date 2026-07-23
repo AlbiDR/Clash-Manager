@@ -222,13 +222,13 @@ Clash Manager installs like a native app and is built to survive a hostile netwo
 - **OS integration.** App shortcuts, a Web Share target that accepts a shared player tag straight into Headhunter, a `web+clash` protocol handler, desktop side-panel support, app badges, and haptic feedback.
 - **Deep game links.** Every player card can open that player's profile directly in Clash Royale.
 
-### The Android app: Blitz Mode
+### The [Android app](APK/README.md): Blitz Mode
 
-The Android build is a custom WebView wrapper around the same PWA, plus a native layer that does what a browser cannot. In **Blitz Mode**, a foreground overlay service and an accessibility service work together to open each selected recruit in Clash Royale and tap the invite button automatically, using coordinates you calibrate once. The PWA drives it through a JavaScript bridge, so multi-select recruiting in the app becomes hands-free invites in the game. See [APK/README.md](APK/README.md).
+The Android build is a custom WebView wrapper around the same PWA, plus a native layer that does what a browser cannot. In **Blitz Mode**, a foreground overlay service and an accessibility service work together to open each selected recruit in Clash Royale and tap the invite button automatically, using coordinates you calibrate once. The PWA drives it through a JavaScript bridge, so multi-select recruiting in the app becomes hands-free invites in the game.
 
-### Backend
+### [Backend](Backend/README.md)
 
-A Supabase project running five Deno Edge Functions behind a rotating pool of ~20 Clash Royale API keys (routed through the RoyaleAPI static-IP proxy). It ingests clan, war, and battle data, discovers recruits, proxies leaderboard and battle-log lookups, and syncs player card collections for the Laboratory. See [Backend/README.md](Backend/README.md).
+A Supabase project running five Deno Edge Functions behind a rotating pool of ~20 Clash Royale API keys (routed through the RoyaleAPI static-IP proxy). It ingests clan, war, and battle data, discovers recruits, proxies leaderboard and battle-log lookups, and syncs player card collections for the Laboratory.
 
 ---
 

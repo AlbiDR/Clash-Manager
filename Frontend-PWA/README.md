@@ -64,7 +64,7 @@ Dependencies point inward only: a feature never imports another feature, and onl
 
 ## Design system
 
-A custom "Neo-Material" system in [`src/core/theme/`](src/core/theme/README.md) with a strict no-dependency rule: zero third-party UI, icon, or charting libraries. Every icon and chart is hand-built SVG, all styling is driven by `--sys-*` CSS variables, and the fonts (Inter, JetBrains Mono) are self-hosted. See [DESIGN.md](../DESIGN.md).
+A custom "Neo-Material" system in [`src/core/theme/`](src/core/theme/README.md), documented in full in [DESIGN.md](../DESIGN.md), with a strict no-dependency rule: zero third-party UI, icon, or charting libraries. Every icon and chart is hand-built SVG, all styling is driven by `--sys-*` CSS variables, and the fonts (Inter, JetBrains Mono) are self-hosted.
 
 ---
 
@@ -85,10 +85,10 @@ A custom "Neo-Material" system in [`src/core/theme/`](src/core/theme/README.md) 
 
 ## Quality
 
-Tests are co-located in `*-tests/` folders next to nearly every source file. Beyond local tests, the monorepo is maintained by a 13-stage autonomous nightly pipeline that refreshes documentation, reconciles versions, and audits architecture. See the [root README](../README.md#autonomous-nightly-pipeline).
+Tests are co-located in `*-tests/` folders next to nearly every source file. Beyond local tests, the monorepo is maintained by a [13-stage autonomous nightly pipeline](../README.md#autonomous-nightly-pipeline) that refreshes documentation, reconciles versions, and audits architecture.
 
 ---
 
 ## License
 
-GPL-3.0-only. Copyright (C) 2026 AlbiDR. See [LICENSE](../LICENSE).
+Released under the [GPL-3.0-only](../LICENSE) license. Copyright (C) 2026 AlbiDR.
