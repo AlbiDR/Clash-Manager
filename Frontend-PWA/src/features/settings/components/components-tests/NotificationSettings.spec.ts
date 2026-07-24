@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount, flushPromises } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 import NotificationSettings from "../NotificationSettings.vue";
 import { ref, reactive, nextTick } from "vue";
@@ -168,5 +168,68 @@ describe("NotificationSettings.vue", () => {
     await testBtn.trigger("click");
 
     expect(mockSettings.sendTestNotification).toHaveBeenCalled();
+  });
+
+  it("handles background synchronization toggle click", async () => {
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const backgroundSyncRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Background Synchronization"));
+    expect(backgroundSyncRow).toBeDefined();
+
+    await backgroundSyncRow!.trigger("click");
+    expect(mockSettings.toggle).toHaveBeenCalledWith("experimentalNotifications");
+  });
+
+  it("handles Quiet Mode toggle click when permission is granted", async () => {
+    mockSettings.notificationPermission.value = "granted";
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const quietModeRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Quiet Mode"));
+    expect(quietModeRow).toBeDefined();
+
+    await quietModeRow!.trigger("click");
+    expect(mockSettings.toggle).toHaveBeenCalledWith("notificationQuietMode");
+  });
+
+  it("handles Sound toggle click when permission is granted", async () => {
+    mockSettings.notificationPermission.value = "granted";
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const soundRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Sound"));
+    expect(soundRow).toBeDefined();
+
+    await soundRow!.trigger("click");
+    expect(mockSettings.toggle).toHaveBeenCalledWith("notificationSound");
+  });
+
+  it("displays the correct badge preview text when threshold is 50", async () => {
+    mockModules.notificationThreshold = 50;
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const badgePreview = wrapper.find(".badge-preview");
+    expect(badgePreview.text()).toContain("Show all good recruits");
+  });
+
+  it("displays the correct badge preview text when threshold is 75", async () => {
+    mockModules.notificationThreshold = 75;
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const badgePreview = wrapper.find(".badge-preview");
+    expect(badgePreview.text()).toContain("Focus on high-potential talent only");
   });
 });
