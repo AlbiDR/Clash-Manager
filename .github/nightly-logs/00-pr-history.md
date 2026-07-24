@@ -1,3 +1,10 @@
+### [2026-07-24] PR #PENDING [Stage 4]: perf(opt): standardize variable naming for domain clarity and audit substrate hygiene
+**Domain:** Core & Features | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/utils/game.ts, Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts, .github/nightly-logs/04-optimization-coverage.log
+**Why:** To satisfy ADR Section II domain-descriptive naming conventions and eliminate generic variable pathogens.
+**Change:** Standardized the generic variable `row` to `kingLevelRow` inside `calculateXpIntoLevel`/`calculateTotalXp` functions, renamed `val` to `thresholdValue` in `NotificationSettings.spec.ts`, and verified unreferenced database views remain clean.
+**Result:** 100% naming compliance with the CleanStack ADR, fully passing the monorepo test gate (1409 passed).
+
 ### [2026-07-23] PR #PENDING [Stage 12]: fix(apk-ux): modernize Notification Engine mobile touch targets and haptic interactions
 **Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/settings/components/NotificationSettings.vue

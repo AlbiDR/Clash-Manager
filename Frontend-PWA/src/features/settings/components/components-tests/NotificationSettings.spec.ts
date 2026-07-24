@@ -28,8 +28,8 @@ const mockSettings = {
   requestNotificationPermission: vi.fn().mockResolvedValue("granted"),
   subscribePush: vi.fn().mockResolvedValue(undefined),
   sendTestNotification: vi.fn().mockResolvedValue(undefined),
-  setNotificationThreshold: vi.fn((val) => {
-    mockModules.notificationThreshold = val;
+  setNotificationThreshold: vi.fn((thresholdValue) => {
+    mockModules.notificationThreshold = thresholdValue;
   }),
 };
 
