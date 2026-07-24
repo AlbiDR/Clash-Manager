@@ -1,3 +1,10 @@
+### [2026-07-24] PR #PENDING [Stage 12]: fix(apk-ux): modernize SelectionFab haptic interaction model and touch inputs
+**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/SelectionFab.vue, Frontend-PWA/src/shared/ui/ui-tests/SelectionFab.spec.ts
+**Why:** Manual pointerdown event listeners and direct useHaptics haptic feedback triggers in SelectionFab were legacy interaction patterns.
+**Change:** Refactored all interactive buttons inside SelectionFab to utilize the declarative v-tactile haptic brokering directive and synchronized the test suite.
+**Result:** Clean declarative haptic synchronization and hybrid shell interaction hygiene verified with all 1408 monorepo tests passing.
+
 ### [2026-07-24] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
