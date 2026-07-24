@@ -163,6 +163,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 * Current focus: Test coverage saturation for Layer 1 utilities.
 * Recent additions: `assets.ts`, `normalizeTag`, backend royale schemas.
 * Gap area: Edge Function integration tests remain sparse.
+* [2026-07-24] [Stage 2] NotificationSettings: Injected comprehensive unit tests into NotificationSettings.spec.ts to fully cover user interaction pathways, toggles, and threshold badge-preview outputs.
 
 ### Stage 3 -- Baseline Consolidation
 * Current focus: Migration folding after each Supabase schema change.
