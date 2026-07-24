@@ -1,11 +1,29 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+/**
+ * COMPONENT: NotificationSettings
+ *
+ * @remarks
+ * Manages background synchronization toggles, heuristic notification threshold
+ * options, quiet modes, and push registration workflows for the application.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 Features (`@features`)
+ * - **Satisfaction:** Satisfies ADR Section III: Data Flow and ADR Section VII: Naming Conventions.
+ * - **UX Standards:** Implements mobile-compliant 48px touch targets and declarative
+ *   haptic feedback brokering (`v-tactile`) on all actionable selectors to ensure
+ *   consistent and highly responsive physical interaction inside Android WebView wrappers.
+ */
 import { Icon, SettingRow, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { computed } from "vue";
 
+/**
+ * Interface contract for NotificationSettings component properties.
+ */
 const props = defineProps<{
+  /** Whether the notification settings card is initially expanded on mount. */
   initiallyExpanded?: boolean;
 }>();
 
@@ -22,6 +40,12 @@ const {
   setNotificationThreshold,
 } = useSettings();
 
+/**
+ * Reactive computed value referencing the current heuristic score threshold.
+ *
+ * [DECISION LOG] Threshold choices are restricted to [50, 75] as defined
+ * in the central catalog (`core/config`) to prioritize high-potential recruits.
+ */
 const threshold = computed(() => modules.notificationThreshold);
 </script>
 
@@ -44,6 +68,11 @@ const threshold = computed(() => modules.notificationThreshold);
         <div class="row-desc">Sync alerts for recruits with score</div>
       </div>
 
+      <!--
+        [DECISION LOG] Button dimensions are modernized to 48px to comply with
+        the hybrid shell mobile ergonomics standard (Target B.2). Declarative haptic
+        brokering is integrated via `v-tactile` to bypass legacy manual triggers.
+      -->
       <div
         class="threshold-selector"
         role="group"
@@ -68,11 +97,9 @@ const threshold = computed(() => modules.notificationThreshold);
     <div v-if="notificationPermission === 'default'" class="perm-section">
       <div class="perm-rationale">
         <Icon name="bell" size="16" />
-        <span
-          >Enable notifications to get updates on high-potential recruits even
-          when the app is closed.</span
-        >
+        <span>Enable notifications to get updates on high-potential recruits even when the app is closed.</span>
       </div>
+      <!-- [DECISION LOG] Height set to 48px to satisfy hybrid touch footprint standard. -->
       <button v-tactile class="enable-btn" @click="requestNotificationPermission">
         Enable Notifications & Badges
       </button>
@@ -109,6 +136,7 @@ const threshold = computed(() => modules.notificationThreshold);
     <!-- Actions Row -->
     <div class="actions-row" v-if="notificationPermission === 'granted'">
       <!-- Improvement #9: Test Notification -->
+      <!-- [DECISION LOG] Height set to 48px to satisfy hybrid touch footprint standard. -->
       <button v-tactile class="action-btn" @click="sendTestNotification">
         <Icon name="bell" size="14" />
         <span>Test Alert</span>

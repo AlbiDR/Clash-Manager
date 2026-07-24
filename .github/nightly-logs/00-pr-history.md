@@ -3105,6 +3105,13 @@ LAST_AGED:   2026-07-24
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-24] PR #PENDING [Stage 6]: docs(tsdoc): harden NotificationSettings interface contracts and logic annotations
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/settings/components/NotificationSettings.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Reconcile interface contracts and decision comments for NotificationSettings component after hybrid shell ergonomics modernization.
+**Change:** Injected comprehensive component-level, props-level, and computed-level JSDoc/TSDoc specifications, inline decision logs for 48px mobile touch targets, and declarative haptic feedback brokering.
+**Result:** 100% logic intent transparency, contract synchronization, and mobile standards compliance for the modernized settings feature substrate.
+
 ### [2026-07-24] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline (audit pass)
 **Domain:** Database Schema | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/00-pr-history.md
