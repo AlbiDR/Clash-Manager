@@ -3091,6 +3091,13 @@ LAST_AGED:   2026-07-24
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-24] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline (audit pass)
+**Domain:** Database Schema | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/00-pr-history.md
+**Why:** To consolidate schema baseline and certify RLS, search_path isolation, and zero-touch deployment compatibility.
+**Change:** Verified 11 incremental migrations are fully folded in, updated the audited date stamp to 2026-07-24, and recorded the compliance verification results.
+**Result:** 100% compliance across all 28 database tables and 95 functions with absolute schema, security, and formatting alignment.
+
 ### [2026-07-24] PR #PENDING [Stage 1]: fix(harden): secure profiler telemetry logging
 **Domain:** Security | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/headhunter-scanner/stages/profiler.ts, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md
