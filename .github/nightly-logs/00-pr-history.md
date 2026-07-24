@@ -3081,7 +3081,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-07-23
+LAST_AGED:   2026-07-24
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -3091,6 +3091,13 @@ LAST_AGED:   2026-07-23
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-24] PR #PENDING [Stage 1]: fix(harden): secure profiler telemetry logging
+**Domain:** Security | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/headhunter-scanner/stages/profiler.ts, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Standard info-level telemetry trace messages inside the headhunter-scanner profiler were incorrectly logged to stderr using console.error, polluting system telemetry with false-positive alerts.
+**Change:** Refactored post-ingestion fate-check tracing statements to use console.log, strictly reserving console.error for actual database and runtime errors.
+**Result:** Improved logging hygiene and prevented false-positive severity-based alert triggers on cloud telemetry streams.
+
 ### [2026-07-23] PR #PENDING [Stage 9]: chore(refactor): no action required
 **Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
@@ -3259,41 +3266,15 @@ LAST_AGED:   2026-07-23
 **Change:** Created a comprehensive Vitest suite covering CORS, authorization guards, validation payload boundaries, cache hits/misses, absolute level scaling, standard/tower-troop collection separation, and graceful recovery from malformed timestamps.
 **Result:** 100% logic and branch coverage verified with 9 newly introduced tests running natively in the monorepo Vitest workspace.
 
-### [2026-07-17] PR #1183 [Stage 9]: chore(refactor): no action required
-**Domain:** Refactor/Structural | **Commit:** 717a8be4b7faddf044256acdc42e63519c7b1da7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1183)
-**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Audited feature-level view modules and shared composables across features to detect outgrown dependencies or oversized layers.
-**Change:** Completed a comprehensive structural audit confirming zero modules exceeding 400 lines and zero architectural layer or cyclical dependency violations.
-**Result:** Monorepo structural and architectural integrity certified with zero debt detected for this run.
-
-### [2026-07-17] PR #1135 [Stage 8]: chore(deps): bump @supabase/supabase-js and update major watchlist
-**Domain:** Dependencies | **Commit:** 3db7643f7217e69151f2283f1d92f23f2277a533 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1135)
-**Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
-**Why:** Conducted a dependency audit to apply safe maintenance updates and research high-risk major version transitions for Pinia 4, Vite 8, and TypeScript 7.
-**Change:** Bumped @supabase/supabase-js to ^2.110.7 via the catalog, and updated the major version watchlist with Pinia 4.0.2 impact analysis.
-**Result:** Monorepo dependencies hardened against rot; ecosystem research documented for architectural planning.
-
-### [2026-07-17] PR #1134 [Stage 7]: fix(version): reconcile @supabase/supabase-js drift in backend functions
-**Domain:** Infrastructure/Backend | **Commit:** 3a8bd93ea2df1990d81dd3d42c308aef2d2d3bd3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1134)
-**Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts
-**Why:** `@supabase/supabase-js` in backend edge functions and Deno scripts had drifted from the monorepo catalog version (v2.110.6).
-**Change:** Synchronized all occurrences of `@supabase/supabase-js` in backend functions and Deno scripts to v2.110.6 and verified monorepo-wide consistency.
-**Result:** 100% catalog adherence and system stability verified via monorepo test gate (1409 passed).
-
-### [2026-07-17] PR #1129 [Stage 1]: fix(harden): secure player card cache check and protect against Temporal crashes
-**Domain:** Hardening | **Commit:** 36db022b2f99ea9ca561baa6967539fdc4d9b5ef | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1129)
-**Files:** Backend/supabase/functions/sync-player-cards/index.ts, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Malformed fetched_at timestamp strings in the player card snapshots table could trigger unhandled exceptions in the Temporal parsing logic.
-**Change:** Hardened the sync-player-cards Edge Function by extracting Temporal parsing into a defensive parseFetchedAt helper with try-catch block and fallback to 0 epoch milliseconds.
-**Result:** Deterministic runtime protection against malformed or corrupted database timestamps at the cache check boundary.
-
-
-
 
 ## T2 -- Recent (8-30 days)
 
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-17] PR #1129 [Hardening]: fix(harden): secure player card cache check and protect against Temporal crashes (``36db022b2f99ea9ca561baa6967539fdc4d9b5ef``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1129)
+* [2026-07-17] PR #1134 [Infrastructure/Backend]: fix(version): reconcile @supabase/supabase-js drift in backend functions (``3a8bd93ea2df1990d81dd3d42c308aef2d2d3bd3``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1134)
+* [2026-07-17] PR #1135 [Dependencies]: chore(deps): bump @supabase/supabase-js and update major watchlist (``3db7643f7217e69151f2283f1d92f23f2277a533``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1135)
+* [2026-07-17] PR #1183 [Refactor/Structural]: chore(refactor): no action required (``717a8be4b7faddf044256acdc42e63519c7b1da7``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1183)
 * [2026-07-16] PR #PENDING [TSDoc]: docs(tsdoc): harden core configuration contracts and logic annotations (``PENDING``) [View](PENDING)
 * [2026-07-16] PR #PENDING [Dependencies]: chore(deps): bump dependencies and update major watchlist (``PENDING``) [View](PENDING)
 * [2026-07-16] PR #PENDING [Infrastructure/Backend]: refactor(structural): decompose harvester and centralize configuration (``PENDING``) [View](PENDING)
@@ -3494,33 +3475,24 @@ LAST_AGED:   2026-07-23
 * [2026-06-25] PR #923 [Baseline]: chore(baseline): fold new migrations into master baseline (``710ec50``) [View](https://github.com/AlbiDR/Clash-Manager/pull/923)
 * [2026-06-25] PR #922 [Verification]: [Stage 2] Verification - Logic Integrity Auditor (``296feca``) [View](https://github.com/AlbiDR/Clash-Manager/pull/922)
 * [2026-06-25] PR #921 [Hardening]: fix(harden): secure recruitment boundary and excise anemic pathogens (``bea0632``) [View](https://github.com/AlbiDR/Clash-Manager/pull/921)
-* [2026-06-24] PR #920 [APK UX]: fix(apk-ux): add tactile feedback to BaseSelect (``2be5f2f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/920)
-* [2026-06-24] PR #919 [APK Optimization]: perf(apk-optimization): enable asset compression and prune locales (``7e9a02b``) [View](https://github.com/AlbiDR/Clash-Manager/pull/919)
-* [2026-06-24] PR #918 [APK Integrity]: fix(apk-integrity): synchronize versioning and harden network security (``4ffc664``) [View](https://github.com/AlbiDR/Clash-Manager/pull/918)
-* [2026-06-24] PR #917 [Dependencies]: chore(deps): update major version watchlist (``cc6e38f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/917)
-* [2026-06-24] PR #916 [TSDoc]: docs(tsdoc): document sort options metadata (``54a9d9b``) [View](https://github.com/AlbiDR/Clash-Manager/pull/916)
-* [2026-06-24] PR #915 [Version Integrity]: chore(version): reconcile version drift in supabase plan (``c57ab4b``) [View](https://github.com/AlbiDR/Clash-Manager/pull/915)
-* [2026-06-24] PR #914 [README]: docs(readme): reconcile shared interaction directive constraints (``4429e8d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/914)
-* [2026-06-24] PR #913 [Verification]: test(verify): add logic proofs for backend shared schemas (``36298c3``) [View](https://github.com/AlbiDR/Clash-Manager/pull/913)
-* [2026-06-24] PR #912 [Hardening]: fix(harden): excise any pathogens from vTooltip and App lifecycle (``f745366``) [View](https://github.com/AlbiDR/Clash-Manager/pull/912)
 
 ## T3 -- Historical (31-90 days)
 
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W26
-* 1 PR [APK Integrity]: #900
-* 2 PRs [APK Optimization]: #901, #910
-* 1 PR [APK UX]: #911
+* 2 PRs [APK Integrity]: #900, #918
+* 3 PRs [APK Optimization]: #901, #910, #919
+* 2 PRs [APK UX]: #911, #920
 * 2 PRs [Baseline]: #894, #904
-* 2 PRs [Dependencies]: #899, #909
-* 2 PRs [Hardening]: #892, #902
+* 3 PRs [Dependencies]: #899, #909, #917
+* 3 PRs [Hardening]: #892, #902, #912
 * 1 PR [Performance]: #905
-* 2 PRs [README]: #896, #906
+* 3 PRs [README]: #896, #906, #914
 * 1 PR [Refactor/Optimization]: #895
-* 2 PRs [TSDoc]: #897, #907
-* 2 PRs [Verification]: #893, #903
-* 2 PRs [Version Integrity]: #898, #908
+* 3 PRs [TSDoc]: #897, #907, #916
+* 3 PRs [Verification]: #893, #903, #913
+* 3 PRs [Version Integrity]: #898, #908, #915
 
 #### 2026-W25
 * 1 PR [APK Integrity]: #889

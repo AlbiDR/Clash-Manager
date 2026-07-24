@@ -270,7 +270,7 @@ export async function runProfiler(
                 .map(recruitCandidate => recruitCandidate.player_tag);
             
             if (newTags.length > 0) {
-                console.error(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
+                console.log(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
                 
                 let fateResults: v.InferOutput<typeof RecruitFateSchema>[] = [];
                 let attempts = 0;
@@ -298,10 +298,10 @@ export async function runProfiler(
                                 fateResults = recruitsFateIntegrity.output;
                                 const queuedCount = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'QUEUE').length;
                                 if (queuedCount === 0) {
-                                    console.error(`[PROFILING] Fate check converged on attempt ${attempts}`);
+                                    console.log(`[PROFILING] Fate check converged on attempt ${attempts}`);
                                     break;
                                 }
-                                console.error(`[PROFILING] Fate check attempt ${attempts}: ${fateResults.length} found, ${queuedCount} still QUEUED...`);
+                                console.log(`[PROFILING] Fate check attempt ${attempts}: ${fateResults.length} found, ${queuedCount} still QUEUED...`);
                             } else {
                                 console.error(`[PROFILING] Fate validation failed on attempt ${attempts}: ${JSON.stringify(recruitsFateIntegrity.issues)}`);
                             }
@@ -338,7 +338,7 @@ export async function runProfiler(
                     stats.new_recruits_benched = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'BENCHED').length;
                     stats.new_recruits_top50 = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'ACTIVE' && Number(fateEntryCandidate.raw_potential_score) >= top50ScoreThreshold).length;
                     
-                    console.error(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
+                    console.log(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
                 } else {
                     console.warn(`[PROFILING] Fate check FAILED after ${maxAttempts} attempts for ${newTags.length} tags.`);
                 }
