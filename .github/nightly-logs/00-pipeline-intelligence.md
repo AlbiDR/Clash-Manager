@@ -233,3 +233,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### [2026-07-18] [Stage 12] TargetPicker Modernization
 * Modernized TargetPicker heights (.input-box, .player-label) to 48px, lock-btn to 40px, applied user-select containment, and integrated v-tactile directive.
 * Verified zero layout regressions via `depcruise` and production PWA build.
+
+### [2026-07-24] [Stage 12] SelectionFab Modernization
+* Modernized SelectionFab by removing manual haptic triggers and replacing them with the declarative v-tactile directive.
+* Verified zero layout regressions and complete monorepo test compliance.

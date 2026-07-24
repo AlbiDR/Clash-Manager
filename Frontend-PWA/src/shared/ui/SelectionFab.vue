@@ -3,7 +3,7 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { useUiCoordinator } from "@core";
-import { useHaptics } from "../composables/useHaptics";
+import { vTactile } from "../directives/vTactile";
 
 /**
  * COMPONENT: SelectionFab
@@ -21,14 +21,6 @@ import { useHaptics } from "../composables/useHaptics";
  */
 
 const { fabState } = useUiCoordinator();
-const haptics = useHaptics();
-
-/**
- * Triggers haptic feedback on interaction start.
- */
-function onInteractionStart() {
-  haptics.tap();
-}
 
 /**
  * [DECISION LOG] ACTION DELEGATION: All handlers verify the existence of
@@ -71,10 +63,10 @@ function handleFabAbortHarvest() {
 <template>
   <!-- Dismiss Button (Always Visible) -->
   <button
+    v-tactile
     class="fab-btn danger"
     :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
     @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
-    @pointerdown="onInteractionStart"
     :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
   >
     <Icon :name="fabState.dismissIcon || 'close'" size="18" />
@@ -91,9 +83,9 @@ function handleFabAbortHarvest() {
     </div>
 
     <button
+      v-tactile
       class="fab-btn primary compact"
       @click="handleFabAction"
-      @pointerdown="onInteractionStart"
       aria-label="Open Next Profile"
     >
       <Icon name="chevron_right" size="20" />
@@ -106,10 +98,10 @@ function handleFabAbortHarvest() {
     <template v-if="fabState.blitzEnabled">
       <!-- Main Blitz Button -->
       <button
+        v-tactile
         class="fab-btn blitz"
         :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
         @click="handleFabBlitz"
-        @pointerdown="onInteractionStart"
         aria-label="Start Blitz Mode"
       >
         <Icon name="lightning" size="18" />
@@ -118,11 +110,11 @@ function handleFabAbortHarvest() {
 
       <!-- Global Harvest Button (Globe) -->
       <button
+        v-tactile
         class="fab-btn compact secondary-harvest"
         :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
         :disabled="fabState.isHarvesting"
         @click="handleFabGlobalHarvest"
-        @pointerdown="onInteractionStart"
         aria-label="Global Harvest"
       >
         <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'" class="spinner-small"></div>
@@ -131,11 +123,11 @@ function handleFabAbortHarvest() {
 
       <!-- Local Harvest Button (Map-Pin) -->
       <button
+        v-tactile
         class="fab-btn compact secondary-harvest"
         :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
         :disabled="fabState.isHarvesting"
         @click="handleFabLocalHarvest"
-        @pointerdown="onInteractionStart"
         aria-label="Local Harvest"
       >
         <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'" class="spinner-small"></div>
@@ -145,10 +137,10 @@ function handleFabAbortHarvest() {
 
     <!-- Action Button (Only if Blitz is NOT enabled) -->
     <button
+      v-tactile
       v-else
       class="fab-btn primary"
       @click="handleFabAction"
-      @pointerdown="onInteractionStart"
       :aria-label="fabState.label || 'Open'"
     >
       <Icon name="check" size="18" />

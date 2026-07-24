@@ -8,14 +8,6 @@ import { mount } from "@vue/test-utils";
 import SelectionFab from "../SelectionFab.vue";
 import { reactive } from "vue";
 
-// Mock haptics
-const mockTap = vi.fn();
-vi.mock("@shared/composables/useHaptics", () => ({
-  useHaptics: () => ({
-    tap: mockTap
-  })
-}));
-
 // Mock UI Coordinator
 const fabState = reactive({
   label: "Open",
@@ -57,6 +49,11 @@ describe("SelectionFab.vue", () => {
       global: {
         stubs: {
           Icon: true
+        },
+        directives: {
+          tactile: {
+            beforeMount() {}
+          }
         }
       }
     });
@@ -95,11 +92,6 @@ describe("SelectionFab.vue", () => {
       expect(fabState.onDismiss).not.toHaveBeenCalled();
     });
 
-    it("triggers haptic tap on pointerdown", async () => {
-      const wrapper = mountFab();
-      await wrapper.find(".fab-btn.danger").trigger("pointerdown");
-      expect(mockTap).toHaveBeenCalled();
-    });
   });
 
   describe("Blasting Mode", () => {

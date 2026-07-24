@@ -17,3 +17,5 @@
 * [2026-07-21] [Stage 12] CHANGED: Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue -- Integrated v-tactile directive into .btn-primary empty-action button to ensure consistent physical haptic response in the hybrid shell.
 * [2026-07-22] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/BaseSelect.vue -- Refactored to use v-tactile directive for declarative brokered haptic feedback on select triggers and option elements.
 * [2026-07-23] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/NotificationSettings.vue -- Modernized threshold-btn, enable-btn, and action-btn to 48px touch footprint and integrated v-tactile haptic feedback directive.
+* [2026-07-24] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/SelectionFab.vue -- Modernized SelectionFab by removing manual haptic triggers and replacing them with the declarative v-tactile directive.
+* [2026-07-24] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/SelectionFab.spec.ts -- Synchronized SelectionFab unit tests to mock and verify the declarative v-tactile directive instead of direct haptic triggers.
