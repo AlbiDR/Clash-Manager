@@ -52,8 +52,8 @@ export function getKingLevelRow(level: number): KingXpRow {
  */
 export function calculateXpIntoLevel(totalXp: number, level?: number): number {
   const baseLevel = level ?? calculateKingLevel(totalXp);
-  const row = getKingLevelRow(baseLevel);
-  return Math.max(0, totalXp - Number(row.cumulative));
+  const kingLevelRow = getKingLevelRow(baseLevel);
+  return Math.max(0, totalXp - Number(kingLevelRow.cumulative));
 }
 
 /**
@@ -64,8 +64,8 @@ export function calculateXpIntoLevel(totalXp: number, level?: number): number {
  * @returns The total cumulative XP.
  */
 export function calculateTotalXp(level: number, xpIntoLevel: number): XP {
-  const row = getKingLevelRow(level);
-  return addXP(row.cumulative, asXP(xpIntoLevel));
+  const kingLevelRow = getKingLevelRow(level);
+  return addXP(kingLevelRow.cumulative, asXP(xpIntoLevel));
 }
 
 /**
