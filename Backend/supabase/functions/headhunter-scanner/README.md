@@ -38,6 +38,7 @@ Via the Key Farm proxy: `/tournaments*`, `/players/{tag}`, and `/players/{tag}/b
 
 - Tournament discovery only runs when the payload contains the `"AUTO"` sentinel; it never takes tournament tags from the request body.
 - Trophy gating is deferred to the profiler (S3), which has the full ladder profile; earlier stages filter only on clan status and the exclusion set.
+- **Logging & Telemetry Hygiene:** Profiling telemetry and post-ingestion fate-check status traces are logged strictly using `console.log` to prevent polluting cloud logging streams with false-positive alerts, reserving `console.error` exclusively for actual database, validation, or fatal execution errors.
 
 ## See also
 
