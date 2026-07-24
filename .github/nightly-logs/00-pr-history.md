@@ -3112,6 +3112,13 @@ LAST_AGED:   2026-07-24
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-24] PR #PENDING [Stage 8]: chore(deps): bump @ast-grep/cli from 0.44.1 to 0.45.0
+**Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** Perform the daily automated package patch/minor update audit and ecosystem safety research for Nightly.
+**Change:** Bumped @ast-grep/cli to ^0.45.0 in the central workspace catalog, regenerated the lockfile, and registered Vite 8, TypeScript 7, and Pinia 4 major version tracking.
+**Result:** 100% dependency hygiene and catalog compliance verified with all 1409 monorepo tests passing successfully.
+
 ### [2026-07-24] PR #PENDING [Stage 6]: docs(tsdoc): harden NotificationSettings interface contracts and logic annotations
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/settings/components/NotificationSettings.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
