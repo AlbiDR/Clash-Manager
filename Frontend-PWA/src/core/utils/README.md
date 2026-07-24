@@ -11,7 +11,7 @@
 
 | File | Role |
 | :--- | :--- |
-| `game.ts`, `gameConstants.ts`, `gameTypes.ts` | Clash Royale card data, XP and King-level math, level normalization. Used by the [Laboratory](../../features/laboratory/README.md). |
+| `game.ts`, `gameConstants.ts`, `gameTypes.ts` | Clash Royale card data, XP and King-level math (including `getKingLevelRow` lookup and standardized domain variable naming for king level row records), level normalization. Used by the [Laboratory](../../features/laboratory/README.md). |
 | `economy.ts` | Currency math and branded `Gold` / `Gems` / `XP` types. |
 | `PriorityQueue.ts` | A binary heap (O(log N)) for upgrade selection in the simulator. |
 | `idbKernel.ts` | Low-level IndexedDB wrapper with in-memory fallback. |

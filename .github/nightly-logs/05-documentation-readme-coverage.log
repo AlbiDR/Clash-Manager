@@ -65,3 +65,12 @@
 * [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
 * [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
 * [2026-07-23] [Stage 5] CLEAN: Frontend-PWA/src/features/settings/README.md -- No action required
+* [2026-07-24] [Stage 5] CHANGED: Backend/supabase/functions/headhunter-scanner/README.md -- Reconciled profiler logging hygiene standards and telemetry false-positive mitigation
+* [2026-07-24] [Stage 5] CHANGED: Frontend-PWA/src/core/utils/README.md -- Reconciled getKingLevelRow lookup mapping and king level row variable naming standardization
+* [2026-07-24] [Stage 5] CHANGED: Frontend-PWA/src/features/settings/README.md -- Reconciled notification settings thresholdValue standardization and mock specification testing
+* [2026-07-24] [Stage 5] CLEAN: README.md -- No action required
+* [2026-07-24] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-07-24] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-07-24] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
+* [2026-07-24] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
+* [2026-07-24] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required

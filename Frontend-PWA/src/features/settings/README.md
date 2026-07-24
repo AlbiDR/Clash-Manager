@@ -13,7 +13,7 @@ Each concern is a collapsible card:
 
 - **Event management** - schedule and track a Clan Voyage (target, countdowns, live progress). Composed from the shared [`EventManagement`](../../shared/ui/README.md) component.
 - **Appearance** - Light / Dark / Auto theme and a keep-screen-awake toggle.
-- **Notifications** - recruit-alert threshold, app badges, and a test notification.
+- **Notifications** - recruit-alert threshold, app badges, and a test notification. The recruit-alert threshold actions are domain-standardized and mocked/tested using the `thresholdValue` parameter mapping.
 - **Feature flags** - Blitz Mode calibration, [Android bridge](../../../../APK/README.md) detection, APK update download, and benchmark-tooltip visibility.
 - **Display modes** - Showcase (demo), Blueprint (skeletons), and Synthetic (mock data).
 - **Network** - live API status and a switchable Supabase endpoint.

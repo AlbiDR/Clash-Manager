@@ -1,3 +1,10 @@
+### [2026-07-24] PR #PENDING [Stage 5]: docs(readme): reconcile backend scanner telemetry and frontend core/settings drift
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/headhunter-scanner/README.md, Frontend-PWA/src/core/utils/README.md, Frontend-PWA/src/features/settings/README.md, .github/nightly-logs/05-documentation-readme-coverage.log
+**Why:** To ensure perfect synchronization between daily substrate implementation adjustments and authoritative architectural documentation.
+**Change:** Documented profiler telemetry logging standards in the headhunter-scanner README, updated core utils README to detail getKingLevelRow lookup mapping and standardized variable conventions, and detailed the standardized notification threshold configuration properties in settings.
+**Result:** 100% architectural alignment, zero documentation drift, and fully synchronized operational guidelines for all developers and automated agents.
+
 ### [2026-07-24] PR #PENDING [Stage 4]: perf(opt): standardize variable naming for domain clarity and audit substrate hygiene
 **Domain:** Core & Features | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/core/utils/game.ts, Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts, .github/nightly-logs/04-optimization-coverage.log
