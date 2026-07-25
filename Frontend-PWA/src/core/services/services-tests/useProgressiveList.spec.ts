@@ -213,4 +213,155 @@ describe("useProgressiveList", () => {
     expect(cancelCalled).toBe(true);
     (window as any).cancelIdleCallback = originalCancel;
   });
+
+  it("defaults initialSize to 12 when not specified", () => {
+    const scope = effectScope();
+    scope.run(() => {
+      const source = ref(Array.from({ length: 20 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source);
+
+      expect(visibleItems.value).toHaveLength(12);
+      expect(visibleItems.value).toEqual(Array.from({ length: 12 }, (_, i) => i + 1));
+    });
+    scope.stop();
+  });
+
+  it("handles source list smaller than initialSize", () => {
+    const scope = effectScope();
+    scope.run(() => {
+      const source = ref([1, 2, 3]);
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(3);
+      expect(visibleItems.value).toEqual([1, 2, 3]);
+
+      const scheduler = window.requestIdleCallback || window.requestAnimationFrame;
+      expect(scheduler).not.toHaveBeenCalled();
+    });
+    scope.stop();
+  });
+
+  it("handles empty source list", () => {
+    const scope = effectScope();
+    scope.run(() => {
+      const source = ref<number[]>([]);
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(0);
+
+      const scheduler = window.requestIdleCallback || window.requestAnimationFrame;
+      expect(scheduler).not.toHaveBeenCalled();
+    });
+    scope.stop();
+  });
+
+  it("clears pending timers and visibleItems when transitioned to an empty list", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 50 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      // Transition to empty
+      source.value = [];
+      await nextTick();
+
+      expect(visibleItems.value).toHaveLength(0);
+
+      const canceller = window.cancelIdleCallback || window.cancelAnimationFrame;
+      expect(canceller).toHaveBeenCalled();
+    });
+    scope.stop();
+  });
+
+  it("falls back to fresh load during isRefresh if visibleItems length is less than initialSize", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 5 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(5);
+
+      // Trigger a small update (difference < 5) but visibleItems.value.length (5) is less than initialSize (10)
+      source.value = Array.from({ length: 7 }, (_, i) => i + 1);
+      await nextTick();
+
+      // Should do fresh load up to initialSize/length
+      expect(visibleItems.value).toHaveLength(7);
+    });
+    scope.stop();
+  });
+
+  it("does not schedule chunks if isRefresh matches the incoming list length exactly", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 20 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      // Load all items
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+
+      // Trigger a refresh with same length but different values
+      const scheduler = window.requestIdleCallback || window.requestAnimationFrame;
+      vi.mocked(scheduler).mockClear();
+
+      source.value = Array.from({ length: 20 }, (_, i) => i + 101);
+      await nextTick();
+
+      expect(visibleItems.value).toHaveLength(20);
+      expect(visibleItems.value[0]).toBe(101);
+
+      // Should not call scheduler because length didn't change and visible list has same size
+      expect(scheduler).not.toHaveBeenCalled();
+    });
+    scope.stop();
+  });
+
+  it("handles rapid successive updates to source list safely", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 50 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      // Immediately change source list again
+      source.value = Array.from({ length: 30 }, (_, i) => i + 101);
+      await nextTick();
+
+      // Previous timer should be canceled
+      const canceller = window.cancelIdleCallback || window.cancelAnimationFrame;
+      expect(canceller).toHaveBeenCalled();
+
+      expect(visibleItems.value).toHaveLength(10);
+      expect(visibleItems.value[0]).toBe(101);
+
+      // First chunk of the new list should be scheduled
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+      expect(visibleItems.value[19]).toBe(120);
+    });
+    scope.stop();
+  });
+
+  it("executes safely when deadline is not an IdleDeadline (e.g., rAnF passing number)", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      // Mock scheduler to pass a numeric timestamp instead of an IdleDeadline
+      (window as any).requestIdleCallback = vi.fn((cb) => setTimeout(() => cb(12345.67), 1));
+
+      const source = ref(Array.from({ length: 30 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      vi.advanceTimersByTime(1);
+      // Under rAnF / numeric deadline, hasIdleDeadline is false, so it should only process a single chunk of size 10 (not loop).
+      // Total visible items should grow to 20.
+      expect(visibleItems.value).toHaveLength(20);
+    });
+    scope.stop();
+  });
 });
