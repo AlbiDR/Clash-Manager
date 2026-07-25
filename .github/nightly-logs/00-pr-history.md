@@ -1,3 +1,10 @@
+### [2026-07-25] PR #PENDING [Stage 7]: fix(version): reconcile supabase-js version drift to v2.110.8
+**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/ingest-royale-data/client.ts, Backend/supabase/functions/_shared/vault.ts, Backend/supabase/functions/_shared/protocol.ts, Backend/supabase/functions/sync-player-cards/client.ts, Backend/supabase/functions/query-royale-api/client.ts, Backend/supabase/functions/fetch-player-battlelog/client.ts, Backend/supabase/functions/headhunter-scanner/client.ts, .github/scripts/fetch_player_battles.ts, .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Reconcile version drift of the @supabase/supabase-js package across all Deno edge functions and GitHub scripts to match the updated pnpm-workspace.yaml catalog version of v2.110.8.
+**Change:** Updated imports of @supabase/supabase-js from v2.110.7 to v2.110.8 in 7 Backend Supabase Edge Functions and the fetch_player_battles.ts utility script.
+**Result:** 100% monorepo-wide consistency and zero version drift across all manifests, edge functions, and runner scripts.
+
 ### [2026-07-25] PR #PENDING [Stage 6]: chore(tsdoc): no gap found
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
