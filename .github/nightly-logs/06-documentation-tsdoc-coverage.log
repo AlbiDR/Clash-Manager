@@ -53,3 +53,6 @@
 * [2026-07-23] [Stage 6] CLEAN: Backend/supabase/functions/_shared/protocol.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after schema validation checks.
 * [2026-07-23] [Stage 6] CLEAN: Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after haptic modernizations.
 * [2026-07-24] [Stage 6] CHANGED: Frontend-PWA/src/features/settings/components/NotificationSettings.vue -- Hardened interface contracts and logic annotations for Layer 3 Notification Engine.
+* [2026-07-25] [Stage 6] CLEAN: Backend/supabase/functions/headhunter-scanner/stages/profiler.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after Stage 1 profiler telemetry logging hardening.
+* [2026-07-25] [Stage 6] CLEAN: Frontend-PWA/src/shared/ui/SelectionFab.vue -- Verified JSDoc/TSDoc coverage and standard license headers after Stage 12 SelectionFab modernization.
+* [2026-07-25] [Stage 6] CLEAN: Frontend-PWA/src/shared/composables/useVoyageStore.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after recent updates.
