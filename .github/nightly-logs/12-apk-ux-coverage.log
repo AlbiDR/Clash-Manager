@@ -19,3 +19,5 @@
 * [2026-07-23] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/NotificationSettings.vue -- Modernized threshold-btn, enable-btn, and action-btn to 48px touch footprint and integrated v-tactile haptic feedback directive.
 * [2026-07-24] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/SelectionFab.vue -- Modernized SelectionFab by removing manual haptic triggers and replacing them with the declarative v-tactile directive.
 * [2026-07-24] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/SelectionFab.spec.ts -- Synchronized SelectionFab unit tests to mock and verify the declarative v-tactile directive instead of direct haptic triggers.
+* [2026-07-25] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/VoyageSetupForm.vue -- Modernized Clan Voyage setup form buttons with declarative v-tactile haptic brokering directive.
+* [2026-07-25] [Stage 12] CHANGED: Frontend-PWA/src/shared/composables/useVoyageForm.ts -- Cleaned up manual haptics.tap() haptic triggers to avoid duplication.

@@ -120,3 +120,15 @@
 * [2026-07-24] [Stage 7] CLEAN: Frontend-PWA/package.json -- No action required
 * [2026-07-24] [Stage 7] CLEAN: Backend/package.json -- No action required
 * [2026-07-24] [Stage 7] CLEAN: pnpm-workspace.yaml -- No action required
+* [2026-07-25] [Stage 7] CHANGED: Backend/supabase/functions/ingest-royale-data/client.ts -- Synchronized @supabase/supabase-js to v2.110.8 to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CHANGED: Backend/supabase/functions/_shared/vault.ts -- Synchronized @supabase/supabase-js to v2.110.8 to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CHANGED: Backend/supabase/functions/_shared/protocol.ts -- Synchronized @supabase/supabase-js to v2.110.8 to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CHANGED: Backend/supabase/functions/sync-player-cards/client.ts -- Synchronized @supabase/supabase-js to v2.110.8 to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CHANGED: Backend/supabase/functions/query-royale-api/client.ts -- Synchronized @supabase/supabase-js to v2.110.8 to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CHANGED: Backend/supabase/functions/fetch-player-battlelog/client.ts -- Synchronized @supabase/supabase-js to v2.110.8 to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CHANGED: Backend/supabase/functions/headhunter-scanner/client.ts -- Synchronized @supabase/supabase-js to v2.110.8 to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CHANGED: .github/scripts/fetch_player_battles.ts -- Synchronized @supabase/supabase-js to v2.110.8 (ESM) to align with monorepo catalog.
+* [2026-07-25] [Stage 7] CLEAN: package.json -- No action required
+* [2026-07-25] [Stage 7] CLEAN: Frontend-PWA/package.json -- No action required
+* [2026-07-25] [Stage 7] CLEAN: Backend/package.json -- No action required
+* [2026-07-25] [Stage 7] CLEAN: pnpm-workspace.yaml -- No action required

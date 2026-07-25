@@ -164,6 +164,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 * Recent additions: `assets.ts`, `normalizeTag`, backend royale schemas.
 * Gap area: Edge Function integration tests remain sparse.
 * [2026-07-24] [Stage 2] NotificationSettings: Injected comprehensive unit tests into NotificationSettings.spec.ts to fully cover user interaction pathways, toggles, and threshold badge-preview outputs.
+* [2026-07-25] [Stage 2] useProgressiveList: Saturating unit tests inside useProgressiveList.spec.ts to fully verify empty lists, rapid updates, and requestAnimationFrame numeric deadline callbacks.
 
 ### Stage 3 -- Baseline Consolidation
 * Current focus: Migration folding after each Supabase schema change.
@@ -237,4 +238,8 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 
 ### [2026-07-24] [Stage 12] SelectionFab Modernization
 * Modernized SelectionFab by removing manual haptic triggers and replacing them with the declarative v-tactile directive.
+* Verified zero layout regressions and complete monorepo test compliance.
+
+### [2026-07-25] [Stage 12] VoyageSetupForm Modernization
+* Modernized VoyageSetupForm by replacing manual, programmatic haptics in the useVoyageForm composable with declarative v-tactile haptic brokering on all interactive buttons.
 * Verified zero layout regressions and complete monorepo test compliance.
