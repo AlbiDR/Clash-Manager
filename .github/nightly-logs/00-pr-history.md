@@ -3210,6 +3210,13 @@ LAST_AGED:   2026-07-24
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-07-25] PR #PENDING [Stage 12]: fix(apk-ux): modernize VoyageSetupForm buttons with brokered haptic feedback
+**Domain:** APK UX | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/VoyageSetupForm.vue, Frontend-PWA/src/shared/composables/useVoyageForm.ts, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
+**Why:** To ensure consistent physical tactile response across the Android WebView shell by utilizing the declarative v-tactile directive.
+**Change:** Applied the v-tactile haptic brokering directive on all interactive buttons in VoyageSetupForm.vue and removed manual, redundant haptics.tap() triggers from useVoyageForm.ts.
+**Result:** 100% hybrid shell interaction parity and unified haptic behavior verified, with zero double-trigger risk and all monorepo checks passing.
+
 ### [2026-07-25] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md

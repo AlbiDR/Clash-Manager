@@ -4,7 +4,6 @@
 import { ref, computed } from "vue";
 import { useVoyageStore } from "./useVoyageStore";
 import { useToast } from "@core/services/useToast";
-import { useHaptics } from "./useHaptics";
 import {
   sanitizeNumericInput,
   durationToSeconds
@@ -39,7 +38,6 @@ interface FormT2T {
 export function useVoyageForm() {
   const store = useVoyageStore();
   const toast = useToast();
-  const haptics = useHaptics();
 
   // --- FORM STATE ---
 
@@ -154,8 +152,6 @@ export function useVoyageForm() {
   async function handleActivate() {
     if (store.loading) return;
 
-    haptics.tap();
-
     if (!isFormValid.value) {
       return;
     }
@@ -208,7 +204,6 @@ export function useVoyageForm() {
    */
   async function handleCancel() {
     if (store.loading) return;
-    haptics.tap();
     if (confirm("Are you sure you want to cancel the scheduled Clan Voyage?")) {
       try {
         await store.cancelSchedule();
@@ -225,7 +220,6 @@ export function useVoyageForm() {
    */
   async function handleSetEnd() {
     if (store.loading) return;
-    haptics.tap();
     if (!isFormValid.value) return;
 
     try {
