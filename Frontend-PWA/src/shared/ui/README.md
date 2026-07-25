@@ -56,7 +56,7 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `DurationInput.vue` | Days/hours/minutes input with clamping. |
 | `CardActions.vue` | Card-level action bar. |
 | `SelectionBar.vue` / `ScoreThresholdSelector.vue` | Bulk-operation bar and its score-threshold picker. |
-| `FloatingDock.vue` / `NavigationDock.vue` / `SelectionFab.vue` | The bottom dock that morphs into contextual selection actions. |
+| `FloatingDock.vue` / `NavigationDock.vue` / `SelectionFab.vue` | The bottom dock that morphs into contextual selection actions. Configured with a declarative `v-tactile` haptic feedback brokering model and 48px touch targets for WebView mobile ergonomics. |
 | `HeaderInfoOverlay.vue` | Explains a view's metrics. |
 
 ## Voyage and feedback
