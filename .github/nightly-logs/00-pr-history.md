@@ -1,3 +1,10 @@
+### [2026-07-25] PR #PENDING [Stage 5]: docs(readme): reconcile SelectionFab modernization and useProgressiveList updates
+**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/README.md, Frontend-PWA/src/core/services/README.md, .github/nightly-logs/05-documentation-readme-coverage.log
+**Why:** Reconcile documentation to align with recent substrate updates in SelectionFab haptic brokering and useProgressiveList edge case verification.
+**Change:** Updated core services and shared ui READMEs to document SelectionFab's declarative v-tactile model and useProgressiveList's default parameters and fallback mechanisms.
+**Result:** 100% architectural alignment, zero documentation drift, and fully synchronized guidelines with 1421 passing tests.
+
 ### [2026-07-25] PR #PENDING [Stage 4]: chore(opt): no bottleneck found -- audit pass
 **Domain:** Codebase Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/00-pr-history.md

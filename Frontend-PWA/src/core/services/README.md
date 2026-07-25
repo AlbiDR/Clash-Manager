@@ -28,7 +28,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useConsoleSelection.ts` | Batch selection logic (select all, select by score). |
 | `useConsoleMetadata.ts` | Connectivity and statistics badges for a console. |
 | `useListFilter.ts` | Search and sort over large datasets, cached with `WeakMap`. |
-| `useProgressiveList.ts` | Time-sliced rendering (`requestIdleCallback`) to hold 60fps. |
+| `useProgressiveList.ts` | Time-sliced rendering (`requestIdleCallback`) to hold 60fps. Configured with a default `initialSize` of 12 items, transition safety controls, and a robust fallback to `requestAnimationFrame` for environments lacking idle scheduling. |
 | `useBlitzMode.ts` | The batch deep-link "Blitz" pipeline shared by the console views. |
 
 ## Connectivity and platform bridges
