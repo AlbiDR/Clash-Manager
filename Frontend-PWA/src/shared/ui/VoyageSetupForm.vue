@@ -22,6 +22,7 @@ import { watch } from "vue";
 import Icon from "./Icon.vue";
 import DurationInput from "./DurationInput.vue";
 import { useVoyageForm } from "../composables/useVoyageForm";
+import { vTactile } from "../directives/vTactile";
 import { getDurationUnits } from "@core";
 import { VOYAGE_DEFAULT_TARGET, VOYAGE_MAX_TARGET } from "@core/config";
 
@@ -129,6 +130,7 @@ watch(
     <button
       v-if="isAwaitingEndSet"
       id="voyage-set-end-btn"
+      v-tactile
       class="activate-btn"
       :class="{ disabled: !isFormValid, loading: store.loading }"
       @click="handleSetEnd"
@@ -143,6 +145,7 @@ watch(
     <button
       v-else
       id="voyage-activate-btn"
+      v-tactile
       class="activate-btn"
       :class="{ disabled: !isFormValid, loading: store.loading }"
       @click="handleActivate"
@@ -160,6 +163,7 @@ watch(
     <button
       v-if="store.isPending"
       id="voyage-cancel-btn"
+      v-tactile
       class="cancel-btn"
       :class="{ disabled: store.loading }"
       @click="handleCancel"

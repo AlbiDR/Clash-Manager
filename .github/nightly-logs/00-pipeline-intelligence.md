@@ -239,3 +239,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### [2026-07-24] [Stage 12] SelectionFab Modernization
 * Modernized SelectionFab by removing manual haptic triggers and replacing them with the declarative v-tactile directive.
 * Verified zero layout regressions and complete monorepo test compliance.
+
+### [2026-07-25] [Stage 12] VoyageSetupForm Modernization
+* Modernized VoyageSetupForm by replacing manual, programmatic haptics in the useVoyageForm composable with declarative v-tactile haptic brokering on all interactive buttons.
+* Verified zero layout regressions and complete monorepo test compliance.
