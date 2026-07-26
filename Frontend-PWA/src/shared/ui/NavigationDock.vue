@@ -91,6 +91,8 @@ function onInteractionStart() {
 
 <style scoped>
 .dock-icon-custom {
+  display: block;
+  flex-shrink: 0;
   width: 22px;
   height: 22px;
 }
