@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-26] PR #PENDING [Stage 11]: Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment.
+**Domain:** apk-optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Audited APK and native WebAPK / WebView configurations and PWA caching manifests.
+**Change:** Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment.
+**Result:** Verified pristine configurations and maintained full native-like hybrid performance layout.
+
+
 ### [2026-07-26] PR #PENDING [Stage 10]: Audited and verified PWA and Android Wrapper configuration parity, permission sanitization, SDK alignment, and custom native layer integrity, appending a clean audit pass log record.
 **Domain:** APK-Integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
