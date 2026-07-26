@@ -3700,23 +3700,8 @@ END;
 $function$;
 
 -- VIEWS
-DROP VIEW IF EXISTS drivers.recruits_view CASCADE;
-CREATE OR REPLACE VIEW drivers.recruits_view AS
-SELECT player_tag AS tag,
-    player_name AS name,
-    trophies,
-    donations,
-    cards,
-    war_wins,
-    raw_potential_score,
-    round(((raw_potential_score / 10000.0) * 100.0), 2) AS potential_score,
-    source,
-    status,
-    found_date,
-    last_scan
-   FROM drivers.recruits
-  WHERE (target_clan_tag IS NULL)
-  ORDER BY raw_potential_score DESC;
+-- drivers.recruits_view removed: view was unreferenced by all application code.
+-- Dropped via migration 20260726163300_drop_orphaned_views.sql.
 
 DROP VIEW IF EXISTS features.scoring_view CASCADE;
 CREATE OR REPLACE VIEW features.scoring_view AS
@@ -4104,16 +4089,8 @@ SELECT c.player_tag,
 
 GRANT SELECT ON features.voyage_contributions TO authenticated, anon, service_role;
 
-DROP VIEW IF EXISTS features.governance_report CASCADE;
-CREATE OR REPLACE VIEW features.governance_report AS
-SELECT id,
-    event_type,
-    status,
-    message,
-    metadata,
-    created_at
-   FROM substrate.governance_telemetry gt
-  ORDER BY created_at DESC;
+-- features.governance_report removed: view was unreferenced by all application code.
+-- Dropped via migration 20260726163300_drop_orphaned_views.sql.
 
 DROP VIEW IF EXISTS features.voyage_summary CASCADE;
 CREATE OR REPLACE VIEW features.voyage_summary AS
@@ -4236,121 +4213,17 @@ WITH benchmarking_context AS (
    FROM scoring_layer
   ORDER BY raw_potential_score DESC;
 
-DROP VIEW IF EXISTS substrate.view_pipeline_health CASCADE;
-CREATE OR REPLACE VIEW substrate.view_pipeline_health AS
-SELECT component_id,
-    status,
-    last_triggered_at,
-    last_success_at,
-    last_failure_at,
-    last_message,
-    is_data_perfect,
-    last_validation_report,
-    updated_at
-   FROM substrate.pipeline_heartbeat ph;
+-- substrate.view_pipeline_health removed: view was unreferenced by all application code.
+-- Dropped via migration 20260726163300_drop_orphaned_views.sql.
 
-DROP VIEW IF EXISTS features.war_activity_view CASCADE;
-CREATE OR REPLACE VIEW features.war_activity_view AS
-WITH activity_enriched AS (
-         SELECT wa.player_tag,
-            wa.player_name,
-            m.role,
-            COALESCE(m.is_active, false) AS is_still_in_clan,
-            wa.week_id,
-            wa.section_index,
-            wa.decks_used,
-            wa.decks_used_today,
-            wa.fame,
-                CASE
-                    WHEN (wa.decks_used > 0) THEN round(((wa.fame)::numeric / (wa.decks_used)::numeric), 1)
-                    ELSE (0)::numeric
-                END AS fame_per_deck,
-            GREATEST(0, (16 - wa.decks_used)) AS decks_remaining_weekly,
-            wa.updated_at
-           FROM (drivers.war_activity wa
-             LEFT JOIN drivers.members m ON ((m.player_tag = wa.player_tag)))
-        )
- SELECT player_name,
-    role,
-    is_still_in_clan,
-    week_id,
-    section_index,
-    decks_used,
-    decks_used_today,
-    fame,
-    fame_per_deck,
-    decks_remaining_weekly,
-    updated_at,
-    player_tag
-   FROM activity_enriched
-  ORDER BY week_id DESC, fame DESC;
+-- features.war_activity_view removed: view was unreferenced by all application code.
+-- Dropped via migration 20260726163300_drop_orphaned_views.sql.
 
-DROP VIEW IF EXISTS features.war_loyalty_view CASCADE;
-CREATE OR REPLACE VIEW features.war_loyalty_view AS
-SELECT clan_tag,
-    clan_name,
-    week_id,
-    fame,
-    rank,
-    clan_points,
-    updated_at
-   FROM drivers.war_history wh;
+-- features.war_loyalty_view removed: view was unreferenced by all application code.
+-- Dropped via migration 20260726163300_drop_orphaned_views.sql.
 
-DROP VIEW IF EXISTS features.war_performance_analytics_view CASCADE;
-CREATE OR REPLACE VIEW features.war_performance_analytics_view AS
-WITH latest_logs AS (
-         SELECT DISTINCT ON ((item.value ->> 'seasonId'::text), (item.value ->> 'sectionIndex'::text), ((standing.value -> 'clan'::text) ->> 'tag'::text)) (item.value ->> 'seasonId'::text) AS season_id,
-            (item.value ->> 'sectionIndex'::text) AS section_index,
-            ((standing.value -> 'clan'::text) ->> 'name'::text) AS clan_name,
-            ((standing.value -> 'clan'::text) ->> 'tag'::text) AS clan_tag,
-            ((standing.value ->> 'rank'::text))::integer AS rank,
-            (((standing.value -> 'clan'::text) ->> 'fame'::text))::integer AS total_fame,
-            ((standing.value -> 'clan'::text) -> 'participants'::text) AS participants
-           FROM substrate.raw_war_log,
-            LATERAL jsonb_array_elements((substrate.raw_war_log.payload -> 'items'::text)) item(value),
-            LATERAL jsonb_array_elements((item.value -> 'standings'::text)) standing(value)
-          WHERE (((standing.value -> 'clan'::text) ->> 'tag'::text) IN ( SELECT drivers.clans.clan_tag
-                   FROM drivers.clans))
-          ORDER BY (item.value ->> 'seasonId'::text), (item.value ->> 'sectionIndex'::text), ((standing.value -> 'clan'::text) ->> 'tag'::text), substrate.raw_war_log.ingested_at DESC
-        ), player_stats AS (
-         SELECT latest_logs.season_id,
-            latest_logs.section_index,
-            latest_logs.clan_tag,
-            latest_logs.clan_name,
-            latest_logs.rank,
-            latest_logs.total_fame,
-            (p.value ->> 'tag'::text) AS player_tag,
-            (p.value ->> 'name'::text) AS player_name,
-            ((p.value ->> 'fame'::text))::integer AS player_fame,
-            ((p.value ->> 'decksUsed'::text))::integer AS decks_used
-           FROM latest_logs,
-            LATERAL jsonb_array_elements(latest_logs.participants) p(value)
-          WHERE (((p.value ->> 'fame'::text))::integer > 0)
-        ), weekly_summary AS (
-         SELECT player_stats.season_id,
-            player_stats.section_index,
-            player_stats.clan_tag,
-            player_stats.clan_name,
-            player_stats.rank,
-            player_stats.total_fame,
-            count(player_stats.player_tag) AS active_participants,
-            round(avg(player_stats.decks_used), 2) AS avg_decks_per_active,
-            (array_agg((((player_stats.player_name || ' ('::text) || player_stats.player_fame) || ')'::text) ORDER BY player_stats.player_fame DESC))[1:5] AS top_contributors
-           FROM player_stats
-          GROUP BY player_stats.season_id, player_stats.section_index, player_stats.clan_tag, player_stats.clan_name, player_stats.rank, player_stats.total_fame
-        )
- SELECT season_id,
-    section_index,
-    clan_name,
-    clan_tag,
-    rank,
-    total_fame,
-    active_participants,
-    avg_decks_per_active,
-    top_contributors,
-    ((season_id || '-'::text) || ((section_index)::integer + 1)) AS week_label
-   FROM weekly_summary
-  ORDER BY (season_id)::integer DESC, (section_index)::integer DESC;
+-- features.war_performance_analytics_view removed: view was unreferenced by all application code.
+-- Dropped via migration 20260726163300_drop_orphaned_views.sql.
 
 -- TRIGGERS
 -- ============================================================
