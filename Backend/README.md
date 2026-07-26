@@ -3,7 +3,7 @@
 
 # Clash Manager Backend
 
-[![Backend](https://img.shields.io/badge/Backend-v14.37.0-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
+[![Backend](https://img.shields.io/badge/Backend-v14.37.1-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
 [![Deno](https://img.shields.io/badge/Edge-Deno-000000?style=flat-square&logo=deno&logoColor=white)](supabase/functions)
 [![Postgres 17](https://img.shields.io/badge/Postgres-17-4169E1?style=flat-square&logo=postgresql&logoColor=white)](supabase/migrations)
 

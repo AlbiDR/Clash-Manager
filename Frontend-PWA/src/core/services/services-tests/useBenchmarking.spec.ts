@@ -115,6 +115,17 @@ describe("useBenchmarking", () => {
       expect(getBenchmark("lb", "score", 50)).not.toBeNull();
       expect(getBenchmark("lb", "tenure", 50)).not.toBeNull();
       expect(getBenchmark("lb", "momentum", 0)).not.toBeNull();
+      expect(getBenchmark("lb", "warWins", 50)).not.toBeNull();
+    });
+
+    it("benchmarks lb warWins (legacy War Wins, Member Card lifetime KPI row) against the clan average", () => {
+      // Max war wins is 100, avg is 50 -- mirrors the trophies/score fixtures above.
+      const result = getBenchmark("lb", "warWins", 90);
+      expect(result?.tier).toBe("ELITE");
+      expect(result?.label).toBe("Legacy War Wins");
+
+      const avgResult = getBenchmark("lb", "warWins", 50);
+      expect(avgResult?.isBetter).toBe(true);
     });
   });
 
