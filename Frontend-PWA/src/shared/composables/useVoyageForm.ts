@@ -184,9 +184,9 @@ export function useVoyageForm() {
         await store.activateVoyage(safeTargetCrowns.value, strictStartsIn, strictEndsIn);
         toast.success("Clan Voyage activated successfully.");
       }
-    } catch (err: unknown) {
-      console.error('[useVoyageForm] handleActivate error:', err);
-      toast.error(err instanceof Error ? err.message : "Operation failed.");
+    } catch (voyageFormActivationError: unknown) {
+      console.error('[useVoyageForm] handleActivate error:', voyageFormActivationError);
+      toast.error(voyageFormActivationError instanceof Error ? voyageFormActivationError.message : "Operation failed.");
     }
   }
 
@@ -208,9 +208,9 @@ export function useVoyageForm() {
       try {
         await store.cancelSchedule();
         toast.success("Scheduled Clan Voyage cancelled.");
-      } catch (err: unknown) {
-        console.error('[useVoyageForm] handleCancel error:', err);
-        toast.error(err instanceof Error ? err.message : "Cancellation failed.");
+      } catch (voyageFormCancellationError: unknown) {
+        console.error('[useVoyageForm] handleCancel error:', voyageFormCancellationError);
+        toast.error(voyageFormCancellationError instanceof Error ? voyageFormCancellationError.message : "Cancellation failed.");
       }
     }
   }
@@ -230,9 +230,9 @@ export function useVoyageForm() {
       };
       await store.setVoyageEnd(strictEndsIn);
       toast.success("Voyage end time set successfully.");
-    } catch (err: unknown) {
-      console.error('[useVoyageForm] handleSetEnd error:', err);
-      toast.error(err instanceof Error ? err.message : "Setting end time failed.");
+    } catch (voyageFormSetEndError: unknown) {
+      console.error('[useVoyageForm] handleSetEnd error:', voyageFormSetEndError);
+      toast.error(voyageFormSetEndError instanceof Error ? voyageFormSetEndError.message : "Setting end time failed.");
     }
   }
 
