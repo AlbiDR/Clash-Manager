@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-26] PR #PENDING [Stage 4]: Increased .target-input height to 48px, renamed generic variable names (diff -> remainingMilliseconds, active -> isVoyageActive, status -> voyageStatus), and standardized catch block parameters.
+**Domain:** optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/VoyageSetupForm.vue
+**Why:** To eliminate anemic pathogens and satisfy touch footprint standards on the Voyage Setup form and composable.
+**Change:** Increased .target-input height to 48px, renamed generic variable names (diff -> remainingMilliseconds, active -> isVoyageActive, status -> voyageStatus), and standardized catch block parameters.
+**Result:** 100% naming compliance with CleanStack ADR, fully passing the monorepo test gate (1426 passed) and production build compilation.
+
+
 ### [2026-07-26] PR #PENDING [Stage 3]: chore(baseline): no migrations to fold -- audit pass
 **Domain:** baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql

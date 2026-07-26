@@ -50,14 +50,14 @@ const {
  */
 watch(
   () => store.isActive,
-  (active) => {
-    if (active && store.summary?.event) {
+  (isVoyageActive) => {
+    if (isVoyageActive && store.summary?.event) {
       targetCrowns.value = store.summary.event.target_crowns;
 
       const endAt = store.summary.event.end_at;
       if (endAt) {
-        const diff = new Date(endAt).getTime() - Date.now();
-        const units = getDurationUnits(diff);
+        const remainingMilliseconds = new Date(endAt).getTime() - Date.now();
+        const units = getDurationUnits(remainingMilliseconds);
         endsIn.value = {
           days: units.days,
           hours: units.hours,
@@ -75,8 +75,8 @@ watch(
  */
 watch(
   () => store.status,
-  (status) => {
-    if (status === 'IDLE' && endsIn.value.days === 0 && endsIn.value.hours === 0 && endsIn.value.minutes === 0) {
+  (voyageStatus) => {
+    if (voyageStatus === 'IDLE' && endsIn.value.days === 0 && endsIn.value.hours === 0 && endsIn.value.minutes === 0) {
       endsIn.value.days = 1;
     }
   },
@@ -225,7 +225,7 @@ watch(
 
 .target-input {
   flex: 1;
-  height: 44px;
+  height: 48px;
   padding: 0 14px;
   font-size: 18px;
   text-align: center;
