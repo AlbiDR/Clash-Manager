@@ -188,6 +188,12 @@ export async function fetchVoyageSummary(): Promise<VoyageViewSummary | null> {
 
   if (!voyageSummaryRaw) return null;
 
+  // The view's outer SELECT has no FROM clause, so it always emits exactly one
+  // row: `event` is NULL whenever no PENDING/ACTIVE voyage exists. That is the
+  // documented idle state, not structural drift, so it resolves to null instead
+  // of tripping the strict `VoyageEventSchema` object guard.
+  if (voyageSummaryRaw.event === null) return null;
+
   return v.parse(VoyageSummarySchema, voyageSummaryRaw);
 }
 

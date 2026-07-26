@@ -142,6 +142,17 @@ describe("VoyageClient", () => {
       expect(result).toBeNull();
     });
 
+    it("fetchVoyageSummary returns null when the view reports an idle event", async () => {
+      // The view always emits one row; a null `event` is the no-active-voyage
+      // state and must resolve to null rather than throwing a validation error.
+      vi.mocked(mockFrom.maybeSingle).mockResolvedValue({
+        data: { event: null, total_voyage_crowns: 0, progress_ratio: 0 } as any,
+        error: null
+      });
+      const result = await VoyageClient.fetchVoyageSummary();
+      expect(result).toBeNull();
+    });
+
     it("fetchVoyageSummary returns null on Supabase error", async () => {
       vi.mocked(mockFrom.maybeSingle).mockResolvedValue({ data: null, error: { message: "Fetch Error" } as any });
       const result = await VoyageClient.fetchVoyageSummary();
