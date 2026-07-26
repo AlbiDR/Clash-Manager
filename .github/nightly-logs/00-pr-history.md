@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-26] PR #PENDING [Stage 2]: Added unit tests asserting feasibility warning visibility under different target versus projected levels, option class mappings, and fallback defaults.
+**Domain:** Laboratory Feature / Verification | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/laboratory/components/components-tests/ParameterCard.spec.ts
+**Why:** To expand logic validation and cover edge cases in the ParameterCard component, ensuring zero blindspots in feasibility warnings and milestone-based level filter states.
+**Change:** Added unit tests asserting feasibility warning visibility under different target versus projected levels, option class mappings, and fallback defaults.
+**Result:** 100% logic coverage and robust validation for ParameterCard verified, with all 1426 monorepo tests passing successfully.
+
+
 ### [2026-07-26] PR #PENDING [Stage 1]: Audited query-royale-api, headhunter-scanner, ingest-royale-data edge function stages and shared substrate utilities, recording a clean audit pass log.
 **Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/01-hardening-coverage.log

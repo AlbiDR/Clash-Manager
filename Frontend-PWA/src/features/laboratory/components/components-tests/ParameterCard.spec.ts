@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import ParameterCard from "../ParameterCard.vue";
-import { type OptimizationSettings } from "../../logic";
+import { type OptimizationSettings, type OptimizationResult } from "../../logic";
 
 describe("ParameterCard.vue", () => {
   const defaultSettings: OptimizationSettings = {
@@ -15,6 +15,26 @@ describe("ParameterCard.vue", () => {
     allowGemSpending: false,
     infiniteResources: false,
     targetLevel: 90
+  };
+
+  const sampleOperation: OptimizationResult = {
+    strategy: "Level Projection",
+    steps: [],
+    projectedKingLevel: 80,
+    totalXpGained: 500000,
+    goldRequired: 100000,
+    gemsRequired: 500,
+    feasible: false,
+    summary: {
+      initialLevel: 14,
+      finalLevel: 80,
+      xpNeeded: 1000000,
+      cardsRequired: 200,
+      goldRequired: 100000,
+      gemsRequired: 500,
+      goldDiff: -50000,
+      gemsDiff: -200,
+    }
   };
 
   const createWrapper = (props = {}) => {
@@ -119,5 +139,67 @@ describe("ParameterCard.vue", () => {
 
     const level51Option = options.find((o: any) => o.value === 51);
     expect(level51Option?.disabled).toBe(false);
+  });
+
+  it("handles fallback to KING_LEVEL_MAX when targetLevel is null or undefined", () => {
+    const settingsWithNoTarget: OptimizationSettings = {
+      strategy: "Level Projection",
+      allowGemSpending: false,
+      infiniteResources: false,
+      targetLevel: undefined
+    };
+    const wrapper = createWrapper({ settings: settingsWithNoTarget });
+    const select = wrapper.findComponent({ name: "BaseSelect" });
+    expect(select.props("modelValue")).toBe(90); // KING_LEVEL_MAX is 90
+  });
+
+  it("asserts levelOptions classes correctly for milestone and past states", () => {
+    const currentLevel = 14;
+    const wrapper = createWrapper({ currentLevel });
+    const select = wrapper.findComponent({ name: "BaseSelect" });
+    const options = select.props("options");
+
+    // Level 10 is past milestone (< 14 and in IMPORTANT_KING_LEVELS)
+    const option10 = options.find((o: any) => o.value === 10);
+    expect(option10?.class).toBe("milestone past");
+
+    // Level 15 is future non-milestone (> 14 and not in IMPORTANT_KING_LEVELS)
+    const option15 = options.find((o: any) => o.value === 15);
+    expect(option15?.class).toBe("");
+
+    // Level 18 is future milestone (> 14 and in IMPORTANT_KING_LEVELS)
+    const option18 = options.find((o: any) => o.value === 18);
+    expect(option18?.class).toBe("milestone");
+  });
+
+  it("shows feasibility warning when operation is provided and projected level is less than target level", () => {
+    const wrapper = createWrapper({
+      settings: { ...defaultSettings, targetLevel: 90 },
+      operation: sampleOperation // projectedKingLevel is 80, target is 90
+    });
+
+    const warning = wrapper.find(".limit-warning");
+    expect(warning.exists()).toBe(true);
+    expect(warning.text()).toContain("Cannot reach Level 90. Roster maxes out at 80.");
+  });
+
+  it("hides feasibility warning when projected level is equal to or greater than target level", () => {
+    const wrapper = createWrapper({
+      settings: { ...defaultSettings, targetLevel: 80 },
+      operation: sampleOperation // projectedKingLevel is 80, target is 80
+    });
+
+    const warning = wrapper.find(".limit-warning");
+    expect(warning.exists()).toBe(false);
+  });
+
+  it("hides feasibility warning when operation is undefined", () => {
+    const wrapper = createWrapper({
+      settings: { ...defaultSettings, targetLevel: 90 },
+      operation: undefined
+    });
+
+    const warning = wrapper.find(".limit-warning");
+    expect(warning.exists()).toBe(false);
   });
 });

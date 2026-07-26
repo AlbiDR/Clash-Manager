@@ -36,3 +36,4 @@
 * [2026-07-19] [Stage 2] CHANGED: Backend/supabase/functions/query-royale-api/index.spec.ts -- Closed zero-coverage gap in query-royale-api Edge Function with saturating unit/integration tests.
 * [2026-07-24] [Stage 2] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts -- Added comprehensive unit tests to fully assert user interaction and threshold-driven badge previews.
 * [2026-07-25] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts -- Added comprehensive unit tests to fully assert edge cases, default parameters, and rAnF fallback safety.
+* [2026-07-26] [Stage 2] CHANGED: Frontend-PWA/src/features/laboratory/components/components-tests/ParameterCard.spec.ts -- Expanded logic validation for ParameterCard feasibility warnings, class assignments, and target level fallbacks.
