@@ -45,6 +45,7 @@ export const MemberSchema = v.object({
     wfame: v.optional(SafeNumberPipe),
     hist: SafeStringPipe,
     v_hist: v.optional(SafeStringPipe),
+    war: v.optional(SafeNumberPipe, 0),
   }),
 });
 
@@ -92,4 +93,5 @@ export const SbRosterRowSchema = v.object({
   v_hist: v.optional(v.nullable(SafeStringPipe)),
   war_participation: v.optional(SafeNumberPipe, 0),
   avg_daily_donations: v.optional(v.nullable(SafeNumberPipe)),
+  war_wins: v.optional(SafeNumberPipe, 0),
 });

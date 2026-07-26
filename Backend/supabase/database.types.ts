@@ -869,6 +869,7 @@ export type Database = {
           voyage_index: number | null
           voyage_merit: number | null
           war_participation: number | null
+          war_wins: number | null
           week_fame: number | null
         }
         Relationships: []

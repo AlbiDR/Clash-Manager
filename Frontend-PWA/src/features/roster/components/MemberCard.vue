@@ -131,6 +131,31 @@ const ariaLabel = computed(() => {
         />
       </StatsGrid>
 
+      <!-- [SLOT] LIFETIME KPIS: Heritage-scale metrics (RPeS, legacy War Wins), -->
+      <!-- visually separated from the active 2x2 grid above via wider spacing. -->
+      <StatsGrid
+        :columns="2"
+        :loading="props.appIsRefreshing"
+        class="lifetime-grid-margin"
+      >
+        <StatisticItem
+          label="RPeS"
+          :value="formatNumber(props.member.performanceRawScore, { maximumFractionDigits: 0 })"
+          :loading="props.appIsRefreshing"
+          benchmark-type="lb"
+          benchmark-metric="score"
+          :benchmark-raw-value="props.member.performanceRawScore"
+        />
+        <StatisticItem
+          label="War Wins"
+          :value="props.member.d.war"
+          :loading="props.appIsRefreshing"
+          benchmark-type="lb"
+          benchmark-metric="warWins"
+          :benchmark-raw-value="props.member.d.war"
+        />
+      </StatsGrid>
+
       <BaseSegmentedControl
         v-model="activeChart"
         :options="[
@@ -155,6 +180,10 @@ const ariaLabel = computed(() => {
 
 <style scoped>
 /* Content specific styles only */
+
+.lifetime-grid-margin {
+  margin-top: 16px;
+}
 
 .chart-toggle-margin {
   margin-top: 16px;

@@ -20,6 +20,7 @@ describe("DataMappers", () => {
         war_participation: 90,
         avg_fame: 2000,
         hist: "W-W-L",
+        war_wins: 42,
       };
 
       const result = mapSbRosterRow(row as any);
@@ -36,6 +37,13 @@ describe("DataMappers", () => {
       expect(result.d.rate).toBe("90%");
       expect(result.d.wfame).toBe(2000);
       expect(result.d.hist).toBe("W-W-L");
+      expect(result.d.war).toBe(42);
+    });
+
+    it("defaults d.war to 0 when war_wins is missing", () => {
+      const row = { player_tag: "#ABC" };
+      const result = mapSbRosterRow(row as any);
+      expect(result.d.war).toBe(0);
     });
 
     it("handles missing or null fields gracefully", () => {

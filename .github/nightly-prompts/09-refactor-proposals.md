@@ -121,7 +121,7 @@ You act as the project's structural architect and structural engine. Your mandat
 ## 2. Core Task and Project Scope
 
 ### A. Target A: Feature De-coupling
-- **Utility Extraction:** If two or more features utilize identical or near-identical utility logic, extract that logic to `@shared/utils` or `@core/utils`.
+- **Utility Extraction:** If two or more features utilize identical or near-identical utility logic, extract that logic to `@shared/utils` or `@core/utils`. Duplicated logic is a Poka-yoke violation in its own right: a bug fixed in one copy silently survives in the others and recurs later as an apparently "new" issue. Extraction is the Preventive Action per the ADR's RCA/CAPA principle.
 - **Component Generalization:** If a feature contains a UI component that could be useful elsewhere (e.g., a stylized list item or custom button), move it to `@shared/ui`.
 
 ### B. Target B: Code Smell Detection
@@ -155,6 +155,7 @@ You act as the project's structural architect and structural engine. Your mandat
 ### Step 2: Surgery Analysis
 - Define the structural debt: "Logic [X] in Feature [Y] violates Feature-to-Feature isolation."
 - Define the surgery: "Move X to @shared/logic/X.ts and update callers in Features A, B, and C."
+- State the Preventive Action: what recurring class of divergence or duplicated-bug-fix this consolidation makes structurally impossible going forward.
 - Ensure the new location complies with the CleanStack ADR.
 - Verify imports are direct and avoid side effects.
 
@@ -178,6 +179,9 @@ Create a Pull Request targeting the `Nightly` branch.
 
   ### Debt Resolved:
   <Describe the structural issue corrected.>
+
+  ### Preventive Action:
+  <What recurring class of bug or divergence this consolidation makes structurally impossible.>
 
   ### Refactor Applied:
   <Describe the new architecture and file movements.>

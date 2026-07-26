@@ -161,10 +161,11 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 - Formulate a precise Threat Statement: "If [condition] occurs, then [system] fails because [vulnerability]."
 - Assess the Blast Radius: List the affected components and downstream implications.
 - Confirm the scope of the fix fits within your constraints and aligns with the CleanStack ADR.
+- **Root Cause & Class Check (CAPA):** State the Root Cause - the actual mechanism, not the symptom. Check `.github/nightly-logs/00-pipeline-intelligence.md` for prior entries of the same failure class. If this class has been patched before and has recurred, the prior fix was a point patch without a Preventive Action; do not repeat that mistake here.
 - Mentally run `pnpm test` against the code. Do not suppress or alter existing tests to hide regressions.
 
 ### Step 3: Hardening Execution
-- Apply hardening to the single selected file.
+- Apply hardening to the single selected file. The change must be a Preventive Action that closes the entire failure class (per the ADR's RCA/CAPA and Poka-Yoke principles), not a Corrective Action that only patches the one observed instance.
 - **Licensing Header:** Prepend standard license headers (`// SPDX-License-Identifier: GPL-3.0-only` / `// Copyright (C) 2026 AlbiDR`) on newly created `.ts` or `.vue` files.
 - **Inline Documentation:** Add a comment on every modified block explaining the specific threat it resolves.
 - **Log Updates:** Append your execution record to `.github/nightly-logs/01-hardening-coverage.log`.
@@ -183,6 +184,8 @@ Create a Pull Request targeting the `Nightly` branch.
   ### Reasoning:
   **[Threat Statement]:** If <condition>, then <impact>.
   **[Blast Radius]:** <affected components/services>.
+  **[Root Cause]:** <the actual mechanism, not the symptom>.
+  **[Preventive Action]:** <how this change closes the entire class, not just this instance>.
   **[Rationale]:** <Explain the logic and architectural alignment of the fix.>
 
   ### Changes:

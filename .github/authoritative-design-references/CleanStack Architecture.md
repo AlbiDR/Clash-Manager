@@ -211,6 +211,9 @@ Metadata standards for long-term project health and maintainability.
 - **Semantic Versioning (SemVer):** MAJOR.MINOR.PATCH schema.
 - **Keep a Changelog (KaC):** Curated, chronological history of notable shifts.
 - **Licensing Consistency:** All source files must carry the authoritative licensing header at line 1: `// SPDX-License-Identifier: GPL-3.0-only` followed by `// Copyright (C) 2026 AlbiDR`.
+- **Root Cause Analysis & CAPA (Corrective and Preventive Action):** No fix may close only the observed instance. Every remediation must state the Root Cause (traced to the actual mechanism, not the symptom - "Five Whys") and ship a Preventive Action that closes the entire failure class, not the single occurrence. A Corrective Action without a Preventive Action is incomplete work.
+- **Class-Level Fixes (SRE Doctrine):** Per Google's blameless-postmortem practice - "fix a class of bugs," not a bug. If a failure recurs after being marked resolved, the original fix lacked a Preventive Action and must be revisited, not re-patched.
+- **Poka-Yoke (Mistake-Proofing):** Where feasible, prefer redesigning the pipeline/architecture so the error class becomes structurally impossible (type constraints, schema validation, CI gates) over relying on vigilance, review discipline, or detection alone.
 
 ---
 

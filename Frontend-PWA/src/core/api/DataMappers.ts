@@ -53,6 +53,7 @@ export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema
       hist: rosterRow.hist || '-', // existing war history string
         // NEW: Voyage history string – optional, defaults to undefined if absent
         v_hist: rosterRow.v_hist || undefined,
+        war: Number(rosterRow.war_wins) || 0,
     },
   };
 }

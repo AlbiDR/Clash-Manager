@@ -57,6 +57,7 @@ const LB_EXTRACTORS: Record<string, (m: LeaderboardMember) => number> = {
   score: (m) => m.performanceScore || 0,
   tenure: (m) => m.d?.days || 0,
   momentum: (m) => m.dt || 0,
+  warWins: (m) => m.d?.war || 0,
 };
 
 /**

@@ -45,6 +45,7 @@ const mockMember: LeaderboardMember = {
     rate: "95%",
     wfame: 2500,
     hist: "3000 24W01 | 1500 24W02",
+    war: 42,
   },
 };
 
@@ -156,6 +157,23 @@ describe("MemberCard.vue", () => {
 
     expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
     expect(wrapper.find(".card-actions-stub").exists()).toBe(true);
+  });
+
+  it("renders the lifetime KPI row (RPeS, War Wins) as a second, separately-spaced grid", () => {
+    const wrapper = mountMemberCard({ expanded: true });
+
+    const grids = wrapper.findAll(".stats-grid");
+    expect(grids).toHaveLength(2);
+    expect(grids[1].classes()).toContain("lifetime-grid-margin");
+
+    const lifetimeTiles = grids[1].findAllComponents({ name: "StatisticItem" });
+    expect(lifetimeTiles).toHaveLength(2);
+    expect(lifetimeTiles[0].props("label")).toBe("RPeS");
+    expect(lifetimeTiles[0].props("value")).toBe("12,345"); // formatNumber(performanceRawScore)
+    expect(lifetimeTiles[0].props("benchmarkMetric")).toBe("score");
+    expect(lifetimeTiles[1].props("label")).toBe("War Wins");
+    expect(lifetimeTiles[1].props("value")).toBe(42);
+    expect(lifetimeTiles[1].props("benchmarkMetric")).toBe("warWins");
   });
 
   it("shows refreshing state in expanded content", () => {
