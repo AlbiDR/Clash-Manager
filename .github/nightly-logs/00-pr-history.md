@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-26] PR #PENDING [Stage 10]: Audited and verified PWA and Android Wrapper configuration parity, permission sanitization, SDK alignment, and custom native layer integrity, appending a clean audit pass log record.
+**Domain:** APK-Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Daily APK and PWA wrapper integrity validation and security scan.
+**Change:** Audited and verified PWA and Android Wrapper configuration parity, permission sanitization, SDK alignment, and custom native layer integrity, appending a clean audit pass log record.
+**Result:** 100% wrapper integrity, version synchronization at v14.33.11, and Android SDK 36 alignment verified.
+
+
 ### [2026-07-26] PR #PENDING [Stage 8]: Updated .github/nightly-logs/08-dependency-audit-coverage.log to append the 2026-07-26 daily dependency audit run record.
 **Domain:** Dependency-Audit | **Commit:** PENDING | [View PR](PENDING)
 **Files:** pnpm-workspace.yaml
