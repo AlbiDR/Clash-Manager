@@ -16,6 +16,10 @@
  * - **Validation Boundary:** Satisfies ADR Section III: Validation Boundaries.
  *   Enforces domain-specific constraints on crown targets and event durations
  *   before backend activation.
+ * - **Touch targets & Variable Naming Standardization:**
+ *   - The `.target-input` has been modernized to 48px height to comply with mobile touch footprint standards (Target B.2).
+ *   - Clean variable naming conventions are enforced via descriptive parameters such as `isVoyageActive`,
+ *     `remainingMilliseconds`, and `voyageStatus`.
  * ============================================================================
  */
 import { watch } from "vue";
@@ -47,6 +51,9 @@ const {
  * @remarks
  * This logic is kept in the component to maintain separation between
  * generic form state and specific store synchronization side-effects.
+ * [DECISION LOG]
+ * - Uses descriptive parameter `isVoyageActive` and local variable `remainingMilliseconds`
+ *   to avoid generic or shadowed identifiers in watch callbacks.
  */
 watch(
   () => store.isActive,
@@ -72,6 +79,9 @@ watch(
 /**
  * Pre-populate 'Ends In' with a 1-day default for new events
  * to improve user experience (one less field to fill).
+ *
+ * [DECISION LOG]
+ * - Uses descriptive parameter `voyageStatus` inside watch callback to align with domain naming rules.
  */
 watch(
   () => store.status,
