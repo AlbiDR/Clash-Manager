@@ -20,13 +20,28 @@ describe("BaseSegmentedControl.vue", () => {
     { label: "Option B", value: "b" }
   ];
 
-  it("renders all provided options", () => {
-    const wrapper = mount(BaseSegmentedControl, {
+  const createWrapper = (props = {}) => {
+    return mount(BaseSegmentedControl, {
       props: {
         modelValue: "a",
-        options
+        options,
+        ...props
+      },
+      global: {
+        directives: {
+          tactile: {
+            mounted(el) {
+              el.addEventListener("pointerdown", () => {});
+              el.addEventListener("pointerup", () => mockTap());
+            }
+          }
+        }
       }
     });
+  };
+
+  it("renders all provided options", () => {
+    const wrapper = createWrapper();
 
     const buttons = wrapper.findAll(".segment-btn");
     expect(buttons).toHaveLength(2);
@@ -35,12 +50,7 @@ describe("BaseSegmentedControl.vue", () => {
   });
 
   it("applies active class to the selected option", () => {
-    const wrapper = mount(BaseSegmentedControl, {
-      props: {
-        modelValue: "b",
-        options
-      }
-    });
+    const wrapper = createWrapper({ modelValue: "b" });
 
     const buttons = wrapper.findAll(".segment-btn");
     expect(buttons[0].classes()).not.toContain("active");
@@ -48,15 +58,13 @@ describe("BaseSegmentedControl.vue", () => {
   });
 
   it("emits update:modelValue and triggers haptics when a new option is clicked", async () => {
-    const wrapper = mount(BaseSegmentedControl, {
-      props: {
-        modelValue: "a",
-        options
-      }
-    });
+    mockTap.mockClear();
+    const wrapper = createWrapper();
 
     const buttons = wrapper.findAll(".segment-btn");
-    // Click 'Option B' (targetValue 'b')
+    // Simulate v-tactile haptic trigger via pointer sequence
+    await buttons[1].trigger("pointerdown");
+    await buttons[1].trigger("pointerup");
     await buttons[1].trigger("click");
 
     expect(wrapper.emitted("update:modelValue")).toBeTruthy();
@@ -66,14 +74,11 @@ describe("BaseSegmentedControl.vue", () => {
 
   it("does not emit or trigger haptics when clicking the already active option", async () => {
     mockTap.mockClear();
-    const wrapper = mount(BaseSegmentedControl, {
-      props: {
-        modelValue: "a",
-        options
-      }
-    });
+    const wrapper = createWrapper();
 
     const buttons = wrapper.findAll(".segment-btn");
+    await buttons[0].trigger("pointerdown");
+    await buttons[0].trigger("pointerup");
     await buttons[0].trigger("click");
 
     expect(wrapper.emitted("update:modelValue")).toBeFalsy();
@@ -81,13 +86,7 @@ describe("BaseSegmentedControl.vue", () => {
   });
 
   it("applies compact class when prop is set", () => {
-    const wrapper = mount(BaseSegmentedControl, {
-      props: {
-        modelValue: "a",
-        options,
-        compact: true
-      }
-    });
+    const wrapper = createWrapper({ compact: true });
 
     expect(wrapper.find(".segmented-control").classes()).toContain("compact");
   });

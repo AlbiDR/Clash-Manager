@@ -9,7 +9,7 @@
  * Layer: @shared/ui
  * ----------------------------------------------------------------------------
  */
-import { useHaptics } from "../composables/useHaptics";
+import { vTactile } from "../directives/vTactile";
 
 const props = defineProps<{
   /** The current active value. */
@@ -24,29 +24,36 @@ const emit = defineEmits<{
   "update:modelValue": [value: T];
 }>();
 
-const haptics = useHaptics();
-
 /**
- * Updates the active value with tactile feedback.
+ * Updates the active value. Tactile haptic feedback is brokered declaratively via v-tactile.
  */
 function selectOption(targetValue: T) {
   if (props.modelValue === targetValue) return;
-  haptics.tap();
   emit("update:modelValue", targetValue);
 }
 </script>
 
 <template>
   <div class="segmented-control" :class="{ compact: props.compact }">
-    <button
-      v-for="optionCandidate in props.options"
-      :key="String(optionCandidate.value)"
-      class="segment-btn hit-target"
-      :class="{ active: props.modelValue === optionCandidate.value }"
-      @click.stop="selectOption(optionCandidate.value)"
-    >
-      <span>{{ optionCandidate.label }}</span>
-    </button>
+    <template v-for="optionCandidate in props.options" :key="String(optionCandidate.value)">
+      <!-- Active Option: No v-tactile directive to avoid redundant haptic feedback on already-selected option -->
+      <button
+        v-if="props.modelValue === optionCandidate.value"
+        class="segment-btn active"
+        @click.stop="selectOption(optionCandidate.value)"
+      >
+        <span>{{ optionCandidate.label }}</span>
+      </button>
+      <!-- Inactive Option: Uses v-tactile for brokered haptic feedback -->
+      <button
+        v-else
+        class="segment-btn"
+        v-tactile
+        @click.stop="selectOption(optionCandidate.value)"
+      >
+        <span>{{ optionCandidate.label }}</span>
+      </button>
+    </template>
   </div>
 </template>
 
@@ -61,6 +68,7 @@ function selectOption(targetValue: T) {
 }
 
 .segment-btn {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
@@ -108,7 +116,9 @@ function selectOption(targetValue: T) {
 }
 
 /* [UX] TOUCH TARGET COMPLIANCE */
-.segment-btn.hit-target::after {
+.segment-btn::after {
+  content: "";
+  position: absolute;
   inset: -8px -4px;
 }
 </style>
