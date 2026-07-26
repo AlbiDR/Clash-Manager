@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-26] PR #PENDING [Stage 8]: Updated .github/nightly-logs/08-dependency-audit-coverage.log to append the 2026-07-26 daily dependency audit run record.
+**Domain:** Dependency-Audit | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml
+**Why:** Ecosystem Watchman audited monorepo dependencies. All packages are aligned with the unified pnpm catalog. Three Tier 2 packages reside on the major version watchlist.
+**Change:** Updated .github/nightly-logs/08-dependency-audit-coverage.log to append the 2026-07-26 daily dependency audit run record.
+**Result:** Dependency audit log up to date. Monorepo is clean.
+
+
 ### [2026-07-26] PR #PENDING [Stage 7]: Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
 **Domain:** Versions | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
