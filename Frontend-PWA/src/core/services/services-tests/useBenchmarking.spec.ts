@@ -15,7 +15,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 9000, // Max trophies
           performanceScore: 100, // Max score
           dt: 10,
-          d: { rate: "100", avg: 50, days: 100 }
+          d: { rate: "100", avg: 50, days: 100, war: 100 } // Max war wins
         },
         {
           id: "2",
@@ -23,7 +23,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 5000, // Avg trophies = (9000+5000+1000)/3 = 5000
           performanceScore: 50, // Avg score = (100+50+0)/3 = 50
           dt: 0,
-          d: { rate: "50", avg: 25, days: 50 }
+          d: { rate: "50", avg: 25, days: 50, war: 50 } // Avg war wins = (100+50+0)/3 = 50
         },
         {
           id: "3",
@@ -31,7 +31,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 1000,
           performanceScore: 0,
           dt: -10,
-          d: { rate: "0", avg: 0, days: 10 }
+          d: { rate: "0", avg: 0, days: 10, war: 0 }
         }
       ],
       hh: [
