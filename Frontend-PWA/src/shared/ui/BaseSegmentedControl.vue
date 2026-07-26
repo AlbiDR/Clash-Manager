@@ -8,8 +8,22 @@
  * mutually exclusive options.
  * Layer: @shared/ui
  * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * **The `hit-target` class on each segment is load-bearing, not cosmetic.**
+ * `vTactile` binds pointer events, which `@click.stop` cannot intercept, so a
+ * segment rendered inside a tactile container (e.g. `BaseCard`) would otherwise
+ * bubble its pointerdown/pointerup to the container and trigger the container's
+ * tap gesture. `.hit-target` is the directive's opt-out contract for actionable
+ * children; removing it collapses the host card on every segment change.
+ *
+ * **Haptics are therefore brokered imperatively, not via `v-tactile`.** The
+ * directive's guard inspects `event.target`, so it fires for every `vTactile`
+ * instance in the bubble path — a `.hit-target` segment suppresses its own
+ * directive just as it suppresses the container's. Opting out of the container
+ * and binding the directive locally are mutually exclusive.
  */
-import { vTactile } from "../directives/vTactile";
+import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
   /** The current active value. */
@@ -24,36 +38,33 @@ const emit = defineEmits<{
   "update:modelValue": [value: T];
 }>();
 
+const haptics = useHaptics();
+
 /**
- * Updates the active value. Tactile haptic feedback is brokered declaratively via v-tactile.
+ * Updates the active value with tactile feedback.
+ *
+ * @remarks
+ * The early return keeps haptics idempotent: re-tapping the already-active
+ * segment is a no-op and must not buzz.
  */
 function selectOption(targetValue: T) {
   if (props.modelValue === targetValue) return;
+  haptics.tap();
   emit("update:modelValue", targetValue);
 }
 </script>
 
 <template>
   <div class="segmented-control" :class="{ compact: props.compact }">
-    <template v-for="optionCandidate in props.options" :key="String(optionCandidate.value)">
-      <!-- Active Option: No v-tactile directive to avoid redundant haptic feedback on already-selected option -->
-      <button
-        v-if="props.modelValue === optionCandidate.value"
-        class="segment-btn active"
-        @click.stop="selectOption(optionCandidate.value)"
-      >
-        <span>{{ optionCandidate.label }}</span>
-      </button>
-      <!-- Inactive Option: Uses v-tactile for brokered haptic feedback -->
-      <button
-        v-else
-        class="segment-btn"
-        v-tactile
-        @click.stop="selectOption(optionCandidate.value)"
-      >
-        <span>{{ optionCandidate.label }}</span>
-      </button>
-    </template>
+    <button
+      v-for="optionCandidate in props.options"
+      :key="String(optionCandidate.value)"
+      class="segment-btn hit-target"
+      :class="{ active: props.modelValue === optionCandidate.value }"
+      @click.stop="selectOption(optionCandidate.value)"
+    >
+      <span>{{ optionCandidate.label }}</span>
+    </button>
   </div>
 </template>
 
@@ -115,8 +126,11 @@ function selectOption(targetValue: T) {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* [UX] TOUCH TARGET COMPLIANCE */
-.segment-btn::after {
+/* [UX] TOUCH TARGET COMPLIANCE
+   Scoped through `.segmented-control` so this expanded hit area outranks the
+   generic `:deep(.hit-target)::after { inset: -4px }` rule that tactile
+   containers (e.g. BaseCard) project onto their actionable children. */
+.segmented-control .segment-btn::after {
   content: "";
   position: absolute;
   inset: -8px -4px;

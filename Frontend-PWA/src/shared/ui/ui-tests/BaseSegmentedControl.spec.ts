@@ -90,4 +90,17 @@ describe("BaseSegmentedControl.vue", () => {
 
     expect(wrapper.find(".segmented-control").classes()).toContain("compact");
   });
+
+  it("marks every segment as a hit-target so tactile containers ignore the pointer sequence", () => {
+    // REGRESSION GUARD: vTactile binds pointer events, which `@click.stop` cannot
+    // intercept. Without `hit-target`, a segment click inside a tactile container
+    // (BaseCard) bubbles up and fires the container's tap gesture, collapsing the card.
+    const wrapper = createWrapper({ modelValue: "a" });
+
+    const buttons = wrapper.findAll(".segment-btn");
+    expect(buttons).toHaveLength(2);
+    for (const segmentButton of buttons) {
+      expect(segmentButton.classes()).toContain("hit-target");
+    }
+  });
 });
