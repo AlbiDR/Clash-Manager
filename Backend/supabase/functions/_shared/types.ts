@@ -122,6 +122,8 @@ export interface RecruitSyncRow {
   war_wins: number;
   /** Calculated recruitment priority score (RPoS). */
   raw_potential_score: number;
+  /** Precomputed weighted win rate persisted for display. */
+  win_rate: number;
   /** Discovery source (SHADOW, TOURNAMENT, etc.). */
   source: string;
   /** Ingestion status (ACTIVE, BENCHED, QUEUE). */

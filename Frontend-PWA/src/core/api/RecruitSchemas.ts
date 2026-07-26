@@ -26,6 +26,7 @@ export const RecruitSchema = v.object({
     war: SafeNumberPipe,
     ago: SafeStringPipe,
     cards: v.optional(SafeNumberPipe, 0),
+    winRate: v.optional(SafeNumberPipe, 0),
   }),
   lastScan: v.optional(SafeNumberPipe, 0),
 });
@@ -49,6 +50,7 @@ export const SbHeadhunterRowSchema = v.object({
   donations: v.optional(SafeNumberPipe, 0),
   cards: v.optional(SafeNumberPipe, 0),
   war_wins: v.optional(SafeNumberPipe, 0),
+  win_rate: v.optional(SafeNumberPipe, 0),
   raw_potential_score: v.optional(SafeNumberPipe, 0),
   potential_score: v.optional(SafeNumberPipe, 0),
   longevity_label: v.optional(SafeStringPipe, "-"),

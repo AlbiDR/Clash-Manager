@@ -531,6 +531,7 @@ export type Database = {
           trophies: number | null
           updated_at: string | null
           war_wins: number | null
+          win_rate: number | null
         }
         Insert: {
           cards?: number | null
@@ -546,6 +547,7 @@ export type Database = {
           trophies?: number | null
           updated_at?: string | null
           war_wins?: number | null
+          win_rate?: number | null
         }
         Update: {
           cards?: number | null
@@ -561,6 +563,7 @@ export type Database = {
           trophies?: number | null
           updated_at?: string | null
           war_wins?: number | null
+          win_rate?: number | null
         }
         Relationships: [
           {
@@ -875,6 +878,7 @@ export type Database = {
           tier: string | null
           trophies: number | null
           war_wins: number | null
+          win_rate: number | null
         }
         Relationships: []
       }

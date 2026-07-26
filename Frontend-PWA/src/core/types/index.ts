@@ -99,6 +99,7 @@ export interface Recruit {
     war: number; // War Wins
     ago: string; // Found Date ISO
     cards?: number; // Cards Won (optional)
+    winRate?: number; // Win Rate ratio, 0-1+ (optional)
   };
   lastScan?: number; // Timestamp of last API validation
 }

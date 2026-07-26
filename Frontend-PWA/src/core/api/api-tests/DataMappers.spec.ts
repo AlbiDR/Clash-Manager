@@ -124,6 +124,7 @@ describe("DataMappers", () => {
         last_seen_at: "2026-02-01T12:00:00Z",
         donations: 300,
         war_wins: 10,
+        win_rate: 0.564,
         found_date: "2026-02-01",
         cards: 100,
       };
@@ -142,8 +143,18 @@ describe("DataMappers", () => {
       expect(result.lastScan).toBe(new Date("2026-02-01T12:00:00Z").getTime());
       expect(result.d.don).toBe(300);
       expect(result.d.war).toBe(10);
+      expect(result.d.winRate).toBe(0.564);
       expect(result.d.ago).toBe("2026-02-01");
       expect(result.d.cards).toBe(100);
+    });
+
+    it("defaults win_rate to 0 when missing", () => {
+      const row = {
+        player_tag: "#ABC",
+        player_name: "NoWinRate",
+      };
+      const result = mapSbHeadhunterRow(row as any);
+      expect(result.d.winRate).toBe(0);
     });
 
     it("handles missing or null fields gracefully", () => {

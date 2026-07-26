@@ -4,7 +4,7 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry, RecruitSyncRow } from "../../_shared/types.ts";
-import { calculateRpos } from "../../_shared/utils.ts";
+import { calculateRpos, calculateWeightedWinRate } from "../../_shared/utils.ts";
 import {
     PROFILER_BATCH_CEILING,
     RECENT_SCAN_THRESHOLD_MS,
@@ -88,7 +88,9 @@ export async function runProfiler(
         let newCount = 0;
         let refreshCount = 0;
         let invalidCount = 0;
-        
+        let withWins = 0;
+        let withBattleCount = 0;
+
         const profileTasks = tagsToFetch.map(playerTag => async () => {
             logAudit('PROFILING', 'called', { tag: playerTag });
             try {
@@ -116,10 +118,24 @@ export async function runProfiler(
                             const donations = playerProfileSnapshot.totalDonations || 0;
                             const warWins = playerProfileSnapshot.warDayWins || 0;
                             const cards = playerProfileSnapshot.challengeCardsWon || 0;
+                            const wins = playerProfileSnapshot.wins || 0;
+                            const battleCount = playerProfileSnapshot.battleCount || 0;
+                            const three_crown_wins = playerProfileSnapshot.threeCrownWins || 0;
+                            const challenge_max_wins = playerProfileSnapshot.challengeMaxWins || 0;
 
                             // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
                             // Refactored to use centralized L1 Core utility to ensure formula consistency.
-                            const potentialRawScore = calculateRpos(trophies, donations, warWins);
+                            const potentialRawScore = calculateRpos({
+                                trophies,
+                                lifetime_donations: donations,
+                                legacy_war_wins: warWins,
+                                wins,
+                                battle_count: battleCount,
+                                three_crown_wins,
+                                challenge_cards_won: cards,
+                                challenge_max_wins,
+                            });
+                            const winRate = calculateWeightedWinRate(wins, battleCount, three_crown_wins);
 
                             validRecruits.push({
                                 player_tag: playerProfileSnapshot.tag,
@@ -129,10 +145,13 @@ export async function runProfiler(
                                 cards,
                                 war_wins: warWins,
                                 raw_potential_score: potentialRawScore,
+                                win_rate: winRate,
                                 source: candidates.get(playerTag) || 'UNKNOWN',
                                 status: 'ACTIVE'
                             });
-                            console.log(`[PROFILER] Admitted ${playerProfileSnapshot.tag} | trophies=${trophies} war=${warWins} donations=${donations} rawScore=${potentialRawScore}`);
+                            if (wins > 0) withWins++;
+                            if (battleCount > 0) withBattleCount++;
+                            console.log(`[PROFILER] Admitted ${playerProfileSnapshot.tag} | trophies=${trophies} war=${warWins} donations=${donations} wins=${wins} battles=${battleCount} winRate=${winRate} rawScore=${potentialRawScore}`);
                             validCount++;
                         } else {
                             console.log(`[PROFILER] Rejected ${playerProfileSnapshot.tag} | hasClan=${!!playerProfileSnapshot.clan?.tag} inExclusion=${exclusionSet.has(playerProfileSnapshot.tag)} trophies=${playerProfileSnapshot.trophies || 0} required=${requiredTrophies}`);
@@ -175,19 +194,25 @@ export async function runProfiler(
         // [DECISION LOG] Renamed 'r' to 'recruitCandidate' to satisfy CleanStack naming conventions.
         if (validRecruits.length >= 10) {
             const withTrophies = validRecruits.filter(recruitSnapshot => recruitSnapshot.trophies > 0).length;
+            // war_wins is expected to be 0 across most/all modern players post RPoS
+            // formula restructure (warDayWins froze when CW1 retired 2020-08-31),
+            // so it is reported for visibility only and no longer treated as suspicious.
             const withWarWins = validRecruits.filter(recruitSnapshot => recruitSnapshot.war_wins > 0).length;
             const withDonations = validRecruits.filter(recruitSnapshot => recruitSnapshot.donations > 0).length;
             const healthReport = {
                 trophies: `${withTrophies}/${validRecruits.length}`,
                 war_wins: `${withWarWins}/${validRecruits.length}`,
                 donations: `${withDonations}/${validRecruits.length}`,
+                wins: `${withWins}/${validRecruits.length}`,
+                battle_count: `${withBattleCount}/${validRecruits.length}`,
             };
             console.log(`[PROFILING] RPoS field health: ${JSON.stringify(healthReport)}`);
 
             const suspiciousFields: string[] = [];
             if (withTrophies === 0) suspiciousFields.push('trophies');
-            if (withWarWins === 0) suspiciousFields.push('warDayWins');
             if (withDonations === 0) suspiciousFields.push('totalDonations');
+            if (withWins === 0) suspiciousFields.push('wins');
+            if (withBattleCount === 0) suspiciousFields.push('battleCount');
 
             if (suspiciousFields.length > 0) {
                 console.warn(`[PROFILING] RPoS FIELD ANOMALY: [${suspiciousFields.join(', ')}] returned 0 across all ${validRecruits.length} profiles - possible Royale API field rename or deprecation`);

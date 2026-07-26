@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect } from "vitest";
-import { normalizeTag, normalizeRarity, calculateRpos } from "../utils";
+import { normalizeTag, normalizeRarity, calculateRpos, calculateWeightedWinRate } from "../utils";
 
 describe("Backend Shared Utilities", () => {
   describe("normalizeTag", () => {
@@ -61,38 +61,98 @@ describe("Backend Shared Utilities", () => {
     });
   });
 
+  describe("calculateWeightedWinRate", () => {
+    it("should have no floor: a low battle count contributes its raw ratio directly", () => {
+      // performanceWins = (1 - 0) + 0 * 1.25 = 1; ratio = 1 / 1 = 1
+      expect(calculateWeightedWinRate(1, 1, 0)).toBe(1);
+    });
+
+    it("should guard only against division by zero, returning 0 rather than NaN", () => {
+      expect(calculateWeightedWinRate(0, 0, 0)).toBe(0);
+      expect(calculateWeightedWinRate(25, 0, 10)).toBe(0);
+    });
+
+    it("should weight three-crown wins at the three-crown multiplier", () => {
+      // performanceWins = (10 - 4) + 4 * 1.25 = 6 + 5 = 11; ratio = 11 / 20 = 0.55
+      expect(calculateWeightedWinRate(10, 20, 4)).toBe(0.55);
+    });
+  });
+
   describe("calculateRpos", () => {
-    it("should correctly calculate RPoS using the authoritative formula", () => {
-      // Trophies(1x) + Donations(0.1x) + (WarWins+500)*20
-      // 5000 + (1000 * 0.1) + (50 + 500) * 20
-      // 5000 + 100 + 11000 = 16100
-      expect(calculateRpos(5000, 1000, 50)).toBe(16100);
+    const zeroParams = {
+      trophies: 0,
+      lifetime_donations: 0,
+      legacy_war_wins: 0,
+      wins: 0,
+      battle_count: 0,
+      three_crown_wins: 0,
+      challenge_cards_won: 0,
+      challenge_max_wins: 0,
+    };
+
+    it("should correctly calculate RPoS using the full formula", () => {
+      // trophies: 5000 * 1.0 = 5000
+      // lifetime_donations: 1000 * 0.1 = 100
+      // performanceWins = (100 - 50) + 50 * 1.25 = 112.5; weightedWinRate = 112.5 / 200 = 0.5625
+      // winRateWeight = (5000 * 1.0) * 0.35 = 1750; weighted term = 0.5625 * 1750 = 984.375
+      // legacy_war_wins: 50 * 10 = 500
+      // challenge_cards_won: min(500, cap) * 0.1 = 50
+      // challenge_max_wins 5 < 12, no GC bonus
+      // total = 5000 + 100 + 984.375 + 500 + 50 + 0 = 6634.375
+      expect(
+        calculateRpos({
+          trophies: 5000,
+          lifetime_donations: 1000,
+          legacy_war_wins: 50,
+          wins: 100,
+          battle_count: 200,
+          three_crown_wins: 50,
+          challenge_cards_won: 500,
+          challenge_max_wins: 5,
+        }),
+      ).toBe(6634.375);
     });
 
-    it("should handle zero values correctly", () => {
-      // 0 + 0 + (0 + 500) * 20 = 10000
-      expect(calculateRpos(0, 0, 0)).toBe(10000);
+    it("should return exactly 0 for all-zero inputs", () => {
+      expect(calculateRpos(zeroParams)).toBe(0);
     });
 
-    it("should handle high values without overflow", () => {
-      // 9000 + (500000 * 0.1) + (1000 + 500) * 20
-      // 9000 + 50000 + 30000 = 89000
-      expect(calculateRpos(9000, 500000, 1000)).toBe(89000);
+    it("should trigger the Grand Challenge bonus exactly at challenge_max_wins = 12", () => {
+      const scoreAtThreshold = calculateRpos({
+        ...zeroParams,
+        trophies: 10000,
+        challenge_max_wins: 12,
+      });
+      // winRateWeight = (10000 * 1.0) * 0.35 = 3500; bonus = 3500 * 0.4 = 1400
+      // total = 10000 + 1400 = 11400
+      expect(scoreAtThreshold).toBe(11400);
     });
 
-    it("should handle negative values (though unlikely in production)", () => {
-      // -100 + (-1000 * 0.1) + (-100 + 500) * 20
-      // -100 - 100 + 8000 = 7800
-      expect(calculateRpos(-100, -1000, -100)).toBe(7800);
+    it("should not trigger the Grand Challenge bonus at challenge_max_wins = 11", () => {
+      const scoreBelowThreshold = calculateRpos({
+        ...zeroParams,
+        trophies: 10000,
+        challenge_max_wins: 11,
+      });
+      expect(scoreBelowThreshold).toBe(10000);
     });
 
-    it("should prioritize war wins in the score calculation", () => {
-      const score1 = calculateRpos(5000, 0, 10); // 5000 + 0 + (510 * 20) = 15200
-      const score2 = calculateRpos(6000, 0, 0);  // 6000 + 0 + (500 * 20) = 16000
-      // Increase war wins by 50
-      const score3 = calculateRpos(5000, 0, 60); // 5000 + 0 + (560 * 20) = 16200
+    it("should cap challenge cards so values above the cap do not increase the score further", () => {
+      const scoreAtCap = calculateRpos({ ...zeroParams, challenge_cards_won: 10000 });
+      const scoreAboveCap = calculateRpos({ ...zeroParams, challenge_cards_won: 50000 });
 
-      expect(score3).toBeGreaterThan(score2);
+      expect(scoreAtCap).toBe(1000);
+      expect(scoreAboveCap).toBe(1000);
+      expect(scoreAboveCap).toBe(scoreAtCap);
+    });
+
+    it("should contribute 0 for zero legacy war wins and a small positive amount for non-zero", () => {
+      const scoreNoWar = calculateRpos({ ...zeroParams, legacy_war_wins: 0 });
+      const scoreWithWar = calculateRpos({ ...zeroParams, legacy_war_wins: 5 });
+
+      expect(scoreNoWar).toBe(0);
+      expect(scoreWithWar).toBe(50);
+      expect(scoreWithWar).toBeGreaterThan(scoreNoWar);
     });
   });
 });

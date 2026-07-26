@@ -81,7 +81,7 @@ The Roster ranks every member by a **Performance Score (0-100)** and lets you dr
 
 The Headhunter is a live feed of clanless players discovered from tournaments and leaderboards, each scored by **Potential Score (0-100)** against your own roster so you know a prospect is genuinely an upgrade.
 
-- **Top prospects, continuously scouted** by the backend and ranked by potential; expand a card for donations, war wins, cards won, and the raw potential score, each benchmarked against your clan and against all other prospects.
+- **Top prospects, continuously scouted** by the backend and ranked by potential; expand a card for donations, win rate, cards won, and the raw potential score, each benchmarked against your clan and against all other prospects.
 - **Dismiss with one tap and undo.** Rejections hide instantly, sync across your devices and browser tabs, and stay hidden for 30 days.
 - **Leaderboard harvest**: pull clanless players straight off the global or your local Path of Legends leaderboard on demand.
 - **Blitz recruiting**: multi-select prospects and Clash Manager opens each one's profile in Clash Royale back to back. On Android it goes further and automatically invites the prospect for you (see [Blitz Mode](#the-android-app-blitz-mode)).
@@ -143,7 +143,7 @@ Clash Manager replaces gut feeling with two scoring families. Both are **self-ca
 
 | Metric | What it is |
 | :--- | :--- |
-| **[RPoS](Backend/supabase/functions/_shared/README.md)** (Raw Potential Score) | An absolute decaying score for a prospect built from trophies, donations, war-win consistency, and a huge bonus for recent clan war battles. Computed in `_shared/utils.ts`. |
+| **[RPoS](Backend/supabase/functions/_shared/README.md)** (Raw Potential Score) | An absolute score for a prospect built from trophies, lifetime donations, and a weighted win rate as the primary signal (three-crown wins count extra), plus small micro-bonuses for legacy war wins, challenge cards, and a Grand Challenge threshold. Computed in `_shared/utils.ts`. |
 | **[PoS](Frontend-PWA/src/features/headhunter/README.md)** (Potential Score, 0-100) | RPoS as a percentage of the strongest prospect currently scouted, with a small bonus for returning veterans the clan already knows. Prospects are tiered Elite, High, or Mid. |
 
 Because a member's score is partailly relative to the current roster and a recruit's score is relative to the current recruit pool, a "90" always means "near the top of what you have right now," today and next season alike without drifting from stale targets.

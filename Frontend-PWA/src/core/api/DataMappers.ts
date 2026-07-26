@@ -92,6 +92,7 @@ export function mapSbHeadhunterRow(headhunterRow: v.InferOutput<typeof SbHeadhun
       war: Number(headhunterRow.war_wins) || 0,
       ago: headhunterRow.found_date || '-',
       cards: Number(headhunterRow.cards) || 0,
+      winRate: Number(headhunterRow.win_rate) || 0,
     },
   };
 }

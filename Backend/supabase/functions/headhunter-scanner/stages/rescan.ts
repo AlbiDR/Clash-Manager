@@ -5,7 +5,7 @@ import * as v from "npm:valibot@1.4.2";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry, RecruitSyncRow } from "../../_shared/types.ts";
-import { calculateRpos } from "../../_shared/utils.ts";
+import { calculateRpos, calculateWeightedWinRate } from "../../_shared/utils.ts";
 import { RESCAN_BATCH_LIMIT, CONCURRENCY_RESCAN } from "../../_shared/config.ts";
 import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
@@ -145,7 +145,17 @@ export async function runRescan(
 
                 // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
                 // Refactored to use centralized L1 Core utility to ensure formula consistency.
-                const rawScore = calculateRpos(playerProfileSnapshot.trophies, playerProfileSnapshot.totalDonations, playerProfileSnapshot.warDayWins);
+                const rawScore = calculateRpos({
+                    trophies: playerProfileSnapshot.trophies,
+                    lifetime_donations: playerProfileSnapshot.totalDonations,
+                    legacy_war_wins: playerProfileSnapshot.warDayWins,
+                    wins: playerProfileSnapshot.wins,
+                    battle_count: playerProfileSnapshot.battleCount,
+                    three_crown_wins: playerProfileSnapshot.threeCrownWins,
+                    challenge_cards_won: playerProfileSnapshot.challengeCardsWon,
+                    challenge_max_wins: playerProfileSnapshot.challengeMaxWins,
+                });
+                const winRate = calculateWeightedWinRate(playerProfileSnapshot.wins, playerProfileSnapshot.battleCount, playerProfileSnapshot.threeCrownWins);
 
                 // Otherwise prepare their profile data for batch refresh
                 refreshedRecruitBatch.push({
@@ -156,6 +166,7 @@ export async function runRescan(
                     cards: playerProfileSnapshot.challengeCardsWon,
                     war_wins: playerProfileSnapshot.warDayWins,
                     raw_potential_score: rawScore,
+                    win_rate: winRate,
                     source: 'TOURNAMENT', // Fallback
                     status: playerProfileSnapshot.trophies >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
                 });

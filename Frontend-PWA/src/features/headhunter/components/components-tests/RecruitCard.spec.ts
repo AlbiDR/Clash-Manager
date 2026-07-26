@@ -26,6 +26,7 @@ const mockRecruit: Recruit = {
     war: 12,
     ago: "2d",
     cards: 4500,
+    winRate: 0.564,
   },
 };
 
@@ -111,8 +112,8 @@ describe("RecruitCard.vue", () => {
     expect(statItems).toHaveLength(4);
     expect(statItems[0].props("label")).toBe("Donations");
     expect(statItems[0].props("value")).toBe(250);
-    expect(statItems[1].props("label")).toBe("War Wins");
-    expect(statItems[1].props("value")).toBe(12);
+    expect(statItems[1].props("label")).toBe("Win Rate");
+    expect(statItems[1].props("value")).toBe("56.4%");
     expect(statItems[2].props("label")).toBe("Cards Won");
     expect(statItems[2].props("value")).toBe(4500);
     expect(statItems[3].props("label")).toBe("RPoS");

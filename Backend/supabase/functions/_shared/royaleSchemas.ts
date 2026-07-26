@@ -92,6 +92,10 @@ export const RoyalePlayerSchema = v.object({
     totalDonations: v.optional(v.number(), 0),
     warDayWins: v.optional(v.number(), 0),
     challengeCardsWon: v.optional(v.number(), 0),
+    wins: v.optional(v.number(), 0),
+    battleCount: v.optional(v.number(), 0),
+    threeCrownWins: v.optional(v.number(), 0),
+    challengeMaxWins: v.optional(v.number(), 0),
     clan: v.optional(v.nullable(v.object({
         tag: v.string()
     })))

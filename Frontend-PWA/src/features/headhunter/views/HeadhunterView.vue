@@ -75,7 +75,7 @@ const {
             item.longevityLabel,
             item.d.don,
             item.d.cards,
-            item.d.war
+            item.d.winRate
           ])"
           :id="`recruit-${item.id}`"
           :recruit="item"

@@ -34,7 +34,8 @@ describe("RecruitSchemas", () => {
         lastScan: 123456,
         d: {
           ...validRecruit.d,
-          cards: 40
+          cards: 40,
+          winRate: 0.564
         }
       };
       const result = v.parse(RecruitSchema, input);
@@ -42,6 +43,12 @@ describe("RecruitSchemas", () => {
       expect(result.potentialRawScore).toBe(1500);
       expect(result.lastScan).toBe(123456);
       expect(result.d.cards).toBe(40);
+      expect(result.d.winRate).toBe(0.564);
+    });
+
+    it("should default d.winRate to 0 when omitted", () => {
+      const result = v.parse(RecruitSchema, validRecruit);
+      expect(result.d.winRate).toBe(0);
     });
   });
 
@@ -52,17 +59,20 @@ describe("RecruitSchemas", () => {
         player_name: "Recruit",
         trophies: 4000,
         potential_score: 90,
-        donations: 500
+        donations: 500,
+        win_rate: 0.564
       };
       const result = v.parse(SbHeadhunterRowSchema, input);
       expect(result.player_tag).toBe("#XYZ");
       expect(result.potential_score).toBe(90);
+      expect(result.win_rate).toBe(0.564);
     });
 
     it("should handle missing fields with defaults", () => {
       const result = v.parse(SbHeadhunterRowSchema, {});
       expect(result.player_name).toBe("Unknown");
       expect(result.donations).toBe(0);
+      expect(result.win_rate).toBe(0);
     });
   });
 
