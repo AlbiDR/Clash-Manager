@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           clan_tag: string
           created_at: string | null
-          end_at: string
+          end_at: string | null
           id: number
           start_at: string
           status: string
@@ -28,7 +28,7 @@ export type Database = {
         Insert: {
           clan_tag: string
           created_at?: string | null
-          end_at: string
+          end_at?: string | null
           id?: never
           start_at: string
           status?: string
@@ -38,7 +38,7 @@ export type Database = {
         Update: {
           clan_tag?: string
           created_at?: string | null
-          end_at?: string
+          end_at?: string | null
           id?: never
           start_at?: string
           status?: string
@@ -151,6 +151,18 @@ export type Database = {
         }
         Relationships: []
       }
+      exclusion_cache: {
+        Row: {
+          player_tag: string
+        }
+        Insert: {
+          player_tag: string
+        }
+        Update: {
+          player_tag?: string
+        }
+        Relationships: []
+      }
       heritage_ledger: {
         Row: {
           avg_fame: number | null
@@ -244,6 +256,7 @@ export type Database = {
           joined_at: string | null
           last_ingested_at: string | null
           last_seen_at: string | null
+          next_poll_at: string | null
           player_name: string | null
           player_tag: string
           role: string | null
@@ -274,6 +287,7 @@ export type Database = {
           joined_at?: string | null
           last_ingested_at?: string | null
           last_seen_at?: string | null
+          next_poll_at?: string | null
           player_name?: string | null
           player_tag: string
           role?: string | null
@@ -304,6 +318,7 @@ export type Database = {
           joined_at?: string | null
           last_ingested_at?: string | null
           last_seen_at?: string | null
+          next_poll_at?: string | null
           player_name?: string | null
           player_tag?: string
           role?: string | null
@@ -379,24 +394,6 @@ export type Database = {
           },
         ]
       }
-      players: {
-        Row: {
-          player_name: string | null
-          player_tag: string
-          updated_at: string | null
-        }
-        Insert: {
-          player_name?: string | null
-          player_tag: string
-          updated_at?: string | null
-        }
-        Update: {
-          player_name?: string | null
-          player_tag?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       player_voyage_history: {
         Row: {
           history: string
@@ -422,6 +419,24 @@ export type Database = {
             referencedColumns: ["player_tag"]
           },
         ]
+      }
+      players: {
+        Row: {
+          player_name: string | null
+          player_tag: string
+          updated_at: string | null
+        }
+        Insert: {
+          player_name?: string | null
+          player_tag: string
+          updated_at?: string | null
+        }
+        Update: {
+          player_name?: string | null
+          player_tag?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       push_subscriptions: {
         Row: {
@@ -687,62 +702,16 @@ export type Database = {
       }
     }
     Views: {
-      recruits_view: {
-        Row: {
-          cards: number | null
-          donations: number | null
-          found_date: string | null
-          last_scan: string | null
-          name: string | null
-          potential_score: number | null
-          raw_potential_score: number | null
-          source: string | null
-          status: Database["drivers"]["Enums"]["recruit_status"] | null
-          tag: string | null
-          trophies: number | null
-          war_wins: number | null
-        }
-        Insert: {
-          cards?: number | null
-          donations?: number | null
-          found_date?: string | null
-          last_scan?: string | null
-          name?: string | null
-          potential_score?: never
-          raw_potential_score?: number | null
-          source?: string | null
-          status?: Database["drivers"]["Enums"]["recruit_status"] | null
-          tag?: string | null
-          trophies?: number | null
-          war_wins?: number | null
-        }
-        Update: {
-          cards?: number | null
-          donations?: number | null
-          found_date?: string | null
-          last_scan?: string | null
-          name?: string | null
-          potential_score?: never
-          raw_potential_score?: number | null
-          source?: string | null
-          status?: Database["drivers"]["Enums"]["recruit_status"] | null
-          tag?: string | null
-          trophies?: number | null
-          war_wins?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_recruits_player"
-            columns: ["tag"]
-            isOneToOne: true
-            referencedRelation: "players"
-            referencedColumns: ["player_tag"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
+      activate_scheduled_voyage: {
+        Args: { end_at: string; target_crowns: number; voyage_id: number }
+        Returns: Json
+      }
+      auto_activate_pending_voyages: { Args: never; Returns: undefined }
       bench_underqualified_recruits: { Args: never; Returns: number }
+      cancel_voyage: { Args: { voyage_id: number }; Returns: Json }
       consolidate_voyage_history: { Args: never; Returns: undefined }
       dismiss_recruit: {
         Args: { p_days_to_ban?: number; p_tag: string }
@@ -752,6 +721,10 @@ export type Database = {
         Args: { p_tag: string }
         Returns: number
       }
+      get_voyage_poll_interval_seconds: {
+        Args: { p_last_seen_at: string; p_voyage_remaining_secs: number }
+        Returns: number
+      }
       initialize_voyage: {
         Args: { end_at: string; start_at: string; target_crowns: number }
         Returns: Json
@@ -759,6 +732,18 @@ export type Database = {
       purge_expired_blacklist: { Args: never; Returns: number }
       purge_stale_voyage_history: { Args: never; Returns: undefined }
       refresh_voyage_contributions: { Args: never; Returns: undefined }
+      schedule_voyage: {
+        Args: { start_at: string; target_crowns: number }
+        Returns: Json
+      }
+      set_voyage_end: {
+        Args: { end_at: string; voyage_id: number }
+        Returns: Json
+      }
+      set_voyage_manual_crowns: {
+        Args: { p_crowns: number; p_player_tag: string }
+        Returns: Json
+      }
     }
     Enums: {
       recruit_event_type:
@@ -830,33 +815,6 @@ export type Database = {
       }
     }
     Views: {
-      governance_report: {
-        Row: {
-          created_at: string | null
-          event_type: string | null
-          id: string | null
-          message: string | null
-          metadata: Json | null
-          status: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          event_type?: string | null
-          id?: string | null
-          message?: string | null
-          metadata?: Json | null
-          status?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          event_type?: string | null
-          id?: string | null
-          message?: string | null
-          metadata?: Json | null
-          status?: string | null
-        }
-        Relationships: []
-      }
       headhunter_view: {
         Row: {
           cards: number | null
@@ -884,6 +842,7 @@ export type Database = {
       }
       roster_view: {
         Row: {
+          avg_daily_donations: number | null
           avg_fame: number | null
           clan_rank: number | null
           decks_used_today: number | null
@@ -892,7 +851,6 @@ export type Database = {
           donations_received: number | null
           exp_level: number | null
           hist: string | null
-          v_hist: string | null
           ingame_link: string | null
           last_ingested_at: string | null
           last_seen_at: string | null
@@ -907,6 +865,7 @@ export type Database = {
           tenure_days: number | null
           tenure_label: string | null
           trophies: number | null
+          v_hist: string | null
           voyage_index: number | null
           voyage_merit: number | null
           war_participation: number | null
@@ -916,6 +875,7 @@ export type Database = {
       }
       scoring_view: {
         Row: {
+          avg_daily_donations: number | null
           avg_fame: number | null
           baseline_raw_score: number | null
           current_fame: number | null
@@ -924,7 +884,6 @@ export type Database = {
           donations: number | null
           heritage_bonus: number | null
           hist: string | null
-          v_hist: string | null
           joined_at: string | null
           last_seen_at: string | null
           loyalty_multiplier: number | null
@@ -936,6 +895,7 @@ export type Database = {
           stability_index: number | null
           tenure_days: number | null
           trophies: number | null
+          v_hist: string | null
           voyage_index: number | null
           voyage_merit: number | null
           war_rate: number | null
@@ -957,89 +917,17 @@ export type Database = {
         Row: {
           event: Json | null
           progress_ratio: number | null
-          total_crowns: number | null
-        }
-        Relationships: []
-      }
-      war_activity_view: {
-        Row: {
-          decks_remaining_weekly: number | null
-          decks_used: number | null
-          decks_used_today: number | null
-          fame: number | null
-          fame_per_deck: number | null
-          is_still_in_clan: boolean | null
-          player_name: string | null
-          player_tag: string | null
-          role: string | null
-          section_index: number | null
-          updated_at: string | null
-          week_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_war_activity_player"
-            columns: ["player_tag"]
-            isOneToOne: false
-            referencedRelation: "roster_view"
-            referencedColumns: ["player_tag"]
-          },
-          {
-            foreignKeyName: "fk_war_activity_player"
-            columns: ["player_tag"]
-            isOneToOne: false
-            referencedRelation: "scoring_view"
-            referencedColumns: ["player_tag"]
-          },
-        ]
-      }
-      war_loyalty_view: {
-        Row: {
-          clan_name: string | null
-          clan_points: number | null
-          clan_tag: string | null
-          fame: number | null
-          rank: number | null
-          updated_at: string | null
-          week_id: string | null
-        }
-        Insert: {
-          clan_name?: string | null
-          clan_points?: number | null
-          clan_tag?: string | null
-          fame?: number | null
-          rank?: number | null
-          updated_at?: string | null
-          week_id?: string | null
-        }
-        Update: {
-          clan_name?: string | null
-          clan_points?: number | null
-          clan_tag?: string | null
-          fame?: number | null
-          rank?: number | null
-          updated_at?: string | null
-          week_id?: string | null
-        }
-        Relationships: []
-      }
-      war_performance_analytics_view: {
-        Row: {
-          active_participants: number | null
-          avg_decks_per_active: number | null
-          clan_name: string | null
-          clan_tag: string | null
-          rank: number | null
-          season_id: string | null
-          section_index: string | null
-          top_contributors: string[] | null
-          total_fame: number | null
-          week_label: string | null
+          total_voyage_crowns: number | null
         }
         Relationships: []
       }
     }
     Functions: {
+      activate_scheduled_voyage: {
+        Args: { end_at: string; target_crowns: number; voyage_id: number }
+        Returns: Json
+      }
+      cancel_voyage: { Args: { voyage_id: number }; Returns: Json }
       dismiss_recruits: { Args: { items: Json }; Returns: Json }
       get_pwa_data: { Args: { threshold?: number }; Returns: Json }
       initialize_voyage: {
@@ -1048,6 +936,18 @@ export type Database = {
       }
       ping: { Args: never; Returns: string }
       process_queue: { Args: { req: Json }; Returns: Json }
+      schedule_voyage: {
+        Args: { start_at: string; target_crowns: number }
+        Returns: Json
+      }
+      set_voyage_end: {
+        Args: { end_at: string; voyage_id: number }
+        Returns: Json
+      }
+      set_voyage_manual_crowns: {
+        Args: { p_crowns: number; p_player_tag: string }
+        Returns: Json
+      }
       trigger_backend_update: { Args: never; Returns: Json }
       undismiss_recruits: { Args: { player_tags: string[] }; Returns: Json }
     }
@@ -1067,6 +967,12 @@ export type Database = {
     }
     Functions: {
       bench_underqualified_recruits: { Args: never; Returns: number }
+      get_active_discovery_anchors: {
+        Args: { p_limit?: number }
+        Returns: {
+          keyword: string
+        }[]
+      }
       get_discovery_cache: {
         Args: { p_hours: number }
         Returns: {
@@ -1102,6 +1008,7 @@ export type Database = {
         }[]
       }
       get_top_50_threshold: { Args: never; Returns: number }
+      get_vault_secret: { Args: { p_name: string }; Returns: string }
       ingest_clan_profile: { Args: { p_payload: Json }; Returns: undefined }
       ingest_player_battles: {
         Args: { p_payload: Json; p_tag: string }
@@ -1150,6 +1057,7 @@ export type Database = {
       sync_players: { Args: { p_players: Json }; Returns: undefined }
       sync_recruits: { Args: { p_recruits: Json }; Returns: undefined }
       touch_recruits: { Args: { p_tags: string[] }; Returns: undefined }
+      update_epoch_state: { Args: { p_top50: number }; Returns: undefined }
       update_telemetry: {
         Args: { p_id: string; p_metadata: Json; p_status: string }
         Returns: undefined
@@ -1273,6 +1181,30 @@ export type Database = {
           metadata?: Json | null
           status?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      headhunter_epoch_state: {
+        Row: {
+          epoch_count: number
+          id: number
+          last_main_scan_at: string | null
+          last_top50_count: number
+          updated_at: string
+        }
+        Insert: {
+          epoch_count?: number
+          id?: number
+          last_main_scan_at?: string | null
+          last_top50_count?: number
+          updated_at?: string
+        }
+        Update: {
+          epoch_count?: number
+          id?: number
+          last_main_scan_at?: string | null
+          last_top50_count?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1401,42 +1333,7 @@ export type Database = {
       }
     }
     Views: {
-      view_pipeline_health: {
-        Row: {
-          component_id: string | null
-          is_data_perfect: boolean | null
-          last_failure_at: string | null
-          last_message: string | null
-          last_success_at: string | null
-          last_triggered_at: string | null
-          last_validation_report: Json | null
-          status: Database["substrate"]["Enums"]["pipeline_status"] | null
-          updated_at: string | null
-        }
-        Insert: {
-          component_id?: string | null
-          is_data_perfect?: boolean | null
-          last_failure_at?: string | null
-          last_message?: string | null
-          last_success_at?: string | null
-          last_triggered_at?: string | null
-          last_validation_report?: Json | null
-          status?: Database["substrate"]["Enums"]["pipeline_status"] | null
-          updated_at?: string | null
-        }
-        Update: {
-          component_id?: string | null
-          is_data_perfect?: boolean | null
-          last_failure_at?: string | null
-          last_message?: string | null
-          last_success_at?: string | null
-          last_triggered_at?: string | null
-          last_validation_report?: Json | null
-          status?: Database["substrate"]["Enums"]["pipeline_status"] | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       execute_nightly_maintenance: { Args: never; Returns: undefined }
@@ -1485,11 +1382,17 @@ export type Database = {
         Returns: undefined
       }
       rotate_recruits: { Args: never; Returns: undefined }
+      run_headhunter_epoch_guard: { Args: never; Returns: undefined }
       run_headhunter_scanner: { Args: never; Returns: undefined }
       run_ingest_royale_data: { Args: never; Returns: undefined }
+      update_epoch_state: { Args: { p_top50: number }; Returns: undefined }
       verify_run_integrity: {
         Args: { p_telemetry_id: string }
         Returns: boolean
+      }
+      weighted_avg: {
+        Args: { p_decay?: number; p_floor?: number; p_values: number[] }
+        Returns: number
       }
     }
     Enums: {
