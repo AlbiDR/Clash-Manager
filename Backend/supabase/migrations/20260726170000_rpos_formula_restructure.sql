@@ -466,14 +466,14 @@ WITH benchmarking_context AS (
             r.donations,
             r.cards,
             r.war_wins,
-            r.win_rate,
             r.raw_potential_score,
             r.found_date,
             r.last_scan AS last_seen_at,
             ((EXTRACT(epoch FROM (now() - r.found_date)))::integer / 60) AS raw_longevity_mins,
             (h.player_tag IS NOT NULL) AS is_former_member,
             COALESCE((h.is_fresh AND (h.max_pes >= 80)), false) AS has_blessing,
-            h.tenure_days AS heritage_tenure_days
+            h.tenure_days AS heritage_tenure_days,
+            r.win_rate
            FROM (drivers.recruits r
              LEFT JOIN heritage_context h ON ((h.player_tag = r.player_tag)))
           WHERE ((r.status = 'ACTIVE'::drivers.recruit_status) AND (NOT (EXISTS ( SELECT 1
@@ -487,7 +487,6 @@ WITH benchmarking_context AS (
             b.donations,
             b.cards,
             b.war_wins,
-            b.win_rate,
             b.raw_potential_score,
             b.found_date,
             b.last_seen_at,
@@ -499,7 +498,8 @@ WITH benchmarking_context AS (
                 CASE
                     WHEN b.has_blessing THEN 1.05
                     ELSE 1.0
-                END) / bc.max_corpus_score) * (100)::numeric))) AS potential_score
+                END) / bc.max_corpus_score) * (100)::numeric))) AS potential_score,
+            b.win_rate
            FROM (base_calculations b
              CROSS JOIN benchmarking_context bc)
         )
@@ -509,7 +509,6 @@ WITH benchmarking_context AS (
     donations,
     cards,
     war_wins,
-    win_rate,
     raw_potential_score,
     potential_score,
     substrate.format_longevity(raw_longevity_mins) AS longevity_label,
@@ -530,7 +529,8 @@ WITH benchmarking_context AS (
     last_seen_at,
     found_date,
     ('https://link.clashroyale.com/en?player='::text || ltrim(player_tag, '#'::text)) AS ingame_link,
-    ('https://royaleapi.com/player/'::text || ltrim(player_tag, '#'::text)) AS royaleapi_link
+    ('https://royaleapi.com/player/'::text || ltrim(player_tag, '#'::text)) AS royaleapi_link,
+    win_rate
    FROM scoring_layer
   ORDER BY raw_potential_score DESC;
 
