@@ -61,12 +61,20 @@
   * Recommended Fix: Re-verify scheduling and webhook triggers in CI configurations, and audit local build wrappers or dependency constraints for any silent environment crashes.
 
 * Missing-Run / Failed Events on 2026-07-25:
-  * Stages: Stage 1 (Harden) [FAILED - monitor] (July 25, 2026), Stage 11 (APK-Optimization) [RECURRING] (July 25, 2026).
-  * State: [FAILED - monitor] for Stage 1 / [RECURRING] for Stage 11
+  * Stages: Stage 1 (Harden) [RESOLVED - monitor] (July 26, 2026), Stage 11 (APK-Optimization) [RESOLVED - monitor] (July 26, 2026).
+  * State: [RESOLVED - monitor] for Stage 1 / [RESOLVED - monitor] for Stage 11
   * Symptom: No log entries for 2026-07-25 in 01-hardening-coverage.log or 11-apk-optimization-coverage.log.
   * Root Cause: Stage 1 did not execute or write logs today, possibly skipped due to zero-diff preconditions or trigger scheduling. Stage 11 continues to miss runs consecutively, indicating a persistent scheduling, webhook trigger, or environment constraint in CI (such as missing ANDROID_HOME or native build tools in the runner).
   * Recommended Fix: For Stage 1, monitor tomorrow's run for automatic recovery. For Stage 11, audit the CI workflow logs to check for runner environment capabilities and webhook/cron scheduler trigger definitions.
+  * Resolution Details for Stage 1 and Stage 11: Both Stage 1 and Stage 11 successfully ran and recovered today on July 26, 2026, logging clean audit passes. This confirms scheduling/environment alignment has been restored for these stages.
   * Resolution Details for Stage 2: Stage 2 (Verify) successfully ran and recovered today on July 25, 2026, logging standard CHANGED test updates. This confirms that moving the MCP prohibition directly into the Base 2 instructions successfully resolved its silent crashes during pre-flight tool initialization.
+
+* Missing-Run / Failed Events on 2026-07-26:
+  * Stages: Stage 9 (Refactor) [FAILED - monitor] (July 26, 2026).
+  * State: [FAILED - monitor]
+  * Symptom: No log entry for 2026-07-26 in 09-refactor-proposals-coverage.log on the Nightly branch.
+  * Root Cause: Stage 9 successfully ran and opened a branch/PR, but because of execution sequencing or a delay in the merge pipeline, the branch was not merged back to Nightly before Stage 13 executed.
+  * Recommended Fix: Verify the automated merger runner execution order. Wait for the auto-merge workflow to complete or serialize pipeline stages.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -89,47 +97,48 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  * Consecutive No-Diff Days: 0 (Failed/missing on 2026-07-25, tracked under Section 1)
+  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-26)
+  * Analysis: Audited edge function stages and shared utilities; certified zero active threats.
 
 * Stage 2 (Verify):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-25)
-  * Analysis: Added comprehensive unit tests to useProgressiveList.spec.ts, validating default rendering limits, rapid-succession inputs, and rAnF numeric callback deadlines.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-26)
+  * Analysis: Added comprehensive logic validation unit tests for ParameterCard component.
 
 * Stage 3 (Baseline Consolidation):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-25)
-  * Analysis: Consolidated schema baseline and updated the audited date stamp to 2026-07-25 in master baseline file.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-26)
+  * Analysis: Consolidated schema baseline and updated the audited date stamp to 2026-07-26 in master baseline file.
 
 * Stage 4 (Optimization):
-  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-25)
-  * Analysis: Audited database views and variable naming; confirmed zero active optimization required.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-26)
+  * Analysis: Modernized VoyageSetupForm touch footprint and eliminated anemic callback error parameters inside useVoyageForm composable.
 
 * Stage 5 (README):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-25)
-  * Analysis: Reconciled SelectionFab modernization and useProgressiveList updates across core services and shared UI READMEs.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-26)
+  * Analysis: Reconciled VoyageSetupForm modernization and useVoyageForm standardized catch exception parameters across core shared READMEs.
 
 * Stage 6 (TSDoc):
-  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-25)
-  * Analysis: Verified JSDoc/TSDoc coverage, inline decision logs, and standard licensing headers across recently modernized modules.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-26)
+  * Analysis: Hardened JSDoc/TSDoc type-safe interface contracts and inline decision comments for VoyageSetupForm and useVoyageForm composable.
 
 * Stage 7 (Version Integrity):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-25)
-  * Analysis: Reconciled @supabase/supabase-js package import version drift to align with monorepo catalog version of v2.110.8 across 7 Edge Functions and runner scripts.
+  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-26)
+  * Analysis: Audited root, PWA, and backend manifests; confirmed zero version drift across monorepo v14.33.11.
 
 * Stage 8 (Dependency Audit):
-  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-25)
+  * Consecutive No-Diff Days: 2 (CLEAN logged on 2026-07-25 and 2026-07-26)
   * Analysis: Verified central monorepo catalog and updated external dependency hygiene; updated major version watchlist.
 
 * Stage 9 (Refactor):
-  * Consecutive No-Diff Days: 4 (CLEAN logged on 2026-07-22, 2026-07-23, 2026-07-24, and 2026-07-25)
-  * Analysis: Audited features feature views and structural health boundaries; certified zero structural debt.
+  * Consecutive No-Diff Days: 0 (Failed/missing today, tracked under Section 1)
 
 * Stage 10 (APK-Integrity):
-  * Consecutive No-Diff Days: 3 (CLEAN logged on 2026-07-23, 2026-07-24, and 2026-07-25)
+  * Consecutive No-Diff Days: 4 (CLEAN logged on 2026-07-23, 2026-07-24, 2026-07-25, and 2026-07-26)
   * Analysis: Audited manifest parity, Digital Asset Links fingerprints, and Android native layer security configurations.
 
 * Stage 11 (APK-Optimization):
-  * Consecutive No-Diff Days: 0 (Failed/missing today, tracked under Section 1)
+  * Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-26)
+  * Analysis: Audited native WebView configurations, Service Worker precache settings, and asset footprint; confirmed zero duplicate assets.
 
 * Stage 12 (APK-UX):
-  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-25)
-  * Analysis: Modernized Clan Voyage setup form with declarative v-tactile haptic brokering directive and cleaned up manual haptic triggers.
+  * Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-26)
+  * Analysis: Modernized BaseSegmentedControl with declarative v-tactile haptic brokering, 48px hit area via relative pseudo-elements, and removed .hit-target pointers.
