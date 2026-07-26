@@ -16,6 +16,12 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+## [2026-07-26] MERGE FAILED: PR #1230: chore(refactor): no action required
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `Merge conflicts (state: dirty).`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1230)
+
 ### [2026-07-26] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 1 and Stage 11 recoveries, and updated the three sections of the living self-healing protocol.
 **Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
