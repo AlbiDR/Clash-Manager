@@ -21,3 +21,5 @@
 * [2026-07-24] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/SelectionFab.spec.ts -- Synchronized SelectionFab unit tests to mock and verify the declarative v-tactile directive instead of direct haptic triggers.
 * [2026-07-25] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/VoyageSetupForm.vue -- Modernized Clan Voyage setup form buttons with declarative v-tactile haptic brokering directive.
 * [2026-07-25] [Stage 12] CHANGED: Frontend-PWA/src/shared/composables/useVoyageForm.ts -- Cleaned up manual haptics.tap() haptic triggers to avoid duplication.
+* [2026-07-26] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/BaseSegmentedControl.vue -- Modernized BaseSegmentedControl by replacing manual, programmatic haptics with declarative v-tactile haptic brokering, removing .hit-target to prevent pointerdown ignore bugs, and expanding touch target footprint to 48px via relative pseudo-element styles.
+* [2026-07-26] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/BaseSegmentedControl.spec.ts -- Synchronized unit tests to register global v-tactile directive, and trigger both pointer and click events to assert declarative haptic brokering.

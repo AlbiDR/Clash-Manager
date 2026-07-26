@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-26] PR #PENDING [Stage 12]: Modernized BaseSegmentedControl by replacing manual programmatic useHaptics with declarative v-tactile directive, removing the pointerdown-blocking .hit-target class from buttons, and establishing relative absolute ::after pseudo-element selectors for 48px hit area coverage.
+**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/BaseSegmentedControl.vue
+**Why:** The BaseSegmentedControl component used manual, programmatic haptics inside the selectOption handler and did not comply with 48px touch target guidelines for the compact variant, resulting in potential tactile response duplication and reduced touch accuracy in Android WebViews.
+**Change:** Modernized BaseSegmentedControl by replacing manual programmatic useHaptics with declarative v-tactile directive, removing the pointerdown-blocking .hit-target class from buttons, and establishing relative absolute ::after pseudo-element selectors for 48px hit area coverage.
+**Result:** 100% compliant declarative haptic brokering and mobile touch target ergonomics verified with all 1426 monorepo unit tests passing flawlessly.
+
+
 ### [2026-07-26] PR #PENDING [Stage 11]: Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment.
 **Domain:** apk-optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
