@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-26] PR #PENDING [Stage 5]: Updated shared/ui and shared/composables README files to document the 48px target-input height compliance and useVoyageForm standardized catch exception parameters.
+**Domain:** documentation-readme | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/README.md, Frontend-PWA/src/shared/composables/README.md
+**Why:** Reconcile UI and composables documentation with recent Stage 4 VoyageSetupForm and useVoyageForm touch target and naming modernization.
+**Change:** Updated shared/ui and shared/composables README files to document the 48px target-input height compliance and useVoyageForm standardized catch exception parameters.
+**Result:** 100% architectural documentation alignment and zero documentation drift verified via self-created markdown validation tool, with all 1426 tests passing.
+
+
 ### [2026-07-26] PR #PENDING [Stage 4]: Increased .target-input height to 48px, renamed generic variable names (diff -> remainingMilliseconds, active -> isVoyageActive, status -> voyageStatus), and standardized catch block parameters.
 **Domain:** optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/shared/ui/VoyageSetupForm.vue
