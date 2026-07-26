@@ -63,7 +63,7 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 
 | Component | Role |
 | :--- | :--- |
-| `VoyageBanner.vue` / `EventManagement.vue` / `VoyageSetupForm.vue` | Voyage progress banner, admin hub, and setup form. |
+| `VoyageBanner.vue` / `EventManagement.vue` / `VoyageSetupForm.vue` | Voyage progress banner, admin hub, and setup form. `VoyageSetupForm.vue` is modernized with a 48px high `.target-input` for mobile touch footprint compliance and standardizes generic variables for state tracking (`isVoyageActive`, `remainingMilliseconds`, and `voyageStatus`). |
 | `ErrorBoundary.vue` / `ErrorState.vue` | Runtime error capture and recovery UI. |
 | `ToastContainer.vue` / `Toast.vue` | Global transient notifications. |
 | `EmptyState.vue` | Empty-data feedback. |

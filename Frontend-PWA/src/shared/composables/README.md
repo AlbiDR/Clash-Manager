@@ -52,7 +52,7 @@ Kept here (not in a feature) so [Roster](../../features/roster/README.md) and [S
 | `useVoyageStore.ts` | Reactive state for the active voyage and contributions (Supabase-backed, realtime). |
 | `useVoyageStatus.ts` | Resolves the current phase and progress. |
 | `useVoyageActions.ts` | Activation and ledger sync. |
-| `useVoyageForm.ts` | Setup-form state and validation. |
+| `useVoyageForm.ts` | Setup-form state, validation, and standardized exception handling using domain-descriptive catch parameters (`voyageFormActivationError`, `voyageFormCancellationError`, and `voyageFormSetEndError`). |
 
 ## Conventions
 
