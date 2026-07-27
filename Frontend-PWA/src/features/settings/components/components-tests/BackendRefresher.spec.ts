@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref, nextTick } from 'vue';
+import { flushPromises } from '@vue/test-utils';
 import BackendRefresher from '../BackendRefresher.vue';
 import { triggerBackendUpdate } from '@core/api/MaintenanceClient';
 import { useClashDataStore } from '@core';
@@ -101,6 +102,7 @@ describe('BackendRefresher.vue', () => {
     // Wait for the async refresh function to continue after await
     await nextTick();
     await nextTick();
+    await flushPromises();
 
     // Should enter cooldown state
     const cooldownText = wrapper.find('.cooldown-text');

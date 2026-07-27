@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { effectScope, nextTick, ref } from "vue";
+import { flushPromises } from "@vue/test-utils";
 import { useBackendRefresher } from "../useBackendRefresher";
 import { triggerBackendUpdate } from "@core/api/MaintenanceClient";
 
@@ -58,6 +59,9 @@ describe("useBackendRefresher", () => {
       expect(targets.members.status).toBe("loading");
 
       await refreshPromise;
+      // Drain the microtask queue so the startCooldown() continuation that runs
+      // after the awaited triggerBackendUpdate() resolves is applied before asserting.
+      await flushPromises();
 
       expect(targets.members.status).toBe("cooldown");
       expect(targets.members.cooldown).toBe(60);
@@ -83,6 +87,7 @@ describe("useBackendRefresher", () => {
       const { targets, refresh } = useBackendRefresher();
 
       await refresh("leaderboard");
+      await flushPromises();
 
       expect(targets.leaderboard.status).toBe("cooldown");
       expect(targets.leaderboard.cooldown).toBe(60);
@@ -98,6 +103,7 @@ describe("useBackendRefresher", () => {
     await scope.run(async () => {
       const { refresh } = useBackendRefresher();
       await refresh("members");
+      await flushPromises();
     });
 
     scope.stop();
