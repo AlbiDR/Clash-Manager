@@ -104,15 +104,15 @@ describe("MemberSchemas", () => {
       expect(result.d.rate).toBeNull();
     });
 
-    it("should not strip d.war -- MemberSchema is the re-validation boundary WebAppDataSchema applies to synced/cached LeaderboardMembers", () => {
-      const input = { ...validMember, d: { ...validMember.d, war: 42 } };
+    it("should not strip d.winRate -- MemberSchema is the re-validation boundary WebAppDataSchema applies to synced/cached LeaderboardMembers", () => {
+      const input = { ...validMember, d: { ...validMember.d, winRate: 0.564 } };
       const result = v.parse(MemberSchema, input);
-      expect(result.d.war).toBe(42);
+      expect(result.d.winRate).toBe(0.564);
     });
 
-    it("should default d.war to 0 when omitted", () => {
+    it("should default d.winRate to 0 when omitted", () => {
       const result = v.parse(MemberSchema, validMember);
-      expect(result.d.war).toBe(0);
+      expect(result.d.winRate).toBe(0);
     });
   });
 
@@ -136,12 +136,12 @@ describe("MemberSchemas", () => {
       expect(result.player_name).toBe("Unknown");
       expect(result.trophies).toBe(0);
       expect(result.exp_level).toBe(1);
-      expect(result.war_wins).toBe(0);
+      expect(result.win_rate).toBe(0);
     });
 
-    it("should parse war_wins when present", () => {
-      const result = v.parse(SbRosterRowSchema, { war_wins: 42 });
-      expect(result.war_wins).toBe(42);
+    it("should parse win_rate when present", () => {
+      const result = v.parse(SbRosterRowSchema, { win_rate: 0.564 });
+      expect(result.win_rate).toBe(0.564);
     });
 
     it("should handle null/undefined fields via pipes", () => {

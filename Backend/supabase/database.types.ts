@@ -871,6 +871,7 @@ export type Database = {
           war_participation: number | null
           war_wins: number | null
           week_fame: number | null
+          win_rate: number | null
         }
         Relationships: []
       }

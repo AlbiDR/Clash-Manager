@@ -77,7 +77,7 @@ export interface LeaderboardMember {
     wfame?: number;
     hist: string;
     v_hist?: string;
-    war: number; // Legacy CW1 War Wins (lifetime, frozen since 2020-08-31)
+    winRate: number; // Recent win rate over the member's rolling battle log
   };
 }
 

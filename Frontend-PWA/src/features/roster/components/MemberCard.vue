@@ -131,7 +131,7 @@ const ariaLabel = computed(() => {
         />
       </StatsGrid>
 
-      <!-- [SLOT] LIFETIME KPIS: Heritage-scale metrics (RPeS, legacy War Wins), -->
+      <!-- [SLOT] LIFETIME KPIS: Heritage-scale metrics (RPeS, recent Win Rate), -->
       <!-- visually separated from the active 2x2 grid above via wider spacing. -->
       <StatsGrid
         :columns="2"
@@ -147,12 +147,12 @@ const ariaLabel = computed(() => {
           :benchmark-raw-value="props.member.performanceRawScore"
         />
         <StatisticItem
-          label="War Wins"
-          :value="props.member.d.war"
+          label="Win Rate"
+          :value="formatNumber(props.member.d.winRate, { style: 'percent', maximumFractionDigits: 1 })"
           :loading="props.appIsRefreshing"
           benchmark-type="lb"
-          benchmark-metric="warWins"
-          :benchmark-raw-value="props.member.d.war"
+          benchmark-metric="winRate"
+          :benchmark-raw-value="props.member.d.winRate"
         />
       </StatsGrid>
 

@@ -124,7 +124,7 @@ describe("useClashDataStore", () => {
   describe("loadLocal", () => {
     it("should hydrate state from cache on success", async () => {
       const mockCachedData = {
-        lb: [{ id: "TAG1", n: "Player 1", t: 5000, performanceScore: 90, performanceRawScore: 1000, d: { role: "member", days: 10, avg: 100, hist: "", war: 0 } }],
+        lb: [{ id: "TAG1", n: "Player 1", t: 5000, performanceScore: 90, performanceRawScore: 1000, d: { role: "member", days: 10, avg: 100, hist: "", winRate: 0 } }],
         hh: [],
         timestamp: Date.now(),
         blacklist: []

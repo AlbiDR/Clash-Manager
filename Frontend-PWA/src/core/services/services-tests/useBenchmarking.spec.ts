@@ -15,7 +15,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 9000, // Max trophies
           performanceScore: 100, // Max score
           dt: 10,
-          d: { rate: "100", avg: 50, days: 100, war: 100 } // Max war wins
+          d: { rate: "100", avg: 50, days: 100, winRate: 1.0 } // Max win rate
         },
         {
           id: "2",
@@ -23,7 +23,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 5000, // Avg trophies = (9000+5000+1000)/3 = 5000
           performanceScore: 50, // Avg score = (100+50+0)/3 = 50
           dt: 0,
-          d: { rate: "50", avg: 25, days: 50, war: 50 } // Avg war wins = (100+50+0)/3 = 50
+          d: { rate: "50", avg: 25, days: 50, winRate: 0.5 } // Avg win rate = (1.0+0.5+0)/3 = 0.5
         },
         {
           id: "3",
@@ -31,7 +31,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 1000,
           performanceScore: 0,
           dt: -10,
-          d: { rate: "0", avg: 0, days: 10, war: 0 }
+          d: { rate: "0", avg: 0, days: 10, winRate: 0 }
         }
       ],
       hh: [
@@ -115,16 +115,16 @@ describe("useBenchmarking", () => {
       expect(getBenchmark("lb", "score", 50)).not.toBeNull();
       expect(getBenchmark("lb", "tenure", 50)).not.toBeNull();
       expect(getBenchmark("lb", "momentum", 0)).not.toBeNull();
-      expect(getBenchmark("lb", "warWins", 50)).not.toBeNull();
+      expect(getBenchmark("lb", "winRate", 0.5)).not.toBeNull();
     });
 
-    it("benchmarks lb warWins (legacy War Wins, Member Card lifetime KPI row) against the clan average", () => {
-      // Max war wins is 100, avg is 50 -- mirrors the trophies/score fixtures above.
-      const result = getBenchmark("lb", "warWins", 90);
+    it("benchmarks lb winRate (Member Card lifetime KPI row) against the clan average", () => {
+      // Max win rate is 1.0, avg is 0.5 -- mirrors the trophies/score fixtures above.
+      const result = getBenchmark("lb", "winRate", 0.95);
       expect(result?.tier).toBe("ELITE");
-      expect(result?.label).toBe("Legacy War Wins");
+      expect(result?.label).toBe("Win Rate");
 
-      const avgResult = getBenchmark("lb", "warWins", 50);
+      const avgResult = getBenchmark("lb", "winRate", 0.5);
       expect(avgResult?.isBetter).toBe(true);
     });
   });

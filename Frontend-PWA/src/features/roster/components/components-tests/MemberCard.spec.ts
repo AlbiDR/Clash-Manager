@@ -45,7 +45,7 @@ const mockMember: LeaderboardMember = {
     rate: "95%",
     wfame: 2500,
     hist: "3000 24W01 | 1500 24W02",
-    war: 42,
+    winRate: 0.564,
   },
 };
 
@@ -159,7 +159,7 @@ describe("MemberCard.vue", () => {
     expect(wrapper.find(".card-actions-stub").exists()).toBe(true);
   });
 
-  it("renders the lifetime KPI row (RPeS, War Wins) as a second, separately-spaced grid", () => {
+  it("renders the lifetime KPI row (RPeS, Win Rate) as a second, separately-spaced grid", () => {
     const wrapper = mountMemberCard({ expanded: true });
 
     const grids = wrapper.findAll(".stats-grid");
@@ -171,9 +171,9 @@ describe("MemberCard.vue", () => {
     expect(lifetimeTiles[0].props("label")).toBe("RPeS");
     expect(lifetimeTiles[0].props("value")).toBe("12,345"); // formatNumber(performanceRawScore)
     expect(lifetimeTiles[0].props("benchmarkMetric")).toBe("score");
-    expect(lifetimeTiles[1].props("label")).toBe("War Wins");
-    expect(lifetimeTiles[1].props("value")).toBe(42);
-    expect(lifetimeTiles[1].props("benchmarkMetric")).toBe("warWins");
+    expect(lifetimeTiles[1].props("label")).toBe("Win Rate");
+    expect(lifetimeTiles[1].props("value")).toBe("56.4%"); // formatNumber(winRate, {style:'percent'})
+    expect(lifetimeTiles[1].props("benchmarkMetric")).toBe("winRate");
   });
 
   it("shows refreshing state in expanded content", () => {

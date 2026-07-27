@@ -118,7 +118,7 @@ export function generateMockData(options?: {
         rate: `${Math.floor(Math.random() * 20) + 80}%`,
         wfame: Math.floor(Math.random() * 800) + 2400, // Realistically high for active members
         hist: generateWarHistory(),
-        war: Math.floor(Math.random() * 400), // Legacy CW1 war wins, frozen since 2020-08-31
+        winRate: Math.random() * 0.5 + 0.4, // Recent win rate, realistically 40-90%
       },
     });
   }
