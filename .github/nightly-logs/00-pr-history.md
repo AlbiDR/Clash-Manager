@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-27] PR #PENDING [Stage 12]: Modernize close-btn-round to 48px and add v-tactile
+**Domain:** APK & PWA Wrapper | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
+**Why:** Modernize overlay close button target height/width to 48px and integrate v-tactile directive
+**Change:** Modernize close-btn-round to 48px and add v-tactile
+**Result:** Passes unit tests cleanly and satisfies APK-UX requirements
+
+
 ### [2026-07-27] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** apk-integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** codebase
