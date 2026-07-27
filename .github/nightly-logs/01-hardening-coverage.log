@@ -74,3 +74,29 @@
 * [2026-07-26] [Stage 1] SKIPPED: Backend/supabase/functions/ingest-royale-data/index.ts -- Audited as CLEAN by Stage 1 in past 7 days
 * [2026-07-26] [Stage 1] SKIPPED: Backend/supabase/functions/sync-player-cards/index.ts -- Modified by Stage 1 in past 7 days
 * [2026-07-26] [Stage 1] SKIPPED: Backend/supabase/functions/headhunter-scanner/stages/shadow-scout.ts -- Modified by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/ingest-royale-data/pipeline.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/ingest-royale-data/stages/discovery.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/ingest-royale-data/stages/clan-sync.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/_shared/muscle.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/_shared/royaleSchemas.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/_shared/substrateSchemas.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/_shared/config.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/_shared/types.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/_shared/rpcSchemas.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/_shared/schemas.ts -- No action required
+* [2026-07-27] [Stage 1] CLEAN: Backend/supabase/functions/headhunter-scanner/scanner.ts -- No action required
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/query-royale-api/index.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/fetch-player-battlelog/index.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/headhunter-scanner/index.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/ingest-royale-data/index.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/sync-player-cards/index.ts -- Modified by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/headhunter-scanner/stages/shadow-scout.ts -- Modified by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/headhunter-scanner/stages/profiler.ts -- Modified by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/query-royale-api/harvester.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/headhunter-scanner/stages/rescan.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/headhunter-scanner/stages/ghost-purge.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/_shared/utils.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/_shared/protocol.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/_shared/vault.ts -- Audited as CLEAN by Stage 1 in past 7 days
