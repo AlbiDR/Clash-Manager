@@ -28,7 +28,7 @@ Each concern is a collapsible card:
 | `views/SettingsView.vue` | Composes the cards into the shared list layout. |
 | `components/` | One card per concern: `AppearanceSettings`, `NotificationSettings`, `FeatureSettings`, `ModeSettings`, `NetworkSettings`, `BackendRefresher`, `UsefulLinksSettings`, `RecoverySettings`. |
 | `composables/useSettings.ts` | Wires the cards to `@core` services and settings. |
-| `composables/useBackendRefresher.ts` | The maintenance triggers and their cooldowns. |
+| `composables/useBackendRefresher.ts` | The maintenance triggers and their cooldowns, utilizing standard domain-descriptive catch parameters (`backendRefreshError`) for robust naming hygiene. |
 
 ## Gotchas
 

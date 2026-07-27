@@ -58,3 +58,4 @@
 * [2026-07-25] [Stage 6] CLEAN: Frontend-PWA/src/shared/composables/useVoyageStore.ts -- Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after recent updates.
 * [2026-07-26] [Stage 6] CHANGED: Frontend-PWA/src/shared/composables/useVoyageForm.ts -- Hardened interface contracts with comprehensive UseVoyageFormReturn properties, action side-effects, and parameter JSDoc mappings linking to ADR Section III and IV.
 * [2026-07-26] [Stage 6] CHANGED: Frontend-PWA/src/shared/ui/VoyageSetupForm.vue -- Documented component-level architectural context for 48px touch targets and domain-descriptive variable naming standardizations.
+* [2026-07-27] [Stage 6] CHANGED: Backend/supabase/functions/fetch-player-battlelog/client.ts -- Hardened interface contracts and added comprehensive TSDoc specifications for client and environment configurations.

@@ -26,10 +26,12 @@ vi.mock("@core/api/VoyageClient", () => ({
   setVoyageEnd: vi.fn(),
 }));
 
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
 vi.mock("@core/services/useToast", () => ({
   useToast: () => ({
-    success: vi.fn(),
-    error: vi.fn(),
+    success: mockToastSuccess,
+    error: mockToastError,
   }),
 }));
 
@@ -38,6 +40,8 @@ describe("useVoyageForm", () => {
     setActivePinia(createPinia());
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    mockToastSuccess.mockClear();
+    mockToastError.mockClear();
   });
 
   it("initializes with default values", () => {
@@ -179,6 +183,117 @@ describe("useVoyageForm", () => {
       await handleSetEnd();
 
       expect(setEndSpy).toHaveBeenCalledWith({ days: 1, hours: 0, minutes: 0 });
+    });
+  });
+
+  describe("sad paths & error handling", () => {
+    let consoleErrorSpy: any;
+
+    beforeEach(() => {
+      consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    it("handleActivate: handles Error instance rejection", async () => {
+      const { targetCrowns, endsIn, handleActivate } = useVoyageForm();
+      const store = useVoyageStore();
+
+      const testError = new Error("Activation failed error");
+      vi.spyOn(store, "activateVoyage").mockRejectedValue(testError);
+
+      targetCrowns.value = 2000;
+      endsIn.value = { days: 1, hours: 2, minutes: 3 };
+
+      await handleActivate();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[useVoyageForm] handleActivate error:",
+        testError
+      );
+      expect(mockToastError).toHaveBeenCalledWith("Activation failed error");
+    });
+
+    it("handleActivate: handles non-Error rejection", async () => {
+      const { targetCrowns, endsIn, handleActivate } = useVoyageForm();
+      const store = useVoyageStore();
+
+      vi.spyOn(store, "activateVoyage").mockRejectedValue("some raw error string");
+
+      targetCrowns.value = 2000;
+      endsIn.value = { days: 1, hours: 2, minutes: 3 };
+
+      await handleActivate();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[useVoyageForm] handleActivate error:",
+        "some raw error string"
+      );
+      expect(mockToastError).toHaveBeenCalledWith("Operation failed.");
+    });
+
+    it("handleCancel: handles Error instance rejection", async () => {
+      const { handleCancel } = useVoyageForm();
+      const store = useVoyageStore();
+
+      const testError = new Error("Cancellation failed error");
+      vi.spyOn(store, "cancelSchedule").mockRejectedValue(testError);
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+
+      await handleCancel();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[useVoyageForm] handleCancel error:",
+        testError
+      );
+      expect(mockToastError).toHaveBeenCalledWith("Cancellation failed error");
+    });
+
+    it("handleCancel: handles non-Error rejection", async () => {
+      const { handleCancel } = useVoyageForm();
+      const store = useVoyageStore();
+
+      vi.spyOn(store, "cancelSchedule").mockRejectedValue({ code: 500, detail: "DB offline" });
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+
+      await handleCancel();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[useVoyageForm] handleCancel error:",
+        { code: 500, detail: "DB offline" }
+      );
+      expect(mockToastError).toHaveBeenCalledWith("Cancellation failed.");
+    });
+
+    it("handleSetEnd: handles Error instance rejection", async () => {
+      const { endsIn, handleSetEnd } = useVoyageForm();
+      const store = useVoyageStore();
+
+      const testError = new Error("Set end failed error");
+      vi.spyOn(store, "setVoyageEnd").mockRejectedValue(testError);
+
+      endsIn.value = { days: 1, hours: 0, minutes: 0 };
+      await handleSetEnd();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[useVoyageForm] handleSetEnd error:",
+        testError
+      );
+      expect(mockToastError).toHaveBeenCalledWith("Set end failed error");
+    });
+
+    it("handleSetEnd: handles non-Error rejection", async () => {
+      const { endsIn, handleSetEnd } = useVoyageForm();
+      const store = useVoyageStore();
+
+      vi.spyOn(store, "setVoyageEnd").mockRejectedValue(null);
+
+      endsIn.value = { days: 1, hours: 0, minutes: 0 };
+      await handleSetEnd();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[useVoyageForm] handleSetEnd error:",
+        null
+      );
+      expect(mockToastError).toHaveBeenCalledWith("Setting end time failed.");
     });
   });
 });

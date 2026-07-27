@@ -4,6 +4,7 @@ import Icon from "./Icon.vue";
 <script setup lang="ts">
 import { watch } from "vue";
 import { formatHeaderDescription } from "@core";
+import { vTactile } from "../directives/vTactile";
 
 const props = defineProps<{
   show: boolean;
@@ -44,6 +45,7 @@ watch(
               <h3>{{ title || "Heuristic Analysis" }}</h3>
             </div>
             <button
+              v-tactile
               class="close-btn-round"
               @click="emit('close')"
               aria-label="Close"
@@ -197,8 +199,8 @@ watch(
 .close-btn-round {
   background: var(--sys-color-surface-container-highest);
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;

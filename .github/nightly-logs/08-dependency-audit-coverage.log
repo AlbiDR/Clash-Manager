@@ -173,3 +173,10 @@
 * [2026-07-26] [Stage 8] Target: Codebase - vite | ^7.3.6 | 8.1.5 | 2026-07-14 | Breaking: Unified bundler (Rolldown), build.rollupOptions renamed to build.rolldownOptions, CJS interop changes. |
 * [2026-07-26] [Stage 8] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure. |
 * [2026-07-26] [Stage 8] Target: Codebase - pinia | ^3.0.4 | 4.0.2 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics. |
+* [2026-07-27] [Stage 8] CLEAN: pnpm-workspace.yaml -- No action required: All dependencies at latest Tier 1
+* [2026-07-27] [Stage 8] CLEAN: package.json -- No action required: Monorepo root dependencies aligned with catalog.
+* [2026-07-27] [Stage 8] CLEAN: Frontend-PWA/package.json -- No action required: PWA dependencies aligned with catalog.
+* [2026-07-27] [Stage 8] CLEAN: Backend/package.json -- No action required: Backend devDependencies aligned with catalog.
+* [2026-07-27] [Stage 8] Target: Codebase - vite | ^7.3.6 | 8.1.5 | 2026-07-14 | Breaking: Unified bundler (Rolldown), build.rollupOptions renamed to build.rolldownOptions, CJS interop changes. |
+* [2026-07-27] [Stage 8] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure. |
+* [2026-07-27] [Stage 8] Target: Codebase - pinia | ^3.0.4 | 4.0.2 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics. |
