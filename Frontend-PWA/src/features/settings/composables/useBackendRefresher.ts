@@ -118,8 +118,8 @@ export function useBackendRefresher() {
         // Still cooldown on failure to prevent spam
         startCooldown(key);
       }
-    } catch (e) {
-      console.error(`Backend refresh failed [${key}]`, e);
+    } catch (backendRefreshError) {
+      console.error(`Backend refresh failed [${key}]`, backendRefreshError);
       startCooldown(key); // Cooldown on error too
     }
   };
