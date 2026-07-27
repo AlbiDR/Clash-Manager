@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 import { DATA_STALENESS_THRESHOLD } from "../config";
-import { useBlueprintMode } from "./useBlueprintMode";
 import { useClashSync } from "./useClashSync";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
@@ -35,9 +34,6 @@ export const useClashDataStore = defineStore("clashData", () => {
    * Initialized as null and hydrated via `loadLocal` or `refreshFromSupabase`.
    */
   const data = ref<WebAppData | null>(null);
-
-  // --- DEPENDENCIES ---
-  const blueprint = useBlueprintMode();
 
   // [REFACTOR] DELEGATION: Structural Surgery Stage 9
   // Rationale: Decompose monolithic store (>400 lines) by extracting

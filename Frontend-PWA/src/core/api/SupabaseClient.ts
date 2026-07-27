@@ -9,7 +9,6 @@ import type {
   Recruit,
   LeaderboardMember,
 } from "@core/types";
-import { loadCache, saveCache } from "../services/StorageService";
 import { SbRosterRowSchema } from "./MemberSchemas";
 import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 import { mapSbRosterRow, mapSbHeadhunterRow } from "./DataMappers";
@@ -83,7 +82,9 @@ export function getApiUrl(): string {
 export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
   try {
     const supabase = createSupabaseClient();
-    const { data: pingRpcResponse, error: pingRpcError } = await supabase.rpc('ping');
+    let pingRequest = supabase.rpc('ping');
+    if (options?.signal) pingRequest = pingRequest.abortSignal(options.signal);
+    const { error: pingRpcError } = await pingRequest;
     if (pingRpcError) return { status: 'error', message: pingRpcError.message };
     return { status: 'success', message: 'Pong' };
   } catch (pingHandshakeError) {
@@ -104,7 +105,6 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * @throws Error if any fetch fails or data validation fails.
  *
  * @sideeffects
- * - WRITES to persistent cache via `saveCache`.
  * - MUTATES `lastSyncStatus`.
  */
 export async function fetchRemote(options?: {
@@ -116,12 +116,25 @@ export async function fetchRemote(options?: {
   const supabase = createSupabaseClient();
   const signal = options?.signal || new AbortController().signal;
 
-  // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC 
+  // [TYPES] postgrest-js's `.single()` narrows its return type to `PostgrestBuilder`,
+  // which doesn't expose `.abortSignal()` -- but `.single()` returns `this` under the
+  // hood (see PostgrestTransformBuilder.single), so the real object still has the
+  // method at runtime. `.abortSignal()` must stay last (it resolves to a terminal,
+  // non-chainable value once awaited, same as every other query below), so this is
+  // a narrow type-only cast rather than a chain reorder.
+  const heartbeatQueryWithSingle = supabase
+    .schema('substrate')
+    .from('pipeline_heartbeat')
+    .select('last_success_at')
+    .eq('component_id', 'ROYALE_DATA_INGESTOR')
+    .single() as unknown as { abortSignal: (s: AbortSignal) => PromiseLike<{ data: { last_success_at: string | null } | null; error: { message: string } | null }> };
+
+  // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
   // to fetch high-fidelity datasets directly from the authoritative feature views.
   const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
     supabase.schema('features').from('roster_view').select('*').abortSignal(signal),
     supabase.schema('features').from('headhunter_view').select('*').limit(250).abortSignal(signal),
-    supabase.schema('substrate').from('pipeline_heartbeat').select('last_success_at').eq('component_id', 'ROYALE_DATA_INGESTOR').single().abortSignal(signal),
+    heartbeatQueryWithSingle.abortSignal(signal),
     supabase.schema('drivers').from('recruit_blacklist').select('player_tag').abortSignal(signal)
   ]);
 

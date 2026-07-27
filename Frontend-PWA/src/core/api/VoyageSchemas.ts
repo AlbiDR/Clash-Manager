@@ -24,8 +24,8 @@ export const VoyageEventSchema = v.object({
   target_crowns: SafeNumberPipe,
   start_at: SafeStringPipe,
   end_at: v.nullable(SafeStringPipe),
-  activated_by: v.optional(v.nullable(SafeStringPipe)),
-  is_victory: v.optional(v.nullable(v.boolean())),
+  activated_by: v.optional(v.nullable(SafeStringPipe), null),
+  is_victory: v.optional(v.nullable(v.boolean()), null),
 });
 
 /**

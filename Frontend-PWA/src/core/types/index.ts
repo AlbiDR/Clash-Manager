@@ -159,6 +159,8 @@ export interface ConsoleFabState {
   visible: boolean;
   /** The primary text label displayed on the button. */
   label: string;
+  /** Optional deep-link URL for the FAB's primary action (e.g. Blitz Mode target). */
+  actionHref?: string;
   /** Indicates if a background operation is currently in progress. */
   isProcessing: boolean;
   /** Indicates if the system is preparing a "Blasting" operation (batch sync). */

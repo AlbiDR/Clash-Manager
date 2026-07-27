@@ -13,6 +13,7 @@ export type BroadcastMessage =
   | { type: "BADGE_UPDATE"; count: number }
   | { type: "DATA_SYNC_SUCCESS"; timestamp: number }
   | { type: "RECRUIT_DISMISSAL"; ids: string[] }
+  | { type: "RECRUIT_RESTORATION"; ids: string[] }
   | { type: "FORCE_REFRESH" };
 
 /**

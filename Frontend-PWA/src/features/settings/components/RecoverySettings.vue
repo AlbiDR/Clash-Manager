@@ -10,7 +10,6 @@ defineProps<{
 }>();
 
 const {
-  isRefreshing,
   forceUpdate,
   downloadApk,
   clearCache,

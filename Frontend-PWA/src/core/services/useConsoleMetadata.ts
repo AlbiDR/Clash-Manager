@@ -6,7 +6,7 @@ import { useConnectivityManager } from "./useConnectivityManager";
 import { useShowcaseMode } from "./useShowcaseMode";
 import { useBlueprintMode } from "./useBlueprintMode";
 import { DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "@core/utils/mockData";
-import type { HubHealth, HubMetadata } from "../types";
+import type { HubHealth } from "../types";
 
 /**
  * COMPOSABLE: useConsoleMetadata

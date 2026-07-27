@@ -12,6 +12,7 @@ import {
   calculateKingLevel as registryCalculateKingLevel,
   calculateXpIntoLevel
 } from '@core/utils/game';
+import { asXP } from '@core/utils/economy';
 
 /**
  * Transforms simulation internal state into a UI-compatible result object.
@@ -31,7 +32,7 @@ export function mapStateToResult(
   initialXp: number
 ): OptimizationResult {
   const kingLevel = registryCalculateKingLevel(Number(state.totalXp));
-  const xpIntoLevel = calculateXpIntoLevel(Number(state.totalXp));
+  const xpIntoLevel = asXP(calculateXpIntoLevel(Number(state.totalXp)));
 
   return {
     actions: state.history as UpgradeAction[],

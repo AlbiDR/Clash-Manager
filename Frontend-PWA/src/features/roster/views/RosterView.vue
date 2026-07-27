@@ -52,7 +52,7 @@ import { useLeaderboard } from "../composables/useLeaderboard";
 import { MemberCard } from "../components";
 import { VoyageBanner } from "@shared";
 
-const { isLoading: isDataLoading } = useClashDataLoader();
+useClashDataLoader();
 
 const {
   isShowcaseMode,

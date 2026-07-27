@@ -17,7 +17,7 @@
  *   Forbidden from importing from Layer 4 (@app) or other Features.
  */
 
-import type { Card, OptimizationSettings, UpgradeCandidate } from './Types';
+import type { OptimizationSettings, UpgradeCandidate } from './Types';
 import { convertGemsToGold } from '@core/utils/economy';
 
 /**
@@ -56,7 +56,7 @@ export class ProjectionStrategy implements ScoringStrategy {
    * @param settings - Simulation settings.
    * @returns The weighted score.
    */
-  calculateScore(candidate: UpgradeCandidate, settings: OptimizationSettings): number {
+  calculateScore(candidate: UpgradeCandidate, _settings: OptimizationSettings): number {
     const { toLevel, goldCost, gemsUsed, xpGained } = candidate;
     
     // Rationale: Theoretical Gems are weighted at 10% of their market value
@@ -98,7 +98,7 @@ export class InventoryStrategy implements ScoringStrategy {
    * @param settings - Simulation settings.
    * @returns The weighted score.
    */
-  calculateScore(candidate: UpgradeCandidate, settings: OptimizationSettings): number {
+  calculateScore(candidate: UpgradeCandidate, _settings: OptimizationSettings): number {
     const { goldCost, gemsUsed, xpGained } = candidate;
 
     // Rationale: Gems are extremely "expensive" (50x multiplier) to force the

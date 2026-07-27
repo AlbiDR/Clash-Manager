@@ -107,7 +107,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
 
         <StatisticItem
           label="Cards Won"
-          :value="props.recruit.d.cards"
+          :value="props.recruit.d.cards || 0"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
           benchmark-metric="cardsWon"

@@ -1,7 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import Icon from "./Icon.vue";
 import ClashRoyaleIcon from "./ClashRoyaleIcon.vue";
 import { useExternalLink } from "@core/services/useExternalLink";
 import { useHaptics } from "@shared/composables/useHaptics";

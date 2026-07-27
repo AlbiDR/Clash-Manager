@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { openDB, idbCore, deleteDatabasePromise, closeDB, useMemoryStore, memoryStore, forceMemoryMode } from "../utils/idbKernel";
+import { openDB, idbCore, deleteDatabasePromise, closeDB, memoryStore, forceMemoryMode } from "../utils/idbKernel";
 import {
   STORAGE_DB_NAME,
   STORAGE_STORE_NAME,

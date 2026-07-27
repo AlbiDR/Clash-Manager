@@ -77,7 +77,7 @@ export async function getPlayerProfile(
     responseJson
   );
 
-  const rawProfileData = "data" in envelope && envelope.data ? envelope.data : envelope;
+  const rawProfileData = "data" in envelope ? envelope.data : envelope;
 
   // Merge cards and towerTroops into a single array for the simulation engine.
   // isTowerTroop is already set correctly by the Edge Function.

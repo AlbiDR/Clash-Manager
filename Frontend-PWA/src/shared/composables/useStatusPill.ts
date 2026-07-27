@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, watch, computed, toValue, type MaybeRefOrGetter } from "vue";
-import { useHaptics } from "./useHaptics";
 import { useViewport } from "./useViewport";
 
 export interface StatusPillProps {
@@ -33,10 +32,10 @@ export interface StatusPillProps {
  * - `isDB`: True if the primary status label is "DB" (cached state).
  * - `displayText`: Viewport-aware label for the pill.
  * - `displaySource`: Normalized data source label.
- * - `handleToggle`: Expansion orchestrator with haptic awareness.
+ * - `handleToggle`: Expansion orchestrator (haptics are handled by `v-tactile`
+ *   on the pill element in `StatusPill.vue`, not here -- see the note below).
  */
 export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
-  const haptics = useHaptics();
   const isExpanded = ref(false);
 
   // [DECISION LOG] AUTO-EXPANSION: Automatically expand on critical states

@@ -86,7 +86,7 @@ router.beforeResolve(async (to, from) => {
   try {
     return await new Promise((resolve) => {
       let resolved = false;
-      const transition = document.startViewTransition(() => {
+      document.startViewTransition(() => {
         // Resolve the navigation, which triggers the DOM update
         resolve(true);
         resolved = true;

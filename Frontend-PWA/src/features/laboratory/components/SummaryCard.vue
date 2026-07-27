@@ -56,7 +56,7 @@ const engineStatus = computed(() => {
       <label class="section-label">Target Progress</label>
       <div class="king-level-display">
         <div class="level-badge current">
-          <span class="num">{{ profile.currentKingLevel || profile.kingLevel }}</span>
+          <span class="num">{{ profile.kingLevel }}</span>
           <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" />
         </div>
         <div class="progression-divider">

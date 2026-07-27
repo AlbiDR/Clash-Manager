@@ -7,8 +7,6 @@ import vue from "@vitejs/plugin-vue";
 import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
 import packageJson from "./package.json";
-import { getAppShellStyles, getAppShellHtml } from "./src/core/theme/AppShell";
-import { generateHtmlEntry } from "./src/core/theme/HtmlEntry";
 
 // View-specific components excluded from monolithic UI bundle.
 // This allows them to be bundled with their respective lazy-loaded views,

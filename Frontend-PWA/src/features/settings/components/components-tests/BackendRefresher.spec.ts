@@ -86,7 +86,9 @@ describe('BackendRefresher.vue', () => {
     await membersButton.trigger('click');
 
     // Should be in loading state
-    expect(triggerBackendUpdate).toHaveBeenCalledWith('members');
+    // trigger_backend_update takes no arguments and always runs the full pipeline;
+    // 'members' only selects which button/cooldown this click affects locally.
+    expect(triggerBackendUpdate).toHaveBeenCalledWith();
     expect(membersButton.attributes('disabled')).toBeDefined();
     expect(wrapper.find('.spinner').exists()).toBe(true);
 

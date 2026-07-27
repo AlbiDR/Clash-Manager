@@ -255,7 +255,7 @@ describe("useConsoleController", () => {
 
   describe("status hierarchy", () => {
     it("returns 'error' when apiStatus is unconfigured", () => {
-      sharedState.mockApiStatus.value = "error";
+      sharedState.mockApiStatus.value = "unconfigured";
       const { status } = useConsoleController(createOptions());
       expect(status.value).toMatchObject({ type: "error", text: "Invalid API URL" });
     });
@@ -296,7 +296,7 @@ describe("useConsoleController", () => {
     });
 
     it("prioritizes unconfigured over offline", () => {
-      sharedState.mockApiStatus.value = "error";
+      sharedState.mockApiStatus.value = "unconfigured";
       sharedState.mockConnectionStatus.value = "offline";
       const { status } = useConsoleController(createOptions());
       expect(status.value.text).toBe("Invalid API URL");

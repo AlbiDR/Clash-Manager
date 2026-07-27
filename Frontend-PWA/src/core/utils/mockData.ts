@@ -141,18 +141,22 @@ export function generateMockData(options?: {
   for (let i = 0; i < recruitCount; i++) {
     const score = Math.floor(Math.random() * 60) + 40;
     const nameBase = recruitNames[i % recruitNames.length] || "Recruit";
+    const discoveryAgeMinutes = Math.floor(Math.random() * 10 * 24 * 60);
+    const discoveryAgeHours = Math.floor(discoveryAgeMinutes / 60);
     hh.push({
       id: `RECRUIT${i}`,
       n: nameBase + i,
       t: 4500 + Math.floor(Math.random() * 3000),
       potentialScore: score,
       potentialRawScore: score * 100,
+      longevity: discoveryAgeMinutes,
+      longevityLabel: discoveryAgeHours > 0
+        ? `${discoveryAgeHours}h ${discoveryAgeMinutes % 60}m`
+        : `${discoveryAgeMinutes}m`,
       d: {
         don: Math.floor(Math.random() * 1000),
         war: Math.floor(Math.random() * 500),
-        ago: new Date(
-          Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
+        ago: new Date(Date.now() - discoveryAgeMinutes * 60 * 1000).toISOString(),
         cards: Math.floor(Math.random() * 50000),
       },
     });

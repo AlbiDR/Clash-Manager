@@ -33,5 +33,5 @@ export const OptimizationSettingsSchema = v.object({
 export const InventoryOverrideSchema = v.partial(v.object({
   gold: v.number(),
   gems: v.number(),
-  wildCards: v.partial(v.record(v.picklist(["Common", "Rare", "Epic", "Legendary", "Champion"]), v.number()))
+  wildCards: v.record(v.picklist(["Common", "Rare", "Epic", "Legendary", "Champion"]), v.number())
 }));

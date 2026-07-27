@@ -15,7 +15,6 @@ import { useSystemInfo } from "@core/services/useSystemInfo";
 import { useApiState } from "@core/api/useApiState";
 import { useBadge } from "@core/services/useBadge";
 import { usePwaManager } from "@core/services/usePwaManager";
-import { subscribeToPush } from "@core/api/MaintenanceClient";
 import { computed, ref, onMounted } from "vue";
 // import { registerSW } from "virtual:pwa-register";
 
@@ -53,6 +52,7 @@ import { computed, ref, onMounted } from "vue";
  * - `pingData`: Reactive latency metrics for the active API connection.
  * - `notificationPermission`: Status of the browser's Notification API.
  * - `isPushSubscribed`: Indicates if the client has an active push subscription.
+ * - `hasWorker`: Indicates if the browser supports the Service Worker API.
  * - `lastSyncFormatted`: Human-readable localized last synchronization time.
  * - `toggle`: Switches boolean feature flags in useAppSettings.
  * - `setTheme`: Authoritative theme setter.
@@ -86,6 +86,8 @@ export function useSettings() {
   const { isHydrated, isRefreshing, lastSyncTime } = storeToRefs(clashDataStore);
   const { refresh, startBackgroundSync } = clashDataStore;
   const { status: unifiedStatus } = useConnectionStatus();
+  // Gates the Cloud Push setting row to browsers that could support it.
+  const hasWorker = "serviceWorker" in navigator;
   const {
     notificationPermission,
     isPushSubscribed,
@@ -243,6 +245,7 @@ export function useSettings() {
     pingData,
     notificationPermission,
     isPushSubscribed,
+    hasWorker,
     lastSyncFormatted,
 
     // Methods

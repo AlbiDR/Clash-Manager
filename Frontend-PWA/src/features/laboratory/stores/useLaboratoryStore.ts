@@ -174,9 +174,15 @@ export const useLaboratoryStore = defineStore("laboratory", () => {
    * update to the reactive inventory state and immediately synchronizes
    * the delta with LocalStorage to ensure session persistence.
    *
-   * @param partialInventory - Partial inventory object to merge.
+   * @param partialInventory - Partial inventory object to merge. `gold`/`gems`
+   *   take plain numbers (re-branded internally via asGold/asGems), and
+   *   `wildCards` merges rarity-by-rarity rather than requiring the full record.
    */
-  function updateInventory(partialInventory: Partial<Inventory>) {
+  function updateInventory(partialInventory: {
+    gold?: number;
+    gems?: number;
+    wildCards?: Partial<Record<Rarity, number>>;
+  }) {
     if (!state.value.observation) return;
 
     const newInventory: Inventory = {

@@ -55,6 +55,11 @@ const {
   selectValue,
   toggleExpand,
 } = useScoreSelector(props, emit);
+// `valuePicker` is bound purely through the template's `ref="valuePicker"` string
+// match (Vue's compiler resolves it by name against this scope); vue-tsc's
+// noUnusedLocals check cannot see that usage, so this keeps it a real error
+// for genuinely dead bindings elsewhere while documenting this one as intentional.
+void valuePicker;
 
 defineExpose({
   /** Expansion state for external visibility (e.g., automated tests or parent logic). */

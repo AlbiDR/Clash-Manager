@@ -21,6 +21,7 @@
  */
 export class PriorityQueue<T> {
   private heap: T[] = [];
+  private comparator: (a: T, b: T) => number;
 
   /**
    * Initializes the Priority Queue with a custom comparator.
@@ -28,7 +29,9 @@ export class PriorityQueue<T> {
    * @param comparator - A function that defines the sort order.
    *   Should return < 0 if 'a' has higher priority than 'b'.
    */
-  constructor(private comparator: (a: T, b: T) => number) {}
+  constructor(comparator: (a: T, b: T) => number) {
+    this.comparator = comparator;
+  }
 
   /**
    * Adds a new item to the queue.

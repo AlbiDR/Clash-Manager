@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon, SettingRow, SettingsCard } from "@shared";
+import { SettingRow, SettingsCard } from "@shared";
 import { useSettings } from "../composables/useSettings";
 defineProps<{
   initiallyExpanded?: boolean;

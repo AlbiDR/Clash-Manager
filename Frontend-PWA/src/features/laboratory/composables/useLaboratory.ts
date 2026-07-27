@@ -17,7 +17,6 @@ import {
   ProfileHydrator,
   RawInventorySchema,
   type PlayerData,
-  type Inventory,
   type UpgradeAction
 } from '../logic';
 
@@ -100,13 +99,16 @@ export function useLaboratory() {
        const inventoryValidation = v.safeParse(RawInventorySchema, rawInventory);
        if (inventoryValidation.success) {
           const validatedInventory = inventoryValidation.output;
-          hydratedData.inventory = {
-            ...hydratedData.inventory,
-            gold: asGold(validatedInventory.gold ?? Number(hydratedData.inventory.gold)),
-            gems: asGems(validatedInventory.gems ?? Number(hydratedData.inventory.gems)),
-            wildCards: {
-              ...hydratedData.inventory.wildCards,
-              ...validatedInventory.wildCards
+          hydratedData = {
+            ...hydratedData,
+            inventory: {
+              ...hydratedData.inventory,
+              gold: asGold(validatedInventory.gold ?? Number(hydratedData.inventory.gold)),
+              gems: asGems(validatedInventory.gems ?? Number(hydratedData.inventory.gems)),
+              wildCards: {
+                ...hydratedData.inventory.wildCards,
+                ...validatedInventory.wildCards
+              }
             }
           };
        } else {
@@ -114,7 +116,7 @@ export function useLaboratory() {
        }
     }
 
-    hydratedData.inventory = store.loadPersistedInventory(hydratedData);
+    hydratedData = { ...hydratedData, inventory: store.loadPersistedInventory(hydratedData) };
 
     const currentLevel = hydratedData.profile.kingLevel;
     if (!settings.value.targetLevel || settings.value.targetLevel <= currentLevel) {

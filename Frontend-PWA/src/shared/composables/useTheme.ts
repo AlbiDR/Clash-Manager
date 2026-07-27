@@ -13,40 +13,6 @@ const theme = ref<Theme>("auto");
 const isInitialized = ref(false);
 
 /**
- * L1 CORE: Web App Manifest Interfaces
- * Rationale: Ensures structural integrity for the dynamic manifest swapper.
- */
-interface WebManifestIcon {
-  src: string;
-  sizes?: string;
-  type?: string;
-  purpose?: string;
-}
-
-interface WebManifestShortcut {
-  name: string;
-  url: string;
-  icons?: WebManifestIcon[];
-}
-
-interface WebManifest {
-  icons?: WebManifestIcon[];
-  shortcuts?: WebManifestShortcut[];
-  theme_color?: string;
-  background_color?: string;
-  display?: string;
-  display_override?: string[];
-  screenshots?: Array<{
-    src: string;
-    sizes?: string;
-    type?: string;
-    form_factor?: string;
-    label?: string;
-  }>;
-  [key: string]: unknown;
-}
-
-/**
  * @remarks
  * The Theme Management domain (Layer 2) orchestrates system-aware visual states
  * and persistent user preferences. It acts as the primary hardware broker for
@@ -61,7 +27,6 @@ interface WebManifest {
  * - **DOM**: Mutates `document.documentElement` classes ('dark') and style properties (CSS Variables).
  * - **Persistence**: Writes user theme preference to `LocalStorage` (`cm_theme_preference`).
  * - **Meta Tags**: Dynamically manages the `theme-color` meta tag to match the active visual state.
- * - **PWA Manifest**: Generates and injects dynamic Blob URIs for `manifest.json` to swap theme-aware screenshots and brand colors.
  */
 export function useTheme() {
   const mediaQuery =

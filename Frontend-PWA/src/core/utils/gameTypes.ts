@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { type Gold, type XP, type Gems } from './economy';
+import { type Gold, type XP } from './economy';
 
 /**
  * All valid card rarities in Clash Royale.

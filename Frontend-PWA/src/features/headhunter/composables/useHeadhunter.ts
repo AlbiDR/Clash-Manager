@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { NetworkError } from "@core/api/SupabaseClient";
 import { dismissRecruits, subscribeToBlacklist, undismissRecruits } from "@core/api/RecruitClient";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBadge } from "@core/services/useBadge";

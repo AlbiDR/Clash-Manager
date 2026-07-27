@@ -27,6 +27,10 @@ interface ConsoleLogicOptions<T> {
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
   /** Optional hydration status override. */
   isHydrated?: Ref<boolean> | ComputedRef<boolean>;
+  /** Optional in-flight refresh status override. */
+  isRefreshing?: Ref<boolean> | ComputedRef<boolean>;
+  /** Optional last-sync-error override. */
+  syncError?: Ref<string | null> | ComputedRef<string | null>;
   /** Optional data source provenance override. */
   currentSource?: Ref<"SUPABASE" | null> | ComputedRef<"SUPABASE" | null>;
   /** Optional remote sync timestamp override. */
@@ -341,7 +345,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       expanded: expandedIds.value.has(id),
       selected: selectedSet.value.has(id),
       selectionMode: isSelectionMode.value,
-      isTagged: data.value?.playerTag === id,
+      isTagged: clashStore.data?.playerTag === id,
       appIsRefreshing: isRefreshing.value && expandedIds.value.has(id),
     }),
     /** Generates a stable key array for use in Vue's memoization / keyed lists. */
@@ -351,7 +355,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       expandedIds.value.has(id),
       selectedSet.value.has(id),
       isRefreshing.value && expandedIds.value.has(id),
-      data.value?.playerTag === id,
+      clashStore.data?.playerTag === id,
       ...extraKeys,
     ],
   };

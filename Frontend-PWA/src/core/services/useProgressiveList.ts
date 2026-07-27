@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, watch, type Ref, shallowRef, onScopeDispose } from "vue";
+import { watch, type Ref, shallowRef, onScopeDispose } from "vue";
 
 /**
  * COMPOSABLE: useProgressiveList

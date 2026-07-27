@@ -117,7 +117,7 @@ const handleOpenDashboard = () => {
 
         <div v-if="props.sortOptions" class="sort-box">
           <BaseSelect
-            :model-value="props.currentSort"
+            :model-value="props.currentSort || ''"
             :options="props.sortOptions"
             aria-label="Sort by"
             @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"

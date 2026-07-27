@@ -28,7 +28,6 @@ import {
   ConsoleLayout
 } from "@shared";
 import { useClashDataStore } from "@core";
-import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useLaboratory } from "../composables/useLaboratory";
 
@@ -42,7 +41,7 @@ import {
   TargetPicker
 } from "../components";
 
-const { isLoading: isDataLoading } = useClashDataLoader();
+useClashDataLoader();
 
 const {
   observation,
@@ -102,7 +101,7 @@ const { data: globalData } = storeToRefs(clashDataStore);
         <ParameterCard 
           :settings="settings"
           :current-level="observation.profile.kingLevel"
-          :operation="operation"
+          :operation="operation ?? undefined"
           @update="setSettings"
         />
       </div>

@@ -23,7 +23,6 @@ import {
   MATERIAL_REQUIREMENTS,
   GEM_CONVERSION_RATES,
   KING_XP_TABLE,
-  KING_LEVEL_MAX,
   IMPORTANT_KING_LEVELS
 } from './gameConstants';
 import type { Rarity, UpgradeData, KingXpRow } from './gameTypes';

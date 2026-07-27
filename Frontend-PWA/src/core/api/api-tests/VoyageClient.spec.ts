@@ -133,7 +133,12 @@ describe("VoyageClient", () => {
       vi.mocked(mockFrom.maybeSingle).mockResolvedValue({ data: mockData, error: null });
 
       const result = await VoyageClient.fetchVoyageSummary();
-      expect(result).toEqual(mockData);
+      // activated_by/is_victory are optional-with-null-default on the schema,
+      // so the parsed output adds them even though the raw mock omitted both.
+      expect(result).toEqual({
+        ...mockData,
+        event: { ...mockData.event, activated_by: null, is_victory: null }
+      });
     });
 
     it("fetchVoyageSummary returns null when no data", async () => {

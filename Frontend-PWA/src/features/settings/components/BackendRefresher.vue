@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon, SettingsCard, vTactile } from "@shared";
+import { SettingsCard, vTactile } from "@shared";
 import { useBackendRefresher } from "../composables/useBackendRefresher";
 
 defineProps<{

@@ -23,19 +23,21 @@ import { MaintenanceResponseSchema, PushSubscriptionSchema } from "./Maintenance
 /**
  * Manually triggers the backend data ingestion pipeline.
  *
- * @param target - Optional specific target for the update (e.g., 'roster', 'headhunter').
  * @returns A Promise resolving to an ApiResponse indicating the outcome of the trigger.
  *
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
  * Delegates the heavy-lifting of data ingestion to the Supabase backend.
  *
+ * `features.trigger_backend_update()` takes no arguments and always runs the
+ * full pipeline; there is currently no backend support for a per-domain
+ * targeted refresh, so this client does not accept one either. See
+ * useBackendRefresher.ts's TargetKey for the UI-facing implication.
+ *
  * @sideeffects
  * - Triggers an asynchronous execution of the backend pipeline.
  */
-export async function triggerBackendUpdate(
-  target?: string,
-): Promise<ApiResponse<v.InferOutput<typeof MaintenanceResponseSchema>>> {
+export async function triggerBackendUpdate(): Promise<ApiResponse<v.InferOutput<typeof MaintenanceResponseSchema>>> {
   const supabase = createSupabaseClient();
   // [THREAT:] Unvalidated RPC responses from the backend (Target C) can mask
   // transient failures or structural desynchronization.

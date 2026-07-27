@@ -4,7 +4,6 @@
 import { ref, watch } from "vue";
 import { Icon, vTactile } from "@shared";
 import { normalizeTag } from "@core";
-import { useHaptics } from "@shared";
 
 const props = defineProps<{
   modelValue: string | null;
@@ -17,7 +16,6 @@ const emit = defineEmits<{
   lockIn: [string | null];
 }>();
 
-const haptics = useHaptics();
 const localTag = ref(props.modelValue || "");
 
 watch(() => props.modelValue, (newVal) => {

@@ -21,6 +21,10 @@ export const RecruitSchema = v.object({
   t: SafeNumberPipe,
   potentialScore: v.optional(SafeNumberPipe, 0),
   potentialRawScore: v.optional(SafeNumberPipe, 0),
+  longevity: v.optional(SafeNumberPipe, 0),
+  longevityLabel: v.optional(SafeStringPipe, "-"),
+  tenureDays: v.optional(SafeNumberPipe),
+  tenureLabel: v.optional(SafeStringPipe),
   d: v.object({
     don: SafeNumberPipe,
     war: SafeNumberPipe,

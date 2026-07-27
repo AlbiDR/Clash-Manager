@@ -18,11 +18,6 @@ export interface ModuleState {
   notificationQuietMode: boolean;
 }
 
-const isMobile =
-  typeof window !== "undefined"
-    ? window.matchMedia("(max-width: 768px)").matches
-    : false;
-
 const DEFAULT_STATE: ModuleState = {
   blitzMode: false,
   ghostBenchmarking: false,

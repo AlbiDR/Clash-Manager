@@ -73,8 +73,8 @@ export const sortByScore = (
  * @returns Standard comparator result.
  */
 export const sortByLastSeen = (
-  candidateA: { d: { seen?: string; ago?: string } },
-  candidateB: { d: { seen?: string; ago?: string } },
+  candidateA: { d: { seen?: string | null; ago?: string } },
+  candidateB: { d: { seen?: string | null; ago?: string } },
 ) => {
   const recencyValueA = candidateA.d.seen || candidateA.d.ago;
   const recencyValueB = candidateB.d.seen || candidateB.d.ago;
@@ -84,7 +84,7 @@ export const sortByLastSeen = (
 /**
  * Registry of sort strategies specifically for the Leaderboard (Roster).
  */
-export const LeaderboardSort = {
+export const LeaderboardSort: Record<string, (a: LeaderboardMember, b: LeaderboardMember) => number> = {
   score: (candidateA: LeaderboardMember, candidateB: LeaderboardMember) =>
     sortByScore(
       { score: candidateA.performanceScore, rawScore: candidateA.performanceRawScore },

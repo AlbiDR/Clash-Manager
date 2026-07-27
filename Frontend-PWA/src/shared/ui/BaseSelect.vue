@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
-<script setup lang="ts" generic="T">
+<script setup lang="ts" generic="T extends string | number">
 import { ref, onMounted, onUnmounted } from "vue";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";

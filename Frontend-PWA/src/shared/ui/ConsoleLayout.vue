@@ -1,14 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ref, watch, onUnmounted, nextTick, toRef, computed } from "vue";
+import { watch, onUnmounted, nextTick, toRef, computed } from "vue";
 import {
   useUiCoordinator,
   useShowcaseMode,
   useBlueprintMode,
   useSystemInfo,
+  type ConsoleRemoteInfo,
+  type ConsoleFabState,
 } from "@core";
-import { useHaptics } from "../composables/useHaptics";
 import { usePullToRefresh } from "../index";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import EmptyState from "./EmptyState.vue";
@@ -40,25 +41,12 @@ const props = defineProps<{
   /** Supporting hint or action description for the empty state. */
   emptyHint?: string;
   emptyIcon?: string;
-  fabState?: {
-    visible: boolean;
-    label: string;
-    actionHref?: string;
-    isProcessing: boolean;
-    isBlasting: boolean;
-    selectionCount: number;
-    blitzEnabled: boolean;
-    isHarvesting?: boolean;
-    activeHarvester?: "global" | "local" | null;
-  };
+  fabState?: ConsoleFabState;
   skeletonComponent?: any;
   skeletonCount?: number;
   totalCount?: number;
   /** Consolidated info about the remote data source. */
-  remoteInfo?: {
-    source: "SUPABASE";
-    dataAge: string | null;
-  };
+  remoteInfo?: ConsoleRemoteInfo;
   footerBadge?: string;
 }>();
 
@@ -78,7 +66,6 @@ const emit = defineEmits<{
 }>();
 
 const { setFabVisible, updateFabState } = useUiCoordinator();
-const haptics = useHaptics();
 const { isShowcaseMode } = useShowcaseMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { appVersion, activeBadge } = useSystemInfo();

@@ -111,13 +111,15 @@ export function useBackendRefresher() {
     target.status = "loading";
 
     try {
-      const response = await triggerBackendUpdate(key);
-      if (response.status === "success") {
-        startCooldown(key);
-      } else {
-        // Still cooldown on failure to prevent spam
-        startCooldown(key);
+      // NOTE: the backend's trigger_backend_update RPC takes no target argument and
+      // always runs the full pipeline; `key` only selects which button/cooldown
+      // this click affects locally, it does not scope what the backend refreshes.
+      const response = await triggerBackendUpdate();
+      if (!response.success) {
+        console.error(`Backend refresh failed [${key}]`, response.error);
       }
+      // Cooldown applies on both outcomes to prevent spamming the trigger.
+      startCooldown(key);
     } catch (e) {
       console.error(`Backend refresh failed [${key}]`, e);
       startCooldown(key); // Cooldown on error too

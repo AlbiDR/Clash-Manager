@@ -12,7 +12,6 @@ import {
   handleBackgroundSync,
   handleAndroidBadge,
 } from "./sw/index";
-import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../core/config";
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: unknown[] };
 declare const clients: Clients;

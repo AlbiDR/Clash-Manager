@@ -51,12 +51,12 @@ defineSlots<{
 
   <template v-else>
     <!-- Standard Mode: Render all items -->
-    <slot
-      v-for="(item, index) in items"
-      :key="item.id"
-      name="item"
-      :item="item"
-      :index="index"
-    ></slot>
+    <template v-for="(item, index) in items" :key="item.id">
+      <slot
+        name="item"
+        :item="item"
+        :index="index"
+      ></slot>
+    </template>
   </template>
 </template>

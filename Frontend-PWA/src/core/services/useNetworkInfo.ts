@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, readonly, onMounted, onUnmounted, computed } from "vue";
+import { ref, readonly, computed } from "vue";
 
 /**
  * [NETWORK] NETWORK INFORMATION API

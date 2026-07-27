@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { computed, unref, type ComputedRef, type Ref } from "vue";
+import { computed, unref } from "vue";
 import { useClashDataStore } from "./useClashDataStore";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
@@ -96,13 +96,13 @@ export function useConnectivityManager() {
         type: "error",
         label: "Sync Error",
         confidence: 0,
-        diagnosis: unref(store.syncError)
+        diagnosis: unref(store.syncError) ?? undefined
       };
     }
 
     // 1.7 API Configuration Error
     // Rationale: Invalid configuration prevents all remote operations.
-    if (unref(apiStatus) === "error") {
+    if (unref(apiStatus) === "unconfigured") {
       return {
         type: "error",
         label: "Invalid API URL",

@@ -10,7 +10,7 @@ import { useSyntheticMode } from "./useSyntheticMode";
 import { generateMockData } from "../utils/mockData";
 import { MemberSchema } from "../api/MemberSchemas";
 import { WebAppDataSchema } from "../api/AppSchemas";
-import type { WebAppData, PlayerTag } from "../types";
+import type { WebAppData } from "../types";
 
 /**
  * CLASH SYNC SERVICE (Layer 1)
@@ -265,7 +265,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
    * @param playerTag - The unique identifier of the player to update.
    * @param playerPartialUpdate - The partial player data to merge.
    */
-  function updatePlayerLocally(playerTag: PlayerTag, playerPartialUpdate: unknown) {
+  function updatePlayerLocally(playerTag: string, playerPartialUpdate: unknown) {
     if (!data.value) return;
 
     // [DECISION LOG] Partial validation: Ensure the patch adheres to MemberSchema.

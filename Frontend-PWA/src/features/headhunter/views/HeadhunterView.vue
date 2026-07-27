@@ -32,7 +32,7 @@ import {
 import { useRecruiter } from "../composables/useRecruiter";
 import { RecruitCard } from "../components";
 
-const { isLoading: isDataLoading } = useClashDataLoader();
+useClashDataLoader();
 
 const {
   visibleItems,
