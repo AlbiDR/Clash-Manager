@@ -16,6 +16,12 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+## [2026-07-27] MERGE FAILED: PR #1245: chore(apk-optimization): no optimization required
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `Merge conflicts (state: dirty).`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1245)
+
 ### [2026-07-27] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 9 recovery, identified Stage 11 missing run, and updated the three sections of the living self-healing protocol.
 **Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
