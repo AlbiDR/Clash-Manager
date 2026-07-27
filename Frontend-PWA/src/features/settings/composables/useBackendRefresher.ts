@@ -118,6 +118,8 @@ export function useBackendRefresher() {
       if (!response.success) {
         console.error(`Backend refresh failed [${key}]`, response.error);
       }
+      // Cooldown applies on both outcomes to prevent spamming the trigger.
+      startCooldown(key);
     } catch (backendRefreshError) {
       console.error(`Backend refresh failed [${key}]`, backendRefreshError);
       startCooldown(key); // Cooldown on error too

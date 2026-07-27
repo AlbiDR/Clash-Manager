@@ -9,7 +9,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref, nextTick } from 'vue';
-import { flushPromises } from '@vue/test-utils';
 import BackendRefresher from '../BackendRefresher.vue';
 import { triggerBackendUpdate } from '@core/api/MaintenanceClient';
 import { useClashDataStore } from '@core';
@@ -49,7 +48,11 @@ vi.mock('@shared', () => ({
 describe('BackendRefresher.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    vi.useFakeTimers();
+    // shouldAdvanceTime: true keeps real microtask semantics so that
+    // mockResolvedValue continuations drain normally via await, while
+    // setInterval / setTimeout remain under fake-timer control for
+    // vi.advanceTimersByTime() assertions.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
   afterEach(() => {
@@ -95,14 +98,14 @@ describe('BackendRefresher.vue', () => {
 
     // Resolve the promise
     resolveRefresh!({
-      status: 'success',
-      data: { success: true, message: 'Updated' }
+      success: true,
+      data: { success: true, message: 'Updated' },
+      error: null
     });
 
     // Wait for the async refresh function to continue after await
     await nextTick();
     await nextTick();
-    await flushPromises();
 
     // Should enter cooldown state
     const cooldownText = wrapper.find('.cooldown-text');

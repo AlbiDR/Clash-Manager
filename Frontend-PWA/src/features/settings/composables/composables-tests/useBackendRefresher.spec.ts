@@ -49,8 +49,9 @@ describe("useBackendRefresher", () => {
     const scope = effectScope();
     await scope.run(async () => {
       vi.mocked(triggerBackendUpdate).mockResolvedValue({
-        status: "success",
+        success: true,
         data: { success: true, message: "Updated" },
+        error: null
       } as any);
 
       const { targets, refresh } = useBackendRefresher();
@@ -80,8 +81,9 @@ describe("useBackendRefresher", () => {
     const scope = effectScope();
     await scope.run(async () => {
       vi.mocked(triggerBackendUpdate).mockResolvedValue({
-        status: "error",
-        message: "Failed",
+        success: false,
+        data: null,
+        error: { code: "FAIL", message: "Failed" }
       } as any);
 
       const { targets, refresh } = useBackendRefresher();
@@ -97,7 +99,7 @@ describe("useBackendRefresher", () => {
 
   it("cleans up intervals on scope dispose", async () => {
     const clearIntervalSpy = vi.spyOn(window, "clearInterval");
-    vi.mocked(triggerBackendUpdate).mockResolvedValue({ status: "success" } as any);
+    vi.mocked(triggerBackendUpdate).mockResolvedValue({ success: true, data: { success: true, message: "ok" }, error: null } as any);
 
     const scope = effectScope();
     await scope.run(async () => {
