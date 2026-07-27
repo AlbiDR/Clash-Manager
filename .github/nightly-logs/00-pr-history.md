@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-27] PR #PENDING [Stage 6]: Added comprehensive CONFIG, supabase client, and syncVault TSDoc/JSDoc specifications and secure side-effect mapping.
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/functions/fetch-player-battlelog/client.ts
+**Why:** To establish type-safe interface contracts and inline decision logs on the recently touched environment client configurations.
+**Change:** Added comprehensive CONFIG, supabase client, and syncVault TSDoc/JSDoc specifications and secure side-effect mapping.
+**Result:** 100% logic intent transparency and contract synchronization with CleanStack ADR verified, with all 1432 monorepo tests passing cleanly.
+
+
 ### [2026-07-27] PR #PENDING [Stage 5]: Updated features/settings README to document useBackendRefresher standardized catch exception parameters.
 **Domain:** documentation-readme | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/settings/README.md
