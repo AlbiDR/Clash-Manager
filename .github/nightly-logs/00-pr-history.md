@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-27] PR #PENDING [Stage 2]: Added 6 comprehensive sad path unit tests inside useVoyageForm.spec.ts asserting Error instance and non-Error string propagation to toast alert services across handleActivate, handleCancel, and handleSetEnd.
+**Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/composables/composables-tests/useVoyageForm.spec.ts
+**Why:** The try-catch blocks and error handling paths in useVoyageForm.ts lacked dedicated test coverage, presenting a validation boundary gap on Voyage form orchestration.
+**Change:** Added 6 comprehensive sad path unit tests inside useVoyageForm.spec.ts asserting Error instance and non-Error string propagation to toast alert services across handleActivate, handleCancel, and handleSetEnd.
+**Result:** 100% of catch blocks and error handling branches covered and validated under Vitest, with all 16 composable tests passing seamlessly.
+
+
 ### [2026-07-27] PR #PENDING [Stage 1]: Audited and verified all active edge function rpc and api endpoints conform to security and validation standards.
 **Domain:** Security | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/01-hardening-coverage.log
