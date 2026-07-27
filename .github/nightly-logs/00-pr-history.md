@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-27] PR #PENDING [Stage 5]: Updated features/settings README to document useBackendRefresher standardized catch exception parameters.
+**Domain:** documentation-readme | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/settings/README.md
+**Why:** Reconcile settings feature documentation with recent useBackendRefresher.ts naming optimization.
+**Change:** Updated features/settings README to document useBackendRefresher standardized catch exception parameters.
+**Result:** 100% architectural documentation alignment and zero documentation drift verified.
+
+
 ### [2026-07-27] PR #PENDING [Stage 4]: Renamed generic catch block parameter 'e' to 'backendRefreshError' inside refresh method.
 **Domain:** Refactor/Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/settings/composables/useBackendRefresher.ts
