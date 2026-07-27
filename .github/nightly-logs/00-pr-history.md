@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-27] PR #PENDING [Stage 4]: Renamed generic catch block parameter 'e' to 'backendRefreshError' inside refresh method.
+**Domain:** Refactor/Optimization | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/settings/composables/useBackendRefresher.ts
+**Why:** To eliminate anemic pathogens and satisfy naming conventions inside features/settings.
+**Change:** Renamed generic catch block parameter 'e' to 'backendRefreshError' inside refresh method.
+**Result:** Improved domain clarity and satisfy ADR naming constraints with 100% test pass.
+
+
 ### [2026-07-27] PR #PENDING [Stage 3]: Audited the master baseline and all post-baseline incremental migrations, and updated the audited date stamp to 2026-07-27 to reflect successful verification.
 **Domain:** Database Baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
