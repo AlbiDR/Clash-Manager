@@ -146,7 +146,7 @@ a { text-decoration: underline; color: inherit; }
 
 .btn-action {
   flex: 1;
-  height: var(--sys-space-44);
+  height: var(--sys-space-48);
   border-radius: var(--sys-shape-corner-medium);
   display: flex;
   align-items: center;

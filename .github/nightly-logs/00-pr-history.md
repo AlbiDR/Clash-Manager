@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-28] PR #PENDING [Stage 12]: Modernized .btn-action primitive button height to var(--sys-space-48) to enforce the 48px minimum touch target compliance.
+**Domain:** apk-ux | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/theme/components.ts
+**Why:** Touch target footprint below 48px on card action buttons degraded hybrid PWA ergonomics on mobile viewports.
+**Change:** Modernized .btn-action primitive button height to var(--sys-space-48) to enforce the 48px minimum touch target compliance.
+**Result:** Guaranteed premium hybrid native interaction ergonomics and 48px minimum footprint compliance across all clan card action buttons.
+
+
 ### [2026-07-28] PR #PENDING [Stage 10]: No mismatches or violations detected across manifests, asset links, resource colors, permissions, or version mappings.
 **Domain:** apk-integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
