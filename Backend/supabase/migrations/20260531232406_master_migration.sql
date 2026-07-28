@@ -21,8 +21,14 @@
  * - 20260629212000_fix_voyage_ingestion_targeting.sql
  * - 20260705030000_voyage_history_pruning.sql
  * - 20260707003200_rename_voyage_5_to_4.sql
+ * - 20260726163300_drop_orphaned_views.sql
+ * - 20260726170000_rpos_formula_restructure.sql
+ * - 20260726180000_fix_raw_potential_score_column_comment.sql
+ * - 20260727000000_rpos_rescan_backfill.sql
+ * - 20260727010000_roster_lifetime_kpi_row.sql
+ * - 20260727020000_roster_win_rate_lifetime_kpi.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-07-27):
+ * Architectural Compliance Verification Log (Audited: 2026-07-28):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
@@ -411,9 +417,10 @@ CREATE TABLE IF NOT EXISTS drivers.recruits (
     donations integer DEFAULT 0,
     cards integer DEFAULT 0,
     war_wins integer DEFAULT 0,
+    win_rate numeric DEFAULT 0.0,
     found_date timestamp with time zone DEFAULT now(),
     last_scan timestamp with time zone DEFAULT now(),
-    raw_potential_score numeric DEFAULT 0.0 /* Authoritative merit score (RPoS) calculated by the scoring kernel: Trophies(1x) + Donations(0.1x) + (WarWins+500)*20. */,
+    raw_potential_score numeric DEFAULT 0.0 /* Authoritative merit score (RPoS) calculated by the scoring kernel: trophies*RPOS_TROPHY_WEIGHT + lifetime_donations*RPOS_DONATION_WEIGHT + weightedWinRate*winRateWeight + legacy_war_wins*RPOS_LEGACY_WAR_WEIGHT + min(challenge_cards_won, RPOS_CHALLENGE_CARD_CAP)*RPOS_CHALLENGE_CARD_WEIGHT + grandChallengeBonus. No +500/*20 offset (removed bug). */,
     player_name text NOT NULL,
     updated_at timestamp with time zone DEFAULT now(),
     target_clan_tag text CHECK (target_clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
@@ -421,6 +428,9 @@ CREATE TABLE IF NOT EXISTS drivers.recruits (
 );
 
 ALTER TABLE drivers.recruits ENABLE ROW LEVEL SECURITY;
+
+COMMENT ON COLUMN drivers.recruits.win_rate IS 'Precomputed weighted win rate (wins/battleCount, three-crown wins weighted at RPOS_THREE_CROWN_MULT), persisted at profiler/rescan time for display on the recruit card. See calculateWeightedWinRate() in _shared/utils.ts.';
+COMMENT ON COLUMN drivers.recruits.raw_potential_score IS 'Authoritative merit score (RPoS) calculated by the scoring kernel (calculateRpos() in _shared/utils.ts): trophies*RPOS_TROPHY_WEIGHT + lifetime_donations*RPOS_DONATION_WEIGHT + weightedWinRate*winRateWeight + legacy_war_wins*RPOS_LEGACY_WAR_WEIGHT + min(challenge_cards_won, RPOS_CHALLENGE_CARD_CAP)*RPOS_CHALLENGE_CARD_WEIGHT + grandChallengeBonus. No +500/*20 offset (removed bug).';
 
 -- Explicit exclusion list. Tags here are stripped out at the Edge to save Royale API calls.
 CREATE TABLE IF NOT EXISTS drivers.recruit_blacklist (
@@ -3483,6 +3493,7 @@ BEGIN
         trophies,
         donations,
         war_wins,
+        win_rate,
         cards,
         raw_potential_score,
         source,
@@ -3495,6 +3506,7 @@ BEGIN
         COALESCE((val->>'trophies')::INTEGER, 0),
         COALESCE((val->>'donations')::INTEGER, 0),
         COALESCE((val->>'war_wins')::INTEGER, 0),
+        COALESCE((val->>'win_rate')::NUMERIC, 0.0),
         COALESCE((val->>'cards')::INTEGER, 0),
         (val->>'raw_potential_score')::NUMERIC,
         (val->>'source')::TEXT,
@@ -3508,6 +3520,7 @@ BEGIN
         trophies            = EXCLUDED.trophies,
         donations           = EXCLUDED.donations,
         war_wins            = EXCLUDED.war_wins,
+        win_rate            = EXCLUDED.win_rate,
         cards               = EXCLUDED.cards,
         raw_potential_score = EXCLUDED.raw_potential_score,
         source              = EXCLUDED.source,
@@ -3517,6 +3530,7 @@ BEGIN
         drivers.recruits.trophies IS DISTINCT FROM EXCLUDED.trophies OR
         drivers.recruits.donations IS DISTINCT FROM EXCLUDED.donations OR
         drivers.recruits.war_wins IS DISTINCT FROM EXCLUDED.war_wins OR
+        drivers.recruits.win_rate IS DISTINCT FROM EXCLUDED.win_rate OR
         drivers.recruits.cards IS DISTINCT FROM EXCLUDED.cards OR
         drivers.recruits.raw_potential_score IS DISTINCT FROM EXCLUDED.raw_potential_score OR
         drivers.recruits.status IS DISTINCT FROM EXCLUDED.status OR
@@ -3919,6 +3933,25 @@ CREATE OR REPLACE VIEW features.scoring_view AS
   ),
 
   -- -- Clinical layer: raw performance + heritage bonus ------------------------
+  --
+  -- heritage_bonus: pre-join recruit-pool quality proxy for members still
+  -- inside rookie_window_days of joining. RPoS-consistent subset (see the
+  -- Phase 2 header comment above for why the win-rate/challenge-card/GC terms
+  -- of the new formula are not, and cannot be, reproduced here):
+  --
+  --   trophies    * 1.0   -- RPOS_TROPHY_WEIGHT       = 1.0  (unchanged)
+  --   donations   * 0.1   -- RPOS_DONATION_WEIGHT      = 0.1  (unchanged; see
+  --                           the WEEKLY-vs-lifetime caveat above -- untouched,
+  --                           out of scope for this fix)
+  --   war_wins    * 10.0  -- RPOS_LEGACY_WAR_WEIGHT    = 10   (FIXED: no more
+  --                           `+ 500` offset, no more `* 20.0` weight -- that
+  --                           was the hidden +10,000 bug this migration removes;
+  --                           zero war_wins now contributes exactly zero, same
+  --                           as the corrected calculateRpos() kernel)
+  --
+  -- The `power(...) / 5.0` tenure-decay envelope wrapping the bracket is a
+  -- separate, pre-existing rookie-window decay curve, unrelated to any RPoS
+  -- config.ts constant -- reproduced verbatim, not part of this fix.
   clinical_layer AS (
       SELECT wc.*,
              round(
@@ -3929,9 +3962,9 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              CASE
                  WHEN wc.tenure_days::double precision < wc.rookie_window_days
                      THEN (
-                         wc.trophies::numeric * 1.0
-                         + wc.donations::numeric * 0.1
-                         + (wc.war_wins + 500)::numeric * 20.0
+                         wc.trophies::numeric * 1.0     -- RPOS_TROPHY_WEIGHT = 1.0 (trophy weight coefficient)
+                         + wc.donations::numeric * 0.1   -- RPOS_DONATION_WEIGHT = 0.1 (donation weight coefficient; unchanged, see WEEKLY-vs-lifetime caveat above)
+                         + wc.war_wins::numeric * 10.0   -- RPOS_LEGACY_WAR_WEIGHT = 10 (legacy CW1 war win micro-bonus; no +500 offset, no *20 -- bug removed)
                      )::double precision
                      * power(
                          (wc.rookie_window_days - wc.tenure_days::double precision)
@@ -3992,55 +4025,61 @@ GRANT SELECT ON features.scoring_view TO authenticated, anon, service_role;
 DROP VIEW IF EXISTS features.roster_view CASCADE;
 CREATE OR REPLACE VIEW features.roster_view AS
  WITH roster_source AS (
-      SELECT m.id,
-             m.player_tag,
-             m.player_name,
-             m.role,
-             m.exp_level,
-             m.last_seen_at,
-             m.updated_at,
-             m.snapshot_date,
-             m.trophies,
-             m.donations,
-             m.donations_received,
-             m.joined_at,
-             m.star_points,
-             m.best_trophies,
-             m.total_donations,
-             m.war_day_wins,
-             m.clan_cards_collected,
-             m.challenge_max_wins,
-             m.card_count,
-             m.elite_wild_cards,
-             m.war_wins,
-             m.week_fame,
-             m.decks_used_today,
-             m.clan_rank,
-             m.last_ingested_at,
-             m.is_active,
-             m.decks_used_weekly,
-             m.current_clan_tag,
-             s.avg_fame,
-             s.war_rate,
-             s.voyage_index,
-             s.voyage_merit,
-             s.raw_performance_score,
-             s.performance_score,
-             s.stability_index,
-             s.days_inactive,
-             s.tenure_days,
-             s.hist,
-             s.v_hist,
-             s.avg_daily_donations,
-             ltrim(m.player_tag, '#'::text) AS raw_tag
-        FROM drivers.members m
-          LEFT JOIN features.scoring_view s ON s.player_tag = m.player_tag
-       WHERE m.is_active = true
-         AND m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text
-  )
+         SELECT m.id,
+            m.player_tag,
+            m.player_name,
+            m.role,
+            m.exp_level,
+            m.last_seen_at,
+            m.updated_at,
+            m.snapshot_date,
+            m.trophies,
+            m.donations,
+            m.donations_received,
+            m.joined_at,
+            m.star_points,
+            m.best_trophies,
+            m.total_donations,
+            m.war_day_wins,
+            m.clan_cards_collected,
+            m.challenge_max_wins,
+            m.card_count,
+            m.elite_wild_cards,
+            m.war_wins,
+            m.week_fame,
+            m.decks_used_today,
+            m.clan_rank,
+            m.last_ingested_at,
+            m.is_active,
+            m.decks_used_weekly,
+            m.current_clan_tag,
+            s.avg_fame,
+            s.war_rate,
+            s.voyage_index,
+            s.voyage_merit,
+            s.raw_performance_score,
+            s.performance_score,
+            s.stability_index,
+            s.days_inactive,
+            s.tenure_days,
+            s.hist,
+            s.v_hist,
+            s.avg_daily_donations,
+            ltrim(m.player_tag, '#'::text) AS raw_tag
+           FROM (drivers.members m
+             LEFT JOIN features.scoring_view s ON ((s.player_tag = m.player_tag)))
+          WHERE ((m.is_active = true) AND (m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text))
+        ),
+     battle_stats AS (
+         SELECT player_tag,
+                count(*) AS battle_count,
+                count(*) FILTER (WHERE win_status) AS wins
+           FROM drivers.player_battles
+          GROUP BY player_tag
+        )
  SELECT player_name,
     role,
-    player_tag,
+    rs.player_tag,
     clan_rank,
     trophies,
     exp_level,
@@ -4052,22 +4091,32 @@ CREATE OR REPLACE VIEW features.roster_view AS
     avg_fame,
     voyage_index,
     voyage_merit,
-    COALESCE(war_rate, 0::numeric) AS war_participation,
+    COALESCE(war_rate, (0)::numeric) AS war_participation,
     raw_performance_score,
     performance_score,
     stability_index,
     substrate.format_last_seen(days_inactive) AS last_seen_label,
-    substrate.format_tenure(tenure_days)       AS tenure_label,
+    substrate.format_tenure((tenure_days)::numeric) AS tenure_label,
     last_seen_at,
     last_ingested_at,
     tenure_days,
     hist,
     v_hist,
     avg_daily_donations,
-    'https://link.clashroyale.com/en?player='::text || raw_tag AS ingame_link,
-    'https://royaleapi.com/player/'::text || raw_tag          AS royaleapi_link
-   FROM roster_source
+    ('https://link.clashroyale.com/en?player='::text || raw_tag) AS ingame_link,
+    ('https://royaleapi.com/player/'::text || raw_tag) AS royaleapi_link,
+    war_wins,
+    COALESCE(bs.wins::numeric / NULLIF(bs.battle_count, 0)::numeric, 0::numeric) AS win_rate
+   FROM roster_source rs
+     LEFT JOIN battle_stats bs ON (bs.player_tag = rs.player_tag)
   ORDER BY raw_performance_score DESC NULLS LAST, performance_score DESC NULLS LAST;
+
+COMMENT ON COLUMN features.roster_view.win_rate IS
+  'Plain win rate (wins / battle_count) over the member''s recent battle log
+   (drivers.player_battles, a rolling ~100-battle / 1-month window, not
+   lifetime). Displayed as a lifetime/heritage KPI on the Member Card
+   alongside RPeS. Superseded war_wins there, which was never populated by
+   the ingestion pipeline and always read 0.';
 
 GRANT SELECT ON features.roster_view TO authenticated, anon, service_role;
 
@@ -4154,7 +4203,8 @@ WITH benchmarking_context AS (
             ((EXTRACT(epoch FROM (now() - r.found_date)))::integer / 60) AS raw_longevity_mins,
             (h.player_tag IS NOT NULL) AS is_former_member,
             COALESCE((h.is_fresh AND (h.max_pes >= 80)), false) AS has_blessing,
-            h.tenure_days AS heritage_tenure_days
+            h.tenure_days AS heritage_tenure_days,
+            r.win_rate
            FROM (drivers.recruits r
              LEFT JOIN heritage_context h ON ((h.player_tag = r.player_tag)))
           WHERE ((r.status = 'ACTIVE'::drivers.recruit_status) AND (NOT (EXISTS ( SELECT 1
@@ -4179,7 +4229,8 @@ WITH benchmarking_context AS (
                 CASE
                     WHEN b.has_blessing THEN 1.05
                     ELSE 1.0
-                END) / bc.max_corpus_score) * (100)::numeric))) AS potential_score
+                END) / bc.max_corpus_score) * (100)::numeric))) AS potential_score,
+            b.win_rate
            FROM (base_calculations b
              CROSS JOIN benchmarking_context bc)
         )
@@ -4209,7 +4260,8 @@ WITH benchmarking_context AS (
     last_seen_at,
     found_date,
     ('https://link.clashroyale.com/en?player='::text || ltrim(player_tag, '#'::text)) AS ingame_link,
-    ('https://royaleapi.com/player/'::text || ltrim(player_tag, '#'::text)) AS royaleapi_link
+    ('https://royaleapi.com/player/'::text || ltrim(player_tag, '#'::text)) AS royaleapi_link,
+    win_rate
    FROM scoring_layer
   ORDER BY raw_potential_score DESC;
 
@@ -4285,5 +4337,12 @@ CREATE OR REPLACE TRIGGER handle_updated_at_heritage BEFORE UPDATE ON drivers.he
 CREATE OR REPLACE TRIGGER handle_updated_at_config BEFORE UPDATE ON substrate.config FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
 CREATE OR REPLACE TRIGGER trg_shredder_war_log AFTER INSERT ON substrate.raw_war_log FOR EACH ROW EXECUTE FUNCTION substrate.shred_war_log();
+
+-- Retroactive backfill for the RPoS formula restructure:
+-- Force rescan of all recruits that have no precomputed win_rate.
+UPDATE drivers.recruits
+   SET last_scan = NOW() - INTERVAL '49 hours'
+ WHERE status IN ('ACTIVE', 'BENCHED', 'QUEUE')
+   AND win_rate = 0;
 
 COMMIT;

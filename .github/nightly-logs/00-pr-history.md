@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-28] PR #PENDING [Stage 3]: Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update.
+**Domain:** database-baseline | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** To fold new incremental migrations chronologically into the master baseline database schema.
+**Change:** Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update.
+**Result:** Unified master baseline is synchronized, RLS and search path isolation verified, and all test files pass successfully.
+
+
 ### [2026-07-28] PR #PENDING [Stage 1]: Audited sync-player-cards and query-royale-api edge functions
 **Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/sync-player-cards/index.ts
