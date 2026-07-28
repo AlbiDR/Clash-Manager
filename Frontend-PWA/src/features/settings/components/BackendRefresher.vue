@@ -1,10 +1,30 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
+
 <script setup lang="ts">
 import { SettingsCard, vTactile } from "@shared";
 import { useBackendRefresher } from "../composables/useBackendRefresher";
 
+/**
+ * COMPONENT: BackendRefresher.vue
+ * ----------------------------------------------------------------------------
+ * Rationale: User interface control panel for manual backend database updates.
+ * Features: Granular Domain Cooldown Tracking, Local/Global Sync Skeletons.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Architectural Context:
+ * - Layer: Layer 3 Features (@features/settings)
+ * - Satisfaction: Satisfies ADR Section IV: Operational Security and Deep Delegation.
+ *
+ * **Decision Log - Touch targets & Brokered Haptics:**
+ * - Uses the centralized `v-tactile` directive to brokered tactile feedback
+ *   upon direct user-initiated refresh actions.
+ * - Action buttons enforce the 48px mobile touch footprint standard (`height: 48px`).
+ */
+
 defineProps<{
+  /** Computed boolean indicating if the SettingsCard should initialize in an expanded state. */
   initiallyExpanded?: boolean;
 }>();
 
@@ -22,6 +42,8 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
     <div class="rows-container">
       <div v-for="target in targets" :key="target.key" class="refresh-row">
         <div class="row-info">
+          <!-- [DECISION LOG] SKELETON REHYDRATION: Pre-render layout line grids
+               to mimic real text width and maintain Visual Hydration Parity. -->
           <template v-if="isRefreshing">
             <div class="sk-text-line-m" style="width: 100px"></div>
             <div class="sk-text-line-s" style="width: 150px"></div>

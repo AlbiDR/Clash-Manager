@@ -1,22 +1,45 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
-import Icon from "./Icon.vue";
+
 <script setup lang="ts">
 import { watch } from "vue";
 import { formatHeaderDescription } from "@core";
 import { vTactile } from "../directives/vTactile";
+import Icon from "./Icon.vue";
+
+/**
+ * COMPONENT: HeaderInfoOverlay.vue
+ * ----------------------------------------------------------------------------
+ * Rationale: Full-screen modal overlay representing Heuristic Analysis details.
+ * Features: Scroll Lock Containment, Teleported Body Rendering, Spring Transitions.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Architectural Context:
+ * - Layer: Layer 2 Shared UI Primitives (@shared/ui)
+ * - Satisfaction: Satisfies ADR Section III: Visual Purity and Section IV: Operational Security.
+ *
+ * **Decision Log - Touch targets & Brokered Haptics:**
+ * - Uses the centralized `v-tactile` directive on the close button to ensure haptic brokering.
+ * - The close button meets the 48px mobile touch footprint standard (`width: 48px`, `height: 48px`).
+ * - Employs a body scroll-lock side effect dynamically triggered on overlay visibility.
+ */
 
 const props = defineProps<{
+  /** Boolean state flag indicating if the overlay modal is currently visible. */
   show: boolean;
+  /** HTML-formatted markdown string containing the detailed analysis text. */
   content: string | null;
+  /** Optional title override displayed in the header. Defaults to "Heuristic Analysis". */
   title?: string;
 }>();
 
 const emit = defineEmits<{
+  /** Dispatched when the user clicks the close icon or outside the modal bounds. */
   close: [];
 }>();
 
-// Lock scroll when overlay is open
+// Lock scroll when overlay is open to enforce focus containment
 watch(
   () => props.show,
   (val) => {
