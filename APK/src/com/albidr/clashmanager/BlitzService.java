@@ -498,11 +498,19 @@ public class BlitzService extends Service {
         wrapper.addView(modifyBtn, gearParams);
 
         // -- Window params --
+        // FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS: same reasoning as the marker and
+        // tap-ripple windows above. Without these, this BOTTOM-gravity popup is positioned
+        // relative to whatever content area Clash Royale's immersive/system-bar state
+        // currently exposes, which can shift once the game takes over the screen — pushing
+        // the Start/Cancel calibration popup somewhere the user can't see or tap, so Blitz
+        // silently never advances past the calibration step.
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             overlayType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             android.graphics.PixelFormat.TRANSLUCENT);
         lp.gravity = android.view.Gravity.BOTTOM | android.view.Gravity.CENTER_HORIZONTAL;
         lp.x = 0;
@@ -685,12 +693,21 @@ public class BlitzService extends Service {
         scaleYAnim.start();
 
         // Window layout params
+        // FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS: without these, a TOP|LEFT window
+        // with explicit x/y is positioned relative to the content area *below* the status
+        // bar (and inside other system-bar insets), not the true screen origin. The
+        // accessibility service's dispatched taps always use true full-screen coordinates
+        // (dm.widthPixels/heightPixels * percent), so without these flags the rendered
+        // marker drifts down (and, depending on device insets, sideways) from the point
+        // that actually gets tapped.
         int overlayType = Build.VERSION.SDK_INT >= 26 ? 2038 : 2002;
         final WindowManager.LayoutParams markerLp = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             overlayType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             android.graphics.PixelFormat.TRANSLUCENT);
         markerLp.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
         int halfSize = markerSize / 2;
@@ -789,10 +806,16 @@ public class BlitzService extends Service {
         indicator.setBackground(bg);
         indicatorContainer.addView(indicator);
 
+        // Same FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS reasoning as the marker window
+        // in createDraggableMarker() — the ripple must line up with the true full-screen
+        // coordinates the accessibility service just tapped, not the below-status-bar
+        // content area a plain TOP|LEFT window would otherwise be positioned against.
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
             windowSize, windowSize, overlayType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             android.graphics.PixelFormat.TRANSLUCENT);
         lp.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
         float half = windowSize / 2.0f;
@@ -1068,11 +1091,17 @@ public class BlitzService extends Service {
         pill.addView(closeBtn);
 
         // Draggable pill
+        // Same FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS reasoning as setupWaitingOverlay()
+        // and createDraggableMarker() — this pill (with its "Stop" button) is visible while
+        // Blitz is actively running over Clash Royale, so it must stay positioned relative to
+        // the true screen, not whatever content area the game's immersive mode exposes.
         final WindowManager.LayoutParams pillLp = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             Build.VERSION.SDK_INT >= 26 ? 2038 : 2002,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             android.graphics.PixelFormat.TRANSLUCENT);
         pillLp.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
         pillLp.x = 0;
