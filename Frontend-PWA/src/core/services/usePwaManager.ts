@@ -182,7 +182,7 @@ export function usePwaManager() {
       }
       toast.remove(activeToastId);
       toast.success("APK download started");
-    } catch (err: unknown) {
+    } catch (downloadApkError: unknown) {
       toast.remove(activeToastId);
       toast.error("Failed to open APK download");
     }
