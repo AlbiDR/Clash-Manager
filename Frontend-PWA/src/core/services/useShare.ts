@@ -50,10 +50,10 @@ export function useShare() {
 
     try {
       await navigator.share(data);
-    } catch (err) {
+    } catch (shareError) {
       // Logic: Ignore AbortError as it represents an intentional user action (cancelling the share).
-      if ((err as Error).name !== "AbortError") {
-        console.error("Share failed:", err);
+      if ((shareError as Error).name !== "AbortError") {
+        console.error("Share failed:", shareError);
       }
     }
   }

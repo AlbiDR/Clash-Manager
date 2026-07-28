@@ -110,14 +110,14 @@ async function checkApiStatus() {
     } else {
       handleFailure(signal);
     }
-  } catch (e: unknown) {
+  } catch (handshakeError: unknown) {
     // [DECISION LOG] ABORT RESILIENCE
     // Rationale: AbortErrors triggered by our own cancellation logic are
     // non-fatal and should not trigger the failure recovery path.
-    if (e instanceof Error && e.name === "AbortError" && signal.aborted) {
+    if (handshakeError instanceof Error && handshakeError.name === "AbortError" && signal.aborted) {
        return;
     }
-    console.warn("API Handshake Failed:", e);
+    console.warn("API Handshake Failed:", handshakeError);
     handleFailure(signal);
   } finally {
     if (handshakeController?.signal === signal) {
