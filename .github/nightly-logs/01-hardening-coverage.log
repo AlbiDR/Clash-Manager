@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+// Standard Log file for Stage 1 Runtime Integrity Auditor.
+// Every log entry written must use the standard status signals: CHANGED, CLEAN, or SKIPPED.
+
 * [2026-04-01] [Stage 1] Target: Frontend-PWA/src/features/laboratory/composables/useLaboratory.ts - Registered file under audit scope.
 * [2026-04-05] [Stage 1] Target: Codebase - Frontend-PWA/src/features/laboratory/components/ParameterCard.vue | Hardened Laboratory Parameters: (1) Excised 'any' pathogen from 'operation' prop. (2) Removed anemic 'as any' casts in King Level milestone detection. (3) Stabilized project-wide type integrity for WindowWithBridge. (4) Injected mandatory [THREAT:] and [DECISION LOG] annotations. Verified via PWA test suite (1271 pass) and production build.
 * [2026-04-07] [Stage 1] Target: Backend-Worker/src/index.ts - Hardened manual sync route and corrected privileged endpoint documentation.
@@ -100,3 +106,5 @@
 * [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/_shared/utils.ts -- Audited as CLEAN by Stage 1 in past 7 days
 * [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/_shared/protocol.ts -- Audited as CLEAN by Stage 1 in past 7 days
 * [2026-07-27] [Stage 1] SKIPPED: Backend/supabase/functions/_shared/vault.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-07-28] [Stage 1] CLEAN: Backend/supabase/functions/sync-player-cards/index.ts -- No action required
+* [2026-07-28] [Stage 1] CLEAN: Backend/supabase/functions/query-royale-api/index.ts -- No action required
