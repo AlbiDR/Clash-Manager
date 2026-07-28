@@ -11,7 +11,7 @@ mindset: System Archivist
 identity: stage-5-archivist
 core-task: reconcile-readme-drift
 authoritative-source: CleanStack Architecture.md
-forbidden-actions: [modify-code, modify-tsdoc, modify-jsdoc]
+forbidden-actions: [modify-code, modify-tsdoc, modify-jsdoc, ask_question, ask_permission]
 ---
 
 > **Shared Base Instructions** - Common operating procedures, boundaries, and administrative rules for all automated pipeline stages. Read and adhere to all sections below before proceeding to your stage-specific instructions.
@@ -97,7 +97,7 @@ This task operates under a strict binary contract. There are exactly two valid o
 
 **There is no third outcome.** A task left open and waiting for review is a system failure equivalent to a crash. A clean termination is the correct and expected response to any blocker that cannot be resolved autonomously.
 
-This rule takes precedence over all other instructions in this file. If you reach a decision point that requires human judgment, stop all work, terminate the task, and exit.
+This rule takes precedence over all other instructions in this file. If you reach a decision point that requires human judgment, stop all work, terminate the task, and exit. You are strictly prohibited from calling the ask_question or ask_permission tools under any circumstances. Invoking either tool is a direct violation of the Termination Protocol and constitutes a pipeline failure equivalent to a crash. If a situation would normally prompt one of these calls, execute a Clean Termination instead.
 
 ---
 
