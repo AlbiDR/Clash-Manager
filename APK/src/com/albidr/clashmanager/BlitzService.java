@@ -97,14 +97,20 @@ public class BlitzService extends Service {
     private static final long GESTURE_TOTAL_DELAY_MS = 1050L;
     private static final int NOTIFICATION_ID = 456;
 
-    // Default calibration coordinates (normalized 0..1)
-    private static final float DEFAULT_INVITE_X = 0.5083f;
-    private static final float DEFAULT_INVITE_Y = 0.7214f;
-    private static final float DEFAULT_CLOSE_X  = 0.9213f;
-    private static final float DEFAULT_CLOSE_Y  = 0.2044f;
+    // The crosshair's rest-state visual size. The pulsing ring animates its scale up to
+    // 1.25x this value, so the surrounding anchor box (below) must be sized to fit that
+    // peak, or the overlay window surface hard-clips it with a visible straight edge.
+    private static final float MARKER_RING_SIZE_DP = 36.0f;
+    private static final float MARKER_ANCHOR_SIZE_DP = 50.0f;
 
-    private static final float DEFAULT_INVITE_Y_TAP = 0.7218f;
-    private static final float DEFAULT_CLOSE_Y_TAP  = 0.204f;
+    // Default calibration coordinates (normalized 0..1)
+    // Kept identical to ClashManagerAccessibilityService's fallback constants so the
+    // rendered marker, the tap-ripple feedback, and the dispatched tap always agree
+    // before the user has calibrated (saveCoordinates persists the real values after that).
+    private static final float DEFAULT_INVITE_X = 0.5083f;
+    private static final float DEFAULT_INVITE_Y = 0.7218f;
+    private static final float DEFAULT_CLOSE_X  = 0.9213f;
+    private static final float DEFAULT_CLOSE_Y  = 0.204f;
 
     private static final String PREFS_BLITZ = "blitz_prefs";
     private static final String PREF_INVITE_X = "invite_x";
@@ -289,7 +295,7 @@ public class BlitzService extends Service {
         int w = marker.getMeasuredWidth() > 0 ? marker.getMeasuredWidth() : mCapturedMarkerWidth;
         int h = marker.getMeasuredHeight() > 0 ? marker.getMeasuredHeight() : mCapturedMarkerHeight;
         float dp = getResources().getDisplayMetrics().density;
-        int markerRadius = (int) (dp * 36.0f);
+        int markerRadius = (int) (dp * MARKER_ANCHOR_SIZE_DP);
         float halfRadius = markerRadius / 2.0f;
         float cx = lp.x + (w / 2.0f);
         float cy = lp.y + (h - halfRadius);
@@ -542,7 +548,8 @@ public class BlitzService extends Service {
 
         DisplayMetrics dm = getResources().getDisplayMetrics();
         float dp = dm.density;
-        final int markerSize = (int) (36.0f * dp);
+        final int markerSize = (int) (MARKER_ANCHOR_SIZE_DP * dp);
+        final int ringSize = (int) (MARKER_RING_SIZE_DP * dp);
 
         // Label text
         TextView labelView = new TextView(this);
@@ -582,28 +589,44 @@ public class BlitzService extends Service {
         crosshairLp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
         crosshair.setLayoutParams(crosshairLp);
 
-        // Outer pulsing ring
+        // Outer pulsing ring - fixed to its own rest size (not MATCH_PARENT) and centered
+        // within the larger `crosshair` anchor box, so scaling it up for the pulse animation
+        // has room to bleed into instead of getting clipped by the window surface edge.
+        // A soft radial fade (rather than a flat fill + hard stroke) also reads less
+        // "placeholder UI" and more like a real glow.
         View outerRing = new View(this);
-        outerRing.setLayoutParams(new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT));
+        FrameLayout.LayoutParams outerRingLp = new FrameLayout.LayoutParams(ringSize, ringSize);
+        outerRingLp.gravity = android.view.Gravity.CENTER;
+        outerRing.setLayoutParams(outerRingLp);
         GradientDrawable ringBg = new GradientDrawable();
         ringBg.setShape(GradientDrawable.OVAL);
-        ringBg.setColor(Color.argb(30, Color.red(color), Color.green(color), Color.blue(color)));
-        int strokeHalf = (int) (1.5f * dp);
-        ringBg.setStroke(strokeHalf, Color.argb(120, Color.red(color), Color.green(color), Color.blue(color)));
+        ringBg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        ringBg.setGradientRadius(ringSize / 2.0f);
+        ringBg.setColors(new int[]{
+            Color.argb(70, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.argb(25, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.TRANSPARENT
+        });
         outerRing.setBackground(ringBg);
         crosshair.addView(outerRing);
 
-        // Inner circle
+        // Inner circle - filled radial gradient (light center fading to the base hue) for a
+        // "glossy bead" look instead of a flat stroke-only ring.
         int innerSize = (int) (20.0f * dp);
+        int strokeHalf = (int) (1.5f * dp);
         View innerCircle = new View(this);
         FrameLayout.LayoutParams innerLp = new FrameLayout.LayoutParams(innerSize, innerSize);
         innerLp.gravity = android.view.Gravity.CENTER;
         innerCircle.setLayoutParams(innerLp);
         GradientDrawable innerBg = new GradientDrawable();
         innerBg.setShape(GradientDrawable.OVAL);
-        innerBg.setStroke(strokeHalf, color);
+        innerBg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        innerBg.setGradientRadius(innerSize * 0.75f);
+        innerBg.setColors(new int[]{
+            lighten(color, 0.55f),
+            color
+        });
+        innerBg.setStroke(strokeHalf, Color.argb(160, Color.red(color), Color.green(color), Color.blue(color)));
         innerCircle.setBackground(innerBg);
         crosshair.addView(innerCircle);
 
@@ -623,7 +646,7 @@ public class BlitzService extends Service {
         vBar.setBackgroundColor(color);
         crosshair.addView(vBar);
 
-        // Center dot
+        // Center dot with a small specular highlight for a glossy, less-flat finish
         int dotSize = (int) (6.0f * dp);
         View dot = new View(this);
         FrameLayout.LayoutParams dotLp = new FrameLayout.LayoutParams(dotSize, dotSize);
@@ -631,7 +654,9 @@ public class BlitzService extends Service {
         dot.setLayoutParams(dotLp);
         GradientDrawable dotBg = new GradientDrawable();
         dotBg.setShape(GradientDrawable.OVAL);
-        dotBg.setColor(color);
+        dotBg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        dotBg.setGradientRadius(dotSize * 0.8f);
+        dotBg.setColors(new int[]{lighten(color, 0.65f), color});
         dot.setBackground(dotBg);
         crosshair.addView(dot);
 
@@ -740,28 +765,43 @@ public class BlitzService extends Service {
         }
         float dp = getResources().getDisplayMetrics().density;
         int size = (int) (56.0f * dp);
+        // The ripple scales up to 2.0x its rest size, so the window it lives in must be at
+        // least that big (plus a small margin for the stroke) or the OS surface hard-clips
+        // the animation right where it should be fading out.
+        int windowSize = (int) (size * 2.2f);
         int overlayType = Build.VERSION.SDK_INT >= 26 ? 2038 : 2002;
 
+        FrameLayout indicatorContainer = new FrameLayout(this);
         final View indicator = new View(this);
+        FrameLayout.LayoutParams indicatorLp = new FrameLayout.LayoutParams(size, size);
+        indicatorLp.gravity = android.view.Gravity.CENTER;
+        indicator.setLayoutParams(indicatorLp);
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.OVAL);
-        bg.setColor(Color.argb(100, Color.red(color), Color.green(color), Color.blue(color)));
-        bg.setStroke((int) (dp * 3.0f), color);
+        bg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        bg.setGradientRadius(size / 2.0f);
+        bg.setColors(new int[]{
+            Color.argb(140, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.argb(60, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.TRANSPARENT
+        });
+        bg.setStroke((int) (dp * 2.0f), Color.argb(180, Color.red(color), Color.green(color), Color.blue(color)));
         indicator.setBackground(bg);
+        indicatorContainer.addView(indicator);
 
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-            size, size, overlayType,
+            windowSize, windowSize, overlayType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
             android.graphics.PixelFormat.TRANSLUCENT);
         lp.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
-        float half = size / 2.0f;
+        float half = windowSize / 2.0f;
         lp.x = (int) (x - half);
         lp.y = (int) (y - half);
 
         try {
-            mWindowManager.addView(indicator, lp);
-            mTapIndicatorViews.add(indicator);
+            mWindowManager.addView(indicatorContainer, lp);
+            mTapIndicatorViews.add(indicatorContainer);
             indicator.setAlpha(1.0f);
             indicator.setScaleX(0.4f);
             indicator.setScaleY(0.4f);
@@ -776,9 +816,9 @@ public class BlitzService extends Service {
                     public void run() {
                         try {
                             if (mWindowManager != null) {
-                                mWindowManager.removeView(indicator);
+                                mWindowManager.removeView(indicatorContainer);
                             }
-                            mTapIndicatorViews.remove(indicator);
+                            mTapIndicatorViews.remove(indicatorContainer);
                         } catch (Exception ignored) {
                         }
                     }
@@ -799,7 +839,7 @@ public class BlitzService extends Service {
         DisplayMetrics dm = getResources().getDisplayMetrics();
         int screenW = dm.widthPixels;
         int screenH = dm.heightPixels;
-        int markerRadius = (int) (dm.density * 36.0f);
+        int markerRadius = (int) (dm.density * MARKER_ANCHOR_SIZE_DP);
 
         WindowManager.LayoutParams inviteLp = (WindowManager.LayoutParams) mInviteMarker.getLayoutParams();
         WindowManager.LayoutParams closeLp  = (WindowManager.LayoutParams) mCloseMarker.getLayoutParams();
@@ -842,6 +882,14 @@ public class BlitzService extends Service {
     private static float clamp(float value, float min, float max, float fallback) {
         if (value < min || value > max) return fallback;
         return value;
+    }
+
+    /** Blends a color toward white by the given fraction (0..1), for gradient highlights. */
+    private static int lighten(int color, float fraction) {
+        int r = (int) (Color.red(color)   + (255 - Color.red(color))   * fraction);
+        int g = (int) (Color.green(color) + (255 - Color.green(color)) * fraction);
+        int b = (int) (Color.blue(color)  + (255 - Color.blue(color))  * fraction);
+        return Color.rgb(r, g, b);
     }
 
     private void removeWaitingOverlay() {
@@ -900,9 +948,9 @@ public class BlitzService extends Service {
             SharedPreferences prefs = getSharedPreferences(PREFS_BLITZ, MODE_PRIVATE);
             DisplayMetrics dm = getResources().getDisplayMetrics();
             final float inviteX = prefs.getFloat(PREF_INVITE_X, DEFAULT_INVITE_X) * dm.widthPixels;
-            final float inviteY = prefs.getFloat(PREF_INVITE_Y, DEFAULT_INVITE_Y_TAP) * dm.heightPixels;
+            final float inviteY = prefs.getFloat(PREF_INVITE_Y, DEFAULT_INVITE_Y) * dm.heightPixels;
             final float closeX  = prefs.getFloat(PREF_CLOSE_X,  DEFAULT_CLOSE_X)  * dm.widthPixels;
-            final float closeY  = prefs.getFloat(PREF_CLOSE_Y,  DEFAULT_CLOSE_Y_TAP)  * dm.heightPixels;
+            final float closeY  = prefs.getFloat(PREF_CLOSE_Y,  DEFAULT_CLOSE_Y)  * dm.heightPixels;
 
             mHandler.postDelayed(new Runnable() {
                 @Override

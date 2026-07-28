@@ -10,6 +10,8 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 
 public class ClashManagerAccessibilityService extends AccessibilityService {
+    // Must stay identical to BlitzService's DEFAULT_* constants so the rendered marker,
+    // the tap-ripple feedback, and the dispatched tap all agree before calibration.
     private static final float DISMISS_X_PERCENT = 0.9213f;
     private static final float DISMISS_Y_PERCENT = 0.204f;
     private static final float INVITE_X_PERCENT = 0.5083f;
