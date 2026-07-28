@@ -16,6 +16,12 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+## [2026-07-28] MERGE FAILED: PR #1250: perf(opt): standardize Layer 1 Core catch block parameter naming
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `Merge conflicts (state: dirty).`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1250)
+
 ### [2026-07-28] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 11 recurring missing run, and updated the three sections of the living self-healing protocol.
 **Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
