@@ -13,6 +13,7 @@
 
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 
 const CONFIG = {
   owner: process.env.GITHUB_REPOSITORY?.split("/")[0] ?? "",
@@ -94,6 +95,146 @@ const SECOND_PASS_SETTLE_MS = 15_000;
 // Maximum number of mergeability polls per PR in the second pass.
 // 8 attempts x 5 seconds = 40 seconds max wait per PR.
 const SECOND_PASS_POLL_MAX = 8;
+
+// ----------------------------------------------------------------------------
+// Conflict Resolution and Rebasing
+// ----------------------------------------------------------------------------
+function runCmd(cmd) {
+  return execSync(cmd, { encoding: "utf8" }).trim();
+}
+
+async function resolveConflictsAndRebase(pr) {
+  const branch = pr.head.ref;
+  log("Rebasing and resolving conflicts for branch " + branch);
+
+  // Ensure git user is configured
+  runCmd("git config --global user.name 'github-actions[bot]'");
+  runCmd("git config --global user.email 'github-actions[bot]@users.noreply.github.com'");
+
+  // Fetch the latest PR branch
+  runCmd("git fetch origin " + branch + ":" + branch);
+
+  // Get the merge base
+  const mergeBase = runCmd("git merge-base " + branch + " Nightly");
+
+  // List all files changed in the PR branch compared to the merge base
+  const changedFiles = runCmd("git diff --name-only " + mergeBase + " " + branch).split("\n").filter(Boolean);
+  log("Changed files in PR: " + changedFiles.join(", "));
+
+  // We will store the modifications
+  const sourcePatchPath = "/tmp/source.patch";
+  
+  // Create a patch of all non-log files
+  try {
+    if (fs.existsSync(sourcePatchPath)) fs.unlinkSync(sourcePatchPath);
+    const sourceDiff = runCmd("git diff " + mergeBase + " " + branch + " -- . ':!.github/nightly-logs/*'");
+    if (sourceDiff) {
+      fs.writeFileSync(sourcePatchPath, sourceDiff);
+    }
+  } catch (e) {
+    log("Failed to create source diff patch: " + e.message, "warn");
+  }
+
+  // Extract PR history entries if 00-pr-history.md was changed
+  let prHistoryBlock = "";
+  if (changedFiles.includes(".github/nightly-logs/00-pr-history.md")) {
+    const prHistoryContent = runCmd("git show " + branch + ":.github/nightly-logs/00-pr-history.md");
+    const t1Header = "## T1 -- Active (last 7 days)\n";
+    const t1Index = prHistoryContent.indexOf(t1Header);
+    if (t1Index !== -1) {
+      const rest = prHistoryContent.slice(t1Index + t1Header.length).trimStart();
+      const nextEntryIndex = rest.indexOf("\n### ");
+      if (nextEntryIndex !== -1) {
+        prHistoryBlock = rest.slice(0, nextEntryIndex).trim() + "\n\n";
+      } else {
+        prHistoryBlock = rest.trim() + "\n\n";
+      }
+      log("Extracted PR history block:\n" + prHistoryBlock);
+    }
+  }
+
+  // Extract coverage log lines
+  const coverageLogs = {};
+  for (const file of changedFiles) {
+    if (file.startsWith(".github/nightly-logs/") && file.endsWith("-coverage.log")) {
+      const prLogContent = runCmd("git show " + branch + ":" + file);
+      const prLines = prLogContent.split("\n").filter(Boolean);
+      const nightlyLogContent = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+      const nightlyLines = new Set(nightlyLogContent.split("\n").filter(Boolean));
+      const newLines = prLines.filter(line => !nightlyLines.has(line));
+      if (newLines.length > 0) {
+        coverageLogs[file] = newLines;
+        log("Extracted new lines for " + file + ": " + newLines.join(", "));
+      }
+    }
+  }
+
+  // For other files under .github/nightly-logs/
+  const otherLogs = {};
+  for (const file of changedFiles) {
+    if (file.startsWith(".github/nightly-logs/") && !file.endsWith("-coverage.log") && file !== ".github/nightly-logs/00-pr-history.md") {
+      const content = runCmd("git show " + branch + ":" + file);
+      otherLogs[file] = content;
+      log("Stored content for other log file: " + file);
+    }
+  }
+
+  // Reset the PR branch to the current Nightly HEAD
+  runCmd("git checkout " + branch);
+  runCmd("git reset --hard Nightly");
+
+  // Re-apply source file changes
+  if (fs.existsSync(sourcePatchPath) && fs.readFileSync(sourcePatchPath, "utf8").trim()) {
+    log("Applying source code patch...");
+    runCmd("git apply " + sourcePatchPath);
+  }
+
+  // Re-apply PR history block
+  if (prHistoryBlock) {
+    log("Re-applying PR history block to 00-pr-history.md...");
+    const historyFile = ".github/nightly-logs/00-pr-history.md";
+    let content = fs.readFileSync(historyFile, "utf8");
+    const t1Header = "## T1 -- Active (last 7 days)\n";
+    const insertIdx = content.indexOf(t1Header);
+    if (insertIdx !== -1) {
+      content = content.slice(0, insertIdx + t1Header.length) + "\n" + prHistoryBlock + content.slice(insertIdx + t1Header.length);
+      fs.writeFileSync(historyFile, content);
+    } else {
+      log("Warning: Could not find T1 marker to insert history entry", "warn");
+    }
+  }
+
+  // Re-apply coverage log entries
+  for (const [file, lines] of Object.entries(coverageLogs)) {
+    log("Re-applying coverage log entries to " + file);
+    let content = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+    if (!content.endsWith("\n") && content.length > 0) content += "\n";
+    content += lines.join("\n") + "\n";
+    fs.writeFileSync(file, content);
+  }
+
+  // Re-apply other log files
+  for (const [file, content] of Object.entries(otherLogs)) {
+    log("Overwriting " + file + " with PR version...");
+    fs.writeFileSync(file, content);
+  }
+
+  // Add and commit changes
+  runCmd("git add .");
+  const status = runCmd("git status --porcelain");
+  if (status) {
+    runCmd("git commit -m \"" + pr.title + "\"");
+    log("Committed resolved changes on PR branch.");
+    const repoUrl = "https://x-access-token:" + CONFIG.token + "@github.com/" + CONFIG.owner + "/" + CONFIG.repo + ".git";
+    runCmd("git push " + repoUrl + " HEAD:" + branch + " --force");
+    log("Successfully force-pushed resolved branch " + branch + " to origin.");
+  } else {
+    log("No changes detected after rebase. Branch is identical to Nightly.");
+  }
+
+  // Go back to Nightly branch and clean up
+  runCmd("git checkout Nightly");
+}
 
 // ----------------------------------------------------------------------------
 // Main
@@ -181,7 +322,21 @@ async function run() {
       }
 
       if (details.mergeable === false) {
-        throw new Error(`Merge conflicts (state: ${details.mergeable_state ?? "unknown"}).`);
+        log("PR #" + pr.number + " has merge conflicts. Attempting automatic resolution...");
+        try {
+          await resolveConflictsAndRebase(pr);
+          details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
+          let refetchPolls = 0;
+          while (details.mergeable === null && refetchPolls < 5) {
+            log("Waiting for GitHub to compute mergeability after force-push (" + (refetchPolls + 1) + "/5)...");
+            await sleep(5000);
+            details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
+            refetchPolls++;
+          }
+        } catch (rebaseError) {
+          log("Automatic conflict resolution failed for PR #" + pr.number + ": " + rebaseError.message, "error");
+          throw rebaseError;
+        }
       }
 
       // Merge with exponential backoff
@@ -359,7 +514,21 @@ async function run() {
       }
 
       if (details.mergeable === false) {
-        throw new Error(`Merge conflicts (state: ${details.mergeable_state ?? "unknown"}).`);
+        log("[Second pass] PR #" + pr.number + " has merge conflicts. Attempting automatic resolution...");
+        try {
+          await resolveConflictsAndRebase(pr);
+          details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
+          let refetchPolls = 0;
+          while (details.mergeable === null && refetchPolls < SECOND_PASS_POLL_MAX) {
+            log("[Second pass] Waiting for GitHub to compute mergeability after force-push (" + (refetchPolls + 1) + "/" + SECOND_PASS_POLL_MAX + ")...");
+            await sleep(5000);
+            details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
+            refetchPolls++;
+          }
+        } catch (rebaseError) {
+          log("[Second pass] Automatic conflict resolution failed for PR #" + pr.number + ": " + rebaseError.message, "error");
+          throw rebaseError;
+        }
       }
 
       const mergeBody = {
