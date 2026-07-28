@@ -27,7 +27,6 @@ import {
   ScoreBadge,
   StatsGrid,
   StatisticItem,
-  TenureBadge,
   TagBadge,
   LongevityBadge
 } from "@shared";
@@ -69,9 +68,13 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
-      <TenureBadge v-if="props.recruit.tenureLabel" :days="props.recruit.tenureDays" />
       <LongevityBadge :time="timeAgo" />
-      <TagBadge :id="props.recruit.id" />
+      <TagBadge
+        :id="props.recruit.id"
+        :style="{
+          background: `color-mix(in srgb, var(--sys-color-primary-container) ${props.recruit.potentialScore || 0}%, var(--sys-color-surface-container-highest))`
+        }"
+      />
     </template>
 
     <!-- [SLOT] IDENTITY NAME: Primary player identification and trophy count. -->
