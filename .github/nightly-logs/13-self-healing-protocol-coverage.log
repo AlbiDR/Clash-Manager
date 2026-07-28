@@ -7,3 +7,4 @@
 * [2026-07-25] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Daily self-healing audit pass: analyzed preceding runs, promoted Stage 2 to resolved status, and updated consecutive no-diff audit metrics.
 * [2026-07-26] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Completed the daily pipeline self-healing audit, documented Stage 1 and Stage 11 recovery resolutions, and updated consecutive no-diff counters.
 * [2026-07-27] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Completed daily self-healing audit pass: evaluated today's runs, mapped missing Stage 11 run, and updated no-diff metrics.
+* [2026-07-28] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Completed daily self-healing audit pass: evaluated today's runs, mapped missing Stages 2, 4, 5, 8, 11 runs, and updated no-diff metrics.
