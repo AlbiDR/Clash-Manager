@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Single, authoritative source of git tags for this repo.
+#
+# Root cause this exists to fix: multiple independent sessions/agents were each
+# computing "the next version" from `git describe --tags` and pushing a tag
+# directly, without ever touching package.json. That produced tags (v14.37.5
+# through v14.37.8, discovered 2026-07-28) that didn't match the version in the
+# commit they pointed to, because tag creation and package.json bumps were two
+# uncoordinated authorities. Fix: package.json is the only source of truth for
+# the version, and this workflow is the only thing that creates tags. No
+# session or script should ever run `git tag` / `git push origin <tag>` itself.
+name: Auto Tag
+
+on:
+  push:
+    branches:
+      - Nightly
+      - Beta
+      - Stable
+    paths:
+      - "package.json"
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: "Create tag from package.json if missing"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag if it doesn't already exist
+        env:
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists — nothing to do."
+            exit 0
+          fi
+
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
+          echo "Created and pushed ${TAG}."

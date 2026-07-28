@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Defense-in-depth backstop for auto-tag.yml. If any tag ever gets created some
+# other way (manual push, a script that slipped past the commit-push-semver
+# skill's rules, a future regression), this fails loudly the moment it lands
+# instead of letting a mismatched tag sit silently in history — which is what
+# happened repeatedly before auto-tag.yml existed (see its header comment for
+# the incident this pair of workflows was built to prevent).
+name: Tag Version Guard
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  verify:
+    name: "Verify tag matches package.json"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tagged commit
+        uses: actions/checkout@v4
+
+      - name: Compare tag to package.json version
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          TAG_VERSION="${TAG_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+
+          if [ "${TAG_VERSION}" != "${PKG_VERSION}" ]; then
+            echo "::error::Tag ${TAG_NAME} does not match package.json version ${PKG_VERSION} at this commit. Tags must only be created by auto-tag.yml, which derives them from package.json. Do not tag manually."
+            exit 1
+          fi
+
+          echo "OK: tag ${TAG_NAME} matches package.json (${PKG_VERSION})."
