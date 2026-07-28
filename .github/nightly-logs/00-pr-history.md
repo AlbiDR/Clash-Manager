@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-28] PR #PENDING [Stage 6]: Added comprehensive component-level, props-level, and emits-level JSDoc/TSDoc specifications, inline decision logs, and relocated the stray import statement in HeaderInfoOverlay.vue.
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/settings/components/BackendRefresher.vue, Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
+**Why:** To establish type-safe interface contracts and inline decision logs on recently modernized backend refresher and overlay components.
+**Change:** Added comprehensive component-level, props-level, and emits-level JSDoc/TSDoc specifications, inline decision logs, and relocated the stray import statement in HeaderInfoOverlay.vue.
+**Result:** 100% logic intent transparency and documentation synchronization with the CleanStack ADR, with all 1442 monorepo tests passing cleanly.
+
+
 ### [2026-07-28] PR #PENDING [Stage 3]: Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update.
 **Domain:** database-baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
