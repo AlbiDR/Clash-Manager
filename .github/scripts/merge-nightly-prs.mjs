@@ -13,6 +13,7 @@
 
 import fs from "fs";
 import path from "path";
+import os from "os";
 import { execSync } from "child_process";
 
 const CONFIG = {
@@ -154,7 +155,7 @@ function createStageTag(pr, squashSha) {
   const date = new Date().toISOString().split("T")[0];
   const stage = stageNumber(pr.head.ref);
   const meta = extractMetadata(pr);
-  
+
   try {
     const fileList = runCmd(`git diff-tree --no-commit-id --name-only -r ${squashSha}`).split("\n").filter(Boolean);
     if (fileList.length > 0) {
@@ -164,22 +165,40 @@ function createStageTag(pr, squashSha) {
     log("Failed to inspect commit diff-tree: " + e.message, "warn");
   }
 
+  // Sanitize all metadata values: strip control characters and lone quotes
+  // that could break git or the markdown renderer.
+  const sanitize = (str) => String(str || "").replace(/[\x00-\x1F\x7F]/g, " ").trim();
+
   const tagName = `nightly/${date}/stage-${stage}`;
-  const tagMsg = `PR: #${pr.number}
-Domain: ${meta.domain}
-Files: ${meta.files}
-Why: ${meta.why}
-Change: ${meta.change}
-Result: ${meta.result}`;
+  const tagMsg = [
+    `PR: #${pr.number}`,
+    `Domain: ${sanitize(meta.domain)}`,
+    `Files: ${sanitize(meta.files)}`,
+    `Why: ${sanitize(meta.why)}`,
+    `Change: ${sanitize(meta.change)}`,
+    `Result: ${sanitize(meta.result)}`,
+  ].join("\n");
+
+  // Write the tag message to a temp file and use -F to avoid shell-injection
+  // issues with multi-line strings or special characters in the message.
+  const tagMsgFile = path.join(os.tmpdir(), `nightly-tag-msg-${stage}.txt`);
+  try {
+    fs.writeFileSync(tagMsgFile, tagMsg, "utf8");
+  } catch (e) {
+    log(`Failed to write tag message file: ${e.message}`, "warn");
+    return;
+  }
 
   try {
-    runCmd(`git tag -d ${tagName} 2>/dev/null || true`);
-    runCmd(`git tag -a "${tagName}" -m "${tagMsg}" ${squashSha}`);
+    runCmd(`git tag -d "${tagName}" 2>/dev/null || true`);
+    runCmd(`git tag -a "${tagName}" -F "${tagMsgFile}" ${squashSha}`);
     const repoUrl = "https://x-access-token:" + CONFIG.token + "@github.com/" + CONFIG.owner + "/" + CONFIG.repo + ".git";
     runCmd(`git push ${repoUrl} refs/tags/${tagName} --force`);
     log(`Created and pushed tag ${tagName} for PR #${pr.number}.`, "success");
   } catch (e) {
     log(`Failed to create tag ${tagName}: ${e.message}`, "warn");
+  } finally {
+    try { fs.unlinkSync(tagMsgFile); } catch (_) {}
   }
 }
 
@@ -301,24 +320,6 @@ async function resolveConflictsAndRebase(pr) {
     log("Failed to create source diff patch: " + e.message, "warn");
   }
 
-  // Extract PR history entries if 00-pr-history.md was changed
-  let prHistoryBlock = "";
-  if (changedFiles.includes(".github/nightly-logs/00-pr-history.md")) {
-    const prHistoryContent = runCmd("git show " + branch + ":.github/nightly-logs/00-pr-history.md");
-    const t1Header = "## T1 -- Active (last 7 days)\n";
-    const t1Index = prHistoryContent.indexOf(t1Header);
-    if (t1Index !== -1) {
-      const rest = prHistoryContent.slice(t1Index + t1Header.length).trimStart();
-      const nextEntryIndex = rest.indexOf("\n### ");
-      if (nextEntryIndex !== -1) {
-        prHistoryBlock = rest.slice(0, nextEntryIndex).trim() + "\n\n";
-      } else {
-        prHistoryBlock = rest.trim() + "\n\n";
-      }
-      log("Extracted PR history block:\n" + prHistoryBlock);
-    }
-  }
-
   // Extract coverage log lines
   const coverageLogs = {};
   for (const file of changedFiles) {
@@ -353,21 +354,6 @@ async function resolveConflictsAndRebase(pr) {
   if (fs.existsSync(sourcePatchPath) && fs.readFileSync(sourcePatchPath, "utf8").trim()) {
     log("Applying source code patch...");
     runCmd("git apply " + sourcePatchPath);
-  }
-
-  // Re-apply PR history block
-  if (prHistoryBlock) {
-    log("Re-applying PR history block to 00-pr-history.md...");
-    const historyFile = ".github/nightly-logs/00-pr-history.md";
-    let content = fs.readFileSync(historyFile, "utf8");
-    const t1Header = "## T1 -- Active (last 7 days)\n";
-    const insertIdx = content.indexOf(t1Header);
-    if (insertIdx !== -1) {
-      content = content.slice(0, insertIdx + t1Header.length) + "\n" + prHistoryBlock + content.slice(insertIdx + t1Header.length);
-      fs.writeFileSync(historyFile, content);
-    } else {
-      log("Warning: Could not find T1 marker to insert history entry", "warn");
-    }
   }
 
   // Re-apply coverage log entries
