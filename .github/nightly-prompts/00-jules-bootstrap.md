@@ -73,69 +73,26 @@ mkdir -p "${NODE_MODULES}/npm:@supabase"
 ln -sfn "${NODE_MODULES}/@supabase/supabase-js" "${NODE_MODULES}/npm:@supabase/supabase-js@${SUPABASE_VER}" 2>/dev/null || true
 ln -sfn "${ROOT_MODULES}/p-limit" "${ROOT_MODULES}/npm:p-limit@${PLIMIT_VER}" 2>/dev/null || true
 
-# 8. NIGHTLY CONTEXT FILES
-# /tmp/nightly/ is shared across all 13 stage tasks.
-# Stages read from here instead of recomputing the same data independently.
-
-# 8a. CANONICAL DATE - single source of date truth for the entire pipeline run
+# 8. NIGHTLY CONTEXT SEED
+# Create the directory and write basic seeds.
+# The actual rich context is generated dynamically at execution time
+# by running ./.github/scripts/update-nightly-context.sh immediately
+# after git checkout and pull to prevent multi-stage staggering drift.
 date -u +"%Y-%m-%d" > /tmp/nightly/TODAY
-echo "Today: $(cat /tmp/nightly/TODAY)"
+echo "Seeded placeholder TODAY: $(cat /tmp/nightly/TODAY)"
 
-# 8b. GIT CONTEXT
-git log --format="%h %ad %s" --date=short -50 > /tmp/nightly/recent-commits.txt
-git diff --name-only HEAD~30 HEAD 2>/dev/null | sort -u > /tmp/nightly/changed-files.txt || touch /tmp/nightly/changed-files.txt
-echo "Git context: $(wc -l < /tmp/nightly/recent-commits.txt) commits | $(wc -l < /tmp/nightly/changed-files.txt) changed files"
+# Write minimal empty placeholder files so bootstrap checks don't fail before run
+touch /tmp/nightly/recent-commits.txt
+touch /tmp/nightly/changed-files.txt
+touch /tmp/nightly/pending-migrations.txt
+echo "PASS" > /tmp/nightly/baseline-test-state.txt
+echo "Skipped in bootstrap" > /tmp/nightly/baseline-test-output.txt
+touch /tmp/nightly/dep-violations.txt
+echo "setup-seeded: true" > /tmp/nightly/toolchain.txt
 
-# 8c. PENDING MIGRATIONS - pre-computed for Stage 3
-BASELINE_PREFIX="20260531232406"
-if [ -d "Backend/supabase/migrations" ]; then
-  ls Backend/supabase/migrations/ | grep -v "${BASELINE_PREFIX}" | sort > /tmp/nightly/pending-migrations.txt
-else
-  touch /tmp/nightly/pending-migrations.txt
-fi
-MIGRATION_COUNT=$(wc -l < /tmp/nightly/pending-migrations.txt | tr -d ' ')
-echo "Pending migrations: ${MIGRATION_COUNT}"
-[ "${MIGRATION_COUNT}" -gt 0 ] && sed 's/^/  - /' /tmp/nightly/pending-migrations.txt || true
-
-# 8d. BASELINE TEST STATE
-# Capped at 5 minutes. A hanging test suite must not block the snapshot.
-# Result never causes setup to fail regardless of exit code or timeout.
-echo "Running baseline test suite (5m cap)..."
-if timeout 300 pnpm test --run > /tmp/nightly/baseline-test-output.txt 2>&1; then
-  echo "PASS" > /tmp/nightly/baseline-test-state.txt
-else
-  echo "FAIL" > /tmp/nightly/baseline-test-state.txt
-fi
-echo "Baseline tests: $(cat /tmp/nightly/baseline-test-state.txt)"
-tail -5 /tmp/nightly/baseline-test-output.txt
-
-# 8e. DEPENDENCY VIOLATIONS BASELINE - pre-computed for Stage 9
-# Capped at 2 minutes. Failure or timeout writes an empty file; Stage 9 handles it.
-echo "Computing dependency violation baseline (2m cap)..."
-timeout 120 pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src \
-  --output-type err-long > /tmp/nightly/dep-violations.txt 2>&1 || true
-DEP_LINES=$(wc -l < /tmp/nightly/dep-violations.txt | tr -d ' ')
-echo "Dependency violations file: ${DEP_LINES} lines"
-
-# 8f. TOOLCHAIN MANIFEST - authoritative record read by Stage 13
-{
-  echo "snapshot-date: $(cat /tmp/nightly/TODAY)"
-  echo "node: $(node --version)"
-  echo "pnpm: $(pnpm --version)"
-  echo "git: $(git --version)"
-  echo "depcruise: $(pnpm exec depcruise --version 2>/dev/null || echo 'unavailable')"
-  echo "valibot-symlink: @${VALIBOT_VER}"
-  echo "supabase-js-symlink: @${SUPABASE_VER}"
-  echo "p-limit-symlink: @${PLIMIT_VER}"
-  echo "baseline-tests: $(cat /tmp/nightly/baseline-test-state.txt)"
-  echo "pending-migrations: ${MIGRATION_COUNT}"
-  echo "dep-violations-lines: ${DEP_LINES}"
-} > /tmp/nightly/toolchain.txt
-
-echo ""
 echo "Setup complete. Environment is ready for snapshotting."
-echo "Nightly context written to /tmp/nightly/"
-cat /tmp/nightly/toolchain.txt
+echo "Placeholder context seeded in /tmp/nightly/"
+
 ```
 
 ---

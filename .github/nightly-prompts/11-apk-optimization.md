@@ -49,7 +49,7 @@ The pipeline operates in a 13-stage sequence where each stage runs as an atomic,
 ## [Base 3] CleanStack Forge - Pipeline Harmony
 
 To ensure clean execution and avoid conflict between consecutive stages, you must adhere to these unified protocols:
-- **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly` to ensure your branch is based on the latest work of the preceding stages.
+- **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly && ./.github/scripts/update-nightly-context.sh` to ensure your branch is based on the latest work of the preceding stages and your dynamic context is synchronized.
 - **Real Date Mandate:** The canonical date for this pipeline run is pre-computed by the setup script and stored at `/tmp/nightly/TODAY`. As your very first shell action, execute `TODAY=$(cat /tmp/nightly/TODAY)` and use this value for all log entries and PR records. Never run `date -u` independently or infer the date from any other source. A log entry carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
