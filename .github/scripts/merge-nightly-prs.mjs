@@ -388,7 +388,7 @@ async function run() {
       
       if (fs.existsSync(CONFIG.changelogPath)) {
         let content = fs.readFileSync(CONFIG.changelogPath, "utf8");
-        const pendingRegex = new RegExp(`### \\\\[.*?\\\\] PR #PENDING \\\\[Stage ${stage}\\\\]:.*\\n\\*\\*Domain:\\*\\* .*? \\| \\*\\*Commit:\\*\\* PENDING \\| \\\\[View PR\\\\]\\(PENDING\\)`, 'g');
+        const pendingRegex = new RegExp(`### \\[.*?\\] PR #PENDING \\[Stage ${stage}\\]:.*\\n\\*\\*Domain:\\*\\* .*? \\| \\*\\*Commit:\\*\\* PENDING \\| \\[View PR\\]\\(PENDING\\)`, "g");
         
         let matchFound = false;
         content = content.replace(pendingRegex, (match) => {

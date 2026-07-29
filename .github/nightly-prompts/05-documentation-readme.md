@@ -138,7 +138,7 @@ You act as a truth-anchoring information architect. Your mandate is the absolute
 
 ### Step 1: Deterministic Coverage Scan
 - **Active Intelligence Check:** Before scanning, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section III Scope Coverage Map and Section V Stage 5 context) and check the active T1 section in `00-pr-history.md`. Focus your README drift audits on modules/files recently changed in 00-pr-history.md or flagged as undergoing active restructuring in Section III and V, ensuring API documentation reflects these exact shifts.
-- **Scan execution:** Identify the single highest-priority README gap using the following queue in strict order. If all targets are current, proceed directly to Step 3 to write only the log entry (skip all README refinement execution sub-steps in Step 3), then proceed to Step 4 to submit a no-gap PR. Do not exit early; performing the audit pass and logging it is required.
+- **Scan execution:** Identify the single highest-priority README gap using the following queue in strict order. If all targets are current, skip Steps 2 and the refinement sub-steps of Step 3, go directly to Step 3, and proceed to Step 4. Do not exit early. The log entry and PR are mandatory even when no gap is found.
 - **Priority List:**
   1. **Drift Reconciler:** Locate any `README.md` whose examples, API shapes, or descriptions conflict with the codebase.
   2. **README Depth:** Identify existing README files that lack architectural context, system boundaries, or integration notes.
@@ -150,10 +150,16 @@ You act as a truth-anchoring information architect. Your mandate is the absolute
 - **Agent Clarity Check:** Ensure the README provides sufficient context for a new AI agent to work in that directory safely.
 
 ### Step 3: README Refinement
-- **Reconciliation First:** Remove or correct stale snippets before introducing new content.
-- **Architectural Vocab:** Use correct system terminology (`@core`, `@shared`, `@features`, `@app`). Explicitly declare import boundaries (what the module can import and what is strictly forbidden).
-- **Naming Conventions:** Ensure all file paths, exports, and type names in the documentation match the ADR Naming Conventions.
-- **Log Updates:** Append the target path to `.github/nightly-logs/05-documentation-readme-coverage.log`.
+
+> **MANDATORY -- This step is never skipped, even on a no-gap run.**
+> Before doing anything else in this step, append exactly one line to `.github/nightly-logs/05-documentation-readme-coverage.log`:
+> - If a gap was found and a README was updated: `* [$TODAY] [Stage 5] CHANGED: <path/to/README.md> -- <reason>`
+> - If no gap was found: `* [$TODAY] [Stage 5] CLEAN: Codebase -- No README drift found`
+> This log write is the atomic unit of work for this stage. It must happen before the PR is created.
+
+- If a gap was found: **Reconciliation First:** Remove or correct stale snippets before introducing new content.
+- If a gap was found: **Architectural Vocab:** Use correct system terminology (`@core`, `@shared`, `@features`, `@app`). Explicitly declare import boundaries (what the module can import and what is strictly forbidden).
+- If a gap was found: **Naming Conventions:** Ensure all file paths, exports, and type names in the documentation match the ADR Naming Conventions.
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.

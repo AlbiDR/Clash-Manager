@@ -146,7 +146,7 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 - **Source Files Only:** All scanning, reading, and gap analysis must use local filesystem tools on the cloned repository. Never connect to the live Supabase project for source inspection.
 - **Baseline Test State:** Before scanning for coverage gaps, read `/tmp/nightly/baseline-test-state.txt`. If it contains `FAIL`, the test suite had pre-existing failures when the snapshot was taken — consult `/tmp/nightly/baseline-test-output.txt` to identify which tests are already failing. Do not write new tests that overlap with already-failing specs; target only the uncovered gap. If the baseline is `PASS`, proceed normally.
 - **Active Intelligence Check:** Read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section V, Stage 2 context) and check the active T1 section in `00-pr-history.md`. Cross-reference identified gaps against `/tmp/nightly/changed-files.txt` (files modified in the last 30 commits, pre-computed by setup) to prioritize writing tests for newly modified or added logic, and focus coverage work on target modules flagged under the Stage 2 Focus/Gaps area in Section V of the intelligence layer.
-- **Scan execution:** Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, proceed directly to Step 3 to write only the log entry (skip all test-writing execution sub-steps in Step 3), then proceed to Step 4 to submit a no-blindspot PR. Do not exit early or skip the PR, as logging the audit pass is required.
+- **Scan execution:** Select the single highest-priority coverage gap using the following queue in strict order. If no gaps exist, skip Steps 1 and 2, go directly to Step 3, and proceed to Step 4. Do not exit early. The log entry and PR are mandatory even when no gap is found.
 - **Priority List:**
   1. **Recent-Change Priority:** Read `/tmp/nightly/changed-files.txt` (already computed by setup — do not re-run git). If files modified by Stage 1 (Harden) in the current cycle, or by Stage 4 (Optimize) in the preceding cycle, lack corresponding specs, or their specs do not cover the changed logic, target them.
   2. **Validation Boundary:** Target functions processing external data (APIs, LocalStorage, user input) that have no tests covering the invalid/malformed input branch.
@@ -160,9 +160,15 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 - Verify imports are direct and avoid side effects from Barrel files.
 
 ### Step 3: Test Writing and Verification
-- Write or update the target `*.spec.ts` file in the correct directory.
-- Run `pnpm test <file>` to ensure the new tests pass and assert correct behavior.
-- **Log Updates:** Append the target file path to `.github/nightly-logs/02-verification-coverage.log`.
+
+> **MANDATORY -- This step is never skipped, even on a no-gap run.**
+> Before doing anything else in this step, append exactly one line to `.github/nightly-logs/02-verification-coverage.log`:
+> - If a gap was found and tests were written: `* [$TODAY] [Stage 2] CHANGED: <path/to/spec.ts> -- <reason>`
+> - If no gap was found: `* [$TODAY] [Stage 2] CLEAN: Codebase -- No coverage gap found`
+> This log write is the atomic unit of work for this stage. It must happen before the PR is created.
+
+- If a gap was found: Write or update the target `*.spec.ts` file in the correct directory.
+- If a gap was found: Run `pnpm test <file>` to ensure the new tests pass and assert correct behavior.
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.
