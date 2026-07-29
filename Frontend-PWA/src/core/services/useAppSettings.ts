@@ -116,8 +116,8 @@ export function useAppSettings() {
           idb
             .set("cm_notification_threshold", newVal.notificationThreshold)
             .catch(() => {});
-        } catch (e) {
-          console.error("[Modules] Failed to persist", e);
+        } catch (modulesPersistenceError) {
+          console.error("[Modules] Failed to persist", modulesPersistenceError);
         }
       },
       { deep: true },
@@ -155,7 +155,7 @@ export function useAppSettings() {
       if (event.key === MODULES_KEY && event.newValue) {
         try {
           Object.assign(modules, mergeStorage(JSON.parse(event.newValue)));
-        } catch (e) {
+        } catch (modulesSyncError) {
           /* fail silent on sync */
         }
       }

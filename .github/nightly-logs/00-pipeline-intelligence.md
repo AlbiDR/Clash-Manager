@@ -243,3 +243,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### [2026-07-25] [Stage 12] VoyageSetupForm Modernization
 * Modernized VoyageSetupForm by replacing manual, programmatic haptics in the useVoyageForm composable with declarative v-tactile haptic brokering on all interactive buttons.
 * Verified zero layout regressions and complete monorepo test compliance.
+
+### [2026-07-29] [Stage 12] ParameterCard Modernization
+* Modernized ParameterCard Allow Gem Spending toggle with declarative v-tactile haptic feedback brokering and removed manual useHaptics trigger.
+* Verified zero layout regressions and complete monorepo test compliance with zero failures.

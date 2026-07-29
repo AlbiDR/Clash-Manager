@@ -107,8 +107,8 @@ async function bootstrap() {
     try {
       const { autoAnimatePlugin } = await import("@formkit/auto-animate/vue");
       app.use(autoAnimatePlugin);
-    } catch (e) {
-      console.warn("Failed to load animations", e);
+    } catch (autoAnimateLoadError) {
+      console.warn("Failed to load animations", autoAnimateLoadError);
       // Fallback dummy to prevent errors
       app.directive("auto-animate", {});
     }
@@ -210,8 +210,8 @@ async function bootstrap() {
                 );
               }
             }
-          } catch (e) {
-            console.warn("Periodic Sync registration failed", e);
+          } catch (periodicSyncRegistrationError) {
+            console.warn("Periodic Sync registration failed", periodicSyncRegistrationError);
           }
         }
       }, 1000);
