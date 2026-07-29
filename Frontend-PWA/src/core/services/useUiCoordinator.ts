@@ -31,6 +31,8 @@ const fabState = reactive({
   selectionCount: 0,
   /** Indicates if the Blitz Mode feature is toggled on in settings. */
   blitzEnabled: false,
+  /** Indicates if the Global/Local Harvest actions are wired up for the active view. */
+  harvestEnabled: false,
   /** The icon name for the dismiss/close button. */
   dismissIcon: "close",
   // Callbacks - set by the view that owns the selection
@@ -95,6 +97,7 @@ export function useUiCoordinator() {
     activeHarvester?: "global" | "local" | null;
     selectionCount?: number;
     blitzEnabled?: boolean;
+    harvestEnabled?: boolean;
     dismissIcon?: string;
     onAction?: (event: MouseEvent) => void;
     onBlitz?: () => void;

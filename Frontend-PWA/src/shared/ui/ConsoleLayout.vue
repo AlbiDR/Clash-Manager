@@ -98,6 +98,7 @@ watch(
         isBlasting: state.isBlasting,
         selectionCount: state.selectionCount,
         blitzEnabled: state.blitzEnabled,
+        harvestEnabled: state.harvestEnabled,
         isHarvesting: state.isHarvesting,
         activeHarvester: state.activeHarvester,
         dismissIcon: state.dismissIcon,

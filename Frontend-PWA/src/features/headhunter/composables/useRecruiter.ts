@@ -96,7 +96,11 @@ export function useRecruiter() {
     scoreGetter: (recruit: Recruit) => recruit.potentialScore || 0,
     onDismiss: dismissBulk,
     selectionStore,
-    fabState: blitz.fabState,
+    // [DECISION LOG] Harvest scouts external clanless players from the Clash
+    // Royale leaderboard, which only makes sense on this recruiting view — not
+    // on Roster, which manages existing clan members. Roster shares this same
+    // Blitz FAB but must not advertise Harvest as available.
+    fabState: computed(() => ({ ...blitz.fabState.value, harvestEnabled: true })),
     layoutEvents: computed(() => ({
       "fab-action": blitz.handleAction,
       "fab-blitz": blitz.handleBlitz,

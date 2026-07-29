@@ -169,6 +169,14 @@ export interface ConsoleFabState {
   selectionCount: number;
   /** Indicates if "Blitz Mode" (high-speed processing) is enabled. */
   blitzEnabled: boolean;
+  /**
+   * Indicates if the Global/Local Harvest actions are wired up for this view.
+   * Harvest scouts external clanless players from the Clash Royale leaderboard,
+   * which only makes sense for a recruiting view (Headhunter) — not for Roster,
+   * which manages existing clan members. Distinct from `blitzEnabled` because
+   * both views share the same Blitz FAB but only one supports Harvest.
+   */
+  harvestEnabled?: boolean;
   /** Indicates if a leaderboard harvest operation is currently active. */
   isHarvesting?: boolean;
   /** The active harvester mode (local or global). */

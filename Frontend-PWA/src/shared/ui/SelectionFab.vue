@@ -108,31 +108,38 @@ function handleFabAbortHarvest() {
         <span>Blitz</span>
       </button>
 
-      <!-- Global Harvest Button (Globe) -->
-      <button
-        v-tactile
-        class="fab-btn compact secondary-harvest"
-        :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
-        :disabled="fabState.isHarvesting"
-        @click="handleFabGlobalHarvest"
-        aria-label="Global Harvest"
-      >
-        <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'" class="spinner-small"></div>
-        <Icon v-else name="globe" size="18" />
-      </button>
+      <!-- Harvest scouts external clanless players from the leaderboard for
+           recruiting, which only applies to views wired up for it
+           (Headhunter). Gated separately from blitzEnabled so views that
+           share this FAB (e.g. Roster) don't show a button that silently
+           does nothing. -->
+      <template v-if="fabState.harvestEnabled">
+        <!-- Global Harvest Button (Globe) -->
+        <button
+          v-tactile
+          class="fab-btn compact secondary-harvest"
+          :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
+          :disabled="fabState.isHarvesting"
+          @click="handleFabGlobalHarvest"
+          aria-label="Global Harvest"
+        >
+          <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'" class="spinner-small"></div>
+          <Icon v-else name="globe" size="18" />
+        </button>
 
-      <!-- Local Harvest Button (Map-Pin) -->
-      <button
-        v-tactile
-        class="fab-btn compact secondary-harvest"
-        :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
-        :disabled="fabState.isHarvesting"
-        @click="handleFabLocalHarvest"
-        aria-label="Local Harvest"
-      >
-        <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'" class="spinner-small"></div>
-        <Icon v-else name="map_pin" size="18" />
-      </button>
+        <!-- Local Harvest Button (Map-Pin) -->
+        <button
+          v-tactile
+          class="fab-btn compact secondary-harvest"
+          :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
+          :disabled="fabState.isHarvesting"
+          @click="handleFabLocalHarvest"
+          aria-label="Local Harvest"
+        >
+          <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'" class="spinner-small"></div>
+          <Icon v-else name="map_pin" size="18" />
+        </button>
+      </template>
     </template>
 
     <!-- Action Button (Only if Blitz is NOT enabled) -->

@@ -18,6 +18,7 @@ const fabState = reactive({
   activeHarvester: null,
   selectionCount: 0,
   blitzEnabled: false,
+  harvestEnabled: false,
   onAction: vi.fn(),
   onBlitz: vi.fn(),
   onDismiss: vi.fn(),
@@ -42,6 +43,7 @@ describe("SelectionFab.vue", () => {
     fabState.activeHarvester = null;
     fabState.selectionCount = 0;
     fabState.blitzEnabled = false;
+    fabState.harvestEnabled = false;
   });
 
   const mountFab = () => {
@@ -114,9 +116,29 @@ describe("SelectionFab.vue", () => {
     });
   });
 
-  describe("Blitz Mode (Enabled)", () => {
+  describe("Blitz Mode (Enabled, Harvest Disabled — e.g. Roster)", () => {
     beforeEach(() => {
       fabState.blitzEnabled = true;
+      fabState.harvestEnabled = false;
+      fabState.selectionCount = 5;
+    });
+
+    it("renders Blitz but not the Harvest buttons", () => {
+      // Regression guard: Harvest scouts external clanless players for
+      // recruiting, which doesn't apply to views like Roster that only wire
+      // up Blitz. Previously these buttons rendered unconditionally whenever
+      // blitzEnabled was true and silently did nothing when clicked there.
+      const wrapper = mountFab();
+      expect(wrapper.find(".fab-btn.blitz").exists()).toBe(true);
+      expect(wrapper.find("button[aria-label='Global Harvest']").exists()).toBe(false);
+      expect(wrapper.find("button[aria-label='Local Harvest']").exists()).toBe(false);
+    });
+  });
+
+  describe("Blitz Mode (Enabled, Harvest Enabled — e.g. Headhunter)", () => {
+    beforeEach(() => {
+      fabState.blitzEnabled = true;
+      fabState.harvestEnabled = true;
       fabState.selectionCount = 5;
     });
 
