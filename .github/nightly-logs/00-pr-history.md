@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-29] PR #PENDING [Stage 8]: chore(deps): bump @types/node and supabase and update major watchlist
+**Domain:** dependency-audit | **Commit:** PENDING | [View PR](PENDING)
+**Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
+**Why:** To perform the daily automated dependency audit scan and ecosystem safety research for Nightly.
+**Change:** chore(deps): bump @types/node and supabase and update major watchlist
+**Result:** Successfully bumped @types/node to ^26.1.2 and supabase to ^2.110.0 in the default catalog, and updated the persistent major version watchlist.
+
+
 ### [2026-07-29] PR #PENDING [Stage 7]: chore(version): no drift found
 **Domain:** Versions | **Commit:** PENDING | [View PR](PENDING)
 **Files:** codebase
