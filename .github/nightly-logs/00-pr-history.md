@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-29] PR #PENDING [Stage 5]: Updated features/roster README to document the modernized MemberCard lifetime KPI slot, detailing RPeS and recent Win Rate benchmark tiles.
+**Domain:** documentation-readme | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/roster/README.md
+**Why:** Reconcile features/roster README documentation with recent MemberCard winRate modernization
+**Change:** Updated features/roster README to document the modernized MemberCard lifetime KPI slot, detailing RPeS and recent Win Rate benchmark tiles.
+**Result:** 100% synchronization between substrate reality and features/roster documentation verified.
+
+
 ### [2026-07-29] PR #PENDING [Stage 3]: Updated compliance audit verification date stamp to 2026-07-29 on master migration.
 **Domain:** baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql

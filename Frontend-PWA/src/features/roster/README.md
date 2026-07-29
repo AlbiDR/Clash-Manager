@@ -11,6 +11,7 @@
 
 - Lists members ranked by Performance Score, sortable by Performance, Momentum, Trophies, Donations, Tenure, Name, or Last Seen, with search by name or tag.
 - Expands each member to show war rate, average fame, average daily donations, and last-seen, each benchmarked against the clan average.
+- Displays a dedicated lifetime KPI slot on the expanded card with tiles for **RPeS** and the player's recent **Win Rate** (derived from the rolling battle log in the `player_battles` table), both benchmarked against the clan baseline.
 - Draws per-member trend charts (war and Voyage) with a best-fit line and a predicted next value.
 - Supports bulk selection (including "select by score") to open or Blitz many members at once.
 
