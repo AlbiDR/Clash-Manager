@@ -89,4 +89,91 @@ describe("useUiCoordinator", () => {
     const { fabOffset } = useUiCoordinator();
     expect(fabOffset.value).toBe(24);
   });
+
+  it("should write falsy-but-defined values instead of treating them as absent", () => {
+    const { fabState, updateFabState } = useUiCoordinator();
+
+    // Seed the singleton with the opposite of every value asserted below, so a
+    // merge that silently skips falsy input cannot pass by coincidence.
+    updateFabState({
+      label: "Seeded",
+      isProcessing: true,
+      isBlasting: true,
+      selectionCount: 7,
+      blitzEnabled: true,
+    });
+
+    updateFabState({
+      label: "",
+      isProcessing: false,
+      isBlasting: false,
+      selectionCount: 0,
+      blitzEnabled: false,
+    });
+
+    // A truthiness guard (`if (value)`) instead of an explicit undefined check
+    // would leave all five of these at their seeded values.
+    expect(fabState.label).toBe("");
+    expect(fabState.isProcessing).toBe(false);
+    expect(fabState.isBlasting).toBe(false);
+    expect(fabState.selectionCount).toBe(0);
+    expect(fabState.blitzEnabled).toBe(false);
+  });
+
+  it("should treat undefined as leave-untouched rather than reset", () => {
+    const { fabState, updateFabState } = useUiCoordinator();
+
+    updateFabState({ label: "Preserved", selectionCount: 12, dismissIcon: "back" });
+
+    // Every contract key omitted here must survive the merge untouched.
+    updateFabState({ isProcessing: true });
+
+    expect(fabState.label).toBe("Preserved");
+    expect(fabState.selectionCount).toBe(12);
+    expect(fabState.dismissIcon).toBe("back");
+    expect(fabState.isProcessing).toBe(true);
+
+    // An explicitly-undefined key must behave identically to an omitted one.
+    updateFabState({ label: undefined, selectionCount: undefined });
+
+    expect(fabState.label).toBe("Preserved");
+    expect(fabState.selectionCount).toBe(12);
+  });
+
+  it("should reject off-contract keys instead of grafting them onto the singleton", () => {
+    const { fabState, updateFabState } = useUiCoordinator();
+
+    // `visible` belongs to the producer type ConsoleFabState, not to the
+    // coordinator singleton, and is the exact key ConsoleLayout deliberately
+    // withholds. `injectedPayload` stands in for an arbitrary untyped key.
+    // The cast simulates an untyped or dynamically-built caller reaching the
+    // merge, which is the only way this input is still representable.
+    const offContractUpdate = {
+      label: "On contract",
+      visible: true,
+      injectedPayload: { escalated: true },
+    } as unknown as Parameters<typeof updateFabState>[0];
+
+    updateFabState(offContractUpdate);
+
+    // The on-contract key still lands.
+    expect(fabState.label).toBe("On contract");
+
+    // The singleton's shape must be unchanged. `fabState` is module-level state
+    // that never resets, so a single grafted key would persist for the whole
+    // session.
+    expect(Object.prototype.hasOwnProperty.call(fabState, "visible")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(fabState, "injectedPayload")).toBe(false);
+  });
+
+  it("should keep the singleton key set stable across repeated merges", () => {
+    const { fabState, updateFabState } = useUiCoordinator();
+    const keysBeforeMerge = Object.keys(fabState).sort();
+
+    updateFabState({ label: "First" });
+    updateFabState({ selectionCount: 3, isHarvesting: true });
+    updateFabState({ activeHarvester: "global", harvestEnabled: true });
+
+    expect(Object.keys(fabState).sort()).toEqual(keysBeforeMerge);
+  });
 });
