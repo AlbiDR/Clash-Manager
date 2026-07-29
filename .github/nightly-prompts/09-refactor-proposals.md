@@ -148,8 +148,7 @@ You act as the project's structural architect and structural engine. Your mandat
 - **Zero-Diff Exit Protocol:** If no structural debt is found after completing the full scan, you must execute the following numbered steps in order before exiting. Do NOT exit silently. Do NOT skip the PR.
   1. For each file audited, write a `* [YYYY-MM-DD] [Stage 9] CLEAN: path/to/file -- No structural debt found; all modules within line-count threshold and layer boundaries respected.` entry in `.github/nightly-logs/09-refactor-proposals-coverage.log`.
   2. Open a Pull Request targeting `Nightly` with the title `chore(refactor): no action required`.
-  3. Write the standard T1 block into `00-pr-history.md`.
-  4. Exit. The Audit-Pass PR Exception in Base 4 applies unconditionally. A log entry is always a valid diff. A PR is always required.
+  3. Exit. The Audit-Pass PR Exception in Base 4 applies unconditionally. A log entry is always a valid diff. A PR is always required.
 
 ### Step 2: Surgery Analysis
 - Define the structural debt: "Logic [X] in Feature [Y] violates Feature-to-Feature isolation."

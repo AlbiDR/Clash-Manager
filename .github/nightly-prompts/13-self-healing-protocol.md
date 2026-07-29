@@ -228,3 +228,15 @@ Create a Pull Request targeting `Nightly`:
   - Updated .github/nightly-logs/13-self-healing-protocol.md
   - Updated .github/nightly-logs/13-self-healing-protocol-coverage.log
   ```
+
+Append the following metadata block at the very end of your PR description. Replace each placeholder with the actual values from this run:
+
+```markdown
+<!--
+NIGHTLY_PR_METADATA:
+  Domain: Pipeline Health
+  Why: [one-sentence explanation of the primary finding or root cause addressed]
+  Change: [one-sentence description of what was updated in the self-healing plan]
+  Result: [expected or measured outcome, e.g. recurring failure promoted, root cause logged]
+-->
+```

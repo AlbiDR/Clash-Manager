@@ -291,6 +291,11 @@ def run_add_entry(today_str, stage_name, domain, pr_num, files_list, why_desc, c
     print(f"Successfully added {stage_name} PR entry to T1 section.")
 
 def main():
+    if len(sys.argv) == 2 and re.match(r"^\d{4}-\d{2}-\d{2}$", sys.argv[1]):
+        # Backwards compatibility fallback: age_pr_history.py <date>
+        run_aging(sys.argv[1])
+        return
+
     if len(sys.argv) < 3:
         print("Usage:")
         print("  age_pr_history.py age <TODAY_YYYY-MM-DD>")
