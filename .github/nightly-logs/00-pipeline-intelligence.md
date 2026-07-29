@@ -214,6 +214,19 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
   regex and wrapped in explicit try-catch blocks for Temporal.Instant.from
   narrowing to prevent unhandled runtime crashes. *(Pattern: PR #PENDING, 2026-07-15)*
 
+* **Singleton merge direction:** When merging a partial update into a module-level
+  reactive singleton, iterate the *target's* keys, never the caller's. Iterating
+  the caller's keys requires an `as any` index write, which silently permits
+  arbitrary keys to be grafted onto state that never resets. Derive the parameter
+  type from `typeof theSingleton` so the contract cannot drift from the state it
+  writes into. *(Established: Stage 1, 2026-07-29, useUiCoordinator.ts)*
+
+* **Stage 1 scope note:** The `Backend/supabase/functions/` tree reaches audit
+  saturation quickly (full sweep inside a 7-day window). When it is excluded,
+  Stage 1's remaining live surface is Target B (cross-layer/cross-feature
+  isolation) and Target C (`any` at Frontend-PWA write boundaries), not Target A.
+  *(Scope finding: Stage 1, 2026-07-29)*
+
 ### WebView Performance and Security
 
 * **WebView Rendering:** `setOffscreenPreRaster(true)` is established for SDK >= 23 to improve scrolling fluidity in the hybrid wrapper. *(Established: PR #PENDING, 2026-07-15)*

@@ -51,6 +51,22 @@ const fabState = reactive({
 });
 
 /**
+ * The authoritative write contract for the global FAB singleton.
+ *
+ * @remarks
+ * [THREAT:] Contract Drift. A hand-restated parameter literal can silently
+ * desynchronize from the singleton it writes into. Deriving the contract from
+ * `fabState` itself makes that drift unrepresentable: a property added to the
+ * singleton is accepted automatically, and a property that does not exist on the
+ * singleton (for example `visible`, which belongs to the *producer* type
+ * `ConsoleFabState` but not to this coordinator) is rejected at compile time.
+ */
+type FabCoordinatorState = typeof fabState;
+
+/** The closed set of keys the coordinator is permitted to write. */
+type FabCoordinatorKey = keyof FabCoordinatorState;
+
+/**
  * COMPOSABLE: useUiCoordinator
  *
  * @remarks
@@ -86,34 +102,51 @@ export function useUiCoordinator() {
   }
 
   /**
-   * Update the global FAB state from views
+   * Copies a single contract key from an incoming partial into the global singleton.
+   *
+   * @remarks
+   * [DECISION LOG] Generic Key Narrowing: the key is a single type parameter rather
+   * than a union, so the read and the write are provably the same property type.
+   * This is what removes the need for the `as any` index write that previously
+   * disabled all type enforcement on this code path.
+   *
+   * @typeParam FabKey - A key that provably exists on the FAB singleton.
+   * @param contractKey - The property to merge.
+   * @param incomingFabState - The caller-supplied partial update.
    */
-  function updateFabState(incomingFabState: {
-    label?: string;
-    actionHref?: string;
-    isProcessing?: boolean;
-    isBlasting?: boolean;
-    isHarvesting?: boolean;
-    activeHarvester?: "global" | "local" | null;
-    selectionCount?: number;
-    blitzEnabled?: boolean;
-    harvestEnabled?: boolean;
-    dismissIcon?: string;
-    onAction?: (event: MouseEvent) => void;
-    onBlitz?: () => void;
-    onDismiss?: () => void;
-    onGlobalHarvest?: () => void;
-    onLocalHarvest?: () => void;
-    onAbortHarvest?: () => void;
-  }) {
-    // [THREAT:] Partial State Corruption.
-    // [DECISION LOG] Optimized State Merging: Partially update the reactive fabState
-    // object while preserving undefined guards for optional inputs. This prevents
-    // accidental resetting of unrelated state properties during view transitions.
-    for (const [key, value] of Object.entries(incomingFabState)) {
-      if (value !== undefined) {
-        (fabState as any)[key] = value;
-      }
+  function mergeContractKey<FabKey extends FabCoordinatorKey>(
+    contractKey: FabKey,
+    incomingFabState: Partial<FabCoordinatorState>,
+  ) {
+    const incomingValue = incomingFabState[contractKey];
+    // Undefined means "leave untouched", not "reset to undefined". Without this
+    // guard a caller omitting an optional field would erase unrelated state
+    // during a view transition.
+    if (incomingValue === undefined) return;
+    fabState[contractKey] = incomingValue;
+  }
+
+  /**
+   * Update the global FAB state from views.
+   *
+   * @param incomingFabState - Partial update; only keys present on the singleton
+   * are honoured. Unknown keys are structurally impossible for typed callers and
+   * silently dropped for untyped ones.
+   */
+  function updateFabState(incomingFabState: Partial<FabCoordinatorState>) {
+    // [THREAT:] Global Singleton Pollution. `fabState` is module-level state that
+    // never resets for the lifetime of the session. The previous
+    // `(fabState as any)[key] = value` write iterated the *caller's* keys, so any
+    // key that reached this function -- including one arriving from an untyped or
+    // dynamically-built object -- was grafted permanently onto global state with
+    // no type checking on either the key or the value.
+    // [DECISION LOG] Target-Driven Merge: iterate the singleton's own keys instead
+    // of the caller's. The write set is therefore bounded by the state object
+    // itself, which is the Poka-Yoke form of this guard: adding a property to
+    // `fabState` extends the contract automatically, and no caller can ever widen
+    // the singleton's shape at runtime.
+    for (const contractKey of Object.keys(fabState) as FabCoordinatorKey[]) {
+      mergeContractKey(contractKey, incomingFabState);
     }
   }
 
