@@ -19,6 +19,8 @@ on:
       - Nightly
       - Beta
       - Stable
+      - Alpha
+      - Clan-Voyage
     paths:
       - "package.json"
 
