@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-29] PR #PENDING [Stage 6]: Added complete JSDoc blocks for saveScrollPosition and getSavedScroll, and embedded detailed inline decision logs and threat annotations for scroll state preservation, View Transitions routing promises, and dynamic chunk loading error recovery.
+**Domain:** tsdoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/app/router/index.ts
+**Why:** To establish type-safe interface contracts and inline decision logs on the recently touched router substrate.
+**Change:** Added complete JSDoc blocks for saveScrollPosition and getSavedScroll, and embedded detailed inline decision logs and threat annotations for scroll state preservation, View Transitions routing promises, and dynamic chunk loading error recovery.
+**Result:** 100% logic intent transparency and contract synchronization with the CleanStack ADR, with all 1442 monorepo tests passing cleanly.
+
+
 ### [2026-07-29] PR #PENDING [Stage 4]: Renamed generic catch block error variables to descriptive and domain-clear identifiers (modulesPersistenceError, modulesSyncError, autoAnimateLoadError, periodicSyncRegistrationError, scrollSaveError, scrollRestoreError, viewTransitionError, and pwaRegistrationError) across useAppSettings.ts, main.ts, router/index.ts, and App.vue.
 **Domain:** optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/core/services/useAppSettings.ts
