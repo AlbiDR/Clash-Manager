@@ -5,7 +5,7 @@
 
 > Layer 1 singletons and state orchestrators: persistence, sync, the reusable list "Console" engine, connectivity, platform bridges, and the PWA lifecycle.
 
-**Layer 1 (@core)** | may import [`@core/api`](../api/README.md) and [`@core/utils`](../utils/README.md) | imports nothing above it.
+**Layer 1 (@core)** | may import any sibling `@core` module - [`@core/api`](../api/README.md), [`@core/config`](../config/README.md), [`@core/types`](../types/README.md), [`@core/utils`](../utils/README.md), and other services in this directory | imports nothing above it: `@shared`, `@features`, and `@app` are forbidden and enforced by the `fe-no-higher-layer-import-in-core` dependency-cruiser rule.
 
 This is the single registry for these services; higher-layer READMEs link here rather than re-listing them.
 
