@@ -108,6 +108,24 @@ Anti-patterns encountered in execution. Avoid these approaches.
   That directory is the pipeline's administrative control surface. Only a human
   or an explicit prompt-engineering session may modify it.
 
+* **Do not replace `localeCompare` with a hoisted `Intl.Collator`.** This looks
+  like a textbook win and is a measured 3.24x regression on V8. Benchmark on
+  node v26.5.0, 1000 names x 200 sorts, order alternated over 3 rounds:
+  `localeCompare` 27.0 ms mean vs hoisted collator 87.4 ms mean. Ordering is
+  identical (499500 pairwise comparisons, 0 sign mismatches), so only the cost
+  differs. V8 has a dedicated fast path for `String.prototype.localeCompare` that
+  a user-constructed collator does not reach, and the APK runtime is Android
+  WebView on the same engine. Attempted and reverted by Stage 4.
+  *(Disproven: Stage 4, 2026-07-29)*
+
+* **Do not prune what `knip` calls unused without checking the ADR first.** Two
+  standing false positives: `Backend/supabase/database.types.ts` is an
+  ADR-mandated type-generation-parity artifact that is intentionally imported by
+  nothing, and `Frontend-PWA/src/features/roster/components/index.ts` is imported
+  by `RosterView.vue` via `"../components"`. Deno entry points and `npm:`
+  specifiers under `Backend/supabase/functions/` are also permanent knip noise.
+  *(Classified: Stage 4, 2026-07-29)*
+
 ---
 
 ## III. Scope Coverage Map
