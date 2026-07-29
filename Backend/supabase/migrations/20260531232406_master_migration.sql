@@ -28,7 +28,7 @@
  * - 20260727010000_roster_lifetime_kpi_row.sql
  * - 20260727020000_roster_win_rate_lifetime_kpi.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-07-28):
+ * Architectural Compliance Verification Log (Audited: 2026-07-29):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
