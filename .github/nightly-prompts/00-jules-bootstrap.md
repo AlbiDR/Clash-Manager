@@ -30,13 +30,29 @@ set -euo pipefail
 # 1. CONTEXT DIRECTORY - must exist before any writes below
 mkdir -p /tmp/nightly
 
+# 1b. OUTPUT CONTAINMENT
+# Jules' own harness appears to capture this script's combined stdout and
+# re-execute it as a command somewhere downstream. Any tool's normal chatter
+# (git status lines, nvm/npm/pnpm progress and hook messages, warning boxes)
+# can therefore crash that unrelated downstream step, e.g.:
+#   bash: line 101: Already: command not found
+# To make that impossible, every noisy command below is redirected into a
+# log file instead of stdout. Only the deliberate "echo" lines in this
+# script ever reach stdout. On a genuine failure the ERR trap below prints
+# the log tail so real environment problems are still visible.
+SETUP_LOG=/tmp/nightly/setup.log
+: > "$SETUP_LOG"
+trap 'echo "Setup FAILED. Last 40 lines of $SETUP_LOG:"; tail -n 40 "$SETUP_LOG"' ERR
+
 # 2. BRANCH CORRECTION
 # Jules clones --depth 1 -b Stable. Nightly does not exist as a local branch.
 # git checkout -B creates or resets the local branch to the fetched FETCH_HEAD.
-git remote prune origin 2>/dev/null || true
-git fetch origin Nightly --depth 100
-git checkout -B Nightly FETCH_HEAD
-git pull origin Nightly
+{
+  git remote prune origin || true
+  git fetch origin Nightly --depth 100
+  git checkout -B Nightly FETCH_HEAD
+  git pull origin Nightly
+} >> "$SETUP_LOG" 2>&1
 echo "Branch: $(git branch --show-current) @ $(git rev-parse --short HEAD)"
 
 # 3. NON-INTERACTIVE MODE
@@ -45,19 +61,23 @@ export DEBIAN_FRONTEND=noninteractive
 
 # 4. NODE 24 VIA NVM
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-nvm install 24 --no-progress
-nvm alias default 24
-nvm use 24
+{
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+  nvm install 24 --no-progress
+  nvm alias default 24
+  nvm use 24
+} >> "$SETUP_LOG" 2>&1
 
 # 5. PNPM + DEPENDENCY INSTALL
 # dependency-cruiser (depcruise binary) is a catalog devDependency.
 # All stages invoke it as: pnpm exec depcruise
-npm install -g pnpm@10.32.1 --silent
-pnpm install --frozen-lockfile
+{
+  npm install -g pnpm@10.32.1
+  pnpm install --frozen-lockfile
+} >> "$SETUP_LOG" 2>&1
 
 # 6. NATIVE BINARY COMPILATION
-pnpm rebuild esbuild sharp 2>/dev/null || true
+{ pnpm rebuild esbuild sharp || true; } >> "$SETUP_LOG" 2>&1
 
 # 7. DENO npm: SYMLINKS
 # Versions resolved dynamically from installed packages, never hardcoded.
@@ -68,10 +88,12 @@ ROOT_MODULES="/app/node_modules"
 VALIBOT_VER=$(node -e "try{console.log(require('${NODE_MODULES}/valibot/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
 SUPABASE_VER=$(node -e "try{console.log(require('${NODE_MODULES}/@supabase/supabase-js/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
 PLIMIT_VER=$(node -e "try{console.log(require('${ROOT_MODULES}/p-limit/package.json').version)}catch(e){console.log('unknown')}" 2>/dev/null || echo "unknown")
-ln -sfn "${NODE_MODULES}/valibot" "${NODE_MODULES}/npm:valibot@${VALIBOT_VER}" 2>/dev/null || true
-mkdir -p "${NODE_MODULES}/npm:@supabase"
-ln -sfn "${NODE_MODULES}/@supabase/supabase-js" "${NODE_MODULES}/npm:@supabase/supabase-js@${SUPABASE_VER}" 2>/dev/null || true
-ln -sfn "${ROOT_MODULES}/p-limit" "${ROOT_MODULES}/npm:p-limit@${PLIMIT_VER}" 2>/dev/null || true
+{
+  ln -sfn "${NODE_MODULES}/valibot" "${NODE_MODULES}/npm:valibot@${VALIBOT_VER}" || true
+  mkdir -p "${NODE_MODULES}/npm:@supabase"
+  ln -sfn "${NODE_MODULES}/@supabase/supabase-js" "${NODE_MODULES}/npm:@supabase/supabase-js@${SUPABASE_VER}" || true
+  ln -sfn "${ROOT_MODULES}/p-limit" "${ROOT_MODULES}/npm:p-limit@${PLIMIT_VER}" || true
+} >> "$SETUP_LOG" 2>&1
 
 # 8. NIGHTLY CONTEXT SEED
 # Create the directory and write basic seeds.
