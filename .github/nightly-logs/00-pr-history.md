@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-29] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
+**Domain:** APK & PWA Wrapper Integrity | **Commit:** PENDING | [View PR](PENDING)
+**Files:** codebase
+**Why:** To perform the daily APK and PWA Wrapper Integrity Audit across manifests, resources, and security profiles.
+**Change:** chore(apk-integrity): no mismatch found
+**Result:** All wrapper configurations, asset links, and permissions are perfectly synchronized.
+
+
 ### [2026-07-29] PR #PENDING [Stage 8]: chore(deps): bump @types/node and supabase and update major watchlist
 **Domain:** dependency-audit | **Commit:** PENDING | [View PR](PENDING)
 **Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
