@@ -70,9 +70,7 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **00-pr-history.md Pre-Flight Aging (Stage 1 Responsibility):** As your very first action, before any hardening work, perform the automated aging pass on `.github/nightly-logs/00-pr-history.md`. You MUST perform this pass exclusively by executing the python script `./.github/scripts/age_pr_history.py "$TODAY"` via shell command. Do NOT use file-reading, file-writing, or text-replacement tools to read or update `00-pr-history.md` for this pass, as the file is too large and will exhaust your context budget. This pass is mandatory and must complete before any other work.
 - **Read Pipeline Intelligence:** After the aging pass, read `.github/nightly-logs/00-pipeline-intelligence.md` in full. Use it to avoid repeating tried approaches, follow proven patterns, and stay aware of open constraints and scope saturation.
 - **Write Pipeline Intelligence:** If this run produces a newly discovered pattern, pitfall, constraint, or scope finding not already recorded, append a concise entry (one to three lines) to the appropriate section of `00-pipeline-intelligence.md` before opening your PR. Mark superseded entries with `[SUPERSEDED by PR #N]` rather than deleting them.
-- **New PR Entry Format (T1):** When appending this run's record to `00-pr-history.md`, write it as a full T1 block inside the T1 section. You MUST perform this insertion exclusively by running the following python script via shell command (substituting values as needed):
-  `./.github/scripts/age_pr_history.py add "$TODAY" "Stage 1" "[domain]" "PENDING" "path/to/changed/file" "Why description" "Change description" "Result description"`
-  Do NOT use any file-reading, file-writing, or text-replacement tools (like sed or grep edits) to update `00-pr-history.md` directly. The Python script handles all file parsing and insertion logic cleanly, ensuring the new entry is appended exactly under the T1 active header.
+- **No Manual Changelog Updates:** You must NOT write to or update `.github/nightly-logs/00-pr-history.md` directly during your run. The history file is compiled automatically from Git tags by the merge coordinator after your PR is merged. To ensure your stage's work is correctly recorded in the history log, you MUST append the `NIGHTLY_PR_METADATA` block to the very end of your PR description.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
@@ -197,4 +195,12 @@ Create a Pull Request targeting the `Nightly` branch.
 
   ### Log Updates:
   - Updated .github/nightly-logs/01-hardening-coverage.log
+  
+  <!--
+  NIGHTLY_PR_METADATA:
+    Domain: <domain>
+    Why: <one sentence reasoning>
+    Change: <one sentence summary of modifications>
+    Result: <expected or measured outcome>
+  -->
   ```

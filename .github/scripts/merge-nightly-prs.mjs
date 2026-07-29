@@ -7,7 +7,7 @@
  * ----------------------------------------------------------------------------
  * Plain ESM — no external dependencies, runs with node directly.
  * Fetches all open PRs targeting Nightly, sorts by stage number, merges in
- * order, deletes head branches, and appends a changelog entry.
+ * order, deletes head branches, and appends a changelog entry via Git tags.
  * ============================================================================
  */
 
@@ -135,24 +135,6 @@ async function resolveConflictsAndRebase(pr) {
     log("Failed to create source diff patch: " + e.message, "warn");
   }
 
-  // Extract PR history entries if 00-pr-history.md was changed
-  let prHistoryBlock = "";
-  if (changedFiles.includes(".github/nightly-logs/00-pr-history.md")) {
-    const prHistoryContent = runCmd("git show " + branch + ":.github/nightly-logs/00-pr-history.md");
-    const t1Header = "## T1 -- Active (last 7 days)\n";
-    const t1Index = prHistoryContent.indexOf(t1Header);
-    if (t1Index !== -1) {
-      const rest = prHistoryContent.slice(t1Index + t1Header.length).trimStart();
-      const nextEntryIndex = rest.indexOf("\n### ");
-      if (nextEntryIndex !== -1) {
-        prHistoryBlock = rest.slice(0, nextEntryIndex).trim() + "\n\n";
-      } else {
-        prHistoryBlock = rest.trim() + "\n\n";
-      }
-      log("Extracted PR history block:\n" + prHistoryBlock);
-    }
-  }
-
   // Extract coverage log lines
   const coverageLogs = {};
   for (const file of changedFiles) {
@@ -164,7 +146,7 @@ async function resolveConflictsAndRebase(pr) {
       const newLines = prLines.filter(line => !nightlyLines.has(line));
       if (newLines.length > 0) {
         coverageLogs[file] = newLines;
-        log("Extracted new lines for " + file + ": " + newLines.join(", "));
+        log("Extracting new lines for " + file + ": " + newLines.join(", "));
       }
     }
   }
@@ -187,21 +169,6 @@ async function resolveConflictsAndRebase(pr) {
   if (fs.existsSync(sourcePatchPath) && fs.readFileSync(sourcePatchPath, "utf8").trim()) {
     log("Applying source code patch...");
     runCmd("git apply " + sourcePatchPath);
-  }
-
-  // Re-apply PR history block
-  if (prHistoryBlock) {
-    log("Re-applying PR history block to 00-pr-history.md...");
-    const historyFile = ".github/nightly-logs/00-pr-history.md";
-    let content = fs.readFileSync(historyFile, "utf8");
-    const t1Header = "## T1 -- Active (last 7 days)\n";
-    const insertIdx = content.indexOf(t1Header);
-    if (insertIdx !== -1) {
-      content = content.slice(0, insertIdx + t1Header.length) + "\n" + prHistoryBlock + content.slice(insertIdx + t1Header.length);
-      fs.writeFileSync(historyFile, content);
-    } else {
-      log("Warning: Could not find T1 marker to insert history entry", "warn");
-    }
   }
 
   // Re-apply coverage log entries
@@ -234,6 +201,259 @@ async function resolveConflictsAndRebase(pr) {
 
   // Go back to Nightly branch and clean up
   runCmd("git checkout Nightly");
+}
+
+// ----------------------------------------------------------------------------
+// Metadata Extraction & Tagging
+// ----------------------------------------------------------------------------
+function extractMetadata(pr) {
+  const body = pr.body || "";
+  
+  // Try parsing the NIGHTLY_PR_METADATA block
+  const metaMatch = body.match(/NIGHTLY_PR_METADATA:\s*([\s\S]*?)-->/);
+  
+  let domain = "Unknown";
+  let why = "Daily audit pass.";
+  let change = pr.title;
+  let result = "Nominal validation.";
+
+  if (metaMatch) {
+    const lines = metaMatch[1].split("\n");
+    lines.forEach(line => {
+      const match = line.match(/^\s*([^:]+):\s*(.*)$/);
+      if (match) {
+        const key = match[1].trim().toLowerCase();
+        const val = match[2].trim();
+        if (key === "domain") domain = val;
+        if (key === "why") why = val;
+        if (key === "change") change = val;
+        if (key === "result") result = val;
+      }
+    });
+  } else {
+    // Try to parse standard sections from the description if present
+    const whyMatch = body.match(/\*\*\[Reasoning\]\*\*:\s*([^\n]+)/i) || body.match(/\*\*\[Why\]\*\*:\s*([^\n]+)/i);
+    const changeMatch = body.match(/\*\*\[Changes\]\*\*:\s*([^\n]+)/i) || body.match(/\*\*\[Change\]\*\*:\s*([^\n]+)/i);
+    const resultMatch = body.match(/\*\*\[Result\]\*\*:\s*([^\n]+)/i) || body.match(/\*\*\[Verification\]\*\*:\s*([^\n]+)/i);
+    
+    if (whyMatch) why = whyMatch[1].trim();
+    if (changeMatch) change = changeMatch[1].trim();
+    if (resultMatch) result = resultMatch[1].trim();
+  }
+
+  // Sanitize values to prevent command injection
+  const sanitize = (str) => str.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+
+  return {
+    domain: sanitize(domain),
+    why: sanitize(why),
+    change: sanitize(change),
+    result: sanitize(result)
+  };
+}
+
+function tagMergeCommit(sha, stage, prNum, meta) {
+  const date = new Date().toISOString().split("T")[0];
+  const tagName = `nightly/${date}/stage-${stage}`;
+  const tagMessage = `PR: #${prNum}
+Domain: ${meta.domain}
+Why: ${meta.why}
+Change: ${meta.change}
+Result: ${meta.result}`;
+
+  try {
+    // Create local annotated tag
+    runCmd(`git tag -a "${tagName}" -m "${tagMessage}" ${sha}`);
+    // Push the tag to remote
+    const repoUrl = `https://x-access-token:${CONFIG.token}@github.com/${CONFIG.owner}/${CONFIG.repo}.git`;
+    runCmd(`git push ${repoUrl} "${tagName}"`);
+    log(`Successfully pushed annotated Git tag: ${tagName}`, "success");
+  } catch (err) {
+    log(`Failed to create/push tag ${tagName}: ${err.message}`, "warn");
+  }
+}
+
+function compileChangelog(newFailedMerges = []) {
+  log("Recompiling T1 history from Git tags...");
+  runCmd("git fetch --tags");
+  
+  // List all nightly/ tags
+  const tagsStr = runCmd("git tag -l 'nightly/*'").trim();
+  const tags = tagsStr ? tagsStr.split("\n").filter(Boolean) : [];
+  
+  const dateLimit = new Date();
+  dateLimit.setDate(dateLimit.getDate() - 7); // 7 days ago
+
+  const entries = [];
+
+  for (const tag of tags) {
+    // tag format: nightly/YYYY-MM-DD/stage-N
+    const match = tag.match(/^nightly\/(\d{4}-\d{2}-\d{2})\/stage-(\d+)$/);
+    if (!match) continue;
+
+    const tagDateStr = match[1];
+    const stage = match[2];
+    const tagDate = new Date(tagDateStr);
+    
+    // Skip if older than 7 days
+    if (tagDate < dateLimit) continue;
+
+    try {
+      // Get the tag details
+      const sha = runCmd(`git rev-parse ${tag}`);
+      const body = runCmd(`git tag -l ${tag} --format="%(contents)"`);
+      
+      // Parse tag body lines
+      const lines = body.split("\n");
+      let prNum = "PENDING";
+      let domain = "Unknown";
+      let why = "";
+      let change = "";
+      let result = "";
+
+      lines.forEach(line => {
+        const matchLine = line.match(/^([^:]+):\s*(.*)$/);
+        if (matchLine) {
+          const key = matchLine[1].trim().toLowerCase();
+          const val = matchLine[2].trim();
+          if (key === "pr") prNum = val.replace("#", "");
+          if (key === "domain") domain = val;
+          if (key === "why") why = val;
+          if (key === "change") change = val;
+          if (key === "result") result = val;
+        }
+      });
+
+      if (!change) {
+        change = `Stage ${stage} run record`;
+      }
+
+      // Query files changed for the squash merge commit SHA
+      let filesList = "codebase";
+      try {
+        const filesStr = runCmd(`git diff-tree --no-commit-id --name-only -r ${sha}`).trim();
+        if (filesStr) {
+          const files = filesStr.split("\n").filter(Boolean);
+          if (files.length <= 5) {
+            filesList = files.join(", ");
+          } else {
+            // Group files by top-level directory
+            const groups = {};
+            files.forEach(f => {
+              const dir = f.split("/").slice(0, 3).join("/");
+              groups[dir] = (groups[dir] || 0) + 1;
+            });
+            filesList = Object.entries(groups)
+              .map(([dir, count]) => `${dir}/* (${count} files)`)
+              .join(", ");
+          }
+        }
+      } catch (err) {
+        log(`Warning: Failed to fetch files for tag ${tag}: ${err.message}`, "warn");
+      }
+
+      const viewUrl = `https://github.com/${CONFIG.owner}/${CONFIG.repo}/pull/${prNum}`;
+
+      const block = `### [${tagDateStr}] PR #${prNum} [Stage ${stage}]: ${change}
+**Domain:** ${domain} | **Commit:** ${sha} | [View PR](${viewUrl})
+**Files:** ${filesList}
+**Why:** ${why}
+**Change:** ${change}
+**Result:** ${result}`;
+
+      entries.push({ date: tagDate, stage: parseInt(stage, 10), isMergeFailed: false, block });
+    } catch (err) {
+      log(`Failed parsing tag ${tag}: ${err.message}`, "warn");
+    }
+  }
+
+  // Extract existing recent MERGE FAILED blocks from 00-pr-history.md
+  const failedBlocks = [...newFailedMerges];
+  if (fs.existsSync(CONFIG.changelogPath)) {
+    const fileContent = fs.readFileSync(CONFIG.changelogPath, "utf8");
+    const t1Marker = "## T1 -- Active (last 7 days)\n";
+    const t2Marker = "## T2 -- Recent (8-30 days)";
+    const parts1 = fileContent.split(t1Marker);
+    if (parts1.length >= 2) {
+      const parts2 = parts1[1].split(t2Marker);
+      if (parts2.length >= 2) {
+        const t1Section = parts2[0];
+        const lines = t1Section.split("\n");
+        let currentBlock = [];
+        lines.forEach(line => {
+          if (line.startsWith("## [") && line.includes("MERGE FAILED")) {
+            if (currentBlock.length > 0) failedBlocks.push(currentBlock.join("\n"));
+            currentBlock = [line];
+          } else if (currentBlock.length > 0) {
+            if (line.startsWith("### ") || line.startsWith("## T")) {
+              failedBlocks.push(currentBlock.join("\n"));
+              currentBlock = [];
+            } else {
+              currentBlock.push(line);
+            }
+          }
+        });
+        if (currentBlock.length > 0) failedBlocks.push(currentBlock.join("\n"));
+      }
+    }
+  }
+
+  // Parse date and push failed merge blocks
+  failedBlocks.forEach(block => {
+    const dateMatch = block.match(/## \[(\d{4}-\d{2}-\d{2})\]/);
+    if (dateMatch) {
+      const blockDateStr = dateMatch[1];
+      const blockDate = new Date(blockDateStr);
+      if (blockDate >= dateLimit) {
+        // Find PR number if possible for sorting, default to 0
+        const prMatch = block.match(/PR #(\d+)/);
+        const prNum = prMatch ? parseInt(prMatch[1], 10) : 0;
+        entries.push({ date: blockDate, stage: prNum, isMergeFailed: true, block });
+      }
+    }
+  });
+
+  // Deduplicate entries by block content signature
+  const seenSignatures = new Set();
+  const dedupedEntries = [];
+  for (const entry of entries) {
+    // Generate a simple signature from the block's first 60 chars to avoid exact duplicate inserts
+    const sig = entry.block.trim().split("\n").slice(0, 3).join("\n");
+    if (!seenSignatures.has(sig)) {
+      seenSignatures.add(sig);
+      dedupedEntries.push(entry);
+    }
+  }
+
+  // Sort entries: newest date first, then highest stage/PR number first
+  dedupedEntries.sort((a, b) => {
+    const diffDate = b.date - a.date;
+    if (diffDate !== 0) return diffDate;
+    return b.stage - a.stage;
+  });
+
+  const t1Content = dedupedEntries.map(e => e.block.trim()).join("\n\n\n") + "\n\n";
+
+  // Re-write 00-pr-history.md
+  if (fs.existsSync(CONFIG.changelogPath)) {
+    let fileContent = fs.readFileSync(CONFIG.changelogPath, "utf8");
+    const t1Marker = "## T1 -- Active (last 7 days)\n";
+    const t2Marker = "## T2 -- Recent (8-30 days)";
+    
+    const parts1 = fileContent.split(t1Marker);
+    if (parts1.length >= 2) {
+      const parts2 = parts1[1].split(t2Marker);
+      if (parts2.length >= 2) {
+        const newFileContent = parts1[0] + t1Marker + "\n" + t1Content + t2Marker + parts2[1];
+        fs.writeFileSync(CONFIG.changelogPath, newFileContent);
+        log("Successfully recompiled 00-pr-history.md T1 section from Git tags.", "success");
+      } else {
+        log("Error: Could not find T2 marker in 00-pr-history.md", "error");
+      }
+    } else {
+      log("Error: Could not find T1 marker in 00-pr-history.md", "error");
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -282,6 +502,8 @@ async function run() {
 
   if (targets.length === 0) {
     log("No matching Nightly PRs found.", "success");
+    // Even if no PRs were merged, compile the changelog to keep it aged and self-healed
+    compileChangelog();
     return;
   }
 
@@ -290,7 +512,7 @@ async function run() {
   const dir = path.dirname(CONFIG.changelogPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  let changelogUpdates = "";
+  const currentFailedMerges = [];
 
   for (const pr of targets) {
     log(`PR #${pr.number}: ${pr.title}`);
@@ -347,10 +569,11 @@ async function run() {
       };
 
       let merged = false;
+      let mergeResult = null;
       for (let attempt = 1; attempt <= 8 && !merged; attempt++) {
         try {
           log(`Merge attempt ${attempt}/8 for PR #${pr.number}...`);
-          await githubApi(
+          mergeResult = await githubApi(
             `/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}/merge`,
             "PUT",
             mergeBody
@@ -383,79 +606,29 @@ async function run() {
         }
       }
 
-      const date = new Date().toISOString().split("T")[0];
       const stage = stageNumber(pr.head.ref);
-      
-      if (fs.existsSync(CONFIG.changelogPath)) {
-        let content = fs.readFileSync(CONFIG.changelogPath, "utf8");
-        const pendingRegex = new RegExp(`### \\[.*?\\] PR #PENDING \\[Stage ${stage}\\]:.*\\n\\*\\*Domain:\\*\\* .*? \\| \\*\\*Commit:\\*\\* PENDING \\| \\[View PR\\]\\(PENDING\\)`, "g");
-        
-        let matchFound = false;
-        content = content.replace(pendingRegex, (match) => {
-          matchFound = true;
-          return match
-            .replace('PR #PENDING', `PR #${pr.number}`)
-            .replace('**Commit:** PENDING', `**Commit:** ${pr.head.sha}`)
-            .replace('[View PR](PENDING)', `[View PR](${pr.html_url})`);
-        });
-
-        if (matchFound) {
-          fs.writeFileSync(CONFIG.changelogPath, content);
-          log(`Updated PENDING block for PR #${pr.number} in changelog.`);
-        } else {
-          log(`Warning: No PENDING block found for Stage ${stage} in changelog.`, "warn");
-        }
+      if (merged && mergeResult && mergeResult.sha) {
+        const meta = extractMetadata(pr);
+        tagMergeCommit(mergeResult.sha, stage, pr.number, meta);
       }
 
     } catch (e) {
       log(`FAILED PR #${pr.number}: ${e.message}`, "error");
 
       const date = new Date().toISOString().split("T")[0];
-      const failMarker = `MERGE FAILED: PR #${pr.number}:`;
-      const existing = fs.existsSync(CONFIG.changelogPath)
-        ? fs.readFileSync(CONFIG.changelogPath, "utf8")
-        : "";
-
-      if (!existing.includes(failMarker)) {
-        changelogUpdates =
-          `\n## [${date}] MERGE FAILED: PR #${pr.number}: ${pr.title}\n` +
-          `> [!CAUTION]\n` +
-          `> **Status**: Auto-merge aborted.\n` +
-          `> **Error**: \`${e.message}\`\n` +
-          `> **PR Link**: [Link](${pr.html_url})\n` +
-          changelogUpdates;
-      }
-    }
-  }
-
-  // Write changelog for first-pass failures
-  if (changelogUpdates && fs.existsSync(CONFIG.changelogPath)) {
-    let content = fs.readFileSync(CONFIG.changelogPath, "utf8");
-    const t1Marker = "## T1 -- Active (last 7 days)\n";
-    const insertIdx = content.indexOf(t1Marker);
-
-    if (insertIdx !== -1) {
-      content =
-        content.slice(0, insertIdx + t1Marker.length) +
-        changelogUpdates +
-        content.slice(insertIdx + t1Marker.length);
-      fs.writeFileSync(CONFIG.changelogPath, content);
-      log("Changelog updated with failed merges.", "success");
-    } else {
-      log("Failed to find T1 marker to insert merge failures.", "warn");
+      currentFailedMerges.push(
+        `## [${date}] MERGE FAILED: PR #${pr.number}: ${pr.title}\n` +
+        `> [!CAUTION]\n` +
+        `> **Status**: Auto-merge aborted.\n` +
+        `> **Error**: \`${e.message}\`\n` +
+        `> **PR Link**: [Link](${pr.html_url})`
+      );
     }
   }
 
   // --------------------------------------------------------------------------
   // Second-pass retry guard
   // --------------------------------------------------------------------------
-  // After all stage PRs are processed in order, GitHub may still have open PRs
-  // whose mergeability was in a pending (null) state during the first pass --
-  // either because GitHub had not yet recomputed their merge status against the
-  // freshly updated Nightly HEAD, or because a transient 405/409 lock was in
-  // effect. Wait for a short settling period, then re-query and retry any PRs
-  // that remain open. This closes the race window that causes Stage 13 to read
-  // a stale coverage log and incorrectly classify the preceding stage as FAILED.
   log(`Settling for ${SECOND_PASS_SETTLE_MS / 1000}s before second-pass check...`);
   await sleep(SECOND_PASS_SETTLE_MS);
 
@@ -487,157 +660,110 @@ async function run() {
       return diff !== 0 ? diff : a.number - b.number;
     });
 
-  if (retryTargets.length === 0) {
-    log("Second-pass check: no remaining open Nightly PRs. Pipeline fully merged.", "success");
-    return;
-  }
+  if (retryTargets.length > 0) {
+    log(`Second-pass retrying ${retryTargets.length} still-open PR(s)...`);
 
-  log(`Second-pass retrying ${retryTargets.length} still-open PR(s)...`);
+    for (const pr of retryTargets) {
+      log(`[Second pass] PR #${pr.number}: ${pr.title}`);
 
-  let retryChangelogUpdates = "";
-
-  for (const pr of retryTargets) {
-    log(`[Second pass] PR #${pr.number}: ${pr.title}`);
-
-    try {
-      let details = await githubApi(
-        `/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}`
-      );
-
-      // Poll for mergeability with an extended budget for the second pass.
-      let polls = 0;
-      while (details.mergeable === null && polls < SECOND_PASS_POLL_MAX) {
-        log(`[Second pass] Waiting for mergeability on PR #${pr.number} (${polls + 1}/${SECOND_PASS_POLL_MAX})...`);
-        await sleep(5_000);
-        details = await githubApi(`/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}`);
-        polls++;
-      }
-
-      if (details.mergeable === false) {
-        log("[Second pass] PR #" + pr.number + " has merge conflicts. Attempting automatic resolution...");
-        try {
-          await resolveConflictsAndRebase(pr);
-          details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
-          let refetchPolls = 0;
-          while (details.mergeable === null && refetchPolls < SECOND_PASS_POLL_MAX) {
-            log("[Second pass] Waiting for GitHub to compute mergeability after force-push (" + (refetchPolls + 1) + "/" + SECOND_PASS_POLL_MAX + ")...");
-            await sleep(5000);
-            details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
-            refetchPolls++;
-          }
-        } catch (rebaseError) {
-          log("[Second pass] Automatic conflict resolution failed for PR #" + pr.number + ": " + rebaseError.message, "error");
-          throw rebaseError;
-        }
-      }
-
-      const mergeBody = {
-        merge_method: "squash",
-        commit_title: `${pr.title} (#${pr.number})`,
-        commit_message: `Automated merge of PR #${pr.number} (author: ${pr.user.login})`,
-      };
-
-      let merged = false;
-      for (let attempt = 1; attempt <= 8 && !merged; attempt++) {
-        try {
-          log(`[Second pass] Merge attempt ${attempt}/8 for PR #${pr.number}...`);
-          await githubApi(
-            `/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}/merge`,
-            "PUT",
-            mergeBody
-          );
-          log(`[Second pass] Merged PR #${pr.number}.`, "success");
-          merged = true;
-        } catch (e) {
-          if (attempt < 8 && (e.message.includes("405") || e.message.includes("409"))) {
-            const wait = Math.pow(2, attempt) * 1000;
-            log(`[Second pass] Merge blocked -- retrying in ${wait / 1000}s...`, "warn");
-            await sleep(wait);
-          } else {
-            throw e;
-          }
-        }
-      }
-
-      // Delete head branch
       try {
-        await githubApi(
-          `/repos/${CONFIG.owner}/${CONFIG.repo}/git/refs/heads/${pr.head.ref}`,
-          "DELETE"
+        let details = await githubApi(
+          `/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}`
         );
-        log(`[Second pass] Deleted branch ${pr.head.ref}.`, "success");
+
+        let polls = 0;
+        while (details.mergeable === null && polls < SECOND_PASS_POLL_MAX) {
+          log(`[Second pass] Waiting for mergeability on PR #${pr.number} (${polls + 1}/${SECOND_PASS_POLL_MAX})...`);
+          await sleep(5_000);
+          details = await githubApi(`/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}`);
+          polls++;
+        }
+
+        if (details.mergeable === false) {
+          log("[Second pass] PR #" + pr.number + " has merge conflicts. Attempting automatic resolution...");
+          try {
+            await resolveConflictsAndRebase(pr);
+            details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
+            let refetchPolls = 0;
+            while (details.mergeable === null && refetchPolls < SECOND_PASS_POLL_MAX) {
+              log("[Second pass] Waiting for GitHub to compute mergeability after force-push (" + (refetchPolls + 1) + "/" + SECOND_PASS_POLL_MAX + ")...");
+              await sleep(5000);
+              details = await githubApi("/repos/" + CONFIG.owner + "/" + CONFIG.repo + "/pulls/" + pr.number);
+              refetchPolls++;
+            }
+          } catch (rebaseError) {
+            log("[Second pass] Automatic conflict resolution failed for PR #" + pr.number + ": " + rebaseError.message, "error");
+            throw rebaseError;
+          }
+        }
+
+        const mergeBody = {
+          merge_method: "squash",
+          commit_title: `${pr.title} (#${pr.number})`,
+          commit_message: `Automated merge of PR #${pr.number} (author: ${pr.user.login})`,
+        };
+
+        let merged = false;
+        let mergeResult = null;
+        for (let attempt = 1; attempt <= 8 && !merged; attempt++) {
+          try {
+            log(`[Second pass] Merge attempt ${attempt}/8 for PR #${pr.number}...`);
+            mergeResult = await githubApi(
+              `/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}/merge`,
+              "PUT",
+              mergeBody
+            );
+            log(`[Second pass] Merged PR #${pr.number}.`, "success");
+            merged = true;
+          } catch (e) {
+            if (attempt < 8 && (e.message.includes("405") || e.message.includes("409"))) {
+              const wait = Math.pow(2, attempt) * 1000;
+              log(`[Second pass] Merge blocked -- retrying in ${wait / 1000}s...`, "warn");
+              await sleep(wait);
+            } else {
+              throw e;
+            }
+          }
+        }
+
+        // Delete head branch
+        try {
+          await githubApi(
+            `/repos/${CONFIG.owner}/${CONFIG.repo}/git/refs/heads/${pr.head.ref}`,
+            "DELETE"
+          );
+          log(`[Second pass] Deleted branch ${pr.head.ref}.`, "success");
+        } catch (e) {
+          if (e.message.includes("404")) {
+            log(`[Second pass] Branch ${pr.head.ref} already deleted.`);
+          } else {
+            log(`[Second pass] Failed to delete branch ${pr.head.ref}: ${e.message}`, "warn");
+          }
+        }
+
+        const stage = stageNumber(pr.head.ref);
+        if (merged && mergeResult && mergeResult.sha) {
+          const meta = extractMetadata(pr);
+          tagMergeCommit(mergeResult.sha, stage, pr.number, meta);
+        }
+
       } catch (e) {
-        if (e.message.includes("404")) {
-          log(`[Second pass] Branch ${pr.head.ref} already deleted.`);
-        } else {
-          log(`[Second pass] Failed to delete branch ${pr.head.ref}: ${e.message}`, "warn");
-        }
-      }
+        log(`[Second pass] FAILED PR #${pr.number}: ${e.message}`, "error");
 
-      const stage = stageNumber(pr.head.ref);
-
-      if (fs.existsSync(CONFIG.changelogPath)) {
-        let content = fs.readFileSync(CONFIG.changelogPath, "utf8");
-        const pendingRegex = new RegExp(
-          `### \\[.*?\\] PR #PENDING \\[Stage ${stage}\\]:.*\n\\*\\*Domain:\\*\\* .*? \\| \\*\\*Commit:\\*\\* PENDING \\| \\[View PR\\]\\(PENDING\\)`,
-          "g"
-        );
-
-        let matchFound = false;
-        content = content.replace(pendingRegex, match => {
-          matchFound = true;
-          return match
-            .replace("PR #PENDING", `PR #${pr.number}`)
-            .replace("**Commit:** PENDING", `**Commit:** ${pr.head.sha}`)
-            .replace("[View PR](PENDING)", `[View PR](${pr.html_url})`);
-        });
-
-        if (matchFound) {
-          fs.writeFileSync(CONFIG.changelogPath, content);
-          log(`[Second pass] Updated PENDING block for PR #${pr.number} in changelog.`);
-        } else {
-          log(`[Second pass] Warning: No PENDING block found for Stage ${stage} in changelog.`, "warn");
-        }
-      }
-
-    } catch (e) {
-      log(`[Second pass] FAILED PR #${pr.number}: ${e.message}`, "error");
-
-      const date = new Date().toISOString().split("T")[0];
-      const failMarker = `MERGE FAILED: PR #${pr.number}:`;
-      const existing = fs.existsSync(CONFIG.changelogPath)
-        ? fs.readFileSync(CONFIG.changelogPath, "utf8")
-        : "";
-
-      if (!existing.includes(failMarker)) {
-        retryChangelogUpdates =
-          `\n## [${date}] MERGE FAILED: PR #${pr.number}: ${pr.title}\n` +
+        const date = new Date().toISOString().split("T")[0];
+        currentFailedMerges.push(
+          `## [${date}] MERGE FAILED: PR #${pr.number}: ${pr.title}\n` +
           `> [!CAUTION]\n` +
           `> **Status**: Auto-merge aborted (second pass).\n` +
           `> **Error**: \`${e.message}\`\n` +
-          `> **PR Link**: [Link](${pr.html_url})\n` +
-          retryChangelogUpdates;
+          `> **PR Link**: [Link](${pr.html_url})`
+        );
       }
     }
   }
 
-  // Write changelog for second-pass failures
-  if (retryChangelogUpdates && fs.existsSync(CONFIG.changelogPath)) {
-    let content = fs.readFileSync(CONFIG.changelogPath, "utf8");
-    const t1Marker = "## T1 -- Active (last 7 days)\n";
-    const insertIdx = content.indexOf(t1Marker);
-
-    if (insertIdx !== -1) {
-      content =
-        content.slice(0, insertIdx + t1Marker.length) +
-        retryChangelogUpdates +
-        content.slice(insertIdx + t1Marker.length);
-      fs.writeFileSync(CONFIG.changelogPath, content);
-      log("[Second pass] Changelog updated with failed merges.", "success");
-    } else {
-      log("[Second pass] Failed to find T1 marker to insert merge failures.", "warn");
-    }
-  }
+  // Compile final changelog dynamically from tags and write it to 00-pr-history.md
+  compileChangelog(currentFailedMerges);
 }
 
 run().catch(e => {
