@@ -16,6 +16,18 @@ LAST_AGED:   2026-07-29
 
 ## T1 -- Active (last 7 days)
 
+## [2026-07-29] MERGE FAILED: PR #1266: chore(refactor): no action required
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `Merge conflicts (state: dirty).`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1266)
+
+## [2026-07-29] MERGE FAILED: PR #1262: docs(readme): reconcile features/roster README with MemberCard winRate modernization
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `Merge conflicts (state: dirty).`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1262)
+
 ### [2026-07-29] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 2 and Stage 5 recurring missing runs, and updated the three sections of the protocol.
 **Domain:** pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
