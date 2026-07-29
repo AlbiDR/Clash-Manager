@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-29] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 2 and Stage 5 recurring missing runs, and updated the three sections of the protocol.
+**Domain:** pipeline | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/13-self-healing-protocol.md
+**Why:** To complete the daily automated self-healing protocol audit pass.
+**Change:** Audited all 13 pipeline stages, documented Stage 2 and Stage 5 recurring missing runs, and updated the three sections of the protocol.
+**Result:** 100% pipeline visibility and updated no-diff metrics with all monorepo checks passing cleanly.
+
+
 ### [2026-07-29] PR #PENDING [Stage 12]: Modernized ParameterCard with declarative v-tactile haptic feedback.
 **Domain:** APK UX | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue
