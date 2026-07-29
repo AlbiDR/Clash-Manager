@@ -106,8 +106,8 @@ onMounted(() => {
         },
       });
       updateServiceWorker.value = update;
-    } catch (e) {
-      console.warn("[PWA] Registration failed", e);
+    } catch (pwaRegistrationError) {
+      console.warn("[PWA] Registration failed", pwaRegistrationError);
     }
   }, 1000);
 });
