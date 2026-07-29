@@ -13,13 +13,10 @@
  * - **Satisfaction:** Satisfies ADR Section III: Data Flow and ADR Section VII: Naming Conventions.
  * - **Interface Boundaries:** Excises any implicit `any` pathogens by enforcing typed properties and emissions.
  */
-import { Icon, SettingRow, BaseSelect, BaseSegmentedControl } from "@shared";
-import { useHaptics } from "@shared/composables/useHaptics";
+import { Icon, SettingRow, BaseSelect, BaseSegmentedControl, vTactile } from "@shared";
 import { computed } from "vue";
 import { type OptimizationSettings, type OptimizationResult } from "../logic";
 import { IMPORTANT_KING_LEVELS, KING_LEVEL_MAX } from "@core";
-
-const haptics = useHaptics();
 
 /**
  * Component properties interface representing optimization parameters.
@@ -56,11 +53,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [newSettings: Partial<OptimizationSettings>];
 }>();
-
-const toggleGemSpending = () => {
-  haptics.tap();
-  emit("update", { allowGemSpending: !props.settings.allowGemSpending });
-};
 
 const levelOptions = computed(() => {
   return Array.from({ length: KING_LEVEL_MAX }, (_, levelIndex) => levelIndex + 1)
@@ -132,11 +124,12 @@ const levelOptions = computed(() => {
 
       <!-- Gem Spending Toggle -->
       <SettingRow
+        v-tactile
         label="Allow Gem Spending"
         description="Buy missing cards with gems"
         :active="settings.allowGemSpending"
         class="parameter-toggle"
-        @click="toggleGemSpending()"
+        @click="emit('update', { allowGemSpending: !settings.allowGemSpending })"
       />
     </div>
   </div>
