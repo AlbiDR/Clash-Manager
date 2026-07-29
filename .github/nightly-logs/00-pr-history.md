@@ -16,6 +16,14 @@ LAST_AGED:   2026-07-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-07-29] PR #PENDING [Stage 12]: Modernized ParameterCard with declarative v-tactile haptic feedback.
+**Domain:** APK UX | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue
+**Why:** To replace programmatic useHaptics with declarative v-tactile directive on ParameterCard.
+**Change:** Modernized ParameterCard with declarative v-tactile haptic feedback.
+**Result:** 100% compliant hybrid UX, passing tests and zero regressions.
+
+
 ### [2026-07-29] PR #PENDING [Stage 11]: Audited WebView configurations, Service Worker cache settings, and ran MD5 resource duplication checksum validation on the assets tree.
 **Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
