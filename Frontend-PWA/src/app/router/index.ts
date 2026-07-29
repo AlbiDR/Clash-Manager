@@ -11,7 +11,7 @@ function saveScrollPosition(path: string, y: number) {
     const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "{}");
     store[path] = y;
     sessionStorage.setItem(SCROLL_KEY, JSON.stringify(store));
-  } catch (e) {
+  } catch (scrollSaveError) {
     /* ignore */
   }
 }
@@ -20,7 +20,7 @@ function getSavedScroll(path: string): number {
   try {
     const store = JSON.parse(sessionStorage.getItem(SCROLL_KEY) || "{}");
     return store[path] || 0;
-  } catch (e) {
+  } catch (scrollRestoreError) {
     return 0;
   }
 }
@@ -99,8 +99,8 @@ router.beforeResolve(async (to, from) => {
         if (!resolved) resolve(true);
       }, 500);
     });
-  } catch (e) {
-    console.warn("View transition failed:", e);
+  } catch (viewTransitionError) {
+    console.warn("View transition failed:", viewTransitionError);
     return true;
   }
 });
