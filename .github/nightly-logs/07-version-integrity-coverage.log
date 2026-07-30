@@ -160,3 +160,5 @@
 * [2026-07-29] [Stage 7] CLEAN: APK/android/apktool.yml -- No action required
 * [2026-07-29] [Stage 7] CLEAN: Backend/supabase/functions/_shared/protocol.ts -- No action required
 * [2026-07-29] [Stage 7] CLEAN: Frontend-PWA/src/core/services/useProgressiveList.ts -- No action required
+* [2026-07-29] [Stage 7] CLEAN: package.json, Frontend-PWA/package.json, Backend/package.json -- Ground truth version 14.40.0 declared identically in all three manifests. Zero drift.
+* [2026-07-29] [Stage 7] CLEAN: Frontend-PWA/package.json, Backend/package.json -- Catalog adherence audit: all shared infrastructure dependencies (vue, pinia, valibot, typescript, vite, vitest) use the catalog: protocol. audit:version (validate_project.ts) reports PASS with zero catalog violations.
