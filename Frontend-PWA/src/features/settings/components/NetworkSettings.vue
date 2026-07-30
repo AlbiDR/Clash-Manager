@@ -117,8 +117,8 @@ function saveApiUrl() {
       <div v-else class="url-input-row">
         <template v-if="isChecking">
           <div class="sk-input skeleton-anim" style="flex: 1"></div>
-          <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
-          <div class="sk-button-s skeleton-anim" style="width: 40px"></div>
+          <div class="sk-button-s skeleton-anim" style="width: var(--sys-space-48)"></div>
+          <div class="sk-button-s skeleton-anim" style="width: var(--sys-space-48)"></div>
         </template>
         <template v-else>
           <input
@@ -207,6 +207,12 @@ function saveApiUrl() {
   font-weight: 800;
   font-size: 12px;
   cursor: pointer;
+  /* Compensating padding keeps the visual label small while the tap
+     footprint still meets the 48px hybrid touch-target minimum. */
+  min-height: var(--sys-space-48);
+  padding: 0 var(--sys-space-12);
+  display: inline-flex;
+  align-items: center;
 }
 
 .url-input-row {
@@ -224,14 +230,18 @@ function saveApiUrl() {
   font-size: 13px;
 }
 .save-btn {
-  width: 40px;
+  /* 48px hybrid touch-target minimum (Target B.2). */
+  width: var(--sys-space-48);
+  min-height: var(--sys-space-48);
   border-radius: 10px;
   background: var(--sys-color-primary);
   color: white;
   border: none;
 }
 .cancel-btn {
-  width: 40px;
+  /* 48px hybrid touch-target minimum (Target B.2). */
+  width: var(--sys-space-48);
+  min-height: var(--sys-space-48);
   border-radius: 10px;
   background: var(--sys-color-surface-container-highest);
   border: none;
