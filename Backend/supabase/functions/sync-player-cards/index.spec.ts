@@ -51,6 +51,7 @@ beforeAll(async () => {
     SUPABASE_SERVICE_ROLE_KEY: "service-key",
     SUPABASE_ANON_KEY: "anon-key",
     INTERNAL_BEARER_TOKEN: "internal-bearer",
+    ALLOWED_ORIGINS: "https://app.test.co",
   };
 
   globalThis.Deno = {
@@ -124,14 +125,38 @@ beforeEach(() => {
 });
 
 describe("sync-player-cards Edge Function", () => {
-  it("should handle CORS OPTIONS preflight request", async () => {
+  // [DECISION LOG COVERAGE] sync-player-cards is one of the three anon-reachable
+  // functions (accepts the publicly known anon key as a valid bearer credential), so
+  // `protocol.ts`'s CORS handling is restricted (allow-list-checked) rather than the
+  // blanket `*` still used by the internal-bearer-only functions.
+  it("should handle a CORS OPTIONS preflight request with no Origin header (server-to-server caller): no CORS header reflected, but the preflight itself still succeeds", async () => {
     const req = new Request("https://test.co/sync-player-cards", {
       method: "OPTIONS",
     });
     const response = await requestHandler(req);
     expect(response.status).toBe(200);
-    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
+  });
+
+  it("should reflect an Origin on the configured allow-list", async () => {
+    const req = new Request("https://test.co/sync-player-cards", {
+      method: "OPTIONS",
+      headers: { Origin: "https://app.test.co" },
+    });
+    const response = await requestHandler(req);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("https://app.test.co");
+  });
+
+  it("should NOT reflect an Origin that is not on the configured allow-list", async () => {
+    const req = new Request("https://test.co/sync-player-cards", {
+      method: "OPTIONS",
+      headers: { Origin: "https://evil.example.com" },
+    });
+    const response = await requestHandler(req);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("should block unauthorized requests (401 Unauthorized)", async () => {
@@ -384,7 +409,12 @@ describe("sync-player-cards Edge Function", () => {
     const response = await requestHandler(req);
     expect(response.status).toBe(500);
     const body = await response.json();
-    expect(body.error).toContain("Clash Royale API error: 404");
+    // protocol.ts's error classification (F7) never returns raw internal
+    // messages across the trust boundary; an unclassified `throw new Error(...)`
+    // degrades to the generic INTERNAL_ERROR shape, with the specific detail
+    // kept server-side only (console.error / telemetry metadata).
+    expect(body.code).toBe("INTERNAL_ERROR");
+    expect(body.error).toBe("Internal Server Error");
   });
 
   it("should validate and reject malformed Clash Royale API payloads gracefully", async () => {
@@ -412,6 +442,7 @@ describe("sync-player-cards Edge Function", () => {
     const response = await requestHandler(req);
     expect(response.status).toBe(500);
     const body = await response.json();
-    expect(body.error).toContain("Invalid response from Clash Royale API");
+    expect(body.code).toBe("INTERNAL_ERROR");
+    expect(body.error).toBe("Internal Server Error");
   });
 });

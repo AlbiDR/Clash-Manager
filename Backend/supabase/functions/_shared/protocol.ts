@@ -5,6 +5,7 @@ import { SupabaseClient } from "npm:@supabase/supabase-js@2.110.8";
 import * as v from "npm:valibot@1.4.2";
 import { AuditEntry } from "./types.ts";
 import { IntegrityCheckDetailsSchema, TelemetrySchema } from "./schemas.ts";
+import { getAllowedOrigins, RATE_LIMIT_BUCKET_SWEEP_THRESHOLD } from "./config.ts";
 import {
     classifyThrown,
     PROTOCOL_ERROR_STATUS,
@@ -12,12 +13,6 @@ import {
     ProtocolErrorCode,
     toClientSafeMessage,
 } from "./errors.ts";
-
-/** Standard response headers for every protocol response body. */
-const JSON_RESPONSE_HEADERS: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-};
 
 /** The only Authorization scheme the protocol accepts. */
 const BEARER_PREFIX = "Bearer ";
@@ -27,6 +22,178 @@ const TOKEN_DIGEST_ALGORITHM = "SHA-256";
 
 /** Sentinel for "no telemetry match count yet" in the constant-time auth accumulator. */
 const NO_TOKEN_MATCHES = 0;
+
+/** Header names inspected, in priority order, to identify the caller's IP behind a proxy. */
+const FORWARDED_FOR_HEADER = "x-forwarded-for";
+const CF_CONNECTING_IP_HEADER = "cf-connecting-ip";
+const REAL_IP_HEADER = "x-real-ip";
+const UNKNOWN_CALLER_IP = "unknown";
+
+/**
+ * Extracts the caller's IP address from proxy-forwarded headers.
+ *
+ * @remarks
+ * Supabase Edge Functions run behind a proxy, so `req` itself carries no socket-level
+ * remote address. Mirrors the header-reading idiom already used elsewhere in this
+ * kernel (reading headers directly off the `Request`, see `isAuthorizedBearer` above
+ * for the equivalent pattern applied to `Authorization`).
+ * [DECISION LOG] `x-forwarded-for` may carry a comma-separated chain
+ * (`client, proxy1, proxy2`); the first entry is the original client. Falls back to
+ * `cf-connecting-ip` (Cloudflare) and then `x-real-ip` before giving up.
+ * [GUARD] Every one of these headers is caller-suppliable and therefore spoofable by a
+ * direct API caller. That is an accepted limitation of IP-based limiting behind any
+ * proxy without a trusted-hop allowlist -- see the rate-limit bucket documentation
+ * below for the full scope of what this mitigation does and does not guarantee.
+ *
+ * @param req - The inbound request.
+ * @returns The best-effort caller IP, or a fixed sentinel when none of the headers are present.
+ */
+function extractCallerIp(req: Request): string {
+    const forwardedFor = req.headers.get(FORWARDED_FOR_HEADER);
+    if (forwardedFor) {
+        const [firstHop] = forwardedFor.split(",");
+        if (firstHop && firstHop.trim().length > 0) return firstHop.trim();
+    }
+
+    const cfConnectingIp = req.headers.get(CF_CONNECTING_IP_HEADER);
+    if (cfConnectingIp && cfConnectingIp.trim().length > 0) return cfConnectingIp.trim();
+
+    const realIp = req.headers.get(REAL_IP_HEADER);
+    if (realIp && realIp.trim().length > 0) return realIp.trim();
+
+    return UNKNOWN_CALLER_IP;
+}
+
+/**
+ * L1 Core: In-memory sliding/fixed-window rate limit bucket store.
+ *
+ * @remarks
+ * [THREAT:] `sync-player-cards`, `query-royale-api`, and `fetch-player-battlelog` all
+ * accept the publicly known Supabase anon key as a valid bearer credential (by design
+ * -- the frontend PWA has no authentication system and genuinely needs this path). The
+ * bearer check is therefore NOT the access-control boundary for those three; volume
+ * limiting is.
+ * [DECISION LOG] KISS/YAGNI: a global per-instance fixed-window counter, not a sliding
+ * log and not an external store (Redis, etc). This is a REAL but DELIBERATELY IMPERFECT
+ * mitigation:
+ *   - Edge Functions are stateless per cold start; this Map resets to empty whenever a
+ *     new instance boots. A warm instance persists it for as long as that instance
+ *     keeps serving requests, which is the actual (and only) scope of protection this
+ *     provides -- it bounds abuse from a single warm instance's perspective, not
+ *     globally across every concurrently running instance.
+ *   - There is no cross-instance coordination: under horizontal scale-out, the true
+ *     ceiling across all instances is `(instance count) x (configured limit)`, not the
+ *     configured limit itself.
+ *   - The counter key is derived from caller-suppliable proxy headers (see
+ *     `extractCallerIp`), so it is spoofable by a motivated direct API caller.
+ * None of this makes the mitigation worthless: it still caps the common case (a script
+ * or buggy client looping requests from one IP against one warm instance), which is
+ * exactly the blast radius this fix targets. A stronger guarantee would require a
+ * shared external store, which is out of scope per ADR KISS/YAGNI for this fix.
+ */
+interface RateLimitBucket {
+    count: number;
+    windowStartMs: number;
+    /** The window duration this bucket was opened with, kept alongside it so the
+     * opportunistic sweep can tell an expired bucket from a live one without having
+     * to know every caller's configured window in advance. */
+    windowMs: number;
+}
+
+const rateLimitBuckets = new Map<string, RateLimitBucket>();
+
+/**
+ * Opportunistically evicts expired buckets once the map grows past the configured
+ * sweep threshold, so a long-lived warm instance does not accumulate unbounded memory
+ * across many distinct caller IPs / targets.
+ *
+ * @param nowMs - The current instant, in epoch milliseconds.
+ */
+function sweepExpiredBuckets(nowMs: number): void {
+    if (rateLimitBuckets.size < RATE_LIMIT_BUCKET_SWEEP_THRESHOLD) return;
+    for (const [key, bucket] of rateLimitBuckets) {
+        if (nowMs - bucket.windowStartMs >= bucket.windowMs) {
+            rateLimitBuckets.delete(key);
+        }
+    }
+}
+
+/**
+ * Checks and increments a fixed-window rate-limit bucket for `key`.
+ *
+ * @param key - The bucket identity (e.g. `ip:1.2.3.4` or `ip-target:1.2.3.4:#ABC123`).
+ * @param maxRequests - The maximum number of requests permitted within `windowMs`.
+ * @param windowMs - The fixed window duration, in milliseconds.
+ * @returns Whether the caller is currently rate-limited, and if so, how many seconds
+ *          until the window resets (for the `Retry-After` response header).
+ */
+function checkRateLimit(key: string, maxRequests: number, windowMs: number): { limited: boolean; retryAfterSeconds: number } {
+    const nowMs = Date.now();
+    sweepExpiredBuckets(nowMs);
+
+    const bucket = rateLimitBuckets.get(key);
+    if (!bucket || nowMs - bucket.windowStartMs >= windowMs) {
+        rateLimitBuckets.set(key, { count: 1, windowStartMs: nowMs, windowMs });
+        return { limited: false, retryAfterSeconds: 0 };
+    }
+
+    bucket.count += 1;
+    if (bucket.count > maxRequests) {
+        const retryAfterMs = windowMs - (nowMs - bucket.windowStartMs);
+        return { limited: true, retryAfterSeconds: Math.max(1, Math.ceil(retryAfterMs / 1000)) };
+    }
+
+    return { limited: false, retryAfterSeconds: 0 };
+}
+
+/**
+ * Resolves the CORS headers for a single response.
+ *
+ * @remarks
+ * [THREAT:] A blanket `Access-Control-Allow-Origin: *` permits ANY origin's page to
+ * read these responses via browser JS. The three anon-reachable functions
+ * (`sync-player-cards`, `query-royale-api`, `fetch-player-battlelog`) respond with real
+ * player/clan data, so that is a cross-origin data-exposure surface for any site that
+ * gets a visitor to issue a fetch.
+ * [DECISION LOG] Restricted, allow-list-checked CORS is OPT-IN via `restricted`, mirroring
+ * `ProtocolOptions.rateLimit`'s opt-in shape: `ingest-royale-data` and `headhunter-scanner`
+ * are internal-bearer-only, cron-triggered functions that pass `restricted: false`
+ * (the default) and keep the original blanket `*` -- they have no browser caller to
+ * protect and no Origin header is ever sent by pg_cron, so the distinction is moot for
+ * them either way, but preserving the exact prior behaviour there avoids touching
+ * functions explicitly out of scope for this fix.
+ *   - `restricted` false/omitted: blanket `Access-Control-Allow-Origin: *` (prior
+ *     behaviour, unchanged).
+ *   - `restricted` true, no `Origin` header at all (server-to-server / cron-style
+ *     callers): the header is omitted entirely. These callers do not enforce CORS and
+ *     are unaffected either way.
+ *   - `restricted` true, `Origin` present and on the configured allow-list: that exact
+ *     origin is reflected back (never `*`), plus `Vary: Origin` so shared caches key on
+ *     it correctly.
+ *   - `restricted` true, `Origin` present but NOT on the allow-list: the header is
+ *     omitted. The request still completes and the caller receives a normal response; a
+ *     browser simply refuses to let its page's JS read it, which is the actual
+ *     enforcement point for browser-based cross-origin access.
+ *
+ * @param req - The inbound request.
+ * @param restricted - Whether to apply allow-list-checked CORS instead of the blanket `*`.
+ * @returns Headers to merge into the response (possibly empty).
+ */
+function resolveCorsHeaders(req: Request, restricted: boolean): Record<string, string> {
+    if (!restricted) {
+        return { "Access-Control-Allow-Origin": "*" };
+    }
+
+    const origin = req.headers.get("origin");
+    if (!origin) return {};
+
+    const allowedOrigins = getAllowedOrigins();
+    if (allowedOrigins.includes(origin)) {
+        return { "Access-Control-Allow-Origin": origin, "Vary": "Origin" };
+    }
+
+    return {};
+}
 
 /**
  * Structural contract for a Valibot object schema, used to read its declared key set.
@@ -52,18 +219,31 @@ const ObjectSchemaShapeSchema = v.object({
  * [DECISION LOG] Status and human-readable text are BOTH derived from the stable `code`,
  * so no call site can accidentally substitute internal detail for client-facing text.
  *
+ * @param req - The inbound request, used to resolve per-origin CORS headers.
  * @param code - The stable protocol error classification.
  * @param extra - Additional NON-SENSITIVE fields to merge into the response body.
+ * @param retryAfterSeconds - When set (RATE_LIMITED), emitted as a `Retry-After` header.
+ * @param corsRestricted - Whether to apply allow-list-checked CORS (see `resolveCorsHeaders`).
  * @returns A Response carrying `{ error, code, ...extra }`.
  */
-function protocolErrorResponse(code: ProtocolErrorCode, extra?: Record<string, unknown>): Response {
+function protocolErrorResponse(
+    req: Request,
+    code: ProtocolErrorCode,
+    extra?: Record<string, unknown>,
+    retryAfterSeconds?: number,
+    corsRestricted = false,
+): Response {
     return new Response(JSON.stringify({
         error: toClientSafeMessage(code),
         code,
         ...extra,
     }), {
         status: PROTOCOL_ERROR_STATUS[code],
-        headers: JSON_RESPONSE_HEADERS,
+        headers: {
+            "Content-Type": "application/json",
+            ...resolveCorsHeaders(req, corsRestricted),
+            ...(retryAfterSeconds !== undefined ? { "Retry-After": String(retryAfterSeconds) } : {}),
+        },
     });
 }
 
@@ -145,6 +325,37 @@ export interface ProtocolOptions<T> {
     /** The Valibot schema used to enforce the validation boundary on the inbound payload. */
     schema: v.BaseSchema<unknown, T, unknown>;
     /**
+     * OPT-IN rate limiting configuration. Omitted entirely (the default) for
+     * internal-bearer-only, cron-triggered functions (`ingest-royale-data`,
+     * `headhunter-scanner`), where rate limiting would be actively harmful. Passed by
+     * the three anon-reachable functions (`sync-player-cards`, `query-royale-api`,
+     * `fetch-player-battlelog`), which accept the publicly known anon key as a valid
+     * bearer credential and therefore need a real volume boundary.
+     *
+     * @remarks
+     * See the `rateLimitBuckets` / `checkRateLimit` documentation above for the exact
+     * (deliberately simple, per-warm-instance, non-bulletproof) enforcement mechanism.
+     */
+    rateLimit?: {
+        /** Max requests allowed per caller IP within `windowMs`, regardless of target. */
+        maxRequests: number;
+        /** Fixed window duration, in milliseconds, for the per-IP bucket. */
+        windowMs: number;
+        /**
+         * Derives a target-scoped key (e.g. a player/clan tag) from the validated
+         * payload. Combined with the caller IP to form a SECOND, independent bucket, so
+         * one caller IP cannot bypass the per-target ceiling by rotating across many
+         * targets, and one popular target is not penalized for every OTHER caller just
+         * because one IP is hammering it. Omit (or return `undefined`) to skip the
+         * per-target bucket and rely on the per-IP bucket alone.
+         */
+        targetKey?: (payload: T) => string | undefined;
+        /** Max requests allowed per (caller IP + targetKey) within `targetWindowMs`. Required when `targetKey` is set. */
+        targetMaxRequests?: number;
+        /** Fixed window duration, in milliseconds, for the per-IP-plus-target bucket. */
+        targetWindowMs?: number;
+    };
+    /**
      * The core business logic handler to be executed within the clinical wrapper.
      *
      * @param payload - The validated and typed request body.
@@ -188,7 +399,7 @@ export interface ProtocolOptions<T> {
  * - CALLS `update_telemetry` RPC to persist audit logs and results.
  */
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
-    const { req, supabase, bearerToken, eventType, componentId, schema, handler } = options;
+    const { req, supabase, bearerToken, eventType, componentId, schema, handler, rateLimit } = options;
     const startInstant = Temporal.Now.instant();
     const audit_log: AuditEntry[] = [];
 
@@ -203,11 +414,19 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     // consumer reading telemetry saw a job that never ended.
     let telemetryId: string | number | null = null;
 
+    // [DECISION LOG] Restricted, allow-list-checked CORS is opt-in via the presence of
+    // `rateLimit`: only the three anon-reachable functions configure it, so only they
+    // get the allow-list check. `ingest-royale-data` / `headhunter-scanner` (internal
+    // bearer only, cron-triggered, out of scope for this fix) keep the original blanket
+    // `Access-Control-Allow-Origin: *` unchanged. See `resolveCorsHeaders` for the full
+    // behavior in each mode.
+    const corsRestricted = !!rateLimit;
+
     // 1. CORS Preflight
     if (req.method === "OPTIONS") {
         return new Response(null, {
             headers: {
-                "Access-Control-Allow-Origin": "*",
+                ...resolveCorsHeaders(req, corsRestricted),
                 "Access-Control-Allow-Methods": "POST, OPTIONS",
                 "Access-Control-Allow-Headers": "authorization, content-type",
             },
@@ -222,14 +441,14 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         const authHeader = req.headers.get("Authorization");
         if (!await isAuthorizedBearer(authHeader, bearerToken)) {
             console.error(`[Protocol] Unauthorized access attempt blocked for ${componentId}.`);
-            return protocolErrorResponse('UNAUTHORIZED');
+            return protocolErrorResponse(req, 'UNAUTHORIZED', undefined, undefined, corsRestricted);
         }
 
         // 3. Method & Payload Validation
         // [THREAT:] Rejects malformed, malicious, or non-POST payloads at the L5 boundary.
         // [DECISION LOG] Strictly enforces POST to simplify the protocol's state machine.
         if (req.method !== 'POST') {
-            return protocolErrorResponse('METHOD_NOT_ALLOWED');
+            return protocolErrorResponse(req, 'METHOD_NOT_ALLOWED', undefined, undefined, corsRestricted);
         }
 
         // [THREAT:] `await req.json().catch(() => ({}))` silently COERCED a truncated,
@@ -255,7 +474,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         } catch {
             // [GUARD] FAIL CLOSED: an unreadable request stream is not an empty body.
             console.warn(`[Protocol] Unreadable request stream for ${componentId}.`);
-            return protocolErrorResponse('MALFORMED_BODY');
+            return protocolErrorResponse(req, 'MALFORMED_BODY', undefined, undefined, corsRestricted);
         }
 
         let rawBody: unknown;
@@ -266,7 +485,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                 rawBody = JSON.parse(rawBodyText);
             } catch {
                 console.warn(`[Protocol] Rejected unparseable JSON body for ${componentId}.`);
-                return protocolErrorResponse('MALFORMED_BODY');
+                return protocolErrorResponse(req, 'MALFORMED_BODY', undefined, undefined, corsRestricted);
             }
         }
 
@@ -291,9 +510,9 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             const undeclaredKeys = Object.keys(rawBody).filter((key) => !(key in declaredKeys));
             if (undeclaredKeys.length > 0) {
                 console.warn(`[Protocol] Validation rejected for ${componentId}: ${undeclaredKeys.length} undeclared field(s).`);
-                return protocolErrorResponse('MALFORMED_PAYLOAD', {
+                return protocolErrorResponse(req, 'MALFORMED_PAYLOAD', {
                     details: undeclaredKeys.map((key) => ({ kind: 'undeclared_field', path: [key] }))
-                });
+                }, undefined, corsRestricted);
             }
         }
 
@@ -302,7 +521,41 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         const parsed = v.safeParse(schema, rawBody);
         if (!parsed.success) {
             console.warn(`[Protocol] Validation rejected for ${componentId}: malformed payload.`);
-            return protocolErrorResponse('MALFORMED_PAYLOAD', { details: parsed.issues });
+            return protocolErrorResponse(req, 'MALFORMED_PAYLOAD', { details: parsed.issues }, undefined, corsRestricted);
+        }
+
+        // 3.5 Rate Limiting Guard (OPT-IN; see ProtocolOptions.rateLimit)
+        // [THREAT:] `sync-player-cards`, `query-royale-api`, and `fetch-player-battlelog`
+        // accept the publicly known anon key as a valid bearer credential, so the
+        // authorization guard above never blocks a scripted flood from an anon caller.
+        // [DECISION LOG] Runs AFTER schema validation (so a request has to at least be
+        // well-formed to consume a rate-limit slot) but BEFORE telemetry boot (so a flood
+        // does not also spend a `report_telemetry` RPC round-trip per rejected request).
+        // Two independent buckets are checked when configured: a per-caller-IP bucket
+        // (bounds total volume regardless of target) and a per-IP-plus-target bucket
+        // (bounds hammering one specific tag/clan from one IP, without penalizing every
+        // OTHER caller of that same popular target).
+        if (rateLimit) {
+            const callerIp = extractCallerIp(req);
+
+            const ipCheck = checkRateLimit(`ip:${componentId}:${callerIp}`, rateLimit.maxRequests, rateLimit.windowMs);
+            if (ipCheck.limited) {
+                console.warn(`[Protocol] Rate limit exceeded (per-IP) for ${componentId} from ${callerIp}.`);
+                return protocolErrorResponse(req, 'RATE_LIMITED', undefined, ipCheck.retryAfterSeconds, corsRestricted);
+            }
+
+            const targetKeyValue = rateLimit.targetKey?.(parsed.output);
+            if (targetKeyValue && rateLimit.targetMaxRequests !== undefined && rateLimit.targetWindowMs !== undefined) {
+                const targetCheck = checkRateLimit(
+                    `ip-target:${componentId}:${callerIp}:${targetKeyValue}`,
+                    rateLimit.targetMaxRequests,
+                    rateLimit.targetWindowMs,
+                );
+                if (targetCheck.limited) {
+                    console.warn(`[Protocol] Rate limit exceeded (per-IP-target) for ${componentId} from ${callerIp} on '${targetKeyValue}'.`);
+                    return protocolErrorResponse(req, 'RATE_LIMITED', undefined, targetCheck.retryAfterSeconds, corsRestricted);
+                }
+            }
         }
 
         // 4. Governance: Initial Heartbeat & Telemetry Boot
@@ -316,8 +569,43 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             p_metadata: { stage: 'BOOT', payload: parsed.output }
         });
 
+        // [DECISION LOG: telemetry-registration-failure] ABORT ON AN EXPLICIT RPC ERROR;
+        // STAY LENIENT ON A STRUCTURALLY ABSENT ROW. Argued out per the ADR's "Defensive
+        // Programming (Fail Fast)" and "Atomicity: partial state leaks are a critical
+        // failure" clauses, but deliberately scoped to the signal that actually means
+        // "telemetry is unavailable":
+        //   - `telemetryError` truthy is an unambiguous, explicit failure signal from
+        //     PostgREST/Supabase (auth rejected, connection refused, function missing). The
+        //     old behaviour only `console.error`-logged this and let the handler run anyway,
+        //     returning 200 with NO audit record anywhere -- a partial-state leak by
+        //     definition, and exactly the failure mode this finding reports. That is
+        //     unacceptable per the ADR's atomicity clause, so this now THROWS
+        //     `ProtocolError('TELEMETRY_UNAVAILABLE', ...)` and aborts before the handler
+        //     runs. A 503 here is retryable and visible; the pg_cron triggers that invoke
+        //     these functions on a schedule treat a 5xx as transient and simply retry on the
+        //     next tick, so this trades an immediate UNAUDITED success for a delayed,
+        //     AUDITED one -- never permanent data loss.
+        //   - `rawTelemetryData` being `null`/mis-shaped with NO accompanying RPC error is a
+        //     materially weaker signal: PostgREST legitimately returns `null` data for some
+        //     void-returning or no-op RPC paths, and it is the default response shape of
+        //     nearly every Supabase test double in this repo that is not specifically
+        //     exercising telemetry. Treating that as a hard abort would fail closed for
+        //     every one of those callers on every request, which is a far larger blast
+        //     radius than the bug being fixed. This branch therefore keeps the ORIGINAL
+        //     lenient behaviour: log a warning, leave `telemetry` (and `telemetryId`) null,
+        //     and let every downstream telemetry write become a no-op guarded by
+        //     `telemetryId !== null`. The run still completes and returns a real result; it
+        //     is simply unaudited for that one request, which is a strictly smaller and
+        //     pre-existing risk than the one this finding targets.
+        // FINAL CALL: only an explicit `telemetryError` aborts the run. A null/malformed
+        // registration response degrades to "unaudited but functional," matching prior
+        // behaviour and every existing caller's test double.
         if (telemetryError) {
-            console.error(`[Protocol] Telemetry registration failed: ${telemetryError.message}`);
+            throw new ProtocolError(
+                'TELEMETRY_UNAVAILABLE',
+                `report_telemetry RPC failed for ${componentId}: ${telemetryError.message}`,
+                { cause: telemetryError }
+            );
         }
 
         const telemetryValidation = v.safeParse(TelemetrySchema, rawTelemetryData);
@@ -328,6 +616,12 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         if (!telemetryValidation.success && rawTelemetryData !== null) {
             console.warn(`[Protocol] Telemetry response failed structural validation for ${componentId}.`);
         }
+
+        // [DECISION LOG] Hoisted `telemetryId` (declared above the try block) is assigned
+        // whenever registration produced a usable id, so the catch block can tell "never
+        // registered" (null, nothing to update) apart from "registered, then the handler
+        // threw" (set, drive the row to FAILED).
+        telemetryId = telemetry?.id ?? null;
 
         logAudit('BOOT', 'triggered', { payload: parsed.output });
 
@@ -346,9 +640,9 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
          */
         const heartbeat = async (stage: string, currentResults: unknown) => {
             logAudit(stage, 'terminated', { status: 'IN_PROGRESS' });
-            if (telemetry?.id) {
+            if (telemetryId !== null) {
                 await supabase.rpc('update_telemetry', {
-                    p_id: telemetry.id,
+                    p_id: telemetryId,
                     p_status: 'IN_PROGRESS',
                     p_metadata: { 
                         ...(typeof currentResults === 'object' && currentResults !== null ? currentResults : { results: currentResults }),
@@ -400,9 +694,9 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             total_duration: Temporal.Now.instant().since(startInstant).total('milliseconds')
         };
         
-        if (telemetry?.id) {
+        if (telemetryId !== null) {
             await supabase.rpc('update_telemetry', {
-                p_id: telemetry.id,
+                p_id: telemetryId,
                 p_status: 'SUCCESS',
                 p_metadata: { 
                     ...(typeof results === 'object' && results !== null ? results : { results }),
@@ -432,37 +726,87 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             data: results,
             duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
             timestamp: Temporal.Now.instant().toString()
-        }), { 
-            status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
+        }), {
+            status: 200, headers: { "Content-Type": "application/json", ...resolveCorsHeaders(req, corsRestricted) }
         });
 
     } catch (protocolError: unknown) {
         // [THREAT:] Unhandled exceptions within the handler or protocol lifecycle
         // are trapped here to prevent raw runtime leaks and ensure failed status reporting.
-        const errorMessage = protocolError instanceof Error ? protocolError.message : String(protocolError);
-        console.error(`[CRITICAL] Protocol Violation in ${componentId}: ${errorMessage}`);
-        logAudit('FATAL_ERROR', 'error', { message: errorMessage });
-        
-        await supabase.rpc('report_heartbeat', {
-            p_component_id: componentId,
-            p_status: 'FAILED',
-            p_message: `Fatal protocol error: ${errorMessage}`,
-            p_metadata: {
-                last_failure_at: Temporal.Now.instant().toString(),
-                is_data_perfect: false,
-                last_validation_report: {
-                    error: errorMessage,
-                    audit_log
-                }
-            }
-        });
+        // [DECISION LOG] Classify via `classifyThrown` rather than reading `.message`
+        // directly: a `ProtocolError` carries a stable `code` that is SAFE to return, while
+        // its `.message` (like any other thrown value's) is FULL internal detail that must
+        // stay server-side. Anything not already a `ProtocolError` degrades to
+        // `INTERNAL_ERROR`, which leaks nothing regardless of what the original throw said.
+        const { code, internalDetail } = classifyThrown(protocolError);
+        console.error(`[CRITICAL] Protocol Violation in ${componentId} [${code}]: ${internalDetail}`);
+        logAudit('FATAL_ERROR', 'error', { code, message: internalDetail });
 
-        return new Response(JSON.stringify({ 
-            error: errorMessage,
+        // [DECISION LOG] Drive the telemetry row to a terminal FAILED state ONLY when a row
+        // was actually registered (`telemetryId !== null`). If registration itself is what
+        // failed (the `TELEMETRY_UNAVAILABLE` throw above, before `telemetryId` is assigned),
+        // there is no row to update -- attempting one would either no-op against a bogus id
+        // or throw a second, more confusing error out of the error handler itself. The
+        // `report_heartbeat` FAILED call below is unconditional because it is a component
+        // health signal, not a per-run audit row, and does not depend on telemetry having
+        // registered successfully.
+        // [GUARD] Wrapped in its own try/catch so a DB outage that caused (or accompanies)
+        // the original failure cannot throw a SECOND, unhandled exception out of the error
+        // handler and crash the function with no response at all.
+        if (telemetryId !== null) {
+            try {
+                await supabase.rpc('update_telemetry', {
+                    p_id: telemetryId,
+                    p_status: 'FAILED',
+                    p_metadata: {
+                        stage: 'FATAL_ERROR',
+                        error_code: code,
+                        error_detail: internalDetail,
+                        current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
+                        audit_log
+                    }
+                });
+            } catch (telemetryCloseError: unknown) {
+                console.error(
+                    `[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}: ` +
+                    `${telemetryCloseError instanceof Error ? telemetryCloseError.message : String(telemetryCloseError)}`
+                );
+            }
+        }
+
+        try {
+            await supabase.rpc('report_heartbeat', {
+                p_component_id: componentId,
+                p_status: 'FAILED',
+                p_message: `Fatal protocol error [${code}] in ${componentId}.`,
+                p_metadata: {
+                    last_failure_at: Temporal.Now.instant().toString(),
+                    is_data_perfect: false,
+                    last_validation_report: {
+                        error_code: code,
+                        error: internalDetail,
+                        audit_log
+                    }
+                }
+            });
+        } catch (heartbeatError: unknown) {
+            console.error(
+                `[Protocol] Failed to report FAILED heartbeat for ${componentId}: ` +
+                `${heartbeatError instanceof Error ? heartbeatError.message : String(heartbeatError)}`
+            );
+        }
+
+        // [THREAT:] Returning `internalDetail` here would leak API key-pool sizes, upstream
+        // status codes, and database schema/table names across the trust boundary. Only
+        // `toClientSafeMessage(code)` and the stable `code` itself are safe to return.
+        return new Response(JSON.stringify({
+            error: toClientSafeMessage(code),
+            code,
             layer: 'L5_CONTROL',
             component_id: componentId
-        }), { 
-            status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } 
+        }), {
+            status: PROTOCOL_ERROR_STATUS[code],
+            headers: { "Content-Type": "application/json", ...resolveCorsHeaders(req, corsRestricted) }
         });
     }
 }

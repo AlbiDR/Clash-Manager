@@ -7,12 +7,8 @@ import { reactive, nextTick, ref } from 'vue';
 
 const isMobileNarrow = ref(false);
 
-// Mock useHaptics
-vi.mock('@core', () => ({
-  useHaptics: () => ({
-    tap: vi.fn(),
-  }),
-}));
+// No haptics mock: useStatusPill delegates haptics to the v-tactile directive
+// and imports only vue + ./useViewport, so it has no haptics dependency to stub.
 
 // Mock useViewport
 vi.mock('../useViewport', () => ({

@@ -5,7 +5,13 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation } from "../../_shared/muscle.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot@1.4.2";
-import { RoyaleClanSchema, RoyaleFlexibleListSchema, RoyaleRiverRaceSchema } from "../../_shared/schemas.ts";
+import {
+    RoyaleClanSchema,
+    createRoyaleFlexibleListSchema,
+    RoyaleClanMemberSchema,
+    RoyaleRiverRaceSchema,
+    RoyaleWarLogItemSchema
+} from "../../_shared/schemas.ts";
 
 /**
  * Stages 2-5: Native Clan Synchronization
@@ -18,13 +24,19 @@ export async function runClanSync(
 ) {
     const CLAN_PATH = `/clans/${encodeURIComponent(clanTag)}`;
 
+    // [GUARD] VALIDATION BOUNDARY: 'members' and 'warlog' are lists whose items must
+    // pass a real item schema, not just "an array of objects" - see the
+    // [DECISION LOG] on createRoyaleFlexibleListSchema in royaleSchemas.ts.
+    const memberListSchema = createRoyaleFlexibleListSchema(RoyaleClanMemberSchema);
+    const warLogListSchema = createRoyaleFlexibleListSchema(RoyaleWarLogItemSchema);
+
     // [DECISION LOG] syncTasks are defined as a const array to enforce type safety
     // when indexing into the results object and mapping schemas.
     const syncTasks = [
         { key: 'profile', path: CLAN_PATH, table: 'raw_clan_profile', schema: RoyaleClanSchema },
-        { key: 'members', path: `${CLAN_PATH}/members`, table: 'raw_clan_members', schema: RoyaleFlexibleListSchema },
+        { key: 'members', path: `${CLAN_PATH}/members`, table: 'raw_clan_members', schema: memberListSchema },
         { key: 'race', path: `${CLAN_PATH}/currentriverrace`, table: 'raw_river_race', schema: RoyaleRiverRaceSchema },
-        { key: 'warlog', path: `${CLAN_PATH}/riverracelog?limit=12`, table: 'raw_war_log', schema: RoyaleFlexibleListSchema }
+        { key: 'warlog', path: `${CLAN_PATH}/riverracelog?limit=12`, table: 'raw_war_log', schema: warLogListSchema }
     ] as const;
 
     for (const syncTask of syncTasks) {

@@ -18,14 +18,49 @@ git diff --name-only HEAD~30 HEAD 2>/dev/null | sort -u > "$CONTEXT_DIR/changed-
 echo "Git logs and diffs generated dynamically."
 
 # 3. Pending migrations
+#
+# "Pending" means genuinely unfolded, not merely newer than the baseline. Listing
+# every post-baseline filename made this signal permanently non-zero: it never
+# shrank no matter how much folding work was completed, so Stage 3 was handed the
+# same 17 filenames every night and the operational debt threshold in
+# 00-pipeline-intelligence.md Section I was always tripped. A warning that is
+# always on is a warning that gets ignored.
+#
+# check-fold-state.py replays the migrations chronologically and compares each
+# resulting object against the baseline's definition, so an empty file here now
+# genuinely means there is no folding work to do.
 BASELINE_PREFIX="20260531232406"
-if [ -d "Backend/supabase/migrations" ]; then
-  ls Backend/supabase/migrations/ | grep -v "${BASELINE_PREFIX}" | sort > "$CONTEXT_DIR/pending-migrations.txt"
+FOLD_CHECK=".github/scripts/check-fold-state.py"
+: > "$CONTEXT_DIR/pending-migrations.txt"
+
+if [ ! -d "Backend/supabase/migrations" ]; then
+  echo "No migrations directory; pending-migrations.txt left empty."
+  : > "$CONTEXT_DIR/fold-state.txt"
+elif command -v python3 >/dev/null 2>&1 && [ -f "$FOLD_CHECK" ]; then
+  # Advisory tool: a non-zero exit means unfolded work was found, not a failure.
+  set +e
+  python3 "$FOLD_CHECK" "Backend/supabase/migrations" > "$CONTEXT_DIR/fold-state.txt" 2>&1
+  FOLD_RC=$?
+  set -e
+  if [ "$FOLD_RC" -ne 0 ]; then
+    # Emit only the migrations that own at least one unfolded object.
+    sed -n '/^Migrations owning unfolded objects:/,$p' "$CONTEXT_DIR/fold-state.txt" \
+      | tail -n +2 | sed 's/^[[:space:]]*//' | grep -E '\.sql$' | sort -u \
+      > "$CONTEXT_DIR/pending-migrations.txt" || true
+  fi
+  echo "Fold-state check complete (rc=${FOLD_RC})."
 else
-  touch "$CONTEXT_DIR/pending-migrations.txt"
+  # Degraded fallback: no python3 available, so fall back to the filename
+  # heuristic and say so, rather than silently reporting a clean baseline.
+  echo "python3 or ${FOLD_CHECK} unavailable; falling back to filename heuristic." \
+    > "$CONTEXT_DIR/fold-state.txt"
+  ls Backend/supabase/migrations/ | grep -v "${BASELINE_PREFIX}" | sort \
+    > "$CONTEXT_DIR/pending-migrations.txt"
+  echo "WARNING: fold-state check unavailable, pending list is filename-based only."
 fi
+
 MIGRATION_COUNT=$(wc -l < "$CONTEXT_DIR/pending-migrations.txt" | tr -d ' ')
-echo "Pending migrations detected: ${MIGRATION_COUNT}"
+echo "Migrations with unfolded objects: ${MIGRATION_COUNT}"
 
 # 4. Detect running stage number from current branch name
 CURRENT_BRANCH=$(git branch --show-current || echo "")

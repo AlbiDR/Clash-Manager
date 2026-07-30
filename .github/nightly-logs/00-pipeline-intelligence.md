@@ -81,6 +81,17 @@ Approaches that have been validated through execution. Follow these when applica
   should fold them into `master_migration.sql` on every run rather than
   letting them accumulate. Allowing more than three unfolded migrations
   is an operational debt signal. *(Pattern: PR #1085, #1096)*
+  **[SUPERSEDED by PR #PENDING, 2026-07-30]:** the "more than three unfolded
+  migrations" signal was measured by filename count (every post-baseline
+  migration, forever), not by fold state, so it could never reach zero and
+  was permanently tripped regardless of how much folding work was done. Stage
+  3 now runs `.github/scripts/check-fold-state.py`, which replays migrations
+  chronologically and diffs each resulting object against the baseline. Use
+  its `pending-migrations.txt` output (now genuinely fold-state-aware) instead
+  of a raw filename count. See Section V Stage 3 for the reconciliation rules
+  it applies (search_path widening to house convention, inline FK hoisting to
+  the constraint block) so a correctly-folded object is not misreported as
+  drift.
 
 ---
 
@@ -138,7 +149,17 @@ detect drift, avoid duplication, and understand current saturation.
 * `Frontend-PWA/src/app/sw.ts` -- Stage 11, 2026-07-12 -- SW cache consolidation
 * `Frontend-PWA/src/app/App.vue` -- Stage 9, 2026-07-11 -- PWA lifecycle centralization
 * `android/` (APK wrapper) -- Stage 10 + 11 + 12, 2026-07-13 -- recurring APK hardening
-* `Backend-Worker/src/services/` -- Stage 1, recurring -- hardening boundary checks
+* `Backend/supabase/functions/` -- Stage 1, recurring -- hardening boundary checks.
+  **[CORRECTED 2026-07-30]:** this row previously read
+  `Backend-Worker/src/services/`, a directory that does not exist anywhere in
+  this repository. There is no separate worker service; the Edge Functions
+  under `Backend/supabase/functions/` are the actual hardening boundary. The
+  stale path was never caught because Stage 1 has no step that verifies its
+  own scope map against the real filesystem before acting on it -- it read the
+  phantom path, found nothing to scan, and moved on without flagging the
+  mismatch. Stage 1 should `test -d` (or equivalent) each path in this Scope
+  Coverage Map at the start of a run and log a CLEAN entry with a correction
+  note if a path no longer exists, rather than silently no-op'ing on it.
 * `supabase/migrations/` -- Stage 3, recurring -- baseline consolidation
 * `Frontend-PWA/src/core/` -- Stage 6, recurring -- TSDoc interface contracts
 * `pnpm-workspace.yaml` + `package.json` -- Stage 7 + 8, recurring -- version and dep management
@@ -175,7 +196,35 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### Stage 1 -- Hardening
 * Current focus: Layer boundary enforcement, security header validation.
 * Pre-flight responsibility: 00-pr-history.md aging pass (runs before all other work).
-* Flagged for next pass: Backend-Worker RPC boundary validation.
+* [2026-07-30] [Stage 1] RPC/trust-boundary audit of `Backend/supabase/functions/`
+  performed (the "Backend-Worker RPC boundary validation" item referred to a
+  directory that does not exist -- corrected in Section III). Findings and fixes:
+  DB read errors that were silently coerced into empty result sets instead of
+  failing the stage (profiler.ts); RPC calls whose `error` return was discarded,
+  letting success counters advance on failed writes (ghost-purge.ts, scanner.ts,
+  tournament-finder.ts); a two-phase player/recruit registry write that was not
+  gated, so a failed first phase let the second phase run anyway and silently
+  lose harvested leads (deep-depth.ts, discovery.ts); a Valibot gate
+  (`RoyaleFlexibleListSchema`) that asserted only "array of objects" while its
+  audit log claimed full validation (clan-sync.ts); unbounded tag strings
+  reaching persistence before use; a single malformed `battleTime` record
+  aborting an entire otherwise-valid battle log fan-out; no typed error shape
+  anywhere in the backend, so internal detail (including API key-pool size)
+  could leak across the trust boundary in a 500 response; telemetry rows that
+  could get stuck IN_PROGRESS forever on a handler throw; a malformed request
+  body silently coerced to `{}` instead of a 400; and a non-constant-time bearer
+  comparison at the sole auth boundary for five unauthenticated-reachable
+  functions. See `_shared/errors.ts` (new) for the typed error contract.
+  Separately and deliberately out of this fix set: three functions
+  (sync-player-cards, query-royale-api, fetch-player-battlelog) accept the
+  browser-shipped publishable key as a valid bearer credential, with
+  `verify_jwt = false`, `Access-Control-Allow-Origin: *`, and no rate limiting,
+  because the PWA has no authentication system to issue a real user JWT from.
+  Decision: keep the access (removing it breaks the frontend) but bound it --
+  per-IP/per-tag rate limiting, hard payload and fan-out caps, CORS locked to
+  known origins. Tracked separately, do not re-flag as a fresh finding.
+* Flagged for next pass: none outstanding from this audit at time of writing;
+  confirm the rate-limiting/CORS follow-up above has landed before closing.
 
 ### Stage 2 -- Verification
 * Current focus: Test coverage saturation for Layer 1 utilities.
@@ -186,8 +235,31 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 
 ### Stage 3 -- Baseline Consolidation
 * Current focus: Migration folding after each Supabase schema change.
-* Trigger: Any run where `supabase/migrations/` contains more than three files
-  not yet folded into the master baseline.
+* Trigger: `.github/scripts/check-fold-state.py` reports at least one object
+  as `ABSENT` or `DIVERGENT` (exit code 1). Do not trigger on raw
+  post-baseline file count -- see Section I Migration folding cadence for why
+  that measure was replaced.
+* Reconciliation rules the checker applies before calling something drift (do
+  not re-fold these, they are already correctly represented in the baseline):
+  (1) an inline `FOREIGN KEY` in a migration's `CREATE TABLE` that the
+  baseline instead declares in the dedicated post-table constraint block
+  (Topological Sorting Safeguard step 5); (2) a function `search_path` that
+  the baseline widens to the house convention
+  (`'public', 'features', 'drivers', 'substrate', 'pg_temp'`) versus a
+  narrower one in the source migration.
+* [2026-07-30] [Stage 3] Folded the 17 post-baseline migrations current at
+  that date. 21 of 23 final-state objects matched verbatim; 2 matched only
+  after the reconciliation rules above; 0 were genuinely absent or divergent.
+  Also removed two non-declarative residues that had been carried into the
+  baseline from folded migrations: (a) a DROP IDENTITY / renumber / ADD
+  IDENTITY sequence that was a schema no-op (the table already declares
+  `GENERATED ALWAYS AS IDENTITY`) but whose `UPDATE ... SET id = 4 WHERE id =
+  5` is a live-data hazard that re-arms if voyage id 5 is ever reused; (b) a
+  one-time `last_scan` rescan backfill that forces a full re-profile of every
+  zero-win-rate recruit on every fresh deploy, which is both a no-op-that-
+  isn't (state-dependent) and a hardcoded business threshold. See the
+  Declarative Purity Contract note at the top of
+  `20260531232406_master_migration.sql` for the full reasoning.
 
 ### Stage 4 -- Optimization
 * Current focus: Variable naming consistency, dead code elimination.

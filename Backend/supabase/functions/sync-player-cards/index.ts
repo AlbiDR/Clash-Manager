@@ -6,6 +6,12 @@ import { fetchWithRotation } from "../_shared/muscle.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import { normalizeTag, normalizeRarity } from "../_shared/utils.ts";
 import { RoyaleFullPlayerSchema, PlayerSyncPayloadSchema, PlayerCardSnapshotSchema } from "../_shared/schemas.ts";
+import {
+  RATE_LIMIT_IP_MAX_REQUESTS,
+  RATE_LIMIT_IP_WINDOW_MS,
+  RATE_LIMIT_IP_TARGET_MAX_REQUESTS,
+  RATE_LIMIT_IP_TARGET_WINDOW_MS,
+} from "../_shared/config.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 
 /**
@@ -143,6 +149,18 @@ Deno.serve(async (syncRequest) => {
     eventType: "PLAYER_SYNC",
     componentId: "PLAYER_CARD_SYNC",
     schema: PlayerSyncPayloadSchema,
+    // [SECURITY] This function accepts the publicly known Supabase anon key as a valid
+    // bearer credential (browser PWA path), so the anon key is not the access-control
+    // boundary here -- rate limiting is. Scoped per caller IP, and per (caller IP + player
+    // tag) so one IP cannot flood a single popular tag without affecting every other
+    // caller of that same tag.
+    rateLimit: {
+      maxRequests: RATE_LIMIT_IP_MAX_REQUESTS,
+      windowMs: RATE_LIMIT_IP_WINDOW_MS,
+      targetKey: (payload) => payload.tag,
+      targetMaxRequests: RATE_LIMIT_IP_TARGET_MAX_REQUESTS,
+      targetWindowMs: RATE_LIMIT_IP_TARGET_WINDOW_MS,
+    },
     handler: async (syncPayload, logAudit, heartbeat) => {
       // [DECISION LOG] Tags are normalized to ensure cache hits regardless of user input casing/prefix.
       const normalizedPlayerTag = normalizeTag(syncPayload.tag);

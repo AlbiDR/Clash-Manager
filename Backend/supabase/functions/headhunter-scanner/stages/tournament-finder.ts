@@ -210,7 +210,20 @@ export async function runTournamentDiscovery(
                                     details: 'Malformed tournament details'
                                 });
                             }
-                            await supabase.rpc('upsert_discovery_cache', { p_tag: tournamentTargetCandidate.tag, p_type: 'TOURNAMENT' });
+                            // [THREAT:] supabase.rpc() resolves with { error } instead of throwing. An
+                            // unchecked failure here never populates the discovery cache, so the
+                            // blacklist stays empty and every tournament detail is re-fetched on every
+                            // run - pure Royale API quota amplification with zero added signal.
+                            const { error: discoveryCacheUpsertError } = await supabase.rpc('upsert_discovery_cache', { p_tag: tournamentTargetCandidate.tag, p_type: 'TOURNAMENT' });
+                            if (discoveryCacheUpsertError) {
+                                stats.errors.push(`DiscoveryCache(${tournamentTargetCandidate.tag}): ${discoveryCacheUpsertError.message}`);
+                                logAudit('TOURNAMENT_DISCOVERY', 'error', {
+                                    tournament: tournamentTargetCandidate.tag,
+                                    message: 'Discovery cache upsert failed - tournament will be re-fetched next run',
+                                    details: discoveryCacheUpsertError
+                                });
+                                console.error(`[TOURNAMENT_DISCOVERY] Discovery cache upsert failed for ${tournamentTargetCandidate.tag}: ${discoveryCacheUpsertError.message}`);
+                            }
                         } else {
                             console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${tournamentTargetCandidate.tag} failed with HTTP ${tournamentDetailApiResponse.status}`);
                         }
@@ -223,10 +236,18 @@ export async function runTournamentDiscovery(
 
                 // 2. Report yield for autonomy
                 // [DECISION LOG] Reporting yield allows the system to prioritize keywords that produce more recruits.
-                await supabase.rpc('report_anchor_yield', { 
-                    p_keyword: keyword, 
-                    p_yield: keywordYield 
+                // [THREAT:] supabase.rpc() resolves with { error } instead of throwing. A silently
+                // dropped yield report freezes anchor prioritization on stale scores, so the
+                // discovery engine keeps spending quota on keywords that stopped producing.
+                const { error: anchorYieldError } = await supabase.rpc('report_anchor_yield', {
+                    p_keyword: keyword,
+                    p_yield: keywordYield
                 });
+                if (anchorYieldError) {
+                    stats.errors.push(`AnchorYield(${keyword}): ${anchorYieldError.message}`);
+                    logAudit('TOURNAMENT_DISCOVERY', 'error', { keyword, message: 'Anchor yield report failed', details: anchorYieldError });
+                    console.error(`[TOURNAMENT_DISCOVERY] Anchor yield report failed for '${keyword}': ${anchorYieldError.message}`);
+                }
                 console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' complete. Total yield: ${keywordYield}`);
 
             } catch (discoveryExecutionError: unknown) {

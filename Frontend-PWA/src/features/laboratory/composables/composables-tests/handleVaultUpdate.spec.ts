@@ -6,9 +6,11 @@ import { ref } from 'vue';
 import { setActivePinia, createPinia } from 'pinia';
 
 // Mock dependencies
-vi.mock('@core/services/useClashData', () => ({
-  useClashData: () => ({
-    data: ref({ playerTag: '#ABC' })
+vi.mock('@core/services/useClashDataStore', () => ({
+  useClashDataStore: () => ({
+    data: ref({ playerTag: '#ABC' }),
+    currentSource: ref('SUPABASE'),
+    remoteSyncTime: ref(Date.now())
   })
 }));
 

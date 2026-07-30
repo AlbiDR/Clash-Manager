@@ -8,7 +8,11 @@ import { RoyaleClanSchema } from "../_shared/schemas.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 import {
   GLOBAL_LOCATION,
-  LOCATION_ID_INTERNATIONAL
+  LOCATION_ID_INTERNATIONAL,
+  RATE_LIMIT_IP_MAX_REQUESTS,
+  RATE_LIMIT_IP_WINDOW_MS,
+  RATE_LIMIT_IP_TARGET_MAX_REQUESTS,
+  RATE_LIMIT_IP_TARGET_WINDOW_MS,
 } from "../_shared/config.ts";
 import {
   harvestClanlessPlayers,
@@ -47,6 +51,21 @@ Deno.serve(async (request) => {
     eventType: "ROYALE_API_QUERY",
     componentId: "ROYALE_API_PROXY",
     schema: PayloadSchema,
+    // [SECURITY] This function accepts the publicly known Supabase anon key as a valid
+    // bearer credential (browser PWA path), so the anon key is not the access-control
+    // boundary here -- rate limiting is. The "global" harvest can fan out to a full
+    // international discovery pass (see harvester.ts's MAX_HARVEST_EPOCHS-capped country
+    // loop), so it is the more expensive of the two endpoint modes; the per-target bucket
+    // is keyed on the requested endpoint (and the configured clan tag for "local", since
+    // that resolves to a fixed region per deployment) so one caller IP cannot bypass the
+    // per-target ceiling by alternating endpoint values.
+    rateLimit: {
+      maxRequests: RATE_LIMIT_IP_MAX_REQUESTS,
+      windowMs: RATE_LIMIT_IP_WINDOW_MS,
+      targetKey: (payload) => payload.endpoint === "global" ? "global" : `local:${CONFIG.CLAN_TAG || "unset"}`,
+      targetMaxRequests: RATE_LIMIT_IP_TARGET_MAX_REQUESTS,
+      targetWindowMs: RATE_LIMIT_IP_TARGET_WINDOW_MS,
+    },
     handler: async (queryPayload, logAudit) => {
       const harvestMode = queryPayload.endpoint;
       logAudit("HARVEST_START", "called", { mode: harvestMode });

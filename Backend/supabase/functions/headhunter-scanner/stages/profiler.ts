@@ -62,6 +62,22 @@ export async function runProfiler(
             .in('player_tag', tagsToProfile)
             .gt('last_scan', thirtyMinutesAgo);
 
+        // [GUARD] DATABASE EGRESS BOUNDARY: PostgREST selects resolve with { data, error };
+        // they never throw, so the error is inspected BEFORE the payload is parsed.
+        // [THREAT:] Parsing `recentScansRaw ?? []` on a failed read launders a hard database
+        // failure into a legitimately-empty de-dupe set. The 30-minute recent-scan filter would
+        // silently no-op and up to PROFILER_BATCH_CEILING profiles would be re-fetched from the
+        // Royale API on every run. Failing here costs nothing because no API quota is spent yet.
+        if (recentScansError) {
+            logAudit('PROFILING', 'integrity_checked', {
+                stage: 'RECENT_SCANS_FETCH',
+                passed: false,
+                details: recentScansError.message
+            });
+            console.error(`[PROFILING] Recent scans fetch failed: ${recentScansError.message}`);
+            throw new Error(`Failed to fetch recent scans: ${recentScansError.message}`);
+        }
+
         // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
         // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
         // [DECISION LOG] Explicitly validating the shape of recentScansRaw before processing.
@@ -69,15 +85,19 @@ export async function runProfiler(
 
         logAudit('PROFILING', 'integrity_checked', {
             stage: 'RECENT_SCANS_FETCH',
-            passed: recentScansIntegrity.success && !recentScansError,
-            details: recentScansError ? recentScansError.message : (recentScansIntegrity.success ? 'Recent scans validated' : 'Malformed recent scans payload')
+            passed: recentScansIntegrity.success,
+            details: recentScansIntegrity.success ? 'Recent scans validated' : 'Malformed recent scans payload'
         });
 
+        // [DECISION LOG] A malformed payload is treated exactly like a failed read: the
+        // de-dupe set is unknowable either way, and continuing with `[]` would trigger the
+        // same mass re-fetch this guard exists to prevent.
         if (!recentScansIntegrity.success) {
             console.error(`[PROFILING] Recent scans validation failed: ${JSON.stringify(recentScansIntegrity.issues)}`);
+            throw new Error('Failed to validate recent scans payload');
         }
 
-        const recentScans = recentScansIntegrity.success ? recentScansIntegrity.output : [];
+        const recentScans = recentScansIntegrity.output;
         const recentlyScannedTags = new Set(recentScans.map(recruitCandidate => recruitCandidate.player_tag));
         const tagsToFetch = tagsToProfile.filter(tagCandidate => !recentlyScannedTags.has(tagCandidate));
 
@@ -162,9 +182,19 @@ export async function runProfiler(
                     }
                 } else {
                     if (playerProfileApiResponse.status === 404) {
-                        await supabase.rpc('report_dead_recruit', { p_player_tag: playerTag });
-                        logAudit('PROFILING', 'called', { tag: playerTag, action: 'blacklisted_ghost' });
-                        console.log(`[PROFILING] Player ${playerTag} is a ghost (404). Blacklisted.`);
+                        // [THREAT:] supabase.rpc() resolves with { error } instead of throwing, so an
+                        // unchecked call would log the tag as blacklisted even when the write failed,
+                        // leaving the dead tag in the discovery pool to be re-fetched every run.
+                        // [DECISION LOG] The 'blacklisted_ghost' audit entry is gated on RPC success.
+                        const { error: deadRecruitReportError } = await supabase.rpc('report_dead_recruit', { p_player_tag: playerTag });
+                        if (deadRecruitReportError) {
+                            stats.errors.push(`Blacklist(${playerTag}): ${deadRecruitReportError.message}`);
+                            logAudit('PROFILING', 'error', { tag: playerTag, message: 'Failed to blacklist ghost', details: deadRecruitReportError });
+                            console.error(`[PROFILING] Failed to blacklist ghost ${playerTag}: ${deadRecruitReportError.message}`);
+                        } else {
+                            logAudit('PROFILING', 'called', { tag: playerTag, action: 'blacklisted_ghost' });
+                            console.log(`[PROFILING] Player ${playerTag} is a ghost (404). Blacklisted.`);
+                        }
                     } else {
                         console.error(`[PROFILING] Player ${playerTag} fetch failed with HTTP ${playerProfileApiResponse.status}`);
                     }
@@ -252,6 +282,23 @@ export async function runProfiler(
                 .select('player_tag')
                 .in('player_tag', validRecruits.map(tagCandidate => tagCandidate.player_tag));
 
+            // [GUARD] DATABASE EGRESS BOUNDARY: PostgREST selects resolve with { data, error };
+            // they never throw, so the error is inspected BEFORE the payload is parsed.
+            // [THREAT:] Parsing `existingRecruitsRaw ?? []` on a failed read makes EVERY recruit
+            // look new. That inflates stats.new_recruits and stats.new_recruits_top50, which feeds
+            // a fabricated p_top50 into update_epoch_state and disarms the epoch retry guard after
+            // a scan that actually found nothing new.
+            // [DECISION LOG] A failed read leaves the new-vs-refreshed split UNKNOWABLE, not empty.
+            // The stage deliberately does NOT abort here: the profiles below are already paid for
+            // in Royale API quota and their ingestion does not depend on this read. Instead the
+            // derived telemetry (the new/refresh split and the post-ingestion fate check that
+            // produces new_recruits_top50) is suppressed, which leaves the epoch guard armed -
+            // the fail-safe direction - rather than publishing a fabricated baseline as truth.
+            if (existingRecruitsError) {
+                stats.errors.push(`ExistingRecruits: ${existingRecruitsError.message}`);
+                console.error(`[PROFILING] Existing recruits fetch failed: ${existingRecruitsError.message}`);
+            }
+
             // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
             // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
             // [DECISION LOG] Ensuring data integrity before determining if recruits are new or refreshed.
@@ -266,13 +313,24 @@ export async function runProfiler(
             if (!existingRecruitsIntegrity.success) {
                 console.error(`[PROFILING] Existing recruits validation failed: ${JSON.stringify(existingRecruitsIntegrity.issues)}`);
             }
-            
+
+            // Only a clean read establishes a trustworthy baseline of already-known tags.
+            const existingBaselineResolved = !existingRecruitsError && existingRecruitsIntegrity.success;
             const existingRecruits = existingRecruitsIntegrity.success ? existingRecruitsIntegrity.output : [];
             const existingTags = new Set(existingRecruits.map(existingRecruitSnapshot => existingRecruitSnapshot.player_tag));
-            validRecruits.forEach(recruitCandidateSnapshot => {
-                if (existingTags.has(recruitCandidateSnapshot.player_tag)) refreshCount++;
-                else newCount++;
-            });
+            if (existingBaselineResolved) {
+                validRecruits.forEach(recruitCandidateSnapshot => {
+                    if (existingTags.has(recruitCandidateSnapshot.player_tag)) refreshCount++;
+                    else newCount++;
+                });
+            } else {
+                logAudit('PROFILING', 'integrity_checked', {
+                    stage: 'NEW_RECRUIT_CLASSIFICATION',
+                    passed: false,
+                    details: 'Existing-recruit baseline unavailable: new/refresh split and Top 50 fate telemetry suppressed'
+                });
+                console.warn(`[PROFILING] Existing-recruit baseline unavailable - suppressing new/refresh split and Top 50 fate telemetry for this run.`);
+            }
 
             console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into database...`);
             for (const [recruitSource, recruitBatch] of bySource) {
@@ -290,10 +348,14 @@ export async function runProfiler(
 
             // --- INGESTION FATE TELEMETRY ---
             // [DECISION LOG] Newly ingested recruits are tracked to verify their promotion from QUEUE to ACTIVE/BENCHED.
-            const newTags = validRecruits
-                .filter(recruitCandidate => !existingTags.has(recruitCandidate.player_tag))
-                .map(recruitCandidate => recruitCandidate.player_tag);
-            
+            // Without a trustworthy baseline every recruit would be classified as new, so the
+            // fate check is skipped entirely rather than run over the whole batch.
+            const newTags = existingBaselineResolved
+                ? validRecruits
+                    .filter(recruitCandidate => !existingTags.has(recruitCandidate.player_tag))
+                    .map(recruitCandidate => recruitCandidate.player_tag)
+                : [];
+
             if (newTags.length > 0) {
                 console.log(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
                 

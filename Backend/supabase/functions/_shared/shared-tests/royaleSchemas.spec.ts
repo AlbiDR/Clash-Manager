@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import * as v from "valibot";
 import {
   RoyaleClanSchema,
-  RoyaleFlexibleListSchema,
+  createRoyaleFlexibleListSchema,
   RoyaleRiverRaceSchema,
   RoyalePlayerSchema,
   RoyaleFullPlayerSchema,
@@ -17,6 +17,8 @@ import {
   RoyaleClanRankingListSchema,
   RoyaleClanDetailSchema,
   RoyaleRankingListSchema,
+  RoyaleWarLogItemSchema,
+  RoyaleTagSchema,
   HarvestedPlayerSchema,
 } from "../royaleSchemas";
 
@@ -55,19 +57,32 @@ describe("Royale API Domain Schemas", () => {
     });
   });
 
-  describe("RoyaleFlexibleListSchema", () => {
+  describe("createRoyaleFlexibleListSchema", () => {
+    // [DECISION LOG] The old fixtures fed bare `{ tag: "#1" }` objects because the
+    // pre-fix schema validated only "an array of objects." Now that the factory
+    // requires a real item schema, the fixtures carry a realistic shape
+    // (RoyaleClanMemberSchema requires both tag and name).
+    const memberListSchema = createRoyaleFlexibleListSchema(RoyaleClanMemberSchema);
+
     it("should handle raw array input", () => {
-      const input = [{ tag: "#1" }, { tag: "#2" }];
-      const result = v.parse(RoyaleFlexibleListSchema, input);
+      const input = [{ tag: "#1", name: "P1" }, { tag: "#2", name: "P2" }];
+      const result = v.parse(memberListSchema, input);
       expect(result.items).toHaveLength(2);
       expect(result.items[0].tag).toBe("#1");
     });
 
     it("should handle wrapped items object input", () => {
-      const input = { items: [{ tag: "#1" }] };
-      const result = v.parse(RoyaleFlexibleListSchema, input);
+      const input = { items: [{ tag: "#1", name: "P1" }] };
+      const result = v.parse(memberListSchema, input);
       expect(result.items).toHaveLength(1);
       expect(result.items[0].tag).toBe("#1");
+    });
+
+    it("should reject items that fail the parameterized item schema", () => {
+      // [F6 regression guard] Previously `RoyaleFlexibleListSchema` asserted only
+      // "an array of objects" and let arbitrary shapes (e.g. missing `name`) through.
+      const input = [{ tag: "#1" }]; // missing required 'name'
+      expect(() => v.parse(memberListSchema, input)).toThrow();
     });
   });
 
@@ -177,6 +192,22 @@ describe("Royale API Domain Schemas", () => {
       expect(result).toHaveLength(1);
       expect(result[0].team[0].crowns).toBe(3);
     });
+
+    it("should reject a malformed battleTime as a validation miss (F10)", () => {
+      // [F10 regression guard] battleTime format must be caught HERE so a bad
+      // record becomes a validation miss (filtered), not an uncaught throw from
+      // parseBattleTime()'s Temporal.Instant.from narrowing further downstream.
+      const input = [
+        {
+          type: "PvP",
+          battleTime: "invalid-time-format",
+          team: [{ tag: "#P1", name: "P1", crowns: 3 }],
+          opponent: [{ tag: "#P2", name: "P2", crowns: 1, clan: { tag: "#C1" } }]
+        }
+      ];
+      const result = v.safeParse(RoyaleBattleLogSchema, input);
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("RoyaleLocationListSchema", () => {
@@ -230,6 +261,64 @@ describe("Royale API Domain Schemas", () => {
       };
       const result = v.parse(RoyaleRankingListSchema, input);
       expect(result.items).toHaveLength(1);
+    });
+  });
+
+  describe("RoyaleWarLogItemSchema", () => {
+    it("should parse a real riverracelog item shape", () => {
+      const input = {
+        seasonId: 55,
+        sectionIndex: 3,
+        standings: [
+          {
+            rank: 1,
+            clan: {
+              tag: "#C1",
+              name: "Clan One",
+              fame: 12000,
+              clanScore: 50000,
+              participants: [
+                { tag: "#P1", name: "P1", decksUsed: 4, fame: 1200 }
+              ]
+            }
+          }
+        ]
+      };
+      const result = v.parse(RoyaleWarLogItemSchema, input);
+      expect(result.standings).toHaveLength(1);
+      expect(result.standings[0].clan.participants).toHaveLength(1);
+      expect(result.standings[0].clan.participants[0].tag).toBe("#P1");
+    });
+
+    it("should default standings to an empty array when absent", () => {
+      const input = { seasonId: 55, sectionIndex: 3 };
+      const result = v.parse(RoyaleWarLogItemSchema, input);
+      expect(result.standings).toEqual([]);
+    });
+
+    it("should fail without seasonId or sectionIndex", () => {
+      const input = { standings: [] };
+      expect(() => v.parse(RoyaleWarLogItemSchema, input)).toThrow();
+    });
+  });
+
+  describe("RoyaleTagSchema", () => {
+    it("should accept a valid tag with the '#' prefix", () => {
+      const result = v.parse(RoyaleTagSchema, "#PP80QG99");
+      expect(result).toBe("#PP80QG99");
+    });
+
+    it("should accept a valid tag without the '#' prefix", () => {
+      const result = v.parse(RoyaleTagSchema, "PP80QG99");
+      expect(result).toBe("PP80QG99");
+    });
+
+    it("should reject a tag that is too short", () => {
+      expect(() => v.parse(RoyaleTagSchema, "#PP")).toThrow();
+    });
+
+    it("should reject a tag with disallowed characters", () => {
+      expect(() => v.parse(RoyaleTagSchema, "#PP80QI99")).toThrow(); // 'I' is not in the CR alphabet
     });
   });
 

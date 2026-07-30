@@ -156,9 +156,21 @@ export async function executeScanner(
     // Report the top-50 outcome to the epoch guard state machine so it can
     // decide whether to arm (top50 = 0) or disarm (top50 >= 1) for this cycle.
     // Non-fatal: a telemetry write failure must never abort the scanner result.
+    // [THREAT:] supabase.rpc() RESOLVES with { error }, it does not throw, so the try/catch
+    // below is dead code for database failures. Without destructuring the error the epoch-guard
+    // feedback write could fail completely silently, leaving the guard on its stale state.
+    // [DECISION LOG] The error is destructured and recorded, and the 'terminated' audit entry
+    // is gated on success so the epoch guard is never reported as updated when it was not.
+    // The catch is retained for genuine transport-level rejections (network/abort).
     try {
-        await supabase.rpc('update_epoch_state', { p_top50: stats.new_recruits_top50 ?? 0 });
-        logAudit('EPOCH_GUARD', 'terminated', { new_recruits_top50: stats.new_recruits_top50 ?? 0 });
+        const { error: epochStateError } = await supabase.rpc('update_epoch_state', { p_top50: stats.new_recruits_top50 ?? 0 });
+        if (epochStateError) {
+            stats.errors.push(`EPOCH_GUARD: ${epochStateError.message}`);
+            logAudit('EPOCH_GUARD', 'error', { message: epochStateError.message, details: epochStateError });
+            console.error(`[SCANNER] Epoch guard feedback write failed: ${epochStateError.message}`);
+        } else {
+            logAudit('EPOCH_GUARD', 'terminated', { new_recruits_top50: stats.new_recruits_top50 ?? 0 });
+        }
     } catch (epochStateExecutionError: unknown) {
         const message = epochStateExecutionError instanceof Error ? epochStateExecutionError.message : String(epochStateExecutionError);
         stats.errors.push(`EPOCH_GUARD: ${message}`);

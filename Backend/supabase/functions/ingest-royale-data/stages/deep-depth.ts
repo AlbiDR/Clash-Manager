@@ -56,6 +56,10 @@ export async function runDeepDepth(
             ...targetsSnapshot.recruits
         ];
 
+        // Tracks whether the shadow-lead registry write actually landed, so the stage
+        // cannot report success while a database write silently failed.
+        let shadowLeadWriteFailure: string | null = null;
+
         if (ingestionTargets.length > 0) {
             logAudit('S6_BATTLES', 'called', { tags_count: ingestionTargets.length });
             
@@ -103,8 +107,16 @@ export async function runDeepDepth(
                             });
                         }
                     } else if (battleLogApiResponse.status === 404) {
-                        await supabase.rpc('report_dead_recruit', { p_player_tag: targetTag });
-                        logAudit('S6_BATTLES', 'called', { tag: targetTag, action: 'purged_ghost' });
+                        // [THREAT:] supabase.rpc() resolves with { error } instead of throwing, so an
+                        // unchecked call would log the ghost as purged even when the write failed,
+                        // keeping the dead tag in the ingestion target set to burn API quota on a
+                        // 404 every 30-minute cycle.
+                        const { error: deadRecruitReportError } = await supabase.rpc('report_dead_recruit', { p_player_tag: targetTag });
+                        if (deadRecruitReportError) {
+                            logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'Failed to report dead recruit', details: deadRecruitReportError });
+                        } else {
+                            logAudit('S6_BATTLES', 'called', { tag: targetTag, action: 'purged_ghost' });
+                        }
                     }
                 } catch (battleLogError: unknown) {
                     const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
@@ -134,17 +146,31 @@ export async function runDeepDepth(
                 }));
 
                 // L2 Drivers: Sync to universal player registry first
-                await supabase.rpc('sync_players', { p_players: validLeads });
-
-                // L2 Drivers: Upsert to shadow recruitment queue
-                const { error: leadErr } = await supabase.rpc('sync_recruits', { p_recruits: recruits });
-                if (leadErr) {
-                    logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Batch Upsert Failure', details: leadErr });
+                // [THREAT:] This registry write is two-phase and NOT atomic. drivers.recruits
+                // carries a foreign key onto the player registry, so running sync_recruits after a
+                // failed sync_players raises FK violations and loses the entire harvest. The error
+                // must be captured because supabase.rpc() resolves with { error } and never throws.
+                // [DECISION LOG] Phase 2 is gated on phase 1 succeeding, and either failure is
+                // propagated to results.battles instead of being reported as a clean stage.
+                const { error: playerRegistryError } = await supabase.rpc('sync_players', { p_players: validLeads });
+                if (playerRegistryError) {
+                    shadowLeadWriteFailure = `Player Registry Sync Failure: ${playerRegistryError.message}`;
+                    logAudit('S6_BATTLES', 'error', { message: 'Player Registry Sync Failure - skipping recruit upsert to avoid foreign key violations', details: playerRegistryError });
+                } else {
+                    // L2 Drivers: Upsert to shadow recruitment queue
+                    const { error: leadErr } = await supabase.rpc('sync_recruits', { p_recruits: recruits });
+                    if (leadErr) {
+                        shadowLeadWriteFailure = `Shadow Lead Batch Upsert Failure: ${leadErr.message}`;
+                        logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Batch Upsert Failure', details: leadErr });
+                    }
                 }
             }
         }
-        results.battles.success = true;
-        logAudit('S6_BATTLES', 'terminated', { tags: ingestionTargets.length, success: true });
+        results.battles.success = shadowLeadWriteFailure === null;
+        if (shadowLeadWriteFailure !== null) {
+            results.battles.error = shadowLeadWriteFailure;
+        }
+        logAudit('S6_BATTLES', 'terminated', { tags: ingestionTargets.length, success: results.battles.success });
     } catch (battleLogError: unknown) {
         const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
         results.battles.error = errorMessage;

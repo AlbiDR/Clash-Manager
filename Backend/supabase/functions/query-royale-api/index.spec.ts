@@ -36,6 +36,7 @@ beforeAll(async () => {
     INTERNAL_BEARER_TOKEN: "internal-bearer",
     CLAN_TAG: "#CLANTAG",
     ROYALE_API_KEYS: '["key1", "key2"]',
+    ALLOWED_ORIGINS: "https://app.test.co",
   };
 
   globalThis.Deno = {
@@ -116,14 +117,37 @@ beforeEach(() => {
 });
 
 describe("query-royale-api Edge Function", () => {
-  it("should handle CORS OPTIONS preflight request", async () => {
+  // [DECISION LOG COVERAGE] query-royale-api is one of the three anon-reachable
+  // functions, so `protocol.ts`'s CORS handling is restricted (allow-list-checked)
+  // rather than the blanket `*` still used by the internal-bearer-only functions.
+  it("should handle a CORS OPTIONS preflight request with no Origin header (server-to-server caller): no CORS header reflected, but the preflight itself still succeeds", async () => {
     const req = new Request("https://test.co/query-royale-api", {
       method: "OPTIONS",
     });
     const response = await requestHandler(req);
     expect(response.status).toBe(200);
-    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
     expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
+  });
+
+  it("should reflect an Origin on the configured allow-list", async () => {
+    const req = new Request("https://test.co/query-royale-api", {
+      method: "OPTIONS",
+      headers: { Origin: "https://app.test.co" },
+    });
+    const response = await requestHandler(req);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("https://app.test.co");
+  });
+
+  it("should NOT reflect an Origin that is not on the configured allow-list", async () => {
+    const req = new Request("https://test.co/query-royale-api", {
+      method: "OPTIONS",
+      headers: { Origin: "https://evil.example.com" },
+    });
+    const response = await requestHandler(req);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 
   it("should block unauthorized requests (401 Unauthorized)", async () => {
@@ -243,25 +267,34 @@ describe("query-royale-api Edge Function", () => {
   });
 
   it("should fail local harvest when CLAN_TAG config is missing", async () => {
+    // protocol.ts's error classification (F7) never returns raw internal messages
+    // across the trust boundary; an unclassified `throw new Error(...)` in the
+    // handler degrades to the generic INTERNAL_ERROR shape. CONFIG is a module-
+    // scoped mock shared across every test in this file, so the mutation is
+    // restored in `finally` -- a bare post-assertion restore left it corrupted
+    // for every later test whenever this assertion itself threw.
     const { CONFIG } = await import("./client.ts");
     const originalClanTag = CONFIG.CLAN_TAG;
     CONFIG.CLAN_TAG = "";
 
-    const req = new Request("https://test.co/query-royale-api", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer internal-bearer",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ endpoint: "local" }),
-    });
+    try {
+      const req = new Request("https://test.co/query-royale-api", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer internal-bearer",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ endpoint: "local" }),
+      });
 
-    const response = await requestHandler(req);
-    expect(response.status).toBe(500);
-    const body = await response.json();
-    expect(body.error).toContain("Missing CLAN_TAG configuration on backend server.");
-
-    CONFIG.CLAN_TAG = originalClanTag;
+      const response = await requestHandler(req);
+      expect(response.status).toBe(500);
+      const body = await response.json();
+      expect(body.code).toBe("INTERNAL_ERROR");
+      expect(body.error).toBe("Internal Server Error");
+    } finally {
+      CONFIG.CLAN_TAG = originalClanTag;
+    }
   });
 
   it("should fail local harvest when clan details fetch fails", async () => {
@@ -283,7 +316,8 @@ describe("query-royale-api Edge Function", () => {
     const response = await requestHandler(req);
     expect(response.status).toBe(500);
     const body = await response.json();
-    expect(body.error).toContain("Failed to retrieve clan details to identify region: 404");
+    expect(body.code).toBe("INTERNAL_ERROR");
+    expect(body.error).toBe("Internal Server Error");
   });
 
   it("should perform local harvest for specific country with combined PoL & rankings merge", async () => {

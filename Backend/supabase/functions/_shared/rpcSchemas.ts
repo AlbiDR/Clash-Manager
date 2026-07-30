@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "npm:valibot@1.4.2";
+import { RoyaleTagSchema } from "./royaleSchemas.ts";
 
 /**
  * L1 Core: Supabase RPC Schemas
@@ -12,11 +13,15 @@ import * as v from "npm:valibot@1.4.2";
  * L1 Core: Player Sync Payload Schema.
  *
  * @remarks
- * Used for inbound sync-player-cards requests.
+ * Used for inbound sync-player-cards requests. `tag` is validated against
+ * `RoyaleTagSchema`, mirroring the `features.player_card_snapshots.player_tag`
+ * CHECK constraint (`^#[0289CGJLPQRUVY]+$`) in
+ * `Backend/supabase/migrations/20260531232406_master_migration.sql`, so an
+ * unbounded/malformed string cannot reach the DB before `normalizeTag()` runs.
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const PlayerSyncPayloadSchema = v.object({
-    tag: v.string()
+    tag: RoyaleTagSchema
 });
 
 /**

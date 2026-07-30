@@ -88,8 +88,18 @@ export async function runGhostPurge(
                 // [DECISION LOG] 404 indicates the player likely no longer exists (tag change/deleted).
                 // Purge immediately to clean the hot-zone.
                 if (playerProfileResponse.status === 404) {
-                    await supabase.rpc('purge_recruits', { p_tags: [recruitCandidate.player_tag] });
-                    ghostsEvicted++;
+                    // [THREAT:] supabase.rpc() resolves with { error } instead of throwing, so an
+                    // unchecked call would advance ghostsEvicted for an eviction that never happened
+                    // and stats.ghosts_purged would report phantom purges.
+                    // [DECISION LOG] The counter only advances once the write is confirmed.
+                    const { error: deadRecruitPurgeError } = await supabase.rpc('purge_recruits', { p_tags: [recruitCandidate.player_tag] });
+                    if (deadRecruitPurgeError) {
+                        console.error(`[GHOST_PURGE] Failed to purge dead recruit ${recruitCandidate.player_tag}: ${deadRecruitPurgeError.message}`);
+                        stats.errors.push(`GHOST_PURGE:${recruitCandidate.player_tag}: ${deadRecruitPurgeError.message}`);
+                        logAudit('GHOST_PURGE', 'error', { tag: recruitCandidate.player_tag, message: 'Failed to purge dead recruit', details: deadRecruitPurgeError });
+                    } else {
+                        ghostsEvicted++;
+                    }
                 }
                 return;
             }
@@ -113,14 +123,25 @@ export async function runGhostPurge(
             // they are considered a "ghost" in the recruitment view and must be evicted.
             if (playerProfileSnapshot.clan?.tag && !exclusionSet.has(playerProfileSnapshot.tag)) {
                 // Ghost confirmed: player has joined a clan that isn't ours
-                await supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] });
-                ghostsEvicted++;
-                logAudit('GHOST_PURGE', 'called', {
-                    tag: playerProfileSnapshot.tag,
-                    clan: playerProfileSnapshot.clan.tag,
-                    action: 'evicted_clanned_ghost'
-                });
-                console.log(`[GHOST_PURGE] Evicted ${playerProfileSnapshot.tag} - joined clan ${playerProfileSnapshot.clan.tag}`);
+                // [THREAT:] A silently failed purge leaves the clanned player holding a top-50 slot
+                // forever while stats.ghosts_purged claims an eviction that never landed.
+                // [DECISION LOG] The counter and the 'evicted_clanned_ghost' audit entry are both
+                // gated on RPC success. On failure the tag is deliberately NOT added to touchedTags,
+                // so its last_scan stays stale and the S4 rescan retries the eviction next cycle.
+                const { error: clannedGhostPurgeError } = await supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] });
+                if (clannedGhostPurgeError) {
+                    console.error(`[GHOST_PURGE] Failed to evict clanned ghost ${playerProfileSnapshot.tag}: ${clannedGhostPurgeError.message}`);
+                    stats.errors.push(`GHOST_PURGE:${playerProfileSnapshot.tag}: ${clannedGhostPurgeError.message}`);
+                    logAudit('GHOST_PURGE', 'error', { tag: playerProfileSnapshot.tag, message: 'Failed to evict clanned ghost', details: clannedGhostPurgeError });
+                } else {
+                    ghostsEvicted++;
+                    logAudit('GHOST_PURGE', 'called', {
+                        tag: playerProfileSnapshot.tag,
+                        clan: playerProfileSnapshot.clan.tag,
+                        action: 'evicted_clanned_ghost'
+                    });
+                    console.log(`[GHOST_PURGE] Evicted ${playerProfileSnapshot.tag} - joined clan ${playerProfileSnapshot.clan.tag}`);
+                }
             } else {
                 // Player is still clanless - refresh their last_scan timestamp so
                 // the stale-rescan (S4) does not redundantly re-check them this cycle
@@ -136,17 +157,24 @@ export async function runGhostPurge(
     await processBatch(purgeTasks, 10);
 
     // --- 3. Bulk-touch all verified clanless recruits in one RPC call ---
+    // [DECISION LOG] `refreshed` reports confirmed last_scan writes, not attempted ones, so a
+    // failed touch_recruits cannot inflate the audit trail with refreshes that never landed.
+    let recruitsRefreshed = 0;
     if (touchedTags.length > 0) {
         const { error: touchErr } = await supabase.rpc('touch_recruits', { p_tags: touchedTags });
         if (touchErr) {
             console.warn(`[GHOST_PURGE] touch_recruits failed: ${touchErr.message}`);
+            stats.errors.push(`GHOST_PURGE:touch_recruits: ${touchErr.message}`);
+            logAudit('GHOST_PURGE', 'error', { message: 'touch_recruits failed', details: touchErr });
+        } else {
+            recruitsRefreshed = touchedTags.length;
         }
     }
 
-    console.log(`[GHOST_PURGE] Audit complete - ${ghostsEvicted} ghost(s) evicted, ${touchedTags.length} recruit(s) refreshed.`);
+    console.log(`[GHOST_PURGE] Audit complete - ${ghostsEvicted} ghost(s) evicted, ${recruitsRefreshed} recruit(s) refreshed.`);
     logAudit('GHOST_PURGE', 'resulted_data', {
         evicted: ghostsEvicted,
-        refreshed: touchedTags.length,
+        refreshed: recruitsRefreshed,
         audited: targets.length
     });
 

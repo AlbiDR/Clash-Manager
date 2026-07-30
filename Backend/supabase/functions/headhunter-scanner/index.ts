@@ -11,8 +11,16 @@ import * as v from "npm:valibot@1.4.2";
  * L5 Control Layer: Edge Scanner Orchestration
  */
 
+// [GUARD] VALIDATION BOUNDARY: `tournaments` accepts the "AUTO" sentinel plus
+// real tournament tags (see scanner.ts, which only checks `.includes("AUTO")`
+// and never reads individual tag content), so items are not tag-format
+// checked here - but the array and each element are bounded so a caller
+// cannot pass an unbounded payload into the scanner.
 const PayloadSchema = v.object({
-    tournaments: v.array(v.string())
+    tournaments: v.pipe(
+        v.array(v.pipe(v.string(), v.maxLength(64))),
+        v.maxLength(50, "tournaments array must not exceed 50 entries.")
+    )
 });
 
 Deno.serve(async (scannerRequest) => {

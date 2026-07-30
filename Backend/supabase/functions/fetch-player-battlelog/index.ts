@@ -4,7 +4,14 @@
 import * as v from "npm:valibot@1.4.2";
 import { clinicalServe } from "../_shared/protocol.ts";
 import { normalizeTag } from "../_shared/utils.ts";
-import { RoyaleBattleLogSchema, KeyPoolSchema } from "../_shared/schemas.ts";
+import { RoyaleBattleLogSchema, RoyaleTagSchema, KeyPoolSchema } from "../_shared/schemas.ts";
+import {
+  MAX_BATTLELOG_FANOUT_KEYS,
+  RATE_LIMIT_IP_MAX_REQUESTS,
+  RATE_LIMIT_IP_WINDOW_MS,
+  RATE_LIMIT_IP_TARGET_MAX_REQUESTS,
+  RATE_LIMIT_IP_TARGET_WINDOW_MS,
+} from "../_shared/config.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 
 /**
@@ -14,8 +21,9 @@ import { supabase, CONFIG, syncVault } from "./client.ts";
  *
  * @remarks
  * Intended for testing and diagnostic purposes. Accepts a player tag,
- * fans out the battlelog request across ALL available API keys in parallel
- * (each key routes to a different proxy node with its own cache state),
+ * fans out the battlelog request across up to MAX_BATTLELOG_FANOUT_KEYS randomly
+ * selected keys from the pool in parallel (each key routes to a different proxy
+ * node with its own cache state),
  * then returns the response with the most recent battleTime. This maximises
  * the chance of surfacing the freshest available data across the full key pool.
  */
@@ -26,12 +34,14 @@ const INITIAL_INDEX = 0;
 /**
  * Validation schema for the inbound payload.
  * Requires a player tag in Clash Royale format (e.g. "#PP80QG99").
+ *
+ * [GUARD] VALIDATION BOUNDARY: mirrors RoyaleTagSchema (see royaleSchemas.ts),
+ * itself mirroring the DB's `player_tag`/`clan_tag` CHECK constraint
+ * (`^#[0289CGJLPQRUVY]+$`), so an unbounded/malformed string is rejected here
+ * rather than passing through as a bare `v.string()`.
  */
 const PayloadSchema = v.object({
-  playerTag: v.pipe(
-    v.string(),
-    v.minLength(3, "Player tag must be at least 3 characters."),
-  ),
+  playerTag: RoyaleTagSchema,
 });
 
 /**
@@ -46,6 +56,33 @@ const PayloadSchema = v.object({
  */
 function resolveKeyPool(): string[] {
   return v.parse(KeyPoolSchema, CONFIG.ROYALE_API_KEYS);
+}
+
+/**
+ * Selects at most `maxKeys` keys from the pool to fan a single request out across.
+ *
+ * @remarks
+ * [THREAT:] The key pool is operator-configured and can grow without bound. Fanning a
+ * single anon-reachable request out to every key in the pool means pool growth directly
+ * multiplies the upstream call volume of one request (and of an abusive caller looping
+ * requests).
+ * [DECISION LOG] A random subset (Fisher-Yates shuffle, then slice), not a fixed prefix,
+ * so the "freshest across several independent proxy nodes" intent of the fan-out is
+ * preserved -- a fixed prefix would always hit the same subset of nodes on every call.
+ *
+ * @param keyPool - The full resolved key pool.
+ * @param maxKeys - The hard ceiling on how many keys to select.
+ * @returns Up to `maxKeys` keys from `keyPool`, in random order.
+ */
+function selectFanoutKeys(keyPool: string[], maxKeys: number): string[] {
+  if (keyPool.length <= maxKeys) return keyPool;
+
+  const shuffled = [...keyPool];
+  for (let shuffleIndex = shuffled.length - 1; shuffleIndex > 0; shuffleIndex--) {
+    const swapIndex = Math.floor(Math.random() * (shuffleIndex + 1));
+    [shuffled[shuffleIndex], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[shuffleIndex]];
+  }
+  return shuffled.slice(0, maxKeys);
 }
 
 /**
@@ -144,6 +181,18 @@ Deno.serve(async (battlelogRequest) => {
     eventType: "PLAYER_BATTLELOG_FETCH",
     componentId: "FETCH_PLAYER_BATTLELOG",
     schema: PayloadSchema,
+    // [SECURITY] This function accepts the publicly known Supabase anon key as a valid
+    // bearer credential (browser PWA path), so the anon key is not the access-control
+    // boundary here -- rate limiting is. It also fans one request out across the whole
+    // key pool in parallel (capped by MAX_BATTLELOG_FANOUT_KEYS below), so it is the
+    // most expensive of the three anon-reachable functions per request.
+    rateLimit: {
+      maxRequests: RATE_LIMIT_IP_MAX_REQUESTS,
+      windowMs: RATE_LIMIT_IP_WINDOW_MS,
+      targetKey: (payload) => payload.playerTag,
+      targetMaxRequests: RATE_LIMIT_IP_TARGET_MAX_REQUESTS,
+      targetWindowMs: RATE_LIMIT_IP_TARGET_WINDOW_MS,
+    },
     handler: async (battlelogPayload, logAudit) => {
       // [DECISION LOG] Tags are normalized to ensure consistency across proxy nodes.
       const { playerTag } = battlelogPayload;
@@ -152,7 +201,8 @@ Deno.serve(async (battlelogRequest) => {
       const normalizedTag = normalizeTag(playerTag);
 
       const encodedTag = encodeURIComponent(normalizedTag);
-      const keyPool = resolveKeyPool();
+      // [GUARD] Hard ceiling on parallel upstream fan-out (see selectFanoutKeys doc).
+      const keyPool = selectFanoutKeys(resolveKeyPool(), MAX_BATTLELOG_FANOUT_KEYS);
 
       logAudit("BATTLELOG_FAN_OUT", "called", {
         playerTag: normalizedTag,

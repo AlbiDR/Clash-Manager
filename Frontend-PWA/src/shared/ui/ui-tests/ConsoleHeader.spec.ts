@@ -6,26 +6,23 @@
 import ConsoleHeader from "../ConsoleHeader.vue";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import { ref, nextTick } from "vue";
+import { nextTick } from "vue";
 
 const { mockTap } = vi.hoisted(() => ({ mockTap: vi.fn() }));
-const mockIsScrolled = ref(false);
 
 vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({ tap: mockTap }),
 }));
 
-// Mock useHeaderScroll - MUST return an object that can be destructured while retaining reactivity
-vi.mock("../composables/useHeaderScroll", () => ({
-  useHeaderScroll: () => ({
-    isScrolled: mockIsScrolled,
-  }),
-}));
+// useHeaderScroll is deliberately NOT mocked: the scrolled-state contract is driven
+// through the real window scroll listener so the assertion covers the genuine chain
+// (window.scrollY -> composable ref -> header class binding).
 
 describe("ConsoleHeader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsScrolled.value = false;
+    // Guarantee every test starts at the top of the document.
+    vi.stubGlobal("scrollY", 0);
   });
 
   it("renders title and optional status correctly", () => {
@@ -91,22 +88,39 @@ describe("ConsoleHeader", () => {
     expect(wrapper.emitted("update:sort")?.[0]).toEqual(["level"]);
   });
 
-  // FIXME: Stubborn reactivity mock in Vitest environment is preventing 'is-scrolled' class detection
-  // Although the production code works correctly in browser, the test environment fails to see the reactive update.
-  it.skip("applies scrolled class based on scroll state", async () => {
+  it("applies scrolled class based on scroll state", async () => {
     const wrapper = mount(ConsoleHeader, {
       props: { title: "Scroll Test" },
     });
 
     expect(wrapper.classes()).not.toContain("is-scrolled");
 
-    // Change value and force Vue to re-render
-    mockIsScrolled.value = true;
-    
-    // Multiple ticks to ensure reactivity chain completes
+    // ConsoleHeader calls useHeaderScroll(10), so anything past 10px is "scrolled".
+    vi.stubGlobal("scrollY", 50);
+    window.dispatchEvent(new Event("scroll"));
     await nextTick();
-    await wrapper.setProps({}); // Forcing re-render of template
-    
+
+    expect(wrapper.classes()).toContain("is-scrolled");
+
+    // Returning to the top must drop the class again.
+    vi.stubGlobal("scrollY", 0);
+    window.dispatchEvent(new Event("scroll"));
+    await nextTick();
+
+    expect(wrapper.classes()).not.toContain("is-scrolled");
+  });
+
+  it("applies scrolled class when mounted on an already-scrolled page", async () => {
+    vi.stubGlobal("scrollY", 50);
+
+    const wrapper = mount(ConsoleHeader, {
+      props: { title: "Scroll Test" },
+    });
+
+    // useHeaderScroll runs its initial check inside onMounted, so the class lands
+    // on the first flush rather than during the initial render.
+    await nextTick();
+
     expect(wrapper.classes()).toContain("is-scrolled");
   });
 

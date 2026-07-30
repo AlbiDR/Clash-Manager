@@ -116,16 +116,13 @@ vi.mock("../useSyntheticMode", async () => {
   };
 });
 
-vi.mock("@shared", async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  const { ref } = await import("vue");
-  return {
-    ...actual,
-    useUiCoordinator: vi.fn(() => ({
-      setFabVisible: vi.fn(),
-    })),
-  };
-});
+// useConsoleController imports useUiCoordinator from "./useUiCoordinator"
+// (src/core/services), so the mock must target that module id.
+vi.mock("@core/services/useUiCoordinator", () => ({
+  useUiCoordinator: vi.fn(() => ({
+    setFabVisible: vi.fn(),
+  })),
+}));
 
 vi.mock("../useConnectionStatus", () => {
   const { ref } = require("vue");

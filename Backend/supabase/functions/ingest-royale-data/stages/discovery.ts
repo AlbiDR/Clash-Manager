@@ -74,7 +74,13 @@ export async function runDiscovery(
                                             });
                                         });
 
-                                    await supabase.rpc('report_discovery', { p_player_tag: tournamentTarget.tag, p_type: 'TOURNAMENT' });
+                                    // [THREAT:] supabase.rpc() resolves with { error } instead of
+                                    // throwing, so an unchecked call loses the discovery record and
+                                    // the same tournament is re-fetched on every subsequent run.
+                                    const { error: discoveryReportError } = await supabase.rpc('report_discovery', { p_player_tag: tournamentTarget.tag, p_type: 'TOURNAMENT' });
+                                    if (discoveryReportError) {
+                                        logAudit('S1_DISCOVERY', 'error', { tag: tournamentTarget.tag, message: 'Discovery report failed', details: discoveryReportError });
+                                    }
                                 }
                             } else {
                                 logAudit('S1_DISCOVERY', 'error', { tag: tournamentTarget.tag, message: 'Tournament details validation failed' });
@@ -115,17 +121,23 @@ export async function runDiscovery(
                 status: 'ACTIVE'
             }));
 
+            // [DECISION LOG] The two-phase write is NOT atomic, so phase 2 (sync_recruits) is
+            // gated on phase 1 (sync_players) succeeding. Running phase 2 against a registry that
+            // never received these tags is guaranteed to raise the foreign key violations
+            // described above and lose the whole harvest regardless.
             const { error: playerRegistryError } = await supabase.rpc('sync_players', { p_players: playerRegistryPayload });
             if (playerRegistryError) {
-                logAudit('S1_DISCOVERY', 'error', { message: 'Player Registry Batch Sync Failure', details: playerRegistryError });
-            }
-
-            const { error: recruitRegistryError } = await supabase.rpc('sync_recruits', { p_recruits: recruitRegistryPayload });
-            
-            if (!recruitRegistryError) {
-                results.discovery.harvested = globalNewRecruits.size;
+                results.discovery.error = `Player Registry Batch Sync Failure: ${playerRegistryError.message}`;
+                logAudit('S1_DISCOVERY', 'error', { message: 'Player Registry Batch Sync Failure - skipping recruit sync to avoid foreign key violations', details: playerRegistryError });
             } else {
-                logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Registry Batch Sync Failure', details: recruitRegistryError });
+                const { error: recruitRegistryError } = await supabase.rpc('sync_recruits', { p_recruits: recruitRegistryPayload });
+
+                if (!recruitRegistryError) {
+                    results.discovery.harvested = globalNewRecruits.size;
+                } else {
+                    results.discovery.error = `Recruit Registry Batch Sync Failure: ${recruitRegistryError.message}`;
+                    logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Registry Batch Sync Failure', details: recruitRegistryError });
+                }
             }
         }
 

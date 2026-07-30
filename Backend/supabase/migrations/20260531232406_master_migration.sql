@@ -28,11 +28,32 @@
  * - 20260727010000_roster_lifetime_kpi_row.sql
  * - 20260727020000_roster_win_rate_lifetime_kpi.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-07-29):
+ * Declarative Purity Contract:
+ * - This file declares SCHEMA, not data history. Every migration above is folded in its
+ *   final structural form only.
+ * - One-time historical DML repairs from the folded migrations are deliberately NOT carried
+ *   into this baseline. They remain in their own migration files as the audit trail and must
+ *   never be re-folded here. Two were removed on 2026-07-30 (see log entry 5 below).
+ * - The only DML permitted here is idempotent seed or invariant data: guarded by
+ *   ON CONFLICT DO NOTHING or NOT EXISTS, and a no-op against an already-correct database.
+ * - Column state is declared once inside CREATE TABLE. Trailing ALTER TABLE ... ALTER COLUMN
+ *   mutations against a table this file already declares are prohibited.
+ * - Identity sequence synchronisation is handled generically for all identity tables by the
+ *   DO block following the table declarations. Do not add per-table identity churn.
+ *
+ * Architectural Compliance Verification Log (Audited: 2026-07-30):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
- * 2. Search Path Isolation: Verified 100% search_path constraints on all plpgsql functions.
+ * 2. Search Path Isolation: Verified 100% search_path constraints on all 95 plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
  * 4. Formatting: Checked and confirmed absolute zero em-dash and zero emoji violations.
+ * 5. Declarative Purity: Removed two non-declarative residues carried in from folded
+ *    migrations. (a) The DROP IDENTITY / UPDATE id 5 -> 4 / ADD IDENTITY block from
+ *    20260707003200: the CREATE TABLE above already declares id as GENERATED ALWAYS AS
+ *    IDENTITY, so the pair was a schema no-op, while the UPDATE was a live-data hazard that
+ *    arms itself once voyage id 5 exists again (it would renumber a live voyage onto the
+ *    existing id 4 and fail the primary key). (b) The last_scan rescan backfill from
+ *    20260727000000: a no-op on fresh deploy, but on re-apply it forces a full re-profile of
+ *    every zero-win-rate recruit and carries hardcoded business thresholds against ADR I.
  */
 
 BEGIN;
@@ -503,12 +524,6 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage (
 );
 
 ALTER TABLE drivers.clan_voyage ENABLE ROW LEVEL SECURITY;
-
--- Gap correction: Rename Voyage ID 5 to 4 and sync identity sequence.
--- ON UPDATE CASCADE on fk_voyage_id ensures contribution rows are preserved.
-ALTER TABLE drivers.clan_voyage ALTER COLUMN id DROP IDENTITY;
-UPDATE drivers.clan_voyage SET id = 4 WHERE id = 5;
-ALTER TABLE drivers.clan_voyage ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY;
 
 -- L2 Drivers: Per-member performance metrics for historical Clan Voyage events.
 CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
@@ -4337,12 +4352,5 @@ CREATE OR REPLACE TRIGGER handle_updated_at_heritage BEFORE UPDATE ON drivers.he
 CREATE OR REPLACE TRIGGER handle_updated_at_config BEFORE UPDATE ON substrate.config FOR EACH ROW EXECUTE FUNCTION public.moddatetime('updated_at');
 
 CREATE OR REPLACE TRIGGER trg_shredder_war_log AFTER INSERT ON substrate.raw_war_log FOR EACH ROW EXECUTE FUNCTION substrate.shred_war_log();
-
--- Retroactive backfill for the RPoS formula restructure:
--- Force rescan of all recruits that have no precomputed win_rate.
-UPDATE drivers.recruits
-   SET last_scan = NOW() - INTERVAL '49 hours'
- WHERE status IN ('ACTIVE', 'BENCHED', 'QUEUE')
-   AND win_rate = 0;
 
 COMMIT;
