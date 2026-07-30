@@ -161,6 +161,31 @@ export function usePwaManager() {
   }
 
   /**
+   * Resolves the exact release APK filename via `APK/release/latest.json`, which
+   * carries a `+<buildNumber>` suffix that cannot be guessed from `appVersion`
+   * alone (distinct builds of the same version get distinct build numbers). Falls
+   * back to the old unsuffixed filename guess if the fetch fails for any reason,
+   * so a network hiccup never blocks the download entirely.
+   */
+  async function resolveApkFilename(): Promise<string> {
+    const fallback = `clashmanager-v${appVersion}.apk`;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const response = await fetch(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
+        { signal: controller.signal },
+      );
+      clearTimeout(timeoutId);
+      if (!response.ok) return fallback;
+      const latest = (await response.json()) as { filename?: string };
+      return latest.filename ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  /**
    * Opens the versioned APK binary hosted in the repository for direct download.
    *
    * @remarks
@@ -174,7 +199,8 @@ export function usePwaManager() {
   async function downloadApk(): Promise<void> {
     const activeToastId = toast.info("Opening APK download...");
     try {
-      const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v${appVersion}.apk`;
+      const filename = await resolveApkFilename();
+      const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${filename}`;
       if (nativeBridge.value?.openExternalUrl) {
         nativeBridge.value.openExternalUrl(apkUrl);
       } else if (typeof window !== "undefined") {

@@ -92,9 +92,7 @@ public class BlitzService extends Service {
     private static final float FLOATING_CORNER_RADIUS_DP = 100.0f;
     private static final float FLOATING_INITIAL_Y_DP = 120.0f;
 
-    private static final long GESTURE_CLOSE_DELAY_MS = 1000L;
     private static final long GESTURE_LOAD_DELAY_MS = 950L;
-    private static final long GESTURE_TOTAL_DELAY_MS = 1050L;
     private static final int NOTIFICATION_ID = 456;
 
     // The crosshair's rest-state visual size. The pulsing ring animates its scale up to
@@ -968,35 +966,44 @@ public class BlitzService extends Service {
         updateOverlayUi();
 
         if (ClashManagerAccessibilityService.isActive()) {
-            SharedPreferences prefs = getSharedPreferences(PREFS_BLITZ, MODE_PRIVATE);
-            DisplayMetrics dm = getResources().getDisplayMetrics();
-            final float inviteX = prefs.getFloat(PREF_INVITE_X, DEFAULT_INVITE_X) * dm.widthPixels;
-            final float inviteY = prefs.getFloat(PREF_INVITE_Y, DEFAULT_INVITE_Y) * dm.heightPixels;
-            final float closeX  = prefs.getFloat(PREF_CLOSE_X,  DEFAULT_CLOSE_X)  * dm.widthPixels;
-            final float closeY  = prefs.getFloat(PREF_CLOSE_Y,  DEFAULT_CLOSE_Y)  * dm.heightPixels;
-
+            final DisplayMetrics dm = getResources().getDisplayMetrics();
+            // Wait for Clash Royale's profile screen to render, then run the invite/close
+            // taps chained off each gesture's own completion (see
+            // ClashManagerAccessibilityService#runInviteCloseSequence) instead of two
+            // independently fixed-delay dispatches - the old GESTURE_CLOSE_DELAY_MS /
+            // GESTURE_TOTAL_DELAY_MS schedule left no margin against Handler jitter and
+            // could have the close tap's dispatchGesture() cancel an invite tap still in
+            // flight.
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    ClashManagerAccessibilityService.tapInvite();
-                    showTapIndicator(inviteX, inviteY, Color.parseColor("#0061a4"));
+                    ClashManagerAccessibilityService.runInviteCloseSequence(
+                        new ClashManagerAccessibilityService.TapSequenceCallback() {
+                            @Override
+                            public void onInviteTapped(float xPercent, float yPercent) {
+                                showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#0061a4"));
+                            }
+
+                            @Override
+                            public void onCloseTapped(float xPercent, float yPercent) {
+                                showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#ba1a1a"));
+                            }
+
+                            @Override
+                            public void onSequenceComplete() {
+                                scheduleAdvance(0L);
+                            }
+                        });
                 }
             }, GESTURE_LOAD_DELAY_MS);
-
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    ClashManagerAccessibilityService.tapClose();
-                    showTapIndicator(closeX, closeY, Color.parseColor("#ba1a1a"));
-                }
-            }, GESTURE_CLOSE_DELAY_MS);
+        } else {
+            scheduleAdvance(AUTO_ADVANCE_DELAY_MS);
         }
+    }
 
+    /** Advances to the next queued profile (or finishes the queue) after `delay`. */
+    private void scheduleAdvance(long delay) {
         int remaining = mTagsList.size() - 1;
-        long delay = (ClashManagerAccessibilityService.isActive())
-            ? GESTURE_TOTAL_DELAY_MS
-            : AUTO_ADVANCE_DELAY_MS;
-
         if (mCurrentIndex < remaining) {
             mHandler.postDelayed(mCountdownRunnable, delay);
         } else {

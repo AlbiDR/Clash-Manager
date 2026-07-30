@@ -31,6 +31,13 @@
     <string name="androidx_startup">androidx.startup</string>
     <string name="appName">Clash Manager</string>
     <string name="assetStatements">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://albidr.github.io\" } }]</string>
+    <!-- CI's monotonic workflow run number (github.run_number), stamped in by
+         apk-release.yml before the apktool build. Distinct from versionCode: two
+         builds of the SAME package.json version (e.g. a re-run after a signing
+         failure) share a versionCode but get different build numbers, so a
+         downloaded APK's recency can be told apart independent of git/semver. "0"
+         here is the local/dev-build placeholder - never shipped as a release. -->
+    <string name="buildNumber">0</string>
     <string name="copy_toast_msg">Link copied to clipboard</string>
     <string name="fallbackType">customtabs</string>
     <string name="fallback_menu_item_copy_link">Copy link</string>

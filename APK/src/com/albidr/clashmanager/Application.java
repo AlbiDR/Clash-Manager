@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 package com.albidr.clashmanager;
 
-/* JADX INFO: loaded from: /Users/ADR/Documents/Github/Projects/clash-manager/APK/android/classes.dex */
 public class Application extends android.app.Application {
-    @Override // android.app.Application
+    @Override
     public void onCreate() {
         super.onCreate();
     }

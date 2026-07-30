@@ -27,16 +27,29 @@ import os from "node:os";
 let defaultApk = "clashmanager.apk";
 if (!process.argv[2]) {
   try {
-    const pkgPath = path.join(process.cwd(), "package.json");
-    if (existsSync(pkgPath)) {
-      const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-      const versionedApk = `APK/release/clashmanager-v${pkg.version}.apk`;
-      if (existsSync(path.join(process.cwd(), versionedApk))) {
-        defaultApk = versionedApk;
-      } else {
-        const unsignedApk = "APK/release/clashmanager-unsigned.apk";
-        if (existsSync(path.join(process.cwd(), unsignedApk))) {
-          defaultApk = unsignedApk;
+    // latest.json (written by apk-release.yml) names the current release file
+    // exactly - it carries a `+<buildNumber>` suffix that a plain
+    // `clashmanager-v<version>.apk` guess can no longer find.
+    const latestJsonPath = path.join(process.cwd(), "APK/release/latest.json");
+    if (existsSync(latestJsonPath)) {
+      const latest = JSON.parse(readFileSync(latestJsonPath, "utf8"));
+      const namedApk = `APK/release/${latest.filename}`;
+      if (latest.filename && existsSync(path.join(process.cwd(), namedApk))) {
+        defaultApk = namedApk;
+      }
+    }
+    if (defaultApk === "clashmanager.apk") {
+      const pkgPath = path.join(process.cwd(), "package.json");
+      if (existsSync(pkgPath)) {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+        const versionedApk = `APK/release/clashmanager-v${pkg.version}.apk`;
+        if (existsSync(path.join(process.cwd(), versionedApk))) {
+          defaultApk = versionedApk;
+        } else {
+          const unsignedApk = "APK/release/clashmanager-unsigned.apk";
+          if (existsSync(path.join(process.cwd(), unsignedApk))) {
+            defaultApk = unsignedApk;
+          }
         }
       }
     }
@@ -129,6 +142,34 @@ function main() {
 
   const version = (badging.match(/versionCode='(\d+)' versionName='([^']*)'/) || []);
   if (version[1]) ok(`version ${version[2]} (code ${version[1]})`);
+
+  // Cross-check the artifact's version against package.json, using the same
+  // semver -> versionCode formula as .github/scripts/validate_project.ts. Catches a
+  // stale local build silently shipping an old version - the class of bug that let a
+  // local `pnpm apk:check` report 14.37.4 while apktool.yml and CI both said 14.38.1
+  // (root cause: a stale, untracked APK/android/build/ apktool cache; see build-apk.sh).
+  try {
+    const pkgPath = path.join(process.cwd(), "package.json");
+    if (existsSync(pkgPath) && version[1] && version[2]) {
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+      const parts = pkg.version.split(".").map(Number);
+      const expectedCode = String(parts[0] * 1000 + parts[1] * 100 + parts[2] * 10);
+      if (version[2] !== pkg.version) {
+        fail(`versionName '${version[2]}' does not match package.json '${pkg.version}' - stale build? Run \`pnpm apk:check\` again.`);
+        problems.push("stale-versionName");
+      } else {
+        ok(`versionName matches package.json (${pkg.version})`);
+      }
+      if (version[1] !== expectedCode) {
+        fail(`versionCode '${version[1]}' does not match expected '${expectedCode}' for package.json version ${pkg.version} - stale build? Run \`pnpm apk:check\` again.`);
+        problems.push("stale-versionCode");
+      } else {
+        ok(`versionCode matches package.json-derived value (${expectedCode})`);
+      }
+    }
+  } catch (e) {
+    console.warn(`⚠ could not cross-check version against package.json: ${e.message}`);
+  }
 
   for (const c of EXPECT.components) {
     if (manifest.includes(`"${c}"`)) ok(`component ${c}`);

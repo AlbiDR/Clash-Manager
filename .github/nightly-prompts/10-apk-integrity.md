@@ -124,6 +124,7 @@ You act as a defensive packaging auditor. You verify the boundaries between the 
 ### B. Target B: Build Configuration and Target Metadata
 - **Target SDK Review:** Ensure the Target SDK version is updated to meet modern Android standards and verify there are no deprecated properties in native build configurations.
 - **Version Number Verification:** Inspect `package.json` version definitions and verify that wrapper version strings and numerical version codes are synchronized correctly.
+- **Release Filename Pattern:** The committed release binary is named `APK/release/clashmanager-v<version>+<buildNumber>.apk` - the `+<buildNumber>` suffix (CI's `github.run_number`, stamped by `apk-release.yml`) changes on every CI build even when `<version>` does not. This is expected and is NOT a version mismatch to flag. `APK/release/latest.json` is the authoritative pointer to the current filename; verify it names a file that actually exists in `APK/release/`, and that its `version`/`buildNumber` fields agree with `apktool.yml` and the filename itself, rather than comparing filenames directly against `package.json`.
 
 ### C. Target C: Security Profile Auditing
 - **Cleartext Traffic Restriction:** Verify that the Android network security configuration forbids cleartext HTTP traffic across non-development environments.

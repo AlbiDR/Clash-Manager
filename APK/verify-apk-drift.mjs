@@ -72,4 +72,5 @@ if (drift.length === 0) {
 console.error(`\x1b[31m✗ committed APK has drifted from APK/android/ source:\x1b[0m`);
 for (const d of drift) console.error(`  ${d}`);
 console.error("\nRebuild and re-commit: pnpm apk:check  →  APK/release/clashmanager-v<VERSION>.apk");
+console.error("(CI's committed release additionally carries a +<buildNumber> suffix - see APK/release/latest.json)");
 process.exit(1);

@@ -3,7 +3,17 @@
 # This workflow picks up committed changes to APK/android/ or APK/src/, builds,
 # signs, and publishes the versioned release APK.
 #
-# Path filter rules:
+# Ordering: triggered by Auto Tag's completion, not by `push` directly. Root cause:
+# a plain `push` trigger here races Auto Tag's own `push` trigger on the same
+# commit - both fire independently off Sync Branches landing a merge. Every
+# meaningful push already bumps package.json in the same commit (the "bump on
+# every push" policy - see .github/scripts/bump-version.mjs), so Auto Tag fires on
+# essentially every push this workflow cares about; chaining off it via
+# `workflow_run` guarantees tagging always completes before the APK build starts,
+# without needing a second, independently-racing trigger.
+#
+# Path filter rules (now applied by the "Check for relevant changes" step, since
+# `workflow_run` cannot filter by path the way `push` can):
 #   Included : APK/src/** (Java source), APK/android/** (manifest, resources, dex)
 #   Included : APK/verify-apk-integrity.mjs (integrity gate used by this workflow)
 #   Excluded : APK/android/classes.dex  - committed by this workflow itself; excluding
@@ -18,26 +28,62 @@ name: APK Release Build
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: ["Auto Tag"]
+    types: [completed]
     branches: ["Beta", "Stable"]
-    paths:
-      - "APK/src/**"
-      - "APK/android/**"
-      - "APK/verify-apk-integrity.mjs"
-      - ".github/workflows/apk-release.yml"
-      - "!APK/android/classes.dex"
-      - "!APK/release/**"
-      - "!APK/**/*.md"
 
 permissions:
   contents: write
 
 concurrency:
-  group: apk-${{ github.ref }}
+  group: apk-${{ github.event.workflow_run.head_branch || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  check:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          fetch-depth: 0
+
+      - name: Check for relevant changes
+        id: filter
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_run" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BASE="${{ github.event.workflow_run.head_sha }}~1"
+          if ! git cat-file -e "${BASE}" 2>/dev/null; then
+            echo "No parent commit (shallow/initial) - proceeding with build."
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "${BASE}" "${{ github.event.workflow_run.head_sha }}")
+          echo "Changed files since Auto Tag's triggering commit:"
+          echo "${CHANGED}"
+          RELEVANT=false
+          for f in ${CHANGED}; do
+            case "$f" in
+              APK/android/classes.dex|APK/release/*|*.md) continue ;;
+              APK/src/*|APK/android/*|APK/verify-apk-integrity.mjs|.github/workflows/apk-release.yml)
+                RELEVANT=true ;;
+            esac
+          done
+          echo "relevant=${RELEVANT}" >> "$GITHUB_OUTPUT"
+          if [ "${RELEVANT}" != "true" ]; then
+            echo "Auto Tag completed but no APK/src, APK/android, or integrity-gate changes were in its commit. Skipping build."
+          fi
+
   build-sign-verify:
+    needs: check
+    if: ${{ needs.check.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     env:
       BT_VERSION: "35.0.0"
@@ -45,6 +91,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -73,6 +120,20 @@ jobs:
           echo "APK version found: $VERSION"
           echo "val=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Stamp build number
+        id: buildnum
+        # github.run_number is a per-workflow monotonic counter, unlike versionCode
+        # (derived purely from versionName - see verify-apk-integrity.mjs), so two
+        # builds of the SAME package.json version get distinct build numbers. This
+        # lets recency be told apart from a downloaded APK alone, without needing
+        # the git repository. Edits the CI workspace copy only - APK/android/ itself
+        # is never committed back by this workflow.
+        run: |
+          BUILD_NUMBER="${{ github.run_number }}"
+          sed -i "s/<string name=\"buildNumber\">0<\/string>/<string name=\"buildNumber\">${BUILD_NUMBER}<\/string>/" \
+            APK/android/res/values/strings.xml
+          echo "val=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
       - name: Build APK from APK/android (apktool)
         run: java -jar "$RUNNER_TEMP/apktool.jar" b APK/android -o "$RUNNER_TEMP/fresh-unsigned.apk"
 
@@ -86,6 +147,7 @@ jobs:
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           VERSION: ${{ steps.version.outputs.val }}
+          BUILD_NUMBER: ${{ steps.buildnum.outputs.val }}
         run: |
           BT="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}"
           "$BT/zipalign" -f -p 4 "$RUNNER_TEMP/fresh-unsigned.apk" "$RUNNER_TEMP/fresh-aligned.apk"
@@ -93,59 +155,71 @@ jobs:
             --ks "$RUNNER_TEMP/release.keystore" \
             --ks-key-alias "$KEY_ALIAS" \
             --ks-pass "env:KS_PASS" --key-pass "env:KEY_PASS" \
-            --out "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" "$RUNNER_TEMP/fresh-aligned.apk"
-          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/clashmanager-v${VERSION}.apk"
+            --out "$RUNNER_TEMP/clashmanager-v${VERSION}+${BUILD_NUMBER}.apk" "$RUNNER_TEMP/fresh-aligned.apk"
+          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/clashmanager-v${VERSION}+${BUILD_NUMBER}.apk"
 
       - name: Native-layer integrity gate
         env:
           AAPT2: ${{ env.ANDROID_SDK_ROOT }}/build-tools/35.0.0/aapt2
           VERSION: ${{ steps.version.outputs.val }}
+          BUILD_NUMBER: ${{ steps.buildnum.outputs.val }}
         run: |
           export AAPT2="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}/aapt2"
-          node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager-v${VERSION}.apk"
+          node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager-v${VERSION}+${BUILD_NUMBER}.apk"
 
       - name: Commit signed APK back to repository
         env:
           VERSION: ${{ steps.version.outputs.val }}
+          BUILD_NUMBER: ${{ steps.buildnum.outputs.val }}
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          
-          # Clean any old versioned APK files from release to maintain a single release binary
-          git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
-          
-          # Copy the fresh signed build to the destination path
-          mkdir -p APK/release
-          cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/release/clashmanager-v${VERSION}.apk
-          
-          # Track the new APK file
-          git add APK/release/clashmanager-v${VERSION}.apk
-          
+
+          FILENAME="clashmanager-v${VERSION}+${BUILD_NUMBER}.apk"
+
+          write_release() {
+            # Clean any old versioned APK files from release to maintain a single release binary
+            git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
+
+            mkdir -p APK/release
+            cp "$RUNNER_TEMP/${FILENAME}" "APK/release/${FILENAME}"
+            git add "APK/release/${FILENAME}"
+
+            # latest.json is the PWA's (and any script's) stable way to find the current
+            # release filename without needing to know the build number in advance -
+            # avoids hardcoding a filename pattern that changes every build.
+            cat > APK/release/latest.json <<EOF
+          {
+            "version": "${VERSION}",
+            "buildNumber": ${BUILD_NUMBER},
+            "filename": "${FILENAME}"
+          }
+          EOF
+            git add APK/release/latest.json
+          }
+
+          write_release
+
           if git diff --cached --quiet; then
             echo "No APK changes to commit"
           else
-            git commit -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
-            
+            git commit -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER} [skip ci]"
+
             # Fetch latest remote changes
             git fetch origin Beta
-            
+
             # If the remote has moved, reset branch pointer but keep our new APK file intact
             if [ "$(git rev-parse HEAD~1)" != "$(git rev-parse origin/Beta)" ]; then
               echo "Remote branch moved. Syncing and resolving conflict..."
               git reset --soft origin/Beta
-              
-              # Re-stage our fresh APK, ignoring any remote version binary
-              git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
-              mkdir -p APK/release
-              cp "$RUNNER_TEMP/clashmanager-v${VERSION}.apk" APK/release/clashmanager-v${VERSION}.apk
-              git add APK/release/clashmanager-v${VERSION}.apk
-              git commit --amend -m "chore(apk): update signed release APK to v${VERSION} [skip ci]"
+              write_release
+              git commit --amend -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER} [skip ci]"
             fi
-            
+
             git push origin HEAD:Beta || {
               echo "Push failed. Checking if target commit is already on remote..."
               git fetch origin Beta
-              git log origin/Beta -1 --oneline | grep -q "update signed release APK to v${VERSION}" \
+              git log origin/Beta -1 --oneline | grep -q "update signed release APK to v${VERSION}+${BUILD_NUMBER}" \
                 && echo "Target binary update already pushed by another process." \
                 || exit 1
             }
@@ -159,5 +233,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: clashmanager-signed-apk
-          path: ${{ runner.temp }}/clashmanager-v${{ steps.version.outputs.val }}.apk
+          path: ${{ runner.temp }}/clashmanager-v${{ steps.version.outputs.val }}+${{ steps.buildnum.outputs.val }}.apk
           if-no-files-found: error

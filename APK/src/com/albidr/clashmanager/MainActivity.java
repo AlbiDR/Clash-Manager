@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
 package com.albidr.clashmanager;
 
 import android.app.Activity;
@@ -15,26 +17,66 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+import androidx.core.graphics.Insets;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends Activity {
+    // Origin the bridge is allowed to talk to. Matches strings.xml/hostName - the
+    // PWA's real host. Any other origin loaded into this WebView (an external
+    // link the user tapped) gets the JS interface detached so that page cannot
+    // call into native code, even though it shares the same WebView instance.
+    private String mTrustedHost;
     private WebView mWebView;
+    private AndroidBridge mBridge;
+    private boolean mBridgeAttached = false;
     private String mPendingTagsJson = null;
     private boolean mAwaitingOverlayPermission = false;
 
     @Override
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
-        if (Build.VERSION.SDK_INT >= 29) {
-            WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
-        }
-        getWindow().setStatusBarColor(Color.parseColor("#0b0e14"));
-        getWindow().setNavigationBarColor(Color.parseColor("#0b0e14"));
-        
+        mTrustedHost = getString(getResources().getIdentifier("hostName", "string", getPackageName()));
+
+        // True edge-to-edge: draw behind system bars ourselves and consume the
+        // insets as padding, rather than relying on setStatusBarColor/
+        // setNavigationBarColor - both are no-ops once targetSdk reaches 35+,
+        // where the platform enforces edge-to-edge unconditionally.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
         FrameLayout frameLayout = new FrameLayout(this);
-        frameLayout.setFitsSystemWindows(true);
         frameLayout.setBackgroundColor(Color.parseColor("#0B0E14"));
-        
+        ViewCompat.setOnApplyWindowInsetsListener(frameLayout, new OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsetsCompat onApplyWindowInsets(android.view.View v, WindowInsetsCompat insets) {
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+                return WindowInsetsCompat.CONSUMED;
+            }
+        });
+
+        // Predictive back (Android 13+): registered directly against the
+        // dispatcher since this Activity extends the plain android.app.Activity,
+        // not AppCompatActivity/ComponentActivity, so onBackPressed() alone is
+        // never invoked once the app opts into the predictive-back contract via
+        // the manifest's enableOnBackInvokedCallback flag.
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                new android.window.OnBackInvokedCallback() {
+                    @Override
+                    public void onBackInvoked() {
+                        if (mWebView != null && mWebView.canGoBack()) {
+                            mWebView.goBack();
+                        } else {
+                            finish();
+                        }
+                    }
+                });
+        }
+
         WebView webView = new WebView(this);
         this.mWebView = webView;
         this.mWebView.setHapticFeedbackEnabled(true);
@@ -58,30 +100,49 @@ public class MainActivity extends Activity {
             settings.setOffscreenPreRaster(true);
         }
         if (Build.VERSION.SDK_INT >= 26) {
-            settings.setSafeBrowsingEnabled(false);
+            settings.setSafeBrowsingEnabled(true);
         }
         settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        // The manifest already forbids cleartext traffic app-wide; ALWAYS_ALLOW here
+        // actively fought that by letting an https page embed http subresources.
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setSupportMultipleWindows(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
         settings.setUserAgentString(settings.getUserAgentString() + " ClashManagerAndroidWrapper");
-        
+
+        this.mBridge = new AndroidBridge();
+        this.mWebView.addJavascriptInterface(this.mBridge, "AndroidBridge");
+        this.mBridgeAttached = true;
+
         this.mWebView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView webView2, String str) {
-                if (!str.startsWith("clashroyale://") && !str.startsWith("intent://")) {
-                    return false;
+                if (str.startsWith("clashroyale://") || str.startsWith("intent://")) {
+                    launchExternalIntent(str);
+                    return true;
                 }
-                try {
-                    Intent uri = Intent.parseUri(str, Intent.URI_INTENT_SCHEME);
-                    if (uri != null) {
-                        webView2.getContext().startActivity(uri);
-                        return true;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if (!isTrustedOrigin(str)) {
+                    launchExternalIntent(str);
+                    return true;
                 }
-                return true;
+                return false;
+            }
+
+            @Override
+            public void onPageStarted(WebView webView2, String str, android.graphics.Bitmap favicon) {
+                super.onPageStarted(webView2, str, favicon);
+                // Detach the native bridge the instant the WebView navigates off the
+                // PWA's own origin (an external https link opened in-place). It is
+                // re-attached only once navigation returns to the trusted origin, so a
+                // third-party page loaded in this WebView can never reach AndroidBridge.
+                boolean trusted = isTrustedOrigin(str);
+                if (trusted && !mBridgeAttached) {
+                    webView2.addJavascriptInterface(mBridge, "AndroidBridge");
+                    mBridgeAttached = true;
+                } else if (!trusted && mBridgeAttached) {
+                    webView2.removeJavascriptInterface("AndroidBridge");
+                    mBridgeAttached = false;
+                }
             }
 
             @Override
@@ -90,44 +151,21 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, "Load failed: " + str + "\nURL: " + str2, Toast.LENGTH_LONG).show();
             }
         });
-        
+
         this.mWebView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onCreateWindow(WebView webView2, boolean z, boolean z2, Message message) {
-                Intent intent;
                 String extra = webView2.getHitTestResult().getExtra();
                 if (extra != null && (extra.startsWith("intent://") || extra.startsWith("clashroyale://") || extra.startsWith("http://") || extra.startsWith("https://"))) {
-                    try {
-                        if (extra.startsWith("intent://")) {
-                            intent = Intent.parseUri(extra, Intent.URI_INTENT_SCHEME);
-                        } else {
-                            intent = new Intent(Intent.ACTION_VIEW, Uri.parse(extra));
-                        }
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        MainActivity.this.startActivity(intent);
-                        return false;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return false;
-                    }
+                    launchExternalIntent(extra);
+                    return false;
                 }
-                
+
                 WebView webView3 = new WebView(MainActivity.this);
                 webView3.setWebViewClient(new WebViewClient() {
                     @Override
                     public boolean shouldOverrideUrlLoading(WebView webView4, String str) {
-                        Intent intent2;
-                        try {
-                            if (str.startsWith("intent://")) {
-                                intent2 = Intent.parseUri(str, Intent.URI_INTENT_SCHEME);
-                            } else {
-                                intent2 = new Intent(Intent.ACTION_VIEW, Uri.parse(str));
-                            }
-                            intent2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            MainActivity.this.startActivity(intent2);
-                        } catch (Exception e2) {
-                            e2.printStackTrace();
-                        }
+                        launchExternalIntent(str);
                         return true;
                     }
                 });
@@ -136,9 +174,46 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
-        
-        this.mWebView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
+
         this.mWebView.loadUrl(getString(getResources().getIdentifier("launchUrl", "string", getPackageName())));
+    }
+
+    /** True when the URL's host is the PWA's own origin (safe to keep the bridge attached for). */
+    private boolean isTrustedOrigin(String url) {
+        try {
+            Uri uri = Uri.parse(url);
+            String scheme = uri.getScheme();
+            if (!"https".equals(scheme) && !"http".equals(scheme)) {
+                // Non-web schemes (about:, data:, blob:) never carry the bridge origin.
+                return "about:blank".equals(url);
+            }
+            return mTrustedHost.equalsIgnoreCase(uri.getHost());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Launches a page-supplied URL/intent-URI as a standalone Android intent instead of
+     * inside this WebView. `setSelector(null)` blocks the intent-scheme "selector"
+     * confusion trick a hostile page could otherwise use to redirect an explicit intent
+     * at an arbitrary component.
+     */
+    private void launchExternalIntent(String str) {
+        try {
+            Intent intent;
+            if (str.startsWith("intent://")) {
+                intent = Intent.parseUri(str, Intent.URI_INTENT_SCHEME);
+                intent.setSelector(null);
+            } else {
+                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(str));
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception e) {
+            android.util.Log.w("ClashManagerMain", "Could not launch external intent for: " + str, e);
+            Toast.makeText(this, "Could not open link", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -188,12 +263,18 @@ public class MainActivity extends Activity {
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    Uri parsed = Uri.parse(url);
+                    String scheme = parsed.getScheme();
+                    if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
+                        android.util.Log.w("ClashManagerMain", "openExternalUrl rejected non-http(s) scheme: " + scheme);
+                        return;
+                    }
                     try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        Intent intent = new Intent(Intent.ACTION_VIEW, parsed);
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         MainActivity.this.startActivity(intent);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        android.util.Log.w("ClashManagerMain", "Could not open URL: " + url, e);
                         Toast.makeText(MainActivity.this, "Could not open URL", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -272,10 +353,14 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getCoordinates() {
-            return "{\"inviteX\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("invite_x", 0.5083f) 
-                + ",\"inviteY\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("invite_y", 0.7214f) 
-                + ",\"closeX\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("close_x", 0.9213f) 
-                + ",\"closeY\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("close_y", 0.2044f) + "}";
+            // Defaults must stay numerically identical to ClashManagerAccessibilityService's
+            // DEFAULT_INVITE_*/DEFAULT_CLOSE_* - previously drifted (0.7214/0.2044 here vs.
+            // 0.7218/0.204 there), so the Settings UI showed calibration markers in a
+            // different spot than where the accessibility service would actually tap.
+            return "{\"inviteX\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("invite_x", 0.5083f)
+                + ",\"inviteY\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("invite_y", 0.7218f)
+                + ",\"closeX\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("close_x", 0.9213f)
+                + ",\"closeY\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("close_y", 0.204f) + "}";
         }
 
         @JavascriptInterface

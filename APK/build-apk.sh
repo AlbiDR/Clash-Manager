@@ -85,6 +85,15 @@ unzip -q -o "${TMP_DIR}/rebuilt.apk" classes.dex -d "${TMP_DIR}/rebuilt-dex/"
 cp "${TMP_DIR}/rebuilt-dex/classes.dex" "${ANDROID_DIR}/classes.dex"
 
 # Finally build the package using the updated classes.dex
+#
+# apktool caches its last decode under android/build/ and skips re-injecting the
+# manifest/resources when it thinks nothing changed ("AndroidManifest.xml and
+# resources have not changed"), which silently ships a stale versionCode/
+# versionName baked into that cache instead of the current apktool.yml. android/build/
+# is untracked (.gitignore'd) so this cache only exists locally - CI always starts
+# from a clean checkout and is unaffected - but a local build can otherwise report
+# (and verify-apk-integrity.mjs can otherwise pass) the WRONG version.
+rm -rf "${ANDROID_DIR}/build"
 echo "▶ Building from android/ via apktool ..."
 apktool b "${ANDROID_DIR}" -o "${OUT}/clashmanager-unsigned.apk"
 

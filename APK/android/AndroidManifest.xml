@@ -20,10 +20,11 @@
     </queries>
     <permission android:name="com.albidr.clashmanager.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
     <uses-permission android:name="com.albidr.clashmanager.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
-    <application android:allowBackup="false" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:extractNativeLibs="false" android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:label="@string/appName" android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity" android:name="com.albidr.clashmanager.Application" android:supportsRtl="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:usesCleartextTraffic="false">
+    <application android:allowBackup="false" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:enableOnBackInvokedCallback="true" android:extractNativeLibs="false" android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:label="@string/appName" android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity" android:name="com.albidr.clashmanager.Application" android:supportsRtl="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:usesCleartextTraffic="false">
         <meta-data android:name="asset_statements" android:resource="@string/assetStatements"/>
         <meta-data android:name="web_manifest_url" android:value="@string/webManifestUrl"/>
         <meta-data android:name="twa_generator" android:value="@string/generatorApp"/>
+        <meta-data android:name="com.albidr.clashmanager.BUILD_NUMBER" android:value="@string/buildNumber"/>
         <activity android:enabled="true" android:excludeFromRecents="true" android:exported="false" android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity">
             <meta-data android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL" android:value="@string/launchUrl"/>
             <intent-filter>

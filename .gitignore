@@ -107,6 +107,9 @@ APK/android/build/
 # Intermediates stay ignored; the versioned signed release APK is tracked (exception below).
 APK/release/*
 !APK/release/clashmanager-v*.apk
+# Pointer to the current release filename (version+buildNumber) - lets the PWA
+# download link and scripts find it without hardcoding the build number.
+!APK/release/latest.json
 
 
 APK/.build

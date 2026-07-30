@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { useExternalLink, getSupercellLocale, appVersion } from "@core";
@@ -14,6 +14,27 @@ defineProps<{
 const { isRefreshing } = useSettings();
 const { openExternal } = useExternalLink();
 const { isNativeWrapper } = useNativeBridge();
+
+// APK/release/latest.json carries a `+<buildNumber>` suffix the plain
+// `clashmanager-v<version>.apk` guess can no longer find. Resolved once at mount;
+// the unsuffixed guess below is the fallback if the fetch fails.
+const apkFilename = ref(`clashmanager-v${appVersion}.apk`);
+onMounted(async () => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const response = await fetch(
+      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
+      { signal: controller.signal },
+    );
+    clearTimeout(timeoutId);
+    if (!response.ok) return;
+    const latest = (await response.json()) as { filename?: string };
+    if (latest.filename) apkFilename.value = latest.filename;
+  } catch {
+    // Keep the fallback filename.
+  }
+});
 
 // Locale-aware: Supercell URLs include a locale segment that must match the
 // user's browser language. Resolved once at mount via getSupercellLocale().
@@ -56,7 +77,7 @@ const usefulLinks = computed(() => {
     links.push({
       label: "Download Android App",
       desc: `Install the native companion APK (v${appVersion})`,
-      url: `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v${appVersion}.apk`,
+      url: `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${apkFilename.value}`,
       icon: "download",
     });
   }
