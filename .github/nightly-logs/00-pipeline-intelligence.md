@@ -321,7 +321,7 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 
 * **WebView Rendering:** `setOffscreenPreRaster(true)` is established for SDK >= 23 to improve scrolling fluidity in the hybrid wrapper. *(Established: PR #PENDING, 2026-07-15)*
 
-* **Safe Browsing:** `setSafeBrowsingEnabled(false)` is used for SDK >= 26 to reduce initialization overhead and privacy-related network calls, as the wrapper targets a known, internal PWA origin. *(Established: PR #PENDING, 2026-07-15)*
+* **Safe Browsing:** `setSafeBrowsingEnabled(true)` is used for SDK >= 26. `MainActivity.java` line 103 confirms `true`, not `false`. [SUPERSEDED by a security hardening pass not tracked with a PR number]. This entry previously claimed `false` "to reduce initialization overhead," which is the wrong tradeoff for a WebView that loads content over the open internet: Safe Browsing is a security control, not a cache setting, and disabling it to shave startup time would be a regression Stage 11 must never propose. *(Corrected: Stage 11, 2026-07-29)*
 
 * **WebView Hardening:** Disabling form data saving (`setSaveFormData(false)`), zoom controls (`setSupportZoom(false)`), and deprecated Web SQL (`setDatabaseEnabled(false)`) is established to minimize wrapper footprint and lock the hybrid UI. *(Established: PR #PENDING, 2026-07-16)*
 
