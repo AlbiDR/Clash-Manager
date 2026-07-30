@@ -480,9 +480,33 @@ function checkDatabaseBaseline() {
   }
 
   // Idempotent CREATE TABLE check
+  //
+  // Tracks `/* ... */` block-comment state across lines, not just `--` line
+  // comments, so prose in a docblock (e.g. "the CREATE TABLE above already
+  // declares...") is never misread as a bad DDL statement. A block comment
+  // that opens and closes on the same line is handled by stripping it before
+  // the pattern match runs.
   const tablePattern = /CREATE\s+TABLE\s+(?!IF\s+NOT\s+EXISTS)([\w\.]+)/i;
+  let inBlockComment = false;
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    let line = lines[i];
+    line = line.replace(/\/\*.*?\*\//g, '');
+
+    if (inBlockComment) {
+      const closeIdx = line.indexOf('*/');
+      if (closeIdx === -1) {
+        continue;
+      }
+      line = line.slice(closeIdx + 2);
+      inBlockComment = false;
+    }
+
+    const openIdx = line.indexOf('/*');
+    if (openIdx !== -1) {
+      line = line.slice(0, openIdx);
+      inBlockComment = true;
+    }
+
     if (line.includes('--')) {
       continue;
     }
