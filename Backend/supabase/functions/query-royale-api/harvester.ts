@@ -36,9 +36,22 @@ let cachedCountries: { id: number; name: string }[] | null = null;
 /**
  * Executes a single rankings query against the Royale API proxy and filters for clanless players.
  *
- * @param endpointPath - The Royale API endpoint to query.
+ * @remarks
+ * Satisfies ADR Section II: Structural Unitary Architecture (Layer 1 Core Engine) and Section V: Data Loader.
+ * Reconciles structural API contracts with runtime types.
+ *
+ * Security Requirements:
+ * - Accesses endpoint via fetchWithRotation.
+ * - Handled under internal bearer tokens and anonymous key routing constraints to enforce Principle of Least Privilege.
+ *
+ * Failure Modes & Recovery:
+ * - Downstream Proxy Failures: Throws if response is non-2xx.
+ * - Structural Payload Drift: Throws if valibot validation against RoyaleRankingListSchema fails.
+ *
+ * @param endpointPath - The path parameter for the downstream proxy request.
  * @param logAudit - Telemetry callback for clinical auditing.
- * @returns A filtered list of clanless players.
+ * @returns Filtered array of discovered clanless player records.
+ * @throws {Error} If the HTTP request fails or the response fails schema verification.
  */
 async function fetchRankings(
   endpointPath: string,
@@ -55,6 +68,9 @@ async function fetchRankings(
   const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
 
   if (!rankingIntegrity.success) {
+    // [THREAT ANNOTATION] Threat Vector: Structural Payload Drift.
+    // If the remote proxy shifts its response structure, failing fast here prevents downstream state pollution
+    // or parsing crashes in the core app.
     throw new Error("Player rankings payload failed structural validation.");
   }
 
@@ -78,8 +94,22 @@ async function fetchRankings(
  *
  * Shuffles country catalog and picks a batch of random regions to query in parallel.
  *
+ * @remarks
+ * Satisfies ADR Section III: Command-Query Separation and Section V: Performance (Lazy Loading & Bundling).
+ * Implements dynamic geographic rotation to avoid querying static cohorts and circumvent API rate limits.
+ *
+ * Security & Authorization:
+ * - Downstream calls to /locations must run through authorized proxy rotating bearer credentials.
+ * - Does not expose internal credentials to client-facing surfaces.
+ *
+ * Potential Failure States:
+ * - Location Directory Missing/Obsolete: Fallback path queries default location ID if locations response is offline.
+ * - Schema Mismatch: Aborts catalog loading if locations payload fails RoyaleLocationListSchema checks.
+ * - Downstream Cascading Timeouts: Handled by individual try/catch boundaries within concurrency-limited execution batch.
+ *
  * @param logAudit - Telemetry callback for clinical auditing.
- * @returns Object containing the merged list of players and the populated region label.
+ * @returns Object containing the consolidated list of players and the compiled populated regions label string.
+ * @throws {Error} If the root locations fetch fails or fails schema validation, and fallback catalog is unresolvable.
  */
 export async function harvestInternationalPlayers(
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
@@ -108,11 +138,16 @@ export async function harvestInternationalPlayers(
   }
 
   if (!cachedCountries || cachedCountries.length === INITIAL_INDEX) {
+    // [THREAT ANNOTATION] Threat Vector: Downstream Location catalog corruption.
+    // If locations data is manipulated or missing, fallback to the default locale ensures continuity of operation.
     logAudit("COUNTRIES_CATALOG_EMPTY_FALLBACK", "run");
     const harvestResults = await harvestClanlessPlayers(String(DEFAULT_FALLBACK_ID), logAudit);
     return { items: harvestResults, region: DEFAULT_FALLBACK_COUNTRY };
   }
 
+  // [DECISION LOG] Shuffle country catalog randomly prior to concurrent query allocation.
+  // Prevents bias towards alphabetical countries and distributes query volume evenly across downstream regional proxies,
+  // reducing the risk of rate-limiting or localized proxy bans.
   const shuffledCandidates = [...cachedCountries];
   for (let shuffleIndex = shuffledCandidates.length - 1; shuffleIndex > 0; shuffleIndex--) {
     const swapIndex = Math.floor(Math.random() * (shuffleIndex + 1));
@@ -130,8 +165,11 @@ export async function harvestInternationalPlayers(
       try {
         const harvestResults = await harvestClanlessPlayers(String(countryCandidate.id), logAudit);
         return { country: countryCandidate.name, players: harvestResults };
-      } catch (harvestError) {
-        console.warn(`[HARVEST] Failed concurrent query for ${countryCandidate.name}:`, harvestError);
+      } catch (harvestError: unknown) {
+        // [THREAT ANNOTATION] Threat Vector: Cascading concurrent timeout spikes.
+        // Wrapping the parallel worker task in individual try-catch blocks isolates regional proxy down-times
+        // and prevents a single bad country API endpoint from failing the entire international discovery batch.
+        console.warn(`[HARVEST] Failed concurrent query for ${countryCandidate.name}:`, harvestError instanceof Error ? harvestError.message : String(harvestError));
         return { country: countryCandidate.name, players: [] };
       }
     };
@@ -166,9 +204,23 @@ export async function harvestInternationalPlayers(
 /**
  * PRIMARY HARVESTER: Discovery Engine
  *
- * @param location - "global" or a numeric Royale API location ID as a string.
+ * Queries worldwide Path of Legends endpoints or country-specific indices to locate unaffiliated players.
+ *
+ * @remarks
+ * Satisfies ADR Section I: Foundation of "Clinical" Logic (Adaptive Formulas) and Section IV: Deep Delegation Strategy.
+ * Ensures optimal player retrieval across both global and highly specific geographic pools.
+ *
+ * Security Controls:
+ * - Inherits JWT verification and bearer authorization validated by public RPC gateway.
+ *
+ * Failure Modes & Recovery:
+ * - Subsystem Downstream Failure: Cascading try/catch blocks guard regional queries and fall back gracefully to empty arrays.
+ * - Global Timeout Spikes: If global Path of Legends query fails entirely, throws to allow higher-level control surfaces to recover.
+ *
+ * @param location - "global" or a numeric location identifier as a string.
  * @param logAudit - Telemetry callback for clinical auditing.
- * @returns An array of discovered clanless player objects.
+ * @returns Consolidated array of discovered clanless player objects.
+ * @throws {Error} If the global Path of Legends fetch or the local fallback query fails.
  */
 export async function harvestClanlessPlayers(
   location: string,
@@ -188,6 +240,8 @@ export async function harvestClanlessPlayers(
         aggregatedResults.set(harvestedItem.tag, harvestedItem);
       }
 
+      // [DECISION LOG] Fall back to top country indices if global pool yields fewer than the target floor.
+      // Resolves the sparsity of high-ranking clanless players globally by fetching from densely populated local regions.
       for (const countryId of TOP_COUNTRY_IDS) {
         if (aggregatedResults.size >= TARGET_HARVEST_FLOOR) break;
         try {
@@ -196,14 +250,16 @@ export async function harvestClanlessPlayers(
           for (const harvestedItem of countryResults) {
             aggregatedResults.set(harvestedItem.tag, harvestedItem);
           }
-        } catch (countryError) {
+        } catch (countryError: unknown) {
+          // [THREAT ANNOTATION] Threat Vector: Downstream Regional API denial of service.
+          // Guarding individual country fetches ensures local API offline states do not abort the active discovery loop.
           console.warn(`[HARVEST] Failed country PoL ${countryId}:`, countryError instanceof Error ? countryError.message : String(countryError));
         }
       }
 
       return Array.from(aggregatedResults.values());
-    } catch (globalPolError) {
-      console.error("[HARVEST] Global Path of Legends query failed:", globalPolError);
+    } catch (globalPolError: unknown) {
+      console.error("[HARVEST] Global Path of Legends query failed:", globalPolError instanceof Error ? globalPolError.message : String(globalPolError));
       throw globalPolError;
     }
   } else {
@@ -223,8 +279,8 @@ export async function harvestClanlessPlayers(
       for (const harvestedItem of rankingsResults) mergedResults.set(harvestedItem.tag, harvestedItem);
 
       return Array.from(mergedResults.values());
-    } catch (localError) {
-      console.error(`[HARVEST] Local harvest failed for ${location}:`, localError);
+    } catch (localError: unknown) {
+      console.error(`[HARVEST] Local harvest failed for ${location}:`, localError instanceof Error ? localError.message : String(localError));
       throw localError;
     }
   }

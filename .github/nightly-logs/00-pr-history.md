@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-07-29
+LAST_AGED:   2026-07-30
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -15,6 +15,19 @@ LAST_AGED:   2026-07-29
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-07-30] PR #PENDING [Stage 9]: chore(refactor): no action required
+**Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** To audit and certify the monorepo structural health, feature isolation, and view module size thresholds.
+**Change:** Audited RosterView, HeadhunterView, and LaboratoryView modules and checked line-count thresholds and layering boundaries.
+**Result:** 100% structural alignment and layer boundary compliance verified with all modules well under the 400-line threshold.
+
+
+
+
+
+
 ### [2026-07-29] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 2 and Stage 5 recurring missing runs, and updated the three sections of the protocol.
 **Domain:** pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
@@ -1607,17 +1620,6 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
-### [2026-07-22] PR #PENDING [Stage 9]: chore(refactor): no action required
-**Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To audit and certify the monorepo's structural health, feature isolation, and view module size thresholds.
-**Change:** Audited feature view modules (RosterView, HeadhunterView, LaboratoryView) and recorded today's clean audit pass status records.
-**Result:** 100% structural alignment and layer boundary compliance verified with all modules well under the 400-line threshold.
-
-Automated changelog of Nightly merges.
-
-
-
 
 ## [2026-07-23] PR #1188: chore(baseline): fold new migrations into master baseline
 **Commit**: `1df18c0fcb5b7666d6047e56e30285038a45059e`
@@ -1766,17 +1768,6 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
-## [2026-07-22] PR #1186: chore(pipeline): update self-healing protocol -- July 22, 2026 daily audit
-**Commit**: `45c2e7159c24b31cf42875436fe46c753432ba95`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1186)
-
-
-
-
-
-
-
-
 
 ### Description
 
@@ -1849,17 +1840,6 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
-## [2026-07-22] PR #1185: fix(apk-ux): modernize BaseSelect haptic interactions and remove legacy useHaptics
-**Commit**: `c45f68ddcf4052e5bde9c41e2ca9734f71f37e62`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1185)
-
-
-
-
-
-
-
-
 
 ### Description
 
@@ -1922,17 +1902,6 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 *PR created automatically by Jules for task [15336597316939134685](https://jules.google.com/task/15336597316939134685) started by @AlbiDR*
 
 ---
-
-
-
-
-## [2026-07-22] PR #1184: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json
-**Commit**: `ac6a117e29134d0d502b10feb4f81e02d82a03c4`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1184)
-
-
-
-
 
 
 
@@ -2001,28 +1970,6 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 *PR created automatically by Jules for task [9353347645023572623](https://jules.google.com/task/9353347645023572623) started by @AlbiDR*
 
 ---
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #PENDING [Stage 7]: chore(version): no version drift found in monorepo v14.33.9
-**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To ensure absolute version integrity and PNPM catalog adherence across the entire monorepo.
-**Change:** Audited manifests, catalog, and substrate versions, and appended 2026-07-22 clean audit pass log records.
-**Result:** 100% monorepo-wide version alignment and catalog protocol adherence verified across all manifests.
-
-
-
-
-
-## [2026-07-22] PR #1183: chore(refactor): no action required
-**Commit**: `717a8be4b7faddf044256acdc42e63519c7b1da7`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1183)
 
 
 
@@ -2108,17 +2055,6 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
-## [2026-07-22] PR #1182: chore(deps): bump @supabase/supabase-js from ^2.110.7 to ^2.110.8
-**Commit**: `b75591ca5c16fa8b0901f864b1cf00530c291265`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1182)
-
-
-
-
-
-
-
-
 
 ### Description
 
@@ -2187,28 +2123,6 @@ No refactoring or structural surgery was required during this pass. Zero audited
 *PR created automatically by Jules for task [14724866611122041004](https://jules.google.com/task/14724866611122041004) started by @AlbiDR*
 
 ---
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #PENDING [Stage 5]: docs(readme): reconcile custom brand icons and dock layout constraints
-**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/ui/README.md, .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Custom brand icon components and specific visual boundary classes were added to the Navigation Dock, causing adjacent shared UI documentation to drift.
-**Change:** Reconciled Shared UI README to document custom brand components (RosterIcon, LaboratoryIcon, HeadhunterIcon, ClashRoyaleIcon) and their explicit 22px layout constraints.
-**Result:** 100% synchronization between substrate layout reality and system-wide architectural intent.
-
-
-
-
-
-## [2026-07-22] PR #1181: chore(version): no drift found
-**Commit**: `d4b36ff0d4d7a666892d2116cfb7b6fe0cabceaf`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1181)
 
 
 
@@ -2286,17 +2200,6 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
-## [2026-07-22] PR #1180: docs(tsdoc): harden ParameterCard interface contracts and logic annotations
-**Commit**: `bfde4330348190fa59fcb2547529b688f7baf5a3`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1180)
-
-
-
-
-
-
-
-
 
 ### Description
 
@@ -2364,28 +2267,6 @@ No refactoring or structural surgery was required during this pass. Zero audited
 *PR created automatically by Jules for task [14215562222974675482](https://jules.google.com/task/14215562222974675482) started by @AlbiDR*
 
 ---
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline -- audit pass
-**Domain:** Database | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To maintain a clean, fully-synchronized, zero-touch deployable master baseline schema of the database.
-**Change:** Re-audited the master schema baseline, updated the audit date to 2026-07-22, and logged a clean pass.
-**Result:** Re-verified 100% RLS compliance, search_path isolation, and standard formatting with zero regressions.
-
-
-
-
-
-## [2026-07-22] PR #1179: docs(readme): reconcile custom brand icons and dock layout constraints
-**Commit**: `2fb02b2bd0eb28de909798bfefadfe7d1ab5a0de`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1179)
 
 
 
@@ -2522,17 +2403,6 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
-## [2026-07-22] PR #1177: perf(opt): standardize loop index and callback variables in laboratory parameters
-**Commit**: `e2a6a9005256bb68c6b27a66fbddb4fb5a970389`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1177)
-
-
-
-
-
-
-
-
 
 ### Description
 
@@ -2598,17 +2468,6 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 *PR created automatically by Jules for task [16437078070601166452](https://jules.google.com/task/16437078070601166452) started by @AlbiDR*
 
 ---
-
-
-
-
-## [2026-07-22] PR #1176: chore(harden): no threat found
-**Commit**: `87cc21f57b566647ae9640be34ebed562794f463`
-**Original PR**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1176)
-
-
-
-
 
 
 
@@ -3083,99 +2942,19 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 **Change:** Standardized the realtime subscription error callback parameter variable from `err` to `realtimeSubscriptionError` to eliminate anemic variable pathogens in Layer 1 Core.
 **Result:** Improved domain-descriptive naming clarity across Layer 1 PostgreSQL subscription boundary with 100% test pass.
 
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #PENDING [Stage 12]: fix(apk-ux): modernize BaseSelect haptic interaction and remove legacy useHaptics
-**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/ui/BaseSelect.vue
-**Why:** The BaseSelect component used manual imperative haptic triggers which bypassed the standard declarative v-tactile interaction model.
-**Change:** Refactored the component to utilize the centralized v-tactile directive on the select trigger and option items and eliminated imperative haptic hook dependencies.
-**Result:** Unified haptic feedback behavior across all shared selectors, verified cleanly through unit tests (1409 passed) and depcruise validation.
-
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #1184 [Stage 10]: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json
-**Domain:** APK Integrity | **Commit:** ac6a117e29134d0d502b10feb4f81e02d82a03c4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1184)
-**Files:** APK/reference/twa-manifest.json, .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Reconcile version and build details between web application (package.json v14.33.9) and the Android wrapper configuration.
-**Change:** Synchronized appVersionName, appVersionCode, and appVersion in twa-manifest.json to match monorepo ground truth v14.33.9 (code 17390).
-**Result:** 100% integrity, alignment, and version synchronization verified across all PWA and APK wrapper boundaries.
-
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #1182 [Stage 8]: chore(deps): bump @supabase/supabase-js to ^2.110.8 and update major watchlist
-**Domain:** Dependency Management | **Commit:** b75591ca5c16fa8b0901f864b1cf00530c291265 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1182)
-**Files:** pnpm-workspace.yaml, .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Apply safe maintenance bump to @supabase/supabase-js and track outstanding major versions of typescript, vite, and pinia in the watchlist.
-**Change:** Bumped @supabase/supabase-js from ^2.110.7 to ^2.110.8 in central catalog and recorded today's run in the dependency audit coverage log.
-**Result:** 100% dependency hygiene and workspace-wide catalog compliance verified with all tests passing cleanly.
-
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #1180 [Stage 6]: docs(tsdoc): harden ParameterCard interface contracts and logic annotations
-**Domain:** TSDoc | **Commit:** bfde4330348190fa59fcb2547529b688f7baf5a3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1180)
-**Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** The ParameterCard component was recently modified by Stage 4 (Optimize), causing adjacent interface contracts to require re-verification and hardening under Stage 6 Focus area.
-**Change:** Injected comprehensive component-level JSDoc/TSDoc specifications mapping properties (`settings`, `currentLevel`, `operation`), emits (`update`), side effects, decision logs, and CleanStack ADR Section III references.
-**Result:** 100% logic intent transparency and contract synchronization for the modernized laboratory feature substrate.
-
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #1177 [Stage 4]: perf(opt): standardize loop index and callback variables in laboratory parameters
-**Domain:** Refactor/Optimization | **Commit:** e2a6a9005256bb68c6b27a66fbddb4fb5a970389 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1177)
-**Files:** Frontend-PWA/src/features/laboratory/components/ParameterCard.vue, .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Standardize generic loop index and callbacks to eliminate anemic pathogens (`i`, `val`) and ensure naming compliance with CleanStack ADR.
-**Change:** Renamed `i` to `levelIndex` and `val` to `strategyValue`/`levelValue` in ParameterCard.vue; executed daily substrate database view hygiene re-verification audit.
-**Result:** Improved domain clarity and 100% monorepo-wide version integrity verified via project validation and full test gate.
-
-
-
-
-
-
-
-
-
-### [2026-07-22] PR #1176 [Stage 1]: chore(harden): no threat found
-**Domain:** Security | **Commit:** 87cc21f57b566647ae9640be34ebed562794f463 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1176)
-**Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Execute the July 22, 2026 nightly Stage 1 runtime integrity audit pass.
-**Change:** Updated 01-hardening-coverage.log with CLEAN status and executed 00-pr-history.md aging.
-**Result:** Verified 100% of the active codebase's RPC boundaries and validation schemas are fully hardened and secure.
-
 ## T2 -- Recent (8-30 days)
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-22] PR #PENDING [Refactor]: chore(refactor): no action required (``PENDING``) [View](PENDING)
+* [2026-07-22] PR #PENDING [Version Integrity]: chore(version): no version drift found in monorepo v14.33.9 (``PENDING``) [View](PENDING)
+* [2026-07-22] PR #PENDING [Documentation/README]: docs(readme): reconcile custom brand icons and dock layout constraints (``PENDING``) [View](PENDING)
+* [2026-07-22] PR #PENDING [Database]: chore(baseline): fold new migrations into master baseline -- audit pass (``PENDING``) [View](PENDING)
+* [2026-07-22] PR #PENDING [Shared UI]: fix(apk-ux): modernize BaseSelect haptic interaction and remove legacy useHaptics (``PENDING``) [View](PENDING)
+* [2026-07-22] PR #1184 [APK Integrity]: fix(apk-integrity): synchronize appVersionName, appVersionCode, and appVersion to match package.json (``ac6a117e29134d0d502b10feb4f81e02d82a03c4``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1184)
+* [2026-07-22] PR #1182 [Dependency Management]: chore(deps): bump @supabase/supabase-js to ^2.110.8 and update major watchlist (``b75591ca5c16fa8b0901f864b1cf00530c291265``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1182)
+* [2026-07-22] PR #1180 [TSDoc]: docs(tsdoc): harden ParameterCard interface contracts and logic annotations (``bfde4330348190fa59fcb2547529b688f7baf5a3``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1180)
+* [2026-07-22] PR #1177 [Refactor/Optimization]: perf(opt): standardize loop index and callback variables in laboratory parameters (``e2a6a9005256bb68c6b27a66fbddb4fb5a970389``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1177)
+* [2026-07-22] PR #1176 [Security]: chore(harden): no threat found (``87cc21f57b566647ae9640be34ebed562794f463``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1176)
 * [2026-07-21] PR #PENDING [Security]: chore(harden): no threat found (``PENDING``) [View](PENDING)
 * [2026-07-21] PR #PENDING [Pipeline]: chore(pipeline): update self-healing protocol -- July 21, 2026 daily audit (``PENDING``) [View](PENDING)
 * [2026-07-21] PR #PENDING [Shared UI]: fix(apk-ux): integrate tactile feedback into HeadhunterView empty-action button (``PENDING``) [View](PENDING)
@@ -3361,19 +3140,21 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-06-30] PR #972 [README]: docs(readme): reconcile voyage promotion and theme engine blueprints (``5fd5f6a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/972)
 * [2026-06-30] PR #971 [Refactor/Optimization]: perf(opt): standardize service worker naming and refactor android badge logic (``3932d23``) [View](https://github.com/AlbiDR/Clash-Manager/pull/971)
 * [2026-06-30] PR #970 [Hardening]: fix(harden): secure maintenance and push subscription boundaries (``cf271b6``) [View](https://github.com/AlbiDR/Clash-Manager/pull/970)
-* [2026-06-29] PR #969 [APK Optimization]: perf(apk-optimization): prune redundant assets and metadata (``3a8a946``) [View](https://github.com/AlbiDR/Clash-Manager/pull/969)
-* [2026-06-29] PR #968 [APK Integrity]: fix(apk-integrity): synchronize app_name and verify wrapper integrity (``8045727``) [View](https://github.com/AlbiDR/Clash-Manager/pull/968)
-* [2026-06-29] PR #967 [Refactor/Optimization]: refactor: extract BaseSegmentedControl generic molecule (``31f2f17``) [View](https://github.com/AlbiDR/Clash-Manager/pull/967)
-* [2026-06-29] PR #966 [Dependencies]: chore(deps): monorepo-wide dependency audit [Stage 8] (``067fb2d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/966)
-* [2026-06-29] PR #965 [Version Integrity]: fix(version): reconcile version drift in APK artifacts (``3feb124``) [View](https://github.com/AlbiDR/Clash-Manager/pull/965)
-* [2026-06-29] PR #964 [TSDoc]: docs(tsdoc): document Voyage and Base schemas (``01b00c3``) [View](https://github.com/AlbiDR/Clash-Manager/pull/964)
-* [2026-06-29] PR #963 [README]: docs(readme): reconcile architectural drift and document core subsystems (``2127b01``) [View](https://github.com/AlbiDR/Clash-Manager/pull/963)
-* [2026-06-29] PR #962 [Baseline]: chore(baseline): fold new migrations into master baseline (``6397977``) [View](https://github.com/AlbiDR/Clash-Manager/pull/962)
-* [2026-06-29] PR #961 [Verification]: test(verify): saturating coverage for swSchemas and swSync boundaries (``9feba4f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/961)
-* [2026-06-29] PR #960 [Hardening]: fix(harden): secure battlelog proxy and recruitment realtime boundary (``ae8f495``) [View](https://github.com/AlbiDR/Clash-Manager/pull/960)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
+
+#### 2026-W27
+* 1 PRs [APK Integrity]: #968
+* 1 PRs [APK Optimization]: #969
+* 1 PRs [Baseline]: #962
+* 1 PRs [Dependencies]: #966
+* 1 PRs [Hardening]: #960
+* 1 PRs [README]: #963
+* 1 PRs [Refactor/Optimization]: #967
+* 1 PRs [TSDoc]: #964
+* 1 PRs [Verification]: #961
+* 1 PRs [Version Integrity]: #965
 
 #### 2026-W26
 * 6 PRs [APK Integrity]: #900, #918, #929, #937, #947, #958

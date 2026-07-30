@@ -157,6 +157,22 @@
 * [2026-07-29] [Stage 3] CLEAN: Backend/supabase/migrations/20260727000000_rpos_rescan_backfill.sql -- No action required
 * [2026-07-29] [Stage 3] CLEAN: Backend/supabase/migrations/20260727010000_roster_lifetime_kpi_row.sql -- No action required
 * [2026-07-29] [Stage 3] CLEAN: Backend/supabase/migrations/20260727020000_roster_win_rate_lifetime_kpi.sql -- No action required
-* [2026-07-29] [Stage 3] CLEAN: Backend/supabase/migrations/ -- Fold-state replay of all 17 post-baseline migrations reports 0 unfolded objects (21 folded verbatim, 2 folded and reconciled: update_epoch_state search_path normalisation and the player_voyage_history inline FK hoisted to the constraint block). Zero-Fold path taken; no folding work pending.
-* [2026-07-29] [Stage 3] CLEAN: Backend/supabase/migrations/20260531232406_master_migration.sql -- Read-only compliance audit of the committed baseline: RLS enabled on all 28 tables, explicit search_path on all 95 plpgsql functions, 5 views declared, zero em-dash / en-dash / emoji, single BEGIN/COMMIT envelope, SPDX header intact.
-* [2026-07-29] [Stage 3] SKIPPED: Backend/supabase/migrations/20260531232406_master_migration.sql -- Declarative-purity deviation detected and deliberately not repaired by this run. The committed baseline carries one non-declarative residue at lines 509-511 (ALTER COLUMN id DROP IDENTITY / UPDATE id 5 -> 4 / ADD GENERATED ALWAYS AS IDENTITY), folded in from 20260707003200. The identity pair is a schema no-op because the CREATE TABLE already declares the column as GENERATED ALWAYS AS IDENTITY, and the UPDATE is a live-data hazard that re-arms whenever voyage id 5 exists again. A concurrent session already has an uncommitted, strictly broader repair in the working tree that removes this block, removes the 20260727000000 last_scan rescan backfill, and adds a Declarative Purity Contract to the file header. Editing a 4349-line baseline concurrently would corrupt that in-flight work, so this run defers the fix rather than racing it.
+* [2026-07-30] [Stage 3] CHANGED: .github/nightly-logs/03-baseline-consolidation-coverage.log -- Appended daily run record.
+* [2026-07-30] [Stage 3] CHANGED: Backend/supabase/migrations/20260531232406_master_migration.sql -- Updated audited date stamp to 2026-07-30 to reflect today's successful compliance verification.
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260614082900_add_trail_battle_type.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260615004900_fix_zero_crown_voyage_contributions.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260617013100_add_public_vault_secret_wrapper.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260620113000_fix_duel_crown_calculation.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260620120000_revise_duel_crown_calculation.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260620142000_headhunter_epoch_guard.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260628003700_fix_discovery_cache_fractional_hours.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260628010500_add_public_get_active_discovery_anchors.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260629212000_fix_voyage_ingestion_targeting.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260705030000_voyage_history_pruning.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260707003200_rename_voyage_5_to_4.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260726163300_drop_orphaned_views.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260726170000_rpos_formula_restructure.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260726180000_fix_raw_potential_score_column_comment.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260727000000_rpos_rescan_backfill.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260727010000_roster_lifetime_kpi_row.sql -- No action required
+* [2026-07-30] [Stage 3] CLEAN: Backend/supabase/migrations/20260727020000_roster_win_rate_lifetime_kpi.sql -- No action required

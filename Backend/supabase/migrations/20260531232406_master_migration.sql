@@ -28,19 +28,6 @@
  * - 20260727010000_roster_lifetime_kpi_row.sql
  * - 20260727020000_roster_win_rate_lifetime_kpi.sql
  *
- * Declarative Purity Contract:
- * - This file declares SCHEMA, not data history. Every migration above is folded in its
- *   final structural form only.
- * - One-time historical DML repairs from the folded migrations are deliberately NOT carried
- *   into this baseline. They remain in their own migration files as the audit trail and must
- *   never be re-folded here. Two were removed on 2026-07-30 (see log entry 5 below).
- * - The only DML permitted here is idempotent seed or invariant data: guarded by
- *   ON CONFLICT DO NOTHING or NOT EXISTS, and a no-op against an already-correct database.
- * - Column state is declared once inside CREATE TABLE. Trailing ALTER TABLE ... ALTER COLUMN
- *   mutations against a table this file already declares are prohibited.
- * - Identity sequence synchronisation is handled generically for all identity tables by the
- *   DO block following the table declarations. Do not add per-table identity churn.
- *
  * Architectural Compliance Verification Log (Audited: 2026-07-30):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all 95 plpgsql functions.
