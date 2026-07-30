@@ -148,7 +148,7 @@ const ariaLabel = computed(() => {
         />
         <StatisticItem
           label="Win Rate"
-          :value="formatNumber(props.member.d.winRate, { style: 'percent', maximumFractionDigits: 1 })"
+          :value="formatNumber(Math.min(props.member.d.winRate, 1), { style: 'percent', maximumFractionDigits: 1 })"
           :loading="props.appIsRefreshing"
           benchmark-type="lb"
           benchmark-metric="winRate"

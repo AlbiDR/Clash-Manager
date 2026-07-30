@@ -192,6 +192,21 @@ export async function runRescan(
                 console.error(`[RESCAN] Sync failure: ${rescanBatchSyncError.message}`);
                 logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: rescanBatchSyncError });
             } else {
+                // Field health check: detect silent Royale API field renames or deprecations.
+                const suspiciousCount = refreshedRecruitBatch.filter(
+                    (r) => r.win_rate === 0 && (r.raw_potential_score || 0) > 0
+                ).length;
+
+                if (refreshedRecruitBatch.length >= 10 && suspiciousCount === refreshedRecruitBatch.length) {
+                    console.warn(
+                        `[RESCAN] RPOS FIELD ANOMALY: All ${refreshedRecruitBatch.length} rescanned profiles returned 0% win rate despite positive raw scores.`
+                    );
+                    logAudit('RESCAN', 'integrity_checked', {
+                        passed: false,
+                        details: 'rpos_field_anomaly: all rescanned profiles returned 0% win rate with positive raw scores',
+                    });
+                }
+
                 stats.rescans_processed = refreshedRecruitBatch.length;
                 stats.refreshed_recruits = (stats.refreshed_recruits || 0) + refreshedRecruitBatch.length;
                 console.log(`[RESCAN] Successfully synchronized ${refreshedRecruitBatch.length} profiles.`);
