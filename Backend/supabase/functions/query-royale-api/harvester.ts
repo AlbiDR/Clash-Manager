@@ -130,8 +130,8 @@ export async function harvestInternationalPlayers(
       try {
         const harvestResults = await harvestClanlessPlayers(String(countryCandidate.id), logAudit);
         return { country: countryCandidate.name, players: harvestResults };
-      } catch (harvestError) {
-        console.warn(`[HARVEST] Failed concurrent query for ${countryCandidate.name}:`, harvestError);
+      } catch (harvestError: unknown) {
+        console.warn(`[HARVEST] Failed concurrent query for ${countryCandidate.name}:`, harvestError instanceof Error ? harvestError.message : String(harvestError));
         return { country: countryCandidate.name, players: [] };
       }
     };
@@ -196,14 +196,14 @@ export async function harvestClanlessPlayers(
           for (const harvestedItem of countryResults) {
             aggregatedResults.set(harvestedItem.tag, harvestedItem);
           }
-        } catch (countryError) {
+        } catch (countryError: unknown) {
           console.warn(`[HARVEST] Failed country PoL ${countryId}:`, countryError instanceof Error ? countryError.message : String(countryError));
         }
       }
 
       return Array.from(aggregatedResults.values());
-    } catch (globalPolError) {
-      console.error("[HARVEST] Global Path of Legends query failed:", globalPolError);
+    } catch (globalPolError: unknown) {
+      console.error("[HARVEST] Global Path of Legends query failed:", globalPolError instanceof Error ? globalPolError.message : String(globalPolError));
       throw globalPolError;
     }
   } else {
@@ -223,8 +223,8 @@ export async function harvestClanlessPlayers(
       for (const harvestedItem of rankingsResults) mergedResults.set(harvestedItem.tag, harvestedItem);
 
       return Array.from(mergedResults.values());
-    } catch (localError) {
-      console.error(`[HARVEST] Local harvest failed for ${location}:`, localError);
+    } catch (localError: unknown) {
+      console.error(`[HARVEST] Local harvest failed for ${location}:`, localError instanceof Error ? localError.message : String(localError));
       throw localError;
     }
   }
