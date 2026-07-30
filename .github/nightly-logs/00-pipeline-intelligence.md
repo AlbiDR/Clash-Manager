@@ -81,6 +81,14 @@ Approaches that have been validated through execution. Follow these when applica
   should fold them into `master_migration.sql` on every run rather than
   letting them accumulate. Allowing more than three unfolded migrations
   is an operational debt signal. *(Pattern: PR #1085, #1096)*
+
+* **Sequential execution eliminates the shared-file merge-conflict class:** When
+  all 13 stages run in one sequential session against one working tree (pull,
+  audit, fix, commit, repeat) instead of as 13 concurrent PRs against a shared
+  `Nightly` branch, the recurring "concurrent shared-file conflict" failure class
+  (Section 2 of the self-healing protocol, recurred on PR #1169, #1171, #1245,
+  #1250) cannot occur -- there is only ever one HEAD to diverge from.
+  *(Established: Stage 13, 2026-07-29)*
   **[SUPERSEDED by PR #PENDING, 2026-07-30]:** the "more than three unfolded
   migrations" signal was measured by filename count (every post-baseline
   migration, forever), not by fold state, so it could never reach zero and

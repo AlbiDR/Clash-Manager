@@ -91,12 +91,13 @@
   - Root Cause: These stages failed to trigger or execute on July 28. Stages 4, 8, and 11 successfully recovered on July 29, 2026. Stages 2 and 5 did not recover and missed today's run, which constitutes a recurring class failure.
   - Recommended Fix: Address trigger issues in CI configuration; perform preventive actions on scheduling.
 
-* Missing-Run / Failed Events on 2026-07-29:
+* Missing-Run / Failed Events on 2026-07-29 [SUPERSEDED - see resolution below]:
   - Stages: Stage 2 (Verify) [RECURRING], Stage 5 (README) [RECURRING], Stage 9 (Refactor) [FAILED - monitor].
   - State: [RECURRING] for Stage 2 and Stage 5 / [FAILED - monitor] for Stage 9
   - Symptom: No log entries for 2026-07-29 in 02-verification-coverage.log, 05-documentation-readme-coverage.log, or 09-refactor-proposals-coverage.log.
   - Root Cause: Stage 2 and Stage 5 missed their runs consecutively today, indicating a persistent scheduling, webhook trigger, or container runner skipping event in CI. Stage 9 missed its run today, possibly due to zero-diff preconditions or execution scheduling issues.
   - Recommended Fix: Audit the CI/CD workflow runner environment and webhook trigger configurations to ensure stable sequential execution of all pipeline stages. Monitor subsequent runs to verify automatic recovery.
+  - Resolution Details (2026-07-29, later same day): All three stages completed later on 2026-07-29 with valid TODAY-dated log entries: Stage 2 logged a CHANGED entry (useUiCoordinator.spec.ts merge-contract coverage), Stage 5 logged a CHANGED entry (core/services README import-boundary reconciliation), and Stage 9 logged four CLEAN entries (duplicate-detection, size-audit, and layer-violation scan, all clean). This confirms the three stages did not fail structurally today; the gap observed earlier in the day was a same-day sequencing artifact, not a stage-level defect. Re-verification across a full 12-stage sequential run today (2026-07-29) found zero FAILED or missing stages: all 12 preceding coverage logs (01 through 12) carry a TODAY-dated entry. This is the first fully-clean day recorded in this document's history. Stage 2 and Stage 5 are demoted from [RECURRING] to [RESOLVED - monitor]; Stage 9 is demoted from [FAILED - monitor] to [RESOLVED - monitor]. Continue monitoring for one more recurrence before considering the pattern closed.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -111,61 +112,61 @@
   - Recommended Fix: Reconcile Stage 2 and Stage 4 prompts with the standard log format prefix instructions.
   - State: [RESOLVED] (Stage 2 successfully logged standard "CHANGED:" prefix on July 18, 2026. Stage 4 prompt instructions have been reconciled).
 
-* Concurrent Shared-File Conflicts Leading to Merge Failures (July 21, 2026):
-  - Symptom: Stage 5 (PR #1169) and Stage 9 (PR #1171) failed to auto-merge today due to hard merge conflicts (State: dirty).
-  - Root Cause: Multiple automated stages execute and open PRs in parallel or rapid succession. Each stage appends its run record to shared files such as `00-pr-history.md` and their respective coverage logs. When one stage's PR is merged, `Nightly` advances, causing all other outstanding PRs that modified the same lines in `00-pr-history.md` to instantly develop hard merge conflicts, aborting their auto-merge workflows.
-  - Recommended Fix: Update the CI/CD pipeline to serialize the execution of the 13 stages to run sequentially instead of concurrently (so each stage pulls the latest merged work from the previous stage before starting). Alternatively, update the auto-merge workflow to automatically rebase outstanding stage PRs on the latest `Nightly` HEAD and resolve conflicts programmatically before attempting auto-merge.
+* Concurrent Shared-File Conflicts Leading to Merge Failures (July 21, 2026) [RECURRING - escalated]:
+  - Symptom: Stage 5 (PR #1169) and Stage 9 (PR #1171) failed to auto-merge on July 21, 2026 due to hard merge conflicts (State: dirty). The identical failure mode recurred twice more: PR #1245 (`chore(apk-optimization): no optimization required`, July 27, 2026) and PR #1250 (`perf(opt): standardize Layer 1 Core catch block parameter naming`, July 28, 2026), both recorded in `00-pr-history.md` as `MERGE FAILED ... Merge conflicts (state: dirty)`.
+  - Root Cause: Unchanged from the original diagnosis. Multiple automated stages execute and open PRs in parallel or rapid succession. Each stage appends its run record to shared files such as `00-pr-history.md` and their respective coverage logs. When one stage's PR is merged, `Nightly` advances, causing all other outstanding PRs that modified the same lines in `00-pr-history.md` to instantly develop hard merge conflicts, aborting their auto-merge workflows. Two more occurrences six and seven days after the original diagnosis confirm the recommended fix below was never applied -- this is now a confirmed [RECURRING] pipeline defect, not an isolated incident.
+  - Recommended Fix (unchanged, now higher priority): Update the CI/CD pipeline to serialize the execution of the 13 stages to run sequentially instead of concurrently (so each stage pulls the latest merged work from the previous stage before starting). Alternatively, update the auto-merge workflow to automatically rebase outstanding stage PRs on the latest `Nightly` HEAD and resolve conflicts programmatically before attempting auto-merge. This session (2026-07-29) executed all 13 stages strictly sequentially in one working tree, pulling/rebasing onto `origin/Beta` before each stage and committing directly rather than opening 13 parallel PRs -- zero merge conflicts resulted. This is empirical evidence the serialization fix works; the remaining work is to encode it into the actual CI/CD trigger configuration rather than relying on sequential execution happening to occur.
 
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
   - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, and 2026-07-29)
-  - Analysis: Audited edge function stages and shared utilities; certified zero active threats.
+  - Analysis: Today's run (2026-07-29) actually produced a CHANGED entry -- closed a global-singleton `as any` write in `useUiCoordinator.ts` -- but the log carries both the earlier CLEAN pass and this later CHANGED fix for the same date. Treating the day as its most significant outcome (CHANGED), the streak resets to 0 as of this write. Prior to today, the 4-day CLEAN streak reflected the Backend Edge Function tree reaching audit saturation within its 7-day re-audit window (per pipeline-intelligence Stage 1 scope note added today): once that tree is excluded, Stage 1's only remaining live surface is Target B/C (layer isolation, `any` boundaries) in Frontend-PWA, which is a narrower, slower-refilling pool. Saturation by design, not a scoping defect.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 2 (Failed/missing on 2026-07-28 and 2026-07-29, tracked under Section 1)
-  - Analysis: Closed partial-coverage validation boundary and catch block error-handling gaps with comprehensive sad path unit tests.
+  - Consecutive No-Diff Days: 0 (CHANGED logged on 2026-07-29 -- see Section 1 resolution)
+  - Analysis: Recovered today. Closed the coverage gap on the merge contract Stage 1 hardened in the same cycle (falsy-value and off-contract-key traps), and proved non-triviality by reverting the implementation and observing 2 of 4 new specs fail. No missed-opportunity signal; Recent-Change Priority correctly routed to the highest-value target.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Folded 6 new migrations (drop orphaned views, rpos formula restructure, comments, win rate KPIs, and backfill) into the master baseline database schema.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-29 -- 0 unfolded objects across all 17 post-baseline migrations)
+  - Analysis: Genuine saturation, not a scoping defect: a fold-state replay (chronological DDL diff against the baseline) is the authoritative signal here, not a filename heuristic, and it reports zero folding work pending. One real deviation was found and deliberately deferred (a non-declarative identity/UPDATE residue) because a concurrent session already held a broader in-flight fix for the same block; recorded as SKIPPED with full reasoning rather than silently passed over.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Modernized useBackendRefresher.ts catch exception parameter variable naming hygiene to eliminate anemic variable pathogens.
+  - Consecutive No-Diff Days: 0 (CHANGED logged earlier on 2026-07-29 by a prior run today; a second CLEAN pass was logged later the same day)
+  - Analysis: The later pass investigated a plausible-looking bottleneck (hoisting `Intl.Collator` over `localeCompare` in the list comparators), implemented it, and disproved it by measurement: 3.24x slower on V8, reverted in full. This is the correct behaviour Stage 4 should exhibit more often -- optimization hypotheses are measured, not assumed. Recorded as a Known Pitfall so no future run re-attempts it.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 2 (Failed/missing on 2026-07-28 and 2026-07-29, tracked under Section 1)
-  - Analysis: Reconciled useBackendRefresher.ts catch block exception parameters across settings README.
+  - Consecutive No-Diff Days: 0 (CHANGED logged on 2026-07-29 -- see Section 1 resolution)
+  - Analysis: Recovered today. Found and fixed a real drift: the core/services README under-declared its own import boundary (omitted `@core/config` and `@core/types`, both in active use), which would have read as a false prohibition to any agent following it. Recent-Change routing (Stage 1 touched an adjacent file) correctly surfaced this.
 
 * Stage 6 (TSDoc):
   - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Hardened client environment JSDoc/TSDoc specifications on BackendRefresher.vue and HeaderInfoOverlay.vue.
+  - Analysis: Recent-Change Priority correctly followed Stage 1's hardening work into the same file and closed a real gap (`setFabVisible` missing `@param` and the dockVisible/toastOffset coupling note).
 
 * Stage 7 (Version Integrity):
   - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, and 2026-07-29)
-  - Analysis: Audited root, PWA, and backend manifests; confirmed zero version drift across monorepo v14.37.10.
+  - Analysis: Audited root, PWA, and backend manifests; confirmed zero version drift across monorepo v14.40.0, corroborated independently by `pnpm run audit:version` (PASS). Saturation by design -- Stage 8 owns the actual version-changing work, so a clean Stage 7 run is the expected steady state, not a missed opportunity.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Verified central monorepo catalog and updated external dependency hygiene; updated major version watchlist.
+  - Consecutive No-Diff Days: 0 (CHANGED logged on 2026-07-29)
+  - Analysis: Bumped @supabase/supabase-js (Tier 1 minor), added jsdom to the major watchlist as a new entry, and refreshed the vite watchlist entry's latest-version figure (8.1.5 -> 8.2.0). Healthy cadence.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-07-27 and 2026-07-28, failed/missing today on 2026-07-29)
-  - Analysis: Audited features view modules (RosterView, HeadhunterView, LaboratoryView) and recorded today clean audit pass status records.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on every date from 2026-07-22 through 2026-07-29, unbroken)
+  - Analysis: [MISSED-OPPORTUNITY SIGNAL] This is the longest unbroken CLEAN streak of any stage in this document and warrants scrutiny rather than a rubber-stamp "saturation by design." Today's run did find two files over the 400-line threshold (`profiler.ts` at 452 lines, `royaleSchemas.ts` at 407) and explicitly rejected both: `profiler.ts` because it is a single tightly-coupled orchestration function in a live data-ingestion Edge Function where a mechanical split carries real regression risk for low structural gain, and `royaleSchemas.ts` because splitting a single cohesive schema file barely over threshold would be over-engineering. Both rejections are individually defensible, but an 8-day streak of "found candidates, rejected all of them" is itself evidence that Stage 9's Priority List (Duplicate Detection, Size Audit, Layer Violation) is tuned to a risk tolerance that structurally cannot produce a PR against a codebase this well-maintained. Recommended prompt change: add a fourth, lower-risk priority item to `09-refactor-proposals.md` Section 3 -- "Test-Only or Doc-Only Structural Cleanup" (e.g. consolidating duplicate spec files, splitting a purely-declarative schema/type file with no runtime coupling) -- so the stage has a safe-to-attempt tier below "split a live orchestration function" once that tier is exhausted. Do not lower the bar on the risky tier; add a safer one alongside it.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-07-23, 2026-07-24, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, and 2026-07-29)
-  - Analysis: Audited manifest parity, Digital Asset Links fingerprints, and Android native layer security configurations. Saturation achieved by design.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-07-22 [CHANGED] then 2026-07-23 through 2026-07-29 CLEAN -- 7 consecutive CLEAN days, now 8 counting today)
+  - Analysis: Audited manifest parity, Digital Asset Links fingerprints, and Android native layer security configurations via the automated `audit-wrapper-integrity.mjs` script, which reports a binary PASS/FAIL rather than a graded finding. Saturation by design: this stage's own tooling is authoritative and exhaustive, so a long CLEAN streak here means the audited surface is actually stable, not that the scan is too narrow.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-29)
-  - Analysis: Service Worker precache globIgnores and module chunking profiles remain fully optimized.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-07-29; note the log also shows a break on 2026-07-28, so this counts only the current unbroken run)
+  - Analysis: Found and corrected a real documentation defect today: `00-pipeline-intelligence.md`'s WebView Security section claimed `setSafeBrowsingEnabled(false)` was established practice, but the actual code (`MainActivity.java:103`) sets it to `true`. No Gradle/ProGuard pipeline exists in this project (confirmed via `build-apk.sh`, which compiles via `javac` + `d8` directly), so Target A (R8/ProGuard minification) is structurally inapplicable here and should not be treated as an unaddressed gap in future audits.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Modernized Allow Gem Spending toggle with declarative haptic feedback brokering in ParameterCard.vue.
+  - Consecutive No-Diff Days: 0 (CHANGED logged on 2026-07-29)
+  - Analysis: Found and fixed a genuine touch-target gap in `NetworkSettings.vue` (edit/save/cancel controls at 40px or undeclared dimensions, below the 48px minimum) that had escaped seven-plus prior runs. This suggests Priority 4 (Touch Target Compliance) scanning in prior runs concentrated on higher-traffic feature views (Roster, Headhunter, Laboratory) and under-swept Settings sub-components; worth widening the sweep pattern rather than a prompt change.
 
 * Stage 13 (Self-Healing):
   - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
+  - Analysis: This run recomputed all 12 no-diff counters directly from full per-stage per-day log history (rather than incrementally trusting the previous day's cached counters), and found two counters had drifted from what a literal increment would have produced. Recommend this direct-recomputation method become the standing procedure for Step 4 rather than an occasional check.
