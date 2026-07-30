@@ -95,7 +95,15 @@ type FabCoordinatorKey = keyof FabCoordinatorState;
  */
 export function useUiCoordinator() {
   /**
-   * Call this from views when FabIsland visibility changes
+   * Toggles the global FAB singleton's visibility flag.
+   *
+   * @remarks
+   * Call this from a view whenever its FabIsland mounts, unmounts, or changes
+   * visibility. `dockVisible` and `toastOffset` derive from this flag, so a
+   * caller that forgets to flip it back to `false` on unmount leaves the main
+   * navigation dock hidden for every other view sharing the singleton.
+   *
+   * @param isFabIslandVisible - The FabIsland's new visibility state.
    */
   function setFabVisible(isFabIslandVisible: boolean) {
     isFabVisible.value = isFabIslandVisible;
