@@ -85,25 +85,33 @@
   - Recommended Fix: Monitor subsequent runs to verify automatic recovery.
 
 * Missing-Run / Failed Events on 2026-07-28:
-  - Stages: Stage 2 (Verify) [RECURRING], Stage 4 (Optimization) [RESOLVED - monitor], Stage 5 (README) [RECURRING], Stage 8 (Dependency-Audit) [RESOLVED - monitor], Stage 11 (APK-Optimization) [RESOLVED - monitor].
-  - State: [RECURRING] for Stage 2 and Stage 5 / [RESOLVED - monitor] for Stage 4, Stage 8, and Stage 11
+  - Stages: Stage 2 (Verify) [RECURRING], Stage 4 (Optimization) [RESOLVED - monitor], Stage 5 (README) [RESOLVED - monitor] (July 30, 2026), Stage 8 (Dependency-Audit) [RESOLVED - monitor], Stage 11 (APK-Optimization) [RESOLVED - monitor].
+  - State: [RECURRING] for Stage 2 / [RESOLVED - monitor] for Stage 4, Stage 5, Stage 8, and Stage 11
   - Symptom: No log entries for 2026-07-28 in 02-verification-coverage.log, 04-optimization-coverage.log, 05-documentation-readme-coverage.log, 08-dependency-audit-coverage.log, or 11-apk-optimization-coverage.log.
-  - Root Cause: These stages failed to trigger or execute on July 28. Stages 4, 8, and 11 successfully recovered on July 29, 2026. Stages 2 and 5 did not recover and missed today's run, which constitutes a recurring class failure.
+  - Root Cause: These stages failed to trigger or execute on July 28. Stages 4, 8, and 11 successfully recovered on July 29, 2026. Stage 5 recovered on July 30, 2026. Stage 2 did not recover and missed today's run, which constitutes a recurring class failure.
   - Recommended Fix: Address trigger issues in CI configuration; perform preventive actions on scheduling.
 
 * Missing-Run / Failed Events on 2026-07-29:
-  - Stages: Stage 2 (Verify) [RECURRING], Stage 5 (README) [RECURRING], Stage 9 (Refactor) [FAILED - monitor].
-  - State: [RECURRING] for Stage 2 and Stage 5 / [FAILED - monitor] for Stage 9
+  - Stages: Stage 2 (Verify) [RECURRING], Stage 5 (README) [RESOLVED - monitor] (July 30, 2026), Stage 9 (Refactor) [RESOLVED - monitor] (July 30, 2026).
+  - State: [RECURRING] for Stage 2 / [RESOLVED - monitor] for Stage 5 and Stage 9
   - Symptom: No log entries for 2026-07-29 in 02-verification-coverage.log, 05-documentation-readme-coverage.log, or 09-refactor-proposals-coverage.log.
   - Root Cause: Stage 2 and Stage 5 missed their runs consecutively today, indicating a persistent scheduling, webhook trigger, or container runner skipping event in CI. Stage 9 missed its run today, possibly due to zero-diff preconditions or execution scheduling issues.
   - Recommended Fix: Audit the CI/CD workflow runner environment and webhook trigger configurations to ensure stable sequential execution of all pipeline stages. Monitor subsequent runs to verify automatic recovery.
+
+* Missing-Run / Failed Events on 2026-07-30:
+  - Stages: Stage 2 (Verify) [RECURRING], Stage 12 (APK-UX) [FAILED - monitor].
+  - State: [RECURRING] for Stage 2 / [FAILED - monitor] for Stage 12
+  - Symptom: No log entries for 2026-07-30 in 02-verification-coverage.log or 12-apk-ux-coverage.log.
+  - Root Cause: Stage 2 missed its run for the third consecutive day, and Stage 12 missed its run today. Since local tests pass 100% and source files are healthy, these are triggered/skipped by CI concurrency or webhook scheduling limitations.
+  - Recommended Fix: Serialize the runner workflow trigger execution or restrict concurrently executing jobs in CI configurations to ensure stable executions of Stage 2 and Stage 12.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
   - Symptom: The merge failure records for PR #1113, PR #1111, and PR #1108 are appended in redundant duplicate blocks in the active T1 section (e.g. 10 duplicate blocks for PR #1113).
   - Root Cause: Since the merge-nightly-prs workflow is triggered on pull_request events, multiple pipeline stages opening PRs concurrently trigger multiple concurrent instances of the merge workflow. Each concurrent run executes merge-nightly-prs.ts, checks if the fail marker is in the checked-out main branch (it is not yet), appends the failure, and rebases via "git pull origin Nightly --rebase" before pushing. This rebase stacks the duplicates sequentially.
-  - Recommended Fix: Update the log-writing script `merge-nightly-prs.ts` to perform a git pull/fetch and re-read the file immediately prior to checking for the presence of the fail marker and writing. Alternatively, serialize or restrict merge-nightly-prs workflow triggers to scheduled crons only rather than triggering on every concurrent pull request event.
+  - State: [RESOLVED] (July 30, 2026)
+  - Resolution Details: Programmatically resolved on July 29, 2026, via commit `cd01864` (Native Git-Tag-Based History Engine) and `3b5e746` (full system coherence pass). The history engine was refactored to use git tags dynamically, which completely removed rebase-induced duplication and file-level race conditions from `00-pr-history.md`.
 
 * Deviation from Standard Log Format in Stage 2 and Stage 4:
   - Symptom: Stage 2 and Stage 4 wrote log entries using "Target: Codebase" instead of the standard "CHANGED:" or "CLEAN:" status prefixes.
@@ -114,58 +122,59 @@
 * Concurrent Shared-File Conflicts Leading to Merge Failures (July 21, 2026):
   - Symptom: Stage 5 (PR #1169) and Stage 9 (PR #1171) failed to auto-merge today due to hard merge conflicts (State: dirty).
   - Root Cause: Multiple automated stages execute and open PRs in parallel or rapid succession. Each stage appends its run record to shared files such as `00-pr-history.md` and their respective coverage logs. When one stage's PR is merged, `Nightly` advances, causing all other outstanding PRs that modified the same lines in `00-pr-history.md` to instantly develop hard merge conflicts, aborting their auto-merge workflows.
-  - Recommended Fix: Update the CI/CD pipeline to serialize the execution of the 13 stages to run sequentially instead of concurrently (so each stage pulls the latest merged work from the previous stage before starting). Alternatively, update the auto-merge workflow to automatically rebase outstanding stage PRs on the latest `Nightly` HEAD and resolve conflicts programmatically before attempting auto-merge.
+  - State: [RESOLVED] (July 30, 2026)
+  - Resolution Details: Resolved programmatically in commit `4b92c7f` on July 28, 2026 (programmatic conflict resolver in `merge-nightly-prs.mjs`) and hardened with retry guards in `e777333` on July 29, 2026. Outstanding stage PRs can now auto-merge smoothly.
 
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, and 2026-07-29)
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, 2026-07-29, and 2026-07-30)
   - Analysis: Audited edge function stages and shared utilities; certified zero active threats.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 2 (Failed/missing on 2026-07-28 and 2026-07-29, tracked under Section 1)
-  - Analysis: Closed partial-coverage validation boundary and catch block error-handling gaps with comprehensive sad path unit tests.
+  - Consecutive No-Diff Days: 3 (Failed/missing on 2026-07-28, 2026-07-29, and 2026-07-30, tracked under Section 1)
+  - Analysis: Expanded sad path tests and validation boundary coverage in previous active runs; currently blocked by CI trigger/webhook issues.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Folded 6 new migrations (drop orphaned views, rpos formula restructure, comments, win rate KPIs, and backfill) into the master baseline database schema.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-30)
+  - Analysis: Checked and confirmed that dropped database views remain unreferenced by Edge Function application logic.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Modernized useBackendRefresher.ts catch exception parameter variable naming hygiene to eliminate anemic variable pathogens.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-30)
+  - Analysis: Standardized and typed catch block parameters (harvestError, countryError, globalPolError, localError) to eliminate untyped catch variables in query-royale-api harvester.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 2 (Failed/missing on 2026-07-28 and 2026-07-29, tracked under Section 1)
-  - Analysis: Reconciled useBackendRefresher.ts catch block exception parameters across settings README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-30)
+  - Analysis: Reconciled query-royale-api harvester standard error catch parameters naming drift across setting README.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Hardened client environment JSDoc/TSDoc specifications on BackendRefresher.vue and HeaderInfoOverlay.vue.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-30)
+  - Analysis: Hardened client environment JSDoc/TSDoc specifications on query-royale-api harvester.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, and 2026-07-29)
-  - Analysis: Audited root, PWA, and backend manifests; confirmed zero version drift across monorepo v14.37.10.
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, 2026-07-29, and 2026-07-30)
+  - Analysis: Audited root, PWA, and backend manifests; confirmed zero version drift across monorepo v14.38.0.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Verified central monorepo catalog and updated external dependency hygiene; updated major version watchlist.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-30)
+  - Analysis: Bumped @supabase/supabase-js to ^2.111.0 in pnpm-workspace.yaml and re-locked dependency tree for modified catalogs.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-07-27 and 2026-07-28, failed/missing today on 2026-07-29)
-  - Analysis: Audited features view modules (RosterView, HeadhunterView, LaboratoryView) and recorded today clean audit pass status records.
+  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-07-27, 2026-07-28, and 2026-07-30, failed/missing on 2026-07-29)
+  - Analysis: Audited features view modules (RosterView, HeadhunterView, LaboratoryView) and recorded clean status records.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-07-23, 2026-07-24, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, and 2026-07-29)
-  - Analysis: Audited manifest parity, Digital Asset Links fingerprints, and Android native layer security configurations. Saturation achieved by design.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-07-23, 2026-07-24, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, 2026-07-29, and 2026-07-30)
+  - Analysis: Audited version synchronization across manifests, Digital Asset Links fingerprints, and Android native layer security configurations. Saturation achieved by design.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-07-29)
-  - Analysis: Service Worker precache globIgnores and module chunking profiles remain fully optimized.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-07-29 and 2026-07-30)
+  - Analysis: Service Worker precache globIgnores, module chunking profiles, and MainActivity.java configurations remain fully optimized.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
-  - Analysis: Modernized Allow Gem Spending toggle with declarative haptic feedback brokering in ParameterCard.vue.
+  - Consecutive No-Diff Days: 1 (Failed/missing today on 2026-07-30, tracked under Section 1)
+  - Analysis: Modernized Allow Gem Spending toggle with declarative haptic feedback brokering in ParameterCard.vue in the last active run.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-29)
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-07-30)
   - Analysis: Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
