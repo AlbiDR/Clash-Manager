@@ -52,6 +52,11 @@ jobs:
           CLAN_TAG: ${{ vars.CLAN_TAG }}
           PLAYER_TAG: ${{ vars.PLAYER_TAG }}
           INTERNAL_BEARER_TOKEN: ${{ secrets.INTERNAL_BEARER_TOKEN }}
+          # Comma-separated list of browser origins allowed to call the anon-reachable
+          # Edge Functions (query-royale-api, sync-player-cards, fetch-player-battlelog).
+          # Required: the restricted CORS allow-list in protocol.ts reads this at runtime.
+          # Must include the deployed PWA origin (e.g. https://albidr.github.io).
+          ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
           SUPABASE_REGION: "eu-west-1"
         run: |
           # 0. Context: We work from the Backend root
@@ -70,6 +75,11 @@ jobs:
           if [ -n "$ROYALE_API_KEYS" ]; then
             echo "Syncing ROYALE_API_KEYS..."
             supabase secrets set --project-ref "$PROJECT_ID" ROYALE_API_KEYS="$ROYALE_API_KEYS"
+          fi
+
+          if [ -n "$ALLOWED_ORIGINS" ]; then
+            echo "Syncing ALLOWED_ORIGINS..."
+            supabase secrets set --project-ref "$PROJECT_ID" ALLOWED_ORIGINS="$ALLOWED_ORIGINS"
           fi
 
           # Sync Authoritative Secrets to Vault for Database-level self-awareness

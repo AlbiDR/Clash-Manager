@@ -29,19 +29,31 @@
 <details open>
   <summary><strong>Dark mode</strong></summary>
   <br />
-  <img src="Frontend-PWA/public/assets/branding/roster-dark.webp" width="46%" alt="Roster" />
-  <img src="Frontend-PWA/public/assets/branding/headhunter-dark.webp" width="46%" alt="Headhunter" />
-  <img src="Frontend-PWA/public/assets/branding/laboratory-dark.webp" width="46%" alt="Laboratory" />
-  <img src="Frontend-PWA/public/assets/branding/settings-dark.webp" width="46%" alt="Settings" />
+  <table>
+    <tr>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/roster-dark.webp" width="100%" alt="Roster" /></td>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/headhunter-dark.webp" width="100%" alt="Headhunter" /></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/laboratory-dark.webp" width="100%" alt="Laboratory" /></td>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/settings-dark.webp" width="100%" alt="Settings" /></td>
+    </tr>
+  </table>
 </details>
 
 <details>
   <summary><strong>Light mode</strong></summary>
   <br />
-  <img src="Frontend-PWA/public/assets/branding/roster-light.webp" width="46%" alt="Roster" />
-  <img src="Frontend-PWA/public/assets/branding/headhunter-light.webp" width="46%" alt="Headhunter" />
-  <img src="Frontend-PWA/public/assets/branding/laboratory-light.webp" width="46%" alt="Laboratory" />
-  <img src="Frontend-PWA/public/assets/branding/settings-light.webp" width="46%" alt="Settings" />
+  <table>
+    <tr>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/roster-light.webp" width="100%" alt="Roster" /></td>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/headhunter-light.webp" width="100%" alt="Headhunter" /></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/laboratory-light.webp" width="100%" alt="Laboratory" /></td>
+      <td align="center"><img src="Frontend-PWA/public/assets/branding/settings-light.webp" width="100%" alt="Settings" /></td>
+    </tr>
+  </table>
 </details>
 
 </div>
