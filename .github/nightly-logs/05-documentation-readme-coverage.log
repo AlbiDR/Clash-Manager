@@ -100,3 +100,11 @@
 * [2026-07-27] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
 * [2026-07-30] [Stage 5] CHANGED: Backend/supabase/functions/query-royale-api/README.md -- Reconciled query-royale-api harvester standard error catch parameters naming drift.
 * [2026-07-30] [Stage 5] CLEAN: README.md, Backend/README.md, Frontend-PWA/README.md -- No action required
+* [2026-07-31] [Stage 5] CHANGED: Frontend-PWA/src/features/settings/README.md -- Reconciled UsefulLinksSettings dynamic and localized behavior.
+* [2026-07-31] [Stage 5] CHANGED: Backend/supabase/functions/headhunter-scanner/README.md -- Reconciled S4 Rescan integrity/field health check warning details.
+* [2026-07-31] [Stage 5] CHANGED: Frontend-PWA/src/features/headhunter/README.md -- Reconciled weighted win rate display cap and benchmarking.
+* [2026-07-31] [Stage 5] CLEAN: README.md -- No action required
+* [2026-07-31] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-07-31] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-07-31] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
+* [2026-07-31] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required

@@ -17,7 +17,7 @@ The scanner (`scanner.ts`) runs five stages:
 | S1 Shadow scout | `stages/shadow-scout.ts` | Turns recent battle-log opponents of tracked players into leads (via `get_shadow_discovery_targets`, up to 75). |
 | S2 Tournament discovery | `stages/tournament-finder.ts` | Searches open tournaments by keyword (from `get_active_discovery_anchors`) and harvests their members. |
 | S3 Profiler | `stages/profiler.ts` | Deep-profiles each candidate, computes the raw potential score (RPoS), and persists those who pass. |
-| S4 Rescan | `stages/rescan.ts` | Refreshes the active recruit pool and drops recruits who go stale or fall below threshold. |
+| S4 Rescan | `stages/rescan.ts` | Refreshes the active recruit pool, drops stale or low-threshold recruits, and performs defensive field health/RPOS integrity checks (triggering a telemetry warning if all rescanned profiles return a 0% win rate despite positive raw scores to flag potential Royale API changes). |
 
 It reports the outcome of each run into `substrate.headhunter_epoch_state`, which drives the 5-minute retry guard.
 
