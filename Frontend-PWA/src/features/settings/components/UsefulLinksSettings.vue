@@ -147,7 +147,15 @@ const usefulLinks = computed(() => {
           <span class="link-label">{{ link.label }}</span>
           <span class="link-desc">{{ link.desc }}</span>
         </div>
-        <img v-if="link.logo" :src="link.logo" class="link-logo" :alt="link.label" />
+        <img
+          v-if="link.logo"
+          :src="link.logo"
+          class="link-logo"
+          :alt="link.label"
+          width="18"
+          height="18"
+          loading="lazy"
+        />
         <Icon v-else-if="link.icon" :name="link.icon" size="18" class="link-icon" />
       </button>
     </div>
