@@ -27,8 +27,11 @@
  * - 20260727000000_rpos_rescan_backfill.sql
  * - 20260727010000_roster_lifetime_kpi_row.sql
  * - 20260727020000_roster_win_rate_lifetime_kpi.sql
+ * - 20260801000000_member_battle_log_backfill.sql
+ * - 20260801010000_recruit_win_rate_backfill.sql
+ * - 20260801020000_blacklist_win_rate_snapshot.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-07-30):
+ * Architectural Compliance Verification Log (Audited: 2026-07-31):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all 95 plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
@@ -1994,14 +1997,16 @@ BEGIN
         player_name,
         raw_potential_score,
         reason,
-        expires_at
+        expires_at,
+        snapshot
     )
     VALUES (
         p_tag,
         v_recruit.player_name,
         COALESCE(v_recruit.raw_potential_score, 0.0),
         'DISMISSED',
-        NOW() + (p_days_to_ban || ' days')::INTERVAL
+        NOW() + (p_days_to_ban || ' days')::INTERVAL,
+        jsonb_build_object('win_rate', COALESCE(v_recruit.win_rate, 0.0))
     )
     ON CONFLICT (player_tag) DO UPDATE SET
         expires_at = NOW() + (p_days_to_ban || ' days')::INTERVAL,
@@ -3422,11 +3427,13 @@ AS $function$
 DECLARE
     v_player_name TEXT;
     v_raw_score   NUMERIC;
+    v_win_rate    NUMERIC;
 BEGIN
     SELECT
         COALESCE(r.player_name, p.player_name, 'Unknown'),
-        COALESCE(r.raw_potential_score, 0.0)
-    INTO v_player_name, v_raw_score
+        COALESCE(r.raw_potential_score, 0.0),
+        COALESCE(r.win_rate, 0.0)
+    INTO v_player_name, v_raw_score, v_win_rate
     FROM drivers.players p
     LEFT JOIN drivers.recruits r ON r.player_tag = p.player_tag
     WHERE p.player_tag = p_player_tag;
@@ -3441,17 +3448,19 @@ BEGIN
         'Player profile returned 404 (Not Found). Universal registry eviction and blacklisting initiated.'
     );
 
-    INSERT INTO drivers.recruit_blacklist (player_tag, player_name, raw_potential_score, reason, expires_at)
+    INSERT INTO drivers.recruit_blacklist (player_tag, player_name, raw_potential_score, reason, expires_at, snapshot)
     VALUES (
         p_player_tag,
         COALESCE(v_player_name, 'Ghost'),
         COALESCE(v_raw_score, 0.0),
         'GHOST_404',
-        NOW() + INTERVAL '7 days'
+        NOW() + INTERVAL '7 days',
+        jsonb_build_object('win_rate', COALESCE(v_win_rate, 0.0))
     )
     ON CONFLICT (player_tag) DO UPDATE SET
         expires_at = NOW() + INTERVAL '7 days',
-        reason     = 'GHOST_404';
+        reason     = 'GHOST_404',
+        snapshot   = drivers.recruit_blacklist.snapshot || jsonb_build_object('win_rate', COALESCE(v_win_rate, 0.0));
 
     DELETE FROM drivers.players WHERE player_tag = p_player_tag;
 
