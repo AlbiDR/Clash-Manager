@@ -105,24 +105,31 @@ def run_aging(today_str):
     t3_content = parts_t4[0]
     t4_content = parts_t4[1]
 
-    # Parse T1 Blocks -- handles both ### [date] PR entries and ## [date] MERGE FAILED blocks
+    # Parse T1 Blocks: handles both ### [date] PR entries and ## [date] MERGE FAILED blocks
     t1_blocks = []
     current_block = []
 
     for line in t1_content.split("\n"):
         if line.startswith("### ") or line.startswith("## ["):
             if current_block:
-                t1_blocks.append("\n".join(current_block))
+                block_str = "\n".join(current_block).strip()
+                if block_str:
+                    t1_blocks.append(block_str)
             current_block = [line]
         elif current_block:
             current_block.append(line)
     if current_block:
-        t1_blocks.append("\n".join(current_block))
+        block_str = "\n".join(current_block).strip()
+        if block_str:
+            t1_blocks.append(block_str)
 
     new_t1_blocks = []
     aged_to_t2 = []
 
     for block in t1_blocks:
+        block = block.strip()
+        if not block:
+            continue
         # Match both ### [date] PR entries and ## [date] MERGE FAILED blocks
         match_date = re.search(r"(?:### |## )\[(\d{4}-\d{2}-\d{2})\]", block)
         if not match_date:
@@ -134,7 +141,7 @@ def run_aging(today_str):
         if age <= 7:
             new_t1_blocks.append(block)
         elif block.lstrip().startswith("## ["):
-            # MERGE FAILED blocks older than 7 days are dropped entirely -- they are noise.
+            # MERGE FAILED blocks older than 7 days are dropped entirely because they are noise.
             pass
         else:
             pr_match = re.search(r"### \[\d{4}-\d{2}-\d{2}\] PR #([^\s\]]+) \[([^\]]+)\]: (.*)", block)
@@ -274,16 +281,17 @@ def run_add_entry(today_str, stage_name, domain, pr_num, files_list, why_desc, c
         print("Could not find T1 section")
         sys.exit(1)
 
+    parts_1_clean = parts[1].lstrip("\n")
     new_entry = (
-        f"\n### [{today_str}] PR #{pr_num} [{stage_name}]: {change_desc}\n"
+        f"### [{today_str}] PR #{pr_num} [{stage_name}]: {change_desc}\n"
         f"**Domain:** {domain} | **Commit:** PENDING | [View PR](PENDING)\n"
         f"**Files:** {files_list}\n"
         f"**Why:** {why_desc}\n"
         f"**Change:** {change_desc}\n"
-        f"**Result:** {result_desc}\n"
+        f"**Result:** {result_desc}"
     )
 
-    final_output = parts[0] + t1_marker + "\n" + new_entry + parts[1]
+    final_output = parts[0] + t1_marker + "\n\n" + new_entry + "\n\n" + parts_1_clean
 
     with open(file_path, "w") as f:
         f.write(final_output)
