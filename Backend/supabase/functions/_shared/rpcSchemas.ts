@@ -80,11 +80,22 @@ export const DiscoveryCacheItemSchema = v.object({
  *
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
+ *
+ * The `get_ingestion_targets()` RPC returns schema-qualified keys
+ * (`"drivers.members"`, `"drivers.recruits"`). The transform step normalises
+ * them to bare `members`/`recruits` so callers remain decoupled from the
+ * Postgres schema-prefix convention.
  */
-export const IngestionTargetsSchema = v.object({
-    members: v.array(v.string()),
-    recruits: v.array(v.string())
-});
+export const IngestionTargetsSchema = v.pipe(
+    v.object({
+        "drivers.members":  v.array(v.string()),
+        "drivers.recruits": v.array(v.string())
+    }),
+    v.transform((raw) => ({
+        members:  raw["drivers.members"],
+        recruits: raw["drivers.recruits"]
+    }))
+);
 
 /**
  * L1 Core: Recruit Fate Schema (RPC).
