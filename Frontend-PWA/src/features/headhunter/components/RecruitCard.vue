@@ -101,11 +101,11 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
         />
         <StatisticItem
           label="Win Rate"
-          :value="formatNumber(Math.min(props.recruit.d.winRate, 1), { style: 'percent', maximumFractionDigits: 1 })"
+          :value="formatNumber(Math.min(props.recruit.d.winRate ?? 0, 1), { style: 'percent', maximumFractionDigits: 1 })"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
           benchmark-metric="winRate"
-          :benchmark-raw-value="props.recruit.d.winRate"
+          :benchmark-raw-value="props.recruit.d.winRate ?? 0"
         />
 
         <StatisticItem
