@@ -46,3 +46,5 @@
 * [2026-07-29] [Stage 4] CLEAN: war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view -- Re-verified dropped database views remain unreferenced by Edge Function application logic.
 * [2026-07-30] [Stage 4] CHANGED: Backend/supabase/functions/query-royale-api/harvester.ts -- Standardized and typed catch block parameters (harvestError, countryError, globalPolError, localError) to eliminate untyped catch variables.
 * [2026-07-30] [Stage 4] CLEAN: war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view -- Re-verified dropped database views remain unreferenced by Edge Function application logic.
+* [2026-07-31] [Stage 4] CHANGED: .github/nightly-logs/04-optimization-coverage.log -- Appended daily run record.
+* [2026-07-31] [Stage 4] CLEAN: war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view -- Re-verified dropped database views remain unreferenced by Edge Function application logic.
