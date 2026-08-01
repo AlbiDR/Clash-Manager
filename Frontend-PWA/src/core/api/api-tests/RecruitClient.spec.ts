@@ -28,15 +28,17 @@ const mockChannel = {
   });
 });
 
-vi.mock("@supabase/supabase-js", () => {
-  const mockClient = {
-    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-    from: vi.fn(() => mockFrom),
-    channel: vi.fn(() => mockChannel),
-    removeChannel: vi.fn(),
-  };
-  (mockClient as any).schema = vi.fn(() => mockClient);
+// Hoisted mock client -- referenced directly in tests so vi.clearAllMocks()
+// does not sever the reference to the mock factory's return value.
+const mockClient = {
+  rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  from: vi.fn(() => mockFrom),
+  channel: vi.fn(() => mockChannel),
+  removeChannel: vi.fn(),
+};
+(mockClient as any).schema = vi.fn(() => mockClient);
 
+vi.mock("@supabase/supabase-js", () => {
   return {
     createClient: vi.fn(() => mockClient),
   };
@@ -45,6 +47,10 @@ vi.mock("@supabase/supabase-js", () => {
 describe("RecruitClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // vi.clearAllMocks() wipes mock implementations; restore safe defaults.
+    mockClient.rpc.mockResolvedValue({ data: null, error: null });
+    mockChannel.on.mockReturnThis();
+    mockChannel.subscribe.mockReturnThis();
   });
 
   describe("Scouting", () => {
@@ -80,7 +86,6 @@ describe("RecruitClient", () => {
 
   describe("Mutations", () => {
     it("dismissRecruits normalizes player tags idempotently", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
       const items = [{ id: '#ABC', score: 80 }, { id: 'XYZ', score: 90 }];
 
@@ -95,7 +100,6 @@ describe("RecruitClient", () => {
     });
 
     it("undismissRecruits normalizes player tags idempotently", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
       const ids = ['#ABC', 'XYZ'];
 
@@ -107,7 +111,6 @@ describe("RecruitClient", () => {
     });
 
     it("dismissRecruits throws NetworkError on RPC error", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: 'PGRST301', message: 'Timeout' } } as any);
 
       const items = [{ id: 'ABC', score: 80 }];
@@ -115,7 +118,6 @@ describe("RecruitClient", () => {
     });
 
     it("undismissRecruits normalizes tags and throws NetworkError on any RPC error", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'failed to fetch' } } as any);
 
       const ids = ['ABC'];
@@ -126,7 +128,6 @@ describe("RecruitClient", () => {
     });
 
     it("dismissRecruits throws Valibot error on malformed RPC response", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       // success field is missing, which is required by DismissResponseSchema
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { count: 5 }, error: null });
 
@@ -198,7 +199,6 @@ describe("RecruitClient", () => {
     });
 
     it("cleanup function removes the channel", () => {
-      const mockClient = vi.mocked(createClient) as any;
       const cleanup = RecruitClient.subscribeToBlacklist(vi.fn(), vi.fn());
 
       cleanup();

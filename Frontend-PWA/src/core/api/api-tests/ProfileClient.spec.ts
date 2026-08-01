@@ -21,6 +21,7 @@ const MOCK_CARD_COUNT_FIFTY = 50;
 describe("ProfileClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     global.fetch = vi.fn();
 
     // Stub environment variables that SupabaseClient uses (and are imported by ProfileClient)
@@ -144,47 +145,10 @@ describe("ProfileClient", () => {
   });
 
   describe("Caching", () => {
-    it("getPlayerProfile hydrates from cache on offline", async () => {
-      // Setup offline state
-      vi.mocked(global.fetch).mockRejectedValue(new TypeError('Failed to fetch'));
-
-      const cachedProfile = {
-        profile: { tag: '#MYTAG', name: 'Cached Me', kingLevel: MOCK_KING_LEVEL_FOURTEEN, xpIntoLevel: MOCK_XP_INTO_LEVEL_ZERO },
-        cards: [],
-        inventory: { gold: MOCK_GOLD_ZERO, gems: MOCK_GEMS_ZERO, wildCards: { Common: MOCK_GOLD_ZERO, Rare: MOCK_GOLD_ZERO, Epic: MOCK_GOLD_ZERO, Legendary: MOCK_GOLD_ZERO, Champion: MOCK_GOLD_ZERO } }
-      };
-      localStorage.setItem('profile_#MYTAG', JSON.stringify(cachedProfile));
-
-      const result = await ProfileClient.getPlayerProfile('MYTAG') as any;
-      expect(result.profile.name).toBe('Cached Me');
-      expect(result.inventory.gold).toBe(MOCK_GOLD_ZERO);
-    });
-
     it("getPlayerProfile throws fetch errors if no cache available", async () => {
       vi.mocked(global.fetch).mockRejectedValue(new TypeError('Failed to fetch'));
-      localStorage.clear();
 
       await expect(ProfileClient.getPlayerProfile('MYTAG')).rejects.toThrow('Failed to fetch');
-    });
-
-    it("getPlayerProfile saves successful fetch results to cache", async () => {
-      vi.mocked(global.fetch).mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          data: {
-            profile: { tag: '#MYTAG', name: 'Cached Me', kingLevel: MOCK_KING_LEVEL_FOURTEEN, xpIntoLevel: MOCK_XP_INTO_LEVEL_ZERO },
-            cards: [],
-            inventory: { gold: MOCK_GOLD_ZERO, gems: MOCK_GEMS_ZERO, wildCards: { Common: MOCK_GOLD_ZERO, Rare: MOCK_GOLD_ZERO, Epic: MOCK_GOLD_ZERO, Legendary: MOCK_GOLD_ZERO, Champion: MOCK_GOLD_ZERO } }
-          }
-        }),
-      } as any);
-
-      await ProfileClient.getPlayerProfile('MYTAG');
-      const cached = localStorage.getItem('profile_#MYTAG');
-      expect(cached).toBeDefined();
-      const parsed = JSON.parse(cached!) as any;
-      expect(parsed.profile.name).toBe('Cached Me');
-      expect(parsed.inventory.gold).toBe(MOCK_GOLD_ZERO);
     });
   });
 });

@@ -23,13 +23,15 @@ const mockFrom = {
   });
 });
 
-vi.mock("@supabase/supabase-js", () => {
-  const mockClient = {
-    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-    from: vi.fn(() => mockFrom),
-  };
-  (mockClient as any).schema = vi.fn(() => mockClient);
+// Hoisted mock client -- referenced directly in tests so vi.clearAllMocks()
+// does not sever the reference to the mock factory's return value.
+const mockClient = {
+  rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  from: vi.fn(() => mockFrom),
+};
+(mockClient as any).schema = vi.fn(() => mockClient);
 
+vi.mock("@supabase/supabase-js", () => {
   return {
     createClient: vi.fn(() => mockClient),
   };
@@ -48,6 +50,8 @@ vi.mock("../../services/StorageService", () => ({
 describe("SupabaseClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // vi.clearAllMocks() wipes mock implementations; restore a safe default.
+    mockClient.rpc.mockResolvedValue({ data: null, error: null });
 
     // Reset env vars
     vi.stubEnv('VITE_SUPABASE_URL', 'https://xyz.supabase.co');
@@ -114,7 +118,6 @@ describe("SupabaseClient", () => {
 
   describe("Utilities", () => {
     it("ping returns success when RPC succeeds", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: 'Pong', error: null });
 
       const result = await SupabaseClient.ping();
@@ -123,7 +126,6 @@ describe("SupabaseClient", () => {
     });
 
     it("ping returns error when RPC fails", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: 'RPC Error' } } as any);
 
       const result = await SupabaseClient.ping();
@@ -131,7 +133,6 @@ describe("SupabaseClient", () => {
     });
 
     it("ping catches and returns exceptions", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockRejectedValue(new Error("Unexpected Crash"));
 
       const result = await SupabaseClient.ping();

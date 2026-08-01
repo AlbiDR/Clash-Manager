@@ -13,6 +13,15 @@ const mockFrom = {
   maybeSingle: vi.fn(),
 };
 
+// Hoisted mock client -- referenced directly in tests so vi.clearAllMocks()
+// does not sever the reference to the mock factory's return value.
+const mockClient = {
+  rpc: vi.fn(),
+  from: vi.fn(() => mockFrom),
+  schema: vi.fn(),
+};
+(mockClient as any).schema = vi.fn(() => mockClient);
+
 // Make them fluent and thenable
 const resetMockFrom = () => {
   [mockFrom.select, mockFrom.limit, mockFrom.maybeSingle].forEach(m => {
@@ -24,12 +33,6 @@ const resetMockFrom = () => {
 };
 
 vi.mock("@supabase/supabase-js", () => {
-  const mockClient = {
-    rpc: vi.fn(),
-    from: vi.fn(() => mockFrom),
-  };
-  (mockClient as any).schema = vi.fn(() => mockClient);
-
   return {
     createClient: vi.fn(() => mockClient),
   };
@@ -38,12 +41,14 @@ vi.mock("@supabase/supabase-js", () => {
 describe("VoyageClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // vi.clearAllMocks() wipes mock implementations; restore a safe default so
+    // tests that do not override rpc still get a resolved value rather than undefined.
+    mockClient.rpc.mockResolvedValue({ data: null, error: null });
     resetMockFrom();
   });
 
   describe("RPC Activation & Scheduling", () => {
     it("initializeVoyage calls RPC with correct params", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
 
       const result = await VoyageClient.initializeVoyage(1600, "start", "end");
@@ -57,14 +62,12 @@ describe("VoyageClient", () => {
     });
 
     it("initializeVoyage throws NetworkError on RPC error", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "RPC Error" } });
 
       await expect(VoyageClient.initializeVoyage(1600, "start", "end")).rejects.toThrow(NetworkError);
     });
 
     it("scheduleVoyageEvent calls RPC with correct params", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
 
       const result = await VoyageClient.scheduleVoyageEvent(1000, "future_start");
@@ -77,14 +80,12 @@ describe("VoyageClient", () => {
     });
 
     it("scheduleVoyageEvent throws NetworkError on RPC error", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "Schedule Error" } });
 
       await expect(VoyageClient.scheduleVoyageEvent(1000, "future_start")).rejects.toThrow(NetworkError);
     });
 
     it("setVoyageEnd calls RPC with correct params", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
 
       const result = await VoyageClient.setVoyageEnd(123, "end_at");
@@ -97,14 +98,12 @@ describe("VoyageClient", () => {
     });
 
     it("setVoyageEnd throws NetworkError on RPC error", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "End Error" } });
 
       await expect(VoyageClient.setVoyageEnd(123, "end_at")).rejects.toThrow(NetworkError);
     });
 
     it("cancelScheduledVoyageEvent calls RPC with correct params", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
 
       const result = await VoyageClient.cancelScheduledVoyageEvent(123);
@@ -116,7 +115,6 @@ describe("VoyageClient", () => {
     });
 
     it("cancelScheduledVoyageEvent throws NetworkError on RPC error", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "Cancel Error" } });
 
       await expect(VoyageClient.cancelScheduledVoyageEvent(123)).rejects.toThrow(NetworkError);

@@ -14,13 +14,15 @@ mockFrom.insert.mockImplementation(() => {
   return Object.assign(Promise.resolve({ data: null, error: null }), mockFrom);
 });
 
-vi.mock("@supabase/supabase-js", () => {
-  const mockClient = {
-    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-    from: vi.fn(() => mockFrom),
-  };
-  (mockClient as any).schema = vi.fn(() => mockClient);
+// Hoisted mock client -- referenced directly in tests so vi.clearAllMocks()
+// does not sever the reference to the mock factory's return value.
+const mockClient = {
+  rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  from: vi.fn(() => mockFrom),
+};
+(mockClient as any).schema = vi.fn(() => mockClient);
 
+vi.mock("@supabase/supabase-js", () => {
   return {
     createClient: vi.fn(() => mockClient),
   };
@@ -29,11 +31,12 @@ vi.mock("@supabase/supabase-js", () => {
 describe("MaintenanceClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // vi.clearAllMocks() wipes mock implementations; restore a safe default.
+    mockClient.rpc.mockResolvedValue({ data: null, error: null });
   });
 
   describe("Pipeline Operations", () => {
     it("triggerBackendUpdate returns success/failure based on RPC", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({
         data: { success: true, message: "Trigger received" },
         error: null
@@ -45,7 +48,6 @@ describe("MaintenanceClient", () => {
     });
 
     it("triggerBackendUpdate returns error if RPC fails", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'Trigger Failed' } } as any);
 
       const result = await MaintenanceClient.triggerBackendUpdate();
@@ -54,7 +56,6 @@ describe("MaintenanceClient", () => {
     });
 
     it("triggerBackendUpdate returns validation error if RPC returns malformed data", async () => {
-      const mockClient = vi.mocked(createClient) as any;
       // Missing 'message' field
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
 
