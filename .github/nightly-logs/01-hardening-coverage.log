@@ -149,3 +149,8 @@
 * [2026-07-31] [Stage 1] SKIPPED: Backend/supabase/functions/ingest-royale-data/stages/discovery.ts -- Audited as CLEAN by Stage 1 in past 7 days
 * [2026-07-31] [Stage 1] SKIPPED: Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts -- Audited as CLEAN by Stage 1 in past 7 days
 * [2026-07-31] [Stage 1] SKIPPED: Backend/supabase/functions/ingest-royale-data/stages/clan-sync.ts -- Audited as CLEAN by Stage 1 in past 7 days
+* [2026-08-01] [Stage 1] CHANGED: Backend/supabase/functions/_shared/protocol.ts -- Hardened and annotated module-level in-memory state rateLimitBuckets with threat and decision log guidelines
+* [2026-08-01] [Stage 1] CLEAN: Frontend-PWA/src/core/services/useProgressiveList.ts -- No action required
+* [2026-08-01] [Stage 1] CLEAN: Frontend-PWA/src/core/services/useClashSync.ts -- No action required
+* [2026-08-01] [Stage 1] CLEAN: Frontend-PWA/src/features/headhunter/components/RecruitCard.vue -- No action required
+* [2026-08-01] [Stage 1] CLEAN: Frontend-PWA/src/features/roster/components/MemberCard.vue -- No action required
