@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
 import { useConnectionStatus } from "../useConnectionStatus";
 import { useWakeLock } from "@shared/composables/useWakeLock";
@@ -56,11 +56,11 @@ vi.mock("../../utils/mockData", () => ({
 }));
 
 describe("useClashSync", () => {
-  let data: ReturnType<typeof ref<WebAppData | null>>;
+  let data: Ref<WebAppData | null>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    data = ref<WebAppData | null>(null);
+    data = ref<WebAppData | null>(null) as Ref<WebAppData | null>;
     mockConnectionStatus.isOnline.value = true;
     mockSyntheticMode.isSyntheticMode.value = false;
     lastSyncStatus.value = null;
@@ -163,7 +163,7 @@ describe("useClashSync", () => {
 
   describe("refreshFromSupabase", () => {
     it("should sync successfully on happy path", async () => {
-      const remotePayload = { lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", blacklist: [] };
+      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", blacklist: [] };
       vi.mocked(fetchRemote).mockResolvedValue(remotePayload);
 
       const sync = useClashSync(data);
@@ -248,7 +248,7 @@ describe("useClashSync", () => {
   describe("updatePlayerLocally", () => {
     it("should update member in leaderboard and persist", async () => {
       data.value = {
-        lb: [{ id: "TAG1", n: "Old Name", t: 0, performanceScore: 0, performanceRawScore: 0, d: { role: "member", days: 0, avg: 0, hist: "" } }],
+        lb: [{ id: "TAG1", n: "Old Name", t: 0, performanceScore: 0, performanceRawScore: 0, d: { role: "member", days: 0, avg: 0, hist: "", winRate: 0 } }],
         hh: [],
         timestamp: 100,
         blacklist: []
@@ -263,7 +263,7 @@ describe("useClashSync", () => {
 
     it("should reject invalid partial data", async () => {
       data.value = {
-        lb: [{ id: "TAG1", n: "Old Name", t: 0, performanceScore: 0, performanceRawScore: 0, d: { role: "member", days: 0, avg: 0, hist: "" } }],
+        lb: [{ id: "TAG1", n: "Old Name", t: 0, performanceScore: 0, performanceRawScore: 0, d: { role: "member", days: 0, avg: 0, hist: "", winRate: 0 } }],
         hh: [],
         timestamp: 100,
         blacklist: []
@@ -271,8 +271,7 @@ describe("useClashSync", () => {
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       const sync = useClashSync(data);
-      // @ts-expect-error - testing invalid data
-      await sync.updatePlayerLocally("TAG1", { t: "not a number" });
+      await sync.updatePlayerLocally("TAG1", { t: "not a number" } as any);
 
       expect(data.value.lb[0].t).toBe(0);
       expect(consoleSpy).toHaveBeenCalled();

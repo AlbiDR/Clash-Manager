@@ -33,7 +33,7 @@ describe("MaintenanceClient", () => {
 
   describe("Pipeline Operations", () => {
     it("triggerBackendUpdate returns success/failure based on RPC", async () => {
-      const mockClient = vi.mocked(createClient)();
+      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({
         data: { success: true, message: "Trigger received" },
         error: null
@@ -45,7 +45,7 @@ describe("MaintenanceClient", () => {
     });
 
     it("triggerBackendUpdate returns error if RPC fails", async () => {
-      const mockClient = vi.mocked(createClient)();
+      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { code: '500', message: 'Trigger Failed' } } as any);
 
       const result = await MaintenanceClient.triggerBackendUpdate();
@@ -54,7 +54,7 @@ describe("MaintenanceClient", () => {
     });
 
     it("triggerBackendUpdate returns validation error if RPC returns malformed data", async () => {
-      const mockClient = vi.mocked(createClient)();
+      const mockClient = vi.mocked(createClient) as any;
       // Missing 'message' field
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: { success: true }, error: null });
 

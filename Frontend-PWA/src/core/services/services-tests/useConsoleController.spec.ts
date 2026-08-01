@@ -6,21 +6,36 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { ref, effectScope } from "vue";
 
-const { sharedState } = vi.hoisted(() => ({
-  sharedState: {
-    mockBlueprintMode: { value: false },
-    mockShowcaseMode: { value: false },
-    mockPingData: { 
-      value: {
-        version: "1.0.0",
-        latency: 42,
-      }
+const { sharedState, mockClashStore } = vi.hoisted(() => {
+  const { ref } = require("vue");
+  return {
+    sharedState: {
+      mockBlueprintMode: { value: false },
+      mockShowcaseMode: { value: false },
+      mockPingData: { 
+        value: {
+          version: "1.0.0",
+          latency: 42,
+        }
+      },
+      mockApiStatus: { value: "online" },
+      mockConnectionStatus: { value: "online" },
+      mockHasValidConfig: { value: true }
     },
-    mockApiStatus: { value: "online" },
-    mockConnectionStatus: { value: "online" },
-    mockHasValidConfig: { value: true }
-  }
-}));
+    mockClashStore: {
+      data: ref({ playerTag: null }),
+      isHydrated: ref(true),
+      isRefreshing: ref(false),
+      syncError: ref(null),
+      lastSyncTime: ref(0),
+      currentSource: ref(null),
+      lastCompiledTime: ref(null),
+      lastFetchedTime: ref(null),
+      loading: ref(false),
+      isStale: ref(false),
+    },
+  };
+});
 
 // Mock leaf dependencies first
 vi.mock("../useSelectionStore", async () => {
@@ -48,25 +63,11 @@ vi.mock("../useDeepLinkHandler", async () => {
     };
 });
 
-// Mock useClashDataStore first
-vi.mock("../useClashDataStore", async () => {
-    const { ref } = await import("vue");
-    const mockStore = {
-        data: ref({ playerTag: null }),
-        isHydrated: ref(true),
-        isRefreshing: ref(false),
-        syncError: ref(null),
-        lastSyncTime: ref(0),
-        currentSource: ref(null),
-        lastCompiledTime: ref(null),
-        lastFetchedTime: ref(null),
-        loading: ref(false),
-        isStale: ref(false),
-    };
-    return {
-        useClashDataStore: vi.fn(() => mockStore),
-    };
-});
+// Mock useClashDataStore first -- mockClashStore is defined via vi.hoisted() above
+// so all ref fields are strongly typed as writable Ref<T> in test scope.
+vi.mock("../useClashDataStore", () => ({
+    useClashDataStore: vi.fn(() => mockClashStore),
+}));
 
 // Mock useApiState at its actual path
 vi.mock("../../api/useApiState", async () => {
@@ -161,17 +162,16 @@ describe("useConsoleController", () => {
     sharedState.mockApiStatus.value = "online";
     sharedState.mockConnectionStatus.value = "online";
 
-    // Reset store mock
-    const clashStore = useClashDataStore();
-    clashStore.isHydrated.value = true;
-    clashStore.isRefreshing.value = false;
-    clashStore.syncError.value = null;
-    clashStore.lastSyncTime.value = Date.now();
-    clashStore.currentSource.value = null;
-    clashStore.lastCompiledTime.value = null;
-    clashStore.lastFetchedTime.value = null;
-    clashStore.loading.value = false;
-    clashStore.isStale.value = false;
+    // Reset mock store refs directly (mockClashStore has writable Ref<T> fields)
+    mockClashStore.isHydrated.value = true;
+    mockClashStore.isRefreshing.value = false;
+    mockClashStore.syncError.value = null;
+    mockClashStore.lastSyncTime.value = Date.now();
+    mockClashStore.currentSource.value = null;
+    mockClashStore.lastCompiledTime.value = null;
+    mockClashStore.lastFetchedTime.value = null;
+    mockClashStore.loading.value = false;
+    mockClashStore.isStale.value = false;
     vi.clearAllMocks();
     vi.useFakeTimers();
   });
@@ -235,8 +235,7 @@ describe("useConsoleController", () => {
   });
 
   it("exposes standardized layoutProps for ConsoleLayout", () => {
-    const clashStore = useClashDataStore();
-    clashStore.loading.value = true;
+    mockClashStore.loading.value = true;
     const options = createOptions();
     options.isRefreshing.value = true;
     const { layoutProps } = useConsoleController(options);
@@ -266,15 +265,13 @@ describe("useConsoleController", () => {
     });
 
     it("returns 'error' when syncError is present", () => {
-      const clashStore = useClashDataStore();
-      clashStore.syncError.value = "Some Error";
+      mockClashStore.syncError.value = "Some Error";
       const { status } = useConsoleController(createOptions());
       expect(status.value).toMatchObject({ type: "error", text: "Sync Error" });
     });
 
     it("returns 'loading' when refreshing and data is empty", () => {
-      const clashStore = useClashDataStore();
-      clashStore.loading.value = true;
+      mockClashStore.loading.value = true;
       const options = createOptions();
       options.data.value = [];
       const { status } = useConsoleController(options);
@@ -282,8 +279,7 @@ describe("useConsoleController", () => {
     });
 
     it("returns 'success' with 'DB' label when data is present from Supabase", () => {
-      const clashStore = useClashDataStore();
-      clashStore.currentSource.value = "SUPABASE";
+      mockClashStore.currentSource.value = "SUPABASE";
       
       const options = createOptions();
       const { status } = useConsoleController(options);
@@ -302,15 +298,14 @@ describe("useConsoleController", () => {
     it("prioritizes offline over sync error", () => {
       sharedState.mockConnectionStatus.value = "offline";
       const options = createOptions();
-      options.syncError.value = "Error";
+      (options.syncError as any).value = "Error";
       const { status } = useConsoleController(options);
       expect(status.value.text).toBe("OFFLINE");
     });
 
     it("returns 'Stale' when data is exactly 31 minutes old", () => {
-      const clashStore = useClashDataStore();
       const now = Date.now();
-      clashStore.lastSyncTime.value = now - 31 * 60000; // 31 minutes ago
+      mockClashStore.lastSyncTime.value = now - 31 * 60000; // 31 minutes ago
       
       const options = createOptions();
       const { status } = useConsoleController(options);
@@ -319,10 +314,9 @@ describe("useConsoleController", () => {
     });
 
     it("returns 'DB' when data is exactly 29 minutes old and source is Supabase", () => {
-      const clashStore = useClashDataStore();
-      clashStore.currentSource.value = "SUPABASE";
+      mockClashStore.currentSource.value = "SUPABASE";
       const now = Date.now();
-      clashStore.lastSyncTime.value = now - 29 * 60000; // 29 minutes ago
+      mockClashStore.lastSyncTime.value = now - 29 * 60000; // 29 minutes ago
       
       const options = createOptions();
       const { status } = useConsoleController(options);
@@ -332,9 +326,8 @@ describe("useConsoleController", () => {
     });
 
     it("uses lastSyncTime for age calculation", () => {
-      const clashStore = useClashDataStore();
       const now = Date.now();
-      clashStore.lastSyncTime.value = now - 31 * 60000;   // 31m ago (STALE)
+      mockClashStore.lastSyncTime.value = now - 31 * 60000;   // 31m ago (STALE)
       
       const options = createOptions();
       const { status } = useConsoleController(options);
@@ -422,7 +415,7 @@ describe("useConsoleController", () => {
     it("limits visibleItems to 1 item regardless of filtered count", () => {
       sharedState.mockShowcaseMode.value = true;
       const options = createOptions();
-      options.data.value = [{ id: "1" }, { id: "2" }, { id: "3" }];
+      options.data.value = [{ id: "1", n: "A" }, { id: "2", n: "B" }, { id: "3", n: "C" }];
       const { visibleItems, filteredItems } = useConsoleController(options);
 
       expect(filteredItems.value).toHaveLength(3);
@@ -433,7 +426,7 @@ describe("useConsoleController", () => {
   describe("statsBadge", () => {
     it("returns correct count in normal mode", () => {
       const options = createOptions();
-      options.data.value = [{ id: "1" }, { id: "2" }];
+      options.data.value = [{ id: "1", n: "A" }, { id: "2", n: "B" }];
       const { statsBadge } = useConsoleController(options);
       expect(statsBadge.value).toEqual({ label: "Tests", value: "2" });
     });
@@ -474,9 +467,8 @@ describe("useConsoleController", () => {
 
   describe("store fallback mechanism", () => {
     it("falls back to useClashDataStore for sync status when omitted from options", () => {
-      const clashStore = useClashDataStore();
-      clashStore.loading.value = false;
-      clashStore.syncError.value = "Store Error";
+      mockClashStore.loading.value = false;
+      mockClashStore.syncError.value = "Store Error";
 
       // Pass only the data, omit other reactive flags to trigger fallback
       const { isRefreshing, syncError, status } = useConsoleController({
@@ -494,9 +486,8 @@ describe("useConsoleController", () => {
 
   describe("layoutProps and hubInfo", () => {
     it("maps hubInfo correctly when source is present", () => {
-      const clashStore = useClashDataStore();
-      clashStore.currentSource.value = "SUPABASE";
-      clashStore.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
+      mockClashStore.currentSource.value = "SUPABASE";
+      mockClashStore.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
       
       const { layoutProps } = useConsoleController(createOptions());
 
@@ -507,10 +498,9 @@ describe("useConsoleController", () => {
     });
 
     it("falls back to lastSyncTime for hubAge if lastCompiledTime is missing", () => {
-      const clashStore = useClashDataStore();
-      clashStore.currentSource.value = "SUPABASE";
-      clashStore.lastCompiledTime.value = null;
-      clashStore.lastSyncTime.value = Date.now() - 7200000; // 2h ago
+      mockClashStore.currentSource.value = "SUPABASE";
+      mockClashStore.lastCompiledTime.value = null;
+      mockClashStore.lastSyncTime.value = Date.now() - 7200000; // 2h ago
       
       const { layoutProps } = useConsoleController(createOptions());
 
@@ -518,8 +508,7 @@ describe("useConsoleController", () => {
     });
 
     it("defaults hubInfo to LOCAL source when currentSource is null", () => {
-      const clashStore = useClashDataStore();
-      clashStore.currentSource.value = null;
+      mockClashStore.currentSource.value = null;
       const { layoutProps } = useConsoleController(createOptions());
       expect(layoutProps.value.remoteInfo?.source).toBe("LOCAL");
     });

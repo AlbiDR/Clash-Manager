@@ -114,7 +114,7 @@ describe("SupabaseClient", () => {
 
   describe("Utilities", () => {
     it("ping returns success when RPC succeeds", async () => {
-      const mockClient = vi.mocked(createClient)();
+      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: 'Pong', error: null });
 
       const result = await SupabaseClient.ping();
@@ -123,7 +123,7 @@ describe("SupabaseClient", () => {
     });
 
     it("ping returns error when RPC fails", async () => {
-      const mockClient = vi.mocked(createClient)();
+      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: 'RPC Error' } } as any);
 
       const result = await SupabaseClient.ping();
@@ -131,7 +131,7 @@ describe("SupabaseClient", () => {
     });
 
     it("ping catches and returns exceptions", async () => {
-      const mockClient = vi.mocked(createClient)();
+      const mockClient = vi.mocked(createClient) as any;
       vi.mocked(mockClient.rpc).mockRejectedValue(new Error("Unexpected Crash"));
 
       const result = await SupabaseClient.ping();
