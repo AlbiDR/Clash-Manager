@@ -196,11 +196,13 @@ export async function handleBackgroundSync(): Promise<void> {
 
     // [DECISION LOG] Direct View Access: We query the view with aliasing (s:potential_score)
     // to reduce payload size and decouple from internal database column naming.
+    // [OPTIMIZATION] Set Cache-Control to no-cache to bypass local/WebView caches and guarantee fresh scores.
     const apiResponse = await fetch(`${supabaseUrl}/rest/v1/headhunter_view?select=s:potential_score`, {
       method: "GET",
       headers: {
         "apikey": supabaseKey,
-        "Accept-Profile": "features"
+        "Accept-Profile": "features",
+        "Cache-Control": "no-cache"
       },
     });
 
