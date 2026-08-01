@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-07-31
+LAST_AGED:   2026-08-01
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -28,12 +28,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-29] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 2 and Stage 5 recurring missing runs, and updated the three sections of the protocol.
 **Domain:** pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
 **Why:** To complete the daily automated self-healing protocol audit pass.
 **Change:** Audited all 13 pipeline stages, documented Stage 2 and Stage 5 recurring missing runs, and updated the three sections of the protocol.
 **Result:** 100% pipeline visibility and updated no-diff metrics with all monorepo checks passing cleanly.
+
 
 
 
@@ -54,12 +56,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-29] PR #PENDING [Stage 11]: Audited WebView configurations, Service Worker cache settings, and ran MD5 resource duplication checksum validation on the assets tree.
 **Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
 **Why:** To perform the daily automated WebView caching topology and asset resource audits and optimizations.
 **Change:** Audited WebView configurations, Service Worker cache settings, and ran MD5 resource duplication checksum validation on the assets tree.
 **Result:** 100% optimized WebView caching topology, zero duplicate native assets, and perfect SW precache configuration verified with zero regressions.
+
 
 
 
@@ -80,12 +84,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-29] PR #PENDING [Stage 8]: chore(deps): bump @types/node and supabase and update major watchlist
 **Domain:** dependency-audit | **Commit:** PENDING | [View PR](PENDING)
 **Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log
 **Why:** To perform the daily automated dependency audit scan and ecosystem safety research for Nightly.
 **Change:** chore(deps): bump @types/node and supabase and update major watchlist
 **Result:** Successfully bumped @types/node to ^26.1.2 and supabase to ^2.110.0 in the default catalog, and updated the persistent major version watchlist.
+
 
 
 
@@ -106,12 +112,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-29] PR #PENDING [Stage 6]: Added complete JSDoc blocks for saveScrollPosition and getSavedScroll, and embedded detailed inline decision logs and threat annotations for scroll state preservation, View Transitions routing promises, and dynamic chunk loading error recovery.
 **Domain:** tsdoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/app/router/index.ts
 **Why:** To establish type-safe interface contracts and inline decision logs on the recently touched router substrate.
 **Change:** Added complete JSDoc blocks for saveScrollPosition and getSavedScroll, and embedded detailed inline decision logs and threat annotations for scroll state preservation, View Transitions routing promises, and dynamic chunk loading error recovery.
 **Result:** 100% logic intent transparency and contract synchronization with the CleanStack ADR, with all 1442 monorepo tests passing cleanly.
+
 
 
 
@@ -132,12 +140,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-29] PR #PENDING [Stage 3]: Updated compliance audit verification date stamp to 2026-07-29 on master migration.
 **Domain:** baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
 **Why:** Ensure master database schema baseline remains certified against compliance policy with the newest audited date stamp.
 **Change:** Updated compliance audit verification date stamp to 2026-07-29 on master migration.
 **Result:** Maintained clean, zero-touch deployable master database baseline schema verified via 100% monorepo test success.
+
 
 
 
@@ -157,12 +167,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-28] PR #1245 [Stage 11]: chore(apk-optimization): no optimization required
 **Domain:** APK Optimization | **Commit:** 2acf351966b5852ad373952e8daaba1cc51d7fce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1245)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
 **Why:** To perform the daily automated APK container and Native WebView wrapper compilation, assets, and caching optimization pass.
 **Change:** Audited native WebView configurations, Service Worker precache settings, and ran MD5 resource duplication checksum validation on the entire assets tree.
 **Result:** 100% optimized WebView caching topology, zero duplicate native assets, and perfect SW precache configuration verified with zero regressions.
+
 
 
 
@@ -182,12 +194,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-28] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 11 recurring missing run, and updated the three sections of the living self-healing protocol.
 **Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
 **Why:** To complete the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
 **Change:** Audited all 13 pipeline stages, documented Stage 11 recurring missing run, and updated the three sections of the living self-healing protocol.
 **Result:** 100% pipeline visibility and updated no-diff metrics with all monorepo checks passing cleanly.
+
 
 
 
@@ -210,12 +224,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-28] PR #PENDING [Stage 10]: No mismatches or violations detected across manifests, asset links, resource colors, permissions, or version mappings.
 **Domain:** apk-integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
 **Why:** Perform standard nightly APK & PWA wrapper integrity audit
 **Change:** No mismatches or violations detected across manifests, asset links, resource colors, permissions, or version mappings.
 **Result:** Passed all automated build and security checks with zero-diff codebase state.
+
 
 
 
@@ -238,12 +254,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-28] PR #PENDING [Stage 7]: Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
 **Domain:** Versions | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
 **Why:** To perform the daily version consistency audit across monorepo manifests, catalogs, and documentation.
 **Change:** Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
 **Result:** Monorepo is perfectly synchronized at ground truth v14.37.4.
+
 
 
 
@@ -266,12 +284,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-28] PR #PENDING [Stage 3]: Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update.
 **Domain:** database-baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
 **Why:** To fold new incremental migrations chronologically into the master baseline database schema.
 **Change:** Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update.
 **Result:** Unified master baseline is synchronized, RLS and search path isolation verified, and all test files pass successfully.
+
 
 
 
@@ -292,11 +312,13 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ## [2026-07-27] MERGE FAILED: PR #1245: chore(apk-optimization): no optimization required
 > [!CAUTION]
 > **Status**: Auto-merge aborted.
 > **Error**: `Merge conflicts (state: dirty).`
 > **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1245)
+
 
 
 
@@ -310,6 +332,7 @@ LAST_AGED:   2026-07-31
 **Why:** To complete the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
 **Change:** Audited all 13 pipeline stages, documented Stage 9 recovery, identified Stage 11 missing run, and updated the three sections of the living self-healing protocol.
 **Result:** 100% pipeline visibility and updated no-diff metrics with all 1432 monorepo tests passing cleanly.
+
 
 
 
@@ -332,12 +355,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-27] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
 **Domain:** apk-integrity | **Commit:** PENDING | [View PR](PENDING)
 **Files:** codebase
 **Why:** Standardize and verify APK/PWA wrapper consistency and secure configuration parameters.
 **Change:** chore(apk-integrity): no mismatch found
 **Result:** Verified perfect manifest, resource, assetlinks and security profile integrity across PWA wrapper and native layers.
+
 
 
 
@@ -360,12 +385,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-27] PR #PENDING [Stage 8]: Verified 100% monorepo-wide adherence to Tier 1 dependency standards with zero patch/minor version drift, maintaining the persistent Tier 2 major version watchlist for Vite, TypeScript, and Pinia.
 **Domain:** dependency-audit | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log
 **Why:** To perform the nightly external health and vulnerability audit across monorepo dependencies.
 **Change:** Verified 100% monorepo-wide adherence to Tier 1 dependency standards with zero patch/minor version drift, maintaining the persistent Tier 2 major version watchlist for Vite, TypeScript, and Pinia.
 **Result:** No action required for Tier 1 dependencies, and the persistent Tier 2 major version watchlist was updated and maintained.
+
 
 
 
@@ -388,12 +415,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-27] PR #PENDING [Stage 6]: Added comprehensive CONFIG, supabase client, and syncVault TSDoc/JSDoc specifications and secure side-effect mapping.
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/functions/fetch-player-battlelog/client.ts
 **Why:** To establish type-safe interface contracts and inline decision logs on the recently touched environment client configurations.
 **Change:** Added comprehensive CONFIG, supabase client, and syncVault TSDoc/JSDoc specifications and secure side-effect mapping.
 **Result:** 100% logic intent transparency and contract synchronization with CleanStack ADR verified, with all 1432 monorepo tests passing cleanly.
+
 
 
 
@@ -416,12 +445,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-27] PR #PENDING [Stage 4]: Renamed generic catch block parameter 'e' to 'backendRefreshError' inside refresh method.
 **Domain:** Refactor/Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/features/settings/composables/useBackendRefresher.ts
 **Why:** To eliminate anemic pathogens and satisfy naming conventions inside features/settings.
 **Change:** Renamed generic catch block parameter 'e' to 'backendRefreshError' inside refresh method.
 **Result:** Improved domain clarity and satisfy ADR naming constraints with 100% test pass.
+
 
 
 
@@ -444,12 +475,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-27] PR #PENDING [Stage 2]: Added 6 comprehensive sad path unit tests inside useVoyageForm.spec.ts asserting Error instance and non-Error string propagation to toast alert services across handleActivate, handleCancel, and handleSetEnd.
 **Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/shared/composables/composables-tests/useVoyageForm.spec.ts
 **Why:** The try-catch blocks and error handling paths in useVoyageForm.ts lacked dedicated test coverage, presenting a validation boundary gap on Voyage form orchestration.
 **Change:** Added 6 comprehensive sad path unit tests inside useVoyageForm.spec.ts asserting Error instance and non-Error string propagation to toast alert services across handleActivate, handleCancel, and handleSetEnd.
 **Result:** 100% of catch blocks and error handling branches covered and validated under Vitest, with all 16 composable tests passing seamlessly.
+
 
 
 
@@ -471,12 +504,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-26] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 1 and Stage 11 recoveries, and updated the three sections of the living self-healing protocol.
 **Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md
 **Why:** Perform the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
 **Change:** Audited all 13 pipeline stages, documented Stage 1 and Stage 11 recoveries, and updated the three sections of the living self-healing protocol.
 **Result:** 100% pipeline visibility and updated no-diff metrics with all 1426 monorepo tests passing cleanly.
+
 
 
 
@@ -501,12 +536,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-26] PR #PENDING [Stage 11]: Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment.
 **Domain:** apk-optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
 **Why:** Audited APK and native WebAPK / WebView configurations and PWA caching manifests.
 **Change:** Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment.
 **Result:** Verified pristine configurations and maintained full native-like hybrid performance layout.
+
 
 
 
@@ -531,12 +568,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-26] PR #PENDING [Stage 9]: chore(refactor): no action required
 **Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
 **Why:** To audit and certify the monorepo structural health, feature isolation, and view module size thresholds.
 **Change:** chore(refactor): no action required
 **Result:** 100% structural alignment and layer boundary compliance verified with all modules well under the 400-line threshold.
+
 
 
 
@@ -561,12 +600,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-26] PR #PENDING [Stage 7]: Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
 **Domain:** Versions | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
 **Why:** No version drift detected in monorepo
 **Change:** Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
 **Result:** Monorepo is perfectly synchronized at ground truth v14.33.11.
+
 
 
 
@@ -591,12 +632,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-26] PR #PENDING [Stage 5]: Updated shared/ui and shared/composables README files to document the 48px target-input height compliance and useVoyageForm standardized catch exception parameters.
 **Domain:** documentation-readme | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/shared/ui/README.md, Frontend-PWA/src/shared/composables/README.md
 **Why:** Reconcile UI and composables documentation with recent Stage 4 VoyageSetupForm and useVoyageForm touch target and naming modernization.
 **Change:** Updated shared/ui and shared/composables README files to document the 48px target-input height compliance and useVoyageForm standardized catch exception parameters.
 **Result:** 100% architectural documentation alignment and zero documentation drift verified via self-created markdown validation tool, with all 1426 tests passing.
+
 
 
 
@@ -621,12 +664,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-26] PR #PENDING [Stage 3]: chore(baseline): no migrations to fold -- audit pass
 **Domain:** baseline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
 **Why:** Periodic automated validation and baselining of database schemas.
 **Change:** chore(baseline): no migrations to fold -- audit pass
 **Result:** Verified compliance with all ADR database constraints and updated audited date stamp.
+
 
 
 
@@ -651,6 +696,7 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-26] PR #PENDING [Stage 1]: Audited query-royale-api, headhunter-scanner, ingest-royale-data edge function stages and shared substrate utilities, recording a clean audit pass log.
 **Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/01-hardening-coverage.log
@@ -665,12 +711,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-25] PR #PENDING [Stage 13]: chore(pipeline): update self-healing protocol -- July 25, 2026 daily audit
 **Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/13-self-healing-protocol.md, .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/00-pr-history.md
 **Why:** To perform the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
 **Change:** Audited all 13 pipeline stages, promoted Stage 2 to resolved status after successful execution, logged Stage 1 and Stage 11 failures, and updated the three sections of the living self-healing protocol.
 **Result:** 100% pipeline visibility, mapped recovery of verification tests, and updated no-diff metrics with all 1421 monorepo tests passing cleanly.
+
 
 
 
@@ -697,12 +745,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-25] PR #PENDING [Stage 8]: Dependency Management
 **Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
 **Why:** Perform the daily automated package dependency audit and ecosystem safety watchlist research.
 **Change:** Audited monorepo and verified that all external dependencies are fully aligned with the central catalog and updated to their latest Tier 1 versions, and kept the major version watchlist updated.
 **Result:** 100% dependency hygiene and catalog compliance verified, with zero version drift across all packages.
+
 
 
 
@@ -729,12 +779,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-25] PR #PENDING [Stage 6]: chore(tsdoc): no gap found
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
 **Why:** To audit and certify the monorepo codebase for licensing header compliance and interface contract documentation coverage.
 **Change:** Audited recently modified backend profiler and shared UI components, confirming 100% TSDoc coverage, inline decision logs, threat annotations, and licensing compliance.
 **Result:** 100% compliance across all tested modules and complete alignment with CleanStack ADR without introducing logical mutations.
+
 
 
 
@@ -761,12 +813,14 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-25] PR #PENDING [Stage 4]: chore(opt): no bottleneck found -- audit pass
 **Domain:** Codebase Optimization | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/00-pr-history.md
 **Why:** To ensure 100% performance, substrate hygiene, and variable naming compliance across both frontend and backend directories.
 **Change:** Verified that the six known database views remain completely unreferenced by application logic, and confirmed frontend modules conform to CleanStack naming standards.
 **Result:** 100% codebase and substrate hygiene verified, all 1421 monorepo tests passing cleanly with zero performance bottlenecks.
+
 
 
 
@@ -793,6 +847,7 @@ LAST_AGED:   2026-07-31
 
 
 
+
 ### [2026-07-25] PR #PENDING [Stage 2]: test(verify): assert useProgressiveList rendering engine edge cases and fallbacks
 **Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pr-history.md, .github/nightly-logs/00-pipeline-intelligence.md
@@ -800,149 +855,6 @@ LAST_AGED:   2026-07-31
 **Change:** Appended 8 comprehensive unit tests to useProgressiveList.spec.ts, validating default rendering limits, short lists, rapid-succession inputs, and rAnF numeric callback deadline execution.
 **Result:** 100% test coverage saturation for useProgressiveList with all 1421 monorepo tests passing cleanly.
 
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 11]: chore(apk-optimization): no optimization required
-**Domain:** APK Optimization | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To perform the daily automated APK container and Native WebView wrapper compilation, assets, and caching optimization pass.
-**Change:** Audited native WebView configurations, Service Worker precache settings, and ran MD5 resource duplication checksum validation on the entire assets tree.
-**Result:** 100% optimized WebView caching topology, zero duplicate native assets, and perfect SW precache configuration verified with zero regressions.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 2]: test(verify): assert NotificationSettings user interaction and badge outputs
-**Domain:** Verification | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts, .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Reconcile test coverage for the modernized settings substrate to ensure proper physical feedback and 48px touch target compliance.
-**Change:** Injected 5 new robust unit tests covering the master synchronization toggle, Quiet Mode, Sound controls, and dynamic badge-preview text mappings under specific threshold selections.
-**Result:** 100% test coverage saturation for NotificationSettings with all 1413 workspace tests passing flawlessly.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 13]: chore(pipeline): update self-healing protocol -- July 24, 2026 daily audit
-**Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/13-self-healing-protocol.md, .github/nightly-logs/13-self-healing-protocol-coverage.log
-**Why:** Complete the daily automated self-healing protocol audit pass for July 24, 2026.
-**Change:** Updated Sections 1, 2, and 3 of the self-healing plan, updated consecutive no-diff days counters to reflect today's commits, and appended the daily audit run record.
-**Result:** 100% pipeline visibility, mapped successful and failed stages, and analyzed cross-stage merge-conflict coherence bugs.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 12]: fix(apk-ux): modernize SelectionFab haptic interaction model and touch inputs
-**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/ui/SelectionFab.vue, Frontend-PWA/src/shared/ui/ui-tests/SelectionFab.spec.ts
-**Why:** Manual pointerdown event listeners and direct useHaptics haptic feedback triggers in SelectionFab were legacy interaction patterns.
-**Change:** Refactored all interactive buttons inside SelectionFab to utilize the declarative v-tactile haptic brokering directive and synchronized the test suite.
-**Result:** Clean declarative haptic synchronization and hybrid shell interaction hygiene verified with all 1408 monorepo tests passing.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 10]: chore(apk-integrity): no mismatch found
-**Domain:** APK Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To execute the daily automated APK & PWA wrapper integrity, manifest synchronization, and security profile audit.
-**Change:** Audited wrapper manifests, colors, shortcuts, assetlinks signatures, target SDK standards, and declared permission sets, recording a clean audit pass log.
-**Result:** 100% wrapper synchronization and defensive security posture verified with all monorepo checks passing cleanly.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 9]: chore(refactor): no action required
-**Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To audit and certify the monorepo structural health, feature isolation, and view module size thresholds.
-**Change:** Audited feature view modules (RosterView, HeadhunterView, LaboratoryView) and recorded today clean audit pass status records.
-**Result:** 100% structural alignment and layer boundary compliance verified with all modules well under the 400-line threshold.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 7]: chore(version): no drift found
-**Domain:** Version Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To perform the daily version consistency audit across monorepo manifests, catalogs, and documentation.
-**Change:** Verified 100% monorepo-wide adherence to the PNPM catalog protocol and synchronization of all manifests and substrate version declarations, appending the audit pass log records.
-**Result:** 100% version alignment, zero version drift, and perfect synchronization across the monorepo verified via the test gate.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 5]: docs(readme): reconcile backend scanner telemetry and frontend core/settings drift
-**Domain:** Documentation/README | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/functions/headhunter-scanner/README.md, Frontend-PWA/src/core/utils/README.md, Frontend-PWA/src/features/settings/README.md, .github/nightly-logs/05-documentation-readme-coverage.log
-**Why:** To ensure perfect synchronization between daily substrate implementation adjustments and authoritative architectural documentation.
-**Change:** Documented profiler telemetry logging standards in the headhunter-scanner README, updated core utils README to detail getKingLevelRow lookup mapping and standardized variable conventions, and detailed the standardized notification threshold configuration properties in settings.
-**Result:** 100% architectural alignment, zero documentation drift, and fully synchronized operational guidelines for all developers and automated agents.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 4]: perf(opt): standardize variable naming for domain clarity and audit substrate hygiene
-**Domain:** Core & Features | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/core/utils/game.ts, Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts, .github/nightly-logs/04-optimization-coverage.log
-**Why:** To satisfy ADR Section II domain-descriptive naming conventions and eliminate generic variable pathogens.
-**Change:** Standardized the generic variable `row` to `kingLevelRow` inside `calculateXpIntoLevel`/`calculateTotalXp` functions, renamed `val` to `thresholdValue` in `NotificationSettings.spec.ts`, and verified unreferenced database views remain clean.
-**Result:** 100% naming compliance with the CleanStack ADR, fully passing the monorepo test gate (1409 passed).
 
 
 
@@ -969,6 +881,7 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Description
 
 
@@ -979,7 +892,9 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Generated by: .github/nightly-prompts/12-apk-ux.md
+
 
 
 
@@ -1003,6 +918,7 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Changes:
 - **[Frontend-PWA/src/features/settings/components/NotificationSettings.vue]:** Modernized .threshold-btn, .enable-btn, and .action-btn by updating their heights to 48px to comply with touch footprint standards, and applied the `v-tactile` directive for declarative brokered haptic feedback.
 - **[Frontend-PWA/src/features/settings/components/components-tests/NotificationSettings.spec.ts]:** Added a mock for `vTactile` to prevent mock export resolution errors during unit and integration test runs.
@@ -1016,8 +932,10 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Verification:
 - **[Automated]:** Full monorepo Vitest suite (1409 passed), PWA client production compilation (`pnpm run build`), and dependency graph layer validation (`depcruise`) completed successfully with zero regressions or violations.
+
 
 
 
@@ -1041,6 +959,7 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Description
 
 
@@ -1051,7 +970,9 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Generated by: .github/nightly-prompts/10-apk-integrity.md
+
 
 
 
@@ -1075,6 +996,7 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Changes:
 - **[Component/File]:** Appended audit log to `.github/nightly-logs/10-apk-integrity-coverage.log`.
 
@@ -1087,8 +1009,10 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified manifest color, assetlinks, shortcuts, versions and SDK configuration alignment via `node APK/audit-wrapper-integrity.mjs` and custom native layer integrity via `pnpm run apk:verify:source`. Both passed perfectly. Running the full monorepo vitest suite resulted in 1409 passed tests and 0 depcruise violations.
+
 
 
 
@@ -1116,6 +1040,7 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Description
 
 
@@ -1126,7 +1051,9 @@ Completed the daily automated self-healing protocol audit pass for July 23, 2026
 
 
 
+
 ### Generated by: .github/nightly-prompts/09-refactor-proposals.md
+
 
 
 
@@ -1149,8 +1076,10 @@ None. Conducted a comprehensive structural and architectural alignment audit on 
 
 
 
+
 ### Refactor Applied:
 No refactoring or structural surgery was required during this pass. Zero audited modules exceed the 400-line threshold limit, and no architectural layer or cyclical dependency violations were detected.
+
 
 
 
@@ -1174,8 +1103,10 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified that the full monorepo test suite (1409 passed) and `npx depcruise` architectural audit completed successfully with zero violations.
+
 
 
 
@@ -1199,7 +1130,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
+
 
 
 
@@ -1220,10 +1153,12 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Reasoning:
 **[Action Tier]:** Tier 1 (automated patch/minor update) & Tier 2 (watchlist update).
 **[Package]:** knip, vue-tsc, typescript, vite, pinia.
 **[Rationale]:** Bumping knip to ^6.29.0 and vue-tsc to ^3.3.8 are safe automated bumps verified by tests. Outstanding major versions of Vite, TypeScript, and Pinia are logged in the persistent watchlist to prevent unsafe autonomous bumps.
+
 
 
 
@@ -1249,9 +1184,11 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Passed the full monorepo Vitest suite (1409 passed, 1 skipped).
 - **[Automated/Audit]:** Watchlist entry is complete and verified.
+
 
 
 
@@ -1275,6 +1212,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -1285,7 +1223,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/07-version-integrity.md
+
 
 
 
@@ -1310,6 +1250,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Changes:
 - **[Audit Log]:** Appended audit run record for 2026-07-23 to `07-version-integrity-coverage.log`.
 - **[PR History]:** Appended T1 block for the audit-pass run to `00-pr-history.md`.
@@ -1323,9 +1264,11 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified monorepo consistency via authoritative `audit:version` script and full monorepo test gate (1409 passed) using Node 22 bypass flags.
 - **[Automated/Audit]:** Confirmed 100% PNPM catalog protocol adherence across all workspace manifests.
+
 
 
 
@@ -1354,6 +1297,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -1364,7 +1308,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/05-documentation-readme.md
+
 
 
 
@@ -1389,8 +1335,10 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Changes:
 - **[Frontend-PWA/src/core/api/README.md]:** Documented strict realtime blacklist subscription payload validation boundaries via BlacklistEventSchema, error callback parameter name standardizations, and resource cleanup contracts.
+
 
 
 
@@ -1414,6 +1362,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Log Updates:
 - Updated .github/nightly-logs/05-documentation-readme-coverage.log
 - Updated .github/nightly-logs/00-pr-history.md
@@ -1427,7 +1376,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
+
 
 
 
@@ -1448,10 +1399,12 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Reasoning:
 **[Priority Queue Item]:** 1. Recent-Change Priority and 2. Missing Interface Contracts.
 **[Safety Checks]:** Confirmed CleanStack Architecture ADR coherence, vocabulary compliance, and license header verification.
 **[Rationale]:** Standardised and mapped core interface contracts and inline decision logs of recently touched Layer 1 and Layer 2 components (`RecruitClient`, `useProgressiveList`, and `BaseSelect`) to preserve complete logic intent transparency.
+
 
 
 
@@ -1478,10 +1431,12 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Ran the specialized Vitest suites for all modified files with 100% pass (29/29 tests passed).
 - **[Automated/Audit]:** Ran `.github/scripts/validate_project.ts` and verified successful Project Integrity check.
 - **[Automated/Audit]:** Ran `npx depcruise` and confirmed zero architectural layer violations.
+
 
 
 
@@ -1504,6 +1459,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -1514,7 +1470,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/04-optimization.md
+
 
 
 
@@ -1539,6 +1497,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Changes:
 - **[Frontend-PWA/src/core/api/RecruitClient.ts]:** Standardized realtime subscription error callback parameter variable from `err` to `realtimeSubscriptionError` to eliminate anemic variable pathogens in Layer 1 Core.
 - **[.github/nightly-logs/04-optimization-coverage.log]:** Appended CHANGED and CLEAN entries for 2026-07-23.
@@ -1553,9 +1512,11 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified all tests (`pnpm test`) pass cleanly (1409 passed, 1 skipped).
 - **[Automated/Audit]:** Verified with 100% correct rating in automated code review.
+
 
 
 
@@ -1583,6 +1544,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -1593,7 +1555,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/03-baseline-consolidation.md
+
 
 
 
@@ -1619,8 +1583,10 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Rationale:
 Folded incremental migrations to maintain a clean, zero-touch deployable master baseline database schema.
+
 
 
 
@@ -1643,6 +1609,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Description
 
 
@@ -1653,7 +1620,9 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Generated by: .github/nightly-prompts/01-hardening.md
+
 
 
 
@@ -1678,6 +1647,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Changes:
 - **[.github/nightly-logs/01-hardening-coverage.log]:** Added CLEAN audit pass entries for 2026-07-23.
 - **[.github/nightly-logs/00-pr-history.md]:** Executed pre-flight aging pass and bumped LAST_AGED.
@@ -1691,9 +1661,11 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified all tests (`pnpm test`) pass successfully.
 - **[Automated/Audit]:** Completed 100% of codebase threat surface check.
+
 
 
 
@@ -1718,6 +1690,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Description
 
 
@@ -1728,7 +1701,9 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Generated by: .github/nightly-prompts/13-self-healing-protocol.md
+
 
 
 
@@ -1756,8 +1731,10 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Primary Finding:
 Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped successful preceding runs (Stages 1, 3, 4, 5, 6, 7, 8, 9, 10, 12) and documented missing/failed runs (Stages 2 and 11) for today. Promoted Stage 2 and Stage 11 to [RECURRING] failures as they have missed multiple consecutive pipeline runs. Re-calculated and updated consecutive no-diff days metrics to reflect today's active version updates, haptic standardizations, and database schema validations.
+
 
 
 
@@ -1782,6 +1759,7 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Log Updates:
 - Updated .github/nightly-logs/13-self-healing-protocol.md
 - Updated .github/nightly-logs/13-self-healing-protocol-coverage.log
@@ -1790,6 +1768,7 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 *PR created automatically by Jules for task [3783654294635565778](https://jules.google.com/task/3783654294635565778) started by @AlbiDR*
 
 ---
+
 
 
 
@@ -1806,7 +1785,9 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Generated by: .github/nightly-prompts/12-apk-ux.md
+
 
 
 
@@ -1830,6 +1811,7 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Changes:
 - **[Frontend-PWA/src/shared/ui/BaseSelect.vue]:** Refactored the component to utilize the centralized `v-tactile` directive on the select trigger and option items, and eliminated imperative haptic hook dependencies.
 
@@ -1842,8 +1824,10 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Verification:
 - **[Automated]:** Full monorepo Vitest suite (1409 passed), PWA client production compilation (`pnpm run build`), and dependency graph layer validation (`depcruise`) completed successfully with zero regressions.
+
 
 
 
@@ -1868,6 +1852,7 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Description
 
 
@@ -1878,7 +1863,9 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Generated by: .github/nightly-prompts/10-apk-integrity.md
+
 
 
 
@@ -1902,8 +1889,10 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Changes:
 - **[APK/reference/twa-manifest.json]:** Updated `appVersionName`, `appVersionCode`, and `appVersion` properties to synchronize with package.json v14.33.9 (17390).
+
 
 
 
@@ -1918,6 +1907,7 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 - **[Automated]:** Verified compile and JSON integrity via `pnpm audit:apk` (PASS).
 - **[Automated]:** Verified native Android wrapper source integrity via `pnpm apk:verify:source` (PASS).
 - **[Automated]:** Successfully executed the full monorepo test suite of 1409 tests via `pnpm test` (PASS).
+
 
 
 
@@ -1946,6 +1936,7 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Description
 
 
@@ -1956,7 +1947,9 @@ Completed the daily Self-Healing Protocol pass for July 22, 2026. Mapped success
 
 
 
+
 ### Generated by: .github/nightly-prompts/09-refactor-proposals.md
+
 
 
 
@@ -1979,8 +1972,10 @@ None. Conducted a comprehensive structural and architectural alignment audit on 
 
 
 
+
 ### Refactor Applied:
 No refactoring or structural surgery was required during this pass. Zero audited modules exceed the 400-line threshold limit, and no architectural layer or cyclical dependency violations were detected.
+
 
 
 
@@ -2004,8 +1999,10 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified that the full monorepo test suite (1409 passed) and `npx depcruise` architectural audit completed successfully with zero violations.
+
 
 
 
@@ -2030,7 +2027,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
+
 
 
 
@@ -2051,10 +2050,12 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Reasoning:
 **[Action Tier]:** Tier 1 (automated patch update).
 **[Package]:** @supabase/supabase-js, current version ^2.110.7, target version ^2.110.8.
 **[Rationale]:** This is a safe patch update for the Supabase JS client libraries to keep the monorepo up to date. All 1409 unit and integration tests passed perfectly after the bump.
+
 
 
 
@@ -2080,10 +2081,12 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Passed the full monorepo Vitest suite (1409 passed) under the Node 22 bypass flags.
 - **[Automated/Audit]:** Passed project-wide validation check via `pnpm audit:version` (PASS).
 - **[Automated/Audit]:** Watchlist entry is complete and verified.
+
 
 
 
@@ -2112,6 +2115,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -2122,7 +2126,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/07-version-integrity.md
+
 
 
 
@@ -2147,6 +2153,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Changes:
 - **[Audit Log]:** Appended audit run record for 2026-07-22 to `07-version-integrity-coverage.log`.
 - **[PR History]:** Appended T1 block for the audit-pass run to `00-pr-history.md`.
@@ -2160,9 +2167,11 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified monorepo consistency via authoritative `audit:version` script and full monorepo test gate (1409 passed) using Node 22 bypass flags.
 - **[Automated/Audit]:** Confirmed 100% PNPM catalog protocol adherence across all workspace manifests.
+
 
 
 
@@ -2187,6 +2196,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -2197,7 +2207,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/06-documentation-tsdoc.md
+
 
 
 
@@ -2222,6 +2234,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Changes:
 - **[ParameterCard.vue]:** Injected comprehensive component-level and prop/emit-level JSDoc/TSDoc blocks, decision/threat logs, and ADR Section III reference links.
 - **[06-documentation-tsdoc-coverage.log]:** Appended 2026-07-22 CHANGED entry.
@@ -2236,10 +2249,12 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Verification:
 - **[Automated]:** Passed full monorepo test suite (1409 passed) under the Node 22 Vitest runner.
 - **[Automated/Audit]:** Verified with dependency-cruiser and confirmed zero violations.
 - **[Automated/Audit]:** Passed project-wide validation checks.
+
 
 
 
@@ -2268,6 +2283,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -2278,7 +2294,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/05-documentation-readme.md
+
 
 
 
@@ -2303,8 +2321,10 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Changes:
 - **[Frontend-PWA/src/shared/ui/README.md]:** Documented custom brand icon components (RosterIcon, LaboratoryIcon, HeadhunterIcon, ClashRoyaleIcon) and their explicit 22px visual boundary layouts in NavigationDock.
+
 
 
 
@@ -2319,6 +2339,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 - **[Automated]:** Passed the entire monorepo Vitest suite (1409 passed).
 - **[Automated/Audit]:** Verified project integrity check via `pnpm audit:version` (PASS).
 - **[Automated/Audit]:** Checked with dependency-cruiser and confirmed zero violations.
+
 
 
 
@@ -2346,6 +2367,7 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Description
 
 
@@ -2356,7 +2378,9 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Generated by: .github/nightly-prompts/03-baseline-consolidation.md
+
 
 
 
@@ -2382,8 +2406,10 @@ No refactoring or structural surgery was required during this pass. Zero audited
 
 
 
+
 ### Rationale:
 Folded incremental migrations to maintain a clean, zero-touch deployable master baseline database schema.
+
 
 
 
@@ -2407,6 +2433,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Description
 
 
@@ -2417,7 +2444,9 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Generated by: .github/nightly-prompts/04-optimization.md
+
 
 
 
@@ -2442,6 +2471,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Changes:
 - **[ParameterCard.vue]:** Renamed generic index `i` to `levelIndex` in `levelOptions` array mapping, and generic argument `val` to `strategyValue`/`levelValue` in strategy and target level update callback listeners.
 - **[logs/pr-history/etc]:** Synchronized standard logs and resolved version drifts across the monorepo to align with v14.33.9 ground truth.
@@ -2455,9 +2485,11 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified with 100% pass (1409 passed) under the monorepo Vitest runner.
 - **[Automated/Audit]:** Verified with successful PWA client production compilation (`pnpm build`) and project validator (`pnpm audit:version`).
+
 
 
 
@@ -2482,6 +2514,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Description
 
 
@@ -2492,7 +2525,9 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Generated by: .github/nightly-prompts/01-hardening.md
+
 
 
 
@@ -2517,6 +2552,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Changes:
 - **.github/nightly-logs/01-hardening-coverage.log:** Added CLEAN audit pass entry for 2026-07-22.
 - **.github/nightly-logs/00-pr-history.md:** Prepended Stage 1 PENDING block and completed automated monthly aging pass.
@@ -2531,9 +2567,11 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified all tests (`pnpm test`) pass successfully.
 - **[Automated/Audit]:** Completed 100% of codebase threat surface check.
+
 
 
 
@@ -2561,6 +2599,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Description
 
 
@@ -2571,7 +2610,9 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Generated by: .github/nightly-prompts/01-hardening.md
+
 
 
 
@@ -2596,6 +2637,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Changes:
 - **.github/nightly-logs/01-hardening-coverage.log:** Added CLEAN audit pass entry for 2026-07-21.
 - **.github/nightly-logs/00-pr-history.md:** Prepended Stage 1 PENDING block and completed automated monthly aging pass.
@@ -2609,9 +2651,11 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Verification:
 - **[Automated]:** Verified all tests (`pnpm test`) and project validation (`validate_project.ts`) pass successfully.
 - **[Automated/Audit]:** Completed 100% of codebase threat surface check.
+
 
 
 
@@ -2639,6 +2683,7 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Description
 
 
@@ -2649,7 +2694,9 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Generated by: .github/nightly-prompts/13-self-healing-protocol.md
+
 
 
 
@@ -2677,8 +2724,10 @@ Folded incremental migrations to maintain a clean, zero-touch deployable master 
 
 
 
+
 ### Primary Finding:
 Successfully completed the July 21, 2026 nightly automated self-healing protocol audit pass. Mapped successful stage runs (3, 7, 8, 10, 12) and documented missing/failed runs (1, 2, 4, 6, 11) for today. Analyzed a critical cross-stage coherence bug where concurrent stage execution and shared file writes (`00-pr-history.md`) produce instant git merge conflicts, causing Stage 5 and Stage 9 pull requests to fail auto-merging. Refined Section 3 consecutive no-diff metrics to reflect today's active version synchronization and haptic enhancements.
+
 
 
 
@@ -2693,6 +2742,7 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 - **Section 1:** Added missing-run and failed stages entries for Stage 1, 2, 4, 6, 11 on 2026-07-21.
 - **Section 2:** Added `Concurrent Shared-File Conflicts Leading to Merge Failures (July 21, 2026)` detailing parallel auto-merge limits on `00-pr-history.md`.
 - **Section 3:** Updated no-diff metrics for Stages 10, 8, 6, 12, 7, 3.
+
 
 
 
@@ -2721,6 +2771,7 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 
 
 
+
 ### Description
 
 
@@ -2731,7 +2782,9 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 
 
 
+
 ### Generated by: .github/nightly-prompts/12-apk-ux.md
+
 
 
 
@@ -2755,6 +2808,7 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 
 
 
+
 ### Changes:
 - **[HeadhunterView.vue]:** Applied the `v-tactile` directive to the `.btn-primary` empty-action button.
 
@@ -2767,8 +2821,10 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 
 
 
+
 ### Verification:
 - **[Automated]:** Build and test suite passed cleanly.
+
 
 
 
@@ -2792,12 +2848,14 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 
 
 
+
 ### [2026-07-25] PR #PENDING [Stage 12]: fix(apk-ux): modernize VoyageSetupForm buttons with brokered haptic feedback
 **Domain:** APK UX | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/shared/ui/VoyageSetupForm.vue, Frontend-PWA/src/shared/composables/useVoyageForm.ts, .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/00-pr-history.md
 **Why:** To ensure consistent physical tactile response across the Android WebView shell by utilizing the declarative v-tactile directive.
 **Change:** Applied the v-tactile haptic brokering directive on all interactive buttons in VoyageSetupForm.vue and removed manual, redundant haptics.tap() triggers from useVoyageForm.ts.
 **Result:** 100% hybrid shell interaction parity and unified haptic behavior verified, with zero double-trigger risk and all monorepo checks passing.
+
 
 
 
@@ -2822,12 +2880,14 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 
 
 
+
 ### [2026-07-25] PR #PENDING [Stage 8]: Dependency Management
 **Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
 **Why:** Perform the daily automated package dependency audit and ecosystem safety watchlist research.
 **Change:** Audited monorepo and verified that all external dependencies are fully aligned with the central catalog and updated to their latest Tier 1 versions, and kept the major version watchlist updated.
 **Result:** 100% dependency hygiene and catalog compliance verified, with zero version drift across all packages.
+
 
 
 
@@ -2844,72 +2904,22 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 **Change:** Audited recently modified backend profiler and shared UI components, confirming 100% TSDoc coverage, inline decision logs, threat annotations, and licensing compliance.
 **Result:** 100% compliance across all tested modules and complete alignment with CleanStack ADR without introducing logical mutations.
 
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 8]: chore(deps): bump @ast-grep/cli from 0.44.1 to 0.45.0
-**Domain:** Dependency Management | **Commit:** PENDING | [View PR](PENDING)
-**Files:** pnpm-workspace.yaml, pnpm-lock.yaml, .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Perform the daily automated package patch/minor update audit and ecosystem safety research for Nightly.
-**Change:** Bumped @ast-grep/cli to ^0.45.0 in the central workspace catalog, regenerated the lockfile, and registered Vite 8, TypeScript 7, and Pinia 4 major version tracking.
-**Result:** 100% dependency hygiene and catalog compliance verified with all 1409 monorepo tests passing successfully.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 6]: docs(tsdoc): harden NotificationSettings interface contracts and logic annotations
-**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/features/settings/components/NotificationSettings.vue, .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Reconcile interface contracts and decision comments for NotificationSettings component after hybrid shell ergonomics modernization.
-**Change:** Injected comprehensive component-level, props-level, and computed-level JSDoc/TSDoc specifications, inline decision logs for 48px mobile touch targets, and declarative haptic feedback brokering.
-**Result:** 100% logic intent transparency, contract synchronization, and mobile standards compliance for the modernized settings feature substrate.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 3]: chore(baseline): fold new migrations into master baseline (audit pass)
-**Domain:** Database Schema | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql, .github/nightly-logs/00-pr-history.md
-**Why:** To consolidate schema baseline and certify RLS, search_path isolation, and zero-touch deployment compatibility.
-**Change:** Verified 11 incremental migrations are fully folded in, updated the audited date stamp to 2026-07-24, and recorded the compliance verification results.
-**Result:** 100% compliance across all 28 database tables and 95 functions with absolute schema, security, and formatting alignment.
-
-
-
-
-
-
-
-
-
-
-### [2026-07-24] PR #PENDING [Stage 1]: fix(harden): secure profiler telemetry logging
-**Domain:** Security | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/functions/headhunter-scanner/stages/profiler.ts, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** Standard info-level telemetry trace messages inside the headhunter-scanner profiler were incorrectly logged to stderr using console.error, polluting system telemetry with false-positive alerts.
-**Change:** Refactored post-ingestion fate-check tracing statements to use console.log, strictly reserving console.error for actual database and runtime errors.
-**Result:** Improved logging hygiene and prevented false-positive severity-based alert triggers on cloud telemetry streams.
-
 ## T2 -- Recent (8-30 days)
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-24] PR #PENDING [APK Optimization]: chore(apk-optimization): no optimization required (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Verification]: test(verify): assert NotificationSettings user interaction and badge outputs (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Pipeline]: chore(pipeline): update self-healing protocol -- July 24, 2026 daily audit (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Shared UI]: fix(apk-ux): modernize SelectionFab haptic interaction model and touch inputs (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Refactor]: chore(refactor): no action required (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Version Integrity]: chore(version): no drift found (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Documentation/README]: docs(readme): reconcile backend scanner telemetry and frontend core/settings drift (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Core & Features]: perf(opt): standardize variable naming for domain clarity and audit substrate hygiene (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Dependency Management]: chore(deps): bump @ast-grep/cli from 0.44.1 to 0.45.0 (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [TSDoc]: docs(tsdoc): harden NotificationSettings interface contracts and logic annotations (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Database Schema]: chore(baseline): fold new migrations into master baseline (audit pass) (``PENDING``) [View](PENDING)
+* [2026-07-24] PR #PENDING [Security]: fix(harden): secure profiler telemetry logging (``PENDING``) [View](PENDING)
 * [2026-07-23] PR #PENDING [Shared UI]: fix(apk-ux): modernize Notification Engine mobile touch targets and haptic interactions (``PENDING``) [View](PENDING)
 * [2026-07-23] PR #PENDING [Refactor]: chore(refactor): no action required (``PENDING``) [View](PENDING)
 * [2026-07-23] PR #PENDING [Documentation/README]: docs(readme): reconcile realtime subscriptions and error callback parameter renaming (``PENDING``) [View](PENDING)
@@ -3094,33 +3104,23 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-07-02] PR #992 [General]: Standardize Variable Naming for Domain Clarity (``bd8edd6``) [View](https://github.com/AlbiDR/Clash-Manager/pull/992)
 * [2026-07-02] PR #991 [README]: docs(readme): reconcile monorepo architecture and theme drift (``a32d021``) [View](https://github.com/AlbiDR/Clash-Manager/pull/991)
 * [2026-07-02] PR #990 [Dependencies]: chore(deps): Stage 8 Dependency Audit - July 2026 (``d4280fa``) [View](https://github.com/AlbiDR/Clash-Manager/pull/990)
-* [2026-07-01] PR #989 [APK UX]: fix(apk-ux): modernize VoyageSetupForm actions with tactile feedback (``68230b0``) [View](https://github.com/AlbiDR/Clash-Manager/pull/989)
-* [2026-07-01] PR #988 [APK Optimization]: perf(apk-optimization): prune redundant AppCompat and legacy resources (``e23c7d8``) [View](https://github.com/AlbiDR/Clash-Manager/pull/988)
-* [2026-07-01] PR #987 [APK Integrity]: chore(apk-integrity): update audit log for July 3, 2026 (``27c7df2``) [View](https://github.com/AlbiDR/Clash-Manager/pull/987)
-* [2026-07-01] PR #986 [Dependencies]: chore(deps): Stage 8 Dependency Audit - Tier 1 Updates and Watchlist Reconciler (``5aa2831``) [View](https://github.com/AlbiDR/Clash-Manager/pull/986)
-* [2026-07-01] PR #985 [Version Integrity]: fix(version): reconcile version drift in valibot substrate (``e3f134c``) [View](https://github.com/AlbiDR/Clash-Manager/pull/985)
-* [2026-07-01] PR #984 [TSDoc]: docs(tsdoc): document core app and offline schemas (``51f50d6``) [View](https://github.com/AlbiDR/Clash-Manager/pull/984)
-* [2026-07-01] PR #983 [README]: docs(readme): reconcile architecture drift across core and backend (``f022036``) [View](https://github.com/AlbiDR/Clash-Manager/pull/983)
-* [2026-07-01] PR #982 [Performance]: perf(opt): standardize variable naming and audit substrate hygiene (``2bddbea``) [View](https://github.com/AlbiDR/Clash-Manager/pull/982)
-* [2026-07-01] PR #981 [Baseline]: chore(baseline): fold new migrations into master baseline (``c48d190``) [View](https://github.com/AlbiDR/Clash-Manager/pull/981)
-* [2026-07-01] PR #980 [Verification]: test(verify): add specs for MaintenanceSchemas (``387644e``) [View](https://github.com/AlbiDR/Clash-Manager/pull/980)
-* [2026-07-01] PR #979 [Hardening]: fix(harden): secure voyage api boundary and state lifecycle (``61ab03d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/979)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W27
-* 2 PRs [APK Integrity]: #968, #976
-* 2 PRs [APK Optimization]: #969, #977
-* 1 PRs [APK UX]: #978
-* 1 PRs [Baseline]: #962
-* 2 PRs [Dependencies]: #966, #975
-* 2 PRs [Hardening]: #960, #970
-* 2 PRs [README]: #963, #972
+* 3 PRs [APK Integrity]: #968, #976, #987
+* 3 PRs [APK Optimization]: #969, #977, #988
+* 2 PRs [APK UX]: #978, #989
+* 2 PRs [Baseline]: #962, #981
+* 3 PRs [Dependencies]: #966, #975, #986
+* 3 PRs [Hardening]: #960, #970, #979
+* 1 PRs [Performance]: #982
+* 3 PRs [README]: #963, #972, #983
 * 2 PRs [Refactor/Optimization]: #967, #971
-* 2 PRs [TSDoc]: #964, #973
-* 1 PRs [Verification]: #961
-* 2 PRs [Version Integrity]: #965, #974
+* 3 PRs [TSDoc]: #964, #973, #984
+* 2 PRs [Verification]: #961, #980
+* 3 PRs [Version Integrity]: #965, #974, #985
 
 #### 2026-W26
 * 6 PRs [APK Integrity]: #900, #918, #929, #937, #947, #958
