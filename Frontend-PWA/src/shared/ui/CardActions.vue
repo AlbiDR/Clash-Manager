@@ -66,6 +66,7 @@ function handleOpenInGame() {
           :height="iconSize"
           alt="RoyaleAPI"
           class="royaleapi-logo"
+          loading="lazy"
         />
         <span>RoyaleAPI</span>
       </button>
