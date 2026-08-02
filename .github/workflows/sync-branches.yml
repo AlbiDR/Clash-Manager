@@ -148,6 +148,51 @@ jobs:
             echo "Beta baseline: FAIL" >> $GITHUB_STEP_SUMMARY
           fi
 
+      - name: Normalise APK release slot (pre-merge)
+        run: |
+          git fetch origin
+
+          # ----------------------------------------------------------------
+          # A rename/rename conflict arises when both branches independently
+          # rename the same base APK blob to different filenames. Git cannot
+          # auto-resolve this class of conflict, even with -X theirs.
+          #
+          # Prevention: before the merge, replace every versioned APK in the
+          # working tree (Beta checkout) with the authoritative file from
+          # Nightly, then commit. Both sides of the merge now reference the
+          # same filename, so no structural conflict can arise.
+          # ----------------------------------------------------------------
+          NIGHTLY_APK=$(git ls-tree origin/Nightly APK/release/ \
+            | awk '{print $4}' \
+            | grep 'clashmanager-v.*\.apk$')
+
+          if [ -n "$NIGHTLY_APK" ]; then
+            NIGHTLY_BASENAME=$(basename "$NIGHTLY_APK")
+
+            # Remove every versioned release APK that is not the Nightly one.
+            git ls-files APK/release/ | grep 'clashmanager-v.*\.apk$' | while read -r OLD; do
+              OLD_BASENAME=$(basename "$OLD")
+              if [ "$OLD_BASENAME" != "$NIGHTLY_BASENAME" ]; then
+                git rm --cached --force "$OLD" 2>/dev/null || true
+                rm -f "$OLD"
+              fi
+            done
+
+            # Write the Nightly APK into place if it is not already present.
+            if [ ! -f "APK/release/$NIGHTLY_BASENAME" ]; then
+              git show "origin/Nightly:$NIGHTLY_APK" > "APK/release/$NIGHTLY_BASENAME"
+              git add "APK/release/$NIGHTLY_BASENAME"
+            fi
+
+            # Also align latest.json so it agrees with the incoming APK.
+            git show origin/Nightly:APK/release/latest.json > APK/release/latest.json
+            git add APK/release/latest.json
+
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(sync): pre-align APK release slot to Nightly before merge [skip ci]"
+            fi
+          fi
+
       - name: Merge Nightly into Beta
         id: merge
         run: |
@@ -348,12 +393,50 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
+      - name: Normalise APK release slot (pre-merge)
+        run: |
+          git fetch origin
+          git checkout Nightly
+          git pull origin Nightly
+
+          # ----------------------------------------------------------------
+          # Mirror of the normalisation in Job 1. Here Beta is the
+          # authoritative source flowing downstream into Nightly.
+          # ----------------------------------------------------------------
+          BETA_APK=$(git ls-tree origin/Beta APK/release/ \
+            | awk '{print $4}' \
+            | grep 'clashmanager-v.*\.apk$')
+
+          if [ -n "$BETA_APK" ]; then
+            BETA_BASENAME=$(basename "$BETA_APK")
+
+            git ls-files APK/release/ | grep 'clashmanager-v.*\.apk$' | while read -r OLD; do
+              OLD_BASENAME=$(basename "$OLD")
+              if [ "$OLD_BASENAME" != "$BETA_BASENAME" ]; then
+                git rm --cached --force "$OLD" 2>/dev/null || true
+                rm -f "$OLD"
+              fi
+            done
+
+            if [ ! -f "APK/release/$BETA_BASENAME" ]; then
+              git show "origin/Beta:$BETA_APK" > "APK/release/$BETA_BASENAME"
+              git add "APK/release/$BETA_BASENAME"
+            fi
+
+            git show origin/Beta:APK/release/latest.json > APK/release/latest.json
+            git add APK/release/latest.json
+
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(sync): pre-align APK release slot to Beta before merge [skip ci]"
+            fi
+          fi
+
       - name: Merge Beta into Nightly
         run: |
           git checkout Nightly
           git pull origin Nightly
           # Code flowing in was already verified by the Air Gap Guard in
-          # JOB 1 (Nightly → Beta). A second test run here would be
+          # JOB 1 (Nightly -> Beta). A second test run here would be
           # redundant by transitivity.
           git merge origin/Beta -X theirs --no-edit
           git push origin Nightly
