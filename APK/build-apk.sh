@@ -41,11 +41,11 @@ rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}/classes"
 mkdir -p "${TMP_DIR}/dex"
 
-# Compile clean Java source tree
-javac -bootclasspath "${ANDROID_JAR}" -cp "${CP_LIBS}" -source 8 -target 8 -d "${TMP_DIR}/classes" "${SRC_DIR}/com/albidr/clashmanager/"*.java
+# Compile clean Java source tree without debug information for minification
+javac -bootclasspath "${ANDROID_JAR}" -cp "${CP_LIBS}" -source 8 -target 8 -g:none -d "${TMP_DIR}/classes" "${SRC_DIR}/com/albidr/clashmanager/"*.java
 
-# Convert compiled classes to Dalvik DEX format using d8
-"${BT}/d8" $(find "${TMP_DIR}/classes" -name "*.class") --lib "${ANDROID_JAR}" --output "${TMP_DIR}/dex/"
+# Convert compiled classes to Dalvik DEX format using d8 with --release flag
+"${BT}/d8" --release $(find "${TMP_DIR}/classes" -name "*.class") --lib "${ANDROID_JAR}" --output "${TMP_DIR}/dex/"
 
 # Wrap classes.dex in a temporary zip so apktool can decode it
 echo "▶ Disassembling compiled classes to smali..."
