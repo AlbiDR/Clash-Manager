@@ -90,7 +90,7 @@ beforeEach(() => {
 
 describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
     it("does NOT call sync_recruits when sync_players fails, and records the failure", async () => {
-        rpcResponses.get_ingestion_targets = { data: { members: [], recruits: ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
         rpcResponses.ingest_player_battles = { data: null, error: null };
         rpcResponses.sync_players = { data: null, error: { message: "players FK violation" } };
 
@@ -117,7 +117,7 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
     });
 
     it("DOES call sync_recruits when sync_players succeeds, and reports success", async () => {
-        rpcResponses.get_ingestion_targets = { data: { members: [], recruits: ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
         rpcResponses.ingest_player_battles = { data: null, error: null };
         rpcResponses.sync_players = { data: null, error: null };
         rpcResponses.sync_recruits = { data: null, error: null };
@@ -146,7 +146,7 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
     });
 
     it("reports failure (not unconditional success) when sync_players succeeds but sync_recruits fails", async () => {
-        rpcResponses.get_ingestion_targets = { data: { members: [], recruits: ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
         rpcResponses.ingest_player_battles = { data: null, error: null };
         rpcResponses.sync_players = { data: null, error: null };
         rpcResponses.sync_recruits = { data: null, error: { message: "recruits upsert failed" } };
@@ -168,7 +168,7 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
     });
 
     it("reports success when there are no shadow leads to synchronize (no clanless opponents observed)", async () => {
-        rpcResponses.get_ingestion_targets = { data: { members: [], recruits: ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
         rpcResponses.ingest_player_battles = { data: null, error: null };
 
         // Opponent has a clan tag, so it is never harvested as a shadow lead;
@@ -207,7 +207,7 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
     });
 
     it("logs an RPC error for ingest_player_battles without aborting the shadow-lead harvest for other targets", async () => {
-        rpcResponses.get_ingestion_targets = { data: { members: [], recruits: ["#RECRUIT1", "#RECRUIT2"] }, error: null };
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1", "#RECRUIT2"] }, error: null };
         rpcResponses.ingest_player_battles = { data: null, error: { message: "battles ingest failed" } };
         rpcResponses.sync_players = { data: null, error: null };
         rpcResponses.sync_recruits = { data: null, error: null };
@@ -236,7 +236,7 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
     });
 
     it("reports a dead recruit via report_dead_recruit on a 404 and logs failure if that RPC errors", async () => {
-        rpcResponses.get_ingestion_targets = { data: { members: [], recruits: ["#GHOST1"] }, error: null };
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#GHOST1"] }, error: null };
         rpcResponses.report_dead_recruit = { data: null, error: { message: "purge failed" } };
 
         mockFetchWithRotation.mockResolvedValue({
