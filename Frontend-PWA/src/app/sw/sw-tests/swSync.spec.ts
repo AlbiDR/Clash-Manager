@@ -167,6 +167,7 @@ describe("swSync", () => {
         headers: {
           "apikey": mockSupabaseKey,
           "Accept-Profile": "features",
+          "Cache-Control": "no-cache",
         },
       }));
 

@@ -1,13 +1,37 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
+
 <script setup lang="ts">
+/**
+ * [FEATURE] USEFUL LINKS SETTINGS
+ * ----------------------------------------------------------------------------
+ * Rationale: Dynamic links portal for official Supercell and Clash Royale resources.
+ * Layer: @features/settings
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Displays a list of external resources with locale-aware URLs matching the user's
+ * active language. In non-native environments, it dynamically appends an Android
+ * app download link, resolving the latest release filename from GitHub API on mount.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 3 (@features)
+ * - **Imports:** Consumes Layer 1 (@core) utilities and Layer 2 (@shared) UI elements.
+ * - **Design Pattern:** Delegated interaction using the `v-tactile` directive on
+ *   buttons and `useExternalLink` for robust external browsing.
+ */
 import { computed, onMounted, ref } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { useExternalLink, getSupercellLocale, appVersion } from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 
-defineProps<{
+const props = defineProps<{
+  /**
+   * Whether the links card should be initially expanded in the settings view.
+   *
+   * @defaultValue false
+   */
   initiallyExpanded?: boolean;
 }>();
 
@@ -15,10 +39,19 @@ const { isRefreshing } = useSettings();
 const { openExternal } = useExternalLink();
 const { isNativeWrapper } = useNativeBridge();
 
-// APK/release/latest.json carries a `+<buildNumber>` suffix the plain
-// `clashmanager-v<version>.apk` guess can no longer find. Resolved once at mount;
-// the unsuffixed guess below is the fallback if the fetch fails.
+/**
+ * Dynamic Android App installer filename resolved from the GitHub release metadata.
+ * Defaults to the standard unsuffixed version filename before resolution.
+ */
 const apkFilename = ref(`clashmanager-v${appVersion}.apk`);
+
+/**
+ * Fetches the latest release filename from GitHub API during component mounting.
+ * Fallback to the default un-suffixed filename on network failure or abort timeout.
+ *
+ * @sideeffects
+ * - Initiates an asynchronous HTTP GET request to the Beta release repository.
+ */
 onMounted(async () => {
   try {
     const controller = new AbortController();
@@ -36,8 +69,17 @@ onMounted(async () => {
   }
 });
 
-// Locale-aware: Supercell URLs include a locale segment that must match the
-// user's browser language. Resolved once at mount via getSupercellLocale().
+/**
+ * Locale-aware links array including royaleapi blogs, giveaways, supercell stores, and app download.
+ *
+ * @remarks
+ * Links are dynamically transformed with Supercell-compliant locale codes resolved
+ * from browser environment settings via `getSupercellLocale()`.
+ *
+ * [DECISION LOG]: Locale segment is resolved dynamically once at mount/compute.
+ * In addition, the Download Android App link is selectively appended only when
+ * `isNativeWrapper` is false, ensuring native context consistency.
+ */
 const usefulLinks = computed(() => {
   const locale = getSupercellLocale();
   const links = [
@@ -105,7 +147,15 @@ const usefulLinks = computed(() => {
           <span class="link-label">{{ link.label }}</span>
           <span class="link-desc">{{ link.desc }}</span>
         </div>
-        <img v-if="link.logo" :src="link.logo" class="link-logo" :alt="link.label" />
+        <img
+          v-if="link.logo"
+          :src="link.logo"
+          class="link-logo"
+          :alt="link.label"
+          width="18"
+          height="18"
+          loading="lazy"
+        />
         <Icon v-else-if="link.icon" :name="link.icon" size="18" class="link-icon" />
       </button>
     </div>

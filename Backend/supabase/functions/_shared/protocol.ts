@@ -100,6 +100,11 @@ interface RateLimitBucket {
     windowMs: number;
 }
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] In-memory rate limiting state is transient and will reset on cold start.
+// [DECISION LOG] State is stored in-memory per worker isolate for latency optimization.
+// Since Supabase Edge Functions spin up and down dynamically, memory is isolated per worker instance.
+// This is an accepted tradeoff per ADR KISS/YAGNI to avoid high latency of shared stores.
 const rateLimitBuckets = new Map<string, RateLimitBucket>();
 
 /**
