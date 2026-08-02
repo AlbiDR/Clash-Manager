@@ -31,7 +31,7 @@
  * - 20260801010000_recruit_win_rate_backfill.sql
  * - 20260801020000_blacklist_win_rate_snapshot.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-08-01):
+ * Architectural Compliance Verification Log (Audited: 2026-08-02):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all 95 plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
