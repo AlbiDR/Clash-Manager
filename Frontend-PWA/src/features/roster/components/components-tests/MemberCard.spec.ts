@@ -199,4 +199,22 @@ describe("MemberCard.vue", () => {
     await baseCard.vm.$emit("toggle-select");
     expect(wrapper.emitted("toggle-select")).toBeTruthy();
   });
+
+  it("caps the displayed win rate at 100% if props.member.d.winRate is greater than 1.0", () => {
+    const inflatedMember = {
+      ...mockMember,
+      d: {
+        ...mockMember.d,
+        winRate: 1.50, // 150%
+      },
+    };
+
+    const wrapper = mountMemberCard({ member: inflatedMember, expanded: true });
+
+    const grids = wrapper.findAll(".stats-grid");
+    const lifetimeTiles = grids[1].findAllComponents({ name: "StatisticItem" });
+    const winRateItem = lifetimeTiles.find(item => item.props("label") === "Win Rate");
+    expect(winRateItem).toBeDefined();
+    expect(winRateItem!.props("value")).toBe("100%");
+  });
 });
