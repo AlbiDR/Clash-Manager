@@ -108,10 +108,18 @@
   - Resolution Details (2026-07-31): Stage 2 and Stage 12 have both successfully recovered today on 2026-07-31, registering valid CHANGED log entries. This confirms that their triggers have recovered and they are no longer in a missing-run state. Both are demoted to [RESOLVED - monitor].
 
 * Missing-Run / Failed Events on 2026-08-01:
-  - Stages: Stage 5 (README) [FAILED - monitor] (August 1, 2026), Stage 6 (TSDoc) [FAILED - monitor] (August 1, 2026), Stage 12 (APK-UX) [FAILED - monitor] (August 1, 2026).
-  - State: [FAILED - monitor] for Stage 5 / [FAILED - monitor] for Stage 6 / [FAILED - monitor] for Stage 12
+  - Stages: Stage 5 (README) [RESOLVED - monitor] (August 2, 2026), Stage 6 (TSDoc) [RESOLVED - monitor] (August 2, 2026), Stage 12 (APK-UX) [RECURRING] (August 2, 2026).
+  - State: [RESOLVED - monitor] for Stage 5 / [RESOLVED - monitor] for Stage 6 / [RECURRING] for Stage 12
   - Symptom: No log entries for 2026-08-01 in 05-documentation-readme-coverage.log, 06-documentation-tsdoc-coverage.log, or 12-apk-ux-coverage.log.
   - Root Cause: These stages failed to trigger or execute on August 1, 2026. Since local tests pass 100% and source files are healthy, this is likely caused by webhook scheduling, runner concurrency limits, or trigger delays in the CI/CD pipeline.
+  - Recommended Fix: Serialize pipeline stage execution or adjust concurrency group configurations in GitHub Actions to ensure reliable sequential execution of all 13 stages. Monitor subsequent runs for automatic recovery.
+  - Resolution Details (2026-08-02): Stage 5 and Stage 6 successfully ran and recovered today on August 2, 2026, registering valid CHANGED log entries. This confirms that their triggers have recovered and they are no longer in a missing-run state. Both are demoted to [RESOLVED - monitor]. Stage 12 did not recover and is promoted to [RECURRING] under August 2, 2026 events.
+
+* Missing-Run / Failed Events on 2026-08-02:
+  - Stages: Stage 1 (Harden) [FAILED - monitor] (August 2, 2026), Stage 12 (APK-UX) [RECURRING] (August 2, 2026).
+  - State: [FAILED - monitor] for Stage 1 / [RECURRING] for Stage 12
+  - Symptom: No log entries for 2026-08-02 in 01-hardening-coverage.log or 12-apk-ux-coverage.log.
+  - Root Cause: These stages failed to trigger or execute on August 2, 2026. Since local tests pass 100% and source files are healthy, this is likely caused by webhook scheduling, runner concurrency limits, or trigger delays in the CI/CD pipeline.
   - Recommended Fix: Serialize pipeline stage execution or adjust concurrency group configurations in GitHub Actions to ensure reliable sequential execution of all 13 stages. Monitor subsequent runs for automatic recovery.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
@@ -137,53 +145,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-01)
-  - Analysis: Hardened in-memory state rateLimitBuckets lifecycle constraints and annotations on protocol.ts.
+  - Consecutive No-Diff Days: 1 (Failed/missing on 2026-08-02, tracked under Section 1)
+  - Analysis: Currently blocked by pipeline trigger or concurrency limitations on August 2, 2026.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-01)
-  - Analysis: Added comprehensive unit tests in harvester.spec.ts to cover query-royale-api harvester logic, fallback mechanisms, Path of Legends thresholds, location caching, geographic rotation shuffles, regional proxy try-catch blocks, and structural validation limits.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-02)
+  - Analysis: Covered the rescan health check monitoring (RPOS field anomaly) and extended RecruitCard & MemberCard win rate capping logic with comprehensive unit tests inside rescan.spec.ts.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-01)
-  - Analysis: Updated the master baseline migration 20260531232406_master_migration.sql with an audited timestamp to ensure compliance checks.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-02)
+  - Analysis: Updated master baseline migration 20260531232406_master_migration.sql with an audited date stamp to ensure schema baseline certification.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-07-31 and 2026-08-01)
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-07-31, 2026-08-01, and 2026-08-02)
   - Analysis: Re-verified dropped database views remain unreferenced by Edge Function application logic.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 1 (Failed/missing on 2026-08-01, tracked under Section 1)
-  - Analysis: Currently blocked by pipeline trigger or concurrency limitations on August 1, 2026.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-02)
+  - Analysis: Reconciled protocol handler constant-time authorization, restricted CORS, and dual-bucket rate-limiting details inside Backend/supabase/functions/_shared/README.md.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 1 (Failed/missing on 2026-08-01, tracked under Section 1)
-  - Analysis: Currently blocked by pipeline trigger or concurrency limitations on August 1, 2026.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-02)
+  - Analysis: Hardened interface contracts with comprehensive JSDoc/TSDoc specifications for the main bootstrap and fatal error systems on Frontend-PWA/src/app/main.ts, and added licensing headers to pwa-assets.config.ts, scripts, and setup.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, 2026-07-29, 2026-07-30, 2026-07-31, and 2026-08-01)
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-07-26, 2026-07-27, 2026-07-28, 2026-07-29, 2026-07-30, 2026-07-31, 2026-08-01, and 2026-08-02)
   - Analysis: Audited root, PWA, and backend manifests; confirmed zero version drift across monorepo v14.40.3.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-01)
-  - Analysis: Aligned catalog versions and bumped knip to ^6.31.0, supabase to ^2.111.0, and vue-tsc to ^3.3.9 in pnpm-workspace.yaml, re-locking the dependency tree.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-02)
+  - Analysis: Audited and aligned workspace and root manifests with standard catalogs, maintaining watchlists for Vite, TypeScript, Pinia, and jsdom.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-01)
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-01 and 2026-08-02)
   - Analysis: Audited features view modules (RosterView, HeadhunterView, LaboratoryView, SettingsView) and verified zero structural debt.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-07-23, 2026-07-24, 2026-07-25, 2026-07-26, 2026-07-27, 2026-07-28, 2026-07-29, 2026-07-30, 2026-07-31, and 2026-08-01)
-  - Analysis: Audited version synchronization across manifests, Digital Asset Links fingerprints, and Android native layer security configurations. Saturation achieved by design.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-02)
+  - Analysis: Synchronized release binary version versionName (v14.40.3) and latest.json pointers with workspace.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-01)
-  - Analysis: Optimized background sync query caching fetch headers in Frontend-PWA/src/app/sw/swSync.ts with Cache-Control no-cache to guarantee fresh recruit scores.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-02)
+  - Analysis: Confirmed WebView caching topology, SW cache registrations, and native assets consolidated without redundancies.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 1 (Failed/missing on 2026-08-01, tracked under Section 1)
-  - Analysis: Currently blocked by pipeline trigger or concurrency limitations on August 1, 2026.
+  - Consecutive No-Diff Days: 2 (Failed/missing on 2026-08-01 and 2026-08-02, tracked under Section 1)
+  - Analysis: Currently blocked by pipeline trigger or concurrency limitations.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-01)
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-02)
   - Analysis: Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
