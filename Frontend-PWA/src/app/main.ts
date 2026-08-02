@@ -28,6 +28,24 @@ import router from "./router";
 
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
+
+/**
+ * Renders a full-screen, system-critical error dialog if the application
+ * fails to bootstrap before mounting the primary Vue instance.
+ *
+ * @remarks
+ * **Design Decisions:**
+ * - Directly mutates the raw `#app` innerHTML to bypass the Vue rendering engine,
+ *   which is likely unmounted or crashed during a boot failure.
+ * - Provides actionable recovery pathways, including a soft manual refresh or
+ *   a complete, hard factory reset of client-side storage keys.
+ *
+ * @param error - The untrusted thrown exception or error object driving the failure.
+ *
+ * @sideeffects
+ * - Mutates DOM state on the `#app` element.
+ * - Calls `console.error` to print the untrusted boot error.
+ */
 function showFatalError(error: unknown) {
   console.error("FATAL ERROR:", error);
   // If the app hasn't mounted, we should probably show something on screen
@@ -71,6 +89,32 @@ function showFatalError(error: unknown) {
 
 // ... global error handlers ...
 
+/**
+ * Primary Application Bootstrapper (Layer 4 Entry Point)
+ * ----------------------------------------------------------------------------
+ * Rationale: Sequentially initializes, configures, and mounts the Vue PWA client,
+ * ensuring strict layering, lazy data layer hydration, and PWA capability binding.
+ *
+ * @remarks
+ * **Bootstrap Sequence:**
+ * 1. Validates environment configurations (Supabase URL).
+ * 2. Initializes critical Layer 1 settings and theme configurations.
+ * 3. Builds and configures the core Vue app, Pinia instance, and Experimental Router.
+ * 4. Injects global aggregated CSS style tokens into the DOM head.
+ * 5. Mounts the primary Vue shell layout.
+ * 6. Defer-loads the heavy `@core` data layer to avoid LCP / blocking overhead.
+ * 7. Performs background service worker update checks and registers WebAPK Periodic Sync.
+ *
+ * **Satisfaction:**
+ * - **Satisfies ADR Section II:** Layer 4 App orchestration.
+ * - **Satisfies ADR Section IV:** Resilient background synchronization.
+ *
+ * @throws Error - Aborts the bootstrap lifecycle if critical credentials (such as VITE_SUPABASE_URL) are missing.
+ *
+ * @sideeffects
+ * - Initializes long-running background watchers, global listeners, and network timers.
+ * - Spawns service worker background synchronizers and registers WebAPK sync targets.
+ */
 async function bootstrap() {
   try {
     // Fix 11: Config Validation

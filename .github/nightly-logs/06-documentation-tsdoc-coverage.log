@@ -65,3 +65,8 @@
 * [2026-07-29] [Stage 6] CHANGED: Frontend-PWA/src/app/router/index.ts -- Hardened interface contracts and logic annotations. Added complete JSDoc blocks for saveScrollPosition and getSavedScroll, and embedded detailed inline decision logs and threat annotations for scroll state preservation, View Transitions routing promises, and dynamic chunk loading error recovery.
 * [2026-07-30] [Stage 6] CHANGED: Backend/supabase/functions/query-royale-api/harvester.ts -- Hardened interface contracts with comprehensive TSDoc specifications and injected detailed inline decision logs and threat annotations.
 * [2026-07-31] [Stage 6] CHANGED: Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue -- Hardened interface contracts and logic annotations. Added component-level, props-level, computed-level JSDoc/TSDoc specifications, inline decision logs for locale resolution, fallback mechanisms, and standardized license headers.
+* [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/src/app/main.ts -- Hardened interface contracts with comprehensive TSDoc/JSDoc specifications for the main bootstrap and fatal error systems, and embedded detailed inline decision logs.
+* [2026-08-02] [Stage 6] CHANGED: Backend/supabase/database.types.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
+* [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/pwa-assets.config.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
+* [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/scripts/synthesize_entry.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
+* [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/vitest.setup.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
