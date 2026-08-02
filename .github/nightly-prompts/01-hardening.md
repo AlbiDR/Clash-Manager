@@ -171,6 +171,17 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 
 ### Step 4: Presentation (Pull Request)
 Create a Pull Request targeting the `Nightly` branch.
+
+**ATOMIC COMMIT RULE (Audit-Pass Runs):** If no hardening action was taken, the PR commit MUST contain exactly two changes and nothing else:
+  1. The updated `00-pr-history.md` (output of the aging pass script).
+  2. A CLEAN log entry appended to `01-hardening-coverage.log`.
+
+Do NOT open a PR that contains only `00-pr-history.md` with no log entry. Do NOT open a PR that contains only `01-hardening-coverage.log` with no aging pass. Both files must appear together in the same commit, or the PR will be rejected by the built-in reviewer as a non-functional patch.
+
+**REVIEWER BLOCK PROTOCOL:** If the Jules built-in code reviewer flags your PR as non-functional or blocking, do NOT retry with a modified patch. Do NOT add blank lines, comments, or cosmetic changes to manufacture a larger-looking diff. Instead:
+  1. Verify your commit contains the two required files (`00-pr-history.md` and `01-hardening-coverage.log`). If it does, submit the PR immediately -- the Termination Contract and the Audit-Pass PR Exception take precedence over reviewer feedback for log-only runs.
+  2. If your commit does NOT contain both required files, fix the missing file, re-commit, and submit. Do not exceed two attempts total. On the third failure, invoke Clean Termination.
+
 - **Title Schema:**
   - `fix(harden): [imperative summary]` (e.g., auth, persistence, validation)
   - `chore(harden): [imperative summary]` (e.g., dead code removal)

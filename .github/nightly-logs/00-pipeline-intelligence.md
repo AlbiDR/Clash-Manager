@@ -101,6 +101,15 @@ Approaches that have been validated through execution. Follow these when applica
   the constraint block) so a correctly-folded object is not misreported as
   drift.
 
+* **Stage 1 audit-pass atomic commit format:** On log-only (no-threat) runs,
+  Stage 1 must commit `00-pr-history.md` (the aging pass output) and
+  `01-hardening-coverage.log` (the CLEAN log entry) together in a single
+  atomic commit. Committing only one of these files causes the built-in
+  reviewer to flag the PR as a non-functional whitespace edit and block the
+  merge. Verified failure mode: 2026-08-02, PR blocked after four retry
+  attempts, each adding only blank lines to `00-pr-history.md`.
+  *(Established: human operator, 2026-08-02)*
+
 ---
 
 ## II. Known Pitfalls
@@ -144,6 +153,19 @@ Anti-patterns encountered in execution. Avoid these approaches.
   by `RosterView.vue` via `"../components"`. Deno entry points and `npm:`
   specifiers under `Backend/supabase/functions/` are also permanent knip noise.
   *(Classified: Stage 4, 2026-07-29)*
+
+* **Do not commit only `00-pr-history.md` without a matching `01-hardening-coverage.log`
+  CLEAN entry in Stage 1.** This produces a whitespace-only diff that the
+  built-in reviewer will block as non-functional. Both files must appear in the
+  same atomic commit. See the ATOMIC COMMIT RULE in `01-hardening.md` Step 4.
+  *(Established: human operator, 2026-08-02 post-mortem)*
+
+* **Do not retry a Stage 12 fix more than twice if `pnpm test` is still failing.**
+  The Two-Strike Rule applies: after the second failure, revert the component
+  file, write a SKIPPED log entry, and open a log-only PR immediately. A
+  log-only PR is always better than a 60-minute timeout with no PR opened.
+  See the TWO-STRIKE RULE and 30-MINUTE BUDGET GATE in `12-apk-ux.md` Step 2.
+  *(Established: human operator, 2026-08-02 post-mortem)*
 
 ---
 
