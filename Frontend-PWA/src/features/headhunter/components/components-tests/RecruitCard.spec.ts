@@ -150,4 +150,21 @@ describe("RecruitCard.vue", () => {
     await baseCard.vm.$emit("toggle-select");
     expect(wrapper.emitted("toggle-select")).toBeTruthy();
   });
+
+  it("caps the displayed win rate at 100% if props.recruit.d.winRate is greater than 1.0", () => {
+    const inflatedRecruit = {
+      ...mockRecruit,
+      d: {
+        ...mockRecruit.d,
+        winRate: 1.25, // 125%
+      },
+    };
+
+    const wrapper = mountRecruitCard({ recruit: inflatedRecruit, expanded: true });
+
+    const statItems = wrapper.findAllComponents({ name: "StatisticItem" });
+    const winRateItem = statItems.find(item => item.props("label") === "Win Rate");
+    expect(winRateItem).toBeDefined();
+    expect(winRateItem!.props("value")).toBe("100%");
+  });
 });

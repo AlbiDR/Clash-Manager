@@ -146,4 +146,115 @@ describe("runRescan recruit persistence wiring", () => {
         const syncCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "sync_recruits");
         expect(syncCall).toBeUndefined();
     });
+
+    describe("RPOS field anomaly detection", () => {
+        it("triggers anomaly warning and logAudit error when >= 10 profiles are processed and all have 0% win rate despite positive raw scores", async () => {
+            // Setup 10 stale recruits
+            const staleRecruits = Array.from({ length: 10 }, (_, i) => ({ player_tag: `#STALE_${i}` }));
+            rpcResponses.get_stale_recruits = { data: staleRecruits, error: null };
+
+            // Fetch returns profiles with wins = 0 and threeCrownWins = 0 (so win_rate = 0), but positive trophies/donations (so positive raw score)
+            mockFetchWithRotation.mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    ...staleProfile,
+                    wins: 0,
+                    threeCrownWins: 0,
+                    totalDonations: 1000,
+                }),
+            });
+
+            const stats = freshStats();
+            const logAuditSpy = vi.fn();
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+            await runRescan(new Set(), 6000, stats, logAuditSpy);
+
+            // Expect anomaly logged
+            const anomalyAudit = logAuditSpy.mock.calls.find(
+                ([_stage, action, details]: [string, string, any]) =>
+                    action === "integrity_checked" && details?.details?.includes("rpos_field_anomaly")
+            );
+            expect(anomalyAudit).toBeDefined();
+            expect(anomalyAudit![2]).toEqual({
+                passed: false,
+                details: "rpos_field_anomaly: all rescanned profiles returned 0% win rate with positive raw scores",
+            });
+
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                expect.stringContaining("RPOS FIELD ANOMALY")
+            );
+
+            consoleWarnSpy.mockRestore();
+        });
+
+        it("does NOT trigger anomaly warning or logAudit error when >= 10 profiles are processed but not all have 0% win rate", async () => {
+            const staleRecruits = Array.from({ length: 10 }, (_, i) => ({ player_tag: `#STALE_${i}` }));
+            rpcResponses.get_stale_recruits = { data: staleRecruits, error: null };
+
+            // First profile has non-zero win rate, others have 0%
+            let fetchCount = 0;
+            mockFetchWithRotation.mockImplementation(async () => {
+                const profile = {
+                    ...staleProfile,
+                    wins: fetchCount === 0 ? 500 : 0,
+                    threeCrownWins: 0,
+                    totalDonations: 1000,
+                };
+                fetchCount++;
+                return {
+                    ok: true,
+                    status: 200,
+                    json: async () => profile,
+                };
+            });
+
+            const stats = freshStats();
+            const logAuditSpy = vi.fn();
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+            await runRescan(new Set(), 6000, stats, logAuditSpy);
+
+            const anomalyAudit = logAuditSpy.mock.calls.find(
+                ([_stage, action, details]: [string, string, any]) =>
+                    action === "integrity_checked" && details?.details?.includes("rpos_field_anomaly")
+            );
+            expect(anomalyAudit).toBeUndefined();
+            expect(consoleWarnSpy).not.toHaveBeenCalled();
+
+            consoleWarnSpy.mockRestore();
+        });
+
+        it("does NOT trigger anomaly warning or logAudit error when fewer than 10 profiles are processed and all have 0% win rate", async () => {
+            const staleRecruits = Array.from({ length: 9 }, (_, i) => ({ player_tag: `#STALE_${i}` }));
+            rpcResponses.get_stale_recruits = { data: staleRecruits, error: null };
+
+            mockFetchWithRotation.mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    ...staleProfile,
+                    wins: 0,
+                    threeCrownWins: 0,
+                    totalDonations: 1000,
+                }),
+            });
+
+            const stats = freshStats();
+            const logAuditSpy = vi.fn();
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+            await runRescan(new Set(), 6000, stats, logAuditSpy);
+
+            const anomalyAudit = logAuditSpy.mock.calls.find(
+                ([_stage, action, details]: [string, string, any]) =>
+                    action === "integrity_checked" && details?.details?.includes("rpos_field_anomaly")
+            );
+            expect(anomalyAudit).toBeUndefined();
+            expect(consoleWarnSpy).not.toHaveBeenCalled();
+
+            consoleWarnSpy.mockRestore();
+        });
+    });
 });
