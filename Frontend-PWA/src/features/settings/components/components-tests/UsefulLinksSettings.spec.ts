@@ -154,7 +154,7 @@ describe("UsefulLinksSettings.vue", () => {
 
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v14.40.3+142.apk"
+      "https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v14.40.3%2B142.apk"
     );
   });
 
