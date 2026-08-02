@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import { generateHtmlEntry } from '../src/core/theme/HtmlEntry';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
