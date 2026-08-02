@@ -108,3 +108,4 @@
 * [2026-07-31] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
 * [2026-07-31] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
 * [2026-07-31] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
+* [2026-08-02] [Stage 5] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconciled protocol handler constant-time authorization, restricted CORS, and dual-bucket rate-limiting details.

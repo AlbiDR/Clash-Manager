@@ -14,6 +14,25 @@
 - Load secrets from Supabase Vault into the environment at startup.
 - Define the Valibot schemas that guard every payload.
 
+## Security Boundaries & Throttling Protocol
+
+The request orchestrator (`protocol.ts`) implements several defense-in-depth mechanisms to protect the Supabase trust boundary and prevent server-side resource exhaustion:
+
+### 1. Constant-Time Bearer Authorization
+To eliminate timing leak vectors at the authentication gate, bearer tokens are normalized to a fixed 32-byte width via SHA-256 digest hashing before validation. Comparison is performed using a non-short-circuiting bitwise XOR accumulator. Every configured token is evaluated on every request, hiding matching positions and key farm pool sizes from timing side-channels.
+
+### 2. Dual-Bucket Rate Limiting (Proxy-Aware)
+Since public client-facing functions accept the public anon key (the PWA has no user authentication subsystem), volume-based throttling is enforced:
+- **Proxy IP Extraction:** Extracts the caller IP by inspecting `x-forwarded-for` (first hop), `cf-connecting-ip` (Cloudflare), and `x-real-ip` headers in sequence.
+- **Throttling Buckets:** Supports dual-bucket mapping:
+  - *Per-IP Bucket:* Restricts total request volume from a single IP regardless of the targets queried.
+  - *Per-IP-Target Bucket:* Restricts focused hammering of a specific player/clan tag from a single IP, preventing popular targets from being globally starved by a single abusive client.
+- **Garbage Collection:** Opportunistically sweeps expired buckets once the in-memory Map exceeds the safety threshold (`RATE_LIMIT_BUCKET_SWEEP_THRESHOLD`), preventing unbounded memory growth.
+- **Isolate Tradeoff:** Throttling uses an in-memory per-worker Map. While state is transient and resets on cold boots, this accepted tradeoff completely bypasses external store latency and coordination overhead per ADR KISS/YAGNI.
+
+### 3. Opt-In Restricted CORS
+To protect player and clan data exposure from malicious third-party web pages, functions queryable from browser JS use opt-in restricted CORS. Verified origin domains are matched dynamically against the configured allow-list and reflected back (avoiding the wildcard `*`), coupled with `Vary: Origin` headers for cache safety. Internal service-to-service cron triggers fallback to default CORS headers.
+
 ## Contents
 
 | File | Role |
