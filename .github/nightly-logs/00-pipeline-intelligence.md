@@ -195,6 +195,12 @@ Operational boundaries discovered at runtime that are not explicitly stated in t
   skipped or fails, the aging pass does not run. No other stage should attempt
   to perform aging to avoid concurrent write conflicts.
 
+* **Stage 10 local compilation constraint:** In local/Jules sandbox runtimes, Java
+  tooling (Gradle caches or SDK build-tools) can be incomplete or present JDK mismatches.
+  A source-level configuration audit and manual synchronization of the release pointers
+  (e.g., `latest.json` and release APK renaming) is the approved sufficient fallback
+  when native compiler tools cannot fully execute locally.
+
 ---
 
 ## V. Stage-Specific Context
