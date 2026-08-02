@@ -5,8 +5,8 @@ name: Sync Nightly PRs
 
 on:
   schedule:
-    # 11:30 AM CEST -- safety-net run after Jules completes its morning session.
-    - cron: "30 9 * * *"
+    # 1:30 PM CEST: safety-net run after Jules completes Stage 13.
+    - cron: "30 11 * * *"
   workflow_dispatch:
   pull_request:
     types: [opened, reopened, ready_for_review]
