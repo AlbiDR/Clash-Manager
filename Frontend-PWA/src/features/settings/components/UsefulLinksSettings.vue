@@ -77,7 +77,7 @@ const usefulLinks = computed(() => {
     links.push({
       label: "Download Android App",
       desc: `Install the native companion APK (v${appVersion})`,
-      url: `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${apkFilename.value}`,
+      url: `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${encodeURIComponent(apkFilename.value)}`,
       icon: "download",
     });
   }

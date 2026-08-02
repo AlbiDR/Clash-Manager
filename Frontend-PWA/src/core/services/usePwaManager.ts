@@ -200,7 +200,7 @@ export function usePwaManager() {
     const activeToastId = toast.info("Opening APK download...");
     try {
       const filename = await resolveApkFilename();
-      const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${filename}`;
+      const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${encodeURIComponent(filename)}`;
       if (nativeBridge.value?.openExternalUrl) {
         nativeBridge.value.openExternalUrl(apkUrl);
       } else if (typeof window !== "undefined") {
