@@ -133,6 +133,14 @@ public class BlitzService extends Service {
 
     private boolean mIsCalibrationUnlocked = false;
 
+    // Set the instant Stop is pressed / the service is destroyed. Guards the
+    // accessibility service's tap-sequence completion callback (onSequenceComplete,
+    // fired from ClashManagerAccessibilityService's own independent Handler) from
+    // re-entering openNextPlayerProfile()/scheduleAdvance() after the user stopped
+    // Blitz - that callback fires on its own schedule regardless of whether this
+    // service's Handler queue was cleared, since it lives in a different service.
+    private volatile boolean mStopped = false;
+
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final Runnable mCountdownRunnable = new Runnable() {
         @Override
@@ -200,6 +208,7 @@ public class BlitzService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mStopped = true;
         mHandler.removeCallbacksAndMessages(null);
         removeWaitingOverlay();
         if (mWindowManager != null && mFloatingView != null) {
@@ -940,6 +949,9 @@ public class BlitzService extends Service {
     // -------------------------------------------------------------------------
 
     private void openNextPlayerProfile() {
+        if (mStopped) {
+            return;
+        }
         mHandler.removeCallbacks(mCountdownRunnable);
         if (mCurrentIndex >= mTagsList.size()) {
             Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
@@ -991,6 +1003,12 @@ public class BlitzService extends Service {
 
                             @Override
                             public void onSequenceComplete() {
+                                // The tap sequence runs on ClashManagerAccessibilityService's own
+                                // Handler, independent of this service's, so it can still fire
+                                // after Stop was pressed and this service was destroyed.
+                                if (mStopped) {
+                                    return;
+                                }
                                 scheduleAdvance(0L);
                             }
                         });
