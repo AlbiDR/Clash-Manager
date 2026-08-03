@@ -55,7 +55,7 @@ const apkFilename = ref(`clashmanager-v${appVersion}.apk`);
 onMounted(async () => {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     const response = await fetch(
       "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
       { signal: controller.signal },

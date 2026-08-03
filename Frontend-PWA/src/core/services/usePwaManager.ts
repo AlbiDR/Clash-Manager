@@ -180,7 +180,7 @@ export function usePwaManager() {
     try {
       // [THREAT:] Slow-network stagnation. Prevent download button from getting stuck in an infinite pending state.
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
