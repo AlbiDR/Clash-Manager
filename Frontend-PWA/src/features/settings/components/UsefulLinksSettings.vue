@@ -116,10 +116,15 @@ const usefulLinks = computed(() => {
   ];
 
   if (!isNativeWrapper.value) {
+    const isFallback = apkFilename.value === `clashmanager-v${appVersion}.apk`;
     links.push({
       label: "Download Android App",
-      desc: `Install the native companion APK (v${appVersion})`,
-      url: `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${encodeURIComponent(apkFilename.value)}`,
+      desc: isFallback
+        ? "Open APK release folder on GitHub"
+        : `Install the native companion APK (v${appVersion})`,
+      url: isFallback
+        ? "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
+        : `https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/${encodeURIComponent(apkFilename.value)}`,
       icon: "download",
     });
   }

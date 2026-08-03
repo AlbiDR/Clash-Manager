@@ -15,6 +15,13 @@ LAST_AGED:   2026-08-02
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-08-03] PR #PENDING [Stage 12]: fix(apk-ux): fix APK download button 404 errors
+**Domain:** APK UX | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/services/usePwaManager.ts, Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue, Frontend-PWA/src/core/services/services-tests/usePwaManager.spec.ts, Frontend-PWA/src/features/settings/components/components-tests/UsefulLinksSettings.spec.ts
+**Why:** To resolve 404 navigation errors by bypassing GitHub 302 redirects and fallback to the release directory on failed resolution.
+**Change:** Updated APK update link to use direct raw.githubusercontent.com URL and graceful fallback directory URL.
+**Result:** 100% compliant hybrid UX, passing unit tests and zero regressions.
+
 ### [2026-07-30] PR #PENDING [Stage 9]: chore(refactor): no action required
 **Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log

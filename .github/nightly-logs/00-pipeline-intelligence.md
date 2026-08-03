@@ -33,6 +33,8 @@ Approaches that have been validated through execution. Follow these when applica
   Direct `navigator.vibrate` calls are an ADR violation (Anti-Pattern #5).
   Stage 12 is the enforcement point. *(Established: PR #1064)*
 
+* **Direct raw download path:** Binary APK files must be referenced directly via raw.githubusercontent.com instead of github.com raw redirects to prevent 404s/redirection failures in WebViews, and fall back to the release directory on resolution failure. *(Established: Stage 12, 2026-08-03)*
+
 ### Refactor and Optimization
 
 * **Centralized constants:** Timing constants and PWA lifecycle flags were

@@ -221,9 +221,14 @@ export function usePwaManager() {
     try {
       // [DECISION LOG] Query the remote repository metadata to get the actual build-numbered filename.
       const filename = await resolveApkFilename();
+      const isFallback = filename === `clashmanager-v${appVersion}.apk`;
 
       // [THREAT:] Special character URL corruption. Encoding handles the "+" build metadata separator smoothly.
-      const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${encodeURIComponent(filename)}`;
+      // [DECISION LOG] Bypassing the github.com redirect by linking directly to raw.githubusercontent.com.
+      // If dynamic resolution fails, we redirect to the folder listing rather than a 404 URL.
+      const apkUrl = isFallback
+        ? "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
+        : `https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/${encodeURIComponent(filename)}`;
 
       if (nativeBridge.value?.openExternalUrl) {
         // [DECISION LOG] Brokered action. Native bridge delegates the intent launch to the Android shell wrapper.
@@ -234,7 +239,11 @@ export function usePwaManager() {
       }
 
       toast.remove(activeToastId);
-      toast.success("APK download started");
+      if (isFallback) {
+        toast.success("Opening APK release directory");
+      } else {
+        toast.success("APK download started");
+      }
     } catch (downloadApkError: unknown) {
       // [THREAT:] Client window state modifications throwing or unexpected bridge failure.
       console.error("[PWA] Failed to dispatch APK download", downloadApkError);
