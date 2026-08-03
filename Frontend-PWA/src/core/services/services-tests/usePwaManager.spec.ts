@@ -19,12 +19,22 @@ const mockToast = {
   remove: vi.fn(),
 };
 
+const mockNativeBridge = {
+  value: undefined as any,
+};
+
 vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => mockHaptics),
 }));
 
 vi.mock("../useToast", () => ({
   useToast: vi.fn(() => mockToast),
+}));
+
+vi.mock("../useNativeBridge", () => ({
+  useNativeBridge: vi.fn(() => ({
+    bridge: mockNativeBridge,
+  })),
 }));
 
 vi.mock("../StorageService", () => ({
@@ -37,11 +47,15 @@ vi.mock("../StorageService", () => ({
 describe("usePwaManager", () => {
   const mockReload = vi.fn();
   const mockConfirm = vi.fn();
+  let mockLocation: { reload: any; href: string };
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("confirm", mockConfirm);
-    vi.stubGlobal("location", { reload: mockReload });
+    mockLocation = { reload: mockReload, href: "" };
+    vi.stubGlobal("location", mockLocation);
+
+    mockNativeBridge.value = undefined;
 
     // Default navigator mock
     vi.stubGlobal("navigator", {
@@ -64,6 +78,9 @@ describe("usePwaManager", () => {
     vi.stubGlobal("sessionStorage", {
       clear: vi.fn(),
     });
+
+    // Default fetch mock
+    vi.stubGlobal("fetch", vi.fn());
   });
 
   afterEach(() => {
@@ -144,6 +161,108 @@ describe("usePwaManager", () => {
       await forceUpdate();
 
       expect(mockToast.error).toHaveBeenCalledWith("Update check failed");
+    });
+  });
+
+  describe("downloadApk", () => {
+    it("should construct encoded download URL and use window.location if native bridge is absent", async () => {
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }),
+      };
+      (fetch as any).mockResolvedValue(mockResponse);
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
+        expect.any(Object)
+      );
+      expect(mockLocation.href).toBe(
+        "https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v14.40.10%2B148.apk"
+      );
+      expect(mockToast.info).toHaveBeenCalledWith("Opening APK download...");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+      expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+    });
+
+    it("should call openExternalUrl on native bridge if present", async () => {
+      const mockOpenExternal = vi.fn();
+      mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
+
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }),
+      };
+      (fetch as any).mockResolvedValue(mockResponse);
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockOpenExternal).toHaveBeenCalledWith(
+        "https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v14.40.10%2B148.apk"
+      );
+      expect(mockLocation.href).toBe("");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should fall back to default filename guess if response latest.json has no filename property", async () => {
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({}),
+      };
+      (fetch as any).mockResolvedValue(mockResponse);
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockLocation.href).toContain("clashmanager-v");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should fall back to default filename guess if fetch response is not ok", async () => {
+      const mockResponse = {
+        ok: false,
+      };
+      (fetch as any).mockResolvedValue(mockResponse);
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockLocation.href).toContain("clashmanager-v");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should fall back to default filename guess if fetch throws", async () => {
+      (fetch as any).mockRejectedValue(new Error("Network Failure"));
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockLocation.href).toContain("clashmanager-v");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should show error toast if download execution throws", async () => {
+      // Simulate an error by stubbing location to throw on assignment
+      Object.defineProperty(mockLocation, "href", {
+        set: () => {
+          throw new Error("Assign fail");
+        },
+      });
+
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }),
+      };
+      (fetch as any).mockResolvedValue(mockResponse);
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockToast.error).toHaveBeenCalledWith("Failed to open APK download");
+      expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
     });
   });
 
