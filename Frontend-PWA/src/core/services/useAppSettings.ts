@@ -4,10 +4,12 @@
 import { idb } from "./StorageService";
 import * as v from "valibot";
 import { ref, watch, reactive, toRaw } from "vue";
+import { type BlitzSpeed, BLITZ_SPEED_DEFAULT } from "@core/config";
 const MODULES_KEY = "cm_modules_v2";
 
 export interface ModuleState {
   blitzMode: boolean;
+  blitzSpeed: BlitzSpeed;
   ghostBenchmarking: boolean;
   sortExplanation: boolean;
   backendRefresher: boolean;
@@ -20,6 +22,7 @@ export interface ModuleState {
 
 const DEFAULT_STATE: ModuleState = {
   blitzMode: false,
+  blitzSpeed: BLITZ_SPEED_DEFAULT,
   ghostBenchmarking: false,
   sortExplanation: true,
   backendRefresher: false,
@@ -37,6 +40,7 @@ const DEFAULT_STATE: ModuleState = {
  */
 const ModuleStateSchema = v.object({
   blitzMode: v.optional(v.boolean(), DEFAULT_STATE.blitzMode),
+  blitzSpeed: v.optional(v.picklist(["fast", "medium", "slow"]), DEFAULT_STATE.blitzSpeed),
   ghostBenchmarking: v.optional(v.boolean(), DEFAULT_STATE.ghostBenchmarking),
   sortExplanation: v.optional(v.boolean(), DEFAULT_STATE.sortExplanation),
   backendRefresher: v.optional(v.boolean(), DEFAULT_STATE.backendRefresher),

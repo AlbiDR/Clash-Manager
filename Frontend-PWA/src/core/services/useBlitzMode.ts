@@ -12,7 +12,8 @@ import {
   BLITZ_SAFETY_DELAY,
   BLITZ_RECOVERY_DELAY,
   BLITZ_COMPLETION_DELAY,
-  BLITZ_BATCH_SHIFT_DELAY
+  BLITZ_BATCH_SHIFT_DELAY,
+  BLITZ_SPEED_DELAYS
 } from "@core/config";
 
 interface BlitzOptions {
@@ -45,7 +46,6 @@ export function useBlitzMode(
   selectionStore: ReturnType<typeof useSelectionStore>,
   options: BlitzOptions = {}
 ) {
-  const { throttleMs = BLITZ_THROTTLE_DEFAULT } = options;
   const { selectedIds, isSelectionMode, clearSelection } = selectionStore;
 
   /** Sequential queue of tags remaining to be opened. */
@@ -62,6 +62,12 @@ export function useBlitzMode(
   const { modules } = useAppSettings();
   const { openInGame } = useExternalLink();
   const { isNativeWrapper, bridge: nativeBridge } = useNativeBridge();
+
+  const throttleMs = computed(() => {
+    if (options.throttleMs !== undefined) return options.throttleMs;
+    const speed = modules.blitzSpeed || "fast";
+    return BLITZ_SPEED_DELAYS[speed] || BLITZ_THROTTLE_DEFAULT;
+  });
 
   /** Indicates if a manual batch queue is currently being processed. */
   const isProcessing = computed(() => batchExecutionQueue.value.length > 0);
@@ -173,7 +179,7 @@ export function useBlitzMode(
       // [THREAT:] Rapid intent firing can lead to OS-level queue saturation or battery drain.
       // [DECISION LOG] Implemented a safety delay for automated blitz
       // to ensure stable deep-link resolution in the native wrapper.
-      const safetyDelay = Math.max(throttleMs, BLITZ_SAFETY_DELAY);
+      const safetyDelay = Math.max(throttleMs.value, BLITZ_SAFETY_DELAY);
       if (blitzCurrentItemIndex.value < selectedIds.value.length - 1) {
         blitzOperationTimer = setTimeout(() => {
           blitzCurrentItemIndex.value++;
@@ -249,14 +255,14 @@ export function useBlitzMode(
           // [THREAT:] Accidental double-clicks triggering overlapping intent calls.
           // [DECISION LOG] Resetting the auto-advance timer to prevent race conditions
           // between manual and automated progression.
-          blitzOperationTimer = setTimeout(advanceBlitz, Math.max(throttleMs, BLITZ_RECOVERY_DELAY));
+          blitzOperationTimer = setTimeout(advanceBlitz, Math.max(throttleMs.value, BLITZ_RECOVERY_DELAY));
         }
       }
       return;
     }
 
     const currentTime = Date.now();
-    if (currentTime - lastDeepLinkTriggerTime.value < throttleMs) {
+    if (currentTime - lastDeepLinkTriggerTime.value < throttleMs.value) {
       // [THREAT:] Rapid clicking causing browser navigation blocks or 'Popups Blocked' warnings.
       // [DECISION LOG] Enforcing a hard throttle at the action boundary.
       event.preventDefault();

@@ -10,7 +10,7 @@ defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
-const { modules, toggle, isRefreshing } = useSettings();
+const { modules, toggle, isRefreshing, setBlitzSpeed } = useSettings();
 const {
   isNativeWrapper,
   isAccessibilityAllowed,
@@ -74,6 +74,33 @@ function handleBlitzToggle() {
         :loading="isRefreshing"
         @click="handleBlitzToggle()"
       />
+
+      <!-- Blitz Speed Selector -->
+      <div v-if="modules.blitzMode || isNativeWrapper" class="blitz-speed-section">
+        <div class="speed-header">
+          <div class="speed-label">Blitz Speed</div>
+          <div class="speed-desc">Touch target interaction rate</div>
+        </div>
+
+        <div
+          class="speed-selector"
+          role="group"
+          aria-label="Blitz Interaction Speed"
+        >
+          <button
+            v-tactile
+            v-for="speedValue in (['fast', 'medium', 'slow'] as const)"
+            :key="speedValue"
+            :class="{ active: modules.blitzSpeed === speedValue }"
+            @click="setBlitzSpeed(speedValue)"
+            class="speed-btn"
+            :aria-label="`Set blitz speed to ${speedValue}`"
+            :aria-pressed="modules.blitzSpeed === speedValue"
+          >
+            {{ speedValue }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Android permissions panel - only shown inside the native TWA wrapper -->
@@ -304,5 +331,76 @@ function handleBlitzToggle() {
 .coord-input:focus {
   outline: none;
   border-color: var(--sys-color-primary);
+}
+
+/* ── Blitz Speed Section ── */
+.blitz-speed-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sys-space-16);
+  padding: var(--sys-space-4) 0;
+}
+
+.speed-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-space-2);
+}
+
+.speed-label {
+  font-size: var(--sys-typescale-body-sm);
+  font-weight: 600;
+  color: var(--sys-color-on-surface);
+}
+
+.speed-desc {
+  font-size: var(--sys-typescale-meta);
+  color: var(--sys-color-on-surface-variant);
+  line-height: var(--sys-leading-normal);
+}
+
+.speed-selector {
+  display: flex;
+  background: var(--sys-color-surface-container-high);
+  padding: 4px;
+  border-radius: 99px;
+  gap: 4px;
+  width: fit-content;
+}
+
+.speed-btn {
+  flex: 1;
+  min-width: 80px;
+  height: 48px; /* 48px touch target compliance */
+  padding: 0 18px;
+  border: none;
+  background: transparent;
+  color: var(--sys-color-outline);
+  border-radius: 99px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: capitalize;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s var(--sys-motion-spring);
+}
+
+.speed-btn.active {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
+  transform: scale(1.02);
+}
+
+.speed-btn:hover:not(.active) {
+  background: rgba(var(--sys-color-primary-rgb), 0.08);
+  color: var(--sys-color-on-surface);
+}
+
+.speed-btn:active {
+  transform: scale(0.96);
 }
 </style>

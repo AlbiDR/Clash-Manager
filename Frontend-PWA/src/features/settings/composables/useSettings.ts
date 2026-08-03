@@ -212,6 +212,11 @@ export function useSettings() {
     startBackgroundSync();
   }
 
+  function setBlitzSpeed(speedValue: import("@core/config").BlitzSpeed) {
+    haptics.tap();
+    modules.blitzSpeed = speedValue;
+  }
+
   const layoutProps = computed(() => ({
     title: "Settings",
     status: apiStatusObject.value,
@@ -269,5 +274,6 @@ export function useSettings() {
     subscribePush,
     sendTestNotification,
     setNotificationThreshold,
+    setBlitzSpeed,
   };
 }
