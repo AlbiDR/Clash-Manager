@@ -112,6 +112,16 @@ export const BADGE_UPDATE_DEBOUNCE = 1500;
  */
 export const BADGE_RETRY_BASE_DELAY = 800;
 
+export type BlitzSpeed = "fast" | "medium" | "slow";
+
+export const BLITZ_SPEED_DELAYS: Record<BlitzSpeed, number> = {
+  fast: 850,
+  medium: 1500,
+  slow: 2500,
+};
+
+export const BLITZ_SPEED_DEFAULT: BlitzSpeed = "fast";
+
 /**
  * Default throttle for manual deep-link clicks.
  *
@@ -121,6 +131,7 @@ export const BADGE_RETRY_BASE_DELAY = 800;
  * OS-level deep-link polling limits while remaining responsive.
  */
 export const BLITZ_THROTTLE_DEFAULT = 850;
+
 
 /**
  * Safety delay for automated blitz to ensure stable deep-link resolution.

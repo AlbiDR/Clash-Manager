@@ -30,16 +30,19 @@ describe("FeatureSettings.vue", () => {
   const mockModules = reactive({
     ghostBenchmarking: false,
     sortExplanation: true,
-    blitzMode: false
+    blitzMode: false,
+    blitzSpeed: "fast",
   });
   const mockIsRefreshing = ref(false);
   const mockToggle = vi.fn();
+  const mockSetBlitzSpeed = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockModules.ghostBenchmarking = false;
     mockModules.sortExplanation = true;
     mockModules.blitzMode = false;
+    mockModules.blitzSpeed = "fast";
     mockIsRefreshing.value = false;
 
     // Ensure clean window state
@@ -49,7 +52,8 @@ describe("FeatureSettings.vue", () => {
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
       modules: mockModules,
       toggle: mockToggle,
-      isRefreshing: mockIsRefreshing
+      isRefreshing: mockIsRefreshing,
+      setBlitzSpeed: mockSetBlitzSpeed,
     } as any);
   });
 

@@ -24,7 +24,7 @@ vi.mock("@core/services/useToast", () => ({
 
 vi.mock("@core/services/useAppSettings", () => ({
   useAppSettings: () => ({
-    modules: { blitzMode: true },
+    modules: { blitzMode: true, blitzSpeed: "fast" },
   }),
 }));
 

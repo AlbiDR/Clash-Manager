@@ -46,6 +46,7 @@ describe("useAppSettings", () => {
     it("hydrates state correctly from valid localStorage data", async () => {
       const validData = {
         blitzMode: true,
+        blitzSpeed: "slow",
         notificationThreshold: 50,
       };
       localStorage.setItem("cm_modules_v2", JSON.stringify(validData));
@@ -55,6 +56,7 @@ describe("useAppSettings", () => {
       init();
 
       expect(modules.blitzMode).toBe(true);
+      expect(modules.blitzSpeed).toBe("slow");
       expect(modules.notificationThreshold).toBe(50);
       expect(modules.sortExplanation).toBe(true); // Default preserved
     });
@@ -62,6 +64,7 @@ describe("useAppSettings", () => {
     it("falls back to defaults when localStorage contains malformed data", async () => {
       const malformedData = {
         blitzMode: "not a boolean",
+        blitzSpeed: "ultra-fast", // Invalid speed value
         notificationThreshold: 999, // Invalid picklist value
       };
       localStorage.setItem("cm_modules_v2", JSON.stringify(malformedData));
@@ -72,6 +75,7 @@ describe("useAppSettings", () => {
       init();
 
       expect(modules.blitzMode).toBe(false); // Default
+      expect(modules.blitzSpeed).toBe("fast"); // Default
       expect(modules.notificationThreshold).toBe(75); // Default
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("[Modules] Storage validation failed"),
