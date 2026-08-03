@@ -70,3 +70,4 @@
 * [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/pwa-assets.config.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
 * [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/scripts/synthesize_entry.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
 * [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/vitest.setup.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
+* [2026-08-03] [Stage 6] CHANGED: Frontend-PWA/src/core/services/usePwaManager.ts -- Recent-Change Priority: hardened dynamic release APK resolution and PWA shell update download contracts, injecting comprehensive TSDoc specifications, ADR Section IV links, and inline decision/threat logs.

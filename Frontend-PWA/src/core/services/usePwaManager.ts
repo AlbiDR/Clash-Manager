@@ -161,54 +161,83 @@ export function usePwaManager() {
   }
 
   /**
-   * Resolves the exact release APK filename via `APK/release/latest.json`, which
-   * carries a `+<buildNumber>` suffix that cannot be guessed from `appVersion`
-   * alone (distinct builds of the same version get distinct build numbers). Falls
-   * back to the old unsuffixed filename guess if the fetch fails for any reason,
-   * so a network hiccup never blocks the download entirely.
+   * Resolves the exact release APK filename from the remote repository metadata.
+   *
+   * @remarks
+   * **Dynamic Release Resolution Contract:**
+   * - Queries `APK/release/latest.json` on the `Beta` branch.
+   * - Relies on a network-isolated 3-second abort timeout to prevent blocking the UI
+   *   indefinitely on severe network degradation or captive portals.
+   * - Since Android companion apps are built with unique version and build suffixes
+   *   (e.g., `clashmanager-v14.40.10+148.apk`), static filename guessing can fail.
+   * - Satisfies ADR Section IV: Resilience & Operational Security (Offline Operations & State Recovery).
+   *
+   * @returns A Promise resolving to the exact filename string or a deterministic fallback.
    */
   async function resolveApkFilename(): Promise<string> {
+    // [DECISION LOG] Fallback name is formatted deterministically from the build-time constant.
     const fallback = `clashmanager-v${appVersion}.apk`;
     try {
+      // [THREAT:] Slow-network stagnation. Prevent download button from getting stuck in an infinite pending state.
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
+
       const response = await fetch(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
         { signal: controller.signal },
       );
       clearTimeout(timeoutId);
+
+      // [THREAT:] Network errors or non-200 responses.
       if (!response.ok) return fallback;
+
       const latest = (await response.json()) as { filename?: string };
+      // [DECISION LOG] Fall back to the old unsuffixed filename if the latest.json lacks the property.
       return latest.filename ?? fallback;
-    } catch {
+    } catch (resolveApkError: unknown) {
+      // [DECISION LOG] Fail silently and return the fallback so a network hiccup never blocks a user.
+      console.warn("[PWA] Dynamic APK resolution failed; utilizing fallback", resolveApkError);
       return fallback;
     }
   }
 
   /**
-   * Opens the versioned APK binary hosted in the repository for direct download.
+   * Triggers direct download of the versioned APK binary hosted in the repository.
    *
    * @remarks
-   * Intended exclusively for native Android wrapper users who need to update
-   * the APK shell. The URL is constructed from the build-time `appVersion`
-   * constant so it always resolves to the binary matching the running PWA.
+   * **APK Update Contract:**
+   * - Intended exclusively for native Android wrapper users to update their APK shells.
+   * - Explicitly encodes the filename suffix (using `encodeURIComponent`) to handle special characters
+   *   like `+` (the SemVer build metadata separator) smoothly without URL corruption.
+   * - Bypasses standard browser navigation if a native bridge exists with `openExternalUrl`,
+   *   delegating URL intent launching to the hybrid container shell.
+   * - Satisfies ADR Section IV: Hardware/Browser Brokering.
    *
-   * [DECISION LOG] Separated from `forceUpdate` to keep SW update and APK
-   * shell update concerns orthogonal.
+   * @throws None - Catch-all blocks propagate failures gracefully to the user via toast notifications.
+   * @returns A Promise that resolves when the download sequence is successfully launched.
    */
   async function downloadApk(): Promise<void> {
     const activeToastId = toast.info("Opening APK download...");
     try {
+      // [DECISION LOG] Query the remote repository metadata to get the actual build-numbered filename.
       const filename = await resolveApkFilename();
+
+      // [THREAT:] Special character URL corruption. Encoding handles the "+" build metadata separator smoothly.
       const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${encodeURIComponent(filename)}`;
+
       if (nativeBridge.value?.openExternalUrl) {
+        // [DECISION LOG] Brokered action. Native bridge delegates the intent launch to the Android shell wrapper.
         nativeBridge.value.openExternalUrl(apkUrl);
       } else if (typeof window !== "undefined") {
+        // [DECISION LOG] Browser fallback. Standard window location redirection for PWA installations.
         window.location.href = apkUrl;
       }
+
       toast.remove(activeToastId);
       toast.success("APK download started");
     } catch (downloadApkError: unknown) {
+      // [THREAT:] Client window state modifications throwing or unexpected bridge failure.
+      console.error("[PWA] Failed to dispatch APK download", downloadApkError);
       toast.remove(activeToastId);
       toast.error("Failed to open APK download");
     }
