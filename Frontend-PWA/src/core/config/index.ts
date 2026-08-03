@@ -116,8 +116,8 @@ export type BlitzSpeed = "fast" | "medium" | "slow";
 
 export const BLITZ_SPEED_DELAYS: Record<BlitzSpeed, number> = {
   fast: 850,
-  medium: 2500,
-  slow: 4000,
+  medium: 6000,
+  slow: 12000,
 };
 
 export const BLITZ_SPEED_DEFAULT: BlitzSpeed = "fast";
