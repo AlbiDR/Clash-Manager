@@ -209,8 +209,9 @@ export function usePwaManager() {
    * - Intended exclusively for native Android wrapper users to update their APK shells.
    * - Explicitly encodes the filename suffix (using `encodeURIComponent`) to handle special characters
    *   like `+` (the SemVer build metadata separator) smoothly without URL corruption.
-   * - Bypasses standard browser navigation if a native bridge exists with `openExternalUrl`,
-   *   delegating URL intent launching to the hybrid container shell.
+   * - Prefers `downloadApkFile` on the native bridge when available, which uses Android's
+   *   `DownloadManager` to fetch the binary natively without routing through a browser.
+   * - Falls back to `openExternalUrl` for older APK builds that pre-date the DownloadManager bridge.
    * - Satisfies ADR Section IV: Hardware/Browser Brokering.
    *
    * @throws None - Catch-all blocks propagate failures gracefully to the user via toast notifications.
@@ -230,8 +231,13 @@ export function usePwaManager() {
         ? "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
         : `https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/${encodeURIComponent(filename)}`;
 
-      if (nativeBridge.value?.openExternalUrl) {
-        // [DECISION LOG] Brokered action. Native bridge delegates the intent launch to the Android shell wrapper.
+      if (!isFallback && nativeBridge.value?.downloadApkFile) {
+        // [DECISION LOG] Preferred path. DownloadManager fetches the binary natively,
+        // saves it to Downloads, and shows a system notification. No browser involved.
+        nativeBridge.value.downloadApkFile(apkUrl, filename);
+      } else if (nativeBridge.value?.openExternalUrl) {
+        // [DECISION LOG] Fallback for older APK builds that pre-date downloadApkFile,
+        // or when isFallback is true and we want to open the directory page.
         nativeBridge.value.openExternalUrl(apkUrl);
       } else if (typeof window !== "undefined") {
         // [DECISION LOG] Browser fallback. Standard window location redirection for PWA installations.

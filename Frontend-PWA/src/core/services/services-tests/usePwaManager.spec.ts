@@ -187,7 +187,28 @@ describe("usePwaManager", () => {
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
     });
 
-    it("should call openExternalUrl on native bridge if present", async () => {
+    it("should call downloadApkFile on native bridge when available", async () => {
+      const mockDownloadApkFile = vi.fn();
+      mockNativeBridge.value = { downloadApkFile: mockDownloadApkFile, openExternalUrl: vi.fn() };
+
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }),
+      };
+      (fetch as any).mockResolvedValue(mockResponse);
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.40.10%2B148.apk",
+        "clashmanager-v14.40.10+148.apk"
+      );
+      expect(mockLocation.href).toBe("");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should fall back to openExternalUrl if downloadApkFile is absent from bridge", async () => {
       const mockOpenExternal = vi.fn();
       mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
 

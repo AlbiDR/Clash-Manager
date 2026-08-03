@@ -3,6 +3,8 @@
 package com.albidr.clashmanager;
 
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -276,6 +278,56 @@ public class MainActivity extends Activity {
                     } catch (Exception e) {
                         android.util.Log.w("ClashManagerMain", "Could not open URL: " + url, e);
                         Toast.makeText(MainActivity.this, "Could not open URL", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        /**
+         * Downloads an APK file directly using the Android DownloadManager.
+         *
+         * Unlike openExternalUrl (which fires ACTION_VIEW and hands the URL to a
+         * browser), this method enqueues the download through the system
+         * DownloadManager so the binary is fetched natively and saved to the
+         * public Downloads folder. The system shows a download progress
+         * notification automatically. Once complete, Android prompts the user to
+         * install the APK if "Install from unknown sources" is enabled.
+         *
+         * @param url      Direct HTTPS URL to the APK file.
+         * @param filename Suggested filename to save under in Downloads.
+         */
+        @JavascriptInterface
+        public void downloadApkFile(final String url, final String filename) {
+            MainActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Uri parsed = Uri.parse(url);
+                    String scheme = parsed.getScheme();
+                    if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
+                        android.util.Log.w("ClashManagerMain", "downloadApkFile rejected non-http(s) scheme: " + scheme);
+                        return;
+                    }
+                    try {
+                        DownloadManager.Request request = new DownloadManager.Request(parsed);
+                        request.setTitle("Clash Manager Update");
+                        request.setDescription("Downloading " + filename);
+                        request.setNotificationVisibility(
+                            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                        request.setDestinationInExternalPublicDir(
+                            android.os.Environment.DIRECTORY_DOWNLOADS, filename);
+                        request.setMimeType("application/vnd.android.package-archive");
+                        request.addRequestHeader("User-Agent", "ClashManager-Android");
+                        DownloadManager dm = (DownloadManager)
+                            MainActivity.this.getSystemService(Context.DOWNLOAD_SERVICE);
+                        dm.enqueue(request);
+                        Toast.makeText(MainActivity.this,
+                            "Download started -- check your notification tray",
+                            Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        android.util.Log.e("ClashManagerMain", "downloadApkFile failed: " + url, e);
+                        Toast.makeText(MainActivity.this,
+                            "Download failed -- check your connection",
+                            Toast.LENGTH_SHORT).show();
                     }
                 }
             });
