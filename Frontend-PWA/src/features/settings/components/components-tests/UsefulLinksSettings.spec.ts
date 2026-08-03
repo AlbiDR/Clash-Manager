@@ -154,11 +154,11 @@ describe("UsefulLinksSettings.vue", () => {
 
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v14.40.3%2B142.apk"
+      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.40.3%2B142.apk"
     );
   });
 
-  it("gracefully falls back to unsuffixed app version filename on fetch error", async () => {
+  it("gracefully falls back to release folder URL on fetch error", async () => {
     globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.reject(new Error("Network Failure"))
     );
@@ -172,7 +172,7 @@ describe("UsefulLinksSettings.vue", () => {
 
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
-      expect.stringMatching(/clashmanager-v\d+\.\d+\.\d+\.apk$/)
+      "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
     );
   });
 });

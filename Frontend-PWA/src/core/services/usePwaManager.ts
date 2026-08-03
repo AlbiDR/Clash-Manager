@@ -180,7 +180,7 @@ export function usePwaManager() {
     try {
       // [THREAT:] Slow-network stagnation. Prevent download button from getting stuck in an infinite pending state.
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
@@ -209,8 +209,9 @@ export function usePwaManager() {
    * - Intended exclusively for native Android wrapper users to update their APK shells.
    * - Explicitly encodes the filename suffix (using `encodeURIComponent`) to handle special characters
    *   like `+` (the SemVer build metadata separator) smoothly without URL corruption.
-   * - Bypasses standard browser navigation if a native bridge exists with `openExternalUrl`,
-   *   delegating URL intent launching to the hybrid container shell.
+   * - Prefers `downloadApkFile` on the native bridge when available, which uses Android's
+   *   `DownloadManager` to fetch the binary natively without routing through a browser.
+   * - Falls back to `openExternalUrl` for older APK builds that pre-date the DownloadManager bridge.
    * - Satisfies ADR Section IV: Hardware/Browser Brokering.
    *
    * @throws None - Catch-all blocks propagate failures gracefully to the user via toast notifications.
@@ -221,12 +222,22 @@ export function usePwaManager() {
     try {
       // [DECISION LOG] Query the remote repository metadata to get the actual build-numbered filename.
       const filename = await resolveApkFilename();
+      const isFallback = filename === `clashmanager-v${appVersion}.apk`;
 
       // [THREAT:] Special character URL corruption. Encoding handles the "+" build metadata separator smoothly.
-      const apkUrl = `https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/${encodeURIComponent(filename)}`;
+      // [DECISION LOG] Bypassing the github.com redirect by linking directly to raw.githubusercontent.com.
+      // If dynamic resolution fails, we redirect to the folder listing rather than a 404 URL.
+      const apkUrl = isFallback
+        ? "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
+        : `https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/${encodeURIComponent(filename)}`;
 
-      if (nativeBridge.value?.openExternalUrl) {
-        // [DECISION LOG] Brokered action. Native bridge delegates the intent launch to the Android shell wrapper.
+      if (!isFallback && nativeBridge.value?.downloadApkFile) {
+        // [DECISION LOG] Preferred path. DownloadManager fetches the binary natively,
+        // saves it to Downloads, and shows a system notification. No browser involved.
+        nativeBridge.value.downloadApkFile(apkUrl, filename);
+      } else if (nativeBridge.value?.openExternalUrl) {
+        // [DECISION LOG] Fallback for older APK builds that pre-date downloadApkFile,
+        // or when isFallback is true and we want to open the directory page.
         nativeBridge.value.openExternalUrl(apkUrl);
       } else if (typeof window !== "undefined") {
         // [DECISION LOG] Browser fallback. Standard window location redirection for PWA installations.
@@ -234,7 +245,11 @@ export function usePwaManager() {
       }
 
       toast.remove(activeToastId);
-      toast.success("APK download started");
+      if (isFallback) {
+        toast.success("Opening APK release directory");
+      } else {
+        toast.success("APK download started");
+      }
     } catch (downloadApkError: unknown) {
       // [THREAT:] Client window state modifications throwing or unexpected bridge failure.
       console.error("[PWA] Failed to dispatch APK download", downloadApkError);

@@ -180,14 +180,35 @@ describe("usePwaManager", () => {
         expect.any(Object)
       );
       expect(mockLocation.href).toBe(
-        "https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v14.40.10%2B148.apk"
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.40.10%2B148.apk"
       );
       expect(mockToast.info).toHaveBeenCalledWith("Opening APK download...");
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
     });
 
-    it("should call openExternalUrl on native bridge if present", async () => {
+    it("should call downloadApkFile on native bridge when available", async () => {
+      const mockDownloadApkFile = vi.fn();
+      mockNativeBridge.value = { downloadApkFile: mockDownloadApkFile, openExternalUrl: vi.fn() };
+
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }),
+      };
+      (fetch as any).mockResolvedValue(mockResponse);
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.40.10%2B148.apk",
+        "clashmanager-v14.40.10+148.apk"
+      );
+      expect(mockLocation.href).toBe("");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should fall back to openExternalUrl if downloadApkFile is absent from bridge", async () => {
       const mockOpenExternal = vi.fn();
       mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
 
@@ -201,13 +222,13 @@ describe("usePwaManager", () => {
       await downloadApk();
 
       expect(mockOpenExternal).toHaveBeenCalledWith(
-        "https://github.com/AlbiDR/Clash-Manager/raw/refs/heads/Beta/APK/release/clashmanager-v14.40.10%2B148.apk"
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.40.10%2B148.apk"
       );
       expect(mockLocation.href).toBe("");
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
 
-    it("should fall back to default filename guess if response latest.json has no filename property", async () => {
+    it("should fall back to release directory listing URL if response latest.json has no filename property", async () => {
       const mockResponse = {
         ok: true,
         json: vi.fn().mockResolvedValue({}),
@@ -217,11 +238,11 @@ describe("usePwaManager", () => {
       const { downloadApk } = usePwaManager();
       await downloadApk();
 
-      expect(mockLocation.href).toContain("clashmanager-v");
-      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+      expect(mockLocation.href).toBe("https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release");
+      expect(mockToast.success).toHaveBeenCalledWith("Opening APK release directory");
     });
 
-    it("should fall back to default filename guess if fetch response is not ok", async () => {
+    it("should fall back to release directory listing URL if fetch response is not ok", async () => {
       const mockResponse = {
         ok: false,
       };
@@ -230,18 +251,18 @@ describe("usePwaManager", () => {
       const { downloadApk } = usePwaManager();
       await downloadApk();
 
-      expect(mockLocation.href).toContain("clashmanager-v");
-      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+      expect(mockLocation.href).toBe("https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release");
+      expect(mockToast.success).toHaveBeenCalledWith("Opening APK release directory");
     });
 
-    it("should fall back to default filename guess if fetch throws", async () => {
+    it("should fall back to release directory listing URL if fetch throws", async () => {
       (fetch as any).mockRejectedValue(new Error("Network Failure"));
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
 
-      expect(mockLocation.href).toContain("clashmanager-v");
-      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+      expect(mockLocation.href).toBe("https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release");
+      expect(mockToast.success).toHaveBeenCalledWith("Opening APK release directory");
     });
 
     it("should show error toast if download execution throws", async () => {

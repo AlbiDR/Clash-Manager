@@ -26,6 +26,14 @@
 export interface AndroidBridge {
   /** Opens a URL using the native Android ACTION_VIEW intent. */
   openExternalUrl(url: string): void;
+  /**
+   * Downloads a file natively via Android DownloadManager.
+   * Preferred over openExternalUrl for binary assets (APK files) because
+   * DownloadManager fetches the file in the background, saves it to the
+   * Downloads folder, and shows a system notification -- instead of
+   * handing the URL to a browser which may render or fail to download it.
+   */
+  downloadApkFile(url: string, filename: string): void;
   /** Directs the native app to open a specific player profile in Clash Royale. */
   openPlayerProfile(id: string): void;
   /** Retrieves persisted Blitz Mode calibration coordinates as a JSON string. */
