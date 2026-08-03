@@ -50,7 +50,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | Service | Role |
 | :--- | :--- |
 | `useAppSettings.ts` | Application settings and feature flags, mirrored to LocalStorage and IndexedDB. |
-| `usePwaManager.ts` | PWA update and recovery lifecycle, plus the Android APK update URL. |
+| `usePwaManager.ts` | PWA update/recovery lifecycle, and dynamic release APK resolution (resolving versioned build suffixes from GitHub API `latest.json`). |
 | `useUiCoordinator.ts` | Global layout spacing and floating-action-button state. |
 | `useBackHandler.ts` | Hardware back-button behavior in the wrapper. |
 | `useBenchmarking.ts` | Compares a member's stats against clan averages in a single pass. |
@@ -58,6 +58,17 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useSystemInfo.ts` | Source of truth for app version and the global display modes. |
 | `useShowcaseMode.ts` / `useBlueprintMode.ts` / `useSyntheticMode.ts` | The Showcase (demo), Blueprint (skeleton), and Synthetic (mock-data) modes. |
 | `useToast.ts` | Global toasts with haptic pairing. |
+
+### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts`)
+
+The PWA lifecycle orchestrator implements robust mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
+
+1. **Service Worker (SW) Coexistence:** Coordinates update checks and skips waiting states when an updated SW is staged, ensuring a fresh asset envelope is downloaded and applied immediately on reload.
+2. **Dynamic APK Release Resolution:** Since the Android companion app is built with unique version and build suffixes (e.g. `+148`), static filename guesses can fail. At the download trigger:
+   - Queries `APK/release/latest.json` on the `Beta` branch via an aborted, network-isolated 3-second fetch to resolve the exact current build's filename.
+   - Gracefully falls back to a deterministic string (`clashmanager-v<appVersion>.apk`) if the network is down or the manifest schema is malformed.
+   - Dispatches the resolved resource URL to `openExternalUrl` on the native bridge if running inside the Android wrapper, or falls back to standard browser `window.location.href` assignment.
+3. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, it unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
 
 ## See also
 
