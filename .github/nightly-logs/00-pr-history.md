@@ -15,8 +15,8 @@ LAST_AGED:   2026-08-02
 ---
 
 ## T1 -- Active (last 7 days)
-### [2026-08-03] PR #PENDING [Stage 12]: fix(apk-ux): fix APK download button 404 errors
-**Domain:** APK UX | **Commit:** PENDING | [View PR](PENDING)
+### [2026-08-03] PR #1328 [Stage 12]: fix(apk-ux): fix APK download button 404 errors
+**Domain:** APK UX | **Commit:** 8f7a5b854f73021bcfe0b3f757464543933da8bd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1328)
 **Files:** Frontend-PWA/src/core/services/usePwaManager.ts, Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue, Frontend-PWA/src/core/services/services-tests/usePwaManager.spec.ts, Frontend-PWA/src/features/settings/components/components-tests/UsefulLinksSettings.spec.ts
 **Why:** To resolve 404 navigation errors by bypassing GitHub 302 redirects and fallback to the release directory on failed resolution.
 **Change:** Updated APK update link to use direct raw.githubusercontent.com URL and graceful fallback directory URL.
