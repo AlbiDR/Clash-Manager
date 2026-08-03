@@ -336,9 +336,8 @@ function handleBlitzToggle() {
 /* ── Blitz Speed Section ── */
 .blitz-speed-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--sys-space-16);
+  flex-direction: column;
+  gap: var(--sys-space-12);
   padding: var(--sys-space-4) 0;
 }
 
@@ -366,14 +365,14 @@ function handleBlitzToggle() {
   padding: 4px;
   border-radius: 99px;
   gap: 4px;
-  width: fit-content;
+  width: 100%;
 }
 
 .speed-btn {
   flex: 1;
-  min-width: 80px;
+  min-width: 0;
   height: 48px; /* 48px touch target compliance */
-  padding: 0 18px;
+  padding: 0 8px;
   border: none;
   background: transparent;
   color: var(--sys-color-outline);
