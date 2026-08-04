@@ -9,6 +9,7 @@ import { storeToRefs } from "pinia";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 import { useSyntheticMode } from "@core/services/useSyntheticMode";
 import { useToast } from "@core/services/useToast";
+import { useConfirm } from "@core/services/useConfirm";
 import { useConnectionStatus } from "@core/services/useConnectionStatus";
 import { useHaptics, useWakeLock } from "@shared";
 import { useSystemInfo } from "@core/services/useSystemInfo";
@@ -99,6 +100,7 @@ export function useSettings() {
     factoryReset: performPwaReset
   } = usePwaManager();
   const toast = useToast();
+  const { confirm } = useConfirm();
   const { appVersion, activeBadge: footerBadgeText } = useSystemInfo();
   const { apiUrl, apiStatus, pingData } = useApiState();
   const { requestPermission, sendLocalNotification } = useBadge();
@@ -164,8 +166,13 @@ export function useSettings() {
     }
   }
 
-  function resetApiUrl() {
-    if (confirm("Reset API URL to default?")) {
+  async function resetApiUrl() {
+    const confirmed = await confirm({
+      title: "Reset API URL to default?",
+      confirmLabel: "Reset",
+    });
+
+    if (confirmed) {
       localStorage.removeItem("cm_supabase_url");
       window.location.reload();
     }

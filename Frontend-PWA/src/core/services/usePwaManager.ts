@@ -3,6 +3,7 @@
 
 import { ref } from "vue";
 import { useToast } from "./useToast";
+import { useConfirm } from "./useConfirm";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
 import { appVersion } from "./useSystemInfo";
@@ -42,6 +43,7 @@ import { UI_STABILITY_DELAY } from "@core/config";
  */
 export function usePwaManager() {
   const toast = useToast();
+  const { confirm } = useConfirm();
   const { bridge: nativeBridge } = useNativeBridge();
 
   const notificationPermission = ref<NotificationPermission | "unsupported">("default");
@@ -269,11 +271,13 @@ export function usePwaManager() {
    * and deletes all named caches before triggering a hard reload.
    */
   async function clearCache(onCleanup?: () => void): Promise<void> {
-    if (
-      confirm(
-        "Purge Asset Cache?\n\nThis will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
-      )
-    ) {
+    const confirmed = await confirm({
+      title: "Purge Asset Cache?",
+      message: "This will clear the Service Worker cache and reload the application. Your settings and data will be preserved.",
+      confirmLabel: "Purge",
+    });
+
+    if (confirmed) {
       // [DECISION LOG] 1. Unregister Workers: Forces the browser to discard the current control logic.
       if ("serviceWorker" in navigator) {
         const swRegistrations = await navigator.serviceWorker.getRegistrations();
@@ -305,11 +309,14 @@ export function usePwaManager() {
    * IndexedDB store. Used to resolve deep state corruption.
    */
   async function factoryReset(onCleanup?: () => void): Promise<void> {
-    if (
-      confirm(
-        "Reset Application Data?\n\nThis will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",
-      )
-    ) {
+    const confirmed = await confirm({
+      title: "Reset Application Data?",
+      message: "This will clear local cache, indexedDB, and settings. Remote database state will NOT be affected.",
+      confirmLabel: "Reset",
+      tone: "danger",
+    });
+
+    if (confirmed) {
       // [DECISION LOG] 1. Unregister Workers: Forces the browser to discard logic and release IDB locks.
       if ("serviceWorker" in navigator) {
         try {

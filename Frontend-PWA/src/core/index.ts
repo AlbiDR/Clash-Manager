@@ -32,6 +32,7 @@ export * from "./services/useShowcaseMode";
 export * from "./services/useSyntheticMode";
 export * from "./services/useBlueprintMode";
 export * from "./services/useToast";
+export * from "./services/useConfirm";
 export * from "./services/useShare";
 export * from "./services/useExternalLink";
 export * from "./services/useSystemInfo";

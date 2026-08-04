@@ -134,6 +134,14 @@ vi.mock("../../../../core/services/useToast", () => ({
   useToast: vi.fn(() => mocks.mockToast),
 }));
 
+vi.mock("../../../../core/services/useConfirm", () => ({
+  useConfirm: vi.fn(() => ({
+    active: ref(null),
+    resolve: vi.fn(),
+    confirm: mocks.mockConfirm,
+  })),
+}));
+
 vi.mock("../../../../core/services/useConnectionStatus", () => ({
   useConnectionStatus: vi.fn(() => ({
     status: mocks.mockStatus,
@@ -484,10 +492,10 @@ describe("useSettings", () => {
       expect(mocks.mockReload).not.toHaveBeenCalled();
     });
 
-    it("resets API URL and reloads on confirmation", () => {
+    it("resets API URL and reloads on confirmation", async () => {
       mocks.mockConfirm.mockReturnValue(true);
       const { result } = withSetup(useSettings);
-      result.resetApiUrl();
+      await result.resetApiUrl();
       expect(localStorage.removeItem).toHaveBeenCalledWith("cm_supabase_url");
       expect(mocks.mockReload).toHaveBeenCalled();
     });

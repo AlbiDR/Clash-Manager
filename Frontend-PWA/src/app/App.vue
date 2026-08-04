@@ -4,6 +4,7 @@
 import {
   ErrorBoundary,
   ToastContainer,
+  ConfirmDialog,
   FloatingDock,
 } from "@shared";
 import {
@@ -152,6 +153,7 @@ onMounted(() => {
 
     <FloatingDock />
     <ToastContainer />
+    <ConfirmDialog />
   </div>
 </template>
 

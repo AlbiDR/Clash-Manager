@@ -31,6 +31,16 @@ vi.mock("../useToast", () => ({
   useToast: vi.fn(() => mockToast),
 }));
 
+const mockConfirm = vi.fn();
+
+vi.mock("../useConfirm", () => ({
+  useConfirm: vi.fn(() => ({
+    active: { value: null },
+    resolve: vi.fn(),
+    confirm: mockConfirm,
+  })),
+}));
+
 vi.mock("../useNativeBridge", () => ({
   useNativeBridge: vi.fn(() => ({
     bridge: mockNativeBridge,
@@ -46,12 +56,10 @@ vi.mock("../StorageService", () => ({
 
 describe("usePwaManager", () => {
   const mockReload = vi.fn();
-  const mockConfirm = vi.fn();
   let mockLocation: { reload: any; href: string };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal("confirm", mockConfirm);
     mockLocation = { reload: mockReload, href: "" };
     vi.stubGlobal("location", mockLocation);
 

@@ -26,6 +26,7 @@ export { default as ErrorBoundary } from "./ui/ErrorBoundary.vue";
 export { default as CardActions } from "./ui/CardActions.vue";
 export { default as Toast } from "./ui/Toast.vue";
 export { default as ToastContainer } from "./ui/ToastContainer.vue";
+export { default as ConfirmDialog } from "./ui/ConfirmDialog.vue";
 export { default as SelectionBar } from "./ui/SelectionBar.vue";
 export { default as ScoreThresholdSelector } from "./ui/ScoreThresholdSelector.vue";
 export { default as SettingRow } from "./ui/SettingRow.vue";
