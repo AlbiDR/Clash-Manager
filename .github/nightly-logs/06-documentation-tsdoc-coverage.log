@@ -10,7 +10,7 @@
 * [2026-05-30] [Stage 6] Target: Codebase - Frontend-PWA/src/features/voyage/composables/useVoyageForm.ts | Documented interface contracts and side effects for the recently refactored form orchestrator.
 * [2026-06-02] [Stage 6] Target: Codebase - Backend/supabase/functions/_shared/muscle.ts | Documented interface contracts for the Native Muscle core utility and added architectural decision logs for key rotation/backoff.
 * [2026-06-04] [Stage 6] Target: Codebase - Frontend-PWA/src/shared/composables/usePullToRefresh.ts | Refactored TSDoc with ADR Section II links and decision logs for the PTR orchestrator.
-* [2026-06-05] [Stage 6] Target: Codebase - Frontend-PWA/src/features/voyage/composables/useVoyageActions.ts | Documented interface contracts and side effects for the Voyage actions orchestrator.
+* [2026-06-05] [Stage 6] Target: Codebase - Frontend-PWA/src/features/voyage/composables/useVoyageStore.ts | Verified full JSDoc/TSDoc coverage, inline decision comments, and standard license headers after recent updates.
 * [2026-06-13] [Stage 6] Target: Codebase - Backend/supabase/functions/query-royale-api/index.ts | Fully documented L5 API proxy, including harvest discovery engine and ADR Section V/II links.
 * [2026-06-14] [Stage 6] Target: Codebase - Backend/supabase/functions/headhunter-scanner/stages/profiler.ts | Fully documented L1 Profiler stage, including ValidRecruit DTO, RPoS decision logs, and backoff telemetry threats.
 * [2026-06-15] [Stage 6] Target: Codebase - Frontend-PWA/src/shared/ui/SelectionFab.vue | Documented SelectionFab component rationale, architectural context, and added decision/threat logs for action delegation and compact styling.
@@ -71,3 +71,6 @@
 * [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/scripts/synthesize_entry.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
 * [2026-08-02] [Stage 6] CHANGED: Frontend-PWA/vitest.setup.ts -- Prepended standard GPL-3.0-only licensing and copyright header block.
 * [2026-08-03] [Stage 6] CHANGED: Frontend-PWA/src/core/services/usePwaManager.ts -- Recent-Change Priority: hardened dynamic release APK resolution and PWA shell update download contracts, injecting comprehensive TSDoc specifications, ADR Section IV links, and inline decision/threat logs.
+* [2026-08-04] [Stage 6] CLEAN: Backend/supabase/functions/_shared/shared-tests/errors.spec.ts -- Verified full coverage and standard license headers on recently added error tests.
+* [2026-08-04] [Stage 6] CLEAN: Frontend-PWA/src/core/services/services-tests/usePwaManager.spec.ts -- Verified full coverage and standard license headers after dynamic APK and bridge updates.
+* [2026-08-04] [Stage 6] CLEAN: Frontend-PWA/src/features/settings/components/components-tests/UsefulLinksSettings.spec.ts -- Verified full coverage and standard license headers after links updates.

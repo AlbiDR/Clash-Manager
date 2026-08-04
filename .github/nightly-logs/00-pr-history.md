@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-08-02
+LAST_AGED:   2026-08-03
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -257,97 +257,6 @@ LAST_AGED:   2026-08-02
 **Why:** Executed daily Stage 1 runtime integrity audit pass across all active Edge Functions and shared substrates.
 **Change:** Audited and verified all active edge function rpc and api endpoints conform to security and validation standards.
 **Result:** 100% security saturation and integrity verified across all active backend schemas and execution paths.
-
-### [2026-07-26] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 1 and Stage 11 recoveries, and updated the three sections of the living self-healing protocol.
-**Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/13-self-healing-protocol.md
-**Why:** Perform the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
-**Change:** Audited all 13 pipeline stages, documented Stage 1 and Stage 11 recoveries, and updated the three sections of the living self-healing protocol.
-**Result:** 100% pipeline visibility and updated no-diff metrics with all 1426 monorepo tests passing cleanly.
-
-### [2026-07-26] PR #PENDING [Stage 12]: Modernized BaseSegmentedControl by replacing manual programmatic useHaptics with declarative v-tactile directive, removing the pointerdown-blocking .hit-target class from buttons, and establishing relative absolute ::after pseudo-element selectors for 48px hit area coverage.
-**Domain:** Shared UI | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/ui/BaseSegmentedControl.vue
-**Why:** The BaseSegmentedControl component used manual, programmatic haptics inside the selectOption handler and did not comply with 48px touch target guidelines for the compact variant, resulting in potential tactile response duplication and reduced touch accuracy in Android WebViews.
-**Change:** Modernized BaseSegmentedControl by replacing manual programmatic useHaptics with declarative v-tactile directive, removing the pointerdown-blocking .hit-target class from buttons, and establishing relative absolute ::after pseudo-element selectors for 48px hit area coverage.
-**Result:** 100% compliant declarative haptic brokering and mobile touch target ergonomics verified with all 1426 monorepo unit tests passing flawlessly.
-
-### [2026-07-26] PR #PENDING [Stage 11]: Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment.
-**Domain:** apk-optimization | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
-**Why:** Audited APK and native WebAPK / WebView configurations and PWA caching manifests.
-**Change:** Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment.
-**Result:** Verified pristine configurations and maintained full native-like hybrid performance layout.
-
-### [2026-07-26] PR #PENDING [Stage 10]: Audited and verified PWA and Android Wrapper configuration parity, permission sanitization, SDK alignment, and custom native layer integrity, appending a clean audit pass log record.
-**Domain:** APK-Integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
-**Why:** Daily APK and PWA wrapper integrity validation and security scan.
-**Change:** Audited and verified PWA and Android Wrapper configuration parity, permission sanitization, SDK alignment, and custom native layer integrity, appending a clean audit pass log record.
-**Result:** 100% wrapper integrity, version synchronization at v14.33.11, and Android SDK 36 alignment verified.
-
-### [2026-07-26] PR #PENDING [Stage 9]: chore(refactor): no action required
-**Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To audit and certify the monorepo structural health, feature isolation, and view module size thresholds.
-**Change:** chore(refactor): no action required
-**Result:** 100% structural alignment and layer boundary compliance verified with all modules well under the 400-line threshold.
-
-### [2026-07-26] PR #PENDING [Stage 8]: Updated .github/nightly-logs/08-dependency-audit-coverage.log to append the 2026-07-26 daily dependency audit run record.
-**Domain:** Dependency-Audit | **Commit:** PENDING | [View PR](PENDING)
-**Files:** pnpm-workspace.yaml
-**Why:** Ecosystem Watchman audited monorepo dependencies. All packages are aligned with the unified pnpm catalog. Three Tier 2 packages reside on the major version watchlist.
-**Change:** Updated .github/nightly-logs/08-dependency-audit-coverage.log to append the 2026-07-26 daily dependency audit run record.
-**Result:** Dependency audit log up to date. Monorepo is clean.
-
-### [2026-07-26] PR #PENDING [Stage 7]: Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
-**Domain:** Versions | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/07-version-integrity-coverage.log
-**Why:** No version drift detected in monorepo
-**Change:** Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
-**Result:** Monorepo is perfectly synchronized at ground truth v14.33.11.
-
-### [2026-07-26] PR #PENDING [Stage 6]: Added UseVoyageFormReturn interface with complete JSDoc/TSDoc specifications and inline annotations for touch targets and standardized catch parameters.
-**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/composables/useVoyageForm.ts
-**Why:** To establish type-safe interface contracts and inline decision logs on the recently optimized Voyage setup form composable.
-**Change:** Added UseVoyageFormReturn interface with complete JSDoc/TSDoc specifications and inline annotations for touch targets and standardized catch parameters.
-**Result:** 100% logic intent transparency and documentation synchronization with CleanStack ADR verified, with all 1426 monorepo tests passing cleanly.
-
-### [2026-07-26] PR #PENDING [Stage 5]: Updated shared/ui and shared/composables README files to document the 48px target-input height compliance and useVoyageForm standardized catch exception parameters.
-**Domain:** documentation-readme | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/ui/README.md, Frontend-PWA/src/shared/composables/README.md
-**Why:** Reconcile UI and composables documentation with recent Stage 4 VoyageSetupForm and useVoyageForm touch target and naming modernization.
-**Change:** Updated shared/ui and shared/composables README files to document the 48px target-input height compliance and useVoyageForm standardized catch exception parameters.
-**Result:** 100% architectural documentation alignment and zero documentation drift verified via self-created markdown validation tool, with all 1426 tests passing.
-
-### [2026-07-26] PR #PENDING [Stage 4]: Increased .target-input height to 48px, renamed generic variable names (diff -> remainingMilliseconds, active -> isVoyageActive, status -> voyageStatus), and standardized catch block parameters.
-**Domain:** optimization | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/ui/VoyageSetupForm.vue
-**Why:** To eliminate anemic pathogens and satisfy touch footprint standards on the Voyage Setup form and composable.
-**Change:** Increased .target-input height to 48px, renamed generic variable names (diff -> remainingMilliseconds, active -> isVoyageActive, status -> voyageStatus), and standardized catch block parameters.
-**Result:** 100% naming compliance with CleanStack ADR, fully passing the monorepo test gate (1426 passed) and production build compilation.
-
-### [2026-07-26] PR #PENDING [Stage 3]: chore(baseline): no migrations to fold -- audit pass
-**Domain:** baseline | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
-**Why:** Periodic automated validation and baselining of database schemas.
-**Change:** chore(baseline): no migrations to fold -- audit pass
-**Result:** Verified compliance with all ADR database constraints and updated audited date stamp.
-
-### [2026-07-26] PR #PENDING [Stage 2]: Added unit tests asserting feasibility warning visibility under different target versus projected levels, option class mappings, and fallback defaults.
-**Domain:** Laboratory Feature / Verification | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/features/laboratory/components/components-tests/ParameterCard.spec.ts
-**Why:** To expand logic validation and cover edge cases in the ParameterCard component, ensuring zero blindspots in feasibility warnings and milestone-based level filter states.
-**Change:** Added unit tests asserting feasibility warning visibility under different target versus projected levels, option class mappings, and fallback defaults.
-**Result:** 100% logic coverage and robust validation for ParameterCard verified, with all 1426 monorepo tests passing successfully.
-
-### [2026-07-26] PR #PENDING [Stage 1]: Audited query-royale-api, headhunter-scanner, ingest-royale-data edge function stages and shared substrate utilities, recording a clean audit pass log.
-**Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/01-hardening-coverage.log
-**Why:** To execute the daily automated Runtime Integrity Auditor security scanner and boundary threat audit.
-**Change:** Audited query-royale-api, headhunter-scanner, ingest-royale-data edge function stages and shared substrate utilities, recording a clean audit pass log.
-**Result:** 100% security saturation and system boundary runtime integrity verified with all monorepo checks passing.
 
 ### Description
 Completed the daily automated self-healing protocol audit pass for July 23, 2026, targeting the Nightly branch. Mapped all preceding stages' status from log evidence, identifying successful runs and documenting the root cause of the silent crashes/recurring failures for Stage 2 and Stage 11 today. Also updated consecutive no-diff days counters to reflect today's commits.
@@ -978,6 +887,19 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 ## T2 -- Recent (8-30 days)
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-26] PR #PENDING [Pipeline]: Audited all 13 pipeline stages, documented Stage 1 and Stage 11 recoveries, and updated the three sections of the living self-healing protocol. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [Shared UI]: Modernized BaseSegmentedControl by replacing manual programmatic useHaptics with declarative v-tactile directive, removing the pointerdown-blocking .hit-target class from buttons, and establishing relative absolute ::after pseudo-element selectors for 48px hit area coverage. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [apk-optimization]: Audited WebView settings, Service Worker configurations, chunk splits, and resource table alignment. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [APK-Integrity]: Audited and verified PWA and Android Wrapper configuration parity, permission sanitization, SDK alignment, and custom native layer integrity, appending a clean audit pass log record. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [Refactor]: chore(refactor): no action required (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [Dependency-Audit]: Updated .github/nightly-logs/08-dependency-audit-coverage.log to append the 2026-07-26 daily dependency audit run record. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [Versions]: Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [TSDoc]: Added UseVoyageFormReturn interface with complete JSDoc/TSDoc specifications and inline annotations for touch targets and standardized catch parameters. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [documentation-readme]: Updated shared/ui and shared/composables README files to document the 48px target-input height compliance and useVoyageForm standardized catch exception parameters. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [optimization]: Increased .target-input height to 48px, renamed generic variable names (diff -> remainingMilliseconds, active -> isVoyageActive, status -> voyageStatus), and standardized catch block parameters. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [baseline]: chore(baseline): no migrations to fold -- audit pass (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [Laboratory Feature / Verification]: Added unit tests asserting feasibility warning visibility under different target versus projected levels, option class mappings, and fallback defaults. (``PENDING``) [View](PENDING)
+* [2026-07-26] PR #PENDING [Hardening]: Audited query-royale-api, headhunter-scanner, ingest-royale-data edge function stages and shared substrate utilities, recording a clean audit pass log. (``PENDING``) [View](PENDING)
 * [2026-07-25] PR #PENDING [Pipeline]: chore(pipeline): update self-healing protocol -- July 25, 2026 daily audit (``PENDING``) [View](PENDING)
 * [2026-07-25] PR #PENDING [Refactor]: chore(refactor): no action required (``PENDING``) [View](PENDING)
 * [2026-07-25] PR #PENDING [Dependency Management]: Dependency Management (``PENDING``) [View](PENDING)
@@ -1171,33 +1093,24 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-07-04] PR #1009 [Baseline]: chore(baseline): fold new migrations into master baseline (``3102f67``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1009)
 * [2026-07-04] PR #1008 [Performance]: perf(opt): standardize variable naming for domain clarity (``8001d43``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1008)
 * [2026-07-04] PR #1007 [Hardening]: fix(harden): harden persistence substrate (``c66004d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1007)
-* [2026-07-03] PR #1006 [TSDoc]: docs(tsdoc): document shared types and game utilities (``0c147d4``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1006)
-* [2026-07-03] PR #1005 [Version Integrity]: fix(version): reconcile version drift in Supabase Functions and Deno scripts (``42e271e``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1005)
-* [2026-07-03] PR #1004 [APK Integrity]: fix(apk-integrity): automate wrapper parity checks and synchronize logs (``035a9f9``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1004)
-* [2026-07-03] PR #1003 [Dependencies]: chore(deps): update tsx and major version watchlist research (``dea9349``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1003)
-* [2026-07-03] PR #1002 [APK Optimization]: perf(apk-optimization): consolidate assets and update SW paths (``0afd06e``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1002)
-* [2026-07-03] PR #1001 [README]: docs(readme): reconcile architectural drift and hexa-stage mapping (``3c3f515``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1001)
-* [2026-07-03] PR #1000 [Refactor/Optimization]: refactor(opt): standardize anemic variables in service worker substrate (``b9c118f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1000)
-* [2026-07-03] PR #999 [Verification]: test(verify): add saturating coverage for useConnectionStatus service (``7183c67``) [View](https://github.com/AlbiDR/Clash-Manager/pull/999)
-* [2026-07-03] PR #998 [Hardening]: fix(harden): profiler runtime integrity and anemic variable excision (``65b85b1``) [View](https://github.com/AlbiDR/Clash-Manager/pull/998)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W27
-* 4 PRs [APK Integrity]: #968, #976, #987, #996
-* 4 PRs [APK Optimization]: #969, #977, #988, #994
+* 5 PRs [APK Integrity]: #1004, #968, #976, #987, #996
+* 5 PRs [APK Optimization]: #1002, #969, #977, #988, #994
 * 2 PRs [APK UX]: #978, #989
 * 2 PRs [Baseline]: #962, #981
-* 4 PRs [Dependencies]: #966, #975, #986, #990
+* 5 PRs [Dependencies]: #1003, #966, #975, #986, #990
 * 1 PRs [General]: #992
-* 4 PRs [Hardening]: #960, #970, #979, #995
+* 5 PRs [Hardening]: #960, #970, #979, #995, #998
 * 1 PRs [Performance]: #982
-* 4 PRs [README]: #963, #972, #983, #991
-* 2 PRs [Refactor/Optimization]: #967, #971
-* 4 PRs [TSDoc]: #964, #973, #984, #997
-* 2 PRs [Verification]: #961, #980
-* 4 PRs [Version Integrity]: #965, #974, #985, #993
+* 5 PRs [README]: #1001, #963, #972, #983, #991
+* 3 PRs [Refactor/Optimization]: #1000, #967, #971
+* 5 PRs [TSDoc]: #1006, #964, #973, #984, #997
+* 3 PRs [Verification]: #961, #980, #999
+* 5 PRs [Version Integrity]: #1005, #965, #974, #985, #993
 
 #### 2026-W26
 * 6 PRs [APK Integrity]: #900, #918, #929, #937, #947, #958
@@ -1277,15 +1190,6 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * 6 PRs [TSDoc]: #578, #585, #590, #605, #611, #619
 * 5 PRs [Verification]: #582, #595, #602, #609, #616
 * 3 PRs [Version Integrity]: #592, #598, #612
-
-#### 2026-W19
-* 7 PRs [Dependencies]: #542, #548, #553, #559, #564, #570, #576
-* 2 PRs [General]: #546, #573
-* 6 PRs [Hardening]: #539, #543, #554, #560, #565, #571
-* 6 PRs [README]: #540, #545, #551, #557, #568, #574
-* 3 PRs [Refactor/Optimization]: #556, #561, #567
-* 7 PRs [TSDoc]: #541, #547, #552, #558, #563, #569, #575
-* 6 PRs [Verification]: #544, #549, #555, #562, #566, #572
 
 ## T4 -- Archive (90+ days)
 
