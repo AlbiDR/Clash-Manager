@@ -139,8 +139,8 @@ describe("useBlitzMode", () => {
       selectionStore.selectAll(["R1", "R2"]);
       handleBlitz();
 
-      // Bridge must receive the JSON tag list
-      expect(mockStartBlitz).toHaveBeenCalledWith(JSON.stringify(["R1", "R2"]));
+      // Bridge must receive the JSON tag list and the configured speed delay
+      expect(mockStartBlitz).toHaveBeenCalledWith(JSON.stringify(["R1", "R2"]), expect.any(Number));
       // Web-side openInGame must NOT be called (native handles it)
       expect(mockOpenInGame).not.toHaveBeenCalled();
 

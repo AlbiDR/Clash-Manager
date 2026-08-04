@@ -35,6 +35,7 @@ public class MainActivity extends Activity {
     private AndroidBridge mBridge;
     private boolean mBridgeAttached = false;
     private String mPendingTagsJson = null;
+    private long mPendingDelayMs = BlitzService.DEFAULT_PROFILE_LOAD_DELAY_MS;
     private boolean mAwaitingOverlayPermission = false;
 
     @Override
@@ -226,7 +227,7 @@ public class MainActivity extends Activity {
             if (Build.VERSION.SDK_INT >= 23 && Settings.canDrawOverlays(this)) {
                 String str = this.mPendingTagsJson;
                 if (str != null) {
-                    startBlitzService(str);
+                    startBlitzService(str, this.mPendingDelayMs);
                     this.mPendingTagsJson = null;
                 }
             } else {
@@ -244,9 +245,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void startBlitzService(String str) {
+    private void startBlitzService(String str, long delayMs) {
         Intent intent = new Intent(this, BlitzService.class);
         intent.putExtra("tags", str);
+        intent.putExtra("delayMs", delayMs);
         if (Build.VERSION.SDK_INT >= 26) {
             startForegroundService(intent);
         } else {
@@ -359,7 +361,7 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void startBlitz(final String tagsJson) {
+        public void startBlitz(final String tagsJson, final long delayMs) {
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -368,10 +370,11 @@ public class MainActivity extends Activity {
                         if (!ClashManagerAccessibilityService.isActive()) {
                             Toast.makeText(MainActivity.this, "Tip: Enable Clash Manager in Accessibility Settings for automatic invites", Toast.LENGTH_LONG).show();
                         }
-                        MainActivity.this.startBlitzService(tagsJson);
+                        MainActivity.this.startBlitzService(tagsJson, delayMs);
                         return;
                     }
                     MainActivity.this.mPendingTagsJson = tagsJson;
+                    MainActivity.this.mPendingDelayMs = delayMs;
                     MainActivity.this.mAwaitingOverlayPermission = true;
                     Toast.makeText(MainActivity.this, "Grant 'Display over other apps' for Clash Manager, then return here", Toast.LENGTH_LONG).show();
                     try {

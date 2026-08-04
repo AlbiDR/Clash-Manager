@@ -46,8 +46,14 @@ export interface AndroidBridge {
   isAccessibilityActive(): boolean;
   /** Checks if the app has draw-over-other-apps overlay permission. */
   hasOverlayPermission(): boolean;
-  /** Initiates a Blitz Mode sequence for the provided list of player tags. */
-  startBlitz(payload: string): void;
+  /**
+   * Initiates a Blitz Mode sequence for the provided list of player tags.
+   *
+   * @param payload - JSON-encoded array of player tags.
+   * @param delayMs - Milliseconds to wait for each profile to render before
+   *   the invite/close taps fire, per the user's Blitz Speed setting.
+   */
+  startBlitz(payload: string, delayMs: number): void;
 }
 
 /**

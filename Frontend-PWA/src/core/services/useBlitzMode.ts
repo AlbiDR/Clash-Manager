@@ -216,7 +216,7 @@ export function useBlitzMode(
     // This allows the native Android app to handle the full batch in a single
     // high-performance loop, bypassing web-layer constraints.
     if (nativeBridge.value) {
-      nativeBridge.value.startBlitz(JSON.stringify(selectedIds.value));
+      nativeBridge.value.startBlitz(JSON.stringify(selectedIds.value), throttleMs.value);
       return;
     }
 

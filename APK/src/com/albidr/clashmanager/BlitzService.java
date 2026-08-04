@@ -37,7 +37,12 @@ import org.json.JSONException;
 
 public class BlitzService extends Service {
 
-    private static final long AUTO_ADVANCE_DELAY_MS = 850L;
+    /**
+     * Fallback wait-for-profile-to-render delay, used only if the JS layer's
+     * Blitz Speed setting (see BLITZ_SPEED_DELAYS in the PWA) somehow isn't
+     * forwarded via the "delayMs" intent extra.
+     */
+    static final long DEFAULT_PROFILE_LOAD_DELAY_MS = 850L;
     private static final String CHANNEL_ID = "BlitzServiceChannel";
 
     // Constants for modify button styling
@@ -92,7 +97,6 @@ public class BlitzService extends Service {
     private static final float FLOATING_CORNER_RADIUS_DP = 100.0f;
     private static final float FLOATING_INITIAL_Y_DP = 120.0f;
 
-    private static final long GESTURE_LOAD_DELAY_MS = 950L;
     private static final int NOTIFICATION_ID = 456;
 
     // The crosshair's rest-state visual size. The pulsing ring animates its scale up to
@@ -130,6 +134,7 @@ public class BlitzService extends Service {
     private List<String> mTagsList = new ArrayList<>();
     private final List<View> mTapIndicatorViews = new ArrayList<>();
     private int mCurrentIndex = 0;
+    private long mProfileLoadDelayMs = DEFAULT_PROFILE_LOAD_DELAY_MS;
 
     private boolean mIsCalibrationUnlocked = false;
 
@@ -176,6 +181,7 @@ public class BlitzService extends Service {
                     mTagsList.add(jsonArray.getString(i));
                 }
                 mCurrentIndex = 0;
+                mProfileLoadDelayMs = intent.getLongExtra("delayMs", DEFAULT_PROFILE_LOAD_DELAY_MS);
             } catch (JSONException e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Failed to parse player queue", Toast.LENGTH_SHORT).show();
@@ -1013,9 +1019,9 @@ public class BlitzService extends Service {
                             }
                         });
                 }
-            }, GESTURE_LOAD_DELAY_MS);
+            }, mProfileLoadDelayMs);
         } else {
-            scheduleAdvance(AUTO_ADVANCE_DELAY_MS);
+            scheduleAdvance(mProfileLoadDelayMs);
         }
     }
 
