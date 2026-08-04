@@ -3,20 +3,30 @@
 
 <script setup lang="ts">
 import BaseBadge from "./BaseBadge.vue";
+import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 
 /**
  * [UI] TENURE BADGE
- * Standardized component for displaying player clan tenure (days in clan).
+ * Standardized component for displaying player clan tenure (days in clan),
+ * with an optional benchmarking tooltip against the clan average.
  */
-const { days = 0 } = defineProps<{
+const props = defineProps<{
   /** Total days in clan */
   days: number | undefined;
+  /** Context for benchmarking ('lb' for Leaderboard, 'hh' for Headhunter) */
+  context?: "lb" | "hh";
 }>();
+
+const { benchmarkTooltipContent } = useBenchmarkedStat(
+  () => props.context,
+  "tenure",
+  () => props.days
+);
 </script>
 
 <template>
-  <BaseBadge class="tenure">
-    {{ days }}d
+  <BaseBadge class="tenure" v-tooltip="benchmarkTooltipContent">
+    {{ props.days ?? 0 }}d
   </BaseBadge>
 </template>
 

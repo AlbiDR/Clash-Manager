@@ -77,7 +77,7 @@ const ariaLabel = computed(() => {
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for clan tenure and hierarchy role. -->
     <template #identity-meta>
-      <TenureBadge :days="props.member.d.days" />
+      <TenureBadge :days="props.member.d.days" context="lb" />
       <RoleBadge :role="props.member.d.role" />
     </template>
 
