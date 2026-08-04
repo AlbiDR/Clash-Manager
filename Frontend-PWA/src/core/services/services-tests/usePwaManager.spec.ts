@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+/**
+ * PWA Manager Service Unit Tests
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Domain:** Layer 1 Core Services (@core)
+ * - **Satisfaction:** ADR Section IV: Resilience & Operational Security.
+ *
+ * This test suite validates the dynamic APK filename resolution, DownloadManager
+ * bridge dispatching, offline resilience fallbacks, and recovery protocols (cache purge
+ * and factory resets).
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { usePwaManager } from "../usePwaManager";
 import { useHaptics } from "@shared/composables/useHaptics";
