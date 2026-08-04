@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+/**
+ * Backend Shared Errors Module Unit Tests
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Domain:** Backend Shared substrate (@core)
+ * - **Satisfaction:** ADR Section IV: Error Propagation Contract.
+ *
+ * This test suite asserts that ProtocolError construction, error status
+ * mapping, client-safe messaging, and error classification function exactly
+ * as defined in the technical specification contract.
+ */
+
 import { describe, it, expect } from "vitest";
 import {
   ProtocolError,
