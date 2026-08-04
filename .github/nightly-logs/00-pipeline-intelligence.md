@@ -388,3 +388,15 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### [2026-07-29] [Stage 12] ParameterCard Modernization
 * Modernized ParameterCard Allow Gem Spending toggle with declarative v-tactile haptic feedback brokering and removed manual useHaptics trigger.
 * Verified zero layout regressions and complete monorepo test compliance with zero failures.
+
+### Pipeline Health and Audit
+
+* **Stage 1 UTC midnight timing:** Stage 1 (Harden) is the first pipeline stage and
+  structurally starts before UTC midnight on most nights. When this happens, its coverage
+  log entry carries the previous UTC date (e.g., `[2026-08-03]`) while all later stages
+  carry the current pipeline day date (e.g., `[2026-08-04]`). Stage 13's completion check
+  must use a two-date window (TODAY and YESTERDAY) when scanning coverage logs to avoid
+  a false RECURRING failure classification for Stage 1. Any audit logic using a strict
+  single TODAY-date match will misclassify Stage 1 as missing on any night it runs before
+  UTC midnight. Step 9 of the Stage 13 prompt has been updated to enforce this window.
+  *(Established: 2026-08-04, corrected via manual fix after PR #1329 misclassification)*
