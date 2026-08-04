@@ -55,3 +55,9 @@
 * [2026-08-03] [Stage 10] CLEAN: APK/reference/twa-manifest.json -- No action required. Verified manifest color, shortcut, orientation, and theme color parity.
 * [2026-08-03] [Stage 10] CLEAN: APK/release/latest.json -- No action required. Version matches current monorepo version 14.40.10 and build number 148.
 * [2026-08-03] [Stage 10] CLEAN: APK/release/clashmanager-v14.40.10+148.apk -- No action required. Release APK version and custom native layer integrity are fully verified.
+* [2026-08-04] [Stage 10] CLEAN: Frontend-PWA/public/.well-known/assetlinks.json -- No action required. Digital Asset Links package name and certificate fingerprint match.
+* [2026-08-04] [Stage 10] CLEAN: APK/android/AndroidManifest.xml -- No action required. Verified cleartext traffic restriction, Target SDK 36 alignment, and sanitized permission declarations.
+* [2026-08-04] [Stage 10] CLEAN: APK/android/apktool.yml -- No action required. VersionName matches monorepo-wide version.
+* [2026-08-04] [Stage 10] CLEAN: APK/reference/twa-manifest.json -- No action required. Verified manifest color, shortcut, orientation, and theme color parity.
+* [2026-08-04] [Stage 10] CLEAN: APK/release/latest.json -- No action required. Version matches current monorepo version 14.41.9 and build number 164.
+* [2026-08-04] [Stage 10] CLEAN: APK/release/clashmanager-v14.41.9+164.apk -- No action required. Release APK version and custom native layer integrity are fully verified.
