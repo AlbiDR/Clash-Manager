@@ -30,7 +30,11 @@ Since public client-facing functions accept the public anon key (the PWA has no 
 - **Garbage Collection:** Opportunistically sweeps expired buckets once the in-memory Map exceeds the safety threshold (`RATE_LIMIT_BUCKET_SWEEP_THRESHOLD`), preventing unbounded memory growth.
 - **Isolate Tradeoff:** Throttling uses an in-memory per-worker Map. While state is transient and resets on cold boots, this accepted tradeoff completely bypasses external store latency and coordination overhead per ADR KISS/YAGNI.
 
-### 3. Opt-In Restricted CORS
+### 3. Error Propagation & Information-Disclosure Safeguards
+To satisfy the Error Propagation and Readability Contracts (ADR Section IV), errors are never thrown as raw strings. The `errors.ts` module defines a closed union of stable `ProtocolErrorCode` types (`UNAUTHORIZED`, `METHOD_NOT_ALLOWED`, `MALFORMED_BODY`, `MALFORMED_PAYLOAD`, `RATE_LIMITED`, `TELEMETRY_UNAVAILABLE`, `INTERNAL_ERROR`), mapping each to its canonical HTTP status and a strict, client-safe message.
+Any uncaught error or unclassified exception caught at the control surface is automatically processed by `classifyThrown()` and degraded to `INTERNAL_ERROR`. This completely eliminates the threat of information disclosure (such as database schemas, table topologies, or API key pool configurations) to external callers.
+
+### 4. Opt-In Restricted CORS
 To protect player and clan data exposure from malicious third-party web pages, functions queryable from browser JS use opt-in restricted CORS. Verified origin domains are matched dynamically against the configured allow-list and reflected back (avoiding the wildcard `*`), coupled with `Vary: Origin` headers for cache safety. Internal service-to-service cron triggers fallback to default CORS headers.
 
 ## Contents
@@ -38,6 +42,7 @@ To protect player and clan data exposure from malicious third-party web pages, f
 | File | Role |
 | :--- | :--- |
 | `protocol.ts` | The shared request handler (`clinicalServe`): CORS, bearer auth, Valibot validation, and telemetry around every function. |
+| `errors.ts` | Typed Protocol Errors: `ProtocolError` class, error mappings, stable classifications, and client-safe serialization. |
 | `muscle.ts` | Clash Royale API access: `fetchWithRotation` (random-start key rotation + exponential backoff) and `processBatch` (concurrency-limited fan-out via `p-limit`). |
 | `vault.ts` | Loads secrets from Supabase Vault into `Deno.env` at function start (`get_vault_secret` RPC, with an env fallback). |
 | `utils.ts` | Shared helpers: `normalizeTag`, `normalizeRarity`, and `calculateRpos` (the raw recruit potential score). |

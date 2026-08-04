@@ -55,6 +55,17 @@ The pipeline moves data in four steps:
 3. **Shred.** An `AFTER INSERT` trigger decomposes the JSON and upserts it into the normalized `drivers` tables.
 4. **Project.** The `features` views compute scores and aggregates on read; the app queries those views and a few RPCs.
 
+### Data Shredding & Reliability Guards
+
+The shredding triggers in the `substrate` schema implement critical transactional and analytical safeguards:
+
+- **Three-Tier River Race Week ID Resolution:** Inside `substrate.shred_river_race()`, the target week identifier is resolved using a fallback hierarchy:
+  1. *Tier 1 (Canonical):* Read `seasonId` directly from the live river race payload to ensure consistency with finished wars.
+  2. *Tier 2 (Fallback):* Retrieve the latest completed war's `seasonId` from the `raw_war_log` table.
+  3. *Tier 3 (Last Resort):* Use the system's current ISO calendar week formatted string.
+  This hierarchy completely eliminates the risk of orphan ghost-rows at season boundaries.
+- **Roster Monotonic Activity Guard:** Inside `substrate.shred_roster()`, member activity tracking is guarded against API cache lag. When updating `last_seen_at` in `drivers.members`, the trigger uses `GREATEST(drivers.members.last_seen_at, EXCLUDED.last_seen_at)` to guarantee that an older, cached API response cannot overwrite a more recent known activity timestamp.
+
 The scoring formulas (RPeS/PeS for members, RPoS/PoS for recruits) are summarized in the [root README](../README.md#the-scoring-engine). RPoS is computed in TypeScript in [`_shared/utils.ts`](supabase/functions/_shared/README.md); everything else is computed in SQL views in the master migration.
 
 ---
