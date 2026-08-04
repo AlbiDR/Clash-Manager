@@ -110,3 +110,7 @@
 * [2026-07-31] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
 * [2026-08-02] [Stage 5] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconciled protocol handler constant-time authorization, restricted CORS, and dual-bucket rate-limiting details.
 * [2026-08-03] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled usePwaManager.ts dynamic release APK resolution and recovery details.
+* [2026-08-04] [Stage 5] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconciled errors.ts typed protocol error mappings and information-disclosure threat safeguards
+* [2026-08-04] [Stage 5] CHANGED: Backend/README.md -- Reconciled database shredding safeguards: three-tier river race resolution and roster monotonic activity guard
+* [2026-08-04] [Stage 5] CLEAN: README.md -- No action required
+* [2026-08-04] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
