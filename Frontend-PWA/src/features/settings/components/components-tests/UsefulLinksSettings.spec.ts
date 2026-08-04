@@ -1,6 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+/**
+ * Useful Links Settings Component Unit Tests
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Domain:** Layer 3 Features (Settings Component)
+ * - **Satisfaction:** ADR Section VII: Naming and Location Conventions.
+ *
+ * This test suite verifies correct localization resolution of URLs, conditional rendering
+ * of the native Android download link inside the hybrid wrapper, and dynamic APK filename
+ * fetching.
+ */
+
 import { mount } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import UsefulLinksSettings from "../UsefulLinksSettings.vue";
