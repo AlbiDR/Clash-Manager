@@ -58,6 +58,7 @@ const LB_EXTRACTORS: Record<string, (m: LeaderboardMember) => number> = {
   tenure: (m) => m.d?.days || 0,
   momentum: (m) => m.dt || 0,
   winRate: (m) => m.d?.winRate || 0,
+  avgFame: (m) => m.d?.wfame || 0,
 };
 
 /**
@@ -90,6 +91,7 @@ const BENCHMARK_LABELS: Record<
   score: (ctx) => (ctx === "lb" ? "Performance" : "Potential"),
   tenure: "Clan Loyalty",
   momentum: "Growth Pace",
+  avgFame: "Average Fame",
 };
 
 /**

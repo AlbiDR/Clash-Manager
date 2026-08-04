@@ -22,6 +22,13 @@ const benchmark = computed(() =>
   typeof props.data === "string" ? null : props.data,
 );
 
+// [DECISION LOG] Plain-string tooltips (e.g. chart bar labels) use a "label\nvalue"
+// convention instead of embedded HTML, since this content renders via safe text
+// interpolation below, never innerHTML/v-html.
+const simpleLines = computed(() =>
+  typeof props.data === "string" ? props.data.split("\n") : [],
+);
+
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, value));
 }
@@ -56,7 +63,11 @@ const delta = computed(() =>
 </script>
 
 <template>
-  <div v-if="!benchmark" class="bc-simple">{{ data }}</div>
+  <div v-if="!benchmark && simpleLines.length > 1" class="bc-simple-rich">
+    <span class="bc-simple-label">{{ simpleLines[0] }}</span>
+    <span class="bc-simple-value">{{ simpleLines[1] }}</span>
+  </div>
+  <div v-else-if="!benchmark" class="bc-simple">{{ data }}</div>
   <div v-else class="bc-panel">
     <div class="bc-header">
       <span class="bc-label">{{ benchmark.label }}</span>
@@ -91,6 +102,27 @@ const delta = computed(() =>
   font-weight: 700;
   color: var(--sys-color-on-surface);
   line-height: var(--sys-leading-tight);
+}
+
+.bc-simple-rich {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-space-4);
+}
+
+.bc-simple-label {
+  font-size: var(--sys-typescale-label-md);
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  color: var(--sys-color-on-surface-variant);
+}
+
+.bc-simple-value {
+  font-size: var(--sys-typescale-body-md);
+  font-weight: 900;
+  font-family: var(--sys-font-family-mono);
+  color: var(--sys-color-on-surface);
 }
 
 .bc-panel {

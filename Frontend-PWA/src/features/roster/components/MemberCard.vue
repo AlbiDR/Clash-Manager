@@ -115,6 +115,9 @@ const ariaLabel = computed(() => {
           label="Average Fame"
           :loading="props.appIsRefreshing"
           :value="formatNumber(props.member.d.wfame)"
+          benchmark-type="lb"
+          benchmark-metric="avgFame"
+          :benchmark-raw-value="props.member.d.wfame"
         />
         <StatisticItem
           label="Avg. Donations"
