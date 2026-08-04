@@ -30,8 +30,10 @@
  * - 20260801000000_member_battle_log_backfill.sql
  * - 20260801010000_recruit_win_rate_backfill.sql
  * - 20260801020000_blacklist_win_rate_snapshot.sql
+ * - 20260803000000_fix_last_seen_at_monotonic_guard.sql
+ * - 20260804000000_harden_river_race_week_id_resolution.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-08-03):
+ * Architectural Compliance Verification Log (Audited: 2026-08-04):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all 95 plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
@@ -1241,21 +1243,48 @@ CREATE OR REPLACE FUNCTION substrate.shred_river_race()
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
-    current_season_id TEXT;
-    target_week_id TEXT;
-    v_clan_tag TEXT;
+    v_live_season_id   TEXT;
+    current_season_id  TEXT;
+    target_week_id     TEXT;
+    v_clan_tag         TEXT;
 BEGIN
     v_clan_tag := NEW.payload->'clan'->>'tag';
 
-    -- Resolve Week ID from War Log or fallback to ISO week
-    SELECT (payload->'items'->0->>'seasonId')::TEXT INTO current_season_id
-    FROM substrate.raw_war_log
-    ORDER BY ingested_at DESC LIMIT 1;
+    -- Tier 1: Read seasonId directly from the live race payload.
+    -- The /currentriverrace API returns seasonId at the top level on every
+    -- active-war response. Using this as the primary source guarantees the
+    -- week_id format matches what shred_war_log() will produce once the war
+    -- ends, eliminating the ghost-row risk at season boundaries.
+    v_live_season_id := NEW.payload->>'seasonId';
 
-    IF current_season_id IS NOT NULL THEN
-        target_week_id := current_season_id || '-' || (NEW.payload->>'sectionIndex');
+    IF v_live_season_id IS NOT NULL THEN
+        target_week_id := v_live_season_id || '-' || (NEW.payload->>'sectionIndex');
+
     ELSE
-        target_week_id := to_char(now(), 'YYYY-"W"WW');
+        -- Tier 2 (existing logic): Fall back to the most recently ingested
+        -- completed war's seasonId from raw_war_log.
+        -- Cross-table read introduces a dependency on ingestion order.
+        -- Acceptable because this path only fires when seasonId is absent from
+        -- the live payload (e.g. training-day warm-up state, or an unexpected
+        -- API response shape change).
+        SELECT (payload->'items'->0->>'seasonId')::TEXT INTO current_season_id
+        FROM substrate.raw_war_log
+        ORDER BY ingested_at DESC LIMIT 1;
+
+        IF current_season_id IS NOT NULL THEN
+            target_week_id := current_season_id || '-' || (NEW.payload->>'sectionIndex');
+
+        ELSE
+            -- Tier 3 (last resort): ISO calendar week.
+            -- Only reached when no war has ever completed in this database
+            -- instance and the live payload also lacks a seasonId.
+            -- Produces a week_id that will not match the canonical
+            -- format once the first war completes. Acceptable as a safety net
+            -- for edge-case cold starts; the conflict key ensures no real data
+            -- is lost; a new row is simply inserted under a transient key.
+            target_week_id := to_char(now(), 'YYYY-"W"WW');
+
+        END IF;
     END IF;
 
     -- 1. Ensure players exist in universal registry (L2 Players)
@@ -1267,16 +1296,17 @@ BEGIN
         updated_at  = now();
 
     -- 2. Ensure members exist (L2 Members) - Lazy creation to satisfy FK
-    -- HARMONIZATION FIX: Default is_active to FALSE. Roster Sync will toggle it TRUE if they are actually in the clan.
+    -- Default is_active to FALSE. Roster Sync will toggle it TRUE if they are
+    -- actually in the clan.
     INSERT INTO drivers.members (player_tag, player_name, current_clan_tag, is_active, last_ingested_at)
     SELECT p->>'tag', p->>'name', v_clan_tag, FALSE, now()
     FROM jsonb_array_elements(NEW.payload->'clan'->'participants') p
     ON CONFLICT (player_tag) DO UPDATE SET
-        player_name = EXCLUDED.player_name,
+        player_name      = EXCLUDED.player_name,
         current_clan_tag = EXCLUDED.current_clan_tag,
         -- is_active = EXCLUDED.is_active, -- REMOVED: Do not override active status here
         last_ingested_at = EXCLUDED.last_ingested_at,
-        updated_at = now();
+        updated_at       = now();
 
     -- 3. Update war activity for participants
     INSERT INTO drivers.war_activity (
@@ -1303,9 +1333,9 @@ BEGIN
         last_ingested_at  = now()
     FROM (
         SELECT
-            p->>'tag'              AS p_tag,
-            (p->>'fame')::INT      AS p_fame,
-            (p->>'decksUsed')::INT AS p_decks_used,
+            p->>'tag'                   AS p_tag,
+            (p->>'fame')::INT           AS p_fame,
+            (p->>'decksUsed')::INT      AS p_decks_used,
             (p->>'decksUsedToday')::INT AS p_decks_used_today
         FROM jsonb_array_elements(NEW.payload->'clan'->'participants') p
     ) p
@@ -1377,8 +1407,8 @@ BEGIN
 
     -- 1. UPSERT participants into universal players registry first to satisfy FKs
     INSERT INTO drivers.players (player_tag, player_name)
-    SELECT 
-        m->>'tag', 
+    SELECT
+        m->>'tag',
         m->>'name'
     FROM jsonb_array_elements(NEW.payload->'items') m
     WHERE (m->>'tag') != v_clan_tag
@@ -1388,39 +1418,43 @@ BEGIN
 
     -- 2. UPSERT current members into drivers.members
     INSERT INTO drivers.members (
-        player_tag, player_name, role, exp_level, trophies, 
-        donations, donations_received, clan_rank, last_seen_at, 
+        player_tag, player_name, role, exp_level, trophies,
+        donations, donations_received, clan_rank, last_seen_at,
         last_ingested_at, is_active, updated_at, current_clan_tag
     )
-    SELECT 
-        m->>'tag', 
-        m->>'name', 
-        m->>'role', 
-        (m->>'expLevel')::INT, 
+    SELECT
+        m->>'tag',
+        m->>'name',
+        m->>'role',
+        (m->>'expLevel')::INT,
         (m->>'trophies')::INT,
-        COALESCE((m->>'donations')::INT, 0), 
+        COALESCE((m->>'donations')::INT, 0),
         COALESCE((m->>'donationsReceived')::INT, 0),
-        (m->>'clanRank')::INT, 
-        (m->>'lastSeen')::TIMESTAMP WITH TIME ZONE, 
-        now(), 
-        TRUE, 
+        (m->>'clanRank')::INT,
+        (m->>'lastSeen')::TIMESTAMP WITH TIME ZONE,
+        now(),
+        TRUE,
         now(),
         v_clan_tag
     FROM jsonb_array_elements(NEW.payload->'items') m
     WHERE (m->>'tag') != v_clan_tag
     ON CONFLICT (player_tag) DO UPDATE SET
-        player_name = EXCLUDED.player_name, 
-        role = EXCLUDED.role, 
-        exp_level = EXCLUDED.exp_level,
-        trophies = EXCLUDED.trophies, 
-        donations = EXCLUDED.donations,
-        donations_received = EXCLUDED.donations_received, 
-        clan_rank = EXCLUDED.clan_rank,
-        last_seen_at = EXCLUDED.last_seen_at, 
-        last_ingested_at = EXCLUDED.last_ingested_at,
-        is_active = TRUE,
-        current_clan_tag = EXCLUDED.current_clan_tag,
-        updated_at = now();
+        player_name          = EXCLUDED.player_name,
+        role                 = EXCLUDED.role,
+        exp_level            = EXCLUDED.exp_level,
+        trophies             = EXCLUDED.trophies,
+        donations            = EXCLUDED.donations,
+        donations_received   = EXCLUDED.donations_received,
+        clan_rank            = EXCLUDED.clan_rank,
+        -- Monotonic guard: never allow last_seen_at to move backwards.
+        -- The CR API lastSeen field is event-triggered, not polled. A sync may
+        -- return an older timestamp than what is already stored (API cache lag).
+        -- GREATEST ensures we keep the most recent known activity timestamp.
+        last_seen_at         = GREATEST(drivers.members.last_seen_at, EXCLUDED.last_seen_at),
+        last_ingested_at     = EXCLUDED.last_ingested_at,
+        is_active            = TRUE,
+        current_clan_tag     = EXCLUDED.current_clan_tag,
+        updated_at           = now();
 
     -- 3. DEACTIVATE LEAVERS
     UPDATE drivers.members
@@ -1433,10 +1467,10 @@ BEGIN
       );
 
     -- 4. CLEANUP RECRUITS (Harmonization)
-    -- If an active member is found in the recruits table, they have "joined us".
+    -- If an active member is found in the recruits table, they have joined us.
     -- We delete them from the active recruitment pool and log the event.
-    FOR v_recruit_tag IN 
-        SELECT r.player_tag 
+    FOR v_recruit_tag IN
+        SELECT r.player_tag
         FROM drivers.recruits r
         JOIN jsonb_array_elements(NEW.payload->'items') AS m ON (m->>'tag' = r.player_tag)
     LOOP
