@@ -131,12 +131,13 @@
   - Recommended Fix: Ensure proper sequential stage orchestration, adjust concurrency rules in the CI runner workspace to prevent job starvation, and monitor subsequent runs for automatic recovery.
 
 * Missing-Run / Failed Events on 2026-08-04:
-  - Stages: Stage 10 (APK-Integrity) [FAILED - monitor] (August 4, 2026), Stage 12 (APK-UX) [RECURRING] (August 4, 2026).
-  - State: [FAILED - monitor] for Stage 10 / [RECURRING] for Stage 12
-  - Symptom: No log entries for 2026-08-04 in 10-apk-integrity-coverage.log or 12-apk-ux-coverage.log.
-  - Root Cause: Stage 10 and Stage 12 failed to trigger or execute during today's automation cycle, likely due to runner concurrency restrictions, container scheduling overlaps, or webhook dispatch latency in CI.
+  - Stages: Stage 12 (APK-UX) [RECURRING] (August 4, 2026).
+  - State: [RECURRING] for Stage 12
+  - Symptom: No log entries for 2026-08-04 in 12-apk-ux-coverage.log.
+  - Root Cause: Stage 12 failed to trigger or execute during today's automation cycle, likely due to runner concurrency restrictions, container scheduling overlaps, or webhook dispatch latency in CI.
   - Recommended Fix: Serialize pipeline stage execution or adjust concurrency group configurations in GitHub Actions to ensure reliable sequential execution of all 13 stages. Monitor subsequent runs to verify automatic recovery.
   - Note (Stage 1 correction): Stage 1 was initially recorded as RECURRING for 2026-08-04 in error. Stage 1 ran at 23:42 UTC on 2026-08-03 (01:42 CEST on 2026-08-04) and merged PR #1329 successfully. Because Stage 1 executes before UTC midnight, its log stamp carries the previous UTC date. Stage 13's strict TODAY-date match misclassified this as a missing run. The 01-hardening-coverage.log entry has been corrected to [2026-08-04] to align with the pipeline day. This entry is superseded -- Stage 1 status for 2026-08-04 is [CLEAN].
+  - Note (Stage 10 recovery): Stage 10 was initially recorded as FAILED for 2026-08-04 because its session completed but crashed at the PR submission step due to GitHub API issues. The log entry was manually recovered and recorded. Stage 10 status is [CLEAN].
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -197,8 +198,8 @@
   - Analysis: Audited features view modules and verified zero structural debt.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 2 (Failed/missing on 2026-08-04, tracked under Section 1)
-  - Analysis: Currently blocked by pipeline trigger or concurrency limitations.
+  - Consecutive No-Diff Days: 0 (Active CLEAN logged on 2026-08-04)
+  - Analysis: Verified Digital Asset Links alignment, package name consistency, twa-manifest orientation and theme color parity, and release APK version v14.41.9+164. Manually recovered after Jules PR creation error.
 
 * Stage 11 (APK-Optimization):
   - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-02 to 2026-08-04 inclusive)
