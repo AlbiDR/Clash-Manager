@@ -64,6 +64,8 @@ defineEmits<{
   justify-content: space-between;
   cursor: pointer;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
+  min-height: var(--sys-space-48); /* 48px hybrid touch-target minimum (Target B.2) */
+  padding: var(--sys-space-4) 0; /* Safe touch target vertical gutter */
 }
 
 .setting-row.disabled {
