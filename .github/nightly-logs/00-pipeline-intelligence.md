@@ -365,10 +365,6 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 
 * **WebView Haptics & Interaction Latency:** Explicitly enabling haptic feedback on the WebView view-level (`setHapticFeedbackEnabled(true)`), auto-loading images (`setLoadsImagesAutomatically(true)`), and disabling media playback user gesture requirements (`setMediaPlaybackRequiresUserGesture(false)`) ensures tactile events can propagate instantly and prevents gesture validation overhead. *(Established: PR #PENDING, 2026-07-17)*
 ### [2026-07-16] [Stage 12] SelectionBar Modernization
-* Integrated  directive for declarative haptic feedback on the primary `.morph-btn`.
-* Increased `.selection-bar` height to 56px and interactive elements (`.morph-btn`, `.count-pill`) to 48px (Target B.2).
-* Verified zero layout regressions via `depcruise` and production PWA build. [SUPERSEDED by PR #PENDING]
-### [2026-07-16] [Stage 12] SelectionBar Modernization
 * Integrated `v-tactile` directive for declarative haptic feedback on the primary `.morph-btn`.
 * Increased `.selection-bar` height to 56px and interactive elements (`.morph-btn`, `.count-pill`) to 48px (Target B.2).
 * Verified zero layout regressions via `depcruise` and production PWA build. [SUPERSEDED by PR #PENDING]

@@ -136,7 +136,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 2] Test Suite and Logic Verification
+## [Stage 2] Verification - Logic Integrity Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -153,7 +153,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 3] Database Schema and Migration Baselining
+## [Stage 3] Baseline Consolidation - Declarative Schema Hardener
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -170,7 +170,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 4] Performance and Hygiene Optimizer
+## [Stage 4] Optimization - Substrate Hygiene Engineer
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -187,7 +187,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 5] Document-README Integration
+## [Stage 5] Documentation README - Architecture Truth Architect
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
