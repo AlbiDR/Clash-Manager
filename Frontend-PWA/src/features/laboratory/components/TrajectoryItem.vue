@@ -63,19 +63,19 @@ defineProps<{
     <div class="cost-stack">
       <div v-if="upgrade.gemsUsed > 0" class="cost-item gem">
         <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
-        <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" />
+        <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" width="16" height="16" loading="lazy" />
       </div>
       <div v-else-if="upgrade.wildCardsUsed > 0" class="cost-item wild">
         <span class="val">{{ formatNumber(upgrade.wildCardsUsed) }}</span>
-        <img :src="getWildcardAsset(upgrade.rarity)" class="res-icon" alt="WildCards" />
+        <img :src="getWildcardAsset(upgrade.rarity)" class="res-icon" alt="WildCards" width="16" height="16" loading="lazy" />
       </div>
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <img :src="getCurrencyAsset('gold')" class="res-icon" alt="Gold" />
+        <img :src="getCurrencyAsset('gold')" class="res-icon" alt="Gold" width="16" height="16" loading="lazy" />
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <img :src="getCurrencyAsset('xp')" class="res-icon sm" alt="XP" />
+        <img :src="getCurrencyAsset('xp')" class="res-icon sm" alt="XP" width="12" height="12" loading="lazy" />
       </div>
     </div>
   </div>

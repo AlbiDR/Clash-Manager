@@ -20,7 +20,7 @@ export interface ConfirmOptions {
 }
 
 interface ActiveConfirm extends ConfirmOptions {
-  resolve: (confirmed: boolean) => void;
+  resolve: (isUserActionConfirmed: boolean) => void;
 }
 
 /** Global reactive state for the single active confirmation dialog. */
@@ -44,21 +44,42 @@ const active = ref<ActiveConfirm | null>(null);
  * - `resolve`: Answers the active confirmation request.
  */
 export function useConfirm() {
-  function confirm(options: ConfirmOptions): Promise<boolean> {
+  /**
+   * Triggers a confirmation dialog request and pauses execution until the user answers.
+   *
+   * @remarks
+   * This is a non-blocking asynchronous method that returns a Promise. When called,
+   * it registers the active modal request in the global state, allowing the MD3-styled
+   * dialog component in the app container to render.
+   * Satisfies ADR Section II: Layer 1 Core services (Global Dialog Confirmation).
+   *
+   * @param pendingConfirmationOptions - Custom settings for the modal dialog (title, message, button labels, tone).
+   * @returns A Promise resolving to true if the user clicks confirm, or false otherwise.
+   */
+  function confirm(pendingConfirmationOptions: ConfirmOptions): Promise<boolean> {
     return new Promise((resolvePromise) => {
       active.value = {
         confirmLabel: "Confirm",
         cancelLabel: "Cancel",
         tone: "default",
-        ...options,
+        ...pendingConfirmationOptions,
         resolve: resolvePromise,
       };
     });
   }
 
-  function resolve(confirmed: boolean) {
+  /**
+   * Resolves the single active confirmation request with the user's response.
+   *
+   * @remarks
+   * This method is invoked by the dialog component's buttons. It invokes the active
+   * promise resolver and resets the `active` reactive state to null, closing the modal.
+   *
+   * @param isUserActionConfirmed - Whether the user clicked the affirmative/confirm button.
+   */
+  function resolve(isUserActionConfirmed: boolean) {
     if (!active.value) return;
-    active.value.resolve(confirmed);
+    active.value.resolve(isUserActionConfirmed);
     active.value = null;
   }
 

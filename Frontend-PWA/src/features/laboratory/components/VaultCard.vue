@@ -31,7 +31,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
         <!-- Primary Resources -->
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="getCurrencyAsset('gold')" class="res-asset" alt="Gold" />
+            <img :src="getCurrencyAsset('gold')" class="res-asset" alt="Gold" width="18" height="18" loading="lazy" />
             <span class="res-label">Gold</span>
           </div>
           <input 
@@ -44,7 +44,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="getCurrencyAsset('gem')" class="res-asset" alt="Gems" />
+            <img :src="getCurrencyAsset('gem')" class="res-asset" alt="Gems" width="18" height="18" loading="lazy" />
             <span class="res-label">Gems</span>
           </div>
           <input 
@@ -73,6 +73,9 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
               :src="getWildcardAsset(rarity as string)"
               class="wc-asset" 
               :alt="rarity as string"
+              width="32"
+              height="32"
+              loading="lazy"
             />
             <input 
               type="number" 

@@ -57,14 +57,14 @@ const engineStatus = computed(() => {
       <div class="king-level-display">
         <div class="level-badge current">
           <span class="num">{{ profile.kingLevel }}</span>
-          <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" />
+          <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" width="18" height="18" loading="lazy" />
         </div>
         <div class="progression-divider">
           <Icon name="chevron_right" size="18" />
         </div>
         <div class="level-badge target">
           <span class="num">{{ result.projectedKingLevel }}</span>
-          <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" />
+          <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" width="18" height="18" loading="lazy" />
         </div>
       </div>
     </div>
@@ -74,7 +74,7 @@ const engineStatus = computed(() => {
       <label class="section-label">Required for Projection</label>
       <div class="resources-grid" :class="{ 'triple': result.totalGemsSpent > 0 }">
         <div class="res-slab xp">
-          <img :src="getCurrencyAsset('xp')" class="res-icon" alt="XP" />
+          <img :src="getCurrencyAsset('xp')" class="res-icon" alt="XP" width="24" height="24" loading="lazy" />
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalXpGained) }}</span>
             <span class="label">Experience</span>
@@ -82,7 +82,7 @@ const engineStatus = computed(() => {
         </div>
         
         <div class="res-slab gold">
-          <img :src="getCurrencyAsset('gold')" class="res-icon" alt="Gold" />
+          <img :src="getCurrencyAsset('gold')" class="res-icon" alt="Gold" width="24" height="24" loading="lazy" />
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGoldSpent) }}</span>
             <span class="label">Gold</span>
@@ -90,7 +90,7 @@ const engineStatus = computed(() => {
         </div>
 
         <div v-if="result.totalGemsSpent > 0" class="res-slab gems">
-          <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" />
+          <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" width="24" height="24" loading="lazy" />
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGemsSpent) }}</span>
             <span class="label">Gems</span>

@@ -32,3 +32,6 @@
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue -- Fixed APK download link to use direct raw.githubusercontent.com URL and graceful fallback directory URL to prevent 404 errors.
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/core/services/services-tests/usePwaManager.spec.ts -- Aligned PWA manager tests with direct download URLs and fallbacks.
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/UsefulLinksSettings.spec.ts -- Aligned UsefulLinksSettings tests with direct download URLs and fallbacks.
+* [2026-08-05] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/SummaryCard.vue -- Modernized image elements with explicit dimensions and lazy loading.
+* [2026-08-05] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/TrajectoryItem.vue -- Modernized image elements with explicit dimensions and lazy loading.
+* [2026-08-05] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/VaultCard.vue -- Modernized image elements with explicit dimensions and lazy loading.
