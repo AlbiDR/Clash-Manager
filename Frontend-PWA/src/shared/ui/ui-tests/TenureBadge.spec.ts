@@ -1,16 +1,44 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { describe, it, expect } from "vitest";
+/**
+ * @vitest-environment jsdom
+ */
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import TenureBadge from "../TenureBadge.vue";
 
+const { mockGetSafeBenchmark } = vi.hoisted(() => ({
+  mockGetSafeBenchmark: vi.fn()
+}));
+
+vi.mock("@core/services/useBenchmarking", () => ({
+  useBenchmarking: () => ({
+    getSafeBenchmark: mockGetSafeBenchmark
+  })
+}));
+
+const vTooltip = {
+  mounted: vi.fn(),
+  updated: vi.fn()
+};
+
 describe("TenureBadge.vue", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSafeBenchmark.mockReturnValue(null);
+  });
+
   const createWrapper = (props = {}) => {
     return mount(TenureBadge, {
       props: {
         days: 10,
         ...props
+      },
+      global: {
+        directives: {
+          tooltip: vTooltip
+        }
       }
     });
   };
@@ -28,5 +56,18 @@ describe("TenureBadge.vue", () => {
   it("renders '0d' when days is 0", () => {
     const wrapper = createWrapper({ days: 0 });
     expect(wrapper.text()).toBe("0d");
+  });
+
+  it("passes correct context and value to getSafeBenchmark", () => {
+    createWrapper({ days: 250, context: "lb" });
+    expect(mockGetSafeBenchmark).toHaveBeenCalledWith("lb", "tenure", 250);
+  });
+
+  it("binds the tooltip directive to the benchmark value", () => {
+    mockGetSafeBenchmark.mockReturnValue("Mocked Benchmark Tooltip");
+    createWrapper({ days: 250, context: "lb" });
+    expect(vTooltip.mounted).toHaveBeenCalled();
+    const call = vTooltip.mounted.mock.calls[0];
+    expect(call[1].value).toBe("Mocked Benchmark Tooltip");
   });
 });

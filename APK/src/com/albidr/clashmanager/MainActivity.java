@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -13,6 +14,7 @@ import android.os.Bundle;
 import android.os.Message;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -37,11 +39,19 @@ public class MainActivity extends Activity {
     private String mPendingTagsJson = null;
     private long mPendingDelayMs = BlitzService.DEFAULT_PROFILE_LOAD_DELAY_MS;
     private boolean mAwaitingOverlayPermission = false;
+    private FrameLayout mRootLayout;
 
     @Override
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         mTrustedHost = getString(getResources().getIdentifier("hostName", "string", getPackageName()));
+
+        // Only ever true for a manifest explicitly marked android:debuggable="true"
+        // (a local dev install) - the signed release manifest never sets that flag,
+        // so this is a no-op in production and safe to leave unconditional.
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
 
         // True edge-to-edge: draw behind system bars ourselves and consume the
         // insets as padding, rather than relying on setStatusBarColor/
@@ -80,12 +90,22 @@ public class MainActivity extends Activity {
                 });
         }
 
+        this.mRootLayout = frameLayout;
+        setContentView(frameLayout);
+        initWebView();
+    }
+
+    /**
+     * Builds and attaches a fresh WebView with the full settings/client/bridge setup, then
+     * loads the PWA. Split out from onCreate so onRenderProcessGone can rebuild the WebView
+     * in place after the renderer crashes, instead of the whole app going down with it.
+     */
+    private void initWebView() {
         WebView webView = new WebView(this);
         this.mWebView = webView;
         this.mWebView.setHapticFeedbackEnabled(true);
-        frameLayout.addView(webView);
-        setContentView(frameLayout);
-        
+        this.mRootLayout.addView(webView);
+
         WebSettings settings = this.mWebView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -113,7 +133,9 @@ public class MainActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
         settings.setUserAgentString(settings.getUserAgentString() + " ClashManagerAndroidWrapper");
 
-        this.mBridge = new AndroidBridge();
+        if (this.mBridge == null) {
+            this.mBridge = new AndroidBridge();
+        }
         this.mWebView.addJavascriptInterface(this.mBridge, "AndroidBridge");
         this.mBridgeAttached = true;
 
@@ -152,6 +174,24 @@ public class MainActivity extends Activity {
             public void onReceivedError(WebView webView2, int i, String str, String str2) {
                 super.onReceivedError(webView2, i, str, str2);
                 Toast.makeText(MainActivity.this, "Load failed: " + str + "\nURL: " + str2, Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView webView2, RenderProcessGoneDetail detail) {
+                // WebView's contract (since API 26): if this isn't overridden, an unhandled
+                // renderer crash takes the whole host app down with it. The renderer crash
+                // itself lives in the platform's WebView, out of our control - but whether
+                // it kills this app is entirely up to us, so rebuild the WebView instead.
+                android.util.Log.w("ClashManagerMain", "WebView renderer process gone (didCrash="
+                    + detail.didCrash() + "); rebuilding WebView instead of losing the app");
+                if (webView2 != mWebView) {
+                    // Stale callback from a WebView already replaced by an earlier recovery.
+                    return true;
+                }
+                mRootLayout.removeView(mWebView);
+                mWebView.destroy();
+                initWebView();
+                return true;
             }
         });
 

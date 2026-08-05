@@ -132,7 +132,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/01-hardening.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/01-hardening.md`
 
 ---
 
@@ -149,7 +149,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/02-verification.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/02-verification.md`
 
 ---
 
@@ -166,7 +166,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/03-baseline-consolidation.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/03-baseline-consolidation.md`
 
 ---
 
@@ -183,7 +183,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/04-optimization.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/04-optimization.md`
 
 ---
 
@@ -200,7 +200,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/05-documentation-readme.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/05-documentation-readme.md`
 
 ---
 
@@ -217,7 +217,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/06-documentation-tsdoc.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/06-documentation-tsdoc.md`
 
 ---
 
@@ -234,7 +234,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/07-version-integrity.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/07-version-integrity.md`
 
 ---
 
@@ -251,7 +251,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/08-dependency-audit.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/08-dependency-audit.md`
 
 ---
 
@@ -268,7 +268,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/09-refactor-proposals.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/09-refactor-proposals.md`
 
 ---
 
@@ -285,7 +285,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/10-apk-integrity.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/10-apk-integrity.md`
 
 ---
 
@@ -302,7 +302,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/11-apk-optimization.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/11-apk-optimization.md`
 
 ---
 
@@ -319,7 +319,7 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/12-apk-ux.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/12-apk-ux.md`
 
 ---
 
@@ -336,4 +336,4 @@ This task has exactly two valid outcomes. Either you complete all work fully aut
 
 ### Bootstrap Execution
 
-Read and execute the instructions in this file exactly as written: `.github/nightly-prompts/13-self-healing-protocol.md`
+Read and execute the instructions located at this repository path exactly as written: `.github/nightly-prompts/13-self-healing-protocol.md`

@@ -40,7 +40,7 @@ describe("useHistoryChart", () => {
 
     expect(mappedData.value.data[0].tooltipLabel).toContain("Fame");
     expect(mappedData.value.projection?.tooltipLabel).toContain("Fame");
-    expect(mappedData.value.projection?.tooltipLabel).toContain("#fbbf24"); // Proj color for war
+    expect(mappedData.value.projection?.tooltipLabel).toContain("Projected");
   });
 
   it("processes 'voyage' type data with correct units and constants", () => {
@@ -53,7 +53,7 @@ describe("useHistoryChart", () => {
 
     expect(mappedData.value.data[0].tooltipLabel).toContain("Crowns");
     expect(mappedData.value.projection?.tooltipLabel).toContain("Crowns");
-    expect(mappedData.value.projection?.tooltipLabel).toContain("#22d3ee"); // Proj color for voyage
+    expect(mappedData.value.projection?.tooltipLabel).toContain("Projected");
   });
 
   it("limits history entries based on type", () => {

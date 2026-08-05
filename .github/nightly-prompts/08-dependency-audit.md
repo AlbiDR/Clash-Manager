@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Dependency Audit [Stage 8] - External Health Auditor
+# [Stage 8] Dependency Audit - External Health Auditor
 
 ---
 role: Dependency-Audit

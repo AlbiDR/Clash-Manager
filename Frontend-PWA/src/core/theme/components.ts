@@ -75,23 +75,6 @@ a { text-decoration: underline; color: inherit; }
 }
 
 /* =========================================
-   RICH TOOLTIPS
-   ========================================= */
-.rich-tooltip {
-  position: fixed; background: var(--sys-surface-glass);
-  color: var(--sys-color-on-surface); padding: var(--sys-space-16); border-radius: var(--sys-shape-corner-m); width: 180px;
-  pointer-events: none; opacity: 0; z-index: var(--sys-z-tooltip);
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: opacity var(--sys-motion-duration-200) ease, transform var(--sys-motion-duration-250) var(--sys-motion-spring), top var(--sys-motion-duration-200) ease, left var(--sys-motion-duration-200) ease;
-  display: flex; flex-direction: column; gap: var(--sys-space-10); contain: content;
-  transform: translateX(-50%) translateY(-100%) scale(0.9);
-}
-.rich-tooltip.visible { opacity: 1; transform: translateX(-50%) translateY(-100%) scale(1); }
-
-/* ... other rt-* classes ... */
-
-/* =========================================
    SHARED CARD COMPONENTS
    ========================================= */
 .player-name {

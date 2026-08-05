@@ -1,154 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import type { Directive } from "vue";
-import { formatNumber } from "../../core";
-import { useHaptics } from "../composables/useHaptics";
 import type { BenchmarkData } from "../../core";
+import { useHaptics } from "../composables/useHaptics";
+import { useGhostBenchmarkState } from "./ghostBenchmarkState";
 
-/**
- * Native API Type: PopoverElement
- * Represents the experimental Popover API interface for HTML elements.
- */
-interface PopoverElement extends HTMLDivElement {
-  popover: string;
-  showPopover(): void;
-  hidePopover(): void;
-}
-
-// Singleton Tooltip State
-// [THREAT:] Singleton state in a shared directive can lead to memory leaks if not
-// properly unmounted. vTooltip implements a globalHide and singleton pattern to
-// maintain a single DOM footprint.
+// Singleton Interaction State
 // [DECISION LOG] EPHEMERAL: singleton state intentionally resets on full page reload.
-let tooltipEl: PopoverElement | null = null;
 let activeTarget: HTMLElement | null = null;
 let hideTimer: number | null = null;
-let pressTimer: ReturnType<typeof setTimeout> | null = null;
 
-/**
- * Internal UI: Create or retrieve the singleton tooltip element.
- *
- * @internal
- * Side Effect: Appends a div to document.body and initializes Popover API if supported.
- */
-function createTooltip(): PopoverElement {
-  if (tooltipEl) return tooltipEl;
-  const el = document.createElement("div") as PopoverElement;
-  el.className = "rich-tooltip";
-
-  // [THREAT:] Unvalidated hardware/browser API access.
-  // [DECISION LOG] Utilizing the Popover API (Optimization #54) for top-layer
-  // rendering to prevent clipping in scrolling containers.
-  if ("showPopover" in el) {
-    el.popover = "manual";
-  }
-
-  document.body.appendChild(el);
-  tooltipEl = el;
-  return el;
-}
-
-/**
- * Renders the tooltip content based on the provided data.
- *
- * @param data - Either a simple string or a complex BenchmarkData object.
- */
-function renderContent(data: BenchmarkData | string) {
-  if (!tooltipEl) return;
-  if (typeof data === "string") {
-    tooltipEl.innerHTML = `<div class="rt-simple">${data}</div>`;
-    return;
-  }
-  
-  const range = data.max - data.min || 1;
-  const playerPos = Math.min(100, Math.max(0, ((data.value - data.min) / range) * 100));
-  const avgPos = Math.min(100, Math.max(0, ((data.avg - data.min) / range) * 100));
-  const sentimentClass = data.isBetter ? "better" : "worse";
-  const delta = data.isBetter ? `+${data.percent}%` : `-${data.percent}%`;
-
-  tooltipEl.innerHTML = `
-    <div class="rt-header">
-        <span class="rt-label">${data.label}</span>
-        <span class="rt-tier tier-${data.tier.toLowerCase().replace(/\s+/g, "-")}">${data.tier}</span>
-    </div>
-    <div class="rt-visual"><div class="rt-track">
-        <div class="rt-line"></div>
-        <div class="rt-marker avg" style="left: ${avgPos}%"></div>
-        <div class="rt-marker player ${sentimentClass}" style="left: ${playerPos}%"></div>
-    </div></div>
-    <div class="rt-footer">
-        <span class="rt-stat">AVG ${formatNumber(Math.round(data.avg))}</span>
-        <span class="rt-delta ${sentimentClass}">${delta}</span>
-    </div>
-    <div class="rt-bounds">
-        <div class="rt-bound"><span>MIN</span> ${formatNumber(Math.round(data.min))}</div>
-        <div class="rt-bound"><span>MAX</span> ${formatNumber(Math.round(data.max))}</div>
-    </div>`;
-}
-
-/**
- * Positions the tooltip relative to the target element.
- *
- * @param el - The target element to anchor the tooltip to.
- */
-function positionTooltip(el: HTMLElement) {
-  if (!tooltipEl) return;
-  const rect = el.getBoundingClientRect();
-  const viewportWidth = window.innerWidth;
-  const padding = 12;
-
-  tooltipEl.classList.add("visible");
-  
-  // [THREAT:] Popover API might throw if already showing or if the state is invalid.
-  // [DECISION LOG] Safe execution of Popover API via unknown narrowing.
-  if ("showPopover" in tooltipEl) {
-    try {
-      tooltipEl.showPopover();
-    } catch (popoverShowError: unknown) {
-      /* fallback: CSS visibility class already added */
-    }
-  }
-
-  const tipRect = tooltipEl.getBoundingClientRect();
-
-  let left = rect.left + rect.width / 2;
-  const halfWidth = tipRect.width / 2;
-  if (left - halfWidth < padding) left = halfWidth + padding;
-  else if (left + halfWidth > viewportWidth - padding) left = viewportWidth - halfWidth - padding;
-
-  let top = rect.top - 8;
-  let translateY = "-100%";
-  if (rect.top < tipRect.height + padding * 2) {
-    top = rect.bottom + 8;
-    translateY = "0%";
-  }
-
-  tooltipEl.style.left = `${left}px`;
-  tooltipEl.style.top = `${top}px`;
-  tooltipEl.style.transform = `translateX(-50%) translateY(${translateY}) scale(1)`;
-}
-
-/**
- * Hides the tooltip globally.
- */
-function globalHide() {
-  if (tooltipEl) {
-    tooltipEl.classList.remove("visible");
-    tooltipEl.style.transform = tooltipEl.style.transform.replace(
-      "scale(1)",
-      "scale(0.8)",
-    );
-    // [THREAT:] Popover API might throw if already hidden.
-    // [DECISION LOG] Safe execution of Popover API via unknown narrowing.
-    if ("hidePopover" in tooltipEl) {
-      try {
-        tooltipEl.hidePopover();
-      } catch (popoverHideError: unknown) {
-        /* ignore: CSS visibility already handled */
-      }
-    }
-  }
-  activeTarget = null;
+// [DECISION LOG] Primary-input detection (coarse/touch vs. fine/mouse) drives
+// which interaction model applies: hover-to-show on fine pointers, tap-to-show
+// on coarse pointers. Re-evaluated live via matchMedia's change event so a
+// convertible/2-in-1 device switching input modes is picked up without reload.
+let isCoarsePointer = false;
+if (typeof window !== "undefined" && window.matchMedia) {
+  const pointerQuery = window.matchMedia("(pointer: coarse)");
+  isCoarsePointer = pointerQuery.matches;
+  pointerQuery.addEventListener("change", (queryChangeEvent) => {
+    isCoarsePointer = queryChangeEvent.matches;
+  });
 }
 
 // Typing for element-bound values to fix any usage
@@ -156,27 +28,31 @@ interface TooltipHTMLElement extends HTMLElement {
   _tooltipValue?: BenchmarkData | string;
 }
 
-// SPEED WIZARD: Unified Delegated Listeners
 if (typeof window !== "undefined") {
   const haptics = useHaptics();
+  const { show, hide } = useGhostBenchmarkState();
 
-  const handleShow = (el: TooltipHTMLElement) => {
+  const handleShow = (el: TooltipHTMLElement, isTap = false) => {
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     const value = el._tooltipValue;
     if (!value) return;
-    createTooltip();
     activeTarget = el;
-    renderContent(value);
-    positionTooltip(el);
-    haptics.heavy();
+    show(el, value);
+    // [DECISION LOG] Haptics reserved for the mobile tap-to-open gesture only.
+    // Firing on every desktop hover (the previous behavior) was noise, not signal.
+    if (isTap) haptics.tap();
   };
 
   const handleHide = () => {
-    hideTimer = window.setTimeout(globalHide, 100);
+    hideTimer = window.setTimeout(() => {
+      hide();
+      activeTarget = null;
+    }, 100);
   };
 
-  // Mouse Delegation
+  // Mouse Delegation (fine pointer only)
   document.body.addEventListener("mouseover", (mouseOverEvent) => {
+    if (isCoarsePointer) return;
     const tooltipTarget = (mouseOverEvent.target as HTMLElement).closest(
       "[data-v-tooltip]",
     ) as TooltipHTMLElement | null;
@@ -184,64 +60,45 @@ if (typeof window !== "undefined") {
   });
 
   document.body.addEventListener("mouseout", (mouseOutEvent) => {
+    if (isCoarsePointer) return;
     const tooltipTarget = (mouseOutEvent.target as HTMLElement).closest(
       "[data-v-tooltip]",
     ) as TooltipHTMLElement | null;
     if (tooltipTarget) handleHide();
   });
 
-  // Touch Delegation (Long Press)
-  document.body.addEventListener(
-    "touchstart",
-    (touchStartEvent) => {
-      const tooltipTarget = (touchStartEvent.target as HTMLElement).closest(
-        "[data-v-tooltip]",
-      ) as TooltipHTMLElement | null;
-      if (!tooltipTarget) {
-        if (
-          tooltipEl?.classList.contains("visible") &&
-          !(touchStartEvent.target as HTMLElement).closest(".rich-tooltip")
-        )
-          globalHide();
-        return;
-      }
-      if (pressTimer) clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => handleShow(tooltipTarget), 400);
-    },
-    { passive: true },
-  );
-
-  document.body.addEventListener("touchend", () => {
-    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-  }, { passive: true });
-
-  window.addEventListener("scroll", globalHide, { passive: true });
+  // Tap Delegation (coarse pointer only)
+  // [DECISION LOG] Replaces the previous 400ms long-press timer: a plain tap
+  // opens the mobile sheet immediately, no ambiguous hold duration. Dismissal
+  // is owned by GhostBenchmarkHost's sheet (backdrop tap / swipe-down).
+  document.body.addEventListener("click", (clickEvent) => {
+    if (!isCoarsePointer) return;
+    const tooltipTarget = (clickEvent.target as HTMLElement).closest(
+      "[data-v-tooltip]",
+    ) as TooltipHTMLElement | null;
+    if (tooltipTarget) handleShow(tooltipTarget, true);
+  });
 }
 
 /**
  * V-TOOLTIP DIRECTIVE
- * Provides an interactive rich tooltip for strings or BenchmarkData.
+ * Provides an interactive ghost-benchmark popup for strings or BenchmarkData.
  *
  * @remarks
  * This directive is a Layer 2 (@shared) molecule. It provides a context-blind
  * information overlay that remains consistent across all business features.
- * To maintain performance and prevent DOM bloat, it utilizes a singleton pattern
- * with event delegation on document.body.
+ * To maintain performance and prevent DOM bloat, it utilizes a singleton
+ * pattern with event delegation on document.body — actual rendering happens
+ * once, in `GhostBenchmarkHost.vue`, driven by the shared `ghostBenchmarkState`.
  *
  * Architectural Constraints:
  * - Must not import from @features or @app.
- * - Relies on the Popover API for top-layer rendering (Optimization #54).
  * - Implements delegated listeners to avoid attaching thousands of mouse events.
  *
- * Interaction Thresholds:
- * - Touch (Long Press): 400ms hold required to trigger.
- * - Haptic Duration: 40ms vibration on activation.
- * - Hide Delay: 100ms debounced exit to prevent flickering.
- *
- * Side Effects:
- * - Creates and appends a '.rich-tooltip' div to document.body on first use.
- * - Attaches global listeners to document.body and window for event delegation and scroll-to-hide.
- * - Triggers hardware haptics via useHaptics.
+ * Interaction Model:
+ * - Fine pointer (desktop): hover to show, 100ms debounced hide on mouseout.
+ * - Coarse pointer (mobile): tap to show; dismissed via the sheet's own
+ *   backdrop tap or swipe-down gesture.
  *
  * Reactive State:
  * - The directive's value (BenchmarkData | string) is stored as an expando
@@ -263,7 +120,10 @@ export const vTooltip: Directive<TooltipHTMLElement, BenchmarkData | string> = {
     }
   },
   unmounted(el) {
-    if (activeTarget === el) globalHide();
+    if (activeTarget === el) {
+      useGhostBenchmarkState().hide();
+      activeTarget = null;
+    }
     delete el._tooltipValue;
   }
 };

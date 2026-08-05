@@ -77,7 +77,7 @@ const ariaLabel = computed(() => {
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for clan tenure and hierarchy role. -->
     <template #identity-meta>
-      <TenureBadge :days="props.member.d.days" />
+      <TenureBadge :days="props.member.d.days" context="lb" />
       <RoleBadge :role="props.member.d.role" />
     </template>
 
@@ -115,6 +115,9 @@ const ariaLabel = computed(() => {
           label="Average Fame"
           :loading="props.appIsRefreshing"
           :value="formatNumber(props.member.d.wfame)"
+          benchmark-type="lb"
+          benchmark-metric="avgFame"
+          :benchmark-raw-value="props.member.d.wfame"
         />
         <StatisticItem
           label="Avg. Donations"

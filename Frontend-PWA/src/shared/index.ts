@@ -27,6 +27,8 @@ export { default as CardActions } from "./ui/CardActions.vue";
 export { default as Toast } from "./ui/Toast.vue";
 export { default as ToastContainer } from "./ui/ToastContainer.vue";
 export { default as ConfirmDialog } from "./ui/ConfirmDialog.vue";
+export { default as GhostBenchmarkHost } from "./ui/GhostBenchmarkHost.vue";
+export { default as BenchmarkContent } from "./ui/BenchmarkContent.vue";
 export { default as SelectionBar } from "./ui/SelectionBar.vue";
 export { default as ScoreThresholdSelector } from "./ui/ScoreThresholdSelector.vue";
 export { default as SettingRow } from "./ui/SettingRow.vue";
@@ -55,6 +57,7 @@ export { useTheme } from "./composables/useTheme";
 export { useLongPress } from "./composables/useLongPress";
 export { useCountdown } from "./composables/useCountdown";
 export { useViewport } from "./composables/useViewport";
+export { usePointerCapability } from "./composables/usePointerCapability";
 
 export { useHeaderScroll } from "./composables/useHeaderScroll";
 export { usePullToRefresh } from "./composables/usePullToRefresh";

@@ -89,7 +89,6 @@ export function useHistoryChart(
     const limit = type === "war" ? 52 : 15;
     const maxScale = type === "war" ? WAR_CONSTANTS.MAX_FAME : VOYAGE_CONSTANTS.MAX_CROWNS;
     const unit = type === "war" ? "Fame" : "Crowns";
-    const projColor = type === "war" ? "#fbbf24" : "#22d3ee";
     const idPrefix = type === "war" ? "h" : "vh";
 
     const processedData = allHistory.slice(0, limit);
@@ -112,13 +111,15 @@ export function useHistoryChart(
       return {
         id: `${idPrefix}-${h.weekId}-${i}`,
         value: h.value,
-        tooltipLabel: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase">${h.readableWeek}</span><br>${formatNumber(h.value)} ${unit}`
+        // [DECISION LOG] Plain text, not HTML: the tooltip renderer uses safe text
+        // interpolation (no innerHTML/v-html), so this must stay markup-free.
+        tooltipLabel: `${h.readableWeek}\n${formatNumber(h.value)} ${unit}`
       };
     });
 
     const projection = {
       value: nextValue,
-      tooltipLabel: `<span style="font-size:10px;opacity:0.8;text-transform:uppercase;color:${projColor}">Projected</span><br>${formatNumber(Math.round(nextValue))} ${unit}`
+      tooltipLabel: `Projected\n${formatNumber(Math.round(nextValue))} ${unit}`
     };
 
     return { data: historyChartSeries, projection, maxScale };

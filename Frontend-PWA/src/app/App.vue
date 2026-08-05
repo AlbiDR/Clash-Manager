@@ -6,6 +6,7 @@ import {
   ToastContainer,
   ConfirmDialog,
   FloatingDock,
+  GhostBenchmarkHost,
 } from "@shared";
 import {
   useClashDataStore,
@@ -154,6 +155,7 @@ onMounted(() => {
     <FloatingDock />
     <ToastContainer />
     <ConfirmDialog />
+    <GhostBenchmarkHost />
   </div>
 </template>
 
