@@ -20,7 +20,7 @@ export interface ConfirmOptions {
 }
 
 interface ActiveConfirm extends ConfirmOptions {
-  resolve: (confirmed: boolean) => void;
+  resolve: (isUserActionConfirmed: boolean) => void;
 }
 
 /** Global reactive state for the single active confirmation dialog. */
@@ -44,21 +44,21 @@ const active = ref<ActiveConfirm | null>(null);
  * - `resolve`: Answers the active confirmation request.
  */
 export function useConfirm() {
-  function confirm(options: ConfirmOptions): Promise<boolean> {
+  function confirm(pendingConfirmationOptions: ConfirmOptions): Promise<boolean> {
     return new Promise((resolvePromise) => {
       active.value = {
         confirmLabel: "Confirm",
         cancelLabel: "Cancel",
         tone: "default",
-        ...options,
+        ...pendingConfirmationOptions,
         resolve: resolvePromise,
       };
     });
   }
 
-  function resolve(confirmed: boolean) {
+  function resolve(isUserActionConfirmed: boolean) {
     if (!active.value) return;
-    active.value.resolve(confirmed);
+    active.value.resolve(isUserActionConfirmed);
     active.value = null;
   }
 

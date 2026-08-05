@@ -159,20 +159,20 @@ export function useSettings() {
     return syncDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   });
 
-  function updateApiUrl(newUrl: string) {
-    if (newUrl.trim()) {
-      localStorage.setItem("cm_supabase_url", newUrl.trim());
+  function updateApiUrl(targetSupabaseUrl: string) {
+    if (targetSupabaseUrl.trim()) {
+      localStorage.setItem("cm_supabase_url", targetSupabaseUrl.trim());
       window.location.reload();
     }
   }
 
   async function resetApiUrl() {
-    const confirmed = await confirm({
+    const isResetConfirmed = await confirm({
       title: "Reset API URL to default?",
       confirmLabel: "Reset",
     });
 
-    if (confirmed) {
+    if (isResetConfirmed) {
       localStorage.removeItem("cm_supabase_url");
       window.location.reload();
     }
@@ -219,9 +219,9 @@ export function useSettings() {
     startBackgroundSync();
   }
 
-  function setBlitzSpeed(speedValue: import("@core/config").BlitzSpeed) {
+  function setBlitzSpeed(blitzSpeedSetting: import("@core/config").BlitzSpeed) {
     haptics.tap();
-    modules.blitzSpeed = speedValue;
+    modules.blitzSpeed = blitzSpeedSetting;
   }
 
   const layoutProps = computed(() => ({
