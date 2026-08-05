@@ -410,6 +410,27 @@ async function run() {
 
   log(`Found ${prs.length} total open PR(s).`);
 
+  // Auto-retarget any Nightly PRs opened targeting the wrong branch
+  for (const pr of prs) {
+    const login = pr.user.login.toLowerCase();
+    const allowed = CONFIG.allowedAuthors.some(a =>
+      login === a.toLowerCase() || login === `${a.toLowerCase()}[bot]`
+    );
+    const isNightlyBranch = pr.head.ref.startsWith("nightly/");
+    const isWrongBase = pr.base.ref !== CONFIG.targetBranch;
+
+    if (allowed && isNightlyBranch && isWrongBase) {
+      log(`Detected PR #${pr.number} targeting '${pr.base.ref}' instead of '${CONFIG.targetBranch}'. Auto-retargeting...`);
+      try {
+        await githubApi(`/repos/${CONFIG.owner}/${CONFIG.repo}/pulls/${pr.number}`, "PATCH", { base: CONFIG.targetBranch });
+        pr.base.ref = CONFIG.targetBranch;
+        log(`PR #${pr.number} successfully retargeted to '${CONFIG.targetBranch}'.`, "success");
+      } catch (e) {
+        log(`Failed to retarget PR #${pr.number}: ${e.message}`, "error");
+      }
+    }
+  }
+
   // Filter to allowed authors targeting Nightly, sort by stage number
   const targets = prs
     .filter(pr => {

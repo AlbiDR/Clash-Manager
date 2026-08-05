@@ -272,7 +272,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 10] APK & PWA Wrapper Integrity Auditor
+## [Stage 10] APK and PWA Wrapper Integrity Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`

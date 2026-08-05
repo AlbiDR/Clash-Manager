@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# [Stage 11] APK & Native Wrapper Optimizations
+# [Stage 11] APK and Native Wrapper Optimizations
 
 ---
 role: APK-Optimization

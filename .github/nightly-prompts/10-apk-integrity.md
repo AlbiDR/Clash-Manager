@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# [Stage 10] APK & PWA Wrapper Integrity Auditor
+# [Stage 10] APK and PWA Wrapper Integrity Auditor
 
 ---
 role: APK-Integrity
