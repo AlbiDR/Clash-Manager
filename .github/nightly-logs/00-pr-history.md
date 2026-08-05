@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-08-04
+LAST_AGED:   2026-08-05
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -98,75 +98,6 @@ LAST_AGED:   2026-08-04
 **Why:** Conduct daily runtime integrity audit on authorization and validation boundaries
 **Change:** Audited all active Edge Functions and verified 100% security saturation
 **Result:** Passed daily audit with zero security vulnerabilities detected
-
-### [2026-07-28] PR #1245 [Stage 11]: chore(apk-optimization): no optimization required
-**Domain:** APK Optimization | **Commit:** 2acf351966b5852ad373952e8daaba1cc51d7fce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1245)
-**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
-**Why:** To perform the daily automated APK container and Native WebView wrapper compilation, assets, and caching optimization pass.
-**Change:** Audited native WebView configurations, Service Worker precache settings, and ran MD5 resource duplication checksum validation on the entire assets tree.
-**Result:** 100% optimized WebView caching topology, zero duplicate native assets, and perfect SW precache configuration verified with zero regressions.
-
-## [2026-07-28] MERGE FAILED: PR #1250: perf(opt): standardize Layer 1 Core catch block parameter naming
-> [!CAUTION]
-> **Status**: Auto-merge aborted.
-> **Error**: `Merge conflicts (state: dirty).`
-> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1250)
-
-### [2026-07-28] PR #PENDING [Stage 13]: Audited all 13 pipeline stages, documented Stage 11 recurring missing run, and updated the three sections of the living self-healing protocol.
-**Domain:** Pipeline | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/13-self-healing-protocol.md
-**Why:** To complete the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
-**Change:** Audited all 13 pipeline stages, documented Stage 11 recurring missing run, and updated the three sections of the living self-healing protocol.
-**Result:** 100% pipeline visibility and updated no-diff metrics with all monorepo checks passing cleanly.
-
-### [2026-07-28] PR #PENDING [Stage 12]: Modernized .btn-action primitive button height to var(--sys-space-48) to enforce the 48px minimum touch target compliance.
-**Domain:** apk-ux | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/core/theme/components.ts
-**Why:** Touch target footprint below 48px on card action buttons degraded hybrid PWA ergonomics on mobile viewports.
-**Change:** Modernized .btn-action primitive button height to var(--sys-space-48) to enforce the 48px minimum touch target compliance.
-**Result:** Guaranteed premium hybrid native interaction ergonomics and 48px minimum footprint compliance across all clan card action buttons.
-
-### [2026-07-28] PR #PENDING [Stage 10]: No mismatches or violations detected across manifests, asset links, resource colors, permissions, or version mappings.
-**Domain:** apk-integrity | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
-**Why:** Perform standard nightly APK & PWA wrapper integrity audit
-**Change:** No mismatches or violations detected across manifests, asset links, resource colors, permissions, or version mappings.
-**Result:** Passed all automated build and security checks with zero-diff codebase state.
-
-### [2026-07-28] PR #PENDING [Stage 9]: chore(refactor): no action required
-**Domain:** Refactor | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/00-pr-history.md
-**Why:** To audit and certify the monorepo structural health, feature isolation, and view module size thresholds.
-**Change:** chore(refactor): no action required
-**Result:** 100% structural alignment and layer boundary compliance verified with all modules well under the 400-line threshold.
-
-### [2026-07-28] PR #PENDING [Stage 7]: Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
-**Domain:** Versions | **Commit:** PENDING | [View PR](PENDING)
-**Files:** .github/nightly-logs/07-version-integrity-coverage.log
-**Why:** To perform the daily version consistency audit across monorepo manifests, catalogs, and documentation.
-**Change:** Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation.
-**Result:** Monorepo is perfectly synchronized at ground truth v14.37.4.
-
-### [2026-07-28] PR #PENDING [Stage 6]: Added comprehensive component-level, props-level, and emits-level JSDoc/TSDoc specifications, inline decision logs, and relocated the stray import statement in HeaderInfoOverlay.vue.
-**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/features/settings/components/BackendRefresher.vue, Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
-**Why:** To establish type-safe interface contracts and inline decision logs on recently modernized backend refresher and overlay components.
-**Change:** Added comprehensive component-level, props-level, and emits-level JSDoc/TSDoc specifications, inline decision logs, and relocated the stray import statement in HeaderInfoOverlay.vue.
-**Result:** 100% logic intent transparency and documentation synchronization with the CleanStack ADR, with all 1442 monorepo tests passing cleanly.
-
-### [2026-07-28] PR #PENDING [Stage 3]: Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update.
-**Domain:** database-baseline | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/migrations/20260531232406_master_migration.sql
-**Why:** To fold new incremental migrations chronologically into the master baseline database schema.
-**Change:** Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update.
-**Result:** Unified master baseline is synchronized, RLS and search path isolation verified, and all test files pass successfully.
-
-### [2026-07-28] PR #PENDING [Stage 1]: Audited sync-player-cards and query-royale-api edge functions
-**Domain:** Hardening | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Backend/supabase/functions/sync-player-cards/index.ts
-**Why:** Conduct exhaustive daily runtime integrity audit on authorization and validation boundaries
-**Change:** Audited sync-player-cards and query-royale-api edge functions
-**Result:** Validated 100% security saturation and zero threats
 
 ### Description
 Completed the daily automated self-healing protocol audit pass for July 23, 2026, targeting the Nightly branch. Mapped all preceding stages' status from log evidence, identifying successful runs and documenting the root cause of the silent crashes/recurring failures for Stage 2 and Stage 11 today. Also updated consecutive no-diff days counters to reflect today's commits.
@@ -797,6 +728,15 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 ## T2 -- Recent (8-30 days)
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-07-28] PR #1245 [APK Optimization]: chore(apk-optimization): no optimization required (``2acf351966b5852ad373952e8daaba1cc51d7fce``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1245)
+* [2026-07-28] PR #PENDING [Pipeline]: Audited all 13 pipeline stages, documented Stage 11 recurring missing run, and updated the three sections of the living self-healing protocol. (``PENDING``) [View](PENDING)
+* [2026-07-28] PR #PENDING [apk-ux]: Modernized .btn-action primitive button height to var(--sys-space-48) to enforce the 48px minimum touch target compliance. (``PENDING``) [View](PENDING)
+* [2026-07-28] PR #PENDING [apk-integrity]: No mismatches or violations detected across manifests, asset links, resource colors, permissions, or version mappings. (``PENDING``) [View](PENDING)
+* [2026-07-28] PR #PENDING [Refactor]: chore(refactor): no action required (``PENDING``) [View](PENDING)
+* [2026-07-28] PR #PENDING [Versions]: Performed exhaustive consistency audit across manifests, catalog, substrate, and documentation. (``PENDING``) [View](PENDING)
+* [2026-07-28] PR #PENDING [TSDoc]: Added comprehensive component-level, props-level, and emits-level JSDoc/TSDoc specifications, inline decision logs, and relocated the stray import statement in HeaderInfoOverlay.vue. (``PENDING``) [View](PENDING)
+* [2026-07-28] PR #PENDING [database-baseline]: Added win_rate column to recruits table, updated scoring, roster, and headhunter views, updated public.sync_recruits function, and appended a rescan backfill scheduler update. (``PENDING``) [View](PENDING)
+* [2026-07-28] PR #PENDING [Hardening]: Audited sync-player-cards and query-royale-api edge functions (``PENDING``) [View](PENDING)
 * [2026-07-27] PR #PENDING [Pipeline]: Audited all 13 pipeline stages, documented Stage 9 recovery, identified Stage 11 missing run, and updated the three sections of the living self-healing protocol. (``PENDING``) [View](PENDING)
 * [2026-07-27] PR #PENDING [APK & PWA Wrapper]: Modernize close-btn-round to 48px and add v-tactile (``PENDING``) [View](PENDING)
 * [2026-07-27] PR #PENDING [apk-integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
@@ -994,35 +934,24 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-07-06] PR #1030 [Refactor/Optimization]: perf(opt): centralize backend utilities and refactor edge functions (``943801c``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1030)
 * [2026-07-06] PR #1029 [Baseline]: chore(baseline): fold new migrations into master baseline (``d36c227``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1029)
 * [2026-07-06] PR #1028 [Verification]: test(verify): add specs for app shell and base theme (``d339b36``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1028)
-* [2026-07-05] PR #1027 [APK UX]: fix(apk-ux): add tactile feedback to backend refresh actions (``319036f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1027)
-* [2026-07-05] PR #1026 [APK Optimization]: perf(apk-optimization): consolidate redundant XML resources into aliases (``4c98aed``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1026)
-* [2026-07-05] PR #1025 [APK Integrity]: chore(apk-integrity): no mismatch found (``79a7cac``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1025)
-* [2026-07-05] PR #1024 [Refactor/Optimization]: refactor: extract leaderboard scouting to core api (``d91e226``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1024)
-* [2026-07-05] PR #1023 [Dependencies]: chore(deps): bump @ast-grep/cli from 0.44.0 to 0.44.1 (``d5bbbab``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1023)
-* [2026-07-05] PR #1022 [Version Integrity]: chore(version): no drift found (``bd3df76``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1022)
-* [2026-07-05] PR #1021 [TSDoc]: docs(tsdoc): document Layer 1 core services (``230c300``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1021)
-* [2026-07-05] PR #1020 [README]: docs(readme): reconcile architectural drift across monorepo (``fcdb326``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1020)
-* [2026-07-05] PR #1019 [Refactor/Optimization]: refactor(opt): standardize core api and service variable naming (``5caaddd``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1019)
-* [2026-07-05] PR #1018 [Baseline]: chore(baseline): fold new migrations into master baseline (``1ae9984``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1018)
-* [2026-07-05] PR #1017 [Verification]: test(verify): add saturating coverage for HtmlEntry.ts (``425101c``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1017)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W27
-* 6 PRs [APK Integrity]: #1004, #1016, #968, #976, #987, #996
-* 5 PRs [APK Optimization]: #1002, #969, #977, #988, #994
-* 3 PRs [APK UX]: #1014, #978, #989
-* 3 PRs [Baseline]: #1009, #962, #981
-* 6 PRs [Dependencies]: #1003, #1013, #966, #975, #986, #990
+* 7 PRs [APK Integrity]: #1004, #1016, #1025, #968, #976, #987, #996
+* 6 PRs [APK Optimization]: #1002, #1026, #969, #977, #988, #994
+* 4 PRs [APK UX]: #1014, #1027, #978, #989
+* 4 PRs [Baseline]: #1009, #1018, #962, #981
+* 7 PRs [Dependencies]: #1003, #1013, #1023, #966, #975, #986, #990
 * 1 PRs [General]: #992
 * 6 PRs [Hardening]: #1007, #960, #970, #979, #995, #998
 * 2 PRs [Performance]: #1008, #982
-* 6 PRs [README]: #1001, #1010, #963, #972, #983, #991
-* 4 PRs [Refactor/Optimization]: #1000, #1015, #967, #971
-* 6 PRs [TSDoc]: #1006, #1011, #964, #973, #984, #997
-* 3 PRs [Verification]: #961, #980, #999
-* 6 PRs [Version Integrity]: #1005, #1012, #965, #974, #985, #993
+* 7 PRs [README]: #1001, #1010, #1020, #963, #972, #983, #991
+* 6 PRs [Refactor/Optimization]: #1000, #1015, #1019, #1024, #967, #971
+* 7 PRs [TSDoc]: #1006, #1011, #1021, #964, #973, #984, #997
+* 4 PRs [Verification]: #1017, #961, #980, #999
+* 7 PRs [Version Integrity]: #1005, #1012, #1022, #965, #974, #985, #993
 
 #### 2026-W26
 * 6 PRs [APK Integrity]: #900, #918, #929, #937, #947, #958
