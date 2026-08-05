@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# [Stage 12] Hybrid Shell UX & UI Auditor
+# [Stage 12] Hybrid Shell UX and UI Auditor
 
 ---
 role: APK-UX

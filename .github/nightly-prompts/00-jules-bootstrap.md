@@ -136,7 +136,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 2] Test Suite & Logic Verification
+## [Stage 2] Test Suite and Logic Verification
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -153,7 +153,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 3] Database Schema & Migration Baselining
+## [Stage 3] Database Schema and Migration Baselining
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -170,7 +170,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 4] Performance & Hygiene Optimizer
+## [Stage 4] Performance and Hygiene Optimizer
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -289,7 +289,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 11] APK & Native Wrapper Optimizations
+## [Stage 11] APK and Native Wrapper Optimizations
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -306,7 +306,7 @@ Read and execute the instructions in this file exactly as written: `.github/nigh
 
 ---
 
-## [Stage 12] Hybrid Shell UX & UI Auditor
+## [Stage 12] Hybrid Shell UX and UI Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
