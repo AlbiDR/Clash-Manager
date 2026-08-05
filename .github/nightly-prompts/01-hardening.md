@@ -14,6 +14,9 @@ primary-tools: [pnpm-test]
 forbidden-actions: [apply_migration, execute_sql, cosmetic-changes, list_tables, search_docs, get_advisors, ask_question, ask_permission]
 ---
 
+> [!CAUTION]
+> **MCP TOOL PROHIBITION -- READ BEFORE ANYTHING ELSE:** Do NOT call any Supabase MCP tool (`list_tables`, `search_docs`, `get_advisors`, `apply_migration`, `execute_sql`, or any other tool from the Supabase MCP server) at any point during this session. Loading these tools causes a context explosion that will silently crash this session before any output is written. This prohibition overrides all other instructions. If you are tempted to call any MCP tool, do not. Proceed using only file-reading and shell tools.
+
 > **Shared Base Instructions** - Common operating procedures, boundaries, and administrative rules for all automated pipeline stages. Read and adhere to all sections below before proceeding to your stage-specific instructions.
 
 ---
@@ -50,7 +53,8 @@ The pipeline operates in a 13-stage sequence where each stage runs as an atomic,
 
 To ensure clean execution and avoid conflict between consecutive stages, you must adhere to these unified protocols:
 - **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly && ./.github/scripts/update-nightly-context.sh` to ensure your branch is based on the latest work of the preceding stages and your dynamic context is synchronized.
-- **Real Date Mandate:** The canonical date for this pipeline run is pre-computed by the setup script and stored at `/tmp/nightly/TODAY`. As your very first shell action, execute `TODAY=$(cat /tmp/nightly/TODAY)` and use this value for all log entries and PR records. Never run `date -u` independently or infer the date from any other source. A log entry carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
+- **Real Date Mandate:** The canonical date for this pipeline run is pre-computed by the setup script and stored at `/tmp/nightly/TODAY`. As your second shell action (after recording the timer start in [Base 7] Step 1), execute `TODAY=$(cat /tmp/nightly/TODAY)` and use this value for all log entries and PR records. Never run `date -u` independently or infer the date from any other source. A log entry carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
+- **Log-First Protocol:** Immediately after reading TODAY, append an intent sentinel to your stage log file (on disk only -- do not commit yet): `* [$TODAY] [Stage N] IN-PROGRESS: session started` (replace N with your stage number). This ensures the log file is already modified before any source-file work begins, so there is always a record to commit even if the session is cut short by the budget gate, a Two-Strike failure, or a non-blocking error. Before your final commit, replace this sentinel with the appropriate final status (CHANGED, CLEAN, SKIPPED, or PARTIAL-RUN). If the session crashes before the replacement, the IN-PROGRESS sentinel is acceptable -- it is always better than no log entry at all.
 - **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
 - **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
 - **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
@@ -68,10 +72,12 @@ To ensure clean execution and avoid conflict between consecutive stages, you mus
 - **Branch Naming Schema:** The working branch created for your PR must follow the schema: `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]` (e.g., `nightly/stage-1-hardening-a1b2c3d4`).
 - **Standard Log Format:** Every log entry written to a `.github/nightly-logs/*.log` file must use the three-status format: `* [YYYY-MM-DD] [Stage N] CHANGED: path/to/file -- [reason]` for files that were modified, `* [YYYY-MM-DD] [Stage N] CLEAN: path/to/file -- No action required` for files audited with no change needed, and `* [YYYY-MM-DD] [Stage N] SKIPPED: path/to/file -- [reason scope was excluded]` for files intentionally excluded. Every entry must carry a status signal.
 - **00-pr-history.md Pre-Flight Aging (Stage 1 Responsibility):** As your very first action, before any hardening work, perform the automated aging pass on `.github/nightly-logs/00-pr-history.md`. You MUST perform this pass exclusively by executing the python script `python3 ./.github/scripts/age_pr_history.py age "$TODAY"` via shell command. Do NOT use file-reading, file-writing, or text-replacement tools to read or update `00-pr-history.md` for this pass, as the file is too large and will exhaust your context budget. This pass is mandatory and must complete before any other work.
+- **Aging Script Fallback:** If `age_pr_history.py` fails for any reason (Python unavailable, script error, file permission issue), do NOT abort the session. Skip the aging pass, append `SKIPPED: 00-pr-history.md -- aging script failed, aging deferred to next run` to `01-hardening-coverage.log`, and proceed immediately to the hardening threat scan. The aging pass must never block the security audit from running.
 - **Read Pipeline Intelligence:** After the aging pass, read `.github/nightly-logs/00-pipeline-intelligence.md` in full. Use it to avoid repeating tried approaches, follow proven patterns, and stay aware of open constraints and scope saturation.
 - **Write Pipeline Intelligence:** If this run produces a newly discovered pattern, pitfall, constraint, or scope finding not already recorded, append a concise entry (one to three lines) to the appropriate section of `00-pipeline-intelligence.md` before opening your PR. Mark superseded entries with `[SUPERSEDED by PR #N]` rather than deleting them.
 - **No Manual Changelog Updates:** You must NOT write to or update `.github/nightly-logs/00-pr-history.md` directly during your run. The history file is compiled automatically from Git tags by the merge coordinator after your PR is merged. To ensure your stage's work is correctly recorded in the history log, you MUST append the `NIGHTLY_PR_METADATA` block to the very end of your PR description.
 - **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
+- **PR Submission Retry:** If the first PR creation attempt fails with a network or API error (rate limit, timeout, or 5xx response), wait 30 seconds and retry exactly once. If the second attempt also fails, write a SKIPPED log entry to your stage log file stating `SKIPPED: PR submission failed -- GitHub API error after two attempts`, commit only the log file, and terminate cleanly. Do not retry more than once and do not leave the session running indefinitely waiting for the API.
 - **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
 
 ---
@@ -104,9 +110,9 @@ This rule takes precedence over all other instructions in this file. If you reac
 
 This task has a hard 60-minute execution budget.
 
-1. **Record Start Time:** At the very start of your execution, run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and store the result as your session start timestamp.
+1. **Record Start Time (Priority Zero):** Before reading any file or executing any other instruction, run `date -u +"%Y-%m-%dT%H:%M:%SZ"` immediately and store the result as your session start timestamp. This must be the very first shell action of your entire session, executed before even reading TODAY.
 2. **Elapsed-Time Checks:** After each major step, re-run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and compute the elapsed minutes from your recorded start time.
-3. **Hard Cutoff at 60 Minutes:** If 60 or more minutes have elapsed since your start timestamp, stop all pending work immediately. Write a partial-run log entry to `.github/nightly-logs/` and terminate this session. Do not open a Pull Request after the deadline.
+3. **Hard Cutoff at 60 Minutes:** If 60 or more minutes have elapsed since your start timestamp, stop all pending source-file work immediately. Write a PARTIAL-RUN log entry to your stage log file stating `PARTIAL-RUN: session cut off by 60-minute budget -- [brief description of work completed so far]`. Commit only the log file and open a log-only PR immediately. Do not skip opening the PR -- a log-only PR is the required output when the budget is exceeded so that Stage 13 does not classify this run as a silent missing run.
 
 ---
 
