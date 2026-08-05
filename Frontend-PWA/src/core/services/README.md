@@ -50,6 +50,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | Service | Role |
 | :--- | :--- |
 | `useAppSettings.ts` | Application settings and feature flags, mirrored to LocalStorage and IndexedDB. |
+| `useConfirm.ts` | Global modal confirmation service (replacing native `confirm()` with styled MD3 ConfirmDialog) to eliminate unstyled system blocks in Android.
 | `usePwaManager.ts` | PWA update/recovery lifecycle, and dynamic release APK resolution (resolving versioned build suffixes from GitHub API `latest.json`). |
 | `useUiCoordinator.ts` | Global layout spacing and floating-action-button state. |
 | `useBackHandler.ts` | Hardware back-button behavior in the wrapper. |
@@ -58,6 +59,13 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useSystemInfo.ts` | Source of truth for app version and the global display modes. |
 | `useShowcaseMode.ts` / `useBlueprintMode.ts` / `useSyntheticMode.ts` | The Showcase (demo), Blueprint (skeleton), and Synthetic (mock-data) modes. |
 | `useToast.ts` | Global toasts with haptic pairing. |
+
+### Declarative Global Dialog Confirmation (`useConfirm.ts`)
+
+The modal confirmation composable provides a robust, styled replacement for the native browser/WebView `window.confirm()` method to prevent blocking and unstyled system alerts:
+- **State Isolation:** Implements global, reactive, single-active confirmation state (`active` ref) scoped strictly to Layer 1 Core.
+- **Asynchronous Flow:** Exposes a promise-driven `confirm(pendingConfirmationOptions)` method that pauses execution and resolves to `isUserActionConfirmed` (boolean) once the user interacts with the UI dialog, ensuring clean linear usage.
+- **Tone & Ergonomics:** Supports custom dialog text, customized button labels, and visual tone configuration (`danger` vs `default`) to convey destructive semantics (e.g. factory resets or API URL resets).
 
 ### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts`)
 
