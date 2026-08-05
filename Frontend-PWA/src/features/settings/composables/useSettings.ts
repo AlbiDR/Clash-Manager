@@ -127,6 +127,15 @@ export function useSettings() {
     return { type: "loading", text: "Connecting..." } as const;
   });
 
+  /**
+   * Updates the application's visual theme with haptic pairing.
+   *
+   * @remarks
+   * Emits a tactile tap event to satisfy Android WebView shell physical response
+   * feedback guidelines prior to applying the new theme state.
+   *
+   * @param newTheme - The target theme mode ('light' | 'auto' | 'dark').
+   */
   function handleThemeChange(newTheme: "light" | "auto" | "dark") {
     // [DECISION LOG] Brokered tactile feedback (haptics) ensures physical touch
     // response for theme changes in the Android WebView shell.
@@ -159,6 +168,16 @@ export function useSettings() {
     return syncDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   });
 
+  /**
+   * Updates the target API endpoint URL and reloads the application.
+   *
+   * @remarks
+   * Stores the custom endpoint directly into LocalStorage. Reloading the window
+   * forces the client and any active SWR mechanisms to re-initialize against the
+   * updated boundary.
+   *
+   * @param targetSupabaseUrl - The new base URL for the Supabase project.
+   */
   function updateApiUrl(targetSupabaseUrl: string) {
     if (targetSupabaseUrl.trim()) {
       localStorage.setItem("cm_supabase_url", targetSupabaseUrl.trim());
@@ -166,6 +185,15 @@ export function useSettings() {
     }
   }
 
+  /**
+   * Reverts the custom API endpoint URL back to the default system endpoint.
+   *
+   * @remarks
+   * Triggers an async confirmation dialog to prevent accidental resets. On confirmation,
+   * it removes the override key from LocalStorage and triggers a full window reload.
+   *
+   * @returns A promise that resolves when the reset procedure has initiated or cancelled.
+   */
   async function resetApiUrl() {
     const isResetConfirmed = await confirm({
       title: "Reset API URL to default?",
@@ -211,6 +239,15 @@ export function useSettings() {
     }
   }
 
+  /**
+   * Configures the high-potential card notification trigger threshold.
+   *
+   * @remarks
+   * Emits a haptic feedback tap and synchronizes the threshold setting value.
+   * It initiates background sync to adjust any periodic worker-level notification triggers.
+   *
+   * @param thresholdValue - The percentage threshold to trigger notification alerts (50 | 75).
+   */
   function setNotificationThreshold(thresholdValue: 50 | 75) {
     // [DECISION LOG] Brokered tactile feedback (haptics) ensures physical touch
     // response for settings changes in the Android WebView shell.
@@ -219,6 +256,14 @@ export function useSettings() {
     startBackgroundSync();
   }
 
+  /**
+   * Adjusts the simulation speed multiplier for the Blitz scanning engine.
+   *
+   * @remarks
+   * Emits tactile tap feedback and registers the speed setting in reactive modules store.
+   *
+   * @param blitzSpeedSetting - Standardized speed enum/type imported from core config.
+   */
   function setBlitzSpeed(blitzSpeedSetting: import("@core/config").BlitzSpeed) {
     haptics.tap();
     modules.blitzSpeed = blitzSpeedSetting;
