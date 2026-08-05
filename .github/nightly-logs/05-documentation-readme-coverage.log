@@ -114,3 +114,11 @@
 * [2026-08-04] [Stage 5] CHANGED: Backend/README.md -- Reconciled database shredding safeguards: three-tier river race resolution and roster monotonic activity guard
 * [2026-08-04] [Stage 5] CLEAN: README.md -- No action required
 * [2026-08-04] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-08-05] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useConfirm global dialog confirmation service and MD3 dialog parameter naming standardizations.
+* [2026-08-05] [Stage 5] CLEAN: README.md -- No action required
+* [2026-08-05] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No README drift found
+* [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No README drift found
+* [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No README drift found
+* [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/src/features/settings/README.md -- No README drift found
