@@ -14,6 +14,7 @@ import {
 } from "@shared";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { registerVisibilityRefresh } from "@core";
+import { FOREGROUND_POLL_INTERVAL } from "@core/config";
 
 import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
@@ -214,6 +215,18 @@ async function bootstrap() {
         console.debug("[App] Visibility threshold reached: Triggering live data revalidation");
         clashDataStore.refreshFromSupabase();
       });
+
+      // LIVE DATA FIRST: Foreground Polling
+      // Rationale: A tab left open and foregrounded continuously never hits the
+      // visibility-change refresh (which only fires after being backgrounded for
+      // VISIBILITY_REFRESH_THRESHOLD) or the router loader (only fires on navigation).
+      // Without this, roster/member data (last-seen, active membership) would keep
+      // showing the same in-memory snapshot indefinitely in a long-lived session.
+      setInterval(() => {
+        if (document.visibilityState === "visible") {
+          clashDataStore.startBackgroundSync();
+        }
+      }, FOREGROUND_POLL_INTERVAL);
 
       // Defer truly heavy background tasks
       setTimeout(async () => {

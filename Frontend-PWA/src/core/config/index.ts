@@ -42,6 +42,23 @@ export const DATA_STALENESS_MINUTES = 30;
 export const VISIBILITY_REFRESH_THRESHOLD = 30 * 60 * 1000; // 30 minutes
 
 /**
+ * Interval for polling Supabase while the app stays open and foregrounded.
+ *
+ * @remarks
+ * [THREAT:] UNBOUNDED SESSION STALENESS:
+ * The visibility-change refresh only fires after VISIBILITY_REFRESH_THRESHOLD
+ * of being backgrounded. A tab left open and foregrounded continuously (never
+ * backgrounded, never re-navigated) previously never refetched again after its
+ * initial load, so roster data (member list, last-seen timestamps) could drift
+ * arbitrarily far from the backend regardless of how fresh the backend was.
+ *
+ * [DECISION LOG] FOREGROUND POLL:
+ * 5 minutes matches the roster's practical freshness needs while staying well
+ * under the 30-minute backend ingest cadence multiple times over.
+ */
+export const FOREGROUND_POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+/**
  * Default score threshold used for recruitment prioritization and batch selection.
  *
  * @remarks
