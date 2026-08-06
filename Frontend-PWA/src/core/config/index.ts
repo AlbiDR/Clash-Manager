@@ -255,11 +255,40 @@ export const STORAGE_DEPRECATED_DB_NAMES = [
   "clash_manager_v13"
 ];
 
-/** Cooldown duration for backend manual updates in seconds. */
+/**
+ * Cooldown duration for backend manual updates in seconds.
+ *
+ * @remarks
+ * [DECISION LOG] COOLDOWN SEGREGATION:
+ * 60 seconds provides an optimal window to protect backend databases and
+ * Edge Functions from rapid, redundant manual trigger spam, while remaining
+ * brief enough to satisfy typical user patience on a retry.
+ */
 export const BACKEND_REFRESH_COOLDOWN_SECONDS = 60;
 
-/** Cooldown interval timer step in milliseconds. */
+/**
+ * Cooldown interval timer step in milliseconds.
+ *
+ * @remarks
+ * [DECISION LOG] TIMER RESOLUTION:
+ * 1000ms (1 second) provides a standard human-perceptible countdown step for the
+ * visual UI refresher badge without incurring excessive Vue reactive re-renders.
+ */
 export const BACKEND_REFRESH_COOLDOWN_INTERVAL = 1000;
 
-/** Hard safety limit on total simulation iterations in the laboratory engine. */
+/**
+ * Hard safety limit on total simulation iterations in the laboratory engine.
+ *
+ * @remarks
+ * [THREAT:] INFINITE SIMULATION LOOP:
+ * A malformed roster, corrupt settings, or an unreachable level target could
+ * drive the greedy priority-queue generator into an infinite loop, causing
+ * severe memory exhaustion or application freeze.
+ *
+ * [DECISION LOG] SAFETY CEILING:
+ * 5000 iterations is a safe mathematical ceiling. For a maximum king level of
+ * 16 per card across 115 cards, the absolute upper bound of possible upgrades
+ * is less than 2000. 5000 therefore allows complete coverage while acting as
+ * an absolute runtime circuit breaker.
+ */
 export const SIMULATION_MAX_ITERATIONS = 5000;

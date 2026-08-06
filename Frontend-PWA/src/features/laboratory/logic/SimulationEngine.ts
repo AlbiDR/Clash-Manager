@@ -97,12 +97,20 @@ export function* calculateProgressionPath(
     iterations++;
 
     // 1. Termination Check - return (not yield) so done=true on this call.
+    // [DECISION LOG] TERMINATION EVALUATION:
+    // We compare currentKingLevel with the targetLevel and current totalXp with the targetXp.
+    // Reaching either threshold signals that the simulation goal has been fully met,
+    // and we return immediately to stop execution.
     const currentKingLevel = registryCalculateKingLevel(Number(currentState.totalXp));
     if (currentKingLevel >= targetLevel || Number(currentState.totalXp) >= targetXp) {
       return currentState;
     }
 
     // 2. Extract best candidate from queue
+    // [DECISION LOG] LAZY EVALUATION HYDRATION:
+    // Extract the highest-priority candidate. We perform lazy re-evaluation of candidate cost
+    // and score against the current state before applying the upgrade. This is far more
+    // efficient than re-sorting the entire queue on every state mutation.
     let bestChoice: ResolvedCandidate | undefined;
 
     while (queue.size() > 0) {
