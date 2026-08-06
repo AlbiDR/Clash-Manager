@@ -32,3 +32,4 @@
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue -- Fixed APK download link to use direct raw.githubusercontent.com URL and graceful fallback directory URL to prevent 404 errors.
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/core/services/services-tests/usePwaManager.spec.ts -- Aligned PWA manager tests with direct download URLs and fallbacks.
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/UsefulLinksSettings.spec.ts -- Aligned UsefulLinksSettings tests with direct download URLs and fallbacks.
+* [2026-08-06] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/ErrorBoundary.vue -- Modernized error copy action with 48px touch footprint via a relative pseudo-element and integrated declarative v-tactile haptic feedback on copy and recover controls to ensure physical touch consistency.

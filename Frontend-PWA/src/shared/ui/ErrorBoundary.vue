@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { ref, onErrorCaptured } from "vue";
-import { useHaptics } from "../composables/useHaptics";
+import { vTactile } from "../directives/vTactile";
 
 /**
  * [GUARD] ERROR BOUNDARY
@@ -10,7 +10,6 @@ import { useHaptics } from "../composables/useHaptics";
  */
 const error = ref<Error | null>(null);
 const copied = ref(false);
-const haptics = useHaptics();
 
 onErrorCaptured((capturedError) => {
   error.value = capturedError instanceof Error ? capturedError : new Error(String(capturedError));
@@ -23,7 +22,6 @@ onErrorCaptured((capturedError) => {
  */
 async function copyError() {
   if (!error.value) return;
-  haptics.tap();
 
   const title = "System Resilience";
   const description =
@@ -45,7 +43,6 @@ async function copyError() {
  * Resets the application state and reloads the page.
  */
 function reset() {
-  haptics.tap();
   error.value = null;
   // Clear any potentially corrupted temporary state
   sessionStorage.clear();
@@ -76,7 +73,8 @@ function reset() {
           {{ error.message }}
         </div>
         <button
-          class="copy-btn"
+          v-tactile
+          class="copy-btn hit-target"
           :class="{ copied }"
           @click="copyError"
           title="Copy Error Details"
@@ -98,7 +96,7 @@ function reset() {
         </button>
       </div>
 
-      <button class="recover-btn" @click="reset">
+      <button v-tactile class="recover-btn" @click="reset">
         <span>Re-Initialize System</span>
       </button>
     </div>
@@ -193,6 +191,17 @@ p {
   transition: all 0.2s var(--sys-motion-spring);
   padding: 0;
   user-select: none; /* Keep button non-selectable */
+}
+
+/* 48px Touch Footprint compliance (Target B.2) via relative pseudo-element */
+.copy-btn.hit-target {
+  position: relative;
+  z-index: 5;
+}
+.copy-btn.hit-target::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
 }
 
 .copy-btn:hover {

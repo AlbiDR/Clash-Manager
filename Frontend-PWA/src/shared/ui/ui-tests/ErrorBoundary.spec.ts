@@ -57,6 +57,11 @@ describe('ErrorBoundary.vue', () => {
     const wrapper = mount(ErrorBoundary, {
       slots: {
         default: h(BuggyComponent)
+      },
+      global: {
+        directives: {
+          tactile: {}
+        }
       }
     });
 
@@ -83,6 +88,11 @@ describe('ErrorBoundary.vue', () => {
     const wrapper = mount(ErrorBoundary, {
       slots: {
         default: h(BuggyComponent)
+      },
+      global: {
+        directives: {
+          tactile: {}
+        }
       }
     });
 
