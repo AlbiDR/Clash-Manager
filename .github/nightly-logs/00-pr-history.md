@@ -15,6 +15,13 @@ LAST_AGED:   2026-08-05
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-08-06] PR #PENDING [Stage 6]: docs(tsdoc): harden centralized configuration and simulation engine contracts
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/core/config/index.ts, Frontend-PWA/src/features/laboratory/logic/SimulationEngine.ts, Frontend-PWA/src/features/settings/composables/useBackendRefresher.ts
+**Why:** To establish strict, type-safe interface contracts and precise inline logic annotations for recently centralized core configuration constants.
+**Change:** Injected comprehensive TSDoc/JSDoc blocks, remarks, threat annotations, and decision logs explaining safety break iterations, cooldown boundaries, and lifecycle delegation.
+**Result:** 100% logic intent transparency and contract synchronization with CleanStack architecture design guidelines across recently optimized features.
+
 ### [2026-08-03] PR #1328 [Stage 12]: fix(apk-ux): fix APK download button 404 errors
 **Domain:** APK UX | **Commit:** 8f7a5b854f73021bcfe0b3f757464543933da8bd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1328)
 **Files:** Frontend-PWA/src/core/services/usePwaManager.ts, Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue, Frontend-PWA/src/core/services/services-tests/usePwaManager.spec.ts, Frontend-PWA/src/features/settings/components/components-tests/UsefulLinksSettings.spec.ts

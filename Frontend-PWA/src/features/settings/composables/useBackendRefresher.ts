@@ -78,7 +78,19 @@ export function useBackendRefresher() {
   });
 
   /**
-   * Initiates a 60-second cooldown for a specific target.
+   * Initiates a standard cooldown for a specific target using centralized configuration constants.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Validation and Cooldown Boundaries.
+   * Consumes BACKEND_REFRESH_COOLDOWN_SECONDS and BACKEND_REFRESH_COOLDOWN_INTERVAL.
+   *
+   * [THREAT:] MEMORY LEAK VIA UNCLEARED INTERVALS:
+   * If a user triggers a cooldown and then navigates away or unmounts the component,
+   * active interval timers can persist in the global window context.
+   *
+   * [DECISION LOG] LIFECYCLE DELEGATION:
+   * The interval is registered on the target object and cleaned up during the
+   * onScopeDispose lifecycle event, ensuring zero orphaned browser resources.
    *
    * @param key - The target key to put on cooldown.
    */
