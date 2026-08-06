@@ -28,7 +28,7 @@
 
 ## The engine (`logic/`)
 
-A generator-based simulator that processes upgrades in ~10ms chunks to stay at 60fps. `SimulationEngine` drives the loop; `SimulationCore` evaluates and applies each upgrade; `ScoringStrategy` provides the interchangeable Level-Projection and Resource-Efficiency strategies; candidates are selected from a binary-heap `PriorityQueue` (O(log N)); `ProfileHydrator` validates input through a Valibot schema; `SimulationMappers` shapes the result for the UI.
+A generator-based simulator that processes upgrades in ~10ms chunks to stay at 60fps, bounded by a hard safety limit of `SIMULATION_MAX_ITERATIONS` to prevent infinite loop execution. `SimulationEngine` drives the loop; `SimulationCore` evaluates and applies each upgrade; `ScoringStrategy` provides the interchangeable Level-Projection and Resource-Efficiency strategies; candidates are selected from a binary-heap `PriorityQueue` (O(log N)); `ProfileHydrator` validates input through a Valibot schema; `SimulationMappers` shapes the result for the UI.
 
 ## See also
 

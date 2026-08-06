@@ -11,6 +11,9 @@
 
 - **Thresholds and defaults** - data staleness TTL, the default recruit-score threshold, the default Voyage crown target, and the score-selection steps.
 - **Timing constants** - UI stability delay, Blitz safety window, badge-update debounce, and storage timeouts.
+- **Foreground polling interval** - `FOREGROUND_POLL_INTERVAL` (5 minutes) to periodically poll Supabase while the app remains open and foregrounded, eliminating unhandled session staleness.
+- **Backend refresh cooldowns** - `BACKEND_REFRESH_COOLDOWN_SECONDS` (60) and `BACKEND_REFRESH_COOLDOWN_INTERVAL` (1000) for uniform, cooldown-guarded manual refresh operations.
+- **Simulation safety limits** - `SIMULATION_MAX_ITERATIONS` (5000) to protect the laboratory's upgrade trajectory calculation from infinite loops.
 - **Storage identifiers** - the current IndexedDB name (`clash_manager_v14`), the registry of deprecated database names to prune, and the recruit notification tag shared with the service worker.
 
 ## Conventions

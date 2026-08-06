@@ -113,7 +113,7 @@
 * [2026-08-04] [Stage 5] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconciled errors.ts typed protocol error mappings and information-disclosure threat safeguards
 * [2026-08-04] [Stage 5] CHANGED: Backend/README.md -- Reconciled database shredding safeguards: three-tier river race resolution and roster monotonic activity guard
 * [2026-08-04] [Stage 5] CLEAN: README.md -- No action required
-* [2026-08-04] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required
+* [2026-08-04] [Stage-5] CLEAN: Frontend-PWA/README.md -- No action required
 * [2026-08-05] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useConfirm global dialog confirmation service and MD3 dialog parameter naming standardizations.
 * [2026-08-05] [Stage 5] CLEAN: README.md -- No action required
 * [2026-08-05] [Stage 5] CLEAN: Backend/README.md -- No action required
@@ -122,3 +122,7 @@
 * [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No README drift found
 * [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No README drift found
 * [2026-08-05] [Stage 5] CLEAN: Frontend-PWA/src/features/settings/README.md -- No README drift found
+* [2026-08-06] [Stage 5] CHANGED: Frontend-PWA/src/core/config/README.md -- Reconciled centralized configuration constants (refresh, simulation iteration safety break, and foreground polling intervals)
+* [2026-08-06] [Stage 5] CHANGED: Frontend-PWA/src/features/laboratory/README.md -- Reconciled simulation engine iterations safety break logic with centralized constants
+* [2026-08-06] [Stage 5] CHANGED: Frontend-PWA/src/features/settings/README.md -- Reconciled backend refresher manual triggers and standard cooldown constraints
+* [2026-08-06] [Stage 5] CHANGED: Frontend-PWA/src/app/README.md -- Reconciled main.ts bootstrap periodic foreground polling details

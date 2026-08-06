@@ -17,7 +17,7 @@ Each concern is a collapsible card:
 - **Feature flags** - Blitz Mode calibration, [Android bridge](../../../../APK/README.md) detection, APK update download, and benchmark-tooltip visibility.
 - **Display modes** - Showcase (demo), Blueprint (skeletons), and Synthetic (mock data).
 - **Network** - live API status and a switchable Supabase endpoint.
-- **Backend maintenance** - manual, cooldown-guarded triggers for the database, scanner, and Key Farm.
+- **Backend maintenance** - manual, cooldown-guarded triggers for the database, scanner, and Key Farm (utilizing centralized `BACKEND_REFRESH_COOLDOWN_SECONDS` and `BACKEND_REFRESH_COOLDOWN_INTERVAL` constants to ensure consistent cooldown behavior across settings and refresh utilities).
 - **Useful links** - Localized and dynamic shortcuts (such as RoyaleAPI Blog/Giveaway, localized Supercell ID rewards and Clash Royale Store, the GitHub repository link, and a Download Android App action that dynamically resolves the latest APK filename from the GitHub API and is hidden inside the native Android wrapper container).
 - **Recovery** - force an update, clear caches, or factory-reset the app.
 
@@ -28,7 +28,7 @@ Each concern is a collapsible card:
 | `views/SettingsView.vue` | Composes the cards into the shared list layout. |
 | `components/` | One card per concern: `AppearanceSettings`, `NotificationSettings`, `FeatureSettings`, `ModeSettings`, `NetworkSettings`, `BackendRefresher`, `UsefulLinksSettings`, `RecoverySettings`. |
 | `composables/useSettings.ts` | Wires the cards to `@core` services and settings. |
-| `composables/useBackendRefresher.ts` | The maintenance triggers and their cooldowns, utilizing standard domain-descriptive catch parameters (`backendRefreshError`) for robust naming hygiene. |
+| `composables/useBackendRefresher.ts` | The maintenance triggers and their cooldowns, utilizing standard domain-descriptive catch parameters (`backendRefreshError`) for robust naming hygiene, constrained by the centralized `BACKEND_REFRESH_COOLDOWN_SECONDS` and `BACKEND_REFRESH_COOLDOWN_INTERVAL` constants. |
 
 ## Gotchas
 

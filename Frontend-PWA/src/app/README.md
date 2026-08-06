@@ -26,6 +26,7 @@
 
 - **Navigation** is lazy: each feature view is a dynamic import, so nothing feature-specific is in the initial bundle. Navigations use the View Transitions API and restore scroll from `sessionStorage`.
 - **Offline** relies on Workbox precaching the app shell and serving it cache-first for a sub-second start. Clan data freshness is handled by `@core` (stale-while-revalidate), not by the service worker; there are no runtime network SWR strategies here.
+- **Foreground polling** in `main.ts` periodically triggers a background synchronization via `FOREGROUND_POLL_INTERVAL` if the document is visible. This prevents unbounded session staleness for users who keep the application open and active for long periods.
 - **Background badge sync** (`sw/swSync.ts`) runs a `periodicsync` handler that queries the headhunter view directly and updates the recruit badge, independent of the `@core` services.
 
 ## See also
