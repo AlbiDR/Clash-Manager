@@ -3,7 +3,11 @@
 
 import { reactive, onScopeDispose } from "vue";
 import { triggerBackendUpdate } from "@core/api/MaintenanceClient";
-import { useClashDataStore } from "@core";
+import {
+  useClashDataStore,
+  BACKEND_REFRESH_COOLDOWN_SECONDS,
+  BACKEND_REFRESH_COOLDOWN_INTERVAL
+} from "@core";
 import { useHaptics } from "@shared";
 import { storeToRefs } from "pinia";
 
@@ -80,7 +84,7 @@ export function useBackendRefresher() {
    */
   const startCooldown = (key: TargetKey) => {
     const target = targets[key];
-    target.cooldown = 60;
+    target.cooldown = BACKEND_REFRESH_COOLDOWN_SECONDS;
     target.status = "cooldown";
 
     if (target.timer) clearInterval(target.timer);
@@ -92,7 +96,7 @@ export function useBackendRefresher() {
         target.timer = null;
         target.status = "idle";
       }
-    }, 1000);
+    }, BACKEND_REFRESH_COOLDOWN_INTERVAL);
   };
 
   /**

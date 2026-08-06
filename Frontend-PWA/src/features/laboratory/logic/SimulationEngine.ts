@@ -32,6 +32,7 @@ import {
   calculateKingLevel as registryCalculateKingLevel
 } from '@core/utils/game';
 import { PriorityQueue } from '@core/utils/PriorityQueue';
+import { SIMULATION_MAX_ITERATIONS } from '@core';
 import type { ScoringStrategy } from './ScoringStrategy';
 import { ProjectionStrategy, InventoryStrategy } from './ScoringStrategy';
 import {
@@ -68,7 +69,7 @@ export function* calculateProgressionPath(
 ): Generator<SimulationState, SimulationState, void> {
   let currentState = initialState;
   let iterations = 0;
-  const MAX_ITERATIONS = 5000; // Safety break
+  const MAX_ITERATIONS = SIMULATION_MAX_ITERATIONS; // Safety break
 
   // Resolve the strategy: explicit injection wins, then settings-based default.
   const scoringStrategy: ScoringStrategy = strategy ?? (
