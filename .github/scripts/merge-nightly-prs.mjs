@@ -79,7 +79,10 @@ async function markReadyForReview(nodeId) {
 // Helpers
 // ----------------------------------------------------------------------------
 function stageNumber(ref) {
-  const m = ref.match(/nightly\/stage-(\d+)/i);
+  // Accept both nightly/stage-N-... and nightly-stage-N-... naming conventions.
+  // The hyphenated form is used when a local nightly branch ref prevents creating
+  // a nightly/ namespace on case-insensitive filesystems (e.g. macOS).
+  const m = ref.match(/nightly[/-]stage-(\d+)/i);
   return m ? parseInt(m[1], 10) : 999;
 }
 
@@ -416,7 +419,8 @@ async function run() {
     const allowed = CONFIG.allowedAuthors.some(a =>
       login === a.toLowerCase() || login === `${a.toLowerCase()}[bot]`
     );
-    const isNightlyBranch = pr.head.ref.startsWith("nightly/");
+    // Accept both nightly/stage-N-... and nightly-stage-N-... naming conventions.
+    const isNightlyBranch = /^nightly[/-]stage-\d+/i.test(pr.head.ref);
     const isWrongBase = pr.base.ref !== CONFIG.targetBranch;
 
     if (allowed && isNightlyBranch && isWrongBase) {
@@ -439,12 +443,13 @@ async function run() {
         login === a.toLowerCase() || login === `${a.toLowerCase()}[bot]`
       );
       const isTargetBranch = pr.base.ref === CONFIG.targetBranch;
-      const isNightlyBranch = pr.head.ref.startsWith("nightly/");
+      // Accept both nightly/stage-N-... and nightly-stage-N-... naming conventions.
+      const isNightlyBranch = /^nightly[/-]stage-\d+/i.test(pr.head.ref);
       if (isTargetBranch && !allowed) {
-        log(`Skipping PR #${pr.number} by ${login} — author not on allowlist.`, "warn");
+        log(`Skipping PR #${pr.number} by ${login} -- author not on allowlist.`, "warn");
       }
       if (isTargetBranch && allowed && !isNightlyBranch) {
-        log(`Skipping PR #${pr.number} — head '${pr.head.ref}' is not a nightly/* branch.`, "warn");
+        log(`Skipping PR #${pr.number} -- head '${pr.head.ref}' is not a nightly/* branch.`, "warn");
       }
       return allowed && isTargetBranch && isNightlyBranch;
     })

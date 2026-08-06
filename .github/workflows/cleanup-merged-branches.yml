@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+name: Cleanup Merged Branches
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - Nightly
+
+permissions:
+  contents: write
+
+jobs:
+  delete-branch:
+    name: "Delete Merged Nightly Branch"
+    # Only run when the PR was actually merged (not just closed/rejected).
+    if: >
+      github.event.pull_request.merged == true &&
+      (
+        github.event.pull_request.user.login == 'google-labs-jules[bot]' ||
+        github.event.pull_request.user.login == 'AlbiDR'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete head branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "PR merged. Deleting head branch: ${HEAD_REF}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${REPO}/git/refs/heads/${HEAD_REF}")
+
+          if [ "$STATUS" = "204" ]; then
+            echo "Branch ${HEAD_REF} deleted successfully."
+          elif [ "$STATUS" = "404" ]; then
+            echo "Branch ${HEAD_REF} was already deleted. No action required."
+          else
+            echo "Unexpected status ${STATUS} when deleting branch ${HEAD_REF}."
+            exit 1
+          fi
