@@ -254,3 +254,12 @@ export const STORAGE_DEPRECATED_DB_NAMES = [
   "clash_manager_v12",
   "clash_manager_v13"
 ];
+
+/** Cooldown duration for backend manual updates in seconds. */
+export const BACKEND_REFRESH_COOLDOWN_SECONDS = 60;
+
+/** Cooldown interval timer step in milliseconds. */
+export const BACKEND_REFRESH_COOLDOWN_INTERVAL = 1000;
+
+/** Hard safety limit on total simulation iterations in the laboratory engine. */
+export const SIMULATION_MAX_ITERATIONS = 5000;
