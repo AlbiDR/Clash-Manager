@@ -26,6 +26,11 @@ const SettingRowStub = defineComponent({
   template: '<div class="setting-row-stub" @click="$emit(\'click\')"></div>'
 });
 
+const AndroidCalibrationSettingsStub = defineComponent({
+  name: "AndroidCalibrationSettings",
+  template: '<div class="android-calibration-settings-stub"></div>'
+});
+
 describe("FeatureSettings.vue", () => {
   const mockModules = reactive({
     ghostBenchmarking: false,
@@ -68,7 +73,8 @@ describe("FeatureSettings.vue", () => {
       global: {
         stubs: {
           SettingsCard: SettingsCardStub,
-          SettingRow: SettingRowStub
+          SettingRow: SettingRowStub,
+          AndroidCalibrationSettings: AndroidCalibrationSettingsStub
         }
       }
     });
@@ -173,132 +179,5 @@ describe("FeatureSettings.vue", () => {
     expect(rows[0].props("loading")).toBe(true);
     expect(rows[1].props("loading")).toBe(true);
     expect(rows[2].props("loading")).toBe(true);
-  });
-
-  describe("Android permissions panel (native wrapper)", () => {
-    const mockBridge = {
-      isAccessibilityActive: vi.fn(() => false),
-      hasOverlayPermission: vi.fn(() => false),
-      openAccessibilitySettings: vi.fn(),
-      getCoordinates: vi.fn(() => '{"inviteX":0.5083,"inviteY":0.7214,"closeX":0.9213,"closeY":0.2044}'),
-      saveCoordinates: vi.fn(),
-      startBlitz: vi.fn(),
-      openExternalUrl: vi.fn(),
-      openPlayerProfile: vi.fn(),
-    };
-
-    beforeEach(() => {
-      resetNativeBridgeState();
-      vi.stubGlobal("window", {
-        AndroidBridge: mockBridge,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        location: { href: "" },
-      });
-      vi.clearAllMocks();
-      mockBridge.isAccessibilityActive.mockReturnValue(false);
-      mockBridge.hasOverlayPermission.mockReturnValue(false);
-      mockBridge.getCoordinates.mockReturnValue('{"inviteX":0.5083,"inviteY":0.7214,"closeX":0.9213,"closeY":0.2044}');
-      vi.mocked(useSettingsModule.useSettings).mockReturnValue({
-        modules: mockModules,
-        toggle: mockToggle,
-        isRefreshing: mockIsRefreshing
-      } as any);
-    });
-
-    it("renders the permissions panel when in native wrapper", () => {
-      const wrapper = mountComponent();
-      expect(wrapper.find(".permissions-section").exists()).toBe(true);
-    });
-
-    it("does not render the permissions panel in PWA mode", () => {
-      delete (window as any).AndroidBridge;
-      const wrapper = mountComponent();
-      expect(wrapper.find(".permissions-section").exists()).toBe(false);
-    });
-
-    it("shows 'Not allowed' when both permissions are denied", async () => {
-      mockBridge.isAccessibilityActive.mockReturnValue(false);
-      mockBridge.hasOverlayPermission.mockReturnValue(false);
-      const wrapper = mountComponent();
-      await wrapper.vm.$nextTick();
-
-      const statusLabels = wrapper.findAll(".permission-status");
-      expect(statusLabels[0].text()).toBe("Not allowed");
-      expect(statusLabels[1].text()).toBe("Not allowed");
-    });
-
-    it("shows 'Allowed' for both permissions when both are granted", async () => {
-      mockBridge.isAccessibilityActive.mockReturnValue(true);
-      mockBridge.hasOverlayPermission.mockReturnValue(true);
-      const wrapper = mountComponent();
-      await wrapper.vm.$nextTick();
-
-      const statusLabels = wrapper.findAll(".permission-status");
-      expect(statusLabels[0].text()).toBe("Allowed");
-      expect(statusLabels[1].text()).toBe("Allowed");
-    });
-
-    it("calls openAccessibilitySettings when the accessibility row is clicked", async () => {
-      const wrapper = mountComponent();
-      await wrapper.vm.$nextTick();
-
-      const { openAccessibilitySettings } = (wrapper.vm as any);
-      openAccessibilitySettings();
-
-      expect(mockBridge.openAccessibilitySettings).toHaveBeenCalledOnce();
-    });
-
-    it("navigates to overlay settings intent when the overlay row is clicked", async () => {
-      const wrapper = mountComponent();
-      await wrapper.vm.$nextTick();
-
-      const { openOverlaySettings } = (wrapper.vm as any);
-      openOverlaySettings();
-
-      // openOverlaySettings deep-links the user to the system overlay permission
-      // screen via an Android intent URL on window.location.href.
-      expect(window.location.href).toBe(
-        "intent:#Intent;action=android.settings.action.MANAGE_OVERLAY_PERMISSION;package=com.albidr.clashmanager;end"
-      );
-    });
-
-    it("navigates to overlay intent URL when overlay permission is already allowed", async () => {
-      mockBridge.hasOverlayPermission.mockReturnValue(true);
-      const wrapper = mountComponent();
-      await wrapper.vm.$nextTick();
-
-      // Call openOverlaySettings directly via vm to avoid trigger() JSDOM
-      // limitations with partially-stubbed window environments.
-      const { openOverlaySettings } = (wrapper.vm as any);
-      openOverlaySettings();
-
-      // openOverlaySettings always navigates to the overlay intent; the guard
-      // against calling startBlitz is not the responsibility of this function.
-      expect(window.location.href).toBe(
-        "intent:#Intent;action=android.settings.action.MANAGE_OVERLAY_PERMISSION;package=com.albidr.clashmanager;end"
-      );
-    });
-
-    it("re-polls permissions on window focus", async () => {
-      mockBridge.isAccessibilityActive.mockReturnValue(false);
-      mockBridge.hasOverlayPermission.mockReturnValue(false);
-      const wrapper = mountComponent();
-      await wrapper.vm.$nextTick();
-
-      // Simulate user returning from settings with permissions now granted
-      mockBridge.isAccessibilityActive.mockReturnValue(true);
-      mockBridge.hasOverlayPermission.mockReturnValue(true);
-
-      // Find the focus listener and call it
-      const focusListener = vi.mocked(window.addEventListener).mock.calls.find(call => call[0] === "focus")?.[1] as Function;
-      if (focusListener) focusListener();
-
-      await wrapper.vm.$nextTick();
-
-      const statusLabels = wrapper.findAll(".permission-status");
-      expect(statusLabels[0].text()).toBe("Allowed");
-      expect(statusLabels[1].text()).toBe("Allowed");
-    });
   });
 });
