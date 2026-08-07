@@ -69,22 +69,22 @@ export function useBaseHistoryChart(options: UseBaseHistoryChartOptions) {
       };
     }
 
-    const bars: ChartBarItem[] = [];
+    const processedChartBars: ChartBarItem[] = [];
 
     // 1. Process Actuals
-    historySeriesSnapshot.forEach((entry) => {
-      bars.push({
-        id: entry.id,
-        value: entry.value,
-        height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (entry.value / maxScale) * 100))}%`,
+    historySeriesSnapshot.forEach((historyEntrySnapshot) => {
+      processedChartBars.push({
+        id: historyEntrySnapshot.id,
+        value: historyEntrySnapshot.value,
+        height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (historyEntrySnapshot.value / maxScale) * 100))}%`,
         isProjection: false,
-        tooltip: entry.tooltipLabel,
+        tooltip: historyEntrySnapshot.tooltipLabel,
       });
     });
 
     // 2. Process Projection (if any)
     if (projection) {
-      bars.push({
+      processedChartBars.push({
         id: "proj-next-value",
         value: projection.value,
         height: `${Math.max(CHART_MIN_HEIGHT, Math.min(100, (projection.value / maxScale) * 100))}%`,
@@ -94,27 +94,27 @@ export function useBaseHistoryChart(options: UseBaseHistoryChartOptions) {
     }
 
     // 3. Geometry
-    const totalSlots = bars.length;
+    const totalChartSlots = processedChartBars.length;
     // Map bars to X,Y coordinates (0-100 scale for SVG viewBox)
-    const curvePoints: Point[] = bars.map((bar, barIndex) => ({
-      x: ((barIndex + 0.5) / totalSlots) * 100,
-      y: (1 - Math.min(1, bar.value / maxScale)) * 100, // Invert Y for SVG
+    const trendCurvePoints: Point[] = processedChartBars.map((chartBar, barIndex) => ({
+      x: ((barIndex + 0.5) / totalChartSlots) * 100,
+      y: (1 - Math.min(1, chartBar.value / maxScale)) * 100, // Invert Y for SVG
     }));
 
     // [DECISION LOG] LINEAR TREND (BEST FIT):
     // Uses a Least Squares regression to generate the trend path.
     // This provides a stable visual indicator of performance trajectory
     // without the erratic noise of raw spline interpolation.
-    const trend = generateLinearTrend(curvePoints);
+    const linearTrendPath = generateLinearTrend(trendCurvePoints);
 
     // Identify key points for dots (These stay on the bars, not the line)
-    const projPoint = projection ? curvePoints[curvePoints.length - 1] : null;
+    const projectedTrendPoint = projection ? trendCurvePoints[trendCurvePoints.length - 1] : null;
 
     return {
-      bars,
-      path: trend.path,
-      projPoint,
-      isPositive: trend.isPositive,
+      bars: processedChartBars,
+      path: linearTrendPath.path,
+      projPoint: projectedTrendPoint,
+      isPositive: linearTrendPath.isPositive,
       isEmpty: false,
     };
   });

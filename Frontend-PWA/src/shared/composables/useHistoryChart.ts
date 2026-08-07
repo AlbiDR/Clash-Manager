@@ -20,37 +20,37 @@ function parseHistoryString(historyStr: string | undefined): HistoryEntry[] {
   const weekRegex = /(\d+)[W-](?:W)?(\d+)/;
   return historyStr
     .split(/[|,]/)
-    .map((x) => x.trim())
+    .map((rawEntryToken) => rawEntryToken.trim())
     .filter(Boolean)
-    .map((entry) => {
-      const [valStr, weekStr] = entry.split(" ");
-      const value = parseInt(valStr || "0", 10) || 0;
-      const wStr = weekStr || "";
-      const weekMatch = wStr.match(weekRegex);
-      let readableWeek = wStr || "?";
-      if (/^\d{4}-\d{2}-\d{2}$/.test(wStr)) {
-        readableWeek = wStr.substring(5).replace('-', '/');
-      } else if (weekMatch) {
-        readableWeek = `Week ${parseInt(weekMatch[2], 10)}`;
+    .map((historyEntryToken) => {
+      const [valueToken, weekStr] = historyEntryToken.split(" ");
+      const parsedHistoryValue = parseInt(valueToken || "0", 10) || 0;
+      const weekStringToken = weekStr || "";
+      const weekFormatMatch = weekStringToken.match(weekRegex);
+      let formattedReadableWeek = weekStringToken || "?";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(weekStringToken)) {
+        formattedReadableWeek = weekStringToken.substring(5).replace('-', '/');
+      } else if (weekFormatMatch) {
+        formattedReadableWeek = `Week ${parseInt(weekFormatMatch[2], 10)}`;
       }
-      return { value, weekId: wStr, readableWeek };
+      return { value: parsedHistoryValue, weekId: weekStringToken, readableWeek: formattedReadableWeek };
     });
 }
 
 // [DECISION LOG] WEIGHTED DECAY: weights start at 1.0, decrement 0.05/week, floor at 0.5.
 // Recent performance is more predictive; old data still contributes without dominating.
 function calculatePrediction(historyScores: number[], maxScore: number): number {
-  const n = historyScores.length;
-  if (n === 0) return 0;
+  const scoresLength = historyScores.length;
+  if (scoresLength === 0) return 0;
   let totalWeightedScore = 0;
   let totalWeights = 0;
-  for (let i = 0; i < n; i++) {
-    const weight = Math.max(0.5, 1.0 - (i * 0.05));
-    totalWeightedScore += historyScores[i] * weight;
-    totalWeights += weight;
+  for (let scoreIndex = 0; scoreIndex < scoresLength; scoreIndex++) {
+    const decayWeightFactor = Math.max(0.5, 1.0 - (scoreIndex * 0.05));
+    totalWeightedScore += historyScores[scoreIndex] * decayWeightFactor;
+    totalWeights += decayWeightFactor;
   }
-  const projection = totalWeights > 0 ? totalWeightedScore / totalWeights : 0;
-  return Math.max(0, Math.min(maxScore, projection));
+  const calculatedProjectionValue = totalWeights > 0 ? totalWeightedScore / totalWeights : 0;
+  return Math.max(0, Math.min(maxScore, calculatedProjectionValue));
 }
 
 /**
@@ -86,43 +86,43 @@ export function useHistoryChart(
     if (isLoading) return { data: [], projection: null, maxScale: 0 };
 
     const allHistory = parseHistoryString(historyValue);
-    const limit = type === "war" ? 52 : 15;
-    const maxScale = type === "war" ? WAR_CONSTANTS.MAX_FAME : VOYAGE_CONSTANTS.MAX_CROWNS;
-    const unit = type === "war" ? "Fame" : "Crowns";
-    const idPrefix = type === "war" ? "h" : "vh";
+    const historyLimitThreshold = type === "war" ? 52 : 15;
+    const maxChartValueScale = type === "war" ? WAR_CONSTANTS.MAX_FAME : VOYAGE_CONSTANTS.MAX_CROWNS;
+    const chartUnitLabel = type === "war" ? "Fame" : "Crowns";
+    const chartElementIdPrefix = type === "war" ? "h" : "vh";
 
-    const processedData = allHistory.slice(0, limit);
+    const processedData = allHistory.slice(0, historyLimitThreshold);
 
     if (processedData.length === 0) {
-      return { data: [], projection: null, maxScale };
+      return { data: [], projection: null, maxScale: maxChartValueScale };
     }
 
     // [DECISION LOG] TREND PREDICTION: Extracts raw values into a series for the
     // weighted decay calculator. Isolation here ensures UI formatting doesn't
     // leak into mathematical projections.
-    const valueSeries = processedData.map((h) => h.value);
-    const nextValue = calculatePrediction(valueSeries, maxScale);
+    const valueSeries = processedData.map((historyItem) => historyItem.value);
+    const projectedNextValue = calculatePrediction(valueSeries, maxChartValueScale);
 
     // [DECISION LOG] CHRONOLOGICAL REVERSAL: History strings are stored with the
     // most recent entry first (index 0). SVG-based charts require left-to-right
     // (oldest-to-newest) ordering for correct trend visualization.
     const chronologicalData = [...processedData].reverse();
-    const historyChartSeries = chronologicalData.map((h, i) => {
+    const historyChartSeries = chronologicalData.map((historyItem, chronologicalIndex) => {
       return {
-        id: `${idPrefix}-${h.weekId}-${i}`,
-        value: h.value,
+        id: `${chartElementIdPrefix}-${historyItem.weekId}-${chronologicalIndex}`,
+        value: historyItem.value,
         // [DECISION LOG] Plain text, not HTML: the tooltip renderer uses safe text
         // interpolation (no innerHTML/v-html), so this must stay markup-free.
-        tooltipLabel: `${h.readableWeek}\n${formatNumber(h.value)} ${unit}`
+        tooltipLabel: `${historyItem.readableWeek}\n${formatNumber(historyItem.value)} ${chartUnitLabel}`
       };
     });
 
     const projection = {
-      value: nextValue,
-      tooltipLabel: `Projected\n${formatNumber(Math.round(nextValue))} ${unit}`
+      value: projectedNextValue,
+      tooltipLabel: `Projected\n${formatNumber(Math.round(projectedNextValue))} ${chartUnitLabel}`
     };
 
-    return { data: historyChartSeries, projection, maxScale };
+    return { data: historyChartSeries, projection, maxScale: maxChartValueScale };
   });
 
   return {

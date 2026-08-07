@@ -1,3 +1,6 @@
+* [2026-08-07] [Stage 4] CHANGED: Frontend-PWA/src/shared/composables/useHistoryChart.ts -- Refactored parseHistoryString, calculatePrediction, and useHistoryChart to standardize variable naming and eliminate anemic variable pathogens.
+* [2026-08-07] [Stage 4] CHANGED: Frontend-PWA/src/shared/composables/useBaseHistoryChart.ts -- Standardized local variables in useBaseHistoryChart to use domain-descriptive names.
+* [2026-08-07] [Stage 4] CLEAN: war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view -- Re-verified dropped database views remain unreferenced by Edge Function application logic.
 * [2026-08-06] [Stage 4] CHANGED: Frontend-PWA/src/core/config/index.ts -- Centralized manual refresh cooldown configuration and laboratory simulation limit constants to eliminate inline magic numbers.
 * [2026-08-06] [Stage 4] CHANGED: Frontend-PWA/src/features/settings/composables/useBackendRefresher.ts -- Refactored startCooldown to consume centralized REFRESH_COOLDOWN_SECONDS and REFRESH_COOLDOWN_INTERVAL constants.
 * [2026-08-06] [Stage 4] CHANGED: Frontend-PWA/src/features/laboratory/logic/SimulationEngine.ts -- Refactored calculateProgressionPath to consume centralized SIMULATION_MAX_ITERATIONS safety threshold.
