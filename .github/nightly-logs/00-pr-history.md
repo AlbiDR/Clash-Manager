@@ -15,6 +15,13 @@ LAST_AGED:   2026-08-06
 ---
 
 ## T1 -- Active (last 7 days)
+### [2026-08-07] PR #PENDING [Stage 6]: docs(tsdoc): document history charting interfaces and mobile gesture benchmark contracts
+**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
+**Files:** Frontend-PWA/src/shared/composables/useHistoryChart.ts, Frontend-PWA/src/shared/composables/useBaseHistoryChart.ts, Frontend-PWA/src/shared/ui/GhostBenchmarkHost.vue, Frontend-PWA/src/shared/ui/BenchmarkContent.vue
+**Why:** To establish type-safe interface contracts and precise inline logic annotations for recently optimized history charting, mobile swipes, and viewport-aware benchmark overlays.
+**Change:** Injected comprehensive JSDoc/TSDoc specifications mapping helper functions, computed visual metrics, and mobile gesture tracking coordinates.
+**Result:** 100% logic intent transparency and contract synchronization with CleanStack architecture design guidelines across recently optimized shared elements.
+
 ### [2026-08-06] PR #PENDING [Stage 6]: docs(tsdoc): harden centralized configuration and simulation engine contracts
 **Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
 **Files:** Frontend-PWA/src/core/config/index.ts, Frontend-PWA/src/features/laboratory/logic/SimulationEngine.ts, Frontend-PWA/src/features/settings/composables/useBackendRefresher.ts

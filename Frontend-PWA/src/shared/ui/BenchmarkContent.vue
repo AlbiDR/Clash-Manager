@@ -15,9 +15,15 @@ import type { BenchmarkData } from "../../core";
  * ----------------------------------------------------------------------------
  */
 const props = defineProps<{
+  /**
+   * Authoritative data payload representing a BenchmarkData object or a simple informational string.
+   */
   data: BenchmarkData | string;
 }>();
 
+/**
+ * Extracts and returns the structured BenchmarkData if the prop payload is not a simple string.
+ */
 const benchmark = computed(() =>
   typeof props.data === "string" ? null : props.data,
 );
@@ -25,36 +31,63 @@ const benchmark = computed(() =>
 // [DECISION LOG] Plain-string tooltips (e.g. chart bar labels) use a "label\nvalue"
 // convention instead of embedded HTML, since this content renders via safe text
 // interpolation below, never innerHTML/v-html.
+/**
+ * Splits plain-text tooltip payloads by line breaks for structured text interpolation in the UI.
+ */
 const simpleLines = computed(() =>
   typeof props.data === "string" ? props.data.split("\n") : [],
 );
 
+/**
+ * Clamps numeric values strictly between 0 and 100 representing visual percentages.
+ *
+ * @param value - Input percentage value.
+ * @returns Clamped visual percentage.
+ */
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, value));
 }
 
+/**
+ * Formats the benchmark tier into a lowercase, hyphenated CSS-safe slug (e.g., "top-tier").
+ */
 const tierSlug = computed(() =>
   benchmark.value ? benchmark.value.tier.toLowerCase().replace(/\s+/g, "-") : "",
 );
 
+/**
+ * Calculates the numeric range between maximum and minimum boundaries to scale visual indicators.
+ */
 const range = computed(() =>
   benchmark.value ? benchmark.value.max - benchmark.value.min || 1 : 1,
 );
 
+/**
+ * Determines the relative horizontal position percentage for the player marker on the range track.
+ */
 const playerPosition = computed(() =>
   benchmark.value
     ? clampPercent(((benchmark.value.value - benchmark.value.min) / range.value) * 100)
     : 0,
 );
 
+/**
+ * Determines the relative horizontal position percentage for the average marker on the range track.
+ */
 const averagePosition = computed(() =>
   benchmark.value
     ? clampPercent(((benchmark.value.avg - benchmark.value.min) / range.value) * 100)
     : 0,
 );
 
+/**
+ * Resolves the visual sentiment class based on player performance relative to averages.
+ */
 const sentiment = computed(() => (benchmark.value?.isBetter ? "better" : "worse"));
 
+/**
+ * Generates the performance delta percentage display string, prepended with a signed operator.
+ */
 const delta = computed(() =>
   benchmark.value
     ? `${benchmark.value.isBetter ? "+" : "-"}${benchmark.value.percent}%`

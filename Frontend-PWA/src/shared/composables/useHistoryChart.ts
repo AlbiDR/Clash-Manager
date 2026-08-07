@@ -9,12 +9,28 @@ export type HistoryChartType = "war" | "voyage";
 const WAR_CONSTANTS = { MAX_FAME: 3600 };
 const VOYAGE_CONSTANTS = { MAX_CROWNS: 250 };
 
+/**
+ * Represents a single parsed historical record.
+ */
 interface HistoryEntry {
+  /** The numeric performance score (e.g. fame points or crowns). */
   value: number;
+  /** The unique identifier representing the week (e.g. "2024-W12" or YYYY-MM-DD). */
   weekId: string;
+  /** Human-readable string representing the week for UI labels. */
   readableWeek: string;
 }
 
+/**
+ * Parses a raw, delimited history string into a series of structured HistoryEntry objects.
+ *
+ * @remarks
+ * Supports multiple formats including pipe/comma separated values, date patterns (YYYY-MM-DD),
+ * and standard week formats (e.g. 2024-W12).
+ *
+ * @param historyStr - The raw history string from database storage.
+ * @returns Array of parsed and structured history entry objects.
+ */
 function parseHistoryString(historyStr: string | undefined): HistoryEntry[] {
   if (!historyStr || historyStr === "-") return [];
   const weekRegex = /(\d+)[W-](?:W)?(\d+)/;
@@ -37,8 +53,19 @@ function parseHistoryString(historyStr: string | undefined): HistoryEntry[] {
     });
 }
 
-// [DECISION LOG] WEIGHTED DECAY: weights start at 1.0, decrement 0.05/week, floor at 0.5.
-// Recent performance is more predictive; old data still contributes without dominating.
+/**
+ * Calculates a weighted decay prediction score based on historical performance series.
+ *
+ * @remarks
+ * [DECISION LOG] WEIGHTED DECAY:
+ * Weights start at 1.0 for the most recent entry and decrement by 0.05 per week
+ * down to a floor of 0.5. This ensures recent performance is more heavily weighted
+ * and predictive while older historical data still contributes safely without dominating.
+ *
+ * @param historyScores - Sequence of historical score integers.
+ * @param maxScore - Upper boundary limit for the calculated prediction (coerced bounds).
+ * @returns Projected next performance score.
+ */
 function calculatePrediction(historyScores: number[], maxScore: number): number {
   const scoresLength = historyScores.length;
   if (scoresLength === 0) return 0;
