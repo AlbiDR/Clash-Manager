@@ -169,6 +169,8 @@ Anti-patterns encountered in execution. Avoid these approaches.
   See the TWO-STRIKE RULE and 30-MINUTE BUDGET GATE in `12-apk-ux.md` Step 2.
   *(Established: human operator, 2026-08-02 post-mortem)*
 
+* **Do not directly invoke manually grabbed/mocked event handlers of unmounted composables/components in Vitest.** Doing so bypasses the event listener system, causing updates to the underlying refs even though `removeEventListener` was called correctly during unmount, resulting in false test failures. Asserting that `removeEventListener` was called with the correct parameters is the correct strategy to test cleanup. *(Established: Stage 2, 2026-08-07)*
+
 ---
 
 ## III. Scope Coverage Map
