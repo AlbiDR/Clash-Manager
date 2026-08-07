@@ -14,7 +14,7 @@ Each concern is a collapsible card:
 - **Event management** - schedule and track a Clan Voyage (target, countdowns, live progress). Composed from the shared [`EventManagement`](../../shared/ui/README.md) component.
 - **Appearance** - Light / Dark / Auto theme and a keep-screen-awake toggle.
 - **Notifications** - recruit-alert threshold, app badges, and a test notification. The recruit-alert threshold actions are domain-standardized and mocked/tested using the `thresholdValue` parameter mapping.
-- **Feature flags** - Blitz Mode calibration, [Android bridge](../../../../APK/README.md) detection, APK update download, and benchmark-tooltip visibility.
+- **Feature flags** - Blitz Mode calibration (with decomposed Android-specific permissions and layout coordinates calibration), [Android bridge](../../../../APK/README.md) detection, APK update download, and benchmark-tooltip visibility.
 - **Display modes** - Showcase (demo), Blueprint (skeletons), and Synthetic (mock data).
 - **Network** - live API status and a switchable Supabase endpoint.
 - **Backend maintenance** - manual, cooldown-guarded triggers for the database, scanner, and Key Farm (utilizing centralized `BACKEND_REFRESH_COOLDOWN_SECONDS` and `BACKEND_REFRESH_COOLDOWN_INTERVAL` constants to ensure consistent cooldown behavior across settings and refresh utilities).
@@ -26,7 +26,7 @@ Each concern is a collapsible card:
 | Path | Role |
 | :--- | :--- |
 | `views/SettingsView.vue` | Composes the cards into the shared list layout. |
-| `components/` | One card per concern: `AppearanceSettings`, `NotificationSettings`, `FeatureSettings`, `ModeSettings`, `NetworkSettings`, `BackendRefresher`, `UsefulLinksSettings`, `RecoverySettings`. |
+| `components/` | One card per concern: `AppearanceSettings`, `NotificationSettings`, `FeatureSettings` (decomposed to delegate Android permissions and layout calibration to the `AndroidCalibrationSettings` sub-component), `ModeSettings`, `NetworkSettings`, `BackendRefresher`, `UsefulLinksSettings`, `RecoverySettings`. |
 | `composables/useSettings.ts` | Wires the cards to `@core` services and settings. |
 | `composables/useBackendRefresher.ts` | The maintenance triggers and their cooldowns, utilizing standard domain-descriptive catch parameters (`backendRefreshError`) for robust naming hygiene, constrained by the centralized `BACKEND_REFRESH_COOLDOWN_SECONDS` and `BACKEND_REFRESH_COOLDOWN_INTERVAL` constants. |
 

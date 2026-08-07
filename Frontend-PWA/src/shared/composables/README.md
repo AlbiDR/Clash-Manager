@@ -14,6 +14,7 @@
 | `useHaptics.ts` | Brokered vibration with named patterns; respects user preference and battery. |
 | `useWakeLock.ts` | Keeps the screen awake during long operations. |
 | `useViewport.ts` | Breakpoint and viewport reactivity. |
+| `usePointerCapability.ts` | Detects coarse/fine pointer capability (touch vs. mouse/trackpad) via media queries. |
 | `useTheme.ts` | Applies light/dark tokens, toggles the `dark` class, and rewrites the `theme-color` meta. |
 
 ## Interaction and gestures
@@ -29,8 +30,8 @@
 
 | Composable | Role |
 | :--- | :--- |
-| `useHistoryChart.ts` | History parsing, slicing, and weighted trend prediction. |
-| `useBaseHistoryChart.ts` | Turns values into SVG paths and bar heights. |
+| `useHistoryChart.ts` | History parsing, slicing, and weighted trend prediction (reconciled with standardized chronological and prediction token variable names). |
+| `useBaseHistoryChart.ts` | Turns values into SVG paths and bar heights (utilizing standardized trend path variable mapping and best-fit linear trend calculations). |
 | `useBenchmarkedStat.ts` | Builds benchmark tooltips against clan averages. |
 
 ## UI state
