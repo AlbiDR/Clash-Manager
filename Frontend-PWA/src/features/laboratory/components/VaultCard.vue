@@ -1,9 +1,21 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Icon } from "@shared";
+import { Icon, vTactile } from "@shared";
 import { getCurrencyAsset, getWildcardAsset } from "@core";
 import { type Inventory } from "../logic";
+
+/**
+ * COMPONENT: VaultCard.vue
+ * ----------------------------------------------------------------------------
+ * Rationale: Laboratory inventory inputs card for primary resources and wildcards.
+ * ----------------------------------------------------------------------------
+ *
+ * **Decision Log - Touch targets & Brokered Haptics:**
+ * - Implements touch target compliance for wildcards (.wc-input) with 48px height footprint.
+ * - Integrates v-tactile directive on all inputs for physical touch haptic brokering in the hybrid WebView.
+ */
+
 defineProps<{
   inventory: Inventory;
   isSimulating: boolean;
@@ -35,6 +47,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
             <span class="res-label">Gold</span>
           </div>
           <input 
+            v-tactile
             type="number" 
             :value="inventory.gold" 
             class="res-input"
@@ -48,6 +61,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
             <span class="res-label">Gems</span>
           </div>
           <input 
+            v-tactile
             type="number" 
             :value="inventory.gems" 
             class="res-input"
@@ -75,6 +89,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
               :alt="rarity as string"
             />
             <input 
+              v-tactile
               type="number" 
               :value="wildCardCount"
               class="wc-input"
@@ -195,12 +210,13 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-small);
-  padding: 6px;
+  padding: var(--sys-space-12) var(--sys-space-6);
   font-family: var(--sys-font-family-mono);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--sys-color-on-surface);
   width: 100%;
+  height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
   text-align: center;
   transition: all 0.2s ease;
 }
