@@ -73,3 +73,7 @@
 * [2026-08-06] [Stage 9] CHANGED: Frontend-PWA/src/features/settings/components/index.ts -- Updated settings components barrel exports.
 * [2026-08-06] [Stage 9] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/FeatureSettings.spec.ts -- Removed Android wrapper tests to match decomposed component structure.
 * [2026-08-06] [Stage 9] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/AndroidCalibrationSettings.spec.ts -- Created new unit test file to cover permissions and calibration logic.
+* [2026-08-07] [Stage 9] CHANGED: Frontend-PWA/src/features/settings/views/SettingsView.vue -- Integrated route-level data loader 'useClashDataLoader' to align SettingsView with architectural routing contracts.
+* [2026-08-07] [Stage 9] CLEAN: Frontend-PWA/src/features/roster/views/RosterView.vue -- No structural debt found; all modules within line-count threshold and layer boundaries respected.
+* [2026-08-07] [Stage 9] CLEAN: Frontend-PWA/src/features/headhunter/views/HeadhunterView.vue -- No structural debt found; all modules within line-count threshold and layer boundaries respected.
+* [2026-08-07] [Stage 9] CLEAN: Frontend-PWA/src/features/laboratory/views/LaboratoryView.vue -- No structural debt found; all modules within line-count threshold and layer boundaries respected.
