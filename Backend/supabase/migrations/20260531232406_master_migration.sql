@@ -33,7 +33,7 @@
  * - 20260803000000_fix_last_seen_at_monotonic_guard.sql
  * - 20260804000000_harden_river_race_week_id_resolution.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-08-06):
+ * Architectural Compliance Verification Log (Audited: 2026-08-07):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
  * 2. Search Path Isolation: Verified 100% search_path constraints on all 95 plpgsql functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
