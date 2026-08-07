@@ -33,3 +33,5 @@
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/core/services/services-tests/usePwaManager.spec.ts -- Aligned PWA manager tests with direct download URLs and fallbacks.
 * [2026-08-03] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/UsefulLinksSettings.spec.ts -- Aligned UsefulLinksSettings tests with direct download URLs and fallbacks.
 * [2026-08-06] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/ErrorBoundary.vue -- Modernized error copy action with 48px touch footprint via a relative pseudo-element and integrated declarative v-tactile haptic feedback on copy and recover controls to ensure physical touch consistency.
+* [2026-08-07] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/VaultCard.vue -- Modernized wildcard inputs with 48px touch target compliance and integrated v-tactile directive for brokered haptic feedback on all resource inputs.
+* [2026-08-07] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/components-tests/VaultCard.spec.ts -- Updated unit tests to register global tactile directive and verified correct tactile binding across all resource and wildcard inputs.

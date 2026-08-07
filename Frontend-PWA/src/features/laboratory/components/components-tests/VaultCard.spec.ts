@@ -6,6 +6,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import VaultCard from "../VaultCard.vue";
+import { vTactile } from "@shared";
 import type { Inventory } from "../../logic/Types";
 
 // Mock Layer 1 components via deep imports to avoid Barrel side effects (ADR Section II)
@@ -39,6 +40,9 @@ describe("VaultCard.vue", () => {
     return mount(VaultCard, {
       props: { ...defaultProps, ...props },
       global: {
+        directives: {
+          tactile: vi.fn(),
+        },
         stubs: {
           // Icon is already mocked via vi.mock
         },
@@ -99,6 +103,17 @@ describe("VaultCard.vue", () => {
 
     expect(wrapper.emitted("update")).toBeTruthy();
     expect(wrapper.emitted("update")![0]).toEqual(["gold", 0]);
+  });
+
+  it("binds v-tactile directive to primary and wild card inputs", () => {
+    const spy = vi.spyOn(vTactile, "mounted");
+    mount(VaultCard, {
+      props: defaultProps,
+    });
+
+    // Expecting 2 primary res-inputs and 5 wildcard wc-inputs to have v-tactile bound
+    expect(spy).toHaveBeenCalledTimes(7);
+    spy.mockRestore();
   });
 
   it("applies loading state when isSimulating is true", () => {
