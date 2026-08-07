@@ -4,11 +4,19 @@
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { generateLinearTrend, type Point } from "@core/utils/bezier";
 
+/**
+ * Represents a single processed bar item in the visualization chart.
+ */
 interface ChartBarItem {
+  /** Unique element identifier for list rendering keys. */
   id: string;
+  /** The raw numeric value of this bar (e.g. fame points or crowns). */
   value: number;
+  /** The geometrically scaled height string, parsed as a percentage (e.g., "75%"). */
   height: string;
+  /** True when the bar represents a predicted/projected future score. */
   isProjection: boolean;
+  /** Tooltip label content containing human-readable week and formatted score details. */
   tooltip: string;
 }
 

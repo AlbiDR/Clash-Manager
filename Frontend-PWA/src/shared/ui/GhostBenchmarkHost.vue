@@ -21,9 +21,21 @@ const { active, hide } = useGhostBenchmarkState();
 const { isCoarsePointer } = usePointerCapability();
 
 // --- Desktop popover positioning ---
+
+/** Reactive reference to the desktop popover DOM element. */
 const popoverEl = ref<HTMLElement | null>(null);
+
+/** Reactive inline style rules applied to position the desktop popover. */
 const popoverStyle = ref<Record<string, string>>({});
 
+/**
+ * Calculates and updates the coordinates of the desktop popover dynamically.
+ *
+ * @remarks
+ * Centers the popover above the anchor element. If constrained by top viewport boundaries,
+ * repositions the popover below the anchor element to prevent vertical clipping. Clamps
+ * horizontal positioning to avoid leaking outside the viewport edges.
+ */
 function positionPopover() {
   const rect = active.value?.anchorRect;
   const el = popoverEl.value;
@@ -52,6 +64,7 @@ function positionPopover() {
   };
 }
 
+// Watch active state to reposition popover on fine pointers
 watch(active, async (value) => {
   if (value && !isCoarsePointer.value) {
     await nextTick();
@@ -59,6 +72,9 @@ watch(active, async (value) => {
   }
 });
 
+/**
+ * Dismisses the fine pointer popover on viewport scroll to prevent alignment drift.
+ */
 function handleScroll() {
   // Matches the pre-existing behavior: the desktop popover is anchor-relative
   // and does not track scroll, so it dismisses on any scroll instead.
@@ -66,25 +82,45 @@ function handleScroll() {
 }
 
 // --- Mobile sheet: scroll lock + swipe-to-dismiss ---
+
+/** Vertical translation offset in pixels during mobile slide/drag gestures. */
 const dragOffset = ref(0);
+
+/** True when the mobile bottom sheet drag gesture is currently active. */
 const isDragging = ref(false);
+
+/** Vertical screen coordinate in pixels where the mobile touch sequence initiated. */
 let touchStartY = 0;
 
+// Watch active state to enforce/restore body scroll-lock on mobile devices
 watch(active, (value) => {
   if (!isCoarsePointer.value) return;
   document.body.style.overflow = value ? "hidden" : "";
 });
 
+/**
+ * Registers the initial vertical touch point on mobile swipe initiation.
+ *
+ * @param e - The native TouchEvent payload.
+ */
 function onSheetTouchStart(e: TouchEvent) {
   touchStartY = e.touches[0].clientY;
   isDragging.value = true;
 }
 
+/**
+ * Tracks swipe translation vertically, clamping upwards drags.
+ *
+ * @param e - The native TouchEvent payload.
+ */
 function onSheetTouchMove(e: TouchEvent) {
   if (!isDragging.value) return;
   dragOffset.value = Math.max(0, e.touches[0].clientY - touchStartY);
 }
 
+/**
+ * Handles the release of swipe/touch drag. Dismisses bottom sheet if vertical distance > 80px.
+ */
 function onSheetTouchEnd() {
   if (!isDragging.value) return;
   isDragging.value = false;
