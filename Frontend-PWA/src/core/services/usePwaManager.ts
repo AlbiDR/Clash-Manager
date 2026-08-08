@@ -118,6 +118,17 @@ export function selectNewestReleaseApk(contents: GitHubReleaseContent[]): ApkRel
   };
 }
 
+function selectNewestReleaseDownload(candidates: Array<ApkReleaseDownload | undefined>): ApkReleaseDownload | undefined {
+  return candidates.reduce<ApkReleaseDownload | undefined>((newestRelease, candidate) => {
+    if (!candidate) return newestRelease;
+    if (!newestRelease) return candidate;
+
+    return compareReleaseApkFilenames(candidate.filename, newestRelease.filename) > 0
+      ? candidate
+      : newestRelease;
+  }, undefined);
+}
+
 async function fetchFresh(url: string, init: RequestInit = {}): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), APK_FETCH_TIMEOUT_MS);
@@ -152,10 +163,7 @@ async function resolveApkReleaseFromContentsApi(): Promise<ApkReleaseDownload | 
   }
 }
 
-async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | undefined> {
-  const releaseFromContentsApi = await resolveApkReleaseFromContentsApi();
-  if (releaseFromContentsApi) return releaseFromContentsApi;
-
+async function resolveApkReleaseFromLatestMetadata(): Promise<ApkReleaseDownload | undefined> {
   try {
     const response = await fetchFresh(APK_LATEST_METADATA_URL);
     if (response.ok) {
@@ -172,6 +180,15 @@ async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | u
   }
 
   return undefined;
+}
+
+async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | undefined> {
+  const [releaseFromContentsApi, releaseFromLatestMetadata] = await Promise.all([
+    resolveApkReleaseFromContentsApi(),
+    resolveApkReleaseFromLatestMetadata(),
+  ]);
+
+  return selectNewestReleaseDownload([releaseFromContentsApi, releaseFromLatestMetadata]);
 }
 
 export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | undefined> {

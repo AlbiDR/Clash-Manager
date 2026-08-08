@@ -352,14 +352,34 @@ describe("usePwaManager", () => {
           { name: "clashmanager-v14.40.10+148.apk", type: "file" },
           { name: "clashmanager-v14.43.0+172.apk", type: "file" },
         ]),
-      });
+      }).mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }) });
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
 
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenCalledTimes(2);
       expect(mockLocation.href).toBe(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.0%2B172.apk"
+      );
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should choose a newer latest.json APK over an older contents listing", async () => {
+      (fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue([{ name: "clashmanager-v14.43.0+172.apk", type: "file" }]),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.43.1+173.apk" }),
+        });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockLocation.href).toBe(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1%2B173.apk"
       );
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
@@ -369,13 +389,14 @@ describe("usePwaManager", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: vi.fn().mockResolvedValue([{ name: "clashmanager-v14.43.0+172.apk", type: "file" }]),
-        });
+        })
+        .mockResolvedValueOnce({ ok: false });
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
       await downloadApk();
 
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenCalledTimes(2);
       expect(mockLocation.href).toBe(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.0%2B172.apk"
       );
@@ -389,7 +410,8 @@ describe("usePwaManager", () => {
       });
 
       (fetch as any)
-        .mockReturnValueOnce(metadataResponse);
+        .mockReturnValueOnce(metadataResponse)
+        .mockResolvedValueOnce({ ok: false });
 
       const first = resolveLatestApkFilename();
       const second = resolveLatestApkFilename();
@@ -403,7 +425,7 @@ describe("usePwaManager", () => {
         "clashmanager-v14.43.0+172.apk",
         "clashmanager-v14.43.0+172.apk",
       ]);
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenCalledTimes(2);
     });
 
     it("should show an error without navigating if release resolution responses are not ok", async () => {
