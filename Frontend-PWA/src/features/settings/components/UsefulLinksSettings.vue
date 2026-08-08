@@ -23,7 +23,13 @@
 import { computed, onMounted, ref } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
-import { useExternalLink, getSupercellLocale, appVersion } from "@core";
+import {
+  appVersion,
+  getSupercellLocale,
+  type ApkReleaseDownload,
+  resolveLatestApkRelease,
+  useExternalLink,
+} from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 
 const props = defineProps<{
@@ -40,10 +46,10 @@ const { openExternal } = useExternalLink();
 const { isNativeWrapper } = useNativeBridge();
 
 /**
- * Dynamic Android App installer filename resolved from the GitHub release metadata.
- * Defaults to the standard unsuffixed version filename before resolution.
+ * Dynamic Android App installer filename resolved from live release metadata.
+ * Undefined until a real versioned APK filename is known.
  */
-const apkFilename = ref(`clashmanager-v${appVersion}.apk`);
+const apkRelease = ref<ApkReleaseDownload>();
 
 /**
  * Fetches the latest release filename from GitHub API during component mounting.
@@ -54,16 +60,8 @@ const apkFilename = ref(`clashmanager-v${appVersion}.apk`);
  */
 onMounted(async () => {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    const response = await fetch(
-      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
-      { signal: controller.signal },
-    );
-    clearTimeout(timeoutId);
-    if (!response.ok) return;
-    const latest = (await response.json()) as { filename?: string };
-    if (latest.filename) apkFilename.value = latest.filename;
+    const latestRelease = await resolveLatestApkRelease();
+    if (latestRelease) apkRelease.value = latestRelease;
   } catch {
     // Keep the fallback filename.
   }
@@ -115,16 +113,11 @@ const usefulLinks = computed(() => {
     },
   ];
 
-  if (!isNativeWrapper.value) {
-    const isFallback = apkFilename.value === `clashmanager-v${appVersion}.apk`;
+  if (!isNativeWrapper.value && apkRelease.value) {
     links.push({
       label: "Download Android App",
-      desc: isFallback
-        ? "Open APK release folder on GitHub"
-        : `Install the native companion APK (v${appVersion})`,
-      url: isFallback
-        ? "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
-        : `https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/${encodeURIComponent(apkFilename.value)}`,
+      desc: `Install the native companion APK (v${appVersion})`,
+      url: apkRelease.value.url,
       icon: "download",
     });
   }
