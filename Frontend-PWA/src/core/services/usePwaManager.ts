@@ -6,10 +6,8 @@ import { useToast } from "./useToast";
 import { useConfirm } from "./useConfirm";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
-import { appVersion } from "./useSystemInfo";
 import { UI_STABILITY_DELAY } from "@core/config";
 
-export const APK_RELEASE_DIRECTORY_URL = "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release";
 export const APK_RELEASE_RAW_BASE_URL = "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release";
 export const APK_LATEST_METADATA_URL = `${APK_RELEASE_RAW_BASE_URL}/latest.json`;
 export const APK_RELEASE_CONTENTS_API_URL =
@@ -104,15 +102,6 @@ async function fetchFresh(url: string, init: RequestInit = {}): Promise<Response
   }
 }
 
-async function apkExists(filename: string): Promise<boolean> {
-  try {
-    const response = await fetchFresh(buildApkDownloadUrl(filename), { method: "HEAD" });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
 async function resolveApkFilenameFromContentsApi(): Promise<string | undefined> {
   try {
     const response = await fetchFresh(APK_RELEASE_CONTENTS_API_URL);
@@ -129,19 +118,20 @@ async function resolveApkFilenameFromContentsApi(): Promise<string | undefined> 
 }
 
 async function resolveLatestApkFilenameUncached(): Promise<string | undefined> {
+  const filenameFromContentsApi = await resolveApkFilenameFromContentsApi();
+  if (filenameFromContentsApi) return filenameFromContentsApi;
+
   try {
     const response = await fetchFresh(APK_LATEST_METADATA_URL);
     if (response.ok) {
       const latestReleaseMetadata = (await response.json()) as { filename?: string };
-      if (isReleaseApkFilename(latestReleaseMetadata.filename) && await apkExists(latestReleaseMetadata.filename)) {
-        return latestReleaseMetadata.filename;
-      }
+      if (isReleaseApkFilename(latestReleaseMetadata.filename)) return latestReleaseMetadata.filename;
     }
   } catch (resolveApkError: unknown) {
     console.warn("[PWA] Dynamic APK metadata resolution failed", resolveApkError);
   }
 
-  return resolveApkFilenameFromContentsApi();
+  return undefined;
 }
 
 export async function resolveLatestApkFilename(): Promise<string | undefined> {
@@ -340,17 +330,14 @@ export function usePwaManager() {
    *
    * @returns A Promise resolving to the exact filename string or a deterministic fallback.
    */
-  async function resolveApkFilename(): Promise<string> {
-    // [DECISION LOG] Fallback name is formatted deterministically from the build-time constant.
-    const fallback = `clashmanager-v${appVersion}.apk`;
+  async function resolveApkFilename(): Promise<string | undefined> {
     try {
       // [THREAT:] Stale latest.json can point at a deleted build after every release rotation.
-      // The shared resolver verifies the binary and self-heals through GitHub's contents API.
-      return await resolveLatestApkFilename() ?? fallback;
+      // The shared resolver prefers GitHub's live contents API, then falls back to latest.json.
+      return await resolveLatestApkFilename();
     } catch (resolveApkError: unknown) {
-      // [DECISION LOG] Fail silently and return the fallback so a network hiccup never blocks a user.
-      console.warn("[PWA] Dynamic APK resolution failed; utilizing fallback", resolveApkError);
-      return fallback;
+      console.warn("[PWA] Dynamic APK resolution failed", resolveApkError);
+      return undefined;
     }
   }
 
@@ -375,22 +362,22 @@ export function usePwaManager() {
     try {
       // [DECISION LOG] Query the remote repository metadata to get the actual build-numbered filename.
       const filename = await resolveApkFilename();
-      const isFallback = filename === `clashmanager-v${appVersion}.apk`;
+      if (!filename) {
+        toast.remove(activeToastId);
+        toast.error("Could not find latest APK");
+        return;
+      }
 
       // [THREAT:] Special character URL corruption. Encoding handles the "+" build metadata separator smoothly.
       // [DECISION LOG] Bypassing the github.com redirect by linking directly to raw.githubusercontent.com.
-      // If dynamic resolution fails, we redirect to the folder listing rather than a 404 URL.
-      const apkUrl = isFallback
-        ? APK_RELEASE_DIRECTORY_URL
-        : buildApkDownloadUrl(filename);
+      const apkUrl = buildApkDownloadUrl(filename);
 
-      if (!isFallback && nativeBridge.value?.downloadApkFile) {
+      if (nativeBridge.value?.downloadApkFile) {
         // [DECISION LOG] Preferred path. DownloadManager fetches the binary natively,
         // saves it to Downloads, and shows a system notification. No browser involved.
         nativeBridge.value.downloadApkFile(apkUrl, filename);
       } else if (nativeBridge.value?.openExternalUrl) {
-        // [DECISION LOG] Fallback for older APK builds that pre-date downloadApkFile,
-        // or when isFallback is true and we want to open the directory page.
+        // [DECISION LOG] Fallback for older APK builds that pre-date downloadApkFile.
         nativeBridge.value.openExternalUrl(apkUrl);
       } else if (typeof window !== "undefined") {
         // [DECISION LOG] Browser fallback. Standard window location redirection for PWA installations.
@@ -398,11 +385,7 @@ export function usePwaManager() {
       }
 
       toast.remove(activeToastId);
-      if (isFallback) {
-        toast.success("Opening APK release directory");
-      } else {
-        toast.success("APK download started");
-      }
+      toast.success("APK download started");
     } catch (downloadApkError: unknown) {
       // [THREAT:] Client window state modifications throwing or unexpected bridge failure.
       console.error("[PWA] Failed to dispatch APK download", downloadApkError);

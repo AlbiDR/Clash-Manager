@@ -95,8 +95,14 @@ describe("UsefulLinksSettings.vue", () => {
     });
   };
 
-  it("renders the links card with all specified links", () => {
+  it("renders the links card with all specified links", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([{ name: "clashmanager-v14.43.1+173.apk", type: "file" }])
+    });
+
     const wrapper = mountComponent();
+    await new Promise(resolve => setTimeout(resolve, 1));
 
     const links = wrapper.findAll("button");
     const labels = links.map(link => link.find(".link-label").text());
@@ -155,7 +161,7 @@ describe("UsefulLinksSettings.vue", () => {
     globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ filename: "clashmanager-v14.40.3+142.apk" })
+        json: () => Promise.resolve([{ name: "clashmanager-v14.40.3+142.apk", type: "file" }])
       })
     );
 
@@ -165,7 +171,7 @@ describe("UsefulLinksSettings.vue", () => {
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringMatching(
-        /^https:\/\/raw\.githubusercontent\.com\/AlbiDR\/Clash-Manager\/Beta\/APK\/release\/latest\.json\?t=\d+$/,
+        /^https:\/\/api\.github\.com\/repos\/AlbiDR\/Clash-Manager\/contents\/APK\/release\?ref=Beta&t=\d+$/,
       ),
       expect.objectContaining({
         cache: "no-store",
@@ -185,7 +191,7 @@ describe("UsefulLinksSettings.vue", () => {
     );
   });
 
-  it("gracefully falls back to release folder URL on fetch error", async () => {
+  it("does not render the Android app download link if APK resolution fails", async () => {
     globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.reject(new Error("Network Failure"))
     );
@@ -195,49 +201,30 @@ describe("UsefulLinksSettings.vue", () => {
 
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
-    expect(downloadBtn).toBeDefined();
-
-    await downloadBtn!.trigger("click");
-    expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
-    );
+    expect(downloadBtn).toBeUndefined();
   });
 
   it("ignores malformed APK metadata filenames", async () => {
-    globalThis.fetch = vi.fn().mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ filename: "../clashmanager.apk" })
-      })
-    );
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ filename: "../clashmanager.apk" }) });
 
     const wrapper = mountComponent();
     await new Promise(resolve => setTimeout(resolve, 1));
 
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
-    expect(downloadBtn).toBeDefined();
-
-    await downloadBtn!.trigger("click");
-    expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
-    );
+    expect(downloadBtn).toBeUndefined();
   });
 
-  it("recovers the newest APK link when latest metadata points at a deleted APK", async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ filename: "clashmanager-v14.40.3+142.apk" })
-      })
-      .mockResolvedValueOnce({ ok: false })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([
-          { name: "clashmanager-v14.40.3+142.apk", type: "file" },
-          { name: "clashmanager-v14.43.0+172.apk", type: "file" }
-        ])
-      });
+  it("uses the newest APK link from the live contents listing", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([
+        { name: "clashmanager-v14.40.3+142.apk", type: "file" },
+        { name: "clashmanager-v14.43.0+172.apk", type: "file" }
+      ])
+    });
 
     const wrapper = mountComponent();
     await new Promise(resolve => setTimeout(resolve, 1));

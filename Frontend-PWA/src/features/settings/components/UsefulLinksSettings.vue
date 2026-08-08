@@ -24,7 +24,6 @@ import { computed, onMounted, ref } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import {
-  APK_RELEASE_DIRECTORY_URL,
   appVersion,
   buildApkDownloadUrl,
   getSupercellLocale,
@@ -47,10 +46,10 @@ const { openExternal } = useExternalLink();
 const { isNativeWrapper } = useNativeBridge();
 
 /**
- * Dynamic Android App installer filename resolved from the GitHub release metadata.
- * Defaults to the standard unsuffixed version filename before resolution.
+ * Dynamic Android App installer filename resolved from live release metadata.
+ * Undefined until a real versioned APK filename is known.
  */
-const apkFilename = ref(`clashmanager-v${appVersion}.apk`);
+const apkFilename = ref<string>();
 
 /**
  * Fetches the latest release filename from GitHub API during component mounting.
@@ -114,14 +113,11 @@ const usefulLinks = computed(() => {
     },
   ];
 
-  if (!isNativeWrapper.value) {
-    const isFallback = apkFilename.value === `clashmanager-v${appVersion}.apk`;
+  if (!isNativeWrapper.value && apkFilename.value) {
     links.push({
       label: "Download Android App",
-      desc: isFallback
-        ? "Open APK release folder on GitHub"
-        : `Install the native companion APK (v${appVersion})`,
-      url: isFallback ? APK_RELEASE_DIRECTORY_URL : buildApkDownloadUrl(apkFilename.value),
+      desc: `Install the native companion APK (v${appVersion})`,
+      url: buildApkDownloadUrl(apkFilename.value),
       icon: "download",
     });
   }
