@@ -11,8 +11,8 @@
  *
  * @remarks
  * Displays a list of external resources with locale-aware URLs matching the user's
- * active language. In non-native environments, it dynamically appends an Android
- * app download link, resolving the latest release filename from GitHub API on mount.
+ * active language. In non-native environments, it appends an Android app download
+ * link that targets the stable latest APK alias.
  *
  * **Architectural Context:**
  * - **Layer:** Layer 3 (@features)
@@ -46,24 +46,23 @@ const { openExternal } = useExternalLink();
 const { isNativeWrapper } = useNativeBridge();
 
 /**
- * Dynamic Android App installer filename resolved from live release metadata.
- * Undefined until a real versioned APK filename is known.
+ * Stable Android App installer target resolved from the core APK release service.
+ * Undefined until the component mount lifecycle has completed.
  */
 const apkRelease = ref<ApkReleaseDownload>();
 
 /**
- * Fetches the latest release filename from GitHub API during component mounting.
- * Fallback to the default un-suffixed filename on network failure or abort timeout.
+ * Resolves the latest APK alias during component mounting.
  *
  * @sideeffects
- * - Initiates an asynchronous HTTP GET request to the Beta release repository.
+ * - Updates local reactive state for the optional web-only Android download link.
  */
 onMounted(async () => {
   try {
     const latestRelease = await resolveLatestApkRelease();
     if (latestRelease) apkRelease.value = latestRelease;
   } catch {
-    // Keep the fallback filename.
+    // Keep the optional web-only download link hidden if resolution unexpectedly fails.
   }
 });
 

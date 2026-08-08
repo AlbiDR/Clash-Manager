@@ -183,6 +183,8 @@ jobs:
               git show "origin/Nightly:$NIGHTLY_APK" > "APK/release/$NIGHTLY_BASENAME"
               git add "APK/release/$NIGHTLY_BASENAME"
             fi
+            git show "origin/Nightly:APK/release/$NIGHTLY_BASENAME" > APK/release/clashmanager-latest.apk
+            git add APK/release/clashmanager-latest.apk
 
             # Also align latest.json so it agrees with the incoming APK.
             git show origin/Nightly:APK/release/latest.json > APK/release/latest.json
@@ -422,6 +424,8 @@ jobs:
               git show "origin/Beta:$BETA_APK" > "APK/release/$BETA_BASENAME"
               git add "APK/release/$BETA_BASENAME"
             fi
+            git show "origin/Beta:APK/release/$BETA_BASENAME" > APK/release/clashmanager-latest.apk
+            git add APK/release/clashmanager-latest.apk
 
             git show origin/Beta:APK/release/latest.json > APK/release/latest.json
             git add APK/release/latest.json

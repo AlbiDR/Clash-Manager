@@ -67,7 +67,7 @@ pnpm icons:android        # regenerate adaptive launcher icons
 
 `build-apk.sh` requires JDK 17 (it rejects newer system JDKs) and the Android build-tools under `~/.bubblewrap/android_sdk`. Running it without `--no-sign` also signs, if a local keystore is present.
 
-Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. `release/latest.json` always points at the current filename; the PWA's download link and any script should read that instead of guessing the filename from the version.
+Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. CI also overwrites `release/clashmanager-latest.apk` with the same signed binary, giving the PWA update button one permanent direct download URL. `release/latest.json` still points at the current versioned filename for scripts and older clients.
 
 ## Guardrails
 

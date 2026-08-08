@@ -10,8 +10,8 @@
  * - **Satisfaction:** ADR Section VII: Naming and Location Conventions.
  *
  * This test suite verifies correct localization resolution of URLs, conditional rendering
- * of the native Android download link inside the hybrid wrapper, and dynamic APK filename
- * fetching.
+ * of the native Android download link inside the hybrid wrapper, and stable latest APK
+ * alias routing.
  */
 
 import { mount } from "@vue/test-utils";
@@ -96,11 +96,6 @@ describe("UsefulLinksSettings.vue", () => {
   };
 
   it("renders the links card with all specified links", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([{ name: "clashmanager-v14.43.1+173.apk", type: "file" }])
-    });
-
     const wrapper = mountComponent();
     await new Promise(resolve => setTimeout(resolve, 1));
 
@@ -157,29 +152,11 @@ describe("UsefulLinksSettings.vue", () => {
     expect(mockOpenExternal).toHaveBeenCalledWith("https://store.supercell.com/fr/clashroyale");
   });
 
-  it("resolves dynamic filename from GitHub API during onMounted", async () => {
-    globalThis.fetch = vi.fn().mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([{ name: "clashmanager-v14.40.3+142.apk", type: "file" }])
-      })
-    );
-
+  it("uses the stable latest APK alias without fetching metadata", async () => {
     const wrapper = mountComponent();
-    // Allow microtasks/onMounted fetches to complete
     await new Promise(resolve => setTimeout(resolve, 1));
 
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringMatching(
-        /^https:\/\/api\.github\.com\/repos\/AlbiDR\/Clash-Manager\/contents\/APK\/release\?ref=Beta&t=\d+$/,
-      ),
-      expect.objectContaining({
-        cache: "no-store",
-        headers: expect.any(Headers),
-        signal: expect.any(AbortSignal),
-      }),
-    );
-    expect(((globalThis.fetch as any).mock.calls[0][1].headers as Headers).get("Cache-Control")).toBe("no-cache");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
 
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
@@ -187,11 +164,11 @@ describe("UsefulLinksSettings.vue", () => {
 
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.40.3%2B142.apk"
+      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk"
     );
   });
 
-  it("does not render the Android app download link if APK resolution fails", async () => {
+  it("still renders the Android app download link if metadata fetches would fail", async () => {
     globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.reject(new Error("Network Failure"))
     );
@@ -201,67 +178,12 @@ describe("UsefulLinksSettings.vue", () => {
 
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
-    expect(downloadBtn).toBeUndefined();
-  });
-
-  it("ignores malformed APK metadata filenames", async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ filename: "../clashmanager.apk" }) });
-
-    const wrapper = mountComponent();
-    await new Promise(resolve => setTimeout(resolve, 1));
-
-    const buttons = wrapper.findAll("button");
-    const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
-    expect(downloadBtn).toBeUndefined();
-  });
-
-  it("uses the newest APK link from the live contents listing", async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: false })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([
-          { name: "clashmanager-v14.40.3+142.apk", type: "file" },
-          { name: "clashmanager-v14.43.0+172.apk", type: "file" }
-        ])
-      })
-      .mockResolvedValueOnce({ ok: false });
-
-    const wrapper = mountComponent();
-    await new Promise(resolve => setTimeout(resolve, 1));
-
-    const buttons = wrapper.findAll("button");
-    const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
     expect(downloadBtn).toBeDefined();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
 
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.0%2B172.apk"
-    );
-  });
-
-  it("uses a same-origin direct APK link when same-origin metadata resolves", async () => {
-    globalThis.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ filename: "clashmanager-v14.43.2+176.apk" })
-      })
-      .mockResolvedValueOnce({ ok: false })
-      .mockResolvedValueOnce({ ok: false });
-
-    const wrapper = mountComponent();
-    await new Promise(resolve => setTimeout(resolve, 1));
-
-    const buttons = wrapper.findAll("button");
-    const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
-    expect(downloadBtn).toBeDefined();
-
-    await downloadBtn!.trigger("click");
-    expect(mockOpenExternal.mock.calls[0][0]).toContain(
-      "/Clash-Manager/APK/release/clashmanager-v14.43.2%2B176.apk"
+      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk"
     );
   });
 });
