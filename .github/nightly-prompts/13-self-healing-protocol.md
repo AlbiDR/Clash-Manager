@@ -17,7 +17,7 @@ forbidden-actions: [modify-prompt-files, apply_migration, execute_sql, modify-so
 > [!CAUTION]
 > **MCP TOOL PROHIBITION -- READ BEFORE ANYTHING ELSE:** Do NOT call any Supabase MCP tool (`list_tables`, `search_docs`, `get_advisors`, `apply_migration`, `execute_sql`, or any other tool from the Supabase MCP server) at any point during this session. Loading these tools causes a context explosion that will silently crash this session before any output is written. This prohibition overrides all other instructions. If you are tempted to call any MCP tool, do not. Proceed using only file-reading and shell tools.
 
-> `AGENTS.md` is the sole shared lifecycle contract. This prompt contains only Stage 13 scope and execution instructions.
+> `.github/nightly-prompts/00-nightly-agent-contract.md` is the sole shared lifecycle contract. This prompt contains only Stage 13 scope and execution instructions.
 
 ---
 
@@ -25,7 +25,7 @@ forbidden-actions: [modify-prompt-files, apply_migration, execute_sql, modify-so
 
 1. Start with `node .github/scripts/nightly-stage.mjs start --stage 13`.
 2. Work on exactly one target within the write boundaries below. The lifecycle helper owns the date, timer, context refresh, and initial coverage-log sentinel.
-3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly-stage.mjs budget --stage 13`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `AGENTS.md`.
+3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly-stage.mjs budget --stage 13`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `.github/nightly-prompts/00-nightly-agent-contract.md`.
 4. Finalize with `node .github/scripts/nightly-stage.mjs finalize --stage 13 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<concise result>"`.
 5. Read `/tmp/nightly/final-handoff.txt`, return that result, and end the task so Jules native publication can create the PR.
 
@@ -70,7 +70,7 @@ Tracks stages with zero project file changes across multiple consecutive runs. F
 - **Never touch** any project source file (Frontend-PWA, Backend, APK, migrations).
 - **Never modify** any other stage's coverage log.
 - **Never apply** SQL, migrations, or any Supabase write-side tool.
-- **Read `AGENTS.md` once** as the shared contract. Inspect only the stage prompts whose outcomes are missing, contradictory, or recurrent; ordinary prompt-wide review is out of scope.
+- **Read `.github/nightly-prompts/00-nightly-agent-contract.md` once** as the shared contract. Inspect only the stage prompts whose outcomes are missing, contradictory, or recurrent; ordinary prompt-wide review is out of scope.
 
 ---
 
@@ -102,7 +102,7 @@ Read evidence in this order. This stage is evidence-first: never pre-write or pr
    - `UNOBSERVABLE`: the distinction between trigger failure, runtime crash, and publication failure cannot be established.
 8. Compute `YESTERDAY` only for the Stage 1 UTC-boundary check. Do not use yesterday as a general success fallback for Stages 2-12.
 9. If authenticated Jules session evidence is already available, use it to refine `MISSING-OUTPUT`; otherwise mark the cause `UNOBSERVABLE` and continue without credentials.
-10. Read `AGENTS.md` and only the full prompts for stages classified `FAILED`, `MISSING-OUTPUT`, contradictory, or recurrent.
+10. Read `.github/nightly-prompts/00-nightly-agent-contract.md` and only the full prompts for stages classified `FAILED`, `MISSING-OUTPUT`, contradictory, or recurrent.
 
 ### Step 4: Analyse
 

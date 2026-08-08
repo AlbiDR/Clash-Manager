@@ -15,6 +15,8 @@ import { fileURLToPath } from "node:url";
 
 const FINAL_STATUSES = new Set(["CHANGED", "CLEAN", "SKIPPED", "PARTIAL-RUN"]);
 const REGISTRY_PATH = ".github/nightly-config/stages.json";
+const AGENT_LOADER_PATH = "AGENTS.md";
+const NIGHTLY_AGENT_CONTRACT_PATH = ".github/nightly-prompts/00-nightly-agent-contract.md";
 const HISTORY_PATH = ".github/nightly-logs/00-pr-history.md";
 const PIPELINE_INTELLIGENCE_PATH = ".github/nightly-logs/00-pipeline-intelligence.md";
 const SELF_HEALING_PATH = ".github/nightly-logs/13-self-healing-protocol.md";
@@ -156,7 +158,7 @@ export function replaceSentinel(content, sentinel, finalLine) {
 
 function isAdministrativePipelinePath(filePath) {
   return (
-    filePath === "AGENTS.md" ||
+    filePath === AGENT_LOADER_PATH ||
     filePath.startsWith(".github/nightly-prompts/") ||
     filePath.startsWith(".github/nightly-config/") ||
     filePath === PIPELINE_INTELLIGENCE_PATH ||
@@ -647,7 +649,10 @@ function validatePrompt(repoRoot, stage) {
     content.includes(`node .github/scripts/nightly-stage.mjs finalize --stage ${stage.number}`),
     `Stage ${stage.number} prompt omits its finalize command.`,
   );
-  invariant(content.includes("AGENTS.md"), `Stage ${stage.number} prompt must defer shared behavior to AGENTS.md.`);
+  invariant(
+    content.includes(NIGHTLY_AGENT_CONTRACT_PATH),
+    `Stage ${stage.number} prompt must defer shared behavior to ${NIGHTLY_AGENT_CONTRACT_PATH}.`,
+  );
   invariant(!content.includes("## [Base "), `Stage ${stage.number} duplicates the shared Base contract.`);
 
   const forbiddenPatterns = [
@@ -702,12 +707,28 @@ function validateContracts(repoRoot, registry) {
   for (const stage of registry.stages) validatePrompt(repoRoot, stage);
   validateBootstrap(repoRoot, registry);
 
-  const agents = readFileSync(path.join(repoRoot, "AGENTS.md"), "utf8");
-  invariant(agents.includes("native scheduled-task publisher"), "AGENTS.md must define native publication ownership.");
-  invariant(agents.includes("git pull --ff-only"), "AGENTS.md must assign bounded branch synchronization to the lifecycle helper.");
-  invariant(!/Skip PR on Zero-Diff/i.test(agents), "AGENTS.md still permits a no-PR outcome.");
-  invariant(!/\bgit commit\b/i.test(agents), "AGENTS.md still instructs manual commits.");
-  invariant(!/\bgit push\b/i.test(agents), "AGENTS.md still instructs manual pushes.");
+  const loader = readFileSync(path.join(repoRoot, AGENT_LOADER_PATH), "utf8");
+  invariant(
+    loader.includes(NIGHTLY_AGENT_CONTRACT_PATH),
+    `${AGENT_LOADER_PATH} must point to ${NIGHTLY_AGENT_CONTRACT_PATH}.`,
+  );
+  invariant(
+    loader.includes("compatibility adapter for agent auto-discovery"),
+    `${AGENT_LOADER_PATH} must remain a small auto-discovery adapter.`,
+  );
+
+  const contract = readFileSync(path.join(repoRoot, NIGHTLY_AGENT_CONTRACT_PATH), "utf8");
+  invariant(
+    contract.includes("native scheduled-task publisher"),
+    `${NIGHTLY_AGENT_CONTRACT_PATH} must define native publication ownership.`,
+  );
+  invariant(
+    contract.includes("git pull --ff-only"),
+    `${NIGHTLY_AGENT_CONTRACT_PATH} must assign bounded branch synchronization to the lifecycle helper.`,
+  );
+  invariant(!/Skip PR on Zero-Diff/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still permits a no-PR outcome.`);
+  invariant(!/\bgit commit\b/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still instructs manual commits.`);
+  invariant(!/\bgit push\b/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still instructs manual pushes.`);
 
   const contextScript = readFileSync(path.join(repoRoot, ".github/scripts/update-nightly-context.sh"), "utf8");
   invariant(contextScript.includes("# BASELINE_TEST_STAGE=2"), "Context script lacks the Stage 2 policy marker.");

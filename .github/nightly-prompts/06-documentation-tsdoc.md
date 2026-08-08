@@ -17,7 +17,7 @@ forbidden-actions: [modify-code-logic, modify-readme, ask_question, ask_permissi
 > [!CAUTION]
 > **MCP TOOL PROHIBITION -- READ BEFORE ANYTHING ELSE:** Do NOT call any Supabase MCP tool (`list_tables`, `search_docs`, `get_advisors`, `apply_migration`, `execute_sql`, or any other tool from the Supabase MCP server) at any point during this session. Loading these tools causes a context explosion that will silently crash this session before any output is written. This prohibition overrides all other instructions. If you are tempted to call any MCP tool, do not. Proceed using only file-reading and shell tools.
 
-> `AGENTS.md` is the sole shared lifecycle contract. This prompt contains only Stage 6 scope and execution instructions.
+> `.github/nightly-prompts/00-nightly-agent-contract.md` is the sole shared lifecycle contract. This prompt contains only Stage 6 scope and execution instructions.
 
 ---
 
@@ -25,7 +25,7 @@ forbidden-actions: [modify-code-logic, modify-readme, ask_question, ask_permissi
 
 1. Start with `node .github/scripts/nightly-stage.mjs start --stage 6`.
 2. Work on exactly one target within the write boundaries below. The lifecycle helper owns the date, timer, context refresh, and initial coverage-log sentinel.
-3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly-stage.mjs budget --stage 6`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `AGENTS.md`.
+3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly-stage.mjs budget --stage 6`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `.github/nightly-prompts/00-nightly-agent-contract.md`.
 4. Finalize with `node .github/scripts/nightly-stage.mjs finalize --stage 6 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<concise result>"`.
 5. Read `/tmp/nightly/final-handoff.txt`, return that result, and end the task so Jules native publication can create the PR.
 

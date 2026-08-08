@@ -131,6 +131,14 @@ test("stage-specific write boundaries reject unsafe diffs", () => {
     /may not modify pipeline instructions/,
   );
   assert.throws(
+    () =>
+      validateChangedPaths(stage13, "CHANGED", [
+        stage13.coverageLog,
+        ".github/nightly-prompts/00-nightly-agent-contract.md",
+      ]),
+    /may not modify pipeline instructions/,
+  );
+  assert.throws(
     () => validateChangedPaths(stage1, "CHANGED", [stage1.coverageLog, ".github/workflows/example.yml"]),
     /may not modify pipeline instructions/,
   );
