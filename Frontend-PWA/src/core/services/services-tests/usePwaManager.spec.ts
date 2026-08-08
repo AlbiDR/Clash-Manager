@@ -260,6 +260,54 @@ describe("usePwaManager", () => {
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
 
+    it("should preserve a trusted direct download_url from the contents API", async () => {
+      const mockOpenExternal = vi.fn();
+      mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
+
+      (fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue([
+          {
+            download_url: "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1+173.apk",
+            name: "clashmanager-v14.43.1+173.apk",
+            type: "file",
+          },
+        ]),
+      });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockOpenExternal).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1+173.apk"
+      );
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should ignore an untrusted download_url and build the raw APK URL", async () => {
+      const mockOpenExternal = vi.fn();
+      mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
+
+      (fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue([
+          {
+            download_url: "https://example.com/not-the-apk.apk",
+            name: "clashmanager-v14.43.1+173.apk",
+            type: "file",
+          },
+        ]),
+      });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockOpenExternal).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1%2B173.apk"
+      );
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
     it("should use latest.json as a backup if the contents API is unavailable", async () => {
       (fetch as any)
         .mockResolvedValueOnce({ ok: false })

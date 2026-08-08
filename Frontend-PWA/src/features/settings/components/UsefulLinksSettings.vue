@@ -25,9 +25,9 @@ import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import {
   appVersion,
-  buildApkDownloadUrl,
   getSupercellLocale,
-  resolveLatestApkFilename,
+  type ApkReleaseDownload,
+  resolveLatestApkRelease,
   useExternalLink,
 } from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
@@ -49,7 +49,7 @@ const { isNativeWrapper } = useNativeBridge();
  * Dynamic Android App installer filename resolved from live release metadata.
  * Undefined until a real versioned APK filename is known.
  */
-const apkFilename = ref<string>();
+const apkRelease = ref<ApkReleaseDownload>();
 
 /**
  * Fetches the latest release filename from GitHub API during component mounting.
@@ -60,8 +60,8 @@ const apkFilename = ref<string>();
  */
 onMounted(async () => {
   try {
-    const latestFilename = await resolveLatestApkFilename();
-    if (latestFilename) apkFilename.value = latestFilename;
+    const latestRelease = await resolveLatestApkRelease();
+    if (latestRelease) apkRelease.value = latestRelease;
   } catch {
     // Keep the fallback filename.
   }
@@ -113,11 +113,11 @@ const usefulLinks = computed(() => {
     },
   ];
 
-  if (!isNativeWrapper.value && apkFilename.value) {
+  if (!isNativeWrapper.value && apkRelease.value) {
     links.push({
       label: "Download Android App",
       desc: `Install the native companion APK (v${appVersion})`,
-      url: buildApkDownloadUrl(apkFilename.value),
+      url: apkRelease.value.url,
       icon: "download",
     });
   }
