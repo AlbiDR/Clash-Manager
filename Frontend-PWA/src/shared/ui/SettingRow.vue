@@ -6,10 +6,14 @@ import { vTactile } from "../directives/vTactile";
 
 /**
  * COMPONENT: SettingRow
+ * ----------------------------------------------------------------------------
+ * Rationale: A standardized row for settings with label, description, and toggle.
+ * ----------------------------------------------------------------------------
  *
- * @remarks
- * A standardized row for application settings, typically containing a label,
- * a description, and a toggle switch.
+ * **Decision Log - Touch targets & Brokered Haptics:**
+ * - Touch Target Compliance (Priority 4 / Target B.2): Enforces a minimum tap
+ *   footprint of 48px height with vertical padding to guarantee accurate touch
+ *   targeting in hybrid WebView/PWA configurations on mobile screens.
  */
 
 defineProps<{
@@ -64,6 +68,8 @@ defineEmits<{
   justify-content: space-between;
   cursor: pointer;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
+  min-height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
+  padding: var(--sys-space-4) 0; /* Compensating vertical padding */
 }
 
 .setting-row.disabled {
