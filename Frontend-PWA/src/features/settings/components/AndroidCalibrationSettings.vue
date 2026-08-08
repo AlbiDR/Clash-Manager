@@ -1,6 +1,20 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+/**
+ * COMPONENT: AndroidCalibrationSettings.vue
+ * ----------------------------------------------------------------------------
+ * Rationale: Manages native Android permissions and screen calibration coordinates.
+ * ----------------------------------------------------------------------------
+ *
+ * **Decision Log - Hardware & Native Integration:**
+ * - Exposes controls for Accessibility Services and Display Overlays required by Blitz Mode.
+ * - Handles screen coordinates mapping (as percentages) to support different mobile viewport models.
+ * - Screen coordinates are automatically persisted through reactive watchers delegating directly to
+ *   the Native JSBridge layer (`saveCoordinates`) upon any interaction/input changes.
+ *
+ * @remarks Satisfies CleanStack ADR Section IV: Hardware/Browser Brokering.
+ */
 import { watch } from "vue";
 import { vTactile } from "@shared";
 import { useNativeBridge } from "@core/services/useNativeBridge";
@@ -18,12 +32,23 @@ const {
   saveCoordinates,
 } = useNativeBridge();
 
-// Auto-save coordinates to native bridge whenever any value changes.
+/**
+ * Auto-save coordinate updates.
+ *
+ * @remarks
+ * Sets up a reactive watcher targeting invite and close touch percentages.
+ * Changes are instantly synchronized with the native host persistent layer,
+ * mitigating data loss on dirty exits.
+ */
 watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
 </script>
 
 <template>
-  <!-- Android permissions panel - only shown inside the native TWA wrapper -->
+  <!--
+    Android permissions panel - only shown inside the native TWA wrapper.
+    [DECISION LOG] Conditional layout containment prevents visual clutter and irrelevant
+    options in desktop or standard mobile browser environments.
+  -->
   <div v-if="isNativeWrapper" class="permissions-section">
     <div class="card-divider-s" />
     <h3 class="section-title">Android Permissions</h3>
@@ -68,7 +93,11 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
     </div>
   </div>
 
-  <!-- Live layout calibration controls for native Android wrapper -->
+  <!--
+    Live layout calibration controls for native Android wrapper.
+    [DECISION LOG] Coordinates are expressed as percentages to maintain device-agnostic scale multiplier
+    compliance regardless of native physical screen resolutions.
+  -->
   <div v-if="isNativeWrapper" class="calibration-section">
     <div class="card-divider-s" />
     <h3 class="section-title">Blitz Mode Calibration</h3>

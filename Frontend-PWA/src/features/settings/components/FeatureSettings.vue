@@ -1,12 +1,30 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+/**
+ * COMPONENT: FeatureSettings.vue
+ * ----------------------------------------------------------------------------
+ * Rationale: Application Features settings card. Controls benchmarking, sorting, and Blitz Mode.
+ * ----------------------------------------------------------------------------
+ *
+ * **Decision Log - Native Wrapper & Blitz Mode Delegation:**
+ * - Blitz Mode acts as an automated operation bypass.
+ * - In native Android wrappers, the actual click automation is fully delegated to the native
+ *   foreground accessibility service, which is why the toggle behaves differently.
+ * - Selecting Blitz Mode triggers an explicit redirection sequence to the system Accessibility
+ *   settings on activation if not already granted.
+ * - Interactive elements (such as Blitz Speed buttons) are scaled to `48px` to guarantee physical
+ *   touch target compliance (`Target B.2`) in high-density mobile displays.
+ *
+ * @remarks Satisfies CleanStack ADR Section II: Unitary Architecture & Section IV: Hardware/Browser Brokering.
+ */
 import { SettingRow, SettingsCard, vTactile } from "@shared";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 import { useSettings } from "../composables/useSettings";
 import AndroidCalibrationSettings from "./AndroidCalibrationSettings.vue";
 
 defineProps<{
+  /** Indicates whether the application features collapsible card should start expanded. */
   initiallyExpanded?: boolean;
 }>();
 
@@ -15,12 +33,17 @@ const { isNativeWrapper, openAccessibilitySettings } = useNativeBridge();
 
 /**
  * Handles the Blitz Mode toggle in non-native-wrapper (PWA) mode.
+ *
+ * @remarks
+ * Prompts immediate redirection to the OS Accessibility settings to configure
+ * click automation privileges if enabling Blitz Mode.
  */
 function handleBlitzToggle() {
   const wasEnabled = !!modules.blitzMode;
   toggle("blitzMode");
 
-  // Only redirect to accessibility activation when the setting is being enabled
+  // [DECISION LOG] Only redirect to accessibility activation when the setting is being enabled
+  // to avoid user disruption when disabling the feature.
   if (!wasEnabled) {
     openAccessibilitySettings();
   }
