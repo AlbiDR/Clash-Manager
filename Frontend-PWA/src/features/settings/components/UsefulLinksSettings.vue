@@ -23,7 +23,14 @@
 import { computed, onMounted, ref } from "vue";
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
-import { useExternalLink, getSupercellLocale, appVersion } from "@core";
+import {
+  APK_RELEASE_DIRECTORY_URL,
+  appVersion,
+  buildApkDownloadUrl,
+  getSupercellLocale,
+  resolveLatestApkFilename,
+  useExternalLink,
+} from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 
 const props = defineProps<{
@@ -54,16 +61,8 @@ const apkFilename = ref(`clashmanager-v${appVersion}.apk`);
  */
 onMounted(async () => {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    const response = await fetch(
-      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
-      { signal: controller.signal },
-    );
-    clearTimeout(timeoutId);
-    if (!response.ok) return;
-    const latest = (await response.json()) as { filename?: string };
-    if (latest.filename) apkFilename.value = latest.filename;
+    const latestFilename = await resolveLatestApkFilename();
+    if (latestFilename) apkFilename.value = latestFilename;
   } catch {
     // Keep the fallback filename.
   }
@@ -122,9 +121,7 @@ const usefulLinks = computed(() => {
       desc: isFallback
         ? "Open APK release folder on GitHub"
         : `Install the native companion APK (v${appVersion})`,
-      url: isFallback
-        ? "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
-        : `https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/${encodeURIComponent(apkFilename.value)}`,
+      url: isFallback ? APK_RELEASE_DIRECTORY_URL : buildApkDownloadUrl(apkFilename.value),
       icon: "download",
     });
   }

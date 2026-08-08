@@ -22,6 +22,7 @@ import * as useSettingsModule from "../../composables/useSettings";
 import * as useExternalLinkModule from "@core/services/useExternalLink";
 import * as useNativeBridgeModule from "@core/services/useNativeBridge";
 import * as localeModule from "@core/utils/locale";
+import { resetApkResolutionCacheForTests } from "@core/services/usePwaManager";
 
 vi.mock("../../composables/useSettings", () => ({
   useSettings: vi.fn()
@@ -49,6 +50,7 @@ describe("UsefulLinksSettings.vue", () => {
     vi.clearAllMocks();
     mockIsRefreshing.value = false;
     mockIsNativeWrapper.value = false;
+    resetApkResolutionCacheForTests();
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
       isRefreshing: mockIsRefreshing
@@ -161,6 +163,18 @@ describe("UsefulLinksSettings.vue", () => {
     // Allow microtasks/onMounted fetches to complete
     await new Promise(resolve => setTimeout(resolve, 1));
 
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^https:\/\/raw\.githubusercontent\.com\/AlbiDR\/Clash-Manager\/Beta\/APK\/release\/latest\.json\?t=\d+$/,
+      ),
+      expect.objectContaining({
+        cache: "no-store",
+        headers: expect.any(Headers),
+        signal: expect.any(AbortSignal),
+      }),
+    );
+    expect(((globalThis.fetch as any).mock.calls[0][1].headers as Headers).get("Cache-Control")).toBe("no-cache");
+
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
     expect(downloadBtn).toBeDefined();
@@ -186,6 +200,55 @@ describe("UsefulLinksSettings.vue", () => {
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
       "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
+    );
+  });
+
+  it("ignores malformed APK metadata filenames", async () => {
+    globalThis.fetch = vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ filename: "../clashmanager.apk" })
+      })
+    );
+
+    const wrapper = mountComponent();
+    await new Promise(resolve => setTimeout(resolve, 1));
+
+    const buttons = wrapper.findAll("button");
+    const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
+    expect(downloadBtn).toBeDefined();
+
+    await downloadBtn!.trigger("click");
+    expect(mockOpenExternal).toHaveBeenCalledWith(
+      "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
+    );
+  });
+
+  it("recovers the newest APK link when latest metadata points at a deleted APK", async () => {
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ filename: "clashmanager-v14.40.3+142.apk" })
+      })
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([
+          { name: "clashmanager-v14.40.3+142.apk", type: "file" },
+          { name: "clashmanager-v14.43.0+172.apk", type: "file" }
+        ])
+      });
+
+    const wrapper = mountComponent();
+    await new Promise(resolve => setTimeout(resolve, 1));
+
+    const buttons = wrapper.findAll("button");
+    const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
+    expect(downloadBtn).toBeDefined();
+
+    await downloadBtn!.trigger("click");
+    expect(mockOpenExternal).toHaveBeenCalledWith(
+      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.0%2B172.apk"
     );
   });
 });

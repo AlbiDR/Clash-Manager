@@ -9,6 +9,170 @@ import { useNativeBridge } from "./useNativeBridge";
 import { appVersion } from "./useSystemInfo";
 import { UI_STABILITY_DELAY } from "@core/config";
 
+export const APK_RELEASE_DIRECTORY_URL = "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release";
+export const APK_RELEASE_RAW_BASE_URL = "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release";
+export const APK_LATEST_METADATA_URL = `${APK_RELEASE_RAW_BASE_URL}/latest.json`;
+export const APK_RELEASE_CONTENTS_API_URL =
+  "https://api.github.com/repos/AlbiDR/Clash-Manager/contents/APK/release?ref=Beta";
+export const APK_FETCH_TIMEOUT_MS = 10000;
+export const APK_RESOLUTION_CACHE_TTL_MS = 60000;
+
+type GitHubReleaseContent = {
+  name?: string;
+  type?: string;
+};
+
+type ReleaseApkParts = {
+  major: number;
+  minor: number;
+  patch: number;
+  build: number;
+};
+
+type ApkResolutionCache = {
+  filename: string;
+  expiresAt: number;
+};
+
+let apkResolutionCache: ApkResolutionCache | undefined;
+let pendingApkResolution: Promise<string | undefined> | undefined;
+
+export function buildFreshApkMetadataUrl(): string {
+  return buildFreshUrl(APK_LATEST_METADATA_URL);
+}
+
+export function buildFreshUrl(url: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+}
+
+export function isReleaseApkFilename(filename: string | undefined): filename is string {
+  return typeof filename === "string" && /^clashmanager-v\d+\.\d+\.\d+\+\d+\.apk$/.test(filename);
+}
+
+export function buildApkDownloadUrl(filename: string): string {
+  return `${APK_RELEASE_RAW_BASE_URL}/${encodeURIComponent(filename)}`;
+}
+
+function parseReleaseApkFilename(filename: string): ReleaseApkParts | undefined {
+  const match = filename.match(/^clashmanager-v(\d+)\.(\d+)\.(\d+)\+(\d+)\.apk$/);
+  if (!match) return undefined;
+
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    build: Number(match[4]),
+  };
+}
+
+function compareReleaseApkFilenames(a: string, b: string): number {
+  const parsedA = parseReleaseApkFilename(a);
+  const parsedB = parseReleaseApkFilename(b);
+  if (!parsedA || !parsedB) return 0;
+
+  return (
+    parsedA.major - parsedB.major ||
+    parsedA.minor - parsedB.minor ||
+    parsedA.patch - parsedB.patch ||
+    parsedA.build - parsedB.build
+  );
+}
+
+export function selectNewestReleaseApkFilename(contents: GitHubReleaseContent[]): string | undefined {
+  return contents
+    .flatMap((item) => item.type === "file" && isReleaseApkFilename(item.name) ? [item.name] : [])
+    .sort(compareReleaseApkFilenames)
+    .at(-1);
+}
+
+async function fetchFresh(url: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), APK_FETCH_TIMEOUT_MS);
+  const { headers: initHeaders, ...fetchInit } = init;
+  const headers = new Headers(initHeaders);
+  headers.set("Cache-Control", "no-cache");
+
+  try {
+    return await fetch(buildFreshUrl(url), {
+      ...fetchInit,
+      cache: "no-store",
+      headers,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function apkExists(filename: string): Promise<boolean> {
+  try {
+    const response = await fetchFresh(buildApkDownloadUrl(filename), { method: "HEAD" });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveApkFilenameFromContentsApi(): Promise<string | undefined> {
+  try {
+    const response = await fetchFresh(APK_RELEASE_CONTENTS_API_URL);
+    if (!response.ok) return undefined;
+
+    const contents = (await response.json()) as GitHubReleaseContent[];
+    if (!Array.isArray(contents)) return undefined;
+
+    return selectNewestReleaseApkFilename(contents);
+  } catch (contentsError: unknown) {
+    console.warn("[PWA] APK contents fallback failed", contentsError);
+    return undefined;
+  }
+}
+
+async function resolveLatestApkFilenameUncached(): Promise<string | undefined> {
+  try {
+    const response = await fetchFresh(APK_LATEST_METADATA_URL);
+    if (response.ok) {
+      const latestReleaseMetadata = (await response.json()) as { filename?: string };
+      if (isReleaseApkFilename(latestReleaseMetadata.filename) && await apkExists(latestReleaseMetadata.filename)) {
+        return latestReleaseMetadata.filename;
+      }
+    }
+  } catch (resolveApkError: unknown) {
+    console.warn("[PWA] Dynamic APK metadata resolution failed", resolveApkError);
+  }
+
+  return resolveApkFilenameFromContentsApi();
+}
+
+export async function resolveLatestApkFilename(): Promise<string | undefined> {
+  const now = Date.now();
+  if (apkResolutionCache && apkResolutionCache.expiresAt > now) return apkResolutionCache.filename;
+  if (pendingApkResolution) return pendingApkResolution;
+
+  pendingApkResolution = resolveLatestApkFilenameUncached()
+    .then((filename) => {
+      if (filename) {
+        apkResolutionCache = {
+          filename,
+          expiresAt: Date.now() + APK_RESOLUTION_CACHE_TTL_MS,
+        };
+      }
+      return filename;
+    })
+    .finally(() => {
+      pendingApkResolution = undefined;
+    });
+
+  return pendingApkResolution;
+}
+
+export function resetApkResolutionCacheForTests(): void {
+  if (import.meta.env.TEST) {
+    apkResolutionCache = undefined;
+    pendingApkResolution = undefined;
+  }
+}
+
 /**
  * PWA MANAGER SERVICE (Layer 1)
  * ----------------------------------------------------------------------------
@@ -180,22 +344,9 @@ export function usePwaManager() {
     // [DECISION LOG] Fallback name is formatted deterministically from the build-time constant.
     const fallback = `clashmanager-v${appVersion}.apk`;
     try {
-      // [THREAT:] Slow-network stagnation. Prevent download button from getting stuck in an infinite pending state.
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-      const response = await fetch(
-        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json",
-        { signal: controller.signal },
-      );
-      clearTimeout(timeoutId);
-
-      // [THREAT:] Network errors or non-200 responses.
-      if (!response.ok) return fallback;
-
-      const latestReleaseMetadata = (await response.json()) as { filename?: string };
-      // [DECISION LOG] Fall back to the old unsuffixed filename if the latest.json lacks the property.
-      return latestReleaseMetadata.filename ?? fallback;
+      // [THREAT:] Stale latest.json can point at a deleted build after every release rotation.
+      // The shared resolver verifies the binary and self-heals through GitHub's contents API.
+      return await resolveLatestApkFilename() ?? fallback;
     } catch (resolveApkError: unknown) {
       // [DECISION LOG] Fail silently and return the fallback so a network hiccup never blocks a user.
       console.warn("[PWA] Dynamic APK resolution failed; utilizing fallback", resolveApkError);
@@ -230,8 +381,8 @@ export function usePwaManager() {
       // [DECISION LOG] Bypassing the github.com redirect by linking directly to raw.githubusercontent.com.
       // If dynamic resolution fails, we redirect to the folder listing rather than a 404 URL.
       const apkUrl = isFallback
-        ? "https://github.com/AlbiDR/Clash-Manager/tree/Beta/APK/release"
-        : `https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/${encodeURIComponent(filename)}`;
+        ? APK_RELEASE_DIRECTORY_URL
+        : buildApkDownloadUrl(filename);
 
       if (!isFallback && nativeBridge.value?.downloadApkFile) {
         // [DECISION LOG] Preferred path. DownloadManager fetches the binary natively,
