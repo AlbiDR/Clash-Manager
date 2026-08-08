@@ -34,6 +34,10 @@ export interface AndroidBridge {
    * handing the URL to a browser which may render or fail to download it.
    */
   downloadApkFile(url: string, filename: string): void;
+  /** Returns the installed native APK versionName, e.g. "14.43.4". */
+  getAppVersionName?(): string;
+  /** Returns the installed native APK CI build number, e.g. 179. */
+  getBuildNumber?(): number;
   /** Directs the native app to open a specific player profile in Clash Royale. */
   openPlayerProfile(id: string): void;
   /** Retrieves persisted Blitz Mode calibration coordinates as a JSON string. */

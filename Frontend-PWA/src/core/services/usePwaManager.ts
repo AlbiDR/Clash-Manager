@@ -9,9 +9,11 @@ import { useNativeBridge } from "./useNativeBridge";
 import { UI_STABILITY_DELAY } from "@core/config";
 
 export const APK_RELEASE_RAW_BASE_URL = "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release";
+export const APK_LATEST_METADATA_URL = `${APK_RELEASE_RAW_BASE_URL}/latest.json`;
 export const APK_LATEST_ALIAS_FILENAME = "clashmanager-latest.apk";
 export const APK_LATEST_ALIAS_DOWNLOAD_URL = `${APK_RELEASE_RAW_BASE_URL}/${APK_LATEST_ALIAS_FILENAME}`;
 export const APK_RESOLUTION_CACHE_TTL_MS = 60000;
+export const APK_METADATA_FETCH_TIMEOUT_MS = 3500;
 
 type ApkResolutionCache = {
   filename: string;
@@ -23,8 +25,10 @@ let apkResolutionCache: ApkResolutionCache | undefined;
 let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
 
 export type ApkReleaseDownload = {
+  buildNumber?: number;
   filename: string;
   url: string;
+  version?: string;
 };
 
 export function buildLatestAliasApkDownload(): ApkReleaseDownload {
@@ -34,8 +38,71 @@ export function buildLatestAliasApkDownload(): ApkReleaseDownload {
   };
 }
 
+function buildFreshUrl(url: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+}
+
+function isReleaseApkFilename(filename: string | undefined): filename is string {
+  return typeof filename === "string" && /^clashmanager-v\d+\.\d+\.\d+\+\d+\.apk$/.test(filename);
+}
+
+function isReleaseVersion(version: string | undefined): version is string {
+  return typeof version === "string" && /^\d+\.\d+\.\d+$/.test(version);
+}
+
+function isReleaseBuildNumber(buildNumber: number | undefined): buildNumber is number {
+  return typeof buildNumber === "number" && Number.isInteger(buildNumber) && buildNumber > 0;
+}
+
+async function fetchFresh(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), APK_METADATA_FETCH_TIMEOUT_MS);
+
+  try {
+    return await fetch(buildFreshUrl(url), {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function resolveLatestApkMetadata(): Promise<Partial<ApkReleaseDownload> | undefined> {
+  try {
+    const response = await fetchFresh(APK_LATEST_METADATA_URL);
+    if (!response.ok) return undefined;
+
+    const metadata = (await response.json()) as {
+      buildNumber?: number;
+      filename?: string;
+      version?: string;
+    };
+    if (!isReleaseApkFilename(metadata.filename)) return undefined;
+
+    return {
+      buildNumber: isReleaseBuildNumber(metadata.buildNumber) ? metadata.buildNumber : undefined,
+      filename: metadata.filename,
+      version: isReleaseVersion(metadata.version) ? metadata.version : undefined,
+    };
+  } catch (metadataError: unknown) {
+    console.warn("[PWA] APK latest metadata lookup failed; using direct latest alias", metadataError);
+    return undefined;
+  }
+}
+
 async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | undefined> {
-  return buildLatestAliasApkDownload();
+  const latestAlias = buildLatestAliasApkDownload();
+  const metadata = await resolveLatestApkMetadata();
+
+  return {
+    ...latestAlias,
+    ...metadata,
+    url: latestAlias.url,
+  };
 }
 
 export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | undefined> {
@@ -236,10 +303,11 @@ export function usePwaManager() {
    * @remarks
    * **Direct Latest APK Contract:**
    * - Uses `APK/release/clashmanager-latest.apk`, which CI overwrites with the newest signed APK.
-   * - Avoids runtime metadata/API lookups so blocked GitHub JSON requests cannot prevent updates.
+   * - Uses metadata only for the saved filename and already-current detection.
+   * - Falls back to the alias filename if blocked GitHub JSON requests fail.
    * - Satisfies ADR Section IV: Resilience & Operational Security (Offline Operations & State Recovery).
    *
-   * @returns A Promise resolving to the permanent latest APK download target.
+   * @returns A Promise resolving to the permanent latest APK download target and best-known filename.
    */
   async function resolveApkRelease(): Promise<ApkReleaseDownload | undefined> {
     try {
@@ -248,6 +316,25 @@ export function usePwaManager() {
       console.warn("[PWA] APK alias resolution failed", resolveApkError);
       return undefined;
     }
+  }
+
+  function getNativeVersionName(): string | undefined {
+    const versionName = nativeBridge.value?.getAppVersionName?.();
+    return isReleaseVersion(versionName) ? versionName : undefined;
+  }
+
+  function getNativeBuildNumber(): number | undefined {
+    const buildNumber = nativeBridge.value?.getBuildNumber?.();
+    return isReleaseBuildNumber(buildNumber) ? buildNumber : undefined;
+  }
+
+  function isInstalledApkCurrent(release: ApkReleaseDownload): boolean {
+    const nativeBuildNumber = getNativeBuildNumber();
+    if (!nativeBuildNumber || !release.buildNumber) return false;
+
+    const nativeVersionName = getNativeVersionName();
+    return nativeBuildNumber >= release.buildNumber &&
+      (!release.version || !nativeVersionName || nativeVersionName === release.version);
   }
 
   /**
@@ -271,6 +358,11 @@ export function usePwaManager() {
       if (!release) {
         toast.remove(activeToastId);
         toast.error("Could not find latest APK");
+        return;
+      }
+      if (isInstalledApkCurrent(release)) {
+        toast.remove(activeToastId);
+        toast.success("You already have the latest APK");
         return;
       }
 

@@ -303,6 +303,28 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getAppVersionName() {
+            try {
+                return MainActivity.this.getPackageManager()
+                    .getPackageInfo(MainActivity.this.getPackageName(), 0)
+                    .versionName;
+            } catch (Exception e) {
+                android.util.Log.w("ClashManagerMain", "getAppVersionName failed", e);
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public int getBuildNumber() {
+            try {
+                return Integer.parseInt(MainActivity.this.getString(R.string.buildNumber));
+            } catch (Exception e) {
+                android.util.Log.w("ClashManagerMain", "getBuildNumber failed", e);
+                return 0;
+            }
+        }
+
+        @JavascriptInterface
         public void openExternalUrl(final String url) {
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override

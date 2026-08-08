@@ -73,7 +73,8 @@ The PWA lifecycle orchestrator implements robust mechanisms to ensure both the b
 
 1. **Service Worker (SW) Coexistence:** Coordinates update checks and skips waiting states when an updated SW is staged, ensuring a fresh asset envelope is downloaded and applied immediately on reload.
 2. **Direct Latest APK Download:** The Android companion app is built with unique version and build suffixes (e.g., `+148`), while CI also publishes a fixed `APK/release/clashmanager-latest.apk` alias. At the download trigger:
-   - Uses the fixed raw GitHub URL for `clashmanager-latest.apk` without fetching repository metadata first.
+   - Always downloads from the fixed raw GitHub URL for `clashmanager-latest.apk`.
+   - Reads `latest.json` only to recover the versioned save filename and compare the remote build number against native bridge metadata when available.
    - Dispatches the stable resource URL to `downloadApkFile`/`openExternalUrl` on the native bridge if running inside the Android wrapper, or falls back to standard browser `window.location.href` assignment.
 3. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, it unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
 

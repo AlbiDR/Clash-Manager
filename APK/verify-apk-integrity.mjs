@@ -88,6 +88,8 @@ const EXPECT = {
     "isAccessibilityActive",
     "hasOverlayPermission",
     "openAccessibilitySettings",
+    "getAppVersionName",
+    "getBuildNumber",
     "openPlayerProfile",
     "openExternalUrl",
   ],

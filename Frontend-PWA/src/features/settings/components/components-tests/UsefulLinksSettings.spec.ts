@@ -152,11 +152,25 @@ describe("UsefulLinksSettings.vue", () => {
     expect(mockOpenExternal).toHaveBeenCalledWith("https://store.supercell.com/fr/clashroyale");
   });
 
-  it("uses the stable latest APK alias without fetching metadata", async () => {
+  it("uses the stable latest APK alias while resolving metadata for filename context", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        buildNumber: 179,
+        filename: "clashmanager-v14.43.4+179.apk",
+        version: "14.43.4"
+      })
+    });
+
     const wrapper = mountComponent();
     await new Promise(resolve => setTimeout(resolve, 1));
 
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^https:\/\/raw\.githubusercontent\.com\/AlbiDR\/Clash-Manager\/Beta\/APK\/release\/latest\.json\?t=\d+$/,
+      ),
+      expect.objectContaining({ cache: "no-store" })
+    );
 
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
@@ -179,7 +193,7 @@ describe("UsefulLinksSettings.vue", () => {
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
     expect(downloadBtn).toBeDefined();
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).toHaveBeenCalled();
 
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(

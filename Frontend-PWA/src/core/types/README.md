@@ -9,7 +9,7 @@
 
 ## What it defines
 
-- **`AndroidBridge`** - the interface the [PWA](../../../README.md) uses to talk to the [Android wrapper](../../../../APK/README.md)'s native layer: deep links (`openPlayerProfile`), external intents (`openExternalUrl`), accessibility status, and Blitz calibration coordinates.
+- **`AndroidBridge`** - the interface the [PWA](../../../README.md) uses to talk to the [Android wrapper](../../../../APK/README.md)'s native layer: deep links (`openPlayerProfile`), external intents (`openExternalUrl`), native APK version/build metadata, accessibility status, and Blitz calibration coordinates.
 - **Domain models** - `LeaderboardMember` (with `performanceScore` / `performanceRawScore`, the [Roster](../../features/roster/README.md)'s core model), `Recruit` (with `potentialScore`, longevity, heritage, the [Headhunter](../../features/headhunter/README.md)'s core model), and `WebAppData` (the full roster + recruit snapshot).
 - **UI contracts** - `ConsoleFabState`, `ConsoleLayoutEvents`, and `ConsoleCardMetadata` for the shared list components.
 - **Clan Voyage** - `VoyageStatus` (IDLE, PENDING, ACTIVE, COMPLETED) and `VoyageSummary`, kept here so features stay isolated.

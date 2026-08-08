@@ -186,11 +186,24 @@ describe("usePwaManager", () => {
   });
 
   describe("downloadApk", () => {
-    it("should use the stable latest APK alias and window.location if native bridge is absent", async () => {
+    it("should use the stable latest APK alias and window.location if metadata is unavailable", async () => {
+      (fetch as any).mockRejectedValue(new Error("Network Failure"));
+
       const { downloadApk } = usePwaManager();
       await downloadApk();
 
-      expect(fetch).not.toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^https:\/\/raw\.githubusercontent\.com\/AlbiDR\/Clash-Manager\/Beta\/APK\/release\/latest\.json\?t=\d+$/,
+        ),
+        expect.objectContaining({
+          cache: "no-store",
+          headers: expect.objectContaining({
+            "Cache-Control": "no-cache",
+          }),
+          signal: expect.any(AbortSignal),
+        }),
+      );
       expect(mockLocation.href).toBe(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk"
       );
@@ -202,13 +215,21 @@ describe("usePwaManager", () => {
     it("should call downloadApkFile on native bridge when available", async () => {
       const mockDownloadApkFile = vi.fn();
       mockNativeBridge.value = { downloadApkFile: mockDownloadApkFile, openExternalUrl: vi.fn() };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          version: "14.43.4",
+        }),
+      });
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
 
       expect(mockDownloadApkFile).toHaveBeenCalledWith(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk",
-        "clashmanager-latest.apk"
+        "clashmanager-v14.43.4+179.apk"
       );
       expect(mockLocation.href).toBe("");
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
@@ -217,6 +238,14 @@ describe("usePwaManager", () => {
     it("should fall back to openExternalUrl if downloadApkFile is absent from bridge", async () => {
       const mockOpenExternal = vi.fn();
       mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          version: "14.43.4",
+        }),
+      });
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
@@ -236,19 +265,53 @@ describe("usePwaManager", () => {
       const { downloadApk } = usePwaManager();
       await downloadApk();
 
-      expect(fetch).not.toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledTimes(1);
       expect(mockOpenExternal).toHaveBeenCalledWith(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk"
       );
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
 
+    it("should not download when the native APK build is already latest", async () => {
+      const mockDownloadApkFile = vi.fn();
+      mockNativeBridge.value = {
+        downloadApkFile: mockDownloadApkFile,
+        getAppVersionName: vi.fn(() => "14.43.4"),
+        getBuildNumber: vi.fn(() => 179),
+      };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          version: "14.43.4",
+        }),
+      });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).not.toHaveBeenCalled();
+      expect(mockLocation.href).toBe("");
+      expect(mockToast.success).toHaveBeenCalledWith("You already have the latest APK");
+      expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+    });
+
     it("should reuse the stable latest APK alias for repeated download attempts", async () => {
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          version: "14.43.4",
+        }),
+      });
+
       const { downloadApk } = usePwaManager();
       await downloadApk();
       await downloadApk();
 
-      expect(fetch).not.toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledTimes(1);
       expect(mockLocation.href).toBe(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk"
       );
@@ -256,17 +319,28 @@ describe("usePwaManager", () => {
     });
 
     it("should resolve the stable latest APK alias for concurrent callers", async () => {
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          version: "14.43.4",
+        }),
+      });
+
       const first = resolveLatestApkFilename();
       const second = resolveLatestApkFilename();
 
       await expect(Promise.all([first, second])).resolves.toEqual([
-        "clashmanager-latest.apk",
-        "clashmanager-latest.apk",
+        "clashmanager-v14.43.4+179.apk",
+        "clashmanager-v14.43.4+179.apk",
       ]);
-      expect(fetch).not.toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledTimes(1);
     });
 
     it("should show error toast if download execution throws", async () => {
+      (fetch as any).mockRejectedValue(new Error("Network Failure"));
+
       // Simulate an error by stubbing location to throw on assignment
       Object.defineProperty(mockLocation, "href", {
         set: () => {
