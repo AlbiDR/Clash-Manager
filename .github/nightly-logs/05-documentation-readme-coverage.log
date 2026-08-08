@@ -134,3 +134,8 @@
 * [2026-08-07] [Stage 5] CLEAN: Frontend-PWA/src/features/laboratory/README.md -- No action required
 * [2026-08-07] [Stage 5] CLEAN: Frontend-PWA/src/features/headhunter/README.md -- No action required
 * [2026-08-07] [Stage 5] CLEAN: Frontend-PWA/src/features/roster/README.md -- No action required
+* [2026-08-08] [Stage 5] CHANGED: Frontend-PWA/src/features/laboratory/README.md -- Reconciled VaultCard touch target layout modernization and tactile haptics
+* [2026-08-08] [Stage 5] CHANGED: Frontend-PWA/src/features/settings/README.md -- Reconciled SettingsView route-level data loader 'useClashDataLoader' integration
+* [2026-08-08] [Stage 5] CLEAN: README.md -- No action required
+* [2026-08-08] [Stage 5] CLEAN: Backend/README.md -- No action required
+* [2026-08-08] [Stage 5] CLEAN: Frontend-PWA/README.md -- No action required

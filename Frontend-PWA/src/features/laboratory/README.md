@@ -10,7 +10,7 @@
 ## What it does
 
 - Loads any player by tag (card levels fetched via the [`sync-player-cards`](../../../../Backend/supabase/functions/sync-player-cards/README.md) Edge Function, normalized to a 1-16 scale).
-- Takes your real inventory: gold, gems, and wild cards per rarity.
+- Takes your real inventory: gold, gems, and wild cards per rarity (configured via the modernized `VaultCard` component, utilizing 48px touch targets for mobile WebView compliance and declarative `v-tactile` haptic feedback brokering).
 - Runs one of two strategies: **Level Projection** (reach a target King Level, assuming resources can be farmed) or **Resource Efficiency** (best XP-per-gold using only what you own, with a heavy penalty on gem spending).
 - Shows current vs projected King Level, total XP gained, and gold and gems spent.
 - Lists the recommended upgrade order, step by step, rendered progressively so hundreds of steps stay smooth.
@@ -20,7 +20,7 @@
 | Path | Role |
 | :--- | :--- |
 | `views/LaboratoryView.vue` | The console view. |
-| `components/` | The input and result cards: `TargetPicker`, `VaultCard`, `ParameterCard`, `SummaryCard`, `TrajectoryList`, `TrajectoryItem`, `LaboratorySkeleton`. |
+| `components/` | The input and result cards: `TargetPicker`, `VaultCard` (reconciled with 48px wildcard input touch footprints and declarative haptics), `ParameterCard`, `SummaryCard`, `TrajectoryList`, `TrajectoryItem`, `LaboratorySkeleton`. |
 | `composables/useLaboratory.ts` | Layout state, profile ingestion, and inventory merging. |
 | `composables/useLaboratorySimulation.ts` | Runs the engine without blocking the UI and cancels stale runs. |
 | `logic/` | The simulation engine (see below). |
