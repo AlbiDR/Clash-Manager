@@ -206,6 +206,7 @@ describe("UsefulLinksSettings.vue", () => {
 
   it("ignores malformed APK metadata filenames", async () => {
     globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) })
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve([]) })
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ filename: "../clashmanager.apk" }) });
 
@@ -218,13 +219,16 @@ describe("UsefulLinksSettings.vue", () => {
   });
 
   it("uses the newest APK link from the live contents listing", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve([
-        { name: "clashmanager-v14.40.3+142.apk", type: "file" },
-        { name: "clashmanager-v14.43.0+172.apk", type: "file" }
-      ])
-    });
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([
+          { name: "clashmanager-v14.40.3+142.apk", type: "file" },
+          { name: "clashmanager-v14.43.0+172.apk", type: "file" }
+        ])
+      })
+      .mockResolvedValueOnce({ ok: false });
 
     const wrapper = mountComponent();
     await new Promise(resolve => setTimeout(resolve, 1));
@@ -236,6 +240,28 @@ describe("UsefulLinksSettings.vue", () => {
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
       "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.0%2B172.apk"
+    );
+  });
+
+  it("uses a same-origin direct APK link when same-origin metadata resolves", async () => {
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ filename: "clashmanager-v14.43.2+176.apk" })
+      })
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: false });
+
+    const wrapper = mountComponent();
+    await new Promise(resolve => setTimeout(resolve, 1));
+
+    const buttons = wrapper.findAll("button");
+    const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
+    expect(downloadBtn).toBeDefined();
+
+    await downloadBtn!.trigger("click");
+    expect(mockOpenExternal.mock.calls[0][0]).toContain(
+      "/Clash-Manager/APK/release/clashmanager-v14.43.2%2B176.apk"
     );
   });
 });

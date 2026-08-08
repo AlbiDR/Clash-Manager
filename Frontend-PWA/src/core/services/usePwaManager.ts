@@ -14,6 +14,7 @@ export const APK_RELEASE_CONTENTS_API_URL =
   "https://api.github.com/repos/AlbiDR/Clash-Manager/contents/APK/release?ref=Beta";
 export const APK_FETCH_TIMEOUT_MS = 10000;
 export const APK_RESOLUTION_CACHE_TTL_MS = 60000;
+export const APK_RELEASE_PATH = "APK/release";
 
 type GitHubReleaseContent = {
   download_url?: string | null;
@@ -56,6 +57,23 @@ export function isReleaseApkFilename(filename: string | undefined): filename is 
 
 export function buildApkDownloadUrl(filename: string): string {
   return `${APK_RELEASE_RAW_BASE_URL}/${encodeURIComponent(filename)}`;
+}
+
+export function buildSameOriginApkReleaseUrl(path: string): string | undefined {
+  if (typeof window === "undefined") return undefined;
+
+  try {
+    const origin = window.location.origin || new URL(window.location.href).origin;
+    const configuredBasePath = import.meta.env.BASE_URL;
+    const basePath = configuredBasePath && configuredBasePath !== "/" ? configuredBasePath : "/Clash-Manager/";
+    return new URL(`${APK_RELEASE_PATH}/${path}`, `${origin}${basePath}`).href;
+  } catch {
+    return undefined;
+  }
+}
+
+export function buildSameOriginApkDownloadUrl(filename: string): string | undefined {
+  return buildSameOriginApkReleaseUrl(encodeURIComponent(filename));
 }
 
 function isDirectApkDownloadUrl(url: string | null | undefined, filename: string): url is string {
@@ -163,32 +181,60 @@ async function resolveApkReleaseFromContentsApi(): Promise<ApkReleaseDownload | 
   }
 }
 
-async function resolveApkReleaseFromLatestMetadata(): Promise<ApkReleaseDownload | undefined> {
+async function resolveApkReleaseFromMetadataUrl(
+  metadataUrl: string,
+  buildDownloadUrl: (filename: string) => string | undefined,
+  sourceName: string,
+): Promise<ApkReleaseDownload | undefined> {
   try {
-    const response = await fetchFresh(APK_LATEST_METADATA_URL);
+    const response = await fetchFresh(metadataUrl);
     if (response.ok) {
       const latestReleaseMetadata = (await response.json()) as { filename?: string };
+      const downloadUrl = isReleaseApkFilename(latestReleaseMetadata.filename)
+        ? buildDownloadUrl(latestReleaseMetadata.filename)
+        : undefined;
       if (isReleaseApkFilename(latestReleaseMetadata.filename)) {
+        if (!downloadUrl) return undefined;
         return {
           filename: latestReleaseMetadata.filename,
-          url: buildApkDownloadUrl(latestReleaseMetadata.filename),
+          url: downloadUrl,
         };
       }
     }
   } catch (resolveApkError: unknown) {
-    console.warn("[PWA] Dynamic APK metadata resolution failed", resolveApkError);
+    console.warn(`[PWA] ${sourceName} APK metadata resolution failed`, resolveApkError);
   }
 
   return undefined;
 }
 
+async function resolveApkReleaseFromLatestMetadata(): Promise<ApkReleaseDownload | undefined> {
+  return resolveApkReleaseFromMetadataUrl(APK_LATEST_METADATA_URL, buildApkDownloadUrl, "Remote latest.json");
+}
+
+async function resolveApkReleaseFromSameOriginMetadata(): Promise<ApkReleaseDownload | undefined> {
+  const sameOriginMetadataUrl = buildSameOriginApkReleaseUrl("latest.json");
+  if (!sameOriginMetadataUrl) return undefined;
+
+  return resolveApkReleaseFromMetadataUrl(
+    sameOriginMetadataUrl,
+    buildSameOriginApkDownloadUrl,
+    "Same-origin latest.json",
+  );
+}
+
 async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | undefined> {
-  const [releaseFromContentsApi, releaseFromLatestMetadata] = await Promise.all([
+  const [releaseFromSameOriginMetadata, releaseFromContentsApi, releaseFromLatestMetadata] = await Promise.all([
+    resolveApkReleaseFromSameOriginMetadata(),
     resolveApkReleaseFromContentsApi(),
     resolveApkReleaseFromLatestMetadata(),
   ]);
 
-  return selectNewestReleaseDownload([releaseFromContentsApi, releaseFromLatestMetadata]);
+  return selectNewestReleaseDownload([
+    releaseFromSameOriginMetadata,
+    releaseFromContentsApi,
+    releaseFromLatestMetadata,
+  ]);
 }
 
 export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | undefined> {

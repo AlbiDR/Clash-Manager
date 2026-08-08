@@ -264,16 +264,17 @@ describe("usePwaManager", () => {
       const mockOpenExternal = vi.fn();
       mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
 
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue([
-          {
-            download_url: "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1+173.apk",
-            name: "clashmanager-v14.43.1+173.apk",
-            type: "file",
-          },
-        ]),
-      });
+      (fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue([
+            {
+              download_url: "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1+173.apk",
+              name: "clashmanager-v14.43.1+173.apk",
+              type: "file",
+            },
+          ]),
+        });
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
@@ -288,16 +289,17 @@ describe("usePwaManager", () => {
       const mockOpenExternal = vi.fn();
       mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
 
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue([
-          {
-            download_url: "https://example.com/not-the-apk.apk",
-            name: "clashmanager-v14.43.1+173.apk",
-            type: "file",
-          },
-        ]),
-      });
+      (fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue([
+            {
+              download_url: "https://example.com/not-the-apk.apk",
+              name: "clashmanager-v14.43.1+173.apk",
+              type: "file",
+            },
+          ]),
+        });
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
@@ -332,8 +334,28 @@ describe("usePwaManager", () => {
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
 
+    it("should use same-origin latest.json when cross-origin sources are unavailable", async () => {
+      mockLocation.href = "http://localhost:3000/Clash-Manager/";
+      (fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.43.2+176.apk" }),
+        })
+        .mockResolvedValueOnce({ ok: false })
+        .mockResolvedValueOnce({ ok: false });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockLocation.href).toContain(
+        "/Clash-Manager/APK/release/clashmanager-v14.43.2%2B176.apk"
+      );
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
     it("should show an error instead of opening the repo when no APK filename can be resolved", async () => {
       (fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({}) })
         .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue([]) })
         .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ filename: "../clashmanager.apk" }) });
 
@@ -345,14 +367,16 @@ describe("usePwaManager", () => {
     });
 
     it("should select the newest APK from the GitHub contents API", async () => {
-      (fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue([
-          { name: "latest.json", type: "file" },
-          { name: "clashmanager-v14.40.10+148.apk", type: "file" },
-          { name: "clashmanager-v14.43.0+172.apk", type: "file" },
-        ]),
-      }).mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }) });
+      (fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue([
+            { name: "latest.json", type: "file" },
+            { name: "clashmanager-v14.40.10+148.apk", type: "file" },
+            { name: "clashmanager-v14.43.0+172.apk", type: "file" },
+          ]),
+        })
+        .mockResolvedValueOnce({ ok: true, json: vi.fn().mockResolvedValue({ filename: "clashmanager-v14.40.10+148.apk" }) });
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
