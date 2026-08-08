@@ -38,6 +38,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+      - name: Nightly lifecycle contracts
+        run: pnpm test:nightly-lifecycle
+
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 

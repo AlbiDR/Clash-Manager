@@ -163,6 +163,13 @@
   - Recommended Fix: N/A.
   - Resolution Details (2026-08-07): Re-verification of the entire nightly pipeline on August 7, 2026, confirmed zero failed or missing stages. This marks another fully-clean, fully-operational run for the entire 12-stage preceding pipeline. All stages successfully executed and recorded their respective coverage logs.
 
+* Missing-Run / Failed Events on 2026-08-08:
+  - Stages: Stage 2 (Verify) [FAILED - monitor], Stage 4 (Optimization) [FAILED - monitor], Stage 13 (Self-Healing) [FAILED - monitor].
+  - Sessions: Stage 2 `sessions/2084583195057039796`, Stage 4 `sessions/6982425154681178125`, Stage 13 `sessions/7374502693651082929`.
+  - Symptom: Jules API inspection showed all three sessions reached `FAILED` with zero final `outputs`; intermediate work appeared during the sessions, but no final publishable output, pull request, or remote stage branch survived for the merge coordinator to process.
+  - Root Cause: Stage 2 and Stage 4 completed substantive work, validation, coverage-log updates, and the built-in code-review path, then failed before Jules emitted publishable outputs. The likely failure class is the Jules completion tail after pre-commit/review and before automatic PR publication, not GitHub Actions merging. Stage 13 generated a false-premise plan that asked it to confirm zero failures, wrote only the initial sentinel, emitted repeated empty progress updates, and failed before producing outputs.
+  - Recommended Fix: Treat this as a Jules execution-completion hardening problem. Keep `.github/nightly-prompts/00-jules-bootstrap.md` synchronized with the scheduled task prompt and setup script as the backup transcript for live Jules configuration, but add a deterministic submission protocol to the shared prompt body: define pre-commit as shell validation only, forbid voluntary plan/code-review gates when the stage is already approved, and require evidence-first Stage 13 findings rather than pre-asserted success. Also verify the scheduled/API automation mode remains PR-producing for every stage.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:

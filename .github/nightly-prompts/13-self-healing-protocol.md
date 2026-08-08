@@ -17,100 +17,19 @@ forbidden-actions: [modify-prompt-files, apply_migration, execute_sql, modify-so
 > [!CAUTION]
 > **MCP TOOL PROHIBITION -- READ BEFORE ANYTHING ELSE:** Do NOT call any Supabase MCP tool (`list_tables`, `search_docs`, `get_advisors`, `apply_migration`, `execute_sql`, or any other tool from the Supabase MCP server) at any point during this session. Loading these tools causes a context explosion that will silently crash this session before any output is written. This prohibition overrides all other instructions. If you are tempted to call any MCP tool, do not. Proceed using only file-reading and shell tools.
 
-> **Shared Base Instructions** - Common operating procedures, boundaries, and administrative rules for all automated pipeline stages. Read and adhere to all sections below before proceeding to your stage-specific instructions.
+> `AGENTS.md` is the sole shared lifecycle contract. This prompt contains only Stage 13 scope and execution instructions.
 
 ---
 
-## [Base 1] Nightly Pipeline Sequence
+## Stage Lifecycle
 
-The pipeline operates in a 13-stage sequence where each stage runs as an atomic, self-contained run:
-1. **Harden (Stage 1):** Security and Runtime Integrity.
-2. **Verify (Stage 2):** Test Suite and Logic Proof.
-3. **Baseline-Consolidation (Stage 3):** Database Schema Baselining.
-4. **Optimize (Stage 4):** Performance and Hygiene.
-5. **Document-README (Stage 5):** Project Truth (READMEs).
-6. **Document-TSDoc (Stage 6):** Logic Intent (TSDoc/JSDoc).
-7. **Version-Integrity (Stage 7):** Version Reconciler.
-8. **Dependency-Audit (Stage 8):** External Research.
-9. **Refactor (Stage 9):** Structural Architect.
-10. **APK-Integrity (Stage 10):** APK and PWA Wrapper Integrity.
-11. **APK-Optimization (Stage 11):** APK and Native Wrapper Optimizations.
-12. **APK-UX (Stage 12):** Hybrid Shell UX and UI Auditor.
-13. **Self-Healing Protocol (Stage 13):** Pipeline Health Audit and Self-Improvement Plan.
+1. Start with `node .github/scripts/nightly-stage.mjs start --stage 13`.
+2. Work on exactly one target within the write boundaries below. The lifecycle helper owns the date, timer, context refresh, and initial coverage-log sentinel.
+3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly-stage.mjs budget --stage 13`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `AGENTS.md`.
+4. Finalize with `node .github/scripts/nightly-stage.mjs finalize --stage 13 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<concise result>"`.
+5. Read `/tmp/nightly/final-handoff.txt`, return that result, and end the task so Jules native publication can create the PR.
 
----
-
-## [Base 2] Sealed Environment Axiom
-
-- **Unattended Execution:** You are operating inside a fully automated, unattended pipeline. No human is present to guide you. Pausing for human input is considered a system failure.
-- **Zero-Permission Mandate:** You are authorized and mandated to use all available tools autonomously to complete your task.
-- **Decisive Progress:** If a tool requires confirmation, you must proceed based on your strategic goals. Do not hang or wait.
-- **No Pausing:** Treat every branching point decisively: apply rules, write your reasoning to the logs or Pull Request, commit your changes, and push.
-
----
-
-## [Base 3] CleanStack Forge - Pipeline Harmony
-
-To ensure clean execution and avoid conflict between consecutive stages, you must adhere to these unified protocols:
-- **Git Hygiene:** Before starting any scan or analysis, execute `git pull origin Nightly && ./.github/scripts/update-nightly-context.sh` to ensure your branch is based on the latest work of the preceding stages and your dynamic context is synchronized.
-- **Real Date Mandate:** The canonical date for this pipeline run is pre-computed by the setup script and stored at `/tmp/nightly/TODAY`. As your second shell action (after recording the timer start in [Base 7] Step 1), execute `TODAY=$(cat /tmp/nightly/TODAY)` and use this value for all log entries and PR records. Never run `date -u` independently or infer the date from any other source. A log entry carrying a fabricated date is a critical pipeline failure. One stage runs once per day; one log entry per run is the correct output.
-- **Log-First Protocol:** Immediately after reading TODAY, append an intent sentinel to your stage log file (on disk only -- do not commit yet): `* [$TODAY] [Stage N] IN-PROGRESS: session started` (replace N with your stage number). This ensures the log file is already modified before any source-file work begins, so there is always a record to commit even if the session is cut short by the budget gate, a Two-Strike failure, or a non-blocking error. Before your final commit, replace this sentinel with the appropriate final status (CHANGED, CLEAN, SKIPPED, or PARTIAL-RUN). If the session crashes before the replacement, the IN-PROGRESS sentinel is acceptable -- it is always better than no log entry at all.
-- **PR Targeting:** Every branch and Pull Request created by an automated agent must explicitly target the `Nightly` branch.
-- **Non-Blocking Failures:** If your specific task fails or encounters an error, write a detailed log of the issue and exit cleanly. Do not block the pipeline. The subsequent stages must still be allowed to run.
-- **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated fixes or modifications.
-- **Clean Exit:** Once your Pull Request is created and pushed, your execution turn is complete. Do not attempt to merge your own Pull Request unless explicitly instructed.
-
----
-
-## [Base 4] Nightly Autonomy Protocol
-
-- **Commit Strategy:** Commit your changes directly to your local working branch.
-- **Explicit Base Branch:** When calling the GitHub API or tools to open a Pull Request, you must explicitly parameterize the API call to set the target or base branch to `Nightly`. Leaving it as default may target the stable branch and break the automated merge pipeline.
-- **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files were modified, exit cleanly without opening a Pull Request or creating a branch.
-- **Audit-Pass PR Exception:** Appending a run record to the stage log file (`.github/nightly-logs/`) always qualifies as an actionable change. If the only change in a run is a log append, this is a valid diff and a PR must still be opened. The Zero-Diff rule does not apply when a log entry is being written. For Stage 13, updating `.github/nightly-logs/13-self-healing-protocol.md` always constitutes an actionable change and a PR must always be opened.
-- **Nightly Context Directory:** The setup script pre-generates a shared context directory at `/tmp/nightly/` before any stage runs. Files available to every stage: `TODAY` (canonical date — already read above), `recent-commits.txt` (last 50 git log entries), `changed-files.txt` (files modified in the last 30 commits), `pending-migrations.txt` (pending SQL migration filenames), `baseline-test-state.txt` (`PASS` or `FAIL`), `baseline-test-output.txt` (full test suite output), `dep-violations.txt` (dependency violation baseline from `depcruise`), and `toolchain.txt` (installed tool versions and baseline state). Read from `/tmp/nightly/` instead of re-running expensive scans — the data is already correct for this snapshot. These files are ephemeral and are never committed.
-- **Branch Naming Schema:** The working branch created for your PR must follow the schema: `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]` (e.g., `nightly/stage-13-self-healing-protocol-a1b2c3d4`).
-- **Standard Log Format:** Every log entry written to a `.github/nightly-logs/*.log` file must use the three-status format: `* [YYYY-MM-DD] [Stage N] CHANGED: path/to/file -- [reason]` for files that were modified, `* [YYYY-MM-DD] [Stage N] CLEAN: path/to/file -- No action required` for files audited with no change needed, and `* [YYYY-MM-DD] [Stage N] SKIPPED: path/to/file -- [reason scope was excluded]` for files intentionally excluded. Every entry must carry a status signal.
-- **Read Pipeline Intelligence:** At the start of your run, read `.github/nightly-logs/00-pipeline-intelligence.md` in full. Use it to avoid repeating tried approaches, follow proven patterns for this domain, and stay aware of open constraints and scope saturation. The 00-pr-history.md aging pass is handled by Stage 1 and must not be performed by this stage.
-- **Write Pipeline Intelligence:** If this run produces a newly discovered pattern, pitfall, constraint, or scope finding not already recorded, append a concise entry (one to three lines) to the appropriate section of `00-pipeline-intelligence.md` before opening your PR. Mark superseded entries with `[SUPERSEDED by PR #N]` rather than deleting them.
-- **No Manual Changelog Updates:** You must NOT write to or update `.github/nightly-logs/00-pr-history.md` directly during your run. The history file is compiled automatically from Git tags by the merge coordinator after your PR is merged. To ensure your stage's work is correctly recorded in the history log, you MUST append the `NIGHTLY_PR_METADATA` block to the very end of your PR description.
-- **One PR Per Run:** Limit your output to one Pull Request per execution cycle.
-- **PR Submission Retry:** If the first PR creation attempt fails with a network or API error (rate limit, timeout, or 5xx response), wait 30 seconds and retry exactly once. If the second attempt also fails, write a SKIPPED log entry to your stage log file stating `SKIPPED: PR submission failed -- GitHub API error after two attempts`, commit only the log file, and terminate cleanly. Do not retry more than once and do not leave the session running indefinitely waiting for the API.
-- **Team Awareness:** The prompts for other pipeline stages are located in `.github/nightly-prompts/`. You may read them to understand the wider pipeline context, but you are strictly forbidden from modifying, testing, or reporting on any files within that administrative directory.
-
----
-
-## [Base 5] Universal Nightly Constraints
-
-1. **Zero Interaction Policy:** You are executing within an automated CI/CD pipeline. You must NEVER pause to ask the user for reviews, decisions, or guidance.
-2. **Autonomous Resolution:** If you encounter errors (e.g., missing environment variables, sandbox constraints, or visual verification failures), do not halt. You must attempt to resolve them autonomously or gracefully degrade your verification strategy.
-3. **Verification Fallback:** If visual or browser-based verification is blocked, rely entirely on the available file read tools and log content. A complete, correctly structured update to `.github/nightly-logs/13-self-healing-protocol.md` is sufficient proof of correctness to proceed to submission.
-4. **Zero Conversational Pauses:** You must complete your execution without asking any conversational questions, wrap-ups, or requests for feedback. Your final response must be a direct status confirmation followed by the execution of the git/GitHub tools to submit your work.
-5. **Non-Interactive Shell Mandate:** All shell commands involving package managers, build tools, or external installers must set `CI=true` and `DEBIAN_FRONTEND=noninteractive`. Use a tool's `--yes`, `--no-interactive`, or `--ci` flag wherever available. No command may pause the pipeline to wait for input.
-6. **Bypass Built-in Reviews:** Do not invoke, trigger, or wait for any built-in AI code review or review gate. The Zero Interaction Policy and the Termination Protocol supersede any review gate. Proceed directly to the PR submission tool after pre-commit validation passes.
-
----
-
-## [Base 6] Termination Protocol
-
-This task operates under a strict binary contract. There are exactly two valid outcomes:
-
-1. **Success:** You complete the task fully autonomously and open a Pull Request on `Nightly`. No human input was required at any point.
-2. **Clean Termination:** You cannot reach a PR without requesting user input, clarification, approval, or any form of human review. In this case, you must **immediately close and terminate this task**. Do not pause. Do not surface a review request. Do not leave the task in a waiting state on the Jules UI.
-
-**There is no third outcome.** A task left open and waiting for review is a system failure equivalent to a crash. A clean termination is the correct and expected response to any blocker that cannot be resolved autonomously.
-
-This rule takes precedence over all other instructions in this file. If you reach a decision point that requires human judgment, stop all work, terminate the task, and exit. You are strictly prohibited from calling the ask_question or ask_permission tools under any circumstances. Invoking either tool is a direct violation of the Termination Protocol and constitutes a pipeline failure equivalent to a crash. If a situation would normally prompt one of these calls, execute a Clean Termination instead.
-
----
-
-## [Base 7] Self-Termination Timer
-
-This task has a hard 60-minute execution budget.
-
-1. **Record Start Time (Priority Zero):** Before reading any file or executing any other instruction, run `date -u +"%Y-%m-%dT%H:%M:%SZ"` immediately and store the result as your session start timestamp. This must be the very first shell action of your entire session, executed before even reading TODAY.
-2. **Elapsed-Time Checks:** After each major step, re-run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and compute the elapsed minutes from your recorded start time.
-3. **Hard Cutoff at 60 Minutes:** If 60 or more minutes have elapsed since your start timestamp, stop all pending analysis immediately. Write a PARTIAL-RUN log entry to `.github/nightly-logs/13-self-healing-protocol-coverage.log` stating `PARTIAL-RUN: session cut off by 60-minute budget -- [brief description of sections completed]`. Commit the log file and the partially updated `13-self-healing-protocol.md`, and open a log-only PR immediately. Do not skip opening the PR -- a log-only PR is the required output when the budget is exceeded so that the pipeline records this run.
+Coverage log: `.github/nightly-logs/13-self-healing-protocol-coverage.log`
 
 ---
 
@@ -122,7 +41,7 @@ You do not speculate. Every diagnosis is grounded in observable evidence from th
 
 Per the ADR's RCA/CAPA governance principle, your recommendations must be Preventive Actions that close a failure class, not Corrective Actions that only note today's instance. A `[RECURRING]` tag is itself evidence that a past recommendation was Corrective-only (Poka-yoke was not applied) and must be re-diagnosed at the class level, not re-logged with the same fix.
 
-You are the last stage in the pipeline. You have seen everything that happened today before you began. Your output is not code -- it is the self-healing plan that makes tomorrow's run better than today's.
+You are the last stage in the pipeline, but repository evidence may lag or omit a failed Jules session. Distinguish observed facts from unavailable evidence. Your output is not code; it is the self-healing plan that makes tomorrow's run better than today's.
 
 ---
 
@@ -151,7 +70,7 @@ Tracks stages with zero project file changes across multiple consecutive runs. F
 - **Never touch** any project source file (Frontend-PWA, Backend, APK, migrations).
 - **Never modify** any other stage's coverage log.
 - **Never apply** SQL, migrations, or any Supabase write-side tool.
-- **Read the prompt files** -- both the shared Base blocks and the stage-specific sections. Defects in the shared Base blocks propagate across all stages simultaneously and are high-value findings.
+- **Read `AGENTS.md` once** as the shared contract. Inspect only the stage prompts whose outcomes are missing, contradictory, or recurrent; ordinary prompt-wide review is out of scope.
 
 ---
 
@@ -159,33 +78,38 @@ Tracks stages with zero project file changes across multiple consecutive runs. F
 
 ### Step 1: Anchor Time and Environment
 
-1. Run `date -u +"%Y-%m-%dT%H:%M:%SZ"` and store as `SESSION_START`.
-2. Execute `TODAY=$(cat /tmp/nightly/TODAY)` and store as `TODAY`. This is the canonical date pre-computed by the setup script and shared across all 13 stages. Never run `date -u` to derive the log date — it may differ from the pipeline run date if the stage executes near midnight. Use this value for all log entries.
-3. Execute `git pull origin Nightly` to ensure the local branch reflects all preceding stages' commits from today's run.
+1. The lifecycle start command already synchronized `Nightly`, anchored the timer and UTC date, refreshed context, and wrote the sentinel. Read `/tmp/nightly/session-state.json`, `/tmp/nightly/TODAY`, and `/tmp/nightly/stage-manifest.txt`; do not repeat startup work.
 
 ### Step 2: Read the Existing Plan
 
-4. Read `.github/nightly-logs/13-self-healing-protocol.md` in full.
-   - If the file does not exist, create it now with the three empty section headers and the document title. This is the first run of Stage 13. Proceed to Step 3.
-   - If the file exists, treat it as your foundation. Everything in it is prior accumulated intelligence. You will update and extend it -- never replace it wholesale.
+2. Inspect the three section headings, the recent tail of Section 1, and the Stage 1-13 counters in Section 3 using targeted searches and bounded ranges.
+   - If the file does not exist, create it with the document title and three empty section headers.
+   - If an older entry must be amended, locate that entry first and read only its surrounding block. Never load or rewrite the document wholesale.
 
 ### Step 3: Gather Evidence
 
-Read all evidence in this order. Do not skip any source.
+Read evidence in this order. This stage is evidence-first: never pre-write or pre-assert a healthy outcome such as "zero failures" or "100% operational success" before the evidence is gathered. Treat any generated plan text as a hypothesis only, and replace it with the observed state once logs, PR history, and available session evidence have been checked.
 
-5. Read `/tmp/nightly/toolchain.txt` (pre-computed by setup). This is the authoritative record of the snapshot environment: which tools were installed, their versions, whether the baseline test suite passed or failed, how many pending migrations existed, and how many dependency violations were present at snapshot time. Use this to ground all environment-related failure diagnoses in this run — if a stage failed because a tool was missing or tests were broken at snapshot time, this file will show it.
-6. Read `00-pr-history.md`: the T1 section (last 7 days) in full, then scan the full file for any MERGE FAILED or merge conflict entries regardless of age.
-7. Read `00-pipeline-intelligence.md` in full.
-8. Read all 13 coverage logs in full (`.github/nightly-logs/01-hardening-coverage.log` through `.github/nightly-logs/13-self-healing-protocol-coverage.log` if it exists). The most recent entries carry the highest signal weight; older entries provide pattern depth.
-9. Determine session outcomes from log evidence: for each of the 12 preceding coverage logs, confirm whether an entry dated either `TODAY` **or `YESTERDAY`** (the date one calendar day before `TODAY`) exists. A stage is COMPLETED if its log contains an entry for either date. A stage is FAILED or MISSING only if its log contains no entry for either date. This two-date window is required because Stage 1 (Harden) is the first pipeline stage and structurally starts before UTC midnight on most nights; its log stamp therefore carries the previous UTC date while still belonging to the current pipeline run. For all other stages (2-12), which run after UTC midnight, only a `TODAY`-dated entry will ever appear, so the window introduces no ambiguity. To compute `YESTERDAY`, execute `YESTERDAY=$(date -u -d "yesterday" +"%Y-%m-%d" 2>/dev/null || date -u -v-1d +"%Y-%m-%d")`. Do not attempt to call any session-listing tool -- this determination is made entirely from the coverage log files, which are the authoritative observable record. Record all 12 states before proceeding.
-10. Read all 13 prompt files in `.github/nightly-prompts/` -- both the shared Base instruction blocks and the stage-specific sections. Read them to understand what each stage is supposed to do, to identify instruction defects, and to evaluate whether the Base blocks contain language that may be contributing to Jules failures or pipeline incoherence.
+3. Read `/tmp/nightly/toolchain.txt`. Stage 13 intentionally receives `SKIPPED` for baseline tests and dependency-cruiser; do not interpret either as failure. Use only recorded tool availability, dependency freshness, migration count, and advisory scan state.
+4. Inspect the active T1 history for the last seven days, then search the full file only for `MERGE FAILED`, `merge conflict`, `PENDING`, and `FAILED` contradictions.
+5. Read only active constraints from pipeline intelligence that affect the observed stages.
+6. Inspect each coverage log for `TODAY`, `YESTERDAY`, and its recent tail. Read an older range only when a recurrence must be verified.
+7. Classify each preceding stage using this evidence model:
+   - `COMPLETED`: a current-cycle finalized coverage record and merged/history evidence agree.
+   - `LATE`: valid evidence exists within the Stage 1 UTC boundary or arrived after an earlier audit.
+   - `MISSING-OUTPUT`: no publishable repository evidence exists. This does not prove the task failed to trigger.
+   - `FAILED`: authenticated Jules session evidence explicitly reports `FAILED`.
+   - `UNOBSERVABLE`: the distinction between trigger failure, runtime crash, and publication failure cannot be established.
+8. Compute `YESTERDAY` only for the Stage 1 UTC-boundary check. Do not use yesterday as a general success fallback for Stages 2-12.
+9. If authenticated Jules session evidence is already available, use it to refine `MISSING-OUTPUT`; otherwise mark the cause `UNOBSERVABLE` and continue without credentials.
+10. Read `AGENTS.md` and only the full prompts for stages classified `FAILED`, `MISSING-OUTPUT`, contradictory, or recurrent.
 
 ### Step 4: Analyse
 
 Take the time required. Do not rush to write. The analytical phase is the most demanding part of this stage.
 
 **For Section 1 (Stability Failures):**
-- For each FAILED or missing stage today (identified in Step 8 as having no TODAY-dated log entry): record the stage number, its expected role, and the observed symptom exactly as it appears in the evidence. Determine the Root Cause from the available evidence. If the root cause cannot be determined from the available logs, state this explicitly -- do not speculate. Write a concrete Preventive Action: exact proposed wording addition or structural change to the relevant prompt file (Base block or stage-specific section) that closes this failure class, not just today's occurrence.
+- For each `FAILED`, `MISSING-OUTPUT`, or `UNOBSERVABLE` stage: record the stage number, expected role, evidence source, and observed symptom. State `Root Cause: UNOBSERVABLE` when the evidence cannot establish one. Never convert an absent repository record into a scheduling or environment diagnosis without session evidence.
 - Compare today's failures against the existing Section 1 entries. Promote any failure that has now recurred to `[RECURRING]`. Mark any previously logged failure that has not reappeared in the available historical evidence as `[RESOLVED - monitor]`.
 - Check for correlated failures: if two or more stages from the same functional area failed on the same day, evaluate whether they share a root cause and consolidate into a single shared-environment pattern entry.
 
@@ -201,48 +125,15 @@ Take the time required. Do not rush to write. The analytical phase is the most d
 
 Update `.github/nightly-logs/13-self-healing-protocol.md` with the analysis from Step 4. Maintain the three-section structure. Write new findings and update existing entries in-place. Do not reorder or remove prior entries unless explicitly superseding them -- mark superseded entries as such.
 
-Append a run record to `.github/nightly-logs/13-self-healing-protocol-coverage.log`:
-- `* [TODAY] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- [one sentence describing what was updated in the plan]`
+Do not modify pipeline intelligence during this stage. Detailed findings belong in the protocol document, and the lifecycle finalizer owns the single coverage-log record.
 
-If a newly discovered pipeline pattern or constraint warrants an entry in `00-pipeline-intelligence.md`, append it now.
+Do not run the project test suite. Verify only the targeted protocol edits with `git diff --check`, re-read the changed blocks, and run the lifecycle budget check.
 
-### Step 6: Submit
+### Step 6: Finalize
 
-Create a Pull Request targeting `Nightly`:
-- **Title schema:** `chore(pipeline): update self-healing protocol -- [brief summary of primary finding]`
-- **Description template:**
-  ```markdown
-  ### Generated by: .github/nightly-prompts/13-self-healing-protocol.md
-
-  ### Run Summary:
-  **Date:** [TODAY]
-  **Sessions audited:** 13 (Stages 1-13)
-  **Failures detected today:** [count]
-  **Recurring failures:** [count]
-  **Coherence bugs updated:** [count]
-  **No-diff stages audited:** [count]
-
-  ### Primary Finding:
-  [One paragraph describing the most important finding or update from this run.]
-
-  ### Plan Updates:
-  - **Section 1:** [What was added, promoted, or resolved]
-  - **Section 2:** [What was added, updated, or resolved]
-  - **Section 3:** [What was updated]
-
-  ### Log Updates:
-  - Updated .github/nightly-logs/13-self-healing-protocol.md
-  - Updated .github/nightly-logs/13-self-healing-protocol-coverage.log
-  ```
-
-Append the following metadata block at the very end of your PR description. Replace each placeholder with the actual values from this run:
-
-```markdown
-<!--
-NIGHTLY_PR_METADATA:
-  Domain: Pipeline Health
-  Why: [one-sentence explanation of the primary finding or root cause addressed]
-  Change: [one-sentence description of what was updated in the self-healing plan]
-  Result: [expected or measured outcome, e.g. recurring failure promoted, root cause logged]
--->
-```
+- Use `CHANGED` only when the verified diff contains a stage-owned file in addition to the coverage log.
+- Use `CLEAN` when the audit completed and no source change is required.
+- Use `SKIPPED` or `PARTIAL-RUN` only after restoring every non-log change.
+- Do not append another summary line manually; finalization replaces the lifecycle sentinel.
+- Run `node .github/scripts/nightly-stage.mjs budget --stage 13`, then `node .github/scripts/nightly-stage.mjs finalize --stage 13 --status <STATUS> --summary "<concise result>"`.
+- Read `/tmp/nightly/final-handoff.txt`, return its result, and end immediately. Jules native publication owns the branch, commit, push, and non-draft PR creation.

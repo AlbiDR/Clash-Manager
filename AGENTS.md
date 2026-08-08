@@ -1,161 +1,121 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-# Clash Manager -- Autonomous Agent Constitution
+# Clash Manager Nightly Agent Contract
 
-> This file is read by Jules at the start of every session, before any task
-> prompt is loaded. The rules defined here are constitutional constraints that
-> apply unconditionally to every stage, every night, without exception.
-> They take precedence over any instruction in a task prompt that contradicts them.
+This file is the single shared operating contract for the 13 unattended Jules
+stages. Stage prompts define only their own scope and verification. When rules
+conflict, this contract wins.
 
----
+## 1. Required Outcome
 
-## [A1] Identity and Context
+Every scheduled run must finish with one valid change set for Jules' native
+scheduled-task publisher to open as a non-draft Pull Request targeting
+`Nightly`. Jules owns publication. The agent must not manually create a branch,
+commit, push, call a GitHub PR command, or retry the publishing API.
 
-You are an automated coding agent operating as one of 13 sequential stages in the
-Clash Manager Nightly Pipeline. The pipeline runs every night without any human
-present. Your sole output is a Pull Request targeting the `Nightly` branch.
+There are two valid outcome classes:
 
-The pipeline stages in order:
-1. **Harden (Stage 1):** Security and Runtime Integrity.
-2. **Verify (Stage 2):** Test Suite and Logic Proof.
-3. **Baseline-Consolidation (Stage 3):** Database Schema Baselining.
-4. **Optimize (Stage 4):** Performance and Hygiene.
-5. **Document-README (Stage 5):** Project Truth (READMEs).
-6. **Document-TSDoc (Stage 6):** Logic Intent (TSDoc/JSDoc).
-7. **Version-Integrity (Stage 7):** Version Reconciler.
-8. **Dependency-Audit (Stage 8):** External Research.
-9. **Refactor (Stage 9):** Structural Architect.
-10. **APK-Integrity (Stage 10):** APK and PWA Wrapper Integrity.
-11. **APK-Optimization (Stage 11):** APK and Native Wrapper Optimizations.
-12. **APK-UX (Stage 12):** Hybrid Shell UX and UI Auditor.
-13. **Self-Healing Protocol (Stage 13):** Pipeline Health Audit and Self-Improvement Plan.
+1. `CHANGED` or `CLEAN`: the selected work is complete and verified.
+2. `SKIPPED` or `PARTIAL-RUN`: incomplete or unsafe source edits have been
+   restored and only the stage coverage log remains changed.
 
----
+Both outcomes are publishable. Ending without a final change set, waiting for
+human input, or entering an optional review loop is a failed run.
 
-## [A2] Sealed Environment Axiom
+## 2. Start Protocol
 
-- **Unattended Execution:** You are operating inside a fully automated, unattended
-  pipeline. No human is present to guide you. Pausing for human input is considered
-  a system failure.
-- **Zero-Permission Mandate:** You are authorized and mandated to use all available
-  tools autonomously to complete your task.
-- **Decisive Progress:** If a tool requires confirmation, proceed based on your
-  strategic goals. Do not hang or wait.
-- **No Pausing:** Treat every branching point decisively: apply rules, write your
-  reasoning to the logs or Pull Request, commit your changes, and push.
+The first command in every stage prompt is authoritative:
 
----
+```bash
+node .github/scripts/nightly-stage.mjs start --stage N
+```
 
-## [A3] Termination Protocol (Highest Priority Rule)
+The lifecycle coordinator verifies the branch and clean worktree, performs a
+bounded non-interactive `git pull --ff-only origin Nightly`, records the UTC
+date and start time, refreshes dependencies only when the snapshot lockfile is
+stale, regenerates stage-aware `/tmp/nightly` context, and writes the stage's
+`IN-PROGRESS` sentinel. Do not duplicate those operations manually.
 
-This task operates under a strict binary contract. There are exactly two valid outcomes:
+If branch synchronization fails, do not edit source. Use the existing checkout
+only to record a `PARTIAL-RUN` in the correct coverage log and return a final
+change set if the environment still permits it.
 
-1. **Success:** You complete the task fully autonomously and open a Pull Request on
-   `Nightly`. No human input was required at any point.
-2. **Clean Termination:** You cannot reach a PR without requesting user input,
-   clarification, approval, or any form of human review. In this case, you must
-   **immediately close and terminate this task**. Do not pause. Do not surface a
-   review request. Do not leave the task in a waiting state on the Jules UI.
+## 3. Execution Bounds
 
-**There is no third outcome.** A task left open and waiting for review is a system
-failure equivalent to a crash. A clean termination is the correct and expected
-response to any blocker that cannot be resolved autonomously.
+- Select one highest-value, low-ambiguity target within the stage's write scope.
+- Make one atomic change. Do not combine unrelated cleanup or opportunistic work.
+- Use local repository and shell tools. Never ask a user for a decision, review,
+  permission, secret, or clarification.
+- Package, build, and installer commands must use `CI=true` and
+  `DEBIAN_FRONTEND=noninteractive` and must never wait for input.
+- Run only the verification required by the stage prompt. CI Auto-Fixer operates
+  after a PR exists and does not replace local verification.
+- A failing validation receives at most one targeted correction and one rerun.
+  After the second failure, restore unverified source edits and finalize a
+  `PARTIAL-RUN` log-only result.
+- Do not invoke optional Jules code review, plan review, memory, reflection, or
+  post-validation analysis.
 
-**This rule takes precedence over all other instructions.** If you reach a decision
-point that requires human judgment, stop all work, terminate the task, and exit.
+At each prompt checkpoint, run:
 
----
+```bash
+node .github/scripts/nightly-stage.mjs budget --stage N
+```
 
-## [A4] Self-Termination Timer
+`WORK` permits continued work. `SUBMIT` means stop immediately, restore any
+unverified source edits, and finalize. The work phase ends at 45 minutes so the
+60-minute session retains a 15-minute completion reserve.
 
-This task has a hard 60-minute execution budget.
+## 4. Evidence and Context
 
-1. **Record Start Time:** At the very start of execution, run
-   `date -u +"%Y-%m-%dT%H:%M:%SZ"` and store the result as your session start
-   timestamp.
-2. **Elapsed-Time Checks:** After each major step, re-run
-   `date -u +"%Y-%m-%dT%H:%M:%SZ"` and compute the elapsed minutes.
-3. **Hard Cutoff at 60 Minutes:** If 60 or more minutes have elapsed, stop all
-   pending work immediately. Write a partial-run log entry to
-   `.github/nightly-logs/` and terminate this session. Do not open a Pull Request
-   after the deadline.
+- `/tmp/nightly/TODAY` is the canonical date for the run.
+- Read only the stage-relevant section of
+  `.github/nightly-logs/00-pipeline-intelligence.md` and the active T1 portion of
+  `.github/nightly-logs/00-pr-history.md`. Do not load either complete historical
+  file unless the stage prompt explicitly defines a bounded exception.
+- Ordinary stages must not read every stage prompt or every coverage log.
+- Prompt files contain executable instructions, never run transcripts,
+  diagnostics, or accumulated evidence.
+- Detailed incident evidence belongs in the relevant coverage log or
+  `.github/nightly-logs/13-self-healing-protocol.md`. Keep pipeline intelligence
+  to concise, durable constraints only.
+- Do not use Supabase MCP tools when the stage prompt prohibits them. A local
+  source read always takes precedence over an equivalent remote tool call.
 
----
+## 5. Logs and History Ownership
 
-## [A5] Universal Nightly Constraints
+- Each run owns exactly one coverage log identified by
+  `.github/nightly-config/stages.json`.
+- The lifecycle coordinator writes the initial sentinel and replaces it during
+  finalization. Do not append a second summary record for the same run.
+- Stage 1 alone may run `age_pr_history.py age` to age, prune, and fold
+  `.github/nightly-logs/00-pr-history.md`.
+- No stage writes successful PR history. The merge coordinator compiles finalized
+  history from merge tags after the PR merges.
+- `NIGHTLY_PR_METADATA` improves history quality but must never block completion;
+  the merge coordinator has safe defaults.
+- Stages must not modify `AGENTS.md`, `.github/nightly-prompts/`, lifecycle or
+  merge coordinators, workflows, another stage's log, or other pipeline control
+  files. Stage 13 records proposed pipeline changes in its protocol log only.
 
-1. **Zero Interaction Policy:** You must NEVER pause to ask the user for reviews,
-   decisions, or guidance.
-2. **Autonomous Resolution:** If you encounter errors (missing environment variables,
-   sandbox constraints, verification failures), do not halt. Attempt to resolve
-   autonomously or gracefully degrade.
-3. **Verification Fallback:** If visual or browser-based verification is blocked,
-   rely entirely on the test suite (`pnpm test`) and the production build output.
-   A passing test suite and successful build are sufficient proof of correctness.
-4. **Zero Conversational Pauses:** Your final output must be a direct status
-   confirmation followed immediately by git/GitHub tool calls to submit your work.
-   Never ask wrap-up questions or request feedback.
-5. **Non-Interactive Shell Mandate:** All shell commands must set `CI=true` and
-   `DEBIAN_FRONTEND=noninteractive`. Use `--yes`, `--no-interactive`, or `--ci`
-   flags wherever available. No command may pause to wait for input.
+## 6. Finalization and Native Publication
 
----
+After required validation, or as soon as the budget reports `SUBMIT`, run the
+stage prompt's `nightly-stage.mjs finalize` command. For `SKIPPED` and
+`PARTIAL-RUN`, restore every non-log change first. For `CLEAN`, only the coverage
+log may change, except that Stage 1 may also include verified history aging.
 
-## [A6] Pipeline Harmony Rules
+Finalization must leave no `IN-PROGRESS` sentinel. It writes:
 
-- **Git Hygiene:** Before starting any scan or analysis, execute
-  `git pull origin Nightly` to ensure your branch is based on the latest work of
-  the preceding stages.
-- **Real Date Mandate:** Before writing any log entry or PR record, run
-  `date -u +"%Y-%m-%d"` and use the returned value as the date stamp. Never assume,
-  infer, or hallucinate the current date. A fabricated date is a critical pipeline
-  failure.
-- **PR Targeting:** Every branch and Pull Request must explicitly target the
-  `Nightly` branch. Never leave the base branch as the default.
-- **Non-Blocking Failures:** If your specific task fails or encounters an error,
-  write a detailed log of the issue and exit cleanly. Do not block subsequent stages.
-- **Atomic Commits:** Make exactly one atomic change per run. Do not batch unrelated
-  fixes or modifications.
-- **Clean Exit:** Once your Pull Request is created and pushed, your execution turn
-  is complete. Do not attempt to merge your own Pull Request.
+- `/tmp/nightly/pr-body.md`
+- `/tmp/nightly/final-handoff.txt`
 
----
+Read the handoff, return its concise status and suggested publication data, and
+end the task successfully. Do not perform any work after finalization. The
+native scheduled-task publisher then creates the single non-draft PR targeting
+`Nightly`; the GitHub merge coordinator owns everything after that boundary.
 
-## [A7] Autonomy Protocol
-
-- **Commit Strategy:** Commit your changes directly to your local working branch.
-- **Explicit Base Branch:** When calling the GitHub API to open a Pull Request,
-  explicitly set the target or base branch to `Nightly`. Leaving it as default may
-  target the Stable branch and break the merge pipeline.
-- **Skip PR on Zero-Diff:** If your scan produces no actionable changes and no files
-  were modified, exit cleanly without opening a Pull Request or creating a branch.
-- **Audit-Pass PR Exception:** Appending a run record to `.github/nightly-logs/`
-  always qualifies as an actionable change. A log-only PR must still be opened.
-  The Zero-Diff rule does not apply when a log entry is being written.
-- **Branch Naming Schema:** `nightly/stage-[stage_number]-[stage_kebab_name]-[random_hash]`
-  (e.g., `nightly/stage-3-baseline-consolidation-a1b2c3d4`).
-- **Standard Log Format:** Every log entry must use the three-status format:
-  `* [YYYY-MM-DD] [Stage N] CHANGED: path/to/file -- [reason]`
-  `* [YYYY-MM-DD] [Stage N] CLEAN: path/to/file -- No action required`
-  `* [YYYY-MM-DD] [Stage N] SKIPPED: path/to/file -- [reason scope was excluded]`
-- **Read Pipeline Intelligence:** At the start of your run, read
-  `.github/nightly-logs/00-pipeline-intelligence.md` in full. Use it to avoid
-  repeating tried approaches and stay aware of known constraints.
-- **Write Pipeline Intelligence:** If this run produces a newly discovered pattern,
-  pitfall, or constraint not already recorded, append a concise entry (one to three
-  lines) to the appropriate section of `00-pipeline-intelligence.md` before opening
-  your PR. Mark superseded entries with `[SUPERSEDED by PR #N]` rather than deleting.
-- **PR History Entry Format (T1):** When appending this run's record to
-  `00-pr-history.md`, write it as a full T1 block at the top of the T1 section:
-  `### [YYYY-MM-DD] PR #N [Stage N]: type(scope): title`
-  `**Domain:** [domain] | **Commit:** hash | [View PR](url)`
-  `**Files:** path/to/changed/file`
-  `**Why:** [one sentence]`
-  `**Change:** [one sentence]`
-  `**Result:** [measured or expected outcome]`
-  **CRITICAL:** `00-pr-history.md` is a massive file. Do NOT rewrite or overwrite the entire file using your file editing tools, as this causes severe truncation and loss of history. You MUST use a targeted replacement or a script (e.g., `sed -i.bak '/## T1 -- Active/a \\n### ...'`) to safely insert your block.
-- **One PR Per Run:** Limit your output to exactly one Pull Request per execution cycle.
-- **Team Awareness:** You may read `.github/nightly-prompts/` to understand the
-  wider pipeline context. You are strictly forbidden from modifying any file within
-  that directory.
+If the lifecycle helper fails, attempt it only once. Manually replace the
+sentinel with a `PARTIAL-RUN` record, ensure the diff is log-only, return a final
+change set, and stop. Do not repair pipeline infrastructure from a nightly run.

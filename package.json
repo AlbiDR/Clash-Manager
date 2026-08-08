@@ -17,6 +17,7 @@
     "version:bump:major": "node .github/scripts/bump-version.mjs major",
     "audit:version": "tsx .github/scripts/validate_project.ts",
     "audit:version:fix": "tsx .github/scripts/validate_project.ts --fix",
+    "test:nightly-lifecycle": "node --test .github/scripts/nightly-stage.test.mjs && node .github/scripts/nightly-stage.mjs validate",
     "test:nightly-merge": "node --test .github/scripts/merge-nightly-prs.test.mjs",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
