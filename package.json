@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.42.3",
+  "version": "14.43.0",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -17,6 +17,7 @@
     "version:bump:major": "node .github/scripts/bump-version.mjs major",
     "audit:version": "tsx .github/scripts/validate_project.ts",
     "audit:version:fix": "tsx .github/scripts/validate_project.ts --fix",
+    "test:nightly-merge": "node --test .github/scripts/merge-nightly-prs.test.mjs",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json",

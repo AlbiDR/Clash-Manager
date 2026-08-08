@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 AlbiDR
 
-# Single, authoritative source of git tags for this repo.
+# Single, authoritative source of release/version tags for this repo.
 #
 # Root cause this exists to fix: multiple independent sessions/agents were each
 # computing "the next version" from `git describe --tags` and pushing a tag
@@ -9,8 +9,9 @@
 # through v14.37.8, discovered 2026-07-28) that didn't match the version in the
 # commit they pointed to, because tag creation and package.json bumps were two
 # uncoordinated authorities. Fix: package.json is the only source of truth for
-# the version, and this workflow is the only thing that creates tags. No
-# session or script should ever run `git tag` / `git push origin <tag>` itself.
+# the version, and this workflow is the only thing that creates v* release tags.
+# Nightly integration audit tags under nightly/* are owned by the nightly merge
+# coordinator and are intentionally outside the v* release tag namespace.
 name: Auto Tag
 
 on:

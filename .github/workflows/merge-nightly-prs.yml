@@ -25,12 +25,12 @@ jobs:
   merge-prs:
     name: "Merge Google Jules PRs"
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           ref: Nightly
 
       - name: Run Merge Script with Retry
@@ -78,4 +78,3 @@ jobs:
           else
             echo "Changelog status: Nominal. No updates required."
           fi
-

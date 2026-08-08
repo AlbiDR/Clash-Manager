@@ -21,6 +21,10 @@ jobs:
       (
         github.event.pull_request.user.login == 'google-labs-jules[bot]' ||
         github.event.pull_request.user.login == 'AlbiDR'
+      ) &&
+      (
+        startsWith(github.event.pull_request.head.ref, 'nightly/stage-') ||
+        startsWith(github.event.pull_request.head.ref, 'nightly-stage-')
       )
     runs-on: ubuntu-latest
     timeout-minutes: 5
