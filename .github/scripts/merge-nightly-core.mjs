@@ -79,6 +79,11 @@ function gitStdout(args, options = {}) {
   return runCmd(args, options).stdout;
 }
 
+export function configureGitActor() {
+  runCmd(["config", "user.name", "github-actions[bot]"]);
+  runCmd(["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
+}
+
 export function parseStageBranch(ref) {
   const match = String(ref || "").match(/^nightly(?:\/|-)?stage-(\d+)(?:-|$)/i);
   if (!match) return null;
@@ -445,6 +450,7 @@ function createStageTag(pr, squashSha, config = CONFIG) {
   const tagMsgFile = path.join(os.tmpdir(), `nightly-tag-msg-${stage}-${pr.number}-${process.pid}.txt`);
   try {
     fs.writeFileSync(tagMsgFile, tagMsg, "utf8");
+    configureGitActor();
     runCmd(["tag", "-a", tagName, "-F", tagMsgFile, squashSha]);
     runCmd(["push", buildRepoUrl(config), `refs/tags/${tagName}`]);
     log(`Created and pushed tag ${tagName} for PR #${pr.number}.`, "success");
@@ -589,8 +595,7 @@ async function resolveConflictsAndRebase(pr, config = CONFIG) {
   validateStageBranch(branch);
   log(`Rebasing and resolving conflicts for branch ${branch}`);
 
-  runCmd(["config", "--global", "user.name", "github-actions[bot]"]);
-  runCmd(["config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"]);
+  configureGitActor();
   runCmd(["fetch", "origin", `${branch}:${branch}`]);
 
   const mergeBase = gitStdout(["merge-base", branch, config.targetBranch]);
