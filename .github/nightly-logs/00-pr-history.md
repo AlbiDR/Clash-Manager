@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-08-07
+LAST_AGED:   2026-08-08
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -15,7 +15,6 @@ LAST_AGED:   2026-08-07
 ---
 
 ## T1 -- Active (last 7 days)
-
 ### [2026-08-08] PR #1390 [Stage 13]: chore(pipeline): Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protoc
 **Domain:** pipeline | **Commit:** 48cf8899 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1390)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log
@@ -862,28 +861,22 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-07-09] PR #1058 [Refactor/Optimization]: refactor(opt): standardize variable naming in core services (``1c0b566b``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1058)
 * [2026-07-09] PR #1057 [Baseline]: chore(baseline): fold new migrations into master baseline (``c2874760``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1057)
 * [2026-07-09] PR #1056 [Hardening]: fix(harden): resolve runtime crash and excise anemic variables in deep-depth stage (``1444b606``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1056)
-* [2026-07-08] PR #1055 [APK Optimization]: perf(apk-optimization): optimize SW precache and prune orphaned resources (``f68eb7d3``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1055)
-* [2026-07-08] PR #1054 [APK Integrity]: fix(apk-integrity): harden security audit and verify manifest parity (``9339b393``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1054)
-* [2026-07-08] PR #1053 [Dependencies]: chore(deps): update dependencies and major version watchlist [Stage 8] (``5a18e9dd``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1053)
-* [2026-07-08] PR #1052 [TSDoc]: docs(tsdoc): document native bridge orchestrator interface contracts (``3d3d642c"``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1052)
-* [2026-07-08] PR #1051 [README]: docs(readme): reconcile core service registry (``b93ce544``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1051)
-* [2026-07-08] PR #1050 [Performance]: perf(opt): standardize variable naming for domain clarity (``d401ce5f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1050)
-* [2026-07-08] PR #1049 [Verification]: test(verify): add specs for useClashLoader (``d9f005ea``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1049)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W28
-* 1 PRs [APK Integrity]: #1036
-* 2 PRs [APK Optimization]: #1037, #1047
+* 2 PRs [APK Integrity]: #1036, #1054
+* 3 PRs [APK Optimization]: #1037, #1047, #1055
 * 2 PRs [APK UX]: #1038, #1048
 * 1 PRs [Baseline]: #1029
-* 2 PRs [Dependencies]: #1034, #1044
+* 3 PRs [Dependencies]: #1034, #1044, #1053
 * 1 PRs [General]: #1046
-* 2 PRs [README]: #1031, #1041
+* 1 PRs [Performance]: #1050
+* 3 PRs [README]: #1031, #1041, #1051
 * 4 PRs [Refactor/Optimization]: #1030, #1035, #1040, #1045
-* 2 PRs [TSDoc]: #1032, #1042
-* 2 PRs [Verification]: #1028, #1039
+* 3 PRs [TSDoc]: #1032, #1042, #1052
+* 3 PRs [Verification]: #1028, #1039, #1049
 * 2 PRs [Version Integrity]: #1033, #1043
 
 #### 2026-W27
