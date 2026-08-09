@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-09] PR #1397 [Stage 7]: chore(version): Stage 7 Version Consistency Audit - CLEAN
+**Domain:** pipeline | **Commit:** 074e7608 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1397)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Stage 7 Version Consistency Audit - CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-09] PR #1396 [Stage 6]: docs(tsdoc): harden SettingRow interface contracts and logic annotations
 **Domain:** pipeline | **Commit:** 39a12213 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1396)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/SettingRow.vue
