@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-09] PR #1394 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
+**Domain:** pipeline | **Commit:** 27b576ca | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1394)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/shared/ui/SettingRow.vue
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 4] Optimization - Substrate Hygiene Engineer
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-09] PR #1393 [Stage 2]: chore(verify): add comprehensive unit and edge tests for VaultCard
 **Domain:** pipeline | **Commit:** aab59c48 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1393)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/laboratory/components/components-tests/VaultCard.spec.ts
