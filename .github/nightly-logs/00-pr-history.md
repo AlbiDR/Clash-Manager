@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-09] PR #1396 [Stage 6]: docs(tsdoc): harden SettingRow interface contracts and logic annotations
+**Domain:** pipeline | **Commit:** 39a12213 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1396)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/SettingRow.vue
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden SettingRow interface contracts and logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-09] PR #1395 [Stage 5]: [Stage 5] Documentation README - Architecture Truth Architect
 **Domain:** pipeline | **Commit:** eb6abc5f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1395)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
