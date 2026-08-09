@@ -7,7 +7,7 @@ import { useConfirm } from "./useConfirm";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
 import { UI_STABILITY_DELAY } from "@core/config";
-import { resolveLatestApkRelease } from "./apkResolver";
+import { resolveLatestApkRelease, type ApkReleaseDownload } from "./apkResolver";
 
 export {
   APK_RELEASE_RAW_BASE_URL,
