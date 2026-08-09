@@ -131,4 +131,89 @@ describe("VaultCard.vue", () => {
     // In many test setups, BASE_URL might be '/' by default
     expect(goldImg.attributes("src")).toContain("assets/game/currency-gold.webp");
   });
+
+  // Additional comprehensive logic validation & boundary checks (Stage 2 Focus)
+  describe("Comprehensive Logic Validation & Boundary Checks", () => {
+    it("handles negative values correctly when input is changed", async () => {
+      const wrapper = mountVaultCard();
+      const gemsInput = wrapper.findAll("input.res-input")[1];
+
+      gemsInput.element.value = "-50";
+      await gemsInput.trigger("input");
+
+      expect(wrapper.emitted("update")).toBeTruthy();
+      expect(wrapper.emitted("update")!.find(e => e[0] === "gems")).toEqual(["gems", -50]);
+    });
+
+    it("handles decimals correctly by parsing them as integers via parseInt", async () => {
+      const wrapper = mountVaultCard();
+      const commonWcInput = wrapper.findAll("input.wc-input")[0];
+
+      commonWcInput.element.value = "250.75";
+      await commonWcInput.trigger("input");
+
+      expect(wrapper.emitted("update")).toBeTruthy();
+      expect(wrapper.emitted("update")!.find(e => e[0] === "wc_common")).toEqual(["wc_common", 250]);
+    });
+
+    it("handles empty string input correctly by falling back to 0", async () => {
+      const wrapper = mountVaultCard();
+      const commonWcInput = wrapper.findAll("input.wc-input")[0];
+
+      commonWcInput.element.value = "";
+      await commonWcInput.trigger("input");
+
+      expect(wrapper.emitted("update")).toBeTruthy();
+      expect(wrapper.emitted("update")!.find(e => e[0] === "wc_common")).toEqual(["wc_common", 0]);
+    });
+
+    it("handles extreme integer boundaries correctly", async () => {
+      const wrapper = mountVaultCard();
+      const goldInput = wrapper.findAll("input.res-input")[0];
+
+      const bigIntStr = "9999999999";
+      goldInput.element.value = bigIntStr;
+      await goldInput.trigger("input");
+
+      expect(wrapper.emitted("update")).toBeTruthy();
+      expect(wrapper.emitted("update")!.find(e => e[0] === "gold")).toEqual(["gold", 9999999999]);
+    });
+
+    it("resolves exact image assets path for other wildcards rarities", () => {
+      const wrapper = mountVaultCard();
+      const commonImg = wrapper.find('img[alt="Common"]');
+      const rareImg = wrapper.find('img[alt="Rare"]');
+      const epicImg = wrapper.find('img[alt="Epic"]');
+      const legendaryImg = wrapper.find('img[alt="Legendary"]');
+      const championImg = wrapper.find('img[alt="Champion"]');
+
+      expect(commonImg.attributes("src")).toContain("assets/game/wildcard-common.webp");
+      expect(rareImg.attributes("src")).toContain("assets/game/wildcard-rare.webp");
+      expect(epicImg.attributes("src")).toContain("assets/game/wildcard-epic.webp");
+      expect(legendaryImg.attributes("src")).toContain("assets/game/wildcard-legendary.webp");
+      expect(championImg.attributes("src")).toContain("assets/game/wildcard-champion.webp");
+    });
+
+    it("verifies emit callbacks for each wildcard input when they trigger update events", async () => {
+      const wrapper = mountVaultCard();
+      const wcInputs = wrapper.findAll("input.wc-input");
+      const rarities = ["common", "rare", "epic", "legendary", "champion"];
+
+      for (let i = 0; i < wcInputs.length; i++) {
+        const input = wcInputs[i];
+        const rarity = rarities[i];
+        input.element.value = "42";
+        await input.trigger("input");
+
+        const updateEvents = wrapper.emitted("update");
+        expect(updateEvents).toBeTruthy();
+        expect(updateEvents!.some(e => e[0] === `wc_${rarity}` && e[1] === 42)).toBe(true);
+      }
+    });
+
+    it("contains is-loading wrapper class when isSimulating is set to true and can trigger styling", () => {
+      const wrapper = mountVaultCard({ isSimulating: true });
+      expect(wrapper.find(".vault-card").classes()).toContain("is-loading");
+    });
+  });
 });
