@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-09] PR #1395 [Stage 5]: [Stage 5] Documentation README - Architecture Truth Architect
+**Domain:** pipeline | **Commit:** eb6abc5f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1395)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 5] Documentation README - Architecture Truth Architect
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-09] PR #1394 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
 **Domain:** pipeline | **Commit:** 27b576ca | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1394)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/shared/ui/SettingRow.vue
