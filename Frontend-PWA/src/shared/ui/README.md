@@ -30,7 +30,7 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `Icon.vue` | The SVG renderer; paths come from `@core/theme/icons`. |
 | `StatusPill.vue` / `MomentumPill.vue` | System-health pill and trend indicator. |
 | `StatsGrid.vue` / `StatisticItem.vue` | Responsive stat grid and a labeled data point. |
-| `SettingRow.vue` | A settings row (toggle, loading, disabled). |
+| `SettingRow.vue` | A standardized settings/preference row. Modernized with a 48px high tap target for WebView mobile compliance, integrated with the declarative `v-tactile` haptic feedback model, and standardizes click emits callback parameters to eliminate anemic variable pathogens (`emitEvent` typed argument). |
 
 ## Identity badges
 
@@ -67,6 +67,24 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `ErrorBoundary.vue` / `ErrorState.vue` | Runtime error capture and recovery UI. |
 | `ToastContainer.vue` / `Toast.vue` | Global transient notifications. |
 | `EmptyState.vue` | Empty-data feedback. |
+
+## Standardized Interactive APIs
+
+### SettingRow.vue
+Standard preference row used across Settings cards (Appearance, Notifications, Modes, Feature flags) and Laboratory parameter configurations.
+- **Props**:
+  - `label?: string` - Main display title.
+  - `description?: string` - Contextual helper description.
+  - `active?: boolean` - Active/selected switch toggle status.
+  - `disabled?: boolean` - Disables interactions, sets pointer-events, and applies 0.5 opacity.
+  - `loading?: boolean` - Applies skeleton loading animations and classes to the switch container.
+  - `mini?: boolean` - Suppresses padding and scales down fonts for dense layouts.
+- **Slots**:
+  - `#label` - Custom markup for labels.
+  - `#description` - Custom markup for descriptions.
+- **Events**:
+  - `@click` - Emitted only when row is not disabled, standardizing the payload parameter as `emitEvent` to conform to CleanStack naming rules and eliminate anemic variable pathogens.
+- **WebView Mobile Ergonomics**: Enforces `min-height: var(--sys-space-48)` with vertical padding and leverages `v-tactile` for declarative haptic feedback brokering.
 
 ## Conventions
 
