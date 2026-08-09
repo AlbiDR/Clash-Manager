@@ -182,7 +182,10 @@ const usefulLinks = computed(() => {
   /* shared */
   text-decoration: none;
   cursor: pointer;
-  padding: 4px 0;
+  min-height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
+  padding: var(--sys-space-4) 0; /* Compensating vertical padding */
+  user-select: none; /* Text Selection Containment (Target A.3) */
+  -webkit-user-select: none;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
