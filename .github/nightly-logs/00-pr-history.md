@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-09] PR #1400 [Stage 10]: chore(apk): Completed APK & PWA wrapper integrity audit - CLEAN
+**Domain:** pipeline | **Commit:** 9f913afe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1400)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Completed APK & PWA wrapper integrity audit - CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-09] PR #1399 [Stage 9]: chore(refactor): Decomposed monolithic usePwaManager.ts by extracting APK release resolution
 **Domain:** pipeline | **Commit:** 615af284 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1399)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/index.ts, Frontend-PWA/src/core/services/apkResolver.ts, Frontend-PWA/src/core/services/services-tests/apkResolver.spec.ts, Frontend-PWA/src/core/services/usePwaManager.ts
