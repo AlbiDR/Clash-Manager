@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-09] PR #1392 [Stage 3]: [Stage 3] Baseline Consolidation - Declarative Schema Hardener
+**Domain:** pipeline | **Commit:** 71561156 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1392)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 3] Baseline Consolidation - Declarative Schema Hardener
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-08] PR #1391 [Stage 1]: Hardening - Runtime Integrity Auditor
 **Domain:** pipeline | **Commit:** a017b1e3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1391)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
