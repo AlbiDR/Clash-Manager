@@ -23,7 +23,7 @@ catalogs:
     jsdom: "^29.1.1"
     knip: "^6.32.0"
     simple-git-hooks: "^2.13.1"
-    supabase: "^2.112.0"
+    supabase: "^2.113.0"
     pinia: "^3.0.4"
     rollup-plugin-visualizer: "^7.0.1"
     tsx: "^4.23.11"
