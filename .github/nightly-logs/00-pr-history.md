@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-09] PR #1401 [Stage 12]: chore(apk-ux): Modernized UsefulLinksSettings.vue with 48px touch target compliance and user-select text containment.
+**Domain:** pipeline | **Commit:** 4c6fa716 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1401)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Modernized UsefulLinksSettings.vue with 48px touch target compliance and user-select text containment.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-09] PR #1400 [Stage 10]: chore(apk): Completed APK & PWA wrapper integrity audit - CLEAN
 **Domain:** pipeline | **Commit:** 9f913afe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1400)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
