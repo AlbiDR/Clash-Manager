@@ -132,6 +132,14 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
           benchmark-metric="rawScore"
           :benchmark-raw-value="props.recruit.potentialRawScore"
         />
+        <StatisticItem
+          label="Last Scan"
+          :value="props.recruit.lastScan ? formatTimeAgo(props.recruit.lastScan) : '-'"
+          :loading="props.appIsRefreshing"
+          benchmark-type="hh"
+          benchmark-metric="lastScan"
+          :benchmark-raw-value="props.recruit.lastScan ? Math.max(0, Math.floor((Date.now() - props.recruit.lastScan) / 60000)) : undefined"
+        />
       </StatsGrid>
 
       <CardActions

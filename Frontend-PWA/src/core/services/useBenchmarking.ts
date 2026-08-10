@@ -83,6 +83,7 @@ const HH_EXTRACTORS: Record<string, (m: Recruit) => number> = {
   winRate: (m) => m.d?.winRate || 0,
   score: (m) => m.potentialScore || 0,
   rawScore: (m) => m.potentialRawScore || 0,
+  lastScan: (m) => m.lastScan ? Math.max(0, Math.floor((Date.now() - m.lastScan) / 60000)) : 99999999,
 };
 
 /**
@@ -102,6 +103,7 @@ const BENCHMARK_METRICS: Record<string, MetricMetadata> = {
   momentum: { label: "Growth Pace" },
   avgFame: { label: "Average Fame" },
   lastSeen: { label: "Last Seen", lowerIsBetter: true, format: "durationMinutes" },
+  lastScan: { label: "Last Scan", lowerIsBetter: true, format: "durationMinutes" },
 };
 
 /**

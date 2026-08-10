@@ -44,6 +44,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 8000, // Max
           potentialScore: 100, // Max
           potentialRawScore: 12000,
+          lastScan: Date.now() - 60 * 60000,
           d: { don: 1000, war: 100, cards: 1000, ago: "1d ago" }
         },
         {
@@ -52,6 +53,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 4000, // Avg
           potentialScore: 50, // Avg
           potentialRawScore: 6000,
+          lastScan: Date.now() - 120 * 60000,
           d: { don: 500, war: 50, cards: 500, ago: "2d ago" }
         },
         {
@@ -60,6 +62,7 @@ vi.mock("../useClashDataStore", () => ({
           t: 0,
           potentialScore: 0,
           potentialRawScore: 0,
+          lastScan: Date.now() - 240 * 60000,
           d: { don: 0, war: 0, cards: 0, ago: "3d ago" }
         }
       ]
@@ -166,12 +169,14 @@ describe("useBenchmarking", () => {
       expect(getBenchmark("hh", "cardsWon", 500)).not.toBeNull();
       expect(getBenchmark("hh", "score", 50)).not.toBeNull();
       expect(getBenchmark("hh", "rawScore", 6000)).not.toBeNull();
+      expect(getBenchmark("hh", "lastScan", 120)).not.toBeNull();
     });
 
     it("uses correct labels for hh context", () => {
       expect(getBenchmark("hh", "donations", 500)?.label).toBe("Lifetime Donos");
       expect(getBenchmark("hh", "score", 50)?.label).toBe("Potential");
       expect(getBenchmark("hh", "rawScore", 6000)?.label).toBe("Raw Potential");
+      expect(getBenchmark("hh", "lastScan", 120)?.label).toBe("Last Scan");
     });
 
     it("benchmarks hh rawScore against RPoS instead of normalized PoS", () => {
@@ -181,6 +186,16 @@ describe("useBenchmarking", () => {
       expect(result?.max).toBe(12000);
       expect(result?.percent).toBe(50);
       expect(result?.tier).toBe("TOP TIER");
+    });
+
+    it("benchmarks hh lastScan as a lower-is-better freshness metric", () => {
+      const freshResult = getBenchmark("hh", "lastScan", 60);
+      expect(freshResult?.label).toBe("Last Scan");
+      expect(freshResult?.format).toBe("durationMinutes");
+      expect(freshResult?.isBetter).toBe(true);
+
+      const staleResult = getBenchmark("hh", "lastScan", 300);
+      expect(staleResult?.isBetter).toBe(false);
     });
   });
 

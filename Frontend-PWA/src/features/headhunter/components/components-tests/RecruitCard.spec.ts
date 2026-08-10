@@ -21,6 +21,7 @@ const mockRecruit: Recruit = {
   potentialRawScore: 15000,
   longevity: 2880,
   longevityLabel: "Time ago: 2d",
+  lastScan: 1700000000000,
   d: {
     don: 250,
     war: 12,
@@ -109,7 +110,7 @@ describe("RecruitCard.vue", () => {
     expect(statsGrid.attributes("aria-busy")).toBe("false");
 
     const statItems = wrapper.findAllComponents({ name: "StatisticItem" });
-    expect(statItems).toHaveLength(5);
+    expect(statItems).toHaveLength(6);
     expect(statItems[0].props("label")).toBe("Donations");
     expect(statItems[0].props("value")).toBe(250);
     expect(statItems[1].props("label")).toBe("Win Rate");
@@ -121,8 +122,29 @@ describe("RecruitCard.vue", () => {
     expect(statItems[4].props("label")).toBe("RPoS");
     expect(statItems[4].props("value")).toBe("15,000");
     expect(statItems[4].props("benchmarkMetric")).toBe("rawScore");
+    expect(statItems[5].props("label")).toBe("Last Scan");
+    expect(statItems[5].props("value")).toBe("Time ago: 1700000000000");
+    expect(statItems[5].props("benchmarkMetric")).toBe("lastScan");
+    expect(statItems[5].props("benchmarkRawValue")).toBeGreaterThanOrEqual(0);
 
     expect(wrapper.findComponent({ name: "CardActions" }).exists()).toBe(true);
+  });
+
+  it("uses a placeholder and skips benchmarking when last scan is unavailable", () => {
+    const unscannedRecruit = {
+      ...mockRecruit,
+      lastScan: undefined,
+    };
+
+    const wrapper = mountRecruitCard({ recruit: unscannedRecruit, expanded: true });
+
+    const lastScanItem = wrapper
+      .findAllComponents({ name: "StatisticItem" })
+      .find(item => item.props("label") === "Last Scan");
+
+    expect(lastScanItem).toBeDefined();
+    expect(lastScanItem!.props("value")).toBe("-");
+    expect(lastScanItem!.props("benchmarkRawValue")).toBeUndefined();
   });
 
   it("shows refreshing state in expanded content", () => {
