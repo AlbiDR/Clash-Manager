@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1408 [Stage 6]: docs(tsdoc): harden apkResolver interface contracts and inline logic annotations
+**Domain:** pipeline | **Commit:** 370289f5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1408)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/apkResolver.ts
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden apkResolver interface contracts and inline logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1407 [Stage 5]: [Stage 5] Documentation README - Architecture Truth Architect
 **Domain:** pipeline | **Commit:** e16b5273 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1407)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
