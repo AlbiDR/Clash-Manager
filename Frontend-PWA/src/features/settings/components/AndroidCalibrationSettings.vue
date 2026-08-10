@@ -137,6 +137,8 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-12);
+  user-select: none; /* Text Selection Containment (Target A.3) */
+  -webkit-user-select: none;
 }
 
 .permission-list {
@@ -221,6 +223,8 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-12);
+  user-select: none; /* Text Selection Containment (Target A.3) */
+  -webkit-user-select: none;
 }
 
 .section-title {
@@ -264,7 +268,8 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
   color: var(--sys-color-on-surface);
   font-size: var(--sys-typescale-body-sm);
   font-weight: 600;
-  padding: var(--sys-space-8) var(--sys-space-10);
+  padding: var(--sys-space-12) var(--sys-space-10); /* Compensating vertical padding */
+  min-height: var(--sys-space-48); /* Touch Target Compliance (Target B.2) */
   width: 100%;
   box-sizing: border-box;
   transition: border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
