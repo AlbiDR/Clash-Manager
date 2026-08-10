@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1413 [Stage 11]: [Stage 11] APK and Native Wrapper Optimizations - CLEAN
+**Domain:** pipeline | **Commit:** 79d64c19 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1413)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 11] APK and Native Wrapper Optimizations - CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1412 [Stage 10]: chore(apk): Completed APK & PWA wrapper integrity audit. No discrepancies found. Manifest, shortcuts, AssetLinks, and custom native layer are fully verified.
 **Domain:** pipeline | **Commit:** 36a5a8a1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1412)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
