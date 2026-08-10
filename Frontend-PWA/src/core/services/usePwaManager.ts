@@ -40,12 +40,41 @@ type ReleaseApkParts = {
 let apkResolutionCache: ApkResolutionCache | undefined;
 let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
 
+type BeforeInstallPromptOutcome = "accepted" | "dismissed";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: BeforeInstallPromptOutcome; platform: string }>;
+};
+
 export type ApkReleaseDownload = {
   buildNumber?: number;
   filename: string;
   url: string;
   version?: string;
 };
+
+const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
+const isPwaInstallAvailable = ref(false);
+let installPromptListenerBound = false;
+
+function bindInstallPromptListener(): void {
+  if (installPromptListenerBound || typeof window === "undefined") return;
+  installPromptListenerBound = true;
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt.value = event as BeforeInstallPromptEvent;
+    isPwaInstallAvailable.value = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt.value = undefined;
+    isPwaInstallAvailable.value = false;
+  });
+}
+
+bindInstallPromptListener();
 
 function buildFreshUrl(url: string): string {
   return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
@@ -249,6 +278,13 @@ export function resetApkResolutionCacheForTests(): void {
   }
 }
 
+export function resetPwaInstallPromptForTests(): void {
+  if (import.meta.env.TEST) {
+    deferredInstallPrompt.value = undefined;
+    isPwaInstallAvailable.value = false;
+  }
+}
+
 /**
  * PWA MANAGER SERVICE (Layer 1)
  * ----------------------------------------------------------------------------
@@ -278,6 +314,7 @@ export function resetApkResolutionCacheForTests(): void {
  * - `updateServiceWorker`: Ref containing the SW registration update function.
  * - `initPwaLifecycle`: Orchestrates SW registration and permission probing.
  * - `forceUpdate`: Triggers a manual Service Worker update check.
+ * - `installPwa`: Opens the browser-managed PWA install prompt when available.
  * - `clearCache`: Purges the PWA asset cache and reloads.
  * - `factoryReset`: Destructive wipe of all local application state.
  */
@@ -494,6 +531,40 @@ export function usePwaManager() {
   }
 
   /**
+   * Opens the browser-managed install prompt for eligible PWA clients.
+   *
+   * @remarks
+   * The install prompt is captured from `beforeinstallprompt` and can be used
+   * only once. Native wrappers never expose this path; installed PWAs also stop
+   * surfacing it through the browser.
+   */
+  async function installPwa(): Promise<void> {
+    const installPrompt = deferredInstallPrompt.value;
+    if (!installPrompt) {
+      toast.info("Install prompt is not available");
+      return;
+    }
+
+    try {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      deferredInstallPrompt.value = undefined;
+      isPwaInstallAvailable.value = false;
+
+      if (choice.outcome === "accepted") {
+        toast.success("PWA install started");
+      } else {
+        toast.info("PWA install dismissed");
+      }
+    } catch (installError: unknown) {
+      console.error("[PWA] Install prompt failed", installError);
+      deferredInstallPrompt.value = undefined;
+      isPwaInstallAvailable.value = false;
+      toast.error("Failed to open install prompt");
+    }
+  }
+
+  /**
    * Purges the Service Worker and Cache API assets.
    *
    * @param onCleanupCallback - Optional callback for Layer 2/3 specific cleanup tasks.
@@ -599,6 +670,8 @@ export function usePwaManager() {
     initPwaLifecycle,
     forceUpdate,
     downloadApk,
+    installPwa,
+    isPwaInstallAvailable,
     clearCache,
     factoryReset,
   };

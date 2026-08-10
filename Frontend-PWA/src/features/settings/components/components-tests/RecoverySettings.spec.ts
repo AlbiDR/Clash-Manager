@@ -22,40 +22,49 @@ describe("RecoverySettings.vue", () => {
   const mockIsRefreshing = ref(false);
   const mockForceUpdate = vi.fn();
   const mockDownloadApk = vi.fn();
+  const mockInstallPwa = vi.fn();
   const mockClearCache = vi.fn();
   const mockFactoryReset = vi.fn();
+  const mockIsPwaInstallAvailable = ref(false);
+  const mockIsNativeWrapper = ref(false);
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsRefreshing.value = false;
+    mockIsPwaInstallAvailable.value = false;
+    mockIsNativeWrapper.value = false;
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
       isRefreshing: mockIsRefreshing,
       forceUpdate: mockForceUpdate,
       downloadApk: mockDownloadApk,
+      installPwa: mockInstallPwa,
+      isPwaInstallAvailable: mockIsPwaInstallAvailable,
       clearCache: mockClearCache,
       factoryReset: mockFactoryReset
     } as any);
 
     vi.mocked(useNativeBridgeModule.useNativeBridge).mockReturnValue({
-      isNativeWrapper: computed(() => false),
+      isNativeWrapper: computed(() => mockIsNativeWrapper.value),
     } as any);
   });
 
-  it("renders the EXPERIMENTAL badge", () => {
-    const wrapper = mount(RecoverySettings, {
-      global: {
-        stubs: {
-          Icon: true,
-          SettingsCard: {
-            template: '<div class="settings-card-stub"><slot name="header-extra" /><slot /></div>'
-          }
-        },
-        directives: {
-          tactile: {}
+  const mountComponent = () => mount(RecoverySettings, {
+    global: {
+      stubs: {
+        Icon: true,
+        SettingsCard: {
+          template: '<div class="settings-card-stub"><slot name="header-extra" /><slot /></div>'
         }
+      },
+      directives: {
+        tactile: {}
       }
-    });
+    }
+  });
+
+  it("renders the EXPERIMENTAL badge", () => {
+    const wrapper = mountComponent();
 
     const badge = wrapper.find(".exp-badge");
     expect(badge.exists()).toBe(true);
@@ -63,19 +72,7 @@ describe("RecoverySettings.vue", () => {
   });
 
   it("calls forceUpdate when Refresh App button is clicked", async () => {
-    const wrapper = mount(RecoverySettings, {
-      global: {
-        stubs: {
-          Icon: true,
-          SettingsCard: {
-            template: '<div class="settings-card-stub"><slot /></div>'
-          }
-        },
-        directives: {
-          tactile: {}
-        }
-      }
-    });
+    const wrapper = mountComponent();
 
     const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Refresh App"));
     await btn?.trigger("click");
@@ -83,19 +80,7 @@ describe("RecoverySettings.vue", () => {
   });
 
   it("calls clearCache when Purge Assets button is clicked", async () => {
-    const wrapper = mount(RecoverySettings, {
-      global: {
-        stubs: {
-          Icon: true,
-          SettingsCard: {
-            template: '<div class="settings-card-stub"><slot /></div>'
-          }
-        },
-        directives: {
-          tactile: {}
-        }
-      }
-    });
+    const wrapper = mountComponent();
 
     const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Purge Assets"));
     await btn?.trigger("click");
@@ -103,23 +88,38 @@ describe("RecoverySettings.vue", () => {
   });
 
   it("calls factoryReset when Factory Reset button is clicked", async () => {
-    const wrapper = mount(RecoverySettings, {
-      global: {
-        stubs: {
-          Icon: true,
-          SettingsCard: {
-            template: '<div class="settings-card-stub"><slot /></div>'
-          }
-        },
-        directives: {
-          tactile: {}
-        }
-      }
-    });
+    const wrapper = mountComponent();
 
     const btn = wrapper.find(".trouble-btn.danger");
     expect(btn.text()).toContain("Factory Reset");
     await btn.trigger("click");
     expect(mockFactoryReset).toHaveBeenCalled();
+  });
+
+  it("shows and triggers the APK update action in the native wrapper", async () => {
+    mockIsNativeWrapper.value = true;
+    mockIsPwaInstallAvailable.value = true;
+    const wrapper = mountComponent();
+
+    const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
+    expect(labels).toContain("Update APK");
+    expect(labels).not.toContain("Install PWA");
+
+    const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Update APK"));
+    await btn?.trigger("click");
+    expect(mockDownloadApk).toHaveBeenCalled();
+  });
+
+  it("shows and triggers the PWA install action for installable web sessions", async () => {
+    mockIsPwaInstallAvailable.value = true;
+    const wrapper = mountComponent();
+
+    const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
+    expect(labels).toContain("Install PWA");
+    expect(labels).not.toContain("Update APK");
+
+    const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Install PWA"));
+    await btn?.trigger("click");
+    expect(mockInstallPwa).toHaveBeenCalled();
   });
 });

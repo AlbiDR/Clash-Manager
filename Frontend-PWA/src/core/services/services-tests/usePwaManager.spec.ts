@@ -14,7 +14,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { resolveLatestApkFilename, resetApkResolutionCacheForTests, usePwaManager } from "../usePwaManager";
+import {
+  resolveLatestApkFilename,
+  resetApkResolutionCacheForTests,
+  resetPwaInstallPromptForTests,
+  usePwaManager,
+} from "../usePwaManager";
 import { useHaptics } from "@shared/composables/useHaptics";
 import { useToast } from "../useToast";
 import { idb } from "../StorageService";
@@ -77,6 +82,7 @@ describe("usePwaManager", () => {
 
     mockNativeBridge.value = undefined;
     resetApkResolutionCacheForTests();
+    resetPwaInstallPromptForTests();
 
     // Default navigator mock
     vi.stubGlobal("navigator", {
@@ -415,6 +421,56 @@ describe("usePwaManager", () => {
 
       expect(mockToast.error).toHaveBeenCalledWith("Failed to open APK download");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+    });
+  });
+
+  describe("installPwa", () => {
+    function dispatchBeforeInstallPrompt(outcome: "accepted" | "dismissed" = "accepted") {
+      const event = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), {
+        prompt: vi.fn().mockResolvedValue(undefined),
+        userChoice: Promise.resolve({ outcome, platform: "web" }),
+      });
+
+      window.dispatchEvent(event);
+      return event;
+    }
+
+    it("captures browser install prompt availability", () => {
+      const { isPwaInstallAvailable } = usePwaManager();
+      expect(isPwaInstallAvailable.value).toBe(false);
+
+      dispatchBeforeInstallPrompt();
+
+      expect(isPwaInstallAvailable.value).toBe(true);
+    });
+
+    it("opens the captured install prompt and reports accepted installs", async () => {
+      const installEvent = dispatchBeforeInstallPrompt("accepted");
+      const { installPwa, isPwaInstallAvailable } = usePwaManager();
+
+      await installPwa();
+
+      expect(installEvent.prompt).toHaveBeenCalled();
+      expect(isPwaInstallAvailable.value).toBe(false);
+      expect(mockToast.success).toHaveBeenCalledWith("PWA install started");
+    });
+
+    it("clears the captured prompt when the install is dismissed", async () => {
+      dispatchBeforeInstallPrompt("dismissed");
+      const { installPwa, isPwaInstallAvailable } = usePwaManager();
+
+      await installPwa();
+
+      expect(isPwaInstallAvailable.value).toBe(false);
+      expect(mockToast.info).toHaveBeenCalledWith("PWA install dismissed");
+    });
+
+    it("shows a neutral toast when no install prompt is available", async () => {
+      const { installPwa } = usePwaManager();
+
+      await installPwa();
+
+      expect(mockToast.info).toHaveBeenCalledWith("Install prompt is not available");
     });
   });
 

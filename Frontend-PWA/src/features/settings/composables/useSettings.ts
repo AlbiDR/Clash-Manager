@@ -96,6 +96,8 @@ export function useSettings() {
     initPwaLifecycle,
     forceUpdate,
     downloadApk,
+    installPwa,
+    isPwaInstallAvailable,
     clearCache: clearPwaCache,
     factoryReset: performPwaReset
   } = usePwaManager();
@@ -302,6 +304,7 @@ export function useSettings() {
     pingData,
     notificationPermission,
     isPushSubscribed,
+    isPwaInstallAvailable,
     hasWorker,
     lastSyncFormatted,
 
@@ -316,6 +319,7 @@ export function useSettings() {
     updateServiceWorker: (reload?: boolean) => updateServiceWorker.value(reload),
     forceUpdate,
     downloadApk,
+    installPwa,
     clearCache,
     factoryReset,
     initAppSettings,

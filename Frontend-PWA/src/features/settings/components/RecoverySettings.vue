@@ -12,6 +12,8 @@ defineProps<{
 const {
   forceUpdate,
   downloadApk,
+  installPwa,
+  isPwaInstallAvailable,
   clearCache,
   factoryReset,
 } = useSettings();
@@ -25,7 +27,7 @@ const { isNativeWrapper } = useNativeBridge();
       <span class="exp-badge">EXPERIMENTAL</span>
     </template>
 
-    <div class="trouble-grid" :class="{ 'has-apk': isNativeWrapper }">
+    <div class="trouble-grid" :class="{ 'has-extra': isNativeWrapper || isPwaInstallAvailable }">
       <button class="trouble-btn" @click="forceUpdate" v-tactile>
         <Icon name="refresh" size="24" />
         <span>Refresh App</span>
@@ -39,6 +41,11 @@ const { isNativeWrapper } = useNativeBridge();
       <button v-if="isNativeWrapper" class="trouble-btn" @click="downloadApk" v-tactile>
         <Icon name="download" size="24" />
         <span>Update APK</span>
+      </button>
+
+      <button v-else-if="isPwaInstallAvailable" class="trouble-btn" @click="installPwa" v-tactile>
+        <Icon name="box" size="24" />
+        <span>Install PWA</span>
       </button>
 
       <button class="trouble-btn danger" @click="factoryReset" v-tactile>
@@ -65,7 +72,7 @@ const { isNativeWrapper } = useNativeBridge();
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
-.trouble-grid.has-apk {
+.trouble-grid.has-extra {
   grid-template-columns: repeat(4, 1fr);
 }
 .trouble-btn {
