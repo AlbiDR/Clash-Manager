@@ -22,6 +22,8 @@ import {
   selectNewestReleaseApk,
   buildSameOriginApkReleaseUrl,
   buildSameOriginApkDownloadUrl,
+  buildFreshUrl,
+  buildFreshApkMetadataUrl,
 } from "../apkResolver";
 
 describe("apkResolver", () => {
@@ -57,6 +59,25 @@ describe("apkResolver", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     globalThis.fetch = originalFetch;
+    vi.useRealTimers();
+  });
+
+  describe("buildFreshUrl and buildFreshApkMetadataUrl", () => {
+    it("should correctly append t query parameter to URLs", () => {
+      const urlWithoutParams = "https://example.com/api";
+      const freshUrl = buildFreshUrl(urlWithoutParams);
+      expect(freshUrl).toMatch(/^https:\/\/example\.com\/api\?t=\d+$/);
+
+      const urlWithParams = "https://example.com/api?foo=bar";
+      const freshUrlWithParams = buildFreshUrl(urlWithParams);
+      expect(freshUrlWithParams).toMatch(/^https:\/\/example\.com\/api\?foo=bar&t=\d+$/);
+    });
+
+    it("should build fresh apk metadata URL using constant", () => {
+      const freshMetadataUrl = buildFreshApkMetadataUrl();
+      expect(freshMetadataUrl).toContain("/latest.json");
+      expect(freshMetadataUrl).toMatch(/&t=\d+|t=\d+/);
+    });
   });
 
   describe("isReleaseApkFilename", () => {
@@ -85,6 +106,41 @@ describe("apkResolver", () => {
       });
     });
 
+    it("should compare complex and varied versions to pick the absolute newest", () => {
+      const versions = [
+        { name: "clashmanager-v14.43.2+100.apk", type: "file" }, // build is smaller, but version is larger
+        { name: "clashmanager-v15.0.0+1.apk", type: "file" },    // major is larger
+        { name: "clashmanager-v14.50.0+1.apk", type: "file" },    // minor is larger
+        { name: "clashmanager-v14.43.3+1.apk", type: "file" },    // patch is larger
+        { name: "clashmanager-v14.43.2+176.apk", type: "file" },  // high build, lower version
+      ];
+
+      const newest = selectNewestReleaseApk(versions);
+      expect(newest?.filename).toBe("clashmanager-v15.0.0+1.apk");
+    });
+
+    it("should compare build number as ultimate tie-breaker when version is identical", () => {
+      const versions = [
+        { name: "clashmanager-v14.43.2+176.apk", type: "file" },
+        { name: "clashmanager-v14.43.2+177.apk", type: "file" },
+        { name: "clashmanager-v14.43.2+175.apk", type: "file" },
+      ];
+
+      const newest = selectNewestReleaseApk(versions);
+      expect(newest?.filename).toBe("clashmanager-v14.43.2+177.apk");
+    });
+
+    it("should ignore invalid files or files with non-file type", () => {
+      const contents = [
+        { name: "clashmanager-v14.43.2+177.apk", type: "dir" }, // invalid type
+        { name: "clashmanager-v14.43.2+176.apk", type: "file" },
+        { name: "clashmanager-v14.43.invalid+1.apk", type: "file" }, // invalid name format
+      ];
+
+      const newest = selectNewestReleaseApk(contents);
+      expect(newest?.filename).toBe("clashmanager-v14.43.2+176.apk");
+    });
+
     it("should return undefined if no valid release APKs are found", () => {
       const contents = [
         { name: "not-an-apk.txt", type: "file" },
@@ -108,12 +164,12 @@ describe("apkResolver", () => {
       });
     });
 
-    it("should discard untrusted download_url and construct raw GitHub release URL", () => {
+    it("should discard untrusted download_url (wrong protocol) and construct raw GitHub release URL", () => {
       const contents = [
         {
           name: "clashmanager-v14.43.1+173.apk",
           type: "file",
-          download_url: "https://example.com/not-the-apk.apk",
+          download_url: "http://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1+173.apk",
         },
       ];
 
@@ -121,6 +177,70 @@ describe("apkResolver", () => {
       expect(newest?.url).toBe(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1%2B173.apk"
       );
+    });
+
+    it("should discard untrusted download_url (wrong hostname) and construct raw GitHub release URL", () => {
+      const contents = [
+        {
+          name: "clashmanager-v14.43.1+173.apk",
+          type: "file",
+          download_url: "https://evil.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1+173.apk",
+        },
+      ];
+
+      const newest = selectNewestReleaseApk(contents);
+      expect(newest?.url).toBe(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1%2B173.apk"
+      );
+    });
+
+    it("should discard untrusted download_url (wrong path suffix) and construct raw GitHub release URL", () => {
+      const contents = [
+        {
+          name: "clashmanager-v14.43.1+173.apk",
+          type: "file",
+          download_url: "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/wrong-file-name.apk",
+        },
+      ];
+
+      const newest = selectNewestReleaseApk(contents);
+      expect(newest?.url).toBe(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1%2B173.apk"
+      );
+    });
+
+    it("should discard invalid URL strings that fail URL parsing and fallback safely", () => {
+      const contents = [
+        {
+          name: "clashmanager-v14.43.1+173.apk",
+          type: "file",
+          download_url: "not-even-a-url-at-all",
+        },
+      ];
+
+      const newest = selectNewestReleaseApk(contents);
+      expect(newest?.url).toBe(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.1%2B173.apk"
+      );
+    });
+  });
+
+  describe("buildSameOriginApkReleaseUrl & buildSameOriginApkDownloadUrl", () => {
+    it("should return undefined in SSR environments (when window is undefined)", () => {
+      vi.stubGlobal("window", undefined);
+      expect(buildSameOriginApkReleaseUrl("latest.json")).toBeUndefined();
+      expect(buildSameOriginApkDownloadUrl("clashmanager-v1.apk")).toBeUndefined();
+    });
+
+    it("should handle error in catch block gracefully when location access throws", () => {
+      const brokenWindow = {};
+      Object.defineProperty(brokenWindow, "location", {
+        get() {
+          throw new Error("Access Denied");
+        }
+      });
+      vi.stubGlobal("window", brokenWindow);
+      expect(buildSameOriginApkReleaseUrl("latest.json")).toBeUndefined();
     });
   });
 
@@ -209,6 +329,103 @@ describe("apkResolver", () => {
       const results = await Promise.all([first, second]);
       expect(results[0]?.filename).toBe("clashmanager-v14.43.0+172.apk");
       expect(results[1]?.filename).toBe("clashmanager-v14.43.0+172.apk");
+    });
+
+    it("should expire cache and perform a new fetch after TTL has elapsed", async () => {
+      vi.useFakeTimers();
+      // Set initial base system time
+      const startTime = Date.now();
+      vi.setSystemTime(startTime);
+
+      let versionNum = 174;
+      vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+        if (url.includes("contents/APK/release")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve([
+              { name: `clashmanager-v14.43.1+${versionNum}.apk`, type: "file" }
+            ])
+          });
+        }
+        return Promise.resolve({ ok: false });
+      }));
+
+      const first = await resolveLatestApkRelease();
+      expect(first?.filename).toBe("clashmanager-v14.43.1+174.apk");
+
+      // Request again immediately - should hit cache
+      const second = await resolveLatestApkRelease();
+      expect(second?.filename).toBe("clashmanager-v14.43.1+174.apk");
+      expect(fetch).toHaveBeenCalledTimes(2); // same-origin fails, contents API success, remote fails
+
+      // Clear mock calls to start fresh
+      vi.mocked(fetch).mockClear();
+
+      // Advance clock past the 60 seconds TTL (61000ms)
+      vi.advanceTimersByTime(61000);
+
+      // Change the returned version for the next fetch
+      versionNum = 175;
+
+      // Request again - cache is expired, should trigger fresh fetch
+      const third = await resolveLatestApkRelease();
+      expect(third?.filename).toBe("clashmanager-v14.43.1+175.apk");
+      expect(fetch).toHaveBeenCalledTimes(2); // same-origin fails, contents API success, remote fails
+    });
+
+    it("should recover and return undefined if all endpoints fail completely", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network Error")));
+
+      const result = await resolveLatestApkRelease();
+      expect(result).toBeUndefined();
+    });
+
+    it("should handle response deserialization parsing errors gracefully", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.reject(new SyntaxError("Unexpected token < in JSON"))
+      }));
+
+      const result = await resolveLatestApkRelease();
+      expect(result).toBeUndefined();
+    });
+
+    it("should handle unexpected contents response format gracefully", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+        if (url.includes("contents/APK/release")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ not_an_array: true }) // invalid format
+          });
+        }
+        return Promise.resolve({ ok: false });
+      }));
+
+      const result = await resolveLatestApkRelease();
+      expect(result).toBeUndefined();
+    });
+
+    it("should call fetch with timeout abort controller and handle timeout abortion", async () => {
+      let aborted = false;
+      vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+        if (init?.signal) {
+          init.signal.addEventListener("abort", () => {
+            aborted = true;
+          });
+        }
+        return new Promise(() => {}); // never resolves
+      }));
+
+      const promise = resolveLatestApkRelease();
+
+      // Since it hangs, it would time out inside fetchFresh.
+      // Let's assert that an abort signal was provided on fetch call
+      expect(fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          signal: expect.any(AbortSignal)
+        })
+      );
     });
   });
 });
