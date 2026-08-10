@@ -15,6 +15,14 @@ LAST_AGED:   2026-08-10
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-10] PR #1416 [Stage 1]: [Stage 1] Hardening - Runtime Integrity Auditor - CLEAN
+**Domain:** pipeline | **Commit:** 449b4738 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1416)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 1] Hardening - Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions.
+
 ### [2026-08-10] PR #1415 [Stage 13]: chore(pipeline): Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protoc
 **Domain:** pipeline | **Commit:** e9ce27e3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1415)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
