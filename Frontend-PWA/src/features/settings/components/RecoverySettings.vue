@@ -4,6 +4,7 @@
 import { Icon, vTactile, SettingsCard } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { useNativeBridge } from "@core/services/useNativeBridge";
+import { computed } from "vue";
 
 defineProps<{
   initiallyExpanded?: boolean;
@@ -13,12 +14,13 @@ const {
   forceUpdate,
   downloadApk,
   installPwa,
-  isPwaInstallAvailable,
+  isPwaStandalone,
   clearCache,
   factoryReset,
 } = useSettings();
 
 const { isNativeWrapper } = useNativeBridge();
+const shouldShowPwaInstall = computed(() => !isNativeWrapper.value && !isPwaStandalone.value);
 </script>
 
 <template>
@@ -27,7 +29,7 @@ const { isNativeWrapper } = useNativeBridge();
       <span class="exp-badge">EXPERIMENTAL</span>
     </template>
 
-    <div class="trouble-grid" :class="{ 'has-extra': isNativeWrapper || isPwaInstallAvailable }">
+    <div class="trouble-grid" :class="{ 'has-extra': isNativeWrapper || shouldShowPwaInstall }">
       <button class="trouble-btn" @click="forceUpdate" v-tactile>
         <Icon name="refresh" size="24" />
         <span>Refresh App</span>
@@ -43,7 +45,7 @@ const { isNativeWrapper } = useNativeBridge();
         <span>Update APK</span>
       </button>
 
-      <button v-else-if="isPwaInstallAvailable" class="trouble-btn" @click="installPwa" v-tactile>
+      <button v-else-if="shouldShowPwaInstall" class="trouble-btn" @click="installPwa" v-tactile>
         <Icon name="box" size="24" />
         <span>Install PWA</span>
       </button>

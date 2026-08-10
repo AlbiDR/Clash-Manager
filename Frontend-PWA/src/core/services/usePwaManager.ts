@@ -56,11 +56,25 @@ export type ApkReleaseDownload = {
 
 const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
 const isPwaInstallAvailable = ref(false);
+const isPwaStandalone = ref(false);
 let installPromptListenerBound = false;
+
+function readPwaStandaloneState(): boolean {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia?.("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator && window.navigator.standalone === true);
+}
 
 function bindInstallPromptListener(): void {
   if (installPromptListenerBound || typeof window === "undefined") return;
   installPromptListenerBound = true;
+  isPwaStandalone.value = readPwaStandaloneState();
+
+  const standaloneMediaQuery = window.matchMedia?.("(display-mode: standalone)");
+  standaloneMediaQuery?.addEventListener?.("change", () => {
+    isPwaStandalone.value = readPwaStandaloneState();
+  });
 
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
@@ -71,6 +85,7 @@ function bindInstallPromptListener(): void {
   window.addEventListener("appinstalled", () => {
     deferredInstallPrompt.value = undefined;
     isPwaInstallAvailable.value = false;
+    isPwaStandalone.value = true;
   });
 }
 
@@ -282,6 +297,7 @@ export function resetPwaInstallPromptForTests(): void {
   if (import.meta.env.TEST) {
     deferredInstallPrompt.value = undefined;
     isPwaInstallAvailable.value = false;
+    isPwaStandalone.value = false;
   }
 }
 
@@ -541,7 +557,7 @@ export function usePwaManager() {
   async function installPwa(): Promise<void> {
     const installPrompt = deferredInstallPrompt.value;
     if (!installPrompt) {
-      toast.info("Install prompt is not available");
+      toast.info("Use your browser menu to install Clash Manager");
       return;
     }
 
@@ -672,6 +688,7 @@ export function usePwaManager() {
     downloadApk,
     installPwa,
     isPwaInstallAvailable,
+    isPwaStandalone,
     clearCache,
     factoryReset,
   };

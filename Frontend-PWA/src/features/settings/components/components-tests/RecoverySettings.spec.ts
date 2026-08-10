@@ -26,12 +26,14 @@ describe("RecoverySettings.vue", () => {
   const mockClearCache = vi.fn();
   const mockFactoryReset = vi.fn();
   const mockIsPwaInstallAvailable = ref(false);
+  const mockIsPwaStandalone = ref(false);
   const mockIsNativeWrapper = ref(false);
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsRefreshing.value = false;
     mockIsPwaInstallAvailable.value = false;
+    mockIsPwaStandalone.value = false;
     mockIsNativeWrapper.value = false;
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
@@ -40,6 +42,7 @@ describe("RecoverySettings.vue", () => {
       downloadApk: mockDownloadApk,
       installPwa: mockInstallPwa,
       isPwaInstallAvailable: mockIsPwaInstallAvailable,
+      isPwaStandalone: mockIsPwaStandalone,
       clearCache: mockClearCache,
       factoryReset: mockFactoryReset
     } as any);
@@ -110,8 +113,7 @@ describe("RecoverySettings.vue", () => {
     expect(mockDownloadApk).toHaveBeenCalled();
   });
 
-  it("shows and triggers the PWA install action for installable web sessions", async () => {
-    mockIsPwaInstallAvailable.value = true;
+  it("shows and triggers the PWA install action for web browser sessions", async () => {
     const wrapper = mountComponent();
 
     const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
@@ -121,5 +123,14 @@ describe("RecoverySettings.vue", () => {
     const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Install PWA"));
     await btn?.trigger("click");
     expect(mockInstallPwa).toHaveBeenCalled();
+  });
+
+  it("hides the PWA install action when already running standalone", () => {
+    mockIsPwaStandalone.value = true;
+    const wrapper = mountComponent();
+
+    const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
+    expect(labels).not.toContain("Install PWA");
+    expect(labels).not.toContain("Update APK");
   });
 });

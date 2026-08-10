@@ -465,12 +465,12 @@ describe("usePwaManager", () => {
       expect(mockToast.info).toHaveBeenCalledWith("PWA install dismissed");
     });
 
-    it("shows a neutral toast when no install prompt is available", async () => {
+    it("shows browser install guidance when no install prompt is available", async () => {
       const { installPwa } = usePwaManager();
 
       await installPwa();
 
-      expect(mockToast.info).toHaveBeenCalledWith("Install prompt is not available");
+      expect(mockToast.info).toHaveBeenCalledWith("Use your browser menu to install Clash Manager");
     });
   });
 

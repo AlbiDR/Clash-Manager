@@ -98,6 +98,7 @@ export function useSettings() {
     downloadApk,
     installPwa,
     isPwaInstallAvailable,
+    isPwaStandalone,
     clearCache: clearPwaCache,
     factoryReset: performPwaReset
   } = usePwaManager();
@@ -305,6 +306,7 @@ export function useSettings() {
     notificationPermission,
     isPushSubscribed,
     isPwaInstallAvailable,
+    isPwaStandalone,
     hasWorker,
     lastSyncFormatted,
 
