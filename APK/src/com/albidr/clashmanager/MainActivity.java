@@ -317,7 +317,9 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int getBuildNumber() {
             try {
-                return Integer.parseInt(MainActivity.this.getString(R.string.buildNumber));
+                int buildNumberId = MainActivity.this.getResources()
+                    .getIdentifier("buildNumber", "string", MainActivity.this.getPackageName());
+                return Integer.parseInt(MainActivity.this.getString(buildNumberId));
             } catch (Exception e) {
                 android.util.Log.w("ClashManagerMain", "getBuildNumber failed", e);
                 return 0;

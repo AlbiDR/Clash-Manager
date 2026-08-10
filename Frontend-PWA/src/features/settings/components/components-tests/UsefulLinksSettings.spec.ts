@@ -11,7 +11,7 @@
  *
  * This test suite verifies correct localization resolution of URLs, conditional rendering
  * of the native Android download link inside the hybrid wrapper, and stable latest APK
- * alias routing.
+ * versioned latest APK routing.
  */
 
 import { mount } from "@vue/test-utils";
@@ -96,6 +96,15 @@ describe("UsefulLinksSettings.vue", () => {
   };
 
   it("renders the links card with all specified links", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        buildNumber: 179,
+        filename: "clashmanager-v14.43.4+179.apk",
+        version: "14.43.4"
+      })
+    });
+
     const wrapper = mountComponent();
     await new Promise(resolve => setTimeout(resolve, 1));
 
@@ -152,7 +161,7 @@ describe("UsefulLinksSettings.vue", () => {
     expect(mockOpenExternal).toHaveBeenCalledWith("https://store.supercell.com/fr/clashroyale");
   });
 
-  it("uses the stable latest APK alias while resolving metadata for filename context", async () => {
+  it("uses the versioned latest APK URL resolved from metadata", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
@@ -178,11 +187,11 @@ describe("UsefulLinksSettings.vue", () => {
 
     await downloadBtn!.trigger("click");
     expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk"
+      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.4%2B179.apk"
     );
   });
 
-  it("still renders the Android app download link if metadata fetches would fail", async () => {
+  it("does not render the Android app download link if release resolution fails", async () => {
     globalThis.fetch = vi.fn().mockImplementation(() =>
       Promise.reject(new Error("Network Failure"))
     );
@@ -192,12 +201,7 @@ describe("UsefulLinksSettings.vue", () => {
 
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
-    expect(downloadBtn).toBeDefined();
-    expect(globalThis.fetch).toHaveBeenCalled();
-
-    await downloadBtn!.trigger("click");
-    expect(mockOpenExternal).toHaveBeenCalledWith(
-      "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-latest.apk"
-    );
+    expect(downloadBtn).toBeUndefined();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 });

@@ -10,15 +10,30 @@ import { UI_STABILITY_DELAY } from "@core/config";
 
 export const APK_RELEASE_RAW_BASE_URL = "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release";
 export const APK_LATEST_METADATA_URL = `${APK_RELEASE_RAW_BASE_URL}/latest.json`;
-export const APK_LATEST_ALIAS_FILENAME = "clashmanager-latest.apk";
-export const APK_LATEST_ALIAS_DOWNLOAD_URL = `${APK_RELEASE_RAW_BASE_URL}/${APK_LATEST_ALIAS_FILENAME}`;
+export const APK_RELEASE_CONTENTS_API_URL =
+  "https://api.github.com/repos/AlbiDR/Clash-Manager/contents/APK/release?ref=Beta";
 export const APK_RESOLUTION_CACHE_TTL_MS = 60000;
 export const APK_METADATA_FETCH_TIMEOUT_MS = 3500;
 
 type ApkResolutionCache = {
+  buildNumber?: number;
   filename: string;
   url: string;
+  version?: string;
   expiresAt: number;
+};
+
+type GitHubReleaseContent = {
+  download_url?: string | null;
+  name?: string;
+  type?: string;
+};
+
+type ReleaseApkParts = {
+  major: number;
+  minor: number;
+  patch: number;
+  build: number;
 };
 
 let apkResolutionCache: ApkResolutionCache | undefined;
@@ -30,13 +45,6 @@ export type ApkReleaseDownload = {
   url: string;
   version?: string;
 };
-
-export function buildLatestAliasApkDownload(): ApkReleaseDownload {
-  return {
-    filename: APK_LATEST_ALIAS_FILENAME,
-    url: APK_LATEST_ALIAS_DOWNLOAD_URL,
-  };
-}
 
 function buildFreshUrl(url: string): string {
   return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
@@ -52,6 +60,35 @@ function isReleaseVersion(version: string | undefined): version is string {
 
 function isReleaseBuildNumber(buildNumber: number | undefined): buildNumber is number {
   return typeof buildNumber === "number" && Number.isInteger(buildNumber) && buildNumber > 0;
+}
+
+function buildApkDownloadUrl(filename: string): string {
+  return `${APK_RELEASE_RAW_BASE_URL}/${encodeURIComponent(filename)}`;
+}
+
+function parseReleaseApkFilename(filename: string): ReleaseApkParts | undefined {
+  const match = filename.match(/^clashmanager-v(\d+)\.(\d+)\.(\d+)\+(\d+)\.apk$/);
+  if (!match) return undefined;
+
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+    build: Number(match[4]),
+  };
+}
+
+function compareReleaseApkFilenames(a: string, b: string): number {
+  const parsedA = parseReleaseApkFilename(a);
+  const parsedB = parseReleaseApkFilename(b);
+  if (!parsedA || !parsedB) return 0;
+
+  return (
+    parsedA.major - parsedB.major ||
+    parsedA.minor - parsedB.minor ||
+    parsedA.patch - parsedB.patch ||
+    parsedA.build - parsedB.build
+  );
 }
 
 async function fetchFresh(url: string): Promise<Response> {
@@ -71,7 +108,7 @@ async function fetchFresh(url: string): Promise<Response> {
   }
 }
 
-async function resolveLatestApkMetadata(): Promise<Partial<ApkReleaseDownload> | undefined> {
+async function resolveLatestApkMetadata(): Promise<ApkReleaseDownload | undefined> {
   try {
     const response = await fetchFresh(APK_LATEST_METADATA_URL);
     if (!response.ok) return undefined;
@@ -86,31 +123,57 @@ async function resolveLatestApkMetadata(): Promise<Partial<ApkReleaseDownload> |
     return {
       buildNumber: isReleaseBuildNumber(metadata.buildNumber) ? metadata.buildNumber : undefined,
       filename: metadata.filename,
+      url: buildApkDownloadUrl(metadata.filename),
       version: isReleaseVersion(metadata.version) ? metadata.version : undefined,
     };
   } catch (metadataError: unknown) {
-    console.warn("[PWA] APK latest metadata lookup failed; using direct latest alias", metadataError);
+    console.warn("[PWA] APK latest metadata lookup failed", metadataError);
+    return undefined;
+  }
+}
+
+async function resolveLatestApkFromContentsApi(): Promise<ApkReleaseDownload | undefined> {
+  try {
+    const response = await fetchFresh(APK_RELEASE_CONTENTS_API_URL);
+    if (!response.ok) return undefined;
+
+    const contents = (await response.json()) as GitHubReleaseContent[];
+    if (!Array.isArray(contents)) return undefined;
+
+    const filename = contents
+      .flatMap((item) => item.type === "file" && isReleaseApkFilename(item.name) ? [item.name] : [])
+      .sort(compareReleaseApkFilenames)
+      .at(-1);
+
+    return filename ? { filename, url: buildApkDownloadUrl(filename) } : undefined;
+  } catch (contentsError: unknown) {
+    console.warn("[PWA] APK contents lookup failed", contentsError);
     return undefined;
   }
 }
 
 async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | undefined> {
-  const latestAlias = buildLatestAliasApkDownload();
-  const metadata = await resolveLatestApkMetadata();
+  const [metadataRelease, contentsRelease] = await Promise.all([
+    resolveLatestApkMetadata(),
+    resolveLatestApkFromContentsApi(),
+  ]);
 
-  return {
-    ...latestAlias,
-    ...metadata,
-    url: latestAlias.url,
-  };
+  if (!metadataRelease) return contentsRelease;
+  if (!contentsRelease) return metadataRelease;
+
+  return compareReleaseApkFilenames(contentsRelease.filename, metadataRelease.filename) > 0
+    ? contentsRelease
+    : metadataRelease;
 }
 
 export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | undefined> {
   const now = Date.now();
   if (apkResolutionCache && apkResolutionCache.expiresAt > now) {
     return {
+      buildNumber: apkResolutionCache.buildNumber,
       filename: apkResolutionCache.filename,
       url: apkResolutionCache.url,
+      version: apkResolutionCache.version,
     };
   }
   if (pendingApkResolution) return pendingApkResolution;
@@ -119,8 +182,10 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
     .then((release) => {
       if (release) {
         apkResolutionCache = {
+          buildNumber: release.buildNumber,
           filename: release.filename,
           url: release.url,
+          version: release.version,
           expiresAt: Date.now() + APK_RESOLUTION_CACHE_TTL_MS,
         };
       }
@@ -298,22 +363,22 @@ export function usePwaManager() {
   }
 
   /**
-   * Resolves the stable latest APK alias published by the release workflow.
+   * Resolves the single versioned release APK published by the release workflow.
    *
    * @remarks
-   * **Direct Latest APK Contract:**
-   * - Uses `APK/release/clashmanager-latest.apk`, which CI overwrites with the newest signed APK.
-   * - Uses metadata only for the saved filename and already-current detection.
-   * - Falls back to the alias filename if blocked GitHub JSON requests fail.
+   * **Versioned Latest APK Contract:**
+   * - Uses `APK/release/latest.json` to resolve the exact versioned APK filename.
+   * - Falls back to the GitHub contents API listing if `latest.json` is stale or unavailable.
+   * - Never opens the repository or release directory when resolution fails.
    * - Satisfies ADR Section IV: Resilience & Operational Security (Offline Operations & State Recovery).
    *
-   * @returns A Promise resolving to the permanent latest APK download target and best-known filename.
+   * @returns A Promise resolving to the latest versioned APK download target.
    */
   async function resolveApkRelease(): Promise<ApkReleaseDownload | undefined> {
     try {
       return await resolveLatestApkRelease();
     } catch (resolveApkError: unknown) {
-      console.warn("[PWA] APK alias resolution failed", resolveApkError);
+      console.warn("[PWA] APK release resolution failed", resolveApkError);
       return undefined;
     }
   }
@@ -338,7 +403,7 @@ export function usePwaManager() {
   }
 
   /**
-   * Triggers direct download of the stable latest APK binary hosted in the repository.
+   * Triggers direct download of the latest versioned APK binary hosted in the repository.
    *
    * @remarks
    * **APK Update Contract:**

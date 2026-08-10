@@ -18,7 +18,7 @@ Each concern is a collapsible card:
 - **Display modes** - Showcase (demo), Blueprint (skeletons), and Synthetic (mock data).
 - **Network** - live API status and a switchable Supabase endpoint.
 - **Backend maintenance** - manual, cooldown-guarded triggers for the database, scanner, and Key Farm (utilizing centralized `BACKEND_REFRESH_COOLDOWN_SECONDS` and `BACKEND_REFRESH_COOLDOWN_INTERVAL` constants to ensure consistent cooldown behavior across settings and refresh utilities).
-- **Useful links** - Localized and dynamic shortcuts (such as RoyaleAPI Blog/Giveaway, localized Supercell ID rewards and Clash Royale Store, the GitHub repository link, and a Download Android App action that targets the stable latest APK alias and is hidden inside the native Android wrapper container).
+- **Useful links** - Localized and dynamic shortcuts (such as RoyaleAPI Blog/Giveaway, localized Supercell ID rewards and Clash Royale Store, the GitHub repository link, and a Download Android App action that targets the latest versioned APK and is hidden inside the native Android wrapper container).
 - **Recovery** - force an update, clear caches, or factory-reset the app.
 
 ## Contents

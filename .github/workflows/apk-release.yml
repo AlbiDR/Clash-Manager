@@ -176,23 +176,18 @@ jobs:
           git config user.name "github-actions[bot]"
 
           FILENAME="clashmanager-v${VERSION}+${BUILD_NUMBER}.apk"
-          LATEST_FILENAME="clashmanager-latest.apk"
 
           write_release() {
             # Clean any old versioned APK files from release to maintain a single release binary
-            git rm -f APK/release/clashmanager-v*.apk 2>/dev/null || true
+            git rm -f APK/release/clashmanager-v*.apk APK/release/clashmanager-latest.apk 2>/dev/null || true
 
             mkdir -p APK/release
             cp "$RUNNER_TEMP/${FILENAME}" "APK/release/${FILENAME}"
-            cp "$RUNNER_TEMP/${FILENAME}" "APK/release/${LATEST_FILENAME}"
-            cmp -s "APK/release/${FILENAME}" "APK/release/${LATEST_FILENAME}"
             git add "APK/release/${FILENAME}"
-            git add --force "APK/release/${LATEST_FILENAME}"
 
-            # The fixed latest alias is the update button's direct URL. latest.json remains
-            # available for scripts and older deployed clients that still resolve the
-            # release filename without needing to know the build number in advance -
-            # avoids hardcoding a filename pattern that changes every build.
+            # latest.json is the stable pointer to the one tracked versioned APK.
+            # The PWA reads it to preserve the versioned download filename while
+            # avoiding a second binary artifact in APK/release.
             cat > APK/release/latest.json <<EOF
           {
             "version": "${VERSION}",

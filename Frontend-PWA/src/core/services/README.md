@@ -51,7 +51,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | :--- | :--- |
 | `useAppSettings.ts` | Application settings and feature flags, mirrored to LocalStorage and IndexedDB. |
 | `useConfirm.ts` | Global modal confirmation service (replacing native `confirm()` with styled MD3 ConfirmDialog) to eliminate unstyled system blocks in Android.
-| `usePwaManager.ts` | PWA update/recovery lifecycle and direct latest APK download dispatch via the stable `clashmanager-latest.apk` release alias. |
+| `usePwaManager.ts` | PWA update/recovery lifecycle and latest versioned APK download dispatch via `APK/release/latest.json`. |
 | `useUiCoordinator.ts` | Global layout spacing and floating-action-button state. |
 | `useBackHandler.ts` | Hardware back-button behavior in the wrapper. |
 | `useBenchmarking.ts` | Compares a member's stats against clan averages in a single pass. |
@@ -72,10 +72,10 @@ The modal confirmation composable provides a robust, styled replacement for the 
 The PWA lifecycle orchestrator implements robust mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
 
 1. **Service Worker (SW) Coexistence:** Coordinates update checks and skips waiting states when an updated SW is staged, ensuring a fresh asset envelope is downloaded and applied immediately on reload.
-2. **Direct Latest APK Download:** The Android companion app is built with unique version and build suffixes (e.g., `+148`), while CI also publishes a fixed `APK/release/clashmanager-latest.apk` alias. At the download trigger:
-   - Always downloads from the fixed raw GitHub URL for `clashmanager-latest.apk`.
-   - Reads `latest.json` only to recover the versioned save filename and compare the remote build number against native bridge metadata when available.
-   - Dispatches the stable resource URL to `downloadApkFile`/`openExternalUrl` on the native bridge if running inside the Android wrapper, or falls back to standard browser `window.location.href` assignment.
+2. **Direct Latest APK Download:** The Android companion app is built with unique version and build suffixes (e.g., `+148`), and CI keeps exactly one tracked versioned APK in `APK/release`. At the download trigger:
+   - Reads `latest.json` to resolve the current versioned APK filename and build number.
+   - Falls back to the GitHub contents API listing if `latest.json` is unavailable.
+   - Dispatches the resolved versioned APK URL to `downloadApkFile`/`openExternalUrl` on the native bridge if running inside the Android wrapper, or falls back to standard browser `window.location.href` assignment.
 3. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, it unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
 
 ## See also

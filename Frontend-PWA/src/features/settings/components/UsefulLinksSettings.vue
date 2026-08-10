@@ -12,7 +12,7 @@
  * @remarks
  * Displays a list of external resources with locale-aware URLs matching the user's
  * active language. In non-native environments, it appends an Android app download
- * link that targets the stable latest APK alias.
+ * link that targets the latest versioned APK resolved from release metadata.
  *
  * **Architectural Context:**
  * - **Layer:** Layer 3 (@features)
@@ -46,13 +46,13 @@ const { openExternal } = useExternalLink();
 const { isNativeWrapper } = useNativeBridge();
 
 /**
- * Stable Android App installer target resolved from the core APK release service.
+ * Android App installer target resolved from the core APK release service.
  * Undefined until the component mount lifecycle has completed.
  */
 const apkRelease = ref<ApkReleaseDownload>();
 
 /**
- * Resolves the latest APK alias during component mounting.
+ * Resolves the latest versioned APK during component mounting.
  *
  * @sideeffects
  * - Updates local reactive state for the optional web-only Android download link.
