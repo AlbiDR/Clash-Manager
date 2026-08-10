@@ -292,7 +292,7 @@ describe("apkResolver", () => {
       }));
 
       const release = await resolveLatestApkRelease();
-      expect(release?.url).toContain("/Clash-Manager/APK/release/clashmanager-v14.43.2%2B176.apk");
+      expect(release?.url).toContain("/Clash-Manager/apk/release/clashmanager-v14.43.2%2B176.apk");
       expect(release?.filename).toBe("clashmanager-v14.43.2+176.apk");
     });
 

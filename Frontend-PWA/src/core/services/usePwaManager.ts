@@ -7,7 +7,56 @@ import { useConfirm } from "./useConfirm";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
 import { UI_STABILITY_DELAY } from "@core/config";
-import { resolveLatestApkRelease, type ApkReleaseDownload } from "./apkResolver";
+import {
+  isReleaseBuildNumber,
+  isReleaseVersion,
+  resolveLatestApkRelease,
+  type ApkReleaseDownload,
+} from "./apkResolver";
+
+type BeforeInstallPromptOutcome = "accepted" | "dismissed";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: BeforeInstallPromptOutcome; platform: string }>;
+};
+
+const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
+const isPwaInstallAvailable = ref(false);
+const isPwaStandalone = ref(false);
+let installPromptListenerBound = false;
+
+function readPwaStandaloneState(): boolean {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia?.("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator && window.navigator.standalone === true);
+}
+
+function bindInstallPromptListener(): void {
+  if (installPromptListenerBound || typeof window === "undefined") return;
+  installPromptListenerBound = true;
+  isPwaStandalone.value = readPwaStandaloneState();
+
+  const standaloneMediaQuery = window.matchMedia?.("(display-mode: standalone)");
+  standaloneMediaQuery?.addEventListener?.("change", () => {
+    isPwaStandalone.value = readPwaStandaloneState();
+  });
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt.value = event as BeforeInstallPromptEvent;
+    isPwaInstallAvailable.value = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt.value = undefined;
+    isPwaInstallAvailable.value = false;
+    isPwaStandalone.value = true;
+  });
+}
+
+bindInstallPromptListener();
 
 export {
   APK_RELEASE_RAW_BASE_URL,
@@ -23,6 +72,8 @@ export {
   buildFreshApkMetadataUrl,
   buildFreshUrl,
   isReleaseApkFilename,
+  isReleaseBuildNumber,
+  isReleaseVersion,
   buildApkDownloadUrl,
   buildSameOriginApkReleaseUrl,
   buildSameOriginApkDownloadUrl,

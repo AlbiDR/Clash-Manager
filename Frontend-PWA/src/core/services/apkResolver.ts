@@ -44,7 +44,7 @@ export const APK_RESOLUTION_CACHE_TTL_MS = 60000;
 /**
  * Filesystem/URL path suffix mapped for locally hosted companion releases.
  */
-export const APK_RELEASE_PATH = "APK/release";
+export const APK_RELEASE_PATH = "apk/release";
 
 /**
  * Interface representing metadata of files returned from GitHub contents API.
@@ -91,6 +91,10 @@ export type ReleaseApkParts = {
  */
 export type ApkResolutionCache = {
   /**
+   * Optional Android build number from latest.json.
+   */
+  buildNumber?: number;
+  /**
    * The resolved newest companion filename.
    */
   filename: string;
@@ -98,6 +102,10 @@ export type ApkResolutionCache = {
    * The direct binary or fallback URL to fetch the APK.
    */
   url: string;
+  /**
+   * Optional semantic app version from latest.json.
+   */
+  version?: string;
   /**
    * Unix epoch timestamp representing cache invalidation deadline.
    */
@@ -121,6 +129,10 @@ let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
  */
 export type ApkReleaseDownload = {
   /**
+   * Optional Android build number from latest.json.
+   */
+  buildNumber?: number;
+  /**
    * The verified APK filename.
    */
   filename: string;
@@ -128,6 +140,10 @@ export type ApkReleaseDownload = {
    * The validated secure URL pointing to the file.
    */
   url: string;
+  /**
+   * Optional semantic app version from latest.json.
+   */
+  version?: string;
 };
 
 /**
@@ -165,6 +181,14 @@ export function buildFreshUrl(url: string): string {
  */
 export function isReleaseApkFilename(filename: string | undefined): filename is string {
   return typeof filename === "string" && /^clashmanager-v\d+\.\d+\.\d+\+\d+\.apk$/.test(filename);
+}
+
+export function isReleaseVersion(version: string | undefined): version is string {
+  return typeof version === "string" && /^\d+\.\d+\.\d+$/.test(version);
+}
+
+export function isReleaseBuildNumber(buildNumber: number | undefined): buildNumber is number {
+  return typeof buildNumber === "number" && Number.isInteger(buildNumber) && buildNumber > 0;
 }
 
 /**
@@ -398,15 +422,23 @@ async function resolveApkReleaseFromMetadataUrl(
   try {
     const response = await fetchFresh(metadataUrl);
     if (response.ok) {
-      const latestReleaseMetadata = (await response.json()) as { filename?: string };
+      const latestReleaseMetadata = (await response.json()) as {
+        buildNumber?: number;
+        filename?: string;
+        version?: string;
+      };
       const downloadUrl = isReleaseApkFilename(latestReleaseMetadata.filename)
         ? buildDownloadUrl(latestReleaseMetadata.filename)
         : undefined;
       if (isReleaseApkFilename(latestReleaseMetadata.filename)) {
         if (!downloadUrl) return undefined;
         return {
+          buildNumber: isReleaseBuildNumber(latestReleaseMetadata.buildNumber)
+            ? latestReleaseMetadata.buildNumber
+            : undefined,
           filename: latestReleaseMetadata.filename,
           url: downloadUrl,
+          version: isReleaseVersion(latestReleaseMetadata.version) ? latestReleaseMetadata.version : undefined,
         };
       }
     }
@@ -478,8 +510,10 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
   const now = Date.now();
   if (apkResolutionCache && apkResolutionCache.expiresAt > now) {
     return {
+      buildNumber: apkResolutionCache.buildNumber,
       filename: apkResolutionCache.filename,
       url: apkResolutionCache.url,
+      version: apkResolutionCache.version,
     };
   }
   if (pendingApkResolution) return pendingApkResolution;
@@ -488,8 +522,10 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
     .then((release) => {
       if (release) {
         apkResolutionCache = {
+          buildNumber: release.buildNumber,
           filename: release.filename,
           url: release.url,
+          version: release.version,
           expiresAt: Date.now() + APK_RESOLUTION_CACHE_TTL_MS,
         };
       }

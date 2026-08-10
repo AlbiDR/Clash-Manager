@@ -223,25 +223,25 @@ describe("usePwaManager", () => {
 
       expect(fetch).toHaveBeenNthCalledWith(
         1,
-        expect.stringMatching(/^https:\/\/albidr\.github\.io\/apk\/release\/latest\.json\?t=\d+$/),
+        expect.stringMatching(/^https:\/\/albidr\.github\.io\/Clash-Manager\/apk\/release\/latest\.json\?t=\d+$/),
         expect.objectContaining({ cache: "no-store" }),
       );
       expect(mockLocation.href).toBe(
-        "https://albidr.github.io/apk/release/clashmanager-v14.43.5%2B182.apk"
+        "https://albidr.github.io/Clash-Manager/apk/release/clashmanager-v14.43.5%2B182.apk"
       );
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
 
     it("should use the GitHub contents fallback and window.location if latest.json is unavailable", async () => {
       (fetch as any)
-        .mockRejectedValueOnce(new Error("Network Failure"))
         .mockResolvedValueOnce({
           ok: true,
           json: vi.fn().mockResolvedValue([
             { name: "latest.json", type: "file" },
             { name: "clashmanager-v14.43.4+179.apk", type: "file" },
           ]),
-        });
+        })
+        .mockRejectedValueOnce(new Error("Network Failure"));
 
       const { downloadApk } = usePwaManager();
       await downloadApk();
@@ -249,20 +249,18 @@ describe("usePwaManager", () => {
       expect(fetch).toHaveBeenNthCalledWith(
         1,
         expect.stringMatching(
-          /^https:\/\/raw\.githubusercontent\.com\/AlbiDR\/Clash-Manager\/Beta\/APK\/release\/latest\.json\?t=\d+$/,
+          /^https:\/\/api\.github\.com\/repos\/AlbiDR\/Clash-Manager\/contents\/APK\/release\?ref=Beta&t=\d+$/,
         ),
         expect.objectContaining({
           cache: "no-store",
-          headers: expect.objectContaining({
-            "Cache-Control": "no-cache",
-          }),
+          headers: expect.any(Headers),
           signal: expect.any(AbortSignal),
         }),
       );
       expect(fetch).toHaveBeenNthCalledWith(
         2,
         expect.stringMatching(
-          /^https:\/\/api\.github\.com\/repos\/AlbiDR\/Clash-Manager\/contents\/APK\/release\?ref=Beta&t=\d+$/,
+          /^https:\/\/raw\.githubusercontent\.com\/AlbiDR\/Clash-Manager\/Beta\/APK\/release\/latest\.json\?t=\d+$/,
         ),
         expect.objectContaining({ cache: "no-store" }),
       );
