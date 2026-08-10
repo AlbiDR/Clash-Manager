@@ -189,6 +189,16 @@ describe("SupabaseClient", () => {
       await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Roster Fetch Error: Roster Fail');
     });
 
+    it("fetchRemote throws error if blacklist fetch fails", async () => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: null, error: { message: 'Blacklist Fail' } } as any);
+
+      await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Blacklist Fetch Error: Blacklist Fail');
+    });
+
     it("fetchRemote defaults to Date.now() if heartbeat query fails", async () => {
       const now = 123456789;
       vi.useFakeTimers();

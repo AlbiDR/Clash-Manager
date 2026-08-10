@@ -100,6 +100,31 @@ describe("useProgressiveList", () => {
     scope.stop();
   });
 
+  it("cancels an older pending chunk before preserving a small refresh", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 50 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+
+      const canceller = window.cancelIdleCallback || window.cancelAnimationFrame;
+      vi.mocked(canceller).mockClear();
+
+      source.value = Array.from({ length: 52 }, (_, i) => i + 101);
+      await nextTick();
+
+      expect(canceller).toHaveBeenCalled();
+      expect(visibleItems.value).toHaveLength(20);
+      expect(visibleItems.value[0]).toBe(101);
+
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value[19]).toBe(120);
+    });
+    scope.stop();
+  });
+
   it("resets on major source list changes", async () => {
     const scope = effectScope();
     await scope.run(async () => {

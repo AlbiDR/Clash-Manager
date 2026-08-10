@@ -65,6 +65,18 @@ function makeRequest(body?: unknown, authToken = BEARER_TOKEN, extraHeaders?: Re
   });
 }
 
+function makeRawRequest(body: string, authToken = BEARER_TOKEN, extraHeaders?: Record<string, string>): Request {
+  return new Request("https://example.test/fn", {
+    method: "POST",
+    headers: {
+      ...(authToken !== undefined ? { Authorization: `Bearer ${authToken}` } : {}),
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
+    body,
+  });
+}
+
 function makeSupabaseMock(rpcImpl: (fn: string, args: unknown) => Promise<{ data: unknown; error: unknown }>) {
   const calls: Array<{ fn: string; args: unknown }> = [];
   const supabase = {
@@ -321,6 +333,30 @@ describe("clinicalServe", () => {
       const retryAfter = thirdResponse.headers.get("Retry-After");
       expect(retryAfter).not.toBeNull();
       expect(Number(retryAfter)).toBeGreaterThan(0);
+    });
+
+    it("charges malformed JSON requests against the per-IP ceiling before body parsing", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-rl-malformed" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const callMalformed = () => clinicalServe({
+        req: makeRawRequest("{", BEARER_TOKEN, { "x-forwarded-for": "10.0.0.22" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "rl-malformed-limit",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 1, windowMs: 60_000 },
+        handler: async () => ({ ok: true }),
+      });
+
+      expect((await callMalformed()).status).toBe(400);
+
+      const secondResponse = await callMalformed();
+      expect(secondResponse.status).toBe(429);
+      expect((await secondResponse.json()).code).toBe("RATE_LIMITED");
     });
 
     it("scopes the per-IP-target bucket independently: hammering one target 429s without a fresh per-IP budget rescuing it, while a DIFFERENT target from the same IP is unaffected", async () => {

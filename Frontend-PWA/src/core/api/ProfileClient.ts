@@ -6,6 +6,8 @@ import { ProfileInputSchema } from "./ProfileSchemas";
 import { RawCardSchema, RawInventorySchema } from "./BaseSchemas";
 import * as v from "valibot";
 
+const PROFILE_FETCH_TIMEOUT_MS = 10000;
+
 /**
  * PROFILE CLIENT (Layer 1)
  * ----------------------------------------------------------------------------
@@ -39,15 +41,23 @@ export async function getPlayerProfile(
   //  3. Upserts the snapshot into features.player_card_snapshots.
   //  4. Returns the profile in ProfileInputSchema format.
   const functionUrl = `${getSupabaseUrl()}/functions/v1/sync-player-cards`;
-  const profileResponse = await fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // Use the publishable key so the Edge Function's JWT verification passes.
-      "Authorization": `Bearer ${getSupabaseKey()}`,
-    },
-    body: JSON.stringify({ tag }),
-  });
+  const abortController = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => abortController.abort(), PROFILE_FETCH_TIMEOUT_MS);
+  let profileResponse: Response;
+  try {
+    profileResponse = await fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Use the publishable key so the Edge Function's JWT verification passes.
+        "Authorization": `Bearer ${getSupabaseKey()}`,
+      },
+      body: JSON.stringify({ tag }),
+      signal: abortController.signal,
+    });
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
 
   if (!profileResponse.ok) {
     const errorBody = await profileResponse.json().catch(() => ({ error: `HTTP ${profileResponse.status}` }));

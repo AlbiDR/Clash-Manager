@@ -456,6 +456,20 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             return protocolErrorResponse(req, 'METHOD_NOT_ALLOWED', undefined, undefined, corsRestricted);
         }
 
+        // 3.5a Rate Limiting Guard: IP-only bucket before body parsing.
+        // [THREAT:] Malformed authorized anon requests can be expensive before schema
+        // validation ever succeeds. Charge the caller IP bucket before parsing so corrupt
+        // bodies cannot bypass the global volume boundary. Target-specific buckets still
+        // run after validation, because they need a trusted parsed target key.
+        if (rateLimit) {
+            const callerIp = extractCallerIp(req);
+            const ipCheck = checkRateLimit(`ip:${componentId}:${callerIp}`, rateLimit.maxRequests, rateLimit.windowMs);
+            if (ipCheck.limited) {
+                console.warn(`[Protocol] Rate limit exceeded (per-IP) for ${componentId} from ${callerIp}.`);
+                return protocolErrorResponse(req, 'RATE_LIMITED', undefined, ipCheck.retryAfterSeconds, corsRestricted);
+            }
+        }
+
         // [THREAT:] `await req.json().catch(() => ({}))` silently COERCED a truncated,
         // binary, or plain-text body into an empty object. For any function whose fields
         // are all optional (ingest-royale-data's `{ CLAN_TAG: v.optional(v.string()) }`)
@@ -529,25 +543,16 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             return protocolErrorResponse(req, 'MALFORMED_PAYLOAD', { details: parsed.issues }, undefined, corsRestricted);
         }
 
-        // 3.5 Rate Limiting Guard (OPT-IN; see ProtocolOptions.rateLimit)
+        // 3.5b Rate Limiting Guard (OPT-IN; see ProtocolOptions.rateLimit)
         // [THREAT:] `sync-player-cards`, `query-royale-api`, and `fetch-player-battlelog`
         // accept the publicly known anon key as a valid bearer credential, so the
         // authorization guard above never blocks a scripted flood from an anon caller.
-        // [DECISION LOG] Runs AFTER schema validation (so a request has to at least be
-        // well-formed to consume a rate-limit slot) but BEFORE telemetry boot (so a flood
-        // does not also spend a `report_telemetry` RPC round-trip per rejected request).
-        // Two independent buckets are checked when configured: a per-caller-IP bucket
-        // (bounds total volume regardless of target) and a per-IP-plus-target bucket
-        // (bounds hammering one specific tag/clan from one IP, without penalizing every
-        // OTHER caller of that same popular target).
+        // [DECISION LOG] The per-IP bucket runs before body parsing. This post-validation
+        // section only applies the independent per-IP-plus-target bucket (bounds hammering
+        // one specific tag/clan from one IP, without penalizing every OTHER caller of that
+        // same popular target).
         if (rateLimit) {
             const callerIp = extractCallerIp(req);
-
-            const ipCheck = checkRateLimit(`ip:${componentId}:${callerIp}`, rateLimit.maxRequests, rateLimit.windowMs);
-            if (ipCheck.limited) {
-                console.warn(`[Protocol] Rate limit exceeded (per-IP) for ${componentId} from ${callerIp}.`);
-                return protocolErrorResponse(req, 'RATE_LIMITED', undefined, ipCheck.retryAfterSeconds, corsRestricted);
-            }
 
             const targetKeyValue = rateLimit.targetKey?.(parsed.output);
             if (targetKeyValue && rateLimit.targetMaxRequests !== undefined && rateLimit.targetWindowMs !== undefined) {

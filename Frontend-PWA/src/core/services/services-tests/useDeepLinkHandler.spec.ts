@@ -71,6 +71,21 @@ describe("useDeepLinkHandler", () => {
     expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
   });
 
+  it("uses the first pin value when the route query contains duplicate pin parameters", async () => {
+    mockRoute.query = { pin: ["123", "456"] };
+    const { expandedIds, processDeepLink } = useDeepLinkHandler(domIdPrefix);
+
+    const mockScrollIntoView = vi.fn();
+    (document.getElementById as any).mockReturnValue({ scrollIntoView: mockScrollIntoView });
+
+    processDeepLink(items);
+    await nextTick();
+
+    expect(expandedIds.value.has("123")).toBe(true);
+    expect(expandedIds.value.has("456")).toBe(false);
+    expect(document.getElementById).toHaveBeenCalledWith("test-123");
+  });
+
   it("should not expand or scroll if pin is missing from query", async () => {
     const { expandedIds, processDeepLink } = useDeepLinkHandler(domIdPrefix);
 

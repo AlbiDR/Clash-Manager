@@ -28,6 +28,8 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends Activity {
+    private static final int MAX_APK_FILENAME_LENGTH = 96;
+
     // Origin the bridge is allowed to talk to. Matches strings.xml/hostName - the
     // PWA's real host. Any other origin loaded into this WebView (an external
     // link the user tapped) gets the JS interface detached so that page cannot
@@ -369,8 +371,12 @@ public class MainActivity extends Activity {
                 public void run() {
                     Uri parsed = Uri.parse(url);
                     String scheme = parsed.getScheme();
-                    if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
-                        android.util.Log.w("ClashManagerMain", "downloadApkFile rejected non-http(s) scheme: " + scheme);
+                    if (!"https".equalsIgnoreCase(scheme)) {
+                        android.util.Log.w("ClashManagerMain", "downloadApkFile rejected non-https scheme: " + scheme);
+                        return;
+                    }
+                    if (filename == null || filename.length() > MAX_APK_FILENAME_LENGTH || !filename.matches("clashmanager-v\\d+\\.\\d+\\.\\d+\\+\\d+\\.apk")) {
+                        android.util.Log.w("ClashManagerMain", "downloadApkFile rejected invalid filename");
                         return;
                     }
                     try {
@@ -405,7 +411,12 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     try {
-                        Intent uri = Intent.parseUri("intent://playerInfo?id=" + tag + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", Intent.URI_INTENT_SCHEME);
+                        String safeTag = tag == null ? "" : tag.replaceAll("[^0289CGJLPQRUVY]", "");
+                        if (safeTag.length() == 0) {
+                            android.util.Log.w("ClashManagerMain", "openPlayerProfile rejected invalid tag");
+                            return;
+                        }
+                        Intent uri = Intent.parseUri("intent://playerInfo?id=" + Uri.encode(safeTag) + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", Intent.URI_INTENT_SCHEME);
                         uri.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         MainActivity.this.startActivity(uri);
                     } catch (Exception e) {

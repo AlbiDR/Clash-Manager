@@ -39,7 +39,7 @@ import { ref, computed, watch, type Ref, type ComputedRef } from "vue";
 // [THREAT:] Memory exhaustion in long-lived sessions if using a standard Map.
 // [DECISION LOG] WeakMap is used to allow the garbage collector to reclaim
 // item-specific cache entries once the source item is no longer referenced.
-const searchCache = new WeakMap<object, string[]>();
+const searchCache = new WeakMap<object, { fields: string[]; normalized: string[] }>();
 
 /**
  * Orchestrates filtering and sorting logic for list-based datasets.
@@ -78,10 +78,14 @@ export function useListFilter<T extends { id: string; n?: string }>(
       const searchCriteria = searchQuery.value.toLowerCase();
       filteredPool = (items.value || []).filter((candidateItem) => {
         if (typeof candidateItem === "object" && candidateItem !== null) {
-          let normalizedFields = searchCache.get(candidateItem);
-          if (!normalizedFields) {
-            normalizedFields = searchFields(candidateItem).map((field) => field.toLowerCase());
-            searchCache.set(candidateItem, normalizedFields);
+          const currentFields = searchFields(candidateItem);
+          const cachedSearch = searchCache.get(candidateItem);
+          const normalizedFields =
+            cachedSearch && areSearchFieldsEqual(cachedSearch.fields, currentFields)
+              ? cachedSearch.normalized
+              : currentFields.map((field) => field.toLowerCase());
+          if (!cachedSearch || cachedSearch.normalized !== normalizedFields) {
+            searchCache.set(candidateItem, { fields: [...currentFields], normalized: normalizedFields });
           }
           return normalizedFields?.some((field) => field.includes(searchCriteria));
         }
@@ -156,4 +160,9 @@ function resolveInitialSort(
   }
 
   return defaultSort;
+}
+
+function areSearchFieldsEqual(leftFields: string[], rightFields: string[]): boolean {
+  return leftFields.length === rightFields.length &&
+    leftFields.every((field, fieldIndex) => field === rightFields[fieldIndex]);
 }

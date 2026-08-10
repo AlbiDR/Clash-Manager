@@ -140,6 +140,7 @@ export async function fetchRemote(options?: {
 
   if (rosterResponse.error) throw new Error(`Roster Fetch Error: ${rosterResponse.error.message}`);
   if (headhunterResponse.error) throw new Error(`Headhunter Fetch Error: ${headhunterResponse.error.message}`);
+  if (blacklistResponse.error) throw new Error(`Blacklist Fetch Error: ${blacklistResponse.error.message}`);
   
   // [GUARD] VALIDATION BOUNDARY: Harden external view data before domain mapping.
   // [THREAT:] Processing unvalidated raw data or using 'any' can cause runtime crashes if the DB schema shifts.

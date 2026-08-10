@@ -79,6 +79,7 @@ export function useProgressiveList<T>(
         Math.abs(incomingList.length - previousList.length) < 5;
 
       if (isRefresh && visibleItems.value.length >= initialSize) {
+        clearTimer();
         visibleItems.value = incomingList.slice(0, visibleItems.value.length) as T[];
         if (visibleItems.value.length < incomingList.length) {
           scheduleChunk(incomingList as T[], visibleItems.value.length);

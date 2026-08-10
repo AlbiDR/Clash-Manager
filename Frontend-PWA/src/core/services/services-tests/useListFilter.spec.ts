@@ -75,6 +75,26 @@ describe("useListFilter", () => {
     expect(filteredItems.value[0].id).toBe("p4");
   });
 
+  it("refreshes cached search text when an item object is mutated in place", () => {
+    const mutableItem = { id: "p1", n: "Alice", score: 100 };
+    const items = ref([mutableItem]);
+    const { searchQuery, filteredItems } = useListFilter(
+      items,
+      searchFields,
+      sortStrategies,
+      "score"
+    );
+
+    searchQuery.value = "alice";
+    expect(filteredItems.value).toHaveLength(1);
+
+    mutableItem.n = "Bob";
+    items.value = [mutableItem];
+    searchQuery.value = "bob";
+    expect(filteredItems.value).toHaveLength(1);
+    expect(filteredItems.value[0].id).toBe("p1");
+  });
+
   it("handles case-insensitive search", () => {
     const items = ref(mockItems);
     const { searchQuery, filteredItems } = useListFilter(

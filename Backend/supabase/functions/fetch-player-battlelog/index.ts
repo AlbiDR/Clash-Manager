@@ -30,6 +30,7 @@ import { supabase, CONFIG, syncVault } from "./client.ts";
 
 const ROYALE_PROXY_BASE = "https://proxy.royaleapi.dev/v1";
 const INITIAL_INDEX = 0;
+const BATTLELOG_FETCH_TIMEOUT_MS = 10000;
 
 /**
  * Validation schema for the inbound payload.
@@ -97,6 +98,8 @@ async function fetchBattlelogWithKey(
   encodedTag: string,
   keyToken: string,
 ): Promise<v.InferOutput<typeof RoyaleBattleLogSchema> | null> {
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), BATTLELOG_FETCH_TIMEOUT_MS);
   try {
     // [THREAT:] External API calls are potential failure points.
     // [DECISION LOG] Standard fetch is used here; rotation and fan-out are handled
@@ -108,6 +111,7 @@ async function fetchBattlelogWithKey(
           Authorization: `Bearer ${keyToken.trim().replace(/^"|"$/g, "")}`,
           Accept: "application/json",
         },
+        signal: abortController.signal,
       },
     );
 
@@ -123,6 +127,8 @@ async function fetchBattlelogWithKey(
     const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
     console.warn(`[fetch-player-battlelog] Single-key fetch failed: ${errorMessage}`);
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

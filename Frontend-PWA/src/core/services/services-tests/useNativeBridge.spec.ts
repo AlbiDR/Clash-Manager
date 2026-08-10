@@ -40,6 +40,15 @@ describe("useNativeBridge", () => {
     expect(isNativeWrapper.value).toBe(false);
   });
 
+  it("returns no bridge when evaluated without a window global", () => {
+    vi.unstubAllGlobals();
+    resetNativeBridgeState();
+
+    const { bridge, isNativeWrapper } = useNativeBridge();
+    expect(isNativeWrapper.value).toBe(false);
+    expect(bridge.value).toBeUndefined();
+  });
+
   it("polls permissions from the bridge", () => {
     const { checkPermissions, isAccessibilityAllowed, isOverlayAllowed } = useNativeBridge();
     checkPermissions();

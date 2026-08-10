@@ -24,6 +24,16 @@ const RE_DESC_BULLET = /^• (.+)$/gm;
 const RE_DESC_LIST = /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li class="bullet-item">))?)+/g;
 /** Global newline regex. */
 const RE_NEWLINE = /\n/g;
+/** Characters that must be escaped before inserting formatted text with v-html. */
+const RE_HTML_ESCAPE = /[&<>"']/g;
+/** Entity lookup for HTML escaping. */
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
 
 /**
  * CLEAN TAG
@@ -81,7 +91,7 @@ export function formatHeaderDescription(text: string): string {
   if (!text) return "";
 
   return (
-    text
+    escapeHtml(text)
       // Section headers (Key: Value or Title:)
       .replace(RE_DESC_SECTION, '<div class="desc-section-title">$1</div>')
       // Bold text (**text**)
@@ -98,4 +108,8 @@ export function formatHeaderDescription(text: string): string {
       // Actual Line breaks
       .replace(RE_NEWLINE, "<br>")
   );
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(RE_HTML_ESCAPE, (character) => HTML_ESCAPE_MAP[character]);
 }

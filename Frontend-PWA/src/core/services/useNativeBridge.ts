@@ -165,6 +165,7 @@ export function useNativeBridge() {
    * Safe access to the native bridge instance.
    */
   const bridge = computed<AndroidBridge | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
     return (window as WindowWithBridge).AndroidBridge;
   });
 

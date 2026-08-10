@@ -72,7 +72,8 @@ export function useDeepLinkHandler(domIdPrefix: string) {
     // Only run once per session/reload to avoid jarring resets.
     if (deepLinkHandled.value) return;
 
-    const pinnedId = route.query.pin as string | undefined;
+    const rawPinnedId = route.query.pin;
+    const pinnedId = Array.isArray(rawPinnedId) ? rawPinnedId[0] : rawPinnedId;
 
     // Check if the pinned ID exists in the current dataset.
     if (pinnedId && items.some((candidateItem) => candidateItem.id === pinnedId)) {

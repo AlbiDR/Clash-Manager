@@ -150,5 +150,19 @@ describe("ProfileClient", () => {
 
       await expect(ProfileClient.getPlayerProfile('MYTAG')).rejects.toThrow('Failed to fetch');
     });
+
+    it("passes an abort signal to the profile sync request", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+      } as any);
+
+      await ProfileClient.getPlayerProfile('MYTAG');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/functions/v1/sync-player-cards"),
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
+    });
   });
 });

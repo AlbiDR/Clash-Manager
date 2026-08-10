@@ -94,6 +94,12 @@ describe("text utilities", () => {
       expect(formatHeaderDescription("Line 1\nLine 2")).toBe("Line 1<br>Line 2");
     });
 
+    it("escapes raw HTML before applying supported formatting", () => {
+      expect(formatHeaderDescription('<img src=x onerror=alert(1)> **ok**')).toBe(
+        '&lt;img src=x onerror=alert(1)&gt; <strong>ok</strong>',
+      );
+    });
+
     it("handles multiple sections and mixed content correctly", () => {
       const input = "**Section 1**\n• Item A\n• Item B\n\n**Section 2:**\nSome text here.";
       const output = formatHeaderDescription(input);
