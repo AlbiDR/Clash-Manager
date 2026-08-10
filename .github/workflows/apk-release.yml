@@ -179,7 +179,7 @@ jobs:
 
           write_release() {
             # Clean any old versioned APK files from release to maintain a single release binary
-            git rm -f APK/release/clashmanager-v*.apk APK/release/clashmanager-latest.apk 2>/dev/null || true
+            git rm -f --ignore-unmatch APK/release/clashmanager-v*.apk APK/release/clashmanager-latest.apk
 
             mkdir -p APK/release
             cp "$RUNNER_TEMP/${FILENAME}" "APK/release/${FILENAME}"
