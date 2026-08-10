@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1412 [Stage 10]: chore(apk): Completed APK & PWA wrapper integrity audit. No discrepancies found. Manifest, shortcuts, AssetLinks, and custom native layer are fully verified.
+**Domain:** pipeline | **Commit:** 36a5a8a1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1412)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Completed APK & PWA wrapper integrity audit. No discrepancies found. Manifest, shortcuts, AssetLinks, and custom native layer are fully verified.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1411 [Stage 9]: chore(refactor): Conducted comprehensive structural audit. Confirmed 100% compliance across all core modules and features with zero violations or debt.
 **Domain:** pipeline | **Commit:** f345ae5a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1411)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
