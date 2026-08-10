@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1414 [Stage 12]: chore(apk-ux): Modernized AndroidCalibrationSettings.vue coordinate inputs
+**Domain:** pipeline | **Commit:** 0fac3693 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1414)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/settings/components/AndroidCalibrationSettings.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Modernized AndroidCalibrationSettings.vue coordinate inputs
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1413 [Stage 11]: [Stage 11] APK and Native Wrapper Optimizations - CLEAN
 **Domain:** pipeline | **Commit:** 79d64c19 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1413)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
