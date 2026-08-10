@@ -13,7 +13,7 @@ export function generateHtmlEntry(version: string): string {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://*.google.com https://*.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googletagmanager.com https://*.google-analytics.com; connect-src 'self' https://*.google.com https://*.googleusercontent.com https://*.supabase.co https://*.googleapis.com https://raw.githubusercontent.com;" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: https://*.google.com https://*.googleusercontent.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://*.googletagmanager.com https://*.google-analytics.com; connect-src 'self' https://*.google.com https://*.googleusercontent.com https://*.supabase.co https://*.googleapis.com https://raw.githubusercontent.com https://api.github.com;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="description" content="Clash Manager - Professional recruitment and performance analytics dashboard for Clash Royale clan leaders." />
     
