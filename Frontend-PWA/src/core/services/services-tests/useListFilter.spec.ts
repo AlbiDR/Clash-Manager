@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { useListFilter } from "../useListFilter";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { ref } from "vue";
 
 describe("useListFilter", () => {
@@ -16,6 +16,10 @@ describe("useListFilter", () => {
     score: (a: any, b: any) => b.score - a.score,
     name: (a: any, b: any) => (a.n || "").localeCompare(b.n || ""),
   };
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
 
   it("filters items by search query", () => {
     const items = ref(mockItems);
@@ -163,6 +167,52 @@ describe("useListFilter", () => {
     expect(filteredItems.value[0].id).toBe("p1");
     expect(filteredItems.value[1].id).toBe("p2");
     expect(filteredItems.value[2].id).toBe("p3");
+  });
+
+  it("hydrates sortBy from localStorage when the stored strategy is valid", () => {
+    localStorage.setItem("cm_test_sort", "name");
+    const items = ref(mockItems);
+    const { sortBy, filteredItems } = useListFilter(
+      items,
+      searchFields,
+      sortStrategies,
+      "score",
+      "cm_test_sort"
+    );
+
+    expect(sortBy.value).toBe("name");
+    expect(filteredItems.value.map((item) => item.id)).toEqual(["p1", "p3", "p2"]);
+  });
+
+  it("falls back to the default sort when localStorage contains an invalid strategy", () => {
+    localStorage.setItem("cm_test_sort", "missing");
+    const items = ref(mockItems);
+    const { sortBy, filteredItems } = useListFilter(
+      items,
+      searchFields,
+      sortStrategies,
+      "score",
+      "cm_test_sort"
+    );
+
+    expect(sortBy.value).toBe("score");
+    expect(filteredItems.value.map((item) => item.id)).toEqual(["p1", "p3", "p2"]);
+  });
+
+  it("persists valid sort changes to localStorage", async () => {
+    const items = ref(mockItems);
+    const { updateSort } = useListFilter(
+      items,
+      searchFields,
+      sortStrategies,
+      "score",
+      "cm_test_sort"
+    );
+
+    updateSort("name");
+
+    await Promise.resolve();
+    expect(localStorage.getItem("cm_test_sort")).toBe("name");
   });
 
   describe("updateSort", () => {

@@ -90,6 +90,7 @@ export function useRecruiter() {
     sortStrategies: RecruiterSort,
     sortOptions: RECRUITER_SORT_OPTIONS,
     defaultSort: "score",
+    sortPersistenceKey: "cm_console_sort_headhunter",
     deepLinkPrefix: "recruit-",
     batchIdMapper: (recruit: Recruit) => recruit.id,
     statsLabel: "Recruit",

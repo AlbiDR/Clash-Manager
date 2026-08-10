@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
-import { ref, computed, type Ref, type ComputedRef } from "vue";
+import { ref, computed, watch, type Ref, type ComputedRef } from "vue";
 
 /**
  * COMPOSABLE: useListFilter
@@ -29,7 +29,8 @@ import { ref, computed, type Ref, type ComputedRef } from "vue";
  * - `updateSort`: Method to change the sorting strategy with View Transition support.
  *
  * @sideeffects
- * None. This composable manages internal reactive state only.
+ * Optionally reads and writes the selected sort key to localStorage when
+ * `sortStorageKey` is provided.
  */
 
 // PERFORMANCE: Cache normalized search strings to avoid O(N * F) work on every keystroke.
@@ -50,9 +51,22 @@ export function useListFilter<T extends { id: string; n?: string }>(
   searchFields: (candidateItem: T) => string[],
   sortStrategies: Record<string, (itemA: T, itemB: T) => number>,
   defaultSort: string = "score",
+  sortStorageKey?: string,
 ) {
   const searchQuery = ref("");
-  const sortBy = ref(defaultSort);
+  const sortBy = ref(resolveInitialSort(sortStrategies, defaultSort, sortStorageKey));
+
+  if (sortStorageKey) {
+    watch(sortBy, (nextSortKey) => {
+      try {
+        if (sortStrategies[nextSortKey]) {
+          localStorage.setItem(sortStorageKey, nextSortKey);
+        }
+      } catch (sortPersistenceError) {
+        console.warn("[ListFilter] Sort preference persistence failed", sortPersistenceError);
+      }
+    });
+  }
 
   const filteredItems = computed(() => {
     let filteredPool: T[];
@@ -125,4 +139,21 @@ export function useListFilter<T extends { id: string; n?: string }>(
     filteredItems,
     updateSort,
   };
+}
+
+function resolveInitialSort(
+  sortStrategies: Record<string, unknown>,
+  defaultSort: string,
+  sortStorageKey?: string,
+): string {
+  if (!sortStorageKey) return defaultSort;
+
+  try {
+    const storedSort = localStorage.getItem(sortStorageKey);
+    if (storedSort && sortStrategies[storedSort]) return storedSort;
+  } catch (sortHydrationError) {
+    console.warn("[ListFilter] Sort preference hydration failed", sortHydrationError);
+  }
+
+  return defaultSort;
 }

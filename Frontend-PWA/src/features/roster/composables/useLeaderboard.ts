@@ -72,6 +72,7 @@ export function useLeaderboard() {
     sortStrategies: LeaderboardSort,
     sortOptions: LEADERBOARD_SORT_OPTIONS,
     defaultSort: "score",
+    sortPersistenceKey: "cm_console_sort_roster",
     deepLinkPrefix: "member-",
     batchIdMapper: (member: LeaderboardMember) => member.id,
     statsLabel: "Member",

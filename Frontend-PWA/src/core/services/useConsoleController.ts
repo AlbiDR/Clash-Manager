@@ -49,6 +49,8 @@ interface ConsoleLogicOptions<T> {
   showSearch?: boolean;
   /** The initial sort strategy key. */
   defaultSort: string;
+  /** Optional localStorage key for preserving the active sort strategy. */
+  sortPersistenceKey?: string;
   /** Prefix used for deep-link URL fragments (e.g., 'member-'). */
   deepLinkPrefix: string;
   /** Mapper to extract a unique ID for batch selection. */
@@ -103,6 +105,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     sortOptions,
     showSearch = true,
     defaultSort,
+    sortPersistenceKey,
     deepLinkPrefix,
     batchIdMapper,
     statsLabel,
@@ -125,6 +128,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     filterFn,
     sortStrategies,
     defaultSort,
+    sortPersistenceKey,
   );
 
   // STEP 2: Pagination/Virtualization logic
