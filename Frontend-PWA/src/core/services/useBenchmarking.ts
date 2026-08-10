@@ -73,6 +73,7 @@ const HH_EXTRACTORS: Record<string, (m: Recruit) => number> = {
   cardsWon: (m) => m.d?.cards || 0,
   winRate: (m) => m.d?.winRate || 0,
   score: (m) => m.potentialScore || 0,
+  rawScore: (m) => m.potentialRawScore || 0,
 };
 
 /**
@@ -90,7 +91,7 @@ const BENCHMARK_LABELS: Record<
   cardsWon: "Cards Won",
   winRate: "Win Rate",
   score: (ctx) => (ctx === "lb" ? "Performance" : "Potential"),
-  rawScore: "Raw Performance",
+  rawScore: (ctx) => (ctx === "lb" ? "Raw Performance" : "Raw Potential"),
   tenure: "Clan Loyalty",
   momentum: "Growth Pace",
   avgFame: "Average Fame",

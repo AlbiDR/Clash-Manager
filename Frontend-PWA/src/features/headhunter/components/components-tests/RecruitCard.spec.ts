@@ -120,6 +120,7 @@ describe("RecruitCard.vue", () => {
     expect(statItems[3].props("value")).toBe(12);
     expect(statItems[4].props("label")).toBe("RPoS");
     expect(statItems[4].props("value")).toBe("15,000");
+    expect(statItems[4].props("benchmarkMetric")).toBe("rawScore");
 
     expect(wrapper.findComponent({ name: "CardActions" }).exists()).toBe(true);
   });

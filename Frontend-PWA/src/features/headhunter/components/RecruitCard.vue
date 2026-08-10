@@ -129,7 +129,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
           :value="formatNumber(props.recruit.potentialRawScore, { maximumFractionDigits: 0 })"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
-          benchmark-metric="score"
+          benchmark-metric="rawScore"
           :benchmark-raw-value="props.recruit.potentialRawScore"
         />
       </StatsGrid>

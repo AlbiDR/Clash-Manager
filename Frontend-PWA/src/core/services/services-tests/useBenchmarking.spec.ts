@@ -43,6 +43,7 @@ vi.mock("../useClashDataStore", () => ({
           n: "Recruit 1",
           t: 8000, // Max
           potentialScore: 100, // Max
+          potentialRawScore: 12000,
           d: { don: 1000, war: 100, cards: 1000, ago: "1d ago" }
         },
         {
@@ -50,6 +51,7 @@ vi.mock("../useClashDataStore", () => ({
           n: "Recruit 2",
           t: 4000, // Avg
           potentialScore: 50, // Avg
+          potentialRawScore: 6000,
           d: { don: 500, war: 50, cards: 500, ago: "2d ago" }
         },
         {
@@ -57,6 +59,7 @@ vi.mock("../useClashDataStore", () => ({
           n: "Recruit 3",
           t: 0,
           potentialScore: 0,
+          potentialRawScore: 0,
           d: { don: 0, war: 0, cards: 0, ago: "3d ago" }
         }
       ]
@@ -148,11 +151,22 @@ describe("useBenchmarking", () => {
       expect(getBenchmark("hh", "warWins", 50)).not.toBeNull();
       expect(getBenchmark("hh", "cardsWon", 500)).not.toBeNull();
       expect(getBenchmark("hh", "score", 50)).not.toBeNull();
+      expect(getBenchmark("hh", "rawScore", 6000)).not.toBeNull();
     });
 
     it("uses correct labels for hh context", () => {
       expect(getBenchmark("hh", "donations", 500)?.label).toBe("Lifetime Donos");
       expect(getBenchmark("hh", "score", 50)?.label).toBe("Potential");
+      expect(getBenchmark("hh", "rawScore", 6000)?.label).toBe("Raw Potential");
+    });
+
+    it("benchmarks hh rawScore against RPoS instead of normalized PoS", () => {
+      const result = getBenchmark("hh", "rawScore", 9000);
+      expect(result?.label).toBe("Raw Potential");
+      expect(result?.avg).toBe(6000);
+      expect(result?.max).toBe(12000);
+      expect(result?.percent).toBe(50);
+      expect(result?.tier).toBe("TOP TIER");
     });
   });
 
