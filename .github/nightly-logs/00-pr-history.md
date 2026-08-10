@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1406 [Stage 4]: Optimization - Substrate Hygiene Engineer
+**Domain:** pipeline | **Commit:** cf8c9274 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1406)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/apkResolver.ts, Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue
+**Why:** Automated nightly audit pass.
+**Change:** Optimization - Substrate Hygiene Engineer
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1405 [Stage 3]: Baseline Consolidation Audit Completed - CLEAN
 **Domain:** pipeline | **Commit:** 2ad3d286 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1405)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
