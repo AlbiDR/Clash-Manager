@@ -3,7 +3,7 @@
 
 # Clash Manager PWA
 
-[![Client](https://img.shields.io/badge/Client-v14.43.7-42b883?style=flat-square&logo=vue.js&logoColor=white)](README.md)
+[![Client](https://img.shields.io/badge/Client-v14.43.8-42b883?style=flat-square&logo=vue.js&logoColor=white)](README.md)
 [![Vue 3.5](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square&logo=vue.js&logoColor=white)](https://vuejs.org)
 [![Vite 7](https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
 
