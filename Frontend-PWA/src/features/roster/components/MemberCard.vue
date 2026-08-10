@@ -35,7 +35,7 @@ import {
 } from "@shared";
 import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
-import { formatTimeAgo, formatNumber } from "@core";
+import { formatTimeAgo, formatNumber, parseTimeAgoValue } from "@core";
 
 const activeChart = ref<"war" | "voyage">("war");
 
@@ -131,6 +131,9 @@ const ariaLabel = computed(() => {
           label="Last Seen"
           :loading="props.appIsRefreshing"
           :value="formatTimeAgo(props.member.d.seen)"
+          benchmark-type="lb"
+          benchmark-metric="lastSeen"
+          :benchmark-raw-value="parseTimeAgoValue(props.member.d.seen)"
         />
       </StatsGrid>
 

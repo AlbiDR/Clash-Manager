@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed } from "vue";
-import { formatNumber } from "../../core";
+import { formatNumber, formatTimeAgo } from "../../core";
 import type { BenchmarkData } from "../../core";
 
 /**
@@ -46,6 +46,20 @@ const simpleLines = computed(() =>
  */
 function clampPercent(value: number): number {
   return Math.min(100, Math.max(0, value));
+}
+
+/**
+ * Formats benchmark values according to the metric's domain.
+ */
+function formatBenchmarkValue(value: number): string {
+  const format = benchmark.value?.format || "number";
+  if (format === "percent") {
+    return formatNumber(value, { style: "percent", maximumFractionDigits: 1 });
+  }
+  if (format === "durationMinutes") {
+    return formatTimeAgo(Date.now() - value * 60_000);
+  }
+  return formatNumber(Math.round(value));
 }
 
 /**
@@ -118,13 +132,13 @@ const delta = computed(() =>
     </div>
 
     <div class="bc-footer">
-      <span class="bc-stat">AVG {{ formatNumber(Math.round(benchmark.avg)) }}</span>
+      <span class="bc-stat">AVG {{ formatBenchmarkValue(benchmark.avg) }}</span>
       <span class="bc-delta" :class="sentiment">{{ delta }}</span>
     </div>
 
     <div class="bc-bounds">
-      <div class="bc-bound"><span>MIN</span> {{ formatNumber(Math.round(benchmark.min)) }}</div>
-      <div class="bc-bound"><span>MAX</span> {{ formatNumber(Math.round(benchmark.max)) }}</div>
+      <div class="bc-bound"><span>MIN</span> {{ formatBenchmarkValue(benchmark.min) }}</div>
+      <div class="bc-bound"><span>MAX</span> {{ formatBenchmarkValue(benchmark.max) }}</div>
     </div>
   </div>
 </template>

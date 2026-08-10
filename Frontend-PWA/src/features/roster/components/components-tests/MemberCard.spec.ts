@@ -28,6 +28,7 @@ vi.mock("../../../../shared/utils/game", () => ({
 
 vi.mock("../../../../core/utils/time", () => ({
   formatTimeAgo: vi.fn((date) => `Time ago: ${date}`),
+  parseTimeAgoValue: vi.fn(() => 120),
 }));
 
 const mockMember: LeaderboardMember = {
@@ -157,6 +158,17 @@ describe("MemberCard.vue", () => {
 
     expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
     expect(wrapper.find(".card-actions-stub").exists()).toBe(true);
+  });
+
+  it("benchmarks the Last Seen tile by recency", () => {
+    const wrapper = mountMemberCard({ expanded: true });
+    const firstGridTiles = wrapper.findAll(".stats-grid")[0].findAllComponents({ name: "StatisticItem" });
+    const lastSeenTile = firstGridTiles.find((tile) => tile.props("label") === "Last Seen");
+
+    expect(lastSeenTile).toBeDefined();
+    expect(lastSeenTile!.props("benchmarkType")).toBe("lb");
+    expect(lastSeenTile!.props("benchmarkMetric")).toBe("lastSeen");
+    expect(lastSeenTile!.props("benchmarkRawValue")).toBeTypeOf("number");
   });
 
   it("renders the lifetime KPI row (RPeS, Win Rate) as a second, separately-spaced grid", () => {

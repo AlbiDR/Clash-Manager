@@ -16,7 +16,7 @@ vi.mock("../useClashDataStore", () => ({
           performanceScore: 100, // Max score
           performanceRawScore: 12000,
           dt: 10,
-          d: { rate: "100", avg: 50, days: 100, winRate: 1.0 } // Max win rate
+          d: { rate: "100", avg: 50, days: 100, winRate: 1.0, seen: "1h ago" } // Max win rate
         },
         {
           id: "2",
@@ -25,7 +25,7 @@ vi.mock("../useClashDataStore", () => ({
           performanceScore: 50, // Avg score = (100+50+0)/3 = 50
           performanceRawScore: 6000,
           dt: 0,
-          d: { rate: "50", avg: 25, days: 50, winRate: 0.5 } // Avg win rate = (1.0+0.5+0)/3 = 0.5
+          d: { rate: "50", avg: 25, days: 50, winRate: 0.5, seen: "2h ago" } // Avg win rate = (1.0+0.5+0)/3 = 0.5
         },
         {
           id: "3",
@@ -34,7 +34,7 @@ vi.mock("../useClashDataStore", () => ({
           performanceScore: 0,
           performanceRawScore: 0,
           dt: -10,
-          d: { rate: "0", avg: 0, days: 10, winRate: 0 }
+          d: { rate: "0", avg: 0, days: 10, winRate: 0, seen: "4h ago" }
         }
       ],
       hh: [
@@ -123,6 +123,7 @@ describe("useBenchmarking", () => {
       expect(getBenchmark("lb", "tenure", 50)).not.toBeNull();
       expect(getBenchmark("lb", "momentum", 0)).not.toBeNull();
       expect(getBenchmark("lb", "winRate", 0.5)).not.toBeNull();
+      expect(getBenchmark("lb", "lastSeen", 120)).not.toBeNull();
     });
 
     it("benchmarks lb rawScore against RPeS instead of normalized PeS", () => {
@@ -141,6 +142,19 @@ describe("useBenchmarking", () => {
 
       const avgResult = getBenchmark("lb", "winRate", 0.5);
       expect(avgResult?.isBetter).toBe(true);
+      expect(avgResult?.format).toBe("percent");
+    });
+
+    it("benchmarks lb lastSeen as a lower-is-better recency metric", () => {
+      const freshResult = getBenchmark("lb", "lastSeen", 60);
+      expect(freshResult?.label).toBe("Last Seen");
+      expect(freshResult?.format).toBe("durationMinutes");
+      expect(freshResult?.tier).toBe("ELITE");
+      expect(freshResult?.isBetter).toBe(true);
+
+      const staleResult = getBenchmark("lb", "lastSeen", 300);
+      expect(staleResult?.tier).toBe("UNDER");
+      expect(staleResult?.isBetter).toBe(false);
     });
   });
 

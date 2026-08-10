@@ -262,4 +262,42 @@ describe("BenchmarkContent.vue -- BenchmarkData: footer values", () => {
 
     expect(wrapper.find(".bc-stat").text()).toContain("6,001");
   });
+
+  it("formats percent metrics as percentages instead of raw fractions", () => {
+    const wrapper = mount(BenchmarkContent, {
+      props: {
+        data: makeData({
+          format: "percent",
+          value: 0.75,
+          avg: 0.5,
+          min: 0.25,
+          max: 1,
+        }),
+      },
+    });
+
+    expect(wrapper.find(".bc-stat").text()).toContain("50%");
+    const bounds = wrapper.findAll(".bc-bound");
+    expect(bounds[0].text()).toContain("25%");
+    expect(bounds[1].text()).toContain("100%");
+  });
+
+  it("formats duration-minute metrics as relative time", () => {
+    const wrapper = mount(BenchmarkContent, {
+      props: {
+        data: makeData({
+          format: "durationMinutes",
+          value: 30,
+          avg: 60,
+          min: 15,
+          max: 120,
+        }),
+      },
+    });
+
+    expect(wrapper.find(".bc-stat").text()).toContain("1h ago");
+    const bounds = wrapper.findAll(".bc-bound");
+    expect(bounds[0].text()).toContain("15m ago");
+    expect(bounds[1].text()).toContain("2h ago");
+  });
 });

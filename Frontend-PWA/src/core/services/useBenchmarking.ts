@@ -14,6 +14,7 @@ import { storeToRefs } from "pinia";
 
 import { computed, type ComputedRef } from "vue";
 import type { LeaderboardMember, Recruit } from "../types";
+import { parseTimeAgoValue } from "../utils/time";
 
 /**
  * Result object for a benchmarking comparison.
@@ -35,9 +36,16 @@ export interface BenchmarkData {
   percent: number;
   /** Indicates if the value is equal to or better than the average. */
   isBetter: boolean;
+  /** Optional display format for values in the benchmark panel. */
+  format?: "number" | "percent" | "durationMinutes";
 }
 
 type StatsMap = Record<string, { avg: number; max: number; min: number }>;
+type MetricMetadata = {
+  label: string | ((ctx: "lb" | "hh") => string);
+  lowerIsBetter?: boolean;
+  format?: BenchmarkData["format"];
+};
 
 // [PERF] PERFORMANCE: Singleton state for benchmarking engine.
 // Moving state and logic to module level prevents O(N) re-creation of computed properties
@@ -60,6 +68,7 @@ const LB_EXTRACTORS: Record<string, (m: LeaderboardMember) => number> = {
   momentum: (m) => m.dt || 0,
   winRate: (m) => m.d?.winRate || 0,
   avgFame: (m) => m.d?.wfame || 0,
+  lastSeen: (m) => parseTimeAgoValue(m.d?.seen),
 };
 
 /**
@@ -80,21 +89,19 @@ const HH_EXTRACTORS: Record<string, (m: Recruit) => number> = {
  * [PERF] BENCHMARK LABELS
  * Rationale: Hoisted to module level to prevent allocation churn.
  */
-const BENCHMARK_LABELS: Record<
-  string,
-  string | ((ctx: "lb" | "hh") => string)
-> = {
-  trophies: "Trophy Rank",
-  warRate: "War Reliability",
-  donations: (ctx) => (ctx === "lb" ? "Daily Average" : "Lifetime Donos"),
-  warWins: "Legacy War Wins",
-  cardsWon: "Cards Won",
-  winRate: "Win Rate",
-  score: (ctx) => (ctx === "lb" ? "Performance" : "Potential"),
-  rawScore: (ctx) => (ctx === "lb" ? "Raw Performance" : "Raw Potential"),
-  tenure: "Clan Loyalty",
-  momentum: "Growth Pace",
-  avgFame: "Average Fame",
+const BENCHMARK_METRICS: Record<string, MetricMetadata> = {
+  trophies: { label: "Trophy Rank" },
+  warRate: { label: "War Reliability" },
+  donations: { label: (ctx) => (ctx === "lb" ? "Daily Average" : "Lifetime Donos") },
+  warWins: { label: "Legacy War Wins" },
+  cardsWon: { label: "Cards Won" },
+  winRate: { label: "Win Rate", format: "percent" },
+  score: { label: (ctx) => (ctx === "lb" ? "Performance" : "Potential") },
+  rawScore: { label: (ctx) => (ctx === "lb" ? "Raw Performance" : "Raw Potential") },
+  tenure: { label: "Clan Loyalty" },
+  momentum: { label: "Growth Pace" },
+  avgFame: { label: "Average Fame" },
+  lastSeen: { label: "Last Seen", lowerIsBetter: true, format: "durationMinutes" },
 };
 
 /**
@@ -183,16 +190,24 @@ function getBenchmark(
   const metricStats = stats[metric];
   if (!metricStats) return null;
 
+  const metricMetadata = BENCHMARK_METRICS[metric];
   const scoreDelta = value - metricStats.avg;
   const deviationPercentage = Math.abs(Math.round((scoreDelta / (metricStats.avg || 1)) * 100));
-  const isAboveAverage = scoreDelta >= 0;
+  const isAboveAverage = metricMetadata?.lowerIsBetter ? scoreDelta <= 0 : scoreDelta >= 0;
 
-  const labelRaw = BENCHMARK_LABELS[metric];
+  const labelRaw = metricMetadata?.label;
   const label =
     typeof labelRaw === "function" ? labelRaw(context) : labelRaw || metric;
 
-  const performanceTier =
-    value >= metricStats.max * 0.9
+  const performanceTier = metricMetadata?.lowerIsBetter
+    ? value <= metricStats.min * 1.1
+      ? "ELITE"
+      : isAboveAverage
+        ? "TOP TIER"
+        : value > metricStats.avg * 2
+          ? "UNDER"
+          : "GROWING"
+    : value >= metricStats.max * 0.9
       ? "ELITE"
       : isAboveAverage
         ? "TOP TIER"
@@ -209,6 +224,7 @@ function getBenchmark(
     max: metricStats.max,
     percent: deviationPercentage,
     isBetter: isAboveAverage,
+    format: metricMetadata?.format,
   };
 }
 
