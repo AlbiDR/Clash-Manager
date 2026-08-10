@@ -50,8 +50,9 @@ This is the single registry for these services; higher-layer READMEs link here r
 | Service | Role |
 | :--- | :--- |
 | `useAppSettings.ts` | Application settings and feature flags, mirrored to LocalStorage and IndexedDB. |
-| `useConfirm.ts` | Global modal confirmation service (replacing native `confirm()` with styled MD3 ConfirmDialog) to eliminate unstyled system blocks in Android.
-| `usePwaManager.ts` | PWA update/recovery lifecycle, and dynamic release APK resolution (resolving versioned build suffixes from GitHub API `latest.json`). |
+| `useConfirm.ts` | Global modal confirmation service (replacing native `confirm()` with styled MD3 ConfirmDialog) to eliminate unstyled system blocks in Android. |
+| `apkResolver.ts` | Dynamic APK release metadata, version matching, and filename resolution utility. |
+| `usePwaManager.ts` | PWA update/recovery lifecycle (Service Worker updates, cache clear, and disaster recovery). |
 | `useUiCoordinator.ts` | Global layout spacing and floating-action-button state. |
 | `useBackHandler.ts` | Hardware back-button behavior in the wrapper. |
 | `useBenchmarking.ts` | Compares a member's stats against clan averages in a single pass. |
@@ -67,16 +68,17 @@ The modal confirmation composable provides a robust, styled replacement for the 
 - **Asynchronous Flow:** Exposes a promise-driven `confirm(pendingConfirmationOptions)` method that pauses execution and resolves to `isUserActionConfirmed` (boolean) once the user interacts with the UI dialog, ensuring clean linear usage.
 - **Tone & Ergonomics:** Supports custom dialog text, customized button labels, and visual tone configuration (`danger` vs `default`) to convey destructive semantics (e.g. factory resets or API URL resets).
 
-### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts`)
+### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts` & `apkResolver.ts`)
 
-The PWA lifecycle orchestrator implements robust mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
+The PWA lifecycle orchestrator and the standalone APK resolver implement robust, decomposed mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
 
-1. **Service Worker (SW) Coexistence:** Coordinates update checks and skips waiting states when an updated SW is staged, ensuring a fresh asset envelope is downloaded and applied immediately on reload.
-2. **Dynamic APK Release Resolution:** Since the Android companion app is built with unique version and build suffixes (e.g. `+148`), static filename guesses can fail. At the download trigger:
-   - Queries `APK/release/latest.json` on the `Beta` branch via an aborted, network-isolated 3-second fetch to resolve the exact current build's filename.
-   - Gracefully falls back to a deterministic string (`clashmanager-v<appVersion>.apk`) if the network is down or the manifest schema is malformed.
-   - Dispatches the resolved resource URL to `openExternalUrl` on the native bridge if running inside the Android wrapper, or falls back to standard browser `window.location.href` assignment.
-3. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, it unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
+1. **Service Worker (SW) Coexistence:** `usePwaManager.ts` coordinates update checks and skips waiting states when an updated SW is staged, ensuring a fresh asset envelope is downloaded and applied immediately on reload.
+2. **Decomposed APK Release Resolution (`apkResolver.ts`):** Dynamic companion APK metadata and filename resolution is isolated in its own Layer 1 core utility service to decoupled presentation logic from infrastructure concerns.
+   - **SemVer Build Sorting:** `compareReleaseApkFilenames` parses SemVer structures and unique version/build suffixes (e.g., `clashmanager-v14.43.2+176.apk`) to perform precise chronological release order sorting.
+   - **Multi-Tier Resolution & Fail-Safes:** At download trigger, it races/orchestrates three API lookup pathways in parallel (same-origin metadata `/APK/release/latest.json`, GitHub Repository Contents API `ref=Beta` branch, and the raw beta repository URL) to guarantee release detection.
+   - **Cache & Throttling Limits:** Caches successfully resolved metadata filenames in memory with a robust `APK_RESOLUTION_CACHE_TTL_MS` (60 seconds) duration, and deduplicates concurrent active resolution lookups via a shared promise registry.
+   - **Ergonomics & Wrapper Bridging:** Once resolved, `usePwaManager.ts` delegates download actions to `downloadApkFile` or `openExternalUrl` on the native bridge if inside the Android wrapper container, falling back to window location assignment in PWAs.
+3. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, `usePwaManager.ts` unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
 
 ## See also
 
