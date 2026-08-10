@@ -107,16 +107,16 @@ function parseReleaseApkFilename(filename: string): ReleaseApkParts | undefined 
   };
 }
 
-function compareReleaseApkFilenames(a: string, b: string): number {
-  const parsedA = parseReleaseApkFilename(a);
-  const parsedB = parseReleaseApkFilename(b);
-  if (!parsedA || !parsedB) return 0;
+function compareReleaseApkFilenames(firstApkFilename: string, secondApkFilename: string): number {
+  const parsedFirstApk = parseReleaseApkFilename(firstApkFilename);
+  const parsedSecondApk = parseReleaseApkFilename(secondApkFilename);
+  if (!parsedFirstApk || !parsedSecondApk) return 0;
 
   return (
-    parsedA.major - parsedB.major ||
-    parsedA.minor - parsedB.minor ||
-    parsedA.patch - parsedB.patch ||
-    parsedA.build - parsedB.build
+    parsedFirstApk.major - parsedSecondApk.major ||
+    parsedFirstApk.minor - parsedSecondApk.minor ||
+    parsedFirstApk.patch - parsedSecondApk.patch ||
+    parsedFirstApk.build - parsedSecondApk.build
   );
 }
 
@@ -126,17 +126,17 @@ export function selectNewestReleaseApkFilename(contents: GitHubReleaseContent[])
 
 export function selectNewestReleaseApk(contents: GitHubReleaseContent[]): ApkReleaseDownload | undefined {
   const filename = contents
-    .flatMap((item) => item.type === "file" && isReleaseApkFilename(item.name) ? [item.name] : [])
+    .flatMap((releaseContentEntry) => releaseContentEntry.type === "file" && isReleaseApkFilename(releaseContentEntry.name) ? [releaseContentEntry.name] : [])
     .sort(compareReleaseApkFilenames)
     .at(-1);
 
   if (!filename) return undefined;
 
-  const matchingItem = contents.find((item) => item.name === filename);
+  const matchingReleaseContent = contents.find((releaseContentEntry) => releaseContentEntry.name === filename);
   return {
     filename,
-    url: isDirectApkDownloadUrl(matchingItem?.download_url, filename)
-      ? matchingItem.download_url
+    url: isDirectApkDownloadUrl(matchingReleaseContent?.download_url, filename)
+      ? matchingReleaseContent.download_url
       : buildApkDownloadUrl(filename),
   };
 }
