@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1405 [Stage 3]: Baseline Consolidation Audit Completed - CLEAN
+**Domain:** pipeline | **Commit:** 2ad3d286 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1405)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Baseline Consolidation Audit Completed - CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1404 [Stage 2]: [Stage 2] Verification - Logic Integrity Auditor
 **Domain:** pipeline | **Commit:** 6fd17d83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1404)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/apkResolver.spec.ts
