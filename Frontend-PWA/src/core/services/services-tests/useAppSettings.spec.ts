@@ -31,6 +31,7 @@ describe("useAppSettings", () => {
     const { useAppSettings } = await import("../useAppSettings");
     const { modules } = useAppSettings();
     expect((modules as any).value).toBeUndefined();
+    expect(modules.ghostBenchmarking).toBe(true);
     expect(modules.sortExplanation).toBeDefined();
   });
 
@@ -76,6 +77,7 @@ describe("useAppSettings", () => {
 
       expect(modules.blitzMode).toBe(false); // Default
       expect(modules.blitzSpeed).toBe("fast"); // Default
+      expect(modules.ghostBenchmarking).toBe(true); // Default
       expect(modules.notificationThreshold).toBe(75); // Default
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("[Modules] Storage validation failed"),
@@ -95,6 +97,7 @@ describe("useAppSettings", () => {
       init();
 
       expect(modules.blitzMode).toBe(true);
+      expect(modules.ghostBenchmarking).toBe(true); // Default applied by Valibot
       expect(modules.notificationThreshold).toBe(75); // Default applied by Valibot
       expect(modules.sortExplanation).toBe(true); // Default applied by Valibot
     });

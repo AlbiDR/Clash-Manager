@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
-import { useBenchmarking } from "@core";
+import { useAppSettings, useBenchmarking } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
@@ -14,6 +14,7 @@ vi.mock("../useClashDataStore", () => ({
           n: "Player 1",
           t: 9000, // Max trophies
           performanceScore: 100, // Max score
+          performanceRawScore: 12000,
           dt: 10,
           d: { rate: "100", avg: 50, days: 100, winRate: 1.0 } // Max win rate
         },
@@ -22,6 +23,7 @@ vi.mock("../useClashDataStore", () => ({
           n: "Player 2",
           t: 5000, // Avg trophies = (9000+5000+1000)/3 = 5000
           performanceScore: 50, // Avg score = (100+50+0)/3 = 50
+          performanceRawScore: 6000,
           dt: 0,
           d: { rate: "50", avg: 25, days: 50, winRate: 0.5 } // Avg win rate = (1.0+0.5+0)/3 = 0.5
         },
@@ -30,6 +32,7 @@ vi.mock("../useClashDataStore", () => ({
           n: "Player 3",
           t: 1000,
           performanceScore: 0,
+          performanceRawScore: 0,
           dt: -10,
           d: { rate: "0", avg: 0, days: 10, winRate: 0 }
         }
@@ -113,9 +116,18 @@ describe("useBenchmarking", () => {
       expect(getBenchmark("lb", "warRate", 50)).not.toBeNull();
       expect(getBenchmark("lb", "donations", 25)).not.toBeNull();
       expect(getBenchmark("lb", "score", 50)).not.toBeNull();
+      expect(getBenchmark("lb", "rawScore", 6000)).not.toBeNull();
       expect(getBenchmark("lb", "tenure", 50)).not.toBeNull();
       expect(getBenchmark("lb", "momentum", 0)).not.toBeNull();
       expect(getBenchmark("lb", "winRate", 0.5)).not.toBeNull();
+    });
+
+    it("benchmarks lb rawScore against RPeS instead of normalized PeS", () => {
+      const result = getBenchmark("lb", "rawScore", 9000);
+      expect(result?.label).toBe("Raw Performance");
+      expect(result?.avg).toBe(6000);
+      expect(result?.max).toBe(12000);
+      expect(result?.tier).toBe("TOP TIER");
     });
 
     it("benchmarks lb winRate (Member Card lifetime KPI row) against the clan average", () => {
@@ -147,9 +159,17 @@ describe("useBenchmarking", () => {
   describe("getSafeBenchmark", () => {
     const { getSafeBenchmark } = useBenchmarking();
 
-    it("returns null if ghostBenchmarking is disabled", () => {
-      // DEFAULT_STATE for ghostBenchmarking is false
+    it("returns benchmark data when ghostBenchmarking uses the default enabled state", () => {
+      expect(getSafeBenchmark("lb", "trophies", 9000)).not.toBeNull();
+    });
+
+    it("returns null when ghostBenchmarking is disabled", () => {
+      const { modules } = useAppSettings();
+      modules.ghostBenchmarking = false;
+
       expect(getSafeBenchmark("lb", "trophies", 9000)).toBeNull();
+
+      modules.ghostBenchmarking = true;
     });
 
     it("returns null if value is undefined", () => {

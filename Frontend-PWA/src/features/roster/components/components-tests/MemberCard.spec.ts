@@ -170,7 +170,7 @@ describe("MemberCard.vue", () => {
     expect(lifetimeTiles).toHaveLength(2);
     expect(lifetimeTiles[0].props("label")).toBe("RPeS");
     expect(lifetimeTiles[0].props("value")).toBe("12,345"); // formatNumber(performanceRawScore)
-    expect(lifetimeTiles[0].props("benchmarkMetric")).toBe("score");
+    expect(lifetimeTiles[0].props("benchmarkMetric")).toBe("rawScore");
     expect(lifetimeTiles[1].props("label")).toBe("Win Rate");
     expect(lifetimeTiles[1].props("value")).toBe("56.4%"); // formatNumber(winRate, {style:'percent'})
     expect(lifetimeTiles[1].props("benchmarkMetric")).toBe("winRate");

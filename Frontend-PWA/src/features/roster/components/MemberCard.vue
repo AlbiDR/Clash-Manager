@@ -146,7 +146,7 @@ const ariaLabel = computed(() => {
           :value="formatNumber(props.member.performanceRawScore, { maximumFractionDigits: 0 })"
           :loading="props.appIsRefreshing"
           benchmark-type="lb"
-          benchmark-metric="score"
+          benchmark-metric="rawScore"
           :benchmark-raw-value="props.member.performanceRawScore"
         />
         <StatisticItem
