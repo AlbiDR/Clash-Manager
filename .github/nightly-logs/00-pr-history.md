@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1410 [Stage 8]: chore(deps): Bumped tsx to ^4.23.12 and updated major version watchlist
+**Domain:** pipeline | **Commit:** d7c7d131 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1410)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped tsx to ^4.23.12 and updated major version watchlist
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1409 [Stage 7]: chore(version): No version drift or catalog violations detected across manifests, substrate, and documentation.
 **Domain:** pipeline | **Commit:** cd6c63ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1409)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
