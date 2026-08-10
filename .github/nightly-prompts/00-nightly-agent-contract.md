@@ -54,6 +54,10 @@ change set if the environment still permits it.
 - A failing validation receives at most one targeted correction and one rerun.
   After the second failure, restore unverified source edits and finalize a
   `PARTIAL-RUN` log-only result.
+- Never ask whether to fix a validation, type-check, build, or compile failure.
+  If the fix is clearly inside the stage's write scope, make one targeted
+  correction and rerun once; otherwise restore unsafe edits and finalize
+  `PARTIAL-RUN` with the blocker recorded.
 - Do not invoke optional Jules code review, plan review, memory, reflection, or
   post-validation analysis.
 

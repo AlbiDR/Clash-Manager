@@ -82,6 +82,7 @@ You act as the project's structural architect and structural engine. Your mandat
 - Move files and update barrel exports (`index.ts`) in the parent directory.
 - Prepend the licensing copyright header on newly created `.ts` or `.vue` files.
 - Update import references monorepo-wide.
+- If any `.ts` or `.vue` file changed, run `pnpm -F clash-manager-pwa type-check` before any test pass. A moved type, value, helper, or export must be locally bound everywhere it is referenced; proxy re-exports alone are not proof of local availability.
 - Run the nearest relevant package tests, then run `pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src --output-type err-long` and compare it with `/tmp/nightly/dep-violations.txt`.
 - If the first verification fails, make one targeted correction and rerun the failed check once. If it fails again, restore all refactor edits and finalize `PARTIAL-RUN`.
 
