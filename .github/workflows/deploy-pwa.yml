@@ -9,12 +9,14 @@ on:
     branches: ["Stable", "Beta", "Clan-Voyage"]
     paths:
       - "Frontend-PWA/**"
+      - "APK/release/**"
       - ".github/workflows/deploy-pwa.yml"
   pull_request:
     branches: ["Stable"]
     types: [opened, synchronize, reopened]
     paths:
       - "Frontend-PWA/**"
+      - "APK/release/**"
   workflow_dispatch:
 
 concurrency:
@@ -89,6 +91,13 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
         run: pnpm run build
+
+      - name: Publish APK release assets with PWA
+        run: |
+          mkdir -p dist/apk/release
+          cp ../APK/release/latest.json dist/apk/release/latest.json
+          APK_FILENAME="$(node -e "console.log(require('../APK/release/latest.json').filename)")"
+          cp "../APK/release/${APK_FILENAME}" "dist/apk/release/${APK_FILENAME}"
 
       - name: List Dist Contents
         run: ls -R ./dist

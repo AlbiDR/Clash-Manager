@@ -186,6 +186,46 @@ describe("usePwaManager", () => {
   });
 
   describe("downloadApk", () => {
+    it("should prefer same-origin APK metadata when the PWA deploy exposes it", async () => {
+      (mockLocation as any).origin = "https://albidr.github.io";
+      (fetch as any)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            buildNumber: 182,
+            filename: "clashmanager-v14.43.5+182.apk",
+            version: "14.43.5",
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue({
+            buildNumber: 179,
+            filename: "clashmanager-v14.43.4+179.apk",
+            version: "14.43.4",
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: vi.fn().mockResolvedValue([
+            { name: "clashmanager-v14.43.4+179.apk", type: "file" },
+          ]),
+        });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(fetch).toHaveBeenNthCalledWith(
+        1,
+        expect.stringMatching(/^https:\/\/albidr\.github\.io\/apk\/release\/latest\.json\?t=\d+$/),
+        expect.objectContaining({ cache: "no-store" }),
+      );
+      expect(mockLocation.href).toBe(
+        "https://albidr.github.io/apk/release/clashmanager-v14.43.5%2B182.apk"
+      );
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
     it("should use the GitHub contents fallback and window.location if latest.json is unavailable", async () => {
       (fetch as any)
         .mockRejectedValueOnce(new Error("Network Failure"))

@@ -202,6 +202,6 @@ describe("UsefulLinksSettings.vue", () => {
     const buttons = wrapper.findAll("button");
     const downloadBtn = buttons.find(b => b.text().includes("Download Android App"));
     expect(downloadBtn).toBeUndefined();
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(3);
   });
 });

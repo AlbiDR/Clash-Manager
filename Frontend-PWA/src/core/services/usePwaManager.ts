@@ -12,6 +12,7 @@ export const APK_RELEASE_RAW_BASE_URL = "https://raw.githubusercontent.com/AlbiD
 export const APK_LATEST_METADATA_URL = `${APK_RELEASE_RAW_BASE_URL}/latest.json`;
 export const APK_RELEASE_CONTENTS_API_URL =
   "https://api.github.com/repos/AlbiDR/Clash-Manager/contents/APK/release?ref=Beta";
+const APK_RELEASE_PAGES_PATH = "apk/release";
 export const APK_RESOLUTION_CACHE_TTL_MS = 60000;
 export const APK_METADATA_FETCH_TIMEOUT_MS = 3500;
 
@@ -62,8 +63,22 @@ function isReleaseBuildNumber(buildNumber: number | undefined): buildNumber is n
   return typeof buildNumber === "number" && Number.isInteger(buildNumber) && buildNumber > 0;
 }
 
-function buildApkDownloadUrl(filename: string): string {
-  return `${APK_RELEASE_RAW_BASE_URL}/${encodeURIComponent(filename)}`;
+function buildApkDownloadUrl(filename: string, baseUrl = APK_RELEASE_RAW_BASE_URL): string {
+  return `${baseUrl.replace(/\/$/, "")}/${encodeURIComponent(filename)}`;
+}
+
+function getSameOriginApkReleaseBaseUrl(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+
+  const origin = window.location?.origin;
+  if (!origin || origin === "null") return undefined;
+
+  try {
+    return new URL(`${APK_RELEASE_PAGES_PATH}/`, new URL(import.meta.env.BASE_URL, origin)).toString();
+  } catch (sameOriginUrlError: unknown) {
+    console.warn("[PWA] Same-origin APK release URL unavailable", sameOriginUrlError);
+    return undefined;
+  }
 }
 
 function parseReleaseApkFilename(filename: string): ReleaseApkParts | undefined {
@@ -108,9 +123,12 @@ async function fetchFresh(url: string): Promise<Response> {
   }
 }
 
-async function resolveLatestApkMetadata(): Promise<ApkReleaseDownload | undefined> {
+async function resolveLatestApkMetadataFromUrl(
+  metadataUrl: string,
+  downloadBaseUrl: string,
+): Promise<ApkReleaseDownload | undefined> {
   try {
-    const response = await fetchFresh(APK_LATEST_METADATA_URL);
+    const response = await fetchFresh(metadataUrl);
     if (!response.ok) return undefined;
 
     const metadata = (await response.json()) as {
@@ -123,13 +141,35 @@ async function resolveLatestApkMetadata(): Promise<ApkReleaseDownload | undefine
     return {
       buildNumber: isReleaseBuildNumber(metadata.buildNumber) ? metadata.buildNumber : undefined,
       filename: metadata.filename,
-      url: buildApkDownloadUrl(metadata.filename),
+      url: buildApkDownloadUrl(metadata.filename, downloadBaseUrl),
       version: isReleaseVersion(metadata.version) ? metadata.version : undefined,
     };
   } catch (metadataError: unknown) {
-    console.warn("[PWA] APK latest metadata lookup failed", metadataError);
+    console.warn("[PWA] APK latest metadata lookup failed", metadataUrl, metadataError);
     return undefined;
   }
+}
+
+async function resolveLatestApkMetadata(): Promise<ApkReleaseDownload | undefined> {
+  const sameOriginBaseUrl = getSameOriginApkReleaseBaseUrl();
+  const metadataCandidates = [
+    ...(sameOriginBaseUrl ? [{
+      downloadBaseUrl: sameOriginBaseUrl,
+      metadataUrl: buildApkDownloadUrl("latest.json", sameOriginBaseUrl),
+    }] : []),
+    {
+      downloadBaseUrl: APK_RELEASE_RAW_BASE_URL,
+      metadataUrl: APK_LATEST_METADATA_URL,
+    },
+  ];
+
+  const releases = (await Promise.all(
+    metadataCandidates.map((candidate) =>
+      resolveLatestApkMetadataFromUrl(candidate.metadataUrl, candidate.downloadBaseUrl),
+    ),
+  )).filter((release): release is ApkReleaseDownload => Boolean(release));
+
+  return releases.sort((a, b) => compareReleaseApkFilenames(a.filename, b.filename)).at(-1);
 }
 
 async function resolveLatestApkFromContentsApi(): Promise<ApkReleaseDownload | undefined> {
