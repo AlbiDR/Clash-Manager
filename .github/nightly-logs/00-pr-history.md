@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-10] PR #1404 [Stage 2]: [Stage 2] Verification - Logic Integrity Auditor
+**Domain:** pipeline | **Commit:** 6fd17d83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1404)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/apkResolver.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 2] Verification - Logic Integrity Auditor
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-09] PR #1403 [Stage 1]: chore(harden): Conducted daily security and data integrity audit, confirming 100% saturation and zero active threat vectors
 **Domain:** pipeline | **Commit:** 3924feaa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1403)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
