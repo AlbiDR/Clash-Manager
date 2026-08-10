@@ -7,26 +7,55 @@ import { vTactile } from "../directives/vTactile";
 /**
  * COMPONENT: SettingRow
  * ----------------------------------------------------------------------------
- * Rationale: A standardized row for settings with label, description, and toggle.
+ * Rationale: A standardized preference and settings layout element used across
+ * Settings panel modules (Appearance, Notification, Features) and Laboratory setup cards.
  * ----------------------------------------------------------------------------
  *
+ * @remarks
+ * Satisfies ADR Section II: Mobile WebView Ergonomics & Target B.2.
+ * Enforces a minimum tap footprint height of 48px with vertical padding to guarantee
+ * high-fidelity hit accuracy under hybrid Android WebView/PWA configurations on dense screens.
+ *
  * **Decision Log - Touch targets & Brokered Haptics:**
- * - Touch Target Compliance (Priority 4 / Target B.2): Enforces a minimum tap
- *   footprint of 48px height with vertical padding to guarantee accurate touch
- *   targeting in hybrid WebView/PWA configurations on mobile screens.
+ * - Touch Target Compliance (Priority 4 / Target B.2): Replaces default inline margins
+ *   with an explicit 48px height footprint and relative hit boundaries.
+ * - Declarative Haptics Brokering: Leverages custom `v-tactile` directive to marshal
+ *   tactile interaction events seamlessly through Layer 2 brokering without legacy
+ *   useHaptics imperative hooks overhead.
  */
 
 defineProps<{
+  /** Main display title for the preference option. */
   label?: string;
+
+  /** Contextual helper subtitle explaining the consequences or options of the preference. */
   description?: string;
+
+  /** Active or selected state of the toggle switch. */
   active?: boolean;
+
+  /** Applies disabled styling, blocks pointer events, and reduces overall element opacity to 0.5. */
   disabled?: boolean;
+
+  /** Triggers a skeleton loading animation overlay on the active switch indicator. */
   loading?: boolean;
+
+  /** Suppresses structural padding and scales down fonts for high-density, compact view layouts. */
   mini?: boolean;
 }>();
 
 defineEmits<{
-  (e: 'click'): void;
+  /**
+   * Click event emitted upon user interaction, standardizing the parameter as `emitEvent`
+   * to satisfy ADR naming standards and eliminate anemic variable pathogens.
+   *
+   * @remarks
+   * Satisfies ADR Section VII: Naming Conventions. Enforces descriptive naming
+   * on the argument callback boundary rather than a generic `e` parameter.
+   *
+   * @param emitEvent - The click event payload.
+   */
+  (emitEvent: 'click'): void;
 }>();
 </script>
 

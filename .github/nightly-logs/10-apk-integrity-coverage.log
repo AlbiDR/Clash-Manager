@@ -79,3 +79,5 @@
 * [2026-08-08] [Stage 10] CLEAN: APK/reference/twa-manifest.json -- No action required. Verified manifest color, shortcut, orientation, and theme color parity.
 * [2026-08-08] [Stage 10] CLEAN: APK/release/latest.json -- No action required. Version matches current monorepo version 14.42.3 and build number 170.
 * [2026-08-08] [Stage 10] CLEAN: APK/release/clashmanager-v14.42.3+170.apk -- No action required. Release APK version and custom native layer integrity are fully verified.
+* [2026-08-09] [Stage 10] CLEAN: Codebase -- Completed APK & PWA wrapper integrity audit. No discrepancies found. Manifest, shortcuts, AssetLinks, and custom native layer are fully verified.
+* [2026-08-10] [Stage 10] CLEAN: Codebase -- Completed APK & PWA wrapper integrity audit. No discrepancies found. Manifest, shortcuts, AssetLinks, and custom native layer are fully verified.

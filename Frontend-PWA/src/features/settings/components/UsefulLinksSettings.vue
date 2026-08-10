@@ -79,7 +79,7 @@ onMounted(async () => {
  */
 const usefulLinks = computed(() => {
   const locale = getSupercellLocale();
-  const links = [
+  const usefulLinksCollection = [
     {
       label: "RoyaleAPI Blog",
       desc: "Latest news and articles about Clash Royale",
@@ -113,7 +113,7 @@ const usefulLinks = computed(() => {
   ];
 
   if (!isNativeWrapper.value && apkRelease.value) {
-    links.push({
+    usefulLinksCollection.push({
       label: "Download Android App",
       desc: `Install the native companion APK (v${appVersion})`,
       url: apkRelease.value.url,
@@ -121,7 +121,7 @@ const usefulLinks = computed(() => {
     });
   }
 
-  return links;
+  return usefulLinksCollection;
 });
 </script>
 
@@ -134,26 +134,26 @@ const usefulLinks = computed(() => {
   >
     <div class="links-list">
       <button
-        v-for="link in usefulLinks"
-        :key="link.url"
+        v-for="usefulLinkRecord in usefulLinks"
+        :key="usefulLinkRecord.url"
         class="link-row"
         v-tactile
-        @click="openExternal(link.url)"
+        @click="openExternal(usefulLinkRecord.url)"
       >
         <div class="link-info">
-          <span class="link-label">{{ link.label }}</span>
-          <span class="link-desc">{{ link.desc }}</span>
+          <span class="link-label">{{ usefulLinkRecord.label }}</span>
+          <span class="link-desc">{{ usefulLinkRecord.desc }}</span>
         </div>
         <img
-          v-if="link.logo"
-          :src="link.logo"
+          v-if="usefulLinkRecord.logo"
+          :src="usefulLinkRecord.logo"
           class="link-logo"
-          :alt="link.label"
+          :alt="usefulLinkRecord.label"
           width="18"
           height="18"
           loading="lazy"
         />
-        <Icon v-else-if="link.icon" :name="link.icon" size="18" class="link-icon" />
+        <Icon v-else-if="usefulLinkRecord.icon" :name="usefulLinkRecord.icon" size="18" class="link-icon" />
       </button>
     </div>
   </SettingsCard>
@@ -181,7 +181,10 @@ const usefulLinks = computed(() => {
   /* shared */
   text-decoration: none;
   cursor: pointer;
-  padding: 4px 0;
+  min-height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
+  padding: var(--sys-space-4) 0; /* Compensating vertical padding */
+  user-select: none; /* Text Selection Containment (Target A.3) */
+  -webkit-user-select: none;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 

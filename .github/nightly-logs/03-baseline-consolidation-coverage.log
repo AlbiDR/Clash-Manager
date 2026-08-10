@@ -385,3 +385,5 @@
 * [2026-08-08] [Stage 3] CLEAN: Backend/supabase/migrations/20260801020000_blacklist_win_rate_snapshot.sql -- No action required
 * [2026-08-08] [Stage 3] CLEAN: Backend/supabase/migrations/20260803000000_fix_last_seen_at_monotonic_guard.sql -- No action required
 * [2026-08-08] [Stage 3] CLEAN: Backend/supabase/migrations/20260804000000_harden_river_race_week_id_resolution.sql -- No action required
+* [2026-08-09] [Stage 3] CLEAN: Codebase -- Baseline master migration is perfectly folded and up to date; no pending migrations or structural drift detected.
+* [2026-08-10] [Stage 3] CLEAN: Codebase -- audit completed; baseline is 100% current and compliant; no folding required.

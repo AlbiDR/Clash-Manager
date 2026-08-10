@@ -7,291 +7,31 @@ import { useConfirm } from "./useConfirm";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
 import { UI_STABILITY_DELAY } from "@core/config";
+import { resolveLatestApkRelease, type ApkReleaseDownload } from "./apkResolver";
 
-export const APK_RELEASE_RAW_BASE_URL = "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release";
-export const APK_LATEST_METADATA_URL = `${APK_RELEASE_RAW_BASE_URL}/latest.json`;
-export const APK_RELEASE_CONTENTS_API_URL =
-  "https://api.github.com/repos/AlbiDR/Clash-Manager/contents/APK/release?ref=Beta";
-const APK_RELEASE_PAGES_PATH = "apk/release";
-export const APK_RESOLUTION_CACHE_TTL_MS = 60000;
-export const APK_METADATA_FETCH_TIMEOUT_MS = 3500;
-
-type ApkResolutionCache = {
-  buildNumber?: number;
-  filename: string;
-  url: string;
-  version?: string;
-  expiresAt: number;
-};
-
-type GitHubReleaseContent = {
-  download_url?: string | null;
-  name?: string;
-  type?: string;
-};
-
-type ReleaseApkParts = {
-  major: number;
-  minor: number;
-  patch: number;
-  build: number;
-};
-
-let apkResolutionCache: ApkResolutionCache | undefined;
-let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
-
-type BeforeInstallPromptOutcome = "accepted" | "dismissed";
-
-type BeforeInstallPromptEvent = Event & {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: BeforeInstallPromptOutcome; platform: string }>;
-};
-
-export type ApkReleaseDownload = {
-  buildNumber?: number;
-  filename: string;
-  url: string;
-  version?: string;
-};
-
-const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
-const isPwaInstallAvailable = ref(false);
-const isPwaStandalone = ref(false);
-let installPromptListenerBound = false;
-
-function readPwaStandaloneState(): boolean {
-  if (typeof window === "undefined") return false;
-
-  return window.matchMedia?.("(display-mode: standalone)").matches ||
-    ("standalone" in window.navigator && window.navigator.standalone === true);
-}
-
-function bindInstallPromptListener(): void {
-  if (installPromptListenerBound || typeof window === "undefined") return;
-  installPromptListenerBound = true;
-  isPwaStandalone.value = readPwaStandaloneState();
-
-  const standaloneMediaQuery = window.matchMedia?.("(display-mode: standalone)");
-  standaloneMediaQuery?.addEventListener?.("change", () => {
-    isPwaStandalone.value = readPwaStandaloneState();
-  });
-
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    deferredInstallPrompt.value = event as BeforeInstallPromptEvent;
-    isPwaInstallAvailable.value = true;
-  });
-
-  window.addEventListener("appinstalled", () => {
-    deferredInstallPrompt.value = undefined;
-    isPwaInstallAvailable.value = false;
-    isPwaStandalone.value = true;
-  });
-}
-
-bindInstallPromptListener();
-
-function buildFreshUrl(url: string): string {
-  return `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
-}
-
-function isReleaseApkFilename(filename: string | undefined): filename is string {
-  return typeof filename === "string" && /^clashmanager-v\d+\.\d+\.\d+\+\d+\.apk$/.test(filename);
-}
-
-function isReleaseVersion(version: string | undefined): version is string {
-  return typeof version === "string" && /^\d+\.\d+\.\d+$/.test(version);
-}
-
-function isReleaseBuildNumber(buildNumber: number | undefined): buildNumber is number {
-  return typeof buildNumber === "number" && Number.isInteger(buildNumber) && buildNumber > 0;
-}
-
-function buildApkDownloadUrl(filename: string, baseUrl = APK_RELEASE_RAW_BASE_URL): string {
-  return `${baseUrl.replace(/\/$/, "")}/${encodeURIComponent(filename)}`;
-}
-
-function getSameOriginApkReleaseBaseUrl(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-
-  const origin = window.location?.origin;
-  if (!origin || origin === "null") return undefined;
-
-  try {
-    return new URL(`${APK_RELEASE_PAGES_PATH}/`, new URL(import.meta.env.BASE_URL, origin)).toString();
-  } catch (sameOriginUrlError: unknown) {
-    console.warn("[PWA] Same-origin APK release URL unavailable", sameOriginUrlError);
-    return undefined;
-  }
-}
-
-function parseReleaseApkFilename(filename: string): ReleaseApkParts | undefined {
-  const match = filename.match(/^clashmanager-v(\d+)\.(\d+)\.(\d+)\+(\d+)\.apk$/);
-  if (!match) return undefined;
-
-  return {
-    major: Number(match[1]),
-    minor: Number(match[2]),
-    patch: Number(match[3]),
-    build: Number(match[4]),
-  };
-}
-
-function compareReleaseApkFilenames(a: string, b: string): number {
-  const parsedA = parseReleaseApkFilename(a);
-  const parsedB = parseReleaseApkFilename(b);
-  if (!parsedA || !parsedB) return 0;
-
-  return (
-    parsedA.major - parsedB.major ||
-    parsedA.minor - parsedB.minor ||
-    parsedA.patch - parsedB.patch ||
-    parsedA.build - parsedB.build
-  );
-}
-
-async function fetchFresh(url: string): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), APK_METADATA_FETCH_TIMEOUT_MS);
-
-  try {
-    return await fetch(buildFreshUrl(url), {
-      cache: "no-store",
-      headers: {
-        "Cache-Control": "no-cache",
-      },
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-async function resolveLatestApkMetadataFromUrl(
-  metadataUrl: string,
-  downloadBaseUrl: string,
-): Promise<ApkReleaseDownload | undefined> {
-  try {
-    const response = await fetchFresh(metadataUrl);
-    if (!response.ok) return undefined;
-
-    const metadata = (await response.json()) as {
-      buildNumber?: number;
-      filename?: string;
-      version?: string;
-    };
-    if (!isReleaseApkFilename(metadata.filename)) return undefined;
-
-    return {
-      buildNumber: isReleaseBuildNumber(metadata.buildNumber) ? metadata.buildNumber : undefined,
-      filename: metadata.filename,
-      url: buildApkDownloadUrl(metadata.filename, downloadBaseUrl),
-      version: isReleaseVersion(metadata.version) ? metadata.version : undefined,
-    };
-  } catch (metadataError: unknown) {
-    console.warn("[PWA] APK latest metadata lookup failed", metadataUrl, metadataError);
-    return undefined;
-  }
-}
-
-async function resolveLatestApkMetadata(): Promise<ApkReleaseDownload | undefined> {
-  const sameOriginBaseUrl = getSameOriginApkReleaseBaseUrl();
-  const metadataCandidates = [
-    ...(sameOriginBaseUrl ? [{
-      downloadBaseUrl: sameOriginBaseUrl,
-      metadataUrl: buildApkDownloadUrl("latest.json", sameOriginBaseUrl),
-    }] : []),
-    {
-      downloadBaseUrl: APK_RELEASE_RAW_BASE_URL,
-      metadataUrl: APK_LATEST_METADATA_URL,
-    },
-  ];
-
-  const releases = (await Promise.all(
-    metadataCandidates.map((candidate) =>
-      resolveLatestApkMetadataFromUrl(candidate.metadataUrl, candidate.downloadBaseUrl),
-    ),
-  )).filter((release): release is ApkReleaseDownload => Boolean(release));
-
-  return releases.sort((a, b) => compareReleaseApkFilenames(a.filename, b.filename)).at(-1);
-}
-
-async function resolveLatestApkFromContentsApi(): Promise<ApkReleaseDownload | undefined> {
-  try {
-    const response = await fetchFresh(APK_RELEASE_CONTENTS_API_URL);
-    if (!response.ok) return undefined;
-
-    const contents = (await response.json()) as GitHubReleaseContent[];
-    if (!Array.isArray(contents)) return undefined;
-
-    const filename = contents
-      .flatMap((item) => item.type === "file" && isReleaseApkFilename(item.name) ? [item.name] : [])
-      .sort(compareReleaseApkFilenames)
-      .at(-1);
-
-    return filename ? { filename, url: buildApkDownloadUrl(filename) } : undefined;
-  } catch (contentsError: unknown) {
-    console.warn("[PWA] APK contents lookup failed", contentsError);
-    return undefined;
-  }
-}
-
-async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | undefined> {
-  const [metadataRelease, contentsRelease] = await Promise.all([
-    resolveLatestApkMetadata(),
-    resolveLatestApkFromContentsApi(),
-  ]);
-
-  if (!metadataRelease) return contentsRelease;
-  if (!contentsRelease) return metadataRelease;
-
-  return compareReleaseApkFilenames(contentsRelease.filename, metadataRelease.filename) > 0
-    ? contentsRelease
-    : metadataRelease;
-}
-
-export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | undefined> {
-  const now = Date.now();
-  if (apkResolutionCache && apkResolutionCache.expiresAt > now) {
-    return {
-      buildNumber: apkResolutionCache.buildNumber,
-      filename: apkResolutionCache.filename,
-      url: apkResolutionCache.url,
-      version: apkResolutionCache.version,
-    };
-  }
-  if (pendingApkResolution) return pendingApkResolution;
-
-  pendingApkResolution = resolveLatestApkReleaseUncached()
-    .then((release) => {
-      if (release) {
-        apkResolutionCache = {
-          buildNumber: release.buildNumber,
-          filename: release.filename,
-          url: release.url,
-          version: release.version,
-          expiresAt: Date.now() + APK_RESOLUTION_CACHE_TTL_MS,
-        };
-      }
-      return release;
-    })
-    .finally(() => {
-      pendingApkResolution = undefined;
-    });
-
-  return pendingApkResolution;
-}
-
-export async function resolveLatestApkFilename(): Promise<string | undefined> {
-  return (await resolveLatestApkRelease())?.filename;
-}
-
-export function resetApkResolutionCacheForTests(): void {
-  if (import.meta.env.TEST) {
-    apkResolutionCache = undefined;
-    pendingApkResolution = undefined;
-  }
-}
+export {
+  APK_RELEASE_RAW_BASE_URL,
+  APK_LATEST_METADATA_URL,
+  APK_RELEASE_CONTENTS_API_URL,
+  APK_FETCH_TIMEOUT_MS,
+  APK_RESOLUTION_CACHE_TTL_MS,
+  APK_RELEASE_PATH,
+  type GitHubReleaseContent,
+  type ReleaseApkParts,
+  type ApkResolutionCache,
+  type ApkReleaseDownload,
+  buildFreshApkMetadataUrl,
+  buildFreshUrl,
+  isReleaseApkFilename,
+  buildApkDownloadUrl,
+  buildSameOriginApkReleaseUrl,
+  buildSameOriginApkDownloadUrl,
+  selectNewestReleaseApkFilename,
+  selectNewestReleaseApk,
+  resolveLatestApkRelease,
+  resolveLatestApkFilename,
+  resetApkResolutionCacheForTests,
+} from "./apkResolver";
 
 export function resetPwaInstallPromptForTests(): void {
   if (import.meta.env.TEST) {
