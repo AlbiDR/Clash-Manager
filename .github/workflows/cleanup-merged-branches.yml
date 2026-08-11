@@ -24,7 +24,8 @@ jobs:
       ) &&
       (
         startsWith(github.event.pull_request.head.ref, 'nightly/stage-') ||
-        startsWith(github.event.pull_request.head.ref, 'nightly-stage-')
+        startsWith(github.event.pull_request.head.ref, 'nightly-stage-') ||
+        startsWith(github.event.pull_request.head.ref, 'Nightly-')
       )
     runs-on: ubuntu-latest
     timeout-minutes: 5

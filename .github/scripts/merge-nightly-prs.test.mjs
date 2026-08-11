@@ -2,13 +2,20 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import {
   classifyTagCreation,
+  classifyNightlyPr,
   collectHistoryBlocksFromTags,
   extractMetadata,
+  getMergeTargets,
   getRecentDateStrings,
+  getRejectedNightlyPrs,
+  inferStageFromChangedFiles,
   insertHistoryBlocks,
   isAllowedAuthor,
   isNightlyStagePr,
@@ -23,6 +30,18 @@ import {
   stageNumber,
   summarizeFiles,
 } from "./merge-nightly-core.mjs";
+import {
+  createEmptyLedger,
+  ensureRunEntries,
+  loadLedger,
+  saveLedger,
+  stageEntry,
+  upsertStageEntry,
+  validateLedger,
+} from "./nightly-ledger.mjs";
+
+const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
+const mergeConfig = { targetBranch: "Nightly", allowedAuthors: ["google-labs-jules", "AlbiDR"] };
 
 test("parses slash and hyphen nightly stage branch names", () => {
   assert.deepEqual(parseStageBranch("nightly/stage-12-apk-ux-a1b2c3d4"), {
@@ -68,21 +87,101 @@ test("sorts stage PRs by stage number and then PR number", () => {
 });
 
 test("filters allowed nightly stage PRs", () => {
-  const config = { targetBranch: "Nightly", allowedAuthors: ["google-labs-jules", "AlbiDR"] };
-  assert.equal(isAllowedAuthor("google-labs-jules[bot]", config.allowedAuthors), true);
-  assert.equal(isAllowedAuthor("dependabot[bot]", config.allowedAuthors), false);
+  assert.equal(isAllowedAuthor("google-labs-jules[bot]", mergeConfig.allowedAuthors), true);
+  assert.equal(isAllowedAuthor("dependabot[bot]", mergeConfig.allowedAuthors), false);
 
   assert.equal(isNightlyStagePr({
     user: { login: "AlbiDR" },
     base: { ref: "Nightly" },
     head: { ref: "nightly-stage-7-version-integrity-x" },
-  }, config), true);
+  }, mergeConfig), true);
 
   assert.equal(isNightlyStagePr({
     user: { login: "AlbiDR" },
     base: { ref: "Stable" },
     head: { ref: "nightly-stage-7-version-integrity-x" },
-  }, config), false);
+  }, mergeConfig), false);
+});
+
+test("classifies canonical and malformed Nightly PRs using registry evidence", () => {
+  const canonical = {
+    number: 7,
+    user: { login: "google-labs-jules[bot]" },
+    base: { ref: "Nightly" },
+    head: { ref: "nightly/stage-7-version-integrity-a1b2c3d4" },
+    files: [".github/nightly-logs/07-version-integrity-coverage.log"],
+  };
+  assert.deepEqual(classifyNightlyPr(canonical, registry, mergeConfig), {
+    kind: "canonical",
+    stage: 7,
+    reason: "canonical nightly stage branch",
+  });
+
+  const malformed = {
+    number: 1418,
+    user: { login: "google-labs-jules[bot]" },
+    base: { ref: "Nightly" },
+    head: { ref: "Nightly-1085819592077280237" },
+    files: [".github/nightly-logs/03-baseline-consolidation-coverage.log"],
+  };
+  assert.equal(inferStageFromChangedFiles(malformed, registry).stage, 3);
+  assert.deepEqual(classifyNightlyPr(malformed, registry, mergeConfig), {
+    kind: "inferred",
+    stage: 3,
+    reason: "inferred Stage 3 from coverage-log",
+    files: [".github/nightly-logs/03-baseline-consolidation-coverage.log"],
+  });
+});
+
+test("blocks ambiguous or evidence-free allowed-author Nightly PRs", () => {
+  const ambiguous = {
+    number: 99,
+    user: { login: "google-labs-jules[bot]" },
+    base: { ref: "Nightly" },
+    head: { ref: "Nightly-ambiguous" },
+    files: [
+      ".github/nightly-logs/03-baseline-consolidation-coverage.log",
+      ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
+    ],
+  };
+  assert.match(classifyNightlyPr(ambiguous, registry, mergeConfig).reason, /multiple stage coverage logs/);
+
+  const evidenceFree = {
+    number: 100,
+    user: { login: "google-labs-jules[bot]" },
+    base: { ref: "Nightly" },
+    head: { ref: "Nightly-no-evidence" },
+    files: ["README.md"],
+  };
+  assert.deepEqual(getRejectedNightlyPrs([ambiguous, evidenceFree], registry, mergeConfig).map(pr => pr.number), [99, 100]);
+});
+
+test("orders inferred stages between canonical stage PRs", () => {
+  const sorted = getMergeTargets([
+    {
+      number: 4,
+      user: { login: "google-labs-jules[bot]" },
+      base: { ref: "Nightly" },
+      head: { ref: "nightly/stage-4-optimization-x" },
+      files: [".github/nightly-logs/04-optimization-coverage.log"],
+    },
+    {
+      number: 3,
+      user: { login: "google-labs-jules[bot]" },
+      base: { ref: "Nightly" },
+      head: { ref: "Nightly-1085819592077280237" },
+      files: [".github/nightly-logs/03-baseline-consolidation-coverage.log"],
+    },
+    {
+      number: 2,
+      user: { login: "google-labs-jules[bot]" },
+      base: { ref: "Nightly" },
+      head: { ref: "nightly/stage-2-verification-x" },
+      files: [".github/nightly-logs/02-verification-coverage.log"],
+    },
+  ], registry, mergeConfig);
+
+  assert.deepEqual(sorted.map(pr => pr.number), [2, 3, 4]);
 });
 
 test("extracts NIGHTLY_PR_METADATA fields", () => {
@@ -304,4 +403,42 @@ test("builds seven UTC date strings for safety-net backfill", () => {
     "2026-08-07",
     "2026-08-06",
   ]);
+});
+
+test("nightly ledger creates and updates one idempotent entry per date and stage", t => {
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), "nightly-ledger-test-"));
+  const ledgerPath = path.join(tempDir, "nightly-run-ledger.json");
+  t.after(() => rmSync(tempDir, { recursive: true, force: true }));
+
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, "2026-08-11", {
+    now: "2026-08-11T13:00:00.000Z",
+    deadlineUtc: { 3: "2026-08-11T02:00:00.000Z" },
+  });
+  assert.equal(Object.keys(ledger.runs["2026-08-11"]).length, 13);
+  assert.equal(stageEntry(ledger, "2026-08-11", 3).state, "EXPECTED");
+  assert.equal(stageEntry(ledger, "2026-08-11", 3).deadlineUtc, "2026-08-11T02:00:00.000Z");
+
+  upsertStageEntry(ledger, registry, "2026-08-11", 3, {
+    state: "RECOVERABLE",
+    evidence: { prNumber: 1418 },
+    failureClass: "MALFORMED_BRANCH",
+    lastObservedAt: "2026-08-11T13:01:00.000Z",
+  });
+  upsertStageEntry(ledger, registry, "2026-08-11", 3, {
+    state: "MERGED",
+    evidence: { commitSha: "8ca87809" },
+    failureClass: null,
+    lastObservedAt: "2026-08-11T13:02:00.000Z",
+  });
+
+  assert.equal(Object.keys(ledger.runs["2026-08-11"]).length, 13);
+  assert.deepEqual(stageEntry(ledger, "2026-08-11", 3).evidence, {
+    prNumber: 1418,
+    commitSha: "8ca87809",
+  });
+  assert.equal(stageEntry(ledger, "2026-08-11", 3).state, "MERGED");
+
+  saveLedger(ledger, ledgerPath);
+  assert.deepEqual(loadLedger(ledgerPath), validateLedger(ledger));
 });

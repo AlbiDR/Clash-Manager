@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-08-09
+LAST_AGED:   2026-08-10
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -16,13 +16,91 @@ LAST_AGED:   2026-08-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-11] PR #1418 [Stage 3]: chore(database): Baseline master migration consolidation completed
+**Domain:** pipeline | **Commit:** 719de1a5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1418)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline master migration consolidation completed
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1425 [Stage 11]: [Stage 11] APK and Native Wrapper Optimizations
+**Domain:** pipeline | **Commit:** 35df2c80 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1425)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 11] APK and Native Wrapper Optimizations
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1424 [Stage 10]: Stage 10 APK and PWA Wrapper Integrity Audit CLEAN
+**Domain:** pipeline | **Commit:** 878b8cb7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1424)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Stage 10 APK and PWA Wrapper Integrity Audit CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1423 [Stage 9]: Stage 9 structural audit CLEAN
+**Domain:** pipeline | **Commit:** be0c37f8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1423)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Stage 9 structural audit CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1422 [Stage 8]: chore(deps): Bumped knip to ^6.32.1 and updated lockfile
+**Domain:** pipeline | **Commit:** f4a12e18 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1422)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped knip to ^6.32.1 and updated lockfile
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1421 [Stage 7]: Version Consistency Auditor Finalized
+**Domain:** pipeline | **Commit:** d32787cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1421)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Version Consistency Auditor Finalized
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1420 [Stage 5]: docs(readme): Reconcile shared directives README drift
+**Domain:** pipeline | **Commit:** 7bf8f9e5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1420)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/directives/README.md
+**Why:** Automated nightly audit pass.
+**Change:** docs(readme): Reconcile shared directives README drift
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1419 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer - CLEAN
+**Domain:** pipeline | **Commit:** 460fbbed | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1419)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 4] Optimization - Substrate Hygiene Engineer - CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-11] PR #1417 [Stage 2]: Nightly Stage 2 Verification: ghostBenchmarkState Tests
+**Domain:** pipeline | **Commit:** dd16184c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1417)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/directives/directives-tests/ghostBenchmarkState.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** Nightly Stage 2 Verification: ghostBenchmarkState Tests
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-10] PR #1416 [Stage 1]: [Stage 1] Hardening - Runtime Integrity Auditor - CLEAN
+**Domain:** pipeline | **Commit:** 449b4738 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1416)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 1] Hardening - Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions.
+
 ### [2026-08-10] PR #1415 [Stage 13]: chore(pipeline): Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protoc
 **Domain:** pipeline | **Commit:** e9ce27e3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1415)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 **Why:** Automated nightly audit pass.
 **Change:** chore(pipeline): Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protoc
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-10] PR #1414 [Stage 12]: chore(apk-ux): Modernized AndroidCalibrationSettings.vue coordinate inputs
 **Domain:** pipeline | **Commit:** 0fac3693 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1414)
@@ -31,14 +109,12 @@ LAST_AGED:   2026-08-09
 **Change:** chore(apk-ux): Modernized AndroidCalibrationSettings.vue coordinate inputs
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-10] PR #1413 [Stage 11]: [Stage 11] APK and Native Wrapper Optimizations - CLEAN
 **Domain:** pipeline | **Commit:** 79d64c19 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1413)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
 **Why:** Automated nightly audit pass.
 **Change:** [Stage 11] APK and Native Wrapper Optimizations - CLEAN
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-10] PR #1412 [Stage 10]: chore(apk): Completed APK & PWA wrapper integrity audit. No discrepancies found. Manifest, shortcuts, AssetLinks, and custom native layer are fully verified.
 **Domain:** pipeline | **Commit:** 36a5a8a1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1412)
@@ -47,14 +123,12 @@ LAST_AGED:   2026-08-09
 **Change:** chore(apk): Completed APK & PWA wrapper integrity audit. No discrepancies found. Manifest, shortcuts, AssetLinks, and custom native layer are fully verified.
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-10] PR #1411 [Stage 9]: chore(refactor): Conducted comprehensive structural audit. Confirmed 100% compliance across all core modules and features with zero violations or debt.
 **Domain:** pipeline | **Commit:** f345ae5a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1411)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
 **Why:** Automated nightly audit pass.
 **Change:** chore(refactor): Conducted comprehensive structural audit. Confirmed 100% compliance across all core modules and features with zero violations or debt.
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-10] PR #1410 [Stage 8]: chore(deps): Bumped tsx to ^4.23.12 and updated major version watchlist
 **Domain:** pipeline | **Commit:** d7c7d131 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1410)
@@ -63,14 +137,12 @@ LAST_AGED:   2026-08-09
 **Change:** chore(deps): Bumped tsx to ^4.23.12 and updated major version watchlist
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-10] PR #1409 [Stage 7]: chore(version): No version drift or catalog violations detected across manifests, substrate, and documentation.
 **Domain:** pipeline | **Commit:** cd6c63ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1409)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
 **Why:** Automated nightly audit pass.
 **Change:** chore(version): No version drift or catalog violations detected across manifests, substrate, and documentation.
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-10] PR #1408 [Stage 6]: docs(tsdoc): harden apkResolver interface contracts and inline logic annotations
 **Domain:** pipeline | **Commit:** 370289f5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1408)
@@ -79,14 +151,12 @@ LAST_AGED:   2026-08-09
 **Change:** docs(tsdoc): harden apkResolver interface contracts and inline logic annotations
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-10] PR #1407 [Stage 5]: [Stage 5] Documentation README - Architecture Truth Architect
 **Domain:** pipeline | **Commit:** e16b5273 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1407)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
 **Why:** Automated nightly audit pass.
 **Change:** [Stage 5] Documentation README - Architecture Truth Architect
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-10] PR #1406 [Stage 4]: Optimization - Substrate Hygiene Engineer
 **Domain:** pipeline | **Commit:** cf8c9274 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1406)
@@ -95,7 +165,6 @@ LAST_AGED:   2026-08-09
 **Change:** Optimization - Substrate Hygiene Engineer
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-10] PR #1405 [Stage 3]: Baseline Consolidation Audit Completed - CLEAN
 **Domain:** pipeline | **Commit:** 2ad3d286 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1405)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
@@ -103,14 +172,12 @@ LAST_AGED:   2026-08-09
 **Change:** Baseline Consolidation Audit Completed - CLEAN
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-10] PR #1404 [Stage 2]: [Stage 2] Verification - Logic Integrity Auditor
 **Domain:** pipeline | **Commit:** 6fd17d83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1404)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/apkResolver.spec.ts
 **Why:** Automated nightly audit pass.
 **Change:** [Stage 2] Verification - Logic Integrity Auditor
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-09] PR #1403 [Stage 1]: chore(harden): Conducted daily security and data integrity audit, confirming 100% saturation and zero active threat vectors
 **Domain:** pipeline | **Commit:** 3924feaa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1403)
@@ -1001,14 +1068,6 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-07-15] PR #1122 [Dependencies]: chore(deps): bump @supabase/supabase-js and update major version watchlist (``PENDING``) [View](PENDING)
 * [2026-07-15] PR #1121 [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
 * [2026-07-15] PR #1120 [APK Optimization]: perf(apk-optimization): optimize webview performance and sw precache (``PENDING``) [View](PENDING)
-* [2026-07-10] PR #1065 [Refactor/Optimization]: refactor(opt): standardize core service variable naming (```558ead3f```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1065)
-* [2026-07-10] PR #1066 [README]: docs(readme): reconcile domain types documentation (```a0f379cf```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1066)
-* [2026-07-10] PR #1067 [TSDoc]: docs(tsdoc): harden interface contracts for Layer 1 core services (```dbbe5fdd```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1067)
-* [2026-07-10] PR #1068 [Version Integrity]: chore(version): no drift found (```c49bd322```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1068)
-* [2026-07-10] PR #1069 [Dependencies]: chore(deps): bump @supabase/supabase-js from 2.110.1 to 2.110.2 (```a7b77ad2```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1069)
-* [2026-07-10] PR #1070 [Refactor/Optimization]: refactor: centralize hub-related interfaces to core types (```a243faa5```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1070)
-* [2026-07-10] PR #1071 [APK Integrity]: fix(apk-integrity): sync brand theme and navigation colors (```7d151633```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1071)
-* [2026-07-10] PR #1072 [APK UX]: fix(apk-ux): modernize score selector for mobile compliance (```4c6b3e21```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1072)
 * [2026-07-11] PR #1073 [Hardening]: fix(harden): secure Royale API harvest boundary (```fb029d16```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1073)
 * [2026-07-11] PR #1074 [Verification]: test(verify): add saturating tests for backend shared utils (```7bd174b8```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1074)
 * [2026-07-11] PR #1075 [Performance]: perf(opt): standardize shared ui variable naming and audit substrate (```a5ca0ac5```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1075)
@@ -1045,19 +1104,19 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W28
-* 2 PRs [APK Integrity]: #1036, #1054
+* 3 PRs [APK Integrity]: #1036, #1054, #1071
 * 3 PRs [APK Optimization]: #1037, #1047, #1055
-* 3 PRs [APK UX]: #1038, #1048, #1064
+* 4 PRs [APK UX]: #1038, #1048, #1064, #1072
 * 2 PRs [Baseline]: #1029, #1057
-* 4 PRs [Dependencies]: #1034, #1044, #1053, #1062
+* 5 PRs [Dependencies]: #1034, #1044, #1053, #1062, #1069
 * 1 PRs [General]: #1046
 * 2 PRs [Hardening]: #1056, #1063
 * 1 PRs [Performance]: #1050
-* 4 PRs [README]: #1031, #1041, #1051, #1059
-* 5 PRs [Refactor/Optimization]: #1030, #1035, #1040, #1045, #1058
-* 4 PRs [TSDoc]: #1032, #1042, #1052, #1060
+* 5 PRs [README]: #1031, #1041, #1051, #1059, #1066
+* 7 PRs [Refactor/Optimization]: #1030, #1035, #1040, #1045, #1058, #1065, #1070
+* 5 PRs [TSDoc]: #1032, #1042, #1052, #1060, #1067
 * 3 PRs [Verification]: #1028, #1039, #1049
-* 3 PRs [Version Integrity]: #1033, #1043, #1061
+* 4 PRs [Version Integrity]: #1033, #1043, #1061, #1068
 
 #### 2026-W27
 * 7 PRs [APK Integrity]: #1004, #1016, #1025, #968, #976, #987, #996
@@ -1141,17 +1200,6 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * 7 PRs [TSDoc]: #626, #633, #641, #648, #655, #662, #670
 * 6 PRs [Verification]: #623, #630, #645, #652, #659, #667
 * 6 PRs [Version Integrity]: #625, #627, #634, #642, #663, #671
-
-#### 2026-W20
-* 7 PRs [Dependencies]: #580, #586, #591, #599, #606, #613, #620
-* 5 PRs [General]: #583, #593, #600, #601, #614
-* 6 PRs [Hardening]: #577, #581, #587, #594, #608, #615
-* 3 PRs [Performance]: #588, #596, #617
-* 7 PRs [README]: #579, #584, #589, #597, #604, #610, #618
-* 3 PRs [Refactor/Optimization]: #603, #607, #621
-* 6 PRs [TSDoc]: #578, #585, #590, #605, #611, #619
-* 5 PRs [Verification]: #582, #595, #602, #609, #616
-* 3 PRs [Version Integrity]: #592, #598, #612
 
 ## T4 -- Archive (90+ days)
 
