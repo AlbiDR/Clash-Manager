@@ -28,6 +28,7 @@ export const CONFIG = {
   targetBranch: "Nightly",
   allowedAuthors: ["google-labs-jules", "AlbiDR"],
   token: process.env.GITHUB_TOKEN ?? "",
+  julesApiKey: process.env.JULES_API_KEY ?? "",
   changelogPath: path.join(".github", "nightly-logs", "00-pr-history.md"),
   ledgerPath: path.join(".github", "nightly-logs", "nightly-run-ledger.json"),
   registryPath: path.join(".github", "nightly-config", "stages.json"),

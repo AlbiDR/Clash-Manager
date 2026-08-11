@@ -7,6 +7,15 @@ import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
 import { ensureRunEntries, loadLedger, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 
 const PASS_STATES = new Set(["MERGED", "RECOVERABLE", "ESCALATED"]);
+const JULES_API_BASE = "https://jules.googleapis.com/v1alpha";
+const IN_FLIGHT_JULES_STATES = new Set([
+  "QUEUED",
+  "PLANNING",
+  "AWAITING_PLAN_APPROVAL",
+  "AWAITING_USER_FEEDBACK",
+  "IN_PROGRESS",
+  "PAUSED",
+]);
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -83,6 +92,34 @@ async function fetchPullRequestFiles(prNumber, config = CONFIG) {
   return files;
 }
 
+async function fetchJulesSessions(config = CONFIG) {
+  if (!config.julesApiKey) return [];
+  try {
+    const res = await fetch(`${JULES_API_BASE}/sessions`, {
+      headers: { "X-Goog-Api-Key": config.julesApiKey },
+    });
+    if (!res.ok) {
+      console.error(`Jules API ${res.status} ${res.statusText}; continuing without session evidence.`);
+      return [];
+    }
+    const body = await res.json();
+    return Array.isArray(body.sessions) ? body.sessions : [];
+  } catch (error) {
+    console.error(`Jules API request failed: ${error.message}; continuing without session evidence.`);
+    return [];
+  }
+}
+
+export function matchJulesSession(sessions, stage, date) {
+  const evidenceDate = expectedEvidenceDate(stage.number, date);
+  const header = `[Stage ${stage.number}]`;
+  const matches = (sessions || [])
+    .filter(session => typeof session?.prompt === "string" && session.prompt.includes(header))
+    .filter(session => String(session.createTime || "").slice(0, 10) === evidenceDate)
+    .sort((a, b) => String(b.createTime || "").localeCompare(String(a.createTime || "")));
+  return matches[0] || null;
+}
+
 async function collectObservedState(registry, date, config = CONFIG) {
   runGit(["fetch", "--tags", "origin", config.targetBranch]);
   const prs = await fetchRecentPullRequests(config);
@@ -111,7 +148,9 @@ async function collectObservedState(registry, date, config = CONFIG) {
     } catch (_) {}
   }
 
-  return { prs, tags, coverageStages };
+  const julesSessions = await fetchJulesSessions(config);
+
+  return { prs, tags, coverageStages, julesSessions };
 }
 
 async function createOrUpdateEscalationIssue(date, entries, summary, config = CONFIG) {
@@ -219,13 +258,31 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
       continue;
     }
 
+    const julesMatch = matchJulesSession(observed.julesSessions, stage, date);
+    if (julesMatch && IN_FLIGHT_JULES_STATES.has(julesMatch.state)) {
+      entries.push({
+        stage: stage.number,
+        state: "RUNNING",
+        failureClass: null,
+        evidence: { julesSession: { id: julesMatch.id, state: julesMatch.state } },
+      });
+      continue;
+    }
+
     const previous = stageEntry(previousLedger, expectedEvidenceDate(stage.number, date), stage.number);
     const recurring = previous?.state === "NO_OUTPUT" || previous?.state === "ESCALATED";
+    const failureClass = julesMatch?.state === "COMPLETED"
+      ? "JULES_SESSION_STUCK"
+      : julesMatch?.state === "FAILED"
+        ? "JULES_SESSION_FAILED"
+        : "NO_PUBLISHED_OUTPUT";
     entries.push({
       stage: stage.number,
       state: recurring ? "ESCALATED" : "NO_OUTPUT",
-      failureClass: "NO_PUBLISHED_OUTPUT",
-      evidence: { coverageLog: stage.coverageLog },
+      failureClass,
+      evidence: julesMatch
+        ? { coverageLog: stage.coverageLog, julesSession: { id: julesMatch.id, state: julesMatch.state } }
+        : { coverageLog: stage.coverageLog },
     });
   }
 

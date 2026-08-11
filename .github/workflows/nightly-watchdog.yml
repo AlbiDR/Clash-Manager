@@ -40,6 +40,7 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
         run: |
           DATE_INPUT="${{ github.event.inputs.date }}"
           if [ -n "$DATE_INPUT" ]; then

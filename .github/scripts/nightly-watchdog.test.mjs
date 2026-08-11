@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { createEmptyLedger, ensureRunEntries, upsertStageEntry } from "./nightly-ledger.mjs";
-import { evaluateNightlyRun, expectedEvidenceDate, renderSummary } from "./nightly-watchdog.mjs";
+import { evaluateNightlyRun, expectedEvidenceDate, matchJulesSession, renderSummary } from "./nightly-watchdog.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
 
@@ -103,4 +103,77 @@ test("watchdog marks missing output and escalates repeated missing output", () =
   assert.equal(entries.find(entry => entry.stage === 12).state, "ESCALATED");
   assert.equal(entries.find(entry => entry.stage === 13).state, "NO_OUTPUT");
   assert.match(renderSummary("2026-08-11", entries), /Failing states: Stage 6 NO_OUTPUT, Stage 13 NO_OUTPUT/);
+});
+
+test("watchdog marks an in-flight Jules session as RUNNING instead of NO_OUTPUT", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${date}/stage-6/pr-1406`);
+  observed.julesSessions = [
+    {
+      id: "session-6-running",
+      state: "IN_PROGRESS",
+      createTime: `${date}T02:00:00Z`,
+      prompt: "# [Stage 6] Documentation TSDoc - Interface Contract Architect",
+    },
+  ];
+
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed,
+    previousLedger: createEmptyLedger(),
+  });
+
+  const stage6 = entries.find(entry => entry.stage === 6);
+  assert.equal(stage6.state, "RUNNING");
+  assert.equal(stage6.failureClass, null);
+  assert.equal(stage6.evidence.julesSession.id, "session-6-running");
+});
+
+test("watchdog classifies a completed-but-unmerged Jules session as stuck", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${date}/stage-13/pr-1413`);
+  observed.julesSessions = [
+    {
+      id: "session-13-completed",
+      state: "COMPLETED",
+      createTime: `${date}T05:00:00Z`,
+      prompt: "# [Stage 13] Self-Healing Protocol",
+    },
+  ];
+
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed,
+    previousLedger: createEmptyLedger(),
+  });
+
+  const stage13 = entries.find(entry => entry.stage === 13);
+  assert.equal(stage13.state, "NO_OUTPUT");
+  assert.equal(stage13.failureClass, "JULES_SESSION_STUCK");
+  assert.equal(stage13.evidence.julesSession.state, "COMPLETED");
+});
+
+test("matchJulesSession disambiguates same-header sessions by date", () => {
+  const stage = registry.stages.find(entry => entry.number === 6);
+  const sessions = [
+    {
+      id: "yesterday",
+      state: "COMPLETED",
+      createTime: "2026-08-10T23:00:00Z",
+      prompt: "# [Stage 6] Documentation TSDoc - Interface Contract Architect",
+    },
+    {
+      id: "today",
+      state: "IN_PROGRESS",
+      createTime: "2026-08-11T02:00:00Z",
+      prompt: "# [Stage 6] Documentation TSDoc - Interface Contract Architect",
+    },
+  ];
+
+  const match = matchJulesSession(sessions, stage, "2026-08-11");
+  assert.equal(match.id, "today");
 });
