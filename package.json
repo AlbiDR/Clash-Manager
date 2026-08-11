@@ -19,6 +19,7 @@
     "audit:version:fix": "tsx .github/scripts/validate_project.ts --fix",
     "test:nightly-lifecycle": "node --test .github/scripts/nightly-stage.test.mjs && node .github/scripts/nightly-stage.mjs validate",
     "test:nightly-merge": "node --test .github/scripts/merge-nightly-prs.test.mjs",
+    "test:nightly-watchdog": "node --test .github/scripts/nightly-watchdog.test.mjs",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json",

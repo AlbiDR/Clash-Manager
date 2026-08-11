@@ -20,6 +20,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { spawnSync } from "child_process";
+import { loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
 
 export const CONFIG = {
   owner: process.env.GITHUB_REPOSITORY?.split("/")[0] ?? "",
@@ -28,6 +29,8 @@ export const CONFIG = {
   allowedAuthors: ["google-labs-jules", "AlbiDR"],
   token: process.env.GITHUB_TOKEN ?? "",
   changelogPath: path.join(".github", "nightly-logs", "00-pr-history.md"),
+  ledgerPath: path.join(".github", "nightly-logs", "nightly-run-ledger.json"),
+  registryPath: path.join(".github", "nightly-config", "stages.json"),
   historyLookbackDays: 7,
 };
 
@@ -97,6 +100,50 @@ export function stageNumber(ref) {
   return parseStageBranch(ref)?.stage ?? 999;
 }
 
+function loadStageRegistry(config = CONFIG) {
+  const registry = JSON.parse(fs.readFileSync(config.registryPath, "utf8"));
+  if (!Array.isArray(registry.stages) || registry.stages.length !== 13) {
+    throw new Error("Nightly stage registry must define 13 stages.");
+  }
+  return registry;
+}
+
+function stageFromCoverageLog(registry, filePath) {
+  return registry.stages.find(stage => stage.coverageLog === filePath) || null;
+}
+
+export function inferStageFromChangedFiles(pr, registry) {
+  const files = (pr?.files || pr?.changedFiles || []).map(file => {
+    if (typeof file === "string") return file;
+    return file?.filename || file?.path || "";
+  }).filter(Boolean);
+  const matchedStages = files
+    .map(file => stageFromCoverageLog(registry, file))
+    .filter(Boolean);
+  const uniqueStageNumbers = [...new Set(matchedStages.map(stage => stage.number))];
+
+  if (uniqueStageNumbers.length === 1) {
+    return {
+      ok: true,
+      stage: uniqueStageNumbers[0],
+      source: "coverage-log",
+      files,
+    };
+  }
+  if (uniqueStageNumbers.length > 1) {
+    return {
+      ok: false,
+      reason: `multiple stage coverage logs changed: ${uniqueStageNumbers.join(", ")}`,
+      files,
+    };
+  }
+  return {
+    ok: false,
+    reason: "no registered stage coverage log changed",
+    files,
+  };
+}
+
 export function parseStageTag(tag) {
   const match = String(tag || "").match(/^nightly\/(\d{4}-\d{2}-\d{2})\/stage-(\d+)(?:\/pr-(\d+))?$/);
   if (!match) return null;
@@ -125,14 +172,54 @@ export function isNightlyStagePr(pr, config = CONFIG) {
   );
 }
 
+export function classifyNightlyPr(pr, registry, config = CONFIG) {
+  const allowed = isAllowedAuthor(pr?.user?.login, config.allowedAuthors);
+  const isTargetBranch = pr?.base?.ref === config.targetBranch;
+  const parsed = parseStageBranch(pr?.head?.ref);
+
+  if (!isTargetBranch) {
+    return { kind: "ignored", stage: null, reason: `base '${pr?.base?.ref}' is not ${config.targetBranch}` };
+  }
+  if (!allowed) {
+    return { kind: "rejected", stage: null, reason: `author '${pr?.user?.login || "unknown"}' is not allowlisted` };
+  }
+  if (parsed) {
+    return { kind: "canonical", stage: parsed.stage, reason: "canonical nightly stage branch" };
+  }
+
+  const inferred = inferStageFromChangedFiles(pr, registry);
+  if (inferred.ok) {
+    return {
+      kind: "inferred",
+      stage: inferred.stage,
+      reason: `inferred Stage ${inferred.stage} from ${inferred.source}`,
+      files: inferred.files,
+    };
+  }
+
+  return {
+    kind: "blocked",
+    stage: null,
+    reason: inferred.reason,
+    files: inferred.files,
+  };
+}
+
+function prStageNumber(pr) {
+  return pr.nightlyClassification?.stage ?? stageNumber(pr.head.ref);
+}
+
 export function sortStagePrs(prs) {
   return [...prs].sort((a, b) => {
-    const diff = stageNumber(a.head.ref) - stageNumber(b.head.ref);
+    const diff = prStageNumber(a) - prStageNumber(b);
     return diff !== 0 ? diff : a.number - b.number;
   });
 }
 
-function validateStageBranch(ref) {
+function validateStageBranch(ref, stageOverride = null) {
+  if (stageOverride) {
+    return { stage: stageOverride, ref };
+  }
   const parsed = parseStageBranch(ref);
   if (!parsed) {
     throw new Error(`Ref '${ref}' is not a valid nightly stage branch.`);
@@ -323,6 +410,38 @@ async function fetchAllPullRequests(config = CONFIG) {
   return prs;
 }
 
+async function fetchPullRequestFiles(prNumber, config = CONFIG) {
+  const files = [];
+  let page = 1;
+  while (true) {
+    const pageFiles = await githubApi(
+      `/repos/${config.owner}/${config.repo}/pulls/${prNumber}/files?per_page=100&page=${page}`,
+      "GET",
+      null,
+      false,
+      config,
+    );
+    if (pageFiles.length === 0) break;
+    files.push(...pageFiles.map(file => file.filename).filter(Boolean));
+    page++;
+  }
+  return files;
+}
+
+async function attachChangedFiles(prs, config = CONFIG) {
+  for (const pr of prs) {
+    if (!isAllowedAuthor(pr?.user?.login, config.allowedAuthors) || pr?.base?.ref !== config.targetBranch) continue;
+    try {
+      pr.files = await fetchPullRequestFiles(pr.number, config);
+    } catch (error) {
+      log(`Failed to fetch changed files for PR #${pr.number}: ${error.message}`, "warn");
+      pr.files = [];
+      pr.fileFetchError = error.message;
+    }
+  }
+  return prs;
+}
+
 async function retargetNightlyPrs(prs, config = CONFIG) {
   for (const pr of prs) {
     const allowed = isAllowedAuthor(pr.user.login, config.allowedAuthors);
@@ -342,20 +461,29 @@ async function retargetNightlyPrs(prs, config = CONFIG) {
   }
 }
 
-function getMergeTargets(prs, config = CONFIG) {
+export function getMergeTargets(prs, registry, config = CONFIG) {
   return sortStagePrs(prs.filter(pr => {
-    const allowed = isAllowedAuthor(pr?.user?.login, config.allowedAuthors);
-    const isTargetBranch = pr?.base?.ref === config.targetBranch;
-    const isNightlyBranch = parseStageBranch(pr?.head?.ref) !== null;
+    const classification = pr.nightlyClassification || classifyNightlyPr(pr, registry, config);
+    pr.nightlyClassification = classification;
 
-    if (isTargetBranch && !allowed) {
-      log(`Skipping PR #${pr.number} by ${pr.user.login} -- author not on allowlist.`, "warn");
+    if (classification.kind === "rejected") {
+      log(`Skipping PR #${pr.number} -- ${classification.reason}.`, "warn");
     }
-    if (isTargetBranch && allowed && !isNightlyBranch) {
-      log(`Skipping PR #${pr.number} -- head '${pr.head.ref}' is not a nightly stage branch.`, "warn");
+    if (classification.kind === "blocked") {
+      log(`Blocking PR #${pr.number} -- head '${pr.head.ref}' cannot be classified: ${classification.reason}.`, "error");
     }
-    return allowed && isTargetBranch && isNightlyBranch;
+    return classification.kind === "canonical" || classification.kind === "inferred";
   }));
+}
+
+export function getRejectedNightlyPrs(prs, registry, config = CONFIG) {
+  return prs
+    .map(pr => ({ pr, classification: pr.nightlyClassification || classifyNightlyPr(pr, registry, config) }))
+    .filter(({ classification }) => classification.kind === "blocked")
+    .map(({ pr, classification }) => {
+      pr.nightlyClassification = classification;
+      return pr;
+    });
 }
 
 async function pollMergeable(prNumber, maxPolls, config = CONFIG) {
@@ -403,9 +531,9 @@ export function classifyTagCreation(existingCommit, expectedCommit) {
   return existingCommit === expectedCommit ? "exists-matching" : "exists-conflicting";
 }
 
-function createStageTag(pr, squashSha, config = CONFIG) {
+function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
   const date = new Date().toISOString().split("T")[0];
-  const stage = validateStageBranch(pr.head.ref).stage;
+  const stage = validateStageBranch(pr.head.ref, stageOverride).stage;
   const meta = extractMetadata(pr);
 
   try {
@@ -590,9 +718,9 @@ function readFileFromRef(ref, file) {
   return gitStdout(["show", `${ref}:${file}`]);
 }
 
-async function resolveConflictsAndRebase(pr, config = CONFIG) {
+async function resolveConflictsAndRebase(pr, config = CONFIG, stageOverride = null) {
   const branch = pr.head.ref;
-  validateStageBranch(branch);
+  validateStageBranch(branch, stageOverride);
   log(`Rebasing and resolving conflicts for branch ${branch}`);
 
   configureGitActor();
@@ -725,8 +853,12 @@ async function deleteHeadBranch(pr, config = CONFIG, prefix = "") {
 
 async function processPullRequest(pr, options, config = CONFIG) {
   const prefix = options.label ? `[${options.label}] ` : "";
-  validateStageBranch(pr.head.ref);
+  const classification = pr.nightlyClassification || { stage: null };
+  validateStageBranch(pr.head.ref, classification.stage);
   log(`${prefix}PR #${pr.number}: ${pr.title}`);
+  if (classification.kind === "inferred") {
+    log(`${prefix}PR #${pr.number} uses malformed head '${pr.head.ref}' but ${classification.reason}.`, "warn");
+  }
 
   let details = await pollMergeable(pr.number, options.mergeablePolls, config);
 
@@ -742,13 +874,13 @@ async function processPullRequest(pr, options, config = CONFIG) {
 
   if (details.mergeable === false) {
     log(`${prefix}PR #${pr.number} has merge conflicts. Attempting automatic resolution...`);
-    await resolveConflictsAndRebase(pr, config);
+    await resolveConflictsAndRebase(pr, config, classification.stage);
     details = await pollMergeable(pr.number, options.mergeablePolls, config);
   }
 
   const mergeRes = await mergePullRequest(pr, details, config);
   log(`${prefix}Merged PR #${pr.number}.`, "success");
-  createStageTag(pr, mergeRes?.sha || details.merge_commit_sha || pr.head.sha, config);
+  createStageTag(pr, mergeRes?.sha || details.merge_commit_sha || pr.head.sha, config, classification.stage);
   syncTargetBranch(config);
   await deleteHeadBranch(pr, config, prefix);
 }
@@ -813,39 +945,98 @@ async function processTargets(targets, options, failures, config = CONFIG) {
 
 export async function run(config = CONFIG) {
   if (!config.token) throw new Error("GITHUB_TOKEN is missing.");
+  const registry = loadStageRegistry(config);
 
   const failures = [];
+  let rejected = [];
   try {
     log(`Fetching open PRs targeting ${config.targetBranch}...`);
     const prs = await fetchAllPullRequests(config);
+    await attachChangedFiles(prs, config);
     log(`Found ${prs.length} total open PR(s).`);
 
     await retargetNightlyPrs(prs, config);
-    const firstPassTargets = getMergeTargets(prs, config);
+    for (const pr of prs) {
+      pr.nightlyClassification = classifyNightlyPr(pr, registry, config);
+    }
+    rejected = getRejectedNightlyPrs(prs, registry, config);
+    for (const pr of rejected) {
+      failures.push({
+        date: new Date().toISOString().split("T")[0],
+        pr,
+        status: "Blocked by Nightly PR classifier.",
+        errorMessage: `${pr.nightlyClassification.reason}; head=${pr.head.ref}; files=${(pr.files || []).join(", ") || "unknown"}`,
+      });
+    }
+
+    const firstPassTargets = getMergeTargets(prs, registry, config);
     await processTargets(firstPassTargets, { mergeablePolls: FIRST_PASS_MERGEABLE_POLLS }, failures, config);
 
     if (firstPassTargets.length === 0) {
       log("Skipping second-pass wait because no first-pass Nightly PRs matched.");
-      return;
-    }
-
-    log(`Settling for ${SECOND_PASS_SETTLE_MS / 1000}s before second-pass check...`);
-    await sleep(SECOND_PASS_SETTLE_MS);
-
-    const retryPrs = await fetchAllPullRequests(config);
-    const retryTargets = getMergeTargets(retryPrs, config);
-    if (retryTargets.length === 0) {
-      log("Second-pass check: no remaining open Nightly PRs. Pipeline fully merged.", "success");
     } else {
-      await processTargets(
-        retryTargets,
-        { label: "Second pass", mergeablePolls: SECOND_PASS_MERGEABLE_POLLS },
-        failures,
-        config,
-      );
+      log(`Settling for ${SECOND_PASS_SETTLE_MS / 1000}s before second-pass check...`);
+      await sleep(SECOND_PASS_SETTLE_MS);
+
+      const retryPrs = await fetchAllPullRequests(config);
+      await attachChangedFiles(retryPrs, config);
+      for (const pr of retryPrs) {
+        pr.nightlyClassification = classifyNightlyPr(pr, registry, config);
+      }
+      const retryRejected = getRejectedNightlyPrs(retryPrs, registry, config);
+      for (const pr of retryRejected) {
+        failures.push({
+          date: new Date().toISOString().split("T")[0],
+          pr,
+          status: "Blocked by Nightly PR classifier during second pass.",
+          errorMessage: `${pr.nightlyClassification.reason}; head=${pr.head.ref}; files=${(pr.files || []).join(", ") || "unknown"}`,
+        });
+      }
+      rejected = [...rejected, ...retryRejected];
+      const retryTargets = getMergeTargets(retryPrs, registry, config);
+      if (retryTargets.length === 0) {
+        log("Second-pass check: no remaining open Nightly PRs. Pipeline fully merged.", "success");
+      } else {
+        await processTargets(
+          retryTargets,
+          { label: "Second pass", mergeablePolls: SECOND_PASS_MERGEABLE_POLLS },
+          failures,
+          config,
+        );
+      }
     }
   } finally {
     writeFailureBlocks(failures, config);
     compileHistoryFromTags(config);
+    if (failures.length > 0) {
+      try {
+        const ledger = loadLedger(config.ledgerPath);
+        const date = new Date().toISOString().split("T")[0];
+        for (const failure of failures) {
+          const stage = failure.pr.nightlyClassification?.stage;
+          if (!stage) continue;
+          upsertStageEntry(ledger, registry, date, stage, {
+            state: "BLOCKED",
+            failureClass: "MERGE_COORDINATOR",
+            evidence: {
+              prNumber: failure.pr.number,
+              prUrl: failure.pr.html_url,
+              headRef: failure.pr.head?.ref,
+              reason: failure.errorMessage,
+            },
+          });
+        }
+        saveLedger(ledger, config.ledgerPath);
+      } catch (error) {
+        log(`Failed to update nightly ledger: ${error.message}`, "warn");
+      }
+    }
+  }
+
+  if (rejected.length > 0) {
+    throw new Error(`${rejected.length} allowed-author Nightly PR(s) could not be classified.`);
+  }
+  if (failures.length > 0) {
+    throw new Error(`${failures.length} Nightly PR merge failure(s) were recorded.`);
   }
 }
