@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-11] PR #1421 [Stage 7]: Version Consistency Auditor Finalized
+**Domain:** pipeline | **Commit:** d32787cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1421)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Version Consistency Auditor Finalized
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-11] PR #1420 [Stage 5]: docs(readme): Reconcile shared directives README drift
 **Domain:** pipeline | **Commit:** 7bf8f9e5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1420)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/directives/README.md
