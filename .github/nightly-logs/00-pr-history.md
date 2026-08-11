@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-11] PR #1420 [Stage 5]: docs(readme): Reconcile shared directives README drift
+**Domain:** pipeline | **Commit:** 7bf8f9e5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1420)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/directives/README.md
+**Why:** Automated nightly audit pass.
+**Change:** docs(readme): Reconcile shared directives README drift
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-11] PR #1419 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer - CLEAN
 **Domain:** pipeline | **Commit:** 460fbbed | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1419)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
