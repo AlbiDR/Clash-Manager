@@ -308,3 +308,4 @@
 * [2026-08-10] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure.
 * [2026-08-10] Target: Codebase - pinia | ^3.0.4 | 4.0.2 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
 * [2026-08-10] Target: Codebase - jsdom | ^29.1.1 | 30.0.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
+* [2026-08-11] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped knip to ^6.32.1 and updated lockfile
