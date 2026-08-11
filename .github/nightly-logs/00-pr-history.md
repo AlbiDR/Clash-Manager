@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-11] PR #1417 [Stage 2]: Nightly Stage 2 Verification: ghostBenchmarkState Tests
+**Domain:** pipeline | **Commit:** dd16184c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1417)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/directives/directives-tests/ghostBenchmarkState.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** Nightly Stage 2 Verification: ghostBenchmarkState Tests
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-10] PR #1416 [Stage 1]: [Stage 1] Hardening - Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** 449b4738 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1416)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
