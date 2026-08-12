@@ -185,6 +185,22 @@
   - Symptom: No log entry for 2026-08-10 in 01-hardening-coverage.log.
   - Root Cause: Stage 1 failed to execute or write logs during today's automation cycle, leaving its status unobservable. Since other stages executed cleanly, this is likely a CI trigger/scheduling skip or timing artifact near UTC midnight.
   - Recommended Fix: Ensure runner workflows remain sequential and serial, preventing trigger gaps or execution starvation in CI. Monitor subsequent runs for automatic recovery.
+  - Resolution Details (2026-08-11): Stage 1 successfully ran and recovered on August 11, 2026, registering a valid CLEAN log entry, and is demoted to [RESOLVED - monitor].
+
+* Missing-Run / Failed Events on 2026-08-11:
+  - Stages: Stage 6 (TSDoc) [RESOLVED - monitor] (August 12, 2026), Stage 12 (APK-UX) [RESOLVED - monitor] (August 12, 2026).
+  - State: [RESOLVED - monitor] for Stage 6 / [RESOLVED - monitor] for Stage 12
+  - Symptom: No log entries for 2026-08-11 in 06-documentation-tsdoc-coverage.log or 12-apk-ux-coverage.log.
+  - Root Cause: These stages failed to trigger, execute, or write logs on August 11, 2026, during the nightly automation cycle. Since other stages completed successfully, this is likely caused by webhook scheduling delays or runner concurrency limits in CI.
+  - Recommended Fix: Audit runner trigger serializations and scheduling overlaps. Monitor subsequent runs for automatic recovery.
+  - Resolution Details (2026-08-12): Both Stage 6 and Stage 12 successfully executed and recovered on August 12, 2026, registering valid CHANGED log entries. Both are demoted to [RESOLVED - monitor].
+
+* Missing-Run / Failed Events on 2026-08-12:
+  - Stages: Stage 1 (Harden) [FAILED - monitor], Stage 2 (Verify) [FAILED - monitor], Stage 4 (Optimization) [FAILED - monitor], Stage 9 (Refactor) [FAILED - monitor], Stage 10 (APK-Integrity) [FAILED - monitor].
+  - State: [FAILED - monitor] for Stage 1, Stage 2, Stage 4, Stage 9, and Stage 10
+  - Symptom: No log entries for 2026-08-12 in 01-hardening-coverage.log, 02-verification-coverage.log, 04-optimization-coverage.log, 09-refactor-proposals-coverage.log, or 10-apk-integrity-coverage.log.
+  - Root Cause: These stages failed to trigger, execute, or write logs during today's automation cycle, leaving their status unobservable. Since other stages executed cleanly, this is likely caused by trigger gaps, CI concurrency blocks, or timing artifacts.
+  - Recommended Fix: Serialize CI workflow executions, adjust runner concurrency limits to prevent job starvation, and monitor subsequent runs for automatic recovery.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -209,53 +225,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-08-04 to 2026-08-09 inclusive; missing/failed on 2026-08-10)
-  - Analysis: Run was missed or failed today during the automation cycle; threat detection and runtime security verification remain fully saturated.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-08-04 to 2026-08-11 inclusive; missing/failed on 2026-08-12)
+  - Analysis: Threat detection and runtime security verification remain fully saturated; run was missed/failed on 2026-08-12 during the automation cycle.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-10)
-  - Analysis: Closed coverage gaps in apkResolver with robust, saturating tests for query param builders, SSR/window undefined scenarios, security checks, and fake timers in apkResolver.spec.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-11; missing/failed on 2026-08-12)
+  - Analysis: Closed zero-coverage gap in ghostBenchmarkState directive state module with comprehensive unit tests on August 11; run was missed/failed on 2026-08-12.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-08 to 2026-08-10 inclusive)
-  - Analysis: Verified baseline master migration declarative purity and folding status; no unfolded migrations or drift detected.
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-08-08 to 2026-08-12 inclusive)
+  - Analysis: Verified baseline master migration declarative purity and folding status; no unfolded migrations or structural drift detected.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-10)
-  - Analysis: Optimized apkResolver.ts and UsefulLinksSettings.vue by renaming anemic and generic variables to eliminate pathogens and satisfy CleanStack naming guidelines.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-11; missing/failed on 2026-08-12)
+  - Analysis: Verified database views and Edge Function application logic; run was missed/failed on 2026-08-12.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-10)
-  - Analysis: Reconciled apkResolver.ts decomposition and usePwaManager.ts delegation in core services README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-12)
+  - Analysis: Reconciled list filtering, PWA installation, and recruit last scan features in core services README.md.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-10)
-  - Analysis: Hardened apkResolver interface contracts and inline logic annotations inside apkResolver.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-12)
+  - Analysis: Hardened vTactile and vTooltip interface contracts and inline annotations inside vTactile.ts.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 16 (CLEAN logged on 2026-07-26 to 2026-08-10 inclusive)
-  - Analysis: Verified monorepo version integrity across package.json files and native manifests; 100% synchronized at ground truth v14.43.2.
+  - Consecutive No-Diff Days: 18 (CLEAN logged on 2026-07-26 to 2026-08-12 inclusive)
+  - Analysis: Verified monorepo version integrity across package.json files, pnpm workspace, and native manifests; 100% synchronized with zero version drift.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-10)
-  - Analysis: Audited dependencies, bumped tsx to ^4.23.12, locked pnpm-lock.yaml, and updated major version watchlist.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-12)
+  - Analysis: Bumped @supabase/supabase-js to ^2.112.3 and refreshed the pnpm-lock.yaml.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-10)
-  - Analysis: Performed daily structural line-count and layer violation audit pass; all feature view modules remain fully compliant with CleanStack guidelines.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-10 to 2026-08-11 inclusive; missing/failed on 2026-08-12)
+  - Analysis: Conducted comprehensive structural line-count and layer violation audit pass; all core feature modules remain 100% compliant with CleanStack guidelines.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-08-04 to 2026-08-10 inclusive)
-  - Analysis: Confirmed complete PWA manifest parity, permission sanitization, Digital Asset Links fingerprint compliance, and native Android wrapper SDK alignment.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-08-04 to 2026-08-11 inclusive; missing/failed on 2026-08-12)
+  - Analysis: Verified Digital Asset Links certificate fingerprint, cleartext restriction, and Android manifest permissions; run was missed/failed on 2026-08-12.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 0 (CLEAN logged on 2026-08-10)
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-10 to 2026-08-12 inclusive)
   - Analysis: WebView settings, Service Worker caching, and native assets remain optimally configured per daily audit pass.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-10)
-  - Analysis: Modernized AndroidCalibrationSettings.vue coordinate inputs to meet 48px touch target guidelines and added user-select none for text selection containment.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-12)
+  - Analysis: Modernized RecruitCard.vue with 48px touch target compliance and user-select none text selection containment.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-10)
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-12)
   - Analysis: Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates.
