@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-12] PR #1429 [Stage 6]: docs(tsdoc): harden vTactile and vTooltip interface contracts and inline annotations
+**Domain:** pipeline | **Commit:** b5275c06 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1429)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/directives/vTactile.ts, Frontend-PWA/src/shared/directives/vTooltip.ts
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden vTactile and vTooltip interface contracts and inline annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-12] PR #1428 [Stage 5]: [Stage 5] Documentation README - Architecture Truth Architect
 **Domain:** pipeline | **Commit:** 587b47e5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1428)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md, Frontend-PWA/src/features/headhunter/README.md, Frontend-PWA/src/features/settings/README.md
