@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-12] PR #1434 [Stage 13]: chore(pipeline): Stage 13 self-healing protocol updates
+**Domain:** pipeline | **Commit:** 40f35d51 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1434)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(pipeline): Stage 13 self-healing protocol updates
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-12] PR #1433 [Stage 12]: Modernized RecruitCard.vue with user-select none text selection containment
 **Domain:** pipeline | **Commit:** c6b1e92f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1433)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
