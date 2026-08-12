@@ -27,7 +27,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useConsoleController.ts` | Drives the list views ([Roster](../../features/roster/README.md), [Headhunter](../../features/headhunter/README.md)): filtering, sorting, progressive rendering. |
 | `useConsoleSelection.ts` | Batch selection logic (select all, select by score). |
 | `useConsoleMetadata.ts` | Connectivity and statistics badges for a console. |
-| `useListFilter.ts` | Search and sort over large datasets, cached with `WeakMap`. |
+| `useListFilter.ts` | Search and sort over large datasets, cached with `WeakMap`, supporting persistent sorting preferences and reactive cache invalidation. |
 | `useProgressiveList.ts` | Time-sliced rendering (`requestIdleCallback`) to hold 60fps. Configured with a default `initialSize` of 12 items, transition safety controls, and a robust fallback to `requestAnimationFrame` for environments lacking idle scheduling. |
 | `useBlitzMode.ts` | The batch deep-link "Blitz" pipeline shared by the console views. |
 
@@ -52,7 +52,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useAppSettings.ts` | Application settings and feature flags, mirrored to LocalStorage and IndexedDB. |
 | `useConfirm.ts` | Global modal confirmation service (replacing native `confirm()` with styled MD3 ConfirmDialog) to eliminate unstyled system blocks in Android. |
 | `apkResolver.ts` | Dynamic APK release metadata, version matching, and filename resolution utility. |
-| `usePwaManager.ts` | PWA update/recovery lifecycle (Service Worker updates, cache clear, and disaster recovery). |
+| `usePwaManager.ts` | PWA update/recovery lifecycle (Service Worker updates, cache clear, PWA installation, and disaster recovery). |
 | `useUiCoordinator.ts` | Global layout spacing and floating-action-button state. |
 | `useBackHandler.ts` | Hardware back-button behavior in the wrapper. |
 | `useBenchmarking.ts` | Compares a member's stats against clan averages in a single pass. |
@@ -78,7 +78,14 @@ The PWA lifecycle orchestrator and the standalone APK resolver implement robust,
    - **Multi-Tier Resolution & Fail-Safes:** At download trigger, it races/orchestrates three API lookup pathways in parallel (same-origin metadata `/APK/release/latest.json`, GitHub Repository Contents API `ref=Beta` branch, and the raw beta repository URL) to guarantee release detection.
    - **Cache & Throttling Limits:** Caches successfully resolved metadata filenames in memory with a robust `APK_RESOLUTION_CACHE_TTL_MS` (60 seconds) duration, and deduplicates concurrent active resolution lookups via a shared promise registry.
    - **Ergonomics & Wrapper Bridging:** Once resolved, `usePwaManager.ts` delegates download actions to `downloadApkFile` or `openExternalUrl` on the native bridge if inside the Android wrapper container, falling back to window location assignment in PWAs.
-3. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, `usePwaManager.ts` unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
+3. **PWA Installation Lifecycle:** Captures browser-managed PWA installation triggers from the `beforeinstallprompt` event and exposes them reactively via the `isPwaInstallAvailable` ref. Invoking the async `installPwa()` method prompts the user directly, updating installation status and managing event teardown/garbage collection cleanly upon resolution.
+4. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, `usePwaManager.ts` unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
+
+### High-Performance Search and Filtering (`useListFilter.ts`)
+
+To support smooth 60FPS list interactions under heavy sorting and filtering operations, `useListFilter.ts` coordinates an optimized presentation-layer orchestration:
+- **Reactive Preference Persistence:** When configured with a `sortStorageKey`, user-selected sorting preferences are automatically persisted to and hydrated from `localStorage`, preserving layout continuity across sessions.
+- **WeakMap Search Cache & Invalidation:** To eliminate redundant string normalizations on every keystroke, a module-scope `WeakMap` caches normalized search strings per object. The caching system implements a robust validation check (`areSearchFieldsEqual`) that verifies if current searchable fields match cached fields, invalidating the cache and re-normalizing dynamically only when data shifts.
 
 ## See also
 
