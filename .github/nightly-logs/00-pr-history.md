@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-12] PR #1433 [Stage 12]: Modernized RecruitCard.vue with user-select none text selection containment
+**Domain:** pipeline | **Commit:** c6b1e92f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1433)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
+**Why:** Automated nightly audit pass.
+**Change:** Modernized RecruitCard.vue with user-select none text selection containment
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-12] PR #1432 [Stage 11]: [Stage 11] APK and Native Wrapper Optimizations - CLEAN
 **Domain:** pipeline | **Commit:** a86cd8e7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1432)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
