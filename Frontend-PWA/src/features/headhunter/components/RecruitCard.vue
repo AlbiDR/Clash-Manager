@@ -155,6 +155,11 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
 <style scoped>
 /* Content specific styles only */
 
+.player-name {
+  user-select: none; /* Text Selection Containment (Target A.3) */
+  -webkit-user-select: none;
+}
+
 .card-actions-margin {
   margin-top: 16px;
 }
