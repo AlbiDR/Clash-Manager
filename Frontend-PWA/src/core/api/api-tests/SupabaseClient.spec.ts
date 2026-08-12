@@ -189,14 +189,16 @@ describe("SupabaseClient", () => {
       await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Roster Fetch Error: Roster Fail');
     });
 
-    it("fetchRemote throws error if blacklist fetch fails", async () => {
+    it("fetchRemote continues with an empty blacklist if blacklist fetch fails", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
         .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: null, error: { message: 'Blacklist Fail' } } as any);
+        .mockResolvedValueOnce({ data: null, error: { message: 'Invalid schema: drivers' } } as any);
 
-      await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Blacklist Fetch Error: Blacklist Fail');
+      const result = await SupabaseClient.fetchRemote();
+      expect(result.blacklist).toEqual([]);
+      expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
     });
 
     it("fetchRemote defaults to Date.now() if heartbeat query fails", async () => {
