@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-12] PR #1431 [Stage 7]: chore(version): Codebase -- No version drift or catalog violations detected.
+**Domain:** pipeline | **Commit:** f55141f0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1431)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Codebase -- No version drift or catalog violations detected.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-12] PR #1430 [Stage 8]: chore(deps): Bumped @supabase/supabase-js to ^2.112.3 and refreshed lockfile
 **Domain:** pipeline | **Commit:** f8c36755 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1430)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
