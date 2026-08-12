@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-08-11
+LAST_AGED:   2026-08-12
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -15,14 +15,12 @@ LAST_AGED:   2026-08-11
 ---
 
 ## T1 -- Active (last 7 days)
-
 ### [2026-08-12] PR #1434 [Stage 13]: chore(pipeline): Stage 13 self-healing protocol updates
 **Domain:** pipeline | **Commit:** 40f35d51 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1434)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 **Why:** Automated nightly audit pass.
 **Change:** chore(pipeline): Stage 13 self-healing protocol updates
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-12] PR #1433 [Stage 12]: Modernized RecruitCard.vue with user-select none text selection containment
 **Domain:** pipeline | **Commit:** c6b1e92f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1433)
@@ -31,14 +29,12 @@ LAST_AGED:   2026-08-11
 **Change:** Modernized RecruitCard.vue with user-select none text selection containment
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-12] PR #1432 [Stage 11]: [Stage 11] APK and Native Wrapper Optimizations - CLEAN
 **Domain:** pipeline | **Commit:** a86cd8e7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1432)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
 **Why:** Automated nightly audit pass.
 **Change:** [Stage 11] APK and Native Wrapper Optimizations - CLEAN
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-12] PR #1431 [Stage 7]: chore(version): Codebase -- No version drift or catalog violations detected.
 **Domain:** pipeline | **Commit:** f55141f0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1431)
@@ -47,14 +43,12 @@ LAST_AGED:   2026-08-11
 **Change:** chore(version): Codebase -- No version drift or catalog violations detected.
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-12] PR #1430 [Stage 8]: chore(deps): Bumped @supabase/supabase-js to ^2.112.3 and refreshed lockfile
 **Domain:** pipeline | **Commit:** f8c36755 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1430)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
 **Why:** Automated nightly audit pass.
 **Change:** chore(deps): Bumped @supabase/supabase-js to ^2.112.3 and refreshed lockfile
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-12] PR #1429 [Stage 6]: docs(tsdoc): harden vTactile and vTooltip interface contracts and inline annotations
 **Domain:** pipeline | **Commit:** b5275c06 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1429)
@@ -63,7 +57,6 @@ LAST_AGED:   2026-08-11
 **Change:** docs(tsdoc): harden vTactile and vTooltip interface contracts and inline annotations
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-12] PR #1428 [Stage 5]: [Stage 5] Documentation README - Architecture Truth Architect
 **Domain:** pipeline | **Commit:** 587b47e5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1428)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md, Frontend-PWA/src/features/headhunter/README.md, Frontend-PWA/src/features/settings/README.md
@@ -71,14 +64,12 @@ LAST_AGED:   2026-08-11
 **Change:** [Stage 5] Documentation README - Architecture Truth Architect
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-12] PR #1427 [Stage 3]: [Stage 3] Baseline Consolidation - Declarative Schema Hardener
 **Domain:** pipeline | **Commit:** eca34371 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1427)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 **Why:** Automated nightly audit pass.
 **Change:** [Stage 3] Baseline Consolidation - Declarative Schema Hardener
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-11] PR #1426 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** e4f14783 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1426)
@@ -1124,17 +1115,6 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-07-15] PR #1122 [Dependencies]: chore(deps): bump @supabase/supabase-js and update major version watchlist (``PENDING``) [View](PENDING)
 * [2026-07-15] PR #1121 [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
 * [2026-07-15] PR #1120 [APK Optimization]: perf(apk-optimization): optimize webview performance and sw precache (``PENDING``) [View](PENDING)
-* [2026-07-12] PR #1084 [Verification]: test(verify): add specs for backend royale schemas (```c52598bb```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1084)
-* [2026-07-12] PR #1085 [Baseline]: chore(baseline): fold new migrations into master baseline (```318d6625```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1085)
-* [2026-07-12] PR #1086 [Performance]: perf(opt): standardize shared UI naming and audit substrate (```bdbafaf8```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1086)
-* [2026-07-12] PR #1087 [README]: docs(readme): reconcile utility and shared UI drift (```c1ba5fc2```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1087)
-* [2026-07-12] PR #1088 [TSDoc]: docs(tsdoc): harden core math and priority queue contracts (```610a9d89```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1088)
-* [2026-07-12] PR #1089 [Version Integrity]: chore(version): harden project integrity and reconcile log (```89ef122d```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1089)
-* [2026-07-12] PR #1090 [Dependencies]: chore(deps): update major version watchlist (```21b5971a```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1090)
-* [2026-07-12] PR #1091 [Refactor/Optimization]: refactor: centralize game asset resolution and standardize laboratory UI (```3262403a```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1091)
-* [2026-07-12] PR #1092 [APK Integrity]: fix(apk-integrity): harden wrapper consistency checks (```fe4e397b```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1092)
-* [2026-07-12] PR #1093 [APK Optimization]: perf(apk-optimization): harden webview and optimize sw cache (```33273b43```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1093)
-* [2026-07-12] PR #1094 [APK UX]: fix(apk-ux): modernize BackendRefresher touch targets and haptics (```31ee635a```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1094)
 * [2026-07-13] PR #1095 [Verification]: test(verify): add specs for assets.ts and normalizeTag (```52933228```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1095)
 * [2026-07-13] PR #1096 [Baseline]: chore(baseline): fold new migrations into master baseline (```4128446f```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1096)
 * [2026-07-13] PR #1097 [Refactor/Optimization]: refactor(opt): standardize headhunter scanner naming (```ad4a533f```) [View](https://github.com/AlbiDR/Clash-Manager/pull/1097)
@@ -1149,19 +1129,19 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W28
-* 4 PRs [APK Integrity]: #1036, #1054, #1071, #1081
-* 4 PRs [APK Optimization]: #1037, #1047, #1055, #1082
-* 5 PRs [APK UX]: #1038, #1048, #1064, #1072, #1083
-* 2 PRs [Baseline]: #1029, #1057
-* 6 PRs [Dependencies]: #1034, #1044, #1053, #1062, #1069, #1079
+* 5 PRs [APK Integrity]: #1036, #1054, #1071, #1081, #1092
+* 5 PRs [APK Optimization]: #1037, #1047, #1055, #1082, #1093
+* 6 PRs [APK UX]: #1038, #1048, #1064, #1072, #1083, #1094
+* 3 PRs [Baseline]: #1029, #1057, #1085
+* 7 PRs [Dependencies]: #1034, #1044, #1053, #1062, #1069, #1079, #1090
 * 1 PRs [General]: #1046
 * 3 PRs [Hardening]: #1056, #1063, #1073
-* 2 PRs [Performance]: #1050, #1075
-* 6 PRs [README]: #1031, #1041, #1051, #1059, #1066, #1076
-* 8 PRs [Refactor/Optimization]: #1030, #1035, #1040, #1045, #1058, #1065, #1070, #1080
-* 6 PRs [TSDoc]: #1032, #1042, #1052, #1060, #1067, #1077
-* 4 PRs [Verification]: #1028, #1039, #1049, #1074
-* 5 PRs [Version Integrity]: #1033, #1043, #1061, #1068, #1078
+* 3 PRs [Performance]: #1050, #1075, #1086
+* 7 PRs [README]: #1031, #1041, #1051, #1059, #1066, #1076, #1087
+* 9 PRs [Refactor/Optimization]: #1030, #1035, #1040, #1045, #1058, #1065, #1070, #1080, #1091
+* 7 PRs [TSDoc]: #1032, #1042, #1052, #1060, #1067, #1077, #1088
+* 5 PRs [Verification]: #1028, #1039, #1049, #1074, #1084
+* 6 PRs [Version Integrity]: #1033, #1043, #1061, #1068, #1078, #1089
 
 #### 2026-W27
 * 7 PRs [APK Integrity]: #1004, #1016, #1025, #968, #976, #987, #996
