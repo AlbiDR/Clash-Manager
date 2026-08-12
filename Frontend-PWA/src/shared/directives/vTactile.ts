@@ -3,22 +3,53 @@
 import type { Directive } from "vue";
 import { useHaptics } from "../composables/useHaptics";
 
+/**
+ * Interface contract representing the optional callback functions that can be bound
+ * to the `v-tactile` directive to handle user tap and long press interactions.
+ *
+ * @remarks
+ * Direct callback bindings are managed dynamically to prevent performance bottlenecks on
+ * continuous touch gestures.
+ */
 interface TactileBinding {
-  onTap: () => void;
-  onLongPress: () => void;
+  /** Optional callback triggered immediately upon a valid tap gesture. */
+  onTap?: () => void;
+  /** Optional callback triggered after a continuous hold exceeding the 500ms long-press threshold. */
+  onLongPress?: () => void;
 }
 
+/**
+ * Tracks the ephemeral, element-specific touch interaction state.
+ *
+ * @remarks
+ * State is stored in a WeakMap keyed by HTMLElement to ensure garbage collection
+ * when components are unmounted, preventing memory leaks in high-frequency views.
+ */
 interface TactileState {
+  /** X-coordinate of the touch/pointer start point. Used for DPI-aware movement tolerance checking. */
   startX: number;
+  /** Y-coordinate of the touch/pointer start point. Used for DPI-aware movement tolerance checking. */
   startY: number;
+  /** Browser timeout handle for scheduling the 500ms long-press execution timer. */
   timer: number | null;
+  /** High-performance boolean flag indicating if a tactile interaction sequence is active on the element. */
   isActive: boolean;
+  /** Indicates whether the current gesture has met the criteria and duration to be classified as a long-press. */
   isLongPress: boolean;
+  /**
+   * Bound event handlers mapped directly to pointer and browser native event APIs.
+   * Captured locally to allow deterministic cleanup upon unmounting.
+   */
   listeners: {
+    /** Pointerdown handler. Evaluates button, prevents child conflict, and schedules the long-press timer. */
     pointerdown: (e: PointerEvent) => void;
+    /** Pointermove handler. Measures distance from origin point against devicePixelRatio-aware movement tolerance. */
     pointermove: (e: PointerEvent) => void;
+    /** Pointerup handler. Evaluates tap trigger criteria, triggers brokered haptics, and clears active state. */
     pointerup: (e: PointerEvent) => void;
+    /** Pointercancel handler. Aborts current gesture immediately on system/browser interruption. */
     pointercancel: (e: PointerEvent) => void;
+    /** Contextmenu handler. Prevents default context menus on mobile devices during active long-press scenarios. */
     contextmenu: (e: Event) => void;
   };
 }
