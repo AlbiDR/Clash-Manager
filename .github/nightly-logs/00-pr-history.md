@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-13] PR #1444 [Stage 12]: [Stage 12] Hybrid Shell UX and UI Auditor - MemberCard.vue Modernization
+**Domain:** pipeline | **Commit:** 26ea70a9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1444)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/roster/components/MemberCard.vue
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 12] Hybrid Shell UX and UI Auditor - MemberCard.vue Modernization
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-13] PR #1443 [Stage 10]: [Stage 10] APK and PWA Wrapper Integrity Auditor
 **Domain:** pipeline | **Commit:** a2f622dc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1443)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
