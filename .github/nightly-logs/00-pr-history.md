@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-13] PR #1439 [Stage 5]: Reconciled useNativeBridge.ts coordination in core services README
+**Domain:** pipeline | **Commit:** 995fd427 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1439)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Automated nightly audit pass.
+**Change:** Reconciled useNativeBridge.ts coordination in core services README
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-13] PR #1438 [Stage 4]: Optimized useNativeBridge.ts by renaming anemic variables to descriptive, domain-specific names
 **Domain:** pipeline | **Commit:** 864c4452 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1438)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/useNativeBridge.ts
