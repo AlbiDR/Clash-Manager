@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-13] PR #1443 [Stage 10]: [Stage 10] APK and PWA Wrapper Integrity Auditor
+**Domain:** pipeline | **Commit:** a2f622dc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1443)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 10] APK and PWA Wrapper Integrity Auditor
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-13] PR #1442 [Stage 9]: chore(refactor): Decomposed monolithic apkResolver.ts
 **Domain:** pipeline | **Commit:** 2567f4c9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1442)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/services/apkResolver.ts, Frontend-PWA/src/core/services/apkResolverUtils.ts
