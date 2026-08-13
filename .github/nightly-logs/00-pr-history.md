@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-13] PR #1437 [Stage 3]: Baseline Consolidated - Declarative Schema Hardener (CLEAN)
+**Domain:** pipeline | **Commit:** ef1c918c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1437)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Baseline Consolidated - Declarative Schema Hardener (CLEAN)
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-13] PR #1436 [Stage 2]: chore(verify): Completed daily verification logic audit pass
 **Domain:** pipeline | **Commit:** bd250daf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1436)
 **Files:** .github/nightly-logs/02-verification-coverage.log
