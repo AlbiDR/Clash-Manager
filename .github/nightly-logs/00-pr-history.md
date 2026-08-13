@@ -15,6 +15,14 @@ LAST_AGED:   2026-08-13
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-13] PR #1447 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** pipeline | **Commit:** 5dd7d47a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1447)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions.
+
 ### [2026-08-13] PR #1446 [Stage 7]: No version drift or catalog violations detected.
 **Domain:** versioning | **Commit:** f7d2a43f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1446)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
