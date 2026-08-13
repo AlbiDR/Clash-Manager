@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-13] PR #1446 [Stage 7]: No version drift or catalog violations detected.
+**Domain:** versioning | **Commit:** f7d2a43f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1446)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Execute the scheduled Stage 7 version-integrity audit.
+**Change:** No version drift or catalog violations detected.
+**Result:** Audit completed with no source change required.
+
+
 ### [2026-08-13] PR #1445 [Stage 13]: [Stage 13] Self-Healing Protocol Daily Audit
 **Domain:** pipeline | **Commit:** 7d5e1aad | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1445)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
