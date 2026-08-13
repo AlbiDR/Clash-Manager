@@ -39,3 +39,4 @@
 * [2026-08-09] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/UsefulLinksSettings.vue -- Modernized UsefulLinksSettings.vue with 48px touch target compliance and user-select text containment.
 * [2026-08-10] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/AndroidCalibrationSettings.vue -- Modernized AndroidCalibrationSettings.vue coordinate inputs to meet 48px touch target guidelines (Target B.2) and added user-select none for text selection containment (Target A.3)
 * [2026-08-12] [Stage 12] CHANGED: Frontend-PWA/src/features/headhunter/components/RecruitCard.vue -- Modernized RecruitCard.vue with 48px touch target compliance and user-select none text selection containment.
+* [2026-08-13] [Stage 12] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- Modernized MemberCard.vue with user-select none text selection containment.
