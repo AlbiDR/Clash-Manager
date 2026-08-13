@@ -87,6 +87,16 @@ To support smooth 60FPS list interactions under heavy sorting and filtering oper
 - **Reactive Preference Persistence:** When configured with a `sortStorageKey`, user-selected sorting preferences are automatically persisted to and hydrated from `localStorage`, preserving layout continuity across sessions.
 - **WeakMap Search Cache & Invalidation:** To eliminate redundant string normalizations on every keystroke, a module-scope `WeakMap` caches normalized search strings per object. The caching system implements a robust validation check (`areSearchFieldsEqual`) that verifies if current searchable fields match cached fields, invalidating the cache and re-normalizing dynamically only when data shifts.
 
+### Native Android Bridge Coordination (`useNativeBridge.ts`)
+
+The Native Bridge service coordinates communication between the Web/PWA layer and the Kotlin-backed Android WebView container (`AndroidBridge`):
+- **Singleton Interface & Detection:** Computes `isNativeWrapper` by inspecting the global `window` object for the injected `AndroidBridge` interface.
+- **Hardware Permission Brokerage:** Manages and exposes reactive state for native device permissions, including Accessibility services (`isAccessibilityAllowed`) and Overlay / Draw-Over-Other-Apps (`isOverlayAllowed`). Automatically re-polls permissions when the application window regains focus to catch system-level modifications made in the background.
+- **Blitz Calibration Coordination:** Manages interactive calibration coordinates (`inviteX`, `inviteY`, `closeX`, `closeY`) for the automation overlay:
+  - **Resolution Independence:** Persists coordinates to the native layer normalized as floats (0.0 - 1.0) via `saveCoordinates()` to ensure density-independent execution across various screen footprints.
+  - **Reconstruction & Rounding:** Hydrates raw native coordinates via `loadCoordinates()`, converting the decimal offsets back to percentage values (0 - 100) and rounding to precision limits for high UI rendering fidelity.
+  - **Robust Fallback Paths:** Implements Android intents for opening deep-linked system settings (`ACCESSIBILITY_SETTINGS` and `MANAGE_OVERLAY_PERMISSION`) if running in normal web browser environments where direct bridge method invocations are unavailable.
+
 ## See also
 
 - [Frontend README](../../../README.md) | [`@core`](../README.md) | [`@core/api`](../api/README.md) | [`@core/utils`](../utils/README.md)
