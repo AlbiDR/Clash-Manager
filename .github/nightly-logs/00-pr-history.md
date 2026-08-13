@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-13] PR #1441 [Stage 8]: chore(deps): Removed redundant p-limit dependency from root and updated major version watchlist.
+**Domain:** pipeline | **Commit:** 48a5c795 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1441)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, Backend/package.json, package.json, pnpm-lock.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Removed redundant p-limit dependency from root and updated major version watchlist.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-13] PR #1440 [Stage 6]: docs(tsdoc): harden clan-sync ingestion stage interface contracts and inline decision logs
 **Domain:** pipeline | **Commit:** 6d912959 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1440)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/ingest-royale-data/stages/clan-sync.ts
