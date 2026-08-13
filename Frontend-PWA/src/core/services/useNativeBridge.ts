@@ -73,11 +73,11 @@ function loadCoordinates() {
 
   try {
     const rawCoordinates = bridge.getCoordinates();
-    const coords = JSON.parse(rawCoordinates);
-    inviteX.value = Math.round(coords.inviteX * 10000) / 100;
-    inviteY.value = Math.round(coords.inviteY * 10000) / 100;
-    closeX.value = Math.round(coords.closeX * 10000) / 100;
-    closeY.value = Math.round(coords.closeY * 10000) / 100;
+    const coordinateSnapshot = JSON.parse(rawCoordinates);
+    inviteX.value = Math.round(coordinateSnapshot.inviteX * 10000) / 100;
+    inviteY.value = Math.round(coordinateSnapshot.inviteY * 10000) / 100;
+    closeX.value = Math.round(coordinateSnapshot.closeX * 10000) / 100;
+    closeY.value = Math.round(coordinateSnapshot.closeY * 10000) / 100;
   } catch (nativeCoordinatesError: unknown) {
     const errorMessage = nativeCoordinatesError instanceof Error ? nativeCoordinatesError.message : String(nativeCoordinatesError);
     console.error("[useNativeBridge] Failed to parse coordinates:", errorMessage);
@@ -96,13 +96,13 @@ function saveCoordinates() {
   const bridge = (window as WindowWithBridge).AndroidBridge;
   if (!bridge || !bridge.saveCoordinates) return;
 
-  const ix = typeof inviteX.value === "string" ? parseFloat(inviteX.value) : inviteX.value;
-  const iy = typeof inviteY.value === "string" ? parseFloat(inviteY.value) : inviteY.value;
-  const cx = typeof closeX.value === "string" ? parseFloat(closeX.value) : closeX.value;
-  const cy = typeof closeY.value === "string" ? parseFloat(closeY.value) : closeY.value;
+  const parsedInviteX = typeof inviteX.value === "string" ? parseFloat(inviteX.value) : inviteX.value;
+  const parsedInviteY = typeof inviteY.value === "string" ? parseFloat(inviteY.value) : inviteY.value;
+  const parsedCloseX = typeof closeX.value === "string" ? parseFloat(closeX.value) : closeX.value;
+  const parsedCloseY = typeof closeY.value === "string" ? parseFloat(closeY.value) : closeY.value;
 
-  if (!isNaN(ix) && !isNaN(iy) && !isNaN(cx) && !isNaN(cy)) {
-    bridge.saveCoordinates(ix / 100, iy / 100, cx / 100, cy / 100);
+  if (!isNaN(parsedInviteX) && !isNaN(parsedInviteY) && !isNaN(parsedCloseX) && !isNaN(parsedCloseY)) {
+    bridge.saveCoordinates(parsedInviteX / 100, parsedInviteY / 100, parsedCloseX / 100, parsedCloseY / 100);
   }
 }
 
