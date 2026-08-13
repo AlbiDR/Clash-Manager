@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-13] PR #1442 [Stage 9]: chore(refactor): Decomposed monolithic apkResolver.ts
+**Domain:** pipeline | **Commit:** 2567f4c9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1442)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/services/apkResolver.ts, Frontend-PWA/src/core/services/apkResolverUtils.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(refactor): Decomposed monolithic apkResolver.ts
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-13] PR #1441 [Stage 8]: chore(deps): Removed redundant p-limit dependency from root and updated major version watchlist.
 **Domain:** pipeline | **Commit:** 48a5c795 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1441)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, Backend/package.json, package.json, pnpm-lock.yaml
