@@ -7,6 +7,7 @@ import { useConfirm } from "./useConfirm";
 import { idb } from "./StorageService";
 import { useNativeBridge } from "./useNativeBridge";
 import { UI_STABILITY_DELAY } from "@core/config";
+import { yieldToInteractionFrame } from "../utils/scheduling";
 import {
   isReleaseBuildNumber,
   isReleaseVersion,
@@ -203,6 +204,7 @@ export function usePwaManager() {
    */
   async function forceUpdate(): Promise<void> {
     const activeToastId = toast.info("Checking for updates...");
+    await yieldToInteractionFrame();
 
     try {
       // [THREAT:] Browser environments without Service Worker support (e.g. non-HTTPS, or disabled).
@@ -428,6 +430,8 @@ export function usePwaManager() {
     });
 
     if (isClearCacheConfirmed) {
+      await yieldToInteractionFrame();
+
       // [DECISION LOG] 1. Unregister Workers: Forces the browser to discard the current control logic.
       if ("serviceWorker" in navigator) {
         const swRegistrations = await navigator.serviceWorker.getRegistrations();
@@ -467,6 +471,8 @@ export function usePwaManager() {
     });
 
     if (isFactoryResetConfirmed) {
+      await yieldToInteractionFrame();
+
       // [DECISION LOG] 1. Unregister Workers: Forces the browser to discard logic and release IDB locks.
       if ("serviceWorker" in navigator) {
         try {

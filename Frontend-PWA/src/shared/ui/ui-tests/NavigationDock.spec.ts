@@ -66,6 +66,50 @@ describe("NavigationDock.vue", () => {
     expect(mockPush).toHaveBeenCalledWith("/headhunter");
   });
 
+  it("retargets additional route taps while navigation is pending", async () => {
+    let resolveFirstNavigation!: () => void;
+    let resolveSecondNavigation!: () => void;
+    mockPush.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveFirstNavigation = resolve;
+      }),
+    );
+    mockPush.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveSecondNavigation = resolve;
+      }),
+    );
+    vi.mocked(useRoute).mockReturnValue({ path: "/roster" } as any);
+    const wrapper = shallowMount(NavigationDock);
+    const buttons = wrapper.findAll(".dock-item");
+
+    buttons[1].trigger("click");
+    await wrapper.vm.$nextTick();
+    expect(buttons[1].classes()).toContain("active");
+    expect(buttons[1].attributes("aria-busy")).toBe("true");
+
+    buttons[2].trigger("click");
+    await wrapper.vm.$nextTick();
+
+    expect(mockPush).toHaveBeenCalledTimes(2);
+    expect(mockPush).toHaveBeenCalledWith("/headhunter");
+    expect(mockPush).toHaveBeenCalledWith("/laboratory");
+    expect(buttons[2].classes()).toContain("active");
+    expect(buttons[2].attributes("disabled")).toBeUndefined();
+
+    resolveFirstNavigation();
+    await Promise.resolve();
+    await wrapper.vm.$nextTick();
+
+    expect(buttons[2].classes()).toContain("active");
+
+    resolveSecondNavigation();
+    await Promise.resolve();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find(".dock-item").attributes("disabled")).toBeUndefined();
+  });
+
   it("does not call router.push when the active route is clicked", async () => {
     vi.mocked(useRoute).mockReturnValue({ path: "/roster" } as any);
     const wrapper = shallowMount(NavigationDock);

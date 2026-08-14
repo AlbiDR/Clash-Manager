@@ -8,6 +8,7 @@ import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { generateMockData } from "../utils/mockData";
+import { yieldToInteractionFrame } from "../utils/scheduling";
 import { MemberSchema } from "../api/MemberSchemas";
 import { WebAppDataSchema } from "../api/AppSchemas";
 import type { WebAppData } from "../types";
@@ -205,6 +206,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       }
 
       console.debug(`[Sync] Refresh successful. Source: ${remoteDataValidation.output.dataSource}`);
+      await yieldToInteractionFrame();
       await commitSyncResult(remoteDataValidation.output);
     } catch (supabaseRefreshError: unknown) {
       console.warn("[Sync] Supabase refresh failed:", supabaseRefreshError);
@@ -243,6 +245,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
         throw new Error("Remote data validation failed");
       }
 
+      await yieldToInteractionFrame();
       await commitSyncResult(remoteDataValidation.output);
     } catch (backgroundSyncError: unknown) {
       consecutiveSyncFailures.value++;

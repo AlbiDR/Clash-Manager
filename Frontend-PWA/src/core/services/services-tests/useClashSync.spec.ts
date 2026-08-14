@@ -210,7 +210,9 @@ describe("useClashSync", () => {
 
       // Should call fetchRemote twice (one foreground, one background)
       expect(fetchRemote).toHaveBeenCalledTimes(2);
-      expect(data.value?.timestamp).toBe(5000);
+      await vi.waitFor(() => {
+        expect(data.value?.timestamp).toBe(5000);
+      });
     });
   });
 

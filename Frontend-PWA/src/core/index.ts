@@ -51,6 +51,7 @@ export * from "./utils/math";
 export * from "./utils/bezier";
 export * from "./utils/visibility";
 export * from "./utils/navigation";
+export * from "./utils/scheduling";
 export * from "./utils/sortOptions";
 export * from "./utils/sortStrategies";
 export * from "./utils/mockData";

@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
+import { computed, ref, watch } from "vue";
 import Icon from "./Icon.vue";
 import RosterIcon from "./RosterIcon.vue";
 import LaboratoryIcon from "./LaboratoryIcon.vue";
@@ -29,6 +30,17 @@ import { useHaptics } from "../composables/useHaptics";
 const route = useRoute();
 const router = useRouter();
 const haptics = useHaptics();
+const pendingPath = ref<string | null>(null);
+const displayPath = computed(() => pendingPath.value ?? route.path);
+let navigationTicket = 0;
+
+watch(
+  () => route.path,
+  (routePath) => {
+    if (pendingPath.value && routePath !== pendingPath.value) return;
+    pendingPath.value = null;
+  },
+);
 
 /**
  * [DECISION LOG] IDEMPOTENT NAVIGATION: Guards against redundant router
@@ -36,9 +48,18 @@ const haptics = useHaptics();
  *
  * [THREAT:] Redundant history entries if navigation guard is bypassed.
  */
-function goTo(targetPath: string) {
-  if (route.path === targetPath) return;
-  router.push(targetPath);
+async function goTo(targetPath: string) {
+  if (displayPath.value === targetPath) return;
+
+  const currentTicket = ++navigationTicket;
+  pendingPath.value = targetPath;
+  try {
+    await router.push(targetPath);
+  } catch (navigationError) {
+    console.warn("[NavigationDock] Navigation failed", navigationError);
+  } finally {
+    if (currentTicket === navigationTicket) pendingPath.value = null;
+  }
 }
 
 /**
@@ -56,13 +77,17 @@ function onInteractionStart() {
     v-for="navItemCandidate in NAV_ITEMS"
     :key="navItemCandidate.name"
     class="dock-item"
-    :class="{ active: route.path === navItemCandidate.path }"
+    :class="{
+      active: displayPath === navItemCandidate.path,
+      pending: pendingPath === navItemCandidate.path
+    }"
     @click="goTo(navItemCandidate.path)"
     @pointerdown="onInteractionStart"
     :aria-label="navItemCandidate.label"
+    :aria-busy="pendingPath === navItemCandidate.path ? 'true' : undefined"
     v-bind="{ 'aria-current': route.path === navItemCandidate.path ? 'page' : undefined }"
   >
-    <div v-if="route.path === navItemCandidate.path" class="capsule-bg"></div>
+    <div v-if="displayPath === navItemCandidate.path" class="capsule-bg"></div>
     
     <RosterIcon
       v-if="navItemCandidate.name === 'roster'"
@@ -111,12 +136,19 @@ function onInteractionStart() {
   font-weight: 850;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: all var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
+  transition:
+    transform var(--sys-motion-duration-100) var(--sys-motion-easing-decelerate),
+    background var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
   background: none;
   border: none;
   font-family: inherit;
   white-space: nowrap;
+  transform: translateZ(0);
 }
 
 .dock-item:active {
@@ -127,6 +159,11 @@ function onInteractionStart() {
 .dock-item.active {
   color: var(--sys-color-on-primary);
   flex: 1.2;
+}
+
+.dock-item.pending {
+  color: var(--sys-color-primary);
+  opacity: 1;
 }
 
 .dock-item.active:active {

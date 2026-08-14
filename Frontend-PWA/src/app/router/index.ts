@@ -98,6 +98,14 @@ const router = createRouter({
 // [PERF] FIX: View Transitions Support with Safety Timeout
 let isInitialNavigation = true;
 
+function shouldUseRouteViewTransition() {
+  if (!document.startViewTransition) return false;
+  if (document.visibilityState !== "visible") return false;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return false;
+  return true;
+}
+
 /**
  * Navigation Guard: beforeResolve (View Transitions & UX orchestration)
  *
@@ -115,8 +123,7 @@ router.beforeResolve(async (to, from) => {
   }
   
   if (to.path === from.path) return;
-  if (!document.startViewTransition) return;
-  if (document.visibilityState !== "visible") return;
+  if (!shouldUseRouteViewTransition()) return;
 
   try {
     return await new Promise((resolve) => {

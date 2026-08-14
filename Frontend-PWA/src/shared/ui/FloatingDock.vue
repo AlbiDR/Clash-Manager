@@ -44,7 +44,7 @@ const { isDesktop } = useViewport();
   /* Respect safe area insets for notched devices + Showcase Frame */
   bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
   background: var(--sys-surface-glass);
 
   border: 1px solid var(--sys-surface-glass-border);
@@ -58,13 +58,24 @@ const { isDesktop } = useViewport();
   z-index: var(--sys-z-dock);
   /* Disable double-tap zoom delay */
   touch-action: manipulation;
+  pointer-events: auto;
+  user-select: none;
+  contain: layout paint style;
+  isolation: isolate;
+  will-change: bottom, box-shadow;
   /* Optimize transition timing for responsiveness */
-  transition: all var(--sys-motion-duration-400) var(--sys-motion-easing-spring-overshoot);
+  transition:
+    bottom var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    box-shadow var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    background var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
 }
 
-.dock-container:hover {
-  bottom: calc(var(--sys-space-28) + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+@media (hover: hover) and (pointer: fine) {
+  .dock-container:hover {
+    bottom: calc(var(--sys-space-28) + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  }
 }
 
 /* FAB Mode Styling */
