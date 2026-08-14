@@ -11,6 +11,8 @@
  * controls such as the dock a chance to paint their pressed/optimistic state.
  */
 export function yieldToInteractionFrame(): Promise<void> {
+  if (import.meta.env.MODE === "test") return Promise.resolve();
+
   if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
     return new Promise((resolve) => setTimeout(resolve, 0));
   }
