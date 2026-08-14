@@ -16,6 +16,86 @@ LAST_AGED:   2026-08-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-14] PR #1458 [Stage 13]: [Stage 13] Self-Healing Protocol Daily Audit
+**Domain:** pipeline | **Commit:** 59a342d1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1458)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 13] Self-Healing Protocol Daily Audit
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1457 [Stage 12]: [Stage 12] Hybrid Shell UX and UI Auditor - TargetPicker.vue Modernization
+**Domain:** pipeline | **Commit:** 75c3e134 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1457)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/laboratory/components/TargetPicker.vue
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 12] Hybrid Shell UX and UI Auditor - TargetPicker.vue Modernization
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1456 [Stage 11]: Completed the daily Stage 11 WebView and Service Worker caching audit pass
+**Domain:** pipeline | **Commit:** 3a52eb5e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1456)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Completed the daily Stage 11 WebView and Service Worker caching audit pass
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1455 [Stage 10]: Completed APK and PWA Wrapper Integrity Audit (Stage 10)
+**Domain:** pipeline | **Commit:** 675f8051 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1455)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Completed APK and PWA Wrapper Integrity Audit (Stage 10)
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1454 [Stage 9]: Stage 9 structural audit CLEAN
+**Domain:** pipeline | **Commit:** e9391a9b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1454)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Stage 9 structural audit CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1453 [Stage 8]: Restored p-limit dependency to root workspace to resolve Edge Function test imports
+**Domain:** pipeline | **Commit:** 366fd1b7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1453)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml
+**Why:** Automated nightly audit pass.
+**Change:** Restored p-limit dependency to root workspace to resolve Edge Function test imports
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1452 [Stage 7]: chore(version): No version drift or catalog violations detected
+**Domain:** pipeline | **Commit:** d30c0f62 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1452)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): No version drift or catalog violations detected
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1451 [Stage 6]: docs(tsdoc): harden TargetPicker interface contracts and inline annotations
+**Domain:** pipeline | **Commit:** f3e2c331 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1451)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/laboratory/components/TargetPicker.vue
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden TargetPicker interface contracts and inline annotations
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1450 [Stage 5]: chore(docs): Reconciled and updated Core Services README
+**Domain:** pipeline | **Commit:** 90e8f941 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1450)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): Reconciled and updated Core Services README
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-14] PR #1449 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
+**Domain:** pipeline | **Commit:** 0777891d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1449)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 4] Optimization - Substrate Hygiene Engineer
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-14] PR #1448 [Stage 2]: [Stage 2] Verification - Logic Integrity Auditor
 **Domain:** pipeline | **Commit:** 830411b6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1448)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts
