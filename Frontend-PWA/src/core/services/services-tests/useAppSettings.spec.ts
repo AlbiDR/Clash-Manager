@@ -75,7 +75,7 @@ describe("useAppSettings", () => {
       const { modules, init } = useAppSettings();
       init();
 
-      expect(modules.blitzMode).toBe(false); // Default
+      expect(modules.blitzMode).toBe(true); // Default
       expect(modules.blitzSpeed).toBe("fast"); // Default
       expect(modules.ghostBenchmarking).toBe(true); // Default
       expect(modules.notificationThreshold).toBe(75); // Default

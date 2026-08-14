@@ -87,6 +87,10 @@ export function useBlitzMode(
     return true;
   });
 
+  const isBlitzEnabled = computed(() => {
+    return !!modules.blitzMode && (isNativeWrapper.value || isTrusted.value);
+  });
+
   /**
    * UI State for the Floating Action Button (FAB).
    */
@@ -133,10 +137,7 @@ export function useBlitzMode(
       isProcessing: isProcessing.value,
       isBlasting: isBlitzActive.value,
       selectionCount: totalSelectedCount,
-      // Blitz is enabled when:
-      // 1. The native AndroidBridge is present (TWA wrapper) - always available, no popup required.
-      // 2. OR the user has manually enabled the blitzMode module flag in settings.
-      blitzEnabled: isNativeWrapper.value || (modules.blitzMode && isTrusted.value),
+      blitzEnabled: isBlitzEnabled.value,
       dismissIcon: "trash",
     };
   });
@@ -210,6 +211,11 @@ export function useBlitzMode(
    */
   function handleBlitz() {
     if (isBlitzActive.value || selectedIds.value.length === 0) return;
+
+    if (!isBlitzEnabled.value) {
+      error("Blitz Mode is disabled");
+      return;
+    }
 
     // [THREAT:] Hardware desynchronization if calling 'any' methods on Window.
     // [DECISION LOG] Enforcing the WindowWithBridge contract for Blitz Mode delegation.

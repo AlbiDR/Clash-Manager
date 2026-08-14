@@ -10,7 +10,7 @@
  * **Decision Log - Native Wrapper & Blitz Mode Delegation:**
  * - Blitz Mode acts as an automated operation bypass.
  * - In native Android wrappers, the actual click automation is fully delegated to the native
- *   foreground accessibility service, which is why the toggle behaves differently.
+ *   foreground accessibility service after the user enables the feature.
  * - Selecting Blitz Mode triggers an explicit redirection sequence to the system Accessibility
  *   settings on activation if not already granted.
  * - Interactive elements (such as Blitz Speed buttons) are scaled to `48px` to guarantee physical
@@ -74,18 +74,16 @@ function handleBlitzToggle() {
         @click="toggle('sortExplanation')"
       />
 
-      <!-- On the native Android wrapper, Blitz Mode is always hardware-delegated via JSBridge.
-           The manual toggle has no effect in this context. -->
       <SettingRow
         label="Blitz Mode"
-        :description="isNativeWrapper ? 'Delegated to native foreground service' : 'Batch operations without confirmation'"
+        :description="isNativeWrapper ? 'Use the native foreground service for selected players' : 'Batch operations without confirmation'"
         :active="modules.blitzMode"
         :loading="isRefreshing"
         @click="handleBlitzToggle()"
       />
 
       <!-- Blitz Speed Selector -->
-      <div v-if="modules.blitzMode || isNativeWrapper" class="blitz-speed-section">
+      <div v-if="modules.blitzMode" class="blitz-speed-section">
         <div class="speed-header">
           <div class="speed-label">Blitz Speed</div>
           <div class="speed-desc">Touch target interaction rate</div>

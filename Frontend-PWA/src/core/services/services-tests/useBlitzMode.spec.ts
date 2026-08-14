@@ -7,6 +7,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 const mockOpenInGame = vi.fn();
 const mockInfo = vi.fn();
 const mockError = vi.fn();
+const mockModules = vi.hoisted(() => ({
+  blitzMode: true,
+  blitzSpeed: "fast",
+}));
 
 vi.mock("@core/services/useExternalLink", () => ({
   useExternalLink: () => ({
@@ -24,7 +28,7 @@ vi.mock("@core/services/useToast", () => ({
 
 vi.mock("@core/services/useAppSettings", () => ({
   useAppSettings: () => ({
-    modules: { blitzMode: true, blitzSpeed: "fast" },
+    modules: mockModules,
   }),
 }));
 
@@ -33,6 +37,8 @@ describe("useBlitzMode", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockModules.blitzMode = true;
+    mockModules.blitzSpeed = "fast";
     selectionStore = useSelectionStore();
   });
 
@@ -116,16 +122,20 @@ describe("useBlitzMode", () => {
       expect(fabState.value.isBlasting).toBe(false);
       expect(selectionStore.selectedIds.value).toEqual([]);
     });
-    it("enables blitz via AndroidBridge even when blitzMode module is off", () => {
+    it("keeps blitz disabled via AndroidBridge when blitzMode module is off", () => {
+      mockModules.blitzMode = false;
       // Simulate native wrapper: inject the bridge before creating the composable
       const mockStartBlitz = vi.fn();
       (window as any).AndroidBridge = { startBlitz: mockStartBlitz, isAndroidWrapper: () => true };
 
-      const { fabState } = useBlitzMode(selectionStore);
+      const { fabState, handleBlitz } = useBlitzMode(selectionStore);
       selectionStore.selectAll(["R1", "R2"]);
 
-      // blitzEnabled must be true from the bridge, not from module setting
-      expect(fabState.value.blitzEnabled).toBe(true);
+      expect(fabState.value.blitzEnabled).toBe(false);
+
+      handleBlitz();
+      expect(mockStartBlitz).not.toHaveBeenCalled();
+      expect(mockError).toHaveBeenCalledWith("Blitz Mode is disabled");
 
       // Clean up bridge injection
       delete (window as any).AndroidBridge;

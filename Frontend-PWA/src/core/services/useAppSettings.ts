@@ -21,7 +21,7 @@ export interface ModuleState {
 }
 
 const DEFAULT_STATE: ModuleState = {
-  blitzMode: false,
+  blitzMode: true,
   blitzSpeed: BLITZ_SPEED_DEFAULT,
   ghostBenchmarking: true,
   sortExplanation: true,
