@@ -236,6 +236,8 @@ export function usePwaManager() {
 
         await serviceWorkerRegistration.update();
 
+        if (nativeBridge.value) await checkApkUpdate();
+
         if (serviceWorkerRegistration.installing || serviceWorkerRegistration.waiting) {
           toast.remove(activeToastId);
           toast.success("Update found! Downloading...");

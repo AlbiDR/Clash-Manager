@@ -58,11 +58,6 @@ onMounted(() => {
         <span>Purge Assets</span>
       </button>
 
-      <button v-if="isNativeWrapper" class="trouble-btn" @click="checkApkUpdate" v-tactile>
-        <Icon name="search" size="24" />
-        <span>Check APK</span>
-      </button>
-
       <button v-if="isNativeWrapper" class="trouble-btn" @click="downloadApk" v-tactile>
         <Icon name="download" size="24" />
         <span>Download Update</span>
@@ -121,7 +116,7 @@ onMounted(() => {
   gap: 12px;
 }
 .trouble-grid.has-extra {
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
 }
 .trouble-btn {
   display: flex;

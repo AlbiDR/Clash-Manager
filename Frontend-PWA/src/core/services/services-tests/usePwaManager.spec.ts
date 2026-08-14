@@ -164,6 +164,35 @@ describe("usePwaManager", () => {
       expect(mockToast.success).toHaveBeenCalledWith("Clash Manager is up to date");
     });
 
+    it("should refresh native APK status as part of Refresh App", async () => {
+      const mockRegistration = {
+        waiting: false,
+        update: vi.fn().mockResolvedValue(undefined),
+      };
+      mockNativeBridge.value = {
+        getAppVersionName: vi.fn(() => "14.43.4"),
+        getBuildNumber: vi.fn(() => 179),
+      };
+      (navigator.serviceWorker.getRegistration as any).mockResolvedValue(mockRegistration);
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          version: "14.43.4",
+        }),
+      });
+
+      const { forceUpdate, apkUpdateMessage } = usePwaManager();
+
+      await forceUpdate();
+
+      expect(mockRegistration.update).toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalled();
+      expect(apkUpdateMessage.value).toBe("Installed APK is current");
+      expect(mockToast.success).toHaveBeenCalledWith("Clash Manager is up to date");
+    });
+
     it("should notify when an update is found and downloading", async () => {
       const mockRegistration = {
         waiting: false,

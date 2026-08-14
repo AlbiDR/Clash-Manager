@@ -132,7 +132,7 @@ describe("RecoverySettings.vue", () => {
 
     const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
     expect(labels).toContain("Download Update");
-    expect(labels).toContain("Check APK");
+    expect(labels).not.toContain("Check APK");
     expect(labels).not.toContain("Install PWA");
 
     const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Download Update"));
@@ -158,9 +158,6 @@ describe("RecoverySettings.vue", () => {
     expect(wrapper.text()).toContain("v14.46.0 (190)");
     expect(wrapper.text()).toContain("Native installer polish");
     expect(wrapper.find(".apk-feed-source").exists()).toBe(false);
-
-    const checkBtn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Check APK"));
-    await checkBtn?.trigger("click");
     expect(mockCheckApkUpdate).toHaveBeenCalled();
   });
 
