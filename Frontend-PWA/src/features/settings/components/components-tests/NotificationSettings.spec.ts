@@ -72,8 +72,8 @@ describe("NotificationSettings.vue", () => {
       props: { initiallyExpanded: true }
     });
     await nextTick();
-    expect(wrapper.find(".perm-section").exists()).toBe(true);
-    expect(wrapper.find(".enable-btn").text()).toContain("Enable Notifications");
+    expect(wrapper.find(".permission-card").exists()).toBe(true);
+    expect(wrapper.find(".enable-btn").text()).toContain("Enable");
     expect(wrapper.find(".actions-row").exists()).toBe(false);
   });
 
@@ -134,7 +134,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const rows = wrapper.findAll(".setting-row");
+    const rows = wrapper.findAll(".notification-toggle");
     const pushRow = rows.find(r => r.text().includes("Cloud Push"));
     expect(pushRow).toBeDefined();
 
@@ -152,7 +152,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const rows = wrapper.findAll(".setting-row");
+    const rows = wrapper.findAll(".notification-toggle");
     const pushRow = rows.find(r => r.text().includes("Cloud Push"));
     expect(pushRow).toBeUndefined();
   });
@@ -176,7 +176,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const backgroundSyncRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Background Synchronization"));
+    const backgroundSyncRow = wrapper.findAll(".notification-toggle").find(r => r.text().includes("Background Sync"));
     expect(backgroundSyncRow).toBeDefined();
 
     await backgroundSyncRow!.trigger("click");
@@ -190,7 +190,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const quietModeRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Quiet Mode"));
+    const quietModeRow = wrapper.findAll(".notification-toggle").find(r => r.text().includes("Quiet Mode"));
     expect(quietModeRow).toBeDefined();
 
     await quietModeRow!.trigger("click");
@@ -204,7 +204,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const soundRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Sound"));
+    const soundRow = wrapper.findAll(".notification-toggle").find(r => r.text().includes("Sound"));
     expect(soundRow).toBeDefined();
 
     await soundRow!.trigger("click");
@@ -218,8 +218,8 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const badgePreview = wrapper.find(".badge-preview");
-    expect(badgePreview.text()).toContain("Show all good recruits");
+    const thresholdRow = wrapper.find(".threshold-row");
+    expect(thresholdRow.text()).toContain("Good and higher");
   });
 
   it("displays the correct badge preview text when threshold is 75", async () => {
@@ -229,7 +229,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const badgePreview = wrapper.find(".badge-preview");
-    expect(badgePreview.text()).toContain("Focus on high-potential talent only");
+    const thresholdRow = wrapper.find(".threshold-row");
+    expect(thresholdRow.text()).toContain("High potential");
   });
 });

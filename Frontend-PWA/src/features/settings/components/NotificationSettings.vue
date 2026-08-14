@@ -7,22 +7,12 @@
  * @remarks
  * Manages background synchronization toggles, heuristic notification threshold
  * options, quiet modes, and push registration workflows for the application.
- *
- * **Architectural Context:**
- * - **Layer:** Layer 3 Features (`@features`)
- * - **Satisfaction:** Satisfies ADR Section III: Data Flow and ADR Section VII: Naming Conventions.
- * - **UX Standards:** Implements mobile-compliant 48px touch targets and declarative
- *   haptic feedback brokering (`v-tactile`) on all actionable selectors to ensure
- *   consistent and highly responsive physical interaction inside Android WebView wrappers.
  */
-import { Icon, SettingRow, SettingsCard, vTactile } from "@shared";
+import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { computed } from "vue";
 
-/**
- * Interface contract for NotificationSettings component properties.
- */
-const props = defineProps<{
+defineProps<{
   /** Whether the notification settings card is initially expanded on mount. */
   initiallyExpanded?: boolean;
 }>();
@@ -40,255 +30,273 @@ const {
   setNotificationThreshold,
 } = useSettings();
 
-/**
- * Reactive computed value referencing the current heuristic score threshold.
- *
- * [DECISION LOG] Threshold choices are restricted to [50, 75] as defined
- * in the central catalog (`core/config`) to prioritize high-potential recruits.
- */
 const threshold = computed(() => modules.notificationThreshold);
 </script>
 
 <template>
   <SettingsCard title="Notification Engine" icon="bell" :initially-expanded="initiallyExpanded">
-    <!-- Master Toggle -->
-    <SettingRow
-      label="Background Synchronization"
-      description="Allow the application to refresh and alert in the background"
-      :active="modules.experimentalNotifications"
-      @click="toggle('experimentalNotifications')"
-    />
+    <div class="notification-stack">
+      <button
+        v-tactile
+        type="button"
+        class="notification-toggle master"
+        :class="{ active: modules.experimentalNotifications }"
+        :aria-pressed="modules.experimentalNotifications"
+        @click="toggle('experimentalNotifications')"
+      >
+        <span class="toggle-copy">
+          <span class="toggle-label">Background Sync</span>
+          <span class="toggle-meta">{{ modules.experimentalNotifications ? "Active" : "Paused" }}</span>
+        </span>
+        <span class="toggle-switch" aria-hidden="true">
+          <span class="toggle-switch-thumb" />
+        </span>
+      </button>
 
-    <div class="card-divider-s" />
+      <div class="threshold-row">
+        <div class="threshold-copy">
+          <div class="row-label">Recruit Alerts</div>
+          <div class="row-desc">{{ threshold === 75 ? "High potential" : "Good and higher" }}</div>
+        </div>
 
-    <!-- Threshold Selector Section -->
-    <div class="notification-section">
-      <div class="section-header">
-        <div class="row-label">Heuristic Threshold</div>
-        <div class="row-desc">Sync alerts for recruits with score</div>
+        <div class="threshold-selector" role="group" aria-label="Notification Threshold">
+          <button
+            v-tactile
+            v-for="thresholdValue in [50, 75] as const"
+            :key="thresholdValue"
+            :class="{ active: threshold === thresholdValue }"
+            @click="setNotificationThreshold(thresholdValue)"
+            class="threshold-btn"
+            :aria-label="`Set threshold to ${thresholdValue}`"
+            :aria-pressed="threshold === thresholdValue"
+          >
+            <span class="threshold-symbol">≥</span>{{ thresholdValue }}
+          </button>
+        </div>
       </div>
 
-      <!--
-        [DECISION LOG] Button dimensions are modernized to 48px to comply with
-        the hybrid shell mobile ergonomics standard (Target B.2). Declarative haptic
-        brokering is integrated via `v-tactile` to bypass legacy manual triggers.
-      -->
-      <div
-        class="threshold-selector"
-        role="group"
-        aria-label="Notification Threshold"
-      >
-        <button
-          v-tactile
-          v-for="thresholdValue in [50, 75] as const"
-          :key="thresholdValue"
-          :class="{ active: threshold === thresholdValue }"
-          @click="setNotificationThreshold(thresholdValue)"
-          class="threshold-btn"
-          :aria-label="`Set threshold to ${thresholdValue}`"
-          :aria-pressed="threshold === thresholdValue"
-        >
-          <span class="threshold-symbol">≥</span>{{ thresholdValue }}
+      <div v-if="notificationPermission === 'default'" class="permission-card">
+        <div class="permission-copy">
+          <Icon name="bell" size="16" />
+          <span>Notifications are off</span>
+        </div>
+        <button v-tactile class="enable-btn" @click="requestNotificationPermission">
+          Enable
         </button>
       </div>
-    </div>
 
-    <!-- Improvement #13: Permission Rationale & Grant -->
-    <div v-if="notificationPermission === 'default'" class="perm-section">
-      <div class="perm-rationale">
-        <Icon name="bell" size="16" />
-        <span>Enable notifications to get updates on high-potential recruits even when the app is closed.</span>
+      <div v-if="notificationPermission === 'granted'" class="delivery-panel">
+        <button
+          v-tactile
+          type="button"
+          class="notification-toggle"
+          :class="{ active: modules.notificationQuietMode }"
+          :aria-pressed="modules.notificationQuietMode"
+          @click="toggle('notificationQuietMode')"
+        >
+          <span class="toggle-copy">
+            <span class="toggle-label">Quiet Mode</span>
+            <span class="toggle-meta">Badge only</span>
+          </span>
+          <span class="toggle-switch" aria-hidden="true">
+            <span class="toggle-switch-thumb" />
+          </span>
+        </button>
+
+        <button
+          v-tactile
+          type="button"
+          class="notification-toggle"
+          :class="{ active: modules.notificationSound }"
+          :aria-pressed="modules.notificationSound"
+          @click="toggle('notificationSound')"
+        >
+          <span class="toggle-copy">
+            <span class="toggle-label">Sound</span>
+            <span class="toggle-meta">System tone</span>
+          </span>
+          <span class="toggle-switch" aria-hidden="true">
+            <span class="toggle-switch-thumb" />
+          </span>
+        </button>
+
+        <button
+          v-if="hasWorker"
+          v-tactile
+          type="button"
+          class="notification-toggle"
+          :class="{ active: isPushSubscribed }"
+          :aria-pressed="isPushSubscribed"
+          @click="subscribePush"
+        >
+          <span class="toggle-copy">
+            <span class="toggle-label">Cloud Push</span>
+            <span class="toggle-meta">Worker alerts</span>
+          </span>
+          <span class="toggle-switch" aria-hidden="true">
+            <span class="toggle-switch-thumb" />
+          </span>
+        </button>
       </div>
-      <!-- [DECISION LOG] Height set to 48px to satisfy hybrid touch footprint standard. -->
-      <button v-tactile class="enable-btn" @click="requestNotificationPermission">
-        Enable Notifications & Badges
-      </button>
-    </div>
 
-    <!-- Toggles Section -->
-    <div class="toggles-grid" v-if="notificationPermission === 'granted'">
-      <!-- Improvement #5: Quiet Mode -->
-      <SettingRow
-        label="Quiet Mode"
-        description="Update badge without sound or popups"
-        :active="modules.notificationQuietMode"
-        @click="toggle('notificationQuietMode')"
-      />
-
-      <!-- Improvement #11: Sound Control -->
-      <SettingRow
-        label="Sound"
-        description="Play system sound on sync"
-        :active="modules.notificationSound"
-        @click="toggle('notificationSound')"
-      />
-
-      <!-- FEATURE 1: Cloud Push -->
-      <SettingRow
-        v-if="hasWorker"
-        label="Cloud Push"
-        description="Receive alerts instantly via Worker"
-        :active="isPushSubscribed"
-        @click="subscribePush"
-      />
-    </div>
-
-    <!-- Actions Row -->
-    <div class="actions-row" v-if="notificationPermission === 'granted'">
-      <!-- Improvement #9: Test Notification -->
-      <!-- [DECISION LOG] Height set to 48px to satisfy hybrid touch footprint standard. -->
-      <button v-tactile class="action-btn" @click="sendTestNotification">
-        <Icon name="bell" size="14" />
-        <span>Test Alert</span>
-      </button>
-      <div class="sync-info">Last synced: {{ lastSyncFormatted }}</div>
-    </div>
-
-    <div class="badge-preview">
-      <Icon name="info" size="14" />
-      <span>{{
-        threshold === 75
-          ? "Focus on high-potential talent only"
-          : "Show all good recruits"
-      }}</span>
+      <div v-if="notificationPermission === 'granted'" class="actions-row">
+        <button v-tactile class="action-btn" @click="sendTestNotification">
+          <Icon name="bell" size="14" />
+          <span>Test Alert</span>
+        </button>
+        <div class="sync-info">Synced {{ lastSyncFormatted }}</div>
+      </div>
     </div>
   </SettingsCard>
 </template>
 
 <style scoped>
-.notification-section {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-space-12);
-}
-
-.perm-section {
-  margin-top: var(--sys-space-12);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-space-12);
-}
-
-.perm-rationale {
-  display: flex;
-  gap: 12px;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--sys-color-on-surface-variant);
-  background: var(--sys-color-surface-container);
-  padding: 12px;
-  border-radius: 8px;
-  align-items: center;
-}
-
-.enable-btn {
-  width: 100%;
-  height: 48px; /* 48px touch target compliance */
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  transition: var(--sys-motion-duration-200) var(--sys-motion-spring);
-}
-
-/* Toggles Grid */
-.toggles-grid {
-  margin-top: var(--sys-space-12);
+.notification-stack {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-8);
-  padding-top: var(--sys-space-12);
-  border-top: 1px solid rgba(var(--sys-color-outline-rgb), 0.1);
 }
 
-
-/* Actions Row */
-.actions-row {
-  margin-top: var(--sys-space-12);
+.notification-toggle {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid rgba(var(--sys-color-outline-rgb), 0.14);
+  border-radius: 8px;
+  padding: 8px 10px 8px 12px;
+  background: var(--sys-color-surface-container-low);
+  color: var(--sys-color-on-surface);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: var(--sys-space-12);
-  border-top: 1px solid rgba(var(--sys-color-outline-rgb), 0.1);
+  gap: var(--sys-space-12);
+  text-align: left;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s var(--sys-motion-spring);
 }
 
-.action-btn {
-  height: 48px; /* 48px touch target compliance */
-  padding: 0 16px;
-  border-radius: 8px;
-  border: 1px solid var(--sys-color-outline-variant);
-  background: transparent;
-  color: var(--sys-color-on-surface);
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
+.notification-toggle.master {
+  background: var(--sys-color-surface-container-high);
 }
 
-.sync-info {
-  font-size: 11px;
-  opacity: 0.5;
-  font-family: var(--sys-font-family-mono);
+.notification-toggle:hover {
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+  background: rgba(var(--sys-color-primary-rgb), 0.05);
 }
 
-.section-header {
+.notification-toggle:active {
+  transform: scale(0.99);
+}
+
+.notification-toggle.active {
+  border-color: rgba(var(--sys-color-primary-rgb), 0.34);
+  background: rgba(var(--sys-color-primary-rgb), 0.08);
+}
+
+.toggle-copy,
+.threshold-copy {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
+.toggle-label,
+.row-label {
+  color: var(--sys-color-on-surface);
+  font-size: var(--sys-typescale-body-sm);
+  font-weight: 800;
+  line-height: 1.2;
+}
 
-/* Elegant threshold selector matching Console Header pill style */
+.toggle-meta,
+.row-desc {
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-meta);
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.toggle-switch {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  padding: 3px;
+  background: rgba(var(--sys-color-outline-rgb), 0.24);
+  display: flex;
+  align-items: center;
+  transition: background 0.18s ease;
+}
+
+.notification-toggle.active .toggle-switch {
+  background: var(--sys-color-primary);
+}
+
+.toggle-switch-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sys-color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  transition: transform 0.18s var(--sys-motion-spring);
+}
+
+.notification-toggle.active .toggle-switch-thumb {
+  transform: translateX(18px);
+}
+
+.threshold-row {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-space-12);
+  padding: 8px 10px 8px 12px;
+  border: 1px solid rgba(var(--sys-color-outline-rgb), 0.12);
+  border-radius: 8px;
+  background: var(--sys-color-surface-container-low);
+}
+
 .threshold-selector {
+  flex: 0 0 auto;
   display: flex;
   background: var(--sys-color-surface-container-high);
   padding: 4px;
   border-radius: 8px;
   gap: 4px;
-  width: fit-content;
 }
 
 .threshold-btn {
-  flex: 1;
-  min-width: 80px;
-  height: 48px; /* 48px touch target compliance */
-  padding: 0 18px;
+  min-width: 64px;
+  height: 40px;
+  padding: 0 12px;
   border: none;
   background: transparent;
   color: var(--sys-color-outline);
   border-radius: 6px;
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 850;
+  font-size: 13px;
   font-family: var(--sys-font-family-mono);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  transition: all 0.2s var(--sys-motion-spring);
+  transition: all 0.18s var(--sys-motion-spring);
 }
 
 .threshold-symbol {
-  font-size: 16px;
+  font-size: 15px;
   opacity: 0.7;
 }
 
 .threshold-btn.active {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
-  transform: scale(1.02);
-}
-
-.threshold-btn.active .threshold-symbol {
-  opacity: 1;
+  box-shadow: 0 2px 8px rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
 .threshold-btn:hover:not(.active) {
@@ -300,24 +308,99 @@ const threshold = computed(() => modules.notificationThreshold);
   transform: scale(0.96);
 }
 
-.badge-preview {
-  margin-top: var(--sys-space-12);
-  padding: 12px;
-  background: rgba(var(--sys-color-primary-rgb), 0.08); /* Fixed opacity */
-  border-radius: 8px;
+.permission-card {
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--sys-color-on-surface);
-  /* opacity: 0.8; Removed to improve contrast */
+  justify-content: space-between;
+  gap: var(--sys-space-12);
+  padding: 8px 8px 8px 12px;
+  border: 1px solid rgba(var(--sys-color-primary-rgb), 0.16);
+  border-radius: 8px;
+  background: rgba(var(--sys-color-primary-rgb), 0.06);
 }
 
-.card-divider-s {
-  height: 1.5px;
-  background: var(--sys-color-outline-variant);
-  opacity: 0.1;
-  margin: var(--sys-space-12) 0;
+.permission-copy {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sys-space-8);
+  color: var(--sys-color-on-surface);
+  font-size: var(--sys-typescale-body-sm);
+  font-weight: 750;
+}
+
+.enable-btn {
+  min-width: 82px;
+  height: 40px;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  border: none;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: var(--sys-typescale-body-sm);
+  cursor: pointer;
+  transition: transform 0.18s var(--sys-motion-spring);
+}
+
+.enable-btn:active {
+  transform: scale(0.96);
+}
+
+.delivery-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-space-8);
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-space-12);
+  padding-top: var(--sys-space-4);
+}
+
+.action-btn {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--sys-color-outline-rgb), 0.16);
+  background: var(--sys-color-surface-container-low);
+  color: var(--sys-color-on-surface);
+  font-size: var(--sys-typescale-meta);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.sync-info {
+  min-width: 0;
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-meta);
+  font-family: var(--sys-font-family-mono);
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 390px) {
+  .threshold-row,
+  .actions-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .threshold-selector,
+  .action-btn {
+    width: 100%;
+  }
+
+  .threshold-btn {
+    flex: 1;
+  }
 }
 </style>
