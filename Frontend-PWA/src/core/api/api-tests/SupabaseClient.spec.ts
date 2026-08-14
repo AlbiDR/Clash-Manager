@@ -85,6 +85,34 @@ describe("SupabaseClient", () => {
   });
 
   describe("Configuration", () => {
+    it("creates a Supabase client with no-store fetch transport", async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response("{}"));
+      vi.stubGlobal("fetch", fetchMock);
+
+      SupabaseClient.createSupabaseClient();
+
+      const clientOptions = vi.mocked(createClient).mock.calls.at(-1)?.[2] as {
+        global?: { fetch?: typeof fetch };
+      };
+      expect(clientOptions?.global?.fetch).toEqual(expect.any(Function));
+
+      await clientOptions.global!.fetch!("https://xyz.supabase.co/rest/v1/roster_view", {
+        headers: { apikey: "mock-key" },
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://xyz.supabase.co/rest/v1/roster_view",
+        expect.objectContaining({
+          cache: "no-store",
+          headers: expect.any(Headers),
+        }),
+      );
+      const headers = fetchMock.mock.calls[0][1].headers as Headers;
+      expect(headers.get("Cache-Control")).toBe("no-cache");
+      expect(headers.get("Pragma")).toBe("no-cache");
+      expect(headers.get("apikey")).toBe("mock-key");
+    });
+
     it("isConfigured returns true when both URL and Key are present", () => {
       expect(SupabaseClient.isConfigured()).toBe(true);
     });

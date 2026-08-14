@@ -47,13 +47,38 @@ export class NetworkError extends Error {
 export const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
 export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
+async function fetchSupabaseFresh(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<Response> {
+  const requestHeaders = input instanceof Request ? input.headers : undefined;
+  const headers = new Headers(requestHeaders);
+  const initHeaders = new Headers(init.headers);
+
+  initHeaders.forEach((value, key) => {
+    headers.set(key, value);
+  });
+
+  headers.set("Cache-Control", "no-cache");
+  headers.set("Pragma", "no-cache");
+
+  return fetch(input, {
+    ...init,
+    cache: "no-store",
+    headers,
+  });
+}
+
 /**
  * Internal factory to create a scoped Supabase client.
  * Configured to target the 'features' schema by default.
  */
 export const createSupabaseClient = () => {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
-        db: { schema: 'features' }
+        db: { schema: 'features' },
+        global: {
+          fetch: fetchSupabaseFresh,
+        },
     });
 };
 
