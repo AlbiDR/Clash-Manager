@@ -48,18 +48,10 @@ export const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
 export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 /**
- * [FIX] Computes the merged headers via `new Request(input, init).headers` instead
- * of manually copying `input`'s headers and then `init`'s on top. The manual merge
- * silently dropped the `Authorization` header supabase-js's FunctionsClient sets
- * when `input` arrived as a `Request` instance: reading a `Request`'s `.headers`
- * directly does not reliably include every header it was constructed with, but
- * building a fresh `Request(input, init)` forces the spec's own (correct) merge
- * algorithm to run. Its absence meant every `ping` edge function call (the only
- * caller using `functions.invoke`, which requires `Authorization`) came back 401
- * despite `apikey` still being present - REST calls via `.from()`/`.rpc()` were
- * unaffected since PostgREST tolerates an apikey-only request. `input` itself is
- * still what gets fetched, unchanged, so callers relying on the original url/Request
- * as the `fetch()` argument see no behavior difference.
+ * Builds the merged headers via `new Request(input, init).headers` rather than
+ * manually copying `input`'s headers and then `init`'s on top, so the spec's own
+ * merge algorithm runs instead of a hand-rolled one. `input` itself is still what
+ * gets fetched, unchanged.
  */
 async function fetchSupabaseFresh(
   input: RequestInfo | URL,
@@ -97,12 +89,8 @@ let cachedSupabaseClient: ReturnType<typeof buildSupabaseClient> | null = null;
  * [FIX] Memoized to a single module-level instance. Every call site previously
  * got its own fresh `createClient(...)`, each spinning up its own GoTrueClient
  * bound to the same `sb-<project>-auth-token` storage key ("Multiple GoTrueClient
- * instances detected" in the console). Concurrent instances race over that shared
- * key during auth initialization, and a request issued by an instance whose
- * session hadn't finished resolving yet would go out without a valid session,
- * surfacing as a spurious 401 alongside a sibling instance's 200 for the same
- * call - which is exactly what tripped the boot-time `ping` handshake into
- * "offline" despite the backend being healthy.
+ * instances detected" in the console). Harmless for this app (no user auth), but
+ * wasteful and the documented Supabase-recommended pattern is one client per key.
  */
 export const createSupabaseClient = () => {
     if (!cachedSupabaseClient) {
@@ -141,8 +129,18 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
     // Settings panel's "Backend v..." readout could never show anything but its "0.0"
     // fallback. The Edge Function runs through the shared clinicalServe protocol, whose
     // success envelope already carries a version string kept in sync with every release.
+    //
+    // [FIX] Explicit Authorization header. supabase-js (2.112.x) deliberately does not
+    // send Authorization as a Bearer fallback for new-format (`sb_publishable_...`) keys
+    // when there is no active user session - confirmed via @supabase/functions-js's own
+    // doc comment on FunctionsClient.invoke. This app has no auth/session at all, so
+    // every ping request went out with `apikey` but no `Authorization`, and the edge
+    // function's bearer check correctly rejected it with 401. REST calls via `.from()`/
+    // `.rpc()` were unaffected since PostgREST tolerates an apikey-only request; `ping`
+    // is the only call site using `functions.invoke`, which requires the header outright.
     const { data, error: pingError } = await supabase.functions.invoke('ping', {
       body: {},
+      headers: { Authorization: `Bearer ${getSupabaseKey()}` },
       ...(options?.signal ? { signal: options.signal } : {}),
     });
     if (pingError) return { status: 'error', message: pingError.message };
