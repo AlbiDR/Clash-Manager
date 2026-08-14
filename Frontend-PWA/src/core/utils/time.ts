@@ -28,6 +28,9 @@ const TIME_UNITS = [
 
 /** Regex for parsing Project Standard date format: dd/MM/yyyy HH.mm.ss */
 const RE_CUSTOM_DATE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2})\.(\d{2})\.(\d{2})$/;
+/** Regex for parsing PostgreSQL/Supabase timestamps without relying on WebView Date quirks. */
+const RE_POSTGRES_TIMESTAMP =
+  /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2})(\.\d+)?)?(?:\s*(Z|[+-]\d{2}(?::?\d{2})?))?$/;
 
 /**
  * DURATION UNITS (Internal/Utility)
@@ -94,6 +97,45 @@ export function formatCountdown(
   return `${String(totalHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function normalizeTimezoneOffset(offset: string | undefined): string {
+  if (!offset || offset === "Z") return "Z";
+  if (/^[+-]\d{2}$/.test(offset)) return `${offset}:00`;
+  if (/^[+-]\d{4}$/.test(offset)) return `${offset.slice(0, 3)}:${offset.slice(3)}`;
+  return offset;
+}
+
+function parseAbsoluteTimeMs(dateInput: string | number | null | undefined): number | null {
+  if (typeof dateInput === "number") return Number.isFinite(dateInput) ? dateInput : null;
+  if (!dateInput) return null;
+
+  const trimmedInput = dateInput.trim();
+  if (!trimmedInput) return null;
+
+  const customMatch = trimmedInput.match(RE_CUSTOM_DATE);
+  if (customMatch) {
+    const day = parseInt(customMatch[1], 10);
+    const month = parseInt(customMatch[2], 10) - 1;
+    const year = parseInt(customMatch[3], 10);
+    const hour = parseInt(customMatch[4], 10);
+    const min = parseInt(customMatch[5], 10);
+    const sec = parseInt(customMatch[6], 10);
+    const customDate = new Date(year, month, day, hour, min, sec);
+    return Number.isNaN(customDate.getTime()) ? null : customDate.getTime();
+  }
+
+  const postgresMatch = trimmedInput.match(RE_POSTGRES_TIMESTAMP);
+  if (postgresMatch) {
+    const [, year, month, day, hour, min, sec = "00", fraction = "", timezone] = postgresMatch;
+    const normalizedTimezone = normalizeTimezoneOffset(timezone);
+    const normalizedTimestamp = `${year}-${month}-${day}T${hour}:${min}:${sec}${fraction}${normalizedTimezone}`;
+    const parsedTimestamp = Date.parse(normalizedTimestamp);
+    return Number.isNaN(parsedTimestamp) ? null : parsedTimestamp;
+  }
+
+  const parsedTimestamp = Date.parse(trimmedInput);
+  return Number.isNaN(parsedTimestamp) ? null : parsedTimestamp;
+}
+
 /**
  * Internal utility to calculate relative time difference.
  *
@@ -109,11 +151,11 @@ const formatTime = (
   if (!dateStr) return "-";
   if (!shortMode && dateStr === "Just now") return dateStr;
 
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return "-";
+  const dateTimeMs = parseAbsoluteTimeMs(dateStr);
+  if (dateTimeMs === null) return "-";
 
   const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const seconds = Math.floor((now.getTime() - dateTimeMs) / 1000);
 
   if (seconds < 0) return shortMode ? "New" : "Just now";
 
@@ -191,33 +233,14 @@ export function parseTimeAgoValue(timeString: string | null | undefined): number
     return cachedAbs === null ? 99999999 : Math.floor((Date.now() - cachedAbs) / 60000);
   }
 
-  // 1. Try parsing custom format: dd/MM/yyyy HH.mm.ss (Project Standard)
-  const customMatch = timeString.match(RE_CUSTOM_DATE);
-  if (customMatch) {
-    const day = parseInt(customMatch[1], 10);
-    const month = parseInt(customMatch[2], 10) - 1;
-    const year = parseInt(customMatch[3], 10);
-    const hour = parseInt(customMatch[4], 10);
-    const min = parseInt(customMatch[5], 10);
-    const sec = parseInt(customMatch[6], 10);
-    const date = new Date(year, month, day, hour, min, sec);
-
-    if (!isNaN(date.getTime())) {
-      const ts = date.getTime();
-      ABS_CACHE.set(timeString, ts);
-      return Math.floor((Date.now() - ts) / 60000);
-    }
-  }
-
-  // 2. Try parsing as Standard Date / ISO String (Fallback)
-  const date = new Date(timeString);
-  if (!isNaN(date.getTime())) {
-    const ts = date.getTime();
+  // 1. Try parsing as an absolute timestamp using deterministic normalizers.
+  const ts = parseAbsoluteTimeMs(timeString);
+  if (ts !== null) {
     ABS_CACHE.set(timeString, ts);
     return Math.floor((Date.now() - ts) / 60000);
   }
 
-  // 3. Legacy Fallback: Parse "2d ago" strings (Old Backend / UI formatted)
+  // 2. Legacy Fallback: Parse "2d ago" strings (Old Backend / UI formatted)
   if (timeString === "Just now") {
     REL_CACHE.set(timeString, 0);
     return 0;

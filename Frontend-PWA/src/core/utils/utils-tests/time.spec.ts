@@ -60,6 +60,13 @@ describe("time utilities", () => {
       expect(formatTimeAgo(twoHoursAgo)).toBe("2h ago");
     });
 
+    it("parses Supabase PostgreSQL timestamps consistently", () => {
+      vi.setSystemTime(new Date("2026-08-14T12:00:00Z"));
+      expect(formatTimeAgo("2026-08-13 21:00:00+00")).toBe("15h ago");
+      expect(formatTimeAgo("2026-08-13 21:00:00+0000")).toBe("15h ago");
+      expect(formatTimeAgo("2026-08-13 21:00:00+00:00")).toBe("15h ago");
+    });
+
     it("returns correct days ago", () => {
       const now = new Date("2026-01-05T12:00:00Z");
       vi.setSystemTime(now);
@@ -139,6 +146,13 @@ describe("time utilities", () => {
 
       const customDateStr = "02/02/2026 18.50.00";
       expect(parseTimeAgoValue(customDateStr)).toBe(10);
+    });
+
+    it("parses Supabase PostgreSQL timestamps for sorting and benchmarks", () => {
+      vi.setSystemTime(new Date("2026-08-14T12:00:00Z"));
+      expect(parseTimeAgoValue("2026-08-13 21:00:00+00")).toBe(900);
+      expect(parseTimeAgoValue("2026-08-13 21:00:00.123+0000")).toBe(899);
+      expect(parseTimeAgoValue("2026-08-13 21:00:00+00:00")).toBe(900);
     });
 
     it("returns 99999999 for unknown patterns", () => {

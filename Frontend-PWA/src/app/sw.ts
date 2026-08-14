@@ -73,9 +73,9 @@ self.addEventListener("activate", (event) => {
       await self.clients.claim();
 
       // [SELF-HEAL] CRITICAL: force every controlled tab to reload once this new
-      // version activates. Navigation is cache-first (matchPrecache below), so a
-      // tab that was already open keeps rendering the STALE precached shell + stale
-      // chunks indefinitely - skipWaiting/claim alone never re-runs the document.
+      // version activates. A tab that was already open can keep rendering the
+      // STALE app shell + stale chunks until the document reloads, so
+      // skipWaiting/claim alone never re-runs the document.
       // Driving the reload from the SW is the ONLY mechanism that reaches clients
       // still running an OLD shell (which predates any client-side update listener).
       // This is what un-sticks browsers wedged on a prior broken deploy.
@@ -109,16 +109,12 @@ self.addEventListener("fetch", (event) => {
     /**
      * [OPTIMIZATION] Native-Like Navigation Strategy (Cache-First)
      * To achieve sub-second "native" startup latency in the hybrid shell, we
-     * prioritize the precached app shell (index.html) for all navigation requests.
-     * This bypasses the network completely for the initial document load.
+     * prefer the network for navigation requests so a visible refresh can pick up
+     * newly deployed app-shell code. The precached shell remains the offline
+     * fallback, preserving native-like startup when the network is unavailable.
      */
     event.respondWith(
       (async () => {
-        const cachedShell = await matchPrecache("/Clash-Manager/index.html");
-        if (cachedShell) {
-          return cachedShell;
-        }
-
         try {
           const preloadResponse = await event.preloadResponse;
           if (preloadResponse) {
@@ -126,6 +122,10 @@ self.addEventListener("fetch", (event) => {
           }
           return await fetch(event.request);
         } catch (fetchError: unknown) {
+          const cachedShell = await matchPrecache("/Clash-Manager/index.html");
+          if (cachedShell) {
+            return cachedShell;
+          }
           throw fetchError;
         }
       })(),
