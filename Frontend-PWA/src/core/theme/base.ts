@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
+import { generatePropertyRegistrations } from './tokens';
+
 /**
  * CLASH MANAGER - Base Reset & Gestures
  * Ported to TypeScript for Technical Purity.
@@ -104,6 +106,8 @@ export const staticTokens = `
   --sys-leading-tight:  1.1;
   --sys-leading-normal: 1.5;
 }
+
+${generatePropertyRegistrations()}
 `;
 
 export const baseStyles = staticTokens + `

@@ -164,7 +164,7 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
 
 .card.selected :deep(.stat-pod) {
   background: rgba(
-    var(--sys-color-on-primary-container-rgb, 0, 29, 54),
+    var(--sys-color-on-primary-container-rgb),
     0.15
   ) !important;
   color: var(--sys-color-on-primary-container) !important;
@@ -173,7 +173,7 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
 }
 .card.selected :deep(.badge:not(.role)) {
   background: rgba(
-    var(--sys-color-on-primary-container-rgb, 0, 29, 54),
+    var(--sys-color-on-primary-container-rgb),
     0.1
   ) !important;
   color: var(--sys-color-on-primary-container) !important;

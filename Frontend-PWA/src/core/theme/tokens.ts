@@ -13,14 +13,12 @@
 export interface ThemeTokens {
   color: {
     primary: string;
-    primaryRgb: string;
     onPrimary: string;
     primaryContainer: string;
     onPrimaryContainer: string;
-    onPrimaryContainerRgb?: string;
 
     secondary: string;
-    onSecondary?: string;
+    onSecondary: string;
     secondaryContainer: string;
     onSecondaryContainer: string;
 
@@ -75,12 +73,17 @@ export interface ThemeTokens {
     level2: string;
     level3: string;
   };
+  // Loading-skeleton placeholder tones (--sk-*). Deliberately independent
+  // from `color` - e.g. light.surf ('#f3edf7') is not the same shade as
+  // light.color.surface ('#fdfcff') by design. Do not collapse these into
+  // `color` aliases; any incidental equality with a `color` value elsewhere
+  // is coincidence, not a contract.
   skeleton: {
     bg: string;
     surf: string;
     text: string;
-    sk: string;
-    skSecondary: string;
+    fill: string;
+    fillSecondary: string;
   };
 }
 
@@ -90,13 +93,12 @@ export interface ThemeTokens {
 export const lightTokens: ThemeTokens = {
   color: {
     primary: '#0061a4',
-    primaryRgb: '0, 97, 164',
     onPrimary: '#ffffff',
     primaryContainer: '#d1e4ff',
     onPrimaryContainer: '#001d36',
-    onPrimaryContainerRgb: '0, 29, 54',
 
     secondary: '#535f70',
+    onSecondary: '#ffffff',
     secondaryContainer: '#d7e3f7',
     onSecondaryContainer: '#101c2b',
 
@@ -145,8 +147,8 @@ export const lightTokens: ThemeTokens = {
     bg: '#fdfcff',
     surf: '#f3edf7',
     text: '#1a1c1e',
-    sk: '#e6e0e9',
-    skSecondary: '#dcdada',
+    fill: '#e6e0e9',
+    fillSecondary: '#dcdada',
   },
 };
 
@@ -156,11 +158,9 @@ export const lightTokens: ThemeTokens = {
 export const darkTokens: ThemeTokens = {
   color: {
     primary: '#a8c7fa',
-    primaryRgb: '168, 199, 250',
     onPrimary: '#00315b',
     primaryContainer: '#004781',
     onPrimaryContainer: '#d1e4ff',
-    onPrimaryContainerRgb: '209, 228, 255',
 
     secondary: '#bbc7db',
     onSecondary: '#253140',
@@ -212,10 +212,65 @@ export const darkTokens: ThemeTokens = {
     bg: '#0b0e14',
     surf: '#1b1f27',
     text: '#e1e2e8',
-    sk: '#2f343e',
-    skSecondary: '#3b4858',
+    fill: '#2f343e',
+    fillSecondary: '#3b4858',
   },
 };
+
+/**
+ * Derives a 'r, g, b' triplet string from a 6-digit hex color, so that
+ * `rgba(var(--sys-color-x-rgb), alpha)` consumers never require a
+ * hand-maintained decimal copy of the source hex sitting next to it.
+ */
+export function hexToRgbTriplet(hex: string): string {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+}
+
+// Color roles that need an `rgba()`-friendly '--sys-color-{role}-rgb' companion
+// var, for translucent fills/borders/shadows built on top of a solid role.
+// Add a role here (not a hand-typed literal) when a new one is needed.
+const RGB_COMPANIONS = ['primary', 'onPrimaryContainer'] as const;
+
+// Automated camelCase to kebab-case transformation to ensure alignment with
+// standard CSS custom-property naming conventions.
+function toKebabCase(key: string): string {
+  return key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
+}
+
+function mapGroup(prefix: string, group: Record<string, string>): Record<string, string> {
+  const vars: Record<string, string> = {};
+  Object.entries(group).forEach(([key, value]) => {
+    vars[`${prefix}${toKebabCase(key)}`] = value;
+  });
+  return vars;
+}
+
+// `color` keys that are not <color> values (a bare number, a filter
+// function) and so cannot be registered as such via @property.
+const NON_COLOR_KEYS = new Set(['scoreTextSwitch', 'glassBlur']);
+
+/**
+ * Emits one `@property` block per `--sys-color-*` token that is genuinely a
+ * CSS `<color>`, registering it with the engine so an invalid value is
+ * rejected by the cascade instead of silently corrupting a downstream
+ * computation, and so theme-toggle color transitions become animatable
+ * (an unregistered custom property cannot be interpolated). Theme-agnostic:
+ * emitted once, using `lightTokens` purely as the initial-value source -
+ * the actual per-theme value is still supplied by `generateCssVariables`.
+ */
+export function generatePropertyRegistrations(): string {
+  return Object.entries(lightTokens.color)
+    .filter(([key]) => !NON_COLOR_KEYS.has(key))
+    .map(
+      ([key, value]) => `@property --sys-color-${toKebabCase(key)} {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: ${value};
+}`
+    )
+    .join('\n');
+}
 
 /**
  * Programmatically transforms a token set into a flat CSS Variable registry.
@@ -229,23 +284,18 @@ export const darkTokens: ThemeTokens = {
  * derivation overhead and ensure 100/100 performance scores.
  */
 export function generateCssVariables(tokens: ThemeTokens): Record<string, string> {
-  const vars: Record<string, string> = {};
-  
-  // [DECISION LOG] Automated camelCase to kebab-case transformation to ensure
-  // alignment with standard --sys- prefixing and CSS naming conventions.
-  Object.entries(tokens.color).forEach(([key, value]) => {
-    const cssKey = `--sys-color-${key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`;
-    vars[cssKey] = value!;
-  });
-  
+  const vars: Record<string, string> = {
+    ...mapGroup('--sys-color-', tokens.color),
+    ...mapGroup('--sk-', tokens.skeleton),
+  };
+
+  for (const role of RGB_COMPANIONS) {
+    const hex = tokens.color[role];
+    if (hex) vars[`--sys-color-${toKebabCase(role)}-rgb`] = hexToRgbTriplet(hex);
+  }
+
   vars['--sys-elevation-2'] = tokens.elevation.level2;
   vars['--sys-elevation-3'] = tokens.elevation.level3;
-  
-  vars['--sh-bg'] = tokens.skeleton.bg;
-  vars['--sh-surf'] = tokens.skeleton.surf;
-  vars['--sh-text'] = tokens.skeleton.text;
-  vars['--sh-sk'] = tokens.skeleton.sk;
-  vars['--sh-sk-secondary'] = tokens.skeleton.skSecondary;
 
   // Add glass special properties
   vars['--sys-surface-glass'] = tokens.color.glass;

@@ -327,14 +327,14 @@ const { chartData } = useBaseHistoryChart({
 }
 
 .sk-chart-area {
-  background: var(--sh-sk-secondary); /* Use secondary skeleton color */
+  background: var(--sk-fill-secondary); /* Use secondary skeleton color */
   border-radius: 8px;
   padding: 4px; /* Internal padding for bars */
 }
 
 .sk-chart-bar {
   width: 8px; /* Fixed width for skeleton bars */
-  background: var(--sh-sk); /* Primary skeleton color for bars */
+  background: var(--sk-fill); /* Primary skeleton color for bars */
   border-radius: 2px;
   opacity: 0.7;
   height: var(--bar-height); /* Dynamic height set in template */

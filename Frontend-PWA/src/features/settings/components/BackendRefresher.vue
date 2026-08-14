@@ -146,7 +146,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--sh-sk-secondary); /* Skeleton background */
+  background: var(--sk-fill-secondary); /* Skeleton background */
   border-radius: 8px;
   animation: pulse 1.5s infinite ease-in-out;
 }

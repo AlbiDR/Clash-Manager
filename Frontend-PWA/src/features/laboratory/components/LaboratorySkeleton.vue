@@ -139,7 +139,7 @@
 }
 
 .glass-panel {
-  background: var(--sh-surf-c);
+  background: var(--sys-color-surface-container);
   border-radius: var(--sys-shape-corner-l);
   border: 1px solid rgba(128, 128, 128, 0.05);
   padding: 18px;
@@ -247,7 +247,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: var(--sh-sk);
+  background: var(--sk-fill);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-large);
   padding: 14px 18px;

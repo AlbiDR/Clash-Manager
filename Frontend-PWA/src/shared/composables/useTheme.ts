@@ -2,10 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 import { ref } from "vue";
 import { darkTokens, generateCssVariables, lightTokens } from "../../core/theme/tokens";
+import { THEME_STORAGE_KEY, resolveIsDark, type Theme } from "../../core/theme/themeContract";
 
-export type Theme = "light" | "dark" | "auto";
+export type { Theme };
 
-const STORAGE_KEY = "cm_theme_preference";
+const STORAGE_KEY = THEME_STORAGE_KEY;
 
 // EPHEMERAL: intentionally resets on cold start
 const theme = ref<Theme>("auto");
@@ -38,8 +39,7 @@ export function useTheme() {
     if (typeof document === "undefined" || !mediaQuery) return;
 
     const root = document.documentElement;
-    const isDark =
-      theme.value === "auto" ? mediaQuery.matches : theme.value === "dark";
+    const isDark = resolveIsDark(theme.value, mediaQuery.matches);
     const targetTokens = isDark ? darkTokens : lightTokens;
     const variables = generateCssVariables(targetTokens);
     
@@ -62,7 +62,7 @@ export function useTheme() {
     // Create a fresh, authoritative meta tag
     const meta = document.createElement("meta");
     meta.name = "theme-color";
-    meta.content = isDark ? "#0b0e14" : "#fdfcff";
+    meta.content = targetTokens.color.background;
     document.head.appendChild(meta);
   }
 

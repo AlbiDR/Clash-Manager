@@ -3,12 +3,13 @@
 
 import { defineConfig, minimalPreset } from "@vite-pwa/assets-generator/config";
 import type { Preset } from "@vite-pwa/assets-generator/config";
+import { lightTokens, darkTokens } from "./src/core/theme/tokens";
 
 // The app's canonical background color, matching manifest.json and the app shell.
 // Used as the fill for maskable icons (which require an opaque background inside
 // the safe-zone) and Apple touch icons. The 'any' / transparent variant intentionally
 // omits this so Android's adaptive-icon system can apply its own launcher shape.
-const APP_BACKGROUND_COLOR = "#0b0e14";
+const APP_BACKGROUND_COLOR = darkTokens.color.background;
 
 export default defineConfig({
   preset: {
@@ -42,7 +43,10 @@ export default defineConfig({
     },
     apple: {
       sizes: [180] as const,
-      resizeOptions: { background: "#ffffff" },
+      // Apple touch icons are a single static asset with no dark variant,
+      // so this can't track light/dark like APP_BACKGROUND_COLOR does.
+      // Reuses onPrimary rather than a second hand-typed white-hex literal.
+      resizeOptions: { background: lightTokens.color.onPrimary },
       padding: 0.1,
     },
     monochrome: {

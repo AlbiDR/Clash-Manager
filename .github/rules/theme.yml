@@ -1,0 +1,16 @@
+id: theme-no-hex-literal
+language: typescript
+message: >-
+  Hex color literal in theme plumbing. AppShell.ts, HtmlEntry.ts, useTheme.ts,
+  and pwa-assets.config.ts must read every color from tokens.ts (lightTokens /
+  darkTokens), never retype a hex value - see the "Theme Token SSOT Collapse"
+  plan and ThemeTokens in src/core/theme/tokens.ts.
+files:
+  - "Frontend-PWA/src/core/theme/AppShell.ts"
+  - "Frontend-PWA/src/core/theme/HtmlEntry.ts"
+  - "Frontend-PWA/src/shared/composables/useTheme.ts"
+  - "Frontend-PWA/pwa-assets.config.ts"
+rule:
+  kind: string_fragment
+  regex: "#[0-9a-fA-F]{3,8}"
+severity: error

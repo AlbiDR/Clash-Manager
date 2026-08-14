@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { getAppShellStyles, getAppShellHtml } from './AppShell';
+import { lightTokens, darkTokens } from './tokens';
+import { BOOT_THEME_SCRIPT } from './themeContract';
 
 /**
  * CLASH MANAGER - HTML Entry Point (TypeScript Source of Truth)
@@ -32,8 +34,8 @@ export function generateHtmlEntry(version: string): string {
     <meta property="twitter:image" content="https://albidr.github.io/Clash-Manager/assets/branding/logo.svg" />
 
     <!-- Theme Colors (Bi-Modal) -->
-    <meta name="theme-color" content="#fdfcff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="${lightTokens.color.background}" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="${darkTokens.color.background}" media="(prefers-color-scheme: dark)" />
     
     <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -49,7 +51,7 @@ export function generateHtmlEntry(version: string): string {
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="Clash Manager" />
-    <meta name="msapplication-TileColor" content="#0b0e14" />
+    <meta name="msapplication-TileColor" content="${darkTokens.color.background}" />
     
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/branding/favicon.ico" sizes="any" />
@@ -66,17 +68,7 @@ export function generateHtmlEntry(version: string): string {
     <link rel="preload" href="./fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 
-    <script>
-      (function() {
-        var pref = localStorage.getItem("cm_theme_preference");
-        var isDark = pref === "dark" || ((!pref || pref === "auto") && window.matchMedia("(prefers-color-scheme: dark)").matches);
-        if (isDark) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      })();
-    </script>
+    <script>${BOOT_THEME_SCRIPT}</script>
     <script>
       (function() {
         // Boot-stuck guard: if Vue hasn't replaced the static app shell after 10s,
