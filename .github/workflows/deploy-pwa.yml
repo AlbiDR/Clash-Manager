@@ -35,6 +35,7 @@ env:
   # drift across runs. The v10/v11 layout WARN emitted by the runner shim is
   # cosmetic only; the downgrade completes successfully regardless.
   PNPM_VERSION: "10.32.1"
+  CI: "true"
 
 defaults:
   run:
@@ -65,18 +66,18 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: "pnpm-lock.yaml"
 
+      - name: Install Dependencies
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
       - name: Project Validation
         working-directory: .
         run: |
           if [ -f .github/scripts/validate_project.ts ]; then
-            npx tsx .github/scripts/validate_project.ts
+            pnpm exec tsx .github/scripts/validate_project.ts
           else
             echo "Validation script not found."
           fi
-
-      - name: Install Dependencies
-        working-directory: .
-        run: pnpm install --frozen-lockfile
 
       - name: Run Tests
         env:
