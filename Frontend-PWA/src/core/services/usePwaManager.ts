@@ -315,9 +315,16 @@ export function usePwaManager() {
         return;
       }
 
+      if (nativeBridge.value?.canRequestPackageInstalls && !nativeBridge.value.canRequestPackageInstalls()) {
+        toast.remove(activeToastId);
+        toast.info("Allow APK updates in Android, then tap Download Update again");
+        nativeBridge.value.openPackageInstallSettings?.();
+        return;
+      }
+
       if (nativeBridge.value?.downloadApkFile) {
         // [DECISION LOG] Preferred path. DownloadManager fetches the binary natively,
-        // saves it to Downloads, and shows a system notification. No browser involved.
+        // saves it to Downloads, and the wrapper opens Android's installer on completion.
         nativeBridge.value.downloadApkFile(release.url, release.filename);
       } else if (nativeBridge.value?.openExternalUrl) {
         // [DECISION LOG] Fallback for older APK builds that pre-date downloadApkFile.

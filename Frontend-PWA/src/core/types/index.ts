@@ -30,8 +30,8 @@ export interface AndroidBridge {
    * Downloads a file natively via Android DownloadManager.
    * Preferred over openExternalUrl for binary assets (APK files) because
    * DownloadManager fetches the file in the background, saves it to the
-   * Downloads folder, and shows a system notification -- instead of
-   * handing the URL to a browser which may render or fail to download it.
+   * Downloads folder, shows a system notification, and then opens Android's
+   * installer for user-confirmed in-place update.
    */
   downloadApkFile(url: string, filename: string): void;
   /** Returns the installed native APK versionName, e.g. "14.43.4". */

@@ -4,9 +4,12 @@ package com.albidr.clashmanager;
 
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -38,10 +41,90 @@ public class MainActivity extends Activity {
     private WebView mWebView;
     private AndroidBridge mBridge;
     private boolean mBridgeAttached = false;
+    private BroadcastReceiver mApkDownloadReceiver = null;
     private String mPendingTagsJson = null;
     private long mPendingDelayMs = BlitzService.DEFAULT_PROFILE_LOAD_DELAY_MS;
     private boolean mAwaitingOverlayPermission = false;
     private FrameLayout mRootLayout;
+
+    private void registerApkDownloadReceiver(final long downloadId, final String filename) {
+        if (this.mApkDownloadReceiver != null) {
+            try {
+                unregisterReceiver(this.mApkDownloadReceiver);
+            } catch (Exception ignored) {
+            }
+            this.mApkDownloadReceiver = null;
+        }
+
+        this.mApkDownloadReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (!DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction())) return;
+
+                long completedId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
+                if (completedId != downloadId) return;
+
+                try {
+                    MainActivity.this.unregisterReceiver(this);
+                } catch (Exception ignored) {
+                }
+                MainActivity.this.mApkDownloadReceiver = null;
+                MainActivity.this.openDownloadedApkInstaller(downloadId, filename);
+            }
+        };
+
+        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(this.mApkDownloadReceiver, filter, Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(this.mApkDownloadReceiver, filter);
+        }
+    }
+
+    private void openDownloadedApkInstaller(long downloadId, String filename) {
+        DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+        if (dm == null) {
+            Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        DownloadManager.Query query = new DownloadManager.Query().setFilterById(downloadId);
+        try (Cursor cursor = dm.query(query)) {
+            if (cursor == null || !cursor.moveToFirst()) {
+                Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+            int status = statusIndex >= 0 ? cursor.getInt(statusIndex) : DownloadManager.STATUS_FAILED;
+            if (status != DownloadManager.STATUS_SUCCESSFUL) {
+                Toast.makeText(this, "APK download did not complete", Toast.LENGTH_LONG).show();
+                return;
+            }
+        } catch (Exception e) {
+            android.util.Log.w("ClashManagerMain", "Could not verify APK download status", e);
+            Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Uri apkUri = dm.getUriForDownloadedFile(downloadId);
+        if (apkUri == null) {
+            Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        try {
+            Intent installIntent = new Intent(Intent.ACTION_VIEW);
+            installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            installIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(installIntent);
+            Toast.makeText(this, "Confirm Android installer to update Clash Manager", Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            android.util.Log.w("ClashManagerMain", "Could not open installer for " + filename, e);
+            Toast.makeText(this, "Download complete -- open " + filename + " from Downloads", Toast.LENGTH_LONG).show();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle bundle) {
@@ -95,6 +178,18 @@ public class MainActivity extends Activity {
         this.mRootLayout = frameLayout;
         setContentView(frameLayout);
         initWebView();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (this.mApkDownloadReceiver != null) {
+            try {
+                unregisterReceiver(this.mApkDownloadReceiver);
+            } catch (Exception ignored) {
+            }
+            this.mApkDownloadReceiver = null;
+        }
+        super.onDestroy();
     }
 
     /**
@@ -358,8 +453,8 @@ public class MainActivity extends Activity {
          * browser), this method enqueues the download through the system
          * DownloadManager so the binary is fetched natively and saved to the
          * public Downloads folder. The system shows a download progress
-         * notification automatically. Once complete, Android can prompt the user
-         * to install the APK if this app is allowed to request package installs.
+         * notification automatically. Once complete, the wrapper opens Android's
+         * package installer so the user can confirm the in-place update.
          *
          * @param url      Direct HTTPS URL to the APK file.
          * @param filename Suggested filename to save under in Downloads.
@@ -391,9 +486,10 @@ public class MainActivity extends Activity {
                         request.addRequestHeader("User-Agent", "ClashManager-Android");
                         DownloadManager dm = (DownloadManager)
                             MainActivity.this.getSystemService(Context.DOWNLOAD_SERVICE);
-                        dm.enqueue(request);
+                        long downloadId = dm.enqueue(request);
+                        MainActivity.this.registerApkDownloadReceiver(downloadId, filename);
                         Toast.makeText(MainActivity.this,
-                            "Download started -- check your notification tray",
+                            "Download started -- installer opens when ready",
                             Toast.LENGTH_LONG).show();
                     } catch (Exception e) {
                         android.util.Log.e("ClashManagerMain", "downloadApkFile failed: " + url, e);

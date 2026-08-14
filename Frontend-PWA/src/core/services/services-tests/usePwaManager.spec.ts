@@ -295,6 +295,32 @@ describe("usePwaManager", () => {
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
 
+    it("should open install settings before downloading when APK installs are not allowed", async () => {
+      const mockDownloadApkFile = vi.fn();
+      const mockOpenPackageInstallSettings = vi.fn();
+      mockNativeBridge.value = {
+        canRequestPackageInstalls: vi.fn(() => false),
+        downloadApkFile: mockDownloadApkFile,
+        openPackageInstallSettings: mockOpenPackageInstallSettings,
+      };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          version: "14.43.4",
+        }),
+      });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).not.toHaveBeenCalled();
+      expect(mockOpenPackageInstallSettings).toHaveBeenCalledOnce();
+      expect(mockToast.info).toHaveBeenCalledWith("Allow APK updates in Android, then tap Download Update again");
+      expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+    });
+
     it("should fall back to openExternalUrl if downloadApkFile is absent from bridge", async () => {
       const mockOpenExternal = vi.fn();
       mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
