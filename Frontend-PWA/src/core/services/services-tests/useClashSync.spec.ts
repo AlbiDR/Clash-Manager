@@ -181,12 +181,24 @@ describe("useClashSync", () => {
       expect(fetchRemote).not.toHaveBeenCalled();
     });
 
-    it("should respect offline guard", async () => {
+    it("should bypass offline guard for manual refresh", async () => {
       mockConnectionStatus.isOnline.value = false;
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 4500, blacklist: [] });
       const sync = useClashSync(data);
 
       await sync.refreshFromSupabase();
-      expect(fetchRemote).not.toHaveBeenCalled();
+      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
+      expect(data.value?.timestamp).toBe(4500);
+    });
+
+    it("should surface foreground refresh failure even when cached data exists", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
+      data.value = { lb: [], hh: [], timestamp: 4000, blacklist: [] };
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(sync.syncError.value).toBe("Network Error");
     });
 
     it("should fallback to background sync on failure", async () => {
