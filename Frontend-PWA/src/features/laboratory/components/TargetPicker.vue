@@ -197,7 +197,7 @@ function handleKeydown(e: KeyboardEvent) {
   white-space: nowrap;
   max-width: 120px;
   overflow: hidden;
-  user-select: none;
+  user-select: none; /* Text Selection Containment (Target A.3) */
   -webkit-user-select: none;
 }
 
@@ -208,7 +208,7 @@ function handleKeydown(e: KeyboardEvent) {
   text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
-  user-select: none;
+  user-select: none; /* Text Selection Containment (Target A.3) */
   -webkit-user-select: none;
 }
 
