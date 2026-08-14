@@ -1,5 +1,10 @@
 {
   "version": "14.43.2",
   "buildNumber": 176,
-  "filename": "clashmanager-v14.43.2+176.apk"
+  "filename": "clashmanager-v14.43.2+176.apk",
+  "sizeBytes": 3970294,
+  "sha256": "84ae186a9f978e5be4b724a585879e6062b36576d07962738d4f63d2dd59d705",
+  "changelog": [
+    "Native wrapper release metadata now includes checksum and artifact details."
+  ]
 }

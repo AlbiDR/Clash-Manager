@@ -19,7 +19,7 @@ Each concern is a collapsible card:
 - **Network** - live API status and a switchable Supabase endpoint.
 - **Backend maintenance** - manual, cooldown-guarded triggers for the database, scanner, and Key Farm (utilizing centralized `BACKEND_REFRESH_COOLDOWN_SECONDS` and `BACKEND_REFRESH_COOLDOWN_INTERVAL` constants to ensure consistent cooldown behavior across settings and refresh utilities).
 - **Useful links** - Localized and dynamic shortcuts (such as RoyaleAPI Blog/Giveaway, localized Supercell ID rewards and Clash Royale Store, the GitHub repository link, and a Download Android App action that targets the latest versioned APK and is hidden inside the native Android wrapper container).
-- **Recovery & Installation** - force an update, clear caches, factory-reset the app, or trigger the PWA installation dialog on eligible web environments.
+- **Recovery & Installation** - force an update, clear caches, factory-reset the app, trigger the PWA installation dialog on eligible web environments, and inspect native APK update status with version, checksum, artifact, and changelog details.
 
 ## Contents
 

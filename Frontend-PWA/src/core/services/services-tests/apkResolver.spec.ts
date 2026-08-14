@@ -278,6 +278,37 @@ describe("apkResolver", () => {
       expect(filename).toBe("clashmanager-v14.43.1+173.apk");
     });
 
+    it("should preserve optional metadata from latest.json", async () => {
+      const sha256 = "b".repeat(64);
+      vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+        if (url.includes("contents/APK/release")) {
+          return Promise.resolve({ ok: false });
+        }
+        if (url.includes("latest.json")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              changelog: ["Smarter native updater"],
+              filename: "clashmanager-v14.43.1+173.apk",
+              sha256,
+              sizeBytes: 3_900_000,
+              version: "14.43.1",
+            })
+          });
+        }
+        return Promise.resolve({ ok: false });
+      }));
+
+      const release = await resolveLatestApkRelease();
+      expect(release).toMatchObject({
+        changelog: ["Smarter native updater"],
+        filename: "clashmanager-v14.43.1+173.apk",
+        sha256,
+        sizeBytes: 3_900_000,
+        version: "14.43.1",
+      });
+    });
+
     it("should resolve same-origin latest.json when configured", async () => {
       mockLocation.href = "http://localhost:3000/Clash-Manager/";
 

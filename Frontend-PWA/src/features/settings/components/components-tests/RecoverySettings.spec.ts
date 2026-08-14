@@ -21,6 +21,7 @@ vi.mock("@core/services/useNativeBridge", () => ({
 describe("RecoverySettings.vue", () => {
   const mockIsRefreshing = ref(false);
   const mockForceUpdate = vi.fn();
+  const mockCheckApkUpdate = vi.fn();
   const mockDownloadApk = vi.fn();
   const mockInstallPwa = vi.fn();
   const mockClearCache = vi.fn();
@@ -28,6 +29,13 @@ describe("RecoverySettings.vue", () => {
   const mockIsPwaInstallAvailable = ref(false);
   const mockIsPwaStandalone = ref(false);
   const mockIsNativeWrapper = ref(false);
+  const mockApkUpdateState = ref("idle");
+  const mockApkUpdateMessage = ref("APK status not checked");
+  const mockApkUpdateLastCheckedAt = ref<number | undefined>(undefined);
+  const mockInstalledApkLabel = ref("v14.45.0 (code 18500)");
+  const mockLatestApkLabel = ref("Not checked");
+  const mockApkArtifactLabel = ref("No APK metadata loaded");
+  const mockApkChangelog = ref<string[]>([]);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -35,11 +43,26 @@ describe("RecoverySettings.vue", () => {
     mockIsPwaInstallAvailable.value = false;
     mockIsPwaStandalone.value = false;
     mockIsNativeWrapper.value = false;
+    mockApkUpdateState.value = "idle";
+    mockApkUpdateMessage.value = "APK status not checked";
+    mockApkUpdateLastCheckedAt.value = undefined;
+    mockInstalledApkLabel.value = "v14.45.0 (code 18500)";
+    mockLatestApkLabel.value = "Not checked";
+    mockApkArtifactLabel.value = "No APK metadata loaded";
+    mockApkChangelog.value = [];
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
       isRefreshing: mockIsRefreshing,
       forceUpdate: mockForceUpdate,
+      checkApkUpdate: mockCheckApkUpdate,
       downloadApk: mockDownloadApk,
+      apkUpdateState: mockApkUpdateState,
+      apkUpdateMessage: mockApkUpdateMessage,
+      apkUpdateLastCheckedAt: mockApkUpdateLastCheckedAt,
+      installedApkLabel: mockInstalledApkLabel,
+      latestApkLabel: mockLatestApkLabel,
+      apkArtifactLabel: mockApkArtifactLabel,
+      apkChangelog: mockApkChangelog,
       installPwa: mockInstallPwa,
       isPwaInstallAvailable: mockIsPwaInstallAvailable,
       isPwaStandalone: mockIsPwaStandalone,
@@ -106,11 +129,34 @@ describe("RecoverySettings.vue", () => {
 
     const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
     expect(labels).toContain("Download Update");
+    expect(labels).toContain("Check APK");
     expect(labels).not.toContain("Install PWA");
 
     const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Download Update"));
     await btn?.trigger("click");
     expect(mockDownloadApk).toHaveBeenCalled();
+  });
+
+  it("shows and triggers native APK diagnostics", async () => {
+    mockIsNativeWrapper.value = true;
+    mockApkUpdateState.value = "available";
+    mockApkUpdateMessage.value = "APK update ready: v14.46.0 (190)";
+    mockApkUpdateLastCheckedAt.value = new Date("2026-08-14T03:40:00").getTime();
+    mockLatestApkLabel.value = "v14.46.0 (190)";
+    mockApkArtifactLabel.value = "4.2 MB · SHA-256 abcdef12...";
+    mockApkChangelog.value = ["Native installer polish"];
+
+    const wrapper = mountComponent();
+
+    expect(wrapper.find(".apk-diagnostics").exists()).toBe(true);
+    expect(wrapper.text()).toContain("APK update ready");
+    expect(wrapper.text()).toContain("v14.45.0 (code 18500)");
+    expect(wrapper.text()).toContain("v14.46.0 (190)");
+    expect(wrapper.text()).toContain("Native installer polish");
+
+    const checkBtn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Check APK"));
+    await checkBtn?.trigger("click");
+    expect(mockCheckApkUpdate).toHaveBeenCalled();
   });
 
   it("shows and triggers the PWA install action for web browser sessions", async () => {

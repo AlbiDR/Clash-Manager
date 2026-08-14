@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useToast } from "./useToast";
 import { useConfirm } from "./useConfirm";
 import { idb } from "./StorageService";
@@ -22,6 +22,8 @@ type BeforeInstallPromptEvent = Event & {
   prompt(): Promise<void>;
   userChoice: Promise<{ outcome: BeforeInstallPromptOutcome; platform: string }>;
 };
+
+type ApkUpdateState = "idle" | "checking" | "available" | "current" | "blocked" | "error";
 
 const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
 const isPwaInstallAvailable = ref(false);
@@ -134,6 +136,10 @@ export function usePwaManager() {
 
   const notificationPermission = ref<NotificationPermission | "unsupported">("default");
   const isPushSubscribed = ref(false);
+  const latestApkRelease = ref<ApkReleaseDownload>();
+  const apkUpdateState = ref<ApkUpdateState>("idle");
+  const apkUpdateMessage = ref("APK status not checked");
+  const apkUpdateLastCheckedAt = ref<number>();
 
   /**
    * Function to trigger a Service Worker reload/update.
@@ -320,6 +326,68 @@ export function usePwaManager() {
     return !!release.version && !!nativeVersionName && nativeVersionName === release.version;
   }
 
+  function getReleaseVersionLabel(release: ApkReleaseDownload | undefined): string {
+    if (!release) return "Not checked";
+    const version = release.version || parseReleaseApkFilename(release.filename)
+      ? `v${release.version ?? release.filename.replace(/^clashmanager-v/, "").replace(/\.apk$/, "")}`
+      : release.filename;
+    return release.buildNumber ? `${version} (${release.buildNumber})` : version;
+  }
+
+  function formatApkSize(sizeBytes: number | undefined): string {
+    if (!sizeBytes) return "Size unknown";
+    if (sizeBytes >= 1024 * 1024) return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${Math.round(sizeBytes / 1024)} KB`;
+  }
+
+  const installedApkLabel = computed(() => {
+    const versionName = getNativeVersionName();
+    const versionCode = getNativeVersionCode();
+    const buildNumber = getNativeBuildNumber();
+    if (!versionName && !versionCode && !buildNumber) return "Web/PWA session";
+    const detail = versionCode ? `code ${versionCode}` : buildNumber ? `build ${buildNumber}` : "native";
+    return `${versionName ? `v${versionName}` : "Native APK"} (${detail})`;
+  });
+
+  const latestApkLabel = computed(() => getReleaseVersionLabel(latestApkRelease.value));
+  const apkArtifactLabel = computed(() => {
+    const release = latestApkRelease.value;
+    if (!release) return "No APK metadata loaded";
+    const checksum = release.sha256 ? `SHA-256 ${release.sha256.slice(0, 8)}...` : "checksum unavailable";
+    return `${formatApkSize(release.sizeBytes)} · ${checksum}`;
+  });
+  const apkChangelog = computed(() => latestApkRelease.value?.changelog ?? []);
+
+  async function checkApkUpdate(): Promise<void> {
+    apkUpdateState.value = "checking";
+    apkUpdateMessage.value = "Checking native APK...";
+
+    const release = await resolveApkRelease();
+    apkUpdateLastCheckedAt.value = Date.now();
+    latestApkRelease.value = release;
+
+    if (!release) {
+      apkUpdateState.value = "error";
+      apkUpdateMessage.value = "Latest APK metadata unavailable";
+      return;
+    }
+
+    if (isInstalledApkCurrent(release)) {
+      apkUpdateState.value = "current";
+      apkUpdateMessage.value = "Installed APK is current or newer";
+      return;
+    }
+
+    if (nativeBridge.value?.canRequestPackageInstalls && !nativeBridge.value.canRequestPackageInstalls()) {
+      apkUpdateState.value = "blocked";
+      apkUpdateMessage.value = "Android install approval required";
+      return;
+    }
+
+    apkUpdateState.value = "available";
+    apkUpdateMessage.value = `APK update ready: ${getReleaseVersionLabel(release)}`;
+  }
+
   /**
    * Triggers direct download of the latest versioned APK binary hosted in the repository.
    *
@@ -338,18 +406,26 @@ export function usePwaManager() {
     const activeToastId = toast.info("Opening APK download...");
     try {
       const release = await resolveApkRelease();
+      latestApkRelease.value = release;
+      apkUpdateLastCheckedAt.value = Date.now();
       if (!release) {
+        apkUpdateState.value = "error";
+        apkUpdateMessage.value = "Latest APK metadata unavailable";
         toast.remove(activeToastId);
         toast.error("Could not find latest APK");
         return;
       }
       if (isInstalledApkCurrent(release)) {
+        apkUpdateState.value = "current";
+        apkUpdateMessage.value = "Installed APK is current or newer";
         toast.remove(activeToastId);
         toast.success("You already have this APK or newer");
         return;
       }
 
       if (nativeBridge.value?.canRequestPackageInstalls && !nativeBridge.value.canRequestPackageInstalls()) {
+        apkUpdateState.value = "blocked";
+        apkUpdateMessage.value = "Android install approval required";
         toast.remove(activeToastId);
         toast.info("Allow APK updates in Android, then tap Download Update again");
         nativeBridge.value.openPackageInstallSettings?.();
@@ -359,7 +435,7 @@ export function usePwaManager() {
       if (nativeBridge.value?.downloadApkFile) {
         // [DECISION LOG] Preferred path. DownloadManager fetches the binary natively,
         // saves it to Downloads, and the wrapper opens Android's installer on completion.
-        nativeBridge.value.downloadApkFile(release.url, release.filename);
+        nativeBridge.value.downloadApkFile(release.url, release.filename, release.sha256);
       } else if (nativeBridge.value?.openExternalUrl) {
         // [DECISION LOG] Fallback for older APK builds that pre-date downloadApkFile.
         nativeBridge.value.openExternalUrl(release.url);
@@ -369,10 +445,14 @@ export function usePwaManager() {
       }
 
       toast.remove(activeToastId);
+      apkUpdateState.value = "available";
+      apkUpdateMessage.value = release.sha256 ? "Download started with checksum verification" : "Download started without checksum metadata";
       toast.success("APK download started");
     } catch (downloadApkError: unknown) {
       // [THREAT:] Client window state modifications throwing or unexpected bridge failure.
       console.error("[PWA] Failed to dispatch APK download", downloadApkError);
+      apkUpdateState.value = "error";
+      apkUpdateMessage.value = "Could not start APK download";
       toast.remove(activeToastId);
       toast.error("Failed to open APK download");
     }
@@ -521,7 +601,15 @@ export function usePwaManager() {
     updateServiceWorker,
     initPwaLifecycle,
     forceUpdate,
+    checkApkUpdate,
     downloadApk,
+    apkUpdateState,
+    apkUpdateMessage,
+    apkUpdateLastCheckedAt,
+    installedApkLabel,
+    latestApkLabel,
+    apkArtifactLabel,
+    apkChangelog,
     installPwa,
     isPwaInstallAvailable,
     isPwaStandalone,

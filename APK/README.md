@@ -46,7 +46,7 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `startBlitz(tagsJson)` | void | Starts a Blitz sequence for the given player tags. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
 | `openExternalUrl(url)` | void | Opens a URL via an Android intent. |
-| `downloadApkFile(url, filename)` | void | Downloads the latest APK through `DownloadManager`, then opens Android's installer for user confirmation. |
+| `downloadApkFile(url, filename, sha256?)` | void | Downloads the latest APK through `DownloadManager`, verifies SHA-256 when metadata provides it, then opens Android's installer for user confirmation. |
 
 The PWA-side contract for these methods lives in [`core/types`](../Frontend-PWA/src/core/types/README.md); changing a signature here means changing it there too.
 

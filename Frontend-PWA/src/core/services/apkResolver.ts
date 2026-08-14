@@ -26,6 +26,8 @@ import {
   isReleaseApkFilename,
   isReleaseVersion,
   isReleaseBuildNumber,
+  isReleaseSizeBytes,
+  isSha256Digest,
   buildApkDownloadUrl,
   buildSameOriginApkReleaseUrl,
   buildSameOriginApkDownloadUrl,
@@ -116,7 +118,10 @@ async function resolveApkReleaseFromMetadataUrl(
     if (response.ok) {
       const latestReleaseMetadata = (await response.json()) as {
         buildNumber?: number;
+        changelog?: string[] | string;
         filename?: string;
+        sha256?: string;
+        sizeBytes?: number;
         version?: string;
       };
       const downloadUrl = isReleaseApkFilename(latestReleaseMetadata.filename)
@@ -124,11 +129,19 @@ async function resolveApkReleaseFromMetadataUrl(
         : undefined;
       if (isReleaseApkFilename(latestReleaseMetadata.filename)) {
         if (!downloadUrl) return undefined;
+        const changelog = Array.isArray(latestReleaseMetadata.changelog)
+          ? latestReleaseMetadata.changelog.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+          : typeof latestReleaseMetadata.changelog === "string" && latestReleaseMetadata.changelog.trim().length > 0
+            ? [latestReleaseMetadata.changelog]
+            : undefined;
         return {
           buildNumber: isReleaseBuildNumber(latestReleaseMetadata.buildNumber)
             ? latestReleaseMetadata.buildNumber
             : undefined,
+          changelog,
           filename: latestReleaseMetadata.filename,
+          sha256: isSha256Digest(latestReleaseMetadata.sha256) ? latestReleaseMetadata.sha256.toLowerCase() : undefined,
+          sizeBytes: isReleaseSizeBytes(latestReleaseMetadata.sizeBytes) ? latestReleaseMetadata.sizeBytes : undefined,
           url: downloadUrl,
           version: isReleaseVersion(latestReleaseMetadata.version) ? latestReleaseMetadata.version : undefined,
         };
@@ -203,7 +216,10 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
   if (apkResolutionCache && apkResolutionCache.expiresAt > now) {
     return {
       buildNumber: apkResolutionCache.buildNumber,
+      changelog: apkResolutionCache.changelog,
       filename: apkResolutionCache.filename,
+      sha256: apkResolutionCache.sha256,
+      sizeBytes: apkResolutionCache.sizeBytes,
       url: apkResolutionCache.url,
       version: apkResolutionCache.version,
     };
@@ -215,7 +231,10 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
       if (release) {
         apkResolutionCache = {
           buildNumber: release.buildNumber,
+          changelog: release.changelog,
           filename: release.filename,
+          sha256: release.sha256,
+          sizeBytes: release.sizeBytes,
           url: release.url,
           version: release.version,
           expiresAt: Date.now() + APK_RESOLUTION_CACHE_TTL_MS,

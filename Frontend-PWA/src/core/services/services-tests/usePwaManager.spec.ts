@@ -289,10 +289,35 @@ describe("usePwaManager", () => {
 
       expect(mockDownloadApkFile).toHaveBeenCalledWith(
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.4%2B179.apk",
-        "clashmanager-v14.43.4+179.apk"
+        "clashmanager-v14.43.4+179.apk",
+        undefined
       );
       expect(mockLocation.href).toBe("");
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should pass checksum metadata to the native APK downloader when available", async () => {
+      const mockDownloadApkFile = vi.fn();
+      mockNativeBridge.value = { downloadApkFile: mockDownloadApkFile, openExternalUrl: vi.fn() };
+      const sha256 = "a".repeat(64);
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 179,
+          filename: "clashmanager-v14.43.4+179.apk",
+          sha256,
+          version: "14.43.4",
+        }),
+      });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.4%2B179.apk",
+        "clashmanager-v14.43.4+179.apk",
+        sha256
+      );
     });
 
     it("should open install settings before downloading when APK installs are not allowed", async () => {

@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
+import android.os.ParcelFileDescriptor;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.RenderProcessGoneDetail;
@@ -29,6 +30,8 @@ import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import java.io.FileInputStream;
+import java.security.MessageDigest;
 
 public class MainActivity extends Activity {
     private static final int MAX_APK_FILENAME_LENGTH = 96;
@@ -47,7 +50,7 @@ public class MainActivity extends Activity {
     private boolean mAwaitingOverlayPermission = false;
     private FrameLayout mRootLayout;
 
-    private void registerApkDownloadReceiver(final long downloadId, final String filename) {
+    private void registerApkDownloadReceiver(final long downloadId, final String filename, final String expectedSha256) {
         if (this.mApkDownloadReceiver != null) {
             try {
                 unregisterReceiver(this.mApkDownloadReceiver);
@@ -69,7 +72,7 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {
                 }
                 MainActivity.this.mApkDownloadReceiver = null;
-                MainActivity.this.openDownloadedApkInstaller(downloadId, filename);
+                MainActivity.this.openDownloadedApkInstaller(downloadId, filename, expectedSha256);
             }
         };
 
@@ -81,7 +84,25 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void openDownloadedApkInstaller(long downloadId, String filename) {
+    private String sha256ForDownload(DownloadManager dm, long downloadId) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (ParcelFileDescriptor descriptor = dm.openDownloadedFile(downloadId);
+             FileInputStream inputStream = new FileInputStream(descriptor.getFileDescriptor())) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                digest.update(buffer, 0, bytesRead);
+            }
+        }
+        byte[] hash = digest.digest();
+        StringBuilder hex = new StringBuilder(hash.length * 2);
+        for (byte value : hash) {
+            hex.append(String.format("%02x", value));
+        }
+        return hex.toString();
+    }
+
+    private void openDownloadedApkInstaller(long downloadId, String filename, String expectedSha256) {
         DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
         if (dm == null) {
             Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
@@ -111,6 +132,21 @@ public class MainActivity extends Activity {
         if (apkUri == null) {
             Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
             return;
+        }
+
+        if (expectedSha256 != null && expectedSha256.matches("(?i)^[a-f0-9]{64}$")) {
+            try {
+                String actualSha256 = sha256ForDownload(dm, downloadId);
+                if (!expectedSha256.equalsIgnoreCase(actualSha256)) {
+                    android.util.Log.w("ClashManagerMain", "APK SHA-256 mismatch for " + filename);
+                    Toast.makeText(this, "APK verification failed -- download blocked", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            } catch (Exception e) {
+                android.util.Log.w("ClashManagerMain", "Could not verify APK checksum for " + filename, e);
+                Toast.makeText(this, "APK verification failed -- download blocked", Toast.LENGTH_LONG).show();
+                return;
+            }
         }
 
         try {
@@ -476,6 +512,11 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public void downloadApkFile(final String url, final String filename) {
+            downloadApkFile(url, filename, null);
+        }
+
+        @JavascriptInterface
+        public void downloadApkFile(final String url, final String filename, final String expectedSha256) {
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -502,7 +543,7 @@ public class MainActivity extends Activity {
                         DownloadManager dm = (DownloadManager)
                             MainActivity.this.getSystemService(Context.DOWNLOAD_SERVICE);
                         long downloadId = dm.enqueue(request);
-                        MainActivity.this.registerApkDownloadReceiver(downloadId, filename);
+                        MainActivity.this.registerApkDownloadReceiver(downloadId, filename, expectedSha256);
                         Toast.makeText(MainActivity.this,
                             "Download started -- installer opens when ready",
                             Toast.LENGTH_LONG).show();

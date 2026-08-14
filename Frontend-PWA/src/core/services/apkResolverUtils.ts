@@ -94,6 +94,18 @@ export type ApkResolutionCache = {
    */
   filename: string;
   /**
+   * Optional release notes surfaced in Settings.
+   */
+  changelog?: string[];
+  /**
+   * Optional SHA-256 digest for the APK binary.
+   */
+  sha256?: string;
+  /**
+   * Optional binary size in bytes.
+   */
+  sizeBytes?: number;
+  /**
    * The direct binary or fallback URL to fetch the APK.
    */
   url: string;
@@ -119,6 +131,18 @@ export type ApkReleaseDownload = {
    * The verified APK filename.
    */
   filename: string;
+  /**
+   * Optional release notes surfaced in Settings.
+   */
+  changelog?: string[];
+  /**
+   * Optional SHA-256 digest for the APK binary.
+   */
+  sha256?: string;
+  /**
+   * Optional binary size in bytes.
+   */
+  sizeBytes?: number;
   /**
    * The validated secure URL pointing to the file.
    */
@@ -172,6 +196,14 @@ export function isReleaseVersion(version: string | undefined): version is string
 
 export function isReleaseBuildNumber(buildNumber: number | undefined): buildNumber is number {
   return typeof buildNumber === "number" && Number.isInteger(buildNumber) && buildNumber > 0;
+}
+
+export function isSha256Digest(value: string | undefined): value is string {
+  return typeof value === "string" && /^[a-fA-F0-9]{64}$/.test(value);
+}
+
+export function isReleaseSizeBytes(value: number | undefined): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
 /**
