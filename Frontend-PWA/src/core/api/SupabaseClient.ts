@@ -47,18 +47,19 @@ export class NetworkError extends Error {
 export const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
 export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
+/**
+ * Builds the merged headers via `new Request(input, init).headers` rather than
+ * manually copying `input`'s headers and then `init`'s on top, so the spec's own
+ * merge algorithm runs instead of a hand-rolled one. `input` itself is still what
+ * gets fetched, unchanged.
+ */
 async function fetchSupabaseFresh(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> {
-  const requestHeaders = input instanceof Request ? input.headers : undefined;
-  const headers = new Headers(requestHeaders);
-  const initHeaders = new Headers(init.headers);
-
-  initHeaders.forEach((value, key) => {
-    headers.set(key, value);
-  });
-
+  // Only used to obtain a spec-correct merge of input's and init's headers;
+  // the original `input` (not this intermediate Request) is still what gets fetched.
+  const headers = new Headers(new Request(input, init).headers);
   headers.set("Cache-Control", "no-cache");
   headers.set("Pragma", "no-cache");
 
@@ -69,17 +70,33 @@ async function fetchSupabaseFresh(
   });
 }
 
-/**
- * Internal factory to create a scoped Supabase client.
- * Configured to target the 'features' schema by default.
- */
-export const createSupabaseClient = () => {
+function buildSupabaseClient() {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
         db: { schema: 'features' },
         global: {
           fetch: fetchSupabaseFresh,
         },
     });
+}
+
+let cachedSupabaseClient: ReturnType<typeof buildSupabaseClient> | null = null;
+
+/**
+ * Internal factory to create a scoped Supabase client.
+ * Configured to target the 'features' schema by default.
+ *
+ * @remarks
+ * [FIX] Memoized to a single module-level instance. Every call site previously
+ * got its own fresh `createClient(...)`, each spinning up its own GoTrueClient
+ * bound to the same `sb-<project>-auth-token` storage key ("Multiple GoTrueClient
+ * instances detected" in the console). Harmless for this app (no user auth), but
+ * wasteful and the documented Supabase-recommended pattern is one client per key.
+ */
+export const createSupabaseClient = () => {
+    if (!cachedSupabaseClient) {
+      cachedSupabaseClient = buildSupabaseClient();
+    }
+    return cachedSupabaseClient;
 };
 
 /**
@@ -112,8 +129,18 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
     // Settings panel's "Backend v..." readout could never show anything but its "0.0"
     // fallback. The Edge Function runs through the shared clinicalServe protocol, whose
     // success envelope already carries a version string kept in sync with every release.
+    //
+    // [FIX] Explicit Authorization header. supabase-js (2.112.x) deliberately does not
+    // send Authorization as a Bearer fallback for new-format (`sb_publishable_...`) keys
+    // when there is no active user session - confirmed via @supabase/functions-js's own
+    // doc comment on FunctionsClient.invoke. This app has no auth/session at all, so
+    // every ping request went out with `apikey` but no `Authorization`, and the edge
+    // function's bearer check correctly rejected it with 401. REST calls via `.from()`/
+    // `.rpc()` were unaffected since PostgREST tolerates an apikey-only request; `ping`
+    // is the only call site using `functions.invoke`, which requires the header outright.
     const { data, error: pingError } = await supabase.functions.invoke('ping', {
       body: {},
+      headers: { Authorization: `Bearer ${getSupabaseKey()}` },
       ...(options?.signal ? { signal: options.signal } : {}),
     });
     if (pingError) return { status: 'error', message: pingError.message };
