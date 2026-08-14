@@ -134,7 +134,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const rows = wrapper.findAll(".notification-toggle");
+    const rows = wrapper.findAll(".setting-row");
     const pushRow = rows.find(r => r.text().includes("Cloud Push"));
     expect(pushRow).toBeDefined();
 
@@ -152,7 +152,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const rows = wrapper.findAll(".notification-toggle");
+    const rows = wrapper.findAll(".setting-row");
     const pushRow = rows.find(r => r.text().includes("Cloud Push"));
     expect(pushRow).toBeUndefined();
   });
@@ -176,7 +176,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const backgroundSyncRow = wrapper.findAll(".notification-toggle").find(r => r.text().includes("Background Sync"));
+    const backgroundSyncRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Background Sync"));
     expect(backgroundSyncRow).toBeDefined();
 
     await backgroundSyncRow!.trigger("click");
@@ -190,7 +190,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const quietModeRow = wrapper.findAll(".notification-toggle").find(r => r.text().includes("Quiet Mode"));
+    const quietModeRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Quiet Mode"));
     expect(quietModeRow).toBeDefined();
 
     await quietModeRow!.trigger("click");
@@ -204,7 +204,7 @@ describe("NotificationSettings.vue", () => {
     });
     await nextTick();
 
-    const soundRow = wrapper.findAll(".notification-toggle").find(r => r.text().includes("Sound"));
+    const soundRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Sound"));
     expect(soundRow).toBeDefined();
 
     await soundRow!.trigger("click");

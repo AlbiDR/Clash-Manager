@@ -18,7 +18,7 @@
  *
  * @remarks Satisfies CleanStack ADR Section II: Unitary Architecture & Section IV: Hardware/Browser Brokering.
  */
-import { SettingsCard, vTactile } from "@shared";
+import { SettingRow, SettingsCard, vTactile } from "@shared";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 import { useSettings } from "../composables/useSettings";
 import AndroidCalibrationSettings from "./AndroidCalibrationSettings.vue";
@@ -58,59 +58,32 @@ function handleBlitzToggle() {
     :initially-expanded="initiallyExpanded"
   >
     <div class="feature-controls">
-      <button
-        v-tactile
-        class="feature-toggle"
-        :class="{ active: modules.ghostBenchmarking }"
-        type="button"
-        :disabled="isRefreshing"
-        :aria-pressed="modules.ghostBenchmarking"
+      <SettingRow
+        label="Ghost Benchmarking"
+        description="Clan averages in stat tooltips"
+        :active="modules.ghostBenchmarking"
+        :loading="isRefreshing"
+        mini
         @click="toggle('ghostBenchmarking')"
-      >
-        <span class="feature-copy">
-          <span class="feature-label">Ghost Benchmarking</span>
-          <span class="feature-state">{{ modules.ghostBenchmarking ? "On" : "Off" }}</span>
-        </span>
-        <span class="feature-switch" aria-hidden="true">
-          <span class="feature-switch-thumb" />
-        </span>
-      </button>
+      />
 
-      <button
-        v-tactile
-        class="feature-toggle"
-        :class="{ active: modules.sortExplanation }"
-        type="button"
-        :disabled="isRefreshing"
-        :aria-pressed="modules.sortExplanation"
+      <SettingRow
+        label="Sorting Descriptions"
+        description="Sorting logic labels"
+        :active="modules.sortExplanation"
+        :loading="isRefreshing"
+        mini
         @click="toggle('sortExplanation')"
-      >
-        <span class="feature-copy">
-          <span class="feature-label">Sorting Descriptions</span>
-          <span class="feature-state">{{ modules.sortExplanation ? "On" : "Off" }}</span>
-        </span>
-        <span class="feature-switch" aria-hidden="true">
-          <span class="feature-switch-thumb" />
-        </span>
-      </button>
+      />
 
-      <button
-        v-tactile
-        class="feature-toggle"
-        :class="{ active: modules.blitzMode }"
-        type="button"
-        :disabled="isRefreshing"
-        :aria-pressed="modules.blitzMode"
+      <SettingRow
+        label="Blitz Mode"
+        :description="isNativeWrapper ? 'Native foreground service' : 'Batch operations'"
+        :active="modules.blitzMode"
+        :loading="isRefreshing"
+        mini
         @click="handleBlitzToggle()"
-      >
-        <span class="feature-copy">
-          <span class="feature-label">Blitz Mode</span>
-          <span class="feature-state">{{ modules.blitzMode ? "On" : "Off" }}</span>
-        </span>
-        <span class="feature-switch" aria-hidden="true">
-          <span class="feature-switch-thumb" />
-        </span>
-      </button>
+      />
 
       <!-- Blitz Speed Selector -->
       <div v-if="modules.blitzMode" class="blitz-speed-section">
@@ -147,107 +120,6 @@ function handleBlitzToggle() {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-8);
-}
-
-.feature-toggle {
-  min-height: 48px;
-  width: 100%;
-  border: 1px solid rgba(var(--sys-color-outline-rgb), 0.16);
-  border-radius: 8px;
-  padding: 8px 10px 8px 12px;
-  background: var(--sys-color-surface-container-low);
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-space-12);
-  text-align: left;
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
-    transform 0.18s var(--sys-motion-spring);
-}
-
-.feature-toggle:hover:not(:disabled) {
-  border-color: rgba(var(--sys-color-primary-rgb), 0.34);
-  background: rgba(var(--sys-color-primary-rgb), 0.05);
-}
-
-.feature-toggle:active:not(:disabled) {
-  transform: scale(0.99);
-}
-
-.feature-toggle:disabled {
-  cursor: progress;
-  opacity: 0.72;
-}
-
-.feature-toggle.active {
-  border-color: rgba(var(--sys-color-primary-rgb), 0.34);
-  background: rgba(var(--sys-color-primary-rgb), 0.08);
-}
-
-.feature-copy {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--sys-space-8);
-}
-
-.feature-label {
-  min-width: 0;
-  color: var(--sys-color-on-surface);
-  font-size: var(--sys-typescale-body-sm);
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.feature-state {
-  flex: 0 0 auto;
-  min-width: 34px;
-  border-radius: 8px;
-  padding: 3px 7px;
-  background: rgba(var(--sys-color-outline-rgb), 0.1);
-  color: var(--sys-color-on-surface-variant);
-  font-size: var(--sys-typescale-meta);
-  font-weight: 800;
-  line-height: 1;
-  text-align: center;
-}
-
-.feature-toggle.active .feature-state {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-}
-
-.feature-switch {
-  flex: 0 0 auto;
-  width: 42px;
-  height: 24px;
-  border-radius: 999px;
-  padding: 3px;
-  background: rgba(var(--sys-color-outline-rgb), 0.24);
-  display: flex;
-  align-items: center;
-  transition: background 0.18s ease;
-}
-
-.feature-toggle.active .feature-switch {
-  background: var(--sys-color-primary);
-}
-
-.feature-switch-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--sys-color-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-  transition: transform 0.18s var(--sys-motion-spring);
-}
-
-.feature-toggle.active .feature-switch-thumb {
-  transform: translateX(18px);
 }
 
 /* ── Blitz Speed Section ── */
@@ -313,14 +185,9 @@ function handleBlitzToggle() {
 }
 
 @media (max-width: 380px) {
-  .feature-copy,
   .blitz-speed-section {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .feature-toggle {
-    align-items: flex-start;
   }
 }
 </style>

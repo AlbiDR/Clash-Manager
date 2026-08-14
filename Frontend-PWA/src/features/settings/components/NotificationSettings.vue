@@ -8,7 +8,7 @@
  * Manages background synchronization toggles, heuristic notification threshold
  * options, quiet modes, and push registration workflows for the application.
  */
-import { Icon, SettingsCard, vTactile } from "@shared";
+import { Icon, SettingRow, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { computed } from "vue";
 
@@ -36,22 +36,13 @@ const threshold = computed(() => modules.notificationThreshold);
 <template>
   <SettingsCard title="Notification Engine" icon="bell" :initially-expanded="initiallyExpanded">
     <div class="notification-stack">
-      <button
-        v-tactile
-        type="button"
-        class="notification-toggle master"
-        :class="{ active: modules.experimentalNotifications }"
-        :aria-pressed="modules.experimentalNotifications"
+      <SettingRow
+        label="Background Sync"
+        :description="modules.experimentalNotifications ? 'Active' : 'Paused'"
+        :active="modules.experimentalNotifications"
+        mini
         @click="toggle('experimentalNotifications')"
-      >
-        <span class="toggle-copy">
-          <span class="toggle-label">Background Sync</span>
-          <span class="toggle-meta">{{ modules.experimentalNotifications ? "Active" : "Paused" }}</span>
-        </span>
-        <span class="toggle-switch" aria-hidden="true">
-          <span class="toggle-switch-thumb" />
-        </span>
-      </button>
+      />
 
       <div class="threshold-row">
         <div class="threshold-copy">
@@ -86,57 +77,30 @@ const threshold = computed(() => modules.notificationThreshold);
       </div>
 
       <div v-if="notificationPermission === 'granted'" class="delivery-panel">
-        <button
-          v-tactile
-          type="button"
-          class="notification-toggle"
-          :class="{ active: modules.notificationQuietMode }"
-          :aria-pressed="modules.notificationQuietMode"
+        <SettingRow
+          label="Quiet Mode"
+          description="Badge only"
+          :active="modules.notificationQuietMode"
+          mini
           @click="toggle('notificationQuietMode')"
-        >
-          <span class="toggle-copy">
-            <span class="toggle-label">Quiet Mode</span>
-            <span class="toggle-meta">Badge only</span>
-          </span>
-          <span class="toggle-switch" aria-hidden="true">
-            <span class="toggle-switch-thumb" />
-          </span>
-        </button>
+        />
 
-        <button
-          v-tactile
-          type="button"
-          class="notification-toggle"
-          :class="{ active: modules.notificationSound }"
-          :aria-pressed="modules.notificationSound"
+        <SettingRow
+          label="Sound"
+          description="System tone"
+          :active="modules.notificationSound"
+          mini
           @click="toggle('notificationSound')"
-        >
-          <span class="toggle-copy">
-            <span class="toggle-label">Sound</span>
-            <span class="toggle-meta">System tone</span>
-          </span>
-          <span class="toggle-switch" aria-hidden="true">
-            <span class="toggle-switch-thumb" />
-          </span>
-        </button>
+        />
 
-        <button
+        <SettingRow
           v-if="hasWorker"
-          v-tactile
-          type="button"
-          class="notification-toggle"
-          :class="{ active: isPushSubscribed }"
-          :aria-pressed="isPushSubscribed"
+          label="Cloud Push"
+          description="Worker alerts"
+          :active="isPushSubscribed"
+          mini
           @click="subscribePush"
-        >
-          <span class="toggle-copy">
-            <span class="toggle-label">Cloud Push</span>
-            <span class="toggle-meta">Worker alerts</span>
-          </span>
-          <span class="toggle-switch" aria-hidden="true">
-            <span class="toggle-switch-thumb" />
-          </span>
-        </button>
+        />
       </div>
 
       <div v-if="notificationPermission === 'granted'" class="actions-row">
@@ -157,45 +121,6 @@ const threshold = computed(() => modules.notificationThreshold);
   gap: var(--sys-space-8);
 }
 
-.notification-toggle {
-  min-height: 48px;
-  width: 100%;
-  border: 1px solid rgba(var(--sys-color-outline-rgb), 0.14);
-  border-radius: 8px;
-  padding: 8px 10px 8px 12px;
-  background: var(--sys-color-surface-container-low);
-  color: var(--sys-color-on-surface);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-space-12);
-  text-align: left;
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
-    transform 0.18s var(--sys-motion-spring);
-}
-
-.notification-toggle.master {
-  background: var(--sys-color-surface-container-high);
-}
-
-.notification-toggle:hover {
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
-  background: rgba(var(--sys-color-primary-rgb), 0.05);
-}
-
-.notification-toggle:active {
-  transform: scale(0.99);
-}
-
-.notification-toggle.active {
-  border-color: rgba(var(--sys-color-primary-rgb), 0.34);
-  background: rgba(var(--sys-color-primary-rgb), 0.08);
-}
-
-.toggle-copy,
 .threshold-copy {
   min-width: 0;
   display: flex;
@@ -203,7 +128,6 @@ const threshold = computed(() => modules.notificationThreshold);
   gap: 2px;
 }
 
-.toggle-label,
 .row-label {
   color: var(--sys-color-on-surface);
   font-size: var(--sys-typescale-body-sm);
@@ -211,41 +135,11 @@ const threshold = computed(() => modules.notificationThreshold);
   line-height: 1.2;
 }
 
-.toggle-meta,
 .row-desc {
   color: var(--sys-color-on-surface-variant);
   font-size: var(--sys-typescale-meta);
   font-weight: 650;
   line-height: 1.2;
-}
-
-.toggle-switch {
-  flex: 0 0 auto;
-  width: 42px;
-  height: 24px;
-  border-radius: 999px;
-  padding: 3px;
-  background: rgba(var(--sys-color-outline-rgb), 0.24);
-  display: flex;
-  align-items: center;
-  transition: background 0.18s ease;
-}
-
-.notification-toggle.active .toggle-switch {
-  background: var(--sys-color-primary);
-}
-
-.toggle-switch-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--sys-color-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-  transition: transform 0.18s var(--sys-motion-spring);
-}
-
-.notification-toggle.active .toggle-switch-thumb {
-  transform: translateX(18px);
 }
 
 .threshold-row {
