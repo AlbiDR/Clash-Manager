@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
 import { useConnectionStatus } from "../useConnectionStatus";
@@ -60,10 +60,15 @@ describe("useClashSync", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
     data = ref<WebAppData | null>(null) as Ref<WebAppData | null>;
     mockConnectionStatus.isOnline.value = true;
     mockSyntheticMode.isSyntheticMode.value = false;
     lastSyncStatus.value = null;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("should initialize with default values", () => {
@@ -101,6 +106,22 @@ describe("useClashSync", () => {
       expect(sync.lastSync.value).toBe(1000);
     });
 
+    it("should hydrate an empty ready state when no local cache exists", async () => {
+      vi.mocked(loadCache).mockResolvedValue(null);
+
+      const sync = useClashSync(data);
+      await sync.loadLocal();
+
+      expect(data.value).toEqual({
+        lb: [],
+        hh: [],
+        timestamp: 0,
+        blacklist: [],
+      });
+      expect(sync.loading.value).toBe(false);
+      expect(saveCache).not.toHaveBeenCalled();
+    });
+
     it("should skip cache if currently held data is newer", async () => {
       const existingData: WebAppData = {
         lb: [], hh: [], timestamp: 2000, blacklist: []
@@ -125,7 +146,12 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
       await sync.loadLocal();
 
-      expect(data.value).toBeNull();
+      expect(data.value).toEqual({
+        lb: [],
+        hh: [],
+        timestamp: 0,
+        blacklist: [],
+      });
       expect(consoleSpy).toHaveBeenCalled();
     });
 
@@ -136,7 +162,12 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
       await sync.loadLocal();
 
-      expect(data.value).toBeNull();
+      expect(data.value).toEqual({
+        lb: [],
+        hh: [],
+        timestamp: 0,
+        blacklist: [],
+      });
       expect(consoleSpy).toHaveBeenCalled();
     });
   });
@@ -213,6 +244,19 @@ describe("useClashSync", () => {
       await vi.waitFor(() => {
         expect(data.value?.timestamp).toBe(5000);
       });
+    });
+
+    it("should time out a stalled foreground refresh and release loading", async () => {
+      vi.useFakeTimers();
+      vi.mocked(fetchRemote).mockReturnValue(new Promise(() => {}) as any);
+      const sync = useClashSync(data);
+
+      const refreshPromise = sync.refreshFromSupabase();
+      await vi.advanceTimersByTimeAsync(15000);
+      await refreshPromise;
+
+      expect(sync.loading.value).toBe(false);
+      expect(sync.syncError.value).toBe("Sync timed out");
     });
   });
 

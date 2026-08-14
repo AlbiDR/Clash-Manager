@@ -76,12 +76,13 @@ function onInteractionStart() {
   <button
     v-for="navItemCandidate in NAV_ITEMS"
     :key="navItemCandidate.name"
+    type="button"
     class="dock-item"
     :class="{
       active: displayPath === navItemCandidate.path,
       pending: pendingPath === navItemCandidate.path
     }"
-    @click="goTo(navItemCandidate.path)"
+    @click.stop.prevent="goTo(navItemCandidate.path)"
     @pointerdown="onInteractionStart"
     :aria-label="navItemCandidate.label"
     :aria-busy="pendingPath === navItemCandidate.path ? 'true' : undefined"

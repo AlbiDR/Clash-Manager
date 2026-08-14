@@ -13,6 +13,8 @@ import { MemberSchema } from "../api/MemberSchemas";
 import { WebAppDataSchema } from "../api/AppSchemas";
 import type { WebAppData } from "../types";
 
+const SYNC_REQUEST_TIMEOUT_MS = 15000;
+
 /**
  * CLASH SYNC SERVICE (Layer 1)
  *
@@ -76,6 +78,29 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
   // --- ACTIONS ---
 
+  function createEmptyWebAppData(): WebAppData {
+    return {
+      lb: [],
+      hh: [],
+      timestamp: 0,
+      blacklist: [],
+    };
+  }
+
+  async function fetchRemoteWithTimeout(options: { force: boolean }): Promise<unknown> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        fetchRemote(options),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error("Sync timed out")), SYNC_REQUEST_TIMEOUT_MS);
+        }),
+      ]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  }
+
   /**
    * Internal helper to update reactive state and persist the result to the local cache.
    *
@@ -135,7 +160,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
       if (!cachedWebAppData) {
         console.debug("[Sync] No local cache found, starting fresh.");
-        await commitSyncResult(null);
+        await commitSyncResult(createEmptyWebAppData(), true);
         return;
       }
 
@@ -151,11 +176,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
         await commitSyncResult(webAppDataValidation.output, true);
       } else {
         console.warn("[Sync] Local cache validation failed:", webAppDataValidation.issues);
-        if (!data.value) await commitSyncResult(null);
+        if (!data.value) await commitSyncResult(createEmptyWebAppData(), true);
       }
     } catch (hydrationError: unknown) {
       console.error("[Sync] Cache hydration failed:", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
-      await commitSyncResult(null);
+      await commitSyncResult(createEmptyWebAppData(), true);
     }
   }
 
@@ -195,7 +220,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     loading.value = true;
     let syncFailed = false;
     try {
-      const remoteData = await fetchRemote({ force: true });
+      const remoteData = await fetchRemoteWithTimeout({ force: true });
 
       // [THREAT:] Malformed remote payload could corrupt local state.
       // [DECISION LOG] Validation boundary protects the in-memory state.
@@ -220,7 +245,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       loading.value = false;
     }
 
-    if (syncFailed) {
+    if (syncFailed && syncError.value !== "Sync timed out") {
       startBackgroundSync(true);
     }
   }
@@ -238,7 +263,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     loading.value = true;
 
     try {
-      const remoteData = await fetchRemote({ force });
+      const remoteData = await fetchRemoteWithTimeout({ force });
 
       const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
       if (!remoteDataValidation.success) {
