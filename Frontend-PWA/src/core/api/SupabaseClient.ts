@@ -47,23 +47,29 @@ export class NetworkError extends Error {
 export const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
 export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
+/**
+ * [FIX] Normalizes through `new Request(input, init)` first instead of manually
+ * merging `input`'s headers with `init.headers`. The manual merge silently dropped
+ * the `Authorization` header supabase-js's FunctionsClient sets when `input` arrived
+ * as a `Request` instance: passing a separate `headers` object alongside a `Request`
+ * `input` to `fetch()` is exactly the ambiguous case the Fetch spec's Request
+ * constructor resolves inconsistently across engines. Building a single canonical
+ * `Request` up front guarantees every header from both `input` and `init` is present
+ * before we layer the two cache-busting headers on top. Its absence meant every
+ * `ping` edge function call (the only caller using `functions.invoke`, which requires
+ * `Authorization`) came back 401 despite `apikey` still being present - REST calls via
+ * `.from()`/`.rpc()` were unaffected since PostgREST tolerates an apikey-only request.
+ */
 async function fetchSupabaseFresh(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> {
-  const requestHeaders = input instanceof Request ? input.headers : undefined;
-  const headers = new Headers(requestHeaders);
-  const initHeaders = new Headers(init.headers);
-
-  initHeaders.forEach((value, key) => {
-    headers.set(key, value);
-  });
-
+  const request = new Request(input, init);
+  const headers = new Headers(request.headers);
   headers.set("Cache-Control", "no-cache");
   headers.set("Pragma", "no-cache");
 
-  return fetch(input, {
-    ...init,
+  return fetch(request, {
     cache: "no-store",
     headers,
   });
