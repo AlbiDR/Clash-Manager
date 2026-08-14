@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-14] PR #1454 [Stage 9]: Stage 9 structural audit CLEAN
+**Domain:** pipeline | **Commit:** e9391a9b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1454)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Stage 9 structural audit CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-14] PR #1453 [Stage 8]: Restored p-limit dependency to root workspace to resolve Edge Function test imports
 **Domain:** pipeline | **Commit:** 366fd1b7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1453)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml
