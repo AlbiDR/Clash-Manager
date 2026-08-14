@@ -364,6 +364,13 @@ export function usePwaManager() {
   });
 
   const latestApkLabel = computed(() => getReleaseVersionLabel(latestApkRelease.value));
+  const apkDirectDownloadUrl = computed(() => {
+    const release = latestApkRelease.value;
+    if (!release) return "";
+    if (isPublishedApkOlderThanInstalled(release)) return "";
+    if (isInstalledApkCurrent(release)) return "";
+    return release.url;
+  });
   const apkArtifactLabel = computed(() => {
     const release = latestApkRelease.value;
     if (!release) return "No APK metadata loaded";
@@ -690,6 +697,7 @@ export function usePwaManager() {
     apkUpdateLastCheckedAt,
     installedApkLabel,
     latestApkLabel,
+    apkDirectDownloadUrl,
     apkArtifactLabel,
     apkFeedSourceLabel,
     apkChangelog,

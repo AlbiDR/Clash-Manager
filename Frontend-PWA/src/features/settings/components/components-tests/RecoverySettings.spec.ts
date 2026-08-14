@@ -34,6 +34,7 @@ describe("RecoverySettings.vue", () => {
   const mockApkUpdateLastCheckedAt = ref<number | undefined>(undefined);
   const mockInstalledApkLabel = ref("v14.45.0 (code 18500)");
   const mockLatestApkLabel = ref("Not checked");
+  const mockApkDirectDownloadUrl = ref("");
   const mockApkArtifactLabel = ref("No APK metadata loaded");
   const mockApkFeedSourceLabel = ref("");
   const mockApkChangelog = ref<string[]>([]);
@@ -49,6 +50,7 @@ describe("RecoverySettings.vue", () => {
     mockApkUpdateLastCheckedAt.value = undefined;
     mockInstalledApkLabel.value = "v14.45.0 (code 18500)";
     mockLatestApkLabel.value = "Not checked";
+    mockApkDirectDownloadUrl.value = "";
     mockApkArtifactLabel.value = "No APK metadata loaded";
     mockApkFeedSourceLabel.value = "";
     mockApkChangelog.value = [];
@@ -63,6 +65,7 @@ describe("RecoverySettings.vue", () => {
       apkUpdateLastCheckedAt: mockApkUpdateLastCheckedAt,
       installedApkLabel: mockInstalledApkLabel,
       latestApkLabel: mockLatestApkLabel,
+      apkDirectDownloadUrl: mockApkDirectDownloadUrl,
       apkArtifactLabel: mockApkArtifactLabel,
       apkFeedSourceLabel: mockApkFeedSourceLabel,
       apkChangelog: mockApkChangelog,
@@ -138,6 +141,22 @@ describe("RecoverySettings.vue", () => {
     const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Download Update"));
     await btn?.trigger("click");
     expect(mockDownloadApk).toHaveBeenCalled();
+  });
+
+  it("renders Download Update as a direct APK link when an update URL is resolved", async () => {
+    mockIsNativeWrapper.value = true;
+    mockApkDirectDownloadUrl.value = "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.45.0%2B191.apk";
+
+    const wrapper = mountComponent();
+    const link = wrapper.find("a.trouble-btn");
+
+    expect(link.exists()).toBe(true);
+    expect(link.text()).toContain("Download Update");
+    expect(link.attributes("href")).toBe(mockApkDirectDownloadUrl.value);
+    expect(link.attributes("target")).toBe("_blank");
+
+    await link.trigger("click");
+    expect(mockDownloadApk).not.toHaveBeenCalled();
   });
 
   it("shows and triggers native APK diagnostics", async () => {
