@@ -69,17 +69,37 @@ async function fetchSupabaseFresh(
   });
 }
 
-/**
- * Internal factory to create a scoped Supabase client.
- * Configured to target the 'features' schema by default.
- */
-export const createSupabaseClient = () => {
+function buildSupabaseClient() {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
         db: { schema: 'features' },
         global: {
           fetch: fetchSupabaseFresh,
         },
     });
+}
+
+let cachedSupabaseClient: ReturnType<typeof buildSupabaseClient> | null = null;
+
+/**
+ * Internal factory to create a scoped Supabase client.
+ * Configured to target the 'features' schema by default.
+ *
+ * @remarks
+ * [FIX] Memoized to a single module-level instance. Every call site previously
+ * got its own fresh `createClient(...)`, each spinning up its own GoTrueClient
+ * bound to the same `sb-<project>-auth-token` storage key ("Multiple GoTrueClient
+ * instances detected" in the console). Concurrent instances race over that shared
+ * key during auth initialization, and a request issued by an instance whose
+ * session hadn't finished resolving yet would go out without a valid session,
+ * surfacing as a spurious 401 alongside a sibling instance's 200 for the same
+ * call - which is exactly what tripped the boot-time `ping` handshake into
+ * "offline" despite the backend being healthy.
+ */
+export const createSupabaseClient = () => {
+    if (!cachedSupabaseClient) {
+      cachedSupabaseClient = buildSupabaseClient();
+    }
+    return cachedSupabaseClient;
 };
 
 /**
