@@ -62,7 +62,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
       </div>
     </div>
 
-    <div class="features-list" style="margin-top: 24px">
+    <div class="features-list">
       <SettingRow
         v-if="wakeLock.isSupported"
         label="Keep Screen On"
@@ -78,11 +78,11 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
 <style scoped>
 .theme-selection-area {
   display: flex;
-  flex-direction: column; /* Restored Vertical Stack */
-  gap: 12px; /* Tight gap */
+  flex-direction: column;
+  gap: var(--sys-space-12);
   background: var(--sys-color-surface-container-low);
-  padding: 14px 16px; /* Optimized cushion */
-  border-radius: 20px;
+  padding: var(--sys-space-12);
+  border-radius: 8px;
   border: 1px solid var(--sys-surface-glass-border);
   position: relative;
   overflow: hidden;
@@ -94,14 +94,13 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
 }
 
 .theme-main-label {
-  font-size: 14px;
+  font-size: var(--sys-typescale-body-sm);
   font-weight: 900;
   color: var(--sys-color-on-surface);
-  letter-spacing: -0.01em;
 }
 
 .theme-sub-label {
-  font-size: 11px;
+  font-size: var(--sys-typescale-meta);
   font-weight: 600;
   color: var(--sys-color-outline);
   opacity: 0.6;
@@ -112,10 +111,10 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   position: relative;
   background: var(--sys-color-surface-container-highest);
   padding: 4px;
-  border-radius: 999px;
+  border-radius: 8px;
   isolation: isolate;
   gap: 4px;
-  width: 100%; /* Full Horizontal Span */
+  width: 100%;
 }
 
 .theme-option {
@@ -129,10 +128,12 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 10px 0; /* Balanced height */
+  min-height: 48px;
+  padding: 8px 0;
   cursor: pointer;
   transition: all 0.4s var(--sys-motion-spring);
   color: var(--sys-color-outline);
+  border-radius: 6px;
 }
 
 .option-icon-box {
@@ -169,7 +170,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   left: 4px;
   width: calc(33.333% - 5.333px);
   background: var(--sys-color-primary-container);
-  border-radius: 999px;
+  border-radius: 6px;
   z-index: 1;
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -183,6 +184,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
 .features-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--sys-space-8);
+  margin-top: var(--sys-space-12);
 }
 </style>

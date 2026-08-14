@@ -111,7 +111,7 @@ onMounted(() => {
 .trouble-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: var(--sys-space-8);
 }
 .trouble-grid.has-extra {
   grid-template-columns: repeat(4, 1fr);
@@ -126,7 +126,7 @@ onMounted(() => {
   padding: 8px 4px;
   background: var(--sys-color-surface-container-high);
   border: none;
-  border-radius: 16px;
+  border-radius: 8px;
   color: var(--sys-color-primary);
   font-size: 11px;
   font-weight: 800;

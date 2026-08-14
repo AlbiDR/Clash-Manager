@@ -147,8 +147,8 @@ function saveApiUrl() {
   justify-content: space-between;
   background: var(--sys-color-surface-container-high);
   padding: 8px 16px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+  border-radius: 8px;
+  margin-bottom: var(--sys-space-12);
 }
 .stat-item {
   display: flex;
@@ -186,7 +186,7 @@ function saveApiUrl() {
 .url-readout {
   background: var(--sys-color-surface-container-highest);
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -217,14 +217,14 @@ function saveApiUrl() {
 
 .url-input-row {
   display: flex;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 .glass-input {
   flex: 1;
   height: 40px;
   background: white;
   border: 1.5px solid var(--sys-color-primary);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0 12px;
   font-family: var(--sys-font-family-mono);
   font-size: 13px;
@@ -233,7 +233,7 @@ function saveApiUrl() {
   /* 48px hybrid touch-target minimum (Target B.2). */
   width: var(--sys-space-48);
   min-height: var(--sys-space-48);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--sys-color-primary);
   color: white;
   border: none;
@@ -242,7 +242,7 @@ function saveApiUrl() {
   /* 48px hybrid touch-target minimum (Target B.2). */
   width: var(--sys-space-48);
   min-height: var(--sys-space-48);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--sys-color-surface-container-highest);
   border: none;
   font-weight: 800;

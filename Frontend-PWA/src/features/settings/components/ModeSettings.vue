@@ -72,7 +72,7 @@ const {
 .features-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--sys-space-8);
 }
 
 .mode-master-container {

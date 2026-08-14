@@ -80,6 +80,6 @@ const { isShowcaseMode } = useShowcaseMode();
   padding: 0 var(--sys-space-16);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-space-12);
+  gap: var(--sys-space-10);
 }
 </style>

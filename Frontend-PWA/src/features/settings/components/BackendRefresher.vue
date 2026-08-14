@@ -128,7 +128,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   color: var(--sys-color-on-secondary-container);
   border: none;
   padding: 0 20px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   font-size: 11px;
   cursor: pointer;
@@ -147,7 +147,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   position: absolute;
   inset: 0;
   background: var(--sh-sk-secondary); /* Skeleton background */
-  border-radius: 12px;
+  border-radius: 8px;
   animation: pulse 1.5s infinite ease-in-out;
 }
 

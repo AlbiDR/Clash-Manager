@@ -49,7 +49,7 @@ const toggleCollapse = () => {
 <style scoped>
 .settings-card {
   background: var(--sys-color-surface-container);
-  border-radius: var(--sys-shape-corner-l);
+  border-radius: 8px;
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
   margin: 0;
@@ -61,12 +61,13 @@ const toggleCollapse = () => {
 
 .settings-card:not(.collapsed) {
   background: var(--sys-color-surface-container-high);
-  box-shadow: var(--sys-elevation-3);
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+  box-shadow: var(--sys-elevation-1);
+  border-color: rgba(var(--sys-color-primary-rgb), 0.18);
 }
 
 .card-header {
-  padding: var(--sys-space-16) var(--sys-space-20);
+  min-height: 56px;
+  padding: var(--sys-space-12) var(--sys-space-16);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -76,7 +77,7 @@ const toggleCollapse = () => {
 }
 
 .settings-card:not(.collapsed) .card-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(var(--sys-color-outline-rgb), 0.1);
 }
 
 .header-main {
@@ -87,7 +88,7 @@ const toggleCollapse = () => {
 
 .card-header h3 {
   margin: 0;
-  font-size: var(--sys-typescale-player);
+  font-size: var(--sys-typescale-body-md);
   font-weight: 850;
   color: var(--sys-color-on-surface);
 }
@@ -122,7 +123,7 @@ const toggleCollapse = () => {
 }
 
 .card-body {
-  padding: var(--sys-space-20);
+  padding: var(--sys-space-16);
 }
 
 /* Collapse Transition */

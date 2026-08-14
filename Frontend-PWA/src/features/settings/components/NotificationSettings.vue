@@ -59,7 +59,7 @@ const threshold = computed(() => modules.notificationThreshold);
       @click="toggle('experimentalNotifications')"
     />
 
-    <div class="card-divider-s" style="margin: 16px 0" />
+    <div class="card-divider-s" />
 
     <!-- Threshold Selector Section -->
     <div class="notification-section">
@@ -161,14 +161,14 @@ const threshold = computed(() => modules.notificationThreshold);
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--sys-space-12);
 }
 
 .perm-section {
-  margin-top: 16px;
+  margin-top: var(--sys-space-12);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .perm-rationale {
@@ -189,7 +189,7 @@ const threshold = computed(() => modules.notificationThreshold);
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -198,29 +198,29 @@ const threshold = computed(() => modules.notificationThreshold);
 
 /* Toggles Grid */
 .toggles-grid {
-  margin-top: 16px;
+  margin-top: var(--sys-space-12);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(128, 128, 128, 0.1);
+  gap: var(--sys-space-8);
+  padding-top: var(--sys-space-12);
+  border-top: 1px solid rgba(var(--sys-color-outline-rgb), 0.1);
 }
 
 
 /* Actions Row */
 .actions-row {
-  margin-top: 16px;
+  margin-top: var(--sys-space-12);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 16px;
-  border-top: 1px solid rgba(128, 128, 128, 0.1);
+  padding-top: var(--sys-space-12);
+  border-top: 1px solid rgba(var(--sys-color-outline-rgb), 0.1);
 }
 
 .action-btn {
   height: 48px; /* 48px touch target compliance */
   padding: 0 16px;
-  border-radius: 99px;
+  border-radius: 8px;
   border: 1px solid var(--sys-color-outline-variant);
   background: transparent;
   color: var(--sys-color-on-surface);
@@ -250,7 +250,7 @@ const threshold = computed(() => modules.notificationThreshold);
   display: flex;
   background: var(--sys-color-surface-container-high);
   padding: 4px;
-  border-radius: 99px;
+  border-radius: 8px;
   gap: 4px;
   width: fit-content;
 }
@@ -263,7 +263,7 @@ const threshold = computed(() => modules.notificationThreshold);
   border: none;
   background: transparent;
   color: var(--sys-color-outline);
-  border-radius: 99px;
+  border-radius: 6px;
   font-weight: 800;
   font-size: 14px;
   font-family: var(--sys-font-family-mono);
@@ -301,10 +301,10 @@ const threshold = computed(() => modules.notificationThreshold);
 }
 
 .badge-preview {
-  margin-top: 16px;
+  margin-top: var(--sys-space-12);
   padding: 12px;
   background: rgba(var(--sys-color-primary-rgb), 0.08); /* Fixed opacity */
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -318,6 +318,6 @@ const threshold = computed(() => modules.notificationThreshold);
   height: 1.5px;
   background: var(--sys-color-outline-variant);
   opacity: 0.1;
-  margin: 20px 0;
+  margin: var(--sys-space-12) 0;
 }
 </style>
