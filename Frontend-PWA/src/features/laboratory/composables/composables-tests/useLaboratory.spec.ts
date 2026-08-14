@@ -31,6 +31,11 @@ vi.mock("@core/api/ProfileClient", () => ({
 
 // Mock requestAnimationFrame to execute immediately
 vi.stubGlobal('requestAnimationFrame', vi.fn((cb: FrameRequestCallback) => cb(0)));
+vi.stubGlobal('requestIdleCallback', vi.fn((cb: IdleRequestCallback) => {
+  cb({ didTimeout: false, timeRemaining: () => 50 } as IdleDeadline);
+  return 0;
+}));
+vi.stubGlobal('cancelIdleCallback', vi.fn());
 
 // Mock localStorage
 const localStorageStore: Record<string, string> = {};
