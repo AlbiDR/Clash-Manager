@@ -21,7 +21,6 @@ const {
   latestApkLabel,
   apkArtifactLabel,
   apkFeedSourceLabel,
-  apkChangelog,
   installPwa,
   isPwaStandalone,
   clearCache,
@@ -94,9 +93,6 @@ onMounted(() => {
         <span class="apk-artifact">{{ apkArtifactLabel }}</span>
       </div>
       <p v-if="shouldShowApkFeedSource" class="apk-feed-source">{{ apkFeedSourceLabel }}</p>
-      <ul v-if="apkChangelog.length" class="apk-changelog">
-        <li v-for="entry in apkChangelog.slice(0, 3)" :key="entry">{{ entry }}</li>
-      </ul>
     </div>
   </SettingsCard>
 </template>
@@ -155,36 +151,28 @@ onMounted(() => {
   --apk-state-on-container: var(--sys-color-on-surface);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--apk-state-color) 34%, var(--sys-color-outline-variant));
-  border-left-width: 3px;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--apk-state-color) 18%, var(--sys-color-outline-variant));
   border-radius: var(--sys-shape-corner-small);
-  background:
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--apk-state-color) 11%, transparent),
-      transparent 34%
-    ),
-    var(--sys-color-surface-container);
+  background: color-mix(in srgb, var(--sys-color-surface-container) 82%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .apk-status-row {
   display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto;
+  grid-template-columns: 6px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  min-height: 28px;
+  gap: 8px;
+  min-height: 22px;
 }
 
 .apk-status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--apk-state-color);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--apk-state-color) 16%, transparent);
 }
 
 .apk-diagnostics[data-state="checking"],
@@ -215,46 +203,44 @@ onMounted(() => {
 
 .apk-status-text {
   min-width: 0;
-  font-size: var(--sys-typescale-footer);
+  overflow: hidden;
+  font-size: var(--sys-typescale-meta);
   font-weight: 850;
   color: var(--sys-color-on-surface);
   line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .apk-status-time {
   justify-self: end;
   min-width: max-content;
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: var(--sys-shape-corner-full);
   background: var(--apk-state-container);
   color: var(--apk-state-on-container);
   font-family: var(--sys-font-family-mono);
-  font-size: var(--sys-typescale-label-md);
+  font-size: var(--sys-typescale-label-sm);
   font-weight: 850;
 }
 
 .apk-version-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 .apk-version-cell {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
-  min-height: 58px;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--sys-color-outline-variant) 74%, transparent);
-  border-radius: var(--sys-shape-corner-small);
-  background: color-mix(in srgb, var(--sys-color-surface-container-high) 72%, transparent);
   color: var(--sys-color-on-surface);
 }
 
 .apk-version-label {
-  font-size: var(--sys-typescale-label-md);
+  font-size: var(--sys-typescale-label-sm);
   font-weight: 900;
   color: var(--sys-color-on-surface-variant);
   text-transform: uppercase;
@@ -265,7 +251,7 @@ onMounted(() => {
   min-width: 0;
   overflow: hidden;
   color: var(--sys-color-on-surface);
-  font-size: var(--sys-typescale-footer);
+  font-size: var(--sys-typescale-meta);
   font-weight: 850;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -280,12 +266,9 @@ onMounted(() => {
 .apk-artifact {
   min-width: 0;
   overflow: hidden;
-  padding: 6px 8px;
-  border-radius: var(--sys-shape-corner-badge);
-  background: color-mix(in srgb, var(--sys-color-surface-container-highest) 66%, transparent);
   color: var(--sys-color-on-surface-variant);
   font-family: var(--sys-font-family-mono);
-  font-size: var(--sys-typescale-label-md);
+  font-size: var(--sys-typescale-label-sm);
   font-weight: 750;
   line-height: 1.3;
   text-overflow: ellipsis;
@@ -295,56 +278,24 @@ onMounted(() => {
 .apk-feed-source {
   margin: 0;
   overflow: hidden;
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-radius: var(--sys-shape-corner-badge);
   background: color-mix(in srgb, var(--sys-color-error) 10%, transparent);
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--sys-typescale-label-md);
+  font-size: var(--sys-typescale-label-sm);
   font-weight: 750;
   color: var(--sys-color-error);
 }
 
-.apk-changelog {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--sys-typescale-footer);
-  color: var(--sys-color-on-surface);
-}
-
-.apk-changelog li {
-  position: relative;
-  min-width: 0;
-  padding-left: 14px;
-  line-height: 1.35;
-}
-
-.apk-changelog li::before {
-  position: absolute;
-  top: 0.58em;
-  left: 0;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--apk-state-color);
-  content: "";
-}
-
 @media (max-width: 430px) {
   .apk-diagnostics {
-    padding: 10px;
+    gap: 7px;
+    padding: 9px;
   }
 
   .apk-version-grid {
-    gap: 6px;
-  }
-
-  .apk-version-cell {
-    padding: 8px;
+    gap: 8px;
   }
 }
 
