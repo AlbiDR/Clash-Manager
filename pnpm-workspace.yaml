@@ -13,7 +13,7 @@ catalogs:
     # Infrastructure
     "@ast-grep/cli": "^0.45.1"
     "@formkit/auto-animate": "^0.10.0"
-    "@supabase/supabase-js": "^2.112.2"
+    "@supabase/supabase-js": "^2.112.3"
     "@types/node": "^26.2.0"
     "@vite-pwa/assets-generator": "^1.0.2"
     "@vitejs/plugin-vue": "^6.0.8"

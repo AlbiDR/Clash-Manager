@@ -14,8 +14,24 @@ import {
 } from "../../_shared/schemas.ts";
 
 /**
- * Stages 2-5: Native Clan Synchronization
- * Synchronizes profile, members, river race, and war log.
+ * STAGES 2-5: NATIVE CLAN SYNCHRONIZATION
+ * ----------------------------------------------------------------------------
+ * Rationale: Manages raw ingestion cycles for core clan datasets (Profile,
+ * Members, River Race, and War Log) from the official Clash Royale API,
+ * validating schema consistency before loading to relational storage.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * This function forms the L1/L5 transition layer. It pulls data iteratively,
+ * subjects each payload to Valibot schema constraints to prevent corrupting
+ * database storage, and pipelines the safe payloads to dedicated Postgres RPCs.
+ *
+ * Satisfies ADR Section III (Validation Boundaries) by enforcing strict schema
+ * parsing of external API payloads prior to database persistence.
+ *
+ * @param clanTag - The authoritative, normalized Clash Royale clan tag.
+ * @param results - Ingestion state aggregator to write cycle success/error statuses.
+ * @param logAudit - Auditing delegate for operational and logic intent logs.
  */
 export async function runClanSync(
     clanTag: string,

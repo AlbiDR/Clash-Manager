@@ -5,15 +5,29 @@ import type { BenchmarkData } from "../../core";
 import { useHaptics } from "../composables/useHaptics";
 import { useGhostBenchmarkState } from "./ghostBenchmarkState";
 
-// Singleton Interaction State
-// [DECISION LOG] EPHEMERAL: singleton state intentionally resets on full page reload.
+/**
+ * Ephemeral active target element for the singleton benchmark tooltip.
+ *
+ * @remarks
+ * [DECISION LOG] EPHEMERAL: singleton state intentionally resets on full page reload.
+ */
 let activeTarget: HTMLElement | null = null;
+
+/**
+ * Timeout handle for debouncing the tooltip concealment sequence.
+ * Ensures brief mouse gap transitions between close elements do not cause jitter.
+ */
 let hideTimer: number | null = null;
 
-// [DECISION LOG] Primary-input detection (coarse/touch vs. fine/mouse) drives
-// which interaction model applies: hover-to-show on fine pointers, tap-to-show
-// on coarse pointers. Re-evaluated live via matchMedia's change event so a
-// convertible/2-in-1 device switching input modes is picked up without reload.
+/**
+ * Indicates if the primary input hardware is a touch or high-latency pointer.
+ *
+ * @remarks
+ * [DECISION LOG] Primary-input detection (coarse/touch vs. fine/mouse) drives
+ * which interaction model applies: hover-to-show on fine pointers, tap-to-show
+ * on coarse pointers. Re-evaluated live via matchMedia's change event so a
+ * convertible/2-in-1 device switching input modes is picked up without reload.
+ */
 let isCoarsePointer = false;
 if (typeof window !== "undefined" && window.matchMedia) {
   const pointerQuery = window.matchMedia("(pointer: coarse)");
@@ -23,8 +37,14 @@ if (typeof window !== "undefined" && window.matchMedia) {
   });
 }
 
-// Typing for element-bound values to fix any usage
+/**
+ * Extended HTMLElement interface carrying the raw tooltip value expando.
+ *
+ * @remarks
+ * Eliminates custom dataset serialization costs and preserves type safety for rich `BenchmarkData` payloads.
+ */
 interface TooltipHTMLElement extends HTMLElement {
+  /** Ephemeral storage representing the reactive tooltip value bound to the DOM node. */
   _tooltipValue?: BenchmarkData | string;
 }
 

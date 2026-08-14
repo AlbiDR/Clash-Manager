@@ -140,7 +140,9 @@ export async function fetchRemote(options?: {
 
   if (rosterResponse.error) throw new Error(`Roster Fetch Error: ${rosterResponse.error.message}`);
   if (headhunterResponse.error) throw new Error(`Headhunter Fetch Error: ${headhunterResponse.error.message}`);
-  if (blacklistResponse.error) throw new Error(`Blacklist Fetch Error: ${blacklistResponse.error.message}`);
+  if (blacklistResponse.error) {
+    console.warn("[Sync] Blacklist fetch failed; continuing with server-filtered recruits.", blacklistResponse.error.message);
+  }
   
   // [GUARD] VALIDATION BOUNDARY: Harden external view data before domain mapping.
   // [THREAT:] Processing unvalidated raw data or using 'any' can cause runtime crashes if the DB schema shifts.
@@ -150,7 +152,9 @@ export async function fetchRemote(options?: {
   const BlacklistRowSchema = v.object({
     player_tag: v.string(),
   });
-  const blacklistData = v.parse(v.array(BlacklistRowSchema), blacklistResponse.data || []);
+  const blacklistData = blacklistResponse.error
+    ? []
+    : v.parse(v.array(BlacklistRowSchema), blacklistResponse.data || []);
   const blacklistTags = blacklistData
     .map((blacklistRow) => {
       const observedPlayerTag = blacklistRow.player_tag;

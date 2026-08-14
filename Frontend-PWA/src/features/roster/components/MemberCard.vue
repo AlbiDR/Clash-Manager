@@ -187,6 +187,11 @@ const ariaLabel = computed(() => {
 <style scoped>
 /* Content specific styles only */
 
+.player-name {
+  user-select: none; /* Text Selection Containment (Target A.3) */
+  -webkit-user-select: none;
+}
+
 .lifetime-grid-margin {
   margin-top: 16px;
 }
