@@ -55,7 +55,7 @@ export function useRecruiter() {
       (recruit) => !blacklist.tombstones.value.has(recruit.id),
     );
     // Sort descending by potentialScore to prioritize highest scores
-    const sorted = filtered.sort((a, b) => (b.potentialScore || 0) - (a.potentialScore || 0));
+    const sorted = filtered.sort((candidateA, candidateB) => (candidateB.potentialScore || 0) - (candidateA.potentialScore || 0));
     // Return top 50 active recruits
     return sorted.slice(0, 50);
   });
@@ -126,13 +126,13 @@ export function useRecruiter() {
       return;
     }
 
-    const targetRecruitIds = recruitsToRemove.map(recruit => recruit.id);
+    const targetRecruitIds = recruitsToRemove.map(recruitSnapshot => recruitSnapshot.id);
     // [GUARD] Payload transformation: Mapping domain model to RPC input schema.
-    const dismissalPayload = recruitsToRemove.map(recruit => ({
-      id: recruit.id,
-      name: recruit.n,
-      score: recruit.potentialRawScore || 0,
-      raw_potential_score: recruit.potentialRawScore || 0
+    const dismissalPayload = recruitsToRemove.map(recruitSnapshot => ({
+      id: recruitSnapshot.id,
+      name: recruitSnapshot.n,
+      score: recruitSnapshot.potentialRawScore || 0,
+      raw_potential_score: recruitSnapshot.potentialRawScore || 0
     }));
 
     const { undismissRecruitsAction } = useHeadhunter();
@@ -163,7 +163,7 @@ export function useRecruiter() {
       return;
     }
     const targetRecruitIds = [...controller.selectedIds.value];
-    const recruitsToRemove = recruits.value.filter(recruit => targetRecruitIds.includes(recruit.id));
+    const recruitsToRemove = recruits.value.filter(recruitSnapshot => targetRecruitIds.includes(recruitSnapshot.id));
     
     // Clear selection state before dismissal to prevent UI desync.
     blitz.clearSelection();
