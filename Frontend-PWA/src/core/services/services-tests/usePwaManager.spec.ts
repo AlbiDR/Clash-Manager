@@ -450,6 +450,7 @@ describe("usePwaManager", () => {
 
     it("should not download when release metadata points to an older APK versionCode", async () => {
       const mockDownloadApkFile = vi.fn();
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       mockNativeBridge.value = {
         downloadApkFile: mockDownloadApkFile,
         getAppVersionCode: vi.fn(() => 18500),
@@ -470,14 +471,24 @@ describe("usePwaManager", () => {
 
       expect(mockDownloadApkFile).not.toHaveBeenCalled();
       expect(mockLocation.href).toBe("");
-      expect(apkUpdateMessage.value).toBe("Installed APK is newer than published metadata");
-      expect(latestApkLabel.value).toBe("Installed is newer");
-      expect(mockToast.success).toHaveBeenCalledWith("You already have this APK or newer");
+      expect(apkUpdateMessage.value).toBe("Release metadata mismatch");
+      expect(latestApkLabel.value).toBe("v14.43.2 (176)");
+      expect(warnSpy).toHaveBeenCalledWith(
+        "[PWA] APK update download blocked because feed is older than installed shell",
+        {
+          installed: "v14.45.0 (code 18500)",
+          published: "v14.43.2 (176)",
+        },
+      );
+      expect(mockToast.error).toHaveBeenCalledWith("Update feed is stale; download blocked");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+
+      warnSpy.mockRestore();
     });
 
     it("should not download an older APK when only native versionName is available", async () => {
       const mockDownloadApkFile = vi.fn();
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       mockNativeBridge.value = {
         downloadApkFile: mockDownloadApkFile,
         getAppVersionName: vi.fn(() => "14.45.0"),
@@ -492,13 +503,24 @@ describe("usePwaManager", () => {
         }),
       });
 
-      const { downloadApk } = usePwaManager();
+      const { downloadApk, apkUpdateMessage, latestApkLabel } = usePwaManager();
       await downloadApk();
 
       expect(mockDownloadApkFile).not.toHaveBeenCalled();
       expect(mockLocation.href).toBe("");
-      expect(mockToast.success).toHaveBeenCalledWith("You already have this APK or newer");
+      expect(apkUpdateMessage.value).toBe("Release metadata mismatch");
+      expect(latestApkLabel.value).toBe("v14.43.2 (176)");
+      expect(warnSpy).toHaveBeenCalledWith(
+        "[PWA] APK update download blocked because feed is older than installed shell",
+        {
+          installed: "v14.45.0 (native)",
+          published: "v14.43.2 (176)",
+        },
+      );
+      expect(mockToast.error).toHaveBeenCalledWith("Update feed is stale; download blocked");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+
+      warnSpy.mockRestore();
     });
 
     it("should reuse the resolved versioned APK URL for repeated download attempts", async () => {

@@ -151,6 +151,7 @@ describe("RecoverySettings.vue", () => {
     expect(wrapper.find(".apk-diagnostics").exists()).toBe(true);
     expect(wrapper.text()).toContain("APK update ready");
     expect(wrapper.text()).toContain("v14.45.0 (code 18500)");
+    expect(wrapper.text()).toContain("Published");
     expect(wrapper.text()).toContain("v14.46.0 (190)");
     expect(wrapper.text()).toContain("Native installer polish");
 

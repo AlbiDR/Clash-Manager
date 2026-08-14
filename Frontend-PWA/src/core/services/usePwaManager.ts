@@ -23,7 +23,7 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: BeforeInstallPromptOutcome; platform: string }>;
 };
 
-type ApkUpdateState = "idle" | "checking" | "available" | "current" | "blocked" | "error";
+type ApkUpdateState = "idle" | "checking" | "available" | "current" | "blocked" | "mismatch" | "error";
 
 const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
 const isPwaInstallAvailable = ref(false);
@@ -330,6 +330,11 @@ export function usePwaManager() {
     return comparison !== undefined && comparison >= 0;
   }
 
+  function isPublishedApkOlderThanInstalled(release: ApkReleaseDownload): boolean {
+    const comparison = getInstalledReleaseComparison(release);
+    return comparison !== undefined && comparison > 0;
+  }
+
   function getReleaseVersionLabel(release: ApkReleaseDownload | undefined): string {
     if (!release) return "Not checked";
     const version = release.version || parseReleaseApkFilename(release.filename)
@@ -353,12 +358,7 @@ export function usePwaManager() {
     return `${versionName ? `v${versionName}` : "Native APK"} (${detail})`;
   });
 
-  const latestApkLabel = computed(() => {
-    const release = latestApkRelease.value;
-    if (!release) return getReleaseVersionLabel(release);
-    const comparison = getInstalledReleaseComparison(release);
-    return comparison !== undefined && comparison > 0 ? "Installed is newer" : getReleaseVersionLabel(release);
-  });
+  const latestApkLabel = computed(() => getReleaseVersionLabel(latestApkRelease.value));
   const apkArtifactLabel = computed(() => {
     const release = latestApkRelease.value;
     if (!release) return "No APK metadata loaded";
@@ -377,16 +377,23 @@ export function usePwaManager() {
 
     if (!release) {
       apkUpdateState.value = "error";
-      apkUpdateMessage.value = "Latest APK metadata unavailable";
+      apkUpdateMessage.value = "Published APK metadata unavailable";
+      return;
+    }
+
+    if (isPublishedApkOlderThanInstalled(release)) {
+      apkUpdateState.value = "mismatch";
+      apkUpdateMessage.value = "Release metadata mismatch";
+      console.warn("[PWA] APK update feed is older than installed shell", {
+        installed: installedApkLabel.value,
+        published: getReleaseVersionLabel(release),
+      });
       return;
     }
 
     if (isInstalledApkCurrent(release)) {
-      const comparison = getInstalledReleaseComparison(release);
       apkUpdateState.value = "current";
-      apkUpdateMessage.value = comparison !== undefined && comparison > 0
-        ? "Installed APK is newer than published metadata"
-        : "Installed APK is current";
+      apkUpdateMessage.value = "Installed APK is current";
       return;
     }
 
@@ -428,17 +435,26 @@ export function usePwaManager() {
       apkUpdateLastCheckedAt.value = Date.now();
       if (!release) {
         apkUpdateState.value = "error";
-        apkUpdateMessage.value = "Latest APK metadata unavailable";
+        apkUpdateMessage.value = "Published APK metadata unavailable";
         toast.remove(activeToastId);
         toast.error("Could not find latest APK");
         return;
       }
+      if (isPublishedApkOlderThanInstalled(release)) {
+        apkUpdateState.value = "mismatch";
+        apkUpdateMessage.value = "Release metadata mismatch";
+        console.warn("[PWA] APK update download blocked because feed is older than installed shell", {
+          installed: installedApkLabel.value,
+          published: getReleaseVersionLabel(release),
+        });
+        toast.remove(activeToastId);
+        toast.error("Update feed is stale; download blocked");
+        return;
+      }
+
       if (isInstalledApkCurrent(release)) {
-        const comparison = getInstalledReleaseComparison(release);
         apkUpdateState.value = "current";
-        apkUpdateMessage.value = comparison !== undefined && comparison > 0
-          ? "Installed APK is newer than published metadata"
-          : "Installed APK is current";
+        apkUpdateMessage.value = "Installed APK is current";
         toast.remove(activeToastId);
         toast.success("You already have this APK or newer");
         return;

@@ -89,7 +89,7 @@ onMounted(() => {
           {{ installedApkLabel }}
         </span>
         <span>
-          <strong>Latest</strong>
+          <strong>Published</strong>
           {{ latestApkLabel }}
         </span>
       </div>
@@ -182,11 +182,13 @@ onMounted(() => {
 }
 
 .apk-diagnostics[data-state="blocked"],
+.apk-diagnostics[data-state="mismatch"],
 .apk-diagnostics[data-state="error"] {
   border-color: color-mix(in srgb, var(--sys-color-error) 45%, var(--sys-color-outline-variant));
 }
 
 .apk-diagnostics[data-state="blocked"] .apk-status-dot,
+.apk-diagnostics[data-state="mismatch"] .apk-status-dot,
 .apk-diagnostics[data-state="error"] .apk-status-dot {
   background: var(--sys-color-error);
 }
