@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-14] PR #1452 [Stage 7]: chore(version): No version drift or catalog violations detected
+**Domain:** pipeline | **Commit:** d30c0f62 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1452)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): No version drift or catalog violations detected
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-14] PR #1451 [Stage 6]: docs(tsdoc): harden TargetPicker interface contracts and inline annotations
 **Domain:** pipeline | **Commit:** f3e2c331 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1451)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/laboratory/components/TargetPicker.vue
