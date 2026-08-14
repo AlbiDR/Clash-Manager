@@ -144,3 +144,4 @@
 * [2026-08-11] [Stage 5] CHANGED: Frontend-PWA/src/shared/directives/README.md -- Reconciled shared directives README drift by documenting ghostBenchmarkState.ts and Layer 2 boundary limits.
 * [2026-08-12] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): reconcile list filtering, PWA installation, and recruit last scan features
 * [2026-08-13] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useNativeBridge.ts coordination in core services README
+* [2026-08-14] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled and updated the Core Services README.md to document the decomposed apkResolverUtils.ts and APK resolution lifecycle.
