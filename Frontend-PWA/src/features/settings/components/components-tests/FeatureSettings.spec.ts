@@ -20,12 +20,6 @@ const SettingsCardStub = defineComponent({
   template: '<div class="settings-card-stub"><slot /></div>'
 });
 
-const SettingRowStub = defineComponent({
-  name: "SettingRow",
-  props: ["label", "description", "active", "loading"],
-  template: '<div class="setting-row-stub" @click="$emit(\'click\')"></div>'
-});
-
 const AndroidCalibrationSettingsStub = defineComponent({
   name: "AndroidCalibrationSettings",
   template: '<div class="android-calibration-settings-stub"></div>'
@@ -73,7 +67,6 @@ describe("FeatureSettings.vue", () => {
       global: {
         stubs: {
           SettingsCard: SettingsCardStub,
-          SettingRow: SettingRowStub,
           AndroidCalibrationSettings: AndroidCalibrationSettingsStub
         }
       }
@@ -92,26 +85,26 @@ describe("FeatureSettings.vue", () => {
 
   it("renders all feature setting rows", () => {
     const wrapper = mountComponent();
-    const rows = wrapper.findAllComponents(SettingRowStub);
+    const rows = wrapper.findAll(".feature-toggle");
 
     expect(rows).toHaveLength(3);
-    expect(rows[0].props("label")).toBe("Ghost Benchmarking");
-    expect(rows[1].props("label")).toBe("Sorting Descriptions");
-    expect(rows[2].props("label")).toBe("Blitz Mode");
+    expect(rows[0].text()).toContain("Ghost Benchmarking");
+    expect(rows[1].text()).toContain("Sorting Descriptions");
+    expect(rows[2].text()).toContain("Blitz Mode");
   });
 
   it("synchronizes row active state with modules", () => {
     const wrapper = mountComponent();
-    const rows = wrapper.findAllComponents(SettingRowStub);
+    const rows = wrapper.findAll(".feature-toggle");
 
-    expect(rows[0].props("active")).toBe(false); // ghostBenchmarking
-    expect(rows[1].props("active")).toBe(true);  // sortExplanation
-    expect(rows[2].props("active")).toBe(false); // blitzMode
+    expect(rows[0].classes()).not.toContain("active"); // ghostBenchmarking
+    expect(rows[1].classes()).toContain("active");     // sortExplanation
+    expect(rows[2].classes()).not.toContain("active"); // blitzMode
   });
 
   it("calls toggle with correct module name when feature rows are clicked", async () => {
     const wrapper = mountComponent();
-    const rows = wrapper.findAllComponents(SettingRowStub);
+    const rows = wrapper.findAll(".feature-toggle");
 
     await rows[0].trigger("click");
     expect(mockToggle).toHaveBeenCalledWith("ghostBenchmarking");
@@ -123,7 +116,7 @@ describe("FeatureSettings.vue", () => {
   describe("Blitz Mode toggle (PWA mode)", () => {
     it("calls toggle('blitzMode') when clicked in PWA mode", async () => {
       const wrapper = mountComponent();
-      const blitzRow = wrapper.findAllComponents(SettingRowStub)[2];
+      const blitzRow = wrapper.findAll(".feature-toggle")[2];
 
       await blitzRow.trigger("click");
       expect(mockToggle).toHaveBeenCalledWith("blitzMode");
@@ -166,7 +159,7 @@ describe("FeatureSettings.vue", () => {
     });
   });
 
-  it("passes isRefreshing state to card and rows", async () => {
+  it("passes isRefreshing state to card and disables feature toggles", async () => {
     const wrapper = mountComponent();
 
     mockIsRefreshing.value = true;
@@ -175,9 +168,9 @@ describe("FeatureSettings.vue", () => {
     const card = wrapper.findComponent(SettingsCardStub);
     expect(card.props("loading")).toBe(true);
 
-    const rows = wrapper.findAllComponents(SettingRowStub);
-    expect(rows[0].props("loading")).toBe(true);
-    expect(rows[1].props("loading")).toBe(true);
-    expect(rows[2].props("loading")).toBe(true);
+    const rows = wrapper.findAll(".feature-toggle");
+    expect(rows[0].attributes("disabled")).toBeDefined();
+    expect(rows[1].attributes("disabled")).toBeDefined();
+    expect(rows[2].attributes("disabled")).toBeDefined();
   });
 });
