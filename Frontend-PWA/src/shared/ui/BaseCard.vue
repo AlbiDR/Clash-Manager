@@ -265,13 +265,18 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Tinted stat-pods fill with a dark/vivid score-* tone (see components.ts),
-   so the on-surface ink above stops being legible; onScore is chosen per
-   theme to stay high-contrast against every stop of the gradient.
-   Scoped to :not(.selected) so it can never out-specificity the selected
-   card's own on-primary-container text override above. */
+/* Tinted stat-pods fade the fill toward vivid primary as the score rises
+   (see .score-tint in components.ts), so the ink needs to fade toward
+   on-primary in lockstep - same crossfade, same --score-raw input - rather
+   than staying fixed at on-surface. Scoped to :not(.selected) so it can
+   never out-specificity the selected card's own on-primary-container text
+   override above. */
 .card:not(.selected) .stat-pod.score-tint :deep(.stat-score) {
-  color: var(--sys-color-on-score) !important;
+  color: color-mix(
+    in oklch,
+    var(--sys-color-on-primary) calc(var(--score-raw, 0) * 1%),
+    var(--sys-color-on-surface)
+  ) !important;
   opacity: 1;
 }
 

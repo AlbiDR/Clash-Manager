@@ -122,30 +122,37 @@ a { text-decoration: underline; color: inherit; }
 /* =========================================
    SCORE TINT SCALE (Data-Driven Gradient)
    ---------------------------------------------------------------------------
-   Two-segment OKLCH interpolation across dedicated score-low/mid/high
-   tokens, driven by the unitless --score-raw custom property (0-100) set by
-   shared/utils/scoreTint.ts. Distinct hues per segment keep every point of
-   the 0-100 range visually distinguishable; blending two adjacent M3
-   container tones (the old approach) reads as visually flat because
-   container roles are deliberately low-chroma. Only applied via this class
-   so score-less consumers keep their default surface fill.
+   Single, continuous OKLCH ramp within the brand's own primary hue, driven
+   by the unitless --score-raw custom property (0-100) set by
+   shared/utils/scoreTint.ts. A single linear mix (rather than multiple
+   segments) gives constant slope across the whole range, so every point
+   (not just the extremes) moves visibly for a small score delta.
+   The old approach mixed two adjacent M3 *container* tones (primary vs.
+   surface), which read as flat because container roles are deliberately
+   low-chroma/high-lightness by design - close to each other regardless of
+   hue. Widening to the full-strength primary token (instead of swapping
+   hue) keeps this on-brand while giving the mix real tonal range to work
+   with. OKLCH keeps that range perceptually uniform end to end; srgb
+   mixing visibly desaturates the midpoint of a hue+neutral blend.
+   Only applied via this class so score-less consumers keep their default
+   surface fill.
    ========================================= */
 .score-tint {
   background: color-mix(
     in oklch,
-    var(--sys-color-score-high) clamp(0%, calc((var(--score-raw, 0) - 50) * 2%), 100%),
-    color-mix(
-      in oklch,
-      var(--sys-color-score-mid) clamp(0%, calc(var(--score-raw, 0) * 2%), 100%),
-      var(--sys-color-score-low)
-    )
+    var(--sys-color-primary) calc(var(--score-raw, 0) * 1%),
+    var(--sys-color-surface-container-highest)
   );
 }
-/* Every score-tint fill is dark/vivid by construction (see tokens.ts), so
-   any text painted directly on it needs the onScore ink instead of whatever
-   the host element normally uses (e.g. .badge's on-surface). */
+/* Text follows the same ramp between the two ink tokens already paired
+   with these fills elsewhere (e.g. .btn-primary uses primary/on-primary),
+   so contrast stays correct at every point without a hard threshold. */
 .score-tint.badge {
-  color: var(--sys-color-on-score);
+  color: color-mix(
+    in oklch,
+    var(--sys-color-on-primary) calc(var(--score-raw, 0) * 1%),
+    var(--sys-color-on-surface)
+  );
 }
 
 .stat-score {
