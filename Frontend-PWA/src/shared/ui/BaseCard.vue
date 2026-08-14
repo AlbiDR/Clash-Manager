@@ -266,15 +266,17 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
 }
 
 /* Tinted stat-pods fade the fill toward vivid primary as the score rises
-   (see .score-tint in components.ts), so the ink needs to fade toward
-   on-primary in lockstep - same crossfade, same --score-raw input - rather
-   than staying fixed at on-surface. Scoped to :not(.selected) so it can
-   never out-specificity the selected card's own on-primary-container text
-   override above. */
+   (see .score-tint in components.ts). Text switches - doesn't fade - from
+   onSurface to onPrimary at --score-text-switch, the contrast-optimal
+   crossover point; see the .score-tint.badge comment in components.ts for
+   why a linear crossfade of ink is wrong here. Scoped to :not(.selected) so
+   it can never out-specificity the selected card's own
+   on-primary-container text override above. */
 .card:not(.selected) .stat-pod.score-tint :deep(.stat-score) {
   color: color-mix(
     in oklch,
-    var(--sys-color-on-primary) calc(var(--score-raw, 0) * 1%),
+    var(--sys-color-on-primary)
+      clamp(0%, calc((var(--score-raw, 0) - var(--sys-color-score-text-switch, 50)) * 1000%), 100%),
     var(--sys-color-on-surface)
   ) !important;
   opacity: 1;

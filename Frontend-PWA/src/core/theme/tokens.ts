@@ -39,6 +39,18 @@ export interface ThemeTokens {
     warningContainer: string;
     onWarningContainer: string;
 
+    // Score-tint text switch point (see .score-tint in components.ts): the
+    // score-raw % (0-100) at which score-pod/badge text should flip from
+    // onSurface to onPrimary. A linear crossfade between the two inks is
+    // WRONG here - it produces a mid-range gray with ~1.1:1 contrast against
+    // the equally-mid-lightness background at that point. This value is the
+    // score % where contrast(bg, onSurface) == contrast(bg, onPrimary), i.e.
+    // the one point a hard switch is allowed to be at its worst. Derived via
+    // WCAG relative-luminance search over the actual primary/
+    // surfaceContainerHighest/onPrimary/onSurface values below - recompute
+    // (see tokens.spec.ts) if any of those four change.
+    scoreTextSwitch: string;
+
     background: string;
     surface: string;
     onSurface: string;
@@ -102,6 +114,8 @@ export const lightTokens: ThemeTokens = {
     onWarning: '#ffffff',
     warningContainer: '#FFDEA8',
     onWarningContainer: '#261A00',
+
+    scoreTextSwitch: '75.5',
 
     background: '#fdfcff',
     surface: '#fdfcff',
@@ -167,6 +181,8 @@ export const darkTokens: ThemeTokens = {
     onWarning: '#401A00',
     warningContainer: '#5A3600',
     onWarningContainer: '#FFDEA8',
+
+    scoreTextSwitch: '53',
 
     background: '#0b0e14',
     surface: '#0b0e14',

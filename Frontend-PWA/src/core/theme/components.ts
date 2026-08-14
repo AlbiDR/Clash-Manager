@@ -144,13 +144,21 @@ a { text-decoration: underline; color: inherit; }
     var(--sys-color-surface-container-highest)
   );
 }
-/* Text follows the same ramp between the two ink tokens already paired
-   with these fills elsewhere (e.g. .btn-primary uses primary/on-primary),
-   so contrast stays correct at every point without a hard threshold. */
+/* Text switches (not fades) between the two ink tokens already paired with
+   these fills elsewhere (e.g. .btn-primary uses primary/on-primary).
+   A linear crossfade in lockstep with the background is wrong here: at the
+   midpoint the mixed ink is mid-gray, which has near-1:1 contrast against
+   the equally mid-lightness background at that same point. Instead this
+   snaps hard at --score-text-switch, the one score % (see tokens.ts) where
+   onSurface and onPrimary give equal contrast against the background -
+   the best any two-ink choice can do, and the only point its own worst
+   case is reached. clamp()'s huge multiplier turns a few tenths of a point
+   of distance from that threshold into a 0%/100% cliff. */
 .score-tint.badge {
   color: color-mix(
     in oklch,
-    var(--sys-color-on-primary) calc(var(--score-raw, 0) * 1%),
+    var(--sys-color-on-primary)
+      clamp(0%, calc((var(--score-raw, 0) - var(--sys-color-score-text-switch, 50)) * 1000%), 100%),
     var(--sys-color-on-surface)
   );
 }
