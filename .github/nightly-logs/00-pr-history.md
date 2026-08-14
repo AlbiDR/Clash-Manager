@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-14] PR #1450 [Stage 5]: chore(docs): Reconciled and updated Core Services README
+**Domain:** pipeline | **Commit:** 90e8f941 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1450)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): Reconciled and updated Core Services README
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-14] PR #1449 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
 **Domain:** pipeline | **Commit:** 0777891d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1449)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
