@@ -359,7 +359,7 @@ export function usePwaManager() {
     const versionCode = getNativeVersionCode();
     const buildNumber = getNativeBuildNumber();
     if (!versionName && !versionCode && !buildNumber) return "Web/PWA session";
-    const detail = versionCode ? `code ${versionCode}` : buildNumber ? `build ${buildNumber}` : "native";
+    const detail = buildNumber ? `build ${buildNumber}` : versionCode ? `code ${versionCode}` : "native";
     return `${versionName ? `v${versionName}` : "Native APK"} (${detail})`;
   });
 

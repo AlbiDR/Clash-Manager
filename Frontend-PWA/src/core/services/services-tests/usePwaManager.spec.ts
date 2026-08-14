@@ -221,6 +221,18 @@ describe("usePwaManager", () => {
   });
 
   describe("downloadApk", () => {
+    it("should label the installed APK by build number before Android versionCode", () => {
+      mockNativeBridge.value = {
+        getAppVersionCode: vi.fn(() => 18500),
+        getAppVersionName: vi.fn(() => "14.45.0"),
+        getBuildNumber: vi.fn(() => 191),
+      };
+
+      const { installedApkLabel } = usePwaManager();
+
+      expect(installedApkLabel.value).toBe("v14.45.0 (build 191)");
+    });
+
     it("should prefer same-origin APK metadata when the PWA deploy exposes it", async () => {
       (mockLocation as any).origin = "https://albidr.github.io";
       (fetch as any)
