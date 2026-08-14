@@ -298,7 +298,13 @@ export function usePwaManager() {
   function getReleaseVersionCode(release: ApkReleaseDownload): number | undefined {
     const parts = parseReleaseApkFilename(release.filename);
     if (!parts) return undefined;
-    return parts.major * 1000 + parts.minor * 100 + parts.patch;
+    // [THREAT:] Must mirror the versionCode formula the Android manifest is actually
+    // stamped with (see .github/scripts/validate_project.ts and
+    // APK/verify-apk-integrity.mjs: major*1000 + minor*100 + patch*10). A missing
+    // `*10` here previously undercounted every non-zero patch release by patch*9,
+    // making the native versionCode look newer than the published release and
+    // permanently tripping the "Release metadata mismatch" state after every update.
+    return parts.major * 1000 + parts.minor * 100 + parts.patch * 10;
   }
 
   function compareReleaseVersions(firstVersion: string, secondVersion: string): number {

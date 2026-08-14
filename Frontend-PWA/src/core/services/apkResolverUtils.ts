@@ -371,17 +371,41 @@ export function selectNewestReleaseApk(contents: GitHubReleaseContent[]): ApkRel
 }
 
 /**
+ * Scores how complete a candidate's metadata is, for tie-breaking between sources
+ * that agree on the same release version.
+ *
+ * @param candidate - The release candidate to score.
+ * @returns 2 when both checksum and size are present, 1 when only one is, 0 otherwise.
+ */
+function getMetadataCompletenessScore(candidate: ApkReleaseDownload): number {
+  return (isSha256Digest(candidate.sha256) ? 1 : 0) + (isReleaseSizeBytes(candidate.sizeBytes) ? 1 : 0);
+}
+
+/**
  * Reduces a collection of resolved download objects down to the semantic peak candidate.
  *
  * @param candidates - List of potential download targets.
  * @returns Highest version candidate or undefined.
+ *
+ * @remarks
+ * [THREAT:] Multiple sources (same-origin, GitHub contents API, remote latest.json)
+ * frequently agree on the same newest version. The GitHub contents API fallback never
+ * carries a checksum or size (see `selectNewestReleaseApk`), so on a version tie this
+ * must prefer whichever candidate has the more complete metadata - otherwise a
+ * metadata-poor source occurring earlier in the candidate array wins by default and
+ * the UI permanently reports "checksum unavailable"/"size unknown" even though a
+ * fully-populated source resolved successfully in the same pass.
  */
 export function selectNewestReleaseDownload(candidates: Array<ApkReleaseDownload | undefined>): ApkReleaseDownload | undefined {
   return candidates.reduce<ApkReleaseDownload | undefined>((newestRelease, candidate) => {
     if (!candidate) return newestRelease;
     if (!newestRelease) return candidate;
 
-    return compareReleaseApkFilenames(candidate.filename, newestRelease.filename) > 0
+    const versionComparison = compareReleaseApkFilenames(candidate.filename, newestRelease.filename);
+    if (versionComparison > 0) return candidate;
+    if (versionComparison < 0) return newestRelease;
+
+    return getMetadataCompletenessScore(candidate) > getMetadataCompletenessScore(newestRelease)
       ? candidate
       : newestRelease;
   }, undefined);

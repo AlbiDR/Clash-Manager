@@ -21,6 +21,15 @@
 #   Excluded : APK/release/**            - build output, never an input.
 #   Excluded : APK/**/*.md               - documentation only, no effect on the binary.
 #
+# The release commit deliberately does NOT carry `[skip ci]`: that keyword skips every
+# push-triggered workflow on the commit, not just this one, and previously suppressed
+# Deploy PWA's `APK/release/**` path trigger too - so the PWA's same-origin latest.json
+# and companion binary silently kept serving the PREVIOUS release indefinitely, causing
+# in-app "release metadata mismatch" / stale checksum reports right after users updated.
+# The self-trigger loop this used to guard against is already closed by the path filter
+# above (APK/android/classes.dex and APK/release/** are excluded inputs), so it's safe
+# to let Deploy PWA and APK Integrity run normally on this commit.
+#
 # Signing material comes from repo Secrets (the keystore itself is NOT in the
 # repo): ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
 # ANDROID_KEY_PASSWORD / ANDROID_KEY_ALIAS.
@@ -210,7 +219,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No APK changes to commit"
           else
-            git commit -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER} [skip ci]"
+            git commit -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER}"
 
             # Fetch latest remote changes
             git fetch origin Beta
@@ -220,7 +229,7 @@ jobs:
               echo "Remote branch moved. Syncing and resolving conflict..."
               git reset --soft origin/Beta
               write_release
-              git commit --amend -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER} [skip ci]"
+              git commit --amend -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER}"
             fi
 
             git push origin HEAD:Beta || {
