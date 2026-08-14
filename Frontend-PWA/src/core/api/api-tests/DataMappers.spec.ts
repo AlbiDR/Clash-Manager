@@ -46,6 +46,16 @@ describe("DataMappers", () => {
       expect(result.d.winRate).toBe(0);
     });
 
+    it("prefers server-generated last_seen_label over client clock parsing", () => {
+      const row = {
+        player_tag: "#ABC",
+        last_seen_at: "2026-08-13 21:00:00+00",
+        last_seen_label: "15h",
+      };
+      const result = mapSbRosterRow(row as any);
+      expect(result.d.seen).toBe("15h");
+    });
+
     it("handles missing or null fields gracefully", () => {
       const row = {
         player_tag: null,

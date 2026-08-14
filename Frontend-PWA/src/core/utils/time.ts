@@ -150,6 +150,11 @@ const formatTime = (
 ): string => {
   if (!dateStr) return "-";
   if (!shortMode && dateStr === "Just now") return dateStr;
+  if (typeof dateStr === "string") {
+    const relativeInput = dateStr.trim();
+    if (relativeInput === "Now") return shortMode ? "New" : "Now";
+    if (TIME_AGO_REGEX.test(relativeInput)) return relativeInput;
+  }
 
   const dateTimeMs = parseAbsoluteTimeMs(dateStr);
   if (dateTimeMs === null) return "-";
@@ -189,7 +194,7 @@ export const formatTimeAgoShort = (
 ): string => formatTime(dateStr, true);
 
 /** Regex for legacy 'X units ago' strings. */
-const TIME_AGO_REGEX = /^(\d+)(mo|[ymdhw]) ago$/;
+const TIME_AGO_REGEX = /^(\d+)(mo|[ymdhw])(?: ago)?$/;
 /** Multipliers to convert various units into minutes. */
 const TIME_AGO_MULTIPLIERS: Record<string, number> = {
   m: 1,
@@ -241,7 +246,7 @@ export function parseTimeAgoValue(timeString: string | null | undefined): number
   }
 
   // 2. Legacy Fallback: Parse "2d ago" strings (Old Backend / UI formatted)
-  if (timeString === "Just now") {
+  if (timeString === "Just now" || timeString === "Now") {
     REL_CACHE.set(timeString, 0);
     return 0;
   }

@@ -47,7 +47,7 @@ export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema
       avg: rosterRow.avg_daily_donations != null
         ? Number(rosterRow.avg_daily_donations)
         : Number(rosterRow.donations) || 0,
-      seen: rosterRow.last_seen_at || '-',
+      seen: rosterRow.last_seen_label || rosterRow.last_seen_at || '-',
       rate: rosterRow.war_participation != null ? `${Math.round(Number(rosterRow.war_participation))}%` : '-',
       wfame: Math.round(Number(rosterRow.avg_fame || rosterRow.week_fame)) || 0,
       hist: rosterRow.hist || '-', // existing war history string

@@ -67,6 +67,12 @@ describe("time utilities", () => {
       expect(formatTimeAgo("2026-08-13 21:00:00+00:00")).toBe("15h ago");
     });
 
+    it("passes through compact server-generated relative labels", () => {
+      expect(formatTimeAgo("Now")).toBe("Now");
+      expect(formatTimeAgo("15h")).toBe("15h");
+      expect(formatTimeAgo("2w")).toBe("2w");
+    });
+
     it("returns correct days ago", () => {
       const now = new Date("2026-01-05T12:00:00Z");
       vi.setSystemTime(now);
@@ -136,6 +142,9 @@ describe("time utilities", () => {
 
     it("correctly parses weeks and months", () => {
       expect(parseTimeAgoValue("1w ago")).toBe(10080);
+      expect(parseTimeAgoValue("1w")).toBe(10080);
+      expect(parseTimeAgoValue("15h")).toBe(900);
+      expect(parseTimeAgoValue("Now")).toBe(0);
       expect(parseTimeAgoValue("2mo ago")).toBe(86400);
     });
 
