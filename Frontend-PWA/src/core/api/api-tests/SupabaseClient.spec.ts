@@ -28,6 +28,7 @@ const mockFrom = {
 const mockClient = {
   rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
   from: vi.fn(() => mockFrom),
+  functions: { invoke: vi.fn().mockResolvedValue({ data: null, error: null }) },
 };
 (mockClient as any).schema = vi.fn(() => mockClient);
 
@@ -52,6 +53,7 @@ describe("SupabaseClient", () => {
     vi.clearAllMocks();
     // vi.clearAllMocks() wipes mock implementations; restore a safe default.
     mockClient.rpc.mockResolvedValue({ data: null, error: null });
+    mockClient.functions.invoke.mockResolvedValue({ data: null, error: null });
 
     // Reset env vars
     vi.stubEnv('VITE_SUPABASE_URL', 'https://xyz.supabase.co');
@@ -145,23 +147,29 @@ describe("SupabaseClient", () => {
   });
 
   describe("Utilities", () => {
-    it("ping returns success when RPC succeeds", async () => {
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: 'Pong', error: null });
+    it("ping returns success with the backend version when the Edge Function succeeds", async () => {
+      vi.mocked(mockClient.functions.invoke).mockResolvedValue({
+        data: { success: true, version: '14.45.7' },
+        error: null,
+      });
 
       const result = await SupabaseClient.ping();
-      expect(result).toEqual({ status: 'success', message: 'Pong' });
-      expect(mockClient.rpc).toHaveBeenCalledWith('ping');
+      expect(result).toEqual({ status: 'success', message: 'Pong', version: '14.45.7' });
+      expect(mockClient.functions.invoke).toHaveBeenCalledWith('ping', expect.objectContaining({ body: {} }));
     });
 
-    it("ping returns error when RPC fails", async () => {
-      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: 'RPC Error' } } as any);
+    it("ping returns error when the Edge Function fails", async () => {
+      vi.mocked(mockClient.functions.invoke).mockResolvedValue({
+        data: null,
+        error: { message: 'Function Error' },
+      } as any);
 
       const result = await SupabaseClient.ping();
-      expect(result).toEqual({ status: 'error', message: 'RPC Error' });
+      expect(result).toEqual({ status: 'error', message: 'Function Error' });
     });
 
     it("ping catches and returns exceptions", async () => {
-      vi.mocked(mockClient.rpc).mockRejectedValue(new Error("Unexpected Crash"));
+      vi.mocked(mockClient.functions.invoke).mockRejectedValue(new Error("Unexpected Crash"));
 
       const result = await SupabaseClient.ping();
       expect(result.status).toBe('error');

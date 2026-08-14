@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.45.8",
+  "version": "14.45.9",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -43,7 +43,10 @@
     "pnpm": ">=10.0.0"
   },
   "packageManager": "pnpm@10.32.1",
-  "workspaces": ["Backend", "Frontend-PWA"],
+  "workspaces": [
+    "Backend",
+    "Frontend-PWA"
+  ],
   "catalogs": {
     "default": {
       "@ast-grep/cli": "^0.45.1",

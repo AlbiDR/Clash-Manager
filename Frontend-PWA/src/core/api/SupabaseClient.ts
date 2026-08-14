@@ -107,11 +107,17 @@ export function getApiUrl(): string {
 export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
   try {
     const supabase = createSupabaseClient();
-    let pingRequest = supabase.rpc('ping');
-    if (options?.signal) pingRequest = pingRequest.abortSignal(options.signal);
-    const { error: pingRpcError } = await pingRequest;
-    if (pingRpcError) return { status: 'error', message: pingRpcError.message };
-    return { status: 'success', message: 'Pong' };
+    // [DECISION LOG] Invokes the `ping` Edge Function rather than the `features.ping()`
+    // Postgres RPC: the RPC returns a bare 'pong' string with no version, so the
+    // Settings panel's "Backend v..." readout could never show anything but its "0.0"
+    // fallback. The Edge Function runs through the shared clinicalServe protocol, whose
+    // success envelope already carries a version string kept in sync with every release.
+    const { data, error: pingError } = await supabase.functions.invoke('ping', {
+      body: {},
+      ...(options?.signal ? { signal: options.signal } : {}),
+    });
+    if (pingError) return { status: 'error', message: pingError.message };
+    return { status: 'success', message: 'Pong', version: data?.version };
   } catch (pingHandshakeError) {
     return { status: 'error', message: String(pingHandshakeError) };
   }
