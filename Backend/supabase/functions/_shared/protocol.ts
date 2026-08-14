@@ -433,7 +433,15 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             headers: {
                 ...resolveCorsHeaders(req, corsRestricted),
                 "Access-Control-Allow-Methods": "POST, OPTIONS",
-                "Access-Control-Allow-Headers": "authorization, content-type",
+                // [FIX] The frontend's shared Supabase fetch wrapper (fetchSupabaseFresh in
+                // SupabaseClient.ts) unconditionally adds Cache-Control/Pragma to every
+                // request, and the supabase-js client itself adds apikey/x-client-info to
+                // every functions.invoke call. This allow-list omitted all four, so the
+                // browser's CORS preflight for `ping` (the only Edge Function the frontend
+                // calls via functions.invoke rather than the permissive PostgREST `.from`/
+                // `.rpc` path) was rejected outright before the request ever reached this
+                // handler - surfacing to the user as a permanent "No Network Connection".
+                "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info, cache-control, pragma",
             },
         });
     }
@@ -732,7 +740,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         return new Response(JSON.stringify({
             success: true,
-            version: '14.45.9',
+            version: '14.45.10',
             data: results,
             duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
             timestamp: Temporal.Now.instant().toString()

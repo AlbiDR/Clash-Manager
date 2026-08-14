@@ -213,6 +213,16 @@ async function bootstrap() {
       // Trigger data revalidation when the app regains focus, respecting the staleness threshold.
       registerVisibilityRefresh(() => {
         console.debug("[App] Visibility threshold reached: Triggering live data revalidation");
+        // [FIX] checkApiStatus's own retry chain gives up permanently after 5
+        // consecutive failures (see handleFailure in useApiState) and nothing else
+        // in the app ever calls it again - a backend outage that resolves after the
+        // hard-fail left the UI stuck reporting "No Network Connection" for the rest
+        // of the session even once the backend was reachable again. Re-arm the
+        // handshake here so a focus regain (the same signal already used to
+        // revalidate data) also gives connectivity another chance.
+        if (apiState.apiStatus.value === "offline") {
+          apiState.checkApiStatus();
+        }
         clashDataStore.refreshFromSupabase();
       });
 
@@ -224,6 +234,12 @@ async function bootstrap() {
       // showing the same in-memory snapshot indefinitely in a long-lived session.
       setInterval(() => {
         if (document.visibilityState === "visible") {
+          // [FIX] Same permanent-offline lockout as the visibility-refresh handler
+          // above, addressed for the case where the app is left open and
+          // foregrounded continuously rather than backgrounded and resumed.
+          if (apiState.apiStatus.value === "offline") {
+            apiState.checkApiStatus();
+          }
           clashDataStore.startBackgroundSync();
         }
       }, FOREGROUND_POLL_INTERVAL);
