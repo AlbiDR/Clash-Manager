@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-14] PR #1457 [Stage 12]: [Stage 12] Hybrid Shell UX and UI Auditor - TargetPicker.vue Modernization
+**Domain:** pipeline | **Commit:** 75c3e134 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1457)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/laboratory/components/TargetPicker.vue
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 12] Hybrid Shell UX and UI Auditor - TargetPicker.vue Modernization
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-14] PR #1456 [Stage 11]: Completed the daily Stage 11 WebView and Service Worker caching audit pass
 **Domain:** pipeline | **Commit:** 3a52eb5e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1456)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
