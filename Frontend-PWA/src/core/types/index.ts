@@ -36,6 +36,8 @@ export interface AndroidBridge {
   downloadApkFile(url: string, filename: string): void;
   /** Returns the installed native APK versionName, e.g. "14.43.4". */
   getAppVersionName?(): string;
+  /** Returns the installed native APK versionCode, e.g. 18500 for 14.45.0. */
+  getAppVersionCode?(): number;
   /** Returns the installed native APK CI build number, e.g. 179. */
   getBuildNumber?(): number;
   /** Directs the native app to open a specific player profile in Clash Royale. */

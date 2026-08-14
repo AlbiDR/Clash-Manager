@@ -412,6 +412,21 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public int getAppVersionCode() {
+            try {
+                android.content.pm.PackageInfo packageInfo = MainActivity.this.getPackageManager()
+                    .getPackageInfo(MainActivity.this.getPackageName(), 0);
+                if (Build.VERSION.SDK_INT >= 28) {
+                    return (int) Math.min(packageInfo.getLongVersionCode(), Integer.MAX_VALUE);
+                }
+                return packageInfo.versionCode;
+            } catch (Exception e) {
+                android.util.Log.w("ClashManagerMain", "getAppVersionCode failed", e);
+                return 0;
+            }
+        }
+
+        @JavascriptInterface
         public int getBuildNumber() {
             try {
                 int buildNumberId = MainActivity.this.getResources()

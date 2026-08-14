@@ -92,6 +92,7 @@ const EXPECT = {
     "openPackageInstallSettings",
     "openAccessibilitySettings",
     "getAppVersionName",
+    "getAppVersionCode",
     "getBuildNumber",
     "openPlayerProfile",
     "openExternalUrl",

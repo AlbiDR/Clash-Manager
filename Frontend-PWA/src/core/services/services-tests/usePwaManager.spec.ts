@@ -378,7 +378,58 @@ describe("usePwaManager", () => {
 
       expect(mockDownloadApkFile).not.toHaveBeenCalled();
       expect(mockLocation.href).toBe("");
-      expect(mockToast.success).toHaveBeenCalledWith("You already have the latest APK");
+      expect(mockToast.success).toHaveBeenCalledWith("You already have this APK or newer");
+      expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+    });
+
+    it("should not download when release metadata points to an older APK versionCode", async () => {
+      const mockDownloadApkFile = vi.fn();
+      mockNativeBridge.value = {
+        downloadApkFile: mockDownloadApkFile,
+        getAppVersionCode: vi.fn(() => 18500),
+        getAppVersionName: vi.fn(() => "14.45.0"),
+        getBuildNumber: vi.fn(() => 0),
+      };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 176,
+          filename: "clashmanager-v14.43.2+176.apk",
+          version: "14.43.2",
+        }),
+      });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).not.toHaveBeenCalled();
+      expect(mockLocation.href).toBe("");
+      expect(mockToast.success).toHaveBeenCalledWith("You already have this APK or newer");
+      expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
+    });
+
+    it("should not download an older APK when only native versionName is available", async () => {
+      const mockDownloadApkFile = vi.fn();
+      mockNativeBridge.value = {
+        downloadApkFile: mockDownloadApkFile,
+        getAppVersionName: vi.fn(() => "14.45.0"),
+        getBuildNumber: vi.fn(() => 0),
+      };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 176,
+          filename: "clashmanager-v14.43.2+176.apk",
+          version: "14.43.2",
+        }),
+      });
+
+      const { downloadApk } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).not.toHaveBeenCalled();
+      expect(mockLocation.href).toBe("");
+      expect(mockToast.success).toHaveBeenCalledWith("You already have this APK or newer");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
     });
 

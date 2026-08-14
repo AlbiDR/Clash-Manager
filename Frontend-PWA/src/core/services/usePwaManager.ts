@@ -10,6 +10,7 @@ import { UI_STABILITY_DELAY } from "@core/config";
 import {
   isReleaseBuildNumber,
   isReleaseVersion,
+  parseReleaseApkFilename,
   resolveLatestApkRelease,
   type ApkReleaseDownload,
 } from "./apkResolver";
@@ -277,13 +278,44 @@ export function usePwaManager() {
     return isReleaseBuildNumber(buildNumber) ? buildNumber : undefined;
   }
 
+  function getNativeVersionCode(): number | undefined {
+    const versionCode = nativeBridge.value?.getAppVersionCode?.();
+    return isReleaseBuildNumber(versionCode) ? versionCode : undefined;
+  }
+
+  function getReleaseVersionCode(release: ApkReleaseDownload): number | undefined {
+    const parts = parseReleaseApkFilename(release.filename);
+    if (!parts) return undefined;
+    return parts.major * 1000 + parts.minor * 100 + parts.patch;
+  }
+
+  function compareReleaseVersions(firstVersion: string, secondVersion: string): number {
+    const first = firstVersion.split(".").map(Number);
+    const second = secondVersion.split(".").map(Number);
+    return (first[0] ?? 0) - (second[0] ?? 0) ||
+      (first[1] ?? 0) - (second[1] ?? 0) ||
+      (first[2] ?? 0) - (second[2] ?? 0);
+  }
+
   function isInstalledApkCurrent(release: ApkReleaseDownload): boolean {
-    const nativeBuildNumber = getNativeBuildNumber();
-    if (!nativeBuildNumber || !release.buildNumber) return false;
+    const nativeVersionCode = getNativeVersionCode();
+    const releaseVersionCode = getReleaseVersionCode(release);
+    if (nativeVersionCode && releaseVersionCode) {
+      if (nativeVersionCode > releaseVersionCode) return true;
+      if (nativeVersionCode < releaseVersionCode) return false;
+    }
 
     const nativeVersionName = getNativeVersionName();
-    return nativeBuildNumber >= release.buildNumber &&
-      (!release.version || !nativeVersionName || nativeVersionName === release.version);
+    if (nativeVersionName && release.version) {
+      const versionComparison = compareReleaseVersions(nativeVersionName, release.version);
+      if (versionComparison > 0) return true;
+      if (versionComparison < 0) return false;
+    }
+
+    const nativeBuildNumber = getNativeBuildNumber();
+    if (nativeBuildNumber && release.buildNumber) return nativeBuildNumber >= release.buildNumber;
+
+    return !!release.version && !!nativeVersionName && nativeVersionName === release.version;
   }
 
   /**
@@ -311,7 +343,7 @@ export function usePwaManager() {
       }
       if (isInstalledApkCurrent(release)) {
         toast.remove(activeToastId);
-        toast.success("You already have the latest APK");
+        toast.success("You already have this APK or newer");
         return;
       }
 

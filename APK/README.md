@@ -41,6 +41,7 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `canRequestPackageInstalls()` | boolean | Whether Android allows this app to request user-confirmed APK installs. |
 | `openPackageInstallSettings()` | void | Opens the per-app Android screen for allowing APK install requests. |
 | `openAccessibilitySettings()` | void | Opens the system accessibility settings. |
+| `getAppVersionName()` / `getAppVersionCode()` / `getBuildNumber()` | string / number / number | Reports installed APK identity so updater checks never hand Android a downgrade. |
 | `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
 | `startBlitz(tagsJson)` | void | Starts a Blitz sequence for the given player tags. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
