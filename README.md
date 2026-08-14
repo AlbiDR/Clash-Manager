@@ -5,7 +5,7 @@
 
   <p><strong>Professional recruitment and performance analytics for Clash Royale clan leaders.</strong></p>
 
-  <p>Stop guessing who to keep and who to recruit. Clash Manager scores your whole roster, scouts elite free agents across the game, plans every card upgrade, and sends clan invites straight into Clash Royale, all from one installable app.</p>
+  <p>Stop guessing who to keep and who to recruit. Clash Manager scores your whole roster, scouts elite free players across the game, plans every card upgrade, and sends clan invites straight into Clash Royale, all from one installable app.</p>
 
   [![Live App](https://img.shields.io/badge/Live-albidr.github.io%2FClash--Manager-0061A4?style=flat-square&logo=pwa&logoColor=white)](https://albidr.github.io/Clash-Manager/)
   [![Client](https://img.shields.io/badge/Client-v14.45.0-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
