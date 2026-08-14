@@ -17,7 +17,7 @@ import {
   useShareTarget,
 } from "@core";
 import { useHaptics } from "@shared";
-import { onMounted, computed, watch, ref } from "vue";
+import { onMounted, computed, watch, ref, KeepAlive } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useIsDataLoading } from "vue-router/experimental";
 import { useHeadhunter } from "@features/headhunter";
@@ -146,7 +146,9 @@ onMounted(() => {
       <ErrorBoundary>
         <RouterView v-slot="{ Component }">
           <transition name="page" mode="out-in">
-            <component :is="Component" :key="currentRoute.fullPath" />
+            <KeepAlive>
+              <component :is="Component" :key="currentRoute.name" />
+            </KeepAlive>
           </transition>
         </RouterView>
       </ErrorBoundary>

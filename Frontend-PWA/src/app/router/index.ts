@@ -183,8 +183,13 @@ router.onError((error, to) => {
   ) {
     // [THREAT:] ChunkLoadError due to redeployed/purged files.
     // [DECISION LOG] Perform an absolute reload of the target path to fetch the fresh bundle manifest.
+    // [THREAT:] This router uses hash history - `to.fullPath` (e.g. "/roster") has no
+    // "#" prefix. Assigning it directly to `location.href` issues a real server request
+    // for that bare path, which doesn't exist on a static host and 404s. Rebuild the URL
+    // so the reload lands on the SPA entry point with the target route in the hash.
     console.warn("Chunk load error detected, reloading page...", error);
-    window.location.href = to.fullPath || "/";
+    const targetPath = to.fullPath || "/";
+    window.location.href = `${window.location.pathname}${window.location.search}#${targetPath}`;
   } else {
     console.error("Unhandled router error:", error);
   }
