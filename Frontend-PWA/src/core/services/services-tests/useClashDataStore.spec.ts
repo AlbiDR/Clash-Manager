@@ -148,7 +148,15 @@ describe("useClashDataStore", () => {
       const store = useClashDataStore();
       await store.loadLocal();
 
-      expect(store.data).toBeNull();
+      expect(store.data).toEqual({
+        lb: [],
+        hh: [],
+        timestamp: 0,
+        blacklist: [],
+      });
+      expect(store.members).toEqual([]);
+      expect(store.recruits).toEqual([]);
+      expect(store.isHydrated).toBe(true);
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
