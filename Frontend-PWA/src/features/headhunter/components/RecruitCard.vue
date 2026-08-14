@@ -28,7 +28,8 @@ import {
   StatsGrid,
   StatisticItem,
   TagBadge,
-  LongevityBadge
+  LongevityBadge,
+  scoreTintStyle
 } from "@shared";
 import { computed } from "vue";
 import type { Recruit, ConsoleCardMetadata } from "@core/types";
@@ -71,9 +72,8 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
       <LongevityBadge :time="timeAgo" />
       <TagBadge
         :id="props.recruit.id"
-        :style="{
-          background: `color-mix(in srgb, var(--sys-color-primary-container) ${props.recruit.potentialScore || 0}%, var(--sys-color-surface-container-highest))`
-        }"
+        class="score-tint"
+        :style="scoreTintStyle(props.recruit.potentialScore ?? 0)"
       />
     </template>
 

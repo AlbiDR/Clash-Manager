@@ -78,3 +78,4 @@ export { useVoyageActions } from "./composables/useVoyageActions";
 
 // Utilities
 export { formatRole } from "./utils/game";
+export { scoreTintStyle } from "./utils/scoreTint";

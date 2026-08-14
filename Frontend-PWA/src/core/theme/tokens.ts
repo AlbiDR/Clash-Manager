@@ -39,6 +39,16 @@ export interface ThemeTokens {
     warningContainer: string;
     onWarningContainer: string;
 
+    // Data-viz scale: dedicated fill tokens for continuous score gradients
+    // (PeS/PoS). M3's "main" roles are dark/vivid in light mode but pale in
+    // dark mode (they're tuned for on-dark text, not backgrounds), while
+    // "container" roles invert that. Aliasing the theme-appropriate role per
+    // scheme keeps every stop legible under a single fixed onScore ink.
+    scoreLow: string;
+    scoreMid: string;
+    scoreHigh: string;
+    onScore: string;
+
     background: string;
     surface: string;
     onSurface: string;
@@ -102,6 +112,12 @@ export const lightTokens: ThemeTokens = {
     onWarning: '#ffffff',
     warningContainer: '#FFDEA8',
     onWarningContainer: '#261A00',
+
+    // Light scheme fill = the dark/vivid "main" role (mirrors error/warning/success).
+    scoreLow: '#ba1a1a',
+    scoreMid: '#7D5700',
+    scoreHigh: '#145218',
+    onScore: '#ffffff',
 
     background: '#fdfcff',
     surface: '#fdfcff',
@@ -167,6 +183,12 @@ export const darkTokens: ThemeTokens = {
     onWarning: '#401A00',
     warningContainer: '#5A3600',
     onWarningContainer: '#FFDEA8',
+
+    // Dark scheme fill = the dark/vivid "container" role (main is pale here, meant for on-dark text).
+    scoreLow: '#93000a',
+    scoreMid: '#5A3600',
+    scoreHigh: '#005313',
+    onScore: '#ffffff',
 
     background: '#0b0e14',
     surface: '#0b0e14',

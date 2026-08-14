@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import Icon from "./Icon.vue";
 import { useCardMechanics } from "../composables/useCardMechanics";
+import { scoreTintStyle } from "../utils/scoreTint";
 
 const props = defineProps<{
   id: string;
@@ -63,7 +64,8 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
         <div class="score-section" @click.stop="handleScoreClick">
           <div
             class="stat-pod hit-target"
-            :style="props.score !== undefined ? { '--score-pct': `${props.score}%` } : {}"
+            :class="{ 'score-tint': props.score !== undefined }"
+            :style="scoreTintStyle(props.score)"
           >
             <slot name="score-section"></slot>
           </div>
@@ -226,16 +228,6 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
   position: relative;
   width: var(--sys-space-48);
   height: var(--sys-space-48);
-  /* [LOGIC] SEMANTIC CONTAINER SCALING:
-     Using primary-container ensures mathematical contrast 
-     coherence across themes:
-     - Dark Mode: Surface -> Deep Blue (Light text remains legible)
-     - Light Mode: Surface -> Pale Blue (Dark text remains legible) */
-  background: color-mix(
-    in srgb,
-    var(--sys-color-primary-container) var(--score-pct, 0%),
-    var(--sys-color-surface-container-highest)
-  );
   background-image: radial-gradient(
     circle at 20% 20%,
     rgba(255, 255, 255, 0.05) 0%,
@@ -256,12 +248,31 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
   z-index: 10;
 }
 
+/* Default (no score): plain neutral fill. Written as :not(.score-tint)
+   rather than a plain .stat-pod rule so it never competes on specificity
+   with the global .score-tint fill below — Vue's scoped-style attribute
+   selector would otherwise outrank a same-specificity global class
+   regardless of source order. */
+.stat-pod:not(.score-tint) {
+  background: var(--sys-color-surface-container-highest);
+}
+
 /* [UI] UNIFORM COHERENCE (Semantic Contrast) */
 .stat-pod :deep(.stat-score) {
   color: var(--sys-color-on-surface) !important;
   opacity: 0.95;
   /* Clean elevation without sticker-effect */
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Tinted stat-pods fill with a dark/vivid score-* tone (see components.ts),
+   so the on-surface ink above stops being legible; onScore is chosen per
+   theme to stay high-contrast against every stop of the gradient.
+   Scoped to :not(.selected) so it can never out-specificity the selected
+   card's own on-primary-container text override above. */
+.card:not(.selected) .stat-pod.score-tint :deep(.stat-score) {
+  color: var(--sys-color-on-score) !important;
+  opacity: 1;
 }
 
 .card-body {

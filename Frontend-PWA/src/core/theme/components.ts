@@ -119,6 +119,35 @@ a { text-decoration: underline; color: inherit; }
   text-transform: uppercase;
 }
 
+/* =========================================
+   SCORE TINT SCALE (Data-Driven Gradient)
+   ---------------------------------------------------------------------------
+   Two-segment OKLCH interpolation across dedicated score-low/mid/high
+   tokens, driven by the unitless --score-raw custom property (0-100) set by
+   shared/utils/scoreTint.ts. Distinct hues per segment keep every point of
+   the 0-100 range visually distinguishable; blending two adjacent M3
+   container tones (the old approach) reads as visually flat because
+   container roles are deliberately low-chroma. Only applied via this class
+   so score-less consumers keep their default surface fill.
+   ========================================= */
+.score-tint {
+  background: color-mix(
+    in oklch,
+    var(--sys-color-score-high) clamp(0%, calc((var(--score-raw, 0) - 50) * 2%), 100%),
+    color-mix(
+      in oklch,
+      var(--sys-color-score-mid) clamp(0%, calc(var(--score-raw, 0) * 2%), 100%),
+      var(--sys-color-score-low)
+    )
+  );
+}
+/* Every score-tint fill is dark/vivid by construction (see tokens.ts), so
+   any text painted directly on it needs the onScore ink instead of whatever
+   the host element normally uses (e.g. .badge's on-surface). */
+.score-tint.badge {
+  color: var(--sys-color-on-score);
+}
+
 .stat-score {
   font-size: var(--sys-typescale-score);
   font-weight: 950;

@@ -16,6 +16,12 @@ describe('Tokens Module', () => {
 
       // Another camelCase color
       expect(vars['--sys-color-surface-container-highest']).toBe(lightTokens.color.surfaceContainerHighest);
+
+      // Score-tint scale (consumed by shared/utils/scoreTint.ts + .score-tint)
+      expect(vars['--sys-color-score-low']).toBe(lightTokens.color.scoreLow);
+      expect(vars['--sys-color-score-mid']).toBe(lightTokens.color.scoreMid);
+      expect(vars['--sys-color-score-high']).toBe(lightTokens.color.scoreHigh);
+      expect(vars['--sys-color-on-score']).toBe(lightTokens.color.onScore);
     });
 
     it('should correctly map elevation properties', () => {

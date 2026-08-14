@@ -88,7 +88,15 @@ describe("BaseCard.vue", () => {
     const score = 85;
     const wrapper = mountBaseCard({ score });
     const statPod = wrapper.find(".stat-pod");
-    expect(statPod.attributes("style")).toContain("--score-pct: 85%");
+    expect(statPod.classes()).toContain("score-tint");
+    expect(statPod.attributes("style")).toContain("--score-raw: 85");
+  });
+
+  it("omits the score-tint class and style when no score is given", () => {
+    const wrapper = mountBaseCard({});
+    const statPod = wrapper.find(".stat-pod");
+    expect(statPod.classes()).not.toContain("score-tint");
+    expect(statPod.attributes("style") ?? "").not.toContain("--score-raw");
   });
 
   describe("Interactions", () => {
