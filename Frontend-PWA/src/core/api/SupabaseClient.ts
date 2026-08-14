@@ -48,28 +48,31 @@ export const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
 export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 /**
- * [FIX] Normalizes through `new Request(input, init)` first instead of manually
- * merging `input`'s headers with `init.headers`. The manual merge silently dropped
- * the `Authorization` header supabase-js's FunctionsClient sets when `input` arrived
- * as a `Request` instance: passing a separate `headers` object alongside a `Request`
- * `input` to `fetch()` is exactly the ambiguous case the Fetch spec's Request
- * constructor resolves inconsistently across engines. Building a single canonical
- * `Request` up front guarantees every header from both `input` and `init` is present
- * before we layer the two cache-busting headers on top. Its absence meant every
- * `ping` edge function call (the only caller using `functions.invoke`, which requires
- * `Authorization`) came back 401 despite `apikey` still being present - REST calls via
- * `.from()`/`.rpc()` were unaffected since PostgREST tolerates an apikey-only request.
+ * [FIX] Computes the merged headers via `new Request(input, init).headers` instead
+ * of manually copying `input`'s headers and then `init`'s on top. The manual merge
+ * silently dropped the `Authorization` header supabase-js's FunctionsClient sets
+ * when `input` arrived as a `Request` instance: reading a `Request`'s `.headers`
+ * directly does not reliably include every header it was constructed with, but
+ * building a fresh `Request(input, init)` forces the spec's own (correct) merge
+ * algorithm to run. Its absence meant every `ping` edge function call (the only
+ * caller using `functions.invoke`, which requires `Authorization`) came back 401
+ * despite `apikey` still being present - REST calls via `.from()`/`.rpc()` were
+ * unaffected since PostgREST tolerates an apikey-only request. `input` itself is
+ * still what gets fetched, unchanged, so callers relying on the original url/Request
+ * as the `fetch()` argument see no behavior difference.
  */
 async function fetchSupabaseFresh(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> {
-  const request = new Request(input, init);
-  const headers = new Headers(request.headers);
+  // Only used to obtain a spec-correct merge of input's and init's headers;
+  // the original `input` (not this intermediate Request) is still what gets fetched.
+  const headers = new Headers(new Request(input, init).headers);
   headers.set("Cache-Control", "no-cache");
   headers.set("Pragma", "no-cache");
 
-  return fetch(request, {
+  return fetch(input, {
+    ...init,
     cache: "no-store",
     headers,
   });
