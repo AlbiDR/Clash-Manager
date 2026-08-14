@@ -305,25 +305,29 @@ export function usePwaManager() {
       (first[2] ?? 0) - (second[2] ?? 0);
   }
 
-  function isInstalledApkCurrent(release: ApkReleaseDownload): boolean {
+  function getInstalledReleaseComparison(release: ApkReleaseDownload): number | undefined {
     const nativeVersionCode = getNativeVersionCode();
     const releaseVersionCode = getReleaseVersionCode(release);
     if (nativeVersionCode && releaseVersionCode) {
-      if (nativeVersionCode > releaseVersionCode) return true;
-      if (nativeVersionCode < releaseVersionCode) return false;
+      return nativeVersionCode - releaseVersionCode;
     }
 
     const nativeVersionName = getNativeVersionName();
     if (nativeVersionName && release.version) {
       const versionComparison = compareReleaseVersions(nativeVersionName, release.version);
-      if (versionComparison > 0) return true;
-      if (versionComparison < 0) return false;
+      if (versionComparison !== 0) return versionComparison;
     }
 
     const nativeBuildNumber = getNativeBuildNumber();
-    if (nativeBuildNumber && release.buildNumber) return nativeBuildNumber >= release.buildNumber;
+    if (nativeBuildNumber && release.buildNumber) return nativeBuildNumber - release.buildNumber;
 
-    return !!release.version && !!nativeVersionName && nativeVersionName === release.version;
+    if (nativeVersionName && release.version && nativeVersionName === release.version) return 0;
+    return undefined;
+  }
+
+  function isInstalledApkCurrent(release: ApkReleaseDownload): boolean {
+    const comparison = getInstalledReleaseComparison(release);
+    return comparison !== undefined && comparison >= 0;
   }
 
   function getReleaseVersionLabel(release: ApkReleaseDownload | undefined): string {
@@ -349,7 +353,12 @@ export function usePwaManager() {
     return `${versionName ? `v${versionName}` : "Native APK"} (${detail})`;
   });
 
-  const latestApkLabel = computed(() => getReleaseVersionLabel(latestApkRelease.value));
+  const latestApkLabel = computed(() => {
+    const release = latestApkRelease.value;
+    if (!release) return getReleaseVersionLabel(release);
+    const comparison = getInstalledReleaseComparison(release);
+    return comparison !== undefined && comparison > 0 ? "Installed is newer" : getReleaseVersionLabel(release);
+  });
   const apkArtifactLabel = computed(() => {
     const release = latestApkRelease.value;
     if (!release) return "No APK metadata loaded";
@@ -373,8 +382,11 @@ export function usePwaManager() {
     }
 
     if (isInstalledApkCurrent(release)) {
+      const comparison = getInstalledReleaseComparison(release);
       apkUpdateState.value = "current";
-      apkUpdateMessage.value = "Installed APK is current or newer";
+      apkUpdateMessage.value = comparison !== undefined && comparison > 0
+        ? "Installed APK is newer than published metadata"
+        : "Installed APK is current";
       return;
     }
 
@@ -422,8 +434,11 @@ export function usePwaManager() {
         return;
       }
       if (isInstalledApkCurrent(release)) {
+        const comparison = getInstalledReleaseComparison(release);
         apkUpdateState.value = "current";
-        apkUpdateMessage.value = "Installed APK is current or newer";
+        apkUpdateMessage.value = comparison !== undefined && comparison > 0
+          ? "Installed APK is newer than published metadata"
+          : "Installed APK is current";
         toast.remove(activeToastId);
         toast.success("You already have this APK or newer");
         return;

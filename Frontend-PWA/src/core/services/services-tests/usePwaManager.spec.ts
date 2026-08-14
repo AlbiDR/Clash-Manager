@@ -437,11 +437,13 @@ describe("usePwaManager", () => {
         }),
       });
 
-      const { downloadApk } = usePwaManager();
+      const { downloadApk, apkUpdateMessage, latestApkLabel } = usePwaManager();
       await downloadApk();
 
       expect(mockDownloadApkFile).not.toHaveBeenCalled();
       expect(mockLocation.href).toBe("");
+      expect(apkUpdateMessage.value).toBe("Installed APK is current");
+      expect(latestApkLabel.value).toBe("v14.43.4 (179)");
       expect(mockToast.success).toHaveBeenCalledWith("You already have this APK or newer");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
     });
@@ -463,11 +465,13 @@ describe("usePwaManager", () => {
         }),
       });
 
-      const { downloadApk } = usePwaManager();
+      const { downloadApk, apkUpdateMessage, latestApkLabel } = usePwaManager();
       await downloadApk();
 
       expect(mockDownloadApkFile).not.toHaveBeenCalled();
       expect(mockLocation.href).toBe("");
+      expect(apkUpdateMessage.value).toBe("Installed APK is newer than published metadata");
+      expect(latestApkLabel.value).toBe("Installed is newer");
       expect(mockToast.success).toHaveBeenCalledWith("You already have this APK or newer");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
     });

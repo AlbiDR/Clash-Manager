@@ -238,17 +238,6 @@ onMounted(() => {
   color: var(--sys-color-on-surface);
 }
 
-@media (max-width: 520px) {
-  .trouble-grid,
-  .trouble-grid.has-extra {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .apk-version-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .flex {
   display: flex;
 }
