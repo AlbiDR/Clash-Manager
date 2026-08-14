@@ -274,7 +274,11 @@ describe("usePwaManager", () => {
 
     it("should call downloadApkFile on native bridge when available", async () => {
       const mockDownloadApkFile = vi.fn();
-      mockNativeBridge.value = { downloadApkFile: mockDownloadApkFile, openExternalUrl: vi.fn() };
+      mockNativeBridge.value = {
+        canRequestPackageInstalls: vi.fn(() => true),
+        downloadApkFile: mockDownloadApkFile,
+        openExternalUrl: vi.fn(),
+      };
       (fetch as any).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -298,7 +302,11 @@ describe("usePwaManager", () => {
 
     it("should pass checksum metadata to the native APK downloader when available", async () => {
       const mockDownloadApkFile = vi.fn();
-      mockNativeBridge.value = { downloadApkFile: mockDownloadApkFile, openExternalUrl: vi.fn() };
+      mockNativeBridge.value = {
+        canRequestPackageInstalls: vi.fn(() => true),
+        downloadApkFile: mockDownloadApkFile,
+        openExternalUrl: vi.fn(),
+      };
       const sha256 = "a".repeat(64);
       (fetch as any).mockResolvedValue({
         ok: true,
@@ -348,7 +356,10 @@ describe("usePwaManager", () => {
 
     it("should fall back to openExternalUrl if downloadApkFile is absent from bridge", async () => {
       const mockOpenExternal = vi.fn();
-      mockNativeBridge.value = { openExternalUrl: mockOpenExternal };
+      mockNativeBridge.value = {
+        canRequestPackageInstalls: vi.fn(() => true),
+        openExternalUrl: mockOpenExternal,
+      };
       (fetch as any).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
@@ -366,6 +377,34 @@ describe("usePwaManager", () => {
       );
       expect(mockLocation.href).toBe("");
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should route old native shells through the browser for the bootstrap APK update", async () => {
+      const mockDownloadApkFile = vi.fn();
+      const mockOpenExternal = vi.fn();
+      mockNativeBridge.value = {
+        downloadApkFile: mockDownloadApkFile,
+        getAppVersionName: vi.fn(() => "14.43.0"),
+        openExternalUrl: mockOpenExternal,
+      };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 190,
+          filename: "clashmanager-v14.46.0+190.apk",
+          version: "14.46.0",
+        }),
+      });
+
+      const { downloadApk, apkUpdateMessage } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).not.toHaveBeenCalled();
+      expect(mockOpenExternal).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.46.0%2B190.apk"
+      );
+      expect(apkUpdateMessage.value).toBe("Browser download opened to update native shell");
+      expect(mockToast.info).toHaveBeenCalledWith("Install the APK from your browser to unlock native updater permissions");
     });
 
     it("should not navigate if both latest.json and contents lookup fail", async () => {

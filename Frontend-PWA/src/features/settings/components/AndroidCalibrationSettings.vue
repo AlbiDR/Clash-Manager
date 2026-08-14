@@ -24,6 +24,7 @@ const {
   isAccessibilityAllowed,
   isOverlayAllowed,
   isPackageInstallAllowed,
+  isPackageInstallSettingsSupported,
   inviteX,
   inviteY,
   closeX,
@@ -97,13 +98,16 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
       <button
         v-tactile
         class="permission-row"
-        :class="{ 'permission-row--granted': isPackageInstallAllowed }"
+        :class="{ 'permission-row--granted': isPackageInstallAllowed, 'permission-row--disabled': !isPackageInstallSettingsSupported }"
+        :disabled="!isPackageInstallSettingsSupported"
         @click="openPackageInstallSettings"
       >
         <span class="permission-dot" :class="isPackageInstallAllowed ? 'permission-dot--on' : 'permission-dot--off'" />
         <span class="permission-info">
           <span class="permission-label">APK Update Installs</span>
-          <span class="permission-status">{{ isPackageInstallAllowed ? 'Allowed' : 'Confirm in Android' }}</span>
+          <span class="permission-status">
+            {{ isPackageInstallAllowed ? 'Allowed' : isPackageInstallSettingsSupported ? 'Confirm in Android' : 'Update shell first' }}
+          </span>
         </span>
         <svg class="permission-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />
@@ -186,6 +190,11 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
 .permission-row--granted {
   border-color: var(--sys-color-primary);
   background: color-mix(in srgb, var(--sys-color-primary) 6%, var(--sys-color-surface-container));
+}
+
+.permission-row--disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .permission-dot {

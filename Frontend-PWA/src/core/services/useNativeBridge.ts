@@ -145,6 +145,7 @@ function init() {
  * - `isAccessibilityAllowed`: Reactive boolean reflecting Accessibility permission status.
  * - `isOverlayAllowed`: Reactive boolean reflecting Overlay (Draw Over Other Apps) permission status.
  * - `isPackageInstallAllowed`: Reactive boolean reflecting APK install request status.
+ * - `isPackageInstallSettingsSupported`: Whether the installed native shell can open APK install settings.
  * - `inviteX`: Reactive percentage (0-100) for the Blitz 'Invite' button X-coordinate.
  * - `inviteY`: Reactive percentage (0-100) for the Blitz 'Invite' button Y-coordinate.
  * - `closeX`: Reactive percentage (0-100) for the Blitz 'Close' button X-coordinate.
@@ -175,6 +176,11 @@ export function useNativeBridge() {
     return (window as WindowWithBridge).AndroidBridge;
   });
 
+  const isPackageInstallSettingsSupported = computed(() =>
+    typeof bridge.value?.canRequestPackageInstalls === "function" &&
+    typeof bridge.value?.openPackageInstallSettings === "function"
+  );
+
   /**
    * Deep-links the user to the Accessibility settings.
    */
@@ -201,12 +207,12 @@ export function useNativeBridge() {
   /**
    * Deep-links the user to the per-app package install permission settings.
    */
-  function openPackageInstallSettings() {
+  function openPackageInstallSettings(): boolean {
     if (bridge.value?.openPackageInstallSettings) {
       bridge.value.openPackageInstallSettings();
-    } else if (typeof window !== "undefined") {
-      window.location.href = "intent:#Intent;action=android.settings.MANAGE_UNKNOWN_APP_SOURCES;package=com.albidr.clashmanager;end";
+      return true;
     }
+    return false;
   }
 
   return {
@@ -215,6 +221,7 @@ export function useNativeBridge() {
     isAccessibilityAllowed,
     isOverlayAllowed,
     isPackageInstallAllowed,
+    isPackageInstallSettingsSupported,
     inviteX,
     inviteY,
     closeX,

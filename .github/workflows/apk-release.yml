@@ -183,6 +183,8 @@ jobs:
 
             mkdir -p APK/release
             cp "$RUNNER_TEMP/${FILENAME}" "APK/release/${FILENAME}"
+            APK_SIZE="$(wc -c < "APK/release/${FILENAME}" | tr -d ' ')"
+            APK_SHA256="$(sha256sum "APK/release/${FILENAME}" | awk '{print $1}')"
             git add "APK/release/${FILENAME}"
 
             # latest.json is the stable pointer to the one tracked versioned APK.
@@ -192,7 +194,12 @@ jobs:
           {
             "version": "${VERSION}",
             "buildNumber": ${BUILD_NUMBER},
-            "filename": "${FILENAME}"
+            "filename": "${FILENAME}",
+            "sizeBytes": ${APK_SIZE},
+            "sha256": "${APK_SHA256}",
+            "changelog": [
+              "Signed Android shell rebuilt from the latest native source."
+            ]
           }
           EOF
             git add APK/release/latest.json

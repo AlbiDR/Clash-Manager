@@ -384,6 +384,12 @@ export function usePwaManager() {
       return;
     }
 
+    if (nativeBridge.value && typeof nativeBridge.value.canRequestPackageInstalls !== "function") {
+      apkUpdateState.value = "blocked";
+      apkUpdateMessage.value = "Install-capable shell update required";
+      return;
+    }
+
     apkUpdateState.value = "available";
     apkUpdateMessage.value = `APK update ready: ${getReleaseVersionLabel(release)}`;
   }
@@ -430,6 +436,17 @@ export function usePwaManager() {
         toast.info("Allow APK updates in Android, then tap Download Update again");
         nativeBridge.value.openPackageInstallSettings?.();
         return;
+      }
+
+      if (nativeBridge.value && typeof nativeBridge.value.canRequestPackageInstalls !== "function") {
+        if (nativeBridge.value.openExternalUrl) {
+          nativeBridge.value.openExternalUrl(release.url);
+          toast.remove(activeToastId);
+          apkUpdateState.value = "blocked";
+          apkUpdateMessage.value = "Browser download opened to update native shell";
+          toast.info("Install the APK from your browser to unlock native updater permissions");
+          return;
+        }
       }
 
       if (nativeBridge.value?.downloadApkFile) {

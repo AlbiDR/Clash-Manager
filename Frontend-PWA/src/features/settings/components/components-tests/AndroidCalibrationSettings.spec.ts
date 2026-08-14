@@ -68,6 +68,18 @@ describe("AndroidCalibrationSettings.vue", () => {
     expect(statusLabels[2].text()).toBe("Confirm in Android");
   });
 
+  it("disables APK install settings when the installed shell is too old", async () => {
+    delete (mockBridge as any).openPackageInstallSettings;
+    const wrapper = mountComponent();
+    await wrapper.vm.$nextTick();
+
+    const rows = wrapper.findAll(".permission-row");
+    const apkRow = rows[2];
+    expect(apkRow.attributes("disabled")).toBeDefined();
+    expect(apkRow.text()).toContain("Update shell first");
+    (mockBridge as any).openPackageInstallSettings = vi.fn();
+  });
+
   it("shows 'Allowed' for all permissions when granted", async () => {
     mockBridge.isAccessibilityActive.mockReturnValue(true);
     mockBridge.hasOverlayPermission.mockReturnValue(true);
@@ -121,7 +133,7 @@ describe("AndroidCalibrationSettings.vue", () => {
     await wrapper.vm.$nextTick();
 
     const { openPackageInstallSettings } = (wrapper.vm as any);
-    openPackageInstallSettings();
+    expect(openPackageInstallSettings()).toBe(true);
 
     expect(mockBridge.openPackageInstallSettings).toHaveBeenCalledOnce();
   });

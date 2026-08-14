@@ -52,7 +52,13 @@ describe("useNativeBridge", () => {
   });
 
   it("polls permissions from the bridge", () => {
-    const { checkPermissions, isAccessibilityAllowed, isOverlayAllowed, isPackageInstallAllowed } = useNativeBridge();
+    const {
+      checkPermissions,
+      isAccessibilityAllowed,
+      isOverlayAllowed,
+      isPackageInstallAllowed,
+      isPackageInstallSettingsSupported,
+    } = useNativeBridge();
     checkPermissions();
     expect(mockBridge.isAccessibilityActive).toHaveBeenCalled();
     expect(mockBridge.hasOverlayPermission).toHaveBeenCalled();
@@ -60,6 +66,7 @@ describe("useNativeBridge", () => {
     expect(isAccessibilityAllowed.value).toBe(true);
     expect(isOverlayAllowed.value).toBe(false);
     expect(isPackageInstallAllowed.value).toBe(true);
+    expect(isPackageInstallSettingsSupported.value).toBe(true);
   });
 
   it("loads and parses coordinates", () => {
@@ -100,17 +107,18 @@ describe("useNativeBridge", () => {
 
   it("delegates package install settings to the bridge", () => {
     const { openPackageInstallSettings } = useNativeBridge();
-    openPackageInstallSettings();
+    expect(openPackageInstallSettings()).toBe(true);
     expect(mockBridge.openPackageInstallSettings).toHaveBeenCalled();
   });
 
-  it("falls back to intent URI for package install settings if bridge method is missing", () => {
+  it("does not emit a broken intent URI if package install settings are unsupported", () => {
     const bridgeWithoutMethod = { ...mockBridge };
     delete (bridgeWithoutMethod as any).openPackageInstallSettings;
     (window as any).AndroidBridge = bridgeWithoutMethod;
 
-    const { openPackageInstallSettings } = useNativeBridge();
-    openPackageInstallSettings();
-    expect(window.location.href).toContain("intent:#Intent;action=android.settings.MANAGE_UNKNOWN_APP_SOURCES");
+    const { openPackageInstallSettings, isPackageInstallSettingsSupported } = useNativeBridge();
+    expect(isPackageInstallSettingsSupported.value).toBe(false);
+    expect(openPackageInstallSettings()).toBe(false);
+    expect(window.location.href).toBe("");
   });
 });
