@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-14] PR #1449 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
+**Domain:** pipeline | **Commit:** 0777891d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1449)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/features/headhunter/composables/useRecruiter.ts
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 4] Optimization - Substrate Hygiene Engineer
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-14] PR #1448 [Stage 2]: [Stage 2] Verification - Logic Integrity Auditor
 **Domain:** pipeline | **Commit:** 830411b6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1448)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts
