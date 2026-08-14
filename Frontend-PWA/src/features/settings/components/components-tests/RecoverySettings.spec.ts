@@ -143,20 +143,19 @@ describe("RecoverySettings.vue", () => {
     expect(mockDownloadApk).toHaveBeenCalled();
   });
 
-  it("renders Download Update as a direct APK link when an update URL is resolved", async () => {
+  it("keeps Download Update on the native updater path when an update URL is resolved", async () => {
     mockIsNativeWrapper.value = true;
     mockApkDirectDownloadUrl.value = "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.45.0%2B191.apk";
 
     const wrapper = mountComponent();
     const link = wrapper.find("a.trouble-btn");
+    const btn = wrapper.findAll("button.trouble-btn").find(b => b.text().includes("Download Update"));
 
-    expect(link.exists()).toBe(true);
-    expect(link.text()).toContain("Download Update");
-    expect(link.attributes("href")).toBe(mockApkDirectDownloadUrl.value);
-    expect(link.attributes("target")).toBe("_blank");
+    expect(link.exists()).toBe(false);
+    expect(btn?.exists()).toBe(true);
 
-    await link.trigger("click");
-    expect(mockDownloadApk).not.toHaveBeenCalled();
+    await btn?.trigger("click");
+    expect(mockDownloadApk).toHaveBeenCalled();
   });
 
   it("shows and triggers native APK diagnostics", async () => {

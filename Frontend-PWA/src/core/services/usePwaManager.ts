@@ -25,7 +25,7 @@ type BeforeInstallPromptEvent = Event & {
 
 type ApkUpdateState = "idle" | "checking" | "available" | "current" | "blocked" | "mismatch" | "error";
 
-const MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD = 192;
+const MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD = 191;
 
 const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
 const isPwaInstallAvailable = ref(false);

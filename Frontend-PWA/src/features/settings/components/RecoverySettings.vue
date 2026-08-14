@@ -19,7 +19,6 @@ const {
   apkUpdateLastCheckedAt,
   installedApkLabel,
   latestApkLabel,
-  apkDirectDownloadUrl,
   apkArtifactLabel,
   apkFeedSourceLabel,
   apkChangelog,
@@ -59,19 +58,7 @@ onMounted(() => {
         <span>Purge Assets</span>
       </button>
 
-      <a
-        v-if="isNativeWrapper && apkDirectDownloadUrl"
-        class="trouble-btn"
-        :href="apkDirectDownloadUrl"
-        target="_blank"
-        rel="noopener"
-        v-tactile
-      >
-        <Icon name="download" size="24" />
-        <span>Download Update</span>
-      </a>
-
-      <button v-else-if="isNativeWrapper" type="button" class="trouble-btn" @click.stop.prevent="downloadApk" v-tactile>
+      <button v-if="isNativeWrapper" type="button" class="trouble-btn" @click.stop.prevent="downloadApk" v-tactile>
         <Icon name="download" size="24" />
         <span>Download Update</span>
       </button>
