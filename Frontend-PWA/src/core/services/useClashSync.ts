@@ -191,8 +191,6 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       return;
     }
 
-    if (!isOnline.value) return;
-
     loading.value = true;
     let syncFailed = false;
     try {
@@ -210,6 +208,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       await commitSyncResult(remoteDataValidation.output);
     } catch (supabaseRefreshError: unknown) {
       console.warn("[Sync] Supabase refresh failed:", supabaseRefreshError);
+      syncError.value = supabaseRefreshError instanceof Error
+        ? supabaseRefreshError.message
+        : "Sync failed";
       syncFailed = true;
     } finally {
       // Reset loading BEFORE startBackgroundSync to avoid premature reset

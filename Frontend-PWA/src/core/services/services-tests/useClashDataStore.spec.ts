@@ -320,14 +320,26 @@ describe("useClashDataStore", () => {
       expect(fetchRemote).toHaveBeenCalledTimes(2);
     });
 
-    it("should respect offline guard", async () => {
+    it("should bypass offline guard for manual refresh", async () => {
       mockConnectionStatus.isOnline.value = false;
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now(), blacklist: [] });
 
       const store = useClashDataStore();
       await store.refreshFromSupabase();
 
-      expect(fetchRemote).not.toHaveBeenCalled();
+      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
       mockConnectionStatus.isOnline.value = true;
+    });
+
+    it("should surface foreground refresh failure even when cached data exists", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("API Down"));
+
+      const store = useClashDataStore();
+      store.data = { lb: [], hh: [], timestamp: Date.now(), blacklist: [] };
+
+      await store.refreshFromSupabase();
+
+      expect(store.syncError).toBe("API Down");
     });
 
     it("should not start if already loading", async () => {

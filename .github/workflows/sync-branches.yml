@@ -151,6 +151,7 @@ jobs:
       - name: Normalise APK release slot (pre-merge)
         run: |
           git fetch origin
+          git pull --ff-only origin Beta
 
           # ----------------------------------------------------------------
           # A rename/rename conflict arises when both branches independently
@@ -199,6 +200,46 @@ jobs:
         run: |
           git fetch origin
 
+          normalise_nightly_apk() {
+            NIGHTLY_APK=$(git ls-tree origin/Nightly APK/release/ \
+              | awk '{print $4}' \
+              | grep 'clashmanager-v.*\.apk$')
+
+            if [ -z "$NIGHTLY_APK" ]; then
+              return
+            fi
+
+            NIGHTLY_BASENAME=$(basename "$NIGHTLY_APK")
+            git ls-files APK/release/ | grep 'clashmanager-v.*\.apk$' | while read -r OLD; do
+              OLD_BASENAME=$(basename "$OLD")
+              if [ "$OLD_BASENAME" != "$NIGHTLY_BASENAME" ]; then
+                git rm --cached --force "$OLD" 2>/dev/null || true
+                rm -f "$OLD"
+              fi
+            done
+
+            if [ ! -f "APK/release/$NIGHTLY_BASENAME" ]; then
+              git show "origin/Nightly:$NIGHTLY_APK" > "APK/release/$NIGHTLY_BASENAME"
+              git add "APK/release/$NIGHTLY_BASENAME"
+            fi
+            git rm -f APK/release/clashmanager-latest.apk 2>/dev/null || true
+            git show origin/Nightly:APK/release/latest.json > APK/release/latest.json
+            git add APK/release/latest.json
+
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(sync): pre-align APK release slot to Nightly before merge [skip ci]"
+            fi
+          }
+
+          merge_nightly() {
+            if [ "$DIVERGED" = "true" ]; then
+              echo "Diverged branches detected. Merging with conflict strategy: Nightly wins (-X theirs)."
+              git merge origin/Nightly -X theirs --no-edit
+            else
+              git merge origin/Nightly --no-edit
+            fi
+          }
+
           # ----------------------------------------------------------------
           # Robustness: If branches have diverged, use `-X theirs` to prefer
           # Nightly as the authoritative source. Nightly is the primary
@@ -206,14 +247,16 @@ jobs:
           # win over any out-of-band direct pushes to Beta.
           # ----------------------------------------------------------------
           DIVERGED="${{ needs.check-sync.outputs.nightly_beta_diverged }}"
-          if [ "$DIVERGED" = "true" ]; then
-            echo "Diverged branches detected. Merging with conflict strategy: Nightly wins (-X theirs)."
-            git merge origin/Nightly -X theirs --no-edit
-          else
-            git merge origin/Nightly --no-edit
-          fi
+          merge_nightly
 
-          git push origin Beta
+          if ! git push origin Beta; then
+            echo "::warning::Beta advanced during the Nightly sync. Rebuilding once from the latest remote tip."
+            git fetch origin
+            git reset --hard origin/Beta
+            normalise_nightly_apk
+            merge_nightly
+            git push origin Beta
+          fi
           echo "merged=true" >> $GITHUB_OUTPUT
 
       - name: "Air Gap Guard - AFTER (Beta + Nightly combined)"
