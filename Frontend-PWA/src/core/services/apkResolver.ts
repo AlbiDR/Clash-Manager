@@ -93,7 +93,14 @@ async function resolveApkReleaseFromContentsApi(): Promise<ApkReleaseDownload | 
     const contents = (await response.json()) as GitHubReleaseContent[];
     if (!Array.isArray(contents)) return undefined;
 
-    return selectNewestReleaseApk(contents);
+    const release = selectNewestReleaseApk(contents);
+    return release
+      ? {
+        ...release,
+        sourceName: "GitHub contents API",
+        sourceUrl: APK_RELEASE_CONTENTS_API_URL,
+      }
+      : undefined;
   } catch (contentsError: unknown) {
     console.warn("[PWA] APK contents fallback failed", contentsError);
     return undefined;
@@ -142,6 +149,8 @@ async function resolveApkReleaseFromMetadataUrl(
           filename: latestReleaseMetadata.filename,
           sha256: isSha256Digest(latestReleaseMetadata.sha256) ? latestReleaseMetadata.sha256.toLowerCase() : undefined,
           sizeBytes: isReleaseSizeBytes(latestReleaseMetadata.sizeBytes) ? latestReleaseMetadata.sizeBytes : undefined,
+          sourceName,
+          sourceUrl: metadataUrl,
           url: downloadUrl,
           version: isReleaseVersion(latestReleaseMetadata.version) ? latestReleaseMetadata.version : undefined,
         };
@@ -220,6 +229,8 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
       filename: apkResolutionCache.filename,
       sha256: apkResolutionCache.sha256,
       sizeBytes: apkResolutionCache.sizeBytes,
+      sourceName: apkResolutionCache.sourceName,
+      sourceUrl: apkResolutionCache.sourceUrl,
       url: apkResolutionCache.url,
       version: apkResolutionCache.version,
     };
@@ -235,6 +246,8 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
           filename: release.filename,
           sha256: release.sha256,
           sizeBytes: release.sizeBytes,
+          sourceName: release.sourceName,
+          sourceUrl: release.sourceUrl,
           url: release.url,
           version: release.version,
           expiresAt: Date.now() + APK_RESOLUTION_CACHE_TTL_MS,

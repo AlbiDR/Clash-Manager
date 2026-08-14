@@ -106,6 +106,14 @@ export type ApkResolutionCache = {
    */
   sizeBytes?: number;
   /**
+   * Human-readable endpoint family that produced the selected release metadata.
+   */
+  sourceName?: string;
+  /**
+   * Base endpoint URL that produced the selected release metadata.
+   */
+  sourceUrl?: string;
+  /**
    * The direct binary or fallback URL to fetch the APK.
    */
   url: string;
@@ -143,6 +151,14 @@ export type ApkReleaseDownload = {
    * Optional binary size in bytes.
    */
   sizeBytes?: number;
+  /**
+   * Human-readable endpoint family that produced the selected release metadata.
+   */
+  sourceName?: string;
+  /**
+   * Base endpoint URL that produced the selected release metadata.
+   */
+  sourceUrl?: string;
   /**
    * The validated secure URL pointing to the file.
    */

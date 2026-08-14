@@ -20,6 +20,7 @@ const {
   installedApkLabel,
   latestApkLabel,
   apkArtifactLabel,
+  apkFeedSourceLabel,
   apkChangelog,
   installPwa,
   isPwaStandalone,
@@ -33,6 +34,7 @@ const apkCheckedAtLabel = computed(() => {
   if (!apkUpdateLastCheckedAt.value) return "Not checked";
   return new Date(apkUpdateLastCheckedAt.value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 });
+const shouldShowApkFeedSource = computed(() => apkUpdateState.value === "mismatch" && apkFeedSourceLabel.value.length > 0);
 
 onMounted(() => {
   if (isNativeWrapper.value) void checkApkUpdate();
@@ -94,6 +96,7 @@ onMounted(() => {
         </span>
       </div>
       <p class="apk-artifact">{{ apkArtifactLabel }}</p>
+      <p v-if="shouldShowApkFeedSource" class="apk-feed-source">{{ apkFeedSourceLabel }}</p>
       <ul v-if="apkChangelog.length" class="apk-changelog">
         <li v-for="entry in apkChangelog.slice(0, 3)" :key="entry">{{ entry }}</li>
       </ul>
@@ -226,8 +229,17 @@ onMounted(() => {
   text-transform: uppercase;
 }
 
-.apk-artifact {
+.apk-artifact,
+.apk-feed-source {
   margin: 0;
+}
+
+.apk-feed-source {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--sys-color-error);
 }
 
 .apk-changelog {

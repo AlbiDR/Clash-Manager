@@ -35,6 +35,7 @@ describe("RecoverySettings.vue", () => {
   const mockInstalledApkLabel = ref("v14.45.0 (code 18500)");
   const mockLatestApkLabel = ref("Not checked");
   const mockApkArtifactLabel = ref("No APK metadata loaded");
+  const mockApkFeedSourceLabel = ref("");
   const mockApkChangelog = ref<string[]>([]);
 
   beforeEach(() => {
@@ -49,6 +50,7 @@ describe("RecoverySettings.vue", () => {
     mockInstalledApkLabel.value = "v14.45.0 (code 18500)";
     mockLatestApkLabel.value = "Not checked";
     mockApkArtifactLabel.value = "No APK metadata loaded";
+    mockApkFeedSourceLabel.value = "";
     mockApkChangelog.value = [];
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
@@ -62,6 +64,7 @@ describe("RecoverySettings.vue", () => {
       installedApkLabel: mockInstalledApkLabel,
       latestApkLabel: mockLatestApkLabel,
       apkArtifactLabel: mockApkArtifactLabel,
+      apkFeedSourceLabel: mockApkFeedSourceLabel,
       apkChangelog: mockApkChangelog,
       installPwa: mockInstallPwa,
       isPwaInstallAvailable: mockIsPwaInstallAvailable,
@@ -154,10 +157,24 @@ describe("RecoverySettings.vue", () => {
     expect(wrapper.text()).toContain("Published");
     expect(wrapper.text()).toContain("v14.46.0 (190)");
     expect(wrapper.text()).toContain("Native installer polish");
+    expect(wrapper.find(".apk-feed-source").exists()).toBe(false);
 
     const checkBtn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Check APK"));
     await checkBtn?.trigger("click");
     expect(mockCheckApkUpdate).toHaveBeenCalled();
+  });
+
+  it("shows APK feed source only when the published metadata mismatches the installed shell", () => {
+    mockIsNativeWrapper.value = true;
+    mockApkUpdateState.value = "mismatch";
+    mockApkUpdateMessage.value = "Release metadata mismatch";
+    mockLatestApkLabel.value = "v14.43.2 (175)";
+    mockApkFeedSourceLabel.value = "Remote latest.json: https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/latest.json";
+
+    const wrapper = mountComponent();
+
+    expect(wrapper.find(".apk-feed-source").exists()).toBe(true);
+    expect(wrapper.text()).toContain("Remote latest.json");
   });
 
   it("shows and triggers the PWA install action for web browser sessions", async () => {

@@ -365,6 +365,11 @@ export function usePwaManager() {
     const checksum = release.sha256 ? `SHA-256 ${release.sha256.slice(0, 8)}...` : "checksum unavailable";
     return `${formatApkSize(release.sizeBytes)} · ${checksum}`;
   });
+  const apkFeedSourceLabel = computed(() => {
+    const release = latestApkRelease.value;
+    if (!release?.sourceName) return "";
+    return release.sourceUrl ? `${release.sourceName}: ${release.sourceUrl}` : release.sourceName;
+  });
   const apkChangelog = computed(() => latestApkRelease.value?.changelog ?? []);
 
   async function checkApkUpdate(): Promise<void> {
@@ -387,6 +392,8 @@ export function usePwaManager() {
       console.warn("[PWA] APK update feed is older than installed shell", {
         installed: installedApkLabel.value,
         published: getReleaseVersionLabel(release),
+        sourceName: release.sourceName,
+        sourceUrl: release.sourceUrl,
       });
       return;
     }
@@ -446,6 +453,8 @@ export function usePwaManager() {
         console.warn("[PWA] APK update download blocked because feed is older than installed shell", {
           installed: installedApkLabel.value,
           published: getReleaseVersionLabel(release),
+          sourceName: release.sourceName,
+          sourceUrl: release.sourceUrl,
         });
         toast.remove(activeToastId);
         toast.error("Update feed is stale; download blocked");
@@ -657,6 +666,7 @@ export function usePwaManager() {
     installedApkLabel,
     latestApkLabel,
     apkArtifactLabel,
+    apkFeedSourceLabel,
     apkChangelog,
     installPwa,
     isPwaInstallAvailable,

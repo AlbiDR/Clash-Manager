@@ -475,10 +475,12 @@ describe("usePwaManager", () => {
       expect(latestApkLabel.value).toBe("v14.43.2 (176)");
       expect(warnSpy).toHaveBeenCalledWith(
         "[PWA] APK update download blocked because feed is older than installed shell",
-        {
+        expect.objectContaining({
           installed: "v14.45.0 (code 18500)",
           published: "v14.43.2 (176)",
-        },
+          sourceName: "Remote latest.json",
+          sourceUrl: expect.stringContaining("/APK/release/latest.json"),
+        }),
       );
       expect(mockToast.error).toHaveBeenCalledWith("Update feed is stale; download blocked");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
@@ -512,10 +514,12 @@ describe("usePwaManager", () => {
       expect(latestApkLabel.value).toBe("v14.43.2 (176)");
       expect(warnSpy).toHaveBeenCalledWith(
         "[PWA] APK update download blocked because feed is older than installed shell",
-        {
+        expect.objectContaining({
           installed: "v14.45.0 (native)",
           published: "v14.43.2 (176)",
-        },
+          sourceName: "Remote latest.json",
+          sourceUrl: expect.stringContaining("/APK/release/latest.json"),
+        }),
       );
       expect(mockToast.error).toHaveBeenCalledWith("Update feed is stale; download blocked");
       expect(mockToast.remove).toHaveBeenCalledWith("toast-id");
