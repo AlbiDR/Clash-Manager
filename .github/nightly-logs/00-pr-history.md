@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-14] PR #1455 [Stage 10]: Completed APK and PWA Wrapper Integrity Audit (Stage 10)
+**Domain:** pipeline | **Commit:** 675f8051 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1455)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** Completed APK and PWA Wrapper Integrity Audit (Stage 10)
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-14] PR #1454 [Stage 9]: Stage 9 structural audit CLEAN
 **Domain:** pipeline | **Commit:** e9391a9b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1454)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
