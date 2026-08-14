@@ -311,7 +311,8 @@ export function usePwaManager() {
     const nativeVersionCode = getNativeVersionCode();
     const releaseVersionCode = getReleaseVersionCode(release);
     if (nativeVersionCode && releaseVersionCode) {
-      return nativeVersionCode - releaseVersionCode;
+      const versionCodeComparison = nativeVersionCode - releaseVersionCode;
+      if (versionCodeComparison !== 0) return versionCodeComparison;
     }
 
     const nativeVersionName = getNativeVersionName();

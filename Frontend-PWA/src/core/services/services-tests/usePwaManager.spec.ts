@@ -357,6 +357,36 @@ describe("usePwaManager", () => {
       );
     });
 
+    it("should download when the versionCode matches but the published buildNumber is newer", async () => {
+      const mockDownloadApkFile = vi.fn();
+      mockNativeBridge.value = {
+        canRequestPackageInstalls: vi.fn(() => true),
+        downloadApkFile: mockDownloadApkFile,
+        getAppVersionCode: vi.fn(() => 18500),
+        getAppVersionName: vi.fn(() => "14.45.0"),
+        getBuildNumber: vi.fn(() => 190),
+      };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 191,
+          filename: "clashmanager-v14.45.0+191.apk",
+          version: "14.45.0",
+        }),
+      });
+
+      const { downloadApk, apkUpdateMessage } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.45.0%2B191.apk",
+        "clashmanager-v14.45.0+191.apk",
+        undefined,
+      );
+      expect(apkUpdateMessage.value).toBe("Download started without checksum metadata");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
     it("should open install settings before downloading when APK installs are not allowed", async () => {
       const mockDownloadApkFile = vi.fn();
       const mockOpenPackageInstallSettings = vi.fn();
