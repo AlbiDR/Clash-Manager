@@ -48,27 +48,27 @@ onMounted(() => {
     </template>
 
     <div class="trouble-grid" :class="{ 'has-extra': isNativeWrapper || shouldShowPwaInstall }">
-      <button class="trouble-btn" @click="forceUpdate" v-tactile>
+      <button type="button" class="trouble-btn" @click.stop.prevent="forceUpdate" v-tactile>
         <Icon name="refresh" size="24" />
         <span>Refresh App</span>
       </button>
 
-      <button class="trouble-btn" @click="clearCache" v-tactile>
+      <button type="button" class="trouble-btn" @click.stop.prevent="clearCache" v-tactile>
         <Icon name="layers_clear" size="24" />
         <span>Purge Assets</span>
       </button>
 
-      <button v-if="isNativeWrapper" class="trouble-btn" @click="downloadApk" v-tactile>
+      <button v-if="isNativeWrapper" type="button" class="trouble-btn" @click.stop.prevent="downloadApk" v-tactile>
         <Icon name="download" size="24" />
         <span>Download Update</span>
       </button>
 
-      <button v-else-if="shouldShowPwaInstall" class="trouble-btn" @click="installPwa" v-tactile>
+      <button v-else-if="shouldShowPwaInstall" type="button" class="trouble-btn" @click.stop.prevent="installPwa" v-tactile>
         <Icon name="box" size="24" />
         <span>Install PWA</span>
       </button>
 
-      <button class="trouble-btn danger" @click="factoryReset" v-tactile>
+      <button type="button" class="trouble-btn danger" @click.stop.prevent="factoryReset" v-tactile>
         <Icon name="restore" size="24" />
         <span>Factory Reset</span>
       </button>

@@ -25,6 +25,8 @@ type BeforeInstallPromptEvent = Event & {
 
 type ApkUpdateState = "idle" | "checking" | "available" | "current" | "blocked" | "mismatch" | "error";
 
+const MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD = 192;
+
 const deferredInstallPrompt = ref<BeforeInstallPromptEvent>();
 const isPwaInstallAvailable = ref(false);
 const isPwaStandalone = ref(false);
@@ -492,21 +494,41 @@ export function usePwaManager() {
         }
       }
 
-      if (nativeBridge.value?.downloadApkFile) {
+      const hasNativeDownloadManager = typeof nativeBridge.value?.downloadApkFile === "function";
+      const nativeBuildNumber = getNativeBuildNumber();
+      const shouldUseNativeDownloadManager =
+        hasNativeDownloadManager &&
+        (!nativeBuildNumber || nativeBuildNumber >= MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD);
+
+      if (shouldUseNativeDownloadManager) {
         // [DECISION LOG] Preferred path. DownloadManager fetches the binary natively,
         // saves it to Downloads, and the wrapper opens Android's installer on completion.
-        nativeBridge.value.downloadApkFile(release.url, release.filename, release.sha256);
+        const nativeDownloadAccepted = nativeBridge.value.downloadApkFile(release.url, release.filename, release.sha256);
+        if (nativeDownloadAccepted === false) {
+          if (nativeBridge.value.openExternalUrl) {
+            nativeBridge.value.openExternalUrl(release.url);
+          } else if (typeof window !== "undefined") {
+            window.location.href = release.url;
+          }
+          apkUpdateMessage.value = "Browser download opened after native updater declined";
+        }
       } else if (nativeBridge.value?.openExternalUrl) {
         // [DECISION LOG] Fallback for older APK builds that pre-date downloadApkFile.
         nativeBridge.value.openExternalUrl(release.url);
+        apkUpdateMessage.value = hasNativeDownloadManager
+          ? "Browser download opened for legacy updater shell"
+          : "Browser download opened to update native shell";
       } else if (typeof window !== "undefined") {
         // [DECISION LOG] Browser fallback. Standard window location redirection for PWA installations.
         window.location.href = release.url;
+        apkUpdateMessage.value = "Browser download opened";
       }
 
       toast.remove(activeToastId);
       apkUpdateState.value = "available";
-      apkUpdateMessage.value = release.sha256 ? "Download started with checksum verification" : "Download started without checksum metadata";
+      if (!apkUpdateMessage.value.includes("Browser download opened")) {
+        apkUpdateMessage.value = release.sha256 ? "Download started with checksum verification" : "Download started without checksum metadata";
+      }
       toast.success("APK download started");
     } catch (downloadApkError: unknown) {
       // [THREAT:] Client window state modifications throwing or unexpected bridge failure.

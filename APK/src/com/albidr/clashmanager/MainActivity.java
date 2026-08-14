@@ -511,25 +511,25 @@ public class MainActivity extends Activity {
          * @param filename Suggested filename to save under in Downloads.
          */
         @JavascriptInterface
-        public void downloadApkFile(final String url, final String filename) {
-            downloadApkFile(url, filename, null);
+        public boolean downloadApkFile(final String url, final String filename) {
+            return downloadApkFile(url, filename, null);
         }
 
         @JavascriptInterface
-        public void downloadApkFile(final String url, final String filename, final String expectedSha256) {
+        public boolean downloadApkFile(final String url, final String filename, final String expectedSha256) {
+            Uri parsed = Uri.parse(url);
+            String scheme = parsed.getScheme();
+            if (!"https".equalsIgnoreCase(scheme)) {
+                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected non-https scheme: " + scheme);
+                return false;
+            }
+            if (filename == null || filename.length() > MAX_APK_FILENAME_LENGTH || !filename.matches("clashmanager-v\\d+\\.\\d+\\.\\d+\\+\\d+\\.apk")) {
+                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected invalid filename");
+                return false;
+            }
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Uri parsed = Uri.parse(url);
-                    String scheme = parsed.getScheme();
-                    if (!"https".equalsIgnoreCase(scheme)) {
-                        android.util.Log.w("ClashManagerMain", "downloadApkFile rejected non-https scheme: " + scheme);
-                        return;
-                    }
-                    if (filename == null || filename.length() > MAX_APK_FILENAME_LENGTH || !filename.matches("clashmanager-v\\d+\\.\\d+\\.\\d+\\+\\d+\\.apk")) {
-                        android.util.Log.w("ClashManagerMain", "downloadApkFile rejected invalid filename");
-                        return;
-                    }
                     try {
                         DownloadManager.Request request = new DownloadManager.Request(parsed);
                         request.setTitle("Clash Manager Update");
@@ -555,6 +555,7 @@ public class MainActivity extends Activity {
                     }
                 }
             });
+            return true;
         }
 
         @JavascriptInterface

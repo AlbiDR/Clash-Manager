@@ -357,20 +357,20 @@ describe("usePwaManager", () => {
       );
     });
 
-    it("should download when the versionCode matches but the published buildNumber is newer", async () => {
+    it("should use native download when a modern shell has the same versionCode and a newer published buildNumber", async () => {
       const mockDownloadApkFile = vi.fn();
       mockNativeBridge.value = {
         canRequestPackageInstalls: vi.fn(() => true),
         downloadApkFile: mockDownloadApkFile,
         getAppVersionCode: vi.fn(() => 18500),
         getAppVersionName: vi.fn(() => "14.45.0"),
-        getBuildNumber: vi.fn(() => 190),
+        getBuildNumber: vi.fn(() => 192),
       };
       (fetch as any).mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          buildNumber: 191,
-          filename: "clashmanager-v14.45.0+191.apk",
+          buildNumber: 193,
+          filename: "clashmanager-v14.45.0+193.apk",
           version: "14.45.0",
         }),
       });
@@ -379,8 +379,8 @@ describe("usePwaManager", () => {
       await downloadApk();
 
       expect(mockDownloadApkFile).toHaveBeenCalledWith(
-        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.45.0%2B191.apk",
-        "clashmanager-v14.45.0+191.apk",
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.45.0%2B193.apk",
+        "clashmanager-v14.45.0+193.apk",
         undefined,
       );
       expect(apkUpdateMessage.value).toBe("Download started without checksum metadata");
@@ -435,6 +435,37 @@ describe("usePwaManager", () => {
         "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.43.4%2B179.apk"
       );
       expect(mockLocation.href).toBe("");
+      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
+    });
+
+    it("should use openExternalUrl for legacy updater shells with silent native downloads", async () => {
+      const mockDownloadApkFile = vi.fn();
+      const mockOpenExternal = vi.fn();
+      mockNativeBridge.value = {
+        canRequestPackageInstalls: vi.fn(() => true),
+        downloadApkFile: mockDownloadApkFile,
+        getAppVersionCode: vi.fn(() => 18500),
+        getAppVersionName: vi.fn(() => "14.45.0"),
+        getBuildNumber: vi.fn(() => 190),
+        openExternalUrl: mockOpenExternal,
+      };
+      (fetch as any).mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          buildNumber: 191,
+          filename: "clashmanager-v14.45.0+191.apk",
+          version: "14.45.0",
+        }),
+      });
+
+      const { downloadApk, apkUpdateMessage } = usePwaManager();
+      await downloadApk();
+
+      expect(mockDownloadApkFile).not.toHaveBeenCalled();
+      expect(mockOpenExternal).toHaveBeenCalledWith(
+        "https://raw.githubusercontent.com/AlbiDR/Clash-Manager/Beta/APK/release/clashmanager-v14.45.0%2B191.apk"
+      );
+      expect(apkUpdateMessage.value).toBe("Browser download opened for legacy updater shell");
       expect(mockToast.success).toHaveBeenCalledWith("APK download started");
     });
 

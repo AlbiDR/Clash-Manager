@@ -33,7 +33,7 @@ export interface AndroidBridge {
    * Downloads folder, shows a system notification, and then opens Android's
    * installer for user-confirmed in-place update.
    */
-  downloadApkFile(url: string, filename: string, sha256?: string): void;
+  downloadApkFile(url: string, filename: string, sha256?: string): boolean | void;
   /** Returns the installed native APK versionName, e.g. "14.43.4". */
   getAppVersionName?(): string;
   /** Returns the installed native APK versionCode, e.g. 18500 for 14.45.0. */
