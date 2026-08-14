@@ -110,6 +110,11 @@ async function fetchJulesSessions(config = CONFIG) {
   }
 }
 
+export function hasDanglingSentinel(content, stageNumber, date) {
+  const sentinel = `* [${date}] [Stage ${stageNumber}] IN-PROGRESS: session started`;
+  return String(content || "").includes(sentinel);
+}
+
 export function matchJulesSession(sessions, stage, date) {
   const evidenceDate = expectedEvidenceDate(stage.number, date);
   const header = `[Stage ${stage.number}]`;
@@ -138,6 +143,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
   }
 
   const coverageStages = new Set();
+  const danglingSentinelStages = new Set();
   for (const stage of registry.stages) {
     try {
       const content = runGit(["show", `origin/${config.targetBranch}:${stage.coverageLog}`]);
@@ -145,12 +151,15 @@ async function collectObservedState(registry, date, config = CONFIG) {
       if (content.includes(`* [${evidenceDate}] [Stage ${stage.number}] `)) {
         coverageStages.add(stage.number);
       }
+      if (hasDanglingSentinel(content, stage.number, evidenceDate)) {
+        danglingSentinelStages.add(stage.number);
+      }
     } catch (_) {}
   }
 
   const julesSessions = await fetchJulesSessions(config);
 
-  return { prs, tags, coverageStages, julesSessions };
+  return { prs, tags, coverageStages, danglingSentinelStages, julesSessions };
 }
 
 async function createOrUpdateEscalationIssue(date, entries, summary, config = CONFIG) {
@@ -207,10 +216,11 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
     const evidenceDate = expectedEvidenceDate(stage.number, date);
     const matchingTags = [...observed.tags].filter(tag => tag.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`));
     if (matchingTags.length > 0 || observed.coverageStages.has(stage.number)) {
+      const danglingSentinel = observed.danglingSentinelStages?.has(stage.number) ?? false;
       entries.push({
         stage: stage.number,
-        state: "MERGED",
-        failureClass: null,
+        state: danglingSentinel ? "DEGRADED" : "MERGED",
+        failureClass: danglingSentinel ? "UNFINALIZED_SENTINEL" : null,
         evidence: { tag: matchingTags[0] || null, coverageLog: stage.coverageLog },
       });
       continue;
@@ -297,6 +307,7 @@ export function renderSummary(date, entries) {
     `Merged: ${entries.filter(entry => entry.state === "MERGED").length}`,
     `Recoverable: ${entries.filter(entry => entry.state === "RECOVERABLE").length}`,
     `Blocked: ${entries.filter(entry => entry.state === "BLOCKED").length}`,
+    `Degraded: ${entries.filter(entry => entry.state === "DEGRADED").length}`,
     `No output: ${entries.filter(entry => entry.state === "NO_OUTPUT").length}`,
     `Escalated: ${entries.filter(entry => entry.state === "ESCALATED").length}`,
     "",

@@ -6,7 +6,13 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { createEmptyLedger, ensureRunEntries, upsertStageEntry } from "./nightly-ledger.mjs";
-import { evaluateNightlyRun, expectedEvidenceDate, matchJulesSession, renderSummary } from "./nightly-watchdog.mjs";
+import {
+  evaluateNightlyRun,
+  expectedEvidenceDate,
+  hasDanglingSentinel,
+  matchJulesSession,
+  renderSummary,
+} from "./nightly-watchdog.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
 
@@ -155,6 +161,44 @@ test("watchdog classifies a completed-but-unmerged Jules session as stuck", () =
   assert.equal(stage13.state, "NO_OUTPUT");
   assert.equal(stage13.failureClass, "JULES_SESSION_STUCK");
   assert.equal(stage13.evidence.julesSession.state, "COMPLETED");
+});
+
+test("hasDanglingSentinel detects an un-finalized sentinel for the given stage and date", () => {
+  const content = [
+    "* [2026-08-13] [Stage 8] CHANGED: Backend/package.json -- Removed redundant p-limit dependency.",
+    "* [2026-08-14] Target: Codebase - p-limit | RESTORED | 7.3.1 | | PASS |",
+    "* [2026-08-14] [Stage 8] IN-PROGRESS: session started",
+  ].join("\n");
+
+  assert.equal(hasDanglingSentinel(content, 8, "2026-08-14"), true);
+  assert.equal(hasDanglingSentinel(content, 8, "2026-08-13"), false);
+  assert.equal(hasDanglingSentinel(content, 9, "2026-08-14"), false);
+});
+
+test("hasDanglingSentinel is false once finalize has replaced the sentinel with a terminal line", () => {
+  const content = "* [2026-08-14] [Stage 8] CHANGED: Backend/package.json -- Restored p-limit dependency.";
+  assert.equal(hasDanglingSentinel(content, 8, "2026-08-14"), false);
+});
+
+test("watchdog downgrades a merged stage with a surviving IN-PROGRESS sentinel to DEGRADED", () => {
+  const date = "2026-08-14";
+  const observed = mergedObserved(date);
+  observed.danglingSentinelStages = new Set([8]);
+
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed,
+    previousLedger: createEmptyLedger(),
+  });
+
+  const stage8 = entries.find(entry => entry.stage === 8);
+  assert.equal(stage8.state, "DEGRADED");
+  assert.equal(stage8.failureClass, "UNFINALIZED_SENTINEL");
+  assert.match(renderSummary(date, entries), /Degraded: 1/);
+  assert.match(renderSummary(date, entries), /Failing states:.*Stage 8 DEGRADED/);
+
+  assert.equal(entries.filter(entry => entry.stage !== 8).every(entry => entry.state === "MERGED"), true);
 });
 
 test("matchJulesSession disambiguates same-header sessions by date", () => {

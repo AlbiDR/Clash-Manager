@@ -99,10 +99,11 @@ Read evidence in this order. This stage is evidence-first: never pre-write or pr
    - `LATE`: valid evidence exists within the Stage 1 UTC boundary or arrived after an earlier audit.
    - `MISSING-OUTPUT`: no publishable repository evidence exists. This does not prove the task failed to trigger.
    - `FAILED`: authenticated Jules session evidence explicitly reports `FAILED`.
+   - `PUBLISHED-DEGRADED`: a current-cycle PR merged with real evidence of work, but its coverage log still contains an un-terminated `[Stage N] IN-PROGRESS: session started` sentinel for the same date -- Jules published before `nightly-stage.mjs finalize` replaced the sentinel with a terminal `CHANGED`/`CLEAN`/`SKIPPED`/`PARTIAL-RUN` line. Corroborate against `nightly-run-ledger.json`, where `nightly-watchdog.mjs` records this as ledger state `DEGRADED` with `failureClass: UNFINALIZED_SENTINEL`. Log this in Section 2, not Section 1 -- the work itself is not a stability failure, the finalization contract was.
    - `UNOBSERVABLE`: the distinction between trigger failure, runtime crash, and publication failure cannot be established.
 8. Compute `YESTERDAY` only for the Stage 1 UTC-boundary check. Do not use yesterday as a general success fallback for Stages 2-12.
 9. If authenticated Jules session evidence is already available, use it to refine `MISSING-OUTPUT`; otherwise mark the cause `UNOBSERVABLE` and continue without credentials.
-10. Read `.github/nightly-prompts/00-nightly-agent-contract.md` and only the full prompts for stages classified `FAILED`, `MISSING-OUTPUT`, contradictory, or recurrent.
+10. Read `.github/nightly-prompts/00-nightly-agent-contract.md` and only the full prompts for stages classified `FAILED`, `MISSING-OUTPUT`, `PUBLISHED-DEGRADED`, contradictory, or recurrent.
 
 ### Step 4: Analyse
 
