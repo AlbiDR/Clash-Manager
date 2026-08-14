@@ -10,7 +10,9 @@ describe("AndroidCalibrationSettings.vue", () => {
   const mockBridge = {
     isAccessibilityActive: vi.fn(() => false),
     hasOverlayPermission: vi.fn(() => false),
+    canRequestPackageInstalls: vi.fn(() => false),
     openAccessibilitySettings: vi.fn(),
+    openPackageInstallSettings: vi.fn(),
     getCoordinates: vi.fn(() => '{"inviteX":0.5083,"inviteY":0.7214,"closeX":0.9213,"closeY":0.2044}'),
     saveCoordinates: vi.fn(),
     startBlitz: vi.fn(),
@@ -29,6 +31,7 @@ describe("AndroidCalibrationSettings.vue", () => {
     vi.clearAllMocks();
     mockBridge.isAccessibilityActive.mockReturnValue(false);
     mockBridge.hasOverlayPermission.mockReturnValue(false);
+    mockBridge.canRequestPackageInstalls.mockReturnValue(false);
     mockBridge.getCoordinates.mockReturnValue('{"inviteX":0.5083,"inviteY":0.7214,"closeX":0.9213,"closeY":0.2044}');
   });
 
@@ -52,26 +55,30 @@ describe("AndroidCalibrationSettings.vue", () => {
     expect(wrapper.find(".permissions-section").exists()).toBe(false);
   });
 
-  it("shows 'Not allowed' when both permissions are denied", async () => {
+  it("shows denied statuses when permissions are missing", async () => {
     mockBridge.isAccessibilityActive.mockReturnValue(false);
     mockBridge.hasOverlayPermission.mockReturnValue(false);
+    mockBridge.canRequestPackageInstalls.mockReturnValue(false);
     const wrapper = mountComponent();
     await wrapper.vm.$nextTick();
 
     const statusLabels = wrapper.findAll(".permission-status");
     expect(statusLabels[0].text()).toBe("Not allowed");
     expect(statusLabels[1].text()).toBe("Not allowed");
+    expect(statusLabels[2].text()).toBe("Confirm in Android");
   });
 
-  it("shows 'Allowed' for both permissions when both are granted", async () => {
+  it("shows 'Allowed' for all permissions when granted", async () => {
     mockBridge.isAccessibilityActive.mockReturnValue(true);
     mockBridge.hasOverlayPermission.mockReturnValue(true);
+    mockBridge.canRequestPackageInstalls.mockReturnValue(true);
     const wrapper = mountComponent();
     await wrapper.vm.$nextTick();
 
     const statusLabels = wrapper.findAll(".permission-status");
     expect(statusLabels[0].text()).toBe("Allowed");
     expect(statusLabels[1].text()).toBe("Allowed");
+    expect(statusLabels[2].text()).toBe("Allowed");
   });
 
   it("calls openAccessibilitySettings when the accessibility row is clicked", async () => {
@@ -109,6 +116,16 @@ describe("AndroidCalibrationSettings.vue", () => {
     );
   });
 
+  it("calls openPackageInstallSettings when the APK update row is clicked", async () => {
+    const wrapper = mountComponent();
+    await wrapper.vm.$nextTick();
+
+    const { openPackageInstallSettings } = (wrapper.vm as any);
+    openPackageInstallSettings();
+
+    expect(mockBridge.openPackageInstallSettings).toHaveBeenCalledOnce();
+  });
+
   it("re-polls permissions on window focus", async () => {
     mockBridge.isAccessibilityActive.mockReturnValue(false);
     mockBridge.hasOverlayPermission.mockReturnValue(false);
@@ -117,6 +134,7 @@ describe("AndroidCalibrationSettings.vue", () => {
 
     mockBridge.isAccessibilityActive.mockReturnValue(true);
     mockBridge.hasOverlayPermission.mockReturnValue(true);
+    mockBridge.canRequestPackageInstalls.mockReturnValue(true);
 
     const focusListener = vi.mocked(window.addEventListener).mock.calls.find(call => call[0] === "focus")?.[1] as Function;
     if (focusListener) focusListener();
@@ -126,5 +144,6 @@ describe("AndroidCalibrationSettings.vue", () => {
     const statusLabels = wrapper.findAll(".permission-status");
     expect(statusLabels[0].text()).toBe("Allowed");
     expect(statusLabels[1].text()).toBe("Allowed");
+    expect(statusLabels[2].text()).toBe("Allowed");
   });
 });

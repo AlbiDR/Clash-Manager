@@ -50,6 +50,10 @@ export interface AndroidBridge {
   isAccessibilityActive(): boolean;
   /** Checks if the app has draw-over-other-apps overlay permission. */
   hasOverlayPermission(): boolean;
+  /** Checks if Android allows this app to request user-confirmed APK installs. */
+  canRequestPackageInstalls?(): boolean;
+  /** Opens the per-app Android install-unknown-apps settings screen. */
+  openPackageInstallSettings?(): void;
   /**
    * Initiates a Blitz Mode sequence for the provided list of player tags.
    *

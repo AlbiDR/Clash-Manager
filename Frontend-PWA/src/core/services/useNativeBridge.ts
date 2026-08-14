@@ -25,6 +25,7 @@ import { type WindowWithBridge, type AndroidBridge } from "@core/types";
 
 const isAccessibilityAllowed = ref(false);
 const isOverlayAllowed = ref(false);
+const isPackageInstallAllowed = ref(false);
 
 const inviteX = ref(50.83);
 const inviteY = ref(72.14);
@@ -53,6 +54,9 @@ function checkPermissions() {
   }
   if (typeof bridge.hasOverlayPermission === "function") {
     isOverlayAllowed.value = bridge.hasOverlayPermission();
+  }
+  if (typeof bridge.canRequestPackageInstalls === "function") {
+    isPackageInstallAllowed.value = bridge.canRequestPackageInstalls();
   }
 }
 
@@ -140,6 +144,7 @@ function init() {
  * - `bridge`: Safe access to the `AndroidBridge` instance or undefined if unavailable.
  * - `isAccessibilityAllowed`: Reactive boolean reflecting Accessibility permission status.
  * - `isOverlayAllowed`: Reactive boolean reflecting Overlay (Draw Over Other Apps) permission status.
+ * - `isPackageInstallAllowed`: Reactive boolean reflecting APK install request status.
  * - `inviteX`: Reactive percentage (0-100) for the Blitz 'Invite' button X-coordinate.
  * - `inviteY`: Reactive percentage (0-100) for the Blitz 'Invite' button Y-coordinate.
  * - `closeX`: Reactive percentage (0-100) for the Blitz 'Close' button X-coordinate.
@@ -147,6 +152,7 @@ function init() {
  * - `checkPermissions`: Method to manually trigger a re-poll of native permission flags.
  * - `openAccessibilitySettings`: Method to trigger a native intent for Accessibility settings.
  * - `openOverlaySettings`: Method to trigger a native intent for Overlay permission settings.
+ * - `openPackageInstallSettings`: Method to trigger a native intent for APK install settings.
  * - `loadCoordinates`: Method to hydrate calibration state from the native bridge.
  * - `saveCoordinates`: Method to persist current calibration state to the native bridge.
  */
@@ -192,11 +198,23 @@ export function useNativeBridge() {
     }
   }
 
+  /**
+   * Deep-links the user to the per-app package install permission settings.
+   */
+  function openPackageInstallSettings() {
+    if (bridge.value?.openPackageInstallSettings) {
+      bridge.value.openPackageInstallSettings();
+    } else if (typeof window !== "undefined") {
+      window.location.href = "intent:#Intent;action=android.settings.MANAGE_UNKNOWN_APP_SOURCES;package=com.albidr.clashmanager;end";
+    }
+  }
+
   return {
     isNativeWrapper,
     bridge,
     isAccessibilityAllowed,
     isOverlayAllowed,
+    isPackageInstallAllowed,
     inviteX,
     inviteY,
     closeX,
@@ -204,6 +222,7 @@ export function useNativeBridge() {
     checkPermissions,
     openAccessibilitySettings,
     openOverlaySettings,
+    openPackageInstallSettings,
     loadCoordinates,
     saveCoordinates,
   };
@@ -218,6 +237,7 @@ export function resetNativeBridgeState() {
     isInitialized = false;
     isAccessibilityAllowed.value = false;
     isOverlayAllowed.value = false;
+    isPackageInstallAllowed.value = false;
     inviteX.value = 50.83;
     inviteY.value = 72.14;
     closeX.value = 92.13;

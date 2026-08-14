@@ -42,7 +42,7 @@ const shouldShowPwaInstall = computed(() => !isNativeWrapper.value && !isPwaStan
 
       <button v-if="isNativeWrapper" class="trouble-btn" @click="downloadApk" v-tactile>
         <Icon name="download" size="24" />
-        <span>Update APK</span>
+        <span>Download Update</span>
       </button>
 
       <button v-else-if="shouldShowPwaInstall" class="trouble-btn" @click="installPwa" v-tactile>

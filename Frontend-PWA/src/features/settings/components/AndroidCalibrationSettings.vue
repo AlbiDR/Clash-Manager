@@ -23,12 +23,14 @@ const {
   isNativeWrapper,
   isAccessibilityAllowed,
   isOverlayAllowed,
+  isPackageInstallAllowed,
   inviteX,
   inviteY,
   closeX,
   closeY,
   openAccessibilitySettings,
   openOverlaySettings,
+  openPackageInstallSettings,
   saveCoordinates,
 } = useNativeBridge();
 
@@ -53,7 +55,7 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
     <div class="card-divider-s" />
     <h3 class="section-title">Android Permissions</h3>
     <p class="section-desc">
-      Blitz Mode requires both permissions below. Tap a row to open the relevant system screen.
+      Blitz Mode and native APK updates use these Android-level approvals.
     </p>
 
     <div class="permission-list">
@@ -85,6 +87,23 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
         <span class="permission-info">
           <span class="permission-label">Display Over Other Apps</span>
           <span class="permission-status">{{ isOverlayAllowed ? 'Allowed' : 'Not allowed' }}</span>
+        </span>
+        <svg class="permission-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />
+        </svg>
+      </button>
+
+      <!-- APK install requests -->
+      <button
+        v-tactile
+        class="permission-row"
+        :class="{ 'permission-row--granted': isPackageInstallAllowed }"
+        @click="openPackageInstallSettings"
+      >
+        <span class="permission-dot" :class="isPackageInstallAllowed ? 'permission-dot--on' : 'permission-dot--off'" />
+        <span class="permission-info">
+          <span class="permission-label">APK Update Installs</span>
+          <span class="permission-status">{{ isPackageInstallAllowed ? 'Allowed' : 'Confirm in Android' }}</span>
         </span>
         <svg class="permission-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />

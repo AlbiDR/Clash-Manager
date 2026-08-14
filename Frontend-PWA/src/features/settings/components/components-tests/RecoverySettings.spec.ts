@@ -105,10 +105,10 @@ describe("RecoverySettings.vue", () => {
     const wrapper = mountComponent();
 
     const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
-    expect(labels).toContain("Update APK");
+    expect(labels).toContain("Download Update");
     expect(labels).not.toContain("Install PWA");
 
-    const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Update APK"));
+    const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Download Update"));
     await btn?.trigger("click");
     expect(mockDownloadApk).toHaveBeenCalled();
   });
@@ -118,7 +118,7 @@ describe("RecoverySettings.vue", () => {
 
     const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
     expect(labels).toContain("Install PWA");
-    expect(labels).not.toContain("Update APK");
+    expect(labels).not.toContain("Download Update");
 
     const btn = wrapper.findAll(".trouble-btn").find(b => b.text().includes("Install PWA"));
     await btn?.trigger("click");
@@ -131,6 +131,6 @@ describe("RecoverySettings.vue", () => {
 
     const labels = wrapper.findAll(".trouble-btn").map(button => button.text());
     expect(labels).not.toContain("Install PWA");
-    expect(labels).not.toContain("Update APK");
+    expect(labels).not.toContain("Download Update");
   });
 });

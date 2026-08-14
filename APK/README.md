@@ -29,7 +29,7 @@ Java classes in [`src/com/albidr/clashmanager/`](src/com/albidr/clashmanager):
 | `Application` | App initialization entry point. |
 | `LauncherActivity`, `DelegationService` | Dormant TWA scaffolding, retained but not the launcher. |
 
-Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `VIBRATE`, `INTERNET`.
+Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `VIBRATE`, `INTERNET`, `REQUEST_INSTALL_PACKAGES`.
 
 ## The JavaScript bridge
 
@@ -38,6 +38,8 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `isAndroidWrapper()` | boolean | True when running inside the wrapper. |
 | `isAccessibilityActive()` | boolean | Whether the accessibility service is running. |
 | `hasOverlayPermission()` | boolean | Whether `SYSTEM_ALERT_WINDOW` is granted. |
+| `canRequestPackageInstalls()` | boolean | Whether Android allows this app to request user-confirmed APK installs. |
+| `openPackageInstallSettings()` | void | Opens the per-app Android screen for allowing APK install requests. |
 | `openAccessibilitySettings()` | void | Opens the system accessibility settings. |
 | `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
 | `startBlitz(tagsJson)` | void | Starts a Blitz sequence for the given player tags. |

@@ -26,6 +26,7 @@ const REQUIRED_IN_MANIFEST = [
   "com.albidr.clashmanager.Application",
   "android.permission.SYSTEM_ALERT_WINDOW",
   "android.permission.FOREGROUND_SERVICE",
+  "android.permission.REQUEST_INSTALL_PACKAGES",
   "android.accessibilityservice.AccessibilityService",
   "@mipmap/ic_launcher_round", // roundIcon wired
 ];

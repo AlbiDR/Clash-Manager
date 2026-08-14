@@ -77,6 +77,7 @@ const EXPECT = {
     "android.permission.SYSTEM_ALERT_WINDOW",
     "android.permission.FOREGROUND_SERVICE",
     "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+    "android.permission.REQUEST_INSTALL_PACKAGES",
   ],
   // The accessibility service is only functional with this intent-filter.
   accessibilityIntent: "android.accessibilityservice.AccessibilityService",
@@ -87,6 +88,8 @@ const EXPECT = {
     "getCoordinates",
     "isAccessibilityActive",
     "hasOverlayPermission",
+    "canRequestPackageInstalls",
+    "openPackageInstallSettings",
     "openAccessibilitySettings",
     "getAppVersionName",
     "getBuildNumber",

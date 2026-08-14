@@ -8,9 +8,11 @@ describe("useNativeBridge", () => {
   const mockBridge = {
     isAccessibilityActive: vi.fn(() => true),
     hasOverlayPermission: vi.fn(() => false),
+    canRequestPackageInstalls: vi.fn(() => true),
     getCoordinates: vi.fn(() => JSON.stringify({ inviteX: 0.5, inviteY: 0.6, closeX: 0.7, closeY: 0.8 })),
     saveCoordinates: vi.fn(),
     openAccessibilitySettings: vi.fn(),
+    openPackageInstallSettings: vi.fn(),
   };
 
   beforeEach(() => {
@@ -50,12 +52,14 @@ describe("useNativeBridge", () => {
   });
 
   it("polls permissions from the bridge", () => {
-    const { checkPermissions, isAccessibilityAllowed, isOverlayAllowed } = useNativeBridge();
+    const { checkPermissions, isAccessibilityAllowed, isOverlayAllowed, isPackageInstallAllowed } = useNativeBridge();
     checkPermissions();
     expect(mockBridge.isAccessibilityActive).toHaveBeenCalled();
     expect(mockBridge.hasOverlayPermission).toHaveBeenCalled();
+    expect(mockBridge.canRequestPackageInstalls).toHaveBeenCalled();
     expect(isAccessibilityAllowed.value).toBe(true);
     expect(isOverlayAllowed.value).toBe(false);
+    expect(isPackageInstallAllowed.value).toBe(true);
   });
 
   it("loads and parses coordinates", () => {
@@ -92,5 +96,21 @@ describe("useNativeBridge", () => {
     const { openAccessibilitySettings } = useNativeBridge();
     openAccessibilitySettings();
     expect(window.location.href).toContain("intent:#Intent;action=android.settings.ACCESSIBILITY_SETTINGS");
+  });
+
+  it("delegates package install settings to the bridge", () => {
+    const { openPackageInstallSettings } = useNativeBridge();
+    openPackageInstallSettings();
+    expect(mockBridge.openPackageInstallSettings).toHaveBeenCalled();
+  });
+
+  it("falls back to intent URI for package install settings if bridge method is missing", () => {
+    const bridgeWithoutMethod = { ...mockBridge };
+    delete (bridgeWithoutMethod as any).openPackageInstallSettings;
+    (window as any).AndroidBridge = bridgeWithoutMethod;
+
+    const { openPackageInstallSettings } = useNativeBridge();
+    openPackageInstallSettings();
+    expect(window.location.href).toContain("intent:#Intent;action=android.settings.MANAGE_UNKNOWN_APP_SOURCES");
   });
 });

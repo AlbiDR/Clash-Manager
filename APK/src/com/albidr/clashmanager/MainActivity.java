@@ -358,8 +358,8 @@ public class MainActivity extends Activity {
          * browser), this method enqueues the download through the system
          * DownloadManager so the binary is fetched natively and saved to the
          * public Downloads folder. The system shows a download progress
-         * notification automatically. Once complete, Android prompts the user to
-         * install the APK if "Install from unknown sources" is enabled.
+         * notification automatically. Once complete, Android can prompt the user
+         * to install the APK if this app is allowed to request package installs.
          *
          * @param url      Direct HTTPS URL to the APK file.
          * @param filename Suggested filename to save under in Downloads.
@@ -433,6 +433,38 @@ public class MainActivity extends Activity {
                 return Settings.canDrawOverlays(MainActivity.this);
             }
             return true;
+        }
+
+        @JavascriptInterface
+        public boolean canRequestPackageInstalls() {
+            if (Build.VERSION.SDK_INT >= 26) {
+                return MainActivity.this.getPackageManager().canRequestPackageInstalls();
+            }
+            return true;
+        }
+
+        @JavascriptInterface
+        public void openPackageInstallSettings() {
+            MainActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent;
+                        if (Build.VERSION.SDK_INT >= 26) {
+                            intent = new Intent(
+                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                Uri.parse("package:" + MainActivity.this.getPackageName()));
+                        } else {
+                            intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+                        }
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        MainActivity.this.startActivity(intent);
+                    } catch (Exception e) {
+                        android.util.Log.w("ClashManagerMain", "Could not open package install settings", e);
+                        Toast.makeText(MainActivity.this, "Could not open install settings", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
         }
 
         @JavascriptInterface
