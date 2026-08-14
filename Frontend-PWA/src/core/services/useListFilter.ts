@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { ref, computed, watch, type Ref, type ComputedRef } from "vue";
+import { sortByNameThenId } from "../utils/sortStrategies";
 
 /**
  * COMPOSABLE: useListFilter
@@ -107,11 +108,7 @@ export function useListFilter<T extends { id: string; n?: string }>(
         if (comparisonResult !== 0) return comparisonResult;
         // [GUARD] Tie-breaker: Ensure stable sorting by Name, then ID
         // Target B [2]: Removed 'any' pathogens by enforcing T extends { id, n }.
-        const nameA = itemA.n || "";
-        const nameB = itemB.n || "";
-        const nameRes = nameA.localeCompare(nameB);
-        if (nameRes !== 0) return nameRes;
-        return itemA.id.localeCompare(itemB.id);
+        return sortByNameThenId(itemA, itemB);
       });
     }
 

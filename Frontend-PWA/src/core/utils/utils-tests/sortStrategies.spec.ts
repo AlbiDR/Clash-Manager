@@ -6,6 +6,7 @@ import {
   sortByTrophies,
   sortByScore,
   sortByLastSeen,
+  sortByNameThenId,
   LeaderboardSort,
   RecruiterSort,
 } from "../sortStrategies";
@@ -30,11 +31,25 @@ describe("sortStrategies", () => {
       expect(sorted[2].n).toBe("Zoro");
     });
 
-    it("is case-sensitive based on localeCompare default", () => {
+    it("sorts case variants deterministically", () => {
       const items = [{ n: "albi" }, { n: "Albi" }];
       const sorted = [...items].sort(sortByName);
-      // In most locales, "albi" and "Albi" order depends on environment but they should be different
-      expect(sorted[0].n).not.toBe(sorted[1].n);
+      expect(sorted.map(item => item.n)).toEqual(["Albi", "albi"]);
+    });
+
+    it("normalizes accented names before comparing raw names", () => {
+      const items = [{ n: "Éclair" }, { n: "beta" }, { n: "Alpha" }];
+      const sorted = [...items].sort(sortByName);
+      expect(sorted.map(item => item.n)).toEqual(["Alpha", "beta", "Éclair"]);
+    });
+
+    it("uses player id as a deterministic final tie-breaker", () => {
+      const items = [
+        { id: "TAG2", n: "albi" },
+        { id: "TAG1", n: "albi" },
+      ];
+      const sorted = [...items].sort(sortByNameThenId);
+      expect(sorted.map(item => item.id)).toEqual(["TAG1", "TAG2"]);
     });
   });
 

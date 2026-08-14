@@ -20,15 +20,52 @@ import { parseTimeAgoValue } from "./time";
  * ============================================================================
  */
 
+function normalizeSortKey(value: string | null | undefined): string {
+  const rawValue = value || "";
+  try {
+    return rawValue
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  } catch {
+    return rawValue.trim().toLowerCase();
+  }
+}
+
+function compareStrings(leftValue: string, rightValue: string): number {
+  if (leftValue < rightValue) return -1;
+  if (leftValue > rightValue) return 1;
+  return 0;
+}
+
 /**
- * Performs an ascending alphabetical sort by name.
+ * Performs a deterministic ascending alphabetical sort by normalized name.
  *
  * @param candidateA - First item with a name property ('n').
  * @param candidateB - Second item with a name property ('n').
  * @returns Standard comparator result (-1, 0, 1).
  */
-export const sortByName = (candidateA: { n: string }, candidateB: { n: string }) =>
-  candidateA.n.localeCompare(candidateB.n);
+export const sortByName = (candidateA: { n: string }, candidateB: { n: string }) => {
+  const normalizedComparison = compareStrings(
+    normalizeSortKey(candidateA.n),
+    normalizeSortKey(candidateB.n),
+  );
+  if (normalizedComparison !== 0) return normalizedComparison;
+  return compareStrings(candidateA.n || "", candidateB.n || "");
+};
+
+export function sortByNameThenId(
+  candidateA: { id: string; n?: string },
+  candidateB: { id: string; n?: string },
+): number {
+  const nameComparison = sortByName(
+    { n: candidateA.n || "" },
+    { n: candidateB.n || "" },
+  );
+  if (nameComparison !== 0) return nameComparison;
+  return compareStrings(candidateA.id, candidateB.id);
+}
 
 /**
  * Performs a descending sort by trophies.

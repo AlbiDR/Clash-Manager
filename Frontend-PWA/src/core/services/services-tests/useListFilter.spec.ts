@@ -159,17 +159,7 @@ describe("useListFilter", () => {
       "score"
     );
 
-    // Tie-breaker logic:
-    // nameA = a.n || "";
-    // nameB = b.n || "";
-    // nameRes = nameA.localeCompare(nameB);
-    // If nameRes === 0, return a.id.localeCompare(b.id);
-
-    // p1 (Albi) vs p2 ("") -> "Albi".localeCompare("") > 0 -> p2 before p1
-    // p2 ("") vs p3 ("") -> 0 -> p2.id ("p2") vs p3.id ("p3") -> "p2" < "p3" -> p2 before p3
-    // p1 ("Albi") vs p3 ("") -> > 0 -> p3 before p1
-
-    // So order should be p2, p3, p1
+    // Deterministic tie-breaker: normalized name first, then player id.
     expect(filteredItems.value[0].id).toBe("p2");
     expect(filteredItems.value[1].id).toBe("p3");
     expect(filteredItems.value[2].id).toBe("p1");
