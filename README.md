@@ -89,9 +89,9 @@ The Roster ranks every member by a **Performance Score (0-100)** and lets you dr
 - **Momentum indicator** showing whether a member is climbing or slipping.
 - **Bulk actions**: select many members at once (or everyone above a score threshold) and open their profiles, or fire them all into game in sequence through Blitz mode.
 
-### [Headhunter](Frontend-PWA/src/features/headhunter/README.md): recruit elite free agents on autopilot
+### [Headhunter](Frontend-PWA/src/features/headhunter/README.md): recruit elite free players on autopilot
 
-The Headhunter is a live feed of clanless players discovered from tournaments and leaderboards, each scored by **Potential Score (0-100)** against your own roster so you know a prospect is genuinely an upgrade.
+The Headhunter is a live feed of clanless players discovered from tournaments and leaderboards, each scored by **Potential Score** against your own roster so you know a prospect is genuinely an upgrade.
 
 - **Top prospects, continuously scouted** by the backend and ranked by potential; expand a card for donations, win rate, cards won, and the raw potential score, each benchmarked against your clan and against all other prospects.
 - **Dismiss with one tap and undo.** Rejections hide instantly, sync across your devices and browser tabs, and stay hidden for 30 days.
