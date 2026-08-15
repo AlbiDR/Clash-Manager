@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-15] PR #1463 [Stage 7]: chore(version): No version drift or catalog violations detected
+**Domain:** pipeline | **Commit:** a0df6af6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1463)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): No version drift or catalog violations detected
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-15] PR #1462 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
 **Domain:** pipeline | **Commit:** e5aa8194 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1462)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/useProgressiveList.ts
