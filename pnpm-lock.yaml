@@ -34,8 +34,8 @@ catalogs:
       specifier: ^0.9.1
       version: 0.9.1
     dependency-cruiser:
-      specifier: ^18.1.1
-      version: 18.1.1
+      specifier: ^18.2.0
+      version: 18.2.0
     jsdom:
       specifier: ^29.1.1
       version: 29.1.1
@@ -100,7 +100,7 @@ importers:
         version: 26.2.0
       dependency-cruiser:
         specifier: 'catalog:'
-        version: 18.1.1
+        version: 18.2.0
       knip:
         specifier: 'catalog:'
         version: 6.32.1
@@ -2217,8 +2217,8 @@ packages:
   defu@6.1.7:
     resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
 
-  dependency-cruiser@18.1.1:
-    resolution: {integrity: sha512-qK29b8kBW60KI1Qvf2w93823AE55lJuXV21iUw9tAMiZudgA95mR2j/EzqsploqS8d8uavTzn1IVoKDSilLD4g==}
+  dependency-cruiser@18.2.0:
+    resolution: {integrity: sha512-xMDoLD0no6pDInR8/4rIIqZ4mERDnsjezk8PkNORYSfBLvjCOogUxaruepmi1uQtZQlYUgdT2u7G3jTlgKqNjw==}
     engines: {node: ^22||^24||>=26}
     hasBin: true
 
@@ -5746,7 +5746,7 @@ snapshots:
 
   defu@6.1.7: {}
 
-  dependency-cruiser@18.1.1:
+  dependency-cruiser@18.2.0:
     dependencies:
       acorn: 8.18.0
       acorn-jsx: 5.3.2(acorn@8.18.0)
