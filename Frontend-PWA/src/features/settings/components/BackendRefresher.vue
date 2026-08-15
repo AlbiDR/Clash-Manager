@@ -17,10 +17,12 @@ import { useBackendRefresher } from "../composables/useBackendRefresher";
  * - Layer: Layer 3 Features (@features/settings)
  * - Satisfaction: Satisfies ADR Section IV: Operational Security and Deep Delegation.
  *
- * **Decision Log - Touch targets & Brokered Haptics:**
+ * **Decision Log - Touch targets, Brokered Haptics & Selection Containment:**
  * - Uses the centralized `v-tactile` directive to brokered tactile feedback
  *   upon direct user-initiated refresh actions.
  * - Action buttons enforce the 48px mobile touch footprint standard (`height: 48px`).
+ * - Applies `user-select: none` text selection containment (Target A.3) to row
+   labels and descriptions to prevent accidental drag selection overlays in WebView.
  */
 
 defineProps<{
@@ -100,6 +102,8 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  user-select: none; /* Text Selection Containment (Target A.3) */
+  -webkit-user-select: none;
 }
 .refresh-row:last-child {
   border-bottom: none;
