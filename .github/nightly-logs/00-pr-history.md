@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-15] PR #1461 [Stage 3]: chore(database): Codebase baseline migration audited and clean; 0 pending migrations.
+**Domain:** pipeline | **Commit:** a0bcdc70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1461)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Codebase baseline migration audited and clean; 0 pending migrations.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-15] PR #1460 [Stage 2]: chore(verify): Frontend-PWA/src/shared/utils/utils-tests/scoreTint.spec.ts -- Expanded unit tests for scoreTint utility
 **Domain:** pipeline | **Commit:** b5294ff7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1460)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/utils/utils-tests/scoreTint.spec.ts
