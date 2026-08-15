@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-15] PR #1462 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
+**Domain:** pipeline | **Commit:** e5aa8194 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1462)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/useProgressiveList.ts
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 4] Optimization - Substrate Hygiene Engineer
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-15] PR #1461 [Stage 3]: chore(database): Codebase baseline migration audited and clean; 0 pending migrations.
 **Domain:** pipeline | **Commit:** a0bcdc70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1461)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
