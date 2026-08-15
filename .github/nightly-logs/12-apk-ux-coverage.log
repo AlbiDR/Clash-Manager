@@ -41,3 +41,4 @@
 * [2026-08-12] [Stage 12] CHANGED: Frontend-PWA/src/features/headhunter/components/RecruitCard.vue -- Modernized RecruitCard.vue with 48px touch target compliance and user-select none text selection containment.
 * [2026-08-13] [Stage 12] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- Modernized MemberCard.vue with user-select none text selection containment.
 * [2026-08-14] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/TargetPicker.vue -- CHANGED: Frontend-PWA/src/features/laboratory/components/TargetPicker.vue -- Modernized TargetPicker.vue with user-select none text selection containment (Target A.3).
+* [2026-08-15] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/BackendRefresher.vue -- Modernized BackendRefresher.vue with text selection containment.
