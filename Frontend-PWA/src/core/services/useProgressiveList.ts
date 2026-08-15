@@ -63,7 +63,7 @@ export function useProgressiveList<T>(
 
   watch(
     sourceList,
-    (incomingList, previousList) => {
+    (sourceListItems, previousListItems) => {
       /**
        * Logic: Churn Prevention (Bug #17)
        *
@@ -74,15 +74,15 @@ export function useProgressiveList<T>(
        * to prevent jarring scroll jumps or layout shifts.
        */
       const isRefresh =
-        previousList &&
-        previousList.length > 0 &&
-        Math.abs(incomingList.length - previousList.length) < 5;
+        previousListItems &&
+        previousListItems.length > 0 &&
+        Math.abs(sourceListItems.length - previousListItems.length) < 5;
 
       if (isRefresh && visibleItems.value.length >= initialSize) {
         clearTimer();
-        visibleItems.value = incomingList.slice(0, visibleItems.value.length) as T[];
-        if (visibleItems.value.length < incomingList.length) {
-          scheduleChunk(incomingList as T[], visibleItems.value.length);
+        visibleItems.value = sourceListItems.slice(0, visibleItems.value.length) as T[];
+        if (visibleItems.value.length < sourceListItems.length) {
+          scheduleChunk(sourceListItems as T[], visibleItems.value.length);
         }
         return;
       }
@@ -92,9 +92,9 @@ export function useProgressiveList<T>(
       clearTimer();
 
       // Initial render for immediate perceived performance
-      visibleItems.value = incomingList.slice(0, initialSize) as T[];
-      if (incomingList.length > initialSize) {
-        scheduleChunk(incomingList as T[], initialSize);
+      visibleItems.value = sourceListItems.slice(0, initialSize) as T[];
+      if (sourceListItems.length > initialSize) {
+        scheduleChunk(sourceListItems as T[], initialSize);
       }
     },
     { immediate: true },
@@ -112,10 +112,10 @@ export function useProgressiveList<T>(
    * @returns Void.
    */
   function scheduleChunk(fullSourceList: T[], renderedItemCount: number) {
-    const scheduler =
+    const frameScheduler =
       window.requestIdleCallback || window.requestAnimationFrame;
 
-    progressiveChunkTimer = (scheduler as (cb: (deadline?: IdleDeadline | number) => void) => number)((deadline) => {
+    progressiveChunkTimer = (frameScheduler as (cb: (deadline?: IdleDeadline | number) => void) => number)((deadline) => {
       let projectedItemCount = renderedItemCount;
 
       // [PERF] IDLE BUDGETING: If we have an idle deadline, we attempt to
