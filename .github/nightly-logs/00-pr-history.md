@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-15] PR #1465 [Stage 10]: chore(apk): APK and PWA wrapper integrity audit passed with CLEAN status
+**Domain:** pipeline | **Commit:** afe19c1d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1465)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): APK and PWA wrapper integrity audit passed with CLEAN status
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-15] PR #1464 [Stage 8]: chore(deps): Bumped dependency-cruiser to ^18.2.0 and updated major version watchlist.
 **Domain:** pipeline | **Commit:** c38e3279 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1464)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
