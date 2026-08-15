@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-08-14
+LAST_AGED:   2026-08-15
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -15,14 +15,12 @@ LAST_AGED:   2026-08-14
 ---
 
 ## T1 -- Active (last 7 days)
-
 ### [2026-08-15] PR #1467 [Stage 13]: chore(pipeline): update self-healing protocol -- August 15, 2026 daily audit
 **Domain:** pipeline | **Commit:** 0993aadf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1467)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 **Why:** Automated nightly audit pass.
 **Change:** chore(pipeline): update self-healing protocol -- August 15, 2026 daily audit
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-15] PR #1466 [Stage 12]: chore(apk-ux): Modernized BackendRefresher.vue with text selection containment.
 **Domain:** pipeline | **Commit:** f34fc210 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1466)
@@ -31,14 +29,12 @@ LAST_AGED:   2026-08-14
 **Change:** chore(apk-ux): Modernized BackendRefresher.vue with text selection containment.
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-15] PR #1465 [Stage 10]: chore(apk): APK and PWA wrapper integrity audit passed with CLEAN status
 **Domain:** pipeline | **Commit:** afe19c1d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1465)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
 **Why:** Automated nightly audit pass.
 **Change:** chore(apk): APK and PWA wrapper integrity audit passed with CLEAN status
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-15] PR #1464 [Stage 8]: chore(deps): Bumped dependency-cruiser to ^18.2.0 and updated major version watchlist.
 **Domain:** pipeline | **Commit:** c38e3279 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1464)
@@ -47,14 +43,12 @@ LAST_AGED:   2026-08-14
 **Change:** chore(deps): Bumped dependency-cruiser to ^18.2.0 and updated major version watchlist.
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-15] PR #1463 [Stage 7]: chore(version): No version drift or catalog violations detected
 **Domain:** pipeline | **Commit:** a0df6af6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1463)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
 **Why:** Automated nightly audit pass.
 **Change:** chore(version): No version drift or catalog violations detected
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-15] PR #1462 [Stage 4]: [Stage 4] Optimization - Substrate Hygiene Engineer
 **Domain:** pipeline | **Commit:** e5aa8194 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1462)
@@ -63,7 +57,6 @@ LAST_AGED:   2026-08-14
 **Change:** [Stage 4] Optimization - Substrate Hygiene Engineer
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-15] PR #1461 [Stage 3]: chore(database): Codebase baseline migration audited and clean; 0 pending migrations.
 **Domain:** pipeline | **Commit:** a0bcdc70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1461)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
@@ -71,14 +64,12 @@ LAST_AGED:   2026-08-14
 **Change:** chore(database): Codebase baseline migration audited and clean; 0 pending migrations.
 **Result:** Nominal validation with zero regressions.
 
-
 ### [2026-08-15] PR #1460 [Stage 2]: chore(verify): Frontend-PWA/src/shared/utils/utils-tests/scoreTint.spec.ts -- Expanded unit tests for scoreTint utility
 **Domain:** pipeline | **Commit:** b5294ff7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1460)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/utils/utils-tests/scoreTint.spec.ts
 **Why:** Automated nightly audit pass.
 **Change:** chore(verify): Frontend-PWA/src/shared/utils/utils-tests/scoreTint.spec.ts -- Expanded unit tests for scoreTint utility
 **Result:** Nominal validation with zero regressions.
-
 
 ### [2026-08-14] PR #1459 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** f706972c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1459)
@@ -569,13 +560,6 @@ LAST_AGED:   2026-08-14
 **Why:** Automated nightly audit pass.
 **Change:** chore(pipeline): Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protoc
 **Result:** Nominal validation with zero regressions.
-
-### [2026-08-07] PR #PENDING [Stage 6]: docs(tsdoc): document history charting interfaces and mobile gesture benchmark contracts
-**Domain:** TSDoc | **Commit:** PENDING | [View PR](PENDING)
-**Files:** Frontend-PWA/src/shared/composables/useHistoryChart.ts, Frontend-PWA/src/shared/composables/useBaseHistoryChart.ts, Frontend-PWA/src/shared/ui/GhostBenchmarkHost.vue, Frontend-PWA/src/shared/ui/BenchmarkContent.vue
-**Why:** To establish type-safe interface contracts and precise inline logic annotations for recently optimized history charting, mobile swipes, and viewport-aware benchmark overlays.
-**Change:** Injected comprehensive JSDoc/TSDoc specifications mapping helper functions, computed visual metrics, and mobile gesture tracking coordinates.
-**Result:** 100% logic intent transparency and contract synchronization with CleanStack architecture design guidelines across recently optimized shared elements.
 
 ### Description
 Completed the daily automated self-healing protocol audit pass for July 23, 2026, targeting the Nightly branch. Mapped all preceding stages' status from log evidence, identifying successful runs and documenting the root cause of the silent crashes/recurring failures for Stage 2 and Stage 11 today. Also updated consecutive no-diff days counters to reflect today's commits.
@@ -1206,6 +1190,7 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 ## T2 -- Recent (8-30 days)
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-08-07] PR #PENDING [TSDoc]: docs(tsdoc): document history charting interfaces and mobile gesture benchmark contracts (``PENDING``) [View](PENDING)
 * [2026-08-06] PR #PENDING [TSDoc]: docs(tsdoc): harden centralized configuration and simulation engine contracts (``PENDING``) [View](PENDING)
 * [2026-08-03] PR #1328 [APK UX]: fix(apk-ux): fix APK download button 404 errors (``8f7a5b854f73021bcfe0b3f757464543933da8bd``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1328)
 * [2026-07-30] PR #PENDING [Refactor]: chore(refactor): no action required (``PENDING``) [View](PENDING)
@@ -1336,26 +1321,20 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-07-16] PR #PENDING [Infrastructure/Backend]: refactor(structural): decompose harvester and centralize configuration (``PENDING``) [View](PENDING)
 * [2026-07-16] PR #PENDING [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
 * [2026-07-16] PR #PENDING [APK Optimization]: perf(apk-optimization): harden webview settings and refine sw precache (``PENDING``) [View](PENDING)
-* [2026-07-15] PR #PENDING [Hardening]: fix(harden): secure battlelog fetch and excise anemic pathogens (``PENDING``) [View](PENDING)
-* [2026-07-15] PR #PENDING [README]: docs(readme): reconcile battlelog hardening and pwa manager drift (``PENDING``) [View](PENDING)
-* [2026-07-15] PR #PENDING [TSDoc]: docs(tsdoc): harden backend edge function and utility contracts (``PENDING``) [View](PENDING)
-* [2026-07-15] PR #1117 [Version Integrity]: fix(version): reconcile version drift in backend and scripts (``ac9c8a1fd1b528a4922e19e16639c6a4e68ebcba``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1117)
-* [2026-07-15] PR #1122 [Dependencies]: chore(deps): bump @supabase/supabase-js and update major version watchlist (``PENDING``) [View](PENDING)
-* [2026-07-15] PR #1121 [APK Integrity]: chore(apk-integrity): no mismatch found (``PENDING``) [View](PENDING)
-* [2026-07-15] PR #1120 [APK Optimization]: perf(apk-optimization): optimize webview performance and sw precache (``PENDING``) [View](PENDING)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W29
-* 1 PRs [APK Optimization]: #1103
-* 2 PRs [Baseline]: #1096
-* 2 PRs [Dependencies]: #1101
+* 1 PRs [APK Integrity]: #1121
+* 2 PRs [APK Optimization]: #1103, #1120
+* 1 PRs [Baseline]: #1096
+* 2 PRs [Dependencies]: #1101, #1122
 * 2 PRs [README]: #1098
 * 2 PRs [Refactor/Optimization]: #1097, #1102
-* 1 PRs [TSDoc]: #1099
-* 2 PRs [Verification]: #1095
-* 2 PRs [Version Integrity]: #1100
+* 2 PRs [TSDoc]: #1099
+* 1 PRs [Verification]: #1095
+* 2 PRs [Version Integrity]: #1100, #1117
 
 #### 2026-W28
 * 5 PRs [APK Integrity]: #1036, #1054, #1071, #1081, #1092
