@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-15] PR #1467 [Stage 13]: chore(pipeline): update self-healing protocol -- August 15, 2026 daily audit
+**Domain:** pipeline | **Commit:** 0993aadf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1467)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(pipeline): update self-healing protocol -- August 15, 2026 daily audit
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-15] PR #1466 [Stage 12]: chore(apk-ux): Modernized BackendRefresher.vue with text selection containment.
 **Domain:** pipeline | **Commit:** f34fc210 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1466)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/settings/components/BackendRefresher.vue
