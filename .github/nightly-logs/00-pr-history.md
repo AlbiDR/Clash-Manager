@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-15] PR #1466 [Stage 12]: chore(apk-ux): Modernized BackendRefresher.vue with text selection containment.
+**Domain:** pipeline | **Commit:** f34fc210 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1466)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/features/settings/components/BackendRefresher.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Modernized BackendRefresher.vue with text selection containment.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-15] PR #1465 [Stage 10]: chore(apk): APK and PWA wrapper integrity audit passed with CLEAN status
 **Domain:** pipeline | **Commit:** afe19c1d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1465)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
