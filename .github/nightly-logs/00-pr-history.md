@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-16] PR #1469 [Stage 2]: chore(verify): Stage 2 Verification - Logic Integrity Auditor
+**Domain:** pipeline | **Commit:** b5458efa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1469)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Stage 2 Verification - Logic Integrity Auditor
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-15] PR #1468 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** c435c4a4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1468)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
