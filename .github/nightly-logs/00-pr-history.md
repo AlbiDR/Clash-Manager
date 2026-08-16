@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-16] PR #1474 [Stage 8]: chore(deps): Bumped knip to ^6.32.2
+**Domain:** pipeline | **Commit:** 1e4677e6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1474)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped knip to ^6.32.2
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-16] PR #1473 [Stage 7]: chore(version): No version drift or catalog violations detected.
 **Domain:** pipeline | **Commit:** fd7b85c4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1473)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
