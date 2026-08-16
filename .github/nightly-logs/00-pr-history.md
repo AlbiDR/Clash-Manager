@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-16] PR #1475 [Stage 9]: chore(refactor): Structural audit complete; architecture is fully compliant with ADR CleanStack guidelines
+**Domain:** pipeline | **Commit:** c86cc53e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1475)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(refactor): Structural audit complete; architecture is fully compliant with ADR CleanStack guidelines
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-16] PR #1474 [Stage 8]: chore(deps): Bumped knip to ^6.32.2
 **Domain:** pipeline | **Commit:** 1e4677e6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1474)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
