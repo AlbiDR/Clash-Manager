@@ -3,7 +3,7 @@
 
 <script setup lang="ts">
 /**
- * [FEATURE] MEMBER CARD
+ * COMPONENT: MemberCard.vue
  * ----------------------------------------------------------------------------
  * Rationale: Authoritative presentation component for clan roster members.
  * Layer: @features/roster
@@ -14,10 +14,15 @@
  * into standardized slots. Integrates with the `WarHistoryChart` feature-component
  * for performance visualization and `CardActions` for roster management.
  *
- * **Constraints:**
- * - Must reside in Layer 3 (@features) as it is coupled to the LeaderboardMember domain type.
- * - Interaction logic (expansion, selection) is delegated to `BaseCard` and orchestrated
- *   via the `useConsoleController` in the parent view.
+ * **Architectural Context:**
+ * - Layer: Layer 3 Features (@features/roster)
+ * - Satisfaction: Satisfies ADR Section II: Unified Layout and ADR Section IV: Operational Resilience.
+ *
+ * **Decision Log - Chart Toggling, Layout Spacing & Text Containment:**
+ * - Provides interactive chart selection toggling between River War and Voyage histories.
+ * - Applies `user-select: none` text selection containment to player names (Target A.3)
+ *   to prevent accidental text highlights during swipe gestures in Android WebView.
+ * - Enforces explicit vertical spacing margins between expanded statistics grid sections.
  */
 import {
   BaseCard,
@@ -37,6 +42,10 @@ import { computed, ref } from "vue";
 import type { LeaderboardMember, ConsoleCardMetadata } from "@core/types";
 import { formatTimeAgo, formatNumber, parseTimeAgoValue } from "@core";
 
+/**
+ * Reactive chart selection state toggling active history visualization.
+ * [DECISION LOG] Defaults to 'war' (River War) as the primary clan performance metric.
+ */
 const activeChart = ref<"war" | "voyage">("war");
 
 const props = defineProps<ConsoleCardMetadata & {
@@ -55,7 +64,11 @@ const emit = defineEmits<{
 
 /**
  * ACCESSIBILITY RESOLVER
- * Constructs a semantic description of the member for screen readers.
+ *
+ * @remarks
+ * Constructs a semantic description of the member for screen readers and screen overlays.
+ *
+ * [DECISION LOG] Rounds performance score to whole numbers for clear speech synthesis.
  */
 const ariaLabel = computed(() => {
   const roleLabel = formatRole(props.member.d.role).label;
