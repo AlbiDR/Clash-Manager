@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-16] PR #1471 [Stage 5]: chore(docs): Reconciled Settings README BackendRefresher modernization
+**Domain:** pipeline | **Commit:** dd72c552 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1471)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/settings/README.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): Reconciled Settings README BackendRefresher modernization
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-16] PR #1470 [Stage 4]: chore(optimize): Optimized TargetPicker.vue by standardizing variable naming and re-verified substrate hygiene.
 **Domain:** pipeline | **Commit:** fd35601b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1470)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/features/laboratory/components/TargetPicker.vue
