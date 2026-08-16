@@ -264,7 +264,87 @@ describe("useRecruiter", () => {
     });
   });
 
+  describe("recruits windowing and edge cases", () => {
+    it("handles nullish clashData safely", () => {
+      mockClashData.value = null as any;
+      const [{ filteredItems }] = withSetup(() => useRecruiter());
+      expect(filteredItems.value).toEqual([]);
+    });
+
+    it("handles missing potentialScore and sorts correctly", () => {
+      mockClashData.value = {
+        hh: [
+          { id: "1", n: "NoScore" } as any,
+          { id: "2", n: "HighCandidate", potentialScore: 95 } as any,
+        ]
+      };
+      const [{ filteredItems }] = withSetup(() => useRecruiter());
+      expect(filteredItems.value[0].id).toBe("2");
+      expect(filteredItems.value[1].id).toBe("1");
+    });
+
+    it("slices active window to top 50 recruits", () => {
+      const manyRecruits = Array.from({ length: 60 }, (_, index) => ({
+        id: `id-${index}`,
+        n: `Recruit ${index}`,
+        potentialScore: index,
+      }));
+      mockClashData.value = { hh: manyRecruits as any };
+      const [{ filteredItems }] = withSetup(() => useRecruiter());
+      expect(filteredItems.value.length).toBe(50);
+      expect(filteredItems.value[0].id).toBe("id-59");
+    });
+  });
+
+  describe("fabState and layoutEvents delegates", () => {
+    it("enables harvest in fabState", () => {
+      const [{ layoutProps }] = withSetup(() => useRecruiter());
+      expect(layoutProps.value.fabState.harvestEnabled).toBe(true);
+    });
+
+    it("binds layoutEvents delegates correctly", () => {
+      const [{ layoutEvents }] = withSetup(() => useRecruiter());
+      expect(typeof layoutEvents.value["fab-action"]).toBe("function");
+      expect(typeof layoutEvents.value["fab-blitz"]).toBe("function");
+      expect(typeof layoutEvents.value["clear-selection"]).toBe("function");
+      expect(typeof layoutEvents.value["fab-global-harvest"]).toBe("function");
+      expect(typeof layoutEvents.value["fab-local-harvest"]).toBe("function");
+      expect(typeof layoutEvents.value["fab-abort-harvest"]).toBe("function");
+
+      // Execute non-throwing delegates to exercise callbacks
+      expect(() => layoutEvents.value["clear-selection"]()).not.toThrow();
+    });
+  });
+
   describe("dismissBulk", () => {
+    it("clears selection and returns early if no items selected", () => {
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
+      selectedIds.value = [];
+      dismissBulk();
+      expect(mockHide).not.toHaveBeenCalled();
+      expect(mockDismissRecruitsAction).not.toHaveBeenCalled();
+    });
+
+    it("handles missing potentialRawScore in dismissal payload", () => {
+      mockClashData.value = {
+        hh: [
+          { id: "3", n: "Recruit No Raw Score" } as any,
+        ]
+      };
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
+      selectedIds.value = ["3"];
+      dismissBulk();
+
+      expect(mockDismissRecruitsAction).toHaveBeenCalledWith([
+        {
+          id: "3",
+          name: "Recruit No Raw Score",
+          score: 0,
+          raw_potential_score: 0,
+        }
+      ]);
+    });
+
     it("dismisses selected recruits with optimistic updates", async () => {
       const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
 

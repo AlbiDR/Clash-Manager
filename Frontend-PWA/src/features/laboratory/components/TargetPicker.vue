@@ -44,8 +44,8 @@ const emit = defineEmits<{
  */
 const localTag = ref(props.modelValue || "");
 
-watch(() => props.modelValue, (newVal) => {
-  localTag.value = newVal || "";
+watch(() => props.modelValue, (newModelValue) => {
+  localTag.value = newModelValue || "";
 });
 
 /**
@@ -56,10 +56,10 @@ watch(() => props.modelValue, (newVal) => {
  * cache lookup failures, and downstream database constraint violations.
  */
 function handleLockIn() {
-  const tag = localTag.value.trim();
-  if (tag) {
+  const trimmedPlayerTag = localTag.value.trim();
+  if (trimmedPlayerTag) {
     // [GUARD] normalizes inputs to strip hashtags or sanitize leading/trailing spaces.
-    emit("lockIn", normalizeTag(tag));
+    emit("lockIn", normalizeTag(trimmedPlayerTag));
   } else {
     emit("lockIn", null);
   }
@@ -68,8 +68,8 @@ function handleLockIn() {
 /**
  * Listens for keyboard actions to trigger native confirm/lock-in on pressing Enter.
  */
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter') {
+function handleKeydown(keyboardEvent: KeyboardEvent) {
+  if (keyboardEvent.key === 'Enter') {
     handleLockIn();
   }
 }

@@ -17,6 +17,18 @@ describe('Shared Score Tint Utilities', () => {
       expect(scoreTintStyle(140)).toEqual({ '--score-raw': '100' });
     });
 
+    it('handles floating point scores correctly', () => {
+      expect(scoreTintStyle(42.8)).toEqual({ '--score-raw': '42.8' });
+      expect(scoreTintStyle(-0.1)).toEqual({ '--score-raw': '0' });
+      expect(scoreTintStyle(100.001)).toEqual({ '--score-raw': '100' });
+    });
+
+    it('handles infinite and NaN boundary inputs correctly', () => {
+      expect(scoreTintStyle(Infinity)).toEqual({ '--score-raw': '100' });
+      expect(scoreTintStyle(-Infinity)).toEqual({ '--score-raw': '0' });
+      expect(scoreTintStyle(NaN)).toEqual({ '--score-raw': 'NaN' });
+    });
+
     it('returns no style when score is undefined', () => {
       expect(scoreTintStyle(undefined)).toEqual({});
     });
