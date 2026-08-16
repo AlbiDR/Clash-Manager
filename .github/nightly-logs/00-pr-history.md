@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-16] PR #1472 [Stage 6]: chore(docs): docs(tsdoc): harden MemberCard interface contracts and inline annotations
+**Domain:** pipeline | **Commit:** 2f452b87 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1472)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/roster/components/MemberCard.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden MemberCard interface contracts and inline annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-16] PR #1471 [Stage 5]: chore(docs): Reconciled Settings README BackendRefresher modernization
 **Domain:** pipeline | **Commit:** dd72c552 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1471)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/settings/README.md
