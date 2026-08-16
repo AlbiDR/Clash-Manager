@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-16] PR #1470 [Stage 4]: chore(optimize): Optimized TargetPicker.vue by standardizing variable naming and re-verified substrate hygiene.
+**Domain:** pipeline | **Commit:** fd35601b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1470)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/features/laboratory/components/TargetPicker.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Optimized TargetPicker.vue by standardizing variable naming and re-verified substrate hygiene.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-16] PR #1469 [Stage 2]: chore(verify): Stage 2 Verification - Logic Integrity Auditor
 **Domain:** pipeline | **Commit:** b5458efa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1469)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/headhunter/composables/composables-tests/useRecruiter.spec.ts
