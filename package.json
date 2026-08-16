@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.45.14",
+  "version": "14.45.15",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -20,6 +20,8 @@
     "test:nightly-lifecycle": "node --test .github/scripts/nightly-stage.test.mjs && node .github/scripts/nightly-stage.mjs validate",
     "test:nightly-merge": "node --test .github/scripts/merge-nightly-prs.test.mjs",
     "test:nightly-watchdog": "node --test .github/scripts/nightly-watchdog.test.mjs",
+    "test:nightly-redact": "node --test .github/scripts/nightly-redact.test.mjs",
+    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json",

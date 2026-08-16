@@ -17,17 +17,23 @@ concurrency:
   group: nightly-watchdog
   cancel-in-progress: false
 
+# issues:write is deliberately absent. Issues are disabled on this repository
+# (has_issues is false), so an issue-based alarm can never fire; the step
+# summary and the exit code carry the signal instead.
+# actions:write is required: the recovery pass dispatches Sync Nightly PRs after
+# nudging a stranded Jules session back into publishing.
 permissions:
   contents: write
   pull-requests: read
-  issues: write
   actions: write
 
 jobs:
   watchdog:
-    name: "Observe Nightly Control Plane"
+    name: "Observe and Recover Nightly Control Plane"
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The recovery pass nudges stuck Jules sessions and then polls up to 8
+    # minutes for the publisher to open their pull requests.
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,12 +48,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
         run: |
+          # Mask before the script can emit a single line. The repository is
+          # public and this job deliberately holds the Jules key so it can
+          # resume stranded sessions.
+          if [ -n "$JULES_API_KEY" ]; then echo "::add-mask::$JULES_API_KEY"; fi
+
           DATE_INPUT="${{ github.event.inputs.date }}"
+          set +e
           if [ -n "$DATE_INPUT" ]; then
             node .github/scripts/nightly-watchdog.mjs --date "$DATE_INPUT"
           else
             node .github/scripts/nightly-watchdog.mjs
           fi
+          WATCHDOG_EXIT=$?
+          set -e
+          echo "exit_code=$WATCHDOG_EXIT" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Commit and Push Ledger with Retry
         run: |
@@ -76,6 +92,16 @@ jobs:
             echo "Nightly run ledger is unchanged."
           fi
 
-      - name: Fail if Watchdog Detected Unresolved Stages
-        if: steps.watchdog.outcome == 'failure'
-        run: exit 1
+      # Exit-code separation. Previously every one of these conditions produced
+      # the same bare `exit 1`, so the workflow was red on 100 percent of its
+      # runs and the conclusion carried no information.
+      - name: Report Unresolved Stages (non-blocking)
+        if: steps.watchdog.outputs.exit_code == '2'
+        run: |
+          echo "::warning title=Nightly stages unresolved::The observer ran cleanly but some stages are unresolved or promotion has stalled. See the job summary."
+
+      - name: Fail Only on Observer or Environment Failure
+        if: steps.watchdog.outputs.exit_code != '0' && steps.watchdog.outputs.exit_code != '2'
+        run: |
+          echo "Watchdog exited ${{ steps.watchdog.outputs.exit_code }}: the observer itself failed."
+          exit 1

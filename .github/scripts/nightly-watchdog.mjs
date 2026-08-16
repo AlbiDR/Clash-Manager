@@ -5,8 +5,30 @@ import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
 import { ensureRunEntries, loadLedger, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
+import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 
-const PASS_STATES = new Set(["MERGED", "RECOVERABLE", "ESCALATED"]);
+// This workflow deliberately holds JULES_API_KEY so it can resume stranded
+// sessions, and the repository is public. Every console line, summary block and
+// ledger write goes through the redactor rather than straight to output.
+let redact = createRedactor([]);
+
+export function configureRedaction(config = CONFIG) {
+  redact = createRedactor([config.julesApiKey, config.token]);
+  return redact;
+}
+
+function logLine(message) {
+  console.log(redact(message));
+}
+
+function errorLine(message) {
+  console.error(redact(message));
+}
+
+// ESCALATED is deliberately NOT a pass state. A stage that has failed on
+// consecutive days is the single most important thing the watchdog can report,
+// so it must both appear in the escalation issue and fail the workflow run.
+const PASS_STATES = new Set(["MERGED", "RECOVERABLE"]);
 const JULES_API_BASE = "https://jules.googleapis.com/v1alpha";
 const IN_FLIGHT_JULES_STATES = new Set([
   "QUEUED",
@@ -16,6 +38,27 @@ const IN_FLIGHT_JULES_STATES = new Set([
   "IN_PROGRESS",
   "PAUSED",
 ]);
+
+// Branch that Nightly is expected to reach. Nightly landing its stages is only
+// half the contract; if the work never promotes, the pipeline is still stalled.
+const PROMOTION_BRANCH = "Beta";
+const STALENESS_ALARM_HOURS = 24;
+
+// A COMPLETED Jules session with no published PR is holding a finished change
+// set that its native publisher never shipped. Nudging asks it to hand that
+// work over; it never asks the session to redo or re-decide anything.
+const RECOVERABLE_FAILURE_CLASSES = new Set(["JULES_SESSION_STUCK"]);
+const MAX_RECOVERY_ATTEMPTS = 2;
+
+// Mirrors the finalization handoff wording the stage prompts already use, so a
+// nudged session resumes into its own publication step rather than restarting
+// work or opening a review loop it was explicitly told not to run.
+export const RECOVERY_PROMPT = [
+  "Your finalized change set was never published as a Pull Request and the session went inactive.",
+  "Return the existing final result now so the native scheduled-task publisher can open one non-draft Pull Request targeting Nightly.",
+  "Do not redo the audit, re-run tests, or start new work.",
+  "Do not run code review, memory, reflection, git commit, git push, or a GitHub PR command.",
+].join(" ");
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -92,21 +135,60 @@ async function fetchPullRequestFiles(prNumber, config = CONFIG) {
   return files;
 }
 
-async function fetchJulesSessions(config = CONFIG) {
-  if (!config.julesApiKey) return [];
+// Returns availability alongside the sessions. Silently degrading to an empty
+// list would misreport a dead API key as "the stage produced no output", which
+// hides the real fault and makes recovery impossible to even attempt.
+async function fetchJulesSessions(config = CONFIG, fetchImpl = fetch) {
+  if (!config.julesApiKey) {
+    errorLine("JULES_API_KEY is not configured; session evidence is unavailable for this run.");
+    return { sessions: [], available: false, error: "JULES_API_KEY is not configured." };
+  }
   try {
-    const res = await fetch(`${JULES_API_BASE}/sessions`, {
+    const res = await fetchImpl(`${JULES_API_BASE}/sessions`, {
       headers: { "X-Goog-Api-Key": config.julesApiKey },
     });
     if (!res.ok) {
-      console.error(`Jules API ${res.status} ${res.statusText}; continuing without session evidence.`);
-      return [];
+      const error = `Jules API ${res.status} ${res.statusText}`;
+      errorLine(`${error}; session evidence is unavailable for this run.`);
+      return { sessions: [], available: false, error };
     }
     const body = await res.json();
-    return Array.isArray(body.sessions) ? body.sessions : [];
+    return { sessions: Array.isArray(body.sessions) ? body.sessions : [], available: true, error: null };
   } catch (error) {
-    console.error(`Jules API request failed: ${error.message}; continuing without session evidence.`);
-    return [];
+    errorLine(`Jules API request failed: ${error.message}; session evidence is unavailable for this run.`);
+    return { sessions: [], available: false, error: error.message };
+  }
+}
+
+export function julesSessionPath(session) {
+  const raw = String(session?.name || session?.id || "").trim();
+  if (!raw) return null;
+  return raw.startsWith("sessions/") ? raw : `sessions/${raw}`;
+}
+
+// POST /v1alpha/sessions/{session}:sendMessage
+// https://developers.google.com/jules/api/reference/rest/v1alpha/sessions
+export async function nudgeJulesSession(session, config = CONFIG, fetchImpl = fetch) {
+  const sessionPath = julesSessionPath(session);
+  if (!sessionPath) return { ok: false, error: "Session has no resolvable resource name." };
+  if (!config.julesApiKey) return { ok: false, error: "JULES_API_KEY is not configured." };
+
+  try {
+    const res = await fetchImpl(`${JULES_API_BASE}/${sessionPath}:sendMessage`, {
+      method: "POST",
+      headers: {
+        "X-Goog-Api-Key": config.julesApiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt: RECOVERY_PROMPT }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return { ok: false, error: `Jules sendMessage ${res.status} ${res.statusText}: ${text}`.trim() };
+    }
+    return { ok: true, error: null, sessionPath };
+  } catch (error) {
+    return { ok: false, error: `Jules sendMessage request failed: ${error.message}` };
   }
 }
 
@@ -125,8 +207,44 @@ export function matchJulesSession(sessions, stage, date) {
   return matches[0] || null;
 }
 
+// Pure half, so the alarm threshold is testable without a git checkout.
+// `commitIsoList` is newest-first, matching `git log` output order.
+export function evaluatePromotionStaleness(commitIsoList, now = new Date()) {
+  const commits = (commitIsoList || []).filter(Boolean);
+  if (commits.length === 0) {
+    return { available: true, error: null, commitCount: 0, stale: false, oldestCommitIso: null, ageHours: 0 };
+  }
+
+  const oldestCommitIso = commits[commits.length - 1];
+  const ageHours = (now.getTime() - new Date(oldestCommitIso).getTime()) / 3_600_000;
+  return {
+    available: true,
+    error: null,
+    commitCount: commits.length,
+    oldestCommitIso,
+    ageHours,
+    stale: ageHours >= STALENESS_ALARM_HOURS,
+  };
+}
+
+export function measurePromotionStaleness(targetBranch = "Nightly", promotionBranch = PROMOTION_BRANCH, now = new Date()) {
+  try {
+    const commits = runGit(["log", `origin/${promotionBranch}..origin/${targetBranch}`, "--format=%cI"])
+      .split("\n")
+      .filter(Boolean);
+    return evaluatePromotionStaleness(commits, now);
+  } catch (error) {
+    return { available: false, error: error.message, commitCount: 0, stale: false };
+  }
+}
+
 async function collectObservedState(registry, date, config = CONFIG) {
   runGit(["fetch", "--tags", "origin", config.targetBranch]);
+  try {
+    runGit(["fetch", "origin", PROMOTION_BRANCH]);
+  } catch (error) {
+    errorLine(`Could not fetch origin/${PROMOTION_BRANCH}: ${error.message}`);
+  }
   const prs = await fetchRecentPullRequests(config);
   const candidateDates = new Set(registry.stages.map(stage => expectedEvidenceDate(stage.number, date)));
   for (const pr of prs.filter(pr => candidateDates.has(String(pr.created_at || "").slice(0, 10)))) {
@@ -157,9 +275,19 @@ async function collectObservedState(registry, date, config = CONFIG) {
     } catch (_) {}
   }
 
-  const julesSessions = await fetchJulesSessions(config);
+  const jules = await fetchJulesSessions(config);
+  const promotion = measurePromotionStaleness(config.targetBranch);
 
-  return { prs, tags, coverageStages, danglingSentinelStages, julesSessions };
+  return {
+    prs,
+    tags,
+    coverageStages,
+    danglingSentinelStages,
+    julesSessions: jules.sessions,
+    julesAvailable: jules.available,
+    julesError: jules.error,
+    promotion,
+  };
 }
 
 async function createOrUpdateEscalationIssue(date, entries, summary, config = CONFIG) {
@@ -167,19 +295,23 @@ async function createOrUpdateEscalationIssue(date, entries, summary, config = CO
   if (unresolved.length === 0) return;
 
   const title = `[Nightly Watchdog] ${date} unresolved pipeline stages`;
-  const query = encodeURIComponent(`repo:${config.owner}/${config.repo} is:issue in:title "${title}"`);
-  const search = await githubApi(`/search/issues?q=${query}`, config);
   const body = [
     "The Nightly watchdog detected unresolved stage states after the post-window cutoff.",
     "",
     summary,
+    "Automated recovery already attempted a nudge for any JULES_SESSION_STUCK stage.",
+    "The stages below survived that pass and need attention:",
+    "",
+    ...unresolved.map(entry => `- Stage ${entry.stage}: ${entry.state} (${entry.failureClass || "unclassified"})`),
+    "",
     "Recovery policy:",
     "- Merge recoverable PRs through Sync Nightly PRs.",
     "- Rerun or inspect Jules tasks for NO_OUTPUT stages.",
+    "- JULES_API_UNAVAILABLE means the watchdog had no session evidence; check the JULES_API_KEY secret.",
     "- Preserve blocked branches until their evidence has been reviewed.",
   ].join("\n");
 
-  const existing = search.items?.find(issue => issue.title === title);
+  const existing = await findIssueByTitle(title, config);
   if (existing) {
     await githubApi(`/repos/${config.owner}/${config.repo}/issues/${existing.number}`, config, "PATCH", {
       body,
@@ -192,6 +324,35 @@ async function createOrUpdateEscalationIssue(date, entries, summary, config = CO
     title,
     body,
   });
+}
+
+async function findIssueByTitle(title, config = CONFIG) {
+  const query = encodeURIComponent(`repo:${config.owner}/${config.repo} is:issue in:title "${title}"`);
+  const search = await githubApi(`/search/issues?q=${query}`, config);
+  return search.items?.find(issue => issue.title === title) || null;
+}
+
+// Landing every stage on Nightly is only half the contract. If Nightly never
+// promotes, the pipeline is stalled even though every stage reported MERGED.
+// Reported through the step summary rather than an issue, because Issues are
+// disabled on this repository and an issue-based alarm can never fire.
+export function renderPromotionSummary(promotion, promotionBranch = PROMOTION_BRANCH) {
+  if (!promotion?.available) {
+    return `\nPromotion to ${promotionBranch}: not measured (observer could not read the branches).\n`;
+  }
+  if (promotion.commitCount === 0) {
+    return `\nPromotion to ${promotionBranch}: current, nothing pending.\n`;
+  }
+  if (!promotion.stale) {
+    return `\nPromotion to ${promotionBranch}: ${promotion.commitCount} commit(s) pending, within the ${STALENESS_ALARM_HOURS}h window.\n`;
+  }
+  return [
+    "",
+    `Promotion to ${promotionBranch}: STALLED.`,
+    `${promotion.commitCount} commit(s) have been waiting ${Math.floor(promotion.ageHours)}h (oldest ${promotion.oldestCommitIso}).`,
+    "Nightly stages are landing but the work is not promoting. Dispatch the Sync Branches workflow.",
+    "",
+  ].join("\n");
 }
 
 function prDateMatchesStage(pr, stageNumber, date) {
@@ -211,6 +372,7 @@ function normalizePr(pr) {
 
 export function evaluateNightlyRun({ registry, date, observed, previousLedger }) {
   const entries = [];
+  const julesAvailable = observed.julesAvailable ?? true;
 
   for (const stage of registry.stages) {
     const evidenceDate = expectedEvidenceDate(stage.number, date);
@@ -279,24 +441,151 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
       continue;
     }
 
-    const previous = stageEntry(previousLedger, expectedEvidenceDate(stage.number, date), stage.number);
-    const recurring = previous?.state === "NO_OUTPUT" || previous?.state === "ESCALATED";
-    const failureClass = julesMatch?.state === "COMPLETED"
-      ? "JULES_SESSION_STUCK"
-      : julesMatch?.state === "FAILED"
-        ? "JULES_SESSION_FAILED"
-        : "NO_PUBLISHED_OUTPUT";
+    // Escalation must consider the PRIOR RUN, not just this date's row.
+    // Ledger rows are keyed by run date and ensureRunEntries has already seeded
+    // today's row as EXPECTED, so consulting only `date` meant a stage that
+    // failed yesterday never escalated. Check both: the same date catches a
+    // second watchdog pass on the same day, the prior day catches chronic failure.
+    const priorDate = utcDate(-1, new Date(`${date}T00:00:00.000Z`));
+    const hasFailed = candidate => candidate?.state === "NO_OUTPUT" || candidate?.state === "ESCALATED";
+    const recurring = hasFailed(stageEntry(previousLedger, date, stage.number))
+      || hasFailed(stageEntry(previousLedger, priorDate, stage.number));
+    // Without session evidence we cannot tell a stuck session from a stage that
+    // never ran, so say so explicitly instead of guessing NO_PUBLISHED_OUTPUT.
+    const failureClass = julesAvailable === false
+      ? "JULES_API_UNAVAILABLE"
+      : julesMatch?.state === "COMPLETED"
+        ? "JULES_SESSION_STUCK"
+        : julesMatch?.state === "FAILED"
+          ? "JULES_SESSION_FAILED"
+          : "NO_PUBLISHED_OUTPUT";
     entries.push({
       stage: stage.number,
       state: recurring ? "ESCALATED" : "NO_OUTPUT",
       failureClass,
       evidence: julesMatch
-        ? { coverageLog: stage.coverageLog, julesSession: { id: julesMatch.id, state: julesMatch.state } }
-        : { coverageLog: stage.coverageLog },
+        ? {
+          coverageLog: stage.coverageLog,
+          julesSession: {
+            id: julesMatch.id,
+            name: julesSessionPath(julesMatch),
+            state: julesMatch.state,
+          },
+        }
+        : { coverageLog: stage.coverageLog, julesApiError: observed.julesError || null },
     });
   }
 
   return entries;
+}
+
+// Ledger rows are keyed by run date; expectedEvidenceDate only governs which
+// tag, log line, or PR date counts as evidence for a stage.
+export function selectRecoveryCandidates(entries, ledger, date) {
+  return entries.filter(entry => {
+    if (!RECOVERABLE_FAILURE_CLASSES.has(entry.failureClass)) return false;
+    if (!entry.evidence?.julesSession) return false;
+    const recorded = stageEntry(ledger, date, entry.stage);
+    return (recorded?.attempts ?? 0) < MAX_RECOVERY_ATTEMPTS;
+  });
+}
+
+// Asks each stuck session to hand over the change set it already finalized,
+// then waits for the publisher to open the PR so the same run can merge it.
+export async function recoverStuckStages({
+  entries,
+  ledger,
+  registry,
+  date,
+  config = CONFIG,
+  fetchImpl = fetch,
+  listPullRequests = fetchRecentPullRequests,
+  sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
+  pollAttempts = 8,
+  pollIntervalMs = 60_000,
+} = {}) {
+  const candidates = selectRecoveryCandidates(entries, ledger, date);
+  if (candidates.length === 0) return { attempted: [], recovered: [], failed: [] };
+
+  const attempted = [];
+  const failed = [];
+  for (const entry of candidates) {
+    const session = entry.evidence.julesSession;
+    const result = await nudgeJulesSession(session, config, fetchImpl);
+    const recorded = stageEntry(ledger, date, entry.stage);
+    upsertStageEntry(ledger, registry, date, entry.stage, {
+      attempts: (recorded?.attempts ?? 0) + 1,
+      evidence: {
+        recovery: {
+          nudgedAt: new Date().toISOString(),
+          sessionName: session.name || session.id,
+          ok: result.ok,
+          error: result.error,
+        },
+      },
+    });
+
+    if (result.ok) {
+      logLine(`Stage ${entry.stage}: nudged stuck Jules session ${session.name || session.id}.`);
+      attempted.push(entry);
+    } else {
+      errorLine(`Stage ${entry.stage}: nudge failed. ${result.error}`);
+      failed.push({ entry, error: result.error });
+    }
+  }
+
+  if (attempted.length === 0) return { attempted, recovered: [], failed };
+
+  const pending = new Set(attempted.map(entry => entry.stage));
+  const recovered = [];
+  for (let attempt = 0; attempt < pollAttempts && pending.size > 0; attempt += 1) {
+    await sleep(pollIntervalMs);
+    let prs;
+    try {
+      prs = await listPullRequests(config);
+    } catch (error) {
+      errorLine(`Recovery poll could not list pull requests: ${error.message}`);
+      continue;
+    }
+    for (const stageNumber of [...pending]) {
+      const match = prs
+        .map(normalizePr)
+        .filter(pr => prDateMatchesStage(pr, stageNumber, date))
+        .map(pr => ({ pr, classification: classifyNightlyPr(pr, registry, config) }))
+        .find(({ pr, classification }) => classification.stage === stageNumber && String(pr.state).toUpperCase() === "OPEN");
+      if (!match) continue;
+      logLine(`Stage ${stageNumber}: recovered as PR #${match.pr.number}.`);
+      upsertStageEntry(ledger, registry, date, stageNumber, {
+        state: "RECOVERABLE",
+        failureClass: "RECOVERED_AFTER_NUDGE",
+        evidence: { prNumber: match.pr.number, prUrl: match.pr.html_url },
+      });
+      recovered.push({ stage: stageNumber, prNumber: match.pr.number });
+      pending.delete(stageNumber);
+    }
+  }
+
+  for (const stageNumber of pending) {
+    errorLine(`Stage ${stageNumber}: nudge sent but no pull request appeared before the poll window closed.`);
+  }
+
+  return { attempted, recovered, failed };
+}
+
+export async function dispatchMergeWorkflow(config = CONFIG) {
+  try {
+    await githubApi(
+      `/repos/${config.owner}/${config.repo}/actions/workflows/merge-nightly-prs.yml/dispatches`,
+      config,
+      "POST",
+      { ref: config.targetBranch },
+    );
+    logLine("Dispatched Sync Nightly PRs to merge the recovered pull requests.");
+    return true;
+  } catch (error) {
+    errorLine(`Could not dispatch Sync Nightly PRs: ${error.message}`);
+    return false;
+  }
 }
 
 export function renderSummary(date, entries) {
@@ -310,6 +599,7 @@ export function renderSummary(date, entries) {
     `Degraded: ${entries.filter(entry => entry.state === "DEGRADED").length}`,
     `No output: ${entries.filter(entry => entry.state === "NO_OUTPUT").length}`,
     `Escalated: ${entries.filter(entry => entry.state === "ESCALATED").length}`,
+    `Recovered by nudge: ${entries.filter(entry => entry.failureClass === "RECOVERED_AFTER_NUDGE").length}`,
     "",
   ];
 
@@ -325,13 +615,26 @@ export function renderSummary(date, entries) {
   return `${lines.join("\n")}\n`;
 }
 
+// Exit codes are distinct so the workflow conclusion carries information.
+// Collapsing these into a single `exit 1` is what made the watchdog red on 100
+// percent of its runs since deployment, and therefore useless as a signal.
+//   0 = every stage accountable and promotion healthy
+//   2 = stages unresolved or promotion stalled, but the observer itself is fine
+//   1 = the observer or its environment is broken
+export function resolveExitCode({ observerHealthy, promotion, entries }) {
+  if (!observerHealthy) return 1;
+  if (promotion?.stale) return 2;
+  if ((entries || []).some(entry => !PASS_STATES.has(entry.state))) return 2;
+  return 0;
+}
+
 function parseArgs(argv) {
   const options = new Map();
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     invariant(token.startsWith("--"), `Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (key === "dry-run") {
+    if (key === "dry-run" || key === "no-recover" || key === "create-issues") {
       options.set(key, true);
       continue;
     }
@@ -343,6 +646,7 @@ function parseArgs(argv) {
 }
 
 export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
+  configureRedaction(config);
   const options = parseArgs(argv);
   const date = options.get("date") || utcDate();
   invariant(/^\d{4}-\d{2}-\d{2}$/.test(date), `Invalid --date value: ${date}`);
@@ -352,15 +656,19 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   ensureRunEntries(ledger, registry, date);
 
   let entries;
+  let promotion = null;
+  let observerHealthy = true;
   try {
     const observed = await collectObservedState(registry, date, config);
+    promotion = observed.promotion;
     entries = evaluateNightlyRun({ registry, date, observed, previousLedger: ledger });
   } catch (error) {
+    observerHealthy = false;
     for (const stage of registry.stages) {
       upsertStageEntry(ledger, registry, date, stage.number, {
         state: "BLOCKED",
         failureClass: "WATCHDOG_OBSERVER_FAILURE",
-        evidence: { reason: error.message },
+        evidence: redactDeep({ reason: error.message }, redact),
       });
     }
     entries = Object.values(ledger.runs[date]);
@@ -370,35 +678,53 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     upsertStageEntry(ledger, registry, date, entry.stage, {
       state: entry.state,
       failureClass: entry.failureClass,
-      evidence: entry.evidence,
+      // The ledger is committed to a public branch, so evidence is scrubbed
+      // before it is ever written, not before it is printed.
+      evidence: redactDeep(entry.evidence, redact),
     });
   }
 
-  const summary = renderSummary(date, entries);
-  console.log(summary);
+  if (!options.get("dry-run") && !options.get("no-recover")) {
+    try {
+      const recovery = await recoverStuckStages({ entries, ledger, registry, date, config });
+      if (recovery.recovered.length > 0) {
+        await dispatchMergeWorkflow(config);
+      }
+      // Re-derive from the ledger so the summary reflects recovery outcomes.
+      entries = Object.values(ledger.runs[date]);
+    } catch (error) {
+      errorLine(`Nightly watchdog recovery pass failed: ${error.message}`);
+    }
+  }
+
+  const promotionReport = renderPromotionSummary(promotion);
+  const summary = redact(`${renderSummary(date, entries)}${promotionReport}`);
+  logLine(summary);
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   }
+
   if (!options.get("dry-run")) {
     saveLedger(ledger, config.ledgerPath);
-    if (entries.some(entry => !PASS_STATES.has(entry.state))) {
+    // GitHub Issues are disabled on this repository (has_issues is false), so
+    // issue creation is opt-in rather than the default alarm channel. The step
+    // summary and the exit code carry the signal instead.
+    if (options.get("create-issues") && entries.some(entry => !PASS_STATES.has(entry.state))) {
       try {
         await createOrUpdateEscalationIssue(date, entries, summary, config);
       } catch (error) {
-        console.error(`Nightly watchdog escalation issue update failed: ${error.message}`);
+        errorLine(`Nightly watchdog escalation issue update failed: ${error.message}`);
       }
     }
   }
 
-  if (entries.some(entry => !PASS_STATES.has(entry.state))) {
-    process.exitCode = 1;
-  }
+  process.exitCode = resolveExitCode({ observerHealthy, promotion, entries });
 }
 
 const isMain = process.argv[1] && process.argv[1].endsWith("nightly-watchdog.mjs");
 if (isMain) {
   runCli().catch(error => {
-    console.error(`Nightly watchdog error: ${error.message}`);
+    errorLine(`Nightly watchdog error: ${error.message}`);
     process.exitCode = 1;
   });
 }
