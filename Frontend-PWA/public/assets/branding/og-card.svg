@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+  <defs>
+    <radialGradient id="glowCyan" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#24C8DB" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#24C8DB" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowGold" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#FDC130" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#FDC130" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#24C8DB"/>
+      <stop offset="100%" stop-color="#FDC130"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Substrate -->
+  <rect width="1200" height="630" fill="#0b0e14"/>
+  <ellipse cx="250" cy="200" rx="520" ry="420" fill="url(#glowCyan)"/>
+  <ellipse cx="980" cy="520" rx="480" ry="380" fill="url(#glowGold)"/>
+
+  <!-- Brand mark (logo.svg, scaled 512 -> 208) -->
+  <g transform="translate(104, 211) scale(0.40625)">
+    <g transform="matrix(1.669227,0,0,1.669227,-171,-171)">
+      <g transform="matrix(1,0,0,1,0,6)">
+        <path d="M185,246C170.272,259.268 161.851,278.186 161.851,298.009C161.851,336.41 193.45,368.009 231.851,368.009C232.234,368.009 232.617,368.006 233,368C266,368 294,344 301,312C308,311 314,309 320,306C315.984,351.163 277.687,386.206 232.346,386.206C184.07,386.206 144.346,346.482 144.346,298.206C144.346,265.323 162.777,235.076 192,220L209,213C208.917,219.06 209.589,225.106 211,231C206,232 200,235 195,238L185,246Z" style="fill:rgb(36,200,219);stroke:rgb(36,200,219);stroke-width:10.4px;"/>
+      </g>
+      <g transform="matrix(1,0,0,1,-0.327096,8.103119)">
+        <circle cx="232.5" cy="297.5" r="25" style="fill:rgb(36,200,219);stroke:rgb(36,200,219);stroke-width:0.6px;"/>
+      </g>
+      <g transform="matrix(1,0,0,1,-15,-83)">
+        <path d="M343,343C357.728,329.732 366.149,310.814 366.149,290.991C366.149,252.59 334.55,220.991 296.149,220.991C295.766,220.991 295.383,220.994 295,221C261,221 233,245 226,277L208,283C212.06,237.876 250.339,202.887 295.646,202.887C343.921,202.887 383.646,242.611 383.646,290.887C383.646,330.751 356.557,365.873 318,376C318.164,369.937 317.491,363.88 316,358C326.004,355.073 335.229,349.948 343,343Z" style="fill:rgb(253,193,48);stroke:rgb(253,193,48);stroke-width:10.4px;stroke-miterlimit:100;"/>
+      </g>
+      <g transform="matrix(1,0,0,1,-13.977056,-85.056708)">
+        <circle cx="294.8" cy="291.5" r="25" style="fill:rgb(253,193,48);"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Wordmark lockup -->
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <text x="368" y="288" font-size="82" font-weight="700" letter-spacing="-2" fill="#f2f5f9">Clash Manager</text>
+    <rect x="370" y="322" width="132" height="5" rx="2.5" fill="url(#rule)"/>
+    <text x="368" y="392" font-size="31" font-weight="500" letter-spacing="0" fill="#9aa6b8">Recruitment and performance analytics</text>
+    <text x="368" y="436" font-size="31" font-weight="500" letter-spacing="0" fill="#9aa6b8">for Clash Royale clan leaders.</text>
+  </g>
+
+  <!-- Footer meta -->
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <text x="104" y="566" font-size="23" font-weight="600" letter-spacing="2.4" fill="#5c6675">PWA</text>
+    <circle cx="185" cy="558" r="3" fill="#3a4250"/>
+    <text x="204" y="566" font-size="23" font-weight="600" letter-spacing="2.4" fill="#5c6675">ANDROID</text>
+    <circle cx="358" cy="558" r="3" fill="#3a4250"/>
+    <text x="377" y="566" font-size="23" font-weight="600" letter-spacing="2.4" fill="#5c6675">OPEN SOURCE</text>
+  </g>
+</svg>

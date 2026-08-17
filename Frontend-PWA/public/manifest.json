@@ -66,32 +66,32 @@
   ],
   "screenshots": [
     {
-      "src": "assets/branding/headhunter-light.webp",
-      "sizes": "1080x1920",
+      "src": "assets/branding/screenshot-roster-dark.webp",
+      "sizes": "1400x2800",
       "type": "image/webp",
       "form_factor": "narrow",
-      "label": "Clash Manager Headhunter (Light)"
+      "label": "Clash Manager Roster (Dark)"
     },
     {
-      "src": "assets/branding/headhunter-dark.webp",
-      "sizes": "1080x1920",
+      "src": "assets/branding/screenshot-roster-light.webp",
+      "sizes": "1400x2800",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Clash Manager Roster (Light)"
+    },
+    {
+      "src": "assets/branding/screenshot-headhunter-dark.webp",
+      "sizes": "1400x2800",
       "type": "image/webp",
       "form_factor": "narrow",
       "label": "Clash Manager Headhunter (Dark)"
     },
     {
-      "src": "assets/branding/roster-light.webp",
-      "sizes": "1920x1080",
+      "src": "assets/branding/screenshot-headhunter-light.webp",
+      "sizes": "1400x2800",
       "type": "image/webp",
-      "form_factor": "wide",
-      "label": "Clash Manager Roster (Light)"
-    },
-    {
-      "src": "assets/branding/roster-dark.webp",
-      "sizes": "1920x1080",
-      "type": "image/webp",
-      "form_factor": "wide",
-      "label": "Clash Manager Roster (Dark)"
+      "form_factor": "narrow",
+      "label": "Clash Manager Headhunter (Light)"
     }
   ],
   "launch_handler": {

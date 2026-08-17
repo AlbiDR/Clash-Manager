@@ -114,13 +114,15 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   flex-direction: column;
   gap: 2px;
 }
+/* Row typescale aligned to the SettingRow/LinkRow scale (body-rg over body-sm); these
+   were previously hardcoded one step smaller at 14px/12px. */
 .row-label {
   font-weight: 800;
-  font-size: 14px;
+  font-size: var(--sys-typescale-body-rg);
   color: var(--sys-color-on-surface);
 }
 .row-desc {
-  font-size: 12px;
+  font-size: var(--sys-typescale-body-sm);
   opacity: 0.5;
 }
 

@@ -20,7 +20,7 @@ const isRetryInteractionActive = ref(false);
 </script>
 
 <template>
-  <div class="error-state animate-pulse-glow" @mousedown="isRetryInteractionActive = true" @mouseup="isRetryInteractionActive = false">
+  <div class="error-state" @mousedown="isRetryInteractionActive = true" @mouseup="isRetryInteractionActive = false">
     <div class="error-icon-box">
       <!-- Custom Crafted Warning SVG -->
       <Icon name="warning" size="48" class="svg-warning" />
@@ -48,6 +48,12 @@ const isRetryInteractionActive = ref(false);
 </template>
 
 <style scoped>
+/* This root previously carried `animate-pulse-glow`, a class defined nowhere in the
+   stack (@core/theme/animations.ts declares `animate-pop` and nothing else), so it
+   styled nothing. Removed rather than invented: the intended motion was never
+   specified. Any replacement belongs in the animations SSOT, and must animate from
+   opacity 0 without a persistent `opacity: 0` base - a base of 0 leaves the element
+   permanently invisible on any client where the animation never runs. */
 .error-state {
   display: flex;
   flex-direction: column;

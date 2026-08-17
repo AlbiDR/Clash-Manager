@@ -32,6 +32,7 @@ export { default as BenchmarkContent } from "./ui/BenchmarkContent.vue";
 export { default as SelectionBar } from "./ui/SelectionBar.vue";
 export { default as ScoreThresholdSelector } from "./ui/ScoreThresholdSelector.vue";
 export { default as SettingRow } from "./ui/SettingRow.vue";
+export { default as LinkRow } from "./ui/LinkRow.vue";
 export { default as ConsoleHeader } from "./ui/ConsoleHeader.vue";
 export { default as ConsoleLayout } from "./ui/ConsoleLayout.vue";
 export { default as ConsoleList } from "./ui/ConsoleList.vue";

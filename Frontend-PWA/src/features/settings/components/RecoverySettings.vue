@@ -298,14 +298,4 @@ onMounted(() => {
     gap: 8px;
   }
 }
-
-.flex {
-  display: flex;
-}
-.align-center {
-  align-items: center;
-}
-.gap-8 {
-  gap: 8px;
-}
 </style>

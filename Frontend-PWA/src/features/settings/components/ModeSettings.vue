@@ -25,7 +25,7 @@ const {
     :loading="isRefreshing"
     :initially-expanded="initiallyExpanded"
   >
-    <div class="features-list">
+    <div class="setting-row-stack">
       <SettingRow
         label="Synthetic Engine"
         description="Populate the interface with high-fidelity mock data"
@@ -53,7 +53,7 @@ const {
           @click="toggleShowcaseMode"
         >
           <template #label>
-            <div class="flex align-center gap-8">
+            <div class="label-with-badge">
               Master Showcase
               <span v-if="isShowcaseMode" class="hybrid-badge">HYBRID</span>
             </div>
@@ -69,7 +69,12 @@ const {
 </template>
 
 <style scoped>
-.features-list {
+/* Deliberately kept local rather than abstracted. Three flex properties do not warrant
+   a shared component or a global class (ADR Section I: YAGNI, KISS), and the shared
+   --sys-space-8 token already prevents the one value that matters from drifting against
+   the identically-named stack in AppearanceSettings. The name is shared vocabulary; the
+   declaration is not shared surface. */
+.setting-row-stack {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-8);
@@ -110,13 +115,13 @@ const {
   letter-spacing: 0.04em;
 }
 
-.flex {
+/* Replaces an anonymous `flex align-center gap-8` utility triplet that was declared
+   locally in this component and, identically, in RecoverySettings (where it was never
+   even used). A single semantic class states the intent and removes the duplicate
+   declaration site. */
+.label-with-badge {
   display: flex;
-}
-.align-center {
   align-items: center;
-}
-.gap-8 {
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 </style>
