@@ -66,8 +66,14 @@ describe("MaintenanceClient", () => {
   });
 
   describe("Push Notifications", () => {
-    it("subscribeToPush inserts valid subscription", async () => {
-      vi.mocked(mockFrom.insert).mockResolvedValue({ error: null } as any);
+    it("subscribeToPush registers a valid subscription through the features RPC", async () => {
+      // The write must go through the RPC, not a direct table insert: the
+      // drivers schema is not exposed on the remote Data API, so an insert is
+      // rejected with PGRST106 before it reaches a row.
+      vi.mocked(mockClient.rpc).mockResolvedValue({
+        data: { success: true, refreshed: false },
+        error: null,
+      });
 
       const mockSub = {
         toJSON: () => ({
@@ -78,12 +84,13 @@ describe("MaintenanceClient", () => {
 
       const result = await MaintenanceClient.subscribeToPush(mockSub as any);
       expect(result).toBe(true);
-      expect(mockFrom.insert).toHaveBeenCalledWith({
+      expect(mockClient.rpc).toHaveBeenCalledWith('register_push_subscription', {
         subscription: {
           endpoint: 'https://push.com/v1',
           keys: { p256dh: 'key1', auth: 'auth1' }
         }
       });
+      expect(mockFrom.insert).not.toHaveBeenCalled();
     });
 
     it("subscribeToPush rejects invalid subscription", async () => {
@@ -96,11 +103,31 @@ describe("MaintenanceClient", () => {
 
       const result = await MaintenanceClient.subscribeToPush(mockSub as any);
       expect(result).toBe(false);
-      expect(mockFrom.insert).not.toHaveBeenCalled();
+      expect(mockClient.rpc).not.toHaveBeenCalled();
     });
 
-    it("subscribeToPush returns false if database insertion fails", async () => {
-      vi.mocked(mockFrom.insert).mockResolvedValue({ error: { message: "DB Error" } } as any);
+    it("subscribeToPush returns false if the RPC transport fails", async () => {
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: null, error: { message: "DB Error" } } as any);
+
+      const mockSub = {
+        toJSON: () => ({
+          endpoint: 'https://push.com/v1',
+          keys: { p256dh: 'key1', auth: 'auth1' }
+        })
+      };
+
+      const result = await MaintenanceClient.subscribeToPush(mockSub as any);
+      expect(result).toBe(false);
+    });
+
+    it("subscribeToPush returns false when the RPC reports failure in-band", async () => {
+      // The RPC surfaces a rejected payload (e.g. a missing endpoint) as
+      // success:false with no transport error, so the absence of an error is
+      // not sufficient evidence that the subscription was stored.
+      vi.mocked(mockClient.rpc).mockResolvedValue({
+        data: { success: false, message: "Push subscription is missing an endpoint." },
+        error: null,
+      });
 
       const mockSub = {
         toJSON: () => ({
