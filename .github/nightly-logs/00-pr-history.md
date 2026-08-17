@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-17] PR #1484 [Stage 6]: docs(tsdoc): harden MemberCard interface contracts and inline annotations
+**Domain:** pipeline | **Commit:** 852799ba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1484)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/roster/components/MemberCard.vue
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden MemberCard interface contracts and inline annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-17] PR #1483 [Stage 4]: chore(optimize): Standardized domain-descriptive naming in MemberCard.vue and re-verified substrate database views.
 **Domain:** pipeline | **Commit:** c950991e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1483)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/features/roster/components/MemberCard.vue
