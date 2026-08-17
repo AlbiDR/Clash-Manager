@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-17] PR #1482 [Stage 3]: chore(database): Baseline consolidation audit clean
+**Domain:** pipeline | **Commit:** 6382682a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1482)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline consolidation audit clean
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-17] PR #1481 [Stage 2]: chore(verify): Closed zero-coverage gap in ConfirmDialog component with comprehensive unit tests
 **Domain:** pipeline | **Commit:** 6381e7d9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1481)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/ui/ui-tests/ConfirmDialog.spec.ts
