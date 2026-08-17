@@ -44,10 +44,21 @@ import { formatTimeAgo, formatNumber, parseTimeAgoValue } from "@core";
 
 /**
  * Reactive chart selection state toggling active history visualization.
+ *
+ * @remarks
+ * Switches between River War (`war`) and Voyage (`voyage`) history charts within the expanded card body.
+ *
  * [DECISION LOG] Defaults to 'war' (River War) as the primary clan performance metric.
  */
 const activeChartMode = ref<"war" | "voyage">("war");
 
+/**
+ * Component Props Interface Definition.
+ *
+ * @remarks
+ * Extends `ConsoleCardMetadata` to include card state (expanded, selected, selectionMode, isTagged)
+ * along with member identification and leaderboard payload data.
+ */
 const props = defineProps<ConsoleCardMetadata & {
   /** Unique player tag identifier. */
   id: string;
@@ -55,6 +66,12 @@ const props = defineProps<ConsoleCardMetadata & {
   member: LeaderboardMember;
 }>();
 
+/**
+ * Component Event Emission Contract.
+ *
+ * @remarks
+ * Defines strict typed events emitted to parent roster view controllers.
+ */
 const emit = defineEmits<{
   /** Triggers card expansion/collapse when not in selection mode. */
   toggle: [];
@@ -67,11 +84,14 @@ const emit = defineEmits<{
  *
  * @remarks
  * Constructs a semantic description of the member for screen readers and screen overlays.
+ * [DECISION LOG] Formats member role and rounds performance score to whole numbers for clear speech synthesis.
  *
- * [DECISION LOG] Rounds performance score to whole numbers for clear speech synthesis.
+ * @returns Formatted accessibility string combining player name, score, and hierarchy role.
  */
 const memberAccessibilityLabel = computed(() => {
+  // Extract human-readable role label from standardized role formatting utility
   const memberRoleDescriptor = formatRole(props.member.d.role).label;
+  // Round score to avoid decimal ambiguity in screen-reader speech synthesis
   const roundedPerformanceScore = Math.round(props.member.performanceScore);
   return `${props.member.n}, score ${roundedPerformanceScore}, ${memberRoleDescriptor}`;
 });
