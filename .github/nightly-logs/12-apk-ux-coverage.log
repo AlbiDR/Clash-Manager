@@ -43,3 +43,4 @@
 * [2026-08-14] [Stage 12] CHANGED: Frontend-PWA/src/features/laboratory/components/TargetPicker.vue -- CHANGED: Frontend-PWA/src/features/laboratory/components/TargetPicker.vue -- Modernized TargetPicker.vue with user-select none text selection containment (Target A.3).
 * [2026-08-15] [Stage 12] CHANGED: Frontend-PWA/src/features/settings/components/BackendRefresher.vue -- Modernized BackendRefresher.vue with text selection containment.
 * [2026-08-16] [Stage 12] CLEAN: Codebase -- Hybrid Shell UX and UI audit complete; bounded candidate set is fully compliant.
+* [2026-08-17] [Stage 12] CLEAN: Codebase -- Hybrid Shell UX and UI audit complete; bounded candidate set is fully compliant.
