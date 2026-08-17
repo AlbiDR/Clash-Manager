@@ -46,7 +46,7 @@ import { formatTimeAgo, formatNumber, parseTimeAgoValue } from "@core";
  * Reactive chart selection state toggling active history visualization.
  * [DECISION LOG] Defaults to 'war' (River War) as the primary clan performance metric.
  */
-const activeChart = ref<"war" | "voyage">("war");
+const activeChartMode = ref<"war" | "voyage">("war");
 
 const props = defineProps<ConsoleCardMetadata & {
   /** Unique player tag identifier. */
@@ -70,9 +70,10 @@ const emit = defineEmits<{
  *
  * [DECISION LOG] Rounds performance score to whole numbers for clear speech synthesis.
  */
-const ariaLabel = computed(() => {
-  const roleLabel = formatRole(props.member.d.role).label;
-  return `${props.member.n}, score ${Math.round(props.member.performanceScore)}, ${roleLabel}`;
+const memberAccessibilityLabel = computed(() => {
+  const memberRoleDescriptor = formatRole(props.member.d.role).label;
+  const roundedPerformanceScore = Math.round(props.member.performanceScore);
+  return `${props.member.n}, score ${roundedPerformanceScore}, ${memberRoleDescriptor}`;
 });
 </script>
 
@@ -84,7 +85,7 @@ const ariaLabel = computed(() => {
     :selection-mode="props.selectionMode"
     :is-tagged="props.isTagged"
     :score="props.member.performanceScore"
-    :aria-label="ariaLabel"
+    :aria-label="memberAccessibilityLabel"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
@@ -176,7 +177,7 @@ const ariaLabel = computed(() => {
       </StatsGrid>
 
       <BaseSegmentedControl
-        v-model="activeChart"
+        v-model="activeChartMode"
         :options="[
           { label: 'War', value: 'war' },
           { label: 'Voyage', value: 'voyage' }
@@ -185,7 +186,7 @@ const ariaLabel = computed(() => {
         class="chart-toggle-margin"
       />
 
-      <WarHistoryChart v-if="activeChart === 'war'" :history="props.member.d.hist" :loading="props.appIsRefreshing" />
+      <WarHistoryChart v-if="activeChartMode === 'war'" :history="props.member.d.hist" :loading="props.appIsRefreshing" />
       <VoyageHistoryChart v-else :history="props.member.d.v_hist" :loading="props.appIsRefreshing" />
 
       <CardActions
