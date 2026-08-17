@@ -329,3 +329,4 @@
 * [2026-08-15] Target: Codebase - jsdom | ^29.1.1 | 30.0.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
 * [2026-08-15] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped dependency-cruiser to ^18.2.0 and updated major version watchlist.
 * [2026-08-16] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped knip to ^6.32.2
+* [2026-08-17] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped vue-tsc to ^3.3.10 and updated lockfile
