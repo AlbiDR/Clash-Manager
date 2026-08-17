@@ -2,53 +2,59 @@
 -- Copyright (C) 2026 AlbiDR
 
 -- =============================================================================
--- Restore last_success_at / last_failure_at maintenance for Edge Function components
+-- Repair public.report_heartbeat, which threw on every Edge Function call
 -- =============================================================================
 --
 -- SYMPTOM
 -- -------
 -- substrate.pipeline_heartbeat.last_success_at was frozen at 2026-04-30 for the
--- two components that report through Edge Functions:
+-- two components that report through Edge Functions, while the two components
+-- that write the table directly from SQL were current:
 --
---   ROYALE_DATA_INGESTOR   last_success_at 2026-04-30T18:00:39Z
---   HEADHUNTER_SCANNER     last_success_at 2026-04-30T18:15:14Z
+--   ROYALE_DATA_INGESTOR   last_success_at 2026-04-30T18:00:39Z   (frozen)
+--   HEADHUNTER_SCANNER     last_success_at 2026-04-30T18:15:14Z   (frozen)
+--   RECRUIT_ROTATION       last_success_at today                  (healthy)
+--   NIGHTLY_MAINTENANCE    last_success_at today                  (healthy)
 --
--- while the two components that write the table directly from SQL were current:
---
---   RECRUIT_ROTATION       last_success_at today
---   NIGHTLY_MAINTENANCE    last_success_at today
---
--- The pipeline itself was healthy the whole time. Only the timestamp was stuck.
+-- The ingestion pipeline itself was healthy throughout. Only its reporting was
+-- broken, which is why nothing else looked wrong.
 --
 -- ROOT CAUSE
 -- ----------
--- There are two report_heartbeat implementations. `substrate.report_heartbeat`
--- maintains the success/failure stamps with a CASE on the reported status.
--- `public.report_heartbeat` -- the one Edge Functions actually reach, because the
--- Data API exposes `public` and not `substrate` -- is not a thin wrapper around it
--- but a separate reimplementation, and its ON CONFLICT clause updates only
--- status, last_message, last_triggered_at and metadata. The two timestamp columns
--- were simply absent from the update list, so they kept whatever value they held
--- when the wrapper took over.
+-- public.report_heartbeat -- the function Edge Functions must call, because the
+-- Data API exposes `public` and not `substrate` -- inserted into a `metadata`
+-- column that does not exist on the live table. substrate.pipeline_heartbeat has
+-- component_id, status, last_message, last_triggered_at, last_success_at,
+-- last_failure_at, last_validation_report, is_data_perfect, discovery_yield and
+-- updated_at. There is no `metadata`. (The baseline migration declares one, but
+-- it is guarded by CREATE TABLE IF NOT EXISTS against an already-existing table,
+-- so the column was never actually added; Backend/supabase/database.types.ts,
+-- generated from the live database, is the authority here and does not list it.)
 --
--- The failure hid because protocol.ts also passes the real instant inside
--- p_metadata (see `last_success_at: Temporal.Now.instant().toString()`), and the
--- wrapper does merge metadata. So the truth was being recorded on every run, just
--- into the jsonb blob instead of the column every reader looks at. Nothing read
--- the column until features.pipeline_heartbeat_view exposed it to the PWA, which
--- is why a 3.5-month-old stamp went unnoticed.
+-- So the INSERT raised "column metadata does not exist" (SQLSTATE 42703) on every
+-- single invocation. Not one field was ever written by an Edge Function
+-- heartbeat: not the timestamps, not the status, not the message.
+--
+-- WHY IT WAS SILENT FOR MONTHS
+-- ---------------------------
+-- protocol.ts issues `await supabase.rpc('report_heartbeat', ...)` at all three
+-- report points and never inspects the returned error, so a hard SQL failure was
+-- indistinguishable from success. Nothing read last_success_at either, until
+-- features.pipeline_heartbeat_view exposed it to the PWA in 14.45.17.
 --
 -- PREVENTIVE ACTION
 -- -----------------
--- The two missing columns are added to the wrapper's ON CONFLICT list, mirroring
--- the CASE logic in substrate.report_heartbeat exactly.
+-- 1. This migration rewrites the function against the columns that actually
+--    exist, promoting the payload protocol.ts already sends (validation report,
+--    is_data_perfect) into real columns instead of a phantom jsonb blob, and
+--    maintaining last_success_at / last_failure_at the way
+--    substrate.report_heartbeat does.
+-- 2. protocol.ts now logs the RPC error at every report point, so a heartbeat
+--    that cannot be written can never again look like one that was.
 --
--- Deliberately NOT delegating to substrate.report_heartbeat, which would be the
--- obvious way to stop the two copies drifting again: that function also assigns
--- `discovery_yield = EXCLUDED.discovery_yield`, and this wrapper has no p_yield
--- parameter, so delegating would reset HEADHUNTER_SCANNER's discovery_yield to 0
--- on every report. Consolidating the two implementations needs that parameter
--- threaded through first, which is a wider change than this fix should carry.
+-- No backfill is possible or needed: there is no metadata blob holding the true
+-- historical stamps, and both frozen rows correct themselves on their component's
+-- next COMPLETED run once the function works.
 
 CREATE OR REPLACE FUNCTION public.report_heartbeat(p_component_id text, p_status text, p_message text, p_metadata jsonb DEFAULT '{}'::jsonb)
  RETURNS void
@@ -57,17 +63,37 @@ CREATE OR REPLACE FUNCTION public.report_heartbeat(p_component_id text, p_status
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
-    INSERT INTO substrate.pipeline_heartbeat (component_id, status, last_message, last_triggered_at, metadata)
-    VALUES (p_component_id, p_status, p_message, NOW(), p_metadata)
+    INSERT INTO substrate.pipeline_heartbeat (
+        component_id,
+        status,
+        last_message,
+        last_triggered_at,
+        last_validation_report,
+        is_data_perfect,
+        last_success_at,
+        last_failure_at,
+        updated_at
+    )
+    VALUES (
+        p_component_id,
+        p_status::substrate.pipeline_status,
+        p_message,
+        NOW(),
+        COALESCE(p_metadata->'last_validation_report', '{}'::jsonb),
+        COALESCE((p_metadata->>'is_data_perfect')::BOOLEAN, FALSE),
+        CASE WHEN p_status = 'COMPLETED' THEN NOW() ELSE NULL END,
+        CASE WHEN p_status = 'FAILED'    THEN NOW() ELSE NULL END,
+        NOW()
+    )
     ON CONFLICT (component_id) DO UPDATE
-    SET status = EXCLUDED.status,
-        last_message = EXCLUDED.last_message,
+    SET status            = EXCLUDED.status,
+        last_message      = EXCLUDED.last_message,
         last_triggered_at = EXCLUDED.last_triggered_at,
-        -- [FIX] These two clauses were missing, freezing both stamps for every
-        -- component that reports through this wrapper. Mirrors the CASE in
-        -- substrate.report_heartbeat: only advance on the matching terminal
-        -- status, and otherwise preserve the existing value rather than nulling
-        -- it, so a RUNNING report never erases the last known success.
+        updated_at        = NOW(),
+
+        -- Only advance a terminal stamp on its own terminal status, and otherwise
+        -- keep the existing value. A RUNNING report must never erase the last
+        -- known success or failure.
         last_success_at = CASE
             WHEN EXCLUDED.status = 'COMPLETED' THEN NOW()
             ELSE substrate.pipeline_heartbeat.last_success_at
@@ -76,32 +102,27 @@ BEGIN
             WHEN EXCLUDED.status = 'FAILED' THEN NOW()
             ELSE substrate.pipeline_heartbeat.last_failure_at
         END,
-        metadata = substrate.pipeline_heartbeat.metadata || EXCLUDED.metadata;
+
+        -- Preserve the previous diagnosis when the caller sends no new one. The
+        -- opening RUNNING report carries no metadata, so overwriting
+        -- unconditionally (as substrate.report_heartbeat does) would discard the
+        -- last completed run's validation report the moment the next run starts.
+        last_validation_report = CASE
+            WHEN p_metadata ? 'last_validation_report' THEN EXCLUDED.last_validation_report
+            ELSE substrate.pipeline_heartbeat.last_validation_report
+        END,
+        is_data_perfect = CASE
+            WHEN p_metadata ? 'is_data_perfect' THEN EXCLUDED.is_data_perfect
+            ELSE substrate.pipeline_heartbeat.is_data_perfect
+        END;
 END;
 $function$;
 
 COMMENT ON FUNCTION public.report_heartbeat(text, text, text, jsonb) IS
-  'Public-schema heartbeat reporter reached by the Edge Functions, which cannot
-   see the substrate schema over the Data API. Maintains last_success_at and
-   last_failure_at in addition to status/message/metadata; omitting those two
-   columns previously froze both stamps at 2026-04-30 for ROYALE_DATA_INGESTOR
-   and HEADHUNTER_SCANNER while the pipeline itself ran normally.';
-
--- -----------------------------------------------------------------------------
--- One-time reconciliation of the rows the bug froze
--- -----------------------------------------------------------------------------
--- Without this the two affected components keep reporting a 2026-04-30 stamp to
--- the PWA until their next COMPLETED run. The value is recovered from the same
--- row's metadata, which the wrapper has been merging correctly all along, so this
--- promotes data that already exists rather than inventing a timestamp.
---
--- Guards: only rows whose metadata stamp is well-formed and strictly newer than
--- the column are touched, so the statement is idempotent and cannot move any
--- stamp backwards.
-UPDATE substrate.pipeline_heartbeat ph
-   SET last_success_at = (ph.metadata->>'last_success_at')::timestamptz
- WHERE ph.metadata->>'last_success_at' ~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}'
-   AND (
-        ph.last_success_at IS NULL
-     OR (ph.metadata->>'last_success_at')::timestamptz > ph.last_success_at
-   );
+  'Public-schema heartbeat reporter reached by the Edge Functions, which cannot see
+   the substrate schema over the Data API. Until 14.45.18 this function inserted
+   into a non-existent `metadata` column and therefore raised 42703 on every call,
+   silently freezing ROYALE_DATA_INGESTOR and HEADHUNTER_SCANNER reporting at
+   2026-04-30 while the pipeline itself ran normally. Maintains last_success_at and
+   last_failure_at on terminal statuses and preserves the prior validation report
+   when a caller sends none.';

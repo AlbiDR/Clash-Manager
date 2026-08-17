@@ -89,6 +89,53 @@ function makeSupabaseMock(rpcImpl: (fn: string, args: unknown) => Promise<{ data
 }
 
 describe("clinicalServe", () => {
+  describe("heartbeat failure visibility", () => {
+    it("logs a failing report_heartbeat RPC instead of swallowing it, and still completes the run", async () => {
+      // Regression: every report point issued a bare `await supabase.rpc(...)`
+      // with no error check, so public.report_heartbeat raising 42703 against a
+      // non-existent column looked identical to a successful write. Edge Function
+      // health reporting was dead from 2026-04-30 to 2026-08-17 with no signal.
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      try {
+        const { supabase, calls } = makeSupabaseMock(async (fn) => {
+          if (fn === "report_telemetry") return { data: { id: "tid-heartbeat" }, error: null };
+          if (fn === "report_heartbeat") {
+            return { data: null, error: { message: 'column "metadata" does not exist' } };
+          }
+          return { data: null, error: null };
+        });
+
+        const handler = vi.fn(async () => ({ ok: true }));
+
+        const response = await clinicalServe({
+          req: makeRequest({}),
+          supabase: supabase as any,
+          bearerToken: BEARER_TOKEN,
+          eventType: "TEST_EVENT",
+          componentId: "protocol-spec",
+          schema: EMPTY_SCHEMA,
+          handler,
+        });
+
+        // A dead heartbeat is observability loss, not a reason to fail ingestion.
+        expect(response.status).toBe(200);
+        expect(handler).toHaveBeenCalled();
+
+        // But it must be loud enough to find in the function logs.
+        const heartbeatCalls = calls.filter((c) => c.fn === "report_heartbeat");
+        expect(heartbeatCalls.length).toBeGreaterThan(0);
+
+        const loggedHeartbeatFailure = consoleErrorSpy.mock.calls.some((args) =>
+          args.some((arg) => typeof arg === "string" && arg.includes("Heartbeat write FAILED")),
+        );
+        expect(loggedHeartbeatFailure).toBe(true);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
+  });
+
   describe("F3: telemetry terminal state", () => {
     it("drives the telemetry row to FAILED when the handler throws", async () => {
       const { supabase, calls } = makeSupabaseMock(async (fn) => {

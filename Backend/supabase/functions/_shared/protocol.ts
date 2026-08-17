@@ -307,6 +307,47 @@ async function isAuthorizedBearer(authHeader: string | null, bearerToken: string
 }
 
 /**
+ * Reports component health, surfacing any failure to write it.
+ *
+ * @remarks
+ * [THREAT:] A heartbeat that cannot be persisted is indistinguishable from a
+ * healthy one if the RPC error is discarded. That is exactly how
+ * `public.report_heartbeat` raising 42703 on a non-existent column went unnoticed
+ * from 2026-04-30 to 2026-08-17: all three report points issued a bare
+ * `await supabase.rpc(...)`, so every component's reporting was dead while the
+ * pipeline itself looked fine.
+ *
+ * [DECISION LOG] The failure is logged, not thrown. Health reporting is
+ * observability, so losing it must not abort an otherwise successful ingestion
+ * run; but it must be loud enough to find in the function logs.
+ *
+ * @param supabase - The Supabase client used to reach the public-schema RPC.
+ * @param payload - The heartbeat arguments forwarded verbatim to the RPC.
+ * @returns Whether the heartbeat was persisted.
+ */
+async function reportHeartbeat(
+    supabase: SupabaseClient,
+    payload: {
+        p_component_id: string;
+        p_status: 'RUNNING' | 'COMPLETED' | 'FAILED';
+        p_message: string;
+        p_metadata?: Record<string, unknown>;
+    },
+): Promise<boolean> {
+    const { error: heartbeatError } = await supabase.rpc('report_heartbeat', payload);
+
+    if (heartbeatError) {
+        console.error(
+            `[Protocol] Heartbeat write FAILED for ${payload.p_component_id} (${payload.p_status}):`,
+            heartbeatError.message ?? heartbeatError,
+        );
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * CONFIGURATION: ProtocolOptions
  *
  * @remarks
@@ -645,7 +686,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         // [DECISION LOG] Initial heartbeat signals to the global supervisor that
         // the Edge Function has started and is nominally healthy.
-        await supabase.rpc('report_heartbeat', {
+        await reportHeartbeat(supabase, {
             p_component_id: componentId,
             p_status: 'RUNNING',
             p_message: `Protocol execution initiated for ${componentId}.`
@@ -727,7 +768,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             });
         }
 
-        await supabase.rpc('report_heartbeat', {
+        await reportHeartbeat(supabase, {
             p_component_id: componentId,
             p_status: 'COMPLETED',
             p_message: `Protocol execution completed. Data perfection: ${isDataPerfect}`,
@@ -740,7 +781,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         return new Response(JSON.stringify({
             success: true,
-            version: '14.45.18',
+            version: '14.45.19',
             data: results,
             duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
             timestamp: Temporal.Now.instant().toString()
@@ -793,7 +834,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         }
 
         try {
-            await supabase.rpc('report_heartbeat', {
+            await reportHeartbeat(supabase, {
                 p_component_id: componentId,
                 p_status: 'FAILED',
                 p_message: `Fatal protocol error [${code}] in ${componentId}.`,
