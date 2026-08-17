@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-17] PR #1486 [Stage 8]: chore(deps): Bumped vue-tsc to ^3.3.10 and updated lockfile
+**Domain:** pipeline | **Commit:** 3241728e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1486)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped vue-tsc to ^3.3.10 and updated lockfile
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-17] PR #1485 [Stage 7]: chore(version): Version integrity audit complete; no version drift or catalog violations found.
 **Domain:** pipeline | **Commit:** 8f93adaa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1485)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
