@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-17] PR #1485 [Stage 7]: chore(version): Version integrity audit complete; no version drift or catalog violations found.
+**Domain:** pipeline | **Commit:** 8f93adaa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1485)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Version integrity audit complete; no version drift or catalog violations found.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-17] PR #1484 [Stage 6]: docs(tsdoc): harden MemberCard interface contracts and inline annotations
 **Domain:** pipeline | **Commit:** 852799ba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1484)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/roster/components/MemberCard.vue
