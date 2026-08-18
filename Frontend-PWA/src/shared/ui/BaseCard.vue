@@ -5,22 +5,80 @@ import Icon from "./Icon.vue";
 import { useCardMechanics } from "../composables/useCardMechanics";
 import { scoreTintStyle } from "../utils/scoreTint";
 
+/**
+ * COMPONENT: BaseCard
+ * ----------------------------------------------------------------------------
+ * Rationale: Authoritative container molecule for interactive cards (Roster members,
+ * Recruits, Laboratory targets) providing standardized selection, expand/collapse,
+ * and score-tint visual representations across all features.
+ * ----------------------------------------------------------------------------
+ *
+ * @remarks
+ * Satisfies ADR Section II: Mobile WebView Ergonomics & Target B.2.
+ * Enforces declarative tactile feedback via `v-tactile` directive while delegating tap,
+ * long-press, and selection mechanics to `useCardMechanics`. Maintains layout isolation
+ * and composited motion performance in hybrid WebView views.
+ *
+ * **Decision Log - Touch Interactions & Rendering Performance:**
+ * - Gesture Disambiguation: Single tap toggles selection mode or expands details depending
+ *   on global selection state, whereas long-press explicitly triggers selection mode.
+ * - Threat Vector - Layout Thrashing & Animation Jitter: CSS properties in `.card` avoid
+ *   animating layout geometry like `height`/`width`; transitions are restricted to composited
+ *   transform, box-shadow, and color opacity properties to prevent main-thread dropped frames.
+ */
+
 const props = defineProps<{
+  /**
+   * Unique DOM identifier for accessibility and DOM element targeting.
+   */
   id: string;
+
+  /**
+   * Indicates whether the card is in an expanded detail view state.
+   */
   expanded: boolean;
+
+  /**
+   * Indicates whether the card is currently selected within multi-selection mode.
+   */
   selected: boolean;
+
+  /**
+   * Active state flag of the parent container's batch/multi-selection mode.
+   */
   selectionMode: boolean;
+
+  /**
+   * Optional flag highlighting whether the entity has been explicitly tagged or bookmarked.
+   */
   isTagged?: boolean;
+
+  /**
+   * Numeric score value used to derive score-tint background styles dynamically.
+   */
   score?: number;
 }>();
 
 const emit = defineEmits<{
+  /**
+   * Emitted when the user requests expansion/collapse toggling of card details.
+   */
   toggle: [];
+
+  /**
+   * Emitted when the card selection state toggles during batch mode or tap/long-press.
+   */
   "toggle-select": [];
-  "score-click": [Event];
+
+  /**
+   * Emitted when the user directly taps the score badge stat-pod.
+   *
+   * @param clickEvent - The mouse or touch event emitted upon score badge interaction.
+   */
+  "score-click": [clickEvent: Event];
 }>();
 
-// Reusable card mechanics
+// Reusable card mechanics orchestrator managing tap dispatches, long-press timer loops, and score clicks
 const {
   handleTap,
   handleLongPress,
@@ -31,6 +89,15 @@ const {
   onSelect: () => emit("toggle-select"),
 });
 
+/**
+ * Intercepts score badge interaction events, executes internal card mechanics state handling,
+ * and re-emits a standardized Event payload to parent observers.
+ *
+ * // Decision: Stop event propagation in template and delegate event normalizations cleanly
+ * // Threat: Untrapped touch propagation triggering parent list scroll locks or inadvertent card selection
+ *
+ * @param cardScoreClickEvent - Raw touch or mouse interaction payload on score container.
+ */
 function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
   internalScoreClick(cardScoreClickEvent);
   emit("score-click", cardScoreClickEvent as Event);
