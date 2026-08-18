@@ -105,10 +105,20 @@ describe("MemberCard.vue", () => {
             template: '<div class="card-actions-stub"></div>',
             props: ["id", "loading", "compact"]
           },
+          BaseSegmentedControl: {
+            name: "BaseSegmentedControl",
+            template: '<div class="base-segmented-control-stub"><button class="btn-voyage" @click="$emit(\'update:modelValue\', \'voyage\')">Voyage</button></div>',
+            props: ["modelValue", "options", "compact"]
+          },
           // Stubbing async component directly in global.stubs
           WarHistoryChart: {
             name: "WarHistoryChart",
             template: '<div class="war-history-chart-mock"></div>',
+            props: ["history", "loading"]
+          },
+          VoyageHistoryChart: {
+            name: "VoyageHistoryChart",
+            template: '<div class="voyage-history-chart-mock"></div>',
             props: ["history", "loading"]
           }
         },
@@ -228,5 +238,53 @@ describe("MemberCard.vue", () => {
     const winRateItem = lifetimeTiles.find(item => item.props("label") === "Win Rate");
     expect(winRateItem).toBeDefined();
     expect(winRateItem!.props("value")).toBe("100%");
+  });
+
+  it("toggles active chart mode between War and Voyage", async () => {
+    const memberWithVoyage = {
+      ...mockMember,
+      d: {
+        ...mockMember.d,
+        v_hist: "200 24V01 | 100 24V02",
+      },
+    };
+
+    const wrapper = mountMemberCard({ member: memberWithVoyage, expanded: true });
+
+    // Initially displays WarHistoryChart
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
+    expect(wrapper.find(".voyage-history-chart-mock").exists()).toBe(false);
+
+    // Click Segmented Control button to toggle to voyage
+    const btnVoyage = wrapper.find(".btn-voyage");
+    await btnVoyage.trigger("click");
+
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
+    const voyageChart = wrapper.findComponent({ name: "VoyageHistoryChart" });
+    expect(voyageChart.exists()).toBe(true);
+    expect(voyageChart.props("history")).toBe("200 24V01 | 100 24V02");
+  });
+
+  it("handles missing or null rate and avg fallback values gracefully", () => {
+    const memberWithNulls = {
+      ...mockMember,
+      d: {
+        ...mockMember.d,
+        rate: null as any,
+        avg: null as any,
+      },
+    };
+
+    const wrapper = mountMemberCard({ member: memberWithNulls, expanded: true });
+    const firstGridTiles = wrapper.findAll(".stats-grid")[0].findAllComponents({ name: "StatisticItem" });
+
+    const warRateTile = firstGridTiles.find((tile) => tile.props("label") === "War Rate");
+    expect(warRateTile).toBeDefined();
+    expect(warRateTile!.props("value")).toBe("0%");
+    expect(warRateTile!.props("benchmarkRawValue")).toBe(0);
+
+    const avgDonationsTile = firstGridTiles.find((tile) => tile.props("label") === "Avg. Donations");
+    expect(avgDonationsTile).toBeDefined();
+    expect(avgDonationsTile!.props("value")).toBe(0);
   });
 });
