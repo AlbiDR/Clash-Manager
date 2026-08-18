@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-18] PR #1495 [Stage 9]: chore(refactor): Structural audit complete; architecture is fully compliant with CleanStack ADR guidelines
+**Domain:** pipeline | **Commit:** 8853c223 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1495)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(refactor): Structural audit complete; architecture is fully compliant with CleanStack ADR guidelines
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-18] PR #1494 [Stage 8]: chore(deps): Bumped supabase devDependency to ^2.114.0
 **Domain:** pipeline | **Commit:** 912c6f15 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1494)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
