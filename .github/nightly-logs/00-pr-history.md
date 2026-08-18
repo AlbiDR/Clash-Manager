@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-18] PR #1491 [Stage 2]: chore(verify): Frontend-PWA/src/features/roster/components/components-tests/MemberCard.spec.ts -- Expanded unit test coverage
+**Domain:** pipeline | **Commit:** ac4f32b1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1491)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/roster/components/components-tests/MemberCard.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Frontend-PWA/src/features/roster/components/components-tests/MemberCard.spec.ts -- Expanded unit test coverage
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-17] PR #1490 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** b468857e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1490)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
