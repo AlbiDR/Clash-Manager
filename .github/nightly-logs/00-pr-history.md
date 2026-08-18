@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-18] PR #1493 [Stage 6]: docs(tsdoc): harden BaseCard interface contracts and inline annotations
+**Domain:** pipeline | **Commit:** 42067be4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1493)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/BaseCard.vue
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden BaseCard interface contracts and inline annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-18] PR #1492 [Stage 4]: chore(optimize): substrate hygiene audit
 **Domain:** pipeline | **Commit:** e40d0552 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1492)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
