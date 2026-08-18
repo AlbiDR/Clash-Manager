@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-18] PR #1492 [Stage 4]: chore(optimize): substrate hygiene audit
+**Domain:** pipeline | **Commit:** e40d0552 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1492)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): substrate hygiene audit
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-18] PR #1491 [Stage 2]: chore(verify): Frontend-PWA/src/features/roster/components/components-tests/MemberCard.spec.ts -- Expanded unit test coverage
 **Domain:** pipeline | **Commit:** ac4f32b1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1491)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/roster/components/components-tests/MemberCard.spec.ts
