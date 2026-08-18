@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-18] PR #1498 [Stage 13]: chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-18
+**Domain:** pipeline | **Commit:** 2b66a5e4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1498)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-18
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-18] PR #1497 [Stage 12]: chore(apk-ux): Global webview UX/UI sweep completed; candidate files verified fully compliant
 **Domain:** pipeline | **Commit:** 46633fa0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1497)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log
