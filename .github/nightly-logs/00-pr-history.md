@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-18] PR #1496 [Stage 10]: chore(apk): APK and PWA wrapper integrity audit passed with no configuration mismatches
+**Domain:** pipeline | **Commit:** 217fe291 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1496)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): APK and PWA wrapper integrity audit passed with no configuration mismatches
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-18] PR #1495 [Stage 9]: chore(refactor): Structural audit complete; architecture is fully compliant with CleanStack ADR guidelines
 **Domain:** pipeline | **Commit:** 8853c223 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1495)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
