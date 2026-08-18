@@ -1124,6 +1124,202 @@
         "lastObservedAt": "2026-08-17T13:34:22.320Z",
         "failureClass": "JULES_SESSION_STUCK"
       }
+    },
+    "2026-08-18": {
+      "1": {
+        "date": "2026-08-18",
+        "stage": 1,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-17/stage-1/pr-1490",
+          "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.580Z",
+        "failureClass": null
+      },
+      "2": {
+        "date": "2026-08-18",
+        "stage": 2,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-2/pr-1491",
+          "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.580Z",
+        "failureClass": null
+      },
+      "3": {
+        "date": "2026-08-18",
+        "stage": 3,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
+          "julesSession": {
+            "id": "17110524642971801581",
+            "state": "COMPLETED"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.580Z",
+        "failureClass": "JULES_SESSION_STUCK"
+      },
+      "4": {
+        "date": "2026-08-18",
+        "stage": 4,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-4/pr-1492",
+          "coverageLog": ".github/nightly-logs/04-optimization-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.580Z",
+        "failureClass": null
+      },
+      "5": {
+        "date": "2026-08-18",
+        "stage": 5,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
+          "julesSession": {
+            "id": "10340095446992134479",
+            "state": "COMPLETED"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": "JULES_SESSION_STUCK"
+      },
+      "6": {
+        "date": "2026-08-18",
+        "stage": 6,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-6/pr-1493",
+          "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": null
+      },
+      "7": {
+        "date": "2026-08-18",
+        "stage": 7,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
+          "julesSession": {
+            "id": "1360719803952637615",
+            "state": "COMPLETED"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": "JULES_SESSION_STUCK"
+      },
+      "8": {
+        "date": "2026-08-18",
+        "stage": 8,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-8/pr-1494",
+          "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": null
+      },
+      "9": {
+        "date": "2026-08-18",
+        "stage": 9,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-9/pr-1495",
+          "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": null
+      },
+      "10": {
+        "date": "2026-08-18",
+        "stage": 10,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-10/pr-1496",
+          "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": null
+      },
+      "11": {
+        "date": "2026-08-18",
+        "stage": 11,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
+          "julesSession": {
+            "id": "2248817704360537756",
+            "state": "COMPLETED"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": "JULES_SESSION_STUCK"
+      },
+      "12": {
+        "date": "2026-08-18",
+        "stage": 12,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-12/pr-1497",
+          "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": null
+      },
+      "13": {
+        "date": "2026-08-18",
+        "stage": 13,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-18/stage-13/pr-1498",
+          "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-18T13:36:17.581Z",
+        "failureClass": null
+      }
     }
   }
 }
