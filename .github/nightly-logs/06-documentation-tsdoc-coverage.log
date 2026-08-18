@@ -95,3 +95,4 @@
 * [2026-08-14] [Stage 6] CHANGED: Frontend-PWA/src/features/laboratory/components/TargetPicker.vue -- docs(tsdoc): harden TargetPicker interface contracts and inline annotations
 * [2026-08-16] [Stage 6] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- docs(tsdoc): harden MemberCard interface contracts and inline annotations
 * [2026-08-17] [Stage 6] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- docs(tsdoc): harden MemberCard interface contracts and inline annotations
+* [2026-08-18] [Stage 6] CHANGED: Frontend-PWA/src/shared/ui/BaseCard.vue -- docs(tsdoc): harden BaseCard interface contracts and inline annotations
