@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`ErrorState.vue > matches snapshot for visual consistency 1`] = `
-"<div data-v-37e03845="" class="error-state animate-pulse-glow">
+"<div data-v-37e03845="" class="error-state">
   <div data-v-37e03845="" class="error-icon-box">
     <!-- Custom Crafted Warning SVG --><svg data-v-abf12756="" data-v-37e03845="" class="icon svg-warning" width="48" height="48" viewBox="0 0 24 24" role="img" aria-hidden="true">
       <title data-v-abf12756="">warning icon</title>

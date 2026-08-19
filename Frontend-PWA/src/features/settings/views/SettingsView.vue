@@ -42,6 +42,7 @@ import {
   BackendRefresher,
   RecoverySettings,
   UsefulLinksSettings,
+  AboutSettings,
 } from "../components";
 
 useClashDataLoader();
@@ -71,6 +72,7 @@ const { isShowcaseMode } = useShowcaseMode();
       <BackendRefresher v-if="modules.backendRefresher" :initially-expanded="isShowcaseMode" />
       <UsefulLinksSettings :initially-expanded="isShowcaseMode" />
       <RecoverySettings :initially-expanded="isShowcaseMode" />
+      <AboutSettings :initially-expanded="isShowcaseMode" />
     </div>
   </ConsoleLayout>
 </template>

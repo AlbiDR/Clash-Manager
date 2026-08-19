@@ -29,6 +29,61 @@ describe('HtmlEntry Module', () => {
     expect(html).toContain("https://*.supabase.co");
   });
 
+  it('should not allowlist analytics or auth origins the app never contacts', () => {
+    // [REGRESSION] The CSP shipped with google.com, googleusercontent.com,
+    // googletagmanager.com, google-analytics.com, and the Google Fonts origins
+    // allowlisted while the app loaded none of them: no analytics loader exists in
+    // src/, SupabaseClient runs session-less, and both typefaces are self-hosted.
+    // A pre-approved script origin is free exfiltration surface for an injected
+    // script, so re-add one only alongside the code that calls it.
+    const html = generateHtmlEntry(mockVersion);
+    const csp = html.match(/content="(default-src[^"]*)"/)?.[1] ?? '';
+
+    expect(csp).not.toContain('googletagmanager.com');
+    expect(csp).not.toContain('google-analytics.com');
+    expect(csp).not.toContain('googleusercontent.com');
+    expect(csp).not.toContain('fonts.googleapis.com');
+    expect(csp).not.toContain('fonts.gstatic.com');
+    expect(csp).toContain("connect-src 'self' https://*.supabase.co");
+  });
+
+  it('should allow the wss upgrade Supabase Realtime opens, not only https', () => {
+    // [REGRESSION] connect-src matches on scheme, so an https-only supabase entry
+    // blocked every realtime WebSocket. Chrome reported the violation and dropped the
+    // socket, degrading live sync to poll-only with no user-visible failure.
+    const html = generateHtmlEntry(mockVersion);
+    const csp = html.match(/content="(default-src[^"]*)"/)?.[1] ?? '';
+
+    expect(csp).toContain('wss://*.supabase.co');
+  });
+
+  it('should expose a raster Open Graph image with declared intrinsic dimensions', () => {
+    // [REGRESSION] og:image pointed at logo.svg. No major unfurler (Facebook, X,
+    // Discord, WhatsApp, LinkedIn, Slack, Reddit) accepts SVG, so every shared link
+    // rendered as a bare text link with no preview at all.
+    const html = generateHtmlEntry(mockVersion);
+
+    expect(html).toContain('property="og:image" content="https://albidr.github.io/Clash-Manager/assets/branding/og-card.png"');
+    expect(html).toContain('property="og:image:type" content="image/png"');
+    expect(html).toContain('property="og:image:width" content="1200"');
+    expect(html).toContain('property="og:image:height" content="630"');
+    expect(html).toContain('property="twitter:image" content="https://albidr.github.io/Clash-Manager/assets/branding/og-card.png"');
+
+    const socialImages = html.match(/property="(?:og|twitter):image" content="([^"]+)"/g) ?? [];
+    expect(socialImages).toHaveLength(2);
+    socialImages.forEach((tag) => expect(tag).not.toContain('.svg'));
+  });
+
+  it('should declare crawler policy in-document because robots.txt cannot bind at a Pages subpath', () => {
+    // robots.txt is only honoured at an origin root. This app deploys to
+    // /Clash-Manager/, so the per-document meta is the control that actually applies.
+    const html = generateHtmlEntry(mockVersion);
+
+    expect(html).toContain('name="robots"');
+    expect(html).toContain('max-image-preview:large');
+    expect(html).toContain('rel="canonical" href="https://albidr.github.io/Clash-Manager/"');
+  });
+
   it('should include mobile-first viewport constraints', () => {
     const html = generateHtmlEntry(mockVersion);
     expect(html).toContain('name="viewport"');

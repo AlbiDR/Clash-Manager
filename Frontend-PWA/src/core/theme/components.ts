@@ -219,4 +219,31 @@ a { text-decoration: underline; color: inherit; }
   opacity: 0.7;
   margin-bottom: var(--sys-space-20);
 }
+
+/* Field surface primitive (SSOT).
+   Consumers supply their own dimensions via a sibling class; this rule owns only the
+   surface, typeface and focus affordance. Previously declared byte-identically in both
+   VoyageSetupForm.vue and DurationInput.vue, with a third divergent copy in
+   NetworkSettings.vue, so the app rendered two different "glass" fields under one name. */
+.glass-input {
+  background: var(--sys-color-surface-container-highest);
+  border: 1.5px solid transparent;
+  border-radius: var(--sys-shape-corner-input);
+  color: var(--sys-color-on-surface);
+  font-family: var(--sys-font-family-mono);
+  font-weight: 800;
+  outline: none;
+  transition: border-color var(--sys-motion-duration-200) ease,
+    box-shadow var(--sys-motion-duration-200) ease;
+}
+
+.glass-input:focus {
+  border-color: var(--sys-color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.12);
+}
+
+.glass-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 `;

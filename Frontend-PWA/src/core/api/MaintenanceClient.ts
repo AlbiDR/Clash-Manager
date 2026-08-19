@@ -83,12 +83,27 @@ export async function subscribeToPush(pushSubscriptionCandidate: PushSubscriptio
     return false;
   }
 
-  const { error: insertionError } = await supabase.schema('drivers').from('push_subscriptions').insert({
-    subscription: validation.output
-  });
+  // [FIX] SCHEMA REACHABILITY: this was a direct insert into
+  // `drivers.push_subscriptions`, a schema the remote Data API does not expose, so
+  // PostgREST rejected it with PGRST106 and no subscription was ever persisted. The
+  // write now goes through the `features.register_push_subscription` RPC, which
+  // validates the endpoint and deduplicates repeat registrations server-side.
+  const { data: registrationResponse, error: registrationError } = await supabase.rpc(
+    'register_push_subscription',
+    { subscription: validation.output },
+  );
 
-  if (insertionError) {
-    console.error("[Maintenance] Push subscription insertion failed:", insertionError);
+  if (registrationError) {
+    console.error("[Maintenance] Push subscription registration failed:", registrationError);
+    return false;
+  }
+
+  // [GUARD] The RPC reports a rejected payload in-band (e.g. a missing endpoint) rather
+  // than as a transport error, so a successful call is not by itself a successful write.
+  const registrationSucceeded = (registrationResponse as { success?: boolean } | null)?.success === true;
+
+  if (!registrationSucceeded) {
+    console.error("[Maintenance] Push subscription rejected by the backend:", registrationResponse);
     return false;
   }
 

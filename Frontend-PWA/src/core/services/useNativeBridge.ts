@@ -61,6 +61,24 @@ function checkPermissions() {
 }
 
 /**
+ * Converts a native decimal coordinate (0.0-1.0) into a UI percentage (0-100).
+ *
+ * @remarks
+ * [THREAT:] The native layer is an untrusted producer; a missing or non-numeric
+ * axis must never be allowed to poison reactive state with NaN.
+ *
+ * @param rawAxisValue - The unvalidated axis value taken from the native payload.
+ * @param fallbackPercent - The current percentage to retain when validation fails.
+ * @returns The axis as a rounded percentage, or the fallback when unusable.
+ */
+function toCalibrationPercent(rawAxisValue: unknown, fallbackPercent: number): number {
+  if (typeof rawAxisValue !== "number" || !Number.isFinite(rawAxisValue)) return fallbackPercent;
+  // Native persists resolution-independent decimals; anything outside 0.0-1.0 is corrupt.
+  if (rawAxisValue < 0 || rawAxisValue > 1) return fallbackPercent;
+  return Math.round(rawAxisValue * 10000) / 100;
+}
+
+/**
  * Hydrates calibration coordinates from native persistence.
  *
  * @remarks
@@ -78,10 +96,21 @@ function loadCoordinates() {
   try {
     const rawCoordinates = bridge.getCoordinates();
     const coordinateSnapshot = JSON.parse(rawCoordinates);
-    inviteX.value = Math.round(coordinateSnapshot.inviteX * 10000) / 100;
-    inviteY.value = Math.round(coordinateSnapshot.inviteY * 10000) / 100;
-    closeX.value = Math.round(coordinateSnapshot.closeX * 10000) / 100;
-    closeY.value = Math.round(coordinateSnapshot.closeY * 10000) / 100;
+
+    /**
+     * [FIX] NaN POISONING GUARD: A partial or malformed native payload
+     * (missing keys, nulls, or strings) survives JSON.parse untouched, so the
+     * surrounding try-catch never fires. Multiplying an absent key yields NaN,
+     * which would overwrite the defaults, render "NaN" in the calibration
+     * inputs, and then be rejected by saveCoordinates' own isNaN guard --
+     * leaving the user unable to recover the values from the UI.
+     * We therefore validate each axis independently and keep the last known
+     * good value whenever the native layer hands us something unusable.
+     */
+    inviteX.value = toCalibrationPercent(coordinateSnapshot?.inviteX, inviteX.value);
+    inviteY.value = toCalibrationPercent(coordinateSnapshot?.inviteY, inviteY.value);
+    closeX.value = toCalibrationPercent(coordinateSnapshot?.closeX, closeX.value);
+    closeY.value = toCalibrationPercent(coordinateSnapshot?.closeY, closeY.value);
   } catch (nativeCoordinatesError: unknown) {
     const errorMessage = nativeCoordinatesError instanceof Error ? nativeCoordinatesError.message : String(nativeCoordinatesError);
     console.error("[useNativeBridge] Failed to parse coordinates:", errorMessage);

@@ -92,6 +92,22 @@ const router = createRouter({
       component: () => import("@features/settings").then(m => m.SettingsView),
       meta: { title: "Settings" },
     },
+    {
+      // [THREAT:] Without a terminal catch-all, vue-router matches no record for an
+      // unknown hash and renders an empty <RouterView> beneath a live FloatingDock -
+      // a blank console with no error and no way back. Reachable from stale
+      // bookmarks, old share links, and the share_target / web+clash handlers
+      // declared in manifest.json, all of which write into the hash segment.
+      // [DECISION LOG] Terminate the table with an explicit 404 view instead of a
+      // redirect, so a malformed deep link stays visible and diagnosable. The view is
+      // a Layer 4 sibling (it reads router state, so it is not a domain-blind Layer 2
+      // primitive) and is lazy-loaded by relative path, keeping it out of the initial
+      // bundle and off the barrel graph that produced the service-worker TDZ crash.
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("../views/NotFoundView.vue"),
+      meta: { title: "Not Found" },
+    },
   ],
 });
 

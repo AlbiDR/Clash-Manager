@@ -125,7 +125,7 @@ function saveApiUrl() {
             v-model="newApiUrl"
             type="text"
             placeholder="https://[project-id].supabase.co"
-            class="glass-input"
+            class="glass-input endpoint-input"
           />
           <button class="save-btn" @click="saveApiUrl" v-tactile>
             <Icon name="check" size="20" />
@@ -219,15 +219,21 @@ function saveApiUrl() {
   display: flex;
   gap: var(--sys-space-8);
 }
-.glass-input {
+/* Surface, typeface and focus ring come from the global .glass-input primitive in
+   @core/theme/components.ts, which this field now shares with every other input in the
+   app. It previously declared a third, divergent "glass" treatment under that same
+   name, including a hardcoded `white` background that left a light box in a dark UI.
+   Only the dimensions and the edit-state emphasis remain local. */
+.endpoint-input {
   flex: 1;
-  height: 40px;
-  background: white;
-  border: 1.5px solid var(--sys-color-primary);
-  border-radius: 8px;
-  padding: 0 12px;
-  font-family: var(--sys-font-family-mono);
-  font-size: 13px;
+  /* Was 40px, below the ADR Section V minimum and 8px short of the .save-btn it
+     sits beside in .url-input-row. */
+  height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
+  padding: 0 var(--sys-space-12);
+  font-size: var(--sys-typescale-body-sm);
+  /* Standing primary border marks the field as actively editable, overriding the
+     primitive's transparent resting border. */
+  border-color: var(--sys-color-primary);
 }
 .save-btn {
   /* 48px hybrid touch-target minimum (Target B.2). */

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+export { default as AboutSettings } from "./AboutSettings.vue";
 export { default as AppearanceSettings } from "./AppearanceSettings.vue";
 export { default as AndroidCalibrationSettings } from "./AndroidCalibrationSettings.vue";
 export { default as BackendRefresher } from "./BackendRefresher.vue";

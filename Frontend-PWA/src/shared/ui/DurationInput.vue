@@ -109,21 +109,8 @@ function onInput(key: keyof DurationModel) {
   opacity: 0.45;
 }
 
-.glass-input {
-  background: var(--sys-color-surface-container-highest);
-  border: 1.5px solid transparent;
-  border-radius: 12px;
-  color: var(--sys-color-on-surface);
-  font-family: var(--sys-font-family-mono);
-  font-weight: 800;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  outline: none;
-}
-
-.glass-input:focus {
-  border-color: var(--sys-color-primary);
-  box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.12);
-}
+/* .glass-input is a global field-surface primitive in @core/theme/components.ts.
+   This component supplies only the dimensions, via .t2t-input below. */
 
 .t2t-group {
   display: flex;

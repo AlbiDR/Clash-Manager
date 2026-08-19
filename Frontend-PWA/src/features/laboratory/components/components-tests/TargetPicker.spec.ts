@@ -51,6 +51,17 @@ describe("TargetPicker.vue", () => {
     expect((input.element as HTMLInputElement).value).toBe("#ABCDEF");
   });
 
+  it("should initialize with empty string if modelValue is null", () => {
+    const wrapper = mount(TargetPicker, {
+      props: {
+        modelValue: null,
+      },
+    });
+
+    const input = wrapper.find("input");
+    expect((input.element as HTMLInputElement).value).toBe("");
+  });
+
   it("should update local state when modelValue prop changes", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
@@ -61,6 +72,9 @@ describe("TargetPicker.vue", () => {
     await wrapper.setProps({ modelValue: "#NEW" });
     const input = wrapper.find("input");
     expect((input.element as HTMLInputElement).value).toBe("#NEW");
+
+    await wrapper.setProps({ modelValue: null });
+    expect((input.element as HTMLInputElement).value).toBe("");
   });
 
   it("should format tag correctly on lock-in (lowercase to uppercase, add #)", async () => {
@@ -94,7 +108,22 @@ describe("TargetPicker.vue", () => {
     expect(wrapper.emitted("lockIn")![0]).toEqual(["#DEF456"]);
   });
 
-  it("should emit null if input is empty on lock-in", async () => {
+  it("should sanitize whitespace padding on lock-in", async () => {
+    const wrapper = mount(TargetPicker, {
+      props: {
+        modelValue: "",
+      },
+    });
+
+    const input = wrapper.find("input");
+    await input.setValue("   2p0882   ");
+
+    await wrapper.find(".lock-btn").trigger("click");
+
+    expect(wrapper.emitted("lockIn")![0]).toEqual(["#2P0882"]);
+  });
+
+  it("should emit null if input is empty or whitespace-only on lock-in", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
         modelValue: "#SOME",
@@ -107,6 +136,11 @@ describe("TargetPicker.vue", () => {
     await wrapper.find(".lock-btn").trigger("click");
 
     expect(wrapper.emitted("lockIn")![0]).toEqual([null]);
+
+    await input.setValue("   ");
+    await wrapper.find(".lock-btn").trigger("click");
+
+    expect(wrapper.emitted("lockIn")![1]).toEqual([null]);
   });
 
   it("should trigger lock-in on Enter keydown", async () => {
@@ -123,7 +157,23 @@ describe("TargetPicker.vue", () => {
     expect(wrapper.emitted("lockIn")![0]).toEqual(["#TEST"]);
   });
 
-  it("should call haptics.tap() on lock-in", async () => {
+  it("should ignore non-Enter keydown events", async () => {
+    const wrapper = mount(TargetPicker, {
+      props: {
+        modelValue: "",
+      },
+    });
+
+    const input = wrapper.find("input");
+    await input.setValue("test");
+    await input.trigger("keydown", { key: "Escape" });
+    await input.trigger("keydown", { key: "Tab" });
+    await input.trigger("keydown", { key: "a" });
+
+    expect(wrapper.emitted("lockIn")).toBeFalsy();
+  });
+
+  it("should call haptics.tap() on lock-in button press", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
         modelValue: "TAG",

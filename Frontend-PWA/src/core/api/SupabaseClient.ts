@@ -180,9 +180,14 @@ export async function fetchRemote(options?: {
   // method at runtime. `.abortSignal()` must stay last (it resolves to a terminal,
   // non-chainable value once awaited, same as every other query below), so this is
   // a narrow type-only cast rather than a chain reorder.
+  // [FIX] SCHEMA REACHABILITY: this previously addressed `substrate.pipeline_heartbeat`
+  // directly. The remote Data API exposes only public/storage/graphql_public/features,
+  // so PostgREST rejected every call with PGRST106 and the error was discarded below,
+  // leaving the freshness stamp permanently null. Reads now go through the granted
+  // `features.pipeline_heartbeat_view` projection.
   const heartbeatQueryWithSingle = supabase
-    .schema('substrate')
-    .from('pipeline_heartbeat')
+    .schema('features')
+    .from('pipeline_heartbeat_view')
     .select('last_success_at')
     .eq('component_id', 'ROYALE_DATA_INGESTOR')
     .single() as unknown as { abortSignal: (s: AbortSignal) => PromiseLike<{ data: { last_success_at: string | null } | null; error: { message: string } | null }> };
@@ -193,7 +198,10 @@ export async function fetchRemote(options?: {
     supabase.schema('features').from('roster_view').select('*').abortSignal(signal),
     supabase.schema('features').from('headhunter_view').select('*').limit(250).abortSignal(signal),
     heartbeatQueryWithSingle.abortSignal(signal),
-    supabase.schema('drivers').from('recruit_blacklist').select('player_tag').abortSignal(signal)
+    // [FIX] SCHEMA REACHABILITY: was `drivers.recruit_blacklist`, which the Data API
+    // does not expose; the warn-and-continue below meant the client-side blacklist was
+    // permanently empty. `features.recruit_blacklist_view` also drops lapsed entries.
+    supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(signal)
   ]);
 
   if (rosterResponse.error) throw new Error(`Roster Fetch Error: ${rosterResponse.error.message}`);

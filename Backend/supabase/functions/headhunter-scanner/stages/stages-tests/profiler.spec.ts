@@ -20,36 +20,19 @@ import { calculateRpos, calculateWeightedWinRate } from "../../../_shared/utils.
  * to resolve under Node.
  */
 
-const { mockSupabase, mockFetchWithRotation, mockProcessBatch, dbResponseQueue, rpcResponses } = vi.hoisted(() => {
-    const dbResponseQueue: Array<{ data: unknown; error: unknown }> = [];
+const { mockSupabase, mockFetchWithRotation, mockProcessBatch, rpcQueues, rpcResponses } = vi.hoisted(() => {
+    // get_recent_scans and get_recruits_fate are each called once per runProfiler()
+    // invocation (recent-scans de-dupe, then the new-vs-refresh existing check);
+    // queue per-RPC-name responses so both calls in a single test can differ.
+    const rpcQueues: Record<string, Array<{ data: unknown; error: unknown }>> = {};
     const rpcResponses: Record<string, { data: unknown; error: unknown }> = {};
 
-    type MockQueryBuilder = {
-        select: () => MockQueryBuilder;
-        in: () => MockQueryBuilder;
-        gt: () => MockQueryBuilder;
-        eq: () => MockQueryBuilder;
-        then: (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => Promise<unknown>;
-    };
-
-    function createQueryBuilder(): MockQueryBuilder {
-        const builder = {} as MockQueryBuilder;
-        builder.select = vi.fn(() => builder);
-        builder.in = vi.fn(() => builder);
-        builder.gt = vi.fn(() => builder);
-        builder.eq = vi.fn(() => builder);
-        builder.then = (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) => {
-            const response = dbResponseQueue.shift() ?? { data: [], error: null };
-            return Promise.resolve(response).then(resolve, reject);
-        };
-        return builder;
-    }
-
     const mockSupabase = {
-        schema: vi.fn(() => ({
-            from: vi.fn(() => createQueryBuilder()),
-        })),
-        rpc: vi.fn((name: string) => Promise.resolve(rpcResponses[name] ?? { data: null, error: null })),
+        rpc: vi.fn((name: string, _args?: unknown) => {
+            const queue = rpcQueues[name];
+            if (queue && queue.length > 0) return Promise.resolve(queue.shift());
+            return Promise.resolve(rpcResponses[name] ?? { data: null, error: null });
+        }),
     };
 
     const mockFetchWithRotation = vi.fn();
@@ -65,7 +48,7 @@ const { mockSupabase, mockFetchWithRotation, mockProcessBatch, dbResponseQueue, 
         return results;
     });
 
-    return { mockSupabase, mockFetchWithRotation, mockProcessBatch, dbResponseQueue, rpcResponses };
+    return { mockSupabase, mockFetchWithRotation, mockProcessBatch, rpcQueues, rpcResponses };
 });
 
 vi.mock("../../client.ts", () => ({
@@ -122,16 +105,14 @@ beforeAll(() => {
 
 beforeEach(() => {
     vi.clearAllMocks();
-    dbResponseQueue.length = 0;
+    for (const key of Object.keys(rpcQueues)) delete rpcQueues[key];
     for (const key of Object.keys(rpcResponses)) delete rpcResponses[key];
 });
 
 describe("runProfiler recruit persistence wiring", () => {
     it("wires calculateRpos()/calculateWeightedWinRate() output into the sync_recruits payload for an eligible recruit", async () => {
-        dbResponseQueue.push(
-            { data: [], error: null }, // recentScans: nothing recently scanned, so the candidate is fetched
-            { data: [{ player_tag: "#PLAYER1" }], error: null }, // existingRecruits: already known -> refresh path (skips fate-telemetry polling)
-        );
+        rpcQueues.get_recent_scans = [{ data: [], error: null }]; // nothing recently scanned, so the candidate is fetched
+        rpcQueues.get_recruits_fate = [{ data: [{ player_tag: "#PLAYER1" }], error: null }]; // already known -> refresh path (skips fate-telemetry polling)
         mockFetchWithRotation.mockResolvedValue({
             ok: true,
             status: 200,
@@ -178,7 +159,7 @@ describe("runProfiler recruit persistence wiring", () => {
     });
 
     it("excludes clanned candidates from ingestion and never calls sync_recruits", async () => {
-        dbResponseQueue.push({ data: [], error: null }); // recentScans only: validRecruits stays empty, so existingRecruits is never queried
+        rpcQueues.get_recent_scans = [{ data: [], error: null }]; // validRecruits stays empty (clanned), so get_recruits_fate is never called
         mockFetchWithRotation.mockResolvedValue({
             ok: true,
             status: 200,

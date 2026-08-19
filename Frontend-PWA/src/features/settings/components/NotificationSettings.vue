@@ -128,17 +128,21 @@ const threshold = computed(() => modules.notificationThreshold);
   gap: 2px;
 }
 
+/* Row typescale is aligned to the SettingRow/LinkRow scale (body-rg over body-sm).
+   This card previously rendered the same semantic roles a step smaller (body-sm over
+   meta), which is what made the Settings stack read as inconsistent between cards.
+   Colour treatment stays local: these rows are static labels, not toggle rows, so they
+   do not adopt SettingRow's muted-until-active palette. */
 .row-label {
   color: var(--sys-color-on-surface);
-  font-size: var(--sys-typescale-body-sm);
+  font-size: var(--sys-typescale-body-rg);
   font-weight: 800;
   line-height: 1.2;
 }
 
 .row-desc {
   color: var(--sys-color-on-surface-variant);
-  font-size: var(--sys-typescale-meta);
-  font-weight: 650;
+  font-size: var(--sys-typescale-body-sm);
   line-height: 1.2;
 }
 
@@ -165,7 +169,7 @@ const threshold = computed(() => modules.notificationThreshold);
 
 .threshold-btn {
   min-width: 64px;
-  height: 40px;
+  height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
   padding: 0 12px;
   border: none;
   background: transparent;
@@ -226,7 +230,7 @@ const threshold = computed(() => modules.notificationThreshold);
 
 .enable-btn {
   min-width: 82px;
-  height: 40px;
+  height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
@@ -256,7 +260,7 @@ const threshold = computed(() => modules.notificationThreshold);
 }
 
 .action-btn {
-  height: 40px;
+  height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
   padding: 0 12px;
   border-radius: 8px;
   border: 1px solid rgba(var(--sys-color-outline-rgb), 0.16);

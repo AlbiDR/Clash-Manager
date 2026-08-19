@@ -10,7 +10,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div class="empty-state animate-fade-in">
+  <div class="empty-state">
     <div class="empty-icon-box">
       <Icon :name="icon || 'telescope'" size="48" />
     </div>
@@ -21,6 +21,9 @@ const props = defineProps<{
 </template>
 
 <style scoped>
+/* This root previously carried `animate-fade-in`, a class defined nowhere in the stack
+   (@core/theme/animations.ts declares `animate-pop` and nothing else), so it styled
+   nothing. See the matching note in ErrorState.vue. */
 .empty-state {
   display: flex;
   flex-direction: column;

@@ -79,6 +79,40 @@ describe("useNativeBridge", () => {
     expect(closeY.value).toBe(80);
   });
 
+  it("keeps the last known good coordinates when the native payload is partial", () => {
+    // Regression: a payload missing keys parses cleanly, so the try-catch never
+    // fires; the old multiplication produced NaN and destroyed the defaults.
+    const { loadCoordinates, inviteX, inviteY, closeX, closeY } = useNativeBridge();
+    mockBridge.getCoordinates.mockReturnValueOnce(JSON.stringify({ inviteX: 0.25 }));
+    inviteX.value = 11;
+    inviteY.value = 22;
+    closeX.value = 33;
+    closeY.value = 44;
+    loadCoordinates();
+
+    expect(inviteX.value).toBe(25);
+    expect(inviteY.value).toBe(22);
+    expect(closeX.value).toBe(33);
+    expect(closeY.value).toBe(44);
+  });
+
+  it("rejects non-numeric and out-of-range axes from the native layer", () => {
+    const { loadCoordinates, inviteX, inviteY, closeX, closeY } = useNativeBridge();
+    mockBridge.getCoordinates.mockReturnValueOnce(
+      JSON.stringify({ inviteX: "0.5", inviteY: null, closeX: 1.5, closeY: -0.2 }),
+    );
+    inviteX.value = 11;
+    inviteY.value = 22;
+    closeX.value = 33;
+    closeY.value = 44;
+    loadCoordinates();
+
+    expect(inviteX.value).toBe(11);
+    expect(inviteY.value).toBe(22);
+    expect(closeX.value).toBe(33);
+    expect(closeY.value).toBe(44);
+  });
+
   it("saves coordinates to the bridge", () => {
     const { saveCoordinates, inviteX, inviteY, closeX, closeY } = useNativeBridge();
     inviteX.value = 10;

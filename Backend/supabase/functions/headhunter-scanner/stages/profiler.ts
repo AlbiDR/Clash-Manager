@@ -55,12 +55,13 @@ export async function runProfiler(
     console.log(`[PROFILING] Triggered. Profiling ${tagsToProfile.length} candidates.`);
     try {
         const thirtyMinutesAgo = Temporal.Now.instant().subtract({ milliseconds: RECENT_SCAN_THRESHOLD_MS }).toString();
+        // [THREAT:] The Data API's `authenticator` role only exposes public/storage/
+        // graphql_public/features (see pgrst.db_schemas) - `drivers` is not reachable
+        // via `.schema('drivers')` in production, only locally where config.toml's
+        // schema list happens to include it. Every other read in this file goes
+        // through a public.* RPC for exactly this reason; this one must too.
         const { data: recentScansRaw, error: recentScansError } = await supabase
-            .schema('drivers')
-            .from('recruits')
-            .select('player_tag')
-            .in('player_tag', tagsToProfile)
-            .gt('last_scan', thirtyMinutesAgo);
+            .rpc('get_recent_scans', { p_tags: tagsToProfile, p_since: thirtyMinutesAgo });
 
         // [GUARD] DATABASE EGRESS BOUNDARY: PostgREST selects resolve with { data, error };
         // they never throw, so the error is inspected BEFORE the payload is parsed.
@@ -276,11 +277,13 @@ export async function runProfiler(
             }
 
             // Determine which recruits are truly new vs refreshed
+            // [THREAT:] Same Data API schema boundary as the recent-scans fetch above:
+            // `drivers` is not exposed in production. get_recruits_fate() already
+            // returns one row per tag that exists in drivers.recruits with no
+            // scan-recency filter, so it doubles as the existing-tag check here
+            // without a dedicated RPC.
             const { data: existingRecruitsRaw, error: existingRecruitsError } = await supabase
-                .schema('drivers')
-                .from('recruits')
-                .select('player_tag')
-                .in('player_tag', validRecruits.map(tagCandidate => tagCandidate.player_tag));
+                .rpc('get_recruits_fate', { tags: validRecruits.map(tagCandidate => tagCandidate.player_tag) });
 
             // [GUARD] DATABASE EGRESS BOUNDARY: PostgREST selects resolve with { data, error };
             // they never throw, so the error is inspected BEFORE the payload is parsed.

@@ -62,7 +62,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
       </div>
     </div>
 
-    <div class="features-list">
+    <div class="setting-row-stack">
       <SettingRow
         v-if="wakeLock.isSupported"
         label="Keep Screen On"
@@ -181,7 +181,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
 .pos-auto  { transform: translateX(calc(100% + 4px)); }
 .pos-dark  { transform: translateX(calc(200% + 8px)); }
 
-.features-list {
+.setting-row-stack {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-8);
