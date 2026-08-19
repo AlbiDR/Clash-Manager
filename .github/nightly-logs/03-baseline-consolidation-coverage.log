@@ -392,3 +392,4 @@
 * [2026-08-13] [Stage 3] CLEAN: Codebase -- Baseline consolidated. Checked 0 pending migrations. Checked RLS compliance, search path isolation, formatting restrictions (no em-dash, no emojis). Baseline is clean.
 * [2026-08-15] [Stage 3] CLEAN: Codebase -- Codebase baseline migration audited and clean; 0 pending migrations.
 * [2026-08-17] [Stage 3] CLEAN: Codebase -- Baseline consolidation audit clean: 0 pending migrations, 28 tables RLS compliant, 95 functions search_path verified
+* [2026-08-19] [Stage 3] CHANGED: Backend/supabase/migrations/20260531232406_master_migration.sql -- Folded 3 pending migrations (2 views, 3 functions) into master baseline
