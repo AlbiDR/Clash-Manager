@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-19] PR #1502 [Stage 12]: chore(apk-ux): Frontend PWA views fully audit-compliant for mobile WebView ergonomics
+**Domain:** pipeline | **Commit:** 5898ad16 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1502)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Frontend PWA views fully audit-compliant for mobile WebView ergonomics
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-19] PR #1501 [Stage 7]: chore(version): No version drift or catalog violations found across monorepo package manifests and workspace catalogs.
 **Domain:** pipeline | **Commit:** 16661516 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1501)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
