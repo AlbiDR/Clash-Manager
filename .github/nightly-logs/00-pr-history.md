@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-19] PR #1500 [Stage 3]: chore(database): Folded 3 pending migrations (2 views, 3 functions) into master baseline
+**Domain:** pipeline | **Commit:** 1c2075be | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1500)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Folded 3 pending migrations (2 views, 3 functions) into master baseline
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-19] PR #1499 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** 05600345 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1499)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
