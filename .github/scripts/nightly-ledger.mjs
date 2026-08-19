@@ -15,6 +15,7 @@ export const LEDGER_STATES = new Set([
   "NO_OUTPUT",
   "BLOCKED",
   "ESCALATED",
+  "DEGRADED",
 ]);
 
 export function createEmptyLedger() {

@@ -15,6 +15,7 @@ import {
   evaluateNightlyRun,
   evaluatePromotionStaleness,
   expectedEvidenceDate,
+  fetchJulesSessions,
   hasDanglingSentinel,
   julesSessionPath,
   matchJulesSession,
@@ -216,6 +217,23 @@ test("watchdog downgrades a merged stage with a surviving IN-PROGRESS sentinel t
   assert.equal(entries.filter(entry => entry.stage !== 8).every(entry => entry.state === "MERGED"), true);
 });
 
+test("a DEGRADED entry persists through upsertStageEntry instead of throwing", () => {
+  // Regression guard: evaluateNightlyRun can emit DEGRADED (above), and runCli
+  // persists every entry through upsertStageEntry immediately afterward, outside
+  // any try/catch. If DEGRADED were ever missing from LEDGER_STATES again, this
+  // would throw here exactly as it did in production: the ledger save and the
+  // recovery pass for every other stage in the run never execute.
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, "2026-08-14");
+  assert.doesNotThrow(() => {
+    upsertStageEntry(ledger, registry, "2026-08-14", 8, {
+      state: "DEGRADED",
+      failureClass: "UNFINALIZED_SENTINEL",
+    });
+  });
+  assert.equal(ledger.runs["2026-08-14"]["8"].state, "DEGRADED");
+});
+
 test("matchJulesSession disambiguates same-header sessions by date", () => {
   const stage = registry.stages.find(entry => entry.number === 6);
   const sessions = [
@@ -380,6 +398,92 @@ test("recoverStuckStages nudges, records the attempt, and marks recovery on a ne
   assert.equal(row.state, "RECOVERABLE");
   assert.equal(row.failureClass, "RECOVERED_AFTER_NUDGE");
   assert.equal(row.evidence.recovery.ok, true);
+});
+
+test("recoverStuckStages does not spend the attempt budget on a failed nudge delivery", async () => {
+  // Regression guard: a nudge that never reached Jules (dead credential,
+  // network error) must not count against MAX_RECOVERY_ATTEMPTS. Before this
+  // fix, two delivery failures alone permanently disabled recovery for the
+  // date even though no attempt was ever made against the stuck session.
+  const date = "2026-08-15";
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed: stuckObserved(date, 3),
+    previousLedger: createEmptyLedger(),
+  });
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+
+  const fetchImpl = async () => ({
+    ok: false,
+    status: 401,
+    statusText: "Unauthorized",
+    text: async () => "invalid key",
+  });
+
+  const result = await recoverStuckStages({
+    entries,
+    ledger,
+    registry,
+    date,
+    config: { ...CONFIG, owner: "AlbiDR", repo: "Clash-Manager", token: "t", julesApiKey: "k" },
+    fetchImpl,
+    listPullRequests: async () => [],
+    sleep: async () => {},
+    pollAttempts: 0,
+    pollIntervalMs: 0,
+  });
+
+  assert.equal(result.failed.length, 1);
+  const row = ledger.runs[date]["3"];
+  assert.equal(row.attempts, 0);
+  assert.equal(row.evidence.recovery.ok, false);
+
+  // A second failed delivery must still leave the budget untouched, so a
+  // later run (fresh credential) can still nudge this session.
+  await recoverStuckStages({
+    entries,
+    ledger,
+    registry,
+    date,
+    config: { ...CONFIG, owner: "AlbiDR", repo: "Clash-Manager", token: "t", julesApiKey: "k" },
+    fetchImpl,
+    listPullRequests: async () => [],
+    sleep: async () => {},
+    pollAttempts: 0,
+    pollIntervalMs: 0,
+  });
+  assert.equal(ledger.runs[date]["3"].attempts, 0);
+  assert.deepEqual(selectRecoveryCandidates(entries, ledger, date).map(entry => entry.stage), [3]);
+});
+
+test("fetchJulesSessions follows nextPageToken instead of returning only the first page", async () => {
+  // Regression guard: every GitHub call in this file pages properly; a single
+  // unpaginated GET here left any session past the first page invisible to
+  // matchJulesSession, silently downgrading a recoverable stuck session to
+  // NO_PUBLISHED_OUTPUT.
+  const calls = [];
+  const fetchImpl = async url => {
+    calls.push(url);
+    const parsed = new URL(url);
+    if (!parsed.searchParams.get("pageToken")) {
+      return {
+        ok: true,
+        json: async () => ({ sessions: [{ id: "page-1-session" }], nextPageToken: "token-2" }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({ sessions: [{ id: "page-2-session" }] }),
+    };
+  };
+
+  const result = await fetchJulesSessions({ julesApiKey: "k" }, fetchImpl);
+
+  assert.equal(calls.length, 2);
+  assert.equal(result.available, true);
+  assert.deepEqual(result.sessions.map(session => session.id), ["page-1-session", "page-2-session"]);
 });
 
 // --------------------------------------------------------------------------

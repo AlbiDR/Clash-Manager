@@ -138,22 +138,36 @@ async function fetchPullRequestFiles(prNumber, config = CONFIG) {
 // Returns availability alongside the sessions. Silently degrading to an empty
 // list would misreport a dead API key as "the stage produced no output", which
 // hides the real fault and makes recovery impossible to even attempt.
-async function fetchJulesSessions(config = CONFIG, fetchImpl = fetch) {
+//
+// Pages through nextPageToken like every GitHub call in this file already
+// does. A single unpaginated GET here would leave any session past the first
+// page invisible to matchJulesSession, silently downgrading a recoverable
+// stuck session to the unrecoverable NO_PUBLISHED_OUTPUT class.
+export async function fetchJulesSessions(config = CONFIG, fetchImpl = fetch) {
   if (!config.julesApiKey) {
     errorLine("JULES_API_KEY is not configured; session evidence is unavailable for this run.");
     return { sessions: [], available: false, error: "JULES_API_KEY is not configured." };
   }
   try {
-    const res = await fetchImpl(`${JULES_API_BASE}/sessions`, {
-      headers: { "X-Goog-Api-Key": config.julesApiKey },
-    });
-    if (!res.ok) {
-      const error = `Jules API ${res.status} ${res.statusText}`;
-      errorLine(`${error}; session evidence is unavailable for this run.`);
-      return { sessions: [], available: false, error };
-    }
-    const body = await res.json();
-    return { sessions: Array.isArray(body.sessions) ? body.sessions : [], available: true, error: null };
+    const sessions = [];
+    let pageToken = "";
+    do {
+      const url = new URL(`${JULES_API_BASE}/sessions`);
+      url.searchParams.set("pageSize", "100");
+      if (pageToken) url.searchParams.set("pageToken", pageToken);
+      const res = await fetchImpl(url.toString(), {
+        headers: { "X-Goog-Api-Key": config.julesApiKey },
+      });
+      if (!res.ok) {
+        const error = `Jules API ${res.status} ${res.statusText}`;
+        errorLine(`${error}; session evidence is unavailable for this run.`);
+        return { sessions: [], available: false, error };
+      }
+      const body = await res.json();
+      if (Array.isArray(body.sessions)) sessions.push(...body.sessions);
+      pageToken = body.nextPageToken || "";
+    } while (pageToken);
+    return { sessions, available: true, error: null };
   } catch (error) {
     errorLine(`Jules API request failed: ${error.message}; session evidence is unavailable for this run.`);
     return { sessions: [], available: false, error: error.message };
@@ -513,8 +527,13 @@ export async function recoverStuckStages({
     const session = entry.evidence.julesSession;
     const result = await nudgeJulesSession(session, config, fetchImpl);
     const recorded = stageEntry(ledger, date, entry.stage);
+    // Only a nudge Jules actually received should cost a retry. A failed HTTP
+    // call (dead credential, transient network error) never reached the
+    // session, so it must not burn the MAX_RECOVERY_ATTEMPTS budget; otherwise
+    // two delivery failures permanently disable recovery for the date even
+    // though no attempt was ever made against the stuck session itself.
     upsertStageEntry(ledger, registry, date, entry.stage, {
-      attempts: (recorded?.attempts ?? 0) + 1,
+      attempts: (recorded?.attempts ?? 0) + (result.ok ? 1 : 0),
       evidence: {
         recovery: {
           nudgedAt: new Date().toISOString(),
