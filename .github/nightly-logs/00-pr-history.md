@@ -16,6 +16,27 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-19] PR #1505 [Stage 6]: docs(tsdoc): harden profiler interface contracts and inline decision logs
+**Domain:** pipeline | **Commit:** f4dd3862 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1505)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/headhunter-scanner/stages/profiler.ts
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden profiler interface contracts and inline decision logs
+**Result:** Nominal validation with zero regressions.
+
+
+## [2026-08-19] MERGE FAILED: PR #1504: chore(verify): Expanded TargetPicker unit test coverage
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `git apply /tmp/nightly-source-2194.patch failed: error: corrupt patch at /tmp/nightly-source-2194.patch:21406`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1504)
+
+## [2026-08-19] MERGE FAILED: PR #1504: chore(verify): Expanded TargetPicker unit test coverage
+> [!CAUTION]
+> **Status**: Auto-merge aborted (second pass).
+> **Error**: `git fetch origin nightly/stage-2-verification-44825882-7959571181793818396:nightly/stage-2-verification-44825882-7959571181793818396 failed: From https://github.com/AlbiDR/Clash-Manager
+ ! [rejected] nightly/stage-2-verification-44825882-7959571181793818396 -> nightly/stage-2-verification-44825882-7959571181793818396  (non-fast-forward)`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1504)
+
 ### [2026-08-19] PR #1503 [Stage 9]: chore(refactor): Structural audit complete; architecture is fully compliant with CleanStack ADR guidelines
 **Domain:** pipeline | **Commit:** 03232ebf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1503)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
