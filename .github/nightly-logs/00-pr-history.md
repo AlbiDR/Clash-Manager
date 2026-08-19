@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-19] PR #1501 [Stage 7]: chore(version): No version drift or catalog violations found across monorepo package manifests and workspace catalogs.
+**Domain:** pipeline | **Commit:** 16661516 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1501)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): No version drift or catalog violations found across monorepo package manifests and workspace catalogs.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-19] PR #1500 [Stage 3]: chore(database): Folded 3 pending migrations (2 views, 3 functions) into master baseline
 **Domain:** pipeline | **Commit:** 1c2075be | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1500)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
