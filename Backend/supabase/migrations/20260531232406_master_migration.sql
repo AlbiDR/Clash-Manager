@@ -3073,6 +3073,50 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION features.register_push_subscription(subscription jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_endpoint TEXT;
+    v_updated  INTEGER := 0;
+BEGIN
+    v_endpoint := subscription->>'endpoint';
+
+    IF v_endpoint IS NULL OR length(trim(v_endpoint)) = 0 THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Push subscription is missing an endpoint.'
+        );
+    END IF;
+
+    UPDATE drivers.push_subscriptions AS ps
+       SET subscription = register_push_subscription.subscription,
+           updated_at   = now()
+     WHERE ps.subscription->>'endpoint' = v_endpoint;
+
+    GET DIAGNOSTICS v_updated = ROW_COUNT;
+
+    IF v_updated = 0 THEN
+        INSERT INTO drivers.push_subscriptions (subscription)
+        VALUES (register_push_subscription.subscription);
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'refreshed', v_updated > 0,
+        'message', 'Push subscription registered.'
+    );
+END;
+$function$;
+
+COMMENT ON FUNCTION features.register_push_subscription(jsonb) IS
+  'Registers or refreshes a Web Push subscription for the PWA. Replaces the PWA''s former direct insert into drivers.push_subscriptions, which PostgREST rejected with PGRST106 because the drivers schema is not exposed, so no subscription was ever persisted. Deduplicates on the subscription endpoint.';
+
+GRANT EXECUTE ON FUNCTION features.register_push_subscription(jsonb) TO authenticated, anon, service_role;
+
 -- Public Functions
 CREATE OR REPLACE FUNCTION public.get_vault_secret(p_name text)
 RETURNS text
@@ -3371,15 +3415,74 @@ CREATE OR REPLACE FUNCTION public.report_heartbeat(p_component_id text, p_status
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
-    INSERT INTO substrate.pipeline_heartbeat (component_id, status, last_message, last_triggered_at, metadata)
-    VALUES (p_component_id, p_status, p_message, NOW(), p_metadata)
+    INSERT INTO substrate.pipeline_heartbeat (
+        component_id,
+        status,
+        last_message,
+        last_triggered_at,
+        last_validation_report,
+        is_data_perfect,
+        last_success_at,
+        last_failure_at,
+        updated_at
+    )
+    VALUES (
+        p_component_id,
+        p_status::substrate.pipeline_status,
+        p_message,
+        NOW(),
+        COALESCE(p_metadata->'last_validation_report', '{}'::jsonb),
+        COALESCE((p_metadata->>'is_data_perfect')::BOOLEAN, FALSE),
+        CASE WHEN p_status = 'COMPLETED' THEN NOW() ELSE NULL END,
+        CASE WHEN p_status = 'FAILED'    THEN NOW() ELSE NULL END,
+        NOW()
+    )
     ON CONFLICT (component_id) DO UPDATE
-    SET status = EXCLUDED.status,
-        last_message = EXCLUDED.last_message,
+    SET status            = EXCLUDED.status,
+        last_message      = EXCLUDED.last_message,
         last_triggered_at = EXCLUDED.last_triggered_at,
-        metadata = substrate.pipeline_heartbeat.metadata || EXCLUDED.metadata;
+        updated_at        = NOW(),
+
+        last_success_at = CASE
+            WHEN EXCLUDED.status = 'COMPLETED' THEN NOW()
+            ELSE substrate.pipeline_heartbeat.last_success_at
+        END,
+        last_failure_at = CASE
+            WHEN EXCLUDED.status = 'FAILED' THEN NOW()
+            ELSE substrate.pipeline_heartbeat.last_failure_at
+        END,
+
+        last_validation_report = CASE
+            WHEN p_metadata ? 'last_validation_report' THEN EXCLUDED.last_validation_report
+            ELSE substrate.pipeline_heartbeat.last_validation_report
+        END,
+        is_data_perfect = CASE
+            WHEN p_metadata ? 'is_data_perfect' THEN EXCLUDED.is_data_perfect
+            ELSE substrate.pipeline_heartbeat.is_data_perfect
+        END;
 END;
 $function$;
+
+COMMENT ON FUNCTION public.report_heartbeat(text, text, text, jsonb) IS
+  'Public-schema heartbeat reporter reached by the Edge Functions, which cannot see the substrate schema over the Data API. Until 14.45.18 this function inserted into a non-existent metadata column and therefore raised 42703 on every call, silently freezing ROYALE_DATA_INGESTOR and HEADHUNTER_SCANNER reporting at 2026-04-30 while the pipeline itself ran normally. Maintains last_success_at and last_failure_at on terminal statuses and preserves the prior validation report when a caller sends none.';
+
+CREATE OR REPLACE FUNCTION public.get_recent_scans(p_tags text[], p_since timestamptz)
+ RETURNS TABLE(player_tag text)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+BEGIN
+    RETURN QUERY
+    SELECT r.player_tag
+    FROM drivers.recruits r
+    WHERE r.player_tag = ANY(p_tags)
+      AND r.last_scan > p_since;
+END;
+$function$;
+
+COMMENT ON FUNCTION public.get_recent_scans(text[], timestamptz) IS
+  'Public-schema wrapper reached by the headhunter-scanner profiler stage, which cannot see drivers.recruits directly over the Data API. Returns the subset of p_tags scanned more recently than p_since, so the profiler can skip re-fetching them from the Royale API within its 30-minute window.';
 
 CREATE OR REPLACE FUNCTION public.get_hot_zone_recruits(p_limit integer)
  RETURNS TABLE(player_tag text)
@@ -4219,6 +4322,29 @@ SELECT
     ) AS progress_ratio;
 
 GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
+
+CREATE OR REPLACE VIEW features.pipeline_heartbeat_view AS
+  SELECT
+    ph.component_id,
+    ph.last_success_at
+  FROM substrate.pipeline_heartbeat ph;
+
+COMMENT ON VIEW features.pipeline_heartbeat_view IS
+  'Anon-readable projection of substrate.pipeline_heartbeat, limited to the component identity and its last success timestamp. Backs the PWA "last synced" indicator. Before this view the PWA queried substrate directly and PostgREST rejected it with PGRST106, so the indicator always read null.';
+
+GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
+
+CREATE OR REPLACE VIEW features.recruit_blacklist_view AS
+  SELECT
+    bl.player_tag
+  FROM drivers.recruit_blacklist bl
+  WHERE bl.expires_at IS NULL
+     OR bl.expires_at > now();
+
+COMMENT ON VIEW features.recruit_blacklist_view IS
+  'Anon-readable projection of drivers.recruit_blacklist, limited to the tags of entries whose temporal contract has not lapsed. Lets the PWA suppress a dismissed recruit immediately rather than waiting for the next server-side headhunter refresh.';
+
+GRANT SELECT ON features.recruit_blacklist_view TO authenticated, anon, service_role;
 
 DROP VIEW IF EXISTS features.headhunter_view CASCADE;
 CREATE OR REPLACE VIEW features.headhunter_view AS
