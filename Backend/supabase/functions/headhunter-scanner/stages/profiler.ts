@@ -18,23 +18,32 @@ import { RoyalePlayerSchema, RecruitFateSchema, StaleRecruitSchema } from "../..
  *
  * @remarks
  * This stage orchestrates the enrichment of discovered player tags with deep
- * profile data from the Royale API. It enforces strict validation boundaries
+ * profile data from the Royale API. It enforces strict validation boundaries,
+ * deduplicates candidates against a 30-minute recent-scan window via public RPC,
  * and executes bulk ingestion into the recruitment substrate.
+ *
+ * **PostgREST Schema Access Boundary:**
+ * PostgREST Data API roles (`authenticator`) expose only public schemas. Direct table
+ * queries against `drivers.*` fail in production with "Invalid schema: drivers". All
+ * reads and writes (`get_recent_scans`, `get_recruits_fate`, `sync_recruits`) are
+ * brokered through `public.*` RPC functions.
  *
  * **Architectural Context:**
  * - **Layer:** Layer 1 Core Stage (Headhunter Scanner)
  * - **Satisfaction:** ADR Section II (Shared Substrate usage) and ADR Section III (Validation Boundaries).
  *
  * **Side Effects:**
- * - **External API:** Performs throttled fetches against the Royale API.
- * - **Database:** Executes multiple RPCs (`sync_recruits`, `report_dead_recruit`, `get_recruits_fate`, `get_top_50_threshold`).
- * - **Telemetry:** Updates the `ScannerStats` object with ingestion results.
+ * - **External API:** Performs throttled batch fetches against the Royale API via muscle worker pool.
+ * - **Database:** Executes public RPCs (`get_recent_scans`, `sync_recruits`, `report_dead_recruit`, `get_recruits_fate`, `get_top_50_threshold`).
+ * - **Telemetry:** Updates the shared `ScannerStats` object with ingestion, RPoS distribution, and promotion fate metrics.
  *
- * @param candidates - Map of discovered tags and their discovery source.
- * @param exclusionSet - Set of tags to ignore (existing members or blacklisted players).
- * @param requiredTrophies - Minimum trophy threshold for admission.
- * @param stats - Shared stats object for telemetry tracking.
- * @param logAudit - Function to record stage execution events.
+ * @param candidates - Map of discovered tags and their discovery source string.
+ * @param exclusionSet - Set of player tags to ignore (existing clan members or blacklisted players).
+ * @param requiredTrophies - Minimum trophy threshold required for player admission.
+ * @param stats - Shared telemetry object for tracking profile counts and processing errors.
+ * @param logAudit - Callback function to record structured stage audit entries.
+ *
+ * @throws {Error} Re-throws unrecoverable database RPC errors or schema validation failures during recent scans fetch.
  */
 export async function runProfiler(
     candidates: Map<string, string>,

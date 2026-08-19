@@ -96,3 +96,4 @@
 * [2026-08-16] [Stage 6] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- docs(tsdoc): harden MemberCard interface contracts and inline annotations
 * [2026-08-17] [Stage 6] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- docs(tsdoc): harden MemberCard interface contracts and inline annotations
 * [2026-08-18] [Stage 6] CHANGED: Frontend-PWA/src/shared/ui/BaseCard.vue -- docs(tsdoc): harden BaseCard interface contracts and inline annotations
+* [2026-08-19] [Stage 6] CHANGED: Backend/supabase/functions/headhunter-scanner/stages/profiler.ts -- docs(tsdoc): harden profiler interface contracts and inline decision logs
