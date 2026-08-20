@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-20] PR #1509 [Stage 11]: chore(apk): Performance and WebView cache topology audit complete; configurations remain fully optimal.
+**Domain:** pipeline | **Commit:** 3eb4fe15 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1509)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Performance and WebView cache topology audit complete; configurations remain fully optimal.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-20] PR #1508 [Stage 4]: chore(optimize): Frontend-PWA/src/shared/ui/DurationInput.vue -- Standardized durationUnitKey variable naming
 **Domain:** pipeline | **Commit:** 8811d720 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1508)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/shared/ui/DurationInput.vue
