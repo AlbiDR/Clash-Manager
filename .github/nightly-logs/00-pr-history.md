@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-20] PR #1508 [Stage 4]: chore(optimize): Frontend-PWA/src/shared/ui/DurationInput.vue -- Standardized durationUnitKey variable naming
+**Domain:** pipeline | **Commit:** 8811d720 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1508)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/shared/ui/DurationInput.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Frontend-PWA/src/shared/ui/DurationInput.vue -- Standardized durationUnitKey variable naming
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-20] PR #1507 [Stage 3]: chore(database): Baseline audit verified: 0 unfolded migrations, 100% RLS compliance
 **Domain:** pipeline | **Commit:** 319fffa7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1507)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
