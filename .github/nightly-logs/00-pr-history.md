@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-20] PR #1507 [Stage 3]: chore(database): Baseline audit verified: 0 unfolded migrations, 100% RLS compliance
+**Domain:** pipeline | **Commit:** 319fffa7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1507)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline audit verified: 0 unfolded migrations, 100% RLS compliance
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-20] PR #1506 [Stage 2]: chore(verify): Closed zero-coverage gap in AboutSettings component with saturating unit/interaction tests.
 **Domain:** pipeline | **Commit:** 43368683 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1506)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/settings/components/components-tests/AboutSettings.spec.ts
