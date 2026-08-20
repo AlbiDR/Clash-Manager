@@ -16,6 +16,21 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-20] PR #1511 [Stage 10]: chore(apk): APK and PWA wrapper configuration audit passed cleanly with zero mismatches.
+**Domain:** pipeline | **Commit:** 578728c3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1511)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): APK and PWA wrapper configuration audit passed cleanly with zero mismatches.
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-20] PR #1512 [Stage 12]: Bound v-tactile directive to ErrorState retry button
+**Domain:** ux | **Commit:** a053a634 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1512)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/shared/ui/ErrorState.vue
+**Why:** Execute the scheduled Stage 12 apk-ux audit.
+**Change:** Bound v-tactile directive to ErrorState retry button
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-20] PR #1510 [Stage 13]: chore(pipeline): Completed Stage 13 self-healing protocol audit and updated protocol document
 **Domain:** pipeline | **Commit:** 614880ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1510)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
