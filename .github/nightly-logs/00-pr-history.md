@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-20] PR #1506 [Stage 2]: chore(verify): Closed zero-coverage gap in AboutSettings component with saturating unit/interaction tests.
+**Domain:** pipeline | **Commit:** 43368683 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1506)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/settings/components/components-tests/AboutSettings.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Closed zero-coverage gap in AboutSettings component with saturating unit/interaction tests.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-19] PR #1505 [Stage 6]: docs(tsdoc): harden profiler interface contracts and inline decision logs
 **Domain:** pipeline | **Commit:** f4dd3862 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1505)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/headhunter-scanner/stages/profiler.ts
