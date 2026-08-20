@@ -7,6 +7,7 @@
  */
 import { ref } from "vue";
 import Icon from "./Icon.vue";
+import { vTactile } from "../directives/vTactile";
 
 const props = defineProps<{
   message: string;
@@ -37,6 +38,7 @@ const isRetryInteractionActive = ref(false);
     <p class="error-message">{{ message }}</p>
     
     <button 
+      v-tactile
       class="btn-error" 
       :class="{ active: isRetryInteractionActive }"
       @click="$emit('retry')"
