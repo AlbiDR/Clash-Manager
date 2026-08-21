@@ -259,6 +259,14 @@
   - Recommended Fix: Ensure runner execution stability and sequential stage execution. Monitor subsequent runs for automatic recovery.
   - Resolution Details (2026-08-20): Stages 4 and 11 successfully executed and recovered on August 20, 2026 (logging CHANGED and CLEAN passes respectively).
 
+* Missing-Run / Failed Events on 2026-08-20 & 2026-08-21:
+  - Stages: Stage 2 (Verify) [RESOLVED - monitor], Stage 8 (Dependency-Audit) [RESOLVED - monitor].
+  - State: [RESOLVED - monitor]
+  - Symptom: Stage 2 (PR #1504) experienced merge coordinator non-fast-forward push rejection on August 20, but recovered on August 21 with CHANGED entry (PR #1514). Stage 8 executed and logged CHANGED on August 21 (PR #1515).
+  - Root Cause: Sequential rebase/merge coordination collision on remote head ref.
+  - Recommended Fix: Ensure merge coordinator handles non-fast-forward branch re-fetches cleanly before push retries.
+  - Resolution Details (2026-08-21): Stage 2 and Stage 8 successfully executed and published PR #1514 and PR #1515 on August 21, 2026.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -294,43 +302,43 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-17 and 2026-08-18)
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-20)
   - Analysis: Threat detection and runtime security verification remain fully operational and verified.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-20)
-  - Analysis: Closed zero-coverage gap in AboutSettings component with saturating unit/interaction tests.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-21 via PR #1514)
+  - Analysis: Closed zero-coverage gap in yieldToInteractionFrame scheduling utility with comprehensive unit/boundary tests.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-20 following baseline fold on 2026-08-19)
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-20 following baseline fold)
   - Analysis: Master migration declarative baseline folding remains fully operational with zero pending migrations.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-20)
+  - Consecutive No-Diff Days: 1 (CLEAN/no new changes after 2026-08-20 CHANGED pass)
   - Analysis: Standardized durationUnitKey variable naming in DurationInput.vue and re-verified substrate hygiene.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 4 (CLEAN/no new commits since 2026-08-16 CHANGED pass)
+  - Consecutive No-Diff Days: 5 (CLEAN/no new commits since 2026-08-16 CHANGED pass)
   - Analysis: Reconciled Settings README documentation for BackendRefresher modernization.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-19)
+  - Consecutive No-Diff Days: 2 (CLEAN/no changes since 2026-08-19 CHANGED pass)
   - Analysis: Hardened profiler interface contracts and inline decision logs in headhunter-scanner (PR #1500).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 25 (CLEAN/unfinalized logged through 2026-08-19)
+  - Consecutive No-Diff Days: 27 (CLEAN/unfinalized logged through 2026-08-19)
   - Analysis: Monorepo version integrity remains perfectly synchronized across root, PWA, and backend manifests with zero version drift.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 2 (CLEAN/no changes since 2026-08-18 CHANGED pass)
-  - Analysis: Bumped supabase devDependency to ^2.114.0 in pnpm-lock.yaml (PR #1494).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-21 via PR #1515)
+  - Analysis: Bumped supabase devDependency to ^2.115.0 in package.json/pnpm-lock.yaml.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-19)
+  - Consecutive No-Diff Days: 2 (CLEAN logged through 2026-08-19)
   - Analysis: Architectural alignment and structural audit remain 100% compliant with ADR CleanStack guidelines.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 7 (CLEAN logged continuously through 2026-08-18)
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-20)
   - Analysis: Verified Digital Asset Links certificate fingerprints, cleartext restriction, and Android manifest permissions with zero configuration mismatches.
 
 * Stage 11 (APK-Optimization):
@@ -338,9 +346,9 @@
   - Analysis: Performance and WebView cache topology audit complete; configurations remain fully optimal.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-19)
-  - Analysis: Hybrid Shell UX and UI audit complete; global webview sweep verified candidate files fully compliant.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-20)
+  - Analysis: Bound v-tactile directive to ErrorState retry button (2026-08-20).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-20)
-  - Analysis: Completed daily self-healing audit pass: mapped August 19 and August 20 stage executions/recoveries, and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-21)
+  - Analysis: Completed daily self-healing audit pass: mapped August 20-21 stage executions/recoveries and updated Section 3 no-diff metrics.
