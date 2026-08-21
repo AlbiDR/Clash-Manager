@@ -1758,7 +1758,7 @@
           "reason": "git fetch origin nightly/stage-2-verification-44825882-7959571181793818396:nightly/stage-2-verification-44825882-7959571181793818396 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-2-verification-44825882-7959571181793818396 -> nightly/stage-2-verification-44825882-7959571181793818396  (non-fast-forward)"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-21T06:34:11.821Z",
+        "lastObservedAt": "2026-08-21T11:30:35.894Z",
         "failureClass": "MERGE_COORDINATOR"
       },
       "3": {
