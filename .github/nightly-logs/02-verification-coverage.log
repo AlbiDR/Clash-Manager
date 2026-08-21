@@ -32,3 +32,4 @@
 * [2026-08-17] [Stage 2] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/ConfirmDialog.spec.ts -- Closed zero-coverage gap in ConfirmDialog component with comprehensive unit tests
 * [2026-08-18] [Stage 2] CHANGED: Frontend-PWA/src/features/roster/components/components-tests/MemberCard.spec.ts -- Frontend-PWA/src/features/roster/components/components-tests/MemberCard.spec.ts -- Expanded unit test coverage for active chart toggling and null fallback handling.
 * [2026-08-20] [Stage 2] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/AboutSettings.spec.ts -- Closed zero-coverage gap in AboutSettings component with saturating unit/interaction tests.
+* [2026-08-21] [Stage 2] CHANGED: Frontend-PWA/src/core/utils/utils-tests/scheduling.spec.ts -- Closed zero-coverage gap in yieldToInteractionFrame scheduling utility with comprehensive unit/boundary tests.
