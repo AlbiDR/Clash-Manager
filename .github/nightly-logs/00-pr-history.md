@@ -15,6 +15,21 @@ LAST_AGED:   2026-08-20
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-21] PR #1514 [Stage 2]: chore(verify): Closed zero-coverage gap in yieldToInteractionFrame scheduling utility
+**Domain:** pipeline | **Commit:** 72c8572a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1514)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/utils/utils-tests/scheduling.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Closed zero-coverage gap in yieldToInteractionFrame scheduling utility
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-20] PR #1513 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** pipeline | **Commit:** 116ae863 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1513)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions.
+
 ### [2026-08-20] PR #1511 [Stage 10]: chore(apk): APK and PWA wrapper configuration audit passed cleanly with zero mismatches.
 **Domain:** pipeline | **Commit:** 578728c3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1511)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
