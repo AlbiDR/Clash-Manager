@@ -1739,10 +1739,13 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-20/stage-1/pr-1513",
+          "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
+        },
         "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
+        "lastObservedAt": "2026-08-21T13:38:56.424Z",
         "failureClass": null
       },
       "2": {
@@ -1750,81 +1753,151 @@
         "stage": 2,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "BLOCKED",
+        "state": "MERGED",
         "evidence": {
           "prNumber": 1504,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1504",
           "headRef": "nightly/stage-2-verification-44825882-7959571181793818396",
-          "reason": "git fetch origin nightly/stage-2-verification-44825882-7959571181793818396:nightly/stage-2-verification-44825882-7959571181793818396 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-2-verification-44825882-7959571181793818396 -> nightly/stage-2-verification-44825882-7959571181793818396  (non-fast-forward)"
+          "reason": "git fetch origin nightly/stage-2-verification-44825882-7959571181793818396:nightly/stage-2-verification-44825882-7959571181793818396 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-2-verification-44825882-7959571181793818396 -> nightly/stage-2-verification-44825882-7959571181793818396  (non-fast-forward)",
+          "tag": "nightly/2026-08-21/stage-2/pr-1514",
+          "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-21T11:30:35.894Z",
-        "failureClass": "MERGE_COORDINATOR"
+        "lastObservedAt": "2026-08-21T13:38:56.424Z",
+        "failureClass": null
       },
       "3": {
         "date": "2026-08-21",
         "stage": 3,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
+          "julesSession": {
+            "id": "8578609002243687454",
+            "name": "sessions/8578609002243687454",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:38:57.592Z",
+            "sessionName": "sessions/8578609002243687454",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:38:57.592Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "4": {
         "date": "2026-08-21",
         "stage": 4,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
+          "julesSession": {
+            "id": "10395996012998213659",
+            "name": "sessions/10395996012998213659",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:38:58.995Z",
+            "sessionName": "sessions/10395996012998213659",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:38:58.996Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "5": {
         "date": "2026-08-21",
         "stage": 5,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
+          "julesSession": {
+            "id": "10369645200629666960",
+            "name": "sessions/10369645200629666960",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:39:00.176Z",
+            "sessionName": "sessions/10369645200629666960",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:39:00.176Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "6": {
         "date": "2026-08-21",
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
+          "julesSession": {
+            "id": "9703408629402851217",
+            "name": "sessions/9703408629402851217",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:39:01.478Z",
+            "sessionName": "sessions/9703408629402851217",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:39:01.478Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "7": {
         "date": "2026-08-21",
         "stage": 7,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
+          "julesSession": {
+            "id": "4628186172567650004",
+            "name": "sessions/4628186172567650004",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:39:02.739Z",
+            "sessionName": "sessions/4628186172567650004",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:39:02.739Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "8": {
         "date": "2026-08-21",
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-21/stage-8/pr-1515",
+          "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log"
+        },
         "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
+        "lastObservedAt": "2026-08-21T13:38:56.425Z",
         "failureClass": null
       },
       "9": {
@@ -1832,54 +1905,111 @@
         "stage": 9,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
+          "julesSession": {
+            "id": "18319794020529633834",
+            "name": "sessions/18319794020529633834",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:39:03.944Z",
+            "sessionName": "sessions/18319794020529633834",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:39:03.944Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "10": {
         "date": "2026-08-21",
         "stage": 10,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "RECOVERABLE",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
+          "julesSession": {
+            "id": "11892569971411613032",
+            "name": "sessions/11892569971411613032",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:39:05.191Z",
+            "sessionName": "sessions/11892569971411613032",
+            "ok": true,
+            "error": null
+          },
+          "prNumber": 1517,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1517"
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:41:22.921Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "11": {
         "date": "2026-08-21",
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
+          "julesSession": {
+            "id": "12438053528317269918",
+            "name": "sessions/12438053528317269918",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:39:06.495Z",
+            "sessionName": "sessions/12438053528317269918",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:39:06.495Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "12": {
         "date": "2026-08-21",
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
-        "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
-        "failureClass": null
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
+          "julesSession": {
+            "id": "13014488050028539170",
+            "name": "sessions/13014488050028539170",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-21T13:39:07.750Z",
+            "sessionName": "sessions/13014488050028539170",
+            "ok": true,
+            "error": null
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-08-21T13:39:07.750Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "13": {
         "date": "2026-08-21",
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
-        "evidence": {},
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-08-21/stage-13/pr-1516",
+          "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log"
+        },
         "attempts": 0,
-        "lastObservedAt": "2026-08-21T00:27:22.232Z",
+        "lastObservedAt": "2026-08-21T13:38:56.425Z",
         "failureClass": null
       }
     }
