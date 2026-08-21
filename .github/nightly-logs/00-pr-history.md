@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-21] PR #1515 [Stage 8]: Bumped supabase devDependency to ^2.115.0 and updated major version watchlist.
+**Domain:** dependencies | **Commit:** 39d9385e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1515)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Execute the scheduled Stage 8 dependency-audit audit.
+**Change:** Bumped supabase devDependency to ^2.115.0 and updated major version watchlist.
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-21] PR #1514 [Stage 2]: chore(verify): Closed zero-coverage gap in yieldToInteractionFrame scheduling utility
 **Domain:** pipeline | **Commit:** 72c8572a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1514)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/utils/utils-tests/scheduling.spec.ts
