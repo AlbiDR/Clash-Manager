@@ -15,6 +15,14 @@ LAST_AGED:   2026-08-22
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-22] PR #1528 [Stage 1]: chore(harden): Hardened in-memory state lifecycle with explicit EPHEMERAL annotations in useToast and useListFilter
+**Domain:** pipeline | **Commit:** a1ce7646 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1528)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/core/services/useListFilter.ts, Frontend-PWA/src/core/services/useToast.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(harden): Hardened in-memory state lifecycle with explicit EPHEMERAL annotations in useToast and useListFilter
+**Result:** Nominal validation with zero regressions.
+
 ### [2026-08-22] PR #1525 [Stage 9]: chore(refactor): Decomposed usePwaManager.ts into useApkManager.ts
 **Domain:** pipeline | **Commit:** dbc7f227 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1525)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts, Frontend-PWA/src/core/services/useApkManager.ts, Frontend-PWA/src/core/services/usePwaManager.ts
