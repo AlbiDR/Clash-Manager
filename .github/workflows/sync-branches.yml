@@ -6,6 +6,11 @@ name: Sync Branches
 
 on:
   workflow_dispatch:
+    inputs:
+      skip_nightly_sync:
+        description: "Skip Job 1 (Nightly -> Beta merge + Air Gap Guard)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -94,7 +99,7 @@ jobs:
   nightly-to-beta:
     name: "(Upstream) Nightly → Beta"
     needs: check-sync
-    if: needs.check-sync.outputs.nightly_beta_diff == 'true'
+    if: needs.check-sync.outputs.nightly_beta_diff == 'true' && github.event.inputs.skip_nightly_sync != 'true'
     runs-on: ubuntu-latest
     outputs:
       merged: ${{ steps.merge.outputs.merged }}
