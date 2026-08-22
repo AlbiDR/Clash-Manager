@@ -77,3 +77,4 @@
 * [2026-08-17] [Stage 4] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- Standardized domain-descriptive naming in MemberCard.vue and re-verified substrate database views.
 * [2026-08-18] [Stage 4] CLEAN: Codebase -- war_loyalty_view, war_performance_analytics_view, governance_report, view_pipeline_health, recruits_view, war_activity_view -- Re-verified orphaned database views remain unreferenced by Edge Function application logic.
 * [2026-08-20] [Stage 4] CHANGED: Frontend-PWA/src/shared/ui/DurationInput.vue -- Frontend-PWA/src/shared/ui/DurationInput.vue -- Standardized durationUnitKey variable naming in DurationInput.vue and re-verified substrate hygiene.
+* [2026-08-22] [Stage 4] CLEAN: Codebase -- Re-verified dropped database views remain unreferenced by Edge Function application logic.
