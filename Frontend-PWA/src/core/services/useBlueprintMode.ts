@@ -16,6 +16,11 @@ import { ref } from "vue";
  * decorative elements and content, leaving only their structural skeletons
  * to facilitate interaction design and layout debugging.
  *
+ * Note: the skeleton geometry shown in this mode now derives from build-time
+ * capture (`core/theme/bones.generated.json`, see `scripts/capture_skeletons.ts`)
+ * rather than being hand-authored - this service only gates *whether*
+ * skeletons show, not their dimensions, so no behavioral change was needed here.
+ *
  * **Architectural Context:**
  * - **Layer:** Layer 1 (@core)
  * - **Import Boundaries:** Pure logic, zero dependencies on higher layers.

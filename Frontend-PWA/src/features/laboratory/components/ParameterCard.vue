@@ -77,8 +77,8 @@ const levelOptions = computed(() => {
 </script>
 
 <template>
-  <div class="parameter-card glass-panel">
-    <h3 class="panel-header">
+  <div class="parameter-card glass-panel" data-bone="ParameterCard.panel">
+    <h3 class="panel-header" data-bone="ParameterCard.header">
       <Icon name="gear" size="16" />
       <span>Parameters</span>
     </h3>
@@ -86,7 +86,7 @@ const levelOptions = computed(() => {
     <div class="parameter-grid">
       <!-- Strategy Selector -->
       <div class="parameter-item">
-        <label class="parameter-label">Optimization Strategy</label>
+        <label class="parameter-label" data-bone="ParameterCard.label">Optimization Strategy</label>
         <BaseSegmentedControl
           :model-value="settings.strategy"
           :options="[

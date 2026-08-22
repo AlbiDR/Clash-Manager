@@ -2,29 +2,25 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed } from "vue";
+import { getBone } from "@core/theme/bones";
 
 /**
  * SHARED COMPONENT: BaseCardSkeleton
  *
  * @remarks
  * A unified skeleton placeholder for both Leaderboard and Recruitment cards.
- * Uses deterministic widths based on index to provide visual variety during loading.
+ * Widths are read from `bones.generated.json` (see `capture_skeletons.ts`),
+ * a build-time capture of the real `MemberCard`/`RecruitCard` DOM geometry -
+ * a single true captured dimension replaces the previous hand-authored,
+ * per-index pseudo-variety (itself drift-bait, since it never tracked the
+ * real components' actual widths).
  */
-const props = defineProps<{
+defineProps<{
   index?: number;
 }>();
 
-const nameWidth = computed(() => {
-  if (props.index === undefined) return "120px";
-  const widths = ["120px", "140px", "90px", "130px", "100px", "150px"];
-  return widths[props.index % widths.length];
-});
-
-const metaWidth = computed(() => {
-  if (props.index === undefined) return "80px";
-  const widths = ["80px", "90px", "60px", "85px", "70px", "75%"];
-  return widths[props.index % widths.length];
-});
+const nameWidth = computed(() => `${getBone("MemberCard", "name")?.width ?? 120}px`);
+const metaWidth = computed(() => `${getBone("MemberCard", "meta")?.width ?? 80}px`);
 </script>
 
 <template>

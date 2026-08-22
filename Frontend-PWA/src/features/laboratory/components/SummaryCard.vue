@@ -33,14 +33,14 @@ const engineStatus = computed(() => {
 </script>
 
 <template>
-  <div class="summary-card glass-panel" style="overflow: hidden;">
+  <div class="summary-card glass-panel" data-bone="SummaryCard.panel" style="overflow: hidden;">
     <div class="summary-header">
       <div class="player-info">
-        <h2 class="player-name">{{ profile.name }}</h2>
+        <h2 class="player-name" data-bone="SummaryCard.playerName">{{ profile.name }}</h2>
         <span class="player-tag">{{ normalizeTag(profile.tag) }}</span>
       </div>
       <div class="header-badges">
-        <div class="projection-badge status" :class="engineStatus.class">
+        <div class="projection-badge status" data-bone="SummaryCard.statusBadge" :class="engineStatus.class">
           <span class="label">Status</span>
           <span class="value"><Icon :name="engineStatus.icon" size="12" /> {{ engineStatus.text }}</span>
         </div>
@@ -55,7 +55,7 @@ const engineStatus = computed(() => {
     <div class="progression-row">
       <label class="section-label">Target Progress</label>
       <div class="king-level-display">
-        <div class="level-badge current">
+        <div class="level-badge current" data-bone="SummaryCard.levelBadge">
           <span class="num">{{ profile.kingLevel }}</span>
           <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" />
         </div>

@@ -59,6 +59,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
 <template>
   <BaseCard
     :id="props.id"
+    data-bone="RecruitCard.card"
     :expanded="props.expanded"
     :selected="props.selected"
     :selection-mode="props.selectionMode"
@@ -69,7 +70,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
-      <LongevityBadge :time="timeAgo" />
+      <LongevityBadge data-bone="RecruitCard.meta" :time="timeAgo" />
       <TagBadge
         :id="props.recruit.id"
         class="score-tint"
@@ -79,7 +80,7 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
 
     <!-- [SLOT] IDENTITY NAME: Primary player identification and trophy count. -->
     <template #identity-name>
-      <span class="player-name">{{ props.recruit.n }}</span>
+      <span class="player-name" data-bone="RecruitCard.name">{{ props.recruit.n }}</span>
       <TrophyBadge :value="props.recruit.t" context="hh" />
     </template>
 

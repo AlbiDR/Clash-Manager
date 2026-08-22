@@ -3,8 +3,28 @@
 
 import { config } from "@vue/test-utils";
 import { vi } from "vitest";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // Global mocks or config
+
+// 0. Seed bones.generated.json (Build-Time Skeleton Capture)
+// `bones.generated.json` is a gitignored build artifact, regenerated on every
+// `dev`/`build` invocation by `scripts/capture_skeletons.ts` (see
+// `synthesize_entry.ts`). CI runs `pnpm test` BEFORE `pnpm run build`, so a
+// clean checkout has no bones file and no Chromium ever needs to boot for
+// tests. Seed an empty-but-valid shape synchronously so `getBone()` calls in
+// component tests resolve to `undefined` (their documented cold-start
+// behavior) instead of a module resolution error.
+const bonesPath = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "src/core/theme/bones.generated.json",
+);
+if (!existsSync(bonesPath)) {
+  mkdirSync(dirname(bonesPath), { recursive: true });
+  writeFileSync(bonesPath, JSON.stringify({ components: {} }));
+}
 
 // 1. Fix JSDOM Navigation Error
 // JSDOM does not implement navigation. We mock it to prevent "Error: Not implemented: navigation"

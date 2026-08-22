@@ -32,8 +32,8 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 </script>
 
 <template>
-  <div class="vault-card glass-panel" :class="{ 'is-loading': isSimulating }">
-    <h3 class="panel-header">
+  <div class="vault-card glass-panel" data-bone="VaultCard.panel" :class="{ 'is-loading': isSimulating }">
+    <h3 class="panel-header" data-bone="VaultCard.header">
       <Icon name="box" size="16" />
       <span>The Vault</span>
     </h3>

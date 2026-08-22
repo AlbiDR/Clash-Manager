@@ -47,6 +47,15 @@ jobs:
           pip install shot-scraper
           shot-scraper install
 
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Start Dev Server
         env:
           VITE_SUPABASE_URL: "https://placeholder.supabase.co"

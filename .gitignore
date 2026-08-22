@@ -76,6 +76,8 @@ coverage
 
 # Generated Assets
 Frontend-PWA/index.html
+Frontend-PWA/src/core/theme/bones.generated.json
+Frontend-PWA/.cache/
 
 # Supabase & Backend Temp
 supabase/.temp/

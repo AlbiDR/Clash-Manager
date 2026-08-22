@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 import { lightTokens, darkTokens, generateCssVariables } from './tokens';
 import { staticTokens } from './base';
+import { getBone } from './bones';
 
 /**
  * CLASH MANAGER - App Shell (TypeScript Source of Truth)
@@ -115,7 +116,7 @@ export function getAppShellStyles(): string {
     .sh-c-meta { display: flex; flex-direction: column; gap: var(--sys-space-4); width: 60px; }
     .sh-badge { height: var(--sys-space-18); background: var(--sh-surf-h); border-radius: var(--sys-shape-corner-badge); opacity: 0.8; }
     .sh-c-info { display: flex; flex-direction: column; gap: var(--sys-space-8); }
-    .sh-name { width: 120px; height: 16px; background: var(--sh-sk); border-radius: var(--sys-shape-corner-extra-small); }
+    .sh-name { width: ${getBone('RosterShell', 'name')?.width ?? 120}px; height: 16px; background: var(--sh-sk); border-radius: var(--sys-shape-corner-extra-small); }
     .sh-sub { width: 80px; height: 12px; background: var(--sh-sk); border-radius: var(--sys-shape-corner-extra-small); opacity: 0.8; }
     .sh-score { width: var(--sys-space-48); height: var(--sys-space-48); background: var(--sh-sk); border-radius: var(--sys-shape-corner-input); margin-right: var(--sys-space-4); }
     .sh-expand { width: 36px; height: 36px; background: var(--sh-surf-h); border-radius: var(--sys-shape-corner-medium); opacity: 0.6; }
@@ -169,7 +170,7 @@ export function getAppShellHtml(): string {
                 <div class="sh-badge"></div>
               </div>
               <div class="sh-c-info">
-                <div class="sh-name" style="width: 120px"></div>
+                <div class="sh-name"></div>
                 <div class="sh-sub"></div>
               </div>
             </div>

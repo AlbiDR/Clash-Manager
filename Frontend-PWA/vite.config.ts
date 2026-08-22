@@ -14,9 +14,7 @@ import packageJson from "./package.json";
 const VIEW_SPECIFIC_COMPONENTS = [
   "WarHistoryChart.vue",
   "MemberCard.vue",
-  "MemberCardSkeleton.vue",
   "RecruitCard.vue",
-  "RecruitCardSkeleton.vue",
   "SettingsCard.vue",
   "SkeletonSettingsCard.vue",
   "/src/features/",

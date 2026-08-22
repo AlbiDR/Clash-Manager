@@ -30,20 +30,21 @@ defineProps<{
 </script>
 
 <template>
-  <div 
-    class="trajectory-item" 
+  <div
+    class="trajectory-item"
+    data-bone="TrajectoryItem.item"
     :class="upgrade.rarity.toLowerCase()"
     :style="{ '--i': index }"
   >
     <div class="upgrade-info">
       <!-- Line 1: Card Name -->
       <div class="name-row">
-        <span class="card-name">{{ upgrade.cardName }}</span>
+        <span class="card-name" data-bone="TrajectoryItem.name">{{ upgrade.cardName }}</span>
       </div>
 
       <!-- Line 2: Level Progression -->
       <div class="level-row">
-        <div class="level-pill">
+        <div class="level-pill" data-bone="TrajectoryItem.levelPill">
           <span class="prev">{{ upgrade.currentLevel }}</span>
           <Icon name="chevron_right" size="10" class="divider" />
           <span class="next">{{ upgrade.targetLevel }}</span>
@@ -60,7 +61,7 @@ defineProps<{
       </div>
     </div>
 
-    <div class="cost-stack">
+    <div class="cost-stack" data-bone="TrajectoryItem.cost">
       <div v-if="upgrade.gemsUsed > 0" class="cost-item gem">
         <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
         <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" />

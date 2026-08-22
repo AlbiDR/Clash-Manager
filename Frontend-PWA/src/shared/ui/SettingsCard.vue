@@ -23,13 +23,14 @@ const toggleCollapse = () => {
 <template>
   <div
     class="settings-card"
+    data-bone="SettingsCard.card"
     :class="{ collapsed: isCollapsed }"
     :aria-busy="loading ? 'true' : 'false'"
   >
     <div class="card-header" @click="toggleCollapse" v-tactile>
       <div class="header-main">
         <Icon :name="icon" size="20" class="header-icon" />
-        <h3>{{ title }}</h3>
+        <h3 data-bone="SettingsCard.title">{{ title }}</h3>
       </div>
       <div class="header-actions">
         <slot name="header-extra" />
