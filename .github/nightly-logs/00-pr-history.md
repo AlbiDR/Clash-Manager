@@ -15,6 +15,35 @@ LAST_AGED:   2026-08-21
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-22] PR #1520 [Stage 4]: chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
+**Domain:** pipeline | **Commit:** 0747b1d1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1520)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-21] PR #1519 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** pipeline | **Commit:** cc0503db | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1519)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-21] PR #1517 [Stage 10]: chore(apk): APK and PWA wrapper integrity audit passed with full parity
+**Domain:** pipeline | **Commit:** 6f548273 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1517)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): APK and PWA wrapper integrity audit passed with full parity
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-21] PR #1518 [Stage 12]: Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts
+**Domain:** ux | **Commit:** 1d23bbe4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1518)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Execute the scheduled Stage 12 apk-ux audit.
+**Change:** Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts
+**Result:** Audit completed with no source change required.
+
 ### [2026-08-21] PR #1516 [Stage 13]: chore(pipeline): Completed Stage 13 self-healing protocol audit and updated protocol document for 2026-08-21
 **Domain:** pipeline | **Commit:** 2e96001a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1516)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
