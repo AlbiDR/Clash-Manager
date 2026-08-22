@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-22] PR #1521 [Stage 7]: chore(version): Audit complete: no version drift or catalog violations detected
+**Domain:** pipeline | **Commit:** 603a70fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1521)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Audit complete: no version drift or catalog violations detected
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-22] PR #1520 [Stage 4]: chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
 **Domain:** pipeline | **Commit:** 0747b1d1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1520)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
