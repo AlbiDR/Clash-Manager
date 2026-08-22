@@ -40,6 +40,8 @@ import { sortByNameThenId } from "../utils/sortStrategies";
 // [THREAT:] Memory exhaustion in long-lived sessions if using a standard Map.
 // [DECISION LOG] WeakMap is used to allow the garbage collector to reclaim
 // item-specific cache entries once the source item is no longer referenced.
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] In-memory WeakMap search normalization cache resets on cold start or full page reload.
 const searchCache = new WeakMap<object, { fields: string[]; normalized: string[] }>();
 
 /**

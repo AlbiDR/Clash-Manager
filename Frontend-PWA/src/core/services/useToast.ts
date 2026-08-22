@@ -30,6 +30,8 @@ const toasts = ref<ToastOptions[]>([]);
  * Set of IDs currently being processed for an action.
  * Prevents race conditions and multi-firing during rapid user interaction.
  */
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] In-memory toast processing lock set resets on app reload / worker cold start; persistent action locks are not required.
 const processingIds = new Set<string>();
 
 /**
