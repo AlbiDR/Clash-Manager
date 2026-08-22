@@ -16,6 +16,21 @@ LAST_AGED:   2026-08-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-22] PR #1525 [Stage 9]: chore(refactor): Decomposed usePwaManager.ts into useApkManager.ts
+**Domain:** pipeline | **Commit:** dbc7f227 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1525)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts, Frontend-PWA/src/core/services/useApkManager.ts, Frontend-PWA/src/core/services/usePwaManager.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(refactor): Decomposed usePwaManager.ts into useApkManager.ts
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-22] PR #1526 [Stage 12]: Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts
+**Domain:** ux | **Commit:** 41be76d1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1526)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Execute the scheduled Stage 12 apk-ux audit.
+**Change:** Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts
+**Result:** Audit completed with no source change required.
+
+
 ### [2026-08-22] PR #1524 [Stage 13]: chore(pipeline): Completed Stage 13 self-healing protocol audit and updated protocol document for 2026-08-22
 **Domain:** pipeline | **Commit:** 64174ac6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1524)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
