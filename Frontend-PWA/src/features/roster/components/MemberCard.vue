@@ -100,6 +100,7 @@ const memberAccessibilityLabel = computed(() => {
 <template>
   <BaseCard
     :id="props.id"
+    data-bone="MemberCard.card"
     :expanded="props.expanded"
     :selected="props.selected"
     :selection-mode="props.selectionMode"
@@ -111,13 +112,13 @@ const memberAccessibilityLabel = computed(() => {
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for clan tenure and hierarchy role. -->
     <template #identity-meta>
-      <TenureBadge :days="props.member.d.days" context="lb" />
+      <TenureBadge data-bone="MemberCard.meta" :days="props.member.d.days" context="lb" />
       <RoleBadge :role="props.member.d.role" />
     </template>
 
     <!-- [SLOT] IDENTITY NAME: Primary player identification and current trophy count. -->
     <template #identity-name>
-      <span class="player-name">{{ props.member.n }}</span>
+      <span class="player-name" data-bone="MemberCard.name">{{ props.member.n }}</span>
       <TrophyBadge :value="props.member.t" context="lb" />
     </template>
 

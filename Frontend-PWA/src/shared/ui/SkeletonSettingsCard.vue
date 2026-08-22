@@ -2,26 +2,27 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed } from "vue";
+import { getBone } from "@core/theme/bones";
 
-const props = defineProps<{
-  index?: number; // For subtle variations
+defineProps<{
+  index?: number; // Retained for API compatibility with list rendering keys
 }>();
 
-const titleWidth = computed(() => {
-  if (props.index === undefined) return "160px";
-  const widths = ["160px", "140px", "180px"];
-  return widths[props.index % widths.length];
-});
-
-const descWidth = computed(() => {
-  if (props.index === undefined) return "200px";
-  const widths = ["200px", "180px", "220px", "190px"];
-  return widths[props.index % widths.length];
-});
+// Widths are read from `bones.generated.json`, a build-time capture of the
+// real `SettingsCard.vue` DOM geometry (see `capture_skeletons.ts`), rather
+// than hand-authored per-index variety values. `SettingsCard`'s body is a
+// generic `<slot>` (its content varies per settings section), so there is no
+// single real "description line" element to capture - the placeholder rows
+// instead scale off the one captured title bone, matching the previous
+// hand-authored proportion between title and description widths.
+const titleBoneWidth = computed(() => getBone("SettingsCard", "title")?.width ?? 160);
+const titleWidth = computed(() => `${titleBoneWidth.value}px`);
+const descWidth = computed(() => `${Math.round(titleBoneWidth.value * 1.25)}px`);
+const cardMinHeight = computed(() => `${getBone("SettingsCard", "card")?.height ?? 180}px`);
 </script>
 
 <template>
-  <div class="settings-card skeleton-anim">
+  <div class="settings-card skeleton-anim" :style="{ minHeight: cardMinHeight }">
     <div class="card-header">
       <div class="sk-icon-small"></div>
       <!-- Placeholder for header icon -->
@@ -53,8 +54,8 @@ const descWidth = computed(() => {
   overflow: hidden;
   margin-bottom: 8px;
 
-  /* CLS Fix: Min height to prevent layout shifts */
-  min-height: 180px; /* Roughly the height of a typical settings card */
+  /* CLS Fix: min-height is bound inline from the captured `SettingsCard.card`
+     bone (see script block) instead of a hardcoded guess. */
 
   /* Inherit global skeleton animation */
   animation: pulse 1.5s infinite ease-in-out;

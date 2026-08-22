@@ -9,7 +9,10 @@ import { mount } from "@vue/test-utils";
 import BaseCardSkeleton from "../BaseCardSkeleton.vue";
 
 describe("BaseCardSkeleton.vue", () => {
-  it("renders with default widths when no index is provided", () => {
+  it("falls back to sane default widths when no bone was captured", () => {
+    // getBone() returns undefined against the empty bones.generated.json
+    // seeded by vitest.setup.ts - the component's own fallback (?? 120 / 80)
+    // is what's under test here, not a captured value.
     const wrapper = mount(BaseCardSkeleton);
 
     expect(wrapper.classes()).toContain("sk-card");
@@ -22,36 +25,18 @@ describe("BaseCardSkeleton.vue", () => {
     expect((metaLine.element as HTMLElement).style.width).toBe("80px");
   });
 
-  it("calculates deterministic widths based on index prop", () => {
-    const testCases = [
-      { index: 0, expectedName: "120px", expectedMeta: "80px" },
-      { index: 1, expectedName: "140px", expectedMeta: "90px" },
-      { index: 2, expectedName: "90px", expectedMeta: "60px" },
-      { index: 3, expectedName: "130px", expectedMeta: "85px" },
-      { index: 4, expectedName: "100px", expectedMeta: "70px" },
-      { index: 5, expectedName: "150px", expectedMeta: "75%" },
-    ];
-
-    testCases.forEach(({ index, expectedName, expectedMeta }) => {
-      const wrapper = mount(BaseCardSkeleton, {
-        props: { index },
-      });
+  it("renders the same fallback width regardless of the (now unused) index prop", () => {
+    // Geometry now comes from a single build-time captured bone shared by
+    // every card instance, not from a hand-authored per-index variety table.
+    for (const index of [0, 1, 2, 3, 4, 5, 6]) {
+      const wrapper = mount(BaseCardSkeleton, { props: { index } });
 
       const playerName = wrapper.find(".sk-player-name");
-      expect((playerName.element as HTMLElement).style.width).toBe(expectedName);
+      expect((playerName.element as HTMLElement).style.width).toBe("120px");
 
       const metaLine = wrapper.find(".sk-text-line-s");
-      expect((metaLine.element as HTMLElement).style.width).toBe(expectedMeta);
-    });
-  });
-
-  it("cycles widths correctly using modulo", () => {
-    const wrapper = mount(BaseCardSkeleton, {
-      props: { index: 6 }, // 6 % 6 = 0
-    });
-
-    const playerName = wrapper.find(".sk-player-name");
-    expect((playerName.element as HTMLElement).style.width).toBe("120px");
+      expect((metaLine.element as HTMLElement).style.width).toBe("80px");
+    }
   });
 
   it("contains all essential skeleton structure elements", () => {

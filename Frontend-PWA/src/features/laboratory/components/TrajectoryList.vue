@@ -40,8 +40,8 @@ const { visibleItems } = useProgressiveList(actions, 20);
 </script>
 
 <template>
-  <div class="trajectory-section">
-    <h3 class="section-title">
+  <div class="trajectory-section" data-bone="TrajectoryList.section">
+    <h3 class="section-title" data-bone="TrajectoryList.title">
       <Icon name="trend_up" size="18" />
       <span>Recommended Trajectory</span>
     </h3>
