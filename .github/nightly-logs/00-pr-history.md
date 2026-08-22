@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-22] PR #1522 [Stage 8]: chore(deps): Bumped vitest and @vitest/coverage-v8 to ^4.1.11 in catalog and updated lockfile.
+**Domain:** pipeline | **Commit:** 34ddab2b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1522)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped vitest and @vitest/coverage-v8 to ^4.1.11 in catalog and updated lockfile.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-22] PR #1521 [Stage 7]: chore(version): Audit complete: no version drift or catalog violations detected
 **Domain:** pipeline | **Commit:** 603a70fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1521)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
