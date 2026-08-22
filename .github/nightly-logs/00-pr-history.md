@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-22] PR #1523 [Stage 11]: chore(apk): Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully
+**Domain:** pipeline | **Commit:** 6b956112 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1523)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-22] PR #1522 [Stage 8]: chore(deps): Bumped vitest and @vitest/coverage-v8 to ^4.1.11 in catalog and updated lockfile.
 **Domain:** pipeline | **Commit:** 34ddab2b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1522)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
