@@ -14,7 +14,8 @@ on:
       - Nightly
 
 concurrency:
-  group: merge-nightly
+  # Shared with Nightly Watchdog. See that workflow's concurrency comment.
+  group: nightly-control-plane
   cancel-in-progress: false
 
 permissions:

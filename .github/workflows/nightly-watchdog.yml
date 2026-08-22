@@ -14,7 +14,12 @@ on:
         required: false
 
 concurrency:
-  group: nightly-watchdog
+  # Shared with Sync Nightly PRs. The watchdog's last action is dispatching
+  # that workflow, so it must never run concurrently with a merge pass already
+  # in flight, and vice versa: a merge run must not touch the ledger or the
+  # PRs the watchdog is still observing. The watchdog releases the lock before
+  # its dispatch resolves, so a queued merge run is a delay, never a deadlock.
+  group: nightly-control-plane
   cancel-in-progress: false
 
 # issues:write is deliberately absent. Issues are disabled on this repository
@@ -40,6 +45,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: Nightly
+
+      - name: Check control-plane deployment alignment
+        # Non-blocking by design: this must never prevent the observe/recover
+        # pass below from running, even when it finds drift. It exists to make
+        # drift visible instead of silent. A step that goes red here is the
+        # signal that a fix landed on Beta only and has not actually reached
+        # Nightly and Stable, the failure mode that stranded the recovery-pass
+        # fix for a full day on 2026-08-16/17.
+        continue-on-error: true
+        run: node .github/scripts/nightly-deploy-check.mjs
 
       - name: Run Nightly Watchdog
         id: watchdog
