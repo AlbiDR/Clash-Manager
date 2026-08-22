@@ -35,16 +35,16 @@ const emit = defineEmits<{
 /**
  * Clamps a T2T unit field to its logical maximum and emits update.
  */
-function onInput(key: keyof DurationModel) {
-  const max = key === "days" ? 7 : key === "hours" ? 23 : 59;
+function onInput(durationUnitKey: keyof DurationModel) {
+  const max = durationUnitKey === "days" ? 7 : durationUnitKey === "hours" ? 23 : 59;
   const newValue = { ...props.modelValue };
 
-  if (newValue[key] !== '') {
-    const sanitized = sanitizeNumericInput(newValue[key]);
+  if (newValue[durationUnitKey] !== '') {
+    const sanitized = sanitizeNumericInput(newValue[durationUnitKey]);
     if (sanitized > max) {
-      newValue[key] = max;
+      newValue[durationUnitKey] = max;
     } else if (sanitized < 0) {
-      newValue[key] = 0;
+      newValue[durationUnitKey] = 0;
     }
   }
 

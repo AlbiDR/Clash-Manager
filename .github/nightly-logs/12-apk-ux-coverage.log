@@ -46,3 +46,6 @@
 * [2026-08-17] [Stage 12] CLEAN: Codebase -- Hybrid Shell UX and UI audit complete; bounded candidate set is fully compliant.
 * [2026-08-18] [Stage 12] CLEAN: Codebase -- Global webview UX/UI sweep completed; candidate files verified fully compliant
 * [2026-08-19] [Stage 12] CLEAN: Codebase -- Frontend PWA views fully audit-compliant for mobile WebView ergonomics
+* [2026-08-20] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/ErrorState.vue -- Bound v-tactile directive to ErrorState retry button
+* [2026-08-21] [Stage 12] CLEAN: Codebase -- Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts
+* [2026-08-22] [Stage 12] CLEAN: Codebase -- Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts

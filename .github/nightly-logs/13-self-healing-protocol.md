@@ -249,6 +249,30 @@
   - Symptom: No log entries for 2026-08-18 in 01-hardening-coverage.log, 03-baseline-consolidation-coverage.log, 05-documentation-readme-coverage.log, 07-version-integrity-coverage.log, or 11-apk-optimization-coverage.log at audit time.
   - Root Cause: These stages failed to trigger, execute, or write logs prior to the Stage 13 audit run today, likely due to trigger gaps, CI runner concurrency limits, execution timing relative to UTC midnight, or same-day execution delays.
   - Recommended Fix: Ensure proper sequential stage orchestration, serialize pipeline stage execution, and monitor subsequent runs for automatic recovery.
+  - Resolution Details (2026-08-20): Stages 3 and 4 successfully executed and recovered on August 20, 2026, registering CLEAN and CHANGED entries respectively. Stage 1 logged CLEAN on August 18.
+
+* Missing-Run / Failed Events on 2026-08-19:
+  - Stages: Stage 4 (Optimization) [RESOLVED - monitor], Stage 5 (README) [RESOLVED - monitor], Stage 6 (TSDoc) [RESOLVED - monitor], Stage 8 (Dependency-Audit) [RESOLVED - monitor], Stage 10 (APK-Integrity) [RESOLVED - monitor], Stage 11 (APK-Optimization) [RESOLVED - monitor], Stage 13 (Self-Healing) [RESOLVED - monitor].
+  - State: [RESOLVED - monitor]
+  - Symptom: No log entries for 2026-08-19 in 04-optimization-coverage.log, 05-documentation-readme-coverage.log, 06-documentation-tsdoc-coverage.log, 08-dependency-audit-coverage.log, 10-apk-integrity-coverage.log, 11-apk-optimization-coverage.log, or 13-self-healing-protocol-coverage.log at audit time.
+  - Root Cause: Jules sessions encountered runner errors (`JULES_SESSION_STUCK` or `JULES_SESSION_FAILED`) or timing gaps during the August 19 cycle.
+  - Recommended Fix: Ensure runner execution stability and sequential stage execution. Monitor subsequent runs for automatic recovery.
+  - Resolution Details (2026-08-20): Stages 4 and 11 successfully executed and recovered on August 20, 2026 (logging CHANGED and CLEAN passes respectively).
+
+* Missing-Run / Failed Events on 2026-08-20 & 2026-08-21:
+  - Stages: Stage 2 (Verify) [RESOLVED - monitor], Stage 8 (Dependency-Audit) [RESOLVED - monitor].
+  - State: [RESOLVED - monitor]
+  - Symptom: Stage 2 (PR #1504) experienced merge coordinator non-fast-forward push rejection on August 20, but recovered on August 21 with CHANGED entry (PR #1514). Stage 8 executed and logged CHANGED on August 21 (PR #1515).
+  - Root Cause: Sequential rebase/merge coordination collision on remote head ref.
+  - Recommended Fix: Ensure merge coordinator handles non-fast-forward branch re-fetches cleanly before push retries.
+  - Resolution Details (2026-08-21): Stage 2 and Stage 8 successfully executed and published PR #1514 and PR #1515 on August 21, 2026.
+
+* Missing-Run / Failed Events on 2026-08-22:
+  - Stages: Stage 1 (Harden), Stage 2 (Verify), Stage 3 (Baseline-Consolidation), Stage 5 (README), Stage 6 (TSDoc), Stage 9 (Refactor), Stage 10 (APK-Integrity), Stage 12 (APK-UX).
+  - State: [UNOBSERVABLE] at Stage 13 audit time
+  - Symptom: No coverage log entries for 2026-08-22 in Stages 1, 2, 3, 5, 6, 9, 10, or 12 prior to Stage 13 execution.
+  - Root Cause: These stages did not write repository coverage log records for 2026-08-22 prior to Stage 13 execution. Stages 4, 7, 8, and 11 executed cleanly and opened PRs #1520, #1521, #1522, and #1523. Without authenticated session data, the cause of missing stage outputs remains unobservable (runner execution delays, trigger skips, or timing gaps relative to audit execution).
+  - Recommended Fix: Ensure runner workflows execute sequentially, prevent concurrent job starvation, and monitor subsequent runs for automatic recovery.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -270,56 +294,68 @@
   - State: [RESOLVED] (July 30, 2026)
   - Resolution Details: Resolved programmatically in commit `4b92c7f` on July 28, 2026 (programmatic conflict resolver in `merge-nightly-prs.mjs`) and hardened with retry guards in `e777333` on July 29, 2026. Outstanding stage PRs can now auto-merge smoothly.
 
+* Unfinalized Sentinel State / Published-Degraded Execution in Stage 7 (August 19, 2026):
+  - Symptom: Stage 7 published PR #1501 while its coverage log `.github/nightly-logs/07-version-integrity-coverage.log` still contained an unfinalized sentinel `IN-PROGRESS: session started`.
+  - Root Cause: Jules session completed and published before `nightly-stage.mjs finalize` was called to replace the in-progress sentinel with a terminal CHANGED/CLEAN record.
+  - State: [ACTIVE - monitor]
+  - Recommended Fix: Ensure all stage execution scripts strictly call `nightly-stage.mjs finalize` before finalizing PR publication.
+
+* Merge Coordinator Branch Non-Fast-Forward Push Rejection in Stage 2 (August 19, 2026):
+  - Symptom: Stage 2 (PR #1504) entered BLOCKED state with `git fetch origin ... failed: [rejected] (non-fast-forward)`.
+  - Root Cause: Remote branch head diverged or was force-pushed/rebased during automated merge coordination attempts.
+  - State: [RESOLVED - monitor] (August 20, 2026)
+  - Resolution Details: Stage 2 recovered on August 20, 2026, executing cleanly and writing test coverage improvements to `AboutSettings.spec.ts`.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-17)
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-21 via PR #1519)
   - Analysis: Threat detection and runtime security verification remain fully operational and verified.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-18)
-  - Analysis: Expanded unit test coverage for MemberCard.vue covering active chart toggling and null fallback handling (PR #1491).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-21 via PR #1514)
+  - Analysis: Closed zero-coverage gap in yieldToInteractionFrame scheduling utility with comprehensive unit/boundary tests.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-17)
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-20 following baseline fold)
   - Analysis: Master migration declarative baseline folding remains fully operational with zero pending migrations.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-18)
-  - Analysis: Re-verified substrate database views remain unreferenced by Edge Function application logic (PR #1492).
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-22 via PR #1520)
+  - Analysis: Re-verified dropped database views remain unreferenced by Edge Function application logic.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-16)
+  - Consecutive No-Diff Days: 6 (CLEAN/no new commits since 2026-08-16 CHANGED pass)
   - Analysis: Reconciled Settings README documentation for BackendRefresher modernization.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-18)
-  - Analysis: Hardened BaseCard.vue interface contracts and inline TSDoc annotations (PR #1493).
+  - Consecutive No-Diff Days: 3 (CLEAN/no changes since 2026-08-19 CHANGED pass)
+  - Analysis: Hardened profiler interface contracts and inline decision logs in headhunter-scanner (PR #1500).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 23 (CLEAN logged continuously from 2026-07-26 through 2026-08-17)
+  - Consecutive No-Diff Days: 28 (CLEAN logged on 2026-08-22 via PR #1521)
   - Analysis: Monorepo version integrity remains perfectly synchronized across root, PWA, and backend manifests with zero version drift.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-18)
-  - Analysis: Bumped supabase devDependency to ^2.114.0 in pnpm-lock.yaml (PR #1494).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-22 via PR #1522)
+  - Analysis: Bumped vitest and @vitest/coverage-v8 to ^4.1.11 in catalog and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-16, 2026-08-17, and 2026-08-18)
-  - Analysis: Architectural alignment and structural audit remain 100% compliant with ADR CleanStack guidelines (PR #1495).
+  - Consecutive No-Diff Days: 3 (CLEAN logged through 2026-08-19)
+  - Analysis: Architectural alignment and structural audit remain 100% compliant with ADR CleanStack guidelines.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-08-13, 2026-08-14, 2026-08-15, 2026-08-16, and 2026-08-18)
-  - Analysis: Verified Digital Asset Links certificate fingerprints, cleartext restriction, and Android manifest permissions with zero configuration mismatches (PR #1496).
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-21)
+  - Analysis: Verified Digital Asset Links certificate fingerprints, cleartext restriction, and Android manifest permissions with zero configuration mismatches.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-16 and 2026-08-17)
-  - Analysis: WebView configurations, Service Worker caching, and native asset caching remain fully optimal and verified.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-22 via PR #1523)
+  - Analysis: Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully optimal.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-16, 2026-08-17, and 2026-08-18)
-  - Analysis: Hybrid Shell UX and UI audit complete; global webview sweep verified candidate files fully compliant (PR #1497).
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-21)
+  - Analysis: Bound v-tactile directive to ErrorState retry button (2026-08-20).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-18)
-  - Analysis: Completed daily self-healing audit pass: mapped August 17 and August 18 stage executions/recoveries, and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-22)
+  - Analysis: Completed daily self-healing audit pass: mapped August 22 stage executions/recoveries and updated Section 3 no-diff metrics.
