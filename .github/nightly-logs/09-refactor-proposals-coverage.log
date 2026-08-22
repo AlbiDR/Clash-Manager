@@ -90,3 +90,4 @@
 * [2026-08-17] [Stage 9] CLEAN: Codebase -- Structural audit complete; architecture is fully compliant with ADR CleanStack guidelines
 * [2026-08-18] [Stage 9] CLEAN: Codebase -- chore(refactor): Structural audit complete; architecture is fully compliant with CleanStack ADR guidelines
 * [2026-08-19] [Stage 9] CLEAN: Codebase -- chore(refactor): Structural audit complete; architecture is fully compliant with CleanStack ADR guidelines
+* [2026-08-22] [Stage 9] CHANGED: Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts -- Decomposed usePwaManager.ts into useApkManager.ts
