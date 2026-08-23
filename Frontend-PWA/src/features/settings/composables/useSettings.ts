@@ -120,6 +120,31 @@ export function useSettings() {
 
   const currentTestCount = ref(1);
 
+  /**
+   * Manual, session-only preview of `SkeletonSettingsCard` for layout QA.
+   *
+   * @remarks
+   * [DECISION LOG] Settings is exempt from the global Blueprint Mode singleton
+   * (see `ConsoleLayout`'s `ignoreBlueprintMode`, set only in `SettingsView.vue`)
+   * because Blueprint's own on/off toggle lives inside Settings itself -
+   * forcing Settings into its skeleton would hide the very control needed to
+   * turn Blueprint back off. That exemption otherwise leaves no way to preview
+   * this view's own skeleton on demand.
+   *
+   * The toggle for this MUST render in `ConsoleLayout`'s `#top` slot (see
+   * `SettingsView.vue`), which is the one region rendered unconditionally
+   * regardless of `loading` - anywhere else (e.g. inside `ModeSettings.vue`,
+   * alongside "Structural Blueprint") would recreate the exact trap this
+   * exists to let people audit: a toggle that hides itself the moment it's
+   * switched on. It intentionally does not persist to localStorage - it is
+   * a one-off "let me look at this" action, not a standing preference.
+   */
+  const isSkeletonPreviewActive = ref(false);
+
+  function toggleSkeletonPreview() {
+    isSkeletonPreviewActive.value = !isSkeletonPreviewActive.value;
+  }
+
   onMounted(() => {
     // [DECISION LOG] Delegating PWA lifecycle orchestration to the Layer 1 manager.
     // This ensures infrastructure boot logic is centralized and decoupled from
@@ -285,7 +310,7 @@ export function useSettings() {
   const layoutProps = computed(() => ({
     title: "Settings",
     status: apiStatusObject.value,
-    loading: !isHydrated.value,
+    loading: !isHydrated.value || isSkeletonPreviewActive.value,
     isRefreshing: isRefreshing.value,
     sheetUrl: "https://supabase.com/dashboard/project/clash-manager",
     footerBadge: footerBadgeText.value,
@@ -303,6 +328,7 @@ export function useSettings() {
     isSyntheticMode,
     isBlueprintMode,
     isShowcaseMode,
+    isSkeletonPreviewActive,
     isHydrated,
     isRefreshing,
     appVersion,
@@ -336,6 +362,7 @@ export function useSettings() {
     toggleSyntheticMode,
     toggleBlueprintMode,
     toggleShowcaseMode,
+    toggleSkeletonPreview,
     refresh,
     updateServiceWorker: (reload?: boolean) => updateServiceWorker.value(reload),
     forceUpdate,

@@ -621,6 +621,25 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void openOverlaySettings() {
+            MainActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        try {
+                            MainActivity.this.startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + MainActivity.this.getPackageName())));
+                        } catch (Exception unused) {
+                            MainActivity.this.startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.w("ClashManagerMain", "Could not open overlay settings", e);
+                        Toast.makeText(MainActivity.this, "Could not open overlay settings", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void startBlitz(final String tagsJson, final long delayMs) {
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override

@@ -52,6 +52,8 @@ export interface AndroidBridge {
   isAccessibilityActive(): boolean;
   /** Checks if the app has draw-over-other-apps overlay permission. */
   hasOverlayPermission(): boolean;
+  /** Opens the per-app Android "Display over other apps" settings screen. */
+  openOverlaySettings?(): void;
   /** Checks if Android allows this app to request user-confirmed APK installs. */
   canRequestPackageInstalls?(): boolean;
   /** Opens the per-app Android install-unknown-apps settings screen. */

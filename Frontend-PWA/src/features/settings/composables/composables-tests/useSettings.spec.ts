@@ -255,6 +255,31 @@ describe("useSettings", () => {
     mocks.mockAppVersion.value = "1.2.3";
   });
 
+  describe("layoutProps.loading / skeleton preview", () => {
+    it("is false once hydrated, with the preview inactive", () => {
+      const { result } = withSetup(useSettings);
+      expect(result.layoutProps.value.loading).toBe(false);
+      expect(result.isSkeletonPreviewActive.value).toBe(false);
+    });
+
+    it("toggleSkeletonPreview forces the skeleton on, without touching Blueprint Mode", () => {
+      // Session-only by design (see useSettings.ts's decision log): unlike the
+      // global Blueprint Mode singleton, this never persists, so leaving it on
+      // can never re-create the "no way to disable it" trap - and its own
+      // toggle lives in ConsoleLayout's always-rendered #top slot, not inside
+      // the loading-gated content it controls.
+      const { result } = withSetup(useSettings);
+      result.toggleSkeletonPreview();
+      expect(result.isSkeletonPreviewActive.value).toBe(true);
+      expect(result.layoutProps.value.loading).toBe(true);
+      expect(mocks.mockIsBlueprintMode.value).toBe(false);
+
+      result.toggleSkeletonPreview();
+      expect(result.isSkeletonPreviewActive.value).toBe(false);
+      expect(result.layoutProps.value.loading).toBe(false);
+    });
+  });
+
   describe("footerBadgeText", () => {
     it("returns 'SHOWCASE' when in showcase mode", () => {
       mocks.mockIsShowcaseMode.value = true;

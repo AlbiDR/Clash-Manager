@@ -21,18 +21,21 @@
     </queries>
     <permission android:name="com.albidr.clashmanager.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
     <uses-permission android:name="com.albidr.clashmanager.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
-    <application android:allowBackup="false" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:enableOnBackInvokedCallback="true" android:extractNativeLibs="false" android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:label="@string/appName" android:manageSpaceActivity="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity" android:name="com.albidr.clashmanager.Application" android:supportsRtl="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:usesCleartextTraffic="false">
+    <!-- [DECISION LOG] android:manageSpaceActivity previously pointed at
+         androidbrowserhelper's ManageDataLauncherActivity (a Trusted Web
+         Activity "manage space" screen that checks Chrome's per-origin site
+         data for launchUrl). This app never actually runs as a TWA - it
+         hosts its own in-process WebView in MainActivity.java - so Chrome
+         correctly reports zero site data for that origin, and Android showed
+         a "This app holds no browsing data" banner despite the app's real
+         WebView/localStorage data (correctly tracked by the OS's own
+         StorageStatsManager) being several MB. Removed so Android falls back
+         to its own default, correct storage/clear-data behavior. -->
+    <application android:allowBackup="false" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:enableOnBackInvokedCallback="true" android:extractNativeLibs="false" android:hardwareAccelerated="true" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:label="@string/appName" android:name="com.albidr.clashmanager.Application" android:supportsRtl="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:usesCleartextTraffic="false">
         <meta-data android:name="asset_statements" android:resource="@string/assetStatements"/>
         <meta-data android:name="web_manifest_url" android:value="@string/webManifestUrl"/>
         <meta-data android:name="twa_generator" android:value="@string/generatorApp"/>
         <meta-data android:name="com.albidr.clashmanager.BUILD_NUMBER" android:value="@string/buildNumber"/>
-        <activity android:enabled="true" android:excludeFromRecents="true" android:exported="false" android:name="com.google.androidbrowserhelper.trusted.ManageDataLauncherActivity">
-            <meta-data android:name="android.support.customtabs.trusted.MANAGE_SPACE_URL" android:value="@string/launchUrl"/>
-            <intent-filter>
-                <action android:name="android.intent.action.APPLICATION_PREFERENCES"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </activity>
         <activity android:alwaysRetainTaskState="true" android:exported="true" android:label="@string/launcherName" android:name="com.albidr.clashmanager.MainActivity">
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
             <intent-filter>

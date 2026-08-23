@@ -28,7 +28,7 @@ export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: tr
  * Setup block for the Settings feature view.
  * Integrates global useSettings composition logic and manages settings sections.
  */
-import { ConsoleLayout, SkeletonSettingsCard, EventManagement } from "@shared";
+import { ConsoleLayout, SkeletonSettingsCard, SettingRow, EventManagement } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 
@@ -50,18 +50,39 @@ useClashDataLoader();
 const {
   modules,
   layoutProps,
-  layoutEvents
+  layoutEvents,
+  isSkeletonPreviewActive,
+  toggleSkeletonPreview
 } = useSettings();
 
 const { isShowcaseMode } = useShowcaseMode();
 </script>
 
 <template>
+  <!-- ignore-blueprint-mode: Settings hosts Blueprint Mode's own on/off
+       toggle (ModeSettings.vue). Without this, enabling Blueprint replaces
+       this view's real content with skeletons too, hiding the toggle that
+       would turn it back off. -->
   <ConsoleLayout
     v-bind="layoutProps"
     :skeleton-component="SkeletonSettingsCard"
+    ignore-blueprint-mode
     v-on="layoutEvents"
   >
+    <!-- Rendered unconditionally by ConsoleLayout regardless of loading state -
+         the one safe place for this toggle. Anywhere inside .settings-content
+         below would hide itself the moment it's switched on, recreating the
+         exact "Structural Blueprint" trap this exists to let people audit. -->
+    <template #top>
+      <SettingRow
+        label="Preview Skeleton Layout"
+        description="Temporarily show this screen's own loading skeleton to check it against the real layout"
+        :active="isSkeletonPreviewActive"
+        mini
+        @click="toggleSkeletonPreview"
+      />
+    </template>
+
     <div class="settings-content">
       <EventManagement :initially-expanded="isShowcaseMode" />
       <AppearanceSettings :initially-expanded="isShowcaseMode" />

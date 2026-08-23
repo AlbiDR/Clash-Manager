@@ -13,6 +13,7 @@ describe("useNativeBridge", () => {
     saveCoordinates: vi.fn(),
     openAccessibilitySettings: vi.fn(),
     openPackageInstallSettings: vi.fn(),
+    openOverlaySettings: vi.fn(),
   };
 
   beforeEach(() => {
@@ -137,6 +138,29 @@ describe("useNativeBridge", () => {
     const { openAccessibilitySettings } = useNativeBridge();
     openAccessibilitySettings();
     expect(window.location.href).toContain("intent:#Intent;action=android.settings.ACCESSIBILITY_SETTINGS");
+  });
+
+  it("delegates overlay settings to the bridge", () => {
+    // Regression coverage: this previously always fell through to a
+    // malformed raw intent-URI fallback, even inside the native wrapper,
+    // because it never checked for the bridge method first - see the
+    // decision log in useNativeBridge.ts's openOverlaySettings.
+    const { openOverlaySettings } = useNativeBridge();
+    openOverlaySettings();
+    expect(mockBridge.openOverlaySettings).toHaveBeenCalled();
+    expect(window.location.href).toBe("");
+  });
+
+  it("falls back to intent URI for overlay settings if bridge method is missing", () => {
+    const bridgeWithoutMethod = { ...mockBridge };
+    delete (bridgeWithoutMethod as any).openOverlaySettings;
+    (window as any).AndroidBridge = bridgeWithoutMethod;
+
+    const { openOverlaySettings } = useNativeBridge();
+    openOverlaySettings();
+    expect(window.location.href).toBe(
+      "intent:#Intent;action=android.settings.action.MANAGE_OVERLAY_PERMISSION;package=com.albidr.clashmanager;end"
+    );
   });
 
   it("delegates package install settings to the bridge", () => {
