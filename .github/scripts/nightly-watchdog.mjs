@@ -57,7 +57,7 @@ export const RECOVERY_PROMPT = [
   "Your finalized change set was never published as a Pull Request and the session went inactive.",
   "Return the existing final result now so the native scheduled-task publisher can open one non-draft Pull Request targeting Nightly.",
   "Do not redo the audit, re-run tests, or start new work.",
-  "Do not run code review, memory, reflection, git commit, git push, or a GitHub PR command.",
+  "Do not run code review, memory, reflection, git commit, or git push.",
 ].join(" ");
 
 function invariant(condition, message) {

@@ -12,7 +12,7 @@ conflict, this contract wins.
 Every scheduled run must finish with one valid change set for Jules' native
 scheduled-task publisher to open as a non-draft Pull Request targeting
 `Nightly`. Jules owns publication. The agent must not manually create a branch,
-commit, push, call a GitHub PR command, or retry the publishing API.
+commit, push, or retry the publishing API.
 
 There are two valid outcome classes:
 

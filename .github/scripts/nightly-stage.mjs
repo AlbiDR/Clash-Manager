@@ -284,7 +284,7 @@ PR base: Nightly
 PR draft: false
 PR body: /tmp/nightly/pr-body.md
 
-Return this result now so Jules' native scheduled-task publisher can create the pull request. Do not run code review, memory, reflection, git commit, git push, or a GitHub PR command.
+Return this result now so Jules' native scheduled-task publisher can create the pull request. Do not run code review, memory, reflection, git commit, or git push.
 `;
 }
 
