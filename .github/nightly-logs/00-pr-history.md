@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-23] PR #1530 [Stage 5]: docs(readme): Reconciled core services README with useApkManager.ts decomposition
+**Domain:** pipeline | **Commit:** 39192846 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1530)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Automated nightly audit pass.
+**Change:** docs(readme): Reconciled core services README with useApkManager.ts decomposition
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-23] PR #1529 [Stage 3]: chore(database): Baseline consolidation audit verified clean; 0 unfolded migrations pending
 **Domain:** pipeline | **Commit:** ab42f947 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1529)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
