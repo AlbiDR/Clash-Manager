@@ -96,4 +96,95 @@ describe('useToast', () => {
 
     expect(toasts.value).toHaveLength(2);
   });
+
+  it('should handle persistent toasts with duration 0 without setting a timer', () => {
+    const { add, toasts } = useToast();
+
+    add({ type: 'info', message: 'Persistent', duration: 0 });
+
+    expect(toasts.value).toHaveLength(1);
+    expect(toasts.value[0].duration).toBe(0);
+
+    vi.advanceTimersByTime(100000);
+    expect(toasts.value).toHaveLength(1);
+  });
+
+  it('should safely execute triggerAction when toast has no onAction callback', () => {
+    const { add, triggerAction, toasts } = useToast();
+
+    const id = add({ type: 'info', message: 'No action' });
+    expect(toasts.value).toHaveLength(1);
+
+    expect(() => triggerAction(id)).not.toThrow();
+    expect(toasts.value).toHaveLength(0);
+  });
+
+  it('should handle removing a non-existent toast gracefully', () => {
+    const { remove, toasts } = useToast();
+
+    toasts.value = [];
+    expect(() => remove('non-existent-id')).not.toThrow();
+    expect(toasts.value).toHaveLength(0);
+  });
+
+  it('should handle triggerAction on a non-existent toast gracefully', () => {
+    const { triggerAction, toasts } = useToast();
+
+    toasts.value = [];
+    expect(() => triggerAction('non-existent-id')).not.toThrow();
+    expect(toasts.value).toHaveLength(0);
+  });
+
+  it('should fallback to Date.now/Math.random when crypto.randomUUID is undefined', async () => {
+    vi.stubGlobal('crypto', undefined);
+
+    const module = await import('../useToast');
+    const { add, toasts } = module.useToast();
+
+    const id = add({ type: 'info', message: 'Fallback ID' });
+    expect(toasts.value).toHaveLength(1);
+    expect(typeof id).toBe('string');
+    expect(id.length).toBeGreaterThan(0);
+  });
+
+  it('should clear processing lock after 800ms allowing subsequent action trigger', () => {
+    const onAction = vi.fn();
+    const { add, triggerAction, toasts } = useToast();
+
+    const id1 = add({ type: 'undo', message: 'Action 1', onAction });
+    triggerAction(id1);
+    expect(onAction).toHaveBeenCalledTimes(1);
+
+    // Re-add toast with same ID to verify processingIds lock removal after 800ms
+    toasts.value.push({
+      id: id1,
+      type: 'undo',
+      message: 'Action 1 re-added',
+      onAction,
+    });
+
+    // Before 800ms lock expires
+    vi.advanceTimersByTime(400);
+    triggerAction(id1);
+    expect(onAction).toHaveBeenCalledTimes(1);
+
+    // After 800ms lock expires
+    vi.advanceTimersByTime(450);
+    triggerAction(id1);
+    expect(onAction).toHaveBeenCalledTimes(2);
+  });
+
+  it('should configure undo toast helper with default options', () => {
+    const onAction = vi.fn();
+    const { undo, toasts } = useToast();
+
+    undo('Action done', onAction);
+
+    expect(toasts.value).toHaveLength(1);
+    const toast = toasts.value[0];
+    expect(toast.type).toBe('undo');
+    expect(toast.message).toBe('Action done');
+    expect(toast.actionLabel).toBe('UNDO');
+    expect(toast.duration).toBe(7000);
+  });
 });
