@@ -112,13 +112,13 @@ describe("BaseCard.vue", () => {
         },
       });
 
-      // The directive is called with the element and the binding object.
-      // We check that the value passed to the directive contains the expected handlers.
-      // Note: Vue 3 directive binding object might have different structure in VTU
+      // The directive is called on both the root .card element and .score-section.
+      // Find the call for the root .card element which has binding values.
       expect(tactileSpy).toHaveBeenCalled();
-      const call = tactileSpy.mock.calls[0];
-      expect(call[0]).toBeInstanceOf(HTMLElement);
-      expect(call[1].value).toMatchObject({
+      const rootCall = tactileSpy.mock.calls.find((call) => call[1]?.value !== undefined);
+      expect(rootCall).toBeTruthy();
+      expect(rootCall[0]).toBeInstanceOf(HTMLElement);
+      expect(rootCall[1].value).toMatchObject({
         onTap: mockHandlers.handleTap,
         onLongPress: mockHandlers.handleLongPress,
       });
