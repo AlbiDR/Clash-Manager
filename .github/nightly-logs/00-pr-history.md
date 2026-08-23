@@ -16,6 +16,35 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-23] PR #1533 [Stage 2]: chore(verify): Frontend-PWA/src/core/services/services-tests/useToast.spec.ts -- Expanded useToast unit test suite to cover fallback ID generation, persistent toasts, and lock releases.
+**Domain:** pipeline | **Commit:** ffb6ef83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1533)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useToast.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Frontend-PWA/src/core/services/services-tests/useToast.spec.ts -- Expanded useToast unit test suite to cover fallback ID generation, persistent toasts, and lock releases.
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-23] PR #1536 [Stage 4]: chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
+**Domain:** pipeline | **Commit:** dc3c996e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1536)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-23] PR #1535 [Stage 6]: chore(docs): docs(tsdoc): harden useApkManager interface contracts and inline logic annotations
+**Domain:** pipeline | **Commit:** f4f12a36 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1535)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useApkManager.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden useApkManager interface contracts and inline logic annotations
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-23] PR #1534 [Stage 10]: chore(apk): APK and PWA wrapper integrity audit completed with no mismatches found.
+**Domain:** pipeline | **Commit:** f8d5308f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1534)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): APK and PWA wrapper integrity audit completed with no mismatches found.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-23] PR #1532 [Stage 13]: chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-23
 **Domain:** pipeline | **Commit:** e0fd9132 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1532)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
