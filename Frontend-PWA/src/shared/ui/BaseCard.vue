@@ -128,7 +128,7 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
 
       <div class="header-actions">
         <!-- Score Section -->
-        <div class="score-section" @click.stop="handleScoreClick">
+        <div class="score-section" v-tactile @click.stop="handleScoreClick">
           <div
             class="stat-pod hit-target"
             :class="{ 'score-tint': props.score !== undefined }"
