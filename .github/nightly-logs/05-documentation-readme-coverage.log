@@ -146,3 +146,4 @@
 * [2026-08-13] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useNativeBridge.ts coordination in core services README
 * [2026-08-14] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled and updated the Core Services README.md to document the decomposed apkResolverUtils.ts and APK resolution lifecycle.
 * [2026-08-16] [Stage 5] CHANGED: Frontend-PWA/src/features/settings/README.md -- docs(readme): Reconciled Settings README BackendRefresher modernization
+* [2026-08-23] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled core services README with useApkManager.ts decomposition

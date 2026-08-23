@@ -53,6 +53,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useConfirm.ts` | Global modal confirmation service (replacing native `confirm()` with styled MD3 ConfirmDialog) to eliminate unstyled system blocks in Android. |
 | `apkResolver.ts` | Dynamic APK release metadata, version matching, and filename resolution utility. |
 | `apkResolverUtils.ts` | Pure utilities, constants, types, and helpers for companion APK version parsing and release resolution. |
+| `useApkManager.ts` | Native APK shell update management (installed vs published release comparison, download dispatching, and bridge state). |
 | `usePwaManager.ts` | PWA update/recovery lifecycle (Service Worker updates, cache clear, PWA installation, and disaster recovery). |
 | `useUiCoordinator.ts` | Global layout spacing and floating-action-button state. |
 | `useBackHandler.ts` | Hardware back-button behavior in the wrapper. |
@@ -69,19 +70,20 @@ The modal confirmation composable provides a robust, styled replacement for the 
 - **Asynchronous Flow:** Exposes a promise-driven `confirm(pendingConfirmationOptions)` method that pauses execution and resolves to `isUserActionConfirmed` (boolean) once the user interacts with the UI dialog, ensuring clean linear usage.
 - **Tone & Ergonomics:** Supports custom dialog text, customized button labels, and visual tone configuration (`danger` vs `default`) to convey destructive semantics (e.g. factory resets or API URL resets).
 
-### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts`, `apkResolver.ts` & `apkResolverUtils.ts`)
+### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts`, `useApkManager.ts`, `apkResolver.ts` & `apkResolverUtils.ts`)
 
-The PWA lifecycle orchestrator, the standalone APK resolver, and its helper utility service implement robust, decomposed mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
+The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper utility services implement robust, decomposed mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
 
 1. **Service Worker (SW) Coexistence:** `usePwaManager.ts` coordinates update checks and skips waiting states when an updated SW is staged, ensuring a fresh asset envelope is downloaded and applied immediately on reload.
-2. **Decomposed APK Release Resolution (`apkResolver.ts` & `apkResolverUtils.ts`):** Dynamic companion APK metadata and filename resolution is isolated in Layer 1 core utility services to decouple presentation logic from infrastructure concerns.
+2. **Dedicated APK Shell Update Management (`useApkManager.ts`):** Decoupled from PWA manager routines, `useApkManager.ts` manages native APK metadata resolution, installed vs. published release version comparison, download dispatching, and bridge status monitoring.
+3. **Decomposed APK Release Resolution (`apkResolver.ts` & `apkResolverUtils.ts`):** Dynamic companion APK metadata and filename resolution is isolated in Layer 1 core utility services to decouple presentation logic from infrastructure concerns.
    - **Pure Helpers & Types (`apkResolverUtils.ts`):** Houses pure utilities, constants, and structured types (such as `ReleaseApkParts` and `ApkReleaseDownload`). It handles the regex-based validation of release filenames (`isReleaseApkFilename`), path builders, and direct download-url matching logic.
    - **SemVer Build Sorting:** `compareReleaseApkFilenames` in `apkResolverUtils.ts` parses SemVer structures and unique version/build suffixes (e.g., `clashmanager-v14.43.2+176.apk`) to perform precise chronological release order sorting.
    - **Multi-Tier Resolution & Fail-Safes:** At download trigger, `apkResolver.ts` races/orchestrates three API lookup pathways in parallel (same-origin metadata `/APK/release/latest.json`, GitHub Repository Contents API `ref=Beta` branch, and the raw beta repository URL) to guarantee release detection.
    - **Cache & Throttling Limits:** Caches successfully resolved metadata filenames in memory with a robust `APK_RESOLUTION_CACHE_TTL_MS` (60 seconds) duration, and deduplicates concurrent active resolution lookups via a shared promise registry.
-   - **Ergonomics & Wrapper Bridging:** Once resolved, `usePwaManager.ts` delegates download actions to `downloadApkFile` or `openExternalUrl` on the native bridge if inside the Android wrapper container, falling back to window location assignment in PWAs.
-3. **PWA Installation Lifecycle:** Captures browser-managed PWA installation triggers from the `beforeinstallprompt` event and exposes them reactively via the `isPwaInstallAvailable` ref. Invoking the async `installPwa()` method prompts the user directly, updating installation status and managing event teardown/garbage collection cleanly upon resolution.
-4. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, `usePwaManager.ts` unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
+   - **Ergonomics & Wrapper Bridging:** Once resolved, `useApkManager.ts` (re-exported and composed by `usePwaManager.ts`) delegates download actions to `downloadApkFile` or `openExternalUrl` on the native bridge if inside the Android wrapper container, falling back to window location assignment in PWAs.
+4. **PWA Installation Lifecycle:** Captures browser-managed PWA installation triggers from the `beforeinstallprompt` event and exposes them reactively via the `isPwaInstallAvailable` ref. Invoking the async `installPwa()` method prompts the user directly, updating installation status and managing event teardown/garbage collection cleanly upon resolution.
+5. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, `usePwaManager.ts` unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
 
 ### High-Performance Search and Filtering (`useListFilter.ts`)
 
