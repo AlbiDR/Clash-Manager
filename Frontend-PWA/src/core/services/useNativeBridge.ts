@@ -226,9 +226,24 @@ export function useNativeBridge() {
 
   /**
    * Deep-links the user to the Overlay permission settings.
+   *
+   * @remarks
+   * [DECISION LOG] Unlike its `openAccessibilitySettings`/
+   * `openPackageInstallSettings` siblings, this previously never checked
+   * `bridge.value` first - it always fired the raw intent-URI fallback below,
+   * even inside the native wrapper. That fallback string is also malformed
+   * (missing the `//` after `intent:`), which the wrapper's WebViewClient
+   * requires to route it through `Intent.parseUri`; it fell through to a
+   * literal `ACTION_VIEW` on the string itself, had no handler, and produced
+   * a generic "Could not open link" toast on every tap. Bridge-first (with
+   * this same fallback string kept, unchanged, only for a plain browser tab
+   * outside the native wrapper) matches the working pattern already proven
+   * by `startBlitz()`'s own overlay-permission intent construction.
    */
   function openOverlaySettings() {
-    if (typeof window !== "undefined") {
+    if (bridge.value?.openOverlaySettings) {
+      bridge.value.openOverlaySettings();
+    } else if (typeof window !== "undefined") {
       window.location.href = "intent:#Intent;action=android.settings.action.MANAGE_OVERLAY_PERMISSION;package=com.albidr.clashmanager;end";
     }
   }

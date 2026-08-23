@@ -13,6 +13,7 @@ describe("AndroidCalibrationSettings.vue", () => {
     canRequestPackageInstalls: vi.fn(() => false),
     openAccessibilitySettings: vi.fn(),
     openPackageInstallSettings: vi.fn(),
+    openOverlaySettings: vi.fn(),
     getCoordinates: vi.fn(() => '{"inviteX":0.5083,"inviteY":0.7214,"closeX":0.9213,"closeY":0.2044}'),
     saveCoordinates: vi.fn(),
     startBlitz: vi.fn(),
@@ -103,20 +104,24 @@ describe("AndroidCalibrationSettings.vue", () => {
     expect(mockBridge.openAccessibilitySettings).toHaveBeenCalledOnce();
   });
 
-  it("navigates to overlay settings intent when the overlay row is clicked", async () => {
+  it("calls the native openOverlaySettings bridge method when the overlay row is clicked", async () => {
+    // Regression coverage: this previously always fell through to a
+    // malformed raw intent-URI fallback, even inside the native wrapper,
+    // because it never checked for the bridge method first (unlike its
+    // openAccessibilitySettings/openPackageInstallSettings siblings) - see
+    // the decision log in useNativeBridge.ts's openOverlaySettings.
     const wrapper = mountComponent();
     await wrapper.vm.$nextTick();
 
     const { openOverlaySettings } = (wrapper.vm as any);
     openOverlaySettings();
 
-    expect(window.location.href).toBe(
-      "intent:#Intent;action=android.settings.action.MANAGE_OVERLAY_PERMISSION;package=com.albidr.clashmanager;end"
-    );
+    expect(mockBridge.openOverlaySettings).toHaveBeenCalledOnce();
+    expect(window.location.href).toBe("");
   });
 
-  it("navigates to overlay intent URL when overlay permission is already allowed", async () => {
-    mockBridge.hasOverlayPermission.mockReturnValue(true);
+  it("falls back to the raw intent URI when running outside the native wrapper", async () => {
+    delete (mockBridge as any).openOverlaySettings;
     const wrapper = mountComponent();
     await wrapper.vm.$nextTick();
 

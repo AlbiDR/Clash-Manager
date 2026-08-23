@@ -30,6 +30,13 @@ vi.mock("../../../core/services/useShowcaseMode", () => ({
   }),
 }));
 
+const mockIsBlueprintMode = { value: false };
+vi.mock("../../../core/services/useBlueprintMode", () => ({
+  useBlueprintMode: () => ({
+    isBlueprintMode: mockIsBlueprintMode,
+  }),
+}));
+
 // Mock Shared Composables
 const mockOnTouchStart = vi.fn();
 const mockOnTouchMove = vi.fn();
@@ -77,6 +84,7 @@ describe("ConsoleLayout", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsBlueprintMode.value = false;
   });
 
   it("renders the title and content slot correctly", () => {
@@ -105,6 +113,33 @@ describe("ConsoleLayout", () => {
     const skeletons = wrapper.findAll(".mock-skeleton");
     expect(skeletons.length).toBe(8);
     expect(wrapper.find(".list-container").exists()).toBe(true);
+  });
+
+  it("forces skeleton display when Blueprint Mode is active", () => {
+    mockIsBlueprintMode.value = true;
+    const wrapper = mount(ConsoleLayout, {
+      props: { ...defaultProps, loading: false },
+      global: globalConfig,
+    });
+
+    expect(wrapper.findAll(".mock-skeleton").length).toBe(8);
+  });
+
+  it("ignoreBlueprintMode keeps real content visible even while Blueprint Mode is active", () => {
+    // Regression coverage: SettingsView.vue sets this because it hosts
+    // Blueprint Mode's own on/off toggle (ModeSettings.vue). Without this
+    // exemption, enabling Blueprint replaced Settings' real content -
+    // including the toggle that turns it back off - with skeletons, trapping
+    // the user with no way to disable it short of clearing app storage.
+    mockIsBlueprintMode.value = true;
+    const wrapper = mount(ConsoleLayout, {
+      props: { ...defaultProps, loading: false, ignoreBlueprintMode: true },
+      slots: { default: '<div class="real-content">Real settings content</div>' },
+      global: globalConfig,
+    });
+
+    expect(wrapper.find(".real-content").exists()).toBe(true);
+    expect(wrapper.findAll(".mock-skeleton").length).toBe(0);
   });
 
   it("renders empty state when isEmpty is true", () => {

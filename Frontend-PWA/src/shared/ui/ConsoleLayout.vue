@@ -48,6 +48,15 @@ const props = defineProps<{
   /** Consolidated info about the remote data source. */
   remoteInfo?: ConsoleRemoteInfo;
   footerBadge?: string;
+  /**
+   * Exempts this console instance from Blueprint Mode's forced skeleton
+   * display. Blueprint Mode is toggled from within the Settings view itself
+   * (see `ModeSettings.vue`) - without this exemption, turning it on replaces
+   * Settings' own real content (including the toggle that turns it back off)
+   * with skeleton placeholders, trapping the user with no way to disable it
+   * short of clearing app storage. Only `SettingsView.vue` should set this.
+   */
+  ignoreBlueprintMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -77,6 +86,7 @@ const activeFooterBadge = computed(() => {
 
 const displayLoading = computed(() => {
   if (isShowcaseMode.value) return false;
+  if (props.ignoreBlueprintMode) return props.loading ?? false;
   return props.loading || isBlueprintMode.value;
 });
 

@@ -35,12 +35,17 @@ const {
         @click="toggleSyntheticMode"
       />
 
-      <!-- Blueprint Mode -->
+      <!-- Blueprint Mode: intentionally NOT disabled by isShowcaseMode. Unlike
+           Synthetic (which Showcase requires to stay on), Blueprint is documented
+           as optional under Showcase (see useShowcaseMode.ts's "Skeletons are
+           optional to allow for high-fidelity captures"). Disabling this row
+           here previously trapped users: enabling Blueprint while Synthetic was
+           already on auto-promoted to Showcase, which then disabled this very
+           row via pointer-events, leaving no direct way to turn it back off. -->
       <SettingRow
         label="Structural Blueprint"
         description="Strip UI to geometric skeletons to audit layout stability"
         :active="isBlueprintMode"
-        :disabled="isShowcaseMode"
         mini
         @click="toggleBlueprintMode"
       />

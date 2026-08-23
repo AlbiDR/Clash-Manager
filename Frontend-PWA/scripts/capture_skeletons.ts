@@ -214,16 +214,31 @@ export async function ensureBonesFresh(): Promise<void> {
         .join(", ")}) - capturing via headless Chromium.`,
     );
     const routes = [...new Set(staleGroups.map((g) => g.route))];
-    const captured = await captureRoutes(routes);
-    for (const [groupName, bones] of Object.entries(captured)) {
-      result[groupName] = bones;
-    }
-    for (const group of measurableGroups) {
-      if (routes.includes(group.route)) {
-        nextCache[group.name] = groupHashes.get(group.name)!;
+    try {
+      const captured = await captureRoutes(routes);
+      for (const [groupName, bones] of Object.entries(captured)) {
+        result[groupName] = bones;
       }
+      for (const group of measurableGroups) {
+        if (routes.includes(group.route)) {
+          nextCache[group.name] = groupHashes.get(group.name)!;
+        }
+      }
+      writeCache(nextCache);
+    } catch (error) {
+      // A missing Chromium binary (e.g. a fresh checkout that hasn't run
+      // `pnpm exec playwright install chromium` yet) must never block the
+      // ordinary `dev`/`build` scripts - it only means skeletons keep
+      // whatever geometry was last captured (or the components' own hardcoded
+      // fallback, on a clean checkout with nothing captured yet) until the
+      // browser is installed. The cache is deliberately left untouched so the
+      // next successful run still treats these groups as stale and retries.
+      console.warn(
+        "[bones] Capture failed - skeletons will use the last captured (or fallback) geometry.",
+        "Run `pnpm exec playwright install chromium` in Frontend-PWA to enable live capture.",
+      );
+      console.warn(error instanceof Error ? error.message : error);
     }
-    writeCache(nextCache);
   }
 
   // Resolve aliases (e.g. RosterShell mirrors MemberCard) after all real
@@ -288,7 +303,12 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
   const vite = await createViteServer({
     root: ROOT,
     server: { middlewareMode: true },
-    appType: "custom",
+    // "spa" (not "custom") is required so Vite serves and transforms
+    // TEMP_INDEX_HTML itself for every non-asset request - "custom" disables
+    // Vite's built-in HTML handling entirely, which silently served nothing
+    // at "/" and made every capture pass measure zero elements without ever
+    // throwing (main.ts never loaded, so the app never mounted).
+    appType: "spa",
     logLevel: "warn",
   });
 
@@ -304,68 +324,87 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
   try {
     const browser = await chromium.launch();
     try {
-      const page = await browser.newPage();
-      // Force Blueprint mode off regardless of route/query combination. A
-      // route requesting Showcase (below) would otherwise also force
-      // Blueprint on, which replaces every real component with its own
-      // skeleton placeholder - capturing a skeleton's hardcoded geometry
-      // instead of the real DOM it's supposed to mirror. This is the exact
-      // escape hatch `useShowcaseMode.ts` documents for branding pipelines.
-      await page.addInitScript(() => {
-        window.localStorage.setItem("clash_manager_blueprint_mode", "false");
-      });
-
       for (const route of routes) {
         const query = ROUTE_QUERY[route] ?? DEFAULT_QUERY;
-        for (const [bp, width] of Object.entries(BREAKPOINTS) as [Breakpoint, number][]) {
-          await page.setViewportSize({ width, height: 900 });
-          await page.goto(`http://127.0.0.1:${port}/#${route}?${query}`, {
-            waitUntil: "networkidle",
+
+        // A fresh page per route, not one page reused across every route.
+        // Successive page.goto() calls that only change the hash fragment
+        // (http://host/#/roster -> http://host/#/settings) are same-document
+        // navigations in a real browser - they update the SPA's route
+        // reactively via hashchange, but never reload the document or re-run
+        // main.ts. The singleton composables (useSyntheticMode,
+        // useShowcaseMode) read their URL query param exactly once, at that
+        // first module evaluation, so every route after the first silently
+        // kept whichever query params the very first route happened to boot
+        // with - only the first route in `routes` ever captured anything.
+        // A real navigation (from about:blank, a distinct origin state) for
+        // each route guarantees main.ts and its singletons re-initialize
+        // against that route's own query string.
+        const page = await browser.newPage();
+        try {
+          // Force Blueprint mode off regardless of route/query combination.
+          // A route requesting Showcase (below) would otherwise also force
+          // Blueprint on, which replaces every real component with its own
+          // skeleton placeholder - capturing a skeleton's hardcoded geometry
+          // instead of the real DOM it's supposed to mirror. This is the
+          // exact escape hatch `useShowcaseMode.ts` documents for branding
+          // pipelines.
+          await page.addInitScript(() => {
+            window.localStorage.setItem("clash_manager_blueprint_mode", "false");
           });
-          await page.waitForSelector("[data-bone]", { timeout: 10_000 }).catch(() => {
-            // No bones rendered for this route/breakpoint (e.g. empty synthetic
-            // dataset) - leave this pass's measurements empty rather than fail
-            // the whole build.
-          });
 
-          const measurements = await page.$$eval("[data-bone]", (elements) =>
-            elements.map((el) => {
-              const rect = el.getBoundingClientRect();
-              return {
-                bone: el.getAttribute("data-bone") || "",
-                width: Math.round(rect.width),
-                height: Math.round(rect.height),
-              };
-            }),
-          );
+          for (const [bp, width] of Object.entries(BREAKPOINTS) as [Breakpoint, number][]) {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto(`http://127.0.0.1:${port}/#${route}?${query}`, {
+              waitUntil: "networkidle",
+            });
+            await page.waitForSelector("[data-bone]", { timeout: 10_000 }).catch(() => {
+              // No bones rendered for this route/breakpoint (e.g. empty
+              // synthetic dataset) - leave this pass's measurements empty
+              // rather than fail the whole build.
+            });
 
-          // Multiple real instances of the same capture group can render on
-          // one page (e.g. nine distinct SettingsCard usages on /settings).
-          // Picking whichever happened to be last in DOM order would silently
-          // capture an arbitrary instance (e.g. always "About", the last one
-          // in SettingsView.vue's template) rather than a representative
-          // dimension. Instead: average the width (a typical size, not
-          // whichever title text happened to be longest/shortest) and take
-          // the max height (tall enough that no real instance would exceed
-          // the skeleton and cause a layout shift).
-          const byBone = new Map<string, { widths: number[]; heights: number[] }>();
-          for (const { bone, width: w, height: h } of measurements) {
-            if (!bone.includes(".")) continue;
-            const entry = byBone.get(bone) ?? { widths: [], heights: [] };
-            entry.widths.push(w);
-            entry.heights.push(h);
-            byBone.set(bone, entry);
-          }
+            const measurements = await page.$$eval("[data-bone]", (elements) =>
+              elements.map((el) => {
+                const rect = el.getBoundingClientRect();
+                return {
+                  bone: el.getAttribute("data-bone") || "",
+                  width: Math.round(rect.width),
+                  height: Math.round(rect.height),
+                };
+              }),
+            );
 
-          for (const [bone, { widths, heights }] of byBone) {
-            const [groupName, boneName] = bone.split(".");
+            // Multiple real instances of the same capture group can render on
+            // one page (e.g. nine distinct SettingsCard usages on /settings).
+            // Picking whichever happened to be last in DOM order would silently
+            // capture an arbitrary instance (e.g. always "About", the last one
+            // in SettingsView.vue's template) rather than a representative
+            // dimension. Instead: average the width (a typical size, not
+            // whichever title text happened to be longest/shortest) and take
+            // the max height (tall enough that no real instance would exceed
+            // the skeleton and cause a layout shift).
+            const byBone = new Map<string, { widths: number[]; heights: number[] }>();
+            for (const { bone, width: w, height: h } of measurements) {
+              if (!bone.includes(".")) continue;
+              const entry = byBone.get(bone) ?? { widths: [], heights: [] };
+              entry.widths.push(w);
+              entry.heights.push(h);
+              byBone.set(bone, entry);
+            }
+
+            for (const [bone, { widths, heights }] of byBone) {
+              const [groupName, boneName] = bone.split(".");
             if (!groupName || !boneName) continue;
             const avgWidth = Math.round(widths.reduce((a, b) => a + b, 0) / widths.length);
             const maxHeight = Math.max(...heights);
             results[groupName] ??= {};
             results[groupName][bp] ??= {};
             results[groupName][bp]![boneName] = { width: avgWidth, height: maxHeight };
+            }
           }
+        } finally {
+          await page.close();
         }
       }
     } finally {

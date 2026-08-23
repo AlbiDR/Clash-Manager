@@ -91,6 +91,7 @@ const EXPECT = {
     "canRequestPackageInstalls",
     "openPackageInstallSettings",
     "openAccessibilitySettings",
+    "openOverlaySettings",
     "getAppVersionName",
     "getAppVersionCode",
     "getBuildNumber",
