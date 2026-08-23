@@ -125,6 +125,23 @@ describe("ConsoleLayout", () => {
     expect(wrapper.findAll(".mock-skeleton").length).toBe(8);
   });
 
+  it("ignoreBlueprintMode opts out of the automatic whole-slot swap even while Blueprint Mode is active", () => {
+    // SettingsView.vue sets this because ConsoleLayout's built-in swap is
+    // all-or-nothing, and it needs to keep one card (ModeSettings, which
+    // hosts Blueprint's own on/off toggle) real and in its normal position
+    // while doing its own per-card swap for everything else - see the
+    // decision log on the ignoreBlueprintMode prop.
+    mockIsBlueprintMode.value = true;
+    const wrapper = mount(ConsoleLayout, {
+      props: { ...defaultProps, loading: false, ignoreBlueprintMode: true },
+      slots: { default: '<div class="real-content">Real settings content</div>' },
+      global: globalConfig,
+    });
+
+    expect(wrapper.find(".real-content").exists()).toBe(true);
+    expect(wrapper.findAll(".mock-skeleton").length).toBe(0);
+  });
+
   it("renders empty state when isEmpty is true", () => {
     const wrapper = mount(ConsoleLayout, {
       props: {

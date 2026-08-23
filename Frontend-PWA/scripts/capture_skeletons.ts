@@ -376,14 +376,17 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
             );
 
             // Multiple real instances of the same capture group can render on
-            // one page (e.g. nine distinct SettingsCard usages on /settings).
-            // Picking whichever happened to be last in DOM order would silently
-            // capture an arbitrary instance (e.g. always "About", the last one
-            // in SettingsView.vue's template) rather than a representative
-            // dimension. Instead: average the width (a typical size, not
-            // whichever title text happened to be longest/shortest) and take
-            // the max height (tall enough that no real instance would exceed
-            // the skeleton and cause a layout shift).
+            // one page (e.g. nine distinct SettingsCard usages on /settings,
+            // whose real heights vary widely by content - About is short,
+            // Network & API is long). Picking whichever happened to be last
+            // in DOM order would silently capture an arbitrary instance
+            // rather than a representative dimension; taking the max would
+            // force every skeleton instance to mirror the single tallest
+            // real card, leaving most skeletons mostly empty space below
+            // their actual content. Average both dimensions instead - a
+            // typical size that under- and over-shoots real instances by
+            // roughly the same, unnoticeable amount, rather than guaranteeing
+            // a specific (and often extreme) one never exceeds the skeleton.
             const byBone = new Map<string, { widths: number[]; heights: number[] }>();
             for (const { bone, width: w, height: h } of measurements) {
               if (!bone.includes(".")) continue;
@@ -397,10 +400,10 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
               const [groupName, boneName] = bone.split(".");
             if (!groupName || !boneName) continue;
             const avgWidth = Math.round(widths.reduce((a, b) => a + b, 0) / widths.length);
-            const maxHeight = Math.max(...heights);
+            const avgHeight = Math.round(heights.reduce((a, b) => a + b, 0) / heights.length);
             results[groupName] ??= {};
             results[groupName][bp] ??= {};
-            results[groupName][bp]![boneName] = { width: avgWidth, height: maxHeight };
+            results[groupName][bp]![boneName] = { width: avgWidth, height: avgHeight };
             }
           }
         } finally {
