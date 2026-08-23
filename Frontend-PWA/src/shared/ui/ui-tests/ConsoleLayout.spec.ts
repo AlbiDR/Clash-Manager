@@ -125,23 +125,6 @@ describe("ConsoleLayout", () => {
     expect(wrapper.findAll(".mock-skeleton").length).toBe(8);
   });
 
-  it("ignoreBlueprintMode keeps real content visible even while Blueprint Mode is active", () => {
-    // Regression coverage: SettingsView.vue sets this because it hosts
-    // Blueprint Mode's own on/off toggle (ModeSettings.vue). Without this
-    // exemption, enabling Blueprint replaced Settings' real content -
-    // including the toggle that turns it back off - with skeletons, trapping
-    // the user with no way to disable it short of clearing app storage.
-    mockIsBlueprintMode.value = true;
-    const wrapper = mount(ConsoleLayout, {
-      props: { ...defaultProps, loading: false, ignoreBlueprintMode: true },
-      slots: { default: '<div class="real-content">Real settings content</div>' },
-      global: globalConfig,
-    });
-
-    expect(wrapper.find(".real-content").exists()).toBe(true);
-    expect(wrapper.findAll(".mock-skeleton").length).toBe(0);
-  });
-
   it("renders empty state when isEmpty is true", () => {
     const wrapper = mount(ConsoleLayout, {
       props: {

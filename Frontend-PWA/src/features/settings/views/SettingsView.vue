@@ -28,7 +28,7 @@ export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: tr
  * Setup block for the Settings feature view.
  * Integrates global useSettings composition logic and manages settings sections.
  */
-import { ConsoleLayout, SkeletonSettingsCard, SettingRow, EventManagement } from "@shared";
+import { ConsoleLayout, SkeletonSettingsCard, EventManagement } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
 
@@ -50,37 +50,28 @@ useClashDataLoader();
 const {
   modules,
   layoutProps,
-  layoutEvents,
-  isSkeletonPreviewActive,
-  toggleSkeletonPreview
+  layoutEvents
 } = useSettings();
 
 const { isShowcaseMode } = useShowcaseMode();
 </script>
 
 <template>
-  <!-- ignore-blueprint-mode: Settings hosts Blueprint Mode's own on/off
-       toggle (ModeSettings.vue). Without this, enabling Blueprint replaces
-       this view's real content with skeletons too, hiding the toggle that
-       would turn it back off. -->
   <ConsoleLayout
     v-bind="layoutProps"
     :skeleton-component="SkeletonSettingsCard"
-    ignore-blueprint-mode
     v-on="layoutEvents"
   >
-    <!-- Rendered unconditionally by ConsoleLayout regardless of loading state -
-         the one safe place for this toggle. Anywhere inside .settings-content
-         below would hide itself the moment it's switched on, recreating the
-         exact "Structural Blueprint" trap this exists to let people audit. -->
+    <!-- ModeSettings ("Display Preferences") lives here, in the one region
+         ConsoleLayout renders unconditionally regardless of Blueprint Mode's
+         forced skeleton swap of everything else below - it hosts Blueprint's
+         own on/off toggle, so it must stay real and reachable no matter what
+         state Blueprint is in. Enabling it and disabling it both go through
+         the exact same card, the same way, every time. -->
     <template #top>
-      <SettingRow
-        label="Preview Skeleton Layout"
-        description="Temporarily show this screen's own loading skeleton to check it against the real layout"
-        :active="isSkeletonPreviewActive"
-        mini
-        @click="toggleSkeletonPreview"
-      />
+      <div class="mode-settings-wrapper">
+        <ModeSettings :initially-expanded="isShowcaseMode" />
+      </div>
     </template>
 
     <div class="settings-content">
@@ -88,7 +79,6 @@ const { isShowcaseMode } = useShowcaseMode();
       <AppearanceSettings :initially-expanded="isShowcaseMode" />
       <NotificationSettings :initially-expanded="isShowcaseMode" />
       <FeatureSettings :initially-expanded="isShowcaseMode" />
-      <ModeSettings :initially-expanded="isShowcaseMode" />
       <NetworkSettings :initially-expanded="isShowcaseMode" />
       <BackendRefresher v-if="modules.backendRefresher" :initially-expanded="isShowcaseMode" />
       <UsefulLinksSettings :initially-expanded="isShowcaseMode" />
@@ -104,5 +94,10 @@ const { isShowcaseMode } = useShowcaseMode();
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-10);
+}
+
+.mode-settings-wrapper {
+  padding: 0 var(--sys-space-16);
+  margin-bottom: var(--sys-space-10);
 }
 </style>
