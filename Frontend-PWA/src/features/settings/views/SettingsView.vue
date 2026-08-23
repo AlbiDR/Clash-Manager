@@ -31,6 +31,7 @@ export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: tr
 import { ConsoleLayout, SkeletonSettingsCard, EventManagement } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
+import { useBlueprintMode } from "@core/services/useBlueprintMode";
 
 // Settings Components
 import {
@@ -54,36 +55,54 @@ const {
 } = useSettings();
 
 const { isShowcaseMode } = useShowcaseMode();
+const { isBlueprintMode } = useBlueprintMode();
 </script>
 
 <template>
+  <!-- ignore-blueprint-mode: ConsoleLayout's built-in Blueprint swap is
+       all-or-nothing (the whole slot becomes skeletons, or none of it does).
+       ModeSettings hosts Blueprint's own on/off toggle and must stay real, in
+       its normal position, no matter what - so this view does its own
+       per-card swap below instead, keeping every card in its original order. -->
   <ConsoleLayout
     v-bind="layoutProps"
     :skeleton-component="SkeletonSettingsCard"
+    ignore-blueprint-mode
     v-on="layoutEvents"
   >
-    <!-- ModeSettings ("Display Preferences") lives here, in the one region
-         ConsoleLayout renders unconditionally regardless of Blueprint Mode's
-         forced skeleton swap of everything else below - it hosts Blueprint's
-         own on/off toggle, so it must stay real and reachable no matter what
-         state Blueprint is in. Enabling it and disabling it both go through
-         the exact same card, the same way, every time. -->
-    <template #top>
-      <div class="mode-settings-wrapper">
-        <ModeSettings :initially-expanded="isShowcaseMode" />
-      </div>
-    </template>
-
     <div class="settings-content">
-      <EventManagement :initially-expanded="isShowcaseMode" />
-      <AppearanceSettings :initially-expanded="isShowcaseMode" />
-      <NotificationSettings :initially-expanded="isShowcaseMode" />
-      <FeatureSettings :initially-expanded="isShowcaseMode" />
-      <NetworkSettings :initially-expanded="isShowcaseMode" />
-      <BackendRefresher v-if="modules.backendRefresher" :initially-expanded="isShowcaseMode" />
-      <UsefulLinksSettings :initially-expanded="isShowcaseMode" />
-      <RecoverySettings :initially-expanded="isShowcaseMode" />
-      <AboutSettings :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="0" /></template>
+      <EventManagement v-else :initially-expanded="isShowcaseMode" />
+
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="1" /></template>
+      <AppearanceSettings v-else :initially-expanded="isShowcaseMode" />
+
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="2" /></template>
+      <NotificationSettings v-else :initially-expanded="isShowcaseMode" />
+
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="3" /></template>
+      <FeatureSettings v-else :initially-expanded="isShowcaseMode" />
+
+      <!-- Always real, in its normal position - see the ignore-blueprint-mode
+           note above. -->
+      <ModeSettings :initially-expanded="isShowcaseMode" />
+
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="4" /></template>
+      <NetworkSettings v-else :initially-expanded="isShowcaseMode" />
+
+      <template v-if="modules.backendRefresher">
+        <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="5" /></template>
+        <BackendRefresher v-else :initially-expanded="isShowcaseMode" />
+      </template>
+
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="6" /></template>
+      <UsefulLinksSettings v-else :initially-expanded="isShowcaseMode" />
+
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="7" /></template>
+      <RecoverySettings v-else :initially-expanded="isShowcaseMode" />
+
+      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="8" /></template>
+      <AboutSettings v-else :initially-expanded="isShowcaseMode" />
     </div>
   </ConsoleLayout>
 </template>
@@ -94,10 +113,5 @@ const { isShowcaseMode } = useShowcaseMode();
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-10);
-}
-
-.mode-settings-wrapper {
-  padding: 0 var(--sys-space-16);
-  margin-bottom: var(--sys-space-10);
 }
 </style>

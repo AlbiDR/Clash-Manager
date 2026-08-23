@@ -97,15 +97,17 @@ const CAPTURE_GROUPS: CaptureGroup[] = [
   },
   {
     // Nine distinct SettingsCard instances render on this route
-    // (NetworkSettings, NotificationSettings, AboutSettings, ...), each
-    // collapsed by default - `initiallyExpanded` is driven by `isShowcaseMode`
-    // (see SettingsView.vue), not by Synthetic mode. Capturing with only
-    // `?synthetic=true` would measure a collapsed header-only card, nowhere
-    // near the real expanded height the previous hand-authored `min-height:
-    // 180px` guess was approximating. See ROUTE_QUERY below for how this
-    // route requests Showcase's expanded-card behavior without pulling in
-    // Blueprint mode (which would replace every real card with its own
-    // skeleton and make this route entirely uncapturable).
+    // (NetworkSettings, NotificationSettings, AboutSettings, ...). Capture
+    // them in their DEFAULT collapsed state (plain `?synthetic=true`, no
+    // Showcase override) - `SkeletonSettingsCard` is shown while the real
+    // page is still loading, and `initiallyExpanded` is driven purely by
+    // `isShowcaseMode` (see SettingsView.vue), which is false for a normal
+    // user. A real user's cards are collapsed the entire time this skeleton
+    // is visible; capturing them force-expanded (a state loading users never
+    // actually see) previously produced a skeleton several times taller than
+    // what it was meant to stand in for. The title (`h3`) lives in the
+    // always-visible header regardless of collapse state, so this loses no
+    // real measurement - only the wrongly-inflated card height.
     name: "SettingsCard",
     route: "/settings",
     sources: [join(ROOT, "src/shared/ui/SettingsCard.vue")],
@@ -149,16 +151,15 @@ const CAPTURE_GROUPS: CaptureGroup[] = [
   },
 ];
 
-// Per-route navigation query string. Every route defaults to plain Synthetic
-// mode (real components, mock data, no Blueprint skeleton override). Routes
-// whose real layout depends on Showcase-only state (e.g. Settings cards'
-// `initiallyExpanded`) opt into `showcase=true` here; Blueprint mode is
-// independently forced off for every capture via an init script below
-// (the exact "branding pipeline" escape hatch `useShowcaseMode.ts` documents),
-// so Showcase's expanded-card behavior never drags in skeleton placeholders.
-const ROUTE_QUERY: Record<string, string> = {
-  "/settings": "synthetic=true&showcase=true",
-};
+// Per-route navigation query string. Every route uses plain Synthetic mode
+// (real components, mock data, no Blueprint skeleton override, no Showcase
+// expansion) - capturing each real component in the same default state a
+// normal user actually sees while its skeleton is showing, not a
+// best-case/expanded state few users ever encounter during a loading window.
+// Blueprint mode is independently forced off for every capture via an init
+// script below (the exact "branding pipeline" escape hatch
+// `useShowcaseMode.ts` documents), so it never replaces a real component with
+// its own skeleton and makes a route uncapturable.
 const DEFAULT_QUERY = "synthetic=true";
 
 const TEMP_INDEX_HTML = `<!doctype html>
@@ -325,8 +326,6 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
     const browser = await chromium.launch();
     try {
       for (const route of routes) {
-        const query = ROUTE_QUERY[route] ?? DEFAULT_QUERY;
-
         // A fresh page per route, not one page reused across every route.
         // Successive page.goto() calls that only change the hash fragment
         // (http://host/#/roster -> http://host/#/settings) are same-document
@@ -355,7 +354,7 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
 
           for (const [bp, width] of Object.entries(BREAKPOINTS) as [Breakpoint, number][]) {
             await page.setViewportSize({ width, height: 900 });
-            await page.goto(`http://127.0.0.1:${port}/#${route}?${query}`, {
+            await page.goto(`http://127.0.0.1:${port}/#${route}?${DEFAULT_QUERY}`, {
               waitUntil: "networkidle",
             });
             await page.waitForSelector("[data-bone]", { timeout: 10_000 }).catch(() => {
@@ -376,14 +375,17 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
             );
 
             // Multiple real instances of the same capture group can render on
-            // one page (e.g. nine distinct SettingsCard usages on /settings).
-            // Picking whichever happened to be last in DOM order would silently
-            // capture an arbitrary instance (e.g. always "About", the last one
-            // in SettingsView.vue's template) rather than a representative
-            // dimension. Instead: average the width (a typical size, not
-            // whichever title text happened to be longest/shortest) and take
-            // the max height (tall enough that no real instance would exceed
-            // the skeleton and cause a layout shift).
+            // one page (e.g. nine distinct SettingsCard usages on /settings,
+            // whose real heights vary widely by content - About is short,
+            // Network & API is long). Picking whichever happened to be last
+            // in DOM order would silently capture an arbitrary instance
+            // rather than a representative dimension; taking the max would
+            // force every skeleton instance to mirror the single tallest
+            // real card, leaving most skeletons mostly empty space below
+            // their actual content. Average both dimensions instead - a
+            // typical size that under- and over-shoots real instances by
+            // roughly the same, unnoticeable amount, rather than guaranteeing
+            // a specific (and often extreme) one never exceeds the skeleton.
             const byBone = new Map<string, { widths: number[]; heights: number[] }>();
             for (const { bone, width: w, height: h } of measurements) {
               if (!bone.includes(".")) continue;
@@ -397,10 +399,10 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
               const [groupName, boneName] = bone.split(".");
             if (!groupName || !boneName) continue;
             const avgWidth = Math.round(widths.reduce((a, b) => a + b, 0) / widths.length);
-            const maxHeight = Math.max(...heights);
+            const avgHeight = Math.round(heights.reduce((a, b) => a + b, 0) / heights.length);
             results[groupName] ??= {};
             results[groupName][bp] ??= {};
-            results[groupName][bp]![boneName] = { width: avgWidth, height: maxHeight };
+            results[groupName][bp]![boneName] = { width: avgWidth, height: avgHeight };
             }
           }
         } finally {

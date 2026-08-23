@@ -48,6 +48,15 @@ const props = defineProps<{
   /** Consolidated info about the remote data source. */
   remoteInfo?: ConsoleRemoteInfo;
   footerBadge?: string;
+  /**
+   * Exempts this console instance from Blueprint Mode's automatic, whole-slot
+   * skeleton swap. Set only by `SettingsView.vue`, which hosts Blueprint's own
+   * on/off toggle (`ModeSettings.vue`) and needs to keep that one card real
+   * and in its normal position while still skeleton-swapping every other
+   * card - something the all-or-nothing swap below can't express, so
+   * `SettingsView.vue` does its own per-card swap instead and opts out here.
+   */
+  ignoreBlueprintMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -77,6 +86,7 @@ const activeFooterBadge = computed(() => {
 
 const displayLoading = computed(() => {
   if (isShowcaseMode.value) return false;
+  if (props.ignoreBlueprintMode) return props.loading ?? false;
   return props.loading || isBlueprintMode.value;
 });
 
