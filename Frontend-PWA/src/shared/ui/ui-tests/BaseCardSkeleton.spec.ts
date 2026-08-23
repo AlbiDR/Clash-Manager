@@ -4,15 +4,20 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import BaseCardSkeleton from "../BaseCardSkeleton.vue";
 
+// Mocked rather than relying on bones.generated.json's actual on-disk content:
+// that file may hold real captured geometry on any machine that has already
+// run `pnpm run capture:skeletons` (e.g. a normal `pnpm dev`), which would
+// make this test's expected widths depend on local capture state instead of
+// being deterministic. Mocking getBone() to always return undefined isolates
+// the component's own fallback behavior, which is what these tests exercise.
+vi.mock("@core/theme/bones", () => ({ getBone: vi.fn(() => undefined) }));
+
 describe("BaseCardSkeleton.vue", () => {
   it("falls back to sane default widths when no bone was captured", () => {
-    // getBone() returns undefined against the empty bones.generated.json
-    // seeded by vitest.setup.ts - the component's own fallback (?? 120 / 80)
-    // is what's under test here, not a captured value.
     const wrapper = mount(BaseCardSkeleton);
 
     expect(wrapper.classes()).toContain("sk-card");

@@ -100,13 +100,19 @@ describe("ModeSettings.vue", () => {
     expect(toggleShowcaseMode).toHaveBeenCalled();
   });
 
-  it("disables Synthetic and Blueprint rows when Showcase Mode is active", () => {
+  it("disables only the Synthetic row when Showcase Mode is active, leaving Blueprint toggleable", () => {
+    // Showcase requires Synthetic data to stay on, so Synthetic is locked while
+    // Showcase is active. Blueprint is documented as optional under Showcase
+    // (see useShowcaseMode.ts) and must stay directly toggleable - disabling it
+    // here previously trapped users who got auto-promoted into Showcase mode
+    // by turning Blueprint on while Synthetic was already active, with no
+    // direct way back off.
     isShowcaseMode.value = true;
     const wrapper = mountComponent();
     const rows = wrapper.findAllComponents({ name: 'SettingRow' });
 
     expect(rows[0].props('disabled')).toBe(true);
-    expect(rows[1].props('disabled')).toBe(true);
+    expect(rows[1].props('disabled')).toBeFalsy();
     expect(rows[2].props('active')).toBe(true);
   });
 
