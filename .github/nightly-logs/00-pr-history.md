@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-23] PR #1531 [Stage 12]: chore(apk-ux): Added v-tactile directive to score-section in BaseCard.vue
+**Domain:** pipeline | **Commit:** 02d8261f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1531)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/shared/ui/BaseCard.vue, Frontend-PWA/src/shared/ui/ui-tests/BaseCard.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Added v-tactile directive to score-section in BaseCard.vue
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-23] PR #1530 [Stage 5]: docs(readme): Reconciled core services README with useApkManager.ts decomposition
 **Domain:** pipeline | **Commit:** 39192846 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1530)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
