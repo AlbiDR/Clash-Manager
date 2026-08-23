@@ -12,8 +12,15 @@ import {
   type ApkReleaseDownload,
 } from "./apkResolver";
 
+/**
+ * Semantic states for native APK update checks and downloads.
+ */
 export type ApkUpdateState = "idle" | "checking" | "available" | "current" | "blocked" | "mismatch" | "error";
 
+/**
+ * Minimum native build number capable of receiving native download manager result callbacks.
+ * Builds prior to 191 require fallback to browser or legacy external URL triggers.
+ */
 const MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD = 191;
 
 /**
@@ -38,21 +45,33 @@ const MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD = 191;
 /**
  * COMPOSABLE: useApkManager
  *
- * @returns State and helper methods to query and apply native APK shell updates.
+ * @remarks
+ * Orchestrates native Android APK version checking, version comparison,
+ * permission verification, and download dispatching through native bridge or browser fallback.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Hardware Brokering:** Interacts directly with `useNativeBridge` to inspect native build attributes and invoke package installers.
+ *
+ * @returns Object containing reactive state, computed metadata labels, update check trigger, and download dispatcher.
  */
 export function useApkManager() {
   const toast = useToast();
   const { bridge: nativeBridge } = useNativeBridge();
 
+  /** Reactive reference to the latest resolved published APK download metadata. */
   const latestApkRelease = ref<ApkReleaseDownload>();
+  /** Current status state of the APK update pipeline. */
   const apkUpdateState = ref<ApkUpdateState>("idle");
+  /** Human-readable status message reflecting the current update state. */
   const apkUpdateMessage = ref("APK status not checked");
+  /** Timestamp (epoch ms) of the last successful or attempted update check. */
   const apkUpdateLastCheckedAt = ref<number>();
 
   /**
    * Resolves the single versioned release APK published by the release workflow.
    *
-   * @returns A Promise resolving to the latest versioned APK download target.
+   * @returns A Promise resolving to the latest versioned APK download target, or undefined on failure.
    */
   async function resolveApkRelease(): Promise<ApkReleaseDownload | undefined> {
     try {
@@ -63,27 +82,55 @@ export function useApkManager() {
     }
   }
 
+  /**
+   * Extracts and validates the installed native app version name from the Android WebView bridge.
+   *
+   * @returns The semantic version string if valid, or undefined if running in a standard web session.
+   */
   function getNativeVersionName(): string | undefined {
     const versionName = nativeBridge.value?.getAppVersionName?.();
     return isReleaseVersion(versionName) ? versionName : undefined;
   }
 
+  /**
+   * Extracts and validates the installed native app build number from the Android WebView bridge.
+   *
+   * @returns The numeric build number if valid, or undefined.
+   */
   function getNativeBuildNumber(): number | undefined {
     const buildNumber = nativeBridge.value?.getBuildNumber?.();
     return isReleaseBuildNumber(buildNumber) ? buildNumber : undefined;
   }
 
+  /**
+   * Extracts and validates the installed native app version code from the Android WebView bridge.
+   *
+   * @returns The numeric version code if valid, or undefined.
+   */
   function getNativeVersionCode(): number | undefined {
     const versionCode = nativeBridge.value?.getAppVersionCode?.();
     return isReleaseBuildNumber(versionCode) ? versionCode : undefined;
   }
 
+  /**
+   * Calculates a numeric version code representation from a release filename.
+   *
+   * @param release - Target APK release payload.
+   * @returns Calculated numeric version code (major * 1000 + minor * 100 + patch * 10) or undefined if unparsable.
+   */
   function getReleaseVersionCode(release: ApkReleaseDownload): number | undefined {
     const parts = parseReleaseApkFilename(release.filename);
     if (!parts) return undefined;
     return parts.major * 1000 + parts.minor * 100 + parts.patch * 10;
   }
 
+  /**
+   * Compares two semantic version strings ("X.Y.Z").
+   *
+   * @param firstVersion - The primary version string to compare.
+   * @param secondVersion - The baseline version string to compare against.
+   * @returns Positive integer if firstVersion > secondVersion, negative if firstVersion < secondVersion, 0 if equal.
+   */
   function compareReleaseVersions(firstVersion: string, secondVersion: string): number {
     const first = firstVersion.split(".").map(Number);
     const second = secondVersion.split(".").map(Number);
@@ -92,6 +139,12 @@ export function useApkManager() {
       (first[2] ?? 0) - (second[2] ?? 0);
   }
 
+  /**
+   * Compares installed native shell metadata against a published release target.
+   *
+   * @param release - Published APK release download target.
+   * @returns Positive integer if installed > published, negative if installed < published, 0 if equal, or undefined if indeterminable.
+   */
   function getInstalledReleaseComparison(release: ApkReleaseDownload): number | undefined {
     const nativeVersionCode = getNativeVersionCode();
     const releaseVersionCode = getReleaseVersionCode(release);
@@ -113,16 +166,34 @@ export function useApkManager() {
     return undefined;
   }
 
+  /**
+   * Checks if the currently installed native shell is up to date relative to the published release.
+   *
+   * @param release - Published APK release target.
+   * @returns True if installed version is equal to or newer than published release.
+   */
   function isInstalledApkCurrent(release: ApkReleaseDownload): boolean {
     const comparison = getInstalledReleaseComparison(release);
     return comparison !== undefined && comparison >= 0;
   }
 
+  /**
+   * Checks if the published update feed is older than the currently installed native shell.
+   *
+   * @param release - Published APK release target.
+   * @returns True if installed version is strictly newer than the published release.
+   */
   function isPublishedApkOlderThanInstalled(release: ApkReleaseDownload): boolean {
     const comparison = getInstalledReleaseComparison(release);
     return comparison !== undefined && comparison > 0;
   }
 
+  /**
+   * Generates a descriptive display label for a given APK release object.
+   *
+   * @param release - Target release or undefined.
+   * @returns Formatted label string (e.g. "v14.46.2 (191)").
+   */
   function getReleaseVersionLabel(release: ApkReleaseDownload | undefined): string {
     if (!release) return "Not checked";
     const version = release.version || parseReleaseApkFilename(release.filename)
@@ -131,12 +202,19 @@ export function useApkManager() {
     return release.buildNumber ? `${version} (${release.buildNumber})` : version;
   }
 
+  /**
+   * Formats raw byte counts into human-readable MB or KB strings.
+   *
+   * @param sizeBytes - Raw file size in bytes.
+   * @returns Formatted string (e.g. "12.4 MB" or "850 KB").
+   */
   function formatApkSize(sizeBytes: number | undefined): string {
     if (!sizeBytes) return "Size unknown";
     if (sizeBytes >= 1024 * 1024) return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
     return `${Math.round(sizeBytes / 1024)} KB`;
   }
 
+  /** Formatted display label for the installed native shell environment. */
   const installedApkLabel = computed(() => {
     const versionName = getNativeVersionName();
     const versionCode = getNativeVersionCode();
@@ -146,7 +224,13 @@ export function useApkManager() {
     return `${versionName ? `v${versionName}` : "Native APK"} (${detail})`;
   });
 
+  /** Formatted display label for the latest published APK release. */
   const latestApkLabel = computed(() => getReleaseVersionLabel(latestApkRelease.value));
+
+  /**
+   * Direct download URL for the active APK release, guarded against stale/current versions.
+   */
+  // [THREAT:] Prevents downloading stale release feeds over a newer installed APK shell.
   const apkDirectDownloadUrl = computed(() => {
     const release = latestApkRelease.value;
     if (!release) return "";
@@ -155,6 +239,7 @@ export function useApkManager() {
     return release.url;
   });
 
+  /** Formatted summary label detailing target file size and SHA-256 checksum preview. */
   const apkArtifactLabel = computed(() => {
     const release = latestApkRelease.value;
     if (!release) return "No APK metadata loaded";
@@ -162,14 +247,25 @@ export function useApkManager() {
     return `${formatApkSize(release.sizeBytes)} · ${checksum}`;
   });
 
+  /** Display label detailing the feed source and URL. */
   const apkFeedSourceLabel = computed(() => {
     const release = latestApkRelease.value;
     if (!release?.sourceName) return "";
     return release.sourceUrl ? `${release.sourceName}: ${release.sourceUrl}` : release.sourceName;
   });
 
+  /** List of change items associated with the latest release. */
   const apkChangelog = computed(() => latestApkRelease.value?.changelog ?? []);
 
+  /**
+   * Queries latest published release metadata and evaluates update state.
+   *
+   * @remarks
+   * Handles checks for feed mismatch, current version parity, and Android package install permission gating.
+   *
+   * @sideeffects
+   * Updates `apkUpdateState`, `apkUpdateMessage`, `apkUpdateLastCheckedAt`, and `latestApkRelease`.
+   */
   async function checkApkUpdate(): Promise<void> {
     apkUpdateState.value = "checking";
     apkUpdateMessage.value = "Checking native APK...";
@@ -184,6 +280,7 @@ export function useApkManager() {
       return;
     }
 
+    // [DECISION LOG] Halt update pipeline if published release feed is older than local native shell.
     if (isPublishedApkOlderThanInstalled(release)) {
       apkUpdateState.value = "mismatch";
       apkUpdateMessage.value = "Release metadata mismatch";
@@ -202,6 +299,7 @@ export function useApkManager() {
       return;
     }
 
+    // [THREAT:] Android 8.0+ requires explicit unknown app install approval per package origin.
     if (nativeBridge.value?.canRequestPackageInstalls && !nativeBridge.value.canRequestPackageInstalls()) {
       apkUpdateState.value = "blocked";
       apkUpdateMessage.value = "Android install approval required";
@@ -218,6 +316,16 @@ export function useApkManager() {
     apkUpdateMessage.value = `APK update ready: ${getReleaseVersionLabel(release)}`;
   }
 
+  /**
+   * Triggers the APK download flow, delegating to the native download manager or browser fallback.
+   *
+   * @remarks
+   * Evaluates native bridge capabilities, build number thresholds (`MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD`),
+   * and permission states before dispatching download or opening external URL triggers.
+   *
+   * @sideeffects
+   * Displays toast notifications and triggers native Android bridge actions or window location redirects.
+   */
   async function downloadApk(): Promise<void> {
     const activeToastId = toast.info("Opening APK download...");
     try {
@@ -232,6 +340,7 @@ export function useApkManager() {
         return;
       }
 
+      // [GUARD] Block download if release feed is older than installed shell.
       if (isPublishedApkOlderThanInstalled(release)) {
         apkUpdateState.value = "mismatch";
         apkUpdateMessage.value = "Release metadata mismatch";
@@ -254,6 +363,7 @@ export function useApkManager() {
         return;
       }
 
+      // [GUARD] Redirect user to Android settings if package install permission is missing.
       if (nativeBridge.value?.canRequestPackageInstalls && !nativeBridge.value.canRequestPackageInstalls()) {
         apkUpdateState.value = "blocked";
         apkUpdateMessage.value = "Android install approval required";
@@ -263,6 +373,7 @@ export function useApkManager() {
         return;
       }
 
+      // [FALLBACK] Trigger external browser download for legacy native shells lacking package install checks.
       if (nativeBridge.value && typeof nativeBridge.value.canRequestPackageInstalls !== "function") {
         if (nativeBridge.value.openExternalUrl) {
           nativeBridge.value.openExternalUrl(release.url);
@@ -276,6 +387,7 @@ export function useApkManager() {
 
       const hasNativeDownloadManager = typeof nativeBridge.value?.downloadApkFile === "function";
       const nativeBuildNumber = getNativeBuildNumber();
+      // [PERF] Delegate to native download manager for modern builds (>= 191).
       const shouldUseNativeDownloadManager =
         hasNativeDownloadManager &&
         (!nativeBuildNumber || nativeBuildNumber >= MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD);
