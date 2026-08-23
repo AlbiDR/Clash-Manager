@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-23] PR #1529 [Stage 3]: chore(database): Baseline consolidation audit verified clean; 0 unfolded migrations pending
+**Domain:** pipeline | **Commit:** ab42f947 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1529)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline consolidation audit verified clean; 0 unfolded migrations pending
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-22] PR #1528 [Stage 1]: chore(harden): Hardened in-memory state lifecycle with explicit EPHEMERAL annotations in useToast and useListFilter
 **Domain:** pipeline | **Commit:** a1ce7646 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1528)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/core/services/useListFilter.ts, Frontend-PWA/src/core/services/useToast.ts
