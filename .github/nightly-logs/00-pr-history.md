@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-24] PR #1537 [Stage 2]: chore(verify): Extended useApkManager test coverage for edge cases and download flows
+**Domain:** pipeline | **Commit:** be9736ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1537)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Extended useApkManager test coverage for edge cases and download flows
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-23] PR #1533 [Stage 2]: chore(verify): Frontend-PWA/src/core/services/services-tests/useToast.spec.ts -- Expanded useToast unit test suite to cover fallback ID generation, persistent toasts, and lock releases.
 **Domain:** pipeline | **Commit:** ffb6ef83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1533)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useToast.spec.ts
