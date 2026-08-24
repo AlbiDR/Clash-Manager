@@ -140,6 +140,7 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
 
         <!-- Expand Button -->
         <button
+          v-tactile
           class="expand-btn hit-target"
           @click.stop="internalExpandClick"
           :class="{ 'is-active': props.expanded }"

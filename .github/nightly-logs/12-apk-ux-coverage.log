@@ -50,3 +50,4 @@
 * [2026-08-21] [Stage 12] CLEAN: Codebase -- Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts
 * [2026-08-22] [Stage 12] CLEAN: Codebase -- Stage 12 global hybrid shell UX audit clean - no layout leaks or missing mobile contracts
 * [2026-08-23] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/BaseCard.vue -- Added v-tactile directive to score-section in BaseCard.vue
+* [2026-08-24] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/BaseCard.vue -- Bound v-tactile directive to expand chevron button in BaseCard.vue for mobile WebView touch feedback
