@@ -95,7 +95,7 @@ export function useHeadhunter() {
     const updatedData = {
       ...clashData.value,
       hh: currentHH.sort(
-        (a, b) => (b.potentialScore || 0) - (a.potentialScore || 0),
+        (recruitA, recruitB) => (recruitB.potentialScore || 0) - (recruitA.potentialScore || 0),
       ),
     };
     updateLocalData(updatedData);
