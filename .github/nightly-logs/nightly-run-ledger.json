@@ -2441,7 +2441,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "BLOCKED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
           "julesSession": {
@@ -2458,11 +2458,11 @@
           "prNumber": 1546,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1546",
           "headRef": "nightly/stage-1-hardening-c33a9fdc-15239668688411919870",
-          "reason": "git checkout nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: error: Your local changes to the following files would be overwritten by checkout:\n\t.github/nightly-logs/00-pr-history.md\nPlease commit your changes or stash them before you switch branches.\nAborting"
+          "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
         },
         "attempts": 2,
-        "lastObservedAt": "2026-08-24T23:15:45.275Z",
-        "failureClass": "JULES_SESSION_STUCK"
+        "lastObservedAt": "2026-08-24T23:33:07.544Z",
+        "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
         "date": "2026-08-24",

@@ -16,6 +16,28 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-24] PR #1548 [Stage 3]: chore(database): Baseline consolidation audit clean: 0 pending migrations, baseline up to date
+**Domain:** pipeline | **Commit:** b36be803 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1548)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline consolidation audit clean: 0 pending migrations, baseline up to date
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-24] PR #1550 [Stage 4]: chore(optimize): Standardized sorting parameters to domain-descriptive identifiers in mockData.ts and useHeadhunter.ts
+**Domain:** pipeline | **Commit:** 6dc01506 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1550)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/utils/mockData.ts, Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Standardized sorting parameters to domain-descriptive identifiers in mockData.ts and useHeadhunter.ts
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-24] PR #1549 [Stage 12]: chore(apk-ux): Bound v-tactile directive to expand chevron button in BaseCard.vue for mobile WebView touch feedback
+**Domain:** pipeline | **Commit:** bb324bf1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1549)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/shared/ui/BaseCard.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Bound v-tactile directive to expand chevron button in BaseCard.vue for mobile WebView touch feedback
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-24] PR #1547 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 5503521d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1547)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
