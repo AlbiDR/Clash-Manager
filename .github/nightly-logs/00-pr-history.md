@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-24] PR #1541 [Stage 8]: [Stage 8] Dependency Audit - External Health Auditor
+**Domain:** pipeline | **Commit:** cc360414 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1541)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 8] Dependency Audit - External Health Auditor
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-24] PR #1540 [Stage 7]: chore(version): Monorepo version declarations consistent at 14.46.5; catalog protocol fully satisfied
 **Domain:** pipeline | **Commit:** b0604a8a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1540)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
