@@ -284,7 +284,7 @@ PR base: Nightly
 PR draft: false
 PR body: /tmp/nightly/pr-body.md
 
-A published Pull Request is the required outcome of this session, not an optional next step. Return this exact result now as your absolute last message: nothing after it, no summary, no offer to do more, no question. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now, because Jules' native scheduled-task publisher only creates the pull request once the session has actually, fully ended. Do not run code review, memory, reflection, git commit, or git push.
+Return this result now so Jules' native scheduled-task publisher can create the pull request. Do not run code review, memory, reflection, git commit, or git push.
 `;
 }
 

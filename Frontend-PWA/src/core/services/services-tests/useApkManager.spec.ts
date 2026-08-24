@@ -6,15 +6,13 @@ import { useApkManager } from "../useApkManager";
 import * as apkResolver from "../apkResolver";
 import { useNativeBridge } from "../useNativeBridge";
 
-const mockToast = {
-  info: vi.fn(() => 1),
-  success: vi.fn(),
-  error: vi.fn(),
-  remove: vi.fn(),
-};
-
 vi.mock("../useToast", () => ({
-  useToast: () => mockToast,
+  useToast: () => ({
+    info: vi.fn(() => 1),
+    success: vi.fn(),
+    error: vi.fn(),
+    remove: vi.fn(),
+  }),
 }));
 
 vi.mock("../useNativeBridge", () => ({
@@ -29,7 +27,6 @@ describe("useApkManager", () => {
     canRequestPackageInstalls: vi.fn(),
     downloadApkFile: vi.fn(),
     openExternalUrl: vi.fn(),
-    openPackageInstallSettings: vi.fn(),
   };
 
   beforeEach(() => {
@@ -58,12 +55,11 @@ describe("useApkManager", () => {
 
   it("identifies installed release as current when version matches", async () => {
     mockBridge.getAppVersionName.mockReturnValue("14.45.21");
-    mockBridge.getBuildNumber.mockReturnValue(210);
+    mockBridge.getAppVersionCode.mockReturnValue(144521);
 
     vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue({
-      filename: "clashmanager-v14.45.21+210.apk",
+      filename: "clashmanager-v14.45.21.apk",
       version: "14.45.21",
-      buildNumber: 210,
       url: "https://example.com/apk",
       sizeBytes: 1024 * 1024 * 5,
     });
@@ -78,13 +74,12 @@ describe("useApkManager", () => {
 
   it("detects when an update is available", async () => {
     mockBridge.getAppVersionName.mockReturnValue("14.45.20");
-    mockBridge.getBuildNumber.mockReturnValue(200);
+    mockBridge.getAppVersionCode.mockReturnValue(144520);
     mockBridge.canRequestPackageInstalls.mockReturnValue(true);
 
     vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue({
-      filename: "clashmanager-v14.45.21+210.apk",
+      filename: "clashmanager-v14.45.21.apk",
       version: "14.45.21",
-      buildNumber: 210,
       url: "https://example.com/apk",
       sizeBytes: 1024 * 1024 * 5,
     });
@@ -95,154 +90,5 @@ describe("useApkManager", () => {
 
     expect(apkUpdateState.value).toBe("available");
     expect(apkUpdateMessage.value).toContain("APK update ready");
-  });
-
-  it("flags release metadata mismatch when published version is older than installed", async () => {
-    mockBridge.getAppVersionName.mockReturnValue("14.46.5");
-    mockBridge.getBuildNumber.mockReturnValue(226);
-
-    vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue({
-      filename: "clashmanager-v14.45.19+213.apk",
-      version: "14.45.19",
-      buildNumber: 213,
-      url: "https://example.com/old-apk",
-      sizeBytes: 1024 * 1024 * 5,
-    });
-
-    const { checkApkUpdate, apkUpdateState, apkUpdateMessage } = useApkManager();
-
-    await checkApkUpdate();
-
-    expect(apkUpdateState.value).toBe("mismatch");
-    expect(apkUpdateMessage.value).toBe("Release metadata mismatch");
-  });
-
-  it("flags blocked state when package install permission is missing", async () => {
-    mockBridge.getAppVersionName.mockReturnValue("14.45.20");
-    mockBridge.getBuildNumber.mockReturnValue(200);
-    mockBridge.canRequestPackageInstalls.mockReturnValue(false);
-
-    vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue({
-      filename: "clashmanager-v14.45.21+210.apk",
-      version: "14.45.21",
-      buildNumber: 210,
-      url: "https://example.com/apk",
-      sizeBytes: 1024 * 1024 * 5,
-    });
-
-    const { checkApkUpdate, apkUpdateState, apkUpdateMessage } = useApkManager();
-
-    await checkApkUpdate();
-
-    expect(apkUpdateState.value).toBe("blocked");
-    expect(apkUpdateMessage.value).toBe("Android install approval required");
-  });
-
-  it("handles errors during apk check gracefully", async () => {
-    vi.spyOn(apkResolver, "resolveLatestApkRelease").mockRejectedValue(new Error("Network failed"));
-
-    const { checkApkUpdate, apkUpdateState, apkUpdateMessage } = useApkManager();
-
-    await checkApkUpdate();
-
-    expect(apkUpdateState.value).toBe("error");
-    expect(apkUpdateMessage.value).toBe("Published APK metadata unavailable");
-  });
-
-  it("formats computed labels and properties correctly", async () => {
-    mockBridge.getAppVersionName.mockReturnValue("14.46.5");
-    mockBridge.getBuildNumber.mockReturnValue(226);
-
-    vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue({
-      filename: "clashmanager-v14.46.5+226.apk",
-      version: "14.46.5",
-      buildNumber: 226,
-      url: "https://example.com/apk",
-      sizeBytes: 15 * 1024 * 1024,
-      sha256: "abcdef1234567890abcdef1234567890",
-      sourceName: "GitHub Releases",
-      sourceUrl: "https://github.com/releases",
-      changelog: ["Bug fixes", "Performance improvements"],
-    });
-
-    const {
-      checkApkUpdate,
-      installedApkLabel,
-      latestApkLabel,
-      apkDirectDownloadUrl,
-      apkArtifactLabel,
-      apkFeedSourceLabel,
-      apkChangelog,
-    } = useApkManager();
-
-    await checkApkUpdate();
-
-    expect(installedApkLabel.value).toBe("v14.46.5 (build 226)");
-    expect(latestApkLabel.value).toBe("v14.46.5 (226)");
-    expect(apkDirectDownloadUrl.value).toBe(""); // Same version = no direct download URL
-    expect(apkArtifactLabel.value).toBe("15.0 MB · SHA-256 abcdef12...");
-    expect(apkFeedSourceLabel.value).toBe("GitHub Releases: https://github.com/releases");
-    expect(apkChangelog.value).toEqual(["Bug fixes", "Performance improvements"]);
-  });
-
-  describe("downloadApk", () => {
-    it("handles download when release metadata is unavailable", async () => {
-      vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue(undefined);
-      const { downloadApk, apkUpdateState, apkUpdateMessage } = useApkManager();
-
-      await downloadApk();
-
-      expect(apkUpdateState.value).toBe("error");
-      expect(apkUpdateMessage.value).toBe("Published APK metadata unavailable");
-      expect(mockToast.error).toHaveBeenCalledWith("Could not find latest APK");
-    });
-
-    it("triggers native download manager when build number threshold is met", async () => {
-      mockBridge.getAppVersionName.mockReturnValue("14.45.20");
-      mockBridge.getBuildNumber.mockReturnValue(195);
-      mockBridge.canRequestPackageInstalls.mockReturnValue(true);
-      mockBridge.downloadApkFile.mockReturnValue(true);
-
-      const release = {
-        filename: "clashmanager-v14.45.21+214.apk",
-        version: "14.45.21",
-        buildNumber: 214,
-        url: "https://example.com/apk",
-        sizeBytes: 1024 * 1024 * 10,
-        sha256: "1234567890",
-      };
-      vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue(release);
-
-      const { downloadApk } = useApkManager();
-      await downloadApk();
-
-      expect(mockBridge.downloadApkFile).toHaveBeenCalledWith(release.url, release.filename, release.sha256);
-      expect(mockToast.success).toHaveBeenCalledWith("APK download started");
-    });
-
-    it("falls back to external browser when native bridge lacks canRequestPackageInstalls", async () => {
-      const legacyBridge = {
-        getAppVersionName: vi.fn().mockReturnValue("14.45.20"),
-        getBuildNumber: vi.fn().mockReturnValue(180),
-        openExternalUrl: vi.fn(),
-      };
-      vi.mocked(useNativeBridge).mockReturnValue({
-        bridge: { value: legacyBridge as any },
-      } as any);
-
-      const release = {
-        filename: "clashmanager-v14.45.21+210.apk",
-        version: "14.45.21",
-        buildNumber: 210,
-        url: "https://example.com/apk",
-      };
-      vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue(release);
-
-      const { downloadApk } = useApkManager();
-      await downloadApk();
-
-      expect(legacyBridge.openExternalUrl).toHaveBeenCalledWith(release.url);
-      expect(mockToast.info).toHaveBeenCalledWith("Install the APK from your browser to unlock native updater permissions");
-    });
   });
 });

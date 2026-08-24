@@ -55,9 +55,7 @@ const MAX_RECOVERY_ATTEMPTS = 2;
 // work or opening a review loop it was explicitly told not to run.
 export const RECOVERY_PROMPT = [
   "Your finalized change set was never published as a Pull Request and the session went inactive.",
-  "A published Pull Request is the only valid outcome of this session; simply restating your result again does not complete it.",
-  "If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now.",
-  "Return the existing final result as your absolute last message, with nothing after it: no summary, no offer to do more, no question.",
+  "Return the existing final result now so the native scheduled-task publisher can open one non-draft Pull Request targeting Nightly.",
   "Do not redo the audit, re-run tests, or start new work.",
   "Do not run code review, memory, reflection, git commit, or git push.",
 ].join(" ");

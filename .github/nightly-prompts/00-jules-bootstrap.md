@@ -3,11 +3,7 @@
 
 # Jules UI Bootstrap Instructions
 
-This document is the source of truth for what must be configured in the Jules UI for each stage of the Nightly pipeline. It is not a passive log of what the UI already contains.
-
-**A commit to this file changes nothing Jules runs by itself.** Jules reads its scheduled-task configuration from its own dashboard, not from this repository. Every block below — the shared Setup Script, and per stage the `# [Stage N]` heading, its `Fetch from` / `PR Base` / `PR Draft` / `Bootstrap Target` fields, its `Completion Contract`, and its `Bootstrap Execution` paragraph — is the exact, complete text that belongs in that stage's Jules scheduled-task fields, copied verbatim into the matching UI field for that stage.
-
-Treat any mismatch between this file and the live Jules UI as the UI being stale, not this file. Whichever side changes first, the other is out of sync until a human copies the update across; a git commit here is only step one.
+This document records the exact prompt instructions configured in the Jules UI for each stage of the Nightly pipeline.
 
 ---
 
@@ -149,7 +145,7 @@ echo "Placeholder context seeded in /tmp/nightly/"
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/01-hardening-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/01-hardening-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -166,7 +162,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/02-verification-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/02-verification-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -183,7 +179,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/03-baseline-consolidation-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/03-baseline-consolidation-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -200,7 +196,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/04-optimization-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/04-optimization-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -217,7 +213,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/05-documentation-readme-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/05-documentation-readme-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -234,7 +230,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/06-documentation-tsdoc-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/06-documentation-tsdoc-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -251,7 +247,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/07-version-integrity-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/07-version-integrity-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -268,7 +264,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/08-dependency-audit-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/08-dependency-audit-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -285,7 +281,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/09-refactor-proposals-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/09-refactor-proposals-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -302,7 +298,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/10-apk-integrity-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/10-apk-integrity-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -319,7 +315,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/11-apk-optimization-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/11-apk-optimization-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -336,7 +332,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/12-apk-ux-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/12-apk-ux-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 
@@ -353,7 +349,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ### Completion Contract
 
-Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/13-self-healing-protocol-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. A published Pull Request is the required outcome of this session, not an optional next step: ending without one is a failed run regardless of how much correct work preceded it. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now. End your final message with nothing after the handoff content: no summary, no offer to do more, no question. Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly` only once the session has actually, fully ended.
+Complete the repository instructions and return one finalized change set. The lifecycle coordinator writes the run record to `.github/nightly-logs/13-self-healing-protocol-coverage.log` and prepares the native publication handoff. If source work cannot be completed safely, restore it, finalize a `SKIPPED` or `PARTIAL-RUN` log-only result, and still return a final change set. Never wait for human input, run optional review loops, or execute manual branch, commit, or push commands. End successfully so Jules scheduled-task publication opens one non-draft Pull Request targeting `Nightly`.
 
 ### Bootstrap Execution
 

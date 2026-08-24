@@ -13,56 +13,27 @@
  * **Architectural Context:**
  * - **Layer:** Layer 2 Shared UI (@shared/ui)
  * - **Role:** Reusable input molecule for duration/countdown configurations.
- * - **Permitted Imports:** `@core` utilities and Vue reactivity primitives.
- *
- * Satisfies ADR Section II: Presentation Orchestration & Layer Boundaries.
- * Satisfies ADR Section III: Validation Boundaries & Input Sanitization.
  * ============================================================================
  */
 import { sanitizeNumericInput } from "@core";
 
-/**
- * Data shape representing relative time-to-timestamp duration units.
- */
 interface DurationModel {
-  /** Relative number of days (0-7), or empty string when cleared. */
   days: number | '';
-  /** Relative number of hours (0-23), or empty string when cleared. */
   hours: number | '';
-  /** Relative number of minutes (0-59), or empty string when cleared. */
   minutes: number | '';
 }
 
-/**
- * Component props for DurationInput.
- */
 const props = defineProps<{
-  /** Reactive duration model bound to inputs. */
   modelValue: DurationModel;
-  /** Optional header label for input group. */
   label?: string;
 }>();
 
-/**
- * Event emissions for DurationInput.
- */
 const emit = defineEmits<{
-  /** Emitted whenever any unit field value changes or is clamped. */
   (e: 'update:modelValue', value: DurationModel): void;
 }>();
 
 /**
  * Clamps a T2T unit field to its logical maximum and emits update.
- *
- * @remarks
- * Enforces strict upper bounds (Days: 7, Hours: 23, Minutes: 59) and lower bound (0).
- * Prevents invalid durations from propagating to core calculations or persistence.
- *
- * [DECISION LOG] Uses `sanitizeNumericInput` from `@core` to parse and strip invalid characters.
- * [THREAT:] Unsanitized negative or out-of-bounds duration values causing invalid timestamp computations.
- *
- * @param durationUnitKey - The target duration field ('days' | 'hours' | 'minutes') being modified.
- * @sideeffects Emits `update:modelValue` event with normalized duration model.
  */
 function onInput(durationUnitKey: keyof DurationModel) {
   const max = durationUnitKey === "days" ? 7 : durationUnitKey === "hours" ? 23 : 59;
