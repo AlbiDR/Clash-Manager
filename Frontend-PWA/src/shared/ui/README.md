@@ -15,10 +15,10 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 
 | Component | Role |
 | :--- | :--- |
-| `ConsoleLayout.vue` | The feature-view shell: header, FAB sync, pull-to-refresh, empty/error orchestration. |
+| `ConsoleLayout.vue` | The feature-view shell: header, FAB sync, pull-to-refresh, empty/error orchestration. Supports `ignoreBlueprintMode` prop to exempt specific views (e.g., Settings) from whole-slot Blueprint skeleton swaps, enabling granular per-card skeleton management. |
 | `ConsoleHeader.vue` | Search (debounced), sort controls, and the status pill. |
 | `ConsoleList.vue` | Time-sliced list container with Showcase support. |
-| `SettingsCard.vue` / `SkeletonSettingsCard.vue` | Collapsible settings container and its skeleton. |
+| `SettingsCard.vue` / `SkeletonSettingsCard.vue` | Collapsible settings container and its skeleton. `SkeletonSettingsCard.vue` renders in a default collapsed state (header only) matching user-facing `SettingsCard.vue` captured bone dimensions from `bones.generated.json` to prevent layout shift. |
 | `AppFooter.vue` | Version and legal footer. |
 
 ## Cards, primitives and stats
