@@ -15,6 +15,26 @@ LAST_AGED:   2026-08-24
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-24] PR #1547 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** hardening | **Commit:** 5503521d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1547)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Execute the scheduled Stage 1 hardening audit.
+**Change:** chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** Audit completed with no source change required.
+
+
+## [2026-08-24] MERGE FAILED: PR #1546: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `GitHub API 403 Forbidden: {"message":"Resource not accessible by integration","documentation_url":"https://docs.github.com/rest/pulls/pulls#merge-a-pull-request","status":"403"}`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1546)
+
+## [2026-08-24] MERGE FAILED: PR #1546: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+> [!CAUTION]
+> **Status**: Auto-merge aborted (second pass).
+> **Error**: `GitHub API 405 Method Not Allowed: {"message":"Pull Request has merge conflicts","documentation_url":"https://docs.github.com/rest/pulls/pulls#merge-a-pull-request","status":"405"}`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1546)
 ### [2026-08-24] PR #1545 [Stage 13]: chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-24
 **Domain:** pipeline | **Commit:** 7fb44ac5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1545)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
