@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-24] PR #1539 [Stage 6]: chore(docs): docs(tsdoc): harden DurationInput interface contracts and logic annotations
+**Domain:** pipeline | **Commit:** 5a92a06c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1539)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/DurationInput.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden DurationInput interface contracts and logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-24] PR #1538 [Stage 5]: chore(docs): docs(readme): Reconciled ConsoleLayout ignoreBlueprintMode and SkeletonSettingsCard collapsed state
 **Domain:** pipeline | **Commit:** 43e2849e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1538)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
