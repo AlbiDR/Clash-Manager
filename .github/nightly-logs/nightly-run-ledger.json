@@ -2441,7 +2441,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "BLOCKED",
+        "state": "NO_OUTPUT",
         "evidence": {
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
           "julesSession": {
@@ -2450,7 +2450,7 @@
             "state": "COMPLETED"
           },
           "recovery": {
-            "nudgedAt": "2026-08-24T13:44:02.160Z",
+            "nudgedAt": "2026-08-24T23:15:45.275Z",
             "sessionName": "sessions/15239668688411919870",
             "ok": true,
             "error": null
@@ -2460,9 +2460,9 @@
           "headRef": "nightly/stage-1-hardening-c33a9fdc-15239668688411919870",
           "reason": "git checkout nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: error: Your local changes to the following files would be overwritten by checkout:\n\t.github/nightly-logs/00-pr-history.md\nPlease commit your changes or stash them before you switch branches.\nAborting"
         },
-        "attempts": 1,
-        "lastObservedAt": "2026-08-24T23:14:53.985Z",
-        "failureClass": "MERGE_COORDINATOR"
+        "attempts": 2,
+        "lastObservedAt": "2026-08-24T23:15:45.275Z",
+        "failureClass": "JULES_SESSION_STUCK"
       },
       "2": {
         "date": "2026-08-24",
@@ -2475,7 +2475,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.945Z",
+        "lastObservedAt": "2026-08-24T23:15:43.171Z",
         "failureClass": null
       },
       "3": {
@@ -2483,7 +2483,7 @@
         "stage": 3,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
           "julesSession": {
@@ -2492,22 +2492,24 @@
             "state": "COMPLETED"
           },
           "recovery": {
-            "nudgedAt": "2026-08-24T13:44:03.378Z",
+            "nudgedAt": "2026-08-24T23:15:46.514Z",
             "sessionName": "sessions/10872179820656624647",
             "ok": true,
             "error": null
-          }
+          },
+          "prNumber": 1548,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1548"
         },
-        "attempts": 1,
-        "lastObservedAt": "2026-08-24T13:44:03.378Z",
-        "failureClass": "JULES_SESSION_STUCK"
+        "attempts": 2,
+        "lastObservedAt": "2026-08-24T23:18:05.591Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "4": {
         "date": "2026-08-24",
         "stage": 4,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "julesSession": {
@@ -2516,15 +2518,17 @@
             "state": "COMPLETED"
           },
           "recovery": {
-            "nudgedAt": "2026-08-24T13:44:04.530Z",
+            "nudgedAt": "2026-08-24T23:15:47.620Z",
             "sessionName": "sessions/8588206555703587109",
             "ok": true,
             "error": null
-          }
+          },
+          "prNumber": 1550,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1550"
         },
-        "attempts": 1,
-        "lastObservedAt": "2026-08-24T13:44:04.531Z",
-        "failureClass": "JULES_SESSION_STUCK"
+        "attempts": 2,
+        "lastObservedAt": "2026-08-24T23:18:05.592Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "5": {
         "date": "2026-08-24",
@@ -2537,7 +2541,7 @@
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.946Z",
+        "lastObservedAt": "2026-08-24T23:15:43.172Z",
         "failureClass": null
       },
       "6": {
@@ -2551,7 +2555,7 @@
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.946Z",
+        "lastObservedAt": "2026-08-24T23:15:43.172Z",
         "failureClass": null
       },
       "7": {
@@ -2565,7 +2569,7 @@
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.946Z",
+        "lastObservedAt": "2026-08-24T23:15:43.172Z",
         "failureClass": null
       },
       "8": {
@@ -2579,7 +2583,7 @@
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.946Z",
+        "lastObservedAt": "2026-08-24T23:15:43.172Z",
         "failureClass": null
       },
       "9": {
@@ -2593,7 +2597,7 @@
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.946Z",
+        "lastObservedAt": "2026-08-24T23:15:43.172Z",
         "failureClass": null
       },
       "10": {
@@ -2607,7 +2611,7 @@
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.947Z",
+        "lastObservedAt": "2026-08-24T23:15:43.172Z",
         "failureClass": null
       },
       "11": {
@@ -2621,7 +2625,7 @@
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.947Z",
+        "lastObservedAt": "2026-08-24T23:15:43.173Z",
         "failureClass": null
       },
       "12": {
@@ -2629,7 +2633,7 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "julesSession": {
@@ -2638,15 +2642,17 @@
             "state": "COMPLETED"
           },
           "recovery": {
-            "nudgedAt": "2026-08-24T13:44:05.582Z",
+            "nudgedAt": "2026-08-24T23:15:48.749Z",
             "sessionName": "sessions/10382205562673785001",
             "ok": true,
             "error": null
-          }
+          },
+          "prNumber": 1549,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1549"
         },
-        "attempts": 1,
-        "lastObservedAt": "2026-08-24T13:44:05.582Z",
-        "failureClass": "JULES_SESSION_STUCK"
+        "attempts": 2,
+        "lastObservedAt": "2026-08-24T23:18:05.592Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "13": {
         "date": "2026-08-24",
@@ -2659,7 +2665,7 @@
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-24T13:44:00.947Z",
+        "lastObservedAt": "2026-08-24T23:15:43.173Z",
         "failureClass": null
       }
     }
