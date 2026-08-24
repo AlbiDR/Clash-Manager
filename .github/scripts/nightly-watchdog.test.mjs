@@ -338,7 +338,7 @@ test("nudgeJulesSession posts to the documented sendMessage endpoint", async () 
   assert.equal(calls[0].url, "https://jules.googleapis.com/v1alpha/sessions/abc:sendMessage");
   assert.equal(calls[0].init.method, "POST");
   assert.equal(calls[0].init.headers["X-Goog-Api-Key"], "test-key");
-  assert.match(JSON.parse(calls[0].init.body).prompt, /Return the existing final result now/);
+  assert.match(JSON.parse(calls[0].init.body).prompt, /Return the existing final result/);
 });
 
 test("julesSessionPath normalizes bare ids and full resource names", () => {

@@ -7,6 +7,18 @@ on:
   schedule:
     # 3:00 PM CEST (1:00 PM UTC): post-window observer after Stage 13 and merge safety-net.
     - cron: "0 13 * * *"
+  pull_request:
+    # Reactive pass. Every Jules stage PR landing on Nightly is itself evidence
+    # that the stages before it either published too or are stuck, so there is
+    # no reason to wait for the fixed 13:00 UTC pass to find out. This mirrors
+    # Sync Nightly PRs' own trigger exactly (same events, same base branch);
+    # the shared nightly-control-plane concurrency group below queues this run
+    # behind that workflow's merge pass instead of racing it. The script does
+    # not need to know which PR triggered it: it re-evaluates all 13 stages for
+    # today and nudges whichever ones are JULES_SESSION_STUCK, in stage order.
+    types: [opened, reopened, ready_for_review, synchronize]
+    branches:
+      - Nightly
   workflow_dispatch:
     inputs:
       date:

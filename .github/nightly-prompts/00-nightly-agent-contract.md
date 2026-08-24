@@ -116,10 +116,22 @@ Finalization must leave no `IN-PROGRESS` sentinel. It writes:
 - `/tmp/nightly/pr-body.md`
 - `/tmp/nightly/final-handoff.txt`
 
-Read the handoff, return its concise status and suggested publication data, and
-end the task successfully. Do not perform any work after finalization. The
-native scheduled-task publisher then creates the single non-draft PR targeting
-`Nightly`; the GitHub merge coordinator owns everything after that boundary.
+Read the handoff and return its concise status and suggested publication data
+as your final message. A published Pull Request is the required outcome of
+this session, not an optional next step someone else may or may not take.
+Completing the audit, writing the log, and running finalize only exist to
+produce that Pull Request; a run that ends without one has failed regardless
+of how much correct work preceded it.
+
+If any distinct action, tool, or control is available to you to submit,
+complete, or hand off the session, separate from simply writing a message,
+invoke it now. Do not assume the handoff text alone is sufficient to trigger
+publication. Your final message must contain nothing after the handoff
+content: no summary, no offer to do more, no question, no sign-off. The
+native scheduled-task publisher creates the single non-draft PR targeting
+`Nightly` only once the session has actually, fully ended; the GitHub merge
+coordinator owns everything after that boundary. Ending the session cleanly
+is part of the task, not a formality that follows it.
 
 If the lifecycle helper fails, attempt it only once. Manually replace the
 sentinel with a `PARTIAL-RUN` record, ensure the diff is log-only, return a final
