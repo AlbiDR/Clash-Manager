@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-24] PR #1538 [Stage 5]: chore(docs): docs(readme): Reconciled ConsoleLayout ignoreBlueprintMode and SkeletonSettingsCard collapsed state
+**Domain:** pipeline | **Commit:** 43e2849e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1538)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(readme): Reconciled ConsoleLayout ignoreBlueprintMode and SkeletonSettingsCard collapsed state
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-24] PR #1537 [Stage 2]: chore(verify): Extended useApkManager test coverage for edge cases and download flows
 **Domain:** pipeline | **Commit:** be9736ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1537)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts
