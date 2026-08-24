@@ -74,7 +74,7 @@ const { data: globalData } = storeToRefs(clashDataStore);
   >
     <template #header-filters>
       <TargetPicker
-        :model-value="trackedPlayerTag"
+        :tracked-tag="trackedPlayerTag"
         :player-name="observation?.profile.name"
         :is-fetching="isFetching"
         @lock-in="(tag: string | null) => { setTrackedPlayerTag(tag); refresh(); }"

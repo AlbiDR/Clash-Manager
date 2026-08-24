@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import { SCORE_SELECTION_STEPS } from "@core";
 
 /**
@@ -16,10 +16,9 @@ import { SCORE_SELECTION_STEPS } from "@core";
  * - **Role:** Internal logic for the ScoreThresholdSelector component.
  * - **Satisfaction:** ADR Section II: Structural Unitary Architecture.
  *
- * @param props - Reactive component properties.
- * @param props.mode - Current comparison mode ('ge' for ≥, 'le' for ≤).
- * @param props.value - Current score threshold value.
- * @param emit - Vue emit function for state updates and selection events.
+ * @param mode - The `defineModel` ref for the comparison mode ('ge' for ≥, 'le' for ≤).
+ * @param value - The `defineModel` ref for the current score threshold value.
+ * @param emitSelect - Callback invoked to finalize a selection (mode or value changed).
  *
  * @returns
  * - `isScoreExpanded`: Reactive boolean for picker expansion state.
@@ -33,12 +32,9 @@ import { SCORE_SELECTION_STEPS } from "@core";
  * - Manipulates DOM scroll position via `scrollTo` when expanded.
  */
 export function useScoreSelector(
-  props: { mode: "ge" | "le"; value: number },
-  emit: {
-    (e: "update:mode", thresholdMode: "ge" | "le"): void;
-    (e: "update:value", thresholdValue: number): void;
-    (e: "select", thresholdValue: number, thresholdMode: "ge" | "le"): void;
-  }
+  mode: Ref<"ge" | "le">,
+  value: Ref<number>,
+  emitSelect: (thresholdValue: number, thresholdMode: "ge" | "le") => void,
 ) {
   // UI State
   const isScoreExpanded = ref(false);
@@ -52,14 +48,14 @@ export function useScoreSelector(
    * Triggers an immediate selection update.
    */
   function toggleMode() {
-    const newMode = props.mode === "ge" ? "le" : "ge";
-    emit("update:mode", newMode);
+    const newMode = mode.value === "ge" ? "le" : "ge";
+    mode.value = newMode;
     // [DECISION LOG] Haptic delegation: Manual haptics removed to favor
     // v-tactile directive in the view, preventing double-triggering.
 
     // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when mode is toggled
     // to ensure UI state remains synchronized with the active list filter.
-    emit("select", props.value, newMode);
+    emitSelect(value.value, newMode);
   }
 
   /**
@@ -67,13 +63,13 @@ export function useScoreSelector(
    * @param thresholdValue - The new score threshold.
    */
   function selectValue(thresholdValue: number) {
-    if (props.value === thresholdValue) return;
-    emit("update:value", thresholdValue);
+    if (value.value === thresholdValue) return;
+    value.value = thresholdValue;
     // [DECISION LOG] Haptic delegation: Manual haptics removed to favor
     // v-tactile directive in the view, preventing double-triggering.
 
     // [DECISION LOG] AUTO-APPLY: Immediately trigger selection when a threshold is clicked.
-    emit("select", thresholdValue, props.mode);
+    emitSelect(thresholdValue, mode.value);
   }
 
   /**

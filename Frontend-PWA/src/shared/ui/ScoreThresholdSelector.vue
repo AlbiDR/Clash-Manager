@@ -27,19 +27,16 @@ import { useScoreSelector } from "../composables/useScoreSelector";
  */
 
 const props = defineProps<{
-  /** Comparison mode: 'ge' (Greater than or equal) or 'le' (Less than or equal). */
-  mode: "ge" | "le";
-  /** Current active score threshold. */
-  value: number;
   /** Disables all interactions when true. */
   disabled?: boolean;
 }>();
 
+/** Comparison mode: 'ge' (Greater than or equal) or 'le' (Less than or equal). */
+const mode = defineModel<"ge" | "le">("mode", { required: true });
+/** Current active score threshold. */
+const value = defineModel<number>("value", { required: true });
+
 const emit = defineEmits<{
-  /** Updates the comparison mode. */
-  (e: "update:mode", thresholdMode: "ge" | "le"): void;
-  /** Updates the threshold value. */
-  (e: "update:value", thresholdValue: number): void;
   /** Emitted when a selection is finalized (value or mode changed). */
   (e: "select", thresholdValue: number, thresholdMode: "ge" | "le"): void;
 }>();
@@ -54,7 +51,7 @@ const {
   toggleMode,
   selectValue,
   toggleExpand,
-} = useScoreSelector(props, emit);
+} = useScoreSelector(mode, value, (thresholdValue, thresholdMode) => emit("select", thresholdValue, thresholdMode));
 // `valuePicker` is bound purely through the template's `ref="valuePicker"` string
 // match (Vue's compiler resolves it by name against this scope); vue-tsc's
 // noUnusedLocals check cannot see that usage, so this keeps it a real error
@@ -78,11 +75,11 @@ defineExpose({
       class="mode-toggle"
       :disabled="props.disabled"
       :title="
-        props.mode === 'ge' ? 'Greater than or equal' : 'Less than or equal'
+        mode === 'ge' ? 'Greater than or equal' : 'Less than or equal'
       "
       @click="toggleMode"
     >
-      <span class="mode-symbol">{{ props.mode === "ge" ? "≥" : "≤" }}</span>
+      <span class="mode-symbol">{{ mode === "ge" ? "≥" : "≤" }}</span>
     </button>
 
     <!-- Main Trigger / Label -->
@@ -92,7 +89,7 @@ defineExpose({
       :disabled="props.disabled"
       @click="toggleExpand"
     >
-      <span class="sp-label">{{ props.value }}</span>
+      <span class="sp-label">{{ value }}</span>
       <span
         class="sp-chevron"
         :class="{ rotated: isScoreExpanded }"
@@ -115,7 +112,7 @@ defineExpose({
         :key="threshold"
         v-tactile
         class="val-opt"
-        :class="{ active: props.value === threshold }"
+        :class="{ active: value === threshold }"
         @click="selectValue(threshold)"
       >
         {{ threshold }}

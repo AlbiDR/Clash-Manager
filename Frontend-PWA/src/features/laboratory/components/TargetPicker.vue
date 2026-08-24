@@ -23,8 +23,8 @@ import { Icon, vTactile } from "@shared";
 import { normalizeTag } from "@core";
 
 const props = defineProps<{
-  /** The current normalized player tag bound via v-model. */
-  modelValue: string | null;
+  /** The currently tracked player tag, set one-way from the parent's resolved state. */
+  trackedTag: string | null;
   /** Optional descriptive name of the currently resolved target player. */
   playerName?: string;
   /** Reactive state indicating if an authoritative profile fetch/sync is active. */
@@ -32,20 +32,19 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  /** Emitted to update the modelValue binding on input. */
-  "update:modelValue": [string | null];
   /** Emitted when the target player tag is confirmed/locked in. */
   lockIn: [string | null];
 }>();
 
 /**
  * Local input buffer holding the raw or partially-entered player tag.
- * Synchronized with props.modelValue to support resets and remote updates.
+ * Synchronized with props.trackedTag to support resets and remote updates.
+ * Deliberately not a v-model: typing must not propagate until lock-in.
  */
-const localTag = ref(props.modelValue || "");
+const localTag = ref(props.trackedTag || "");
 
-watch(() => props.modelValue, (newModelValue) => {
-  localTag.value = newModelValue || "";
+watch(() => props.trackedTag, (newTrackedTag) => {
+  localTag.value = newTrackedTag || "";
 });
 
 /**

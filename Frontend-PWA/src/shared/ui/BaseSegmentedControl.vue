@@ -26,17 +26,14 @@
 import { useHaptics } from "../composables/useHaptics";
 
 const props = defineProps<{
-  /** The current active value. */
-  modelValue: T;
   /** List of available options. */
   options: { label: string; value: T }[];
   /** Optional compact variant for smaller contexts (e.g. Card contents). */
   compact?: boolean;
 }>();
 
-const emit = defineEmits<{
-  "update:modelValue": [value: T];
-}>();
+/** The current active value. */
+const modelValue = defineModel<T>({ required: true });
 
 const haptics = useHaptics();
 
@@ -48,9 +45,9 @@ const haptics = useHaptics();
  * segment is a no-op and must not buzz.
  */
 function selectOption(targetValue: T) {
-  if (props.modelValue === targetValue) return;
+  if (modelValue.value === targetValue) return;
   haptics.tap();
-  emit("update:modelValue", targetValue);
+  modelValue.value = targetValue;
 }
 </script>
 
@@ -63,7 +60,7 @@ function selectOption(targetValue: T) {
       v-for="optionCandidate in props.options"
       :key="String(optionCandidate.value)"
       class="segment-btn hit-target"
-      :class="{ active: props.modelValue === optionCandidate.value }"
+      :class="{ active: modelValue === optionCandidate.value }"
       @click.stop="selectOption(optionCandidate.value)"
     >
       <span>{{ optionCandidate.label }}</span>

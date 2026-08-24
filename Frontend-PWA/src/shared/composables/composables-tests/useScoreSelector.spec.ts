@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { ref } from "vue";
 import { useScoreSelector } from "../useScoreSelector";
 
 
@@ -25,50 +26,54 @@ describe("useScoreSelector", () => {
   });
 
   it("initializes with correct default state", () => {
-    const props = { mode: "ge" as const, value: 75 };
-    const emit = vi.fn();
-    const { isScoreExpanded, thresholds } = useScoreSelector(props, emit);
+    const mode = ref<"ge" | "le">("ge");
+    const value = ref(75);
+    const emitSelect = vi.fn();
+    const { isScoreExpanded, thresholds } = useScoreSelector(mode, value, emitSelect);
 
     expect(isScoreExpanded.value).toBe(false);
     expect(thresholds).toEqual([15, 30, 45, 60, 75, 90, 100]);
   });
 
-  it("toggles mode and emits event", () => {
-    const props = { mode: "ge" as const, value: 75 };
-    const emit = vi.fn();
-    const { toggleMode } = useScoreSelector(props, emit);
+  it("toggles mode and calls emitSelect", () => {
+    const mode = ref<"ge" | "le">("ge");
+    const value = ref(75);
+    const emitSelect = vi.fn();
+    const { toggleMode } = useScoreSelector(mode, value, emitSelect);
 
     toggleMode();
-    expect(emit).toHaveBeenCalledWith("update:mode", "le");
-    expect(emit).toHaveBeenCalledWith("select", 75, "le");
+    expect(mode.value).toBe("le");
+    expect(emitSelect).toHaveBeenCalledWith(75, "le");
 
-    emit.mockClear();
-    const propsLe = { mode: "le" as const, value: 75 };
-    const { toggleMode: toggleModeLe } = useScoreSelector(propsLe, emit);
+    emitSelect.mockClear();
+    const modeLe = ref<"ge" | "le">("le");
+    const { toggleMode: toggleModeLe } = useScoreSelector(modeLe, value, emitSelect);
     toggleModeLe();
-    expect(emit).toHaveBeenCalledWith("update:mode", "ge");
-    expect(emit).toHaveBeenCalledWith("select", 75, "ge");
+    expect(modeLe.value).toBe("ge");
+    expect(emitSelect).toHaveBeenCalledWith(75, "ge");
   });
 
-  it("selects value and emits event", () => {
-    const props = { mode: "ge" as const, value: 75 };
-    const emit = vi.fn();
-    const { selectValue } = useScoreSelector(props, emit);
+  it("selects value and calls emitSelect", () => {
+    const mode = ref<"ge" | "le">("ge");
+    const value = ref(75);
+    const emitSelect = vi.fn();
+    const { selectValue } = useScoreSelector(mode, value, emitSelect);
 
     selectValue(60);
-    expect(emit).toHaveBeenCalledWith("update:value", 60);
-    expect(emit).toHaveBeenCalledWith("select", 60, "ge");
+    expect(value.value).toBe(60);
+    expect(emitSelect).toHaveBeenCalledWith(60, "ge");
 
-    // Redundant selection should not trigger emit
-    vi.clearAllMocks();
-    selectValue(75);
-    expect(emit).not.toHaveBeenCalled();
+    // Redundant selection should not trigger emitSelect
+    emitSelect.mockClear();
+    selectValue(60);
+    expect(emitSelect).not.toHaveBeenCalled();
   });
 
   it("toggles expand and attempts scroll", () => {
-    const props = { mode: "ge" as const, value: 75 };
-    const emit = vi.fn();
-    const { toggleExpand, isScoreExpanded, valuePicker } = useScoreSelector(props, emit);
+    const mode = ref<"ge" | "le">("ge");
+    const value = ref(75);
+    const emitSelect = vi.fn();
+    const { toggleExpand, isScoreExpanded, valuePicker } = useScoreSelector(mode, value, emitSelect);
 
     // Mock valuePicker ref
     const mockScrollTo = vi.fn();
@@ -93,9 +98,10 @@ describe("useScoreSelector", () => {
   });
 
   it("handles toggleExpand without valuePicker ref safely", () => {
-    const props = { mode: "ge" as const, value: 75 };
-    const emit = vi.fn();
-    const { toggleExpand, isScoreExpanded, valuePicker } = useScoreSelector(props, emit);
+    const mode = ref<"ge" | "le">("ge");
+    const value = ref(75);
+    const emitSelect = vi.fn();
+    const { toggleExpand, isScoreExpanded, valuePicker } = useScoreSelector(mode, value, emitSelect);
 
     valuePicker.value = null;
 
@@ -108,9 +114,10 @@ describe("useScoreSelector", () => {
   });
 
   it("handles valuePicker without scrollTo method safely", () => {
-    const props = { mode: "ge" as const, value: 75 };
-    const emit = vi.fn();
-    const { toggleExpand, valuePicker } = useScoreSelector(props, emit);
+    const mode = ref<"ge" | "le">("ge");
+    const value = ref(75);
+    const emitSelect = vi.fn();
+    const { toggleExpand, valuePicker } = useScoreSelector(mode, value, emitSelect);
 
     valuePicker.value = {
       scrollWidth: 500

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted } from "vue";
+import { ref, useTemplateRef, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useGhostBenchmarkState } from "../directives/ghostBenchmarkState";
 import { usePointerCapability } from "../composables/usePointerCapability";
 import BenchmarkContent from "./BenchmarkContent.vue";
@@ -23,7 +23,7 @@ const { isCoarsePointer } = usePointerCapability();
 // --- Desktop popover positioning ---
 
 /** Reactive reference to the desktop popover DOM element. */
-const popoverEl = ref<HTMLElement | null>(null);
+const popoverEl = useTemplateRef<HTMLElement>("popoverEl");
 
 /** Reactive inline style rules applied to position the desktop popover. */
 const popoverStyle = ref<Record<string, string>>({});

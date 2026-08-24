@@ -40,10 +40,10 @@ describe("TargetPicker.vue", () => {
     vi.clearAllMocks();
   });
 
-  it("should initialize with modelValue", () => {
+  it("should initialize with trackedTag", () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "#ABCDEF",
+        trackedTag: "#ABCDEF",
       },
     });
 
@@ -51,14 +51,14 @@ describe("TargetPicker.vue", () => {
     expect((input.element as HTMLInputElement).value).toBe("#ABCDEF");
   });
 
-  it("should update local state when modelValue prop changes", async () => {
+  it("should update local state when trackedTag prop changes", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "#OLD",
+        trackedTag: "#OLD",
       },
     });
 
-    await wrapper.setProps({ modelValue: "#NEW" });
+    await wrapper.setProps({ trackedTag: "#NEW" });
     const input = wrapper.find("input");
     expect((input.element as HTMLInputElement).value).toBe("#NEW");
   });
@@ -66,7 +66,7 @@ describe("TargetPicker.vue", () => {
   it("should format tag correctly on lock-in (lowercase to uppercase, add #)", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "",
+        trackedTag: "",
       },
     });
 
@@ -82,7 +82,7 @@ describe("TargetPicker.vue", () => {
   it("should format tag correctly on lock-in (already has #)", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "",
+        trackedTag: "",
       },
     });
 
@@ -97,7 +97,7 @@ describe("TargetPicker.vue", () => {
   it("should emit null if input is empty on lock-in", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "#SOME",
+        trackedTag: "#SOME",
       },
     });
 
@@ -112,7 +112,7 @@ describe("TargetPicker.vue", () => {
   it("should trigger lock-in on Enter keydown", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "",
+        trackedTag: "",
       },
     });
 
@@ -126,7 +126,7 @@ describe("TargetPicker.vue", () => {
   it("should call haptics.tap() on lock-in", async () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "TAG",
+        trackedTag: "TAG",
       },
     });
 
@@ -140,7 +140,7 @@ describe("TargetPicker.vue", () => {
   it("should disable button and show loader icon when isFetching is true", () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "TAG",
+        trackedTag: "TAG",
         isFetching: true,
       },
     });
@@ -157,7 +157,7 @@ describe("TargetPicker.vue", () => {
   it("should render playerName when provided", () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "TAG",
+        trackedTag: "TAG",
         playerName: "Clash Master",
       },
     });
@@ -169,7 +169,7 @@ describe("TargetPicker.vue", () => {
   it("should not render player-label if playerName is not provided", () => {
     const wrapper = mount(TargetPicker, {
       props: {
-        modelValue: "TAG",
+        trackedTag: "TAG",
         playerName: undefined,
       },
     });

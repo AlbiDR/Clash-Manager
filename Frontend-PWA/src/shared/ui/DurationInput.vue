@@ -36,20 +36,13 @@ interface DurationModel {
 /**
  * Component props for DurationInput.
  */
-const props = defineProps<{
-  /** Reactive duration model bound to inputs. */
-  modelValue: DurationModel;
+defineProps<{
   /** Optional header label for input group. */
   label?: string;
 }>();
 
-/**
- * Event emissions for DurationInput.
- */
-const emit = defineEmits<{
-  /** Emitted whenever any unit field value changes or is clamped. */
-  (e: 'update:modelValue', value: DurationModel): void;
-}>();
+/** Reactive duration model bound to inputs. */
+const modelValue = defineModel<DurationModel>({ required: true });
 
 /**
  * Clamps a T2T unit field to its logical maximum and emits update.
@@ -63,20 +56,20 @@ const emit = defineEmits<{
  *
  * @param event - The native input event; read directly since `modelValue` is never mutated in place.
  * @param durationUnitKey - The target duration field ('days' | 'hours' | 'minutes') being modified.
- * @sideeffects Emits `update:modelValue` event with normalized duration model.
+ * @sideeffects Writes the normalized duration model back to `modelValue`.
  */
 function onInput(event: Event, durationUnitKey: keyof DurationModel) {
   const max = durationUnitKey === "days" ? 7 : durationUnitKey === "hours" ? 23 : 59;
   const target = event.target as HTMLInputElement;
   const rawValue = target.value === '' ? '' : Number(target.value);
-  const newValue = { ...props.modelValue, [durationUnitKey]: rawValue };
+  const newValue = { ...modelValue.value, [durationUnitKey]: rawValue };
 
   if (newValue[durationUnitKey] !== '') {
     const sanitized = sanitizeNumericInput(newValue[durationUnitKey]);
     newValue[durationUnitKey] = sanitized > max ? max : sanitized;
   }
 
-  emit('update:modelValue', newValue);
+  modelValue.value = newValue;
 }
 </script>
 

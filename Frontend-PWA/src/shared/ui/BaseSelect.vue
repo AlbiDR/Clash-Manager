@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts" generic="T extends string | number">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, useTemplateRef, onMounted, onUnmounted } from "vue";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 
@@ -39,8 +39,6 @@ interface Option<V> {
  * Component-level properties for BaseSelect.
  */
 const props = defineProps<{
-  /** The active selected value of type T. */
-  modelValue: T;
   /** The array of option contracts of type Option<T>. */
   options: Option<T>[];
   /** The default fallback placeholder text. */
@@ -49,16 +47,11 @@ const props = defineProps<{
   ariaLabel?: string;
 }>();
 
-/**
- * Component-level custom event emissions.
- */
-const emit = defineEmits<{
-  /** Emitted when an option selection changes. */
-  "update:modelValue": [T];
-}>();
+/** The active selected value of type T. */
+const modelValue = defineModel<T>({ required: true });
 
 const isOpen = ref(false);
-const selectRef = ref<HTMLElement | null>(null);
+const selectRef = useTemplateRef<HTMLElement>("selectRef");
 
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
@@ -66,9 +59,7 @@ const toggleDropdown = () => {
 
 const selectOption = (option: Option<T>) => {
   if (option.disabled) return;
-  // [THREAT:] Emitting unvalidated 'any' values can corrupt higher-layer state.
-  // [DECISION LOG] Generics ensure that the emitted value strictly matches the T type.
-  emit("update:modelValue", option.value);
+  modelValue.value = option.value;
   isOpen.value = false;
 };
 
@@ -87,8 +78,7 @@ onUnmounted(() => {
 });
 
 const getSelectedLabel = () => {
-  // [DECISION LOG] Renaming anemic pathogen 'o' to 'option'.
-  const selected = props.options.find((option) => option.value === props.modelValue);
+  const selected = props.options.find((option) => option.value === modelValue.value);
   return selected ? selected.label : props.placeholder || "Select...";
 };
 </script>
@@ -129,12 +119,12 @@ const getSelectedLabel = () => {
             :key="option.value"
             v-tactile
             role="option"
-            :aria-selected="option.value === props.modelValue"
+            :aria-selected="option.value === modelValue"
             class="option-item"
             :class="[
               option.class || '',
               {
-                active: option.value === props.modelValue,
+                active: option.value === modelValue,
                 disabled: option.disabled
               }
             ]"
