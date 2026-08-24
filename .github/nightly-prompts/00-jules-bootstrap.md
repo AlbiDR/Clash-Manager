@@ -3,7 +3,11 @@
 
 # Jules UI Bootstrap Instructions
 
-This document records the exact prompt instructions configured in the Jules UI for each stage of the Nightly pipeline.
+This document is the source of truth for what must be configured in the Jules UI for each stage of the Nightly pipeline. It is not a passive log of what the UI already contains.
+
+**A commit to this file changes nothing Jules runs by itself.** Jules reads its scheduled-task configuration from its own dashboard, not from this repository. Every block below — the shared Setup Script, and per stage the `# [Stage N]` heading, its `Fetch from` / `PR Base` / `PR Draft` / `Bootstrap Target` fields, its `Completion Contract`, and its `Bootstrap Execution` paragraph — is the exact, complete text that belongs in that stage's Jules scheduled-task fields, copied verbatim into the matching UI field for that stage.
+
+Treat any mismatch between this file and the live Jules UI as the UI being stale, not this file. Whichever side changes first, the other is out of sync until a human copies the update across; a git commit here is only step one.
 
 ---
 
