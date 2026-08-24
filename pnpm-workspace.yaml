@@ -11,7 +11,7 @@ catalogs:
   default:
 
     # Infrastructure
-    "@ast-grep/cli": "^0.45.1"
+    "@ast-grep/cli": "^0.45.2"
     "@formkit/auto-animate": "^0.10.0"
     "@supabase/supabase-js": "^2.112.3"
     "@types/node": "^26.2.0"
