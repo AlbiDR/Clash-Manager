@@ -98,7 +98,7 @@ const {
  *
  * @param cardScoreClickEvent - Raw touch or mouse interaction payload on score container.
  */
-function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
+function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | KeyboardEvent) {
   internalScoreClick(cardScoreClickEvent);
   emit("score-click", cardScoreClickEvent as Event);
 }
@@ -128,7 +128,17 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent) {
 
       <div class="header-actions">
         <!-- Score Section -->
-        <div class="score-section" v-tactile @click.stop="handleScoreClick">
+        <div
+          class="score-section"
+          role="button"
+          tabindex="0"
+          :aria-pressed="props.selected"
+          aria-label="Select card"
+          v-tactile
+          @click.stop="handleScoreClick"
+          @keydown.enter="handleScoreClick"
+          @keydown.space.prevent="handleScoreClick"
+        >
           <div
             class="stat-pod hit-target"
             :class="{ 'score-tint': props.score !== undefined }"

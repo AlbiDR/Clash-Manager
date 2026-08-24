@@ -25,7 +25,8 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 
 | Component | Role |
 | :--- | :--- |
-| `BaseCard.vue` / `BaseCardSkeleton.vue` | The foundational card (squish, selection) and its skeleton. |
+| `BaseCard.vue` / `BaseCardSkeleton.vue` | The foundational card (squish, selection) and its skeleton. Use for interactive list items that expand, select, or tap. |
+| `.surface-panel` / `.panel-header` (CSS utilities, defined in [`@core/theme/components.ts`](../../core/theme/README.md), not components) | The static-panel counterpart to `BaseCard`: a non-interactive content/section container on the same `--sys-color-surface-container` background as `BaseCard`/`SettingsCard` (with the `--sys-surface-glass-border` accent `SettingsCard` also uses). Used by Laboratory's config and summary panels (`VaultCard.vue`, `SummaryCard.vue`, `ParameterCard.vue`) and their skeleton, none of which have expand/select/selection-mode state; `BaseCard`'s props require exactly that, so it isn't a fit there. Historically named `.glass-panel` and built on the `--sys-surface-glass` overlay token (the one `ConfirmDialog.vue`/`Toast.vue`/`ErrorState.vue`/`FloatingDock.vue` use for floating chrome) even though these panels render in-flow, never floating — migrated 2026-08-24 to match the in-flow convention. Reach for `BaseCard` for a selectable/expandable list item; reach for `surface-panel` for a static in-flow section. |
 | `BaseBadge.vue` | The atomic badge. |
 | `Icon.vue` | The SVG renderer; paths come from `@core/theme/icons`. |
 | `StatusPill.vue` / `MomentumPill.vue` | System-health pill and trend indicator. |

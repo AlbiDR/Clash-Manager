@@ -75,7 +75,7 @@ export function useCardMechanics(
    * tap handler, ensuring that clicking the score ONLY selects the card
    * without triggering an unintentional expansion or collapse.
    */
-  function handleScoreClick(cardInteractionEvent: MouseEvent | TouchEvent) {
+  function handleScoreClick(cardInteractionEvent: MouseEvent | TouchEvent | KeyboardEvent) {
     cardInteractionEvent.stopPropagation(); // Event Isolation: Prevent card-level handleTap
     haptics.tap();
     interactionCallbacks.onSelect();

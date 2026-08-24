@@ -133,7 +133,17 @@ function saveApiUrl() {
           <button class="cancel-btn" @click="isEditing = false" v-tactile>X</button>
         </template>
       </div>
-      <div v-if="hasLocalOverride" class="override-pill" @click="resetApiUrl" v-tactile>
+      <div
+        v-if="hasLocalOverride"
+        class="override-pill"
+        role="button"
+        tabindex="0"
+        aria-label="Reset custom API override"
+        v-tactile
+        @click="resetApiUrl"
+        @keydown.enter="resetApiUrl"
+        @keydown.space.prevent="resetApiUrl"
+      >
         Running custom override • Tap to reset
       </div>
     </div>

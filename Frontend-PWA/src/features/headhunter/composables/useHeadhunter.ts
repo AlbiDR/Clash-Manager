@@ -16,6 +16,16 @@ import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
 let previousData: WebAppData | null = null;
 
 /**
+ * Guards the badge/notification watcher below so it registers exactly once
+ * per app lifetime. `useHeadhunter()` is invoked both from the permanent
+ * `App.vue` root AND from `useRecruiter()` on every Headhunter view mount;
+ * without this guard each additional invocation registered its own `watch`
+ * racing over the shared `previousData` above, which could send the same
+ * "Elite Recruit Found" local notification twice.
+ */
+let notificationWatcherStarted = false;
+
+/**
  * COMPOSABLE: useHeadhunter
  *
  * @remarks
@@ -176,19 +186,23 @@ export function useHeadhunter() {
   // Watcher to react to data changes (for badge and notifications)
   // Rationale: Decouples view logic from state changes, ensuring consistent
   // updates even when data is refreshed from the background service worker.
-  watch(
-    clashData,
-    (newData) => {
-      if (newData) {
-        updateHeadhunterBadge(newData);
-        if (previousData && newData.timestamp !== previousData.timestamp) {
-          processRecruitChanges(previousData, newData);
+  // Guarded to register once per app lifetime -- see `notificationWatcherStarted`.
+  if (!notificationWatcherStarted) {
+    notificationWatcherStarted = true;
+    watch(
+      clashData,
+      (newData) => {
+        if (newData) {
+          updateHeadhunterBadge(newData);
+          if (previousData && newData.timestamp !== previousData.timestamp) {
+            processRecruitChanges(previousData, newData);
+          }
+          previousData = newData;
         }
-        previousData = newData;
-      }
-    },
-    { immediate: true },
-  );
+      },
+      { immediate: true },
+    );
+  }
 
   /**
    * Action: dismissRecruitsAction
