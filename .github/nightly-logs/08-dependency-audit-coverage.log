@@ -344,3 +344,4 @@
 * [2026-08-22] Target: Codebase - pinia | ^3.0.4 | 4.0.3 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
 * [2026-08-22] Target: Codebase - jsdom | ^29.1.1 | 30.0.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
 * [2026-08-22] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped vitest and @vitest/coverage-v8 to ^4.1.11 in catalog and updated lockfile.
+* [2026-08-24] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped @ast-grep/cli to ^0.45.2
