@@ -51,7 +51,10 @@ const {
       />
 
       <!-- Master Showcase Group -->
-      <div class="mode-master-container" :class="{ active: isShowcaseMode }">
+      <div
+        class="mode-master-container"
+        :class="{ active: isShowcaseMode }"
+      >
         <SettingRow
           :active="isShowcaseMode"
           mini
@@ -60,7 +63,10 @@ const {
           <template #label>
             <div class="label-with-badge">
               Master Showcase
-              <span v-if="isShowcaseMode" class="hybrid-badge">HYBRID</span>
+              <span
+                v-if="isShowcaseMode"
+                class="hybrid-badge"
+              >HYBRID</span>
             </div>
           </template>
           <template #description>

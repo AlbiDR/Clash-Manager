@@ -11,7 +11,11 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
 </script>
 
 <template>
-  <SettingsCard title="Appearance & Utility" icon="gear" :initially-expanded="initiallyExpanded">
+  <SettingsCard
+    title="Appearance & Utility"
+    icon="gear"
+    :initially-expanded="initiallyExpanded"
+  >
     <div class="theme-selection-area">
       <div class="theme-label-group">
         <span class="theme-main-label">System Theme</span>
@@ -23,11 +27,14 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
           v-tactile
           class="theme-option"
           :class="{ active: theme === 'light' }"
-          @click="handleThemeChange('light')"
           aria-label="Light Theme"
+          @click="handleThemeChange('light')"
         >
           <div class="option-icon-box">
-             <Icon name="theme_light" size="18" />
+            <Icon
+              name="theme_light"
+              size="18"
+            />
           </div>
           <span class="option-name">Light</span>
         </button>
@@ -36,11 +43,14 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
           v-tactile
           class="theme-option"
           :class="{ active: theme === 'auto' }"
-          @click="handleThemeChange('auto')"
           aria-label="Auto Theme"
+          @click="handleThemeChange('auto')"
         >
           <div class="option-icon-box">
-            <Icon name="theme_auto" size="18" />
+            <Icon
+              name="theme_auto"
+              size="18"
+            />
           </div>
           <span class="option-name">Auto</span>
         </button>
@@ -49,16 +59,22 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
           v-tactile
           class="theme-option"
           :class="{ active: theme === 'dark' }"
-          @click="handleThemeChange('dark')"
           aria-label="Dark Theme"
+          @click="handleThemeChange('dark')"
         >
           <div class="option-icon-box">
-            <Icon name="moon" size="18" />
+            <Icon
+              name="moon"
+              size="18"
+            />
           </div>
           <span class="option-name">Dark</span>
         </button>
 
-        <div class="selection-slider" :class="`pos-${theme}`" />
+        <div
+          class="selection-slider"
+          :class="`pos-${theme}`"
+        />
       </div>
     </div>
 

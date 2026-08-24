@@ -56,14 +56,14 @@ describe("VoyageBanner.vue", () => {
   });
 
   it("should not render when not active", async () => {
-    // @ts-ignore - manual state injection for test
+    // @ts-expect-error - manual state injection for test
     store.summary = null;
     await wrapper.vm.$nextTick();
     expect(wrapper.find(".voyage-banner").exists()).toBe(false);
   });
 
   it("should render when active", async () => {
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000 },
       total_voyage_crowns: 500,
@@ -80,7 +80,7 @@ describe("VoyageBanner.vue", () => {
   });
 
   it("should render victory state when achieved", async () => {
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000 },
       total_voyage_crowns: 1000,
@@ -98,7 +98,7 @@ describe("VoyageBanner.vue", () => {
     // Set endsAt to 5 seconds in the future (12:00:05)
     const futureDate = new Date("2026-01-01T12:00:05Z");
 
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: {
         status: "ACTIVE",
@@ -126,7 +126,7 @@ describe("VoyageBanner.vue", () => {
   });
 
   it("should update countdown when endsAt changes", async () => {
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000, end_at: null },
       total_voyage_crowns: 0,
@@ -136,7 +136,7 @@ describe("VoyageBanner.vue", () => {
     expect(wrapper.find(".countdown").text()).toBe("");
 
     const futureDate = new Date("2026-01-01T13:00:00Z"); // 1 hour from 12:00:00
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary.event.end_at = futureDate.toISOString();
     await wrapper.vm.$nextTick();
 

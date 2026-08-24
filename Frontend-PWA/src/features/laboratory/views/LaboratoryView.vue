@@ -82,14 +82,24 @@ const { data: globalData } = storeToRefs(clashDataStore);
     </template>
 
     <template #empty-action>
-      <router-link v-if="!globalData?.playerTag" to="/settings" class="btn-primary">
-        <Icon name="settings" size="18" />
+      <router-link
+        v-if="!globalData?.playerTag"
+        to="/settings"
+        class="btn-primary"
+      >
+        <Icon
+          name="settings"
+          size="18"
+        />
         <span>Configure Settings</span>
       </router-link>
     </template>
 
     <!-- Simulation Dashboard -->
-    <div v-if="observation" class="dashboard-grid">
+    <div
+      v-if="observation"
+      class="dashboard-grid"
+    >
       <!-- 1. The Vault & Settings -->
       <div class="dashboard-sidebar">
         <VaultCard 

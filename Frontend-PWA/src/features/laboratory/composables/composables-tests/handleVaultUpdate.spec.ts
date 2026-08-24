@@ -28,7 +28,7 @@ vi.mock('../../logic', async (importOriginal) => {
   return {
     ...actual,
     ProfileHydrator: {
-      hydrate: vi.fn((data) => ({
+      hydrate: vi.fn((_data) => ({
         profile: { kingLevel: 14, tag: '#ABC' },
         inventory: { gold: 1000, gems: 100, wildCards: {} }
       })),

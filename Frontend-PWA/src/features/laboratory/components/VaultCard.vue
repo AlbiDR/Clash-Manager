@@ -32,9 +32,19 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 </script>
 
 <template>
-  <div class="vault-card glass-panel" data-bone="VaultCard.panel" :class="{ 'is-loading': isSimulating }">
-    <h3 class="panel-header" data-bone="VaultCard.header">
-      <Icon name="box" size="16" />
+  <div
+    class="vault-card surface-panel"
+    data-bone="VaultCard.panel"
+    :class="{ 'is-loading': isSimulating }"
+  >
+    <h3
+      class="panel-header"
+      data-bone="VaultCard.header"
+    >
+      <Icon
+        name="box"
+        size="16"
+      />
       <span>The Vault</span>
     </h3>
 
@@ -43,7 +53,11 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
         <!-- Primary Resources -->
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="getCurrencyAsset('gold')" class="res-asset" alt="Gold" />
+            <img
+              :src="getCurrencyAsset('gold')"
+              class="res-asset"
+              alt="Gold"
+            >
             <span class="res-label">Gold</span>
           </div>
           <input 
@@ -57,7 +71,11 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 
         <div class="resource-item">
           <div class="res-meta">
-            <img :src="getCurrencyAsset('gem')" class="res-asset" alt="Gems" />
+            <img
+              :src="getCurrencyAsset('gem')"
+              class="res-asset"
+              alt="Gems"
+            >
             <span class="res-label">Gems</span>
           </div>
           <input 
@@ -87,7 +105,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
               :src="getWildcardAsset(rarity as string)"
               class="wc-asset" 
               :alt="rarity as string"
-            />
+            >
             <input 
               v-tactile
               type="number" 

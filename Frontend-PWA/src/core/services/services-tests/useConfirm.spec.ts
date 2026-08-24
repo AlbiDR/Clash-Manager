@@ -17,7 +17,7 @@ describe("useConfirm service", () => {
   });
 
   it("should merge and apply default options when confirm is called", () => {
-    const promise = confirm({ title: "Delete Record?" });
+    const _promise = confirm({ title: "Delete Record?" });
 
     expect(active.value).not.toBeNull();
     expect(active.value?.title).toBe("Delete Record?");
@@ -32,7 +32,7 @@ describe("useConfirm service", () => {
   });
 
   it("should merge full custom options correctly", () => {
-    const promise = confirm({
+    const _promise = confirm({
       title: "Warning",
       message: "This action is irreversible.",
       confirmLabel: "Proceed",

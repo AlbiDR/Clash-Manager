@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useVoyageStatus } from "../useVoyageStatus";
 import { useVoyageStore } from "../useVoyageStore";
 import { useCountdown } from "../useCountdown";
-import { ref, computed, nextTick, reactive } from "vue";
+import { computed, nextTick, reactive } from "vue";
 
 vi.mock("../useVoyageStore", () => ({
   useVoyageStore: vi.fn()

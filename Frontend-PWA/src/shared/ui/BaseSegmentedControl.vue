@@ -55,7 +55,10 @@ function selectOption(targetValue: T) {
 </script>
 
 <template>
-  <div class="segmented-control" :class="{ compact: props.compact }">
+  <div
+    class="segmented-control"
+    :class="{ compact: props.compact }"
+  >
     <button
       v-for="optionCandidate in props.options"
       :key="String(optionCandidate.value)"

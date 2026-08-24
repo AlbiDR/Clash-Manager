@@ -61,20 +61,19 @@ const emit = defineEmits<{
  * [DECISION LOG] Uses `sanitizeNumericInput` from `@core` to parse and strip invalid characters.
  * [THREAT:] Unsanitized negative or out-of-bounds duration values causing invalid timestamp computations.
  *
+ * @param event - The native input event; read directly since `modelValue` is never mutated in place.
  * @param durationUnitKey - The target duration field ('days' | 'hours' | 'minutes') being modified.
  * @sideeffects Emits `update:modelValue` event with normalized duration model.
  */
-function onInput(durationUnitKey: keyof DurationModel) {
+function onInput(event: Event, durationUnitKey: keyof DurationModel) {
   const max = durationUnitKey === "days" ? 7 : durationUnitKey === "hours" ? 23 : 59;
-  const newValue = { ...props.modelValue };
+  const target = event.target as HTMLInputElement;
+  const rawValue = target.value === '' ? '' : Number(target.value);
+  const newValue = { ...props.modelValue, [durationUnitKey]: rawValue };
 
   if (newValue[durationUnitKey] !== '') {
     const sanitized = sanitizeNumericInput(newValue[durationUnitKey]);
-    if (sanitized > max) {
-      newValue[durationUnitKey] = max;
-    } else if (sanitized < 0) {
-      newValue[durationUnitKey] = 0;
-    }
+    newValue[durationUnitKey] = sanitized > max ? max : sanitized;
   }
 
   emit('update:modelValue', newValue);
@@ -83,16 +82,21 @@ function onInput(durationUnitKey: keyof DurationModel) {
 
 <template>
   <div class="duration-input">
-    <label v-if="label" class="field-label">{{ label }}</label>
+    <label
+      v-if="label"
+      class="field-label"
+    >{{ label }}</label>
     <div class="t2t-group">
       <!-- Days -->
       <div class="t2t-unit">
         <input
-          v-model.number="modelValue.days"
-          type="number" min="0" max="7"
+          :value="modelValue.days"
+          type="number"
+          min="0"
+          max="7"
           class="glass-input t2t-input"
-          @input="onInput('days')"
-        />
+          @input="onInput($event, 'days')"
+        >
         <span class="t2t-label">D</span>
       </div>
       <span class="t2t-sep">:</span>
@@ -100,11 +104,13 @@ function onInput(durationUnitKey: keyof DurationModel) {
       <!-- Hours -->
       <div class="t2t-unit">
         <input
-          v-model.number="modelValue.hours"
-          type="number" min="0" max="23"
+          :value="modelValue.hours"
+          type="number"
+          min="0"
+          max="23"
           class="glass-input t2t-input"
-          @input="onInput('hours')"
-        />
+          @input="onInput($event, 'hours')"
+        >
         <span class="t2t-label">H</span>
       </div>
       <span class="t2t-sep">:</span>
@@ -112,11 +118,13 @@ function onInput(durationUnitKey: keyof DurationModel) {
       <!-- Minutes -->
       <div class="t2t-unit">
         <input
-          v-model.number="modelValue.minutes"
-          type="number" min="0" max="59"
+          :value="modelValue.minutes"
+          type="number"
+          min="0"
+          max="59"
           class="glass-input t2t-input"
-          @input="onInput('minutes')"
-        />
+          @input="onInput($event, 'minutes')"
+        >
         <span class="t2t-label">M</span>
       </div>
     </div>

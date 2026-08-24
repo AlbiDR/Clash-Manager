@@ -8,7 +8,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import StatisticItem from '../StatisticItem.vue';
-import { useBenchmarking } from '@core/services/useBenchmarking';
 
 // Mock useBenchmarking
 const mockGetSafeBenchmark = vi.fn((type, metric, value) => {

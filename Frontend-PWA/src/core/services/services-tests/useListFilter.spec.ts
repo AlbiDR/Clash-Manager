@@ -167,7 +167,7 @@ describe("useListFilter", () => {
 
   it("returns original order when an invalid sort strategy is used", () => {
     const items = ref(mockItems);
-    const { filteredItems, sortBy } = useListFilter(
+    const { filteredItems, sortBy: _sortBy } = useListFilter(
       items,
       searchFields,
       sortStrategies,

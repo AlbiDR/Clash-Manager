@@ -152,7 +152,7 @@ describe("useConnectivityManager", () => {
       const { metadata } = useConnectivityManager();
 
       // Accessing the computed property triggers the utilities
-      const { age, lastCompiled, lastFetched } = metadata.value;
+      const { age, lastCompiled: _lastCompiled, lastFetched: _lastFetched } = metadata.value;
 
       expect(timeUtils.formatTimeAgo).toHaveBeenCalledTimes(3);
       expect(age).toContain("formatted-");

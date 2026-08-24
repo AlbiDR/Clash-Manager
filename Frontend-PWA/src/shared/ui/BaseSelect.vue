@@ -94,7 +94,10 @@ const getSelectedLabel = () => {
 </script>
 
 <template>
-  <div class="custom-select" ref="selectRef">
+  <div
+    ref="selectRef"
+    class="custom-select"
+  >
     <button
       v-tactile
       type="button"
@@ -104,19 +107,30 @@ const getSelectedLabel = () => {
       @click="toggleDropdown"
     >
       <span class="trigger-label">{{ getSelectedLabel() }}</span>
-      <Icon name="chevron-down" size="14" class="select-chevron" :class="{ 'is-open': isOpen }" />
+      <Icon
+        name="chevron-down"
+        size="14"
+        class="select-chevron"
+        :class="{ 'is-open': isOpen }"
+      />
     </button>
 
     <Transition name="fade-slide">
-      <div v-if="isOpen" class="options-dropdown">
-        <ul role="listbox" class="options-list">
+      <div
+        v-if="isOpen"
+        class="options-dropdown"
+      >
+        <ul
+          role="listbox"
+          class="options-list"
+        >
           <li
             v-for="option in props.options"
             :key="option.value"
+            v-tactile
             role="option"
             :aria-selected="option.value === props.modelValue"
             class="option-item"
-            v-tactile
             :class="[
               option.class || '',
               {

@@ -31,7 +31,12 @@ const { active, resolve } = useConfirm();
       >
         <div class="confirm-card glassmorphic">
           <h3>{{ active.title }}</h3>
-          <p v-if="active.message" class="confirm-message">{{ active.message }}</p>
+          <p
+            v-if="active.message"
+            class="confirm-message"
+          >
+            {{ active.message }}
+          </p>
 
           <div class="confirm-actions">
             <button

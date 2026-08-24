@@ -64,23 +64,30 @@ watch(
         <div class="info-card-expanded glassmorphic">
           <div class="expansion-header">
             <div class="expansion-title-group">
-              <Icon name="info" size="18" class="ext-icon" />
+              <Icon
+                name="info"
+                size="18"
+                class="ext-icon"
+              />
               <h3>{{ title || "Heuristic Analysis" }}</h3>
             </div>
             <button
               v-tactile
               class="close-btn-round"
-              @click="emit('close')"
               aria-label="Close"
+              @click="emit('close')"
             >
-              <Icon name="close" size="20" />
+              <Icon
+                name="close"
+                size="20"
+              />
             </button>
           </div>
 
           <div
             class="expansion-content scrollable-area"
             v-html="formatHeaderDescription(content)"
-          ></div>
+          />
         </div>
       </div>
     </Transition>

@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { calculateProgressionPath } from '../SimulationEngine';
 import ProfileHydrator from '../ProfileHydrator';
 import { asGold, asGems } from '@core/utils/economy';
-import type { PlayerData, PlayerProfile, Card, Inventory, OptimizationSettings } from '../Types';
+import type { PlayerProfile, Card, Inventory, OptimizationSettings } from '../Types';
 
 describe('Laboratory Engine Diagnostic', () => {
   it("should reach Level 80 from Level 76 with infinite resources", () => {

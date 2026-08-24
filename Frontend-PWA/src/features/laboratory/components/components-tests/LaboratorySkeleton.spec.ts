@@ -17,7 +17,7 @@ describe("LaboratorySkeleton.vue", () => {
     expect(wrapper.find(".dashboard-sidebar").exists()).toBe(true);
 
     // Verify panels (Vault, Parameters, Summary)
-    const panels = wrapper.findAll(".glass-panel");
+    const panels = wrapper.findAll(".surface-panel");
     expect(panels.length).toBe(3);
 
     // Verify skeleton animation classes are present

@@ -61,6 +61,7 @@ defineEmits<{
 
 <template>
   <div
+    v-tactile
     class="setting-row"
     :class="{
       'active-row': active,
@@ -68,14 +69,17 @@ defineEmits<{
       'disabled': disabled
     }"
     @click="!disabled && $emit('click')"
-    v-tactile
   >
     <div class="row-info">
       <div class="row-label">
-        <slot name="label">{{ label }}</slot>
+        <slot name="label">
+          {{ label }}
+        </slot>
       </div>
       <div class="row-desc">
-        <slot name="description">{{ description }}</slot>
+        <slot name="description">
+          {{ description }}
+        </slot>
       </div>
     </div>
     <div
@@ -85,7 +89,7 @@ defineEmits<{
         'skeleton-anim sk-badge-s': loading,
       }"
     >
-      <div class="handle"></div>
+      <div class="handle" />
     </div>
   </div>
 </template>

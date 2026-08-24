@@ -39,44 +39,86 @@ defineProps<{
     <div class="upgrade-info">
       <!-- Line 1: Card Name -->
       <div class="name-row">
-        <span class="card-name" data-bone="TrajectoryItem.name">{{ upgrade.cardName }}</span>
+        <span
+          class="card-name"
+          data-bone="TrajectoryItem.name"
+        >{{ upgrade.cardName }}</span>
       </div>
 
       <!-- Line 2: Level Progression -->
       <div class="level-row">
-        <div class="level-pill" data-bone="TrajectoryItem.levelPill">
+        <div
+          class="level-pill"
+          data-bone="TrajectoryItem.levelPill"
+        >
           <span class="prev">{{ upgrade.currentLevel }}</span>
-          <Icon name="chevron_right" size="10" class="divider" />
+          <Icon
+            name="chevron_right"
+            size="10"
+            class="divider"
+          />
           <span class="next">{{ upgrade.targetLevel }}</span>
         </div>
         <span class="logic-type">{{ upgrade.upgradeType }}</span>
-        <span v-if="upgrade.isTowerTroop" class="tower-badge">Tower</span>
+        <span
+          v-if="upgrade.isTowerTroop"
+          class="tower-badge"
+        >Tower</span>
       </div>
 
       <!-- Line 3: Efficiency Index -->
       <div class="efficiency-slab efficiency">
-        <Icon name="psychology" size="12" class="eff-icon" />
+        <Icon
+          name="psychology"
+          size="12"
+          class="eff-icon"
+        />
         <span class="eff-val">{{ upgrade.efficiencyIndex.toFixed(2) }}</span>
         <span class="eff-label">EFFICIENCY</span>
       </div>
     </div>
 
-    <div class="cost-stack" data-bone="TrajectoryItem.cost">
-      <div v-if="upgrade.gemsUsed > 0" class="cost-item gem">
+    <div
+      class="cost-stack"
+      data-bone="TrajectoryItem.cost"
+    >
+      <div
+        v-if="upgrade.gemsUsed > 0"
+        class="cost-item gem"
+      >
         <span class="val">{{ formatNumber(upgrade.gemsUsed) }}</span>
-        <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" />
+        <img
+          :src="getCurrencyAsset('gem')"
+          class="res-icon"
+          alt="Gems"
+        >
       </div>
-      <div v-else-if="upgrade.wildCardsUsed > 0" class="cost-item wild">
+      <div
+        v-else-if="upgrade.wildCardsUsed > 0"
+        class="cost-item wild"
+      >
         <span class="val">{{ formatNumber(upgrade.wildCardsUsed) }}</span>
-        <img :src="getWildcardAsset(upgrade.rarity)" class="res-icon" alt="WildCards" />
+        <img
+          :src="getWildcardAsset(upgrade.rarity)"
+          class="res-icon"
+          alt="WildCards"
+        >
       </div>
       <div class="cost-item gold">
         <span class="val">{{ formatNumber(upgrade.goldCost) }}</span>
-        <img :src="getCurrencyAsset('gold')" class="res-icon" alt="Gold" />
+        <img
+          :src="getCurrencyAsset('gold')"
+          class="res-icon"
+          alt="Gold"
+        >
       </div>
       <div class="cost-item xp">
         <span class="val">+{{ formatNumber(upgrade.xpGained) }}</span>
-        <img :src="getCurrencyAsset('xp')" class="res-icon sm" alt="XP" />
+        <img
+          :src="getCurrencyAsset('xp')"
+          class="res-icon sm"
+          alt="XP"
+        >
       </div>
     </div>
   </div>

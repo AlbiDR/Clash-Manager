@@ -45,8 +45,19 @@ const {
     @click="handleToggle"
   >
     <div class="status-dot">
-      <svg v-if="props.type === 'loading'" class="spinner" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" />
+      <svg
+        v-if="props.type === 'loading'"
+        class="spinner"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+        />
       </svg>
       <template v-else>
         <div
@@ -63,29 +74,60 @@ const {
     <div class="pill-content-wrapper">
       <div class="pill-content">
         <!-- BASE LABEL -->
-        <span v-if="props.type === 'loading'" class="status-label technical base-label">Syncing...</span>
-        <span v-else class="status-label technical base-label" :class="{ 'is-db': isDB }">
+        <span
+          v-if="props.type === 'loading'"
+          class="status-label technical base-label"
+        >Syncing...</span>
+        <span
+          v-else
+          class="status-label technical base-label"
+          :class="{ 'is-db': isDB }"
+        >
           <template v-if="isDB">
-            <svg class="icon-bolt" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            <svg
+              class="icon-bolt"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
           </template>
           {{ displayText }}
         </span>
 
         <!-- EXPANDED CONTENT (Grid Transition) -->
-        <div class="expanded-section" :class="{ 'is-open': isExpanded && props.type !== 'loading' }">
+        <div
+          class="expanded-section"
+          :class="{ 'is-open': isExpanded && props.type !== 'loading' }"
+        >
           <div class="expanded-inner">
-            <div class="divider"></div>
+            <div class="divider" />
             
-            <div v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis" class="hub-details">
-              <span v-if="displaySource" class="source-tag technical" :class="(props.remoteInfo?.source || '').toLowerCase()">
+            <div
+              v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis"
+              class="hub-details"
+            >
+              <span
+                v-if="displaySource"
+                class="source-tag technical"
+                :class="(props.remoteInfo?.source || '').toLowerCase()"
+              >
                 {{ displaySource }}
               </span>
-              <span v-if="props.remoteInfo?.diagnosis" class="diagnosis-info technical">
+              <span
+                v-if="props.remoteInfo?.diagnosis"
+                class="diagnosis-info technical"
+              >
                 {{ props.remoteInfo.diagnosis }}
               </span>
-              <span v-else-if="props.remoteInfo?.dataAge" class="age-info technical">
+              <span
+                v-else-if="props.remoteInfo?.dataAge"
+                class="age-info technical"
+              >
                 {{ props.remoteInfo.dataAge }}
               </span>
             </div>

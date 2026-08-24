@@ -13,7 +13,7 @@
  *  - Multiple calls to useGhostBenchmarkState refer to the exact same shared reactive ref (module-level singleton).
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { useGhostBenchmarkState } from "../ghostBenchmarkState";
 import type { BenchmarkData } from "../../../core";
 

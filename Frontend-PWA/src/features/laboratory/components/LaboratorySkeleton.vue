@@ -39,101 +39,217 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
     <div class="dashboard-grid">
       <!-- 1. The Vault & Settings (Sidebar Grid) -->
       <div class="dashboard-sidebar">
-        
         <!-- Vault Skeleton -->
-        <div class="sk-panel glass-panel skeleton-anim">
+        <div class="sk-panel surface-panel skeleton-anim">
           <div class="sk-panel-header">
-            <div class="sk-icon-dot"></div>
-            <div class="sk-text-line-m" :style="{ width: vaultHeader.width }"></div>
+            <div class="sk-icon-dot" />
+            <div
+              class="sk-text-line-m"
+              :style="{ width: vaultHeader.width }"
+            />
           </div>
           <div class="sk-grid-2">
-            <div class="sk-res-col"><div class="sk-label-box"></div><div class="sk-input"></div></div>
-            <div class="sk-res-col"><div class="sk-label-box"></div><div class="sk-input"></div></div>
+            <div class="sk-res-col">
+              <div class="sk-label-box" /><div class="sk-input" />
+            </div>
+            <div class="sk-res-col">
+              <div class="sk-label-box" /><div class="sk-input" />
+            </div>
           </div>
           <div class="sk-wc-section">
-            <div class="sk-label-box" style="width: 100px;"></div>
-             <div class="sk-wc-row">
-               <div class="sk-wc-col" v-for="i in 5" :key="i">
-                 <div class="sk-box" style="width: 32px; height: 32px; border-radius: 6px;"></div>
-                 <div class="sk-input" style="height: 28px; width: 100%;"></div>
-               </div>
-             </div>
+            <div
+              class="sk-label-box"
+              style="width: 100px;"
+            />
+            <div class="sk-wc-row">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="sk-wc-col"
+              >
+                <div
+                  class="sk-box"
+                  style="width: 32px; height: 32px; border-radius: 6px;"
+                />
+                <div
+                  class="sk-input"
+                  style="height: 28px; width: 100%;"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Parameters Skeleton -->
-        <div class="sk-panel glass-panel skeleton-anim" style="animation-delay: 0.1s;">
+        <div
+          class="sk-panel surface-panel skeleton-anim"
+          style="animation-delay: 0.1s;"
+        >
           <div class="sk-panel-header">
-            <div class="sk-icon-dot"></div>
-            <div class="sk-text-line-m" :style="{ width: parameterHeader.width }"></div>
+            <div class="sk-icon-dot" />
+            <div
+              class="sk-text-line-m"
+              :style="{ width: parameterHeader.width }"
+            />
           </div>
           <div class="sk-vstack">
-            <div class="sk-label-box" :style="{ width: parameterLabel.width }"></div>
-            <div class="sk-button-m" style="height: 36px;"></div>
-            <div class="sk-input" style="height: 80px; border-radius: 8px;"></div>
+            <div
+              class="sk-label-box"
+              :style="{ width: parameterLabel.width }"
+            />
+            <div
+              class="sk-button-m"
+              style="height: 36px;"
+            />
+            <div
+              class="sk-input"
+              style="height: 80px; border-radius: 8px;"
+            />
             
-            <div class="sk-label-box" style="width: 100px; margin-top: 8px;"></div>
-            <div class="sk-input" style="height: 44px;"></div>
+            <div
+              class="sk-label-box"
+              style="width: 100px; margin-top: 8px;"
+            />
+            <div
+              class="sk-input"
+              style="height: 44px;"
+            />
 
             <div class="sk-toggle-row">
-               <div class="sk-vstack" style="gap: 4px;">
-                 <div class="sk-text-line-m" style="width: 130px;"></div>
-                 <div class="sk-label-box" style="width: 90px;"></div>
-               </div>
-               <div class="sk-pill" style="width: 44px; height: 24px;"></div>
+              <div
+                class="sk-vstack"
+                style="gap: 4px;"
+              >
+                <div
+                  class="sk-text-line-m"
+                  style="width: 130px;"
+                />
+                <div
+                  class="sk-label-box"
+                  style="width: 90px;"
+                />
+              </div>
+              <div
+                class="sk-pill"
+                style="width: 44px; height: 24px;"
+              />
             </div>
           </div>
         </div>
-
       </div>
 
       <!-- 2. Result Summary Skeleton -->
-      <div class="sk-panel glass-panel skeleton-anim" style="animation-delay: 0.2s;">
+      <div
+        class="sk-panel surface-panel skeleton-anim"
+        style="animation-delay: 0.2s;"
+      >
         <div class="sk-summary-header">
           <div class="sk-vstack">
-            <div class="sk-text-line-m" :style="{ width: summaryPlayerName.width, height: summaryPlayerName.height }"></div>
-            <div class="sk-label-box" style="width: 80px;"></div>
+            <div
+              class="sk-text-line-m"
+              :style="{ width: summaryPlayerName.width, height: summaryPlayerName.height }"
+            />
+            <div
+              class="sk-label-box"
+              style="width: 80px;"
+            />
           </div>
-          <div class="sk-pill" :style="{ width: summaryStatusBadge.width, height: summaryStatusBadge.height, borderRadius: '12px' }"></div>
+          <div
+            class="sk-pill"
+            :style="{ width: summaryStatusBadge.width, height: summaryStatusBadge.height, borderRadius: '12px' }"
+          />
         </div>
-        <div class="sk-label-box" style="width: 100px; margin-top: 16px; margin-bottom: 8px;"></div>
+        <div
+          class="sk-label-box"
+          style="width: 100px; margin-top: 16px; margin-bottom: 8px;"
+        />
         <div class="sk-progression-row">
-           <div class="sk-input" :style="{ height: summaryLevelBadge.height, width: summaryLevelBadge.width, borderRadius: '14px' }"></div>
-           <div class="sk-box" style="width: 24px; height: 24px; border-radius: 50%;"></div>
-           <div class="sk-input" :style="{ height: summaryLevelBadge.height, width: summaryLevelBadge.width, borderRadius: '14px' }"></div>
+          <div
+            class="sk-input"
+            :style="{ height: summaryLevelBadge.height, width: summaryLevelBadge.width, borderRadius: '14px' }"
+          />
+          <div
+            class="sk-box"
+            style="width: 24px; height: 24px; border-radius: 50%;"
+          />
+          <div
+            class="sk-input"
+            :style="{ height: summaryLevelBadge.height, width: summaryLevelBadge.width, borderRadius: '14px' }"
+          />
         </div>
 
-        <div class="sk-label-box" style="width: 120px; margin-top: 24px; margin-bottom: 8px;"></div>
+        <div
+          class="sk-label-box"
+          style="width: 120px; margin-top: 24px; margin-bottom: 8px;"
+        />
         <div class="sk-grid-3">
-           <div class="sk-input" style="height: 60px; border-radius: 16px;" v-for="i in 3" :key="i"></div>
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="sk-input"
+            style="height: 60px; border-radius: 16px;"
+          />
         </div>
       </div>
 
       <!-- 3. Trajectory List Skeleton -->
-      <div class="trajectory-section skeleton-anim" style="animation-delay: 0.3s;">
+      <div
+        class="trajectory-section skeleton-anim"
+        style="animation-delay: 0.3s;"
+      >
         <div class="section-title">
-          <div class="sk-icon-dot" style="width: 18px; height: 18px;"></div>
-          <div class="sk-text-line-m" :style="{ width: trajectoryTitle.width, height: trajectoryTitle.height }"></div>
+          <div
+            class="sk-icon-dot"
+            style="width: 18px; height: 18px;"
+          />
+          <div
+            class="sk-text-line-m"
+            :style="{ width: trajectoryTitle.width, height: trajectoryTitle.height }"
+          />
         </div>
         <div class="sk-trajectory-list">
-          <div class="sk-traj-item" v-for="i in 3" :key="i">
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="sk-traj-item"
+          >
             <div class="sk-traj-info">
-              <div class="sk-text-line-m" :style="{ width: trajectoryItemName.width, height: trajectoryItemName.height }"></div>
+              <div
+                class="sk-text-line-m"
+                :style="{ width: trajectoryItemName.width, height: trajectoryItemName.height }"
+              />
               <div class="sk-traj-row">
-                 <div class="sk-pill" :style="{ width: trajectoryLevelPill.width, height: trajectoryLevelPill.height, borderRadius: '6px' }"></div>
-                 <div class="sk-label-box" style="width: 60px;"></div>
+                <div
+                  class="sk-pill"
+                  :style="{ width: trajectoryLevelPill.width, height: trajectoryLevelPill.height, borderRadius: '6px' }"
+                />
+                <div
+                  class="sk-label-box"
+                  style="width: 60px;"
+                />
               </div>
-              <div class="sk-pill" style="width: 80px; height: 24px; border-radius: 6px; margin-top: 4px;"></div>
+              <div
+                class="sk-pill"
+                style="width: 80px; height: 24px; border-radius: 6px; margin-top: 4px;"
+              />
             </div>
             <div class="sk-cost-stack">
-              <div class="sk-value-box" style="width: 50px;"></div>
-              <div class="sk-value-box" style="width: 70px;"></div>
-              <div class="sk-value-box" style="width: 60px; height: 10px;"></div>
+              <div
+                class="sk-value-box"
+                style="width: 50px;"
+              />
+              <div
+                class="sk-value-box"
+                style="width: 70px;"
+              />
+              <div
+                class="sk-value-box"
+                style="width: 60px; height: 10px;"
+              />
             </div>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -162,10 +278,10 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
   }
 }
 
-.glass-panel {
+.surface-panel {
   background: var(--sys-color-surface-container);
   border-radius: var(--sys-shape-corner-l);
-  border: 1px solid rgba(128, 128, 128, 0.05);
+  border: 1px solid var(--sys-surface-glass-border);
   padding: 18px;
   display: flex;
   flex-direction: column;

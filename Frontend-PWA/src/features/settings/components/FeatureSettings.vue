@@ -86,8 +86,13 @@ function handleBlitzToggle() {
       />
 
       <!-- Blitz Speed Selector -->
-      <div v-if="modules.blitzMode" class="blitz-speed-section">
-        <div class="speed-label">Blitz Speed</div>
+      <div
+        v-if="modules.blitzMode"
+        class="blitz-speed-section"
+      >
+        <div class="speed-label">
+          Blitz Speed
+        </div>
 
         <div
           class="speed-selector"
@@ -95,14 +100,14 @@ function handleBlitzToggle() {
           aria-label="Blitz Interaction Speed"
         >
           <button
-            v-tactile
             v-for="speedValue in (['fast', 'medium', 'slow'] as const)"
             :key="speedValue"
+            v-tactile
             :class="{ active: modules.blitzSpeed === speedValue }"
-            @click="setBlitzSpeed(speedValue)"
             class="speed-btn"
             :aria-label="`Set blitz speed to ${speedValue}`"
             :aria-pressed="modules.blitzSpeed === speedValue"
+            @click="setBlitzSpeed(speedValue)"
           >
             {{ speedValue }}
           </button>

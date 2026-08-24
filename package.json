@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.46.7",
+  "version": "14.46.8",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -41,7 +41,7 @@
     "typescript": "catalog:"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src"
+    "pre-commit": "pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint"
   },
   "engines": {
     "node": ">=24.0.0",

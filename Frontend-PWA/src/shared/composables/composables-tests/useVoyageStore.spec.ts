@@ -165,15 +165,15 @@ describe("useVoyageStore", () => {
     it("should correctly compute isPending", () => {
       const store = useVoyageStore();
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "PENDING", start_at: "2026-01-02T00:00:00Z" } };
       expect(store.isPending).toBe(true);
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "PENDING", start_at: "2025-12-31T23:59:59Z" } };
       expect(store.isPending).toBe(false);
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "ACTIVE", start_at: "2026-01-02T00:00:00Z" } };
       expect(store.isPending).toBe(false);
     });
@@ -181,15 +181,15 @@ describe("useVoyageStore", () => {
     it("should correctly compute isAwaitingEnd", () => {
       const store = useVoyageStore();
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "ACTIVE", end_at: null } };
       expect(store.isAwaitingEnd).toBe(true);
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "ACTIVE", end_at: "2026-01-07T00:00:00Z" } };
       expect(store.isAwaitingEnd).toBe(false);
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "IDLE", end_at: null } };
       expect(store.isAwaitingEnd).toBe(false);
     });
@@ -230,7 +230,7 @@ describe("useVoyageStore", () => {
       vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue(null);
 
       const store = useVoyageStore();
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { id: 101, status: "PENDING" } };
 
       await store.cancelSchedule();
@@ -302,7 +302,7 @@ describe("useVoyageStore", () => {
 
       const store = useVoyageStore();
       // Seed an ACTIVE voyage so the store can retrieve the ID
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = {
         event: { id: 42, status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null, clan_tag: "#CLAN", activated_by: null, is_victory: false },
         contributions: [],
@@ -331,7 +331,7 @@ describe("useVoyageStore", () => {
       } as any);
 
       const store = useVoyageStore();
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = {
         event: { id: 42, status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null, clan_tag: "#CLAN", activated_by: null, is_victory: false },
         contributions: [],

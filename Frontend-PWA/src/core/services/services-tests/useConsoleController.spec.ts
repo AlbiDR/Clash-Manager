@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { useConsoleController } from "@core";
-import { useClashDataStore } from "../useClashDataStore";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { ref, effectScope } from "vue";
@@ -473,7 +472,7 @@ describe("useConsoleController", () => {
       // Pass only the data, omit other reactive flags to trigger fallback
       const { isRefreshing, syncError, status } = useConsoleController({
           data: ref([{ id: "1", n: "Test" }]),
-          sortStrategies: { score: (a: any, b: any) => 0 },
+          sortStrategies: { score: (_a: any, _b: any) => 0 },
           defaultSort: "score",
           filterFn: (candidateItem: any) => [candidateItem.n],
       } as any);

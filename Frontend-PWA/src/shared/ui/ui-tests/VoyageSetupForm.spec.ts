@@ -132,7 +132,7 @@ describe("VoyageSetupForm.vue", () => {
 
   it("hides Starts In section when voyage is active", async () => {
     const store = useVoyageStore();
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000, end_at: new Date(Date.now() + 86400000).toISOString() }
     };
@@ -146,7 +146,7 @@ describe("VoyageSetupForm.vue", () => {
 
   it("shows Set End Time button when voyage is active with no end_at", async () => {
     const store = useVoyageStore();
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000, end_at: null }
     };
@@ -159,7 +159,7 @@ describe("VoyageSetupForm.vue", () => {
 
   it("calls store.setVoyageEnd when Set End Time button is clicked", async () => {
     const store = useVoyageStore();
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: { status: "ACTIVE", target_crowns: 1000, end_at: null }
     };
@@ -191,7 +191,7 @@ describe("VoyageSetupForm.vue", () => {
     const store = useVoyageStore();
 
     // Simulate store update
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: {
         status: "ACTIVE",

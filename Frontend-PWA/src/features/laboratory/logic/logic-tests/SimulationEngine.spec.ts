@@ -149,8 +149,8 @@ describe('SimulationEngine', () => {
     });
 
     it('should prioritize better efficiency when using Resource Efficiency strategy', () => {
-       const commonCard: Card = { name: 'Common', rarity: 'Common', level: 13, count: 10000, isTowerTroop: false }; // XP: 1600, Gold: 40k. Eff: 1600/40000 = 0.04
-       const rareCard: Card = { name: 'Rare', rarity: 'Rare', level: 13, count: 10000, isTowerTroop: false }; // XP: 1600, Gold: 40k. Eff: 1600/40000 = 0.04
+       const _commonCard: Card = { name: 'Common', rarity: 'Common', level: 13, count: 10000, isTowerTroop: false }; // XP: 1600, Gold: 40k. Eff: 1600/40000 = 0.04
+       const _rareCard: Card = { name: 'Rare', rarity: 'Rare', level: 13, count: 10000, isTowerTroop: false }; // XP: 1600, Gold: 40k. Eff: 1600/40000 = 0.04
        // At level 14->15:
        // Common: XP: 50000, Gold: 90k. Eff: 50000/90000 = 0.555
        // Rare: XP: 50000, Gold: 90k. Eff: 50000/90000 = 0.555

@@ -2,18 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect } from "vitest";
 import { calculateProgressionPath } from "../SimulationEngine";
-import type { SimulationState, OptimizationSettings, PlayerData, PlayerProfile, Inventory, Card, UpgradeAction } from "../Types";
-
-// Mock data to match a typical Level 76 player
-const mockProfile: PlayerProfile = {
-  name: "Debug Player",
-  tag: "#DEBUG",
-  kingLevel: 76,
-  xpIntoLevel: 0,
-  arena: "Legendary Arena",
-  clanName: "Debug Clan",
-  legacyTrophies: 0
-};
+import type { SimulationState, OptimizationSettings, Inventory, Card } from "../Types";
 
 const mockInventory: Inventory = {
   gold: 100000 as any,

@@ -70,7 +70,10 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for discovery time and identification. -->
     <template #identity-meta>
-      <LongevityBadge data-bone="RecruitCard.meta" :time="timeAgo" />
+      <LongevityBadge
+        data-bone="RecruitCard.meta"
+        :time="timeAgo"
+      />
       <TagBadge
         :id="props.recruit.id"
         class="score-tint"
@@ -80,18 +83,30 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
 
     <!-- [SLOT] IDENTITY NAME: Primary player identification and trophy count. -->
     <template #identity-name>
-      <span class="player-name" data-bone="RecruitCard.name">{{ props.recruit.n }}</span>
-      <TrophyBadge :value="props.recruit.t" context="hh" />
+      <span
+        class="player-name"
+        data-bone="RecruitCard.name"
+      >{{ props.recruit.n }}</span>
+      <TrophyBadge
+        :value="props.recruit.t"
+        context="hh"
+      />
     </template>
 
     <!-- [SLOT] SCORE SECTION: PoS (Potential Score) for recruitment prioritization. -->
     <template #score-section>
-      <ScoreBadge :score="props.recruit.potentialScore" context="hh" />
+      <ScoreBadge
+        :score="props.recruit.potentialScore"
+        context="hh"
+      />
     </template>
 
     <!-- [SLOT] EXPANDED CONTENT: Detailed recruitment metrics and actions. -->
     <template #expanded-content>
-      <StatsGrid :columns="2" :loading="props.appIsRefreshing">
+      <StatsGrid
+        :columns="2"
+        :loading="props.appIsRefreshing"
+      >
         <StatisticItem
           label="Donations"
           :value="Math.round(props.recruit.d.don || 0)"
@@ -144,8 +159,8 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
       </StatsGrid>
 
       <CardActions
-        class="card-actions-margin"
         :id="props.recruit.id"
+        class="card-actions-margin"
         :loading="props.appIsRefreshing"
         compact
       />

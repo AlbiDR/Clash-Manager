@@ -112,14 +112,24 @@ const memberAccessibilityLabel = computed(() => {
   >
     <!-- [SLOT] IDENTITY META: Semantic badges for clan tenure and hierarchy role. -->
     <template #identity-meta>
-      <TenureBadge data-bone="MemberCard.meta" :days="props.member.d.days" context="lb" />
+      <TenureBadge
+        data-bone="MemberCard.meta"
+        :days="props.member.d.days"
+        context="lb"
+      />
       <RoleBadge :role="props.member.d.role" />
     </template>
 
     <!-- [SLOT] IDENTITY NAME: Primary player identification and current trophy count. -->
     <template #identity-name>
-      <span class="player-name" data-bone="MemberCard.name">{{ props.member.n }}</span>
-      <TrophyBadge :value="props.member.t" context="lb" />
+      <span
+        class="player-name"
+        data-bone="MemberCard.name"
+      >{{ props.member.n }}</span>
+      <TrophyBadge
+        :value="props.member.t"
+        context="lb"
+      />
     </template>
 
     <!-- [SLOT] SCORE SECTION: PeS (Performance Score) and momentum tracking. -->
@@ -207,12 +217,20 @@ const memberAccessibilityLabel = computed(() => {
         class="chart-toggle-margin"
       />
 
-      <WarHistoryChart v-if="activeChartMode === 'war'" :history="props.member.d.hist" :loading="props.appIsRefreshing" />
-      <VoyageHistoryChart v-else :history="props.member.d.v_hist" :loading="props.appIsRefreshing" />
+      <WarHistoryChart
+        v-if="activeChartMode === 'war'"
+        :history="props.member.d.hist"
+        :loading="props.appIsRefreshing"
+      />
+      <VoyageHistoryChart
+        v-else
+        :history="props.member.d.v_hist"
+        :loading="props.appIsRefreshing"
+      />
 
       <CardActions
-        class="card-actions-margin"
         :id="props.member.id"
+        class="card-actions-margin"
         :loading="props.appIsRefreshing"
       />
     </template>

@@ -65,7 +65,7 @@ export function useLaboratorySimulation() {
       if (simulationId !== currentSimulationId || !currentSimulation) return;
 
       let latestSimulationState: SimulationState | null = null;
-      let batchStartTime = performance.now();
+      const batchStartTime = performance.now();
       const BATCH_TIME_MS = 10;
 
       while (performance.now() - batchStartTime < BATCH_TIME_MS) {

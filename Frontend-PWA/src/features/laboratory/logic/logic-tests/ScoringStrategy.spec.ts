@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect } from 'vitest';
 import { ProjectionStrategy, InventoryStrategy } from '../ScoringStrategy';
-import { GEM_TO_GOLD_FACTOR, asGold, asGems, asXP } from '@core/utils/economy';
+import { asGold, asGems, asXP } from '@core/utils/economy';
 import type { UpgradeCandidate, OptimizationSettings } from '../Types';
 
 describe('ScoringStrategy', () => {

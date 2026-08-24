@@ -57,15 +57,18 @@ defineEmits<{
 
 <template>
   <button
+    v-tactile
     type="button"
     class="link-row"
     :class="{ disabled: disabled }"
-    v-tactile
     @click="!disabled && $emit('click')"
   >
     <div class="link-info">
       <span class="link-label">{{ label }}</span>
-      <span v-if="description" class="link-desc">{{ description }}</span>
+      <span
+        v-if="description"
+        class="link-desc"
+      >{{ description }}</span>
     </div>
     <img
       v-if="logo"
@@ -75,8 +78,13 @@ defineEmits<{
       width="18"
       height="18"
       loading="lazy"
+    >
+    <Icon
+      v-else-if="icon"
+      :name="icon"
+      size="18"
+      class="link-icon"
     />
-    <Icon v-else-if="icon" :name="icon" size="18" class="link-icon" />
   </button>
 </template>
 

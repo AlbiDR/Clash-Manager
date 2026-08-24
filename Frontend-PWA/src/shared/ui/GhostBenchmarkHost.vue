@@ -167,7 +167,7 @@ onUnmounted(() => {
           @touchmove="onSheetTouchMove"
           @touchend="onSheetTouchEnd"
         >
-          <div class="bc-sheet-handle"></div>
+          <div class="bc-sheet-handle" />
           <BenchmarkContent :data="active.content" />
         </div>
       </div>

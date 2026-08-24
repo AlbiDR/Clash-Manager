@@ -4,8 +4,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useClashDataStore } from "../useClashDataStore";
-import { useConnectionStatus } from "../useConnectionStatus";
-import { useWakeLock } from "@shared/composables/useWakeLock";
 import { fetchRemote } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 

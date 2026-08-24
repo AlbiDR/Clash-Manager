@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { useConsoleSelection } from '../useConsoleSelection';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 
 describe('useConsoleSelection', () => {
   const mockItems = [

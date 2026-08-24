@@ -106,7 +106,7 @@ export class InventoryStrategy implements ScoringStrategy {
     const effectiveCost = Number(goldCost) + (Number(convertGemsToGold(gemsUsed)) * 50);
 
     // Strict ROI: Pure cost-efficiency without milestone bias.
-    let score = effectiveCost / (Number(xpGained) || 1);
+    const score = effectiveCost / (Number(xpGained) || 1);
 
     return score;
   }

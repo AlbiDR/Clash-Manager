@@ -6,7 +6,7 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import EventManagement from "../EventManagement.vue";
 import { useVoyageStore } from "../../composables/useVoyageStore";
-import { nextTick, defineComponent, h } from "vue";
+import { nextTick } from "vue";
 
 // Mock SettingsCard and Icon to avoid importing complex UI components
 vi.mock("../SettingsCard.vue", () => ({
@@ -82,7 +82,7 @@ describe("EventManagement.vue", () => {
 
   it("displays active summary when store.isActive is true", async () => {
     const store = useVoyageStore();
-    // @ts-ignore - injecting mock state
+    // @ts-expect-error - injecting mock state
     store.summary = {
       event: {
         status: "ACTIVE",
@@ -110,7 +110,7 @@ describe("EventManagement.vue", () => {
 
   it("shows Goal Achieved when crowns target is met", async () => {
     const store = useVoyageStore();
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: {
         status: "ACTIVE",
@@ -130,7 +130,7 @@ describe("EventManagement.vue", () => {
   it("updates countdown timer every second", async () => {
     const store = useVoyageStore();
     const endAt = new Date("2026-01-01T12:00:10Z"); // 10 seconds from now
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: {
         status: "ACTIVE",
@@ -169,7 +169,7 @@ describe("EventManagement.vue", () => {
     const store = useVoyageStore();
     const refreshSpy = vi.spyOn(store, "refresh");
     const endAt = new Date("2026-01-01T12:00:01Z");
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: {
         status: "ACTIVE",
@@ -195,7 +195,7 @@ describe("EventManagement.vue", () => {
 
   it("handles empty endsAt gracefully", async () => {
     const store = useVoyageStore();
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary = {
       event: {
         status: "ACTIVE",

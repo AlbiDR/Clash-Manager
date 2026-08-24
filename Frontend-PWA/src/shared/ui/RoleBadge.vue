@@ -19,7 +19,10 @@ const roleInfo = computed(() => formatRole(role));
 </script>
 
 <template>
-  <BaseBadge class="role" :class="roleInfo.class">
+  <BaseBadge
+    class="role"
+    :class="roleInfo.class"
+  >
     {{ roleInfo.label }}
   </BaseBadge>
 </template>

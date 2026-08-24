@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ref, reactive, defineComponent, h } from "vue";
+import { ref, defineComponent, h } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
+import { mount } from "@vue/test-utils";
 
 const mocks = vi.hoisted(() => {
   const { ref, reactive } = require("vue");
@@ -45,17 +46,6 @@ const mocks = vi.hoisted(() => {
 
 // Deep imports for services per Section 9
 import { idb } from "../../../../core/services/StorageService";
-import { useTheme } from "../../../../shared/composables/useTheme";
-import { useAppSettings } from "../../../../core/services/useAppSettings";
-import { useBlueprintMode } from "../../../../core/services/useBlueprintMode";
-import { useClashDataStore } from "../../../../core/services/useClashDataStore";
-import { useShowcaseMode } from "../../../../core/services/useShowcaseMode";
-import { useSyntheticMode } from "../../../../core/services/useSyntheticMode";
-import { useToast } from "../../../../core/services/useToast";
-import { useConnectionStatus } from "../../../../core/services/useConnectionStatus";
-import { useHaptics } from "@shared/composables/useHaptics";
-import { useWakeLock } from "@shared/composables/useWakeLock";
-import { useSystemInfo } from "../../../../core/services/useSystemInfo";
 import { useSettings } from "../useSettings";
 
 vi.mock("../../../../core/services/useSystemInfo", () => {
@@ -201,7 +191,7 @@ function withSetup<T>(hook: () => T) {
       return () => h("div");
     },
   });
-  const wrapper = require("@vue/test-utils").mount(setup);
+  const wrapper = mount(setup);
   return { result: result!, wrapper };
 }
 
@@ -227,7 +217,7 @@ describe("useSettings", () => {
       keys: vi.fn().mockResolvedValue([]),
       delete: vi.fn().mockResolvedValue(true),
     });
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     global.__APP_VERSION__ = "1.2.3";
 
     // Reset mocks
@@ -314,7 +304,7 @@ describe("useSettings", () => {
     });
 
     it("returns 'loading' for unknown status", () => {
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       mocks.mockStatus.value = "something-else";
       const { result } = withSetup(useSettings);
       expect(result.apiStatusObject.value).toEqual({ type: "loading", text: "Connecting..." });
@@ -345,7 +335,7 @@ describe("useSettings", () => {
     it("updates and reloads if a waiting worker exists", async () => {
       vi.useFakeTimers();
       const originalProd = import.meta.env.PROD;
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       import.meta.env.PROD = true;
 
       const mockReg = { waiting: {} };
@@ -362,7 +352,7 @@ describe("useSettings", () => {
       expect(mocks.mockToast.success).toHaveBeenCalledWith("Update ready! Reloading...");
       expect(mocks.mockUpdateServiceWorker).toHaveBeenCalledWith(true);
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       import.meta.env.PROD = originalProd;
       vi.useRealTimers();
     });

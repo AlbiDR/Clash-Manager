@@ -3,7 +3,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createClient } from "@supabase/supabase-js";
-import { idb } from "../../services/StorageService";
 import * as SupabaseClient from "../SupabaseClient";
 
 // Mock Supabase JS Client

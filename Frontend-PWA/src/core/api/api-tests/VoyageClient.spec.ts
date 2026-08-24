@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createClient } from "@supabase/supabase-js";
 import * as VoyageClient from "../VoyageClient";
 import { NetworkError } from "../SupabaseClient";
 

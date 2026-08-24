@@ -437,17 +437,17 @@ describe("apkResolver", () => {
     });
 
     it("should call fetch with timeout abort controller and handle timeout abortion", async () => {
-      let aborted = false;
+      let _aborted = false;
       vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string, init?: RequestInit) => {
         if (init?.signal) {
           init.signal.addEventListener("abort", () => {
-            aborted = true;
+            _aborted = true;
           });
         }
         return new Promise(() => {}); // never resolves
       }));
 
-      const promise = resolveLatestApkRelease();
+      const _promise = resolveLatestApkRelease();
 
       // Since it hangs, it would time out inside fetchFresh.
       // Let's assert that an abort signal was provided on fetch call

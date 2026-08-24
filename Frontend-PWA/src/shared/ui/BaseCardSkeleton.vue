@@ -27,21 +27,27 @@ const metaWidth = computed(() => `${getBone("MemberCard", "meta")?.width ?? 80}p
   <div class="sk-card skeleton-anim">
     <div class="sk-header-group">
       <div class="sk-meta-stack">
-        <div class="sk-badge-s"></div>
-        <div class="sk-badge-s"></div>
+        <div class="sk-badge-s" />
+        <div class="sk-badge-s" />
       </div>
 
       <div class="sk-info">
-        <div class="sk-player-name" :style="{ width: nameWidth }"></div>
+        <div
+          class="sk-player-name"
+          :style="{ width: nameWidth }"
+        />
         <div class="sk-trophy-meta">
-          <div class="sk-icon-dot"></div>
-          <div class="sk-text-line-s" :style="{ width: metaWidth }"></div>
+          <div class="sk-icon-dot" />
+          <div
+            class="sk-text-line-s"
+            :style="{ width: metaWidth }"
+          />
         </div>
       </div>
     </div>
     <div class="sk-header-actions">
-      <div class="sk-box"></div>
-      <div class="sk-icon-btn-s"></div>
+      <div class="sk-box" />
+      <div class="sk-icon-btn-s" />
     </div>
   </div>
 </template>

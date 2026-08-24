@@ -1,7 +1,7 @@
 {
   "name": "clash-manager-pwa",
   "private": true,
-  "version": "14.46.7",
+  "version": "14.46.8",
   "license": "GPL-3.0-only",
   "description": "A modern, material design PWA for managing Clash Royale clans.",
   "author": "AlbiDR",
@@ -20,7 +20,8 @@
     "test": "vitest run --pool=threads",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "type-check": "vue-tsc --build --force"
+    "type-check": "vue-tsc --build --force",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@formkit/auto-animate": "catalog:",
@@ -41,8 +42,12 @@
     "@vite-pwa/assets-generator": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "@vue/eslint-config-typescript": "catalog:",
     "@vue/test-utils": "catalog:",
     "@vue/tsconfig": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-vue": "catalog:",
+    "globals": "catalog:",
     "jsdom": "catalog:",
     "playwright": "catalog:",
     "rollup-plugin-visualizer": "catalog:",

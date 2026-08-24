@@ -39,9 +39,9 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 <template>
   <div
     v-if="trendInfo"
+    v-tooltip="benchmarkTooltipContent"
     class="momentum-pill"
     :class="trendInfo.dir"
-    v-tooltip="benchmarkTooltipContent"
   >
     <Icon
       :name="trendInfo.dir === 'up' ? 'trend_up' : 'trend_down'"

@@ -33,7 +33,7 @@ import {
 } from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 
-const props = defineProps<{
+defineProps<{
   /**
    * Whether the links card should be initially expanded in the settings view.
    *

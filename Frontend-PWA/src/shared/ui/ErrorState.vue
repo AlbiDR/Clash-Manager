@@ -9,7 +9,7 @@ import { ref } from "vue";
 import Icon from "./Icon.vue";
 import { vTactile } from "../directives/vTactile";
 
-const props = defineProps<{
+defineProps<{
   message: string;
 }>();
 
@@ -21,21 +21,47 @@ const isRetryInteractionActive = ref(false);
 </script>
 
 <template>
-  <div class="error-state" @mousedown="isRetryInteractionActive = true" @mouseup="isRetryInteractionActive = false">
+  <div
+    class="error-state"
+    @mousedown="isRetryInteractionActive = true"
+    @mouseup="isRetryInteractionActive = false"
+  >
     <div class="error-icon-box">
       <!-- Custom Crafted Warning SVG -->
-      <Icon name="warning" size="48" class="svg-warning" />
-      <svg width="0" height="0" style="position: absolute;">
+      <Icon
+        name="warning"
+        size="48"
+        class="svg-warning"
+      />
+      <svg
+        width="0"
+        height="0"
+        style="position: absolute;"
+      >
         <defs>
-          <linearGradient id="warning-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color: var(--sys-color-error); stop-opacity: 1" />
-            <stop offset="100%" style="stop-color: #ff8e8e; stop-opacity: 1" />
+          <linearGradient
+            id="warning-grad"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+          >
+            <stop
+              offset="0%"
+              style="stop-color: var(--sys-color-error); stop-opacity: 1"
+            />
+            <stop
+              offset="100%"
+              style="stop-color: #ff8e8e; stop-opacity: 1"
+            />
           </linearGradient>
         </defs>
       </svg>
     </div>
     
-    <p class="error-message">{{ message }}</p>
+    <p class="error-message">
+      {{ message }}
+    </p>
     
     <button 
       v-tactile
@@ -43,7 +69,11 @@ const isRetryInteractionActive = ref(false);
       :class="{ active: isRetryInteractionActive }"
       @click="$emit('retry')"
     >
-      <Icon name="refresh" size="18" class="svg-refresh" />
+      <Icon
+        name="refresh"
+        size="18"
+        class="svg-refresh"
+      />
       <span>Re-Synchronize</span>
     </button>
   </div>

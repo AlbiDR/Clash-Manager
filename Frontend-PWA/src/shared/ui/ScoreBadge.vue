@@ -31,8 +31,8 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 <template>
   <div class="score-badge-wrapper">
     <span
-      class="stat-score"
       v-tooltip="benchmarkTooltipContent"
+      class="stat-score"
     >
       {{ Math.round(props.score || 0) }}
     </span>

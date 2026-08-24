@@ -77,16 +77,28 @@ const levelOptions = computed(() => {
 </script>
 
 <template>
-  <div class="parameter-card glass-panel" data-bone="ParameterCard.panel">
-    <h3 class="panel-header" data-bone="ParameterCard.header">
-      <Icon name="gear" size="16" />
+  <div
+    class="parameter-card surface-panel"
+    data-bone="ParameterCard.panel"
+  >
+    <h3
+      class="panel-header"
+      data-bone="ParameterCard.header"
+    >
+      <Icon
+        name="gear"
+        size="16"
+      />
       <span>Parameters</span>
     </h3>
 
     <div class="parameter-grid">
       <!-- Strategy Selector -->
       <div class="parameter-item">
-        <label class="parameter-label" data-bone="ParameterCard.label">Optimization Strategy</label>
+        <label
+          class="parameter-label"
+          data-bone="ParameterCard.label"
+        >Optimization Strategy</label>
         <BaseSegmentedControl
           :model-value="settings.strategy"
           :options="[
@@ -108,7 +120,10 @@ const levelOptions = computed(() => {
       </div>
 
       <!-- Target Level Selector -->
-      <div class="parameter-item" v-if="settings.strategy === 'Level Projection'">
+      <div
+        v-if="settings.strategy === 'Level Projection'"
+        class="parameter-item"
+      >
         <label class="parameter-label">Target King Level</label>
         <BaseSelect
           :model-value="settings.targetLevel || KING_LEVEL_MAX"
@@ -116,8 +131,14 @@ const levelOptions = computed(() => {
           @update:model-value="(levelValue) => emit('update', { targetLevel: levelValue })"
         />
         
-        <div v-if="operation && settings.targetLevel && operation.projectedKingLevel < settings.targetLevel" class="limit-warning">
-          <Icon name="warning" size="12" />
+        <div
+          v-if="operation && settings.targetLevel && operation.projectedKingLevel < settings.targetLevel"
+          class="limit-warning"
+        >
+          <Icon
+            name="warning"
+            size="12"
+          />
           <span>Cannot reach Level {{ settings.targetLevel }}. Roster maxes out at {{ operation.projectedKingLevel }}.</span>
         </div>
       </div>

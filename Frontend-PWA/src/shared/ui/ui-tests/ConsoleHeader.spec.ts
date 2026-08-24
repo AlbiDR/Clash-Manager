@@ -39,7 +39,7 @@ describe("ConsoleHeader", () => {
 
   it("opens the dashboard URL when the title is clicked", async () => {
     const dashboardUrl = "https://supabase.com/dashboard/project/test";
-    // @ts-ignore - Mocking window.open in JSDOM
+    // @ts-expect-error - Mocking window.open in JSDOM
     const windowSpy = vi.spyOn(window, "open").mockImplementation(() => null);
 
     const wrapper = mount(ConsoleHeader, {

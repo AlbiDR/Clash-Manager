@@ -26,10 +26,13 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 
 <template>
   <div
-    class="trophy-meta hit-target"
     v-tooltip="benchmarkTooltipContent"
+    class="trophy-meta hit-target"
   >
-    <Icon name="trophy" size="12" />
+    <Icon
+      name="trophy"
+      size="12"
+    />
     <span class="trophy-val">{{ formatNumber(props.value) }}</span>
   </div>
 </template>

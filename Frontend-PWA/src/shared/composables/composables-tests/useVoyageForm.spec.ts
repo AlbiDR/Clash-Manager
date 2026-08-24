@@ -118,7 +118,7 @@ describe("useVoyageForm", () => {
       const { endsIn, isFormValid, validationHint } = useVoyageForm();
       const store = useVoyageStore();
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "ACTIVE" } };
 
       endsIn.value = { days: 0, hours: 0, minutes: 0 };
@@ -131,10 +131,10 @@ describe("useVoyageForm", () => {
     });
 
     it("validates for AWAITING_END correctly", () => {
-      const { endsIn, isFormValid, validationHint, isAwaitingEndSet } = useVoyageForm();
+      const { endsIn, isFormValid, validationHint: _validationHint, isAwaitingEndSet } = useVoyageForm();
       const store = useVoyageStore();
 
-      // @ts-ignore
+      // @ts-expect-error -- test mock/state does not satisfy the full type
       store.summary = { event: { status: "ACTIVE", end_at: null } };
       expect(isAwaitingEndSet.value).toBe(true);
 

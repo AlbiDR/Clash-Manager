@@ -71,7 +71,10 @@ const {
     <div class="sel-group management">
       <!-- Count Bubble (Active Only) -->
       <Transition name="status-pop">
-        <div v-if="isActive" class="count-pill">
+        <div
+          v-if="isActive"
+          class="count-pill"
+        >
           {{ props.count }}/{{ props.totalCount }}
         </div>
       </Transition>
@@ -90,16 +93,28 @@ const {
             : emit('select-score', filterValue, filterMode)
         "
       >
-        <Transition name="text-morph" mode="out-in">
-          <span v-if="!isActive" key="select">Select</span>
-          <span v-else key="done">Done</span>
+        <Transition
+          name="text-morph"
+          mode="out-in"
+        >
+          <span
+            v-if="!isActive"
+            key="select"
+          >Select</span>
+          <span
+            v-else
+            key="done"
+          >Done</span>
         </Transition>
       </button>
     </div>
 
     <!-- Skeleton Overlays -->
-    <div v-if="props.loading" class="loading-overlay">
-      <div class="sk-line skeleton-anim"></div>
+    <div
+      v-if="props.loading"
+      class="loading-overlay"
+    >
+      <div class="sk-line skeleton-anim" />
     </div>
   </div>
 </template>

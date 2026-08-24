@@ -20,8 +20,6 @@ import {
   resetPwaInstallPromptForTests,
   usePwaManager,
 } from "../usePwaManager";
-import { useHaptics } from "@shared/composables/useHaptics";
-import { useToast } from "../useToast";
 import { idb } from "../StorageService";
 
 const mockHaptics = {

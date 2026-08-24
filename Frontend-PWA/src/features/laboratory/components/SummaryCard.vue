@@ -33,16 +33,32 @@ const engineStatus = computed(() => {
 </script>
 
 <template>
-  <div class="summary-card glass-panel" data-bone="SummaryCard.panel" style="overflow: hidden;">
+  <div
+    class="summary-card surface-panel"
+    data-bone="SummaryCard.panel"
+    style="overflow: hidden;"
+  >
     <div class="summary-header">
       <div class="player-info">
-        <h2 class="player-name" data-bone="SummaryCard.playerName">{{ profile.name }}</h2>
+        <h2
+          class="player-name"
+          data-bone="SummaryCard.playerName"
+        >
+          {{ profile.name }}
+        </h2>
         <span class="player-tag">{{ normalizeTag(profile.tag) }}</span>
       </div>
       <div class="header-badges">
-        <div class="projection-badge status" data-bone="SummaryCard.statusBadge" :class="engineStatus.class">
+        <div
+          class="projection-badge status"
+          data-bone="SummaryCard.statusBadge"
+          :class="engineStatus.class"
+        >
           <span class="label">Status</span>
-          <span class="value"><Icon :name="engineStatus.icon" size="12" /> {{ engineStatus.text }}</span>
+          <span class="value"><Icon
+            :name="engineStatus.icon"
+            size="12"
+          /> {{ engineStatus.text }}</span>
         </div>
         <div class="projection-badge">
           <span class="label">Trajectory</span>
@@ -55,16 +71,30 @@ const engineStatus = computed(() => {
     <div class="progression-row">
       <label class="section-label">Target Progress</label>
       <div class="king-level-display">
-        <div class="level-badge current" data-bone="SummaryCard.levelBadge">
+        <div
+          class="level-badge current"
+          data-bone="SummaryCard.levelBadge"
+        >
           <span class="num">{{ profile.kingLevel }}</span>
-          <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" />
+          <img
+            :src="getTowerLevelAsset()"
+            class="level-icon"
+            alt="Tower"
+          >
         </div>
         <div class="progression-divider">
-          <Icon name="chevron_right" size="18" />
+          <Icon
+            name="chevron_right"
+            size="18"
+          />
         </div>
         <div class="level-badge target">
           <span class="num">{{ result.projectedKingLevel }}</span>
-          <img :src="getTowerLevelAsset()" class="level-icon" alt="Tower" />
+          <img
+            :src="getTowerLevelAsset()"
+            class="level-icon"
+            alt="Tower"
+          >
         </div>
       </div>
     </div>
@@ -72,9 +102,16 @@ const engineStatus = computed(() => {
     <!-- 2. Resources Grid (Unified & Symmetrical) -->
     <div class="metrics-section">
       <label class="section-label">Required for Projection</label>
-      <div class="resources-grid" :class="{ 'triple': result.totalGemsSpent > 0 }">
+      <div
+        class="resources-grid"
+        :class="{ 'triple': result.totalGemsSpent > 0 }"
+      >
         <div class="res-slab xp">
-          <img :src="getCurrencyAsset('xp')" class="res-icon" alt="XP" />
+          <img
+            :src="getCurrencyAsset('xp')"
+            class="res-icon"
+            alt="XP"
+          >
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalXpGained) }}</span>
             <span class="label">Experience</span>
@@ -82,15 +119,26 @@ const engineStatus = computed(() => {
         </div>
         
         <div class="res-slab gold">
-          <img :src="getCurrencyAsset('gold')" class="res-icon" alt="Gold" />
+          <img
+            :src="getCurrencyAsset('gold')"
+            class="res-icon"
+            alt="Gold"
+          >
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGoldSpent) }}</span>
             <span class="label">Gold</span>
           </div>
         </div>
 
-        <div v-if="result.totalGemsSpent > 0" class="res-slab gems">
-          <img :src="getCurrencyAsset('gem')" class="res-icon" alt="Gems" />
+        <div
+          v-if="result.totalGemsSpent > 0"
+          class="res-slab gems"
+        >
+          <img
+            :src="getCurrencyAsset('gem')"
+            class="res-icon"
+            alt="Gems"
+          >
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGemsSpent) }}</span>
             <span class="label">Gems</span>

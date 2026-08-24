@@ -54,6 +54,11 @@ jobs:
         run: |
           npx depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src
 
+      - name: Lint (ESLint)
+        run: |
+          cd Frontend-PWA
+          pnpm run lint
+
       - name: Dead Code Scan (knip)
         continue-on-error: true
         run: |

@@ -98,7 +98,10 @@ watch(
   <div class="setup-form">
     <!-- Crown Target -->
     <div class="field-group">
-      <label class="field-label" for="voyage-target">Crown Target</label>
+      <label
+        class="field-label"
+        for="voyage-target"
+      >Crown Target</label>
       <div class="input-row">
         <input
           id="voyage-target"
@@ -108,10 +111,13 @@ watch(
           :max="VOYAGE_MAX_TARGET"
           class="glass-input target-input"
           :placeholder="String(VOYAGE_DEFAULT_TARGET)"
-          @input="onTargetInput"
           :disabled="store.isPending"
-        />
-        <span class="input-suffix"><Icon name="crown" size="14" /></span>
+          @input="onTargetInput"
+        >
+        <span class="input-suffix"><Icon
+          name="crown"
+          size="14"
+        /></span>
       </div>
     </div>
 
@@ -131,7 +137,10 @@ watch(
 
     <!-- Validation Hint -->
     <Transition name="hint-fade">
-      <p v-if="validationHint" class="validation-hint">
+      <p
+        v-if="validationHint"
+        class="validation-hint"
+      >
         {{ validationHint }}
       </p>
     </Transition>
@@ -143,8 +152,8 @@ watch(
       v-tactile
       class="activate-btn"
       :class="{ disabled: !isFormValid, loading: store.loading }"
-      @click="handleSetEnd"
       :disabled="store.loading"
+      @click="handleSetEnd"
     >
       <div class="btn-glow" />
       <span v-if="store.loading">Processing...</span>
@@ -158,8 +167,8 @@ watch(
       v-tactile
       class="activate-btn"
       :class="{ disabled: !isFormValid, loading: store.loading }"
-      @click="handleActivate"
       :disabled="store.isPending || store.loading"
+      @click="handleActivate"
     >
       <div class="btn-glow" />
       <span v-if="store.loading">Processing...</span>

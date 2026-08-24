@@ -93,17 +93,40 @@ onUnmounted(clearTimer);
     @click="handleMainClick"
   >
     <!-- Visual Indicator for Undo (Progress circle or icon) -->
-    <div v-if="type === 'undo'" class="icon-side undo-icon">
-      <Icon name="undo" size="18" />
+    <div
+      v-if="type === 'undo'"
+      class="icon-side undo-icon"
+    >
+      <Icon
+        name="undo"
+        size="18"
+      />
     </div>
 
-    <div v-else class="icon-side">
-      <Icon v-if="type === 'success'" name="check" size="20" />
-      <Icon v-else-if="type === 'error'" name="warning" size="20" />
-      <Icon v-else name="info" size="20" />
+    <div
+      v-else
+      class="icon-side"
+    >
+      <Icon
+        v-if="type === 'success'"
+        name="check"
+        size="20"
+      />
+      <Icon
+        v-else-if="type === 'error'"
+        name="warning"
+        size="20"
+      />
+      <Icon
+        v-else
+        name="info"
+        size="20"
+      />
     </div>
 
-    <div class="message">{{ message }}</div>
+    <div class="message">
+      {{ message }}
+    </div>
 
     <!-- Copy Button for Error and Info notifications -->
     <button 
@@ -112,7 +135,10 @@ onUnmounted(clearTimer);
       title="Copy message"
       @click.stop="copyToClipboard"
     >
-      <Icon :name="showCopiedTick ? 'check' : 'copy'" size="16" />
+      <Icon
+        :name="showCopiedTick ? 'check' : 'copy'"
+        size="16"
+      />
     </button>
 
     <button
@@ -124,8 +150,14 @@ onUnmounted(clearTimer);
       {{ actionLabel }}
     </button>
 
-    <button class="close-btn" @click.stop="$emit('dismiss', id)">
-      <Icon name="close" size="16" />
+    <button
+      class="close-btn"
+      @click.stop="$emit('dismiss', id)"
+    >
+      <Icon
+        name="close"
+        size="16"
+      />
     </button>
   </div>
 </template>

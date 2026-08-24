@@ -42,29 +42,43 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
     body-class="no-padding"
   >
     <div class="rows-container">
-      <div v-for="target in targets" :key="target.key" class="refresh-row">
+      <div
+        v-for="target in targets"
+        :key="target.key"
+        class="refresh-row"
+      >
         <div class="row-info">
           <!-- [DECISION LOG] SKELETON REHYDRATION: Pre-render layout line grids
                to mimic real text width and maintain Visual Hydration Parity. -->
           <template v-if="isRefreshing">
-            <div class="sk-text-line-m" style="width: 100px"></div>
-            <div class="sk-text-line-s" style="width: 150px"></div>
+            <div
+              class="sk-text-line-m"
+              style="width: 100px"
+            />
+            <div
+              class="sk-text-line-s"
+              style="width: 150px"
+            />
           </template>
           <template v-else>
-            <div class="row-label">{{ target.label }}</div>
-            <div class="row-desc">{{ target.desc }}</div>
+            <div class="row-label">
+              {{ target.label }}
+            </div>
+            <div class="row-desc">
+              {{ target.desc }}
+            </div>
           </template>
         </div>
 
         <button
           v-tactile
           class="action-btn"
-          @click="refresh(target.key)"
           :disabled="target.status === 'loading' || target.cooldown > 0"
           :class="{
             'is-loading': target.status === 'loading',
             'skeleton-anim sk-button-m': isRefreshing,
           }"
+          @click="refresh(target.key)"
         >
           <!-- Normal State -->
           <template v-if="isRefreshing">
@@ -78,7 +92,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
 
           <!-- Loading State -->
           <template v-else-if="target.status === 'loading'">
-            <div class="spinner"></div>
+            <div class="spinner" />
           </template>
 
           <!-- Cooldown State -->
@@ -177,12 +191,6 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   opacity: 0.6;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .cooldown-text {

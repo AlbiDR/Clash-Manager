@@ -41,39 +41,92 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsCard title="System & Recovery" icon="gear" :initially-expanded="initiallyExpanded">
+  <SettingsCard
+    title="System & Recovery"
+    icon="gear"
+    :initially-expanded="initiallyExpanded"
+  >
     <template #header-extra>
       <span class="exp-badge">EXPERIMENTAL</span>
     </template>
 
-    <div class="trouble-grid" :class="{ 'has-extra': isNativeWrapper || shouldShowPwaInstall }">
-      <button type="button" class="trouble-btn" @click.stop.prevent="forceUpdate" v-tactile>
-        <Icon name="refresh" size="24" />
+    <div
+      class="trouble-grid"
+      :class="{ 'has-extra': isNativeWrapper || shouldShowPwaInstall }"
+    >
+      <button
+        v-tactile
+        type="button"
+        class="trouble-btn"
+        @click.stop.prevent="forceUpdate"
+      >
+        <Icon
+          name="refresh"
+          size="24"
+        />
         <span>Refresh App</span>
       </button>
 
-      <button type="button" class="trouble-btn" @click.stop.prevent="clearCache" v-tactile>
-        <Icon name="layers_clear" size="24" />
+      <button
+        v-tactile
+        type="button"
+        class="trouble-btn"
+        @click.stop.prevent="clearCache"
+      >
+        <Icon
+          name="layers_clear"
+          size="24"
+        />
         <span>Purge Assets</span>
       </button>
 
-      <button v-if="isNativeWrapper" type="button" class="trouble-btn" @click.stop.prevent="downloadApk" v-tactile>
-        <Icon name="download" size="24" />
+      <button
+        v-if="isNativeWrapper"
+        v-tactile
+        type="button"
+        class="trouble-btn"
+        @click.stop.prevent="downloadApk"
+      >
+        <Icon
+          name="download"
+          size="24"
+        />
         <span>Download Update</span>
       </button>
 
-      <button v-else-if="shouldShowPwaInstall" type="button" class="trouble-btn" @click.stop.prevent="installPwa" v-tactile>
-        <Icon name="box" size="24" />
+      <button
+        v-else-if="shouldShowPwaInstall"
+        v-tactile
+        type="button"
+        class="trouble-btn"
+        @click.stop.prevent="installPwa"
+      >
+        <Icon
+          name="box"
+          size="24"
+        />
         <span>Install PWA</span>
       </button>
 
-      <button type="button" class="trouble-btn danger" @click.stop.prevent="factoryReset" v-tactile>
-        <Icon name="restore" size="24" />
+      <button
+        v-tactile
+        type="button"
+        class="trouble-btn danger"
+        @click.stop.prevent="factoryReset"
+      >
+        <Icon
+          name="restore"
+          size="24"
+        />
         <span>Factory Reset</span>
       </button>
     </div>
 
-    <div v-if="isNativeWrapper" class="apk-diagnostics" :data-state="apkUpdateState">
+    <div
+      v-if="isNativeWrapper"
+      class="apk-diagnostics"
+      :data-state="apkUpdateState"
+    >
       <div class="apk-status-row">
         <span class="apk-status-dot" />
         <span class="apk-status-text">{{ apkUpdateMessage }}</span>
@@ -92,7 +145,12 @@ onMounted(() => {
       <div class="apk-meta-row">
         <span class="apk-artifact">{{ apkArtifactLabel }}</span>
       </div>
-      <p v-if="shouldShowApkFeedSource" class="apk-feed-source">{{ apkFeedSourceLabel }}</p>
+      <p
+        v-if="shouldShowApkFeedSource"
+        class="apk-feed-source"
+      >
+        {{ apkFeedSourceLabel }}
+      </p>
     </div>
   </SettingsCard>
 </template>

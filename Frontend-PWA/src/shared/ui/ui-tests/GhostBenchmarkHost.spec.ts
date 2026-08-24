@@ -26,7 +26,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, flushPromises } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { nextTick } from "vue";
 import GhostBenchmarkHost from "../GhostBenchmarkHost.vue";
 import { useGhostBenchmarkState } from "../../directives/ghostBenchmarkState";

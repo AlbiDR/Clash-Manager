@@ -110,35 +110,59 @@ const delta = computed(() =>
 </script>
 
 <template>
-  <div v-if="!benchmark && simpleLines.length > 1" class="bc-simple-rich">
+  <div
+    v-if="!benchmark && simpleLines.length > 1"
+    class="bc-simple-rich"
+  >
     <span class="bc-simple-label">{{ simpleLines[0] }}</span>
     <span class="bc-simple-value">{{ simpleLines[1] }}</span>
   </div>
-  <div v-else-if="!benchmark" class="bc-simple">{{ data }}</div>
-  <div v-else class="bc-panel">
+  <div
+    v-else-if="!benchmark"
+    class="bc-simple"
+  >
+    {{ data }}
+  </div>
+  <div
+    v-else
+    class="bc-panel"
+  >
     <div class="bc-header">
       <span class="bc-label">{{ benchmark.label }}</span>
-      <span class="bc-tier" :class="`tier-${tierSlug}`">{{ benchmark.tier }}</span>
+      <span
+        class="bc-tier"
+        :class="`tier-${tierSlug}`"
+      >{{ benchmark.tier }}</span>
     </div>
 
     <div class="bc-track">
-      <div class="bc-line"></div>
-      <div class="bc-marker bc-marker-avg" :style="{ left: `${averagePosition}%` }"></div>
+      <div class="bc-line" />
+      <div
+        class="bc-marker bc-marker-avg"
+        :style="{ left: `${averagePosition}%` }"
+      />
       <div
         class="bc-marker bc-marker-player"
         :class="sentiment"
         :style="{ left: `${playerPosition}%` }"
-      ></div>
+      />
     </div>
 
     <div class="bc-footer">
       <span class="bc-stat">AVG {{ formatBenchmarkValue(benchmark.avg) }}</span>
-      <span class="bc-delta" :class="sentiment">{{ delta }}</span>
+      <span
+        class="bc-delta"
+        :class="sentiment"
+      >{{ delta }}</span>
     </div>
 
     <div class="bc-bounds">
-      <div class="bc-bound"><span>MIN</span> {{ formatBenchmarkValue(benchmark.min) }}</div>
-      <div class="bc-bound"><span>MAX</span> {{ formatBenchmarkValue(benchmark.max) }}</div>
+      <div class="bc-bound">
+        <span>MIN</span> {{ formatBenchmarkValue(benchmark.min) }}
+      </div>
+      <div class="bc-bound">
+        <span>MAX</span> {{ formatBenchmarkValue(benchmark.max) }}
+      </div>
     </div>
   </div>
 </template>

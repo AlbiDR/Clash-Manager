@@ -82,13 +82,16 @@ function onInteractionStart() {
       active: displayPath === navItemCandidate.path,
       pending: pendingPath === navItemCandidate.path
     }"
-    @click.stop.prevent="goTo(navItemCandidate.path)"
-    @pointerdown="onInteractionStart"
     :aria-label="navItemCandidate.label"
     :aria-busy="pendingPath === navItemCandidate.path ? 'true' : undefined"
     v-bind="{ 'aria-current': route.path === navItemCandidate.path ? 'page' : undefined }"
+    @click.stop.prevent="goTo(navItemCandidate.path)"
+    @pointerdown="onInteractionStart"
   >
-    <div v-if="displayPath === navItemCandidate.path" class="capsule-bg"></div>
+    <div
+      v-if="displayPath === navItemCandidate.path"
+      class="capsule-bg"
+    />
     
     <RosterIcon
       v-if="navItemCandidate.name === 'roster'"
@@ -109,7 +112,10 @@ function onInteractionStart() {
       class="dock-icon"
     />
     
-    <span v-if="navItemCandidate.label" class="dock-label">
+    <span
+      v-if="navItemCandidate.label"
+      class="dock-label"
+    >
       {{ navItemCandidate.label }}
     </span>
   </button>

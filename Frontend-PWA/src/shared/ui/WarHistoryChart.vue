@@ -19,6 +19,6 @@ const { mappedData } = useHistoryChart(() => props.history, "war", () => props.l
     :history-series="mappedData.data"
     :projection="mappedData.projection"
     :loading="loading"
-    :maxScale="mappedData.maxScale"
+    :max-scale="mappedData.maxScale"
   />
 </template>

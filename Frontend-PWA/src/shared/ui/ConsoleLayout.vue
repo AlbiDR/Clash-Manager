@@ -174,7 +174,7 @@ onUnmounted(() => {
         @refresh="emit('refresh')"
       >
         <template #filters>
-          <slot name="header-filters"></slot>
+          <slot name="header-filters" />
         </template>
         <template #extra>
           <SelectionBar
@@ -189,12 +189,15 @@ onUnmounted(() => {
               (thresholdValue: number, thresholdMode: 'ge' | 'le') => emit('select-score', thresholdValue, thresholdMode)
             "
           />
-          <slot name="extra-header" v-else></slot>
+          <slot
+            v-else
+            name="extra-header"
+          />
         </template>
       </ConsoleHeader>
       
       <!-- Persistent Top Content -->
-      <slot name="top"></slot>
+      <slot name="top" />
 
       <!-- Error State -->
       <ErrorState
@@ -204,7 +207,10 @@ onUnmounted(() => {
       />
 
       <!-- Loading State (Skeletons) -->
-      <div v-else-if="displayLoading" class="list-container gpu-contain">
+      <div
+        v-else-if="displayLoading"
+        class="list-container gpu-contain"
+      >
         <component
           :is="props.skeletonComponent || BaseCardSkeleton"
           v-for="i in (props.skeletonCount || 8)"
@@ -222,13 +228,16 @@ onUnmounted(() => {
         :hint="props.emptyHint"
       >
         <template #action>
-          <slot name="empty-action"></slot>
+          <slot name="empty-action" />
         </template>
       </EmptyState>
 
       <!-- Content State -->
-      <div v-else class="list-container gpu-contain">
-        <slot></slot>
+      <div
+        v-else
+        class="list-container gpu-contain"
+      >
+        <slot />
       </div>
 
       <AppFooter

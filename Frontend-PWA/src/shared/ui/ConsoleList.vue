@@ -44,19 +44,25 @@ defineSlots<{
       name="item"
       :item="items[0]"
       :index="0"
-    ></slot>
+    />
     <!-- Showcase Mode: Render 7 skeletons -->
-    <BaseCardSkeleton v-for="i in 7" :key="'skeleton-' + i" />
+    <BaseCardSkeleton
+      v-for="i in 7"
+      :key="'skeleton-' + i"
+    />
   </template>
 
   <template v-else>
     <!-- Standard Mode: Render all items -->
-    <template v-for="(item, index) in items" :key="item.id">
+    <template
+      v-for="(item, index) in items"
+      :key="item.id"
+    >
       <slot
         name="item"
         :item="item"
         :index="index"
-      ></slot>
+      />
     </template>
   </template>
 </template>

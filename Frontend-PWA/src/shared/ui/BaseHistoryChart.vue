@@ -59,12 +59,13 @@ const { chartData } = useBaseHistoryChart({
           left: `${chartData.projPoint.x}%`,
           top: `${chartData.projPoint.y}%`,
         }"
-      ></div>
+      />
 
       <!-- Bars -->
       <div
         v-for="chartBar in chartData.bars"
         :key="chartBar.id"
+        v-tooltip="chartBar.tooltip"
         class="bar hit-target"
         :class="{
           'bar-win':
@@ -77,7 +78,6 @@ const { chartData } = useBaseHistoryChart({
           'bar-projected': chartBar.isProjection,
         }"
         :style="{ height: chartBar.height }"
-        v-tooltip="chartBar.tooltip"
       />
     </div>
 
@@ -93,9 +93,11 @@ const { chartData } = useBaseHistoryChart({
           :key="i"
           class="sk-chart-bar"
           :style="{ height: `${Math.random() * 50 + 30}%` }"
-        ></div>
+        />
       </template>
-      <template v-else> No history </template>
+      <template v-else>
+        No history
+      </template>
     </div>
   </div>
 </template>

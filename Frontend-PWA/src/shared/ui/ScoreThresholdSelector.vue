@@ -68,30 +68,48 @@ defineExpose({
 </script>
 
 <template>
-  <div class="score-pill-group" :class="{ expanded: isScoreExpanded, disabled: props.disabled }">
+  <div
+    class="score-pill-group"
+    :class="{ expanded: isScoreExpanded, disabled: props.disabled }"
+  >
     <!-- Comparison Mode Toggle -->
     <button
       v-tactile
       class="mode-toggle"
-      @click="toggleMode"
       :disabled="props.disabled"
       :title="
         props.mode === 'ge' ? 'Greater than or equal' : 'Less than or equal'
       "
+      @click="toggleMode"
     >
       <span class="mode-symbol">{{ props.mode === "ge" ? "≥" : "≤" }}</span>
     </button>
 
     <!-- Main Trigger / Label -->
-    <button v-tactile class="sp-trigger" @click="toggleExpand" :disabled="props.disabled">
+    <button
+      v-tactile
+      class="sp-trigger"
+      :disabled="props.disabled"
+      @click="toggleExpand"
+    >
       <span class="sp-label">{{ props.value }}</span>
-      <span class="sp-chevron" :class="{ rotated: isScoreExpanded }">
-        <Icon name="chevron_down" size="14" />
+      <span
+        class="sp-chevron"
+        :class="{ rotated: isScoreExpanded }"
+      >
+        <Icon
+          name="chevron_down"
+          size="14"
+        />
       </span>
     </button>
 
     <!-- Dynamic Value Picker (Horizontal Scroll) -->
-    <div v-if="isScoreExpanded" ref="valuePicker" class="value-picker">
+    <div
+      v-if="isScoreExpanded"
+      ref="valuePicker"
+      class="value-picker"
+    >
       <button
         v-for="threshold in thresholds"
         :key="threshold"

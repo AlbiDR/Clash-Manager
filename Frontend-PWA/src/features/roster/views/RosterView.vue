@@ -85,6 +85,7 @@ const {
     >
       <template #item="{ item: memberSnapshot, index }">
         <MemberCard
+          :id="`member-${memberSnapshot.id}`"
           :key="memberSnapshot.id"
           v-memo="getMemoKeys(memberSnapshot.id, [
             memberSnapshot.performanceScore,
@@ -94,7 +95,6 @@ const {
             memberSnapshot.d.avg,
             memberSnapshot.d.seen
           ])"
-          :id="`member-${memberSnapshot.id}`"
           :member="memberSnapshot"
           v-bind="getCardMetadata(memberSnapshot.id)"
           :style="{ '--i': index }"

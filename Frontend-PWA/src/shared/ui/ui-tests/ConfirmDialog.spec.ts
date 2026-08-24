@@ -7,7 +7,7 @@ import { useConfirm } from "@core";
 import ConfirmDialog from "../ConfirmDialog.vue";
 
 describe("ConfirmDialog.vue", () => {
-  const { active, confirm, resolve } = useConfirm();
+  const { active, confirm } = useConfirm();
 
   beforeEach(() => {
     active.value = null;

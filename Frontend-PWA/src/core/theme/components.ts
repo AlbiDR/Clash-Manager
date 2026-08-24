@@ -197,10 +197,10 @@ a { text-decoration: underline; color: inherit; }
 .role-member { background: var(--sys-color-surface-container-highest); color: var(--sys-color-on-surface); border: 1px solid var(--sys-color-outline-variant); }
 
 /* =========================================
-   GLASS UI PRIMITIVES
+   SURFACE PANEL PRIMITIVES
    ========================================= */
-.glass-panel {
-  background: var(--sys-surface-glass);
+.surface-panel {
+  background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-l);
   padding: var(--sys-space-20);

@@ -77,8 +77,15 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 
 <template>
   <div class="target-picker">
-    <div class="input-box" :class="{ 'is-fetching': props.isFetching }">
-      <Icon name="crosshair" size="16" class="prefix-icon" />
+    <div
+      class="input-box"
+      :class="{ 'is-fetching': props.isFetching }"
+    >
+      <Icon
+        name="crosshair"
+        size="16"
+        class="prefix-icon"
+      />
       <input
         v-model="localTag"
         type="text"
@@ -87,19 +94,25 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
         spellcheck="false"
         autocomplete="off"
         @keydown="handleKeydown"
-      />
+      >
       
       <button 
-        class="lock-btn" 
+        v-tactile 
+        class="lock-btn"
         :disabled="props.isFetching"
         @click="handleLockIn"
-        v-tactile
       >
-        <Icon :name="props.isFetching ? 'loader' : 'check'" :size="16" />
+        <Icon
+          :name="props.isFetching ? 'loader' : 'check'"
+          :size="16"
+        />
       </button>
     </div>
     
-    <div v-if="props.playerName" class="player-label">
+    <div
+      v-if="props.playerName"
+      class="player-label"
+    >
       <span class="label-text">{{ props.playerName }}</span>
     </div>
   </div>

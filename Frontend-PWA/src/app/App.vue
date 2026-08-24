@@ -17,7 +17,7 @@ import {
   useShareTarget,
 } from "@core";
 import { useHaptics } from "@shared";
-import { onMounted, computed, watch, ref, KeepAlive } from "vue";
+import { onMounted, computed, watch, ref } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useIsDataLoading } from "vue-router/experimental";
 import { useHeadhunter } from "@features/headhunter";
@@ -101,7 +101,9 @@ onMounted(() => {
           // [THREAT:] Silent failure to check for updates can lead to stale app versions.
           // [DECISION LOG] Implementing an hourly background check for Service Worker
           // updates to ensure clients are not stuck on legacy code.
-          registration && setInterval(() => registration.update(), 60 * 60 * 1000);
+          if (registration) {
+            setInterval(() => registration.update(), 60 * 60 * 1000);
+          }
         },
         onNeedRefresh() {
           console.log("[PWA] Update available");
@@ -139,15 +141,27 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="app-shell" :class="{ 'showcase-frame': isShowcaseMode }">
-    <div class="connectivity-strip" :class="connectionState"></div>
+  <div
+    class="app-shell"
+    :class="{ 'showcase-frame': isShowcaseMode }"
+  >
+    <div
+      class="connectivity-strip"
+      :class="connectionState"
+    />
 
     <main class="app-container">
       <ErrorBoundary>
         <RouterView v-slot="{ Component }">
-          <transition name="page" mode="out-in">
+          <transition
+            name="page"
+            mode="out-in"
+          >
             <KeepAlive>
-              <component :is="Component" :key="currentRoute.name" />
+              <component
+                :is="Component"
+                :key="currentRoute.name"
+              />
             </KeepAlive>
           </transition>
         </RouterView>

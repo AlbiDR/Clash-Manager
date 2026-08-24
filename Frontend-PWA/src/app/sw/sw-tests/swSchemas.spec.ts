@@ -72,7 +72,7 @@ describe("swSchemas", () => {
     });
 
     it("should fail for missing fields", () => {
-      const { notificationsEnabled, ...incomplete } = validConfig;
+      const { notificationsEnabled: _notificationsEnabled, ...incomplete } = validConfig;
       expect(v.safeParse(SwConfigSchema, incomplete).success).toBe(false);
     });
   });

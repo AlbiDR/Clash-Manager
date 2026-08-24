@@ -71,38 +71,83 @@ const { isBlueprintMode } = useBlueprintMode();
     v-on="layoutEvents"
   >
     <div class="settings-content">
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="0" /></template>
-      <EventManagement v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="0" />
+      </template>
+      <EventManagement
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
 
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="1" /></template>
-      <AppearanceSettings v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="1" />
+      </template>
+      <AppearanceSettings
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
 
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="2" /></template>
-      <NotificationSettings v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="2" />
+      </template>
+      <NotificationSettings
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
 
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="3" /></template>
-      <FeatureSettings v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="3" />
+      </template>
+      <FeatureSettings
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
 
       <!-- Always real, in its normal position - see the ignore-blueprint-mode
            note above. -->
       <ModeSettings :initially-expanded="isShowcaseMode" />
 
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="4" /></template>
-      <NetworkSettings v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="4" />
+      </template>
+      <NetworkSettings
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
 
       <template v-if="modules.backendRefresher">
-        <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="5" /></template>
-        <BackendRefresher v-else :initially-expanded="isShowcaseMode" />
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="5" />
+        </template>
+        <BackendRefresher
+          v-else
+          :initially-expanded="isShowcaseMode"
+        />
       </template>
 
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="6" /></template>
-      <UsefulLinksSettings v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="6" />
+      </template>
+      <UsefulLinksSettings
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
 
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="7" /></template>
-      <RecoverySettings v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="7" />
+      </template>
+      <RecoverySettings
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
 
-      <template v-if="isBlueprintMode"><SkeletonSettingsCard :index="8" /></template>
-      <AboutSettings v-else :initially-expanded="isShowcaseMode" />
+      <template v-if="isBlueprintMode">
+        <SkeletonSettingsCard :index="8" />
+      </template>
+      <AboutSettings
+        v-else
+        :initially-expanded="isShowcaseMode"
+      />
     </div>
   </ConsoleLayout>
 </template>

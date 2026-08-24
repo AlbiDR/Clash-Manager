@@ -17,7 +17,7 @@
 
 <template>
   <div class="badge">
-    <slot></slot>
+    <slot />
   </div>
 </template>
 

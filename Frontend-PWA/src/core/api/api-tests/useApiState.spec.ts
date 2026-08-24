@@ -3,7 +3,6 @@
 import { resetApiState, useApiState } from "../useApiState";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { isConfigured, ping, getApiUrl } from "../SupabaseClient";
-import { nextTick } from "vue";
 
 // Mock SupabaseClient directly using deep import path to avoid singleton/barrel issues
 vi.mock("../SupabaseClient", () => ({
@@ -39,7 +38,7 @@ describe("useApiState", () => {
       modules: { API_PUBLIC: "11.0.1" },
     };
 
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(ping).mockResolvedValue(mockPingResponse);
 
     const { apiStatus, pingData, checkApiStatus } = useApiState();
@@ -61,7 +60,7 @@ describe("useApiState", () => {
       modules: {},
     };
 
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(ping).mockResolvedValue(mockPingResponse);
 
     const { apiStatus, checkApiStatus } = useApiState();
@@ -73,7 +72,7 @@ describe("useApiState", () => {
   });
 
   it("sets status to offline only after consecutive failures (Soft Fail)", async () => {
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(ping).mockRejectedValue(new Error("Network Error"));
 
     const { apiStatus, checkApiStatus } = useApiState();
@@ -106,7 +105,7 @@ describe("useApiState", () => {
   });
 
   it("sets status to unconfigured when isConfigured returns false", async () => {
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(isConfigured).mockReturnValue(false);
 
     const { apiStatus, checkApiStatus } = useApiState();
@@ -131,7 +130,7 @@ describe("useApiState", () => {
 
   it("sets status to offline immediately when navigator.onLine is false", async () => {
     vi.stubGlobal("navigator", { onLine: false });
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(ping).mockRejectedValue(new Error("Network Error"));
 
     const { apiStatus, checkApiStatus } = useApiState();
@@ -142,7 +141,7 @@ describe("useApiState", () => {
   });
 
   it("sets status to waking during retries", async () => {
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(ping).mockRejectedValue(new Error("Network Error"));
 
     const { apiStatus, checkApiStatus } = useApiState();
@@ -163,7 +162,7 @@ describe("useApiState", () => {
 
   it("handshake times out after 25 seconds", async () => {
     // ping never resolves
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(ping).mockImplementation(() => new Promise(() => {}));
 
     const { apiStatus, checkApiStatus } = useApiState();

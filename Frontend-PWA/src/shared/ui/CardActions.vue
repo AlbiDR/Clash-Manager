@@ -50,15 +50,21 @@ function handleOpenInGame() {
 <template>
   <div class="card-actions-wrapper">
     <template v-if="loading">
-      <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
-      <div class="sk-button-m skeleton-anim" style="flex: 1"></div>
+      <div
+        class="sk-button-m skeleton-anim"
+        style="flex: 1"
+      />
+      <div
+        class="sk-button-m skeleton-anim"
+        style="flex: 1"
+      />
     </template>
     <template v-else>
       <button
-        @click.stop="handleOpenExternal"
         class="btn-action"
         :class="{ compact: compact }"
         aria-label="View on RoyaleAPI"
+        @click.stop="handleOpenExternal"
       >
         <img
           src="https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png"
@@ -67,14 +73,14 @@ function handleOpenInGame() {
           alt="RoyaleAPI"
           class="royaleapi-logo"
           loading="lazy"
-        />
+        >
         <span>RoyaleAPI</span>
       </button>
       <button
-        @click.stop="handleOpenInGame"
         class="btn-action primary"
         :class="{ compact: compact }"
         aria-label="Open in Game"
+        @click.stop="handleOpenInGame"
       >
         <ClashRoyaleIcon
           :size="iconSize + 4"

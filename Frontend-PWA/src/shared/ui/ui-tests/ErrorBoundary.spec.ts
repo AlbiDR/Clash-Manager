@@ -12,6 +12,7 @@ import { defineComponent, h, nextTick } from 'vue';
  */
 const BuggyComponent = defineComponent({
   name: 'BuggyComponent',
+  // eslint-disable-next-line vue/require-render-return -- always throws, never returns
   render() {
     throw new Error('Test Error');
   }

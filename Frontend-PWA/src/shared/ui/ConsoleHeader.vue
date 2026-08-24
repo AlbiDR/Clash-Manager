@@ -77,7 +77,10 @@ const handleOpenDashboard = () => {
             >
               {{ props.title }}
             </h1>
-            <div v-if="props.stats" class="title-label">
+            <div
+              v-if="props.stats"
+              class="title-label"
+            >
               <span class="count-value">{{ props.stats.value }}</span>
               <span class="count-label">{{ props.stats.label }}</span>
             </div>
@@ -97,10 +100,20 @@ const handleOpenDashboard = () => {
         </div>
       </div>
 
-      <div v-if="props.showSearch || !!$slots.filters" class="search-sort-row">
-        <div v-if="props.showSearch" class="search-bar">
+      <div
+        v-if="props.showSearch || !!$slots.filters"
+        class="search-sort-row"
+      >
+        <div
+          v-if="props.showSearch"
+          class="search-bar"
+        >
           <div class="search-box">
-            <Icon name="search" size="18" class="search-icon" />
+            <Icon
+              name="search"
+              size="18"
+              class="search-icon"
+            />
             <input
               type="text"
               class="search-input"
@@ -108,29 +121,38 @@ const handleOpenDashboard = () => {
               autocomplete="off"
               aria-label="Search"
               @input="handleInput"
-            />
+            >
           </div>
         </div>
 
         <!-- Custom Filters / Controls Slot -->
-        <slot name="filters"></slot>
+        <slot name="filters" />
 
-        <div v-if="props.sortOptions" class="sort-box">
+        <div
+          v-if="props.sortOptions"
+          class="sort-box"
+        >
           <BaseSelect
             :model-value="props.currentSort || ''"
             :options="props.sortOptions"
             aria-label="Sort by"
             @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
           />
-          <span v-if="activeSortDescription" class="sort-desc">
+          <span
+            v-if="activeSortDescription"
+            class="sort-desc"
+          >
             {{ activeSortDescription }}
           </span>
         </div>
       </div>
     </div>
 
-    <div class="header-extra" v-if="!!$slots.extra">
-      <slot name="extra"></slot>
+    <div
+      v-if="!!$slots.extra"
+      class="header-extra"
+    >
+      <slot name="extra" />
     </div>
   </header>
 </template>

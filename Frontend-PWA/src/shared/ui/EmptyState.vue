@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-const props = defineProps<{
+defineProps<{
   icon?: string;
   message: string;
   hint?: string;
@@ -12,11 +12,21 @@ const props = defineProps<{
 <template>
   <div class="empty-state">
     <div class="empty-icon-box">
-      <Icon :name="icon || 'telescope'" size="48" />
+      <Icon
+        :name="icon || 'telescope'"
+        size="48"
+      />
     </div>
-    <p class="empty-message">{{ message }}</p>
-    <p v-if="hint" class="empty-hint">{{ hint }}</p>
-    <slot name="action"></slot>
+    <p class="empty-message">
+      {{ message }}
+    </p>
+    <p
+      v-if="hint"
+      class="empty-hint"
+    >
+      {{ hint }}
+    </p>
+    <slot name="action" />
   </div>
 </template>
 

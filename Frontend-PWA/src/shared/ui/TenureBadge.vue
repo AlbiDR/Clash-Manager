@@ -25,7 +25,10 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 </script>
 
 <template>
-  <BaseBadge class="tenure" v-tooltip="benchmarkTooltipContent">
+  <BaseBadge
+    v-tooltip="benchmarkTooltipContent"
+    class="tenure"
+  >
     {{ props.days ?? 0 }}d
   </BaseBadge>
 </template>

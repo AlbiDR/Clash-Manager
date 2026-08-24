@@ -34,7 +34,7 @@
 import { LinkRow, SettingsCard } from "@shared";
 import { appVersion, useExternalLink } from "@core";
 
-const props = defineProps<{
+defineProps<{
   /**
    * Whether the about card should be initially expanded in the settings view.
    *
@@ -78,7 +78,11 @@ const aboutLinks = [
 </script>
 
 <template>
-  <SettingsCard title="About" icon="info" :initially-expanded="initiallyExpanded">
+  <SettingsCard
+    title="About"
+    icon="info"
+    :initially-expanded="initiallyExpanded"
+  >
     <div class="about-body">
       <div class="about-meta">
         <div class="about-meta-cell">

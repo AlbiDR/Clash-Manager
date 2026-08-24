@@ -27,7 +27,7 @@ import { formatNumber } from "@core";
 
 const VoyageSetupForm = defineAsyncComponent(() => import("./VoyageSetupForm.vue"));
 
-const props = defineProps<{
+defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
@@ -65,14 +65,24 @@ const pillClass = computed(() => {
     </template>
 
     <!-- Pre-Event Summary (read-only) -->
-    <div v-if="store.isPending" class="active-summary pre-event-summary">
+    <div
+      v-if="store.isPending"
+      class="active-summary pre-event-summary"
+    >
       <div class="summary-row">
         <span class="summary-label">Crown Target</span>
         <span class="summary-value primary">
-          {{ formatNumber(store.targetCrowns) }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
+          {{ formatNumber(store.targetCrowns) }} <Icon
+            name="crown"
+            size="14"
+            style="display: inline-block; vertical-align: middle; margin-left: 2px;"
+          />
         </span>
       </div>
-      <div class="summary-row" v-if="startsInCountdown">
+      <div
+        v-if="startsInCountdown"
+        class="summary-row"
+      >
         <span class="summary-label">Starts In</span>
         <span class="summary-value timer pending-timer">
           {{ startsInCountdown }}
@@ -82,11 +92,18 @@ const pillClass = computed(() => {
     </div>
 
     <!-- Active Event Summary (read-only) -->
-    <div v-if="store.isActive" class="active-summary">
+    <div
+      v-if="store.isActive"
+      class="active-summary"
+    >
       <div class="summary-row">
         <span class="summary-label">Progress</span>
         <span class="summary-value primary">
-          {{ formatNumber(store.totalCrowns) }} / {{ formatNumber(store.targetCrowns) }} <Icon name="crown" size="14" style="display: inline-block; vertical-align: middle; margin-left: 2px;" />
+          {{ formatNumber(store.totalCrowns) }} / {{ formatNumber(store.targetCrowns) }} <Icon
+            name="crown"
+            size="14"
+            style="display: inline-block; vertical-align: middle; margin-left: 2px;"
+          />
         </span>
       </div>
       <div class="summary-row">
@@ -97,18 +114,30 @@ const pillClass = computed(() => {
       </div>
       <div class="summary-row">
         <span class="summary-label">Status</span>
-        <span class="summary-value" :class="{ 'victory': store.isVictory }">
+        <span
+          class="summary-value"
+          :class="{ 'victory': store.isVictory }"
+        >
           {{ store.isVictory ? "Goal Achieved" : "Underway" }}
         </span>
       </div>
-      <div class="summary-row" v-if="timeRemaining">
+      <div
+        v-if="timeRemaining"
+        class="summary-row"
+      >
         <span class="summary-label">Ends In</span>
-        <span class="summary-value timer" :class="{ 'ended': timeRemaining === 'Ended' }">
+        <span
+          class="summary-value timer"
+          :class="{ 'ended': timeRemaining === 'Ended' }"
+        >
           {{ timeRemaining }}
         </span>
       </div>
       <!-- Nudge: end_at not yet set -->
-      <div class="summary-row" v-if="!store.endsAt">
+      <div
+        v-if="!store.endsAt"
+        class="summary-row"
+      >
         <span class="summary-label">Ends In</span>
         <span class="summary-value awaiting-text">Not yet set</span>
       </div>

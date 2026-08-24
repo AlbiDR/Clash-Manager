@@ -8,11 +8,6 @@ import DurationInput from '../DurationInput.vue';
 /**
  * @file DurationInput.spec.ts
  * @summary Logic Integrity tests for DurationInput component.
- * @remarks
- * [LOGIC AUDIT]:
- * 1. Positive clamping (e.g. 10d -> 7d) works because sanitized (10) > max (7).
- * 2. Negative clamping (e.g. -5d -> 0d) fails in current implementation because
- *    sanitize(-5) returns 0, and the check (sanitized < 0) is 0 < 0 (false).
  */
 
 describe('DurationInput.vue', () => {
@@ -137,14 +132,7 @@ describe('DurationInput.vue', () => {
     expect(emitted![0][0].hours).toBe(12);
   });
 
-  /**
-   * [BUG REPORT]: The following test documents a pre-existing bug in DurationInput.vue
-   * The onInput function fails to apply the sanitized value (0) because it only
-   * assigns back if (sanitized > max) or (sanitized < 0). Since sanitize()
-   * returns 0 for negative inputs, (sanitized < 0) is false, and the raw
-   * negative value is emitted.
-   */
-  it('identifies bug: fails to clamp negative input to 0', async () => {
+  it('clamps negative input to 0', async () => {
     const modelValue = createModelValue();
     const wrapper = mount(DurationInput, {
       props: { modelValue }
@@ -154,7 +142,6 @@ describe('DurationInput.vue', () => {
     await input.setValue(-5);
 
     const emitted = wrapper.emitted('update:modelValue');
-    // It SHOULD be 0, but current implementation emits -5
-    expect(emitted![0][0].days).toBe(-5);
+    expect(emitted![0][0].days).toBe(0);
   });
 });

@@ -9,7 +9,7 @@ import {
   STORAGE_KEY_INVENTORY,
   STORAGE_KEY_OBSERVATION
 } from "../useLaboratoryStore";
-import type { PlayerData, Inventory } from "../../logic/Types";
+import type { PlayerData } from "../../logic/Types";
 import { asGold, asGems } from "@core/utils/economy";
 
 const MALFORMED_SETTINGS_JSON = "invalid-json";

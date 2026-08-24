@@ -20,7 +20,7 @@ describe("useUiCoordinator", () => {
       onBlitz: undefined,
       onDismiss: undefined,
     });
-    // @ts-ignore - reset internal callbacks to null
+    // @ts-expect-error - reset internal callbacks to null
     const { fabState } = useUiCoordinator();
     fabState.onAction = null;
     fabState.onBlitz = null;

@@ -19,7 +19,7 @@ const { mappedData } = useHistoryChart(() => props.history, "voyage", () => prop
     :history-series="mappedData.data"
     :projection="mappedData.projection"
     :loading="loading"
-    :maxScale="mappedData.maxScale"
-    :winThreshold="100"
+    :max-scale="mappedData.maxScale"
+    :win-threshold="100"
   />
 </template>

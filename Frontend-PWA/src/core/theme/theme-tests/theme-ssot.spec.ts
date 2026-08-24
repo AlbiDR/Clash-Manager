@@ -148,7 +148,7 @@ describe('Theme token SSOT drift firewall', () => {
           },
         },
       };
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+       
       const run = new Function('localStorage', 'window', 'document', BOOT_THEME_SCRIPT);
       run(localStorage, window, document);
       return classes.has('dark');

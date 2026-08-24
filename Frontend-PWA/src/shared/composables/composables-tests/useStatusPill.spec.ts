@@ -55,7 +55,7 @@ describe('useStatusPill', () => {
 
   it('does not auto-expand when type changes to success', async () => {
     props.type = 'warning';
-    const { isExpanded } = useStatusPill(props);
+    const { isExpanded: _isExpanded } = useStatusPill(props);
     props.type = 'success';
     await nextTick();
     // It remains whatever it was (it doesn't auto-collapse in the implementation)

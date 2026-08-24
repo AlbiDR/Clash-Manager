@@ -52,7 +52,7 @@ describe("useBenchmarkedStat", () => {
     expect(mockGetSafeBenchmark).toHaveBeenCalledWith("lb", "score", 100);
 
     value.value = 200;
-    benchmarkTooltipContent.value;
+    expect(benchmarkTooltipContent.value); // Trigger evaluation
     expect(mockGetSafeBenchmark).toHaveBeenCalledWith("lb", "score", 200);
   });
 
@@ -64,7 +64,7 @@ describe("useBenchmarkedStat", () => {
     expect(mockGetSafeBenchmark).toHaveBeenCalledWith("lb", "score", 500);
 
     context.value = "hh";
-    benchmarkTooltipContent.value;
+    expect(benchmarkTooltipContent.value); // Trigger evaluation
     expect(mockGetSafeBenchmark).toHaveBeenCalledWith("hh", "score", 500);
   });
 

@@ -56,8 +56,15 @@ const {
   >
     <!-- Custom Empty Action for Recruit View -->
     <template #empty-action>
-      <button v-tactile class="btn-primary" @click="refresh">
-        <Icon name="refresh" size="18" />
+      <button
+        v-tactile
+        class="btn-primary"
+        @click="refresh"
+      >
+        <Icon
+          name="refresh"
+          size="18"
+        />
         <span>Scan Again</span>
       </button>
     </template>
@@ -68,6 +75,7 @@ const {
     >
       <template #item="{ item, index }">
         <RecruitCard
+          :id="`recruit-${item.id}`"
           :key="item.id"
           v-memo="getMemoKeys(item.id, [
             item.potentialScore,
@@ -77,7 +85,6 @@ const {
             item.d.cards,
             item.d.winRate
           ])"
-          :id="`recruit-${item.id}`"
           :recruit="item"
           v-bind="getCardMetadata(item.id)"
           :style="{ '--i': index }"

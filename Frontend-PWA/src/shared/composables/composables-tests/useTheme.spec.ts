@@ -5,19 +5,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 describe("useTheme", () => {
   let useTheme: any;
 
-  /** Helper to read Blob content as text in JSDOM environment */
-  const readBlob = async (b: Blob) => {
-    const reader = new FileReader();
-    const promise = new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string);
-    });
-    reader.readAsText(b);
-    if (vi.isFakeTimers()) {
-      await vi.advanceTimersByTimeAsync(100);
-    }
-    return promise;
-  };
-
   beforeEach(async () => {
     // Reset modules to clear singleton state (isInitialized, theme)
     vi.resetModules();

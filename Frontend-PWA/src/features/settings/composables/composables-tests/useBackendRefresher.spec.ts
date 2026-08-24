@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
-import { effectScope, nextTick, ref } from "vue";
+import { effectScope, ref } from "vue";
 import { flushPromises } from "@vue/test-utils";
 import { useBackendRefresher } from "../useBackendRefresher";
 import { triggerBackendUpdate } from "@core/api/MaintenanceClient";

@@ -66,29 +66,33 @@ function handleFabAbortHarvest() {
     v-tactile
     class="fab-btn danger"
     :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
-    @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
     :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
+    @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
   >
-    <Icon :name="fabState.dismissIcon || 'close'" size="18" />
-    <span v-if="!fabState.selectionCount && !fabState.isBlasting && !fabState.isHarvesting"
-      >Clear</span
-    >
+    <Icon
+      :name="fabState.dismissIcon || 'close'"
+      size="18"
+    />
+    <span v-if="!fabState.selectionCount && !fabState.isBlasting && !fabState.isHarvesting">Clear</span>
   </button>
 
   <!-- Blasting State: Progress Indicator -->
   <template v-if="fabState.isBlasting">
     <div class="blast-status">
-      <div class="spinner-small"></div>
+      <div class="spinner-small" />
       <span class="blast-label">{{ fabState.label }}</span>
     </div>
 
     <button
       v-tactile
       class="fab-btn primary compact"
-      @click="handleFabAction"
       aria-label="Open Next Profile"
+      @click="handleFabAction"
     >
-      <Icon name="chevron_right" size="20" />
+      <Icon
+        name="chevron_right"
+        size="20"
+      />
     </button>
   </template>
 
@@ -101,10 +105,13 @@ function handleFabAbortHarvest() {
         v-tactile
         class="fab-btn blitz"
         :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
-        @click="handleFabBlitz"
         aria-label="Start Blitz Mode"
+        @click="handleFabBlitz"
       >
-        <Icon name="lightning" size="18" />
+        <Icon
+          name="lightning"
+          size="18"
+        />
         <span>Blitz</span>
       </button>
 
@@ -120,11 +127,18 @@ function handleFabAbortHarvest() {
           class="fab-btn compact secondary-harvest"
           :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
           :disabled="fabState.isHarvesting"
-          @click="handleFabGlobalHarvest"
           aria-label="Global Harvest"
+          @click="handleFabGlobalHarvest"
         >
-          <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'" class="spinner-small"></div>
-          <Icon v-else name="globe" size="18" />
+          <div
+            v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'"
+            class="spinner-small"
+          />
+          <Icon
+            v-else
+            name="globe"
+            size="18"
+          />
         </button>
 
         <!-- Local Harvest Button (Map-Pin) -->
@@ -133,24 +147,34 @@ function handleFabAbortHarvest() {
           class="fab-btn compact secondary-harvest"
           :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
           :disabled="fabState.isHarvesting"
-          @click="handleFabLocalHarvest"
           aria-label="Local Harvest"
+          @click="handleFabLocalHarvest"
         >
-          <div v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'" class="spinner-small"></div>
-          <Icon v-else name="map_pin" size="18" />
+          <div
+            v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'"
+            class="spinner-small"
+          />
+          <Icon
+            v-else
+            name="map_pin"
+            size="18"
+          />
         </button>
       </template>
     </template>
 
     <!-- Action Button (Only if Blitz is NOT enabled) -->
     <button
-      v-tactile
       v-else
+      v-tactile
       class="fab-btn primary"
-      @click="handleFabAction"
       :aria-label="fabState.label || 'Open'"
+      @click="handleFabAction"
     >
-      <Icon name="check" size="18" />
+      <Icon
+        name="check"
+        size="18"
+      />
       <span :key="fabState.label">{{ fabState.label }}</span>
     </button>
   </template>
@@ -231,11 +255,6 @@ function handleFabAbortHarvest() {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   opacity: 0.6;
-}
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 .fab-btn.secondary-harvest {

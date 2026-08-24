@@ -153,7 +153,7 @@ describe("AndroidCalibrationSettings.vue", () => {
     mockBridge.hasOverlayPermission.mockReturnValue(true);
     mockBridge.canRequestPackageInstalls.mockReturnValue(true);
 
-    const focusListener = vi.mocked(window.addEventListener).mock.calls.find(call => call[0] === "focus")?.[1] as Function;
+    const focusListener = vi.mocked(window.addEventListener).mock.calls.find(call => call[0] === "focus")?.[1] as (() => void) | undefined;
     if (focusListener) focusListener();
 
     await wrapper.vm.$nextTick();

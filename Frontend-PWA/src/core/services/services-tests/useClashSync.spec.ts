@@ -4,9 +4,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
-import { useConnectionStatus } from "../useConnectionStatus";
-import { useWakeLock } from "@shared/composables/useWakeLock";
-import { useSyntheticMode } from "../useSyntheticMode";
 import { fetchRemote, lastSyncStatus } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 import { generateMockData } from "../../utils/mockData";

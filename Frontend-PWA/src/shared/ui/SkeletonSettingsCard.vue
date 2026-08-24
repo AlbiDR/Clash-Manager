@@ -26,11 +26,17 @@ const cardMinHeight = computed(() => `${getBone("SettingsCard", "card")?.height 
 </script>
 
 <template>
-  <div class="settings-card skeleton-anim" :style="{ minHeight: cardMinHeight }">
+  <div
+    class="settings-card skeleton-anim"
+    :style="{ minHeight: cardMinHeight }"
+  >
     <div class="card-header">
-      <div class="sk-icon-small"></div>
+      <div class="sk-icon-small" />
       <!-- Placeholder for header icon -->
-      <div class="sk-line-m" :style="{ width: titleWidth }"></div>
+      <div
+        class="sk-line-m"
+        :style="{ width: titleWidth }"
+      />
       <!-- Placeholder for header title -->
     </div>
   </div>

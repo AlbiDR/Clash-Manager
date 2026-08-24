@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 import TrajectoryList from "../TrajectoryList.vue";
-import TrajectoryItem from "../TrajectoryItem.vue";
 import { useProgressiveList } from "@core/services/useProgressiveList";
 
 // Mock the progressive list service

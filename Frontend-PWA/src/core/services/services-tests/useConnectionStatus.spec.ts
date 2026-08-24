@@ -34,12 +34,12 @@ describe("useConnectionStatus", () => {
     mockIsSlow = ref(false);
     onLineValue.value = true;
 
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(useApiState).mockReturnValue({
       apiStatus: mockApiStatus,
     });
 
-    // @ts-ignore
+    // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(useNetworkInfo).mockReturnValue({
       isSlowConnection: mockIsSlow,
       effectiveType: ref("4g"),
@@ -71,7 +71,7 @@ describe("useConnectionStatus", () => {
     // Testing the event listener specifically is hard in JSDOM without triggering real events.
     // Instead we can access the internal ref if we exposed it, or simulate the event.
 
-    const { status, isOnline } = useConnectionStatus();
+    const { status, isOnline: _isOnline } = useConnectionStatus();
 
     // Simulate offline event
     window.dispatchEvent(new Event("offline"));
