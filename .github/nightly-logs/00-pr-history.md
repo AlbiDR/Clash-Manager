@@ -16,6 +16,78 @@ LAST_AGED:   2026-08-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-24] PR #1545 [Stage 13]: chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-24
+**Domain:** pipeline | **Commit:** 7fb44ac5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1545)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-24
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1544 [Stage 11]: chore(apk): Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully optimal.
+**Domain:** pipeline | **Commit:** ee4441f9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1544)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully optimal.
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1543 [Stage 10]: chore(apk): Verified APK and PWA wrapper integrity
+**Domain:** pipeline | **Commit:** 5f8f4ff5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1543)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Verified APK and PWA wrapper integrity
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1542 [Stage 9]: chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Domain:** pipeline | **Commit:** 34ff9276 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1542)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1541 [Stage 8]: [Stage 8] Dependency Audit - External Health Auditor
+**Domain:** pipeline | **Commit:** cc360414 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1541)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 8] Dependency Audit - External Health Auditor
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1540 [Stage 7]: chore(version): Monorepo version declarations consistent at 14.46.5; catalog protocol fully satisfied
+**Domain:** pipeline | **Commit:** b0604a8a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1540)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Monorepo version declarations consistent at 14.46.5; catalog protocol fully satisfied
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1539 [Stage 6]: chore(docs): docs(tsdoc): harden DurationInput interface contracts and logic annotations
+**Domain:** pipeline | **Commit:** 5a92a06c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1539)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/DurationInput.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden DurationInput interface contracts and logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1538 [Stage 5]: chore(docs): docs(readme): Reconciled ConsoleLayout ignoreBlueprintMode and SkeletonSettingsCard collapsed state
+**Domain:** pipeline | **Commit:** 43e2849e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1538)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(readme): Reconciled ConsoleLayout ignoreBlueprintMode and SkeletonSettingsCard collapsed state
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-08-24] PR #1537 [Stage 2]: chore(verify): Extended useApkManager test coverage for edge cases and download flows
+**Domain:** pipeline | **Commit:** be9736ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1537)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Extended useApkManager test coverage for edge cases and download flows
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-23] PR #1533 [Stage 2]: chore(verify): Frontend-PWA/src/core/services/services-tests/useToast.spec.ts -- Expanded useToast unit test suite to cover fallback ID generation, persistent toasts, and lock releases.
 **Domain:** pipeline | **Commit:** ffb6ef83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1533)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useToast.spec.ts

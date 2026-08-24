@@ -34,3 +34,4 @@
 * [2026-08-20] [Stage 2] CHANGED: Frontend-PWA/src/features/settings/components/components-tests/AboutSettings.spec.ts -- Closed zero-coverage gap in AboutSettings component with saturating unit/interaction tests.
 * [2026-08-21] [Stage 2] CHANGED: Frontend-PWA/src/core/utils/utils-tests/scheduling.spec.ts -- Closed zero-coverage gap in yieldToInteractionFrame scheduling utility with comprehensive unit/boundary tests.
 * [2026-08-23] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useToast.spec.ts -- Frontend-PWA/src/core/services/services-tests/useToast.spec.ts -- Expanded useToast unit test suite to cover fallback ID generation, persistent toasts, and lock releases.
+* [2026-08-24] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts -- Extended useApkManager test coverage for edge cases and download flows
