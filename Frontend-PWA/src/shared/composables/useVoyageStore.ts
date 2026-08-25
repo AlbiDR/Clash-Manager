@@ -21,7 +21,7 @@
  * ============================================================================
  */
 import { defineStore } from "pinia";
-import { ref, computed, getCurrentInstance, onUnmounted } from "vue";
+import { ref, computed } from "vue";
 import type { VoyageSummary, VoyageStatus } from "./voyageTypes";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { 
@@ -139,18 +139,21 @@ export const useVoyageStore = defineStore("voyage", () => {
 
   /**
    * Unsubscribes from the realtime channel and clears the local reference.
+   *
+   * @remarks
+   * Deliberately not tied to a component's `onUnmounted`: this store is an
+   * app-wide singleton whose `setup()` body runs exactly once, on whichever
+   * component happens to trigger its lazy first instantiation. Attaching
+   * `onUnmounted` here would couple channel cleanup to that arbitrary
+   * component's lifecycle instead of the voyage's actual domain state, and
+   * would never fire again afterward. `refresh()` already tears the channel
+   * down once the event leaves ACTIVE/PENDING, which is the correct signal.
    */
   function cleanupListeners() {
     if (realtimeChannel) {
       realtimeChannel.unsubscribe();
       realtimeChannel = null;
     }
-  }
-
-  if (getCurrentInstance()) {
-    onUnmounted(() => {
-      cleanupListeners();
-    });
   }
 
   // --- ACTIONS ---
