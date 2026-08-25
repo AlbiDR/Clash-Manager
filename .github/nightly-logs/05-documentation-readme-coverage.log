@@ -148,3 +148,4 @@
 * [2026-08-16] [Stage 5] CHANGED: Frontend-PWA/src/features/settings/README.md -- docs(readme): Reconciled Settings README BackendRefresher modernization
 * [2026-08-23] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled core services README with useApkManager.ts decomposition
 * [2026-08-24] [Stage 5] CHANGED: Frontend-PWA/src/shared/ui/README.md -- docs(readme): Reconciled ConsoleLayout ignoreBlueprintMode and SkeletonSettingsCard collapsed state
+* [2026-08-25] [Stage 5] CHANGED: Frontend-PWA/src/shared/ui/README.md -- docs(readme): Reconciled BaseCard v-tactile haptic integration in shared UI README
