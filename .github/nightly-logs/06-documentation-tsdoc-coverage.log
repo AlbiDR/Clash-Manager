@@ -99,3 +99,4 @@
 * [2026-08-19] [Stage 6] CHANGED: Backend/supabase/functions/headhunter-scanner/stages/profiler.ts -- docs(tsdoc): harden profiler interface contracts and inline decision logs
 * [2026-08-23] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useApkManager.ts -- docs(tsdoc): harden useApkManager interface contracts and inline logic annotations
 * [2026-08-24] [Stage 6] CHANGED: Frontend-PWA/src/shared/ui/DurationInput.vue -- docs(tsdoc): harden DurationInput interface contracts and logic annotations
+* [2026-08-25] [Stage 6] CHANGED: Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts -- docs(tsdoc): harden useHeadhunter interface contracts and inline logic annotations

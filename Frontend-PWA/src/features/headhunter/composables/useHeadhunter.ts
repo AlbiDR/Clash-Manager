@@ -34,8 +34,9 @@ let previousData: WebAppData | null = null;
  * - Broadcasts state changes to other tabs via `useBroadcastChannel`.
  *
  * @returns
- * - `dismissRecruitsAction`: Async action to optimistically dismiss recruits.
- * - `undismissRecruitsAction`: Async action to reverse a dismissal.
+ * - `injectRecruits`: Function to deduplicate and inject new recruit records into the local store.
+ * - `dismissRecruitsAction`: Async action to optimistically dismiss recruits with resilience rollbacks.
+ * - `undismissRecruitsAction`: Async action to reverse a dismissal and restore original recruits.
  */
 export function useHeadhunter() {
   // Scoped Singleton Initializations
@@ -72,7 +73,8 @@ export function useHeadhunter() {
    *
    * @remarks
    * Merges a collection of recruits into the authoritative store.
-   * Handles deduplication and sorting to ensure state consistency.
+   * Handles deduplication and descending potential score sorting to ensure state consistency.
+   * Satisfies ADR Section III: Validation Boundaries and Section VII: Naming Conventions.
    *
    * @param recruits - Array of recruit objects to inject.
    * @returns The count of unique new recruits actually added.
@@ -83,6 +85,7 @@ export function useHeadhunter() {
     const existingIds = new Set(currentHH.map((recruit) => recruit.id));
     let added = 0;
 
+    // Deduplicate incoming recruits against existing store IDs
     recruits.forEach((recruit) => {
       if (!existingIds.has(recruit.id)) {
         currentHH.push(recruit);
@@ -92,6 +95,7 @@ export function useHeadhunter() {
 
     if (added === 0) return 0;
 
+    // Sort recruits in descending order of potential score using domain-descriptive identifiers recruitA and recruitB
     const updatedData = {
       ...clashData.value,
       hh: currentHH.sort(
@@ -247,6 +251,7 @@ export function useHeadhunter() {
       ids: string[],
       originalRecruits?: Recruit[],
     ) => {
+      // Optimistically inject original recruits into store if provided to eliminate UI latency
       if (originalRecruits && originalRecruits.length > 0) {
         injectRecruits(originalRecruits);
       }
@@ -255,7 +260,7 @@ export function useHeadhunter() {
         await undismissRecruits(ids);
         broadcast({ type: "RECRUIT_RESTORATION", ids });
       } catch (undoError: unknown) {
-        // THREAT: Unvalidated error 'e' risks silent corruption if logging fails or masks context [Target B 4].
+        // THREAT: Unvalidated error risks silent corruption if logging fails or masks context [Target B 4].
         console.error("Undo Sync Failed:", undoError instanceof Error ? undoError.message : String(undoError));
       }
     }
