@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1554 [Stage 6]: chore(docs): docs(tsdoc): harden useHeadhunter interface contracts and inline logic annotations
+**Domain:** pipeline | **Commit:** 4e52d0b2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1554)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden useHeadhunter interface contracts and inline logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-25] PR #1553 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no new orphaned views found
 **Domain:** pipeline | **Commit:** 64c322a6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1553)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
