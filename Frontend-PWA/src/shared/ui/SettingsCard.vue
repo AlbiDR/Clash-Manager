@@ -27,10 +27,20 @@ const toggleCollapse = () => {
     :class="{ collapsed: isCollapsed }"
     :aria-busy="loading ? 'true' : 'false'"
   >
-    <div class="card-header" @click="toggleCollapse" v-tactile>
+    <div
+      v-tactile
+      class="card-header"
+      @click="toggleCollapse"
+    >
       <div class="header-main">
-        <Icon :name="icon" size="20" class="header-icon" />
-        <h3 data-bone="SettingsCard.title">{{ title }}</h3>
+        <Icon
+          :name="icon"
+          size="20"
+          class="header-icon"
+        />
+        <h3 data-bone="SettingsCard.title">
+          {{ title }}
+        </h3>
       </div>
       <div class="header-actions">
         <slot name="header-extra" />
@@ -40,12 +50,19 @@ const toggleCollapse = () => {
           :aria-expanded="!isCollapsed"
           :aria-label="isCollapsed ? `Expand ${title} section` : `Collapse ${title} section`"
         >
-          <Icon name="chevron_down" size="18" />
+          <Icon
+            name="chevron_down"
+            size="18"
+          />
         </button>
       </div>
     </div>
     <Transition name="collapse">
-      <div v-if="!isCollapsed" class="card-body" :class="bodyClass">
+      <div
+        v-if="!isCollapsed"
+        class="card-body"
+        :class="bodyClass"
+      >
         <slot />
       </div>
     </Transition>

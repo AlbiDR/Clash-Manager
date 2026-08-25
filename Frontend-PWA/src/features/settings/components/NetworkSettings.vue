@@ -25,7 +25,7 @@ import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
 import { ref, computed, watch } from "vue";
 
-const props = defineProps<{
+defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
@@ -63,38 +63,53 @@ function saveApiUrl() {
 </script>
 
 <template>
-  <SettingsCard title="Network & API" icon="plug" :loading="isChecking" :initially-expanded="initiallyExpanded">
+  <SettingsCard
+    title="Network & API"
+    icon="plug"
+    :loading="isChecking"
+    :initially-expanded="initiallyExpanded"
+  >
     <template #header-extra>
-      <div class="status-indicator" :class="apiStatus"></div>
+      <div
+        class="status-indicator"
+        :class="apiStatus"
+      />
     </template>
 
     <div class="network-stats">
       <div class="stat-item">
         <span class="label">Ping</span>
         <template v-if="isChecking">
-          <div class="sk-stat-value" style="width: 30px"></div>
+          <div
+            class="sk-stat-value"
+            style="width: 30px"
+          />
         </template>
         <template v-else>
-          <span class="value"
-            >{{ pingData?.latency || "--" }}<small>ms</small></span
-          >
+          <span class="value">{{ pingData?.latency || "--" }}<small>ms</small></span>
         </template>
       </div>
-      <span class="v-sep"></span>
+      <span class="v-sep" />
       <div class="stat-item">
         <span class="label">Backend</span>
         <template v-if="isChecking">
-          <div class="sk-stat-value" style="width: 25px"></div>
+          <div
+            class="sk-stat-value"
+            style="width: 25px"
+          />
         </template>
         <template v-else>
           <span class="value">v{{ pingData?.version || "0.0" }}</span>
         </template>
       </div>
-      <span class="v-sep"></span>
+      <span class="v-sep" />
       <div class="stat-item">
         <span class="label">Link</span>
         <template v-if="isChecking">
-          <div class="sk-stat-value" style="width: 35px"></div>
+          <div
+            class="sk-stat-value"
+            style="width: 35px"
+          />
         </template>
         <template v-else>
           <span class="value">Ready</span>
@@ -103,22 +118,48 @@ function saveApiUrl() {
     </div>
 
     <div class="url-manager">
-      <div class="field-label">API Endpoint</div>
-      <div v-if="!isEditing" class="url-readout skeleton-anim">
+      <div class="field-label">
+        API Endpoint
+      </div>
+      <div
+        v-if="!isEditing"
+        class="url-readout skeleton-anim"
+      >
         <template v-if="isChecking">
-          <div class="sk-text-line-m" style="width: 80%"></div>
-          <div class="sk-button-s"></div>
+          <div
+            class="sk-text-line-m"
+            style="width: 80%"
+          />
+          <div class="sk-button-s" />
         </template>
         <template v-else>
           <span class="url-text">{{ apiUrl }}</span>
-          <button class="edit-btn" @click="isEditing = true" v-tactile>Edit</button>
+          <button
+            v-tactile
+            class="edit-btn"
+            @click="isEditing = true"
+          >
+            Edit
+          </button>
         </template>
       </div>
-      <div v-else class="url-input-row">
+      <div
+        v-else
+        class="url-input-row"
+      >
         <template v-if="isChecking">
-          <div class="sk-input skeleton-anim" style="flex: 1"></div>
-          <div class="sk-button-s skeleton-anim" style="width: var(--sys-space-48)"></div>
-          <div class="sk-button-s skeleton-anim" style="width: var(--sys-space-48)"></div>
+          <div
+            class="sk-input skeleton-anim"
+            style="flex: 1"
+          />
+          <div
+            class="sk-button-s skeleton-anim"
+            style="width: var(--sys-space-48)"
+          />
+          <div
+            class="sk-button-s skeleton-anim"
+            style="width: var(--sys-space-48)"
+          />
         </template>
         <template v-else>
           <input
@@ -126,20 +167,33 @@ function saveApiUrl() {
             type="text"
             placeholder="https://[project-id].supabase.co"
             class="glass-input endpoint-input"
-          />
-          <button class="save-btn" @click="saveApiUrl" v-tactile>
-            <Icon name="check" size="20" />
+          >
+          <button
+            v-tactile
+            class="save-btn"
+            @click="saveApiUrl"
+          >
+            <Icon
+              name="check"
+              size="20"
+            />
           </button>
-          <button class="cancel-btn" @click="isEditing = false" v-tactile>X</button>
+          <button
+            v-tactile
+            class="cancel-btn"
+            @click="isEditing = false"
+          >
+            X
+          </button>
         </template>
       </div>
       <div
         v-if="hasLocalOverride"
+        v-tactile
         class="override-pill"
         role="button"
         tabindex="0"
         aria-label="Reset custom API override"
-        v-tactile
         @click="resetApiUrl"
         @keydown.enter="resetApiUrl"
         @keydown.space.prevent="resetApiUrl"

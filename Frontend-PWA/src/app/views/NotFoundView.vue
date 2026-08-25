@@ -62,13 +62,25 @@ const attemptedPath = computed(() => {
 
 <template>
   <div class="not-found-view">
-    <section class="nf-panel" role="alert" aria-labelledby="nf-title">
+    <section
+      class="nf-panel"
+      role="alert"
+      aria-labelledby="nf-title"
+    >
       <span class="nf-badge">
-        <Icon name="warning" size="12" />
+        <Icon
+          name="warning"
+          size="12"
+        />
         <span>404</span>
       </span>
 
-      <h1 id="nf-title" class="nf-title">This link has no console</h1>
+      <h1
+        id="nf-title"
+        class="nf-title"
+      >
+        This link has no console
+      </h1>
 
       <p class="nf-body">
         The address does not match any Clash Manager screen. It may come from an older
@@ -80,8 +92,15 @@ const attemptedPath = computed(() => {
         <code class="nf-route-value">{{ attemptedPath }}</code>
       </div>
 
-      <RouterLink to="/roster" class="nf-action" v-tactile>
-        <Icon name="roster" size="18" />
+      <RouterLink
+        v-tactile
+        to="/roster"
+        class="nf-action"
+      >
+        <Icon
+          name="roster"
+          size="18"
+        />
         <span>Return to Roster</span>
       </RouterLink>
     </section>

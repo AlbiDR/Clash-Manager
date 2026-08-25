@@ -44,44 +44,102 @@ const shouldShowBanner = computed(() => {
       aria-label="Clan Voyage Status"
     >
       <!-- Header Row -->
-      <div class="banner-header" :class="{ 'no-margin': store.isPending || store.isAwaitingEnd }">
+      <div
+        class="banner-header"
+        :class="{ 'no-margin': store.isPending || store.isAwaitingEnd }"
+      >
         <div class="banner-title-group">
           <span class="banner-icon">
-            <Icon v-if="store.isVictory" name="victory" size="20" />
-            <Icon v-else-if="store.isPending" name="schedule" size="20" />
-            <Icon v-else-if="store.isAwaitingEnd" name="warning" size="20" />
-            <Icon v-else name="voyage" size="20" />
+            <Icon
+              v-if="store.isVictory"
+              name="victory"
+              size="20"
+            />
+            <Icon
+              v-else-if="store.isPending"
+              name="schedule"
+              size="20"
+            />
+            <Icon
+              v-else-if="store.isAwaitingEnd"
+              name="warning"
+              size="20"
+            />
+            <Icon
+              v-else
+              name="voyage"
+              size="20"
+            />
           </span>
           <div class="banner-labels">
             <span class="banner-title">Clan Voyage</span>
-            <span v-if="store.isVictory" class="victory-label">Goal Achieved</span>
-            <span v-else-if="store.isPending" class="pre-event-label">Pre-Event Scheduled</span>
-            <span v-else-if="store.isAwaitingEnd" class="awaiting-label">Awaiting Promotion</span>
-            <span v-else class="banner-subtitle">Active Event</span>
+            <span
+              v-if="store.isVictory"
+              class="victory-label"
+            >Goal Achieved</span>
+            <span
+              v-else-if="store.isPending"
+              class="pre-event-label"
+            >Pre-Event Scheduled</span>
+            <span
+              v-else-if="store.isAwaitingEnd"
+              class="awaiting-label"
+            >Awaiting Promotion</span>
+            <span
+              v-else
+              class="banner-subtitle"
+            >Active Event</span>
           </div>
         </div>
         <div class="banner-meta">
           <div class="crown-count">
-              <span class="crown-value">{{ formatNumber(store.totalCrowns) }}</span>
-            <span class="crown-sep" v-if="store.isActive">/</span>
-              <span class="crown-target" v-if="store.isActive">{{ formatNumber(store.targetCrowns) }}</span>
-              <span class="crown-target-single" v-else>Target: {{ formatNumber(store.targetCrowns) }}</span>
-            <span class="crown-icon"><Icon name="crown" size="14" /></span>
+            <span class="crown-value">{{ formatNumber(store.totalCrowns) }}</span>
+            <span
+              v-if="store.isActive"
+              class="crown-sep"
+            >/</span>
+            <span
+              v-if="store.isActive"
+              class="crown-target"
+            >{{ formatNumber(store.targetCrowns) }}</span>
+            <span
+              v-else
+              class="crown-target-single"
+            >Target: {{ formatNumber(store.targetCrowns) }}</span>
+            <span class="crown-icon"><Icon
+              name="crown"
+              size="14"
+            /></span>
           </div>
-          <div class="countdown" v-if="store.isActive" :class="{ 'ended': timeRemaining === 'Ended' }">
+          <div
+            v-if="store.isActive"
+            class="countdown"
+            :class="{ 'ended': timeRemaining === 'Ended' }"
+          >
             {{ timeRemaining }}
           </div>
-          <div class="countdown pending" v-else-if="store.isPending" :class="{ 'ended': startsInCountdown === 'Ended' }">
+          <div
+            v-else-if="store.isPending"
+            class="countdown pending"
+            :class="{ 'ended': startsInCountdown === 'Ended' }"
+          >
             Starts in: {{ startsInCountdown }}
           </div>
-          <div class="countdown awaiting" v-else-if="store.isAwaitingEnd">
+          <div
+            v-else-if="store.isAwaitingEnd"
+            class="countdown awaiting"
+          >
             Set End Time
           </div>
         </div>
       </div>
 
       <!-- Progress Bar (Only for active events) -->
-      <div class="progress-track" aria-hidden="true" v-if="store.isActive">
+      <div
+        v-if="store.isActive"
+        class="progress-track"
+        aria-hidden="true"
+      >
         <div
           class="progress-fill"
           :style="{ width: `${progressPercent}%` }"

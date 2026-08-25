@@ -52,9 +52,14 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
     [DECISION LOG] Conditional layout containment prevents visual clutter and irrelevant
     options in desktop or standard mobile browser environments.
   -->
-  <div v-if="isNativeWrapper" class="permissions-section">
+  <div
+    v-if="isNativeWrapper"
+    class="permissions-section"
+  >
     <div class="card-divider-s" />
-    <h3 class="section-title">Android Permissions</h3>
+    <h3 class="section-title">
+      Android Permissions
+    </h3>
     <p class="section-desc">
       Blitz Mode and native APK updates use these Android-level approvals.
     </p>
@@ -67,13 +72,25 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
         :class="{ 'permission-row--granted': isAccessibilityAllowed }"
         @click="openAccessibilitySettings"
       >
-        <span class="permission-dot" :class="isAccessibilityAllowed ? 'permission-dot--on' : 'permission-dot--off'" />
+        <span
+          class="permission-dot"
+          :class="isAccessibilityAllowed ? 'permission-dot--on' : 'permission-dot--off'"
+        />
         <span class="permission-info">
           <span class="permission-label">Accessibility Service</span>
           <span class="permission-status">{{ isAccessibilityAllowed ? 'Allowed' : 'Not allowed' }}</span>
         </span>
-        <svg class="permission-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />
+        <svg
+          class="permission-arrow"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          aria-hidden="true"
+        >
+          <path
+            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"
+            fill="currentColor"
+          />
         </svg>
       </button>
 
@@ -84,13 +101,25 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
         :class="{ 'permission-row--granted': isOverlayAllowed }"
         @click="openOverlaySettings"
       >
-        <span class="permission-dot" :class="isOverlayAllowed ? 'permission-dot--on' : 'permission-dot--off'" />
+        <span
+          class="permission-dot"
+          :class="isOverlayAllowed ? 'permission-dot--on' : 'permission-dot--off'"
+        />
         <span class="permission-info">
           <span class="permission-label">Display Over Other Apps</span>
           <span class="permission-status">{{ isOverlayAllowed ? 'Allowed' : 'Not allowed' }}</span>
         </span>
-        <svg class="permission-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />
+        <svg
+          class="permission-arrow"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          aria-hidden="true"
+        >
+          <path
+            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"
+            fill="currentColor"
+          />
         </svg>
       </button>
 
@@ -102,15 +131,27 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
         :disabled="!isPackageInstallSettingsSupported"
         @click="openPackageInstallSettings"
       >
-        <span class="permission-dot" :class="isPackageInstallAllowed ? 'permission-dot--on' : 'permission-dot--off'" />
+        <span
+          class="permission-dot"
+          :class="isPackageInstallAllowed ? 'permission-dot--on' : 'permission-dot--off'"
+        />
         <span class="permission-info">
           <span class="permission-label">APK Update Installs</span>
           <span class="permission-status">
             {{ isPackageInstallAllowed ? 'Allowed' : isPackageInstallSettingsSupported ? 'Confirm in Android' : 'Update shell first' }}
           </span>
         </span>
-        <svg class="permission-arrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" fill="currentColor" />
+        <svg
+          class="permission-arrow"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          aria-hidden="true"
+        >
+          <path
+            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"
+            fill="currentColor"
+          />
         </svg>
       </button>
     </div>
@@ -121,27 +162,54 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
     [DECISION LOG] Coordinates are expressed as percentages to maintain device-agnostic scale multiplier
     compliance regardless of native physical screen resolutions.
   -->
-  <div v-if="isNativeWrapper" class="calibration-section">
+  <div
+    v-if="isNativeWrapper"
+    class="calibration-section"
+  >
     <div class="card-divider-s" />
-    <h3 class="section-title">Blitz Mode Calibration</h3>
-    <p class="section-desc">Changes are saved automatically and become the default for the next session.</p>
+    <h3 class="section-title">
+      Blitz Mode Calibration
+    </h3>
+    <p class="section-desc">
+      Changes are saved automatically and become the default for the next session.
+    </p>
 
     <div class="input-grid">
       <div class="input-group">
         <label>Invite X (%)</label>
-        <input type="number" step="0.01" v-model="inviteX" class="coord-input" />
+        <input
+          v-model="inviteX"
+          type="number"
+          step="0.01"
+          class="coord-input"
+        >
       </div>
       <div class="input-group">
         <label>Invite Y (%)</label>
-        <input type="number" step="0.01" v-model="inviteY" class="coord-input" />
+        <input
+          v-model="inviteY"
+          type="number"
+          step="0.01"
+          class="coord-input"
+        >
       </div>
       <div class="input-group">
         <label>Close X (%)</label>
-        <input type="number" step="0.01" v-model="closeX" class="coord-input" />
+        <input
+          v-model="closeX"
+          type="number"
+          step="0.01"
+          class="coord-input"
+        >
       </div>
       <div class="input-group">
         <label>Close Y (%)</label>
-        <input type="number" step="0.01" v-model="closeY" class="coord-input" />
+        <input
+          v-model="closeY"
+          type="number"
+          step="0.01"
+          class="coord-input"
+        >
       </div>
     </div>
   </div>

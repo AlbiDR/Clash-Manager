@@ -24,7 +24,10 @@ const props = defineProps<{
 </script>
 
 <template>
-  <BaseBadge class="tag" :aria-label="`Player tag: ${formatDisplayTag(props.id)}`">
+  <BaseBadge
+    class="tag"
+    :aria-label="`Player tag: ${formatDisplayTag(props.id)}`"
+  >
     {{ formatDisplayTag(props.id) }}
   </BaseBadge>
 </template>

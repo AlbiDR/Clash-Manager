@@ -20,19 +20,24 @@ const handleReload = () => {
 <template>
   <div class="footer-info">
     <div
+      v-tactile
       class="brand"
       role="button"
       tabindex="0"
+      v-bind="{ 'aria-label': 'Reload application' }"
       @click="handleReload"
       @keydown.enter="handleReload"
       @keydown.space.prevent="handleReload"
-      v-tactile
-      v-bind="{ 'aria-label': 'Reload application' }"
     >
       CLASH MANAGER V{{ props.version }}
-      <span v-if="props.badge" class="demo-tag">{{ props.badge }}</span>
+      <span
+        v-if="props.badge"
+        class="demo-tag"
+      >{{ props.badge }}</span>
     </div>
-    <div class="copy">Copyright © 2026 AlbiDR</div>
+    <div class="copy">
+      Copyright © 2026 AlbiDR
+    </div>
   </div>
 </template>
 

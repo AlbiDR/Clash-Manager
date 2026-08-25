@@ -34,7 +34,11 @@ const threshold = computed(() => modules.notificationThreshold);
 </script>
 
 <template>
-  <SettingsCard title="Notification Engine" icon="bell" :initially-expanded="initiallyExpanded">
+  <SettingsCard
+    title="Notification Engine"
+    icon="bell"
+    :initially-expanded="initiallyExpanded"
+  >
     <div class="notification-stack">
       <SettingRow
         label="Background Sync"
@@ -46,37 +50,58 @@ const threshold = computed(() => modules.notificationThreshold);
 
       <div class="threshold-row">
         <div class="threshold-copy">
-          <div class="row-label">Recruit Alerts</div>
-          <div class="row-desc">{{ threshold === 75 ? "High potential" : "Good and higher" }}</div>
+          <div class="row-label">
+            Recruit Alerts
+          </div>
+          <div class="row-desc">
+            {{ threshold === 75 ? "High potential" : "Good and higher" }}
+          </div>
         </div>
 
-        <div class="threshold-selector" role="group" aria-label="Notification Threshold">
+        <div
+          class="threshold-selector"
+          role="group"
+          aria-label="Notification Threshold"
+        >
           <button
-            v-tactile
             v-for="thresholdValue in [50, 75] as const"
             :key="thresholdValue"
+            v-tactile
             :class="{ active: threshold === thresholdValue }"
-            @click="setNotificationThreshold(thresholdValue)"
             class="threshold-btn"
             :aria-label="`Set threshold to ${thresholdValue}`"
             :aria-pressed="threshold === thresholdValue"
+            @click="setNotificationThreshold(thresholdValue)"
           >
             <span class="threshold-symbol">≥</span>{{ thresholdValue }}
           </button>
         </div>
       </div>
 
-      <div v-if="notificationPermission === 'default'" class="permission-card">
+      <div
+        v-if="notificationPermission === 'default'"
+        class="permission-card"
+      >
         <div class="permission-copy">
-          <Icon name="bell" size="16" />
+          <Icon
+            name="bell"
+            size="16"
+          />
           <span>Notifications are off</span>
         </div>
-        <button v-tactile class="enable-btn" @click="requestNotificationPermission">
+        <button
+          v-tactile
+          class="enable-btn"
+          @click="requestNotificationPermission"
+        >
           Enable
         </button>
       </div>
 
-      <div v-if="notificationPermission === 'granted'" class="delivery-panel">
+      <div
+        v-if="notificationPermission === 'granted'"
+        class="delivery-panel"
+      >
         <SettingRow
           label="Quiet Mode"
           description="Badge only"
@@ -103,12 +128,24 @@ const threshold = computed(() => modules.notificationThreshold);
         />
       </div>
 
-      <div v-if="notificationPermission === 'granted'" class="actions-row">
-        <button v-tactile class="action-btn" @click="sendTestNotification">
-          <Icon name="bell" size="14" />
+      <div
+        v-if="notificationPermission === 'granted'"
+        class="actions-row"
+      >
+        <button
+          v-tactile
+          class="action-btn"
+          @click="sendTestNotification"
+        >
+          <Icon
+            name="bell"
+            size="14"
+          />
           <span>Test Alert</span>
         </button>
-        <div class="sync-info">Synced {{ lastSyncFormatted }}</div>
+        <div class="sync-info">
+          Synced {{ lastSyncFormatted }}
+        </div>
       </div>
     </div>
   </SettingsCard>

@@ -107,34 +107,34 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
 <template>
   <div
     :id="props.id"
+    v-tactile="{ onTap: handleTap, onLongPress: handleLongPress }"
     class="card squish-interaction"
     :class="{ expanded: props.expanded, selected: props.selected, tagged: props.isTagged }"
     role="article"
     v-bind="{ 'aria-expanded': props.expanded }"
-    v-tactile="{ onTap: handleTap, onLongPress: handleLongPress }"
   >
     <div class="card-header">
       <div class="identity-group">
         <!-- SLOT: Meta Stack (Badges, Time, Tags) -->
         <div class="meta-stack">
-          <slot name="identity-meta"></slot>
+          <slot name="identity-meta" />
         </div>
 
         <!-- SLOT: Name Block (Name, Trophy Count) -->
         <div class="name-block">
-          <slot name="identity-name"></slot>
+          <slot name="identity-name" />
         </div>
       </div>
 
       <div class="header-actions">
         <!-- Score Section -->
         <div
+          v-tactile
           class="score-section"
           role="button"
           tabindex="0"
           :aria-pressed="props.selected"
           aria-label="Select card"
-          v-tactile
           @click.stop="handleScoreClick"
           @keydown.enter="handleScoreClick"
           @keydown.space.prevent="handleScoreClick"
@@ -144,25 +144,31 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
             :class="{ 'score-tint': props.score !== undefined }"
             :style="scoreTintStyle(props.score)"
           >
-            <slot name="score-section"></slot>
+            <slot name="score-section" />
           </div>
         </div>
 
         <!-- Expand Button -->
         <button
           class="expand-btn hit-target"
-          @click.stop="internalExpandClick"
           :class="{ 'is-active': props.expanded }"
           v-bind="{ 'aria-expanded': props.expanded, 'aria-label': 'Expand details' }"
+          @click.stop="internalExpandClick"
         >
-          <Icon name="chevron_down" size="20" />
+          <Icon
+            name="chevron_down"
+            size="20"
+          />
         </button>
       </div>
     </div>
 
     <!-- Expanded Content -->
-    <div class="card-body" v-if="props.expanded">
-      <slot name="expanded-content"></slot>
+    <div
+      v-if="props.expanded"
+      class="card-body"
+    >
+      <slot name="expanded-content" />
     </div>
   </div>
 </template>
