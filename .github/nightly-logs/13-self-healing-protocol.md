@@ -284,11 +284,19 @@
   - Resolution Details (2026-08-24): Stages 2, 5, 6, 7, 8, 9, 10, and 11 successfully executed and recorded active 2026-08-24 entries today. Stage 1 was merged via PR #1528. All are demoted to [RESOLVED - monitor].
 
 * Missing-Run / Failed Events on 2026-08-24:
-  - Stages: Stage 1 (Harden), Stage 3 (Baseline Consolidation), Stage 4 (Optimization), Stage 12 (APK-UX).
-  - State: [UNOBSERVABLE] at Stage 13 audit time
+  - Stages: Stage 1 (Harden) [RECURRING], Stage 3 (Baseline Consolidation) [RESOLVED - monitor] (August 25, 2026), Stage 4 (Optimization) [RESOLVED - monitor] (August 25, 2026), Stage 12 (APK-UX) [RESOLVED - monitor] (August 25, 2026).
+  - State: [RESOLVED - monitor] for Stages 3, 4, 12 / [RECURRING] for Stage 1
   - Symptom: No published coverage log entries for 2026-08-24 in Stages 1, 3, 4, or 12 prior to Stage 13 audit execution.
-  - Root Cause: These stages have not written published repository coverage log records for 2026-08-24 prior to Stage 13 execution. Stages 2, 5, 6, 7, 8, 9, 10, and 11 executed cleanly and opened PRs #1537 through #1544. Without authenticated session data at audit start, the cause of missing stage outputs remains unobservable (runner execution delays, trigger skips, or timing gaps relative to audit execution).
+  - Root Cause: These stages had not written published repository coverage log records for 2026-08-24 prior to Stage 13 audit execution. Stages 2, 5, 6, 7, 8, 9, 10, and 11 executed cleanly and opened PRs #1537 through #1544.
   - Recommended Fix: Ensure runner workflows execute sequentially, prevent concurrent job starvation, and monitor subsequent runs for automatic recovery.
+  - Resolution Details (2026-08-25): Stages 3, 4, and 12 recovered on August 25, 2026 (Stage 3 PR #1552 CLEAN, Stage 4 PR #1553 CLEAN, Stage 12 PR #1561 CLEAN). Stage 1 missed execution for a second consecutive run on 2026-08-25 and is promoted to [RECURRING].
+
+* Missing-Run / Failed Events on 2026-08-25:
+  - Stages: Stage 1 (Harden) [RECURRING].
+  - State: [RECURRING]
+  - Symptom: No coverage log entry or PR opened for 2026-08-25 in 01-hardening-coverage.log.
+  - Root Cause: Ledger analysis shows Stage 1 entered `MERGED` state for 2026-08-24 tag/pr-1547 with reason `git fetch ... failed: [rejected] non-fast-forward`, but failed to execute or write a coverage log record for 2026-08-25 before Stage 13 audit execution.
+  - Recommended Fix: Audit Stage 1 start protocol and git branch refetching logic to prevent non-fast-forward fetch rejections from skipping execution cycles.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -326,53 +334,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 2 (No entry on 2026-08-23 or 2026-08-24; last active change on 2026-08-22 via PR #1528)
-  - Analysis: Hardened in-memory state lifecycle with explicit EPHEMERAL annotations in useToast and useListFilter. Monitored for automatic recovery.
+  - Consecutive No-Diff Days: 3 (No entry on 2026-08-23, 2026-08-24, or 2026-08-25; last active change on 2026-08-22 via PR #1528)
+  - Analysis: Monitored for automatic recovery; promoted to [RECURRING] in Section 1 due to missed execution on August 25.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-24 in useApkManager.spec.ts)
-  - Analysis: Extended useApkManager unit test coverage for edge cases and download flows.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-25 in useListFilter.spec.ts via PR #1551)
+  - Analysis: Expanded useListFilter unit test suite to cover primitive items, searchCache field invalidation, and localStorage storage exceptions.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-08-23, no entry on 2026-08-24; last active change on 2026-08-19)
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-08-25 via PR #1552; last active change on 2026-08-19)
   - Analysis: Master baseline and post-baseline migrations fully consolidated; 0 unfolded migrations pending.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-08-22 and 2026-08-23, no entry on 2026-08-24)
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-08-25 via PR #1553; last active change on 2026-08-20)
   - Analysis: Re-verified dropped database views remain unreferenced by Edge Function application logic.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-24 in shared/ui README)
-  - Analysis: Reconciled ConsoleLayout ignoreBlueprintMode and SkeletonSettingsCard collapsed state in shared UI README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-25 in shared UI README via PR #1555)
+  - Analysis: Reconciled BaseCard v-tactile haptic integration in shared UI README.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-24 in DurationInput.vue)
-  - Analysis: Hardened DurationInput interface contracts and logic annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-25 in useHeadhunter.ts via PR #1554)
+  - Analysis: Hardened useHeadhunter interface contracts and inline logic annotations.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 31 (CLEAN logged on 2026-08-24)
-  - Analysis: Monorepo version declarations consistent at 14.46.5; catalog protocol fully satisfied with zero version drift.
+  - Consecutive No-Diff Days: 32 (CLEAN logged on 2026-08-25 via PR #1556)
+  - Analysis: Monorepo version declarations consistent across manifests; catalog protocol fully satisfied with zero version drift.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-24 in pnpm-lock.yaml)
-  - Analysis: Bumped @ast-grep/cli to ^0.45.2 in catalog and updated lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-25 in pnpm-lock.yaml and pnpm-workspace.yaml via PR #1557)
+  - Analysis: Bumped @types/node to ^26.3.0 and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-24, last active change on 2026-08-22)
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-25 via PR #1559; last active change on 2026-08-22)
   - Analysis: Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-08-23 and 2026-08-24)
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-08-25 via PR #1558)
   - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security settings.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-08-22 and 2026-08-24)
+  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-08-25 via PR #1560)
   - Analysis: Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully optimal.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 1 (No entry on 2026-08-24; last active change on 2026-08-23 in BaseCard.vue)
-  - Analysis: Added v-tactile directive to score-section in BaseCard.vue. Monitored for automatic recovery.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-25 via PR #1561; last active change on 2026-08-23)
+  - Analysis: Stage 12 global hybrid shell UX audit clean - bounded candidate set is fully compliant.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-24)
-  - Analysis: Completed daily self-healing audit pass: mapped August 23 and August 24 stage executions/recoveries and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-25)
+  - Analysis: Completed daily self-healing audit pass: mapped August 24 and August 25 stage executions/recoveries and updated Section 3 no-diff metrics.
