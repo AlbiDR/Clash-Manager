@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1560 [Stage 11]: chore(apk): Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully optimal.
+**Domain:** pipeline | **Commit:** f4398965 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1560)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully optimal.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-25] PR #1559 [Stage 9]: Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
 **Domain:** architecture | **Commit:** 8a5857ab | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1559)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
