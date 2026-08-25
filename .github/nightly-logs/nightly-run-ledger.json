@@ -2685,7 +2685,7 @@
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.826Z",
+        "lastObservedAt": "2026-08-25T13:42:34.715Z",
         "failureClass": null
       },
       "2": {
@@ -2699,7 +2699,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.826Z",
+        "lastObservedAt": "2026-08-25T13:42:34.715Z",
         "failureClass": null
       },
       "3": {
@@ -2718,7 +2718,7 @@
           "tag": "nightly/2026-08-25/stage-3/pr-1552"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.826Z",
+        "lastObservedAt": "2026-08-25T13:42:34.715Z",
         "failureClass": null
       },
       "4": {
@@ -2733,7 +2733,7 @@
           "tag": "nightly/2026-08-25/stage-4/pr-1553"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.827Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "5": {
@@ -2761,7 +2761,7 @@
           "tag": "nightly/2026-08-25/stage-5/pr-1555"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-25T11:15:23.827Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "6": {
@@ -2776,7 +2776,7 @@
           "tag": "nightly/2026-08-25/stage-6/pr-1554"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.827Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "7": {
@@ -2791,7 +2791,7 @@
           "tag": "nightly/2026-08-25/stage-7/pr-1556"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.827Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "8": {
@@ -2810,7 +2810,7 @@
           "tag": "nightly/2026-08-25/stage-8/pr-1557"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.827Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "9": {
@@ -2838,7 +2838,7 @@
           "tag": "nightly/2026-08-25/stage-9/pr-1559"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-25T11:15:23.828Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "10": {
@@ -2857,7 +2857,7 @@
           "tag": "nightly/2026-08-25/stage-10/pr-1558"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.828Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "11": {
@@ -2876,7 +2876,7 @@
           "tag": "nightly/2026-08-25/stage-11/pr-1560"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.828Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "12": {
@@ -2891,7 +2891,7 @@
           "tag": "nightly/2026-08-25/stage-12/pr-1561"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.828Z",
+        "lastObservedAt": "2026-08-25T13:42:34.716Z",
         "failureClass": null
       },
       "13": {
@@ -2906,7 +2906,7 @@
           "tag": "nightly/2026-08-25/stage-13/pr-1562"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T11:15:23.828Z",
+        "lastObservedAt": "2026-08-25T13:42:34.717Z",
         "failureClass": null
       }
     }
