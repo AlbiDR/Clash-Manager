@@ -273,4 +273,98 @@ describe("useListFilter", () => {
       expect(sortBy.value).toBe("name");
     });
   });
+
+  it("handles primitive or non-object item candidates during filtering", () => {
+    const primitiveItems = ["alpha", null, { id: "p1", n: "beta" }, 123];
+    const items = ref(primitiveItems as any);
+    const { searchQuery, filteredItems } = useListFilter(
+      items,
+      (candidateItem: any) => {
+        if (typeof candidateItem === "string") return [candidateItem];
+        if (candidateItem && candidateItem.n) return [candidateItem.n];
+        return ["fallback"];
+      },
+      {},
+      "score"
+    );
+
+    searchQuery.value = "bet";
+    expect(filteredItems.value).toHaveLength(1);
+    expect(filteredItems.value[0]).toEqual({ id: "p1", n: "beta" });
+
+    searchQuery.value = "fall";
+    expect(filteredItems.value).toHaveLength(2); // null and 123
+  });
+
+  it("re-evaluates search cache when searchFields returns different array values for the same object reference", () => {
+    let dynamicField = "InitialValue";
+    const itemRef = { id: "p1", n: "Test" };
+    const items = ref([itemRef]);
+    const { searchQuery, filteredItems } = useListFilter(
+      items,
+      () => [dynamicField],
+      {},
+      "score"
+    );
+
+    searchQuery.value = "initial";
+    expect(filteredItems.value).toHaveLength(1);
+
+    // Change extracted search fields dynamically without mutating the item object reference
+    dynamicField = "UpdatedValue";
+    searchQuery.value = "updated";
+    expect(filteredItems.value).toHaveLength(1);
+  });
+
+  it("handles localStorage.getItem exceptions gracefully during hydration", () => {
+    const getItemSpy = vi.spyOn(localStorage, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const items = ref(mockItems);
+    const { sortBy } = useListFilter(
+      items,
+      searchFields,
+      sortStrategies,
+      "score",
+      "cm_restricted_key"
+    );
+
+    expect(sortBy.value).toBe("score");
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[ListFilter] Sort preference hydration failed",
+      expect.any(Error)
+    );
+
+    getItemSpy.mockRestore();
+    warnSpy.mockRestore();
+  });
+
+  it("handles localStorage.setItem exceptions gracefully during sort updates", async () => {
+    const setItemSpy = vi.spyOn(localStorage, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const items = ref(mockItems);
+    const { updateSort } = useListFilter(
+      items,
+      searchFields,
+      sortStrategies,
+      "score",
+      "cm_restricted_key"
+    );
+
+    updateSort("name");
+    await Promise.resolve();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[ListFilter] Sort preference persistence failed",
+      expect.any(Error)
+    );
+
+    setItemSpy.mockRestore();
+    warnSpy.mockRestore();
+  });
 });
