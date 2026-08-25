@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1555 [Stage 5]: docs(readme): Reconciled BaseCard v-tactile haptic integration in shared UI README
+**Domain:** documentation | **Commit:** 38d3c470 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1555)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Why:** Execute the scheduled Stage 5 documentation-readme audit.
+**Change:** docs(readme): Reconciled BaseCard v-tactile haptic integration in shared UI README
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-25] PR #1554 [Stage 6]: chore(docs): docs(tsdoc): harden useHeadhunter interface contracts and inline logic annotations
 **Domain:** pipeline | **Commit:** 4e52d0b2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1554)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/headhunter/composables/useHeadhunter.ts
