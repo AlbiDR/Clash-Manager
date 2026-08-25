@@ -12,6 +12,14 @@
 # the version, and this workflow is the only thing that creates v* release tags.
 # Nightly integration audit tags under nightly/* are owned by the nightly merge
 # coordinator and are intentionally outside the v* release tag namespace.
+#
+# Root cause this ALSO fixes (2026-08-25 audit): tag creation used to have no
+# correctness gate at all, and APK Release Build triggers off this workflow's
+# completion - so a commit that failed its own test suite could still get a
+# v* tag and, if it touched APK/src or APK/android, a signed release APK
+# committed on top of it. Deploy PWA already blocks a broken Frontend-PWA
+# build from going live, but nothing stopped Auto Tag from tagging it anyway.
+# The `test` job below is that gate: `tag` now depends on it passing.
 name: Auto Tag
 
 on:
@@ -26,9 +34,52 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    working-directory: Frontend-PWA
+
 jobs:
+  test:
+    name: "Verify Frontend-PWA before tagging"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10.32.1"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: "pnpm-lock.yaml"
+
+      - name: Install Dependencies
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Tests
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
+        run: pnpm test
+
+      - name: Build Project
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
+        run: pnpm run build
+
   tag:
     name: "Create tag from package.json if missing"
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -38,11 +89,13 @@ jobs:
 
       - name: Read version from package.json
         id: version
+        working-directory: .
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag if it doesn't already exist
+        working-directory: .
         env:
           TAG: v${{ steps.version.outputs.version }}
         run: |
