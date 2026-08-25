@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1561 [Stage 12]: chore(apk-ux): Stage 12 global hybrid shell UX audit clean - bounded candidate set is fully compliant.
+**Domain:** pipeline | **Commit:** 2b2d5c24 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1561)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Stage 12 global hybrid shell UX audit clean - bounded candidate set is fully compliant.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-25] PR #1560 [Stage 11]: chore(apk): Performance, WebView cache topology, and Service Worker manifest audit complete; configurations remain fully optimal.
 **Domain:** pipeline | **Commit:** f4398965 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1560)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
