@@ -2685,7 +2685,7 @@
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.960Z",
+        "lastObservedAt": "2026-08-25T06:12:01.313Z",
         "failureClass": null
       },
       "2": {
@@ -2699,7 +2699,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
+        "lastObservedAt": "2026-08-25T06:12:01.313Z",
         "failureClass": null
       },
       "3": {
@@ -2718,7 +2718,7 @@
           "tag": "nightly/2026-08-25/stage-3/pr-1552"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
+        "lastObservedAt": "2026-08-25T06:12:01.314Z",
         "failureClass": null
       },
       "4": {
@@ -2733,7 +2733,7 @@
           "tag": "nightly/2026-08-25/stage-4/pr-1553"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
+        "lastObservedAt": "2026-08-25T06:12:01.314Z",
         "failureClass": null
       },
       "5": {
@@ -2761,7 +2761,7 @@
           "tag": "nightly/2026-08-25/stage-5/pr-1555"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
+        "lastObservedAt": "2026-08-25T06:12:01.314Z",
         "failureClass": null
       },
       "6": {
@@ -2776,7 +2776,7 @@
           "tag": "nightly/2026-08-25/stage-6/pr-1554"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
+        "lastObservedAt": "2026-08-25T06:12:01.314Z",
         "failureClass": null
       },
       "7": {
@@ -2791,7 +2791,7 @@
           "tag": "nightly/2026-08-25/stage-7/pr-1556"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
+        "lastObservedAt": "2026-08-25T06:12:01.315Z",
         "failureClass": null
       },
       "8": {
@@ -2799,14 +2799,18 @@
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
-          "julesApiError": null
+          "julesApiError": null,
+          "prNumber": 1557,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1557",
+          "headRef": "nightly/stage-8-dependency-audit-e46a901e-11087615800891553576",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-25T06:12:01.315Z",
+        "failureClass": "OPEN_PR"
       },
       "9": {
         "date": "2026-08-25",
@@ -2819,7 +2823,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.961Z",
+        "lastObservedAt": "2026-08-25T06:12:01.315Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -2833,7 +2837,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.962Z",
+        "lastObservedAt": "2026-08-25T06:12:01.315Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -2847,7 +2851,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.962Z",
+        "lastObservedAt": "2026-08-25T06:12:01.315Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -2861,7 +2865,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.962Z",
+        "lastObservedAt": "2026-08-25T06:12:01.315Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -2875,7 +2879,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T05:15:13.962Z",
+        "lastObservedAt": "2026-08-25T06:12:01.316Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
