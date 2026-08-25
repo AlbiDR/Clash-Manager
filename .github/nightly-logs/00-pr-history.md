@@ -16,6 +16,21 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1559 [Stage 9]: Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Domain:** architecture | **Commit:** 8a5857ab | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1559)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Execute the scheduled Stage 9 refactor audit.
+**Change:** Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Result:** Audit completed with no source change required.
+
+### [2026-08-25] PR #1558 [Stage 10]: APK and PWA wrapper integrity audit passed: zero mismatches or regressions found.
+**Domain:** apk | **Commit:** ac95a2d7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1558)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Execute the scheduled Stage 10 apk-integrity audit.
+**Change:** APK and PWA wrapper integrity audit passed: zero mismatches or regressions found.
+**Result:** Audit completed with no source change required.
+
+
 ### [2026-08-25] PR #1557 [Stage 8]: Bumped @types/node to ^26.3.0 and updated lockfile.
 **Domain:** dependencies | **Commit:** 910a3194 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1557)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
