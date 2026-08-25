@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1556 [Stage 7]: chore(version): Audit complete; monorepo package versions and catalog dependencies are fully consistent across all manif
+**Domain:** pipeline | **Commit:** 22c6ac7d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1556)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Audit complete; monorepo package versions and catalog dependencies are fully consistent across all manif
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-25] PR #1555 [Stage 5]: docs(readme): Reconciled BaseCard v-tactile haptic integration in shared UI README
 **Domain:** documentation | **Commit:** 38d3c470 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1555)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md

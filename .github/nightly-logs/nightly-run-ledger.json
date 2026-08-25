@@ -2685,7 +2685,7 @@
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-25T04:30:55.891Z",
+        "lastObservedAt": "2026-08-25T05:14:34.647Z",
         "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
