@@ -245,6 +245,30 @@ jobs:
             fi
           }
 
+          # Root cause this fixes (2026-08-25 audit): the merge used to be
+          # pushed to Beta BEFORE the Air Gap Guard "AFTER" test ran, so a
+          # regression Nightly introduced landed on Beta regardless, and
+          # recovery meant a human manually reverting it. Beta is a shared
+          # branch other automation reads from, so the fix is to never push
+          # a merge that hasn't already been verified locally - not to
+          # revert one after the fact. `run_tests` below runs before every
+          # push attempt, including the retry-on-race path.
+          run_tests() {
+            echo "### AFTER - Beta + Nightly combined (post-merge, pre-push)" >> "$GITHUB_STEP_SUMMARY"
+            if pnpm test; then
+              echo "after=pass" >> "$GITHUB_OUTPUT"
+              echo "Combined state: PASS" >> "$GITHUB_STEP_SUMMARY"
+              return 0
+            else
+              echo "after=fail" >> "$GITHUB_OUTPUT"
+              echo "Combined state: FAIL - Nightly introduced a regression." >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "> The merge was NOT pushed. Beta remains at its pre-merge state." >> "$GITHUB_STEP_SUMMARY"
+              echo "> Fix the offending commit(s) in Nightly before the next sync cycle." >> "$GITHUB_STEP_SUMMARY"
+              return 1
+            fi
+          }
+
           # ----------------------------------------------------------------
           # Robustness: If branches have diverged, use `-X theirs` to prefer
           # Nightly as the authoritative source. Nightly is the primary
@@ -254,37 +278,29 @@ jobs:
           DIVERGED="${{ needs.check-sync.outputs.nightly_beta_diverged }}"
           merge_nightly
 
+          if ! run_tests; then
+            exit 1
+          fi
+
           if ! git push origin Beta; then
-            echo "::warning::Beta advanced during the Nightly sync. Rebuilding once from the latest remote tip."
+            echo "::warning::Beta advanced during the Nightly sync. Rebuilding once from the latest remote tip and re-verifying before pushing."
             git fetch origin
             git reset --hard origin/Beta
             normalise_nightly_apk
             merge_nightly
+            if ! run_tests; then
+              echo "::error::Combined state failed after rebuilding against the new Beta tip. Not pushing."
+              exit 1
+            fi
             git push origin Beta
           fi
-          echo "merged=true" >> $GITHUB_OUTPUT
-
-      - name: "Air Gap Guard - AFTER (Beta + Nightly combined)"
-        id: test-after
-        run: |
-          echo "### AFTER - Beta + Nightly combined (post-merge)" >> $GITHUB_STEP_SUMMARY
-          if pnpm test; then
-            echo "after=pass" >> $GITHUB_OUTPUT
-            echo "Combined state: PASS" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "after=fail" >> $GITHUB_OUTPUT
-            echo "Combined state: FAIL - Nightly introduced a regression." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "> The merge has been pushed. Manual intervention required to revert" >> $GITHUB_STEP_SUMMARY
-            echo "> the offending Nightly commit(s) before the next sync cycle." >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
+          echo "merged=true" >> "$GITHUB_OUTPUT"
 
       - name: "Air Gap Guard - Regression Summary"
         if: always()
         run: |
           BEFORE="${{ steps.test-before.outputs.before }}"
-          AFTER="${{ steps.test-after.outputs.after }}"
+          AFTER="${{ steps.merge.outputs.after }}"
           echo "### Regression Delta" >> $GITHUB_STEP_SUMMARY
           echo "| Phase | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
