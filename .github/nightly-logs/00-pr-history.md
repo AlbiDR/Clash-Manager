@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1562 [Stage 13]: chore(pipeline): chore(self-healing): Updated protocol document with August 25 run analysis and no-diff metrics
+**Domain:** pipeline | **Commit:** 03cd4114 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1562)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(pipeline): chore(self-healing): Updated protocol document with August 25 run analysis and no-diff metrics
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-25] PR #1561 [Stage 12]: chore(apk-ux): Stage 12 global hybrid shell UX audit clean - bounded candidate set is fully compliant.
 **Domain:** pipeline | **Commit:** 2b2d5c24 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1561)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log
