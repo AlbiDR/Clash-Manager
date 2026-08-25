@@ -236,7 +236,7 @@ export interface ConsoleLayoutEvents<T = any> {
   /** Triggered when the management FAB is dismissed. */
   "fab-dismiss": () => void;
   /** Allows for feature-specific event extensions. */
-  [key: string]: ((...args: any[]) => void | Promise<void>) | undefined | any;
+  [key: string]: ((...args: any[]) => void | Promise<void>) | undefined;
 }
 
 /**

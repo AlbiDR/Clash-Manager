@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { watch, onUnmounted, nextTick, toRef, computed } from "vue";
+import { watch, onUnmounted, nextTick, toRef, computed, type Component } from "vue";
 import {
   useUiCoordinator,
   useShowcaseMode,
@@ -42,7 +42,7 @@ const props = defineProps<{
   emptyHint?: string;
   emptyIcon?: string;
   fabState?: ConsoleFabState;
-  skeletonComponent?: any;
+  skeletonComponent?: Component;
   skeletonCount?: number;
   totalCount?: number;
   /** Consolidated info about the remote data source. */

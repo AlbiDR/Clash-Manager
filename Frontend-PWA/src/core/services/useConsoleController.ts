@@ -267,7 +267,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   const layoutEvents = computed((): ConsoleLayoutEvents<T> => {
     const baseEvents: ConsoleLayoutEvents<T> = {
       refresh: refreshFn,
-      "update:search": (query: string) => (searchQuery.value = query),
+      "update:search": (query: string) => { searchQuery.value = query; },
       "update:sort": updateSort,
       "select-all": handleSelectAll,
       "clear-selection": clearSelection,
