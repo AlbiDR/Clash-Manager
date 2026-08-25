@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1551 [Stage 2]: chore(verify): Expanded useListFilter unit test suite
+**Domain:** pipeline | **Commit:** 7e5e7683 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1551)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useListFilter.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Expanded useListFilter unit test suite
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-24] PR #1548 [Stage 3]: chore(database): Baseline consolidation audit clean: 0 pending migrations, baseline up to date
 **Domain:** pipeline | **Commit:** b36be803 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1548)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log

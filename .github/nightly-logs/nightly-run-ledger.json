@@ -2668,6 +2668,156 @@
         "lastObservedAt": "2026-08-24T23:15:43.173Z",
         "failureClass": null
       }
+    },
+    "2026-08-25": {
+      "1": {
+        "date": "2026-08-25",
+        "stage": 1,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "BLOCKED",
+        "evidence": {
+          "prNumber": 1546,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1546",
+          "headRef": "nightly/stage-1-hardening-c33a9fdc-15239668688411919870",
+          "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:26:35.093Z",
+        "failureClass": "MERGE_COORDINATOR"
+      },
+      "2": {
+        "date": "2026-08-25",
+        "stage": 2,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "3": {
+        "date": "2026-08-25",
+        "stage": 3,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "4": {
+        "date": "2026-08-25",
+        "stage": 4,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "5": {
+        "date": "2026-08-25",
+        "stage": 5,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "6": {
+        "date": "2026-08-25",
+        "stage": 6,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "7": {
+        "date": "2026-08-25",
+        "stage": 7,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "8": {
+        "date": "2026-08-25",
+        "stage": 8,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "9": {
+        "date": "2026-08-25",
+        "stage": 9,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "10": {
+        "date": "2026-08-25",
+        "stage": 10,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "11": {
+        "date": "2026-08-25",
+        "stage": 11,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "12": {
+        "date": "2026-08-25",
+        "stage": 12,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      },
+      "13": {
+        "date": "2026-08-25",
+        "stage": 13,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {},
+        "attempts": 0,
+        "lastObservedAt": "2026-08-25T00:24:53.412Z",
+        "failureClass": null
+      }
     }
   }
 }
