@@ -42,12 +42,6 @@ describe("VoyageSetupForm.vue", () => {
     setActivePinia(createPinia());
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
-
-    // Suppress onUnmounted warning for store initialization outside components
-    vi.spyOn(console, 'warn').mockImplementation((msg) => {
-      if (msg.includes('onUnmounted')) return;
-      console.log(msg);
-    });
   });
 
   const createWrapper = () => {
