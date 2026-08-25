@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-25] PR #1552 [Stage 3]: chore(database): Baseline consolidation audit passed: schema state is CLEAN with zero pending migrations.
+**Domain:** pipeline | **Commit:** c558b6c0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1552)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline consolidation audit passed: schema state is CLEAN with zero pending migrations.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-25] PR #1551 [Stage 2]: chore(verify): Expanded useListFilter unit test suite
 **Domain:** pipeline | **Commit:** 7e5e7683 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1551)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useListFilter.spec.ts
