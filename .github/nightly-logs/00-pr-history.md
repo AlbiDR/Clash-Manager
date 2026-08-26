@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1572 [Stage 10]: chore(apk): Verified APK and PWA wrapper integrity
+**Domain:** pipeline | **Commit:** ff6c2d24 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1572)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Verified APK and PWA wrapper integrity
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-26] PR #1571 [Stage 8]: Bumped @supabase/supabase-js to ^2.112.4
 **Domain:** dependencies | **Commit:** 141b874d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1571)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
