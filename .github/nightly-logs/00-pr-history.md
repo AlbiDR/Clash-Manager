@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1568 [Stage 6]: chore(docs): docs(tsdoc): harden useShowcaseMode interface contracts and logic annotations
+**Domain:** pipeline | **Commit:** ea3f20ad | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1568)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useShowcaseMode.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden useShowcaseMode interface contracts and logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-26] PR #1567 [Stage 5]: docs(readme): Reconciled useHeadhunter error rollbacks, deduplication, and notification contracts in headhunter README
 **Domain:** documentation | **Commit:** 0d09f8c2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1567)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/headhunter/README.md
