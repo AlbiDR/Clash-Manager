@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1573 [Stage 11]: Audited WebView cache topology, Service Worker routes, R8/compilation settings, asset footprint, and wrapper configurations; verified target compliance with zero source drift.
+**Domain:** apk | **Commit:** a24429a2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1573)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Execute the scheduled Stage 11 apk-optimization audit.
+**Change:** Audited WebView cache topology, Service Worker routes, R8/compilation settings, asset footprint, and wrapper configurations; verified target compliance with zero source drift.
+**Result:** Audit completed with no source change required.
+
+
 ### [2026-08-26] PR #1572 [Stage 10]: chore(apk): Verified APK and PWA wrapper integrity
 **Domain:** pipeline | **Commit:** ff6c2d24 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1572)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
