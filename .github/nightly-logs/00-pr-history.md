@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1571 [Stage 8]: Bumped @supabase/supabase-js to ^2.112.4
+**Domain:** dependencies | **Commit:** 141b874d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1571)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Execute the scheduled Stage 8 dependency-audit audit.
+**Change:** Bumped @supabase/supabase-js to ^2.112.4
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-26] PR #1570 [Stage 9]: Extracted formatBytes utility from useApkManager to text.ts
 **Domain:** architecture | **Commit:** 39bd3c63 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1570)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/services/useApkManager.ts, Frontend-PWA/src/core/utils/text.ts, Frontend-PWA/src/core/utils/utils-tests/text.spec.ts
