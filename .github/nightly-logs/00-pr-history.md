@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1565 [Stage 3]: chore(database): Baseline Consolidation Stage 3
+**Domain:** pipeline | **Commit:** fa73765e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1565)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline Consolidation Stage 3
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-26] PR #1564 [Stage 2]: chore(verify): Expanded useHeadhunter unit test suite to cover deduplication, AbortError rollback, plural notifications, and sync error handling.
 **Domain:** pipeline | **Commit:** d2d9f133 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1564)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/headhunter/composables/composables-tests/useHeadhunter.spec.ts
