@@ -13,7 +13,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.17"
   }
   drivers: {
     Tables: {
@@ -843,6 +843,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_heartbeat_view: {
+        Row: {
+          component_id: string | null
+          last_success_at: string | null
+        }
+        Insert: {
+          component_id?: string | null
+          last_success_at?: string | null
+        }
+        Update: {
+          component_id?: string | null
+          last_success_at?: string | null
+        }
+        Relationships: []
+      }
+      recruit_blacklist_view: {
+        Row: {
+          player_tag: string | null
+        }
+        Insert: {
+          player_tag?: string | null
+        }
+        Update: {
+          player_tag?: string | null
+        }
+        Relationships: []
+      }
       roster_view: {
         Row: {
           avg_daily_donations: number | null
@@ -941,6 +968,10 @@ export type Database = {
       }
       ping: { Args: never; Returns: string }
       process_queue: { Args: { req: Json }; Returns: Json }
+      register_push_subscription: {
+        Args: { subscription: Json }
+        Returns: Json
+      }
       schedule_voyage: {
         Args: { start_at: string; target_crowns: number }
         Returns: Json
@@ -992,6 +1023,12 @@ export type Database = {
         }[]
       }
       get_ingestion_targets: { Args: never; Returns: Json }
+      get_recent_scans: {
+        Args: { p_since: string; p_tags: string[] }
+        Returns: {
+          player_tag: string
+        }[]
+      }
       get_recruits_fate: {
         Args: { tags: string[] }
         Returns: {
