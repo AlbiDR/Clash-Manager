@@ -200,6 +200,14 @@ CREATE TABLE IF NOT EXISTS substrate.discovery_cache (
 ALTER TABLE substrate.discovery_cache ENABLE ROW LEVEL SECURITY;
 
 -- L0 Substrate: High-fidelity registry for tracking pipeline health and execution status.
+-- [2026-08-26 audit] Dropped a `metadata` column here: declared since this
+-- table's introduction but never live, guarded out by CREATE TABLE IF NOT
+-- EXISTS against the already-existing table. This is the exact drift that
+-- made public.report_heartbeat raise 42703 on every call from 2026-04-30 to
+-- 2026-08-17 (see 20260817010000_fix_heartbeat_success_timestamps.sql, which
+-- fixed the function but left this declaration wrong). Removing it now so a
+-- fresh build from these migrations matches production instead of
+-- reintroducing the column the function was rewritten to stop using.
 CREATE TABLE IF NOT EXISTS substrate.pipeline_heartbeat (
     is_data_perfect boolean DEFAULT false /* Boolean flag indicating the last run was 100% verified against expected data shapes. */,
     status substrate.pipeline_status NOT NULL /* Current operational state of the component (IDLE, RUNNING, COMPLETED, FAILED). */,
@@ -211,7 +219,6 @@ CREATE TABLE IF NOT EXISTS substrate.pipeline_heartbeat (
     last_triggered_at timestamp with time zone DEFAULT now(),
     discovery_yield integer DEFAULT 0,
     updated_at timestamp with time zone DEFAULT now(),
-    metadata jsonb DEFAULT '{}'::jsonb,
     CONSTRAINT substrate_pipeline_heartbeat_pkey PRIMARY KEY (component_id)
 );
 
