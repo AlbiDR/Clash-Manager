@@ -76,6 +76,19 @@ export function formatDisplayTag(tag: string | undefined): string {
 }
 
 /**
+ * FORMAT BYTES
+ * Formats raw byte counts into human-readable MB or KB strings.
+ *
+ * @param sizeBytes - Raw file size in bytes.
+ * @returns Formatted string (e.g. "12.4 MB" or "850 KB").
+ */
+export function formatBytes(sizeBytes: number | undefined): string {
+  if (!sizeBytes) return "Size unknown";
+  if (sizeBytes >= 1024 * 1024) return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.round(sizeBytes / 1024)} KB`;
+}
+
+/**
  * DESCRIPTION FORMATTER
  * Converts markdown-ish strings from remote data sources into semantic HTML.
  *
