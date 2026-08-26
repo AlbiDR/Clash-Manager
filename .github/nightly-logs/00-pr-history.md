@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1570 [Stage 9]: Extracted formatBytes utility from useApkManager to text.ts
+**Domain:** architecture | **Commit:** 39bd3c63 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1570)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/services/useApkManager.ts, Frontend-PWA/src/core/utils/text.ts, Frontend-PWA/src/core/utils/utils-tests/text.spec.ts
+**Why:** Execute the scheduled Stage 9 refactor audit.
+**Change:** Extracted formatBytes utility from useApkManager to text.ts
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-26] PR #1569 [Stage 7]: chore(version): No version drift or catalog violations detected.
 **Domain:** pipeline | **Commit:** 464e1bac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1569)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
