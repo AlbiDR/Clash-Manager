@@ -36,6 +36,26 @@ const isShowcaseMode = ref(
   localStorage.getItem(SHOWCASE_KEY) === "true" || getParam("showcase") === "true"
 );
 
+/**
+ * COMPOSABLE: useShowcaseMode
+ *
+ * @remarks
+ * Orchestrates the "Showcase" state within Layer 1 (@core).
+ * Showcase mode acts as a master toggle that simultaneously manages Synthetic (mock data)
+ * and Blueprint (skeleton UI) display modes.
+ *
+ * Satisfies ADR Section I: Architectural Boundaries & Section II: State Management.
+ *
+ * **Side Effects:**
+ * - Reads from and persists state to `localStorage` under `clash_manager_showcase_mode`.
+ * - Interacts with URL query parameters (`showcase=true`) for headless test automation or portfolio rendering.
+ * - Synchronizes child states in `useSyntheticMode` and `useBlueprintMode`.
+ *
+ * @returns
+ * - `isShowcaseMode`: Reactive ref indicating whether Showcase mode is active.
+ * - `toggleShowcaseMode`: Function to invert the master Showcase state and update dependent child modes.
+ * - `setShowcaseMode`: Function to explicitly set master Showcase state and update dependent child modes.
+ */
 export function useShowcaseMode() {
   const { isSyntheticMode, setSyntheticMode } = useSyntheticMode();
   const { isBlueprintMode, setBlueprintMode } = useBlueprintMode();
