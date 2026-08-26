@@ -36,6 +36,7 @@ const PATHS = {
   pwaReadme: path.join(PWA_DIR, 'README.md'),
   backendReadme: path.join(BACKEND_DIR, 'README.md'),
   dbBaseline: path.join(BACKEND_DIR, 'supabase', 'migrations', '20260531232406_master_migration.sql'),
+  dbTypes: path.join(BACKEND_DIR, 'supabase', 'database.types.ts'),
 };
 
 const ARGS = process.argv.slice(2);
@@ -64,6 +65,77 @@ interface PackageJson {
 
 function escapeRegExp(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Extracts { "schema.table": Set<columnName> } for every `CREATE TABLE IF NOT
+ * EXISTS` block in the baseline migration. Table-level constraints (PRIMARY
+ * KEY, FOREIGN KEY, CONSTRAINT, UNIQUE, CHECK) are not column declarations
+ * and are skipped.
+ */
+function parseBaselineTableColumns(content: string): Map<string, Set<string>> {
+  const tables = new Map<string, Set<string>>();
+  const tablePattern = /CREATE TABLE IF NOT EXISTS (\w+\.\w+) \(([\s\S]*?)\n\);/g;
+  let match;
+  while ((match = tablePattern.exec(content)) !== null) {
+    const [tableKey, body] = [match[1], match[2]];
+    const columns = new Set<string>();
+    for (const rawLine of body.split('\n')) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('--')) continue;
+      if (/^(PRIMARY KEY|FOREIGN KEY|CONSTRAINT|UNIQUE|CHECK)\b/i.test(line)) continue;
+      const colMatch = /^"?(\w+)"?\s+[A-Za-z]/.exec(line);
+      if (colMatch) columns.add(colMatch[1]);
+    }
+    tables.set(tableKey, columns);
+  }
+  return tables;
+}
+
+/**
+ * Extracts { "schema.table": Set<columnName> } from database.types.ts's Row
+ * types, for the schemas the baseline migration actually declares tables in.
+ * database.types.ts is generated from the live database, so this is what's
+ * actually true, independent of what any migration claims.
+ */
+function parseLiveTableColumns(content: string): Map<string, Set<string>> {
+  const tables = new Map<string, Set<string>>();
+  const lines = content.split('\n');
+  const trackedSchemas = new Set(['substrate', 'drivers', 'public', 'features']);
+  let currentSchema: string | null = null;
+  let i = 0;
+  while (i < lines.length) {
+    const schemaMatch = /^  (\w+): \{$/.exec(lines[i]);
+    if (schemaMatch && trackedSchemas.has(schemaMatch[1])) {
+      currentSchema = schemaMatch[1];
+      i++;
+      continue;
+    }
+    if (currentSchema && /^    Tables: \{$/.test(lines[i])) {
+      i++;
+      while (i < lines.length && !/^    \}$/.test(lines[i])) {
+        const tableMatch = /^      (\w+): \{$/.exec(lines[i]);
+        if (tableMatch) {
+          const tableName = tableMatch[1];
+          i++;
+          if (i < lines.length && /^        Row: \{$/.test(lines[i])) {
+            i++;
+            const columns = new Set<string>();
+            while (i < lines.length && !/^        \}$/.test(lines[i])) {
+              const colMatch = /^ {10}(\w+)\??:/.exec(lines[i]);
+              if (colMatch) columns.add(colMatch[1]);
+              i++;
+            }
+            tables.set(`${currentSchema}.${tableName}`, columns);
+          }
+        }
+        i++;
+      }
+      continue;
+    }
+    i++;
+  }
+  return tables;
 }
 
 /**
@@ -577,6 +649,32 @@ function checkDatabaseBaseline() {
   // Unqualified moddatetime trigger function check
   if (/EXECUTE\s+FUNCTION\s+moddatetime/i.test(content)) {
     dbErrors.push('Unqualified moddatetime call found');
+  }
+
+  // Phantom column check (2026-08-26 audit): every column a CREATE TABLE IF
+  // NOT EXISTS block declares must actually exist live, or the IF NOT EXISTS
+  // guard silently strands it against the already-existing table -- exactly
+  // what made public.report_heartbeat raise 42703 on every call for 3.5
+  // months (2026-04-30 to 2026-08-17) before anyone noticed, and what a
+  // second pass found again on substrate.discovery_cache.discovered_at.
+  // database.types.ts is generated from the live database and is the
+  // authority here, not this file's own declarations.
+  if (!fs.existsSync(PATHS.dbTypes)) {
+    log.warn(`database.types.ts not found at ${PATHS.dbTypes}. Skipping phantom-column check.`);
+  } else {
+    const liveTables = parseLiveTableColumns(fs.readFileSync(PATHS.dbTypes, 'utf-8'));
+    const migrationTables = parseBaselineTableColumns(content);
+    for (const [tableKey, migrationCols] of migrationTables) {
+      const liveCols = liveTables.get(tableKey);
+      if (!liveCols) continue; // Table not in database.types.ts; not this check's concern.
+      const phantom = [...migrationCols].filter((c) => !liveCols.has(c));
+      if (phantom.length > 0) {
+        dbErrors.push(
+          `Table ${tableKey} declares column(s) not present in database.types.ts, ` +
+          `likely silently skipped by CREATE TABLE IF NOT EXISTS: ${phantom.join(', ')}`,
+        );
+      }
+    }
   }
 
   if (dbErrors.length === 0) {
