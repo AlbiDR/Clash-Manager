@@ -2,7 +2,15 @@ project_id = "hucktamloykszinwbtuh"
 
 [api]
 port = 54321
-schemas = ["public", "substrate", "drivers", "features"]
+# [2026-08-26 audit] Was ["public", "substrate", "drivers", "features"]. That
+# never matched the remote project, which only exposes the four schemas below
+# (see 20260817000000_expose_pwa_client_surfaces.sql) -- substrate and drivers
+# are internal-only, reached exclusively through features views/RPCs. This
+# setting only configures the local dev stack; it does not change what the
+# remote project actually exposes, but keeping it accurate is what would have
+# caught the PGRST106 failures (dead heartbeat freshness, empty blacklist,
+# lost push subscriptions) locally instead of silently in production.
+schemas = ["public", "storage", "graphql_public", "features"]
 
 [db]
 port = 54322

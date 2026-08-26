@@ -3,7 +3,7 @@
 
 # Clash Manager Backend
 
-[![Backend](https://img.shields.io/badge/Backend-v14.46.15-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
+[![Backend](https://img.shields.io/badge/Backend-v14.46.16-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
 [![Deno](https://img.shields.io/badge/Edge-Deno-000000?style=flat-square&logo=deno&logoColor=white)](supabase/functions)
 [![Postgres 17](https://img.shields.io/badge/Postgres-17-4169E1?style=flat-square&logo=postgresql&logoColor=white)](supabase/migrations)
 
@@ -39,7 +39,7 @@ Five Deno functions live in [`supabase/functions/`](supabase/functions). All sha
 
 ## Data model
 
-Four schemas are exposed through PostgREST (`public`, `substrate`, `drivers`, `features`). Data flows strictly one way through them.
+The database is organized into four schemas, but only two are reachable through PostgREST: `public` and `features`. `substrate` and `drivers` are internal-only, reached exclusively through `public` RPCs and `features` views/RPCs -- never directly. Data flows strictly one way through all four.
 
 | Schema | Role | Holds |
 | :--- | :--- | :--- |

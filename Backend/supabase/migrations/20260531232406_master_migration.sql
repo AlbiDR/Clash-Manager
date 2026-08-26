@@ -182,11 +182,18 @@ CREATE TABLE IF NOT EXISTS substrate.governance_telemetry (
 ALTER TABLE substrate.governance_telemetry ENABLE ROW LEVEL SECURITY;
 
 -- Prevents redundant API scans by tracking previously indexed tournament tags.
+-- [2026-08-26 audit] Dropped a `discovered_at` column here: declared since this
+-- table's introduction but never present on the live table (CREATE TABLE IF NOT
+-- EXISTS silently skipped it against the already-existing table, the same class
+-- of drift fixed for substrate.pipeline_heartbeat in
+-- 20260817010000_fix_heartbeat_success_timestamps.sql). Unlike that case, no
+-- function ever referenced it -- get_discovery_cache and upsert_discovery_cache
+-- only touch player_tag, type, and scanned_at -- so there was nothing to repair,
+-- just a phantom declaration to stop making here.
 CREATE TABLE IF NOT EXISTS substrate.discovery_cache (
     type text NOT NULL,
     scanned_at timestamp with time zone DEFAULT now() /* Timestamp of the last time this player was indexed in a discovery scan. */,
     player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
-    discovered_at timestamp with time zone DEFAULT now(),
     CONSTRAINT substrate_discovery_cache_pkey PRIMARY KEY (player_tag)
 );
 
