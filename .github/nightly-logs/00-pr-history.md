@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1567 [Stage 5]: docs(readme): Reconciled useHeadhunter error rollbacks, deduplication, and notification contracts in headhunter README
+**Domain:** documentation | **Commit:** 0d09f8c2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1567)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/headhunter/README.md
+**Why:** Execute the scheduled Stage 5 documentation-readme audit.
+**Change:** docs(readme): Reconciled useHeadhunter error rollbacks, deduplication, and notification contracts in headhunter README
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-26] PR #1566 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no new orphaned views found
 **Domain:** pipeline | **Commit:** b5f0707b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1566)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
