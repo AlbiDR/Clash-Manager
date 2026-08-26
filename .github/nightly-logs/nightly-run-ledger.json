@@ -2916,7 +2916,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "BLOCKED",
+        "state": "MERGED",
         "evidence": {
           "prNumber": 1546,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1546",
@@ -2926,8 +2926,8 @@
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:21:51.888Z",
-        "failureClass": "MERGE_COORDINATOR"
+        "lastObservedAt": "2026-08-26T11:20:33.092Z",
+        "failureClass": null
       },
       "2": {
         "date": "2026-08-26",
@@ -2940,7 +2940,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.275Z",
+        "lastObservedAt": "2026-08-26T11:20:33.093Z",
         "failureClass": null
       },
       "3": {
@@ -2959,7 +2959,7 @@
           "tag": "nightly/2026-08-26/stage-3/pr-1565"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.275Z",
+        "lastObservedAt": "2026-08-26T11:20:33.093Z",
         "failureClass": null
       },
       "4": {
@@ -2978,7 +2978,7 @@
           "tag": "nightly/2026-08-26/stage-4/pr-1566"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.275Z",
+        "lastObservedAt": "2026-08-26T11:20:33.093Z",
         "failureClass": null
       },
       "5": {
@@ -2993,7 +2993,7 @@
           "tag": "nightly/2026-08-26/stage-5/pr-1567"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.275Z",
+        "lastObservedAt": "2026-08-26T11:20:33.093Z",
         "failureClass": null
       },
       "6": {
@@ -3012,7 +3012,7 @@
           "tag": "nightly/2026-08-26/stage-6/pr-1568"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.275Z",
+        "lastObservedAt": "2026-08-26T11:20:33.094Z",
         "failureClass": null
       },
       "7": {
@@ -3027,7 +3027,7 @@
           "tag": "nightly/2026-08-26/stage-7/pr-1569"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.276Z",
+        "lastObservedAt": "2026-08-26T11:20:33.094Z",
         "failureClass": null
       },
       "8": {
@@ -3055,7 +3055,7 @@
           "tag": "nightly/2026-08-26/stage-8/pr-1571"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-26T10:14:14.276Z",
+        "lastObservedAt": "2026-08-26T11:20:33.094Z",
         "failureClass": null
       },
       "9": {
@@ -3070,7 +3070,7 @@
           "tag": "nightly/2026-08-26/stage-9/pr-1570"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.276Z",
+        "lastObservedAt": "2026-08-26T11:20:33.094Z",
         "failureClass": null
       },
       "10": {
@@ -3089,7 +3089,7 @@
           "tag": "nightly/2026-08-26/stage-10/pr-1572"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.276Z",
+        "lastObservedAt": "2026-08-26T11:20:33.094Z",
         "failureClass": null
       },
       "11": {
@@ -3104,7 +3104,7 @@
           "tag": "nightly/2026-08-26/stage-11/pr-1573"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.276Z",
+        "lastObservedAt": "2026-08-26T11:20:33.095Z",
         "failureClass": null
       },
       "12": {
@@ -3112,32 +3112,34 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "julesApiError": null,
           "prNumber": 1574,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1574",
           "headRef": "nightly/stage-12-apk-ux-f06181ef-15771720589259057837",
-          "reason": "canonical nightly stage branch"
+          "reason": "canonical nightly stage branch",
+          "tag": "nightly/2026-08-26/stage-12/pr-1574"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.277Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-08-26T11:20:33.095Z",
+        "failureClass": null
       },
       "13": {
         "date": "2026-08-26",
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
-          "julesApiError": null
+          "julesApiError": null,
+          "tag": "nightly/2026-08-26/stage-13/pr-1575"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T10:14:14.277Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-26T11:20:33.095Z",
+        "failureClass": null
       }
     }
   }
