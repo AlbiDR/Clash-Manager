@@ -5,6 +5,7 @@ import {
   cleanTag,
   normalizeTag,
   formatDisplayTag,
+  formatBytes,
   formatHeaderDescription,
 } from "../text";
 
@@ -59,6 +60,23 @@ describe("text utilities", () => {
     it("handles undefined/empty input", () => {
       expect(formatDisplayTag(undefined)).toBe("");
       expect(formatDisplayTag("")).toBe("");
+    });
+  });
+
+  describe("formatBytes", () => {
+    it("handles undefined or zero bytes", () => {
+      expect(formatBytes(undefined)).toBe("Size unknown");
+      expect(formatBytes(0)).toBe("Size unknown");
+    });
+
+    it("formats kilobyte values", () => {
+      expect(formatBytes(850 * 1024)).toBe("850 KB");
+      expect(formatBytes(512)).toBe("1 KB");
+    });
+
+    it("formats megabyte values", () => {
+      expect(formatBytes(15 * 1024 * 1024)).toBe("15.0 MB");
+      expect(formatBytes(12.4 * 1024 * 1024)).toBe("12.4 MB");
     });
   });
 
