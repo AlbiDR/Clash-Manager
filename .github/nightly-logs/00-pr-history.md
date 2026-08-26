@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-26] PR #1564 [Stage 2]: chore(verify): Expanded useHeadhunter unit test suite to cover deduplication, AbortError rollback, plural notifications, and sync error handling.
+**Domain:** pipeline | **Commit:** d2d9f133 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1564)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/headhunter/composables/composables-tests/useHeadhunter.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Expanded useHeadhunter unit test suite to cover deduplication, AbortError rollback, plural notifications, and sync error handling.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-25] PR #1563 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** 3bce81c8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1563)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
