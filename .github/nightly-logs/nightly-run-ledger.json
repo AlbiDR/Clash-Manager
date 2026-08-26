@@ -2916,7 +2916,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "MERGED",
+        "state": "BLOCKED",
         "evidence": {
           "prNumber": 1546,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1546",
@@ -2926,8 +2926,8 @@
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T23:33:13.665Z",
-        "failureClass": null
+        "lastObservedAt": "2026-08-26T23:41:26.550Z",
+        "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
         "date": "2026-08-26",

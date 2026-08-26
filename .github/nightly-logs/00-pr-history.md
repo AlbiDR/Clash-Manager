@@ -15,6 +15,21 @@ LAST_AGED:   2026-08-26
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-26] PR #1576 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** pipeline | **Commit:** 0b26e3ba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1576)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-26] PR #1575 [Stage 13]: chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-26
+**Domain:** pipeline | **Commit:** f6c81c70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1575)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(pipeline): Completed Stage 13 pipeline self-healing audit pass for 2026-08-26
+**Result:** Nominal validation with zero regressions.
+
 ### [2026-08-26] PR #1574 [Stage 12]: chore(apk-ux): Global UX sweep completed; no pending layout leaks, raw selectors, or missing tactile bindings found
 **Domain:** pipeline | **Commit:** 18ee016f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1574)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log
