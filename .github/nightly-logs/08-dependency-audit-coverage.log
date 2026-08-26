@@ -352,3 +352,4 @@
 * [2026-08-25] Target: Codebase - jsdom | ^29.1.1 | 30.0.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
 * [2026-08-25] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped @types/node to ^26.3.0 and updated lockfile.
 * [2026-08-25] [Stage 8] CHANGED: pnpm-workspace.yaml -- Bumped @types/node to ^26.3.0 and updated lockfile.
+* [2026-08-26] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped @supabase/supabase-js to ^2.112.4
