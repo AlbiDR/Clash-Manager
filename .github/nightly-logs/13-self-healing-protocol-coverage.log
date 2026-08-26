@@ -25,3 +25,5 @@
 * [2026-08-22] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Completed Stage 13 self-healing protocol audit and updated protocol document for 2026-08-22
 * [2026-08-23] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Completed Stage 13 pipeline self-healing audit pass for 2026-08-23
 * [2026-08-24] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Completed Stage 13 pipeline self-healing audit pass for 2026-08-24
+* [2026-08-25] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- chore(self-healing): Updated protocol document with August 25 run analysis and no-diff metrics
+* [2026-08-26] [Stage 13] CHANGED: .github/nightly-logs/13-self-healing-protocol.md -- Completed Stage 13 pipeline self-healing audit pass for 2026-08-26

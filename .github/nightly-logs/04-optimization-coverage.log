@@ -79,3 +79,6 @@
 * [2026-08-20] [Stage 4] CHANGED: Frontend-PWA/src/shared/ui/DurationInput.vue -- Frontend-PWA/src/shared/ui/DurationInput.vue -- Standardized durationUnitKey variable naming in DurationInput.vue and re-verified substrate hygiene.
 * [2026-08-22] [Stage 4] CLEAN: Codebase -- Re-verified dropped database views remain unreferenced by Edge Function application logic.
 * [2026-08-23] [Stage 4] CLEAN: Codebase -- Re-verified dropped database views remain unreferenced by Edge Function application logic.
+* [2026-08-24] [Stage 4] CHANGED: Frontend-PWA/src/core/utils/mockData.ts -- Standardized sorting parameters to domain-descriptive identifiers in mockData.ts and useHeadhunter.ts and verified substrate view hygiene.
+* [2026-08-25] [Stage 4] CLEAN: Codebase -- Substrate hygiene audit confirmed known unreferenced views; no new orphaned views found
+* [2026-08-26] [Stage 4] CLEAN: Codebase -- Substrate hygiene audit confirmed known unreferenced views; no new orphaned views found

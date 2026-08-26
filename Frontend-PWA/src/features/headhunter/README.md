@@ -22,15 +22,17 @@
 | `views/HeadhunterView.vue` | The console view and empty-state "Scan Again" action. |
 | `components/RecruitCard.vue` | A recruit row: identity, potential score, expandable stats. |
 | `composables/useRecruiter.ts` | The main engine: list config, manual and background sync, Blitz setup. |
-| `composables/useHeadhunter.ts` | The dismissal lifecycle and realtime/broadcast sync. |
+| `composables/useHeadhunter.ts` | The dismissal lifecycle, optimistic state rollbacks, recruit injection deduplication, and realtime/broadcast sync. |
 | `composables/useLeaderboardScraper.ts` | On-demand global/local leaderboard harvesting via [`query-royale-api`](../../../../Backend/supabase/functions/query-royale-api/README.md). |
 | `composables/useRecruitBlacklist.ts` | In-memory tombstones that hide a recruit between the tap and realtime confirmation. |
 
 ## How it works, and why
 
 1. `useRecruiter` syncs the recruit pool (scored server-side in the headhunter view).
-2. Recruits are filtered against local tombstones and rendered in the shared list layout.
-3. Dismissing a recruit injects a tombstone, sends the Supabase request, and broadcasts to other tabs.
+2. Recruits are filtered against local tombstones and rendered in the shared list layout. Deduplication and descending potential score ordering during candidate injection are handled via `injectRecruits`.
+3. Dismissing a recruit injects an optimistic tombstone, sends the Supabase request, and broadcasts to other tabs (`useBroadcastChannel`).
+4. On dismissal failure, `useHeadhunter` handles state rollbacks gracefully: requests interrupted by navigation (`AbortError`) roll back local state silently without raising toast alerts, whereas network or RPC errors surface user toasts before restoring original state.
+5. Evaluating incoming data deltas surfaces pluralized system notifications when multiple elite candidates cross the notification threshold simultaneously.
 
 - **Why manual ingest?** The backend scans around the clock, but a manual trigger lets leadership force a full-pool refresh on demand.
 - **Why in-memory tombstones, not LocalStorage?** A dismissed recruit must never flash back if a stale background payload arrives first. Authoritative state is the realtime subscription, so tombstones intentionally reset on reload.

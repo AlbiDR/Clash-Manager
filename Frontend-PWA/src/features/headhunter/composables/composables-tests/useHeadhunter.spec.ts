@@ -272,4 +272,107 @@ describe("useHeadhunter", () => {
 
     expect(undismissRecruits).toHaveBeenCalledWith(["R1"]);
   });
+
+  it("should handle null or empty data in injectRecruits", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    const { injectRecruits } = useHeadhunter();
+
+    mockClashData.value = null;
+    expect(injectRecruits([sampleRecruit1])).toBe(0);
+
+    mockClashData.value = sampleData;
+    expect(injectRecruits([])).toBe(0);
+  });
+
+  it("should deduplicate and sort recruits descending by potentialScore in injectRecruits", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    const { injectRecruits } = useHeadhunter();
+
+    mockClashData.value = { ...sampleData, hh: [sampleRecruit2] };
+    await nextTick();
+    mockUpdateLocalData.mockClear();
+
+    const sampleRecruit3: Recruit = {
+      id: "R3",
+      n: "Recruit 3",
+      t: 7000,
+      potentialScore: 95,
+      potentialRawScore: 50000,
+      d: { don: 200, war: 20, ago: "2023-01-01", cards: 0 },
+    };
+
+    // R2 is already in hh, so only R1 and R3 are new
+    const addedCount = injectRecruits([sampleRecruit1, sampleRecruit2, sampleRecruit3]);
+    expect(addedCount).toBe(2);
+
+    // Order should be R3 (95), R1 (80), R2 (60)
+    expect(mockUpdateLocalData).toHaveBeenCalledWith(expect.objectContaining({
+      hh: [sampleRecruit3, sampleRecruit1, sampleRecruit2]
+    }));
+  });
+
+  it("should silently rollback on AbortError during dismissal", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    const { dismissRecruitsAction } = useHeadhunter();
+    const { dismissRecruits } = await import("@core/api/RecruitClient");
+
+    const abortError = new Error("Aborted");
+    abortError.name = "AbortError";
+    vi.mocked(dismissRecruits).mockRejectedValueOnce(abortError);
+
+    mockClashData.value = sampleData;
+    await nextTick();
+    mockUpdateLocalData.mockClear();
+
+    await dismissRecruitsAction([{ id: "R1", score: 40000 }]);
+
+    // Should update twice: optimistic removal, then silent rollback to original sampleData
+    expect(mockUpdateLocalData).toHaveBeenCalledTimes(2);
+    expect(mockUpdateLocalData).toHaveBeenLastCalledWith(sampleData);
+  });
+
+  it("should send plural notification when multiple elite recruits enter pool", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter();
+
+    const sampleRecruit3: Recruit = {
+      id: "R3",
+      n: "Recruit 3",
+      t: 7000,
+      potentialScore: 90,
+      potentialRawScore: 50000,
+      d: { don: 200, war: 20, ago: "2023-01-01", cards: 0 },
+    };
+
+    mockClashData.value = { ...sampleData, hh: [], timestamp: 1000 };
+    await nextTick();
+    mockSendLocalNotification.mockClear();
+
+    // Add two elite recruits (R1 score 80, R3 score 90)
+    mockClashData.value = { ...sampleData, hh: [sampleRecruit1, sampleRecruit3], timestamp: 2000 };
+    await nextTick();
+
+    expect(mockSendLocalNotification).toHaveBeenCalledWith(
+      "Elite Recruits Located",
+      expect.stringContaining("2 candidates with scores up to 90 detected"),
+      "headhunter-channel"
+    );
+  });
+
+  it("should handle sync failure gracefully in undismissRecruitsAction", async () => {
+    const { useHeadhunter } = await import("../useHeadhunter");
+    const { undismissRecruitsAction } = useHeadhunter();
+    const { undismissRecruits } = await import("@core/api/RecruitClient");
+
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(undismissRecruits).mockRejectedValueOnce(new Error("Network Failure"));
+
+    mockClashData.value = sampleData;
+    await nextTick();
+
+    await undismissRecruitsAction(["R1"]);
+
+    expect(consoleSpy).toHaveBeenCalledWith("Undo Sync Failed:", "Network Failure");
+    consoleSpy.mockRestore();
+  });
 });

@@ -150,6 +150,7 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
 
         <!-- Expand Button -->
         <button
+          v-tactile
           class="expand-btn hit-target"
           :class="{ 'is-active': props.expanded }"
           v-bind="{ 'aria-expanded': props.expanded, 'aria-label': 'Expand details' }"

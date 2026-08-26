@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { computed, ref } from "vue";
+import { formatBytes } from "../utils/text";
 import { useToast } from "./useToast";
 import { useNativeBridge } from "./useNativeBridge";
 import {
@@ -202,18 +203,6 @@ export function useApkManager() {
     return release.buildNumber ? `${version} (${release.buildNumber})` : version;
   }
 
-  /**
-   * Formats raw byte counts into human-readable MB or KB strings.
-   *
-   * @param sizeBytes - Raw file size in bytes.
-   * @returns Formatted string (e.g. "12.4 MB" or "850 KB").
-   */
-  function formatApkSize(sizeBytes: number | undefined): string {
-    if (!sizeBytes) return "Size unknown";
-    if (sizeBytes >= 1024 * 1024) return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
-    return `${Math.round(sizeBytes / 1024)} KB`;
-  }
-
   /** Formatted display label for the installed native shell environment. */
   const installedApkLabel = computed(() => {
     const versionName = getNativeVersionName();
@@ -244,7 +233,7 @@ export function useApkManager() {
     const release = latestApkRelease.value;
     if (!release) return "No APK metadata loaded";
     const checksum = release.sha256 ? `SHA-256 ${release.sha256.slice(0, 8)}...` : "checksum unavailable";
-    return `${formatApkSize(release.sizeBytes)} · ${checksum}`;
+    return `${formatBytes(release.sizeBytes)} · ${checksum}`;
   });
 
   /** Display label detailing the feed source and URL. */

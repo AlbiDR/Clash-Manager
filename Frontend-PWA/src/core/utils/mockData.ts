@@ -163,8 +163,8 @@ export function generateMockData(options?: {
   }
 
   return {
-    lb: lb.sort((a, b) => b.performanceScore - a.performanceScore),
-    hh: hh.sort((a, b) => b.potentialScore - a.potentialScore),
+    lb: lb.sort((memberA, memberB) => memberB.performanceScore - memberA.performanceScore),
+    hh: hh.sort((recruitA, recruitB) => recruitB.potentialScore - recruitA.potentialScore),
     timestamp: Date.now(),
   };
 }
