@@ -2926,7 +2926,7 @@
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.227Z",
+        "lastObservedAt": "2026-08-26T04:22:45.589Z",
         "failureClass": null
       },
       "2": {
@@ -2940,7 +2940,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.228Z",
+        "lastObservedAt": "2026-08-26T04:22:45.589Z",
         "failureClass": null
       },
       "3": {
@@ -2959,7 +2959,7 @@
           "tag": "nightly/2026-08-26/stage-3/pr-1565"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.228Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": null
       },
       "4": {
@@ -2978,7 +2978,7 @@
           "tag": "nightly/2026-08-26/stage-4/pr-1566"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.228Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": null
       },
       "5": {
@@ -2993,7 +2993,7 @@
           "tag": "nightly/2026-08-26/stage-5/pr-1567"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.228Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": null
       },
       "6": {
@@ -3001,14 +3001,18 @@
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
-          "julesApiError": null
+          "julesApiError": null,
+          "prNumber": 1568,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1568",
+          "headRef": "nightly/stage-6-documentation-tsdoc-d7b2c0af-14702060663890875771",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.229Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
+        "failureClass": "OPEN_PR"
       },
       "7": {
         "date": "2026-08-26",
@@ -3021,7 +3025,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.229Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -3035,7 +3039,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.229Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -3049,7 +3053,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.229Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -3063,7 +3067,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.229Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -3077,7 +3081,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.229Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -3091,7 +3095,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.230Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -3105,7 +3109,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-26T03:28:31.230Z",
+        "lastObservedAt": "2026-08-26T04:22:45.590Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
