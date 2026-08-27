@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-27] PR #1583 [Stage 8]: Bumped @types/node to ^26.4.0 in catalog and updated lockfile.
+**Domain:** dependencies | **Commit:** f9115b11 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1583)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Execute the scheduled Stage 8 dependency-audit audit.
+**Change:** Bumped @types/node to ^26.4.0 in catalog and updated lockfile.
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-27] PR #1582 [Stage 7]: chore(version): Audit complete; monorepo package versions and catalog dependencies are fully consistent across all manifests.
 **Domain:** pipeline | **Commit:** 466ce119 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1582)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
