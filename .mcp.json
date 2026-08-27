@@ -2,10 +2,7 @@
   "mcpServers": {
     "jules": {
       "command": "npx",
-      "args": ["@google/jules-mcp"],
-      "env": {
-        "JULES_API_KEY": "${JULES_API_KEY}"
-      }
+      "args": ["@google/jules-mcp"]
     }
   }
 }
