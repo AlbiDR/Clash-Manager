@@ -3148,7 +3148,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "BLOCKED",
+        "state": "MERGED",
         "evidence": {
           "tag": "nightly/2026-08-26/stage-1/pr-1576",
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
@@ -3158,8 +3158,8 @@
           "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T04:38:24.072Z",
-        "failureClass": "MERGE_COORDINATOR"
+        "lastObservedAt": "2026-08-27T04:39:16.324Z",
+        "failureClass": null
       },
       "2": {
         "date": "2026-08-27",
@@ -3176,7 +3176,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.321Z",
+        "lastObservedAt": "2026-08-27T04:39:16.324Z",
         "failureClass": null
       },
       "3": {
@@ -3191,7 +3191,7 @@
           "tag": "nightly/2026-08-27/stage-3/pr-1578"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.321Z",
+        "lastObservedAt": "2026-08-27T04:39:16.324Z",
         "failureClass": null
       },
       "4": {
@@ -3206,7 +3206,7 @@
           "tag": "nightly/2026-08-27/stage-4/pr-1579"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.321Z",
+        "lastObservedAt": "2026-08-27T04:39:16.324Z",
         "failureClass": null
       },
       "5": {
@@ -3214,28 +3214,42 @@
         "stage": 5,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
-          "julesApiError": null
+          "julesApiError": null,
+          "julesSession": {
+            "id": "13560637745920727717",
+            "name": "sessions/13560637745920727717",
+            "state": "COMPLETED"
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-27T04:39:17.599Z",
+            "sessionName": "sessions/13560637745920727717",
+            "ok": true,
+            "error": null
+          },
+          "prNumber": 1581,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1581"
         },
-        "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.321Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "attempts": 1,
+        "lastObservedAt": "2026-08-27T04:41:36.864Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "6": {
         "date": "2026-08-27",
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
-          "julesApiError": null
+          "julesApiError": null,
+          "tag": "nightly/2026-08-27/stage-6/pr-1580"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.321Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-27T04:39:16.324Z",
+        "failureClass": null
       },
       "7": {
         "date": "2026-08-27",
@@ -3248,7 +3262,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.321Z",
+        "lastObservedAt": "2026-08-27T04:39:16.325Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -3262,7 +3276,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.322Z",
+        "lastObservedAt": "2026-08-27T04:39:16.325Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -3276,7 +3290,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.322Z",
+        "lastObservedAt": "2026-08-27T04:39:16.325Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -3290,7 +3304,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.322Z",
+        "lastObservedAt": "2026-08-27T04:39:16.325Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -3304,7 +3318,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.322Z",
+        "lastObservedAt": "2026-08-27T04:39:16.325Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -3318,7 +3332,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.322Z",
+        "lastObservedAt": "2026-08-27T04:39:16.325Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -3332,7 +3346,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T02:23:23.322Z",
+        "lastObservedAt": "2026-08-27T04:39:16.326Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
