@@ -398,3 +398,4 @@
 * [2026-08-24] [Stage 3] CLEAN: Codebase -- Baseline consolidation audit clean: 0 pending migrations, baseline up to date
 * [2026-08-25] [Stage 3] CLEAN: Codebase -- Baseline consolidation audit passed: schema state is CLEAN with zero pending migrations.
 * [2026-08-26] [Stage 3] CLEAN: Codebase -- Baseline is current and fully compliant with RLS, search_path isolation, and formatting rules; 0 pending migrations
+* [2026-08-27] [Stage 3] CLEAN: Codebase -- Audit complete: baseline migration fully folded and RLS compliant with safe search_path isolation

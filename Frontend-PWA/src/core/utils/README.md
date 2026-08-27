@@ -17,7 +17,7 @@
 | `idbKernel.ts` | Low-level IndexedDB wrapper with in-memory fallback. |
 | `math.ts` | Number formatting, momentum, and duration conversion; handles null/NaN safely. |
 | `time.ts` | Relative-time and countdown formatting. |
-| `text.ts` | Tag cleaning and display formatting, plus a small Markdown parser for clan descriptions. |
+| `text.ts` | Tag cleaning, display formatting, `formatBytes` file size utility, and Markdown parser for clan descriptions. |
 | `locale.ts` | Maps the browser language to a Supercell-supported locale for external links. |
 | `assets.ts` | Resolves game-asset icon paths relative to the app base URL. |
 | `sortOptions.ts`, `sortStrategies.ts` | Sort labels/descriptions and the comparator functions for [Roster](../../features/roster/README.md) and [Headhunter](../../features/headhunter/README.md). |
