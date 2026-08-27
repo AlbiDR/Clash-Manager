@@ -3148,7 +3148,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "MERGED",
+        "state": "BLOCKED",
         "evidence": {
           "tag": "nightly/2026-08-26/stage-1/pr-1576",
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
@@ -3158,8 +3158,8 @@
           "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T10:21:50.326Z",
-        "failureClass": null
+        "lastObservedAt": "2026-08-27T10:29:36.141Z",
+        "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
         "date": "2026-08-27",

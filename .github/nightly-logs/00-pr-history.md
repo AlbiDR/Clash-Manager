@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-27] PR #1587 [Stage 12]: chore(apk-ux): Global UX sweep complete; candidate set fully compliant
+**Domain:** pipeline | **Commit:** fef9de94 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1587)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Global UX sweep complete; candidate set fully compliant
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-27] PR #1586 [Stage 11]: Audit complete: native WebView settings and PWA SW cache topology are fully optimized
 **Domain:** apk | **Commit:** 7228923e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1586)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
