@@ -3148,7 +3148,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "BLOCKED",
+        "state": "MERGED",
         "evidence": {
           "tag": "nightly/2026-08-26/stage-1/pr-1576",
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
@@ -3158,8 +3158,8 @@
           "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:24:35.018Z",
-        "failureClass": "MERGE_COORDINATOR"
+        "lastObservedAt": "2026-08-27T07:17:39.915Z",
+        "failureClass": null
       },
       "2": {
         "date": "2026-08-27",
@@ -3176,7 +3176,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.298Z",
+        "lastObservedAt": "2026-08-27T07:17:39.916Z",
         "failureClass": null
       },
       "3": {
@@ -3191,7 +3191,7 @@
           "tag": "nightly/2026-08-27/stage-3/pr-1578"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.299Z",
+        "lastObservedAt": "2026-08-27T07:17:39.916Z",
         "failureClass": null
       },
       "4": {
@@ -3206,7 +3206,7 @@
           "tag": "nightly/2026-08-27/stage-4/pr-1579"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.299Z",
+        "lastObservedAt": "2026-08-27T07:17:39.916Z",
         "failureClass": null
       },
       "5": {
@@ -3234,7 +3234,7 @@
           "tag": "nightly/2026-08-27/stage-5/pr-1581"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-27T06:16:58.299Z",
+        "lastObservedAt": "2026-08-27T07:17:39.916Z",
         "failureClass": null
       },
       "6": {
@@ -3249,7 +3249,7 @@
           "tag": "nightly/2026-08-27/stage-6/pr-1580"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.299Z",
+        "lastObservedAt": "2026-08-27T07:17:39.917Z",
         "failureClass": null
       },
       "7": {
@@ -3264,7 +3264,7 @@
           "tag": "nightly/2026-08-27/stage-7/pr-1582"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.300Z",
+        "lastObservedAt": "2026-08-27T07:17:39.917Z",
         "failureClass": null
       },
       "8": {
@@ -3272,32 +3272,37 @@
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "julesApiError": null,
           "prNumber": 1583,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1583",
           "headRef": "nightly/stage-8-dependency-audit-4979d648-993044041256059701",
-          "reason": "canonical nightly stage branch"
+          "reason": "canonical nightly stage branch",
+          "tag": "nightly/2026-08-27/stage-8/pr-1583"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.300Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-08-27T07:17:39.917Z",
+        "failureClass": null
       },
       "9": {
         "date": "2026-08-27",
         "stage": 9,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
-          "julesApiError": null
+          "julesApiError": null,
+          "prNumber": 1584,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1584",
+          "headRef": "nightly/stage-9-refactor-a37250b7-1054016407213168190",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.300Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-27T07:17:39.917Z",
+        "failureClass": "OPEN_PR"
       },
       "10": {
         "date": "2026-08-27",
@@ -3310,7 +3315,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.300Z",
+        "lastObservedAt": "2026-08-27T07:17:39.917Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -3324,7 +3329,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.300Z",
+        "lastObservedAt": "2026-08-27T07:17:39.918Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -3338,7 +3343,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.301Z",
+        "lastObservedAt": "2026-08-27T07:17:39.918Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -3352,7 +3357,7 @@
           "julesApiError": null
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T06:16:58.301Z",
+        "lastObservedAt": "2026-08-27T07:17:39.918Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
