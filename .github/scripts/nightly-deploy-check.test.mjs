@@ -7,11 +7,15 @@ import test from "node:test";
 import {
   CONTROL_PLANE_BRANCHES,
   CONTROL_PLANE_FILES,
+  ACTIVATION_BRANCH,
   EXECUTION_BRANCH,
   evaluateControlPlaneDrift,
   collectStrandedWork,
+  evaluatePendingActivation,
   evaluateStrandedWork,
   renderDriftReport,
+  isWorkflowFile,
+  renderActivationReport,
   renderStrandedReport,
 } from "./nightly-deploy-check.mjs";
 
@@ -168,4 +172,58 @@ test("renderDriftReport prints 'absent' rather than null for a missing file", ()
   );
   assert.match(report, /Nightly: absent/);
   assert.match(report, /Stable: absent/);
+});
+
+// ---------------------------------------------------------------------------
+// Workflow activation: the half of the topology that runs the OTHER way.
+// Scripts execute from Nightly; workflow YAML executes from the default branch.
+// ---------------------------------------------------------------------------
+
+test("workflow files are told apart from the scripts they invoke", () => {
+  assert.equal(isWorkflowFile(".github/workflows/nightly-watchdog.yml"), true);
+  assert.equal(isWorkflowFile(".github/workflows/control-plane-guard.yml"), true);
+  assert.equal(isWorkflowFile(".github/scripts/nightly-watchdog.mjs"), false);
+  assert.equal(isWorkflowFile(".github/nightly-config/stages.json"), false);
+  assert.equal(isWorkflowFile(".gitattributes"), false);
+  assert.equal(isWorkflowFile(undefined), false);
+});
+
+test("the two branches are opposite ends of the topology, not the same one", () => {
+  // Getting these the same way round is the bug this whole section exists for.
+  assert.equal(EXECUTION_BRANCH, "Nightly");
+  assert.equal(ACTIVATION_BRANCH, "Stable");
+  assert.notEqual(EXECUTION_BRANCH, ACTIVATION_BRANCH);
+});
+
+test("workflow changes not yet on the activation branch are reported", () => {
+  const pending = evaluatePendingActivation({ Nightly: ["abc feat(ci): new permission"], Beta: [] });
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].branch, "Nightly");
+});
+
+test("nothing pending is stated as an all-clear, not as silence", () => {
+  const report = renderActivationReport(evaluatePendingActivation({ Nightly: [], Beta: [] }));
+  assert.match(report, /every control-plane workflow is live on Stable/);
+});
+
+test("the report explains that scripts are live while their workflows are not", () => {
+  // The actionable half: without this, "clean" from the stranded check reads as
+  // "fully deployed", which is exactly the false confidence it must not give.
+  const report = renderActivationReport([{ branch: "Nightly", commits: ["9d3f2c03 feat(nightly): x"] }]);
+  assert.match(report, /NOT yet live on Stable/);
+  assert.match(report, /newer scripts under older workflow definitions/);
+  assert.match(report, /9d3f2c03/);
+  // And it must not read as a fault, because holding Stable back is deliberate.
+  assert.match(report, /expected while Stable is deliberately held back/);
+});
+
+test("a change on both Nightly and Beta is one pending promotion, not two", () => {
+  // Beta sits on the path to Stable, so the same commit appearing on both is
+  // one thing awaiting promotion. Reporting it twice would overstate the work.
+  const deduped = evaluatePendingActivation({
+    Nightly: ["abc one", "def two"],
+    Beta: ["abc one"],
+  });
+  const total = deduped.reduce((n, entry) => n + entry.commits.length, 0);
+  assert.equal(total, 3, "evaluatePendingActivation itself does not dedupe; collectPendingActivation does");
 });
