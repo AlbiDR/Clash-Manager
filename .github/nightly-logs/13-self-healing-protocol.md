@@ -307,6 +307,14 @@
   - Recommended Fix: N/A.
   - Resolution Details (2026-08-26): Re-verification of the entire nightly pipeline on August 26, 2026, confirmed zero failed or missing stages. All 12 preceding stages (Stages 1 through 12) executed cleanly and logged valid coverage log entries (PRs #1563 through #1574). This marks a 100% operational run for the entire pipeline.
 
+* Missing-Run / Failed Events on 2026-08-27:
+  - Stages: None. All 12 preceding stages completed successfully during this automation cycle.
+  - State: Fully operational.
+  - Symptom: N/A.
+  - Root Cause: N/A.
+  - Recommended Fix: N/A.
+  - Resolution Details (2026-08-27): Re-verification of the entire nightly pipeline on August 27, 2026, confirmed zero failed or missing stages. All 12 preceding stages (Stages 1 through 12) executed cleanly and logged valid coverage log entries (PRs #1576 through #1587). This marks another 100% operational run for the entire pipeline.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -343,53 +351,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-08-25 via PR #1563; last active change on 2026-08-22 via PR #1528)
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-08-27 via PR #1576 logged 2026-08-26 UTC; last active change on 2026-08-22 via PR #1528)
   - Analysis: Audit pass completed cleanly with zero threat vectors; demoted to [RESOLVED - monitor] in Section 1.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-26 in useHeadhunter.spec.ts via PR #1564)
-  - Analysis: Expanded useHeadhunter unit test suite to cover deduplication, AbortError rollback, plural notifications, and sync error handling.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-27 in substrateSchemas.spec.ts via PR #1577)
+  - Analysis: Added comprehensive unit tests for substrateSchemas validation boundaries.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-08-26 via PR #1565; last active change on 2026-08-19)
-  - Analysis: Master baseline and post-baseline migrations fully consolidated; 0 unfolded migrations pending.
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-08-27 via PR #1578; last active change on 2026-08-19)
+  - Analysis: Baseline migration fully folded and RLS compliant with safe search_path isolation.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-08-26 via PR #1566; last active change on 2026-08-20)
-  - Analysis: Substrate hygiene audit confirmed known unreferenced views; no new orphaned views found.
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-27 via PR #1579; last active change on 2026-08-24 via PR #1553)
+  - Analysis: Substrate hygiene audit confirmed known unreferenced views; no source changes required.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-26 in headhunter README via PR #1567)
-  - Analysis: Reconciled useHeadhunter error rollbacks, deduplication, and notification contracts in headhunter README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-27 in core utils README via PR #1581)
+  - Analysis: Reconciled formatBytes utility in text.ts within core utils README.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-26 in useShowcaseMode.ts via PR #1568)
-  - Analysis: Hardened useShowcaseMode interface contracts and logic annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-27 in text.ts via PR #1580)
+  - Analysis: Hardened text utilities interface contracts and inline logic annotations.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 33 (CLEAN logged on 2026-08-26 via PR #1569)
-  - Analysis: Monorepo version declarations consistent across manifests; catalog protocol fully satisfied with zero version drift.
+  - Consecutive No-Diff Days: 34 (CLEAN logged on 2026-08-27 via PR #1582)
+  - Analysis: Monorepo package versions and catalog dependencies are fully consistent across all manifests.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-26 in pnpm-lock.yaml via PR #1571)
-  - Analysis: Bumped @supabase/supabase-js to ^2.112.4 and refreshed lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-27 in package.json via PR #1583)
+  - Analysis: Bumped @types/node to ^26.4.0 in catalog and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-26 in useApkManager.ts, text.ts via PR #1570)
-  - Analysis: Extracted formatBytes utility from useApkManager to text.ts with unit test coverage.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-27 via PR #1584; last active change on 2026-08-26 via PR #1570)
+  - Analysis: Structural audit clean; substrate architecture strictly aligned with CleanStack ADR.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-08-26 via PR #1572)
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-08-27 via PR #1585)
   - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security settings.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-08-26 via PR #1573)
-  - Analysis: Audited WebView cache topology, Service Worker routes, R8/compilation settings, asset footprint, and wrapper configurations; verified target compliance with zero source drift.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-08-27 via PR #1586)
+  - Analysis: Native WebView settings and PWA SW cache topology are fully optimized.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-26 via PR #1574; last active change on 2026-08-23)
-  - Analysis: Global UX sweep completed; no pending layout leaks, raw selectors, or missing tactile bindings found.
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-27 via PR #1587; last active change on 2026-08-24 via PR #1545)
+  - Analysis: Global UX sweep complete; candidate set fully compliant.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-26)
-  - Analysis: Completed daily self-healing audit pass for 2026-08-26: mapped August 26 stage executions/recoveries and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-27)
+  - Analysis: Completed daily self-healing audit pass for 2026-08-27: mapped August 27 stage executions/recoveries and updated Section 3 no-diff metrics.
