@@ -2,6 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// @ts-expect-error - plain .mjs module, deliberately shared with the APK scripts
+// which are not TypeScript. It is the single source of truth for the semver to
+// Android versionCode derivation; see its header for the regression it replaces.
+import { androidVersionCode, assertVersionCodeNotRegressed } from './android-version-code.mjs';
+
 /**
  * ============================================================================
  * SCRIPT: VALIDATE PROJECT
@@ -406,10 +411,12 @@ function reconcileOtherFiles(groundTruth: string): string[] {
   if (fs.existsSync(apktoolPath)) {
     let content = fs.readFileSync(apktoolPath, 'utf-8');
     
-    // Parse version components: e.g. "14.2.6" -> code: 14260
-    const parts = groundTruth.split('.').map(Number);
-    const expectedCode = parts[0] * 1000 + parts[1] * 100 + parts[2] * 10;
-    
+    // Derived by the single shared implementation. This used to be written out
+    // by hand here, and the hand-written version was not monotonic: a minor
+    // bump from any patch above 10 produced a LOWER code than the release
+    // before it, which Android treats as un-installable.
+    const expectedCode = androidVersionCode(groundTruth);
+
     const nameRegex = /versionName:\s*['"]?([0-9.]+)['"]?/;
     const codeRegex = /versionCode:\s*['"]?(\d+)['"]?/;
     
@@ -427,6 +434,15 @@ function reconcileOtherFiles(groundTruth: string): string[] {
     }
     
     if (!codeMatch || Number(codeMatch[1]) !== expectedCode) {
+      // Independent of the formula on purpose. Whatever arithmetic produced the
+      // new code, it must still be above the one already recorded, because
+      // Android refuses to install an APK whose versionCode is not higher than
+      // the installed one. This catches a regression even if a future edit to
+      // the formula looks perfectly reasonable to whoever writes it, and it is
+      // never auto-fixed: silently rewriting a regressing code is exactly how
+      // this would reach users.
+      assertVersionCodeNotRegressed(codeMatch ? Number(codeMatch[1]) : undefined, expectedCode, 'apktool.yml versionCode');
+
       issues.push(`[DRIFT] apktool.yml versionCode mismatch: expected ${expectedCode}`);
       if (IS_FIX_MODE) {
         content = content.replace(codeRegex, `versionCode: ${expectedCode}`);
@@ -442,8 +458,7 @@ function reconcileOtherFiles(groundTruth: string): string[] {
   // Sync APK/reference/twa-manifest.json
   const twaManifestPath = path.join(ROOT_DIR, 'APK', 'reference', 'twa-manifest.json');
   if (fs.existsSync(twaManifestPath)) {
-    const twaParts = groundTruth.split('.').map(Number);
-    const twaCode = twaParts[0] * 1000 + twaParts[1] * 100 + twaParts[2] * 10;
+    const twaCode = androidVersionCode(groundTruth);
     const twaManifest = JSON.parse(fs.readFileSync(twaManifestPath, 'utf-8'));
     let twaModified = false;
 
@@ -456,6 +471,11 @@ function reconcileOtherFiles(groundTruth: string): string[] {
       if (IS_FIX_MODE) { twaManifest.appVersion = groundTruth; twaModified = true; }
     }
     if (twaManifest.appVersionCode !== twaCode) {
+      assertVersionCodeNotRegressed(
+        typeof twaManifest.appVersionCode === 'number' ? twaManifest.appVersionCode : undefined,
+        twaCode,
+        'twa-manifest.json appVersionCode',
+      );
       issues.push(`[DRIFT] twa-manifest.json appVersionCode mismatch: expected ${twaCode}`);
       if (IS_FIX_MODE) { twaManifest.appVersionCode = twaCode; twaModified = true; }
     }

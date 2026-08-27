@@ -114,18 +114,6 @@ export function useApkManager() {
   }
 
   /**
-   * Calculates a numeric version code representation from a release filename.
-   *
-   * @param release - Target APK release payload.
-   * @returns Calculated numeric version code (major * 1000 + minor * 100 + patch * 10) or undefined if unparsable.
-   */
-  function getReleaseVersionCode(release: ApkReleaseDownload): number | undefined {
-    const parts = parseReleaseApkFilename(release.filename);
-    if (!parts) return undefined;
-    return parts.major * 1000 + parts.minor * 100 + parts.patch * 10;
-  }
-
-  /**
    * Compares two semantic version strings ("X.Y.Z").
    *
    * @param firstVersion - The primary version string to compare.
@@ -143,17 +131,26 @@ export function useApkManager() {
   /**
    * Compares installed native shell metadata against a published release target.
    *
+   * Compares the published semantic version directly. It deliberately does NOT
+   * re-derive a numeric version code from the release filename to compare
+   * against the installed one, which is what this did previously.
+   *
+   * That comparison mixed two different kinds of value: the installed side was
+   * the APK's real versionCode, while the published side was a number this
+   * function computed itself from the filename. It was therefore only correct
+   * for as long as the app's copy of the derivation matched the one CI had used
+   * when building the APK, in a codebase where that arithmetic was written out
+   * by hand in five separate places. It also silently outranked the semantic
+   * version comparison below, so when the derivation was wrong the correct
+   * answer sitting immediately beneath it was never reached.
+   *
+   * Comparing the versions themselves needs no shared constant, cannot drift
+   * from CI, and keeps working if the versionCode scheme is ever changed again.
+   *
    * @param release - Published APK release download target.
    * @returns Positive integer if installed > published, negative if installed < published, 0 if equal, or undefined if indeterminable.
    */
   function getInstalledReleaseComparison(release: ApkReleaseDownload): number | undefined {
-    const nativeVersionCode = getNativeVersionCode();
-    const releaseVersionCode = getReleaseVersionCode(release);
-    if (nativeVersionCode && releaseVersionCode) {
-      const versionCodeComparison = nativeVersionCode - releaseVersionCode;
-      if (versionCodeComparison !== 0) return versionCodeComparison;
-    }
-
     const nativeVersionName = getNativeVersionName();
     if (nativeVersionName && release.version) {
       const versionComparison = compareReleaseVersions(nativeVersionName, release.version);

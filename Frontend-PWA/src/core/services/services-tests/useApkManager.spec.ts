@@ -34,6 +34,13 @@ describe("useApkManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // clearAllMocks clears calls but NOT implementations, so a mockReturnValue
+    // set by one test leaks into every test after it. These bridge getters are
+    // read by the update-comparison path, so a leaked value silently changes
+    // what a later test is actually exercising.
+    mockBridge.getAppVersionName.mockReset();
+    mockBridge.getAppVersionCode.mockReset();
+    mockBridge.getBuildNumber.mockReset();
     vi.mocked(useNativeBridge).mockReturnValue({
       bridge: { value: mockBridge as any },
     } as any);
@@ -95,6 +102,62 @@ describe("useApkManager", () => {
 
     expect(apkUpdateState.value).toBe("available");
     expect(apkUpdateMessage.value).toContain("APK update ready");
+  });
+
+  it("offers a minor-bump update even when the installed versionCode outranks the derived one", async () => {
+    // Regression guard for the 2026-08-27 versionCode defect. The old code
+    // derived a numeric version code from the release filename with
+    // `major * 1000 + minor * 100 + patch * 10` and compared it against the
+    // installed APK's REAL versionCode, short-circuiting before the semantic
+    // version comparison.
+    //
+    // Installed 14.46.23 carries real versionCode 18830. The published 14.47.0
+    // derived to 18700 under that formula, so 18830 - 18700 came out positive,
+    // the app concluded it was already newer than the release, and every user
+    // would have been stranded on 14.46.23 forever with no error anywhere.
+    //
+    // The semantic versions are compared directly now, so the installed
+    // versionCode cannot outrank them however it was derived.
+    mockBridge.getAppVersionName.mockReturnValue("14.46.23");
+    mockBridge.getAppVersionCode.mockReturnValue(18830);
+    mockBridge.getBuildNumber.mockReturnValue(245);
+    mockBridge.canRequestPackageInstalls.mockReturnValue(true);
+
+    vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue({
+      filename: "clashmanager-v14.47.0+246.apk",
+      version: "14.47.0",
+      buildNumber: 246,
+      url: "https://example.com/apk",
+      sizeBytes: 1024 * 1024 * 5,
+    });
+
+    const { checkApkUpdate, apkUpdateState } = useApkManager();
+
+    await checkApkUpdate();
+
+    expect(apkUpdateState.value).toBe("available");
+  });
+
+  it("still reports current when the installed version equals the published one", async () => {
+    // The companion to the case above: removing the versionCode comparison must
+    // not make a genuinely up-to-date install look stale.
+    mockBridge.getAppVersionName.mockReturnValue("14.47.0");
+    mockBridge.getAppVersionCode.mockReturnValue(14047000);
+    mockBridge.getBuildNumber.mockReturnValue(246);
+
+    vi.spyOn(apkResolver, "resolveLatestApkRelease").mockResolvedValue({
+      filename: "clashmanager-v14.47.0+246.apk",
+      version: "14.47.0",
+      buildNumber: 246,
+      url: "https://example.com/apk",
+      sizeBytes: 1024 * 1024 * 5,
+    });
+
+    const { checkApkUpdate, apkUpdateState } = useApkManager();
+
+    await checkApkUpdate();
+
+    expect(apkUpdateState.value).toBe("current");
   });
 
   it("flags release metadata mismatch when published version is older than installed", async () => {

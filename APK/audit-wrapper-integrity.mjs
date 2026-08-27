@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { androidVersionCode } from '../.github/scripts/android-version-code.mjs';
+
 /**
  * APK & PWA Wrapper Integrity Auditor
  * Automates Target A, B, and C checks for Stage 10.
@@ -158,9 +160,11 @@ function checkVersionSync() {
   const pwa = JSON.parse(fs.readFileSync(PWA_MANIFEST, 'utf8'));
 
   const version = pkg.version;
-  // Calculate expected versionCode: e.g. 14.2.6 -> 14260
   const parts = version.split('.').map(Number);
-  const expectedCode = parts[0] * 1000 + parts[1] * 100 + parts[2] * 10;
+  // Single shared derivation. This was hand-written here, and identically in
+  // three other places, using a formula that was not monotonic across a minor
+  // bump from a patch above 10.
+  const expectedCode = androidVersionCode(version);
 
   if (twa.appVersionName === version) ok(`TWA appVersionName matches package.json: ${version}`);
   else fail(`TWA appVersionName mismatch: ${twa.appVersionName} vs ${version}`);

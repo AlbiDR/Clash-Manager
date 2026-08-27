@@ -24,6 +24,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+import { androidVersionCode } from "../.github/scripts/android-version-code.mjs";
+
 let defaultApk = "clashmanager.apk";
 if (!process.argv[2]) {
   try {
@@ -150,8 +152,9 @@ function main() {
   const version = (badging.match(/versionCode='(\d+)' versionName='([^']*)'/) || []);
   if (version[1]) ok(`version ${version[2]} (code ${version[1]})`);
 
-  // Cross-check the artifact's version against package.json, using the same
-  // semver -> versionCode formula as .github/scripts/validate_project.ts. Catches a
+  // Cross-check the artifact's version against package.json, using the shared
+  // semver -> versionCode derivation in .github/scripts/android-version-code.mjs
+  // rather than a local copy of the arithmetic. Catches a
   // stale local build silently shipping an old version - the class of bug that let a
   // local `pnpm apk:check` report 14.37.4 while apktool.yml and CI both said 14.38.1
   // (root cause: a stale, untracked APK/android/build/ apktool cache; see build-apk.sh).
@@ -159,8 +162,7 @@ function main() {
     const pkgPath = path.join(process.cwd(), "package.json");
     if (existsSync(pkgPath) && version[1] && version[2]) {
       const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-      const parts = pkg.version.split(".").map(Number);
-      const expectedCode = String(parts[0] * 1000 + parts[1] * 100 + parts[2] * 10);
+      const expectedCode = String(androidVersionCode(pkg.version));
       if (version[2] !== pkg.version) {
         fail(`versionName '${version[2]}' does not match package.json '${pkg.version}' - stale build? Run \`pnpm apk:check\` again.`);
         problems.push("stale-versionName");
