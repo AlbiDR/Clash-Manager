@@ -12,6 +12,7 @@ import {
   fallbackBranchName,
   parseCoverageOutcome,
   patchTouchedPaths,
+  publishFallback,
   renderFallbackPrBody,
 } from "./nightly-publish-fallback.mjs";
 
@@ -123,4 +124,94 @@ test("every refusal is explicit rather than a silent skip", () => {
     assert.equal(plan.ok, false);
     assert.match(plan.reason, pattern);
   }
+});
+
+test("a failed pull request removes the branch it already pushed", async () => {
+  // Creating a PR needs pull-requests: write, and a workflow's permissions come
+  // from its YAML on the default branch, so until that half is deployed this is
+  // the call that fails. Leaving the branch behind would create a
+  // nightly/stage-N branch with no pull request: precisely the litter that
+  // misclassified stage 1 on three consecutive runs via PR #1546.
+  const commands = [];
+  const plan = {
+    stage: 4, branch: "nightly/stage-4-optimization-fallback-1", patch: "PATCH",
+    paths: ["a.log"], status: "CLEAN", summary: "s", sessionName: "sessions/1",
+    commitMessage: "m", prTitle: "t",
+  };
+
+  await assert.rejects(
+    () => publishFallback(plan, {
+      config: { targetBranch: "Nightly", owner: "o", repo: "r" },
+      githubApi: async () => { throw new Error("403 Resource not accessible by integration"); },
+      runGit: args => { commands.push(args.join(" ")); return ""; },
+      applyPatch: () => ({ status: 0, stderr: "" }),
+      log: () => {},
+    }),
+    /403/,
+    "the failure must propagate, never be reported as a successful publish",
+  );
+
+  assert.ok(commands.some(c => c.startsWith("push --force-with-lease")), "precondition: the branch was pushed");
+  assert.ok(
+    commands.includes("push origin --delete nightly/stage-4-optimization-fallback-1"),
+    "the orphaned branch must be deleted after the pull request fails",
+  );
+});
+
+test("a successful publish never deletes anything", async () => {
+  const commands = [];
+  const result = await publishFallback(
+    { stage: 4, branch: "nightly/stage-4-x", patch: "P", paths: ["a.log"], status: "CLEAN",
+      summary: "s", sessionName: "sessions/1", commitMessage: "m", prTitle: "t" },
+    {
+      config: { targetBranch: "Nightly", owner: "o", repo: "r" },
+      githubApi: async () => ({ number: 99, html_url: "https://example.test/99" }),
+      runGit: args => { commands.push(args.join(" ")); return ""; },
+      applyPatch: () => ({ status: 0, stderr: "" }),
+      log: () => {},
+    },
+  );
+  assert.equal(result.published, true);
+  assert.equal(result.prNumber, 99);
+  assert.ok(!commands.some(c => c.includes("--delete")), "nothing may be deleted on the success path");
+});
+
+test("a patch whose base has moved leaves no branch behind at all", async () => {
+  // The stale-session case: refuse before anything is pushed, so there is
+  // nothing to clean up.
+  const commands = [];
+  await assert.rejects(
+    () => publishFallback(
+      { stage: 4, branch: "nightly/stage-4-x", patch: "P", paths: ["a.log"], status: "CLEAN",
+        summary: "s", sessionName: "sessions/1", commitMessage: "m", prTitle: "t" },
+      {
+        config: { targetBranch: "Nightly", owner: "o", repo: "r" },
+        githubApi: async () => { throw new Error("must not be called"); },
+        runGit: args => { commands.push(args.join(" ")); return ""; },
+        applyPatch: () => ({ status: 1, stderr: "does not apply" }),
+        log: () => {},
+      },
+    ),
+    /no longer applies/,
+  );
+  assert.ok(!commands.some(c => c.startsWith("push")), "nothing may be pushed when the patch does not apply");
+});
+
+test("dry run proves the patch applies and creates nothing", async () => {
+  const commands = [];
+  const result = await publishFallback(
+    { stage: 4, branch: "nightly/stage-4-x", patch: "P", paths: ["a.log"], status: "CLEAN",
+      summary: "s", sessionName: "sessions/1", commitMessage: "m", prTitle: "t" },
+    {
+      config: { targetBranch: "Nightly", owner: "o", repo: "r" },
+      githubApi: async () => { throw new Error("must not be called"); },
+      runGit: args => { commands.push(args.join(" ")); return ""; },
+      applyPatch: () => ({ status: 0, stderr: "" }),
+      dryRun: true,
+      log: () => {},
+    },
+  );
+  assert.equal(result.published, false);
+  assert.equal(result.dryRun, true);
+  assert.ok(!commands.some(c => c.startsWith("push") || c.startsWith("commit")), "a dry run must not write anything");
 });
