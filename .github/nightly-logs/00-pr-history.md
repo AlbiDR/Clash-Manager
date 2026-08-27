@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-27] PR #1582 [Stage 7]: chore(version): Audit complete; monorepo package versions and catalog dependencies are fully consistent across all manifests.
+**Domain:** pipeline | **Commit:** 466ce119 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1582)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Audit complete; monorepo package versions and catalog dependencies are fully consistent across all manifests.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-27] PR #1581 [Stage 5]: [Stage 5] docs(readme): reconcile formatBytes utility in text.ts within core utils README
 **Domain:** pipeline | **Commit:** 8c690928 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1581)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/utils/README.md

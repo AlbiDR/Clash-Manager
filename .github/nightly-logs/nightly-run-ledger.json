@@ -3158,7 +3158,7 @@
           "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T04:49:16.029Z",
+        "lastObservedAt": "2026-08-27T05:24:36.107Z",
         "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
