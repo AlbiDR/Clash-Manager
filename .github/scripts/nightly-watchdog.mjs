@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
 import { ensureRunEntries, loadLedger, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
+import { buildFallbackPlan, publishFallback } from "./nightly-publish-fallback.mjs";
 
 // This workflow deliberately holds JULES_API_KEY so it can resume stranded
 // sessions, and the repository is public. Every console line, summary block and
@@ -671,7 +672,73 @@ export async function recoverStuckStages({
     errorLine(`Stage ${stageNumber}: nudge sent but no pull request appeared before the poll window closed.`);
   }
 
-  return { attempted, recovered, failed };
+  // Everything the nudge could not rescue. Reported so the caller can escalate
+  // to the fallback publisher rather than writing the stage off for the night.
+  const recoveredStages = new Set(recovered.map(item => item.stage));
+  const unrecovered = [
+    ...attempted.filter(entry => !recoveredStages.has(entry.stage)),
+    ...failed.map(item => item.entry),
+  ];
+
+  return { attempted, recovered, failed, unrecovered };
+}
+
+// Last resort once nudging has failed: publish the stage's finished work
+// ourselves. See nightly-publish-fallback.mjs for why this is safe to do
+// autonomously (the patch is validated against the same per-stage write
+// boundary the normal path uses, and refuses rather than guesses).
+//
+// Runs only over stages the nudge could not rescue, so the happy path and the
+// nudge path both behave exactly as they did before.
+export async function publishStrandedWork({
+  unrecovered = [],
+  julesSessions = [],
+  ledger,
+  registry,
+  date,
+  config = CONFIG,
+  dryRun = false,
+  publish = publishFallback,
+} = {}) {
+  const published = [];
+  const refused = [];
+  if (unrecovered.length === 0) return { published, refused };
+
+  for (const entry of unrecovered) {
+    const stage = registry.stages.find(item => item.number === entry.stage);
+    // Re-matched from the full session list: the ledger only records a session's
+    // id, name and state, never the change set, so evidence alone cannot publish.
+    const session = matchJulesSession(julesSessions, stage, date);
+    const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(entry.stage, date) });
+
+    if (!plan.ok) {
+      errorLine(`Fallback publish declined. ${plan.reason}`);
+      refused.push({ stage: entry.stage, reason: plan.reason });
+      continue;
+    }
+
+    try {
+      const result = await publish(plan, { config, githubApi, dryRun, log: logLine });
+      if (result.published) {
+        upsertStageEntry(ledger, registry, date, entry.stage, {
+          state: "RECOVERABLE",
+          failureClass: "RECOVERED_BY_FALLBACK_PUBLISH",
+          evidence: {
+            prNumber: result.prNumber,
+            prUrl: result.prUrl,
+            headRef: result.branch,
+            fallbackPublish: { at: new Date().toISOString(), sessionName: plan.sessionName, status: plan.status },
+          },
+        });
+        published.push({ stage: entry.stage, prNumber: result.prNumber });
+      }
+    } catch (error) {
+      errorLine(`Stage ${entry.stage}: fallback publish failed. ${error.message}`);
+      refused.push({ stage: entry.stage, reason: error.message });
+    }
+  }
+
+  return { published, refused };
 }
 
 export async function dispatchMergeWorkflow(config = CONFIG) {
@@ -754,7 +821,7 @@ function parseArgs(argv) {
     const token = argv[index];
     invariant(token.startsWith("--"), `Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (key === "dry-run" || key === "no-recover" || key === "create-issues") {
+    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish") {
       options.set(key, true);
       continue;
     }
@@ -780,6 +847,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   let staleStagePrs = null;
   let julesAvailable = null;
   let julesError = null;
+  let julesSessions = [];
   let observerHealthy = true;
   try {
     const observed = await collectObservedState(registry, date, config);
@@ -788,6 +856,9 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     // stage merged but the credential is dead is NOT a healthy run.
     julesAvailable = observed.julesAvailable ?? null;
     julesError = observed.julesError ?? null;
+    // The full sessions, not the trimmed evidence: only these carry the change
+    // set the fallback publisher needs.
+    julesSessions = observed.julesSessions || [];
     // Report only, derived from the pull requests already fetched above. It
     // deliberately does not feed resolveExitCode: an abandoned PR from a
     // previous run must never turn tonight's healthy run red.
@@ -818,7 +889,21 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   if (!options.get("dry-run") && !options.get("no-recover")) {
     try {
       const recovery = await recoverStuckStages({ entries, ledger, registry, date, config });
-      if (recovery.recovered.length > 0) {
+      let publishedByFallback = 0;
+      // Escalation, not a parallel path: only stages the nudge failed to rescue
+      // reach this, so a normal night never touches it.
+      if (!options.get("no-fallback-publish") && recovery.unrecovered?.length) {
+        const fallback = await publishStrandedWork({
+          unrecovered: recovery.unrecovered,
+          julesSessions,
+          ledger,
+          registry,
+          date,
+          config,
+        });
+        publishedByFallback = fallback.published.length;
+      }
+      if (recovery.recovered.length > 0 || publishedByFallback > 0) {
         await dispatchMergeWorkflow(config);
       }
       // Re-derive from the ledger so the summary reflects recovery outcomes.
