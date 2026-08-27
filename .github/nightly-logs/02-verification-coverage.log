@@ -37,3 +37,4 @@
 * [2026-08-24] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useApkManager.spec.ts -- Extended useApkManager test coverage for edge cases and download flows
 * [2026-08-25] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useListFilter.spec.ts -- Expanded useListFilter unit test suite to cover primitive items, searchCache field invalidation, and localStorage storage exceptions.
 * [2026-08-26] [Stage 2] CHANGED: Frontend-PWA/src/features/headhunter/composables/composables-tests/useHeadhunter.spec.ts -- Expanded useHeadhunter unit test suite to cover deduplication, AbortError rollback, plural notifications, and sync error handling.
+* [2026-08-27] [Stage 2] CHANGED: Backend/supabase/functions/_shared/shared-tests/substrateSchemas.spec.ts -- Add comprehensive unit tests for substrateSchemas validation boundaries
