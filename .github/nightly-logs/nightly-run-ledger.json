@@ -3148,14 +3148,18 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "MERGED",
+        "state": "BLOCKED",
         "evidence": {
           "tag": "nightly/2026-08-26/stage-1/pr-1576",
-          "coverageLog": ".github/nightly-logs/01-hardening-coverage.log"
+          "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
+          "prNumber": 1546,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1546",
+          "headRef": "nightly/stage-1-hardening-c33a9fdc-15239668688411919870",
+          "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T00:35:00.764Z",
-        "failureClass": null
+        "lastObservedAt": "2026-08-27T00:42:38.883Z",
+        "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
         "date": "2026-08-27",

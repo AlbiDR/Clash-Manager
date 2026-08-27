@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-27] PR #1577 [Stage 2]: chore(verify): Add comprehensive unit tests for substrateSchemas validation boundaries
+**Domain:** pipeline | **Commit:** 5cdc2c2d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1577)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/substrateSchemas.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Add comprehensive unit tests for substrateSchemas validation boundaries
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-26] PR #1576 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** 0b26e3ba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1576)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
