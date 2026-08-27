@@ -138,14 +138,35 @@ jobs:
           node-version: "24"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        id: install-before
+        run: |
+          # ----------------------------------------------------------------
+          # Deliberately non-fatal. A broken Beta baseline must not block the
+          # sync, because the incoming Nightly merge is usually the thing that
+          # repairs it. On 2026-08-26 a corrupt lockfile on Beta deadlocked
+          # this pipeline exactly that way: every run died here, and the merge
+          # that carried the healthy lockfile could never land.
+          #
+          # The baseline is a measurement, not a gate. The gate that matters
+          # is the post-merge verification below, which never lets an unproven
+          # state reach Beta.
+          # ----------------------------------------------------------------
+          if pnpm install --frozen-lockfile; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Beta baseline dependencies do not install. Continuing; the merged state is verified independently before any push."
+          fi
 
       - name: "Air Gap Guard - BEFORE (Beta baseline)"
         id: test-before
         run: |
           echo "## Air Gap Guard" >> $GITHUB_STEP_SUMMARY
           echo "### BEFORE - Beta baseline (pre-merge)" >> $GITHUB_STEP_SUMMARY
-          if pnpm test; then
+          if [ "${{ steps.install-before.outputs.ok }}" != "true" ]; then
+            echo "before=blocked" >> $GITHUB_OUTPUT
+            echo "Beta baseline: BLOCKED - dependencies could not be installed" >> $GITHUB_STEP_SUMMARY
+          elif pnpm test; then
             echo "before=pass" >> $GITHUB_OUTPUT
             echo "Beta baseline: PASS" >> $GITHUB_STEP_SUMMARY
           else
@@ -236,6 +257,56 @@ jobs:
             fi
           }
 
+          # ----------------------------------------------------------------
+          # pnpm-lock.yaml is generated, and its `packages:` and `snapshots:`
+          # entries reference each other. Before `pnpm-lock.yaml merge=binary`
+          # was added to .gitattributes, a `-X theirs` merge spliced hunks from
+          # both sides and could emit a file that is valid YAML but internally
+          # inconsistent. Merge 7433cf1f did exactly that on 2026-08-26: it
+          # kept @eslint/core's reference to @types/json-schema@7.0.15 while
+          # dropping the entries that define it, and every later
+          # `--frozen-lockfile` install on Beta failed.
+          #
+          # .gitattributes prevents the splice. This gate proves the result:
+          # the merged lockfile must actually install before anything is
+          # pushed, which also covers the case merge=binary cannot fix - one
+          # side's lockfile taken whole while the other side's manifests came
+          # along with it, leaving the lockfile merely stale.
+          #
+          # Two properties of pnpm make the exact commands here load-bearing:
+          #   - Only a FULL `pnpm install --frozen-lockfile` detects this
+          #     corruption. `--lockfile-only --frozen-lockfile` reports the
+          #     lockfile as up to date and exits 0 on a file that is broken.
+          #   - Only a FULL `pnpm install --no-frozen-lockfile` repairs it.
+          #     `--lockfile-only --no-frozen-lockfile` sees manifests that
+          #     match, skips resolution, and leaves the dropped entries out.
+          # Do not "optimise" either one into its --lockfile-only form.
+          # ----------------------------------------------------------------
+          verify_lockfile() {
+            if pnpm install --frozen-lockfile; then
+              return 0
+            fi
+
+            echo "::warning::Merged pnpm-lock.yaml is broken or stale. Regenerating it from the merged manifests."
+            if ! pnpm install --no-frozen-lockfile; then
+              echo "::error::pnpm-lock.yaml could not be regenerated after the merge."
+              return 1
+            fi
+
+            if ! git diff --quiet -- pnpm-lock.yaml; then
+              git add pnpm-lock.yaml
+              git commit -m "chore(sync): regenerate pnpm-lock.yaml after merge [skip ci]"
+            fi
+
+            if ! pnpm install --frozen-lockfile; then
+              echo "::error::pnpm-lock.yaml still does not install after regeneration. Not pushing."
+              return 1
+            fi
+
+            echo "> pnpm-lock.yaml was repaired after the merge and re-verified." >> "$GITHUB_STEP_SUMMARY"
+            return 0
+          }
+
           merge_nightly() {
             if [ "$DIVERGED" = "true" ]; then
               echo "Diverged branches detected. Merging with conflict strategy: Nightly wins (-X theirs)."
@@ -243,6 +314,12 @@ jobs:
             else
               git merge origin/Nightly --no-edit
             fi
+
+            # Verified here rather than after the caller's push, so that both
+            # the first attempt and the retry-on-race path are covered, and so
+            # `pnpm test` below runs against post-merge dependencies rather
+            # than the pre-merge node_modules.
+            verify_lockfile
           }
 
           # Root cause this fixes (2026-08-25 audit): the merge used to be

@@ -9,3 +9,12 @@ Frontend-PWA/scratch/* linguist-documentation
 
 # Exclude local dev-only service worker files from language statistics
 Frontend-PWA/dev-dist/* linguist-generated
+
+# pnpm-lock.yaml is a generated file whose `packages:` and `snapshots:` entries
+# reference each other. A textual 3-way merge resolves hunks independently and
+# can splice both sides together into a file that is valid YAML but internally
+# inconsistent - a reference kept on one side, the entry it points at dropped
+# with the other. That is what broke Beta on 2026-08-26 (merge 7433cf1f).
+# `merge=binary` makes git treat the file as unmergeable, so a merge takes one
+# side's lockfile whole (with -X theirs: the incoming one) instead of splicing.
+pnpm-lock.yaml merge=binary
