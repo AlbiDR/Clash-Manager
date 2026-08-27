@@ -3158,7 +3158,7 @@
           "reason": "git fetch origin nightly/stage-1-hardening-c33a9fdc-15239668688411919870:nightly/stage-1-hardening-c33a9fdc-15239668688411919870 failed: From https://github.com/AlbiDR/Clash-Manager\n ! [rejected] nightly/stage-1-hardening-c33a9fdc-15239668688411919870 -> nightly/stage-1-hardening-c33a9fdc-15239668688411919870  (non-fast-forward)"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.352Z",
+        "lastObservedAt": "2026-08-27T22:42:48.263Z",
         "failureClass": null
       },
       "2": {
@@ -3176,7 +3176,7 @@
           "coverageLog": ".github/nightly-logs/02-verification-coverage.log"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.352Z",
+        "lastObservedAt": "2026-08-27T22:42:48.263Z",
         "failureClass": null
       },
       "3": {
@@ -3191,7 +3191,7 @@
           "tag": "nightly/2026-08-27/stage-3/pr-1578"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.352Z",
+        "lastObservedAt": "2026-08-27T22:42:48.264Z",
         "failureClass": null
       },
       "4": {
@@ -3206,7 +3206,7 @@
           "tag": "nightly/2026-08-27/stage-4/pr-1579"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.352Z",
+        "lastObservedAt": "2026-08-27T22:42:48.264Z",
         "failureClass": null
       },
       "5": {
@@ -3234,7 +3234,7 @@
           "tag": "nightly/2026-08-27/stage-5/pr-1581"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-27T11:16:32.353Z",
+        "lastObservedAt": "2026-08-27T22:42:48.264Z",
         "failureClass": null
       },
       "6": {
@@ -3249,7 +3249,7 @@
           "tag": "nightly/2026-08-27/stage-6/pr-1580"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.353Z",
+        "lastObservedAt": "2026-08-27T22:42:48.264Z",
         "failureClass": null
       },
       "7": {
@@ -3264,7 +3264,7 @@
           "tag": "nightly/2026-08-27/stage-7/pr-1582"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.353Z",
+        "lastObservedAt": "2026-08-27T22:42:48.264Z",
         "failureClass": null
       },
       "8": {
@@ -3283,7 +3283,7 @@
           "tag": "nightly/2026-08-27/stage-8/pr-1583"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.353Z",
+        "lastObservedAt": "2026-08-27T22:42:48.265Z",
         "failureClass": null
       },
       "9": {
@@ -3302,7 +3302,7 @@
           "tag": "nightly/2026-08-27/stage-9/pr-1584"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.353Z",
+        "lastObservedAt": "2026-08-27T22:42:48.265Z",
         "failureClass": null
       },
       "10": {
@@ -3321,7 +3321,7 @@
           "tag": "nightly/2026-08-27/stage-10/pr-1585"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.353Z",
+        "lastObservedAt": "2026-08-27T22:42:48.265Z",
         "failureClass": null
       },
       "11": {
@@ -3340,7 +3340,7 @@
           "tag": "nightly/2026-08-27/stage-11/pr-1586"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.354Z",
+        "lastObservedAt": "2026-08-27T22:42:48.265Z",
         "failureClass": null
       },
       "12": {
@@ -3359,7 +3359,7 @@
           "tag": "nightly/2026-08-27/stage-12/pr-1587"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.354Z",
+        "lastObservedAt": "2026-08-27T22:42:48.265Z",
         "failureClass": null
       },
       "13": {
@@ -3374,7 +3374,7 @@
           "tag": "nightly/2026-08-27/stage-13/pr-1588"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-27T11:16:32.354Z",
+        "lastObservedAt": "2026-08-27T22:42:48.266Z",
         "failureClass": null
       }
     }
