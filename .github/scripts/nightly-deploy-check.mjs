@@ -114,6 +114,10 @@ export function renderDriftReport(drifted, branches = CONTROL_PLANE_BRANCHES) {
 // if stages are added or removed, or if the sync cadence changes.
 export const EXECUTION_BRANCH = "Nightly";
 
+// Where scheduled and dispatched runs read workflow YAML from: the repository
+// default branch.
+export const ACTIVATION_BRANCH = "Stable";
+
 export function evaluateStrandedWork(commitsByBranch) {
   return Object.entries(commitsByBranch || {})
     .filter(([, commits]) => Array.isArray(commits) && commits.length > 0)
@@ -143,6 +147,95 @@ export function renderStrandedReport(stranded, executionBranch = EXECUTION_BRANC
   }
   lines.push("", "Remedy: dispatch the Sync Branches workflow so the work reaches " + `${executionBranch}.`);
   return `${lines.join("\n")}\n`;
+}
+
+// ---------------------------------------------------------------------------
+// The other half of the deployment topology, which runs in the OPPOSITE
+// direction to everything above.
+//
+// A workflow's scripts are invoked from its `ref: Nightly` checkout, so for
+// scripts the hazard is Nightly missing work. But a workflow's own YAML, for
+// scheduled and manually dispatched runs, is read from the repository's DEFAULT
+// branch. So for workflow files the hazard is the default branch missing work:
+// a new workflow, a new permission or a new trigger can be merged, present on
+// Nightly, and still completely inert.
+//
+// That is the state this repository was in the moment this was written:
+// control-plane-guard.yml and the watchdog's pull-requests: write permission
+// existed on Nightly and Beta while the default branch had neither, so the
+// pipeline was running new scripts under old YAML and the stranded check above
+// reported clean, because it only ever asks the Nightly question.
+//
+// Deliberately INFORMATIONAL, never a failure. Beta and Stable are held back on
+// purpose so that no unreviewed nightly change reaches users unannounced, which
+// means workflow YAML pending activation is a normal and intended state for as
+// long as the operator wants it. Failing on it would be failing on the
+// architecture working correctly. It is reported because "is my change actually
+// live yet" is precisely the question that cost a full day on 2026-08-16.
+export function isWorkflowFile(file) {
+  return String(file || "").startsWith(".github/workflows/") && String(file).endsWith(".yml");
+}
+
+export function evaluatePendingActivation(commitsByBranch) {
+  return Object.entries(commitsByBranch || {})
+    .filter(([, commits]) => Array.isArray(commits) && commits.length > 0)
+    .map(([branch, commits]) => ({ branch, commits }));
+}
+
+export function renderActivationReport(pending, activationBranch = ACTIVATION_BRANCH) {
+  if (pending.length === 0) {
+    return `\nWorkflow activation: every control-plane workflow is live on ${activationBranch}.\n`;
+  }
+  const lines = [
+    "",
+    `Workflow activation: workflow changes are NOT yet live on ${activationBranch}.`,
+    "",
+    `Scheduled and dispatched runs read a workflow's YAML from ${activationBranch}, so a new`,
+    "workflow, permission or trigger present elsewhere does nothing until it lands there.",
+    `The scripts those workflows invoke come from Nightly and ARE live, so the pipeline is`,
+    "currently running newer scripts under older workflow definitions.",
+    "",
+  ];
+  for (const entry of pending) {
+    lines.push(`- on ${entry.branch}, not yet on ${activationBranch}:`);
+    for (const commit of entry.commits) lines.push(`    ${commit}`);
+  }
+  lines.push("", `This is expected while ${activationBranch} is deliberately held back. Dispatch Sync`);
+  lines.push("Branches when you want these workflow changes to take effect.");
+  lines.push("");
+  return lines.join("\n");
+}
+
+export function collectPendingActivation(
+  files = CONTROL_PLANE_FILES.filter(isWorkflowFile),
+  branches = CONTROL_PLANE_BRANCHES,
+  activationBranch = ACTIVATION_BRANCH,
+) {
+  const commitsByBranch = {};
+  for (const branch of branches) {
+    if (branch === activationBranch) continue;
+    const res = spawnSync(
+      "git",
+      ["log", "--oneline", "--no-decorate", `origin/${activationBranch}..origin/${branch}`, "--", ...files],
+      { encoding: "utf8" },
+    );
+    if (res.status !== 0) {
+      throw new Error(`Could not compare origin/${activationBranch}..origin/${branch}: ${(res.stderr || "").trim() || "git failed"}`);
+    }
+    commitsByBranch[branch] = res.stdout.split("\n").map(line => line.trim()).filter(Boolean);
+  }
+  // Beta is on the path to the activation branch, so a change sitting on both
+  // Nightly and Beta is one pending promotion, not two separate findings.
+  const seen = new Set();
+  for (const branch of Object.keys(commitsByBranch)) {
+    commitsByBranch[branch] = commitsByBranch[branch].filter(line => {
+      const sha = line.split(" ")[0];
+      if (seen.has(sha)) return false;
+      seen.add(sha);
+      return true;
+    });
+  }
+  return commitsByBranch;
 }
 
 export function collectStrandedWork(
@@ -203,11 +296,18 @@ export function runCli(argv = process.argv.slice(2)) {
   let report;
   let failed;
   try {
-    const findings = argv.includes("--stranded")
+    const stranded = argv.includes("--stranded");
+    const findings = stranded
       ? { items: evaluateStrandedWork(collectStrandedWork()), render: renderStrandedReport }
       : { items: evaluateControlPlaneDrift(collectControlPlaneBlobs()), render: renderDriftReport };
     report = findings.render(findings.items);
     failed = findings.items.length > 0;
+
+    // Appended, never folded into the verdict: workflow YAML awaiting promotion
+    // is an intended state here, so it informs without failing anything.
+    if (stranded) {
+      report += renderActivationReport(evaluatePendingActivation(collectPendingActivation()));
+    }
   } catch (error) {
     // Same principle as the throw itself: an observer that cannot observe
     // reports a failure, never an all-clear.
