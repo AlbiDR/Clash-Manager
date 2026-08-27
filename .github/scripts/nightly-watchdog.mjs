@@ -44,6 +44,18 @@ const IN_FLIGHT_JULES_STATES = new Set([
 const PROMOTION_BRANCH = "Beta";
 const STALENESS_ALARM_HOURS = 24;
 
+// A stage pull request normally merges within about an hour of being opened, so
+// one still open a full day later is not slow, it is abandoned. PR #1546 sat
+// open from 2026-08-24 with a non-fast-forward head ref, and for three
+// consecutive runs it was the sole cause of stage 1 being classified BLOCKED
+// with failureClass MERGE_COORDINATOR. Nothing reported it and nothing reaped
+// it; it stopped mattering only when it was closed by hand on 2026-08-27.
+// Reporting is deliberately all this does. Closing someone else's pull request
+// automatically is not a decision a nightly observer should be making, and the
+// exit code stays untouched so this can never turn a healthy run red.
+const STALE_STAGE_PR_HOURS = 24;
+const STAGE_BRANCH_PREFIX = "nightly/stage-";
+
 // A COMPLETED Jules session with no published PR is holding a finished change
 // set that its native publisher never shipped. Nudging asks it to hand that
 // work over; it never asks the session to redo or re-decide anything.
@@ -371,6 +383,54 @@ export function renderPromotionSummary(promotion, promotionBranch = PROMOTION_BR
   ].join("\n");
 }
 
+// Pure half of the abandoned-stage-PR report. Takes the pull request list the
+// observer has already fetched, so this costs no additional API calls.
+export function evaluateStaleStagePrs(prs, now = new Date(), maxAgeHours = STALE_STAGE_PR_HOURS) {
+  const nowMs = now.getTime();
+  return (prs || [])
+    .map(pr => normalizePr(pr))
+    .filter(pr => (pr.state || "").toLowerCase() === "open")
+    .filter(pr => String(pr.head?.ref || "").startsWith(STAGE_BRANCH_PREFIX))
+    .map(pr => {
+      const createdIso = String(pr.created_at || pr.createdAt || "");
+      const createdMs = Date.parse(createdIso);
+      return {
+        number: pr.number,
+        headRef: pr.head?.ref || null,
+        url: pr.html_url || null,
+        createdIso,
+        ageHours: Number.isNaN(createdMs) ? null : (nowMs - createdMs) / 3_600_000,
+      };
+    })
+    // An unparseable timestamp is reported rather than dropped: a stage PR the
+    // observer cannot date is itself worth a human look.
+    .filter(pr => pr.ageHours === null || pr.ageHours >= maxAgeHours)
+    .sort((a, b) => (b.ageHours ?? Infinity) - (a.ageHours ?? Infinity));
+}
+
+export function renderStaleStagePrReport(stale, maxAgeHours = STALE_STAGE_PR_HOURS) {
+  // Distinguished from an empty list on purpose. If the observer threw before it
+  // could read the pull requests, saying "none" would be a false all-clear.
+  if (stale === null || stale === undefined) {
+    return "\nAbandoned stage PRs: not measured (observer could not read the pull requests).\n";
+  }
+  if (stale.length === 0) {
+    return `\nAbandoned stage PRs: none open longer than ${maxAgeHours}h.\n`;
+  }
+  const lines = [
+    "",
+    `Abandoned stage PRs: ${stale.length} open longer than ${maxAgeHours}h.`,
+    "An open stage PR that never merged can be misclassified as a live blocker on",
+    "every later run, so review and close or merge these by hand.",
+  ];
+  for (const pr of stale) {
+    const age = pr.ageHours === null ? "age unknown" : `${Math.floor(pr.ageHours)}h old`;
+    lines.push(`- PR #${pr.number} (${age}) ${pr.headRef || "unknown ref"} ${pr.url || ""}`.trimEnd());
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
 function prDateMatchesStage(pr, stageNumber, date) {
   const expectedDate = expectedEvidenceDate(stageNumber, date);
   return String(pr.created_at || pr.createdAt || "").startsWith(expectedDate);
@@ -678,10 +738,15 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
 
   let entries;
   let promotion = null;
+  let staleStagePrs = null;
   let observerHealthy = true;
   try {
     const observed = await collectObservedState(registry, date, config);
     promotion = observed.promotion;
+    // Report only, derived from the pull requests already fetched above. It
+    // deliberately does not feed resolveExitCode: an abandoned PR from a
+    // previous run must never turn tonight's healthy run red.
+    staleStagePrs = evaluateStaleStagePrs(observed.prs);
     entries = evaluateNightlyRun({ registry, date, observed, previousLedger: ledger });
   } catch (error) {
     observerHealthy = false;
@@ -719,7 +784,8 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   }
 
   const promotionReport = renderPromotionSummary(promotion);
-  const summary = redact(`${renderSummary(date, entries)}${promotionReport}`);
+  const staleReport = renderStaleStagePrReport(staleStagePrs);
+  const summary = redact(`${renderSummary(date, entries)}${promotionReport}${staleReport}`);
   logLine(summary);
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);

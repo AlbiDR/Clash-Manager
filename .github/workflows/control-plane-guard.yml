@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Guard against the nightly pipeline executing control-plane code that has been
+# superseded downstream.
+#
+# THE FAILURE THIS EXISTS FOR
+# A workflow reads its own YAML from the default branch but invokes its scripts
+# from its `ref: Nightly` checkout. So a control-plane fix that has landed on
+# Beta or Stable but has not reached Nightly does not run. It looks merged, it
+# reads as deployed, and it is inert. That is what happened on 2026-08-16: the
+# recovery-pass fix sat on Beta alone for a full day while three more stages
+# went unrecovered, and nothing in any run errored to say so.
+#
+# WHY THIS IS NOT A "ARE ALL THREE BRANCHES IDENTICAL" CHECK
+# sync-branches.yml is workflow_dispatch only, deliberately. Nightly is fully
+# automated, while the live APK, PWA and Backend deploys are driven from Beta
+# and Stable, so holding Beta and Stable back is precisely what stops an
+# unreviewed nightly change from reaching users unannounced, and it keeps the
+# operator in the loop to notice a breakage at the moment it is promoted.
+# Nightly running ahead of Beta and Stable is therefore the intended steady
+# state, for as long as the operator chooses to leave it that way. A check that
+# alarmed on that would be alarming on the architecture working as designed.
+#
+# Only the reverse direction is a fault, and that is what is checked here:
+# commits touching control-plane paths that are reachable from Beta or Stable
+# but not from Nightly.
+#
+# WHY THERE IS NO SCHEDULE
+# A cron would have to encode when the stage window opens, which is a hardcoded
+# assumption about a schedule that lives outside this repository entirely (the
+# Jules UI scheduled tasks). Retime the stages and the cron silently starts
+# checking at the wrong moment, with nothing to report that it has become
+# wrong. Per the project ADR, magic numbers and hardcoded times are banned for
+# exactly this reason.
+#
+# So the trigger is the pipeline itself. Every nightly stage PR landing on
+# Nightly is direct evidence that the control plane is in use right now, which
+# is the only moment the question actually matters. This mirrors the trigger
+# nightly-watchdog.yml and merge-nightly-prs.yml already use, so if the shape of
+# the pipeline ever changes, all three move together instead of this one being
+# left behind holding a stale clock.
+#
+# This workflow is strictly read-only: no merge, no push, no tag, no ledger
+# write. The worst case if it is wrong is a red cross on this workflow alone.
+name: Control Plane Guard
+
+on:
+  pull_request:
+    # Identical to the watchdog's reactive trigger, deliberately. A stage PR
+    # arriving means stages are running, so any control-plane work stranded
+    # downstream is being skipped by the stages that have not run yet.
+    types: [opened, reopened, ready_for_review, synchronize]
+    branches:
+      - Nightly
+  workflow_dispatch:
+
+# Deliberately NOT the shared `nightly-control-plane` group. The watchdog, the
+# merge pass and the dispatcher share that lock because all three read and write
+# the ledger. This guard touches neither the ledger nor any pull request, so
+# joining that group would only create a window in which a read-only check can
+# delay the pipeline.
+concurrency:
+  group: control-plane-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: "Verify Nightly is not missing control-plane work"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # Checked twice with a short pause, failing only if the finding survives.
+      # This is a debounce on a race, not a schedule: a sync propagates
+      # Nightly -> Beta -> Stable -> Beta -> Nightly as four separate pushes, so
+      # between two of them a commit genuinely is reachable from one branch and
+      # not yet from another. That window is seconds. A stranded fix lasts hours
+      # or days, so it cannot be debounced away, while a mid-sync race always
+      # is. One false alarm is all it would take to teach us to ignore this.
+      - name: Check for control-plane work stranded downstream
+        run: |
+          set +e
+          node .github/scripts/nightly-deploy-check.mjs --stranded
+          first=$?
+          set -e
+          if [ "$first" -eq 0 ]; then
+            exit 0
+          fi
+
+          echo "::notice::Finding on the first check. Re-checking shortly in case a branch sync is mid-flight."
+          sleep 45
+
+          echo "--- Second check ---"
+          node .github/scripts/nightly-deploy-check.mjs --stranded
+          echo "The first finding had cleared by the second check; treating it as a sync in flight."
+
+      - name: Explain a failure
+        if: failure()
+        run: |
+          {
+            echo ""
+            echo "## What to do about this"
+            echo ""
+            echo "Beta or Stable holds a commit touching a control-plane file that Nightly"
+            echo "does not have, and it was still missing on a second check, so this is not"
+            echo "a branch sync in flight."
+            echo ""
+            echo "Nightly workflows invoke their scripts from \`ref: Nightly\`. Until that"
+            echo "work reaches Nightly it does not run, however merged it looks."
+            echo ""
+            echo "Remedy: dispatch the Sync Branches workflow, then re-run this workflow."
+            echo ""
+            echo "Note: Nightly being AHEAD of Beta and Stable is never reported here. That"
+            echo "is the intended state between manual syncs."
+          } >> "$GITHUB_STEP_SUMMARY"

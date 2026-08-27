@@ -5,7 +5,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { createEmptyLedger, ensureRunEntries, upsertStageEntry } from "./nightly-ledger.mjs";
+import {
+  BLOCKER_EVIDENCE_KEYS,
+  createEmptyLedger,
+  ensureRunEntries,
+  prNumberFromTag,
+  upsertStageEntry,
+} from "./nightly-ledger.mjs";
 import { CONFIG } from "./merge-nightly-core.mjs";
 import { redactDeep } from "./nightly-redact.mjs";
 import {
@@ -14,6 +20,7 @@ import {
   renderPromotionSummary,
   evaluateNightlyRun,
   evaluatePromotionStaleness,
+  evaluateStaleStagePrs,
   expectedEvidenceDate,
   fetchJulesSessions,
   hasDanglingSentinel,
@@ -21,6 +28,7 @@ import {
   matchJulesSession,
   nudgeJulesSession,
   recoverStuckStages,
+  renderStaleStagePrReport,
   renderSummary,
   selectRecoveryCandidates,
 } from "./nightly-watchdog.mjs";
@@ -622,4 +630,263 @@ test("resolveExitCode reserves 1 for observer failure and 2 for unresolved stage
 test("resolveExitCode treats an escalated stage as unresolved", () => {
   const entries = [{ stage: 11, state: "ESCALATED" }];
   assert.equal(resolveExitCode({ observerHealthy: true, promotion: { available: true, stale: false }, entries }), 2);
+});
+
+// ---------------------------------------------------------------------------
+// Resolved-blocker evidence must not survive into a healthy entry.
+// ---------------------------------------------------------------------------
+
+test("a resolved blocker's evidence is dropped once the stage reaches MERGED", () => {
+  // Reproduces the real 2026-08-27 stage 1 entry: PR #1546 blocked the stage on
+  // 2026-08-24 with a non-fast-forward head ref, the stage later merged under a
+  // different PR, and the stale blocker keys rode along for three more runs.
+  const ledger = createEmptyLedger();
+  const date = "2026-08-27";
+  ensureRunEntries(ledger, registry, date);
+
+  upsertStageEntry(ledger, registry, date, 1, {
+    state: "BLOCKED",
+    failureClass: "MERGE_COORDINATOR",
+    evidence: {
+      prNumber: 1546,
+      prUrl: "https://github.com/AlbiDR/Clash-Manager/pull/1546",
+      headRef: "nightly/stage-1-hardening-c33a9fdc-15239668688411919870",
+      reason: "non-fast-forward",
+      coverageLog: ".github/nightly-logs/01-hardening-coverage.log",
+    },
+  });
+
+  const merged = upsertStageEntry(ledger, registry, date, 1, {
+    state: "MERGED",
+    failureClass: null,
+    evidence: { tag: "nightly/2026-08-26/stage-1/pr-1576" },
+  });
+
+  for (const key of BLOCKER_EVIDENCE_KEYS) {
+    assert.equal(merged.evidence[key], undefined, `${key} should not survive into a MERGED entry`);
+  }
+  // The audit trail itself is preserved: only the resolved blocker is dropped.
+  assert.equal(merged.evidence.tag, "nightly/2026-08-26/stage-1/pr-1576");
+  assert.equal(merged.evidence.coverageLog, ".github/nightly-logs/01-hardening-coverage.log");
+});
+
+test("a MERGED stage keeps the PR evidence its own pass supplied", () => {
+  // The normal case: a stage that merged via its own canonical branch. Its PR
+  // number is real evidence, not a leftover, so it must be retained.
+  const ledger = createEmptyLedger();
+  const date = "2026-08-27";
+  const entry = upsertStageEntry(ledger, registry, date, 2, {
+    state: "MERGED",
+    failureClass: null,
+    evidence: {
+      prNumber: 1577,
+      headRef: "nightly/stage-2-verification-1c46cdbe-3460248856176268467",
+      reason: "canonical nightly stage branch",
+      tag: "nightly/2026-08-27/stage-2/pr-1577",
+    },
+  });
+  assert.equal(entry.evidence.prNumber, 1577);
+  assert.equal(entry.evidence.reason, "canonical nightly stage branch");
+  assert.equal(entry.evidence.tag, "nightly/2026-08-27/stage-2/pr-1577");
+});
+
+test("blocker evidence is retained while the stage is still failing", () => {
+  const ledger = createEmptyLedger();
+  const date = "2026-08-27";
+  upsertStageEntry(ledger, registry, date, 4, {
+    state: "BLOCKED",
+    failureClass: "MERGE_COORDINATOR",
+    evidence: { prNumber: 99, reason: "non-fast-forward" },
+  });
+  // A later pass that does not resolve the stage must not erase the diagnosis.
+  const still = upsertStageEntry(ledger, registry, date, 4, { state: "NO_OUTPUT" });
+  assert.equal(still.evidence.prNumber, 99);
+  assert.equal(still.evidence.reason, "non-fast-forward");
+});
+
+test("a MERGED stage that still carries a failure class keeps its evidence", () => {
+  // Defensive: MERGED plus a non-null failureClass is a contradictory state, so
+  // the safe behaviour is to preserve every clue rather than tidy it away.
+  const ledger = createEmptyLedger();
+  const date = "2026-08-27";
+  upsertStageEntry(ledger, registry, date, 7, {
+    state: "BLOCKED",
+    failureClass: "MERGE_COORDINATOR",
+    evidence: { reason: "non-fast-forward" },
+  });
+  const odd = upsertStageEntry(ledger, registry, date, 7, {
+    state: "MERGED",
+    failureClass: "MERGE_COORDINATOR",
+  });
+  assert.equal(odd.evidence.reason, "non-fast-forward");
+});
+
+test("a successful nudge survives the stage merging afterwards", () => {
+  // recoverStuckStages writes `recovery` and the stage then merges. That record
+  // is how a nudged run is told apart from a clean one, so it must persist.
+  const ledger = createEmptyLedger();
+  const date = "2026-08-27";
+  upsertStageEntry(ledger, registry, date, 5, {
+    state: "NO_OUTPUT",
+    failureClass: "JULES_SESSION_STUCK",
+    evidence: {
+      julesSession: { id: "13560637745920727717", state: "COMPLETED" },
+      recovery: { nudgedAt: "2026-08-27T04:39:17.599Z", ok: true, error: null },
+      reason: "no published output",
+    },
+  });
+  const merged = upsertStageEntry(ledger, registry, date, 5, {
+    state: "MERGED",
+    failureClass: null,
+    evidence: { tag: "nightly/2026-08-27/stage-5/pr-1581" },
+  });
+  assert.equal(merged.evidence.recovery.ok, true);
+  assert.equal(merged.evidence.julesSession.id, "13560637745920727717");
+  assert.equal(merged.evidence.reason, undefined);
+});
+
+// ---------------------------------------------------------------------------
+// Abandoned stage pull requests.
+// ---------------------------------------------------------------------------
+
+const NOW = new Date("2026-08-27T12:00:00.000Z");
+
+test("evaluateStaleStagePrs flags an open stage PR older than the window", () => {
+  const stale = evaluateStaleStagePrs(
+    [
+      {
+        number: 1546,
+        state: "open",
+        created_at: "2026-08-24T13:45:48Z",
+        head: { ref: "nightly/stage-1-hardening-c33a9fdc-15239668688411919870" },
+        html_url: "https://github.com/AlbiDR/Clash-Manager/pull/1546",
+      },
+    ],
+    NOW,
+  );
+  assert.equal(stale.length, 1);
+  assert.equal(stale[0].number, 1546);
+  assert.ok(stale[0].ageHours > 24);
+});
+
+test("evaluateStaleStagePrs ignores a merged or closed stage PR", () => {
+  const prs = [
+    { number: 1, state: "closed", created_at: "2026-08-20T00:00:00Z", head: { ref: "nightly/stage-3-x" } },
+    { number: 2, state: "merged", created_at: "2026-08-20T00:00:00Z", head: { ref: "nightly/stage-4-x" } },
+  ];
+  assert.deepEqual(evaluateStaleStagePrs(prs, NOW), []);
+});
+
+test("evaluateStaleStagePrs ignores tonight's freshly opened stage PR", () => {
+  const prs = [
+    { number: 1588, state: "open", created_at: "2026-08-27T11:30:00Z", head: { ref: "nightly/stage-13-x" } },
+  ];
+  assert.deepEqual(evaluateStaleStagePrs(prs, NOW), []);
+});
+
+test("evaluateStaleStagePrs ignores an open PR that is not a stage branch", () => {
+  // PR #1527 ("Verify git remote configuration") is exactly this shape: long
+  // open, but not a nightly stage branch, so it is not this report's business.
+  const prs = [
+    { number: 1527, state: "open", created_at: "2026-08-22T21:40:50Z", head: { ref: "inspect-remote-11703119615054146703" } },
+  ];
+  assert.deepEqual(evaluateStaleStagePrs(prs, NOW), []);
+});
+
+test("evaluateStaleStagePrs accepts the GraphQL pull request shape", () => {
+  const prs = [
+    {
+      number: 1546,
+      state: "open",
+      createdAt: "2026-08-24T13:45:48Z",
+      headRefName: "nightly/stage-1-hardening-c33a9fdc",
+      url: "https://github.com/AlbiDR/Clash-Manager/pull/1546",
+    },
+  ];
+  const stale = evaluateStaleStagePrs(prs, NOW);
+  assert.equal(stale.length, 1);
+  assert.equal(stale[0].headRef, "nightly/stage-1-hardening-c33a9fdc");
+});
+
+test("evaluateStaleStagePrs reports an undateable stage PR rather than dropping it", () => {
+  const prs = [
+    { number: 7, state: "open", created_at: "not-a-date", head: { ref: "nightly/stage-6-x" } },
+  ];
+  const stale = evaluateStaleStagePrs(prs, NOW);
+  assert.equal(stale.length, 1);
+  assert.equal(stale[0].ageHours, null);
+});
+
+test("evaluateStaleStagePrs sorts oldest first and tolerates an empty input", () => {
+  const prs = [
+    { number: 2, state: "open", created_at: "2026-08-25T00:00:00Z", head: { ref: "nightly/stage-2-x" } },
+    { number: 1, state: "open", created_at: "2026-08-23T00:00:00Z", head: { ref: "nightly/stage-1-x" } },
+  ];
+  assert.deepEqual(evaluateStaleStagePrs(prs, NOW).map(pr => pr.number), [1, 2]);
+  assert.deepEqual(evaluateStaleStagePrs([], NOW), []);
+  assert.deepEqual(evaluateStaleStagePrs(undefined, NOW), []);
+});
+
+test("renderStaleStagePrReport separates 'none' from 'not measured'", () => {
+  assert.match(renderStaleStagePrReport([]), /none open longer than 24h/);
+  // A failed observer must never read as an all-clear.
+  assert.match(renderStaleStagePrReport(null), /not measured/);
+  assert.match(renderStaleStagePrReport(undefined), /not measured/);
+});
+
+test("renderStaleStagePrReport names every abandoned PR and its age", () => {
+  const report = renderStaleStagePrReport([
+    { number: 1546, headRef: "nightly/stage-1-hardening-c33a9fdc", url: "https://example.test/1546", ageHours: 70.4 },
+    { number: 9, headRef: null, url: null, ageHours: null },
+  ]);
+  assert.match(report, /2 open longer than 24h/);
+  assert.match(report, /PR #1546 \(70h old\) nightly\/stage-1-hardening-c33a9fdc/);
+  assert.match(report, /PR #9 \(age unknown\) unknown ref/);
+});
+
+test("a stage that merged under its own recovered PR keeps that PR number", () => {
+  // The case that rejected the first, blunter version of this rule. Stage 3's
+  // PR was MALFORMED_BRANCH, the coordinator recovered it, and it merged under
+  // that same PR. The merge pass records only `commitSha`, so `prNumber` is the
+  // stage's real provenance and dropping it would destroy the stage-to-PR link
+  // for precisely the recoveries that succeeded.
+  const ledger = createEmptyLedger();
+  const date = "2026-08-11";
+  upsertStageEntry(ledger, registry, date, 3, {
+    state: "RECOVERABLE",
+    failureClass: "MALFORMED_BRANCH",
+    evidence: { prNumber: 1418 },
+  });
+  const merged = upsertStageEntry(ledger, registry, date, 3, {
+    state: "MERGED",
+    failureClass: null,
+    evidence: { commitSha: "8ca87809" },
+  });
+  assert.equal(merged.evidence.prNumber, 1418);
+  assert.equal(merged.evidence.commitSha, "8ca87809");
+});
+
+test("a merge tag agreeing with the carried PR number preserves it", () => {
+  const ledger = createEmptyLedger();
+  const date = "2026-08-27";
+  upsertStageEntry(ledger, registry, date, 9, {
+    state: "PR_OPEN",
+    failureClass: null,
+    evidence: { prNumber: 1584, headRef: "nightly/stage-9-refactor-a37250b7" },
+  });
+  const merged = upsertStageEntry(ledger, registry, date, 9, {
+    state: "MERGED",
+    failureClass: null,
+    evidence: { tag: "nightly/2026-08-27/stage-9/pr-1584" },
+  });
+  assert.equal(merged.evidence.prNumber, 1584);
+  assert.equal(merged.evidence.headRef, "nightly/stage-9-refactor-a37250b7");
+});
+
+test("prNumberFromTag reads the PR number only from a well-formed merge tag", () => {
+  assert.equal(prNumberFromTag("nightly/2026-08-27/stage-1/pr-1576"), 1576);
+  assert.equal(prNumberFromTag("nightly/2026-08-27/stage-1/pr-"), null);
+  assert.equal(prNumberFromTag("v14.46.21"), null);
+  assert.equal(prNumberFromTag(null), null);
+  assert.equal(prNumberFromTag(undefined), null);
 });

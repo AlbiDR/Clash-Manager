@@ -87,6 +87,75 @@ export function ensureRunEntries(ledger, registry, date, options = {}) {
   return ledger;
 }
 
+// Evidence accumulates across observation passes: `upsertStageEntry` merges it
+// rather than replacing it, so a key written by a failing pass used to survive
+// every later pass forever, including the one that recorded success.
+//
+// Real consequence (2026-08-27): stage 1 read `state: MERGED, failureClass:
+// null` while still carrying PR #1546's number, head ref and non-fast-forward
+// `reason` from a failing pass three days earlier. The stage was healthy and
+// its work had landed under an entirely different pull request (#1576), but
+// every reader of the ledger, human or agent, saw a live blocker that no longer
+// existed. The ledger is the primary evidence source for the nightly recap and
+// for the watchdog's own escalation logic, so a permanent phantom blocker costs
+// real time on exactly the nights when there is least of it.
+//
+// WHY THIS IS NARROWER THAN "DROP THE BLOCKER KEYS ON SUCCESS"
+// That was the first attempt and it was wrong. A stage whose pull request was
+// initially MALFORMED_BRANCH and which then merged under that same pull request
+// records `prNumber` in the failing pass and `commitSha` in the succeeding one.
+// There the pull request number is the stage's real provenance, not a leftover,
+// and blanket-dropping it would have destroyed the stage-to-PR link for exactly
+// the recoveries that worked. An existing test caught it.
+//
+// What separates the two cases is contradiction, not mere presence: in the
+// #1546 case the merge tag named a DIFFERENT pull request than the carried
+// `prNumber`. So the rule is:
+//   1. `reason` explains a blocker. Once a stage is MERGED with no failure
+//      class there is no blocker to explain, so it goes.
+//   2. The pull request identity goes only when the merge evidence positively
+//      contradicts it, meaning the tag names a different PR number.
+// Anything this pass supplied itself is always kept: a pass describing the
+// present is never overruled by a rule about the past.
+export const RESOLVED_BLOCKER_KEYS = ["reason"];
+export const SUPERSEDED_PR_KEYS = ["prNumber", "prUrl", "headRef"];
+export const BLOCKER_EVIDENCE_KEYS = [...RESOLVED_BLOCKER_KEYS, ...SUPERSEDED_PR_KEYS];
+
+// Merge tags are `nightly/<date>/stage-<n>/pr-<number>`; the trailing number is
+// the pull request the stage actually merged under.
+export function prNumberFromTag(tag) {
+  const match = /\/pr-(\d+)$/.exec(String(tag ?? ""));
+  return match ? Number(match[1]) : null;
+}
+
+// Durable keys (`tag`, `commitSha`, `coverageLog`, `julesSession`, `recovery`,
+// `julesApiError`, `dispatchSessionName`) are deliberately never cleared: they
+// are the audit trail of what actually happened, a successful nudge included.
+export function resolveEvidence(currentEvidence, patchEvidence, state, failureClass) {
+  const merged = { ...(currentEvidence || {}), ...(patchEvidence || {}) };
+  if (state !== "MERGED" || failureClass) return merged;
+
+  const suppliedNow = key => Boolean(patchEvidence) && Object.prototype.hasOwnProperty.call(patchEvidence, key);
+
+  for (const key of RESOLVED_BLOCKER_KEYS) {
+    if (!suppliedNow(key)) delete merged[key];
+  }
+
+  const mergedUnderPr = prNumberFromTag(merged.tag);
+  const contradicted =
+    mergedUnderPr !== null
+    && merged.prNumber !== null
+    && merged.prNumber !== undefined
+    && Number(merged.prNumber) !== mergedUnderPr;
+  if (contradicted) {
+    for (const key of SUPERSEDED_PR_KEYS) {
+      if (!suppliedNow(key)) delete merged[key];
+    }
+  }
+
+  return merged;
+}
+
 export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}) {
   ensureRunEntries(ledger, registry, date);
   const key = String(stageNumber);
@@ -96,12 +165,11 @@ export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}
     ...patch,
     date,
     stage: Number(stageNumber),
-    evidence: {
-      ...(current.evidence || {}),
-      ...(patch.evidence || {}),
-    },
     lastObservedAt: patch.lastObservedAt || new Date().toISOString(),
   };
+  // Resolved after the spread so it sees the state and failure class this write
+  // actually lands, not the ones the entry held before it.
+  next.evidence = resolveEvidence(current.evidence, patch.evidence, next.state, next.failureClass);
   assertLedger(LEDGER_STATES.has(next.state), `Nightly ledger entry ${date}/${key} has invalid state.`);
   ledger.runs[date][key] = next;
   return next;
