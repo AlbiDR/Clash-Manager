@@ -41,7 +41,7 @@ concurrency:
 # nudging a stranded Jules session back into publishing.
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
   actions: write
 
 jobs:

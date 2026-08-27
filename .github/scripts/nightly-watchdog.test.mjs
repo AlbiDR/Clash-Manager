@@ -10,6 +10,7 @@ import {
   createEmptyLedger,
   ensureRunEntries,
   prNumberFromTag,
+  stageEntry,
   upsertStageEntry,
 } from "./nightly-ledger.mjs";
 import { CONFIG } from "./merge-nightly-core.mjs";
@@ -27,10 +28,13 @@ import {
   julesSessionPath,
   matchJulesSession,
   nudgeJulesSession,
+  publishStrandedWork,
   recoverStuckStages,
+  renderRecoveryReadiness,
   renderStaleStagePrReport,
   renderSummary,
   selectRecoveryCandidates,
+  sessionTelemetry,
 } from "./nightly-watchdog.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -889,4 +893,219 @@ test("prNumberFromTag reads the PR number only from a well-formed merge tag", ()
   assert.equal(prNumberFromTag("v14.46.21"), null);
   assert.equal(prNumberFromTag(null), null);
   assert.equal(prNumberFromTag(undefined), null);
+});
+
+// ---------------------------------------------------------------------------
+// A dead recovery credential must never read as a healthy run.
+// ---------------------------------------------------------------------------
+
+test("a perfect night with an unreachable Jules API still fails the run", () => {
+  // The exact hole this closes. The nudge path is what took this pipeline from
+  // 4 of 13 to 13 of 13, and it runs ONLY when a stage strands. So if
+  // JULES_API_KEY expires or is rotated without updating the secret, nothing
+  // notices: JULES_API_UNAVAILABLE is attached only to stages that produced no
+  // output, so on a night where all 13 publish on their own every entry is
+  // MERGED and the run used to exit 0. The credential would then be found
+  // broken on the first night a stage stranded, which is the one night it is
+  // needed.
+  const allMerged = Array.from({ length: 13 }, (_, index) => ({ stage: index + 1, state: "MERGED" }));
+  const healthyPromotion = { available: true, stale: false, commitCount: 0 };
+
+  assert.equal(
+    resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries: allMerged, julesAvailable: false }),
+    2,
+    "recovery being disarmed must fail the run even when every stage merged",
+  );
+
+  // The same run with the credential working is the genuine all-clear.
+  assert.equal(
+    resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries: allMerged, julesAvailable: true }),
+    0,
+  );
+});
+
+test("an unreachable Jules API does not masquerade as a broken observer", () => {
+  // Exit 1 means "the observer or its environment is broken" and would send you
+  // debugging the watchdog. A dead credential is a pipeline capability problem,
+  // which is exit 2.
+  const entries = [{ stage: 1, state: "MERGED" }];
+  assert.equal(resolveExitCode({ observerHealthy: true, promotion: null, entries, julesAvailable: false }), 2);
+  assert.equal(resolveExitCode({ observerHealthy: false, promotion: null, entries, julesAvailable: false }), 1);
+});
+
+test("omitting julesAvailable leaves the exit code unchanged", () => {
+  // Backward compatibility for every existing caller and test: only an explicit
+  // false is treated as disarmed, never an absent or unmeasured value.
+  const entries = [{ stage: 1, state: "MERGED" }];
+  const healthyPromotion = { available: true, stale: false, commitCount: 0 };
+  assert.equal(resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries }), 0);
+  assert.equal(
+    resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries, julesAvailable: null }),
+    0,
+  );
+});
+
+test("renderRecoveryReadiness states the capability on every run, not only on failure", () => {
+  // Silent infrastructure has to announce itself while it is working, otherwise
+  // the only evidence it ever existed is the night it is missed.
+  assert.match(renderRecoveryReadiness(true), /Recovery: armed/);
+
+  const disarmed = renderRecoveryReadiness(false, "Jules API 401 Unauthorized");
+  assert.match(disarmed, /Recovery: DISARMED/);
+  assert.match(disarmed, /401 Unauthorized/);
+  assert.match(disarmed, /JULES_API_KEY/);
+  // Must actively contradict the reassuring reading of a green stage list.
+  assert.match(disarmed, /not evidence this is working/);
+
+  assert.match(renderRecoveryReadiness(null), /not measured/);
+});
+
+// ---------------------------------------------------------------------------
+// Fallback publishing: the escalation after a nudge could not rescue a stage.
+// ---------------------------------------------------------------------------
+
+const fallbackPatch = (stage, status, date) => {
+  const log = stage.coverageLog;
+  return `diff --git a/${log} b/${log}\n--- a/${log}\n+++ b/${log}\n@@ -1 +1,2 @@\n context\n+* [${date}] [Stage ${stage.number}] ${status}: Codebase -- recovered work\n`;
+};
+
+const strandedSession = (stage, status, date) => ({
+  id: `sess-${stage.number}`,
+  name: `sessions/sess-${stage.number}`,
+  state: "COMPLETED",
+  createTime: `${date}T02:00:00Z`,
+  prompt: `# [Stage ${stage.number}] something`,
+  outputs: [{ changeSet: { gitPatch: { unidiffPatch: fallbackPatch(stage, status, date) } } }],
+});
+
+test("a stage the nudge could not rescue is published from the session's own patch", () => {
+  const date = "2026-08-20";
+  const stage = registry.stages.find(s => s.number === 4);
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  const calls = [];
+
+  return publishStrandedWork({
+    unrecovered: [{ stage: 4 }],
+    julesSessions: [strandedSession(stage, "CLEAN", date)],
+    ledger,
+    registry,
+    date,
+    config: { ...CONFIG, targetBranch: "Nightly" },
+    publish: async plan => {
+      calls.push(plan);
+      return { published: true, branch: plan.branch, prNumber: 4242, prUrl: "https://example.test/4242" };
+    },
+  }).then(result => {
+    assert.equal(result.published.length, 1);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].status, "CLEAN");
+
+    // The ledger must record HOW it was rescued. A stage recovered by the
+    // fallback is a stage whose Jules publisher failed twice over, which is a
+    // materially different fact from one the nudge fixed.
+    const entry = stageEntry(ledger, date, 4);
+    assert.equal(entry.state, "RECOVERABLE");
+    assert.equal(entry.failureClass, "RECOVERED_BY_FALLBACK_PUBLISH");
+    assert.equal(entry.evidence.prNumber, 4242);
+    assert.equal(entry.evidence.fallbackPublish.status, "CLEAN");
+  });
+});
+
+test("a patch that escapes the stage's write boundary is refused, not published", () => {
+  const date = "2026-08-20";
+  const stage = registry.stages.find(s => s.number === 2);
+  // Stage 2 may only touch *.spec.ts. This patch also rewrites a service.
+  const log = stage.coverageLog;
+  const patch =
+    `diff --git a/${log} b/${log}\n@@ -1 +1,2 @@\n+* [${date}] [Stage 2] CHANGED: x -- bad\n`
+    + "diff --git a/Frontend-PWA/src/core/services/useApkManager.ts b/Frontend-PWA/src/core/services/useApkManager.ts\n@@ -1 +1 @@\n+evil\n";
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  let published = false;
+
+  return publishStrandedWork({
+    unrecovered: [{ stage: 2 }],
+    julesSessions: [{ id: "s2", name: "sessions/s2", state: "COMPLETED", createTime: `${date}T02:00:00Z`,
+      prompt: "# [Stage 2] verification", outputs: [{ changeSet: { gitPatch: { unidiffPatch: patch } } }] }],
+    ledger,
+    registry,
+    date,
+    config: CONFIG,
+    publish: async () => { published = true; return { published: true }; },
+  }).then(result => {
+    assert.equal(published, false, "the publisher must never be reached for an out-of-boundary patch");
+    assert.equal(result.published.length, 0);
+    assert.equal(result.refused.length, 1);
+    assert.match(result.refused[0].reason, /write boundary/);
+    // The stage stays unrescued rather than being marked recovered.
+    assert.notEqual(stageEntry(ledger, date, 2).failureClass, "RECOVERED_BY_FALLBACK_PUBLISH");
+  });
+});
+
+test("nothing is published when there is nothing stranded", () => {
+  return publishStrandedWork({ unrecovered: [], registry, date: "2026-08-20", config: CONFIG })
+    .then(result => {
+      assert.deepEqual(result.published, []);
+      assert.deepEqual(result.refused, []);
+    });
+});
+
+test("a stage with no matching session is refused with a reason", () => {
+  const date = "2026-08-20";
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  return publishStrandedWork({
+    unrecovered: [{ stage: 6 }],
+    julesSessions: [],
+    ledger,
+    registry,
+    date,
+    config: CONFIG,
+    publish: async () => { throw new Error("must not be called"); },
+  }).then(result => {
+    assert.equal(result.published.length, 0);
+    assert.match(result.refused[0].reason, /no Jules session/);
+  });
+});
+
+test("a chronically carried stage fails the run even though every night passed", () => {
+  // The consolidation this whole health module exists for. Each individual run
+  // was a pass, so entries are all in PASS_STATES and every other signal is
+  // green. Without this the pipeline reports success while being carried.
+  const allPassing = Array.from({ length: 13 }, (_, i) => ({ stage: i + 1, state: "MERGED" }));
+  const healthy = { observerHealthy: true, promotion: { available: true, stale: false }, entries: allPassing, julesAvailable: true };
+
+  assert.equal(resolveExitCode({ ...healthy, chronicStages: [] }), 0);
+  assert.equal(resolveExitCode({ ...healthy, chronicStages: [{ stage: 5 }] }), 2);
+  // Omitted entirely must not change any existing caller's result.
+  assert.equal(resolveExitCode(healthy), 0);
+});
+
+test("session telemetry is recorded for stages that merged, not only for failures", () => {
+  // You cannot see a stage drifting towards failure if measurement only starts
+  // once it has already failed.
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.julesSessions = registry.stages.map(stage => ({
+    id: `s${stage.number}`,
+    name: `sessions/s${stage.number}`,
+    state: "COMPLETED",
+    createTime: `${expectedEvidenceDate(stage.number, date)}T02:00:00Z`,
+    updateTime: `${expectedEvidenceDate(stage.number, date)}T02:30:00Z`,
+    prompt: `# [Stage ${stage.number}] x`,
+  }));
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  const stage6 = entries.find(e => e.stage === 6);
+  assert.equal(stage6.state, "MERGED");
+  assert.equal(stage6.evidence.session.createTime, `${date}T02:00:00Z`);
+  assert.equal(stage6.evidence.session.lifetimeMinutes, 30);
+});
+
+test("sessionTelemetry degrades to nulls rather than inventing numbers", () => {
+  assert.equal(sessionTelemetry(null), null);
+  const partial = sessionTelemetry({ id: "x", state: "COMPLETED", createTime: "2026-08-11T02:00:00Z" });
+  assert.equal(partial.lifetimeMinutes, null, "no updateTime means no span, not zero");
+  assert.equal(partial.createTime, "2026-08-11T02:00:00Z");
 });

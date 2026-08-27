@@ -26,7 +26,14 @@ export const CONFIG = {
   owner: process.env.GITHUB_REPOSITORY?.split("/")[0] ?? "",
   repo: process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "",
   targetBranch: "Nightly",
-  allowedAuthors: ["google-labs-jules", "AlbiDR"],
+  // github-actions is required for the watchdog's fallback publisher: when a
+  // stranded stage's work is published by this repository's own workflow rather
+  // than by Jules, the pull request is authored by github-actions[bot], and an
+  // unallowlisted author is classified as rejected and never merged. Widening
+  // this does not widen what such a pull request may contain: it must still sit
+  // on a `nightly/stage-N-` branch and its diff is validated against that
+  // stage's write boundary before it is ever pushed.
+  allowedAuthors: ["google-labs-jules", "AlbiDR", "github-actions"],
   token: process.env.GITHUB_TOKEN ?? "",
   julesApiKey: process.env.JULES_API_KEY ?? "",
   changelogPath: path.join(".github", "nightly-logs", "00-pr-history.md"),

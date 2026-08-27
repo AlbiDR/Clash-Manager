@@ -6,6 +6,8 @@ import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
 import { ensureRunEntries, loadLedger, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
+import { buildFallbackPlan, publishFallback } from "./nightly-publish-fallback.mjs";
+import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
 
 // This workflow deliberately holds JULES_API_KEY so it can resume stranded
 // sessions, and the repository is public. Every console line, summary block and
@@ -408,6 +410,27 @@ export function evaluateStaleStagePrs(prs, now = new Date(), maxAgeHours = STALE
     .sort((a, b) => (b.ageHours ?? Infinity) - (a.ageHours ?? Infinity));
 }
 
+// Reported on every run, not only when it breaks. The recovery path is silent
+// infrastructure: it does nothing visible until the night it is needed, so the
+// only way to know it is still armed is to say so while it is.
+export function renderRecoveryReadiness(julesAvailable, julesError) {
+  if (julesAvailable === false) {
+    return [
+      "",
+      "Recovery: DISARMED. The Jules API is unreachable, so no stranded session can be nudged.",
+      julesError ? `Reason: ${julesError}` : "No reason reported.",
+      "Every stage may still have merged tonight; that is not evidence this is working.",
+      "JULES_SESSION_STUCK is the pipeline's dominant historical failure and it is",
+      "unrecoverable until this is fixed. Check the JULES_API_KEY repository secret.",
+      "",
+    ].join("\n");
+  }
+  if (julesAvailable === true) {
+    return "\nRecovery: armed (Jules API reachable, stranded sessions can be nudged).\n";
+  }
+  return "\nRecovery: not measured (the observer did not reach the Jules API check).\n";
+}
+
 export function renderStaleStagePrReport(stale, maxAgeHours = STALE_STAGE_PR_HOURS) {
   // Distinguished from an empty list on purpose. If the observer threw before it
   // could read the pull requests, saying "none" would be a false all-clear.
@@ -446,6 +469,36 @@ function normalizePr(pr) {
   };
 }
 
+// Per-stage timing recorded for EVERY stage, including the ones that merged
+// cleanly. Only recording it for failures would make the data useless for its
+// actual purpose: you cannot see a stage drifting towards failure if you only
+// start measuring once it has already failed.
+//
+// createTime is the load-bearing field. It is the only evidence in the whole
+// system that separates "this stage was never triggered" (its Jules UI schedule
+// is disabled, deleted or misconfigured, and nothing in this repository can see
+// that) from "it was triggered and then stranded". Those two look identical
+// from the outside and need completely different fixes.
+//
+// lifetimeMinutes is create-to-update and is explicitly NOT work duration: a
+// session that finishes early but is touched later reads long (stage 13 showed
+// 592 minutes on 2026-08-27 for minutes of actual work). It is recorded as a
+// coarse signal, and named so nobody mistakes it for something it is not.
+export function sessionTelemetry(session) {
+  if (!session) return null;
+  const createTime = session.createTime || null;
+  const updateTime = session.updateTime || null;
+  const span = createTime && updateTime ? (Date.parse(updateTime) - Date.parse(createTime)) / 60000 : null;
+  return {
+    id: session.id,
+    name: julesSessionPath(session),
+    state: session.state,
+    createTime,
+    updateTime,
+    lifetimeMinutes: Number.isFinite(span) ? Math.round(span * 10) / 10 : null,
+  };
+}
+
 export function evaluateNightlyRun({ registry, date, observed, previousLedger }) {
   const entries = [];
   const julesAvailable = observed.julesAvailable ?? true;
@@ -459,7 +512,12 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
         stage: stage.number,
         state: danglingSentinel ? "DEGRADED" : "MERGED",
         failureClass: danglingSentinel ? "UNFINALIZED_SENTINEL" : null,
-        evidence: { tag: matchingTags[0] || null, coverageLog: stage.coverageLog },
+        evidence: {
+          tag: matchingTags[0] || null,
+          coverageLog: stage.coverageLog,
+          // Recorded on success too; see sessionTelemetry for why.
+          session: sessionTelemetry(matchJulesSession(observed.julesSessions, stage, date)),
+        },
       });
       continue;
     }
@@ -512,7 +570,10 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
         stage: stage.number,
         state: "RUNNING",
         failureClass: null,
-        evidence: { julesSession: { id: julesMatch.id, state: julesMatch.state } },
+        evidence: {
+          julesSession: { id: julesMatch.id, state: julesMatch.state },
+          session: sessionTelemetry(julesMatch),
+        },
       });
       continue;
     }
@@ -547,6 +608,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
             name: julesSessionPath(julesMatch),
             state: julesMatch.state,
           },
+          session: sessionTelemetry(julesMatch),
         }
         : { coverageLog: stage.coverageLog, julesApiError: observed.julesError || null },
     });
@@ -650,7 +712,73 @@ export async function recoverStuckStages({
     errorLine(`Stage ${stageNumber}: nudge sent but no pull request appeared before the poll window closed.`);
   }
 
-  return { attempted, recovered, failed };
+  // Everything the nudge could not rescue. Reported so the caller can escalate
+  // to the fallback publisher rather than writing the stage off for the night.
+  const recoveredStages = new Set(recovered.map(item => item.stage));
+  const unrecovered = [
+    ...attempted.filter(entry => !recoveredStages.has(entry.stage)),
+    ...failed.map(item => item.entry),
+  ];
+
+  return { attempted, recovered, failed, unrecovered };
+}
+
+// Last resort once nudging has failed: publish the stage's finished work
+// ourselves. See nightly-publish-fallback.mjs for why this is safe to do
+// autonomously (the patch is validated against the same per-stage write
+// boundary the normal path uses, and refuses rather than guesses).
+//
+// Runs only over stages the nudge could not rescue, so the happy path and the
+// nudge path both behave exactly as they did before.
+export async function publishStrandedWork({
+  unrecovered = [],
+  julesSessions = [],
+  ledger,
+  registry,
+  date,
+  config = CONFIG,
+  dryRun = false,
+  publish = publishFallback,
+} = {}) {
+  const published = [];
+  const refused = [];
+  if (unrecovered.length === 0) return { published, refused };
+
+  for (const entry of unrecovered) {
+    const stage = registry.stages.find(item => item.number === entry.stage);
+    // Re-matched from the full session list: the ledger only records a session's
+    // id, name and state, never the change set, so evidence alone cannot publish.
+    const session = matchJulesSession(julesSessions, stage, date);
+    const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(entry.stage, date) });
+
+    if (!plan.ok) {
+      errorLine(`Fallback publish declined. ${plan.reason}`);
+      refused.push({ stage: entry.stage, reason: plan.reason });
+      continue;
+    }
+
+    try {
+      const result = await publish(plan, { config, githubApi, dryRun, log: logLine });
+      if (result.published) {
+        upsertStageEntry(ledger, registry, date, entry.stage, {
+          state: "RECOVERABLE",
+          failureClass: "RECOVERED_BY_FALLBACK_PUBLISH",
+          evidence: {
+            prNumber: result.prNumber,
+            prUrl: result.prUrl,
+            headRef: result.branch,
+            fallbackPublish: { at: new Date().toISOString(), sessionName: plan.sessionName, status: plan.status },
+          },
+        });
+        published.push({ stage: entry.stage, prNumber: result.prNumber });
+      }
+    } catch (error) {
+      errorLine(`Stage ${entry.stage}: fallback publish failed. ${error.message}`);
+      refused.push({ stage: entry.stage, reason: error.message });
+    }
+  }
+
+  return { published, refused };
 }
 
 export async function dispatchMergeWorkflow(config = CONFIG) {
@@ -699,11 +827,35 @@ export function renderSummary(date, entries) {
 // Exit codes are distinct so the workflow conclusion carries information.
 // Collapsing these into a single `exit 1` is what made the watchdog red on 100
 // percent of its runs since deployment, and therefore useless as a signal.
-//   0 = every stage accountable and promotion healthy
-//   2 = stages unresolved or promotion stalled, but the observer itself is fine
+//   0 = every stage accountable, recovery armed, promotion healthy
+//   2 = stages unresolved, recovery disarmed, or promotion stalled
 //   1 = the observer or its environment is broken
-export function resolveExitCode({ observerHealthy, promotion, entries }) {
+export function resolveExitCode({ observerHealthy, promotion, entries, julesAvailable, chronicStages }) {
   if (!observerHealthy) return 1;
+
+  // A dead Jules credential must fail the run even when every stage merged.
+  //
+  // The nudge path is what took this pipeline from 4 of 13 to 13 of 13, and it
+  // is exercised ONLY when a stage strands. So if JULES_API_KEY expires, is
+  // rotated without updating the secret, or is simply absent, the failure is
+  // invisible: JULES_API_UNAVAILABLE is attached as a failure class only to
+  // stages that produced no output, so on a night where all 13 stages publish
+  // on their own, every entry is MERGED, every entry passes, and this returned
+  // 0. A confident green from a watchdog that has lost the ability to recover
+  // anything.
+  //
+  // The credential would then be found broken on the first night a stage
+  // stranded, which is precisely the night it is needed. A mechanism used only
+  // in emergencies needs a heartbeat, not an emergency, so its absence is
+  // reported on the quiet nights when there is time to fix it.
+  if (julesAvailable === false) return 2;
+
+  // A stage that needed rescuing on every one of its recent runs passes every
+  // individual night, because each night it was rescued. Left at exit 0 that is
+  // a pipeline degrading behind a green light, which is precisely the state
+  // this whole consolidation exists to make impossible.
+  if ((chronicStages || []).length > 0) return 2;
+
   if (promotion?.stale) return 2;
   if ((entries || []).some(entry => !PASS_STATES.has(entry.state))) return 2;
   return 0;
@@ -715,7 +867,7 @@ function parseArgs(argv) {
     const token = argv[index];
     invariant(token.startsWith("--"), `Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (key === "dry-run" || key === "no-recover" || key === "create-issues") {
+    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish") {
       options.set(key, true);
       continue;
     }
@@ -739,10 +891,20 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   let entries;
   let promotion = null;
   let staleStagePrs = null;
+  let julesAvailable = null;
+  let julesError = null;
+  let julesSessions = [];
   let observerHealthy = true;
   try {
     const observed = await collectObservedState(registry, date, config);
     promotion = observed.promotion;
+    // Captured for the readiness report and the exit code. A run where every
+    // stage merged but the credential is dead is NOT a healthy run.
+    julesAvailable = observed.julesAvailable ?? null;
+    julesError = observed.julesError ?? null;
+    // The full sessions, not the trimmed evidence: only these carry the change
+    // set the fallback publisher needs.
+    julesSessions = observed.julesSessions || [];
     // Report only, derived from the pull requests already fetched above. It
     // deliberately does not feed resolveExitCode: an abandoned PR from a
     // previous run must never turn tonight's healthy run red.
@@ -773,7 +935,21 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   if (!options.get("dry-run") && !options.get("no-recover")) {
     try {
       const recovery = await recoverStuckStages({ entries, ledger, registry, date, config });
-      if (recovery.recovered.length > 0) {
+      let publishedByFallback = 0;
+      // Escalation, not a parallel path: only stages the nudge failed to rescue
+      // reach this, so a normal night never touches it.
+      if (!options.get("no-fallback-publish") && recovery.unrecovered?.length) {
+        const fallback = await publishStrandedWork({
+          unrecovered: recovery.unrecovered,
+          julesSessions,
+          ledger,
+          registry,
+          date,
+          config,
+        });
+        publishedByFallback = fallback.published.length;
+      }
+      if (recovery.recovered.length > 0 || publishedByFallback > 0) {
         await dispatchMergeWorkflow(config);
       }
       // Re-derive from the ledger so the summary reflects recovery outcomes.
@@ -783,9 +959,22 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     }
   }
 
+  // Evaluated after the recovery pass so tonight's rescues are already recorded
+  // and counted. A stage rescued moments ago still needed rescuing.
+  const health = evaluatePipelineHealth(ledger, registry);
+  for (const stage of health.stages) {
+    upsertStageEntry(ledger, registry, date, stage.stage, {
+      evidence: { health: { verdict: stage.verdict, currentStreak: stage.currentStreak ?? 0, reason: stage.reason } },
+    });
+  }
+
   const promotionReport = renderPromotionSummary(promotion);
   const staleReport = renderStaleStagePrReport(staleStagePrs);
-  const summary = redact(`${renderSummary(date, entries)}${promotionReport}${staleReport}`);
+  const recoveryReport = renderRecoveryReadiness(julesAvailable, julesError);
+  const healthReport = renderHealthReport(health);
+  const summary = redact(
+    `${renderSummary(date, entries)}${recoveryReport}${healthReport}${promotionReport}${staleReport}`,
+  );
   logLine(summary);
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
@@ -805,7 +994,13 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     }
   }
 
-  process.exitCode = resolveExitCode({ observerHealthy, promotion, entries });
+  process.exitCode = resolveExitCode({
+    observerHealthy,
+    promotion,
+    entries,
+    julesAvailable,
+    chronicStages: health.chronic,
+  });
 }
 
 const isMain = process.argv[1] && process.argv[1].endsWith("nightly-watchdog.mjs");
