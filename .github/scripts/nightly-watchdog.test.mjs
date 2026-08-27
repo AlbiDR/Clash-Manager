@@ -28,6 +28,7 @@ import {
   matchJulesSession,
   nudgeJulesSession,
   recoverStuckStages,
+  renderRecoveryReadiness,
   renderStaleStagePrReport,
   renderSummary,
   selectRecoveryCandidates,
@@ -889,4 +890,69 @@ test("prNumberFromTag reads the PR number only from a well-formed merge tag", ()
   assert.equal(prNumberFromTag("v14.46.21"), null);
   assert.equal(prNumberFromTag(null), null);
   assert.equal(prNumberFromTag(undefined), null);
+});
+
+// ---------------------------------------------------------------------------
+// A dead recovery credential must never read as a healthy run.
+// ---------------------------------------------------------------------------
+
+test("a perfect night with an unreachable Jules API still fails the run", () => {
+  // The exact hole this closes. The nudge path is what took this pipeline from
+  // 4 of 13 to 13 of 13, and it runs ONLY when a stage strands. So if
+  // JULES_API_KEY expires or is rotated without updating the secret, nothing
+  // notices: JULES_API_UNAVAILABLE is attached only to stages that produced no
+  // output, so on a night where all 13 publish on their own every entry is
+  // MERGED and the run used to exit 0. The credential would then be found
+  // broken on the first night a stage stranded, which is the one night it is
+  // needed.
+  const allMerged = Array.from({ length: 13 }, (_, index) => ({ stage: index + 1, state: "MERGED" }));
+  const healthyPromotion = { available: true, stale: false, commitCount: 0 };
+
+  assert.equal(
+    resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries: allMerged, julesAvailable: false }),
+    2,
+    "recovery being disarmed must fail the run even when every stage merged",
+  );
+
+  // The same run with the credential working is the genuine all-clear.
+  assert.equal(
+    resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries: allMerged, julesAvailable: true }),
+    0,
+  );
+});
+
+test("an unreachable Jules API does not masquerade as a broken observer", () => {
+  // Exit 1 means "the observer or its environment is broken" and would send you
+  // debugging the watchdog. A dead credential is a pipeline capability problem,
+  // which is exit 2.
+  const entries = [{ stage: 1, state: "MERGED" }];
+  assert.equal(resolveExitCode({ observerHealthy: true, promotion: null, entries, julesAvailable: false }), 2);
+  assert.equal(resolveExitCode({ observerHealthy: false, promotion: null, entries, julesAvailable: false }), 1);
+});
+
+test("omitting julesAvailable leaves the exit code unchanged", () => {
+  // Backward compatibility for every existing caller and test: only an explicit
+  // false is treated as disarmed, never an absent or unmeasured value.
+  const entries = [{ stage: 1, state: "MERGED" }];
+  const healthyPromotion = { available: true, stale: false, commitCount: 0 };
+  assert.equal(resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries }), 0);
+  assert.equal(
+    resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries, julesAvailable: null }),
+    0,
+  );
+});
+
+test("renderRecoveryReadiness states the capability on every run, not only on failure", () => {
+  // Silent infrastructure has to announce itself while it is working, otherwise
+  // the only evidence it ever existed is the night it is missed.
+  assert.match(renderRecoveryReadiness(true), /Recovery: armed/);
+
+  const disarmed = renderRecoveryReadiness(false, "Jules API 401 Unauthorized");
+  assert.match(disarmed, /Recovery: DISARMED/);
+  assert.match(disarmed, /401 Unauthorized/);
+  assert.match(disarmed, /JULES_API_KEY/);
+  // Must actively contradict the reassuring reading of a green stage list.
+  assert.match(disarmed, /not evidence this is working/);
+
+  assert.match(renderRecoveryReadiness(null), /not measured/);
 });
