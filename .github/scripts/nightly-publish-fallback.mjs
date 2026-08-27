@@ -172,37 +172,70 @@ function git(args, options = {}) {
  * `dryRun` stops after proving the patch applies cleanly, which is the only
  * part that can fail for reasons the plan could not predict.
  */
-export async function publishFallback(plan, { config, githubApi, dryRun = false, log = console.log }) {
+export async function publishFallback(plan, {
+  config,
+  githubApi,
+  dryRun = false,
+  log = console.log,
+  // Injectable so the failure paths below can be exercised in tests without a
+  // real repository. An untested cleanup path is indistinguishable from an
+  // absent one, and this one only ever runs when something has already failed.
+  runGit = git,
+  applyPatch = (patch, check) => spawnSync("git", ["apply", ...(check ? ["--check"] : []), "-"], { input: patch, encoding: "utf8" }),
+}) {
   const base = config.targetBranch;
-  git(["fetch", "origin", base]);
-  git(["checkout", "-B", plan.branch, `origin/${base}`]);
+  runGit(["fetch", "origin", base]);
+  runGit(["checkout", "-B", plan.branch, `origin/${base}`]);
 
   // --check first: a patch that does not apply is a stale session whose base
   // has moved, not something to force. Failing here leaves no branch behind.
-  const check = spawnSync("git", ["apply", "--check", "-"], { input: plan.patch, encoding: "utf8" });
+  const check = applyPatch(plan.patch, true);
   if (check.status !== 0) {
-    git(["checkout", base]);
+    runGit(["checkout", base]);
     throw new Error(`Stage ${plan.stage}: patch no longer applies to ${base}. ${(check.stderr || "").trim().slice(0, 300)}`);
   }
   if (dryRun) {
     log(`[dry-run] Stage ${plan.stage}: patch applies cleanly to ${base}; would publish ${plan.branch}.`);
-    git(["checkout", base]);
+    runGit(["checkout", base]);
     return { published: false, dryRun: true, branch: plan.branch };
   }
 
-  const apply = spawnSync("git", ["apply", "-"], { input: plan.patch, encoding: "utf8" });
+  const apply = applyPatch(plan.patch, false);
   if (apply.status !== 0) throw new Error(`Stage ${plan.stage}: git apply failed after --check passed.`);
 
-  git(["add", "--", ...plan.paths]);
-  git(["commit", "-m", plan.commitMessage]);
-  git(["push", "--force-with-lease", "origin", plan.branch]);
+  runGit(["add", "--", ...plan.paths]);
+  runGit(["commit", "-m", plan.commitMessage]);
+  runGit(["push", "--force-with-lease", "origin", plan.branch]);
 
-  const pr = await githubApi(`/repos/${config.owner}/${config.repo}/pulls`, config, "POST", {
-    title: plan.prTitle,
-    head: plan.branch,
-    base,
-    body: renderFallbackPrBody(plan),
-  });
+  // The branch exists on the remote from here on, so a failure to open the pull
+  // request must not leave it behind. An orphaned nightly/stage-N branch with no
+  // pull request is exactly the kind of litter that misleads later
+  // classification: PR #1546 sat open for three days and misclassified stage 1
+  // on three consecutive runs. Creating that situation while trying to fix it
+  // would be its own kind of absurd.
+  //
+  // This is not hypothetical. Creating a pull request needs pull-requests:
+  // write, and a workflow's permissions come from its YAML on the default
+  // branch, so until that half is deployed this call is the one that fails.
+  let pr;
+  try {
+    pr = await githubApi(`/repos/${config.owner}/${config.repo}/pulls`, config, "POST", {
+      title: plan.prTitle,
+      head: plan.branch,
+      base,
+      body: renderFallbackPrBody(plan),
+    });
+  } catch (error) {
+    try {
+      runGit(["push", "origin", "--delete", plan.branch]);
+      log(`Stage ${plan.stage}: pull request could not be opened; removed the orphaned branch ${plan.branch}.`);
+    } catch (cleanupError) {
+      // Reported rather than swallowed: a branch we could neither use nor
+      // remove is something a human needs to know about by name.
+      log(`Stage ${plan.stage}: could not remove orphaned branch ${plan.branch}. ${cleanupError.message}`);
+    }
+    throw error;
+  }
 
   log(`Stage ${plan.stage}: published recovered work as PR #${pr.number}.`);
   return { published: true, branch: plan.branch, prNumber: pr.number, prUrl: pr.html_url };
