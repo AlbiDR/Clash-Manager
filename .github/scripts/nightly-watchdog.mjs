@@ -7,6 +7,7 @@ import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
 import { ensureRunEntries, loadLedger, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, publishFallback } from "./nightly-publish-fallback.mjs";
+import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
 
 // This workflow deliberately holds JULES_API_KEY so it can resume stranded
 // sessions, and the repository is public. Every console line, summary block and
@@ -468,6 +469,36 @@ function normalizePr(pr) {
   };
 }
 
+// Per-stage timing recorded for EVERY stage, including the ones that merged
+// cleanly. Only recording it for failures would make the data useless for its
+// actual purpose: you cannot see a stage drifting towards failure if you only
+// start measuring once it has already failed.
+//
+// createTime is the load-bearing field. It is the only evidence in the whole
+// system that separates "this stage was never triggered" (its Jules UI schedule
+// is disabled, deleted or misconfigured, and nothing in this repository can see
+// that) from "it was triggered and then stranded". Those two look identical
+// from the outside and need completely different fixes.
+//
+// lifetimeMinutes is create-to-update and is explicitly NOT work duration: a
+// session that finishes early but is touched later reads long (stage 13 showed
+// 592 minutes on 2026-08-27 for minutes of actual work). It is recorded as a
+// coarse signal, and named so nobody mistakes it for something it is not.
+export function sessionTelemetry(session) {
+  if (!session) return null;
+  const createTime = session.createTime || null;
+  const updateTime = session.updateTime || null;
+  const span = createTime && updateTime ? (Date.parse(updateTime) - Date.parse(createTime)) / 60000 : null;
+  return {
+    id: session.id,
+    name: julesSessionPath(session),
+    state: session.state,
+    createTime,
+    updateTime,
+    lifetimeMinutes: Number.isFinite(span) ? Math.round(span * 10) / 10 : null,
+  };
+}
+
 export function evaluateNightlyRun({ registry, date, observed, previousLedger }) {
   const entries = [];
   const julesAvailable = observed.julesAvailable ?? true;
@@ -481,7 +512,12 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
         stage: stage.number,
         state: danglingSentinel ? "DEGRADED" : "MERGED",
         failureClass: danglingSentinel ? "UNFINALIZED_SENTINEL" : null,
-        evidence: { tag: matchingTags[0] || null, coverageLog: stage.coverageLog },
+        evidence: {
+          tag: matchingTags[0] || null,
+          coverageLog: stage.coverageLog,
+          // Recorded on success too; see sessionTelemetry for why.
+          session: sessionTelemetry(matchJulesSession(observed.julesSessions, stage, date)),
+        },
       });
       continue;
     }
@@ -534,7 +570,10 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
         stage: stage.number,
         state: "RUNNING",
         failureClass: null,
-        evidence: { julesSession: { id: julesMatch.id, state: julesMatch.state } },
+        evidence: {
+          julesSession: { id: julesMatch.id, state: julesMatch.state },
+          session: sessionTelemetry(julesMatch),
+        },
       });
       continue;
     }
@@ -569,6 +608,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
             name: julesSessionPath(julesMatch),
             state: julesMatch.state,
           },
+          session: sessionTelemetry(julesMatch),
         }
         : { coverageLog: stage.coverageLog, julesApiError: observed.julesError || null },
     });
@@ -790,7 +830,7 @@ export function renderSummary(date, entries) {
 //   0 = every stage accountable, recovery armed, promotion healthy
 //   2 = stages unresolved, recovery disarmed, or promotion stalled
 //   1 = the observer or its environment is broken
-export function resolveExitCode({ observerHealthy, promotion, entries, julesAvailable }) {
+export function resolveExitCode({ observerHealthy, promotion, entries, julesAvailable, chronicStages }) {
   if (!observerHealthy) return 1;
 
   // A dead Jules credential must fail the run even when every stage merged.
@@ -809,6 +849,12 @@ export function resolveExitCode({ observerHealthy, promotion, entries, julesAvai
   // in emergencies needs a heartbeat, not an emergency, so its absence is
   // reported on the quiet nights when there is time to fix it.
   if (julesAvailable === false) return 2;
+
+  // A stage that needed rescuing on every one of its recent runs passes every
+  // individual night, because each night it was rescued. Left at exit 0 that is
+  // a pipeline degrading behind a green light, which is precisely the state
+  // this whole consolidation exists to make impossible.
+  if ((chronicStages || []).length > 0) return 2;
 
   if (promotion?.stale) return 2;
   if ((entries || []).some(entry => !PASS_STATES.has(entry.state))) return 2;
@@ -913,10 +959,22 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     }
   }
 
+  // Evaluated after the recovery pass so tonight's rescues are already recorded
+  // and counted. A stage rescued moments ago still needed rescuing.
+  const health = evaluatePipelineHealth(ledger, registry);
+  for (const stage of health.stages) {
+    upsertStageEntry(ledger, registry, date, stage.stage, {
+      evidence: { health: { verdict: stage.verdict, currentStreak: stage.currentStreak ?? 0, reason: stage.reason } },
+    });
+  }
+
   const promotionReport = renderPromotionSummary(promotion);
   const staleReport = renderStaleStagePrReport(staleStagePrs);
   const recoveryReport = renderRecoveryReadiness(julesAvailable, julesError);
-  const summary = redact(`${renderSummary(date, entries)}${recoveryReport}${promotionReport}${staleReport}`);
+  const healthReport = renderHealthReport(health);
+  const summary = redact(
+    `${renderSummary(date, entries)}${recoveryReport}${healthReport}${promotionReport}${staleReport}`,
+  );
   logLine(summary);
   if (process.env.GITHUB_STEP_SUMMARY) {
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
@@ -936,7 +994,13 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     }
   }
 
-  process.exitCode = resolveExitCode({ observerHealthy, promotion, entries, julesAvailable });
+  process.exitCode = resolveExitCode({
+    observerHealthy,
+    promotion,
+    entries,
+    julesAvailable,
+    chronicStages: health.chronic,
+  });
 }
 
 const isMain = process.argv[1] && process.argv[1].endsWith("nightly-watchdog.mjs");

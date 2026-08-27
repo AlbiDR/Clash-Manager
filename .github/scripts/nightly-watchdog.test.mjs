@@ -34,6 +34,7 @@ import {
   renderStaleStagePrReport,
   renderSummary,
   selectRecoveryCandidates,
+  sessionTelemetry,
 } from "./nightly-watchdog.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -1066,4 +1067,45 @@ test("a stage with no matching session is refused with a reason", () => {
     assert.equal(result.published.length, 0);
     assert.match(result.refused[0].reason, /no Jules session/);
   });
+});
+
+test("a chronically carried stage fails the run even though every night passed", () => {
+  // The consolidation this whole health module exists for. Each individual run
+  // was a pass, so entries are all in PASS_STATES and every other signal is
+  // green. Without this the pipeline reports success while being carried.
+  const allPassing = Array.from({ length: 13 }, (_, i) => ({ stage: i + 1, state: "MERGED" }));
+  const healthy = { observerHealthy: true, promotion: { available: true, stale: false }, entries: allPassing, julesAvailable: true };
+
+  assert.equal(resolveExitCode({ ...healthy, chronicStages: [] }), 0);
+  assert.equal(resolveExitCode({ ...healthy, chronicStages: [{ stage: 5 }] }), 2);
+  // Omitted entirely must not change any existing caller's result.
+  assert.equal(resolveExitCode(healthy), 0);
+});
+
+test("session telemetry is recorded for stages that merged, not only for failures", () => {
+  // You cannot see a stage drifting towards failure if measurement only starts
+  // once it has already failed.
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.julesSessions = registry.stages.map(stage => ({
+    id: `s${stage.number}`,
+    name: `sessions/s${stage.number}`,
+    state: "COMPLETED",
+    createTime: `${expectedEvidenceDate(stage.number, date)}T02:00:00Z`,
+    updateTime: `${expectedEvidenceDate(stage.number, date)}T02:30:00Z`,
+    prompt: `# [Stage ${stage.number}] x`,
+  }));
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  const stage6 = entries.find(e => e.stage === 6);
+  assert.equal(stage6.state, "MERGED");
+  assert.equal(stage6.evidence.session.createTime, `${date}T02:00:00Z`);
+  assert.equal(stage6.evidence.session.lifetimeMinutes, 30);
+});
+
+test("sessionTelemetry degrades to nulls rather than inventing numbers", () => {
+  assert.equal(sessionTelemetry(null), null);
+  const partial = sessionTelemetry({ id: "x", state: "COMPLETED", createTime: "2026-08-11T02:00:00Z" });
+  assert.equal(partial.lifetimeMinutes, null, "no updateTime means no span, not zero");
+  assert.equal(partial.createTime, "2026-08-11T02:00:00Z");
 });
