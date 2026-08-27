@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-27] PR #1581 [Stage 5]: [Stage 5] docs(readme): reconcile formatBytes utility in text.ts within core utils README
+**Domain:** pipeline | **Commit:** 8c690928 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1581)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/utils/README.md
+**Why:** Automated nightly audit pass.
+**Change:** [Stage 5] docs(readme): reconcile formatBytes utility in text.ts within core utils README
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-27] PR #1580 [Stage 6]: docs(tsdoc): harden text utilities interface contracts and inline logic annotations
 **Domain:** pipeline | **Commit:** 1ce0d86e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1580)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/utils/text.ts
