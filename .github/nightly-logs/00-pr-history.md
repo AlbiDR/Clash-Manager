@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-27] PR #1579 [Stage 4]: Substrate hygiene audit confirmed known unreferenced views; no source changes required
+**Domain:** optimization | **Commit:** 773a6367 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1579)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Execute the scheduled Stage 4 optimization audit.
+**Change:** Substrate hygiene audit confirmed known unreferenced views; no source changes required
+**Result:** Audit completed with no source change required.
+
+
 ### [2026-08-27] PR #1578 [Stage 3]: chore(database): Audit complete: baseline migration fully folded and RLS compliant with safe search_path isolation
 **Domain:** pipeline | **Commit:** 80b696e8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1578)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
