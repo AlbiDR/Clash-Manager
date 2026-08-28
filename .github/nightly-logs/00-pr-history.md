@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1601 [Stage 12]: chore(apk-ux): Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
+**Domain:** pipeline | **Commit:** ba31e0a0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1601)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-28] PR #1600 [Stage 13]: chore(pipeline): Completed Stage 13 self-healing protocol audit for 2026-08-28
 **Domain:** pipeline | **Commit:** 17989622 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1600)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
