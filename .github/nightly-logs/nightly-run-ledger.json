@@ -3393,7 +3393,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.438Z",
+        "lastObservedAt": "2026-08-28T11:22:53.549Z",
         "failureClass": null
       },
       "2": {
@@ -3423,7 +3423,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.438Z",
+        "lastObservedAt": "2026-08-28T11:22:53.549Z",
         "failureClass": null
       },
       "3": {
@@ -3454,7 +3454,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.438Z",
+        "lastObservedAt": "2026-08-28T11:22:53.549Z",
         "failureClass": null
       },
       "4": {
@@ -3485,7 +3485,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.439Z",
+        "lastObservedAt": "2026-08-28T11:22:53.550Z",
         "failureClass": null
       },
       "5": {
@@ -3513,7 +3513,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.439Z",
+        "lastObservedAt": "2026-08-28T11:22:53.550Z",
         "failureClass": null
       },
       "6": {
@@ -3544,7 +3544,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.439Z",
+        "lastObservedAt": "2026-08-28T11:22:53.550Z",
         "failureClass": null
       },
       "7": {
@@ -3575,7 +3575,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.439Z",
+        "lastObservedAt": "2026-08-28T11:22:53.550Z",
         "failureClass": null
       },
       "8": {
@@ -3603,7 +3603,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.439Z",
+        "lastObservedAt": "2026-08-28T11:22:53.550Z",
         "failureClass": null
       },
       "9": {
@@ -3634,7 +3634,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.439Z",
+        "lastObservedAt": "2026-08-28T11:22:53.551Z",
         "failureClass": null
       },
       "10": {
@@ -3662,7 +3662,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.440Z",
+        "lastObservedAt": "2026-08-28T11:22:53.551Z",
         "failureClass": null
       },
       "11": {
@@ -3690,7 +3690,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.440Z",
+        "lastObservedAt": "2026-08-28T11:22:53.551Z",
         "failureClass": null
       },
       "12": {
@@ -3698,7 +3698,7 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "julesApiError": null,
@@ -3706,30 +3706,60 @@
             "verdict": "DEGRADING",
             "currentStreak": 1,
             "reason": "intervention rate rose from 0% to 43%"
-          }
+          },
+          "julesSession": {
+            "id": "6908583810077681132",
+            "name": "sessions/6908583810077681132",
+            "state": "COMPLETED"
+          },
+          "session": {
+            "id": "6908583810077681132",
+            "name": "sessions/6908583810077681132",
+            "state": "COMPLETED",
+            "createTime": "2026-08-28T10:02:46.415664466Z",
+            "updateTime": "2026-08-28T10:19:03.328671Z",
+            "lifetimeMinutes": 16.3
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-28T11:20:36.364Z",
+            "sessionName": "sessions/6908583810077681132",
+            "ok": true,
+            "error": null
+          },
+          "prNumber": 1601,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1601"
         },
-        "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.440Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "attempts": 1,
+        "lastObservedAt": "2026-08-28T11:22:53.551Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "13": {
         "date": "2026-08-28",
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-08-28/stage-13/pr-1600",
+          "session": {
+            "id": "7814148439792939488",
+            "name": "sessions/7814148439792939488",
+            "state": "COMPLETED",
+            "createTime": "2026-08-28T11:12:53.739676109Z",
+            "updateTime": "2026-08-28T11:19:58.504199Z",
+            "lifetimeMinutes": 7.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T09:20:12.440Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-28T11:22:53.551Z",
+        "failureClass": null
       }
     }
   }
