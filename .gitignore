@@ -1,6 +1,14 @@
 # AI & Temporary Configs
-.agent
-.agents
+# Agent tooling: session artifacts stay local, but the SHARED definitions
+# (workflows, skills, rules) are tracked so every agent on every machine
+# reads the same ones. They used to be wholly ignored, which meant the same
+# workflow was hand-recreated per tool, drifted apart, and vanished on a
+# fresh clone.
+.agent/*
+!.agent/workflows/
+!.agent/skills/
+.agents/*
+!.agents/rules/
 _agent
 _agents
 .gemini
@@ -9,7 +17,10 @@ _agents
 .mcp
 # Claude Code personal settings - contains API tokens; never commit
 .claude/settings.local.json
-.claude
+.claude/*
+!.claude/skills/
+# Never the local settings: they hold API credentials.
+.claude/settings.local.json
 
 # Dependencies
 node_modules
