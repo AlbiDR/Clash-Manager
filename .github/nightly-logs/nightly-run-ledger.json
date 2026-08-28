@@ -3393,7 +3393,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.257Z",
+        "lastObservedAt": "2026-08-28T01:33:24.346Z",
         "failureClass": null
       },
       "2": {
@@ -3401,28 +3401,37 @@
         "stage": 2,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "prNumber": 1590,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1590",
           "headRef": "nightly/stage-2-verification-0024e50b-13449437855150237748",
-          "reason": "canonical nightly stage branch",
           "health": {
-            "verdict": "DEGRADING",
-            "currentStreak": 1,
-            "reason": "intervention rate rose from 33% to 38%"
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-08-28/stage-2/pr-1590",
+          "coverageLog": ".github/nightly-logs/02-verification-coverage.log",
+          "session": {
+            "id": "13449437855150237748",
+            "name": "sessions/13449437855150237748",
+            "state": "COMPLETED",
+            "createTime": "2026-08-28T00:15:12.593193842Z",
+            "updateTime": "2026-08-28T00:33:28.585404Z",
+            "lifetimeMinutes": 18.3
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.257Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-08-28T01:33:24.346Z",
+        "failureClass": null
       },
       "3": {
         "date": "2026-08-28",
         "stage": 3,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
           "julesApiError": null,
@@ -3430,18 +3439,22 @@
             "verdict": "DEGRADING",
             "currentStreak": 1,
             "reason": "intervention rate rose from 29% to 43%"
-          }
+          },
+          "prNumber": 1591,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1591",
+          "headRef": "nightly/stage-3-baseline-consolidation-e180dec6-8365309205015882873",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.257Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-28T01:33:24.347Z",
+        "failureClass": "OPEN_PR"
       },
       "4": {
         "date": "2026-08-28",
         "stage": 4,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "julesApiError": null,
@@ -3452,7 +3465,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.257Z",
+        "lastObservedAt": "2026-08-28T01:33:24.347Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "5": {
@@ -3460,7 +3473,7 @@
         "stage": 5,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
           "julesApiError": null,
@@ -3471,7 +3484,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.257Z",
+        "lastObservedAt": "2026-08-28T01:33:24.347Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "6": {
@@ -3479,7 +3492,7 @@
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "julesApiError": null,
@@ -3490,7 +3503,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.257Z",
+        "lastObservedAt": "2026-08-28T01:33:24.347Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "7": {
@@ -3498,7 +3511,7 @@
         "stage": 7,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "julesApiError": null,
@@ -3509,7 +3522,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.257Z",
+        "lastObservedAt": "2026-08-28T01:33:24.347Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -3517,7 +3530,7 @@
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "julesApiError": null,
@@ -3528,7 +3541,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.258Z",
+        "lastObservedAt": "2026-08-28T01:33:24.348Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -3536,7 +3549,7 @@
         "stage": 9,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "julesApiError": null,
@@ -3547,7 +3560,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.258Z",
+        "lastObservedAt": "2026-08-28T01:33:24.348Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -3555,7 +3568,7 @@
         "stage": 10,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "julesApiError": null,
@@ -3566,7 +3579,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.258Z",
+        "lastObservedAt": "2026-08-28T01:33:24.348Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -3574,7 +3587,7 @@
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "julesApiError": null,
@@ -3585,7 +3598,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.258Z",
+        "lastObservedAt": "2026-08-28T01:33:24.348Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -3593,7 +3606,7 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "julesApiError": null,
@@ -3604,7 +3617,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.258Z",
+        "lastObservedAt": "2026-08-28T01:33:24.348Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -3612,7 +3625,7 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "julesApiError": null,
@@ -3623,7 +3636,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-28T00:33:07.258Z",
+        "lastObservedAt": "2026-08-28T01:33:24.349Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
