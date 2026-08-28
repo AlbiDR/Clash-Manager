@@ -25,6 +25,7 @@ export const CONTROL_PLANE_FILES = [
   ".github/scripts/nightly-stage.mjs",
   ".github/scripts/nightly-publish-fallback.mjs",
   ".github/scripts/nightly-health.mjs",
+  ".github/scripts/nightly-recap.mjs",
   ".github/nightly-config/stages.json",
   // The guard and the checker it runs are themselves control-plane files. A
   // drift detector that does not watch its own deployment can be silently

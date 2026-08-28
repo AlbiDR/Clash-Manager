@@ -9,6 +9,7 @@ import {
   HEALTH,
   evaluatePipelineHealth,
   evaluateStageHealth,
+  isObserved,
   neededIntervention,
   renderHealthReport,
   stageInterventionHistory,
@@ -116,4 +117,28 @@ test("the real recorded history is evaluated without throwing and stays calibrat
     health.chronic.length + health.degrading.length < registry.stages.length,
     "an analyser that flags every stage is not distinguishing anything",
   );
+});
+
+test("an unobserved day is not counted as a failure", () => {
+  // Real incident: on 2026-08-20 the ledger held 12 EXPECTED rows while eight
+  // stages had genuinely merged (tags pr-1506..pr-1513). The watchdog had
+  // failed to finish its observation pass. Scoring EXPECTED as a failure blames
+  // the pipeline for the observer's blind spot and skews every rate from it.
+  assert.equal(isObserved({ state: "EXPECTED" }), false);
+  assert.equal(isObserved({ state: "RUNNING" }), false);
+  assert.equal(isObserved({ state: "MERGED" }), true);
+  assert.equal(isObserved({ state: "NO_OUTPUT" }), true);
+  assert.equal(isObserved(null), false);
+
+  const ledger = {
+    schemaVersion: 1,
+    runs: {
+      "2026-08-19": { 4: { state: "MERGED", attempts: 0 } },
+      "2026-08-20": { 4: { state: "EXPECTED" } },
+      "2026-08-21": { 4: { state: "MERGED", attempts: 0 } },
+    },
+  };
+  const history = stageInterventionHistory(ledger, 4);
+  assert.deepEqual(history.map(h => h.date), ["2026-08-19", "2026-08-21"], "the unobserved day is dropped entirely");
+  assert.ok(history.every(h => h.needed === false));
 });

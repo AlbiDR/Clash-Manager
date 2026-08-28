@@ -34,6 +34,26 @@ const MIN_OBSERVATIONS_PER_HALF = 2;
 const RESCUED_CLASSES = new Set(["RECOVERED_AFTER_NUDGE", "RECOVERED_BY_FALLBACK_PUBLISH"]);
 const SELF_SUFFICIENT_STATES = new Set(["MERGED"]);
 
+// States that mean the observer never reached a verdict, NOT that the stage
+// failed. EXPECTED is what ensureRunEntries seeds a row with, so a row still
+// holding it is one the watchdog never got back to; RUNNING was in flight when
+// the pass ended.
+//
+// Counting these as failures conflates "we did not look" with "it broke", and
+// that is not hypothetical: on 2026-08-20 the ledger recorded 12 EXPECTED while
+// eight stages had genuinely merged, evidenced by tags pr-1506 through pr-1513.
+// The watchdog had failed to complete its observation pass. Treating that day
+// as a pipeline collapse would blame the pipeline for the observer's blind spot
+// and permanently skew every rate computed from it.
+//
+// They are excluded from the history entirely rather than counted either way,
+// because an unknown is not evidence in either direction.
+const UNOBSERVED_STATES = new Set(["EXPECTED", "RUNNING"]);
+
+export function isObserved(entry) {
+  return Boolean(entry) && !UNOBSERVED_STATES.has(entry.state);
+}
+
 export const HEALTH = {
   HEALTHY: "HEALTHY",
   DEGRADING: "DEGRADING",
@@ -61,7 +81,10 @@ export function stageInterventionHistory(ledger, stageNumber) {
     .sort()
     .map(date => {
       const entry = ledger.runs[date][String(stageNumber)];
-      return entry ? { date, needed: neededIntervention(entry), state: entry.state, failureClass: entry.failureClass } : null;
+      // Unobserved days are dropped, not scored. See UNOBSERVED_STATES.
+      return isObserved(entry)
+        ? { date, needed: neededIntervention(entry), state: entry.state, failureClass: entry.failureClass }
+        : null;
     })
     .filter(Boolean);
 }
