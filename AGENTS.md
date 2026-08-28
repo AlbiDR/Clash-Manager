@@ -55,3 +55,19 @@ three tool-branded folders in the repository root. Edit the files under
 `.github/agents/`, never a symlinked path, and every tool picks the change up at
 once because there is only one copy.
 
+## Precedence when a definition exists twice
+
+`.github/agents/` is authoritative. If you find a skill, workflow or rule with
+the same name anywhere else, including one supplied by your own tool's account
+or plugin, use the one in `.github/agents/` and ignore the other.
+
+This is not hypothetical. On 2026-08-28 a plugin-supplied `nightly-recap` skill
+from 25 July was still in circulation: it scoped a run by branch diff and would
+report a healthy, already-synced stage as STUCK. Four more definitions (the ADR,
+release, semver, commit-push-semver) had drifted from the tracked originals by
+180 tokens, 29 lines, 61 lines, and into a 145-byte stub respectively.
+
+Such copies are re-materialised from the account at session start, so deleting
+the files does not remove them. Run `pnpm agents:audit` to list any that are
+present.
+
