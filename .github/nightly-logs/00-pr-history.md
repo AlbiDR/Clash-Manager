@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1596 [Stage 8]: chore(deps): Bumped supabase devDependency to ^2.116.0
+**Domain:** pipeline | **Commit:** c2f40985 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1596)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped supabase devDependency to ^2.116.0
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-28] PR #1595 [Stage 7]: chore(version): Version integrity audit complete: all packages at v14.46.23 and catalog references synchronized.
 **Domain:** pipeline | **Commit:** c8bcd68d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1595)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
