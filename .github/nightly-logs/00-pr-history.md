@@ -15,6 +15,14 @@ LAST_AGED:   2026-08-28
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-28] PR #1602 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** pipeline | **Commit:** a442c2c3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1602)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions.
+
 ### [2026-08-28] PR #1601 [Stage 12]: chore(apk-ux): Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
 **Domain:** pipeline | **Commit:** ba31e0a0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1601)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log
