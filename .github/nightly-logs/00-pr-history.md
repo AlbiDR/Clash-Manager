@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1593 [Stage 5]: docs(readme): Reconciled useShowcaseMode blueprint override and master-child synchronization in core services README
+**Domain:** documentation | **Commit:** 9561ae85 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1593)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Execute the scheduled Stage 5 documentation-readme audit.
+**Change:** docs(readme): Reconciled useShowcaseMode blueprint override and master-child synchronization in core services README
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-28] PR #1592 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no source changes required
 **Domain:** pipeline | **Commit:** ce4e8a9b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1592)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
