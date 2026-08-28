@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1591 [Stage 3]: chore(database): Baseline consolidated and 100% compliant; zero pending migrations unfolded
+**Domain:** pipeline | **Commit:** 9118f8a7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1591)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline consolidated and 100% compliant; zero pending migrations unfolded
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-28] PR #1590 [Stage 2]: chore(verify): Expanded useShowcaseMode spec with blueprint override and synthetic watcher unit tests.
 **Domain:** pipeline | **Commit:** 795d1148 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1590)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useShowcaseMode.spec.ts
