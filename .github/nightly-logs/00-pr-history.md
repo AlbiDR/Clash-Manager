@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1590 [Stage 2]: chore(verify): Expanded useShowcaseMode spec with blueprint override and synthetic watcher unit tests.
+**Domain:** pipeline | **Commit:** 795d1148 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1590)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useShowcaseMode.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Expanded useShowcaseMode spec with blueprint override and synthetic watcher unit tests.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-27] PR #1589 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** 202b5f43 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1589)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
