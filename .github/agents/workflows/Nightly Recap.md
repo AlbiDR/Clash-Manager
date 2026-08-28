@@ -1,5 +1,5 @@
 ---
-description: Describe what has happened in Nightly
+description: Describe what the nightly pipeline did on a run, via pnpm nightly:recap
 ---
 
 # Workflow: Nightly Recap
