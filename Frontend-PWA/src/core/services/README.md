@@ -70,6 +70,13 @@ The modal confirmation composable provides a robust, styled replacement for the 
 - **Asynchronous Flow:** Exposes a promise-driven `confirm(pendingConfirmationOptions)` method that pauses execution and resolves to `isUserActionConfirmed` (boolean) once the user interacts with the UI dialog, ensuring clean linear usage.
 - **Tone & Ergonomics:** Supports custom dialog text, customized button labels, and visual tone configuration (`danger` vs `default`) to convey destructive semantics (e.g. factory resets or API URL resets).
 
+### Showcase Mode Orchestration (`useShowcaseMode.ts`)
+
+`useShowcaseMode.ts` acts as a Layer 1 master-child state orchestrator that coordinates the simultaneous activation of Synthetic (mock data) and Blueprint (skeleton UI) display states:
+- **Master-Child Synchronization:** Bidirectionally synchronizes state between child composables (`useSyntheticMode` and `useBlueprintMode`) and master Showcase status. Disabling Synthetic mode automatically deactivates master Showcase mode, whereas enabling both sub-modes manually promotes Showcase status.
+- **Persistence & Automation Intents:** Initializes state from `localStorage` (`clash_manager_showcase_mode`) or URL query parameters (`showcase=true`) / hash search params to support headless test automation and external rendering pipelines.
+- **Blueprint Override Control:** Respects explicit blueprint override settings (`clash_manager_blueprint_mode = false`), permitting mock data orchestration without skeleton UI overlays for branding pipelines (e.g., `portfolio-stitch.html`).
+
 ### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts`, `useApkManager.ts`, `apkResolver.ts` & `apkResolverUtils.ts`)
 
 The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper utility services implement robust, decomposed mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
