@@ -32,7 +32,6 @@ describe("useShowcaseMode", () => {
     const { useShowcaseMode } = await import("../useShowcaseMode");
     const { isShowcaseMode } = useShowcaseMode();
 
-    // The immediate watch will run, but synthetic and blueprint are true, so it stays true
     expect(isShowcaseMode.value).toBe(true);
   });
 
@@ -43,10 +42,38 @@ describe("useShowcaseMode", () => {
     const { useShowcaseMode } = await import("../useShowcaseMode");
     const { isShowcaseMode } = useShowcaseMode();
 
-    // Rationale: Master toggle wins during initialization to ensure consistency.
     expect(isShowcaseMode.value).toBe(true);
     expect(isSyntheticMode.value).toBe(true);
     expect(isBlueprintMode.value).toBe(true);
+  });
+
+  it("respects clash_manager_blueprint_mode=false when showcase is active", async () => {
+    localStorage.setItem("clash_manager_showcase_mode", "true");
+    localStorage.setItem("clash_manager_blueprint_mode", "false");
+    isSyntheticMode.value = false;
+    isBlueprintMode.value = false;
+    const { useShowcaseMode } = await import("../useShowcaseMode");
+    const { isShowcaseMode } = useShowcaseMode();
+
+    expect(isShowcaseMode.value).toBe(true);
+    expect(isSyntheticMode.value).toBe(true);
+    expect(isBlueprintMode.value).toBe(false);
+  });
+
+  it("turns showcase off when synthetic mode is disabled while showcase is active", async () => {
+    localStorage.setItem("clash_manager_showcase_mode", "true");
+    isSyntheticMode.value = true;
+    isBlueprintMode.value = true;
+    const { useShowcaseMode } = await import("../useShowcaseMode");
+    const { isShowcaseMode } = useShowcaseMode();
+
+    expect(isShowcaseMode.value).toBe(true);
+
+    isSyntheticMode.value = false;
+    await nextTick();
+
+    expect(isShowcaseMode.value).toBe(false);
+    expect(localStorage.getItem("clash_manager_showcase_mode")).toBe("false");
   });
 
   it("syncs to master toggle when both child toggles are on", async () => {
