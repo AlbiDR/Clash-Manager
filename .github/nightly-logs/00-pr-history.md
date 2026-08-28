@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1595 [Stage 7]: chore(version): Version integrity audit complete: all packages at v14.46.23 and catalog references synchronized.
+**Domain:** pipeline | **Commit:** c8bcd68d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1595)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Version integrity audit complete: all packages at v14.46.23 and catalog references synchronized.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-28] PR #1594 [Stage 6]: chore(docs): docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
 **Domain:** pipeline | **Commit:** 3e1797ad | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1594)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useBlueprintMode.ts
