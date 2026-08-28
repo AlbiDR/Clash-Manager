@@ -35,3 +35,23 @@ re-grade anything it reports: every agent must produce the same facts and differ
 only in wording. If something looks wrong, fix the script and its tests rather
 than working around it in a prompt.
 
+## Where agent configuration lives
+
+Shared definitions are tracked once, here:
+
+```
+.github/agents/workflows/   multi-step workflows
+.github/agents/skills/      skills (SKILL.md), shared by every tool
+.github/agents/rules/       standards that apply to all agents
+```
+
+Each tool's own hard-coded path (`.claude/skills/`, `.agent/workflows/`,
+`.agent/skills/`, `.agents/rules/`) is a symlink into that directory, created by
+`.github/scripts/link-agent-dirs.mjs`, which `prepare` runs on install. Run
+`pnpm agents:link` to repair them by hand.
+
+Those tool directories are gitignored on purpose: committing them would put
+three tool-branded folders in the repository root. Edit the files under
+`.github/agents/`, never a symlinked path, and every tool picks the change up at
+once because there is only one copy.
+

@@ -1,26 +1,21 @@
 # AI & Temporary Configs
-# Agent tooling: session artifacts stay local, but the SHARED definitions
-# (workflows, skills, rules) are tracked so every agent on every machine
-# reads the same ones. They used to be wholly ignored, which meant the same
-# workflow was hand-recreated per tool, drifted apart, and vanished on a
-# fresh clone.
-.agent/*
-!.agent/workflows/
-!.agent/skills/
-.agents/*
-!.agents/rules/
+# Agent tool directories stay untracked so the repository root is not littered
+# with tool-branded folders. The SHARED definitions they contain (workflows,
+# skills, rules) are tracked once in .github/agents/ and linked into place by
+# .github/scripts/link-agent-dirs.mjs, which `prepare` runs on install.
+.agent
+.agents
 _agent
 _agents
 .gemini
 .cursor
 .jules
 .mcp
+# Local MCP server wiring: developer tooling only, nothing in CI reads it.
+.mcp.json
 # Claude Code personal settings - contains API tokens; never commit
 .claude/settings.local.json
-.claude/*
-!.claude/skills/
-# Never the local settings: they hold API credentials.
-.claude/settings.local.json
+.claude
 
 # Dependencies
 node_modules
