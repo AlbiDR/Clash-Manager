@@ -95,3 +95,4 @@
 * [2026-08-25] [Stage 9] CLEAN: Codebase -- Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
 * [2026-08-26] [Stage 9] CHANGED: Frontend-PWA/src/core/services/useApkManager.ts -- Extracted formatBytes utility from useApkManager to text.ts
 * [2026-08-27] [Stage 9] CLEAN: Codebase -- Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+* [2026-08-28] [Stage 9] CLEAN: Codebase -- Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
