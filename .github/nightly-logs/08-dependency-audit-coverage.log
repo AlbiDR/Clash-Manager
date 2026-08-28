@@ -354,3 +354,4 @@
 * [2026-08-25] [Stage 8] CHANGED: pnpm-workspace.yaml -- Bumped @types/node to ^26.3.0 and updated lockfile.
 * [2026-08-26] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped @supabase/supabase-js to ^2.112.4
 * [2026-08-27] [Stage 8] CHANGED: package.json -- Bumped @types/node to ^26.4.0 in catalog and updated lockfile.
+* [2026-08-28] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped supabase devDependency to ^2.116.0
