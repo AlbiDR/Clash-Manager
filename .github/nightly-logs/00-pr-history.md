@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1594 [Stage 6]: chore(docs): docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
+**Domain:** pipeline | **Commit:** 3e1797ad | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1594)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useBlueprintMode.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-28] PR #1593 [Stage 5]: docs(readme): Reconciled useShowcaseMode blueprint override and master-child synchronization in core services README
 **Domain:** documentation | **Commit:** 9561ae85 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1593)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
