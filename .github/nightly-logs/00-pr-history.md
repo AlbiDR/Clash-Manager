@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-28] PR #1600 [Stage 13]: chore(pipeline): Completed Stage 13 self-healing protocol audit for 2026-08-28
+**Domain:** pipeline | **Commit:** 17989622 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1600)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** chore(pipeline): Completed Stage 13 self-healing protocol audit for 2026-08-28
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-28] PR #1599 [Stage 11]: chore(apk): Audit complete: native WebView settings and PWA SW cache topology are fully optimized
 **Domain:** pipeline | **Commit:** 3bfcc105 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1599)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
