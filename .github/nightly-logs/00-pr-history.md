@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-29] PR #1607 [Stage 6]: chore(docs): docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
+**Domain:** pipeline | **Commit:** 0275d8cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1607)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useBlueprintMode.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-29] PR #1606 [Stage 4]: chore(optimize): Standardized parameter variable naming in useBlueprintMode.ts
 **Domain:** pipeline | **Commit:** 01b4331b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1606)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/useBlueprintMode.ts
