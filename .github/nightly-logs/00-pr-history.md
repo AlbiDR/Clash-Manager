@@ -16,6 +16,21 @@ LAST_AGED:   2026-08-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-29] PR #1604 [Stage 2]: chore(verify): Expanded useBlueprintMode spec with URL query/hash param initialization and showcase override boundary tests.
+**Domain:** pipeline | **Commit:** 896d5f5f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1604)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useBlueprintMode.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Expanded useBlueprintMode spec with URL query/hash param initialization and showcase override boundary tests.
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-29] PR #1603 [Stage 3]: chore(database): Baseline audit clean: 0 pending migrations folded, 28 tables RLS compliant, 97 functions isolated.
+**Domain:** pipeline | **Commit:** d5e20ff8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1603)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline audit clean: 0 pending migrations folded, 28 tables RLS compliant, 97 functions isolated.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-28] PR #1602 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** a442c2c3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1602)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
