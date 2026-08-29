@@ -32,12 +32,12 @@ const BLUEPRINT_KEY = "clash_manager_blueprint_mode";
 
 // [PERF] Singleton State: Ensures all components share the same toggle status.
 // Initialized from LocalStorage or URL param to preserve state across reloads or automation.
-const getParam = (name: string) => {
+const getParam = (parameterName: string) => {
   // [ROUTING RECOVERY] Fallback query string parsing for both search query and hash parameters.
   const search = new URLSearchParams(window.location.search);
-  if (search.has(name)) return search.get(name);
+  if (search.has(parameterName)) return search.get(parameterName);
   const hashSearch = new URLSearchParams(window.location.hash.split("?")[1] || "");
-  return hashSearch.get(name);
+  return hashSearch.get(parameterName);
 };
 
 // [DEFAULT OVERRIDE] Blueprint state evaluates local persistence first, followed by direct URL overrides,

@@ -84,3 +84,4 @@
 * [2026-08-26] [Stage 4] CLEAN: Codebase -- Substrate hygiene audit confirmed known unreferenced views; no new orphaned views found
 * [2026-08-27] [Stage 4] CLEAN: Codebase -- Substrate hygiene audit confirmed known unreferenced views; no source changes required
 * [2026-08-28] [Stage 4] CLEAN: Codebase -- Substrate hygiene audit confirmed known unreferenced views; no source changes required
+* [2026-08-29] [Stage 4] CHANGED: Frontend-PWA/src/core/services/useBlueprintMode.ts -- Standardized parameter variable naming in useBlueprintMode.ts to eliminate anemic pathogens and re-verified substrate database views.
