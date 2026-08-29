@@ -3788,7 +3788,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.737Z",
+        "lastObservedAt": "2026-08-29T23:29:06.438Z",
         "failureClass": null
       },
       "2": {
@@ -3809,8 +3809,8 @@
             "name": "sessions/18022401045056286095",
             "state": "COMPLETED",
             "createTime": "2026-08-29T00:18:17.315805504Z",
-            "updateTime": "2026-08-29T01:30:53.374100Z",
-            "lifetimeMinutes": 72.6
+            "updateTime": "2026-08-29T18:08:10.983338Z",
+            "lifetimeMinutes": 1069.9
           },
           "recovery": {
             "nudgedAt": "2026-08-29T01:28:51.892Z",
@@ -3828,7 +3828,7 @@
           "tag": "nightly/2026-08-29/stage-2/pr-1604"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T16:56:05.737Z",
+        "lastObservedAt": "2026-08-29T23:29:06.438Z",
         "failureClass": null
       },
       "3": {
@@ -3853,12 +3853,12 @@
             "name": "sessions/11078474817375157049",
             "state": "COMPLETED",
             "createTime": "2026-08-29T01:20:25.533893133Z",
-            "updateTime": "2026-08-29T01:28:35.401837Z",
-            "lifetimeMinutes": 8.2
+            "updateTime": "2026-08-29T18:08:04.427514Z",
+            "lifetimeMinutes": 1007.6
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.737Z",
+        "lastObservedAt": "2026-08-29T23:29:06.438Z",
         "failureClass": null
       },
       "4": {
@@ -3885,8 +3885,8 @@
             "name": "sessions/2881823561360091023",
             "state": "COMPLETED",
             "createTime": "2026-08-29T02:03:43.187684537Z",
-            "updateTime": "2026-08-29T03:37:59.759062Z",
-            "lifetimeMinutes": 94.3
+            "updateTime": "2026-08-29T18:08:34.892819Z",
+            "lifetimeMinutes": 964.9
           },
           "recovery": {
             "nudgedAt": "2026-08-29T03:35:56.934Z",
@@ -3899,7 +3899,7 @@
           "tag": "nightly/2026-08-29/stage-4/pr-1606"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T16:56:05.738Z",
+        "lastObservedAt": "2026-08-29T23:29:06.438Z",
         "failureClass": null
       },
       "5": {
@@ -3925,12 +3925,12 @@
             "name": "sessions/17758273985404960123",
             "state": "COMPLETED",
             "createTime": "2026-08-29T03:25:48.323894305Z",
-            "updateTime": "2026-08-29T03:35:58.426292Z",
-            "lifetimeMinutes": 10.2
+            "updateTime": "2026-08-29T18:08:27.691325Z",
+            "lifetimeMinutes": 882.7
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.738Z",
+        "lastObservedAt": "2026-08-29T23:29:06.438Z",
         "failureClass": null
       },
       "6": {
@@ -3953,12 +3953,12 @@
             "name": "sessions/14099766423476291019",
             "state": "COMPLETED",
             "createTime": "2026-08-29T04:03:42.195143958Z",
-            "updateTime": "2026-08-29T04:10:47.273578Z",
-            "lifetimeMinutes": 7.1
+            "updateTime": "2026-08-29T18:08:40.311217Z",
+            "lifetimeMinutes": 845
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.738Z",
+        "lastObservedAt": "2026-08-29T23:29:06.439Z",
         "failureClass": null
       },
       "7": {
@@ -3981,12 +3981,12 @@
             "name": "sessions/4026885999820541302",
             "state": "COMPLETED",
             "createTime": "2026-08-29T05:11:32.852193661Z",
-            "updateTime": "2026-08-29T05:18:38.297448Z",
-            "lifetimeMinutes": 7.1
+            "updateTime": "2026-08-29T18:08:47.800304Z",
+            "lifetimeMinutes": 777.2
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.738Z",
+        "lastObservedAt": "2026-08-29T23:29:06.439Z",
         "failureClass": null
       },
       "8": {
@@ -4009,12 +4009,12 @@
             "name": "sessions/14821411944462916119",
             "state": "COMPLETED",
             "createTime": "2026-08-29T06:15:29.739987304Z",
-            "updateTime": "2026-08-29T06:29:45.170151Z",
-            "lifetimeMinutes": 14.3
+            "updateTime": "2026-08-29T18:08:53.278399Z",
+            "lifetimeMinutes": 713.4
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.738Z",
+        "lastObservedAt": "2026-08-29T23:29:06.439Z",
         "failureClass": null
       },
       "9": {
@@ -4040,12 +4040,12 @@
             "name": "sessions/13845280851424023134",
             "state": "COMPLETED",
             "createTime": "2026-08-29T07:01:30.879228798Z",
-            "updateTime": "2026-08-29T07:12:37.196804Z",
-            "lifetimeMinutes": 11.1
+            "updateTime": "2026-08-29T18:08:56.740484Z",
+            "lifetimeMinutes": 667.4
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.739Z",
+        "lastObservedAt": "2026-08-29T23:29:06.439Z",
         "failureClass": null
       },
       "10": {
@@ -4068,12 +4068,12 @@
             "name": "sessions/13894103754897537233",
             "state": "COMPLETED",
             "createTime": "2026-08-29T08:06:25.506900339Z",
-            "updateTime": "2026-08-29T08:15:36.348291Z",
-            "lifetimeMinutes": 9.2
+            "updateTime": "2026-08-29T18:08:59.662996Z",
+            "lifetimeMinutes": 602.6
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.739Z",
+        "lastObservedAt": "2026-08-29T23:29:06.439Z",
         "failureClass": null
       },
       "11": {
@@ -4100,8 +4100,8 @@
             "name": "sessions/7872122788878305948",
             "state": "COMPLETED",
             "createTime": "2026-08-29T09:16:48.050589573Z",
-            "updateTime": "2026-08-29T11:33:46.466263Z",
-            "lifetimeMinutes": 137
+            "updateTime": "2026-08-29T18:09:11.154480Z",
+            "lifetimeMinutes": 532.4
           },
           "recovery": {
             "nudgedAt": "2026-08-29T11:31:44.933Z",
@@ -4114,7 +4114,7 @@
           "tag": "nightly/2026-08-29/stage-11/pr-1613"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T16:56:05.739Z",
+        "lastObservedAt": "2026-08-29T23:29:06.439Z",
         "failureClass": null
       },
       "12": {
@@ -4141,8 +4141,8 @@
             "name": "sessions/5855882033630819526",
             "state": "COMPLETED",
             "createTime": "2026-08-29T10:04:05.052093880Z",
-            "updateTime": "2026-08-29T11:33:47.918975Z",
-            "lifetimeMinutes": 89.7
+            "updateTime": "2026-08-29T18:09:15.989699Z",
+            "lifetimeMinutes": 485.2
           },
           "recovery": {
             "nudgedAt": "2026-08-29T11:31:46.201Z",
@@ -4155,7 +4155,7 @@
           "tag": "nightly/2026-08-29/stage-12/pr-1614"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T16:56:05.739Z",
+        "lastObservedAt": "2026-08-29T23:29:06.440Z",
         "failureClass": null
       },
       "13": {
@@ -4178,12 +4178,12 @@
             "name": "sessions/17667425017462069367",
             "state": "COMPLETED",
             "createTime": "2026-08-29T11:23:41.758689249Z",
-            "updateTime": "2026-08-29T11:30:48.169730Z",
-            "lifetimeMinutes": 7.1
+            "updateTime": "2026-08-29T18:09:06.708656Z",
+            "lifetimeMinutes": 405.4
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T16:56:05.739Z",
+        "lastObservedAt": "2026-08-29T23:29:06.440Z",
         "failureClass": null
       }
     }
