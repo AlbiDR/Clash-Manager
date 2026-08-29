@@ -3788,7 +3788,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.557Z",
+        "lastObservedAt": "2026-08-29T11:34:04.019Z",
         "failureClass": null
       },
       "2": {
@@ -3828,7 +3828,7 @@
           "tag": "nightly/2026-08-29/stage-2/pr-1604"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T08:16:34.557Z",
+        "lastObservedAt": "2026-08-29T11:34:04.020Z",
         "failureClass": null
       },
       "3": {
@@ -3858,7 +3858,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.557Z",
+        "lastObservedAt": "2026-08-29T11:34:04.020Z",
         "failureClass": null
       },
       "4": {
@@ -3899,7 +3899,7 @@
           "tag": "nightly/2026-08-29/stage-4/pr-1606"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T08:16:34.557Z",
+        "lastObservedAt": "2026-08-29T11:34:04.020Z",
         "failureClass": null
       },
       "5": {
@@ -3930,7 +3930,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.557Z",
+        "lastObservedAt": "2026-08-29T11:34:04.020Z",
         "failureClass": null
       },
       "6": {
@@ -3958,7 +3958,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.557Z",
+        "lastObservedAt": "2026-08-29T11:34:04.020Z",
         "failureClass": null
       },
       "7": {
@@ -3986,7 +3986,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.557Z",
+        "lastObservedAt": "2026-08-29T11:34:04.021Z",
         "failureClass": null
       },
       "8": {
@@ -4014,7 +4014,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.558Z",
+        "lastObservedAt": "2026-08-29T11:34:04.021Z",
         "failureClass": null
       },
       "9": {
@@ -4045,7 +4045,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.558Z",
+        "lastObservedAt": "2026-08-29T11:34:04.021Z",
         "failureClass": null
       },
       "10": {
@@ -4073,7 +4073,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.558Z",
+        "lastObservedAt": "2026-08-29T11:34:04.021Z",
         "failureClass": null
       },
       "11": {
@@ -4081,7 +4081,7 @@
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "julesApiError": null,
@@ -4089,18 +4089,39 @@
             "verdict": "HEALTHY",
             "currentStreak": 1,
             "reason": "no adverse trend"
-          }
+          },
+          "julesSession": {
+            "id": "7872122788878305948",
+            "name": "sessions/7872122788878305948",
+            "state": "COMPLETED"
+          },
+          "session": {
+            "id": "7872122788878305948",
+            "name": "sessions/7872122788878305948",
+            "state": "COMPLETED",
+            "createTime": "2026-08-29T09:16:48.050589573Z",
+            "updateTime": "2026-08-29T09:29:55.556185Z",
+            "lifetimeMinutes": 13.1
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-29T11:31:44.933Z",
+            "sessionName": "sessions/7872122788878305948",
+            "ok": true,
+            "error": null
+          },
+          "prNumber": 1613,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1613"
         },
-        "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.558Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "attempts": 1,
+        "lastObservedAt": "2026-08-29T11:34:04.021Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "12": {
         "date": "2026-08-29",
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "julesApiError": null,
@@ -4108,30 +4129,60 @@
             "verdict": "DEGRADING",
             "currentStreak": 2,
             "reason": "intervention rate rose from 0% to 50%"
-          }
+          },
+          "julesSession": {
+            "id": "5855882033630819526",
+            "name": "sessions/5855882033630819526",
+            "state": "COMPLETED"
+          },
+          "session": {
+            "id": "5855882033630819526",
+            "name": "sessions/5855882033630819526",
+            "state": "COMPLETED",
+            "createTime": "2026-08-29T10:04:05.052093880Z",
+            "updateTime": "2026-08-29T10:19:14.455823Z",
+            "lifetimeMinutes": 15.2
+          },
+          "recovery": {
+            "nudgedAt": "2026-08-29T11:31:46.201Z",
+            "sessionName": "sessions/5855882033630819526",
+            "ok": true,
+            "error": null
+          },
+          "prNumber": 1614,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1614"
         },
-        "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.558Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "attempts": 1,
+        "lastObservedAt": "2026-08-29T11:34:04.022Z",
+        "failureClass": "RECOVERED_AFTER_NUDGE"
       },
       "13": {
         "date": "2026-08-29",
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-08-29/stage-13/pr-1612",
+          "session": {
+            "id": "17667425017462069367",
+            "name": "sessions/17667425017462069367",
+            "state": "COMPLETED",
+            "createTime": "2026-08-29T11:23:41.758689249Z",
+            "updateTime": "2026-08-29T11:30:48.169730Z",
+            "lifetimeMinutes": 7.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T08:16:34.559Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-29T11:34:04.022Z",
+        "failureClass": null
       }
     }
   }
