@@ -77,6 +77,14 @@ The modal confirmation composable provides a robust, styled replacement for the 
 - **Persistence & Automation Intents:** Initializes state from `localStorage` (`clash_manager_showcase_mode`) or URL query parameters (`showcase=true`) / hash search params to support headless test automation and external rendering pipelines.
 - **Blueprint Override Control:** Respects explicit blueprint override settings (`clash_manager_blueprint_mode = false`), permitting mock data orchestration without skeleton UI overlays for branding pipelines (e.g., `portfolio-stitch.html`).
 
+### Blueprint Mode Service (`useBlueprintMode.ts`)
+
+`useBlueprintMode.ts` manages the structural skeleton display state for interaction design and layout debugging in Layer 1 Core:
+- **Triple-Tier Initialization:** Evaluates toggle status with strict fallback precedence: local persistence (`clash_manager_blueprint_mode`), direct URL parameters (`blueprint=true`), and master Showcase mode defaults unless explicitly disabled (`clash_manager_blueprint_mode !== "false"`).
+- **Dual Parameter Parsing:** Incorporates fallback query parsing (`getParam`) that inspects both `window.location.search` and hash parameters (`window.location.hash`) for headless test automation and routing isolation.
+- **Build-Time Skeleton Derivation:** Gates the visibility of structural UI skeletons whose geometric dimensions derive from build-time capture (`core/theme/bones.generated.json`, generated via `scripts/capture_skeletons.ts`).
+- **State Persistence & Control:** Exposes reactive reference `isBlueprintMode`, `toggleBlueprintMode`, and `setBlueprintMode`, synchronizing all state mutations to `localStorage`.
+
 ### PWA Updates and APK Resolution Lifecycle (`usePwaManager.ts`, `useApkManager.ts`, `apkResolver.ts` & `apkResolverUtils.ts`)
 
 The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper utility services implement robust, decomposed mechanisms to ensure both the browser-based client and the native Android wrapper can recover and upgrade seamlessly:
