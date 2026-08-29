@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-29] PR #1608 [Stage 7]: chore(version): Audit complete: Version ground truth 14.46.23 aligned
+**Domain:** pipeline | **Commit:** d8f7ec83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1608)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Audit complete: Version ground truth 14.46.23 aligned
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-29] PR #1607 [Stage 6]: chore(docs): docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
 **Domain:** pipeline | **Commit:** 0275d8cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1607)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useBlueprintMode.ts
