@@ -3788,7 +3788,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.562Z",
+        "lastObservedAt": "2026-08-29T05:19:29.187Z",
         "failureClass": null
       },
       "2": {
@@ -3828,7 +3828,7 @@
           "tag": "nightly/2026-08-29/stage-2/pr-1604"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T04:11:50.562Z",
+        "lastObservedAt": "2026-08-29T05:19:29.187Z",
         "failureClass": null
       },
       "3": {
@@ -3858,7 +3858,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.563Z",
+        "lastObservedAt": "2026-08-29T05:19:29.187Z",
         "failureClass": null
       },
       "4": {
@@ -3899,7 +3899,7 @@
           "tag": "nightly/2026-08-29/stage-4/pr-1606"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T04:11:50.563Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": null
       },
       "5": {
@@ -3930,7 +3930,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.563Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": null
       },
       "6": {
@@ -3958,7 +3958,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.563Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": null
       },
       "7": {
@@ -3966,19 +3966,28 @@
         "stage": 7,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-08-29/stage-7/pr-1608",
+          "session": {
+            "id": "4026885999820541302",
+            "name": "sessions/4026885999820541302",
+            "state": "COMPLETED",
+            "createTime": "2026-08-29T05:11:32.852193661Z",
+            "updateTime": "2026-08-29T05:18:38.297448Z",
+            "lifetimeMinutes": 7.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.563Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "failureClass": null
       },
       "8": {
         "date": "2026-08-29",
@@ -3996,7 +4005,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.564Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -4015,7 +4024,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.564Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -4034,7 +4043,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.564Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -4053,7 +4062,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.564Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -4072,7 +4081,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.564Z",
+        "lastObservedAt": "2026-08-29T05:19:29.188Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -4091,7 +4100,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T04:11:50.565Z",
+        "lastObservedAt": "2026-08-29T05:19:29.189Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
