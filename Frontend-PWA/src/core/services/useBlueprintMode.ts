@@ -30,8 +30,17 @@ import { ref } from "vue";
  */
 const BLUEPRINT_KEY = "clash_manager_blueprint_mode";
 
-// [PERF] Singleton State: Ensures all components share the same toggle status.
-// Initialized from LocalStorage or URL param to preserve state across reloads or automation.
+/**
+ * Helper to extract a URL query parameter from either `window.location.search` or `window.location.hash`.
+ *
+ * @remarks
+ * Evaluates standard query search parameters first before falling back to query strings embedded
+ * within the hash routing string. This ensures query flag overrides remain robust across both search
+ * and hash-based SPA routing strategies.
+ *
+ * @param parameterName - The query string parameter key to extract.
+ * @returns The parameter string value if present, or `null` if unassigned.
+ */
 const getParam = (parameterName: string) => {
   // [ROUTING RECOVERY] Fallback query string parsing for both search query and hash parameters.
   const search = new URLSearchParams(window.location.search);
@@ -42,6 +51,8 @@ const getParam = (parameterName: string) => {
 
 // [DEFAULT OVERRIDE] Blueprint state evaluates local persistence first, followed by direct URL overrides,
 // and finally showcase mode defaults unless explicitly disabled via LocalStorage.
+// [THREAT ANNOTATION: URL Param Tampering] Gated by explicit 'true' or 'false' string equality checks
+// to prevent arbitrary query string injection or truthy value coercion from altering layout states.
 const isBlueprintMode = ref(
   localStorage.getItem(BLUEPRINT_KEY) === "true" || 
   getParam("blueprint") === "true" ||
@@ -63,7 +74,7 @@ const isBlueprintMode = ref(
  * - Reads from and persists state to `localStorage` under key `clash_manager_blueprint_mode`.
  * - Interacts with URL query parameters (`blueprint=true` or `showcase=true`) for headless layout testing.
  *
- * @returns
+ * @returns Object containing reactive state and control methods:
  * - `isBlueprintMode`: Reactive reference to the global blueprint toggle status.
  * - `toggleBlueprintMode`: Function to flip current blueprint status and synchronize `localStorage`.
  * - `setBlueprintMode`: Function to explicitly set target blueprint boolean state and synchronize `localStorage`.
@@ -71,6 +82,10 @@ const isBlueprintMode = ref(
 export function useBlueprintMode() {
   /**
    * Flips the current Blueprint Mode status and persists the updated value to `localStorage`.
+   *
+   * @remarks
+   * Mutates the underlying singleton `isBlueprintMode` ref and serializes the new state
+   * to `localStorage` under `clash_manager_blueprint_mode`.
    */
   function toggleBlueprintMode() {
     // [STATE MUTATION] Toggle reactive boolean state.
@@ -81,6 +96,10 @@ export function useBlueprintMode() {
 
   /**
    * Explicitly sets the Blueprint Mode status and persists the updated value to `localStorage`.
+   *
+   * @remarks
+   * Sets the singleton `isBlueprintMode` ref to the provided boolean target and serializes
+   * the value to `localStorage`.
    *
    * @param targetState - The target boolean state for Blueprint Mode.
    */
