@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-29] PR #1609 [Stage 8]: chore(deps): Bumped vue to ^3.5.42 in catalog and updated lockfile.
+**Domain:** pipeline | **Commit:** 9fbf837e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1609)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped vue to ^3.5.42 in catalog and updated lockfile.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-29] PR #1608 [Stage 7]: chore(version): Audit complete: Version ground truth 14.46.23 aligned
 **Domain:** pipeline | **Commit:** d8f7ec83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1608)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
