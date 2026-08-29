@@ -16,6 +16,21 @@ LAST_AGED:   2026-08-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-29] PR #1613 [Stage 11]: chore(apk): Stage 11 APK and Native Wrapper Optimizations
+**Domain:** pipeline | **Commit:** 579d32a2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1613)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Stage 11 APK and Native Wrapper Optimizations
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-29] PR #1614 [Stage 12]: chore(apk-ux): Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
+**Domain:** pipeline | **Commit:** e5d8c1ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1614)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-29] PR #1612 [Stage 13]: chore(pipeline): Completed Stage 13 self-healing protocol audit for 2026-08-29
 **Domain:** pipeline | **Commit:** a8a86a2f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1612)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
