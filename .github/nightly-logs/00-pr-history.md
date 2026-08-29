@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-29] PR #1610 [Stage 9]: chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Domain:** pipeline | **Commit:** e81c5a30 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1610)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-29] PR #1609 [Stage 8]: chore(deps): Bumped vue to ^3.5.42 in catalog and updated lockfile.
 **Domain:** pipeline | **Commit:** 9fbf837e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1609)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
