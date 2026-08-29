@@ -16,6 +16,21 @@ LAST_AGED:   2026-08-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-29] PR #1606 [Stage 4]: chore(optimize): Standardized parameter variable naming in useBlueprintMode.ts
+**Domain:** pipeline | **Commit:** 01b4331b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1606)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/useBlueprintMode.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Standardized parameter variable naming in useBlueprintMode.ts
+**Result:** Nominal validation with zero regressions.
+
+### [2026-08-29] PR #1605 [Stage 5]: docs(readme): Reconciled useBlueprintMode in core services README
+**Domain:** pipeline | **Commit:** 67e94389 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1605)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Automated nightly audit pass.
+**Change:** docs(readme): Reconciled useBlueprintMode in core services README
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-29] PR #1604 [Stage 2]: chore(verify): Expanded useBlueprintMode spec with URL query/hash param initialization and showcase override boundary tests.
 **Domain:** pipeline | **Commit:** 896d5f5f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1604)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useBlueprintMode.spec.ts
