@@ -3788,7 +3788,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.187Z",
+        "lastObservedAt": "2026-08-29T06:30:36.444Z",
         "failureClass": null
       },
       "2": {
@@ -3828,7 +3828,7 @@
           "tag": "nightly/2026-08-29/stage-2/pr-1604"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T05:19:29.187Z",
+        "lastObservedAt": "2026-08-29T06:30:36.444Z",
         "failureClass": null
       },
       "3": {
@@ -3858,7 +3858,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.187Z",
+        "lastObservedAt": "2026-08-29T06:30:36.444Z",
         "failureClass": null
       },
       "4": {
@@ -3899,7 +3899,7 @@
           "tag": "nightly/2026-08-29/stage-4/pr-1606"
         },
         "attempts": 1,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.445Z",
         "failureClass": null
       },
       "5": {
@@ -3930,7 +3930,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.445Z",
         "failureClass": null
       },
       "6": {
@@ -3958,7 +3958,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.445Z",
         "failureClass": null
       },
       "7": {
@@ -3986,7 +3986,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.445Z",
         "failureClass": null
       },
       "8": {
@@ -3994,19 +3994,28 @@
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "julesApiError": null,
           "health": {
-            "verdict": "DEGRADING",
-            "currentStreak": 1,
-            "reason": "intervention rate rose from 13% to 38%"
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-08-29/stage-8/pr-1609",
+          "session": {
+            "id": "14821411944462916119",
+            "name": "sessions/14821411944462916119",
+            "state": "COMPLETED",
+            "createTime": "2026-08-29T06:15:29.739987304Z",
+            "updateTime": "2026-08-29T06:29:45.170151Z",
+            "lifetimeMinutes": 14.3
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-29T06:30:36.445Z",
+        "failureClass": null
       },
       "9": {
         "date": "2026-08-29",
@@ -4024,7 +4033,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.446Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -4043,7 +4052,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.446Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -4062,7 +4071,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.446Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -4081,7 +4090,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.188Z",
+        "lastObservedAt": "2026-08-29T06:30:36.446Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -4100,7 +4109,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-29T05:19:29.189Z",
+        "lastObservedAt": "2026-08-29T06:30:36.446Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
