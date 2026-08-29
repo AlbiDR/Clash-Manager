@@ -42,7 +42,7 @@ catalogs:
     vitest: "^4.1.11"
 
     # Core Shared Dependencies (Consolidated)
-    vue: "^3.5.41"
+    vue: "^3.5.42"
     vue-router: "^5.2.0"
     vue-tsc: "^3.3.10"
     workbox-precaching: "^7.4.1"
