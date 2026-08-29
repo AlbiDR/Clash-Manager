@@ -400,3 +400,4 @@
 * [2026-08-26] [Stage 3] CLEAN: Codebase -- Baseline is current and fully compliant with RLS, search_path isolation, and formatting rules; 0 pending migrations
 * [2026-08-27] [Stage 3] CLEAN: Codebase -- Audit complete: baseline migration fully folded and RLS compliant with safe search_path isolation
 * [2026-08-28] [Stage 3] CLEAN: Codebase -- Baseline consolidated and 100% compliant; zero pending migrations unfolded
+* [2026-08-29] [Stage 3] CLEAN: Codebase -- Baseline audit clean: 0 pending migrations folded, 28 tables RLS compliant, 97 functions isolated.
