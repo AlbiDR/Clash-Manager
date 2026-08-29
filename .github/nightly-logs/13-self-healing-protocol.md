@@ -316,11 +316,18 @@
   - Resolution Details (2026-08-27): Re-verification of the entire nightly pipeline on August 27, 2026, confirmed zero failed or missing stages. All 12 preceding stages (Stages 1 through 12) executed cleanly and logged valid coverage log entries (PRs #1576 through #1587). This marks another 100% operational run for the entire pipeline.
 
 * Missing-Run / Unobservable Events on 2026-08-28:
-  - Stages: Stage 1 (Harden) [UNOBSERVABLE], Stage 12 (APK-UX) [UNOBSERVABLE].
+  - Stages: Stage 1 (Harden) [RESOLVED - monitor] (August 29, 2026), Stage 12 (APK-UX) [RESOLVED - monitor] (August 29, 2026).
+  - State: [RESOLVED - monitor]
+  - Symptom: Initial missing output recorded prior to Stage 13 execution on 2026-08-28.
+  - Root Cause: Execution timing gap relative to audit execution.
+  - Resolution Details (2026-08-29): Re-verification of 2026-08-28 pipeline output confirmed Stage 1 and Stage 12 completed cleanly and published PR #1602 (Stage 1 CLEAN) and PR #1601 (Stage 12 CLEAN). Both are demoted to [RESOLVED - monitor].
+
+* Missing-Run / Unobservable Events on 2026-08-29:
+  - Stages: Stage 11 (APK-Optimization) [UNOBSERVABLE], Stage 12 (APK-UX) [UNOBSERVABLE].
   - State: [ACTIVE - monitor]
-  - Symptom: No published PR history or coverage log entries for 2026-08-28 in 01-hardening-coverage.log or 12-apk-ux-coverage.log prior to Stage 13 execution. Stages 2 through 11 executed cleanly and opened PRs #1590 through #1599.
-  - Root Cause: Stage 1 and Stage 12 left no published output in repository evidence for 2026-08-28; exact cause is unobservable without session logs.
-  - Recommended Fix: Monitor tomorrow's pipeline execution to confirm automatic recovery of Stage 1 and Stage 12.
+  - Symptom: No published PR history or coverage log entries for 2026-08-29 in 11-apk-optimization-coverage.log or 12-apk-ux-coverage.log prior to Stage 13 audit execution. Stages 1 through 10 executed cleanly and published PRs #1602 through #1611.
+  - Root Cause: Stage 11 and Stage 12 left no published output in repository evidence for 2026-08-29 prior to Stage 13 execution; exact cause is unobservable without session logs.
+  - Recommended Fix: Monitor tomorrow's pipeline execution to confirm automatic recovery of Stage 11 and Stage 12.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -355,56 +362,62 @@
   - Recommended Fix: Ensure merge coordinator workflow issues `git fetch origin Nightly` and re-bases or resets local head prior to push retries.
   - Resolution Details: Monitored across cycles. Stage 2 recovered on August 20 and August 21 (PR #1514) with verified test coverage.
 
+* Session Stalling and Recovery Nudge Interventions in Stages 2 and 4 (August 29, 2026):
+  - Symptom: Stage 2 and Stage 4 sessions exceeded standard runtime reserves and required `RECOVERED_AFTER_NUDGE` recovery dispatches before publishing PR #1604 and PR #1606.
+  - Root Cause: Long-running validation suites or post-commit processing reached completion reserve limits without emitting final terminal events, triggering automated watchdog nudges.
+  - State: [ACTIVE - monitor]
+  - Recommended Fix: Continue monitoring watchdog recovery efficiency and audit stage validation execution bounds.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 6 (Last CLEAN logged on 2026-08-27 via PR #1576; missing output on 2026-08-28; last active change on 2026-08-22 via PR #1528)
-  - Analysis: Audit pass completed cleanly with zero threat vectors on 2026-08-27; missing run logged for 2026-08-28.
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-08-28 via PR #1602; last active change on 2026-08-22 via PR #1528)
+  - Analysis: Audit pass completed cleanly with zero threat vectors.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-28 in useShowcaseMode.spec.ts via PR #1590)
-  - Analysis: Expanded useShowcaseMode spec with blueprint override and synthetic watcher unit tests.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in useBlueprintMode.spec.ts via PR #1604)
+  - Analysis: Expanded useBlueprintMode spec with URL query/hash param initialization and showcase override boundary tests.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-08-28 via PR #1591; last active change on 2026-08-19)
+  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-08-29 via PR #1603; last active change on 2026-08-19)
   - Analysis: Baseline migration fully folded and RLS compliant with safe search_path isolation.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-08-28 via PR #1592; last active change on 2026-08-24 via PR #1553)
-  - Analysis: Substrate hygiene audit confirmed known unreferenced views; no source changes required.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in useBlueprintMode.ts via PR #1606)
+  - Analysis: Standardized parameter variable naming in useBlueprintMode.ts to eliminate anemic pathogens.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-28 in core services README via PR #1593)
-  - Analysis: Reconciled useShowcaseMode blueprint override and master-child synchronization in core services README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in core services README via PR #1605)
+  - Analysis: Reconciled useBlueprintMode initialization priority, query params, and skeleton derivation in core services README.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-28 in useBlueprintMode.ts via PR #1594)
-  - Analysis: Hardened useBlueprintMode interface contracts and inline logic annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in useBlueprintMode.ts via PR #1607)
+  - Analysis: Hardened useBlueprintMode interface contracts and inline annotations.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 35 (CLEAN logged on 2026-08-28 via PR #1595)
+  - Consecutive No-Diff Days: 36 (CLEAN logged on 2026-08-29 via PR #1608)
   - Analysis: Monorepo package versions and catalog dependencies are fully consistent across all manifests.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-28 in pnpm-lock.yaml via PR #1596)
-  - Analysis: Bumped supabase devDependency to ^2.116.0.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in package.json/pnpm-lock.yaml via PR #1609)
+  - Analysis: Bumped vue to ^3.5.42 in catalog and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-28 via PR #1597; last active change on 2026-08-26 via PR #1570)
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-29 via PR #1610; last active change on 2026-08-26 via PR #1570)
   - Analysis: Structural audit clean; substrate architecture strictly aligned with CleanStack ADR.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-08-28 via PR #1598)
+  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-08-29 via PR #1611)
   - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security settings.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-08-28 via PR #1599)
+  - Consecutive No-Diff Days: 10 (Last CLEAN logged on 2026-08-28 via PR #1599; missing output on 2026-08-29)
   - Analysis: Native WebView settings and PWA SW cache topology are fully optimized.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 4 (Last CLEAN logged on 2026-08-27 via PR #1587; missing output on 2026-08-28; last active change on 2026-08-24 via PR #1545)
-  - Analysis: Global UX sweep complete; candidate set fully compliant on 2026-08-27; missing run logged for 2026-08-28.
+  - Consecutive No-Diff Days: 5 (Last CLEAN logged on 2026-08-28 via PR #1601; missing output on 2026-08-29)
+  - Analysis: Global UX sweep complete; candidate set fully compliant.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-28)
-  - Analysis: Completed daily self-healing audit pass for 2026-08-28: mapped August 28 stage executions/recoveries and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29)
+  - Analysis: Completed daily self-healing audit pass for 2026-08-29: mapped August 29 stage executions/recoveries and updated Section 3 no-diff metrics.
