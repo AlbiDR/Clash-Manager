@@ -16,6 +16,21 @@ LAST_AGED:   2026-08-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-30] PR #1627 [Stage 12]: Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
+**Domain:** ux | **Commit:** 27ba7f42 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1627)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Execute the scheduled Stage 12 apk-ux audit.
+**Change:** Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
+**Result:** Audit completed with no source change required.
+
+### [2026-08-30] PR #1626 [Stage 13]: Completed Stage 13 pipeline self-healing audit for 2026-08-30
+**Domain:** pipeline | **Commit:** d29d5e6e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1626)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Automated nightly audit pass.
+**Change:** Completed Stage 13 pipeline self-healing audit for 2026-08-30
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-30] PR #1625 [Stage 11]: chore(apk): Audit complete: native WebView settings and PWA SW cache topology are fully optimized
 **Domain:** pipeline | **Commit:** fa77e6be | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1625)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
