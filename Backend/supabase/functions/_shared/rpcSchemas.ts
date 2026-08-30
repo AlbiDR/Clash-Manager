@@ -28,6 +28,11 @@ export const PlayerSyncPayloadSchema = v.object({
  * L1 Core: Shadow Discovery Target Schema (RPC).
  *
  * @remarks
+ * Validates target player payloads returned from shadow discovery RPC procedures.
+ * Enforces string typing on `opponent_player_tag` prior to downstream harvesting.
+ *
+ * [THREAT: UNVALIDATED_TAG_INJECTION]
+ * Prevents non-string or malformed structures from propagating into the shadow scout pipeline.
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const ShadowTargetSchema = v.object({
@@ -38,6 +43,10 @@ export const ShadowTargetSchema = v.object({
  * L1 Core: Stale Recruit Schema (RPC).
  *
  * @remarks
+ * Validates stale recruit player tag records retrieved from database cleanup RPC procedures.
+ *
+ * [THREAT: STALE_PURGE_CORRECTNESS]
+ * Guarantees incoming RPC target payloads strictly match expected object shapes before invoking purge routines.
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const StaleRecruitSchema = v.object({
@@ -48,6 +57,10 @@ export const StaleRecruitSchema = v.object({
  * L1 Core: Headhunter Context Schema (RPC).
  *
  * @remarks
+ * Validates headhunter scanning context parameters including minimum trophy requirements and exclusion tag sets.
+ *
+ * [THREAT: BOUNDARY_TYPE_CORRUPTION]
+ * Prevents invalid trophy counts or non-array exclusion lists from breaking scanner filtering logic.
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const HeadhunterContextSchema = v.object({
@@ -59,6 +72,7 @@ export const HeadhunterContextSchema = v.object({
  * L1 Core: Discovery Anchor Schema (RPC).
  *
  * @remarks
+ * Validates anchor keyword parameters used in deep-depth discovery RPC queries.
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const DiscoveryAnchorSchema = v.object({
@@ -69,6 +83,7 @@ export const DiscoveryAnchorSchema = v.object({
  * L1 Core: Discovery Cache Item Schema.
  *
  * @remarks
+ * Validates cached player tag entries returned from local or RPC discovery caches.
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const DiscoveryCacheItemSchema = v.object({
@@ -79,18 +94,23 @@ export const DiscoveryCacheItemSchema = v.object({
  * L1 Core: Ingestion Targets Schema.
  *
  * @remarks
- * Satisfies ADR Section III: Validation Boundaries.
+ * Validates and transforms schema-qualified targets returned by `get_ingestion_targets()`.
  *
- * The `get_ingestion_targets()` RPC returns schema-qualified keys
- * (`"drivers.members"`, `"drivers.recruits"`). The transform step normalises
- * them to bare `members`/`recruits` so callers remain decoupled from the
+ * [DECISION LOG] SCHEMA DECOUPLING:
+ * The `get_ingestion_targets()` RPC returns schema-qualified keys (`"drivers.members"`, `"drivers.recruits"`).
+ * The transform step normalises them to bare `members`/`recruits` so callers remain decoupled from the
  * Postgres schema-prefix convention.
+ *
+ * [THREAT: DATABASE_SCHEMA_LEAKAGE]
+ * Decouples internal database namespace structure from Edge Function consumption contracts.
+ * Satisfies ADR Section III: Validation Boundaries.
  */
 export const IngestionTargetsSchema = v.pipe(
     v.object({
         "drivers.members":  v.array(v.string()),
         "drivers.recruits": v.array(v.string())
     }),
+    // Transform schema-qualified RPC fields into domain-clean properties.
     v.transform((raw) => ({
         members:  raw["drivers.members"],
         recruits: raw["drivers.recruits"]
@@ -101,6 +121,11 @@ export const IngestionTargetsSchema = v.pipe(
  * L1 Core: Recruit Fate Schema (RPC).
  *
  * @remarks
+ * Validates recruit status and potential score evaluation results returned from database scoring RPCs.
+ * Accepts numeric or string representations of `raw_potential_score` to accommodate Postgres decimal returns.
+ *
+ * [THREAT: TYPE_COERCION_MISMATCH]
+ * Handles union types for raw potential scores to prevent parsing failures when database drivers return numeric strings.
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const RecruitFateSchema = v.object({
