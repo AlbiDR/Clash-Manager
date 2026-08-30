@@ -1,31 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- Migration: 20260727020000_roster_win_rate_lifetime_kpi.sql
---
--- Corrects the Member Card lifetime-KPI row shipped in
--- 20260727010000_roster_lifetime_kpi_row.sql. That migration added
--- war_wins, but drivers.members.war_wins has never been populated by any
--- ingestion pipeline (substrate.shred_clan_members only writes player_tag,
--- name, role, exp_level, trophies, donations, donations_received, clan_rank,
--- last_seen_at, is_active). It reads 0 for every member regardless of their
--- real Clash Royale history, which is worse than merely stale -- it is
--- confidently wrong for members who do have real legacy war wins.
---
--- Recruits already show a Win Rate tile (from the RPoS restructure), sourced
--- from the Royale API player profile's lifetime wins/battleCount/
--- threeCrownWins. Members have no equivalent lifetime field ingested, but
--- deep-depth.ts already fetches and stores each member's recent battle log
--- in drivers.player_battles (rolling ~100 battles / 1 month, whichever is
--- smaller -- see ingest_player_battles). That data is real and populated.
---
--- Deliberately a PLAIN win rate (wins / battle_count), not the three-crown-
--- weighted formula recruits use: player_battles.team_crowns is on a
--- different, inflated scale for riverRaceDuel rows (summed round crowns,
--- see ingest_player_battles), so a flat "= 3" three-crown check would silently
--- misclassify duel wins. Not worth the complexity for a supplementary tile.
--- =============================================================================
 
 CREATE OR REPLACE VIEW features.roster_view AS
  WITH roster_source AS (
@@ -121,6 +96,3 @@ COMMENT ON COLUMN features.roster_view.win_rate IS
    lifetime). Displayed as a lifetime/heritage KPI on the Member Card
    alongside RPeS. Superseded war_wins there, which was never populated by
    the ingestion pipeline and always read 0.';
-
--- No GRANT here: CREATE OR REPLACE VIEW preserves the existing privileges
--- features.roster_view already holds from the master migration.

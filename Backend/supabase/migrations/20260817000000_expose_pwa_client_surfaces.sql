@@ -1,51 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- Expose the three PWA client surfaces that were unreachable over the Data API
--- =============================================================================
---
--- ROOT CAUSE
--- ----------
--- Three frontend call sites addressed internal schemas directly:
---
---   Frontend-PWA/src/core/api/SupabaseClient.ts   substrate.pipeline_heartbeat  (read)
---   Frontend-PWA/src/core/api/SupabaseClient.ts   drivers.recruit_blacklist     (read)
---   Frontend-PWA/src/core/api/MaintenanceClient.ts drivers.push_subscriptions   (insert)
---
--- The remote Data API exposes only `public`, `storage`, `graphql_public` and
--- `features`, so PostgREST rejected all three with HTTP 406 / PGRST106
--- ("Invalid schema") before a single row was touched. Note that
--- Backend/supabase/config.toml lists `substrate` and `drivers` as exposed; that
--- local value never matched the remote project, which is what let this drift
--- go unnoticed.
---
--- WHY IT WAS SILENT
--- -----------------
--- Every one of the three call sites degrades gracefully: the heartbeat error is
--- discarded, the blacklist error is warned-and-continued, and the push insert
--- only logs. So the app showed a permanently null pipeline freshness stamp, a
--- permanently empty client-side blacklist, and never persisted a push
--- subscription -- with no error surfaced to the user.
---
--- PREVENTIVE ACTION
--- -----------------
--- Reads move to `features` views and the write moves to a `features`
--- SECURITY DEFINER RPC, which is the pattern every already-working client
--- surface in this database uses (features.roster_view, features.headhunter_view,
--- features.dismiss_recruits, ...). Both views expose the minimum column set the
--- client actually consumes rather than `SELECT *`, so widening a base table
--- never silently widens the anon-reachable surface.
---
--- Every statement below is idempotent (CREATE OR REPLACE / GRANT / COMMENT), so
--- a partially applied push is safe to re-run without a repair step.
 
--- -----------------------------------------------------------------------------
--- 1. Pipeline freshness (read)
--- -----------------------------------------------------------------------------
--- Only the component identity and its last success stamp are exposed. The rest
--- of substrate.pipeline_heartbeat is operational internals (error payloads,
--- attempt counters) that the client neither reads nor should see.
 CREATE OR REPLACE VIEW features.pipeline_heartbeat_view AS
   SELECT
     ph.component_id,
@@ -60,16 +16,6 @@ COMMENT ON VIEW features.pipeline_heartbeat_view IS
 
 GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
 
--- -----------------------------------------------------------------------------
--- 2. Recruit blacklist (read)
--- -----------------------------------------------------------------------------
--- Expired rows are filtered out here as well as being pruned by the scheduled
--- maintenance job. The prune runs on a schedule, so between runs an expired row
--- is still present in the table; leaking it would keep suppressing a recruit
--- whose 30-day temporal contract has already lapsed.
---
--- Only player_tag is exposed. The eviction reason, cached name, score and full
--- stat snapshot stay internal.
 CREATE OR REPLACE VIEW features.recruit_blacklist_view AS
   SELECT
     bl.player_tag
@@ -85,19 +31,6 @@ COMMENT ON VIEW features.recruit_blacklist_view IS
 
 GRANT SELECT ON features.recruit_blacklist_view TO authenticated, anon, service_role;
 
--- -----------------------------------------------------------------------------
--- 3. Push subscription registration (write)
--- -----------------------------------------------------------------------------
--- This one is deliberately NOT an insertable view. An anon-writable view would
--- let any caller append unbounded rows to drivers.push_subscriptions. Routing
--- through a SECURITY DEFINER function instead means the endpoint is validated
--- and a repeat registration updates the existing row rather than adding another.
---
--- Scope note: this is a genuinely new anon-reachable write path, because the old
--- direct insert never actually reached the database. Deduplicating on endpoint
--- bounds growth per device, but it does not rate-limit a caller who submits many
--- distinct fabricated endpoints. If that becomes a concern the mitigation is a
--- rate limit at the edge, not a change here.
 CREATE OR REPLACE FUNCTION features.register_push_subscription(subscription jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql

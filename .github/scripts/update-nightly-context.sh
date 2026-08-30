@@ -100,11 +100,12 @@ echo "Git logs and diffs generated dynamically."
 # 00-pipeline-intelligence.md Section I was always tripped. A warning that is
 # always on is a warning that gets ignored.
 #
-# check-fold-state.py replays the migrations chronologically and compares each
+# fold-state.mjs replays the migrations chronologically and compares each
 # resulting object against the baseline's definition, so an empty file here now
 # genuinely means there is no folding work to do.
 BASELINE_PREFIX="20260531232406"
-FOLD_CHECK=".github/scripts/check-fold-state.py"
+FOLD_CHECK=".github/scripts/fold-state.mjs"
+MIGRATION_AUDIT=".github/scripts/audit-migrations.mjs"
 : > "$CONTEXT_DIR/pending-migrations.txt"
 
 if [ "${STAGE_NUM}" != "3" ]; then
@@ -114,17 +115,18 @@ elif [ ! -d "Backend/supabase/migrations" ]; then
   echo "SKIPPED" > "$CONTEXT_DIR/fold-state-status.txt"
   echo "No migrations directory; pending-migrations.txt left empty."
   echo "Skipped: migrations directory is unavailable." > "$CONTEXT_DIR/fold-state.txt"
-elif command -v python3 >/dev/null 2>&1 && [ -f "$FOLD_CHECK" ]; then
-  # Advisory tool: a non-zero exit means unfolded work was found, not a failure.
+elif command -v node >/dev/null 2>&1 && [ -f "$FOLD_CHECK" ]; then
   set +e
-  python3 "$FOLD_CHECK" "Backend/supabase/migrations" > "$CONTEXT_DIR/fold-state.txt" 2>&1
+  node "$FOLD_CHECK" --json "Backend/supabase/migrations" > "$CONTEXT_DIR/fold-state.json" 2>&1
   FOLD_RC=$?
+  node "$FOLD_CHECK" "Backend/supabase/migrations" > "$CONTEXT_DIR/fold-state.txt" 2>&1
   set -e
-  if [ "$FOLD_RC" -ne 0 ]; then
-    # Emit only the migrations that own at least one unfolded object.
-    sed -n '/^Migrations owning unfolded objects:/,$p' "$CONTEXT_DIR/fold-state.txt" \
-      | tail -n +2 | sed 's/^[[:space:]]*//' | grep -E '\.sql$' | sort -u \
-      > "$CONTEXT_DIR/pending-migrations.txt" || true
+  if [ "$FOLD_RC" -eq 1 ]; then
+    node -e '
+      const report = require(process.argv[1]);
+      const names = [...new Set(report.objects.filter(item => item.status === "unfolded").map(item => item.source))].sort();
+      process.stdout.write(names.join("\n") + (names.length ? "\n" : ""));
+    ' "$CONTEXT_DIR/fold-state.json" > "$CONTEXT_DIR/pending-migrations.txt"
   fi
   if [ "$FOLD_RC" -eq 0 ]; then
     echo "CLEAN" > "$CONTEXT_DIR/fold-state-status.txt"
@@ -135,9 +137,9 @@ elif command -v python3 >/dev/null 2>&1 && [ -f "$FOLD_CHECK" ]; then
   fi
   echo "Fold-state check complete (rc=${FOLD_RC})."
 else
-  # Degraded fallback: no python3 available, so fall back to the filename
+  # Degraded fallback: no Node available, so fall back to the filename
   # heuristic and say so, rather than silently reporting a clean baseline.
-  echo "python3 or ${FOLD_CHECK} unavailable; falling back to filename heuristic." \
+  echo "node or ${FOLD_CHECK} unavailable; falling back to filename heuristic." \
     > "$CONTEXT_DIR/fold-state.txt"
   find Backend/supabase/migrations -maxdepth 1 -type f -name '*.sql' \
     ! -name "${BASELINE_PREFIX}*" -exec basename {} \; | sort \
@@ -148,6 +150,32 @@ fi
 
 MIGRATION_COUNT=$(wc -l < "$CONTEXT_DIR/pending-migrations.txt" | tr -d ' ')
 echo "Migrations with unfolded objects: ${MIGRATION_COUNT}"
+
+if [ "${STAGE_NUM}" != "3" ]; then
+  echo "SKIPPED" > "$CONTEXT_DIR/migration-quality-status.txt"
+  echo '{"version":1,"status":"SKIPPED"}' > "$CONTEXT_DIR/migration-quality.json"
+elif command -v node >/dev/null 2>&1 && [ -f "$MIGRATION_AUDIT" ]; then
+  set +e
+  node "$MIGRATION_AUDIT" --json > "$CONTEXT_DIR/migration-quality.json" 2>&1
+  MIGRATION_AUDIT_RC=$?
+  set -e
+  case "$MIGRATION_AUDIT_RC" in
+    0) echo "PASS" > "$CONTEXT_DIR/migration-quality-status.txt" ;;
+    1) echo "FAIL" > "$CONTEXT_DIR/migration-quality-status.txt" ;;
+    *) echo "DEGRADED" > "$CONTEXT_DIR/migration-quality-status.txt" ;;
+  esac
+else
+  echo "DEGRADED" > "$CONTEXT_DIR/migration-quality-status.txt"
+  echo '{"version":1,"status":"DEGRADED","error":"migration audit unavailable"}' > "$CONTEXT_DIR/migration-quality.json"
+fi
+
+if [ "${STAGE_NUM}" != "3" ]; then
+  echo "SKIPPED" > "$CONTEXT_DIR/database-verification-status.txt"
+elif command -v supabase >/dev/null 2>&1 && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  echo "DB-AVAILABLE" > "$CONTEXT_DIR/database-verification-status.txt"
+else
+  echo "DB-UNAVAILABLE" > "$CONTEXT_DIR/database-verification-status.txt"
+fi
 
 # BASELINE_TEST_STAGE=2
 # 5. Conditional baseline test run (Stage 2 only, or explicitly forced)
@@ -210,6 +238,8 @@ PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e)
   echo "supabase-js-symlink: @${SUPABASE_VER}"
   echo "p-limit-symlink: @${PLIMIT_VER}"
   echo "fold-state: $(cat "$CONTEXT_DIR/fold-state-status.txt")"
+  echo "migration-quality: $(cat "$CONTEXT_DIR/migration-quality-status.txt")"
+  echo "database-verification: $(cat "$CONTEXT_DIR/database-verification-status.txt")"
   echo "baseline-tests: $(cat "$CONTEXT_DIR/baseline-test-state.txt")"
   echo "dependency-cruiser: $(cat "$CONTEXT_DIR/depcruise-state.txt")"
   echo "pending-migrations: ${MIGRATION_COUNT}"

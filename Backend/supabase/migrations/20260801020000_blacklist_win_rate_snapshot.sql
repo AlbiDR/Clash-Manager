@@ -1,55 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- Migration: 20260801020000_blacklist_win_rate_snapshot.sql
---
--- Includes win_rate in the snapshot JSONB payload written to
--- drivers.recruit_blacklist at eviction time.
---
--- Root cause (documented in win-rate-recalculation-SSOT.md Section 2.3,
--- Sub-cause C):
--- The snapshot column in drivers.recruit_blacklist is documented as "Full JSONB
--- snapshot of player stats for historical review." However, win_rate was never
--- included in the snapshot payload by any of the blacklist write paths, because
--- it was added to drivers.recruits (migration 20260726170000) after the
--- original blacklist functions were written. Three functions write to
--- drivers.recruit_blacklist:
---
---   1. public.report_dead_recruit(p_player_tag)
---      Evicts 404 ghost profiles. Reads from drivers.recruits + drivers.players.
---
---   2. drivers.dismiss_recruit(p_tag, p_days_to_ban)
---      Single-tag manual dismissal. Reads from drivers.recruits.
---
---   3. features.dismiss_recruits(items jsonb)
---      Bulk dismissal from the frontend. Receives raw_potential_score in the
---      payload but not win_rate (the frontend does not send it).
---
--- Fix strategy:
--- No schema change to drivers.recruit_blacklist is required. The snapshot
--- column already accepts arbitrary JSONB (DEFAULT '{}'::jsonb). This migration
--- adds win_rate to the snapshot payload in the two functions that read from
--- drivers.recruits at eviction time (report_dead_recruit and dismiss_recruit).
--- features.dismiss_recruits receives only id, name, and raw_potential_score
--- from the frontend JSON payload; it cannot include win_rate without a frontend
--- change. That path is left as-is -- the snapshot is a best-effort audit trail,
--- not a required field.
---
--- Decision D5 (SSOT): No schema change. The snapshot JSONB is the correct
--- vehicle -- adding a win_rate column would require all downstream readers and
--- the headhunter_view benchmarking_context to be updated.
--- =============================================================================
 
 
--- =============================================================================
--- Phase 4a: public.report_dead_recruit
---
--- Adds win_rate to the DECLARE block and reads it from drivers.recruits in the
--- same SELECT that already reads raw_potential_score. Adds it to the snapshot
--- payload in the INSERT (and the ON CONFLICT DO UPDATE SET clause so that a
--- repeated ghost eviction of the same tag also carries the latest win_rate).
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION public.report_dead_recruit(p_player_tag text)
  RETURNS void
@@ -102,16 +55,6 @@ BEGIN
 END; $function$;
 
 
--- =============================================================================
--- Phase 4b: drivers.dismiss_recruit
---
--- Adds win_rate to the DECLARE block and reads it from drivers.recruits in
--- the existing SELECT. Adds it to the snapshot payload in the INSERT.
--- The ON CONFLICT clause only updates expires_at and created_at (existing
--- behavior): a repeated manual dismissal is a re-ban, not a profile refresh,
--- so the snapshot from the original dismissal is preserved via the ||
--- merge-update pattern.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION drivers.dismiss_recruit(p_tag text, p_days_to_ban integer DEFAULT 30)
  RETURNS void

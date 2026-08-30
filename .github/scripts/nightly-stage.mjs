@@ -726,6 +726,14 @@ function validateContracts(repoRoot, registry) {
     contract.includes("git pull --ff-only"),
     `${NIGHTLY_AGENT_CONTRACT_PATH} must assign bounded branch synchronization to the lifecycle helper.`,
   );
+  invariant(
+    contract.includes("Missing tools, malformed output, unsupported input, timeouts"),
+    `${NIGHTLY_AGENT_CONTRACT_PATH} must define degraded evidence handling.`,
+  );
+  invariant(
+    contract.includes("Every finalization summary names the audited target, the verification method"),
+    `${NIGHTLY_AGENT_CONTRACT_PATH} must define evidence-bearing summaries.`,
+  );
   invariant(!/Skip PR on Zero-Diff/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still permits a no-PR outcome.`);
   invariant(!/\bgit commit\b/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still instructs manual commits.`);
   invariant(!/\bgit push\b/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still instructs manual pushes.`);
@@ -733,6 +741,10 @@ function validateContracts(repoRoot, registry) {
   const contextScript = readFileSync(path.join(repoRoot, ".github/scripts/update-nightly-context.sh"), "utf8");
   invariant(contextScript.includes("# BASELINE_TEST_STAGE=2"), "Context script lacks the Stage 2 policy marker.");
   invariant(contextScript.includes("# DEPENDENCY_CRUISER_STAGE=9"), "Context script lacks the Stage 9 policy marker.");
+  invariant(contextScript.includes(".github/scripts/fold-state.mjs"), "Context script must use the SQL-aware fold-state checker.");
+  invariant(contextScript.includes("migration-quality-status.txt"), "Context script must report migration-quality status.");
+  invariant(contextScript.includes("database-verification-status.txt"), "Context script must report database-verification availability.");
+  invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must preserve degraded fold state.");
   invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must report skipped fold scans.");
   invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/depcruise-state.txt"'), "Context script must report skipped dependency scans.");
   console.log("Nightly contracts validated: 13 stages, one lifecycle, zero duplicated Base contracts.");

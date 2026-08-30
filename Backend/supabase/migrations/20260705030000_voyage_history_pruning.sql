@@ -1,27 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- Migration: 20260705030000_voyage_history_pruning.sql
---
--- Implements smart pruning for drivers.clan_voyage_contributions:
---   1. Creates drivers.player_voyage_history to store consolidated old voyages.
---   2. Fixes the ON DELETE CASCADE gap on clan_voyage_contributions.player_tag.
---   3. Adds drivers.consolidate_voyage_history() for nightly consolidation.
---   4. Adds drivers.purge_stale_voyage_history() as a safety-net purge.
---   5. Updates features.scoring_view to union individual + archived rows.
---   6. Updates drivers.get_rolling_voyage_performance() to read from both sources.
---   7. Updates substrate.execute_nightly_maintenance() to call new functions.
---
--- Archive format (history column): comma-separated triplets ordered DESC by voyage_id.
---   voyage_id|total_voyage_crowns|target_crowns|end_date
---   e.g. "42|380|500|2026-06-15,41|120|500|2026-06-08"
--- =============================================================================
 
 
--- =============================================================================
--- Phase 1: Create drivers.player_voyage_history
--- =============================================================================
 
 CREATE TABLE IF NOT EXISTS drivers.player_voyage_history (
     player_tag  text        NOT NULL,
@@ -38,11 +19,6 @@ CREATE TABLE IF NOT EXISTS drivers.player_voyage_history (
 ALTER TABLE drivers.player_voyage_history ENABLE ROW LEVEL SECURITY;
 
 
--- =============================================================================
--- Phase 2: Fix ON DELETE CASCADE gap on clan_voyage_contributions.player_tag
--- (ADR XI.2 compliance: all downstream tables referencing drivers.players must
---  cascade so that purging a player leaves zero orphan fragments.)
--- =============================================================================
 
 ALTER TABLE drivers.clan_voyage_contributions
     DROP CONSTRAINT IF EXISTS clan_voyage_contributions_player_tag_fkey;
@@ -54,26 +30,6 @@ ALTER TABLE drivers.clan_voyage_contributions
         ON DELETE CASCADE;
 
 
--- =============================================================================
--- Phase 3: drivers.consolidate_voyage_history()
---
--- Collapses all completed voyage contribution rows that are older than the
--- current anchor voyage into a single history string per player inside
--- drivers.player_voyage_history, then deletes the individual source rows.
---
--- The anchor voyage is the ACTIVE (or PENDING) voyage when one exists;
--- otherwise it is the most recently completed voyage. This means the latest
--- entry is always kept as individual rows even after completion, acting as a
--- safety net for manual overrides and Supabase sync edge cases.
---
--- Idempotency: the history string is deduplicated by voyage_id on every run,
--- so re-running the function cannot produce duplicate archive entries.
---
--- Transactional safety: the DELETE of individual rows only runs after the
--- UPSERT into player_voyage_history has already succeeded for that player.
--- Any failure in the UPSERT raises an exception before the DELETE executes,
--- preventing data loss.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION drivers.consolidate_voyage_history()
  RETURNS void
@@ -188,15 +144,6 @@ END;
 $function$;
 
 
--- =============================================================================
--- Phase 4: drivers.purge_stale_voyage_history()
---
--- Safety-net purge that removes any player_voyage_history rows whose player_tag
--- no longer exists in drivers.players. In normal operation the ON DELETE CASCADE
--- on the FK handles this automatically; this function exists solely to log a
--- governance telemetry event if residual rows are found (which would indicate a
--- cascade failure worth investigating).
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION drivers.purge_stale_voyage_history()
  RETURNS void
@@ -226,13 +173,6 @@ END;
 $function$;
 
 
--- =============================================================================
--- Phase 5: Update drivers.get_rolling_voyage_performance()
---
--- Extends the rolling performance average to include archived entries from
--- drivers.player_voyage_history so that the score remains stable after
--- consolidation collapses old individual rows.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION drivers.get_rolling_voyage_performance(p_tag text)
  RETURNS numeric
@@ -281,25 +221,11 @@ END;
 $function$;
 
 
--- =============================================================================
--- Phase 6: Rebuild features.scoring_view
---
--- Replaces the voyage_history CTE so it unions:
---   Source A: individual completed voyage rows still in clan_voyage_contributions
---             (the anchor voyage once consolidation has run).
---   Source B: parsed entries from drivers.player_voyage_history (all older voyages).
---
--- The recency_rank window continues to use end_at DESC for consistency with the
--- existing scoring decay formula. The v_hist display string is unchanged.
--- All other CTEs and the final SELECT are reproduced verbatim.
--- =============================================================================
 
 DROP VIEW IF EXISTS features.scoring_view CASCADE;
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
-  -- -- Voyage pipeline -----------------------------------------------------------
   voyage_history AS (
-      -- Source A: individual rows still in the live contributions table.
       SELECT
           c.player_tag,
           c.total_voyage_crowns                               AS crowns,
@@ -312,8 +238,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
 
       UNION ALL
 
-      -- Source B: entries parsed from the consolidated history archive.
-      -- Format per entry: voyage_id|crowns|target_crowns|end_date (YYYY-MM-DD).
       SELECT
           pvh.player_tag,
           (regexp_split_to_array(entry, '\|'))[2]::integer               AS crowns,
@@ -359,8 +283,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY vh.player_tag
   ),
 
-  -- -- War pipeline: recency-decayed (replaces flat AVG factual_logs) ----------
-  -- Level 1: aggregate to one row per (player, war section week)
   war_weekly AS (
       SELECT wa.player_tag,
              wa.week_id,
@@ -370,7 +292,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM drivers.war_activity wa
        GROUP BY wa.player_tag, wa.week_id
   ),
-  -- Level 2: assign recency rank (1 = most recent section)
   war_ranked AS (
       SELECT player_tag,
              week_id,
@@ -382,7 +303,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              ) AS recency_rank
         FROM war_weekly
   ),
-  -- Level 3: compute decayed weighted averages and display history
   war_factuals AS (
       SELECT player_tag,
              count(*)                                                                          AS recorded_weeks,
@@ -393,8 +313,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY player_tag
   ),
 
-  -- -- Donation pipeline: recency-decayed weekly peaks expressed as daily avg --
-  -- Level 1: extract the weekly donation peak from daily snapshots
   donation_weekly AS (
       SELECT player_tag,
              DATE_TRUNC('week', snapshot_date) AS week_start,
@@ -402,7 +320,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM drivers.member_snapshots
        GROUP BY player_tag, DATE_TRUNC('week', snapshot_date)
   ),
-  -- Level 2: assign recency rank (1 = most recent calendar week)
   donation_ranked AS (
       SELECT player_tag,
              week_start,
@@ -412,7 +329,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              ) AS recency_rank
         FROM donation_weekly
   ),
-  -- Level 3: compute decayed weighted average, divide by 7 for daily rate
   donation_factuals AS (
       SELECT player_tag,
              substrate.weighted_avg(ARRAY_AGG(max_donations::numeric ORDER BY recency_rank)) / 7.0
@@ -421,7 +337,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY player_tag
   ),
 
-  -- -- Benchmarking context: clan-wide maximum baseline ------------------------
   benchmarking_context_base AS (
       SELECT
           ( SELECT COALESCE(NULLIF(max(w.recorded_weeks), 0), 12::bigint)
@@ -462,7 +377,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM benchmarking_context_base bcb
   ),
 
-  -- -- Base stats: per-player resolved values -----------------------------------
   base_stats AS (
       SELECT m.player_tag,
              m.player_name AS name,
@@ -480,8 +394,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              COALESCE(wf.hist,          '-'::text)                                      AS hist,
              COALESCE(vf.v_hist,        '-'::text)                                      AS v_hist,
              COALESCE(vf.weighted_voyage_index, 0::numeric)                             AS voyage_index,
-             -- Recency-decayed daily avg; falls back to live weekly / 7 for members
-             -- with no snapshot history (cold-start guard)
              COALESCE(df.avg_daily_donations, m.donations::numeric / 7.0, 0::numeric)  AS avg_daily_donations
         FROM drivers.members m
           LEFT JOIN war_factuals      wf ON m.player_tag = wf.player_tag
@@ -490,7 +402,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        WHERE m.is_active = true
   ),
 
-  -- -- Weighted calculations ----------------------------------------------------
   weighted_calculations AS (
       SELECT bs.*,
              LEAST(1.0, bs.recorded_weeks::numeric / bc.max_history_weeks::numeric) AS stability_index,
@@ -509,7 +420,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
           CROSS JOIN benchmarking_context bc
   ),
 
-  -- -- Clinical layer: raw performance + heritage bonus ------------------------
   clinical_layer AS (
       SELECT wc.*,
              round(
@@ -535,7 +445,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM weighted_calculations wc
   ),
 
-  -- -- Final scoring: normalize to 0-100 PeS ------------------------------------
   final_scoring AS (
       SELECT *,
              raw_performance_score::double precision + heritage_bonus AS total_combined_score,
@@ -578,9 +487,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
 GRANT SELECT ON features.scoring_view TO authenticated, anon, service_role;
 
 
--- =============================================================================
--- Rebuild dependent views invalidated by the CASCADE DROP above.
--- =============================================================================
 
 DROP VIEW IF EXISTS features.roster_view CASCADE;
 CREATE OR REPLACE VIEW features.roster_view AS
@@ -680,16 +586,6 @@ SELECT c.player_tag,
 GRANT SELECT ON features.voyage_contributions TO authenticated, anon, service_role;
 
 
--- =============================================================================
--- Phase 7: Update substrate.execute_nightly_maintenance()
---
--- Inserts two new steps into the maintenance pipeline:
---   - drivers.consolidate_voyage_history(): runs after voyage finalization and
---     before player/member purges so history is written before any cascade deletes.
---   - drivers.purge_stale_voyage_history(): runs after purge_orphan_players() as
---     a safety-net telemetry check confirming no residual history rows leaked past
---     the ON DELETE CASCADE.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION substrate.execute_nightly_maintenance()
  RETURNS void

@@ -1,38 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- Migration: Harden week_id resolution in substrate.shred_river_race()
---
--- Problem:
---   The previous implementation resolved the war season identifier (week_id) by
---   querying substrate.raw_war_log for the most recent completed-war seasonId.
---   At the very start of a new season, before any war has finished and therefore
---   before any row exists in raw_war_log, that query returns NULL and the function
---   fell back to an ISO calendar week string (e.g. "2026-W31").
---
---   When the war later completed and shred_war_log() ran, it wrote war_activity
---   rows using the real canonial format ("<seasonId>-<sectionIndex>", e.g. "1234-3").
---   The ON CONFLICT (player_tag, week_id) key did not match the ISO-week rows
---   written during the live race, producing duplicate ghost rows.
---
--- Fix:
---   Introduce a three-tier resolution priority for week_id:
---     1. Primary  -- Read seasonId directly from NEW.payload (the live race JSON
---                    itself). The /currentriverrace API exposes seasonId at the
---                    top level on every response, so this eliminates the cross-
---                    table lookup for the common case.
---     2. Secondary -- Fall back to the latest completed war's seasonId stored in
---                    raw_war_log. Preserves the existing behaviour for any edge
---                    case where seasonId is absent from the live payload.
---     3. Last resort -- ISO calendar week. Only fires when both tier-1 and tier-2
---                    sources are unavailable (e.g. training-day period with no
---                    prior war history at all).
---
--- Safety:
---   All downstream logic (player upserts, member upserts, war_activity upsert,
---   member metric sync) is unchanged. The DECLARE block receives one additional
---   variable (v_live_season_id). The ON CONFLICT clauses and table columns are
---   not altered by this migration.
 
 CREATE OR REPLACE FUNCTION substrate.shred_river_race()
  RETURNS trigger

@@ -1,23 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- MIGRATION: Fix riverRaceDuel crown calculation in Clan Voyage
--- =============================================================================
---
--- PROBLEM:
---   For regular 1v1 battles, voyage crowns are calculated as `team_crowns + (3 - opponent_crowns)`.
---   For `riverRaceDuel` (best-of-3), the API returns cumulative crowns across all sub-battles
---   in `team_crowns`. Applying the `(3 - opponent_crowns)` bonus incorrectly assumes a single
---   game was played, leading to incorrect calculations.
---
--- FIX:
---   Use a CASE statement to calculate crowns:
---   - For `riverRaceDuel`, use `team_crowns` directly.
---   - For other battle types, use `team_crowns + (3 - opponent_crowns)`.
---   Updated `refresh_voyage_contributions`, `on_contribution_manual_override_updated`,
---   and `on_battle_recorded` to use this logic consistently.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION drivers.refresh_voyage_contributions()
  RETURNS void

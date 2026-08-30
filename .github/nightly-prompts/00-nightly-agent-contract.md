@@ -87,6 +87,25 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
 - Do not use Supabase MCP tools when the stage prompt prohibits them. A local
   source read always takes precedence over an equivalent remote tool call.
 
+### Evidence quality
+
+- Prefer versioned, structured helper output over reconstructing state from
+  filenames, prose logs, or partial command output. The helper that owns a fact
+  is authoritative for that fact.
+- `CLEAN` means every required scan completed and its output was parsed
+  successfully. Missing tools, malformed output, unsupported input, timeouts,
+  and infrastructure failures are degraded evidence, never proof of cleanliness.
+- Use `SKIPPED` only when work is genuinely inapplicable. If required evidence
+  was attempted but unavailable or inconclusive, restore source edits and use
+  `PARTIAL-RUN`, unless the stage prompt explicitly identifies an authoritative
+  substitute that completed successfully.
+- Keep `PASS`, `FAIL`, `DEGRADED`, `SKIPPED`, and domain-specific availability
+  states distinct in generated context. Never collapse an error into an empty
+  candidate list.
+- Every finalization summary names the audited target, the verification method,
+  and the result. A claim such as "audit complete" without those facts is not
+  sufficient evidence for later stages.
+
 ## 5. Logs and History Ownership
 
 - Each run owns exactly one coverage log identified by

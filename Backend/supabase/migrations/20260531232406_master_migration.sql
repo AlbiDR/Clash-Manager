@@ -32,13 +32,16 @@
  * - 20260801020000_blacklist_win_rate_snapshot.sql
  * - 20260803000000_fix_last_seen_at_monotonic_guard.sql
  * - 20260804000000_harden_river_race_week_id_resolution.sql
+ * - 20260817000000_expose_pwa_client_surfaces.sql
+ * - 20260817010000_fix_heartbeat_success_timestamps.sql
+ * - 20260819000000_fix_profiler_drivers_schema_access.sql
  *
- * Architectural Compliance Verification Log (Audited: 2026-08-08):
+ * Architectural Compliance Verification Log (Audited: 2026-08-31):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
- * 2. Search Path Isolation: Verified 100% search_path constraints on all 95 plpgsql functions.
+ * 2. Search Path Isolation: Verified 100% search_path constraints on all 97 functions.
  * 3. Soft-Deletes: Validated complete absence of soft-delete boolean flags per ADR XI.
  * 4. Formatting: Checked and confirmed absolute zero em-dash and zero emoji violations.
- * 5. Declarative Purity: Removed two non-declarative residues carried in from folded
+ * 5. Declarative Purity: Removed four non-declarative residues carried in from folded
  *    migrations. (a) The DROP IDENTITY / UPDATE id 5 -> 4 / ADD IDENTITY block from
  *    20260707003200: the CREATE TABLE above already declares id as GENERATED ALWAYS AS
  *    IDENTITY, so the pair was a schema no-op, while the UPDATE was a live-data hazard that
@@ -46,6 +49,9 @@
  *    existing id 4 and fail the primary key). (b) The last_scan rescan backfill from
  *    20260727000000: a no-op on fresh deploy, but on re-apply it forces a full re-profile of
  *    every zero-win-rate recruit and carries hardcoded business thresholds against ADR I.
+ *    (c) The completed-voyage contribution backfill: another fresh-install no-op whose
+ *    result depends on pre-existing operational rows. (d) The identity sequence repair
+ *    loop: unnecessary on a fresh schema and state-changing on baseline reapplication.
  */
 
 BEGIN;
@@ -447,7 +453,7 @@ CREATE TABLE IF NOT EXISTS drivers.recruits (
     win_rate numeric DEFAULT 0.0,
     found_date timestamp with time zone DEFAULT now(),
     last_scan timestamp with time zone DEFAULT now(),
-    raw_potential_score numeric DEFAULT 0.0 /* Authoritative merit score (RPoS) calculated by the scoring kernel: trophies*RPOS_TROPHY_WEIGHT + lifetime_donations*RPOS_DONATION_WEIGHT + weightedWinRate*winRateWeight + legacy_war_wins*RPOS_LEGACY_WAR_WEIGHT + min(challenge_cards_won, RPOS_CHALLENGE_CARD_CAP)*RPOS_CHALLENGE_CARD_WEIGHT + grandChallengeBonus. No +500/*20 offset (removed bug). */,
+    raw_potential_score numeric DEFAULT 0.0 /* Authoritative merit score (RPoS) calculated by the scoring kernel: trophies*RPOS_TROPHY_WEIGHT + lifetime_donations*RPOS_DONATION_WEIGHT + weightedWinRate*winRateWeight + legacy_war_wins*RPOS_LEGACY_WAR_WEIGHT + min(challenge_cards_won, RPOS_CHALLENGE_CARD_CAP)*RPOS_CHALLENGE_CARD_WEIGHT + grandChallengeBonus. No +500 * 20 offset (removed bug). */,
     player_name text NOT NULL,
     updated_at timestamp with time zone DEFAULT now(),
     target_clan_tag text CHECK (target_clan_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
@@ -547,71 +553,6 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
 );
 
 ALTER TABLE drivers.clan_voyage_contributions ENABLE ROW LEVEL SECURITY;
-
--- =============================================================================
--- Retroactive backfill for all completed voyages
--- =============================================================================
--- Insert 0-crown rows for every active member who has no contribution record
--- for any completed voyage. ON CONFLICT ensures idempotency.
-INSERT INTO drivers.clan_voyage_contributions (
-    voyage_id,
-    player_tag,
-    player_name,
-    total_voyage_crowns,
-    percentage_voyage_crowns
-)
-SELECT
-    v.id,
-    m.player_tag,
-    m.player_name,
-    0,
-    0.0
-FROM drivers.clan_voyage v
-CROSS JOIN drivers.members m
-WHERE v.status = 'COMPLETED'
-  AND m.is_active = true
-  AND NOT EXISTS (
-      SELECT 1
-      FROM drivers.clan_voyage_contributions c
-      WHERE c.voyage_id = v.id
-        AND c.player_tag = m.player_tag
-  )
-ON CONFLICT (voyage_id, player_tag) DO NOTHING;
-
--- Synchronize identity sequences for all tables to prevent ID skipping on fresh installs.
-DO $$
-DECLARE
-    v_table RECORD;
-    v_max_id bigint;
-    v_seq text;
-BEGIN
-    FOR v_table IN (
-        SELECT quote_ident(schemaname) || '.' || quote_ident(tablename) as full_name,
-               schemaname, tablename, column_name
-        FROM (VALUES
-            ('substrate', 'raw_clan_profile', 'id'),
-            ('substrate', 'raw_clan_members', 'id'),
-            ('substrate', 'raw_river_race', 'id'),
-            ('substrate', 'raw_war_log', 'id'),
-            ('drivers', 'clans', 'id'),
-            ('drivers', 'members', 'id'),
-            ('drivers', 'war_activity', 'id'),
-            ('drivers', 'war_history', 'id'),
-            ('drivers', 'player_battles', 'id'),
-            ('drivers', 'member_snapshots', 'id'),
-            ('drivers', 'recruit_ledger', 'id'),
-            ('drivers', 'push_subscriptions', 'id'),
-            ('drivers', 'clan_voyage', 'id'),
-            ('drivers', 'clan_voyage_contributions', 'id')
-        ) AS t(schemaname, tablename, column_name)
-    ) LOOP
-        EXECUTE format('SELECT MAX(%I) FROM %s', v_table.column_name, v_table.full_name) INTO v_max_id;
-        v_seq := pg_get_serial_sequence(v_table.full_name, v_table.column_name);
-        IF v_max_id IS NOT NULL AND v_seq IS NOT NULL THEN
-            PERFORM setval(v_seq, v_max_id);
-        END IF;
-    END LOOP;
-END $$;
 
 CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
     player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
@@ -3478,7 +3419,7 @@ END;
 $function$;
 
 COMMENT ON FUNCTION public.report_heartbeat(text, text, text, jsonb) IS
-  'Public-schema heartbeat reporter reached by the Edge Functions, which cannot see the substrate schema over the Data API. Until 14.45.18 this function inserted into a non-existent metadata column and therefore raised 42703 on every call, silently freezing ROYALE_DATA_INGESTOR and HEADHUNTER_SCANNER reporting at 2026-04-30 while the pipeline itself ran normally. Maintains last_success_at and last_failure_at on terminal statuses and preserves the prior validation report when a caller sends none.';
+  'Public-schema heartbeat reporter reached by the Edge Functions, which cannot see the substrate schema over the Data API. Until 14.45.18 this function inserted into a non-existent `metadata` column and therefore raised 42703 on every call, silently freezing ROYALE_DATA_INGESTOR and HEADHUNTER_SCANNER reporting at 2026-04-30 while the pipeline itself ran normally. Maintains last_success_at and last_failure_at on terminal statuses and preserves the prior validation report when a caller sends none.';
 
 CREATE OR REPLACE FUNCTION public.get_recent_scans(p_tags text[], p_since timestamptz)
  RETURNS TABLE(player_tag text)
@@ -4272,6 +4213,13 @@ CREATE OR REPLACE VIEW features.roster_view AS
    FROM roster_source rs
      LEFT JOIN battle_stats bs ON (bs.player_tag = rs.player_tag)
   ORDER BY raw_performance_score DESC NULLS LAST, performance_score DESC NULLS LAST;
+
+COMMENT ON COLUMN features.roster_view.war_wins IS
+  'Legacy Clan War 1 day-wins (drivers.members.war_wins). Frozen at each
+   member''s value as of 2020-08-31 since CW1 retired; displayed as a
+   lifetime/heritage KPI on the Member Card, not an active performance
+   signal. See RPoS formula restructure SSOT Section 2 for why this same
+   field is deliberately excluded from the scoring formula.';
 
 COMMENT ON COLUMN features.roster_view.win_rate IS
   'Plain win rate (wins / battle_count) over the member''s recent battle log

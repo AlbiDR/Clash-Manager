@@ -1,31 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- MIGRATION: fix last_seen_at monotonic guard in shred_clan_members
--- =============================================================================
---
--- PROBLEM:
---   The ON CONFLICT clause in substrate.shred_clan_members() was setting
---   last_seen_at = EXCLUDED.last_seen_at unconditionally. The Clash Royale API
---   does not update lastSeen on every sync -- it is event-triggered on the game
---   server side. When the API returns a stale timestamp (e.g., the value from
---   before the player's most recent activity), the upsert overwrites the fresher
---   stored value with the older API value, causing "last seen" to move backwards.
---
--- SYMPTOM:
---   A member observed as active right now displays "1w" on the roster because a
---   previous sync had stored a fresh timestamp, then a subsequent sync replaced
---   it with the stale API value.
---
--- FIX:
---   Apply a GREATEST() guard: last_seen_at = GREATEST(drivers.members.last_seen_at, EXCLUDED.last_seen_at)
---   This ensures last_seen_at is monotonically non-decreasing. A sync can never
---   move the stored timestamp backwards; it can only advance it when the API
---   reports fresher activity.
---
--- SCOPE: substrate.shred_clan_members() only. No view, schema, or index changes.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION substrate.shred_clan_members()
  RETURNS trigger

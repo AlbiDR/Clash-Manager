@@ -1,35 +1,5 @@
--- Migration: 20260620142000_headhunter_epoch_guard
--- Introduces the Headhunter Top-50 Safety Epoch Loop.
---
--- [CONTEXT] The headhunter scanner runs every 30 minutes via pg_cron. If a scan
--- produces zero recruits landing in the visible top-50 pool, the headhunter view
--- stagnates for 30 minutes. This migration closes that gap by adding an epoch
--- guard: a lightweight pg_cron job that ticks every 5 minutes and re-triggers
--- the scanner when the previous run yielded no top-50 recruits, up to a
--- configurable maximum number of retries within a hard wall-clock window.
---
--- [ARCHITECTURE] The guard is orchestrated entirely in SQL (no new Edge Function).
--- This matches the existing pattern where substrate.run_headhunter_scanner()
--- already drives the main scanner via net.http_post.
---
--- [NO MAGIC NUMBERS] All thresholds are stored as rows in substrate.config so
--- they can be adjusted post-deploy without a migration or code change.
---
--- Components added:
---   1. substrate.headhunter_epoch_state  - singleton ephemeral state table
---   2. substrate.config rows             - epoch configuration keys
---   3. substrate.update_epoch_state()    - called by the Edge Function after each scan
---   4. public.update_epoch_state()       - PostgREST-accessible RPC wrapper
---   5. substrate.run_headhunter_epoch_guard() - pg_cron guard function
---   6. cron.schedule()                   - 5-minute epoch guard tick
-
 BEGIN;
 
--- ============================================================
--- 1. EPOCH STATE TABLE
--- Singleton row tracking the current epoch loop state.
--- epoch_count is reset to 0 at the start of each new 30-min main cycle.
--- ============================================================
 CREATE TABLE IF NOT EXISTS substrate.headhunter_epoch_state (
     id                 integer      NOT NULL DEFAULT 1,
     last_main_scan_at  timestamptz,
@@ -54,16 +24,10 @@ COMMENT ON COLUMN substrate.headhunter_epoch_state.epoch_count IS
 COMMENT ON COLUMN substrate.headhunter_epoch_state.last_top50_count IS
     'The new_recruits_top50 value reported by the most recent scanner run.';
 
--- Seed the singleton row (safe to run multiple times)
 INSERT INTO substrate.headhunter_epoch_state (id)
 VALUES (1)
 ON CONFLICT (id) DO NOTHING;
 
--- ============================================================
--- 2. EPOCH CONFIGURATION KEYS
--- Stored in substrate.config (existing SSOT for system toggles).
--- Units: epoch counts are integers, delays/windows are seconds.
--- ============================================================
 INSERT INTO substrate.config (key, value, description) VALUES
     (
         'EPOCH_MAX_RETRIES',
@@ -83,12 +47,6 @@ INSERT INTO substrate.config (key, value, description) VALUES
     )
 ON CONFLICT (key) DO NOTHING;
 
--- ============================================================
--- 3. substrate.update_epoch_state(p_top50 integer)
--- Called by the headhunter-scanner Edge Function at the end of each run.
--- Classifies the run as either a main cycle start or an epoch retry,
--- then updates the singleton state accordingly.
--- ============================================================
 CREATE OR REPLACE FUNCTION substrate.update_epoch_state(p_top50 integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -171,11 +129,6 @@ COMMENT ON FUNCTION substrate.update_epoch_state(integer) IS
     'Classifies the run as a new main cycle or an epoch retry and updates '
     'substrate.headhunter_epoch_state accordingly.';
 
--- ============================================================
--- 4. public.update_epoch_state(p_top50 integer)
--- PostgREST-accessible RPC bridge so the Edge Function can call
--- supabase.rpc("update_epoch_state", { p_top50: ... }).
--- ============================================================
 CREATE OR REPLACE FUNCTION public.update_epoch_state(p_top50 integer)
  RETURNS void
  LANGUAGE plpgsql
@@ -192,14 +145,6 @@ COMMENT ON FUNCTION public.update_epoch_state(integer) IS
     'Required by headhunter-scanner Edge Function which calls supabase.rpc() '
     'and can only reach the public schema via PostgREST.';
 
--- ============================================================
--- 5. substrate.run_headhunter_epoch_guard()
--- Invoked every 5 minutes by pg_cron.
--- Reads the epoch state and config; fires the scanner if and only if:
---   - last_top50_count = 0 (previous scan missed the top-50)
---   - epoch_count < EPOCH_MAX_RETRIES
---   - time since last_main_scan_at <= EPOCH_WINDOW_S
--- ============================================================
 CREATE OR REPLACE FUNCTION substrate.run_headhunter_epoch_guard()
  RETURNS void
  LANGUAGE plpgsql
@@ -303,11 +248,6 @@ COMMENT ON FUNCTION substrate.run_headhunter_epoch_guard() IS
     'Edge Function when the previous scan produced no top-50 recruits, subject to '
     'EPOCH_MAX_RETRIES and EPOCH_WINDOW_S config constraints.';
 
--- ============================================================
--- 6. pg_cron SCHEDULE
--- Ticks every 5 minutes. The guard function itself is idempotent
--- and fast-exits when no action is required.
--- ============================================================
 SELECT cron.schedule(
     'headhunter-epoch-guard',
     '*/5 * * * *',

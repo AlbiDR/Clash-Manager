@@ -95,8 +95,8 @@ Approaches that have been validated through execution. Follow these when applica
   migrations" signal was measured by filename count (every post-baseline
   migration, forever), not by fold state, so it could never reach zero and
   was permanently tripped regardless of how much folding work was done. Stage
-  3 now runs `.github/scripts/check-fold-state.py`, which replays migrations
-  chronologically and diffs each resulting object against the baseline. Use
+  3 now runs `.github/scripts/fold-state.mjs`, which replays migrations
+  chronologically with a SQL-aware lexer and diffs each resulting object against the baseline. Use
   its `pending-migrations.txt` output (now genuinely fold-state-aware) instead
   of a raw filename count. See Section V Stage 3 for the reconciliation rules
   it applies (search_path widening to house convention, inline FK hoisting to
@@ -275,10 +275,15 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 
 ### Stage 3 -- Baseline Consolidation
 * Current focus: Migration folding after each Supabase schema change.
-* Trigger: `.github/scripts/check-fold-state.py` reports at least one object
+* Trigger: `.github/scripts/fold-state.mjs` reports at least one object
   as `ABSENT` or `DIVERGENT` (exit code 1). Do not trigger on raw
   post-baseline file count -- see Section I Migration folding cadence for why
   that measure was replaced.
+* Required gates: `pnpm audit:migrations` enforces concise incremental
+  migration comments and static baseline quality; `pnpm test:database-baseline`
+  is the CI authority for idempotency, pgTAP, and baseline-versus-full-replay
+  catalog equivalence. Missing or unsupported static evidence is `DEGRADED`,
+  never `CLEAN`; unavailable Docker is recorded as `DB-UNAVAILABLE`.
 * Reconciliation rules the checker applies before calling something drift (do
   not re-fold these, they are already correctly represented in the baseline):
   (1) an inline `FOREIGN KEY` in a migration's `CREATE TABLE` that the

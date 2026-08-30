@@ -1,25 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- Migration: 20260727010000_roster_lifetime_kpi_row.sql
---
--- Companion database migration for the Member Card "lifetime KPIs" row
--- (RPeS + Legacy War Wins), the deferred Section 5a follow-up to the RPoS
--- formula restructure (20260726170000_rpos_formula_restructure.sql).
---
--- RPeS is already exposed by features.roster_view as raw_performance_score,
--- so no scoring change is needed for it. Legacy War Wins is not: drivers.
--- members.war_wins is already joined into roster_view's roster_source CTE
--- (used internally for stability_index et al.), but was never threaded
--- through to the view's final SELECT, so the column has never left the
--- database.
---
--- Appended at the END of the final SELECT list -- CREATE OR REPLACE VIEW
--- can only add columns there; inserting one earlier shifts every subsequent
--- column's ordinal position and Postgres rejects it (SQLSTATE 42P16, hit
--- and documented while shipping 20260726170000_rpos_formula_restructure.sql).
--- =============================================================================
 
 CREATE OR REPLACE VIEW features.roster_view AS
  WITH roster_source AS (
@@ -106,6 +87,3 @@ COMMENT ON COLUMN features.roster_view.war_wins IS
    lifetime/heritage KPI on the Member Card, not an active performance
    signal. See RPoS formula restructure SSOT Section 2 for why this same
    field is deliberately excluded from the scoring formula.';
-
--- No GRANT here: CREATE OR REPLACE VIEW preserves the existing privileges
--- features.roster_view already holds from the master migration.

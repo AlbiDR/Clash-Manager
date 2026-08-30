@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "baseline": "Backend/supabase/migrations/20260531232406_master_migration.sql",
+  "budgets": {
+    "smallStatementLimit": 5,
+    "smallCommentLines": 6,
+    "largeCommentLines": 12,
+    "ratioMinimumNonblankLines": 16,
+    "maximumCommentRatio": 0.4
+  },
+  "allowedSeedTargets": [
+    "substrate.config",
+    "substrate.headhunter_epoch_state"
+  ],
+  "immutableFileHashes": {
+    "Backend/supabase/migrations/20260614082900_add_trail_battle_type.sql": "8c94c134ce891e5a50d8d2fd25f78e904cbcecb01101e4ace3cd12dc70034ce2",
+    "Backend/supabase/migrations/20260615004900_fix_zero_crown_voyage_contributions.sql": "9a64a67cc931c9ca55b594fbc387d83c57a8bf4c058e8b63e3ab9f2fbeb9b9b9",
+    "Backend/supabase/migrations/20260617013100_add_public_vault_secret_wrapper.sql": "529a1ad9b83bc70eb3371a431965bcdd4decf048e66ca4d0daaf2c913c40d7e0",
+    "Backend/supabase/migrations/20260620113000_fix_duel_crown_calculation.sql": "da97ce8d1b7b79ec8dc3bb4fe3b64b063027246f1bbc6b12040aa7412a69950d",
+    "Backend/supabase/migrations/20260620120000_revise_duel_crown_calculation.sql": "2ebf70239ca0cf9385f77c754b182204704094b3849095471b42d2364dc7e991",
+    "Backend/supabase/migrations/20260620142000_headhunter_epoch_guard.sql": "3e7974b8c3ef5dfd3f6e7328273822e5ef2876c27771a8375b6c51988aa342ab",
+    "Backend/supabase/migrations/20260628003700_fix_discovery_cache_fractional_hours.sql": "646d93e4d864f333e91744e1c241b8f85f98cf534e11307c44bd37462c69dc43",
+    "Backend/supabase/migrations/20260628010500_add_public_get_active_discovery_anchors.sql": "aa58ffed5a6b3a2a93f05c6a3bffb26e7daf01b9d1ea3b25021c2274bbaf96b5",
+    "Backend/supabase/migrations/20260629212000_fix_voyage_ingestion_targeting.sql": "60af45a6ab3d12e3ae2bb7122b917b6d50bb80ec47c795f4d556d904cfdaa27e",
+    "Backend/supabase/migrations/20260705030000_voyage_history_pruning.sql": "8d64cd00a7beb6d9725f896abbf609772314feeb9c4feb800a577dd218ebedfa",
+    "Backend/supabase/migrations/20260707003200_rename_voyage_5_to_4.sql": "67cb14e7c50624d4e3fda57c42980fb04096d1a5e0fd9690815d4006c0894b17",
+    "Backend/supabase/migrations/20260726163300_drop_orphaned_views.sql": "dd5885c11eeeca4ef9eaab4a7d9c33bb1261eae13bc091451715c7ee58dd8493",
+    "Backend/supabase/migrations/20260726170000_rpos_formula_restructure.sql": "62169a3859b25116a04da0b5c4ecca140f641b40ff2f97c3e27fc70a49ee4901",
+    "Backend/supabase/migrations/20260726180000_fix_raw_potential_score_column_comment.sql": "23f4c070cae1d097faab9d694794f77b36654137a87ba9174e8bb5b37b2eb81b",
+    "Backend/supabase/migrations/20260727000000_rpos_rescan_backfill.sql": "c3d4e8a39832bdd24ffd496432f787a63466b1880a3a03e76d22afd7a30423ca",
+    "Backend/supabase/migrations/20260727010000_roster_lifetime_kpi_row.sql": "320af47f08aa646bf17c04111f1e86a3c0a7fc49890d0b94edd3753d826be3da",
+    "Backend/supabase/migrations/20260727020000_roster_win_rate_lifetime_kpi.sql": "4b21293bb7c920e021458dad1f77d281b295ae99c8ceeffbbb022f5b3c531d15",
+    "Backend/supabase/migrations/20260801000000_member_battle_log_backfill.sql": "cffb1690bfc8cd16aba20859f30cb943d7f419008e6453d79b7b9eba7c35af7d",
+    "Backend/supabase/migrations/20260801010000_recruit_win_rate_backfill.sql": "d5e5ea24aebb4909664ef1cccccc4b617074f719a4641e974486d4820f18cf56",
+    "Backend/supabase/migrations/20260801020000_blacklist_win_rate_snapshot.sql": "10d3c55f4ede065689d5d1db0db9815d60943f10e823e06896591302667f6fbb",
+    "Backend/supabase/migrations/20260803000000_fix_last_seen_at_monotonic_guard.sql": "33f00af150aed669bf0286835a875857c1dbd7d3af51a3e5b7d58b773418f36a",
+    "Backend/supabase/migrations/20260804000000_harden_river_race_week_id_resolution.sql": "b4a212ec5a61757a355d408fc36b877f02eac96c41947f0decfea52a181cf6cc",
+    "Backend/supabase/migrations/20260817000000_expose_pwa_client_surfaces.sql": "4b629378d785efc7c597b84a756befa181ca456c50cf63a69d0f73c3547c0fce",
+    "Backend/supabase/migrations/20260817010000_fix_heartbeat_success_timestamps.sql": "ad7170610b988f28d847654cc20b5fb07dce4014d9e099564cdace14e360a6c5",
+    "Backend/supabase/migrations/20260819000000_fix_profiler_drivers_schema_access.sql": "87f308e4112d99cf84f48953c2f874d5c9ca382c95fffbb3c7a55d85ac815119"
+  },
+  "exemptions": []
+}

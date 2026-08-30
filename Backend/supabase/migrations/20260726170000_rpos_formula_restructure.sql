@@ -1,142 +1,19 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- Migration: 20260726170000_rpos_formula_restructure.sql
---
--- Companion database migration for the RPoS (Raw Potential Score) formula
--- restructure. See rpos-formula-restructure-SSOT.md Sections 5, 5a and 8 for
--- the full research trail and decisions this migration implements.
---
---   1. Adds drivers.recruits.win_rate -- the weighted win rate is now a
---      first-class displayed metric on the recruit card (replacing the War
---      Wins tile), so it is persisted the same way raw_potential_score
---      already is, computed once at profiler/rescan time.
---   2. Fixes the heritage_bonus formula inside features.scoring_view, which
---      duplicated the OLD, buggy RPoS formula
---      `(war_wins + 500) * 20.0` as a pre-join quality proxy. The `+500`
---      offset was a bug (see SSOT Section 2): warDayWins/war_wins froze at 0
---      for every player who started after Clan Wars 1 retired on 2020-08-31,
---      turning the offset into a hidden, universal `+10,000` inflation with
---      zero differentiating signal. This migration replaces it with the same
---      no-offset legacy-war micro-bonus now used by calculateRpos() in
---      _shared/utils.ts: `legacy_war_wins * RPOS_LEGACY_WAR_WEIGHT`.
---   3. Threads win_rate through features.headhunter_view -- the view the
---      frontend actually reads (SELECT * against it via SupabaseClient.ts /
---      RecruitClient.ts). Adding the column to drivers.recruits alone is not
---      sufficient: the view's CTEs project an explicit column list, so
---      win_rate would otherwise never reach the API response and the recruit
---      card's Win Rate tile would always read 0.
---   4. Fixes public.sync_recruits(p_recruits jsonb) -- the only RPC that
---      writes to drivers.recruits -- to include win_rate in its INSERT column
---      list, SELECT values, ON CONFLICT UPDATE SET, and write-optimization
---      WHERE clause. Without this, profiler.ts/rescan.ts compute and send
---      win_rate in every payload, but it is silently dropped and the column
---      stays at its DEFAULT 0.0 forever.
---
--- drivers.recruit_blacklist needs NO schema change: it already carries a
--- flexible `snapshot jsonb` column ("Full JSONB snapshot of player stats ...
--- for historical review") that can hold win_rate alongside the other
--- historical fields without a new column (SSOT Section 5a).
--- =============================================================================
 
 
--- =============================================================================
--- Phase 1: Add drivers.recruits.win_rate
---
--- Precomputed weighted win rate (performanceWins / battleCount, with
--- three-crown wins weighted at RPOS_THREE_CROWN_MULT -- see
--- calculateWeightedWinRate() in _shared/utils.ts), persisted at
--- profiler/rescan time, the same compute stage that already produces
--- raw_potential_score. Deriving it later by inverting raw_potential_score was
--- considered and rejected: inverting a multi-term formula to recover one
--- component is fragile and breaks the moment any weight changes (SSOT
--- Section 5a).
--- =============================================================================
 
 ALTER TABLE drivers.recruits
     ADD COLUMN win_rate numeric DEFAULT 0.0;
 
--- An inline `/* ... */` token on the column definition itself is discarded by
--- Postgres at parse time and never reaches pg_description -- the same gap
--- 20260726180000_fix_raw_potential_score_column_comment.sql exists to correct
--- for raw_potential_score. A real COMMENT ON COLUMN is used here instead so
--- the documentation actually lands as DB metadata from the start.
 COMMENT ON COLUMN drivers.recruits.win_rate IS 'Precomputed weighted win rate (wins/battleCount, three-crown wins weighted at RPOS_THREE_CROWN_MULT), persisted at profiler/rescan time for display on the recruit card. See calculateWeightedWinRate() in _shared/utils.ts.';
 
 
--- =============================================================================
--- Phase 2: Fix the heritage_bonus formula in features.scoring_view
---
--- Authoritative live source: the CREATE OR REPLACE VIEW for features.scoring_view
--- inside 20260705030000_voyage_history_pruning.sql. That file's timestamp is
--- later than 20260531232406_master_migration.sql's own scoring_view definition,
--- so its body is what is actually live in the database today -- the master
--- migration's CREATE OR REPLACE VIEW for this same view was superseded the
--- moment 20260705030000 ran. The two definitions are otherwise identical; only
--- the heritage_bonus CASE expression below is being changed.
---
--- Every other CTE (voyage_history, voyage_ranked, voyage_factuals, war_weekly,
--- war_ranked, war_factuals, donation_weekly, donation_ranked, donation_factuals,
--- benchmarking_context_base, benchmarking_context, base_stats,
--- weighted_calculations, final_scoring) and the final SELECT are reproduced
--- verbatim, unchanged, from that authoritative definition.
---
--- The output column list, names, order and types are identical to the live
--- view, so CREATE OR REPLACE VIEW is used directly -- no DROP ... CASCADE is
--- needed, and features.roster_view / features.voyage_contributions (which
--- both read FROM features.scoring_view) are left untouched.
---
--- ---------------------------------------------------------------------------
--- What heritage_bonus approximates, and why only a SUBSET of the new RPoS
--- formula is replicated here (not the full formula):
---
--- heritage_bonus is a temporary bonus applied only while a member is still
--- within the clan's rookie_window_days, meant to approximate the member's
--- pre-join recruit-pool quality using an old snapshot of the RPoS formula. The
--- full new RPoS formula (SSOT Section 5) adds a weighted-win-rate term
--- (wins/battleCount with a three-crown multiplier), a capped challenge-card
--- micro-bonus, and a Grand Challenge bonus derived from the win-rate weight.
--- None of those can be reproduced here: they all require raw CR API profile
--- fields (wins, battleCount, threeCrownWins, challengeCardsWon,
--- challengeMaxWins) that are fetched ONLY during headhunter recruit scanning
--- (profiler.ts / rescan.ts) and, per SSOT Section 5a/10, are explicitly kept
--- as compute-time-only inputs -- never persisted to drivers.recruits (aside
--- from the new win_rate column added in Phase 1) and never persisted to
--- drivers.members at all. drivers.members does carry columns named
--- war_day_wins, total_donations and challenge_max_wins that look like they
--- could supply this data, but none of them are ever written by any ingestion
--- trigger or Edge Function in this codebase (verified by inspecting
--- substrate.shred_clan_members() and every other INSERT/UPDATE against
--- drivers.members) -- they sit permanently at their DEFAULT 0, so even if
--- referenced here they would contribute no real signal today.
---
--- What IS available on this view's base_stats/weighted_calculations rows is
--- exactly what the OLD formula already used: wc.trophies, wc.donations and
--- wc.war_wins. So the reasonable equivalent subset is: keep the trophy and
--- donation terms unchanged, and fix only the legacy-war term to match the new
--- calculateRpos() kernel (no +500 offset, weight renamed/repurposed to
--- RPOS_LEGACY_WAR_WEIGHT). This is a narrow, faithful fix of the duplicated
--- bug -- not a reintroduction of the full new formula, which this view's data
--- model cannot support.
---
--- Known, pre-existing, OUT-OF-SCOPE caveat (not changed by this migration):
--- wc.donations here resolves to drivers.members.donations, the WEEKLY
--- donation counter (resets weekly, observed range roughly 0-1,000) -- NOT the
--- lifetime totalDonations that RPOS_DONATION_WEIGHT (0.1) is calibrated
--- against in the TypeScript kernel (lifetime range roughly 20,000-350,000,
--- see SSOT Section 1 "Critical input mapping"). This mismatch predates this
--- migration (it is untouched from the original heritage_bonus formula) and is
--- outside the scope of the SQL migration note this migration implements,
--- which only calls out the war_wins/+500/*20 duplicate. Flagged here for a
--- future, separate cleanup pass.
--- =============================================================================
 
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
-  -- -- Voyage pipeline -----------------------------------------------------------
   voyage_history AS (
-      -- Source A: individual rows still in the live contributions table.
       SELECT
           c.player_tag,
           c.total_voyage_crowns                               AS crowns,
@@ -149,8 +26,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
 
       UNION ALL
 
-      -- Source B: entries parsed from the consolidated history archive.
-      -- Format per entry: voyage_id|crowns|target_crowns|end_date (YYYY-MM-DD).
       SELECT
           pvh.player_tag,
           (regexp_split_to_array(entry, '\|'))[2]::integer               AS crowns,
@@ -196,8 +71,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY vh.player_tag
   ),
 
-  -- -- War pipeline: recency-decayed (replaces flat AVG factual_logs) ----------
-  -- Level 1: aggregate to one row per (player, war section week)
   war_weekly AS (
       SELECT wa.player_tag,
              wa.week_id,
@@ -207,7 +80,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM drivers.war_activity wa
        GROUP BY wa.player_tag, wa.week_id
   ),
-  -- Level 2: assign recency rank (1 = most recent section)
   war_ranked AS (
       SELECT player_tag,
              week_id,
@@ -219,7 +91,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              ) AS recency_rank
         FROM war_weekly
   ),
-  -- Level 3: compute decayed weighted averages and display history
   war_factuals AS (
       SELECT player_tag,
              count(*)                                                                          AS recorded_weeks,
@@ -230,8 +101,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY player_tag
   ),
 
-  -- -- Donation pipeline: recency-decayed weekly peaks expressed as daily avg --
-  -- Level 1: extract the weekly donation peak from daily snapshots
   donation_weekly AS (
       SELECT player_tag,
              DATE_TRUNC('week', snapshot_date) AS week_start,
@@ -239,7 +108,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM drivers.member_snapshots
        GROUP BY player_tag, DATE_TRUNC('week', snapshot_date)
   ),
-  -- Level 2: assign recency rank (1 = most recent calendar week)
   donation_ranked AS (
       SELECT player_tag,
              week_start,
@@ -249,7 +117,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              ) AS recency_rank
         FROM donation_weekly
   ),
-  -- Level 3: compute decayed weighted average, divide by 7 for daily rate
   donation_factuals AS (
       SELECT player_tag,
              substrate.weighted_avg(ARRAY_AGG(max_donations::numeric ORDER BY recency_rank)) / 7.0
@@ -258,7 +125,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        GROUP BY player_tag
   ),
 
-  -- -- Benchmarking context: clan-wide maximum baseline ------------------------
   benchmarking_context_base AS (
       SELECT
           ( SELECT COALESCE(NULLIF(max(w.recorded_weeks), 0), 12::bigint)
@@ -299,7 +165,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM benchmarking_context_base bcb
   ),
 
-  -- -- Base stats: per-player resolved values -----------------------------------
   base_stats AS (
       SELECT m.player_tag,
              m.player_name AS name,
@@ -317,8 +182,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              COALESCE(wf.hist,          '-'::text)                                      AS hist,
              COALESCE(vf.v_hist,        '-'::text)                                      AS v_hist,
              COALESCE(vf.weighted_voyage_index, 0::numeric)                             AS voyage_index,
-             -- Recency-decayed daily avg; falls back to live weekly / 7 for members
-             -- with no snapshot history (cold-start guard)
              COALESCE(df.avg_daily_donations, m.donations::numeric / 7.0, 0::numeric)  AS avg_daily_donations
         FROM drivers.members m
           LEFT JOIN war_factuals      wf ON m.player_tag = wf.player_tag
@@ -327,7 +190,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
        WHERE m.is_active = true
   ),
 
-  -- -- Weighted calculations ----------------------------------------------------
   weighted_calculations AS (
       SELECT bs.*,
              LEAST(1.0, bs.recorded_weeks::numeric / bc.max_history_weeks::numeric) AS stability_index,
@@ -346,26 +208,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
           CROSS JOIN benchmarking_context bc
   ),
 
-  -- -- Clinical layer: raw performance + heritage bonus ------------------------
-  --
-  -- heritage_bonus: pre-join recruit-pool quality proxy for members still
-  -- inside rookie_window_days of joining. RPoS-consistent subset (see the
-  -- Phase 2 header comment above for why the win-rate/challenge-card/GC terms
-  -- of the new formula are not, and cannot be, reproduced here):
-  --
-  --   trophies    * 1.0   -- RPOS_TROPHY_WEIGHT       = 1.0  (unchanged)
-  --   donations   * 0.1   -- RPOS_DONATION_WEIGHT      = 0.1  (unchanged; see
-  --                           the WEEKLY-vs-lifetime caveat above -- untouched,
-  --                           out of scope for this fix)
-  --   war_wins    * 10.0  -- RPOS_LEGACY_WAR_WEIGHT    = 10   (FIXED: no more
-  --                           `+ 500` offset, no more `* 20.0` weight -- that
-  --                           was the hidden +10,000 bug this migration removes;
-  --                           zero war_wins now contributes exactly zero, same
-  --                           as the corrected calculateRpos() kernel)
-  --
-  -- The `power(...) / 5.0` tenure-decay envelope wrapping the bracket is a
-  -- separate, pre-existing rookie-window decay curve, unrelated to any RPoS
-  -- config.ts constant -- reproduced verbatim, not part of this fix.
   clinical_layer AS (
       SELECT wc.*,
              round(
@@ -391,7 +233,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM weighted_calculations wc
   ),
 
-  -- -- Final scoring: normalize to 0-100 PeS ------------------------------------
   final_scoring AS (
       SELECT *,
              raw_performance_score::double precision + heritage_bonus AS total_combined_score,
@@ -432,18 +273,6 @@ CREATE OR REPLACE VIEW features.scoring_view AS
    FROM final_scoring;
 
 
--- =============================================================================
--- Phase 3: Thread win_rate through features.headhunter_view
---
--- Authoritative live source: the CREATE OR REPLACE VIEW for
--- features.headhunter_view inside 20260531232406_master_migration.sql -- it is
--- never redefined by any later migration (grep-confirmed), so that body is
--- what is actually live today. Reproduced verbatim below, with win_rate added
--- in the three places a view column must be threaded through: the
--- base_calculations CTE (source column), the scoring_layer CTE (pass-through),
--- and the final SELECT (exposed column). No other column, join, filter, or
--- ordering is changed.
--- =============================================================================
 
 CREATE OR REPLACE VIEW features.headhunter_view AS
 WITH benchmarking_context AS (
@@ -535,18 +364,6 @@ WITH benchmarking_context AS (
   ORDER BY raw_potential_score DESC;
 
 
--- =============================================================================
--- Phase 4: Persist win_rate through public.sync_recruits(p_recruits jsonb)
---
--- Authoritative live source: 20260531232406_master_migration.sql, never
--- redefined since (grep-confirmed) -- this is the ONLY function that writes to
--- drivers.recruits. Reproduced verbatim below with win_rate added to the
--- INSERT column list, the SELECT value list (same COALESCE-to-zero pattern
--- used for the other numeric columns), the ON CONFLICT UPDATE SET clause, and
--- the write-optimization WHERE guard. Part A (drivers.players upsert) is
--- unchanged and omitted from the diff reasoning below since it never touched
--- recruit metrics.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION public.sync_recruits(p_recruits jsonb)
  RETURNS void

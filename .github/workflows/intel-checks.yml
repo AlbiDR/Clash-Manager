@@ -80,6 +80,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -87,15 +97,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Start Supabase Local Stack
-        run: |
-          cd Backend
-          supabase db start
+      - name: Audit Migration Quality
+        run: pnpm audit:migrations
 
-      - name: Run Database Tests (pg_tap)
-        run: |
-          cd Backend
-          supabase test db
+      - name: Verify Declarative Database Baseline
+        run: pnpm test:database-baseline
 
       - name: Verify database.types.ts is fresh (Schema Drift Guard, Phase 2)
         # Root cause this closes (2026-08-26 audit): the phantom-column check in

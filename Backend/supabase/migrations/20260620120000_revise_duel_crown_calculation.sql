@@ -1,22 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- MIGRATION: Fix riverRaceDuel crown calculation in Clan Voyage
--- =============================================================================
---
--- PROBLEM:
---   For `riverRaceDuel` (best-of-3), the top-level `team_crowns` reports the 
---   match series score, not actual tower crowns. The actual tower crowns per
---   match are nested inside a `rounds` array.
---
--- FIX:
---   - Update `ingest_player_battles` to correctly calculate equivalent voyage 
---     crowns for `riverRaceDuel` directly from the `rounds` JSON arrays.
---   - Revert `refresh_voyage_contributions` and `on_contribution_manual_override_updated`
---     to their original, clean formula: `team_crowns + (3 - opponent_crowns)`.
---   - Update `on_battle_recorded` to also consistently use `team_crowns + (3 - opponent_crowns)`.
--- =============================================================================
 
 CREATE OR REPLACE FUNCTION public.ingest_player_battles(p_tag text, p_payload jsonb)
  RETURNS void

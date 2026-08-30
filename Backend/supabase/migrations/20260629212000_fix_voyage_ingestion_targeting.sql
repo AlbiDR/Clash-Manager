@@ -1,28 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- Migration: 20260629212000_fix_voyage_ingestion_targeting
---
--- PROBLEM:
---   get_ingestion_targets() filters active members by next_poll_at, which is
---   a schedule derived from their last inactivity tier. When a Clan Voyage
---   activates, members who were recently inactive carry a long next_poll_at
---   (60-90+ minutes). They are silently skipped on every pipeline run until
---   that scheduled time expires naturally. The voyage ceiling logic inside
---   ingest_player_battles() never fires for them because they never reach
---   that function. This causes systematic under-reporting of voyage crowns.
---
--- FIX:
---   When a Clan Voyage is active, bypass next_poll_at entirely and return
---   ALL active members as ingestion targets. The per-player voyage ceiling
---   inside ingest_player_battles() already handles adaptive re-scheduling
---   once a player is polled, so no additional changes are required there.
---   The fix is contained to this single function.
---
--- UNCHANGED BEHAVIOUR:
---   - When no voyage is active, the normal next_poll_at scheduling is
---     preserved exactly as before.
---   - The recruits query is unchanged.
 
 CREATE OR REPLACE FUNCTION public.get_ingestion_targets()
  RETURNS jsonb

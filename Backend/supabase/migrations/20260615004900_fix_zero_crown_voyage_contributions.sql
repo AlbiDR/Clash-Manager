@@ -1,45 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- =============================================================================
--- MIGRATION: Fix 0-crown voyage contribution rows for non-participating members
--- =============================================================================
---
--- PROBLEM:
---   Members who did not fight during a completed Clan Voyage had no entry in
---   their bar graph history on the PWA. Their v_hist string showed N-1 entries
---   instead of N (e.g., 2 bars instead of 3).
---
--- ROOT CAUSE:
---   Two interrelated defects in the voyage pipeline:
---
---   1. on_battle_recorded() TRIGGER BUG
---      When a voyage completes because the crown target is reached
---      (v_current >= v_target), the trigger transitions the voyage to COMPLETED
---      directly without pre-populating 0-crown rows for non-participating members.
---      finalize_expired_voyages() is the ONLY function that inserts these rows,
---      but it only processes voyages WHERE status = 'ACTIVE' AND end_at <= now().
---      Since the trigger already set the status to COMPLETED, the cron job silently
---      skips it, leaving non-participants with no contribution record at all.
---
---   2. finalize_expired_voyages() CLEANUP BUG
---      Step 3 deleted 0-crown rows for any player with player_name IS NULL,
---      regardless of whether they were still an active member. This incorrectly
---      purged valid contribution records for active members whose player_name
---      was NULL at finalization time (e.g., during a fresh data ingestion pass).
---
--- FIX:
---   1. Retroactively backfill all missing 0-crown rows for past completed voyages.
---   2. Fix on_battle_recorded() to pre-populate 0-crown rows before completing.
---   3. Fix finalize_expired_voyages() to scope the cleanup strictly to
---      player_tags that are no longer in the active members roster.
--- =============================================================================
 
--- =============================================================================
--- STEP 1: Retroactive backfill for all completed voyages
--- =============================================================================
--- Insert 0-crown rows for every active member who has no contribution record
--- for any completed voyage. ON CONFLICT ensures idempotency.
 INSERT INTO drivers.clan_voyage_contributions (
     voyage_id,
     player_tag,
@@ -65,12 +27,6 @@ WHERE v.status = 'COMPLETED'
   )
 ON CONFLICT (voyage_id, player_tag) DO NOTHING;
 
--- =============================================================================
--- STEP 2: Fix finalize_expired_voyages() - tighten the cleanup condition
--- =============================================================================
--- Remove the OR player_name IS NULL clause which incorrectly purged valid
--- 0-crown records for active members with a temporarily-NULL player_name.
--- The cleanup is now scoped exclusively to player_tags no longer on the roster.
 CREATE OR REPLACE FUNCTION substrate.finalize_expired_voyages()
  RETURNS integer
  LANGUAGE plpgsql
@@ -134,13 +90,6 @@ BEGIN
 END;
 $function$;
 
--- =============================================================================
--- STEP 3: Fix on_battle_recorded() to pre-populate 0-crown rows before COMPLETED
--- =============================================================================
--- When a voyage completes because the crown target is reached or time has
--- expired, insert 0-crown rows for all non-participating active members BEFORE
--- transitioning the voyage to COMPLETED. This mirrors what finalize_expired_voyages()
--- does, closing the gap that previously left non-participants without a record.
 CREATE OR REPLACE FUNCTION drivers.on_battle_recorded()
  RETURNS trigger
  LANGUAGE plpgsql
