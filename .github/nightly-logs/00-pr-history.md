@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-30] PR #1623 [Stage 9]: Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Domain:** architecture | **Commit:** 5c04a2d2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1623)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Execute the scheduled Stage 9 refactor audit.
+**Change:** Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
+**Result:** Audit completed with no source change required.
+
+
 ### [2026-08-30] PR #1622 [Stage 8]: chore(deps): Bumped tsx to ^4.23.13 and updated lockfile.
 **Domain:** pipeline | **Commit:** 96b14283 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1622)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
