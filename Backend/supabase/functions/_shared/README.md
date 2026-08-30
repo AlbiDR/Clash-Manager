@@ -49,7 +49,7 @@ To protect player and clan data exposure from malicious third-party web pages, f
 | `config.ts` | Tunable thresholds, batch limits, and discovery keywords. No inline magic numbers elsewhere. |
 | `schemas.ts` | Barrel that re-exports the three schema modules below. |
 | `royaleSchemas.ts` | Valibot schemas for Clash Royale API responses. |
-| `rpcSchemas.ts` | Valibot schemas for database RPC payloads (sync rows, scanner context). |
+| `rpcSchemas.ts` | Valibot schemas for database RPC payloads (`PlayerSyncPayloadSchema` tag validation matching `RoyaleTagSchema`, `IngestionTargetsSchema` transforming `"drivers.*"` keys to bare `members`/`recruits`, `ShadowTargetSchema`, `StaleRecruitSchema`, `HeadhunterContextSchema`, `DiscoveryAnchorSchema`, `DiscoveryCacheItemSchema`, `RecruitFateSchema`). |
 | `substrateSchemas.ts` | Valibot schemas for orchestration state, telemetry, the key pool, and Vault secrets. |
 | `types.ts` | Shared TypeScript types (audit entries, ingestion results, recruit sync DTOs). |
 
