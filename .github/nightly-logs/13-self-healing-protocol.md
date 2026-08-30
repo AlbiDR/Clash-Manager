@@ -323,11 +323,19 @@
   - Resolution Details (2026-08-29): Re-verification of 2026-08-28 pipeline output confirmed Stage 1 and Stage 12 completed cleanly and published PR #1602 (Stage 1 CLEAN) and PR #1601 (Stage 12 CLEAN). Both are demoted to [RESOLVED - monitor].
 
 * Missing-Run / Unobservable Events on 2026-08-29:
-  - Stages: Stage 11 (APK-Optimization) [UNOBSERVABLE], Stage 12 (APK-UX) [UNOBSERVABLE].
-  - State: [ACTIVE - monitor]
-  - Symptom: No published PR history or coverage log entries for 2026-08-29 in 11-apk-optimization-coverage.log or 12-apk-ux-coverage.log prior to Stage 13 audit execution. Stages 1 through 10 executed cleanly and published PRs #1602 through #1611.
-  - Root Cause: Stage 11 and Stage 12 left no published output in repository evidence for 2026-08-29 prior to Stage 13 execution; exact cause is unobservable without session logs.
-  - Recommended Fix: Monitor tomorrow's pipeline execution to confirm automatic recovery of Stage 11 and Stage 12.
+  - Stages: Stage 11 (APK-Optimization) [RESOLVED - monitor] (August 30, 2026), Stage 12 (APK-UX) [RECURRING] (August 30, 2026).
+  - State: [RESOLVED - monitor] for Stage 11 / [RECURRING] for Stage 12
+  - Symptom: Initial missing output recorded prior to Stage 13 execution on 2026-08-29.
+  - Root Cause: Stage 11 recovered on August 30, 2026, publishing PR #1625 with a CLEAN audit entry. Stage 12 missed output again on 2026-08-30 (`NO_PUBLISHED_OUTPUT`), marking two consecutive missed runs.
+  - Recommended Fix: Audit Stage 12 execution triggers, runner concurrency bounds, and session timeout thresholds in CI configurations to prevent recurrent execution starvation.
+  - Resolution Details (2026-08-30): Stage 11 successfully ran and published PR #1625 (CLEAN), demoting Stage 11 to [RESOLVED - monitor]. Stage 12 did not produce published output and is promoted to [RECURRING] status under August 30 events.
+
+* Missing-Run / Unobservable Events on 2026-08-30:
+  - Stages: Stage 12 (APK-UX) [RECURRING] (August 30, 2026).
+  - State: [RECURRING] for Stage 12
+  - Symptom: No published PR history or coverage log entry for 2026-08-30 in 12-apk-ux-coverage.log (`failureClass: NO_PUBLISHED_OUTPUT`). Stages 1 through 11 completed successfully and published PRs #1615 through #1625.
+  - Root Cause: Stage 12 failed to produce published repository output for the second consecutive day during the automation cycle; exact cause is unobservable without authenticated session logs.
+  - Recommended Fix: Monitor CI runner concurrency limits and dispatch schedules to ensure Stage 12 executes reliably.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -371,53 +379,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-08-28 via PR #1602; last active change on 2026-08-22 via PR #1528)
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-08-30 via PR #1615; last active change on 2026-08-22 via PR #1528)
   - Analysis: Audit pass completed cleanly with zero threat vectors.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in useBlueprintMode.spec.ts via PR #1604)
-  - Analysis: Expanded useBlueprintMode spec with URL query/hash param initialization and showcase override boundary tests.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in rpcSchemas.spec.ts via PR #1616)
+  - Analysis: Added comprehensive unit tests for L1 Core RPC Schemas in rpcSchemas.spec.ts.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-08-29 via PR #1603; last active change on 2026-08-19)
+  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-08-30 via PR #1617; last active change on 2026-08-19)
   - Analysis: Baseline migration fully folded and RLS compliant with safe search_path isolation.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in useBlueprintMode.ts via PR #1606)
-  - Analysis: Standardized parameter variable naming in useBlueprintMode.ts to eliminate anemic pathogens.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-30 via PR #1618; last active change on 2026-08-29 via PR #1606)
+  - Analysis: Re-verified dropped database views remain unreferenced by Edge Function application logic.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in core services README via PR #1605)
-  - Analysis: Reconciled useBlueprintMode initialization priority, query params, and skeleton derivation in core services README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in shared backend README via PR #1619)
+  - Analysis: Reconciled rpcSchemas validation boundaries and transform contracts in shared backend README.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in useBlueprintMode.ts via PR #1607)
-  - Analysis: Hardened useBlueprintMode interface contracts and inline annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in rpcSchemas.ts via PR #1620)
+  - Analysis: Hardened rpcSchemas interface contracts and inline logic annotations.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 36 (CLEAN logged on 2026-08-29 via PR #1608)
+  - Consecutive No-Diff Days: 37 (CLEAN logged on 2026-08-30 via PR #1621)
   - Analysis: Monorepo package versions and catalog dependencies are fully consistent across all manifests.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29 in package.json/pnpm-lock.yaml via PR #1609)
-  - Analysis: Bumped vue to ^3.5.42 in catalog and updated lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in pnpm-lock.yaml via PR #1622)
+  - Analysis: Bumped tsx to ^4.23.13 and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-08-29 via PR #1610; last active change on 2026-08-26 via PR #1570)
+  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-08-30 via PR #1623; last active change on 2026-08-26 via PR #1570)
   - Analysis: Structural audit clean; substrate architecture strictly aligned with CleanStack ADR.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-08-29 via PR #1611)
+  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-08-30 via PR #1624)
   - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security settings.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 10 (Last CLEAN logged on 2026-08-28 via PR #1599; missing output on 2026-08-29)
-  - Analysis: Native WebView settings and PWA SW cache topology are fully optimized.
+  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-08-30 via PR #1625; last active change on 2026-08-15)
+  - Analysis: Audit complete: native WebView settings and PWA SW cache topology are fully optimized.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 5 (Last CLEAN logged on 2026-08-28 via PR #1601; missing output on 2026-08-29)
+  - Consecutive No-Diff Days: 6 (Last CLEAN logged on 2026-08-28 via PR #1601; missing output on 2026-08-29 and 2026-08-30)
   - Analysis: Global UX sweep complete; candidate set fully compliant.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-29)
-  - Analysis: Completed daily self-healing audit pass for 2026-08-29: mapped August 29 stage executions/recoveries and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30)
+  - Analysis: Completed daily self-healing audit pass for 2026-08-30: mapped August 30 stage executions/recoveries (PRs #1615 - #1625) and updated Section 3 no-diff metrics.
