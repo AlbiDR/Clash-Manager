@@ -12,14 +12,14 @@ vi.mock("../useClashDataStore", () => ({
 describe("hydrateClashData", () => {
   let mockStore: {
     loadLocal: any;
-    refreshFromSupabase: any;
+    startBackgroundSync: any;
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockStore = {
       loadLocal: vi.fn().mockResolvedValue(undefined),
-      refreshFromSupabase: vi.fn().mockResolvedValue(undefined),
+      startBackgroundSync: vi.fn().mockResolvedValue(undefined),
     };
     vi.mocked(useClashDataStore).mockReturnValue(mockStore as any);
   });
@@ -28,10 +28,10 @@ describe("hydrateClashData", () => {
     await hydrateClashData();
 
     expect(mockStore.loadLocal).toHaveBeenCalledTimes(1);
-    expect(mockStore.refreshFromSupabase).toHaveBeenCalledTimes(1);
+    expect(mockStore.startBackgroundSync).toHaveBeenCalledTimes(1);
   });
 
-  it("should await loadLocal before calling refreshFromSupabase", async () => {
+  it("should await loadLocal before starting background sync", async () => {
     let resolveLoadLocal: (value: unknown) => void = () => {};
     const loadLocalPromise = new Promise((resolve) => {
       resolveLoadLocal = resolve;
@@ -42,19 +42,19 @@ describe("hydrateClashData", () => {
 
     // Verification: refresh should not have been called yet
     expect(mockStore.loadLocal).toHaveBeenCalled();
-    expect(mockStore.refreshFromSupabase).not.toHaveBeenCalled();
+    expect(mockStore.startBackgroundSync).not.toHaveBeenCalled();
 
     // Resolve loadLocal
     resolveLoadLocal(undefined);
     await hydrationPromise;
 
     // Verification: refresh should now be called
-    expect(mockStore.refreshFromSupabase).toHaveBeenCalled();
+    expect(mockStore.startBackgroundSync).toHaveBeenCalled();
   });
 
-  it("should not await refreshFromSupabase (fire-and-forget logic proof)", async () => {
+  it("should use background sync so a transient boot failure stays non-user-facing", async () => {
     let refreshResolved = false;
-    mockStore.refreshFromSupabase.mockImplementation(() => {
+    mockStore.startBackgroundSync.mockImplementation(() => {
       return new Promise((resolve) => {
         // Delay resolution to prove it's not awaited
         setTimeout(() => {
@@ -67,7 +67,7 @@ describe("hydrateClashData", () => {
     await hydrateClashData();
 
     // If hydrateClashData resolved, but refreshResolved is still false,
-    // it proves refreshFromSupabase was not awaited.
+    // it proves startBackgroundSync was not awaited.
     expect(refreshResolved).toBe(false);
 
     // Cleanup: wait for the pending promise to avoid vitest warnings

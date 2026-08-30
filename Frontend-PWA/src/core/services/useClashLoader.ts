@@ -17,7 +17,7 @@ import { useClashDataStore } from "./useClashDataStore";
  * **Execution Strategy:**
  * 1. `loadLocal()` - Synchronous IndexedDB hydration path; returns near-instantly
  *    from the L2 cache so the view renders with cached data on the first frame.
- * 2. `refreshFromSupabase()` - Fire-and-forget network refresh. Does NOT block the
+ * 2. `startBackgroundSync()` - Fire-and-forget network refresh. Does NOT block the
  *    returned Promise, preserving the Stale-While-Revalidate PWA topology.
  *
  * **Usage:**
@@ -45,6 +45,8 @@ export async function hydrateClashData(): Promise<void> {
   // The store's reactive state updates automatically when the network resolves,
   // preserving the Stale-While-Revalidate (SWR) topology.
 
-  // Step 2: Trigger live Supabase refresh without awaiting (fire-and-forget).
-  store.refreshFromSupabase();
+  // Step 2: Revalidate without publishing a transient boot failure as a manual
+  // refresh error. The background path applies the sync failure threshold and
+  // preserves the locally hydrated state while the APK network stack settles.
+  store.startBackgroundSync();
 }

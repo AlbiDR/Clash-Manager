@@ -31,7 +31,7 @@ export const useClashDataStore = defineStore("clashData", () => {
 
   /**
    * The central dataset containing all clan and recruitment data.
-   * Initialized as null and hydrated via `loadLocal` or `refreshFromSupabase`.
+   * Initialized as null and hydrated via `loadLocal` or the sync actions.
    */
   const data = ref<WebAppData | null>(null);
 

@@ -14,6 +14,13 @@ import { WebAppDataSchema } from "../api/AppSchemas";
 import type { WebAppData } from "../types";
 
 const SYNC_REQUEST_TIMEOUT_MS = 15000;
+const SYNC_FAILURE_VISIBILITY_THRESHOLD = 3;
+
+type SyncIntent = "background" | "manual";
+
+type SyncAttemptResult =
+  | { success: true }
+  | { success: false; error: Error; failureCount: number };
 
 /**
  * CLASH SYNC SERVICE (Layer 1)
@@ -57,6 +64,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** Fault tolerance tracker for user-visible errors. */
   const consecutiveSyncFailures = ref(0);
 
+  /** The single authoritative in-flight remote synchronization attempt. */
+  let activeSyncPromise: Promise<SyncAttemptResult> | null = null;
+
   /** Indicates the provenance of the dataset (SUPABASE). */
   const dataSource = ref<"SUPABASE" | null>(null);
 
@@ -88,12 +98,17 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   }
 
   async function fetchRemoteWithTimeout(options: { force: boolean }): Promise<unknown> {
+    const requestController = new AbortController();
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       return await Promise.race([
-        fetchRemote(options),
+        fetchRemote({ ...options, signal: requestController.signal }),
         new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(() => reject(new Error("Sync timed out")), SYNC_REQUEST_TIMEOUT_MS);
+          timeoutId = setTimeout(() => {
+            const timeoutError = new Error("Sync timed out");
+            reject(timeoutError);
+            requestController.abort(timeoutError);
+          }, SYNC_REQUEST_TIMEOUT_MS);
         }),
       ]);
     } finally {
@@ -200,92 +215,91 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     await commitSyncResult(incomingDataValidation.output);
   }
 
-  /**
-   * Triggers a high-priority foreground synchronization from Supabase.
-   *
-   * @remarks
-   * Utilizes a WakeLock to prevent the device from sleeping during the network request.
-   * If the foreground sync fails, it automatically falls back to a background sync attempt.
-   */
-  async function refreshFromSupabase() {
-    // [GUARD] Concurrency: Prevent overlapping sync cycles.
-    if (loading.value) return;
+  function normalizeSyncError(syncFailure: unknown): Error {
+    return syncFailure instanceof Error ? syncFailure : new Error("Sync failed");
+  }
 
+  /**
+   * Runs or joins the single authoritative remote synchronization attempt.
+   * Transport, validation, and persistence are intentionally centralized here.
+   */
+  function executeRemoteSync(force: boolean): Promise<SyncAttemptResult> {
+    if (activeSyncPromise) return activeSyncPromise;
+    if (loading.value) {
+      return Promise.resolve({
+        success: false,
+        error: new Error("Sync already in progress"),
+        failureCount: consecutiveSyncFailures.value,
+      });
+    }
+
+    const syncPromise = (async (): Promise<SyncAttemptResult> => {
+      loading.value = true;
+      try {
+        const remoteData = await fetchRemoteWithTimeout({ force });
+        const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
+
+        if (!remoteDataValidation.success) {
+          console.error("[Sync] Data Validation Failure Details:", JSON.stringify(remoteDataValidation.issues, null, 2));
+          throw new Error("Remote data validation failed");
+        }
+
+        await yieldToInteractionFrame();
+        await commitSyncResult(remoteDataValidation.output);
+        return { success: true };
+      } catch (syncFailure: unknown) {
+        consecutiveSyncFailures.value++;
+        const normalizedSyncError = normalizeSyncError(syncFailure);
+        console.warn(`[Sync] Remote sync failed (Attempt ${consecutiveSyncFailures.value}):`, normalizedSyncError);
+        return {
+          success: false,
+          error: normalizedSyncError,
+          failureCount: consecutiveSyncFailures.value,
+        };
+      } finally {
+        loading.value = false;
+      }
+    })();
+
+    activeSyncPromise = syncPromise;
+    void syncPromise.finally(() => {
+      if (activeSyncPromise === syncPromise) activeSyncPromise = null;
+    });
+    return syncPromise;
+  }
+
+  /** Applies caller intent to the result without duplicating sync execution. */
+  async function runSync(syncIntent: SyncIntent, force: boolean): Promise<void> {
     if (isSyntheticMode.value) {
       console.debug("[Sync] Synthetic Mode active: Refreshing mock data");
       await commitSyncResult(generateMockData());
       return;
     }
 
-    loading.value = true;
-    let syncFailed = false;
-    try {
-      const remoteData = await fetchRemoteWithTimeout({ force: true });
+    if (syncIntent === "background" && !isOnline.value && !force) return;
 
-      // [THREAT:] Malformed remote payload could corrupt local state.
-      // [DECISION LOG] Validation boundary protects the in-memory state.
-      const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
-      if (!remoteDataValidation.success) {
-        console.error("[Sync] Data Validation Failure Details:", JSON.stringify(remoteDataValidation.issues, null, 2));
-        throw new Error("Remote data validation failed");
-      }
+    const syncResult = await executeRemoteSync(force);
+    if (syncResult.success) return;
 
-      console.debug(`[Sync] Refresh successful. Source: ${remoteDataValidation.output.dataSource}`);
-      await yieldToInteractionFrame();
-      await commitSyncResult(remoteDataValidation.output);
-    } catch (supabaseRefreshError: unknown) {
-      console.warn("[Sync] Supabase refresh failed:", supabaseRefreshError);
-      syncError.value = supabaseRefreshError instanceof Error
-        ? supabaseRefreshError.message
-        : "Sync failed";
-      syncFailed = true;
-    } finally {
-      // Reset loading BEFORE startBackgroundSync to avoid premature reset
-      // of loading state that startBackgroundSync sets on its own.
-      loading.value = false;
-    }
+    const shouldExposeFailure = syncIntent === "manual"
+      || !data.value
+      || syncResult.failureCount >= SYNC_FAILURE_VISIBILITY_THRESHOLD;
 
-    if (syncFailed && syncError.value !== "Sync timed out") {
-      startBackgroundSync(true);
-    }
+    if (shouldExposeFailure) syncError.value = syncResult.error.message;
+  }
+
+  /** Triggers a user-visible foreground synchronization from Supabase. */
+  async function refreshFromSupabase(): Promise<void> {
+    await runSync("manual", true);
   }
 
   /**
-   * Executes a non-blocking background synchronization.
+   * Executes a fault-tolerant background synchronization.
    *
    * @param force - If true, bypasses the online check.
    */
-  async function startBackgroundSync(force = false) {
-    // [GUARD] Concurrency: Prevent overlapping sync cycles.
-    if (loading.value) return;
-    if (!isOnline.value && !force) return;
-
-    loading.value = true;
-
-    try {
-      const remoteData = await fetchRemoteWithTimeout({ force });
-
-      const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
-      if (!remoteDataValidation.success) {
-        throw new Error("Remote data validation failed");
-      }
-
-      await yieldToInteractionFrame();
-      await commitSyncResult(remoteDataValidation.output);
-    } catch (backgroundSyncError: unknown) {
-      consecutiveSyncFailures.value++;
-      const errorMessage = backgroundSyncError instanceof Error ? backgroundSyncError.message : "Sync failed";
-
-      // [DECISION LOG] Failure threshold: Only expose sync errors to the user after
-      // 3 consecutive failures to avoid noise during transient network drops.
-      if (!data.value || consecutiveSyncFailures.value >= 3) {
-        syncError.value = errorMessage;
-      }
-
-      console.warn(`[Sync] Background sync failed (Attempt ${consecutiveSyncFailures.value}):`, backgroundSyncError);
-    } finally {
-      loading.value = false;
-    }
+  async function startBackgroundSync(force = false): Promise<void> {
+    await runSync("background", force);
   }
 
   /**

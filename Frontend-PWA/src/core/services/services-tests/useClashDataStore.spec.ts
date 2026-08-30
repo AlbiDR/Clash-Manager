@@ -274,7 +274,7 @@ describe("useClashDataStore", () => {
       const store = useClashDataStore();
       await store.refresh();
       
-      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
+      expect(fetchRemote).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
       expect(store.data).toEqual(mockRemoteData);
     });
   });
@@ -296,34 +296,28 @@ describe("useClashDataStore", () => {
       expect(store.loading).toBe(false);
       expect(store.data).toEqual(mockRemoteData);
       expect(store.dataSource).toBe("SUPABASE");
-      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
+      expect(fetchRemote).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
       expect(saveCache).toHaveBeenCalledWith(mockRemoteData);
     });
 
-    it("should attempt fallback to startBackgroundSync(true) if fetchRemote fails [CRACK: Guard Blocked]", async () => {
-      // [CRACK IDENTIFIED]: The current implementation of refreshFromSupabase calls startBackgroundSync
-      // while loading.value is still true. startBackgroundSync has a guard 'if (loading.value) return;'
-      // which causes the fallback to exit immediately without performing the sync.
-      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Supabase Down"));
+    it("should perform one authoritative attempt when a manual fetch fails", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Supabase Down"));
 
       const store = useClashDataStore();
       await store.refreshFromSupabase();
 
-      // [FIX VERIFIED]: Previously failed with 1 due to the loading guard deadlock.
-      // Now correctly attempts the fallback (2nd call to fetchRemote).
-      expect(fetchRemote).toHaveBeenCalledTimes(2);
-      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(store.syncError).toBe("Supabase Down");
     });
 
-    it("should attempt fallback to startBackgroundSync(true) if validation fails", async () => {
-      // [FIX VERIFIED]: Previously failed with 1 due to the loading guard deadlock.
-      // Now correctly attempts the fallback (2nd call to fetchRemote).
-      vi.mocked(fetchRemote).mockResolvedValueOnce({ invalid: "data" });
+    it("should perform one authoritative attempt when validation fails", async () => {
+      vi.mocked(fetchRemote).mockResolvedValue({ invalid: "data" });
 
       const store = useClashDataStore();
       await store.refreshFromSupabase();
 
-      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(store.syncError).toBe("Remote data validation failed");
     });
 
     it("should bypass offline guard for manual refresh", async () => {
@@ -333,7 +327,7 @@ describe("useClashDataStore", () => {
       const store = useClashDataStore();
       await store.refreshFromSupabase();
 
-      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
+      expect(fetchRemote).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
       mockConnectionStatus.isOnline.value = true;
     });
 

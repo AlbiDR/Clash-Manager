@@ -190,7 +190,7 @@ async function bootstrap() {
       const wakeLock = useWakeLock();
       const storagePersistence = useStoragePersistence();
 
-      // [VR5] Data hydration (loadLocal + refreshFromSupabase) is now owned
+      // [VR5] Data hydration (loadLocal + startBackgroundSync) is now owned
       // by the route-level DataLoaderPlugin. The loader fires on the very
       // first navigation (/roster), ensuring the Pinia store is hydrated
       // before the view renders without any imperative boot call here.

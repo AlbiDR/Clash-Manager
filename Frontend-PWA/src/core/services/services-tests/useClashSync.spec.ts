@@ -201,12 +201,21 @@ describe("useClashSync", () => {
       expect(data.value).toEqual(remotePayload);
     });
 
-    it("should respect concurrency guard", async () => {
+    it("should coalesce concurrent callers into one remote attempt", async () => {
+      let resolveRemote: (value: WebAppData) => void = () => {};
+      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4100, blacklist: [] };
+      vi.mocked(fetchRemote).mockReturnValue(new Promise((resolve) => {
+        resolveRemote = resolve;
+      }));
       const sync = useClashSync(data);
-      sync.loading.value = true;
 
-      await sync.refreshFromSupabase();
-      expect(fetchRemote).not.toHaveBeenCalled();
+      const firstRefresh = sync.refreshFromSupabase();
+      const secondRefresh = sync.refreshFromSupabase();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      resolveRemote(remotePayload);
+      await Promise.all([firstRefresh, secondRefresh]);
+      expect(data.value).toEqual(remotePayload);
     });
 
     it("should bypass offline guard for manual refresh", async () => {
@@ -215,7 +224,7 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
 
       await sync.refreshFromSupabase();
-      expect(fetchRemote).toHaveBeenCalledWith({ force: true });
+      expect(fetchRemote).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
       expect(data.value?.timestamp).toBe(4500);
     });
 
@@ -229,31 +238,30 @@ describe("useClashSync", () => {
       expect(sync.syncError.value).toBe("Network Error");
     });
 
-    it("should fallback to background sync on failure", async () => {
-      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Network Error"));
-      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 5000, blacklist: [] });
+    it("should not create a duplicate retry storm after a manual failure", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
 
       const sync = useClashSync(data);
       await sync.refreshFromSupabase();
 
-      // Should call fetchRemote twice (one foreground, one background)
-      expect(fetchRemote).toHaveBeenCalledTimes(2);
-      await vi.waitFor(() => {
-        expect(data.value?.timestamp).toBe(5000);
-      });
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(sync.syncError.value).toBe("Network Error");
     });
 
     it("should time out a stalled foreground refresh and release loading", async () => {
       vi.useFakeTimers();
-      vi.mocked(fetchRemote).mockReturnValue(new Promise(() => {}) as any);
+      vi.mocked(fetchRemote).mockReturnValue(new Promise<WebAppData>(() => {}));
       const sync = useClashSync(data);
 
       const refreshPromise = sync.refreshFromSupabase();
+      const requestSignal = vi.mocked(fetchRemote).mock.calls[0][0]?.signal;
+      expect(requestSignal?.aborted).toBe(false);
       await vi.advanceTimersByTimeAsync(15000);
       await refreshPromise;
 
       expect(sync.loading.value).toBe(false);
       expect(sync.syncError.value).toBe("Sync timed out");
+      expect(requestSignal?.aborted).toBe(true);
     });
   });
 
