@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-30] PR #1622 [Stage 8]: chore(deps): Bumped tsx to ^4.23.13 and updated lockfile.
+**Domain:** pipeline | **Commit:** 96b14283 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1622)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped tsx to ^4.23.13 and updated lockfile.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-30] PR #1621 [Stage 7]: chore(version): No version drift or catalog violations detected across monorepo package manifests.
 **Domain:** pipeline | **Commit:** 2a30e3c1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1621)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
