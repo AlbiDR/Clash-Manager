@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-30] PR #1619 [Stage 5]: docs(readme): Reconciled rpcSchemas validation boundaries and transform contracts in shared backend README
+**Domain:** pipeline | **Commit:** 0b199de0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1619)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/_shared/README.md
+**Why:** Automated nightly audit pass.
+**Change:** docs(readme): Reconciled rpcSchemas validation boundaries and transform contracts in shared backend README
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-30] PR #1618 [Stage 4]: chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
 **Domain:** pipeline | **Commit:** 4a3f0bc8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1618)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
