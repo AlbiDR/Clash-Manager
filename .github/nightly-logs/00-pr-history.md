@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-30] PR #1618 [Stage 4]: chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
+**Domain:** pipeline | **Commit:** 4a3f0bc8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1618)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Re-verified dropped database views remain unreferenced by Edge Function application logic.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-30] PR #1617 [Stage 3]: chore(database): Baseline consolidated and 100% compliant; zero pending migrations unfolded
 **Domain:** pipeline | **Commit:** 254ac0cb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1617)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
