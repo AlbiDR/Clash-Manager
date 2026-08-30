@@ -40,3 +40,4 @@
 * [2026-08-27] [Stage 2] CHANGED: Backend/supabase/functions/_shared/shared-tests/substrateSchemas.spec.ts -- Add comprehensive unit tests for substrateSchemas validation boundaries
 * [2026-08-28] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useShowcaseMode.spec.ts -- Expanded useShowcaseMode spec with blueprint override and synthetic watcher unit tests.
 * [2026-08-29] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useBlueprintMode.spec.ts -- Expanded useBlueprintMode spec with URL query/hash param initialization and showcase override boundary tests.
+* [2026-08-30] [Stage 2] CHANGED: Backend/supabase/functions/_shared/shared-tests/rpcSchemas.spec.ts -- Added comprehensive unit tests for L1 Core RPC Schemas in rpcSchemas.spec.ts
