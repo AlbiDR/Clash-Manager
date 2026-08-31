@@ -4616,7 +4616,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.404Z",
+        "lastObservedAt": "2026-08-31T04:28:26.096Z",
         "failureClass": null
       },
       "2": {
@@ -4643,7 +4643,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.404Z",
+        "lastObservedAt": "2026-08-31T04:28:26.096Z",
         "failureClass": null
       },
       "3": {
@@ -4674,7 +4674,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.404Z",
+        "lastObservedAt": "2026-08-31T04:28:26.096Z",
         "failureClass": null
       },
       "4": {
@@ -4705,7 +4705,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.404Z",
+        "lastObservedAt": "2026-08-31T04:28:26.097Z",
         "failureClass": null
       },
       "5": {
@@ -4733,7 +4733,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.405Z",
+        "lastObservedAt": "2026-08-31T04:28:26.097Z",
         "failureClass": null
       },
       "6": {
@@ -4741,19 +4741,28 @@
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-08-31/stage-6/pr-1633",
+          "session": {
+            "id": "16316183513327095722",
+            "name": "sessions/16316183513327095722",
+            "state": "COMPLETED",
+            "createTime": "2026-08-31T04:20:39.482542348Z",
+            "updateTime": "2026-08-31T04:27:43.610843Z",
+            "lifetimeMinutes": 7.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.405Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-31T04:28:26.097Z",
+        "failureClass": null
       },
       "7": {
         "date": "2026-08-31",
@@ -4771,7 +4780,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.405Z",
+        "lastObservedAt": "2026-08-31T04:28:26.097Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -4790,7 +4799,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.405Z",
+        "lastObservedAt": "2026-08-31T04:28:26.098Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -4809,7 +4818,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.406Z",
+        "lastObservedAt": "2026-08-31T04:28:26.098Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -4828,7 +4837,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.406Z",
+        "lastObservedAt": "2026-08-31T04:28:26.099Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -4847,7 +4856,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.406Z",
+        "lastObservedAt": "2026-08-31T04:28:26.099Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -4866,7 +4875,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.406Z",
+        "lastObservedAt": "2026-08-31T04:28:26.099Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -4885,7 +4894,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T03:11:47.407Z",
+        "lastObservedAt": "2026-08-31T04:28:26.100Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
