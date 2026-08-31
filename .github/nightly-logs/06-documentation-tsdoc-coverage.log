@@ -105,3 +105,4 @@
 * [2026-08-28] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useBlueprintMode.ts -- docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
 * [2026-08-29] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useBlueprintMode.ts -- docs(tsdoc): harden useBlueprintMode interface contracts and inline annotations
 * [2026-08-30] [Stage 6] CHANGED: Backend/supabase/functions/_shared/rpcSchemas.ts -- docs(tsdoc): harden rpcSchemas interface contracts and inline logic annotations
+* [2026-08-31] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useClashSync.ts -- docs(tsdoc): harden useClashSync interface contracts and inline logic annotations
