@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1633 [Stage 6]: chore(docs): docs(tsdoc): harden useClashSync interface contracts and inline logic annotations
+**Domain:** pipeline | **Commit:** 32750357 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1633)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSync.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): docs(tsdoc): harden useClashSync interface contracts and inline logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-31] PR #1632 [Stage 5]: chore(docs): Reconciled useClashSync single-flight sync and failure thresholds in core services README
 **Domain:** pipeline | **Commit:** c0ad7abb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1632)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
