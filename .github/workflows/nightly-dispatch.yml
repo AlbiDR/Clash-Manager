@@ -58,9 +58,9 @@ jobs:
 
           DATE_INPUT="${{ github.event.inputs.date }}"
           if [ -n "$DATE_INPUT" ]; then
-            node .github/scripts/nightly-dispatch.mjs --stage "${{ github.event.inputs.stage }}" --date "$DATE_INPUT"
+            node .github/scripts/nightly/nightly-dispatch.mjs --stage "${{ github.event.inputs.stage }}" --date "$DATE_INPUT"
           else
-            node .github/scripts/nightly-dispatch.mjs --stage "${{ github.event.inputs.stage }}"
+            node .github/scripts/nightly/nightly-dispatch.mjs --stage "${{ github.event.inputs.stage }}"
           fi
 
       - name: Commit and Push Ledger with Retry

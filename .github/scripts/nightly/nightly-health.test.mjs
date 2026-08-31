@@ -15,7 +15,7 @@ import {
   stageInterventionHistory,
 } from "./nightly-health.mjs";
 
-const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
+const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 
 // `needed` is what the ledger implies; this builds the history directly so the
 // verdict logic can be tested without hand-writing whole ledgers.
@@ -110,7 +110,7 @@ test("renderHealthReport says plainly why a per-run check cannot see this", () =
 test("the real recorded history is evaluated without throwing and stays calibrated", () => {
   // Guards against a future change that makes the analyser alarm on everything:
   // a report that flags all thirteen stages is as useless as one that flags none.
-  const ledger = JSON.parse(readFileSync(new URL("../nightly-logs/nightly-run-ledger.json", import.meta.url), "utf8"));
+  const ledger = JSON.parse(readFileSync(new URL("../../nightly-logs/nightly-run-ledger.json", import.meta.url), "utf8"));
   const health = evaluatePipelineHealth(ledger, registry);
   assert.equal(health.stages.length, 13);
   assert.ok(

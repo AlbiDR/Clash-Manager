@@ -23,10 +23,10 @@ forbidden-actions: [apply_migration, execute_sql, cosmetic-changes, ask_question
 
 ## Stage Lifecycle
 
-1. Start with `node .github/scripts/nightly-stage.mjs start --stage 11`.
+1. Start with `node .github/scripts/nightly/nightly-stage.mjs start --stage 11`.
 2. Work on exactly one target within the write boundaries below. The lifecycle helper owns the date, timer, context refresh, and initial coverage-log sentinel.
-3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly-stage.mjs budget --stage 11`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `.github/nightly-prompts/00-nightly-agent-contract.md`.
-4. Finalize with `node .github/scripts/nightly-stage.mjs finalize --stage 11 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
+3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 11`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `.github/nightly-prompts/00-nightly-agent-contract.md`.
+4. Finalize with `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 11 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
 5. Read `/tmp/nightly/final-handoff.txt`, return that result, and end the task so Jules native publication can create the PR.
 
 Coverage log: `.github/nightly-logs/11-apk-optimization-coverage.log`
@@ -87,5 +87,5 @@ You act as a performance auditor focused on compilation optimization, native ass
 - Use `CLEAN` when the audit completed and no source change is required.
 - Use `SKIPPED` or `PARTIAL-RUN` only after restoring every non-log change.
 - Do not append another summary line manually; finalization replaces the lifecycle sentinel.
-- Run `node .github/scripts/nightly-stage.mjs budget --stage 11`, then `node .github/scripts/nightly-stage.mjs finalize --stage 11 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
+- Run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 11`, then `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 11 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
 - Read `/tmp/nightly/final-handoff.txt`, return its result, and end immediately. Jules native publication owns the branch, commit, push, and non-draft PR creation.

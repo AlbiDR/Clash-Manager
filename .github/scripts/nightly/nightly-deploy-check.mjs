@@ -17,29 +17,29 @@ export const CONTROL_PLANE_FILES = [
   ".github/workflows/nightly-watchdog.yml",
   ".github/workflows/merge-nightly-prs.yml",
   ".github/workflows/sync-branches.yml",
-  ".github/scripts/nightly-watchdog.mjs",
-  ".github/scripts/nightly-ledger.mjs",
-  ".github/scripts/nightly-redact.mjs",
-  ".github/scripts/merge-nightly-prs.mjs",
-  ".github/scripts/merge-nightly-core.mjs",
-  ".github/scripts/nightly-stage.mjs",
-  ".github/scripts/nightly-publish-fallback.mjs",
-  ".github/scripts/nightly-health.mjs",
-  ".github/scripts/nightly-recap.mjs",
+  ".github/scripts/nightly/nightly-watchdog.mjs",
+  ".github/scripts/nightly/nightly-ledger.mjs",
+  ".github/scripts/nightly/nightly-redact.mjs",
+  ".github/scripts/nightly/merge-nightly-prs.mjs",
+  ".github/scripts/nightly/merge-nightly-core.mjs",
+  ".github/scripts/nightly/nightly-stage.mjs",
+  ".github/scripts/nightly/nightly-publish-fallback.mjs",
+  ".github/scripts/nightly/nightly-health.mjs",
+  ".github/scripts/nightly/nightly-recap.mjs",
   ".github/nightly-config/stages.json",
   // The guard and the checker it runs are themselves control-plane files. A
   // drift detector that does not watch its own deployment can be silently
   // downgraded on one branch and still report everything as fine from another,
   // which is the same class of blind spot it exists to close.
   ".github/workflows/control-plane-guard.yml",
-  ".github/scripts/nightly-deploy-check.mjs",
+  ".github/scripts/nightly/nightly-deploy-check.mjs",
   // The dispatch path is inert today (workflow_dispatch only, no cron) but it
   // is the intended replacement for the Jules UI scheduled tasks. Watching it
   // now means the stage-by-stage migration starts with drift detection already
   // covering it, rather than having to remember to add it at the point where a
   // mistake would silently stop a stage from being triggered at all.
   ".github/workflows/nightly-dispatch.yml",
-  ".github/scripts/nightly-dispatch.mjs",
+  ".github/scripts/nightly/nightly-dispatch.mjs",
   // Not under .github/, but load-bearing for the sync since be32a747: the
   // `pnpm-lock.yaml merge=binary` attribute is what stops a 3-way merge from
   // splicing the lockfile into a valid-YAML-but-uninstallable state, which is

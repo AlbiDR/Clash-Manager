@@ -70,7 +70,7 @@ jobs:
         # Nightly and Stable, the failure mode that stranded the recovery-pass
         # fix for a full day on 2026-08-16/17.
         continue-on-error: true
-        run: node .github/scripts/nightly-deploy-check.mjs
+        run: node .github/scripts/nightly/nightly-deploy-check.mjs
 
       - name: Run Nightly Watchdog
         id: watchdog
@@ -87,9 +87,9 @@ jobs:
           DATE_INPUT="${{ github.event.inputs.date }}"
           set +e
           if [ -n "$DATE_INPUT" ]; then
-            node .github/scripts/nightly-watchdog.mjs --date "$DATE_INPUT"
+            node .github/scripts/nightly/nightly-watchdog.mjs --date "$DATE_INPUT"
           else
-            node .github/scripts/nightly-watchdog.mjs
+            node .github/scripts/nightly/nightly-watchdog.mjs
           fi
           WATCHDOG_EXIT=$?
           set -e

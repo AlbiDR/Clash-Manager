@@ -24,7 +24,7 @@ pnpm nightly:recap --json     # same facts, machine readable
 pnpm nightly:recap --date 2026-08-25
 ```
 
-`.github/scripts/nightly-recap.mjs` is the single source of truth for those
+`.github/scripts/nightly/nightly-recap.mjs` is the single source of truth for those
 facts. It scopes a run by DATE, using the ledger, the `nightly/<date>/stage-N/pr-*`
 tags and the coverage logs, all read from `origin/Nightly`. It therefore gives
 the same answer whether or not the branches have been synced, and can report on

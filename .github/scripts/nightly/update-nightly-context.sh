@@ -107,7 +107,7 @@ BASELINE_PREFIX="20260531232406"
 FOLD_CHECK=".github/scripts/fold-state.mjs"
 MIGRATION_AUDIT=".github/scripts/audit-migrations.mjs"
 APK_UX_AUDIT=".github/scripts/audit-apk-ux.mjs"
-CLEAN_CALIBRATION=".github/scripts/nightly-clean-calibration.mjs"
+CLEAN_CALIBRATION=".github/scripts/nightly/nightly-clean-calibration.mjs"
 : > "$CONTEXT_DIR/pending-migrations.txt"
 
 if [ "${STAGE_NUM}" != "3" ]; then

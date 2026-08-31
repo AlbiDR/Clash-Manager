@@ -37,7 +37,7 @@ import {
   sessionTelemetry,
 } from "./nightly-watchdog.mjs";
 
-const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
+const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 
 function mergedObserved(date) {
   return {

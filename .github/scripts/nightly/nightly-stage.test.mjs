@@ -25,7 +25,7 @@ import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
 
 const scriptPath = fileURLToPath(new URL("./nightly-stage.mjs", import.meta.url));
 const contextScriptPath = fileURLToPath(new URL("./update-nightly-context.sh", import.meta.url));
-const registryPath = fileURLToPath(new URL("../nightly-config/stages.json", import.meta.url));
+const registryPath = fileURLToPath(new URL("../../nightly-config/stages.json", import.meta.url));
 const registry = validateRegistryData(JSON.parse(readFileSync(registryPath, "utf8")));
 
 function run(command, args, cwd, env = {}) {
@@ -285,12 +285,12 @@ test("real startup synchronizes a disposable Nightly branch and writes bounded s
     rmSync(testContext, { recursive: true, force: true });
   });
 
-  mkdirSync(path.join(repoRoot, ".github/scripts"), { recursive: true });
+  mkdirSync(path.join(repoRoot, ".github/scripts/nightly"), { recursive: true });
   writeFileSync(
-    path.join(repoRoot, ".github/scripts/update-nightly-context.sh"),
+    path.join(repoRoot, ".github/scripts/nightly/update-nightly-context.sh"),
     readFileSync(contextScriptPath, "utf8"),
   );
-  assert.equal(run("git", ["add", ".github/scripts/update-nightly-context.sh"], repoRoot).status, 0);
+  assert.equal(run("git", ["add", ".github/scripts/nightly/update-nightly-context.sh"], repoRoot).status, 0);
   assert.equal(run("git", ["commit", "-m", "test: add context helper"], repoRoot).status, 0);
   assert.equal(run("git", ["push", "origin", "Nightly"], repoRoot).status, 0);
 

@@ -12,7 +12,7 @@ pnpm nightly:recap --json     # same facts, machine readable
 pnpm nightly:recap --date 2026-08-25
 ```
 
-The single source of truth is `.github/scripts/nightly-recap.mjs`, which is
+The single source of truth is `.github/scripts/nightly/nightly-recap.mjs`, which is
 tracked in the repository, covered by tests, and shared by every agent.
 
 ## Why this file no longer contains the logic

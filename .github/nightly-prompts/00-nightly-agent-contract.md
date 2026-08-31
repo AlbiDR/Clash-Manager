@@ -28,7 +28,7 @@ human input, or entering an optional review loop is a failed run.
 The first command in every stage prompt is authoritative:
 
 ```bash
-node .github/scripts/nightly-stage.mjs start --stage N
+node .github/scripts/nightly/nightly-stage.mjs start --stage N
 ```
 
 The lifecycle coordinator verifies the branch and clean worktree, performs a
@@ -64,7 +64,7 @@ change set if the environment still permits it.
 At each prompt checkpoint, run:
 
 ```bash
-node .github/scripts/nightly-stage.mjs budget --stage N
+node .github/scripts/nightly/nightly-stage.mjs budget --stage N
 ```
 
 `WORK` permits continued work. `SUBMIT` means stop immediately, restore any
@@ -112,7 +112,7 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
   `.github/nightly-config/stages.json`.
 - The lifecycle coordinator writes the initial sentinel and replaces it during
   finalization. Do not append a second summary record for the same run.
-- Stage 1 alone may run `age_pr_history.py age` to age, prune, and fold
+- Stage 1 alone may run `age-pr-history.py age` to age, prune, and fold
   `.github/nightly-logs/00-pr-history.md`.
 - No stage writes successful PR history. The merge coordinator compiles finalized
   history from merge tags after the PR merges.

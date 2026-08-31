@@ -7,7 +7,7 @@ import test from "node:test";
 
 import { stageDisplayNumber, stageSessionTitle } from "./nightly-dispatch.mjs";
 
-const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
+const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 
 test("Jules session titles use one zero-padded stage nomenclature", () => {
   assert.equal(stageDisplayNumber(1), "S01");

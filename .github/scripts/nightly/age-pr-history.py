@@ -300,14 +300,14 @@ def run_add_entry(today_str, stage_name, domain, pr_num, files_list, why_desc, c
 
 def main():
     if len(sys.argv) == 2 and re.match(r"^\d{4}-\d{2}-\d{2}$", sys.argv[1]):
-        # Backwards compatibility fallback: age_pr_history.py <date>
+        # Backwards compatibility fallback: age-pr-history.py <date>
         run_aging(sys.argv[1])
         return
 
     if len(sys.argv) < 3:
         print("Usage:")
-        print("  age_pr_history.py age <TODAY_YYYY-MM-DD>")
-        print("  age_pr_history.py add <TODAY_YYYY-MM-DD> <STAGE_NAME> <DOMAIN> <PR_NUM> <FILES> <WHY> <CHANGE> <RESULT>")
+        print("  age-pr-history.py age <TODAY_YYYY-MM-DD>")
+        print("  age-pr-history.py add <TODAY_YYYY-MM-DD> <STAGE_NAME> <DOMAIN> <PR_NUM> <FILES> <WHY> <CHANGE> <RESULT>")
         sys.exit(1)
 
     action = sys.argv[1]

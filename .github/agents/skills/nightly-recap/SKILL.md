@@ -39,5 +39,5 @@ in the ledger.
 - Never commit, push or tag. This is read-only.
 - No em-dashes and no emojis in the output.
 
-If the script is wrong, fix `.github/scripts/nightly-recap.mjs` and its tests.
+If the script is wrong, fix `.github/scripts/nightly/nightly-recap.mjs` and its tests.
 Never work around it here: this file is local and gitignored, the script is not.

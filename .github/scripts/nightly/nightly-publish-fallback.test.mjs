@@ -16,7 +16,7 @@ import {
   renderFallbackPrBody,
 } from "./nightly-publish-fallback.mjs";
 
-const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
+const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 const stageOf = number => registry.stages.find(stage => stage.number === number);
 const DATE = "2026-08-27";
 

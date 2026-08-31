@@ -92,7 +92,7 @@ jobs:
       - name: Check for control-plane work stranded downstream
         run: |
           set +e
-          node .github/scripts/nightly-deploy-check.mjs --stranded
+          node .github/scripts/nightly/nightly-deploy-check.mjs --stranded
           first=$?
           set -e
           if [ "$first" -eq 0 ]; then
@@ -103,7 +103,7 @@ jobs:
           sleep 45
 
           echo "--- Second check ---"
-          node .github/scripts/nightly-deploy-check.mjs --stranded
+          node .github/scripts/nightly/nightly-deploy-check.mjs --stranded
           echo "The first finding had cleared by the second check; treating it as a sync in flight."
 
       - name: Explain a failure

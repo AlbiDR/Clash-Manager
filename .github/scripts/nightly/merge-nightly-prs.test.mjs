@@ -40,7 +40,7 @@ import {
   validateLedger,
 } from "./nightly-ledger.mjs";
 
-const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
+const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 const mergeConfig = { targetBranch: "Nightly", allowedAuthors: ["google-labs-jules", "AlbiDR"] };
 
 test("parses slash and hyphen nightly stage branch names", () => {

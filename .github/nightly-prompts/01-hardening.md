@@ -23,10 +23,10 @@ forbidden-actions: [apply_migration, execute_sql, cosmetic-changes, list_tables,
 
 ## Stage Lifecycle
 
-1. Start with `node .github/scripts/nightly-stage.mjs start --stage 1`.
+1. Start with `node .github/scripts/nightly/nightly-stage.mjs start --stage 1`.
 2. Work on exactly one target within the write boundaries below. The lifecycle helper owns the date, timer, context refresh, and initial coverage-log sentinel.
-3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly-stage.mjs budget --stage 1`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `.github/nightly-prompts/00-nightly-agent-contract.md`.
-4. Finalize with `node .github/scripts/nightly-stage.mjs finalize --stage 1 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
+3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 1`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `.github/nightly-prompts/00-nightly-agent-contract.md`.
+4. Finalize with `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 1 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
 5. Read `/tmp/nightly/final-handoff.txt`, return that result, and end the task so Jules native publication can create the PR.
 
 Coverage log: `.github/nightly-logs/01-hardening-coverage.log`
@@ -67,7 +67,7 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Threat Surface Scan
-- **History aging:** Before scanning source, run `python3 .github/scripts/age_pr_history.py age "$(cat /tmp/nightly/TODAY)"`. Do not read or edit `00-pr-history.md` manually. If aging fails, continue the security audit and mention the deferred aging in the final summary; aging must not consume the run.
+- **History aging:** Before scanning source, run `python3 .github/scripts/nightly/age-pr-history.py age "$(cat /tmp/nightly/TODAY)"`. Do not read or edit `00-pr-history.md` manually. If aging fails, continue the security audit and mention the deferred aging in the final summary; aging must not consume the run.
 - **Active Intelligence Check:** Before scanning, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I, II, and V) and look at the T1 active section of `.github/nightly-logs/00-pr-history.md` to see what files were modified in the last 7 days. You MUST exclude any files that have been modified or audited as CLEAN by Stage 1 in the past 7 days, or that are marked as saturated in Section III of the intelligence document, unless a critical vulnerability remains unaddressed.
 - **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and the normal bounded scan finds no threat, widen the scan to at least one older Target B or Target C surface that was not touched in `/tmp/nightly/changed-files.txt`. A calibration CLEAN summary must name the widened surface, the ordinary CLEAN-since-calibration count, and the evidence checked.
 - **MCP Tool Prohibition:** Do not call any Supabase MCP tools during this stage. `list_tables`, `search_docs`, `get_advisors`, and all other Supabase MCP tools are explicitly forbidden even though they may be available in this environment. This stage operates entirely on source code — Edge Function files, TypeScript, Vue components. Database schema inspection via MCP is not required and will consume your entire time budget processing schema payloads that are irrelevant to the threat scan.
@@ -98,5 +98,5 @@ You act as an adversarial security and failure-mode auditor. You do not view the
 - Use `CLEAN` when no threat requires a source change and the history-aging pass completed successfully.
 - Use `SKIPPED` or `PARTIAL-RUN` only after restoring every non-log change.
 - Do not append another summary line manually; finalization replaces the lifecycle sentinel.
-- Run `node .github/scripts/nightly-stage.mjs budget --stage 1`, then `node .github/scripts/nightly-stage.mjs finalize --stage 1 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
+- Run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 1`, then `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 1 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
 - Read `/tmp/nightly/final-handoff.txt`, return its result, and end immediately. Jules native publication owns the branch, commit, push, and non-draft PR creation.

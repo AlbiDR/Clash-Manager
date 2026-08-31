@@ -151,7 +151,7 @@ git diff control-plane/2026-08-27-13of13 origin/Nightly -- .github/scripts/ .git
 ## Standing rule for control-plane changes
 
 The 10 files listed in `CONTROL_PLANE_FILES` in
-`.github/scripts/nightly-deploy-check.mjs` are read from different branches at
+`.github/scripts/nightly/nightly-deploy-check.mjs` are read from different branches at
 runtime: a workflow's own YAML comes from the default branch (Stable), while the
 scripts it invokes come from its `ref: Nightly` checkout. A change that reaches
 only one branch is not deployed; it sits inert and nothing errors to say so.

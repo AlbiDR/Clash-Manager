@@ -18,7 +18,7 @@ import {
   renderRecap,
 } from "./nightly-recap.mjs";
 
-const registry = JSON.parse(readFileSync(new URL("../nightly-config/stages.json", import.meta.url), "utf8"));
+const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 const stageOf = n => registry.stages.find(s => s.number === n);
 
 test("Stage 1 is dated to the previous day, every other stage to the run date", () => {
@@ -290,7 +290,7 @@ test("the real recorded history recaps without throwing, for a synced run", () =
   // 2026-08-25 was promoted to Beta and Stable long ago. The previous prose
   // recap scoped itself by `origin/Beta..origin/Nightly` and would report
   // "nothing to catch up on" for this date; scoping by run date must not care.
-  const ledger = JSON.parse(readFileSync(new URL("../nightly-logs/nightly-run-ledger.json", import.meta.url), "utf8"));
+  const ledger = JSON.parse(readFileSync(new URL("../../nightly-logs/nightly-run-ledger.json", import.meta.url), "utf8"));
   assert.ok(ledger.runs["2026-08-25"], "precondition: the run is in the ledger");
   const recap = buildRecap({
     ledger, registry, date: "2026-08-25",

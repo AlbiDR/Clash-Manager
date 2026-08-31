@@ -88,13 +88,13 @@ test("a git failure raises rather than reporting an all-clear", () => {
 test("the watch list covers the guard and the checker themselves", () => {
   // A drift detector that is not itself watched can be downgraded on one branch
   // and still report everything as fine when invoked from another.
-  assert.ok(CONTROL_PLANE_FILES.includes(".github/scripts/nightly-deploy-check.mjs"));
+  assert.ok(CONTROL_PLANE_FILES.includes(".github/scripts/nightly/nightly-deploy-check.mjs"));
   assert.ok(CONTROL_PLANE_FILES.includes(".github/workflows/control-plane-guard.yml"));
 });
 
 test("the watch list covers the dispatch path the migration will depend on", () => {
   assert.ok(CONTROL_PLANE_FILES.includes(".github/workflows/nightly-dispatch.yml"));
-  assert.ok(CONTROL_PLANE_FILES.includes(".github/scripts/nightly-dispatch.mjs"));
+  assert.ok(CONTROL_PLANE_FILES.includes(".github/scripts/nightly/nightly-dispatch.mjs"));
 });
 
 test("the watch list covers the merge attributes the sync depends on", () => {
@@ -182,7 +182,7 @@ test("renderDriftReport prints 'absent' rather than null for a missing file", ()
 test("workflow files are told apart from the scripts they invoke", () => {
   assert.equal(isWorkflowFile(".github/workflows/nightly-watchdog.yml"), true);
   assert.equal(isWorkflowFile(".github/workflows/control-plane-guard.yml"), true);
-  assert.equal(isWorkflowFile(".github/scripts/nightly-watchdog.mjs"), false);
+  assert.equal(isWorkflowFile(".github/scripts/nightly/nightly-watchdog.mjs"), false);
   assert.equal(isWorkflowFile(".github/nightly-config/stages.json"), false);
   assert.equal(isWorkflowFile(".gitattributes"), false);
   assert.equal(isWorkflowFile(undefined), false);

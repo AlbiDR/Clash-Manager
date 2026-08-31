@@ -6,6 +6,7 @@ import { createHash, randomBytes } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   renameSync,
   writeFileSync,
@@ -162,11 +163,10 @@ function isAdministrativePipelinePath(filePath) {
     filePath.startsWith(".github/nightly-prompts/") ||
     filePath.startsWith(".github/nightly-config/") ||
     filePath === PIPELINE_INTELLIGENCE_PATH ||
-    filePath.startsWith(".github/scripts/nightly-stage") ||
-    filePath === ".github/scripts/update-nightly-context.sh" ||
-    filePath.startsWith(".github/scripts/merge-nightly-") ||
-    filePath === ".github/scripts/age_pr_history.py" ||
-    filePath === ".github/scripts/append-pr-history.mjs" ||
+    filePath.startsWith(".github/scripts/nightly/nightly-stage") ||
+    filePath === ".github/scripts/nightly/update-nightly-context.sh" ||
+    filePath.startsWith(".github/scripts/nightly/merge-nightly-") ||
+    filePath === ".github/scripts/nightly/age-pr-history.py" ||
     filePath === ".github/scripts/check-fold-state.py" ||
     filePath.startsWith(".github/workflows/")
   );
@@ -499,7 +499,7 @@ function runDependencyRefresh(repoRoot) {
 function runContextUpdate(repoRoot, stage, targetContextDir) {
   const result = spawnSync(
     "bash",
-    [path.join(repoRoot, ".github/scripts/update-nightly-context.sh"), "--stage", String(stage.number)],
+    [path.join(repoRoot, ".github/scripts/nightly/update-nightly-context.sh"), "--stage", String(stage.number)],
     {
       cwd: repoRoot,
       env: {
@@ -602,7 +602,7 @@ function startCommand(repoRoot, registry, stage, dryRun) {
     `target-branch: ${registry.targetBranch}`,
     `branch-prefix: ${stage.branchPrefix}`,
     `work-deadline-epoch: ${state.workDeadlineEpoch}`,
-    `finalize: node .github/scripts/nightly-stage.mjs finalize --stage ${stage.number} --status <STATUS> --summary <WHAT_CHANGED> --why <RATIONALE> --result <VERIFICATION_RESULT>`,
+    `finalize: node .github/scripts/nightly/nightly-stage.mjs finalize --stage ${stage.number} --status <STATUS> --summary <WHAT_CHANGED> --why <RATIONALE> --result <VERIFICATION_RESULT>`,
   ].join("\n");
   atomicWrite(path.join(targetContextDir, "stage-manifest.txt"), `${manifest}\n`);
   console.log(`Nightly Stage ${stage.number} started. Work phase ends after ${registry.workBudgetMinutes} minutes.`);
@@ -687,16 +687,16 @@ function validatePrompt(repoRoot, stage) {
   invariant(/^target branch:\s*Nightly$/m.test(content), `Stage ${stage.number} target branch is incorrect.`);
   invariant(content.includes(stage.coverageLog), `Stage ${stage.number} prompt omits its coverage log.`);
   invariant(
-    content.includes(`node .github/scripts/nightly-stage.mjs start --stage ${stage.number}`),
+    content.includes(`node .github/scripts/nightly/nightly-stage.mjs start --stage ${stage.number}`),
     `Stage ${stage.number} prompt omits its start command.`,
   );
   invariant(!/git pull origin Nightly/i.test(content), `Stage ${stage.number} duplicates branch synchronization.`);
   invariant(
-    content.includes(`node .github/scripts/nightly-stage.mjs budget --stage ${stage.number}`),
+    content.includes(`node .github/scripts/nightly/nightly-stage.mjs budget --stage ${stage.number}`),
     `Stage ${stage.number} prompt omits its budget command.`,
   );
   invariant(
-    content.includes(`node .github/scripts/nightly-stage.mjs finalize --stage ${stage.number}`),
+    content.includes(`node .github/scripts/nightly/nightly-stage.mjs finalize --stage ${stage.number}`),
     `Stage ${stage.number} prompt omits its finalize command.`,
   );
   invariant(
@@ -767,6 +767,22 @@ function validateBootstrap(repoRoot, registry) {
 }
 
 function validateContracts(repoRoot, registry) {
+  const misplacedNightlyScripts = readdirSync(path.join(repoRoot, ".github/scripts"), {
+    withFileTypes: true,
+  })
+    .filter(
+      entry =>
+        entry.isFile() &&
+        /^(?:nightly-|merge-nightly-|age[-_]pr[-_]history|append-pr-history|update-nightly-context)/.test(
+          entry.name,
+        ),
+    )
+    .map(entry => entry.name);
+  invariant(
+    misplacedNightlyScripts.length === 0,
+    `Nightly-owned scripts must live in .github/scripts/nightly/: ${misplacedNightlyScripts.join(", ")}`,
+  );
+
   for (const stage of registry.stages) validatePrompt(repoRoot, stage);
   validateBootstrap(repoRoot, registry);
 
@@ -801,7 +817,7 @@ function validateContracts(repoRoot, registry) {
   invariant(!/\bgit commit\b/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still instructs manual commits.`);
   invariant(!/\bgit push\b/i.test(contract), `${NIGHTLY_AGENT_CONTRACT_PATH} still instructs manual pushes.`);
 
-  const contextScript = readFileSync(path.join(repoRoot, ".github/scripts/update-nightly-context.sh"), "utf8");
+  const contextScript = readFileSync(path.join(repoRoot, ".github/scripts/nightly/update-nightly-context.sh"), "utf8");
   invariant(contextScript.includes("# BASELINE_TEST_STAGE=2"), "Context script lacks the Stage 2 policy marker.");
   invariant(contextScript.includes("# DEPENDENCY_CRUISER_STAGE=9"), "Context script lacks the Stage 9 policy marker.");
   invariant(contextScript.includes(".github/scripts/fold-state.mjs"), "Context script must use the SQL-aware fold-state checker.");
@@ -809,7 +825,7 @@ function validateContracts(repoRoot, registry) {
   invariant(contextScript.includes("database-verification-status.txt"), "Context script must report database-verification availability.");
   invariant(contextScript.includes("apk-ux-audit-status.txt"), "Context script must report APK UX audit status.");
   invariant(contextScript.includes(".github/scripts/audit-apk-ux.mjs"), "Context script must use the structured Stage 12 APK UX audit.");
-  invariant(contextScript.includes(".github/scripts/nightly-clean-calibration.mjs"), "Context script must compute CLEAN calibration state.");
+  invariant(contextScript.includes(".github/scripts/nightly/nightly-clean-calibration.mjs"), "Context script must compute CLEAN calibration state.");
   invariant(contextScript.includes("clean-calibration.json"), "Context script must write CLEAN calibration JSON.");
   invariant(contextScript.includes("clean-calibration-due"), "Context script must report CLEAN calibration state in the toolchain manifest.");
   invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must preserve degraded fold state.");
