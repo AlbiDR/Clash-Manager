@@ -136,6 +136,8 @@ echo "SKIPPED" > /tmp/nightly/baseline-test-state.txt
 echo "Skipped in bootstrap" > /tmp/nightly/baseline-test-output.txt
 touch /tmp/nightly/dep-violations.txt
 echo "SKIPPED" > /tmp/nightly/depcruise-state.txt
+echo '{"stage":null,"due":false,"consecutiveClean":0,"status":"SKIPPED"}' > /tmp/nightly/clean-calibration.json
+echo "calibration-due: NO" > /tmp/nightly/clean-calibration.txt
 echo "setup-seeded: true" > /tmp/nightly/toolchain.txt
 
 echo "Setup complete. Environment is ready for snapshotting."

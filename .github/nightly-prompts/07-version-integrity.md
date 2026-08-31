@@ -64,7 +64,7 @@ Identify the highest declared version across these three `package.json` files. T
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Version Consistency Scan
-Scan the codebase for one unambiguous version inconsistency using the following priority list. If no drift is found, skip source edits and finalize `CLEAN`.
+Scan the codebase for one unambiguous version inconsistency using the following priority list. Read `/tmp/nightly/clean-calibration.txt` before finalizing. If no drift is found and `calibration-due: YES`, report the run as a calibration CLEAN with the ordinary CLEAN-since-calibration count plus the `pnpm audit:version` and catalog evidence. If no drift is found, skip source edits and finalize `CLEAN`.
 - **Priority List:**
   1. **Catalog Scan:** Read `Frontend-PWA/package.json` and `Backend/package.json`. Identify any shared dependencies that are not using the `"catalog:"` protocol and apply the adherence rule.
   2. **Package Version Scan:** Read `package.json` at the root, in `Frontend-PWA/`, and in `Backend/`. Identify any disagreement in the `version` field and synchronize all to the highest declared value.

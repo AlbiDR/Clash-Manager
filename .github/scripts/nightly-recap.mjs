@@ -230,6 +230,10 @@ function stripCommitPrefix(value) {
   return String(value || "").replace(/^([a-z]+)(\([^)]+\))?!?:\s+/i, "");
 }
 
+function isCalibrationClean(stage) {
+  return stage.outcome === "CLEAN" && /\bcalibration\b|ordinary CLEAN-since-calibration|consecutive CLEAN/i.test(stage.summary || "");
+}
+
 function semanticAction(stage) {
   const action = stripCommitPrefix(stage.summary || stage.title || stage.result || "-")
     .replace(/^Audit complete:\s*/i, "")
@@ -250,6 +254,9 @@ function semanticMiddle(stage) {
     return `That keeps ${area} up to date and makes the fix part of the branch.`;
   }
   if (stage.outcome === "CLEAN") {
+    if (isCalibrationClean(stage)) {
+      return `This was a wider calibration check after repeated clean runs, so the CLEAN result has stronger evidence.`;
+    }
     return `The run confirmed ${area} is still healthy, so no code or docs needed to change.`;
   }
   if (stage.outcome === "SKIPPED") {

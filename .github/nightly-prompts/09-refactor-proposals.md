@@ -63,6 +63,7 @@ You act as the project's structural architect and structural engine. Your mandat
 ### Step 1: Structural Scan
 - **Active Intelligence Check:** Before selecting a refactoring target, read `.github/nightly-logs/00-pipeline-intelligence.md` (especially Section I, III, and V) and the T1 active section of `00-pr-history.md`. You must check Section I to verify whether a pattern or central utility has already been established (e.g. game asset resolution or timing constants) and check Section III (Scope Coverage Map) to avoid target collision with files Stage 4 (Optimization) has modified or cleaned in the last 7 days.
 - **Scan execution:** Use `/tmp/nightly/changed-files.txt`, the Stage 9 intelligence section, and `/tmp/nightly/dep-violations.txt` to inspect likely targets. Stop at the first viable target rather than scanning the whole monorepo.
+- **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and the normal bounded candidate set contains no viable refactor, widen the scan to one older Core or Feature module outside `/tmp/nightly/changed-files.txt`. A calibration CLEAN summary must name the widened module, the ordinary CLEAN-since-calibration count, and why no extraction or boundary repair was safe.
 - **Priority List:**
   1. **Duplicate Detection:** Scan features in `@features` for duplicate utility or business logic.
   2. **Size Audit:** Find modules exceeding line count thresholds (e.g., 400 lines).

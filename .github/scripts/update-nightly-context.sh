@@ -107,6 +107,7 @@ BASELINE_PREFIX="20260531232406"
 FOLD_CHECK=".github/scripts/fold-state.mjs"
 MIGRATION_AUDIT=".github/scripts/audit-migrations.mjs"
 APK_UX_AUDIT=".github/scripts/audit-apk-ux.mjs"
+CLEAN_CALIBRATION=".github/scripts/nightly-clean-calibration.mjs"
 : > "$CONTEXT_DIR/pending-migrations.txt"
 
 if [ "${STAGE_NUM}" != "3" ]; then
@@ -244,12 +245,23 @@ else
 fi
 DEP_LINES=$(wc -l < "$CONTEXT_DIR/dep-violations.txt" | tr -d ' ')
 
-# 7. Symlink validation
+# 7. CLEAN calibration state
+if command -v node >/dev/null 2>&1 && [ -f "$CLEAN_CALIBRATION" ] && [ "${STAGE_NUM}" != "0" ]; then
+  node "$CLEAN_CALIBRATION" --stage "$STAGE_NUM" --json > "$CONTEXT_DIR/clean-calibration.json"
+  node "$CLEAN_CALIBRATION" --stage "$STAGE_NUM" > "$CONTEXT_DIR/clean-calibration.txt"
+else
+  echo '{"stage":null,"due":false,"consecutiveClean":0,"status":"DEGRADED"}' > "$CONTEXT_DIR/clean-calibration.json"
+  echo "calibration-due: NO" > "$CONTEXT_DIR/clean-calibration.txt"
+fi
+CALIBRATION_DUE=$(node -e 'try{const r=require(process.argv[1]); console.log(r && r.due ? "YES" : "NO")}catch(e){console.log("NO")}' "$CONTEXT_DIR/clean-calibration.json")
+CLEAN_STREAK=$(node -e 'try{const r=require(process.argv[1]); console.log(r && Number.isFinite(r.consecutiveClean) ? r.consecutiveClean : 0)}catch(e){console.log(0)}' "$CONTEXT_DIR/clean-calibration.json")
+
+# 8. Symlink validation
 VALIBOT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e){console.log("unknown")}' "${REPO_ROOT}/Frontend-PWA/node_modules/valibot/package.json" 2>/dev/null || echo "unknown")
 SUPABASE_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e){console.log("unknown")}' "${REPO_ROOT}/Frontend-PWA/node_modules/@supabase/supabase-js/package.json" 2>/dev/null || echo "unknown")
 PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e){console.log("unknown")}' "${REPO_ROOT}/node_modules/p-limit/package.json" 2>/dev/null || echo "unknown")
 
-# 8. Toolchain manifest
+# 9. Toolchain manifest
 {
   echo "snapshot-date: $TODAY"
   echo "node: $(node --version)"
@@ -265,6 +277,8 @@ PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e)
   echo "apk-ux-audit: $(cat "$CONTEXT_DIR/apk-ux-audit-status.txt")"
   echo "baseline-tests: $(cat "$CONTEXT_DIR/baseline-test-state.txt")"
   echo "dependency-cruiser: $(cat "$CONTEXT_DIR/depcruise-state.txt")"
+  echo "clean-calibration-due: ${CALIBRATION_DUE}"
+  echo "clean-streak: ${CLEAN_STREAK}"
   echo "pending-migrations: ${MIGRATION_COUNT}"
   echo "dep-violations-lines: ${DEP_LINES}"
 } > "$CONTEXT_DIR/toolchain.txt"

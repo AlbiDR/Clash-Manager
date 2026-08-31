@@ -743,6 +743,7 @@ function validateBootstrap(repoRoot, registry) {
   invariant(content.includes("fold-state-status.txt"), "Bootstrap setup must seed fold-state status.");
   invariant(content.includes("apk-ux-audit-status.txt"), "Bootstrap setup must seed APK UX audit status.");
   invariant(content.includes("depcruise-state.txt"), "Bootstrap setup must seed dependency-cruiser status.");
+  invariant(content.includes("clean-calibration.json"), "Bootstrap setup must seed CLEAN calibration status.");
   invariant(!content.includes("### Termination Contract"), "Bootstrap still contains the obsolete termination contract.");
   invariant(
     (content.match(/^### Completion Contract$/gm) || []).length === registry.stages.length,
@@ -808,6 +809,9 @@ function validateContracts(repoRoot, registry) {
   invariant(contextScript.includes("database-verification-status.txt"), "Context script must report database-verification availability.");
   invariant(contextScript.includes("apk-ux-audit-status.txt"), "Context script must report APK UX audit status.");
   invariant(contextScript.includes(".github/scripts/audit-apk-ux.mjs"), "Context script must use the structured Stage 12 APK UX audit.");
+  invariant(contextScript.includes(".github/scripts/nightly-clean-calibration.mjs"), "Context script must compute CLEAN calibration state.");
+  invariant(contextScript.includes("clean-calibration.json"), "Context script must write CLEAN calibration JSON.");
+  invariant(contextScript.includes("clean-calibration-due"), "Context script must report CLEAN calibration state in the toolchain manifest.");
   invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must preserve degraded fold state.");
   invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must report skipped fold scans.");
   invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/depcruise-state.txt"'), "Context script must report skipped dependency scans.");

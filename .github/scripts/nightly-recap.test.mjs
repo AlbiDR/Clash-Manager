@@ -260,6 +260,32 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
   ].join("\n"));
 });
 
+test("a calibration-backed CLEAN run is called out in prose", () => {
+  const text = renderRecap({
+    date: "2026-08-27",
+    total: 1,
+    merged: 1,
+    changed: 0,
+    clean: 1,
+    stuck: 0,
+    rescued: 0,
+    grade: 10,
+    rationale: "Optimal run: every stage completed unaided.",
+    stages: [{
+      stage: 10,
+      slug: "apk-integrity",
+      outcome: "CLEAN",
+      prNumber: 2010,
+      title: "chore(apk): calibration CLEAN for wrapper integrity",
+      summary: "calibration CLEAN after 7 ordinary CLEAN-since-calibration runs checked full wrapper invariant set",
+      result: "Audit completed with no source change required.",
+      merged: true,
+    }],
+  });
+  assert.match(text, /This was a wider calibration check after repeated clean runs/);
+  assert.match(text, /Audit completed with no source change required\./);
+});
+
 test("the real recorded history recaps without throwing, for a synced run", () => {
   // 2026-08-25 was promoted to Beta and Stable long ago. The previous prose
   // recap scoped itself by `origin/Beta..origin/Nightly` and would report

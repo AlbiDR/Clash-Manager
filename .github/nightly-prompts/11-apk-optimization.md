@@ -64,6 +64,7 @@ You act as a performance auditor focused on compilation optimization, native ass
 ### Step 1: Scan Performance Configurations
 - **Active Intelligence Check:** Before selecting or auditing a wrapper configuration, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I, II, and IV) and check only the active T1 tier in `00-pr-history.md`. You must check Section I to verify whether specific configs (such as WebView cache topology) have already been optimized and established, and check Section IV to ensure your proposed change does not conflict with open wrapper or build constraints.
 - **Scan Execution:** Use `/tmp/nightly/changed-files.txt` and the Stage 11 intelligence sections to inspect likely wrapper or bundle targets. Stop at one viable optimization. If none exists, skip source edits and finalize `CLEAN`.
+- **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and the normal recent-file scan finds no viable optimization, widen the scan to the full wrapper optimization set: WebView cache mode, acceleration settings, service worker routes, bundle chunking, and asset footprint. A calibration CLEAN summary must name those checks and the ordinary CLEAN-since-calibration count.
 - **Identify optimization points in:**
   1. Resource compression or optimization rules.
   2. ProGuard configurations and target compiler options.
