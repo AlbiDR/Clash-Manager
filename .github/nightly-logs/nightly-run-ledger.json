@@ -4616,7 +4616,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.988Z",
+        "lastObservedAt": "2026-08-31T06:34:32.465Z",
         "failureClass": null
       },
       "2": {
@@ -4643,7 +4643,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.988Z",
+        "lastObservedAt": "2026-08-31T06:34:32.466Z",
         "failureClass": null
       },
       "3": {
@@ -4674,7 +4674,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.988Z",
+        "lastObservedAt": "2026-08-31T06:34:32.466Z",
         "failureClass": null
       },
       "4": {
@@ -4705,7 +4705,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.988Z",
+        "lastObservedAt": "2026-08-31T06:34:32.466Z",
         "failureClass": null
       },
       "5": {
@@ -4733,7 +4733,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.989Z",
+        "lastObservedAt": "2026-08-31T06:34:32.466Z",
         "failureClass": null
       },
       "6": {
@@ -4761,7 +4761,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.989Z",
+        "lastObservedAt": "2026-08-31T06:34:32.467Z",
         "failureClass": null
       },
       "7": {
@@ -4789,7 +4789,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.989Z",
+        "lastObservedAt": "2026-08-31T06:34:32.467Z",
         "failureClass": null
       },
       "8": {
@@ -4797,7 +4797,7 @@
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "julesApiError": null,
@@ -4805,11 +4805,15 @@
             "verdict": "DEGRADING",
             "currentStreak": 1,
             "reason": "intervention rate rose from 11% to 33%"
-          }
+          },
+          "prNumber": 1635,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1635",
+          "headRef": "nightly/stage-8-dependency-audit-d018a6f1-13597724596738119280",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.989Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-31T06:34:32.467Z",
+        "failureClass": "OPEN_PR"
       },
       "9": {
         "date": "2026-08-31",
@@ -4827,7 +4831,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.989Z",
+        "lastObservedAt": "2026-08-31T06:34:32.467Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -4846,7 +4850,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.989Z",
+        "lastObservedAt": "2026-08-31T06:34:32.467Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -4865,7 +4869,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.990Z",
+        "lastObservedAt": "2026-08-31T06:34:32.468Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -4884,7 +4888,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.990Z",
+        "lastObservedAt": "2026-08-31T06:34:32.468Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -4903,7 +4907,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T06:03:53.990Z",
+        "lastObservedAt": "2026-08-31T06:34:32.468Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
