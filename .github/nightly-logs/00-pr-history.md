@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1638 [Stage 11]: chore(apk): Audit complete: native WebView settings and PWA SW cache topology are fully optimized
+**Domain:** pipeline | **Commit:** 372e9ed6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1638)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Audit complete: native WebView settings and PWA SW cache topology are fully optimized
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-31] PR #1637 [Stage 10]: Audited APK/PWA wrapper integrity and verified digital asset links, manifests, build parameters, and security policies (CLEAN)
 **Domain:** apk | **Commit:** 602e6c82 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1637)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
