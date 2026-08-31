@@ -105,6 +105,11 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
 - Every finalization summary names the audited target, the verification method,
   and the result. A claim such as "audit complete" without those facts is not
   sufficient evidence for later stages.
+- A `CLEAN` summary must be evidence prose, not a verdict label. Name the exact
+  surface inspected, the command or source check used, and the concrete clean
+  result. Avoid generic bodies such as "audit complete", "no source changes
+  required", or "fully optimized" unless the surrounding sentence explains what
+  was checked and what passed.
 
 ## 5. Logs and History Ownership
 
