@@ -5,6 +5,10 @@ name: Nightly Watchdog
 
 on:
   schedule:
+    # Hourly early observer during the stage window. It is quiet when stages are
+    # still running, but rescues completed Jules sessions whose native publisher
+    # did not open a PR promptly.
+    - cron: "35 0-12 * * *"
     # 3:00 PM CEST (1:00 PM UTC): post-window observer after Stage 13 and merge safety-net.
     - cron: "0 13 * * *"
   pull_request:

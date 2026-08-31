@@ -68,8 +68,11 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Global Frontend Sweep
-- Use `/tmp/nightly/changed-files.txt`, the active T1 history, and the Stage 12 intelligence section to build a bounded candidate set. Search only that set and stop at the first viable issue.
-- Identify potential UX issues. If multiple issues are found, select the first one encountered in the list sequence (1 through 10). Do not list options, do not ask the user for choice or direction, and do not pause. Select one autonomously and proceed immediately to Step 2.
+- Read `/tmp/nightly/apk-ux-audit-status.txt` and `/tmp/nightly/apk-ux-audit.json` first. This structured audit is the authoritative broad sweep for raw native selectors, unsafe external anchors, and bounded candidate discovery.
+- If the audit status is `DEGRADED`, do not call the run clean. Use `/tmp/nightly/changed-files.txt`, the active T1 history, and the Stage 12 intelligence section to perform one bounded manual source audit. If that substitute evidence cannot be completed, restore non-log edits and finalize `PARTIAL-RUN`.
+- If the audit status is `FAIL`, select the first violation in `/tmp/nightly/apk-ux-audit.json`, make exactly one surgical fix, and proceed to Step 2.
+- If the audit status is `PASS`, inspect only the JSON `candidateFiles` list plus `/tmp/nightly/changed-files.txt`. If no viable candidate remains after that bounded source review, skip source edits and finalize `CLEAN`.
+- Identify potential UX issues in this order. If multiple issues are found, select the first one encountered in the list sequence (1 through 10). Do not list options, do not ask the user for choice or direction, and do not pause. Select one autonomously and proceed immediately to Step 2.
   1. Raw `<select>` elements not yet replaced by a custom abstraction.
   2. Interactive click elements missing tactile feedback hooks.
   3. Layout containers with hardcoded height values ignoring safe-area insets.
@@ -80,7 +83,7 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
   8. Input fields lacking viewport adjustment hooks for virtual keyboard views.
   9. Color schemes missing active prefers-color-scheme query support.
   10. Media elements missing dimensions or lazy-loading settings.
-- If no UX issue is found in the bounded candidate set, skip source edits and finalize `CLEAN`.
+- If no UX issue is found in the bounded candidate set and `apk-ux-audit-status.txt` is `PASS`, skip source edits and finalize `CLEAN`.
 
 ### Step 2: Surgical Fix
 - Apply exactly one fix to the highest-priority issue found.
@@ -89,7 +92,7 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 - If the first verification fails, make one targeted correction and rerun the same check once. If it fails again, restore the component edit and finalize `PARTIAL-RUN`.
 
 ### Step 3: Record Result
-- Put the component and verification method in the lifecycle finalization summary; do not append a second coverage-log record.
+- Put the component, APK UX audit status, and verification method in the lifecycle finalization summary; do not append a second coverage-log record.
 
 ### Step 4: Finalize
 

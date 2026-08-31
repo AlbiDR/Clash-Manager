@@ -106,6 +106,7 @@ echo "Git logs and diffs generated dynamically."
 BASELINE_PREFIX="20260531232406"
 FOLD_CHECK=".github/scripts/fold-state.mjs"
 MIGRATION_AUDIT=".github/scripts/audit-migrations.mjs"
+APK_UX_AUDIT=".github/scripts/audit-apk-ux.mjs"
 : > "$CONTEXT_DIR/pending-migrations.txt"
 
 if [ "${STAGE_NUM}" != "3" ]; then
@@ -177,6 +178,27 @@ else
   echo "DB-UNAVAILABLE" > "$CONTEXT_DIR/database-verification-status.txt"
 fi
 
+if [ "${STAGE_NUM}" != "12" ]; then
+  echo "SKIPPED" > "$CONTEXT_DIR/apk-ux-audit-status.txt"
+  echo '{"version":1,"status":"SKIPPED"}' > "$CONTEXT_DIR/apk-ux-audit.json"
+  echo "Skipped: APK UX audit runs dynamically only for Stage 12." > "$CONTEXT_DIR/apk-ux-audit.txt"
+elif command -v node >/dev/null 2>&1 && [ -f "$APK_UX_AUDIT" ]; then
+  set +e
+  node "$APK_UX_AUDIT" --json > "$CONTEXT_DIR/apk-ux-audit.json" 2>&1
+  APK_UX_AUDIT_RC=$?
+  node "$APK_UX_AUDIT" > "$CONTEXT_DIR/apk-ux-audit.txt" 2>&1
+  set -e
+  case "$APK_UX_AUDIT_RC" in
+    0) echo "PASS" > "$CONTEXT_DIR/apk-ux-audit-status.txt" ;;
+    1) echo "FAIL" > "$CONTEXT_DIR/apk-ux-audit-status.txt" ;;
+    *) echo "DEGRADED" > "$CONTEXT_DIR/apk-ux-audit-status.txt" ;;
+  esac
+else
+  echo "DEGRADED" > "$CONTEXT_DIR/apk-ux-audit-status.txt"
+  echo '{"version":1,"status":"DEGRADED","error":"APK UX audit unavailable"}' > "$CONTEXT_DIR/apk-ux-audit.json"
+  echo "APK UX audit unavailable." > "$CONTEXT_DIR/apk-ux-audit.txt"
+fi
+
 # BASELINE_TEST_STAGE=2
 # 5. Conditional baseline test run (Stage 2 only, or explicitly forced)
 RUN_TESTS="false"
@@ -240,6 +262,7 @@ PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e)
   echo "fold-state: $(cat "$CONTEXT_DIR/fold-state-status.txt")"
   echo "migration-quality: $(cat "$CONTEXT_DIR/migration-quality-status.txt")"
   echo "database-verification: $(cat "$CONTEXT_DIR/database-verification-status.txt")"
+  echo "apk-ux-audit: $(cat "$CONTEXT_DIR/apk-ux-audit-status.txt")"
   echo "baseline-tests: $(cat "$CONTEXT_DIR/baseline-test-state.txt")"
   echo "dependency-cruiser: $(cat "$CONTEXT_DIR/depcruise-state.txt")"
   echo "pending-migrations: ${MIGRATION_COUNT}"

@@ -343,6 +343,10 @@ Current focus areas, recent findings, and files flagged for revisiting per stage
 ### Stage 12 -- APK UX
 * Current focus: Touch target compliance, haptics brokering.
 * Recurring: New interactive components frequently miss 48px minimum.
+* Evidence gate: consume `/tmp/nightly/apk-ux-audit.json` before manual search;
+  `DEGRADED` audit output is not a clean UX sweep.
+* Control-plane note: hourly watchdog passes during the stage window recover
+  completed-but-unpublished Jules sessions before the post-window observer.
 
 ### Runtime and Security
 * **Temporal parsing safety:** External battleTime strings must be validated via

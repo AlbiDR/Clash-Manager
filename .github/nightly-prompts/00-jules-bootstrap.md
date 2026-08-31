@@ -129,6 +129,9 @@ touch /tmp/nightly/pending-migrations.txt
 echo "SKIPPED" > /tmp/nightly/fold-state-status.txt
 echo "SKIPPED" > /tmp/nightly/migration-quality-status.txt
 echo "SKIPPED" > /tmp/nightly/database-verification-status.txt
+echo "SKIPPED" > /tmp/nightly/apk-ux-audit-status.txt
+echo '{"version":1,"status":"SKIPPED"}' > /tmp/nightly/apk-ux-audit.json
+echo "Skipped in bootstrap" > /tmp/nightly/apk-ux-audit.txt
 echo "SKIPPED" > /tmp/nightly/baseline-test-state.txt
 echo "Skipped in bootstrap" > /tmp/nightly/baseline-test-output.txt
 touch /tmp/nightly/dep-violations.txt
