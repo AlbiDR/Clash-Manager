@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -5,7 +8,7 @@ import { fileURLToPath } from 'url';
 // @ts-expect-error - plain .mjs module, deliberately shared with the APK scripts
 // which are not TypeScript. It is the single source of truth for the semver to
 // Android versionCode derivation; see its header for the regression it replaces.
-import { androidVersionCode, assertVersionCodeNotRegressed } from './android-version-code.mjs';
+import { androidVersionCode, assertVersionCodeNotRegressed } from '../android/android-version-code.mjs';
 
 /**
  * ============================================================================
@@ -21,7 +24,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- Configuration & Paths ---
-const ROOT_DIR = path.resolve(__dirname, '../../');
+const ROOT_DIR = path.resolve(__dirname, '../../..');
 const PWA_DIR = path.join(ROOT_DIR, 'Frontend-PWA');
 const BACKEND_DIR = path.join(ROOT_DIR, 'Backend');
 

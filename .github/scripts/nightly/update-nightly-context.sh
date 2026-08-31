@@ -104,9 +104,9 @@ echo "Git logs and diffs generated dynamically."
 # resulting object against the baseline's definition, so an empty file here now
 # genuinely means there is no folding work to do.
 BASELINE_PREFIX="20260531232406"
-FOLD_CHECK=".github/scripts/fold-state.mjs"
-MIGRATION_AUDIT=".github/scripts/audit-migrations.mjs"
-APK_UX_AUDIT=".github/scripts/audit-apk-ux.mjs"
+FOLD_CHECK=".github/scripts/database/fold-state.mjs"
+MIGRATION_AUDIT=".github/scripts/database/audit-migrations.mjs"
+APK_UX_AUDIT=".github/scripts/android/audit-apk-ux.mjs"
 CLEAN_CALIBRATION=".github/scripts/nightly/nightly-clean-calibration.mjs"
 : > "$CONTEXT_DIR/pending-migrations.txt"
 

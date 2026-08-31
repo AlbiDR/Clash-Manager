@@ -36,8 +36,8 @@ const RoyaleBattleLogSchema = v.array(
 async function main() {
   const playerTag = Deno.args[0];
   if (!playerTag) {
-    console.error("Usage: Deno run -A fetch_player_battles.ts <PLAYER_TAG>");
-    console.error("Example: Deno run -A fetch_player_battles.ts #PP80QG99");
+    console.error("Usage: Deno run -A fetch-player-battles.ts <PLAYER_TAG>");
+    console.error("Example: Deno run -A fetch-player-battles.ts #PP80QG99");
     Deno.exit(1);
   }
 

@@ -101,12 +101,12 @@ The rules below just map that already-decided type to a bump size:
 the bump. Minor/patch: proceed autonomously.
 
 ```bash
-node .github/scripts/bump-version.mjs <patch|minor|major>
+node .github/scripts/project/bump-version.mjs <patch|minor|major>
 ```
 
 This writes the new version to all three `package.json` files and auto-syncs every other
 reference in the monorepo (`protocol.ts`, README badges, `apktool.yml`,
-`twa-manifest.json`, etc.) via `validate_project.ts --fix`. Then commit and push that as
+`twa-manifest.json`, etc.) via `validate-project.ts --fix`. Then commit and push that as
 its own commit:
 
 ```bash

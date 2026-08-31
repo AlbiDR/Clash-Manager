@@ -24,11 +24,17 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-import { androidVersionCode } from "../.github/scripts/android-version-code.mjs";
+import { androidVersionCode } from "../.github/scripts/android/android-version-code.mjs";
 
 let defaultApk = "clashmanager.apk";
 if (!process.argv[2]) {
   try {
+    let packageVersion = null;
+    const pkgPath = path.join(process.cwd(), "package.json");
+    if (existsSync(pkgPath)) {
+      packageVersion = JSON.parse(readFileSync(pkgPath, "utf8")).version;
+    }
+
     // latest.json (written by apk-release.yml) names the current release file
     // exactly - it carries a `+<buildNumber>` suffix that a plain
     // `clashmanager-v<version>.apk` guess can no longer find.
@@ -36,15 +42,17 @@ if (!process.argv[2]) {
     if (existsSync(latestJsonPath)) {
       const latest = JSON.parse(readFileSync(latestJsonPath, "utf8"));
       const namedApk = `APK/release/${latest.filename}`;
-      if (latest.filename && existsSync(path.join(process.cwd(), namedApk))) {
+      if (
+        latest.filename &&
+        latest.version === packageVersion &&
+        existsSync(path.join(process.cwd(), namedApk))
+      ) {
         defaultApk = namedApk;
       }
     }
     if (defaultApk === "clashmanager.apk") {
-      const pkgPath = path.join(process.cwd(), "package.json");
-      if (existsSync(pkgPath)) {
-        const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-        const versionedApk = `APK/release/clashmanager-v${pkg.version}.apk`;
+      if (packageVersion) {
+        const versionedApk = `APK/release/clashmanager-v${packageVersion}.apk`;
         if (existsSync(path.join(process.cwd(), versionedApk))) {
           defaultApk = versionedApk;
         } else {
@@ -153,7 +161,7 @@ function main() {
   if (version[1]) ok(`version ${version[2]} (code ${version[1]})`);
 
   // Cross-check the artifact's version against package.json, using the shared
-  // semver -> versionCode derivation in .github/scripts/android-version-code.mjs
+  // semver -> versionCode derivation in .github/scripts/android/android-version-code.mjs
   // rather than a local copy of the arithmetic. Catches a
   // stale local build silently shipping an old version - the class of bug that let a
   // local `pnpm apk:check` report 14.37.4 while apktool.yml and CI both said 14.38.1

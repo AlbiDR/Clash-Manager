@@ -13,7 +13,7 @@ import { supabase, CONFIG } from "./client.ts";
  * @remarks
  * [DECISION LOG] Runs through `clinicalServe` (not a bare `Deno.serve` response) purely
  * to get its already-synced `version` literal in the success envelope for free -- that
- * field is kept current on every release by `validate_project.ts --fix` (see
+ * field is kept current on every release by `validate-project.ts --fix` (see
  * PATHS.protocol). Previously the frontend called `supabase.rpc('ping')` directly
  * against `features.ping()`, a plain Postgres function that only ever returned the text
  * 'pong' with no version, so the Settings panel's "Backend v..." readout had no live

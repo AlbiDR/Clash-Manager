@@ -3,8 +3,8 @@
 
 /**
  * bump-version.mjs
- * Usage: node .github/scripts/bump-version.mjs [patch|minor|major]
- * Bumps version in all three package.json files, then runs validate_project.ts
+ * Usage: node .github/scripts/project/bump-version.mjs [patch|minor|major]
+ * Bumps version in all three package.json files, then runs validate-project.ts
  * --fix to sync every other version reference in the monorepo automatically.
  */
 
@@ -42,7 +42,7 @@ for (const pkgPath of pkgPaths) {
 
 // Sync all other version references via the validator's --fix mode
 console.log("\nSyncing all version references...");
-execSync("npx tsx .github/scripts/validate_project.ts --fix", {
+execSync("npx tsx .github/scripts/project/validate-project.ts --fix", {
   stdio: "inherit",
 });
 

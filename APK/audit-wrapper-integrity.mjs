@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { androidVersionCode } from '../.github/scripts/android-version-code.mjs';
+import { androidVersionCode } from '../.github/scripts/android/android-version-code.mjs';
 
 /**
  * APK & PWA Wrapper Integrity Auditor

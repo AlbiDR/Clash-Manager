@@ -3,7 +3,7 @@
 
 // Single source of truth for deriving an Android versionCode from the project
 // semver. Before this module the same arithmetic was written out by hand in
-// four places (validate_project.ts twice, verify-apk-integrity.mjs,
+// four places (validate-project.ts twice, verify-apk-integrity.mjs,
 // audit-wrapper-integrity.mjs) plus a fifth copy inside the shipped PWA, and
 // they had no way of disagreeing loudly.
 //

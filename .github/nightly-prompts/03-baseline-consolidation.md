@@ -99,7 +99,7 @@ Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold
 - Resolve conflicts programmatically (e.g., compile final column datatypes, default values, check constraints, and unique indexes).
 
 ### Step 3: Local Compilation and Verification
-- Run `pnpm audit:migrations` and `node .github/scripts/fold-state.mjs Backend/supabase/migrations`; both must pass statically.
+- Run `pnpm audit:migrations` and `node .github/scripts/database/fold-state.mjs Backend/supabase/migrations`; both must pass statically.
 - If database verification is available, run `pnpm test:database-baseline`; it must prove baseline idempotency, pgTAP success, and catalog equivalence.
 - If database verification is unavailable, use the literal evidence `DB-UNAVAILABLE`; do not claim semantic verification.
 - The finalization summary must include migrations examined, objects folded/reconciled, migration-quality result, static result, and semantic result.
