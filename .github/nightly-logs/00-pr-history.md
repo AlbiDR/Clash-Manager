@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1631 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no source changes required
+**Domain:** pipeline | **Commit:** a03872c8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1631)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no source changes required
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-31] PR #1630 [Stage 3]: chore(database): Baseline current (0 unfolded migrations, 160 baseline objects, migration-quality PASS, fold-state CLEAN
 **Domain:** pipeline | **Commit:** 9a66dace | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1630)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
