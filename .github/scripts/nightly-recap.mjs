@@ -130,6 +130,7 @@ export function classifyStage({ stage, entry, tag, declared, history }) {
     attempts: entry?.attempts ?? 0,
     tag: tag || entry?.evidence?.tag || null,
     prNumber: prNumberFromTag(tag) ?? history?.prNumber ?? entry?.evidence?.prNumber ?? null,
+    title: history?.title ?? null,
     summary: declared?.summary ?? history?.change ?? null,
     target: declared?.target ?? null,
     why: history?.why ?? null,
@@ -185,7 +186,13 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
 }
 
 function escapeMarkdownCell(value) {
-  return String(value || "").replaceAll("|", "\\|").replace(/\s+/g, " ").trim();
+  return String(value || "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll("|", "\\|")
+    .replaceAll("*", "\\*")
+    .replaceAll("_", "\\_")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function usefulWhy(stage) {
@@ -196,6 +203,80 @@ function usefulWhy(stage) {
   return stage.why;
 }
 
+function displayStatus(outcome) {
+  return `${String(outcome || "").slice(0, 1)}${String(outcome || "").slice(1).toLowerCase()}`;
+}
+
+function displayArea(slug) {
+  const acronyms = new Map([
+    ["apk", "APK"],
+    ["pwa", "PWA"],
+    ["readme", "README"],
+    ["tsdoc", "TSDoc"],
+    ["ux", "UX"],
+  ]);
+  return escapeMarkdownCell(slug)
+    .split("-")
+    .map(part => acronyms.get(part.toLowerCase()) || part)
+    .join(" ");
+}
+
+function sentencePart(value) {
+  const text = escapeMarkdownCell(value);
+  return /[.!?]$/.test(text) ? text : `${text}.`;
+}
+
+function stripCommitPrefix(value) {
+  return String(value || "").replace(/^([a-z]+)(\([^)]+\))?!?:\s+/i, "");
+}
+
+function semanticAction(stage) {
+  const action = stripCommitPrefix(stage.summary || stage.title || stage.result || "-")
+    .replace(/^Audit complete:\s*/i, "")
+    .replace(/^Stage \d+\s+/i, "")
+    .replace(/\s+\(CLEAN\)$/i, "")
+    .replace(/\s+-\s+CLEAN$/i, " completed cleanly");
+  if (/^(nothing to do|no changes required)$/i.test(action.trim())) {
+    return `The ${displayArea(stage.slug)} check found everything already in order.`;
+  }
+  return action;
+}
+
+function semanticMiddle(stage) {
+  const why = usefulWhy(stage);
+  if (why) return why;
+  const area = displayArea(stage.slug);
+  if (stage.outcome === "CHANGED") {
+    return `That keeps ${area} up to date and makes the fix part of the branch.`;
+  }
+  if (stage.outcome === "CLEAN") {
+    return `The run confirmed ${area} is still healthy, so no code or docs needed to change.`;
+  }
+  if (stage.outcome === "SKIPPED") {
+    return `There was no useful ${area} work to do in this run.`;
+  }
+  if (stage.outcome === "PARTIAL-RUN") {
+    return `It kept the ${area} notes, but avoided shipping changes that were not fully checked.`;
+  }
+  return `This area needs follow-up before ${area} can be called healthy again.`;
+}
+
+function semanticResult(stage) {
+  const result = stage.result || (stage.merged ? "Merged successfully." : stage.state || stage.outcome);
+  if (/^Nominal validation with zero regressions\.?$/i.test(result)) {
+    return "Validation passed with zero regressions.";
+  }
+  return result;
+}
+
+function stageDescription(stage) {
+  return [
+    sentencePart(semanticAction(stage)),
+    sentencePart(semanticMiddle(stage)),
+    sentencePart(semanticResult(stage)),
+  ];
+}
+
 export function renderRecap(recap) {
   const lines = [
     `Nightly Recap: ${recap.date}`,
@@ -203,17 +284,15 @@ export function renderRecap(recap) {
     `Summary: ${recap.merged}/${recap.total} merged | ${recap.changed} changed | ${recap.clean} clean | ${recap.stuck} stuck | ${recap.rescued} intervention`,
     `Grade: ${recap.grade}/10 - ${recap.rationale}`,
     "",
-    "| Stage | Status | PR | Area | Outcome |",
-    "| --- | --- | --- | --- | --- |",
   ];
   for (const s of recap.stages) {
-    lines.push([
-      `S${String(s.stage).padStart(2, "0")}`,
-      s.outcome,
-      s.prNumber ? `#${s.prNumber}` : "-",
-      escapeMarkdownCell(s.slug),
-      escapeMarkdownCell(s.summary || s.result || "-"),
-    ].map(cell => ` ${cell} `).join("|").replace(/^/, "|").replace(/$/, "|"));
+    const label = `S${String(s.stage).padStart(2, "0")}`;
+    const pr = s.prNumber ? `PR #${s.prNumber}` : "no PR";
+    lines.push(`**${label}** | ${pr}`);
+    lines.push(`${displayStatus(s.outcome)} | **${displayArea(s.slug).toUpperCase()}**`);
+    lines.push(`_${escapeMarkdownCell(s.title || s.summary || s.result || "-")}_`);
+    lines.push(...stageDescription(s));
+    lines.push("");
   }
 
   const notes = recap.stages.flatMap(s => {
@@ -227,9 +306,8 @@ export function renderRecap(recap) {
     }
     return stageNotes;
   });
-  if (notes.length > 0) lines.push("", "Notes:", ...notes.map(note => `- ${note}`));
+  if (notes.length > 0) lines.push("Notes:", ...notes.map(note => `- ${note}`), "");
 
-  lines.push("");
   return lines.join("\n");
 }
 

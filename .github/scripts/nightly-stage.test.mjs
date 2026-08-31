@@ -170,6 +170,14 @@ test("metadata and native handoff are complete without pending placeholders", ()
     result: "The focused spec passed and guards the failure boundary.",
   });
   assert.match(body, /NIGHTLY_PR_METADATA:/);
+  assert.match(
+    body,
+    /This Stage 2 Verification - Logic Integrity Auditor run focused on Added loader boundary coverage\./,
+  );
+  assert.match(
+    body,
+    /It made a small, targeted update and left the branch with verified nightly maintenance\./,
+  );
   assert.match(body, /\*\*What changed:\*\* Added loader boundary coverage/);
   assert.match(body, /\*\*Why:\*\* The loader path lacked regression coverage\./);
   assert.match(body, /\*\*Result:\*\* The focused spec passed and guards the failure boundary\./);

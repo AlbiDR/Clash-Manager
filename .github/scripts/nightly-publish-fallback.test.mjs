@@ -70,6 +70,8 @@ test("a well-formed CLEAN session yields a complete plan", () => {
   assert.equal(plan.status, "CLEAN");
   assert.equal(plan.commitMessage, `chore(${stage.commitScope}): did the thing`);
   const body = renderFallbackPrBody(plan);
+  assert.match(body, /This recovered Stage 4 run publishes the finalized nightly work: did the thing\./);
+  assert.match(body, /The fallback publisher opened this PR so the completed run is not lost\./);
   assert.match(body, /\*\*What changed:\*\* did the thing/);
   assert.match(body, /\*\*Why:\*\* The Jules session finalized successfully/);
   assert.match(body, /\*\*Result:\*\* The recovered patch was applied unmodified/);

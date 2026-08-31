@@ -143,11 +143,18 @@ export function renderFallbackPrBody(plan) {
   const files = plan.paths.join(", ") || "codebase";
   const why = "The Jules session finalized successfully, but its native publisher never opened a pull request and watchdog nudges did not recover publication.";
   const result = "The recovered patch was applied unmodified and validated against the stage write-boundary rules used by normal finalization.";
+  const overview = [
+    `This recovered Stage ${plan.stage} run publishes the finalized nightly work: ${plan.summary}.`,
+    `${why} The fallback publisher opened this PR so the completed run is not lost.`,
+    result,
+  ].join(" ");
 
   return [
     `### Recovered Nightly Stage ${plan.stage}`,
     "",
     `**Status:** ${plan.status}`,
+    "",
+    overview,
     "",
     `**What changed:** ${plan.summary}`,
     "",

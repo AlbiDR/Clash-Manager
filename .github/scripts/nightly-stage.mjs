@@ -264,15 +264,39 @@ function defaultResult(status) {
   return "The run degraded safely to a log-only result.";
 }
 
+function sentence(value) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  return /[.!?]$/.test(text) ? text : `${text}.`;
+}
+
+function statusNarrative(status) {
+  if (status === "CHANGED") return "It made a small, targeted update and left the branch with verified nightly maintenance.";
+  if (status === "CLEAN") return "It found the audited area already healthy, so the PR records the completed check without unnecessary source churn.";
+  if (status === "SKIPPED") return "It found no useful work for this stage on this run, and records that decision explicitly.";
+  if (status === "PARTIAL-RUN") return "It kept the evidence from the run while avoiding source changes that were not safe to ship.";
+  return "It records the stage outcome so the nightly pipeline remains auditable.";
+}
+
+function renderPrOverview(stage, status, summary, why, result) {
+  return [
+    `This Stage ${stage.number} ${stage.name} run focused on ${sentence(summary)}`,
+    `${sentence(why)} ${statusNarrative(status)}`,
+    sentence(result),
+  ].join(" ");
+}
+
 export function renderPrBody(stage, status, summary, changedPaths, details = {}) {
   const normalizedSummary = cleanSummary(summary);
   const files = changedPaths.join(", ") || stage.coverageLog;
   const why = cleanPrDetail(details.why, defaultWhy(stage), "--why");
   const result = cleanPrDetail(details.result, defaultResult(status), "--result");
+  const overview = renderPrOverview(stage, status, normalizedSummary, why, result);
 
   return `### Nightly Stage ${stage.number}: ${stage.name}
 
 **Status:** ${status}
+
+${overview}
 
 **What changed:** ${normalizedSummary}
 
