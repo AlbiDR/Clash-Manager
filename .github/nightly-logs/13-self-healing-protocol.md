@@ -331,11 +331,20 @@
   - Resolution Details (2026-08-30): Stage 11 successfully ran and published PR #1625 (CLEAN), demoting Stage 11 to [RESOLVED - monitor]. Stage 12 did not produce published output and is promoted to [RECURRING] status under August 30 events.
 
 * Missing-Run / Unobservable Events on 2026-08-30:
-  - Stages: Stage 12 (APK-UX) [RECURRING] (August 30, 2026).
-  - State: [RECURRING] for Stage 12
+  - Stages: Stage 12 (APK-UX) [RESOLVED - monitor] (August 31, 2026).
+  - State: [RESOLVED - monitor] for Stage 12
   - Symptom: No published PR history or coverage log entry for 2026-08-30 in 12-apk-ux-coverage.log (`failureClass: NO_PUBLISHED_OUTPUT`). Stages 1 through 11 completed successfully and published PRs #1615 through #1625.
   - Root Cause: Stage 12 failed to produce published repository output for the second consecutive day during the automation cycle; exact cause is unobservable without authenticated session logs.
   - Recommended Fix: Monitor CI runner concurrency limits and dispatch schedules to ensure Stage 12 executes reliably.
+  - Resolution Details (2026-08-31): Stage 12 successfully executed and recovered on August 31, 2026, registering active changes for Toast.vue (PR #1639) and demoting Stage 12 to [RESOLVED - monitor].
+
+* Missing-Run / Failed Events on 2026-08-31:
+  - Stages: None. All 12 preceding stages completed successfully during this automation cycle.
+  - State: Fully operational.
+  - Symptom: N/A.
+  - Root Cause: N/A.
+  - Recommended Fix: N/A.
+  - Resolution Details (2026-08-31): Re-verification of the entire nightly pipeline on August 31, 2026, confirmed zero failed or missing stages. All 12 preceding stages (Stages 1 through 12) executed cleanly and logged valid coverage log entries (PRs #1628 through #1639). Stage 12 (APK-UX) successfully recovered today, integrating `v-tactile` directive into `Toast.vue` (PR #1639), and is demoted from [RECURRING] to [RESOLVED - monitor]. This marks a 100% operational run for the entire pipeline.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -379,53 +388,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-08-30 via PR #1615; last active change on 2026-08-22 via PR #1528)
+  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-08-31 via PR #1628; last active change on 2026-08-22 via PR #1528)
   - Analysis: Audit pass completed cleanly with zero threat vectors.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in rpcSchemas.spec.ts via PR #1616)
-  - Analysis: Added comprehensive unit tests for L1 Core RPC Schemas in rpcSchemas.spec.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in useClashSync.spec.ts via PR #1629)
+  - Analysis: Expanded useClashSync spec coverage for single-flight promises and failure thresholds.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-08-30 via PR #1617; last active change on 2026-08-19)
-  - Analysis: Baseline migration fully folded and RLS compliant with safe search_path isolation.
+  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-08-31 via PR #1630; last active change on 2026-08-19)
+  - Analysis: Baseline current (0 unfolded migrations, 160 baseline objects, migration-quality PASS, fold-state CLEAN).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-08-30 via PR #1618; last active change on 2026-08-29 via PR #1606)
-  - Analysis: Re-verified dropped database views remain unreferenced by Edge Function application logic.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-31 via PR #1631; last active change on 2026-08-29 via PR #1606)
+  - Analysis: Substrate hygiene audit confirmed known unreferenced views; no source changes required.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in shared backend README via PR #1619)
-  - Analysis: Reconciled rpcSchemas validation boundaries and transform contracts in shared backend README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in core services README via PR #1632)
+  - Analysis: Reconciled useClashSync single-flight sync and failure thresholds in core services README.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in rpcSchemas.ts via PR #1620)
-  - Analysis: Hardened rpcSchemas interface contracts and inline logic annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in useClashSync.ts via PR #1633)
+  - Analysis: Hardened useClashSync interface contracts and inline logic annotations.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 37 (CLEAN logged on 2026-08-30 via PR #1621)
-  - Analysis: Monorepo package versions and catalog dependencies are fully consistent across all manifests.
+  - Consecutive No-Diff Days: 38 (CLEAN logged on 2026-08-31 via PR #1634)
+  - Analysis: Monorepo package versions and catalog dependencies are fully consistent across all manifests (v14.46.24).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30 in pnpm-lock.yaml via PR #1622)
-  - Analysis: Bumped tsx to ^4.23.13 and updated lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in package.json via PR #1635)
+  - Analysis: Bumped knip to ^6.33.0 and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-08-30 via PR #1623; last active change on 2026-08-26 via PR #1570)
-  - Analysis: Structural audit clean; substrate architecture strictly aligned with CleanStack ADR.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in apkManagerUtils.ts via PR #1636)
+  - Analysis: Decomposed useApkManager into pure helpers module apkManagerUtils to reduce module length below 400 LOC threshold.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-08-30 via PR #1624)
+  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-08-31 via PR #1637)
   - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security settings.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-08-30 via PR #1625; last active change on 2026-08-15)
+  - Consecutive No-Diff Days: 12 (CLEAN logged on 2026-08-31 via PR #1638; last active change on 2026-08-15)
   - Analysis: Audit complete: native WebView settings and PWA SW cache topology are fully optimized.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 6 (Last CLEAN logged on 2026-08-28 via PR #1601; missing output on 2026-08-29 and 2026-08-30)
-  - Analysis: Global UX sweep complete; candidate set fully compliant.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in Toast.vue via PR #1639)
+  - Analysis: Integrated v-tactile directive into Toast action/close/copy buttons for mobile WebView touch feedback.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-30)
-  - Analysis: Completed daily self-healing audit pass for 2026-08-30: mapped August 30 stage executions/recoveries (PRs #1615 - #1625) and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31)
+  - Analysis: Completed daily self-healing audit pass for 2026-08-31: mapped August 31 stage executions/recoveries (PRs #1628 - #1639) and updated Section 3 no-diff metrics.
