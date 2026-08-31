@@ -4616,7 +4616,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.887Z",
+        "lastObservedAt": "2026-08-31T11:09:13.410Z",
         "failureClass": null
       },
       "2": {
@@ -4643,7 +4643,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.887Z",
+        "lastObservedAt": "2026-08-31T11:09:13.410Z",
         "failureClass": null
       },
       "3": {
@@ -4674,7 +4674,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.887Z",
+        "lastObservedAt": "2026-08-31T11:09:13.410Z",
         "failureClass": null
       },
       "4": {
@@ -4705,7 +4705,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.887Z",
+        "lastObservedAt": "2026-08-31T11:09:13.410Z",
         "failureClass": null
       },
       "5": {
@@ -4733,7 +4733,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.887Z",
+        "lastObservedAt": "2026-08-31T11:09:13.411Z",
         "failureClass": null
       },
       "6": {
@@ -4761,7 +4761,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.888Z",
+        "lastObservedAt": "2026-08-31T11:09:13.411Z",
         "failureClass": null
       },
       "7": {
@@ -4789,7 +4789,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.888Z",
+        "lastObservedAt": "2026-08-31T11:09:13.411Z",
         "failureClass": null
       },
       "8": {
@@ -4820,7 +4820,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.888Z",
+        "lastObservedAt": "2026-08-31T11:09:13.411Z",
         "failureClass": null
       },
       "9": {
@@ -4851,7 +4851,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.888Z",
+        "lastObservedAt": "2026-08-31T11:09:13.413Z",
         "failureClass": null
       },
       "10": {
@@ -4879,7 +4879,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.889Z",
+        "lastObservedAt": "2026-08-31T11:09:13.413Z",
         "failureClass": null
       },
       "11": {
@@ -4910,7 +4910,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.889Z",
+        "lastObservedAt": "2026-08-31T11:09:13.414Z",
         "failureClass": null
       },
       "12": {
@@ -4938,7 +4938,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.889Z",
+        "lastObservedAt": "2026-08-31T11:09:13.414Z",
         "failureClass": null
       },
       "13": {
@@ -4946,7 +4946,7 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "julesApiError": null,
@@ -4954,11 +4954,15 @@
             "verdict": "HEALTHY",
             "currentStreak": 1,
             "reason": "no adverse trend"
-          }
+          },
+          "prNumber": 1640,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1640",
+          "headRef": "nightly/stage-13-self-healing-protocol-c87f2ca0-10724048199236180496",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T10:36:17.889Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-31T11:09:13.414Z",
+        "failureClass": "OPEN_PR"
       }
     }
   }
