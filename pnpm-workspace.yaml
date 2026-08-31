@@ -26,7 +26,7 @@ catalogs:
     eslint-plugin-vue: "^10.10.0"
     globals: "^17.11.0"
     jsdom: "^29.1.1"
-    knip: "^6.32.2"
+    knip: "^6.33.0"
     pinia: "^3.0.4"
     playwright: "^1.55.0"
     rollup-plugin-visualizer: "^7.0.1"

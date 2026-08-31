@@ -78,7 +78,7 @@
       "@vue/tsconfig": "^0.9.1",
       "dependency-cruiser": "^18.1.1",
       "jsdom": "^29.1.1",
-      "knip": "^6.32.1",
+      "knip": "^6.33.0",
       "simple-git-hooks": "^2.13.1",
       "supabase": "^2.115.0",
       "pinia": "^3.0.4",
