@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1636 [Stage 9]: chore(refactor): Decomposed useApkManager into pure helpers module apkManagerUtils
+**Domain:** pipeline | **Commit:** f45eec69 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1636)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/services/apkManagerUtils.ts, Frontend-PWA/src/core/services/services-tests/apkManagerUtils.spec.ts, Frontend-PWA/src/core/services/useApkManager.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(refactor): Decomposed useApkManager into pure helpers module apkManagerUtils
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-31] PR #1635 [Stage 8]: Bumped knip to ^6.33.0 and updated lockfile.
 **Domain:** dependencies | **Commit:** 25d1af4f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1635)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
