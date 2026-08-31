@@ -57,6 +57,8 @@ describe("useClashSync", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(fetchRemote).mockReset();
+    vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 1000, blacklist: [] });
     vi.useRealTimers();
     data = ref<WebAppData | null>(null) as Ref<WebAppData | null>;
     mockConnectionStatus.isOnline.value = true;
@@ -266,6 +268,42 @@ describe("useClashSync", () => {
   });
 
   describe("startBackgroundSync", () => {
+    it("should skip background sync when offline unless forced", async () => {
+      mockConnectionStatus.isOnline.value = false;
+      const sync = useClashSync(data);
+
+      await sync.startBackgroundSync();
+      expect(fetchRemote).not.toHaveBeenCalled();
+
+      await sync.startBackgroundSync(true);
+      expect(fetchRemote).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
+    });
+
+    it("should normalize non-Error failures during remote sync", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue("string failure");
+      const sync = useClashSync(data);
+
+      await sync.startBackgroundSync();
+      expect(sync.syncError.value).toBe("Sync failed");
+    });
+
+    it("should share single-flight promise between background sync and manual refresh", async () => {
+      let resolveRemote: (value: WebAppData) => void = () => {};
+      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4200, blacklist: [] };
+      vi.mocked(fetchRemote).mockReturnValue(new Promise((resolve) => {
+        resolveRemote = resolve;
+      }));
+      const sync = useClashSync(data);
+
+      const backgroundTask = sync.startBackgroundSync();
+      const manualTask = sync.refreshFromSupabase();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      resolveRemote(remotePayload);
+      await Promise.all([backgroundTask, manualTask]);
+      expect(data.value).toEqual(remotePayload);
+    });
+
     it("should implement 3-strike rule for error reporting", async () => {
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Fail"));
       const sync = useClashSync(data);
