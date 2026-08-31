@@ -184,25 +184,52 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
   return { date, stages, ...gradeRun(stages) };
 }
 
+function escapeMarkdownCell(value) {
+  return String(value || "").replaceAll("|", "\\|").replace(/\s+/g, " ").trim();
+}
+
+function usefulWhy(stage) {
+  if (!stage.why) return null;
+  if (stage.why === stage.summary) return null;
+  if (/^Automated nightly audit pass\.?$/i.test(stage.why)) return null;
+  if (new RegExp(`^Execute the scheduled Stage ${stage.stage} ${stage.slug} audit\\.?$`, "i").test(stage.why)) return null;
+  return stage.why;
+}
+
 export function renderRecap(recap) {
   const lines = [
-    `Nightly Recap for ${recap.date}`,
+    `Nightly Recap: ${recap.date}`,
     "",
-    `${recap.merged}/${recap.total} stages merged  |  ${recap.changed} changed, ${recap.clean} clean, ${recap.stuck} stuck  |  ${recap.rescued} needed intervention`,
+    `Summary: ${recap.merged}/${recap.total} merged | ${recap.changed} changed | ${recap.clean} clean | ${recap.stuck} stuck | ${recap.rescued} intervention`,
+    `Grade: ${recap.grade}/10 - ${recap.rationale}`,
     "",
+    "| Stage | Status | PR | Area | Outcome |",
+    "| --- | --- | --- | --- | --- |",
   ];
   for (const s of recap.stages) {
-    const bits = [`S${String(s.stage).padStart(2, "0")}  ${s.outcome.padEnd(11)} ${s.slug}`];
-    if (s.prNumber) bits.push(`PR #${s.prNumber}`);
-    if (s.rescued) bits.push(`rescued via ${s.rescuedBy || "retry"}`);
-    lines.push(bits.join("  |  "));
-    if (s.summary) lines.push(`         ${s.summary}`);
-    if (s.why && s.why !== s.summary) lines.push(`         why: ${s.why}`);
-    if (s.health && s.health.verdict && s.health.verdict !== "HEALTHY" && s.health.verdict !== "UNKNOWN") {
-      lines.push(`         health: ${s.health.verdict} (${s.health.reason})`);
-    }
+    lines.push([
+      `S${String(s.stage).padStart(2, "0")}`,
+      s.outcome,
+      s.prNumber ? `#${s.prNumber}` : "-",
+      escapeMarkdownCell(s.slug),
+      escapeMarkdownCell(s.summary || s.result || "-"),
+    ].map(cell => ` ${cell} `).join("|").replace(/^/, "|").replace(/$/, "|"));
   }
-  lines.push("", `Grade: ${recap.grade}/10 - ${recap.rationale}`, "");
+
+  const notes = recap.stages.flatMap(s => {
+    const stageNotes = [];
+    const label = `S${String(s.stage).padStart(2, "0")}`;
+    if (s.rescued) stageNotes.push(`${label}: rescued via ${s.rescuedBy || "retry"}.`);
+    const why = usefulWhy(s);
+    if (why) stageNotes.push(`${label}: why - ${why}`);
+    if (s.health && s.health.verdict && s.health.verdict !== "HEALTHY" && s.health.verdict !== "UNKNOWN") {
+      stageNotes.push(`${label}: health - ${s.health.verdict} (${s.health.reason})`);
+    }
+    return stageNotes;
+  });
+  if (notes.length > 0) lines.push("", "Notes:", ...notes.map(note => `- ${note}`));
+
+  lines.push("");
   return lines.join("\n");
 }
 
