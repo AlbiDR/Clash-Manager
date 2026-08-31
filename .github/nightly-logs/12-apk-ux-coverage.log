@@ -57,3 +57,4 @@
 * [2026-08-28] [Stage 12] CLEAN: Codebase -- Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
 * [2026-08-29] [Stage 12] CLEAN: Codebase -- Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
 * [2026-08-30] [Stage 12] CLEAN: Codebase -- Global UX sweep completed; bounded candidate set clean with zero raw select or layout violations
+* [2026-08-31] [Stage 12] CHANGED: Frontend-PWA/src/shared/ui/Toast.vue -- Integrated v-tactile directive into Toast action/close/copy buttons
