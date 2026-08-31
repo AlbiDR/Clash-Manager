@@ -4616,7 +4616,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.781Z",
+        "lastObservedAt": "2026-08-31T10:36:17.887Z",
         "failureClass": null
       },
       "2": {
@@ -4643,7 +4643,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.782Z",
+        "lastObservedAt": "2026-08-31T10:36:17.887Z",
         "failureClass": null
       },
       "3": {
@@ -4674,7 +4674,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.782Z",
+        "lastObservedAt": "2026-08-31T10:36:17.887Z",
         "failureClass": null
       },
       "4": {
@@ -4705,7 +4705,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.782Z",
+        "lastObservedAt": "2026-08-31T10:36:17.887Z",
         "failureClass": null
       },
       "5": {
@@ -4733,7 +4733,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.782Z",
+        "lastObservedAt": "2026-08-31T10:36:17.887Z",
         "failureClass": null
       },
       "6": {
@@ -4761,7 +4761,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.782Z",
+        "lastObservedAt": "2026-08-31T10:36:17.888Z",
         "failureClass": null
       },
       "7": {
@@ -4789,7 +4789,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.783Z",
+        "lastObservedAt": "2026-08-31T10:36:17.888Z",
         "failureClass": null
       },
       "8": {
@@ -4820,7 +4820,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.783Z",
+        "lastObservedAt": "2026-08-31T10:36:17.888Z",
         "failureClass": null
       },
       "9": {
@@ -4851,7 +4851,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.783Z",
+        "lastObservedAt": "2026-08-31T10:36:17.888Z",
         "failureClass": null
       },
       "10": {
@@ -4879,7 +4879,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.783Z",
+        "lastObservedAt": "2026-08-31T10:36:17.889Z",
         "failureClass": null
       },
       "11": {
@@ -4887,42 +4887,59 @@
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1638,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1638",
           "headRef": "nightly/stage-11-apk-optimization-d6cb7f3d-12508446800222147356",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-08-31/stage-11/pr-1638",
+          "session": {
+            "id": "12508446800222147356",
+            "name": "sessions/12508446800222147356",
+            "state": "COMPLETED",
+            "createTime": "2026-08-31T09:14:45.657970607Z",
+            "updateTime": "2026-08-31T09:22:55.500591Z",
+            "lifetimeMinutes": 8.2
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.784Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-08-31T10:36:17.889Z",
+        "failureClass": null
       },
       "12": {
         "date": "2026-08-31",
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "julesApiError": null,
           "health": {
-            "verdict": "DEGRADING",
-            "currentStreak": 4,
-            "reason": "intervention rate rose from 11% to 56%"
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-08-31/stage-12/pr-1639",
+          "session": {
+            "id": "16368044071949868081",
+            "name": "sessions/16368044071949868081",
+            "state": "COMPLETED",
+            "createTime": "2026-08-31T10:25:20.101837498Z",
+            "updateTime": "2026-08-31T10:35:25.156163Z",
+            "lifetimeMinutes": 10.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.784Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-08-31T10:36:17.889Z",
+        "failureClass": null
       },
       "13": {
         "date": "2026-08-31",
@@ -4940,7 +4957,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-08-31T09:23:31.784Z",
+        "lastObservedAt": "2026-08-31T10:36:17.889Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
