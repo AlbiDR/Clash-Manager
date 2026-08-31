@@ -8,7 +8,7 @@ description: Describe what the nightly pipeline did on a run. Reports each of th
 The facts come from one place, and it is not this file.
 
 ```bash
-pnpm nightly:recap --json
+pnpm nightly:recap
 ```
 
 Optionally `--date YYYY-MM-DD` for a specific run; the default is the newest run
@@ -16,14 +16,13 @@ in the ledger.
 
 ## What to do
 
-1. Run the command above.
-2. Narrate the result: per stage, what it did and why, then the grade and its
-   rationale. Group by stage number, 01 to 13.
-3. Mention any stage where `rescued` is true, and say which mechanism rescued it
-   (`rescuedBy`). A stage that merged only because something rescued it is not
-   the same as one that merged unaided.
-4. Surface any `health.verdict` that is not HEALTHY or UNKNOWN. Those are
-   cross-run trends that no single run can show.
+1. Run the human-readable command above. Use `pnpm nightly:recap --date YYYY-MM-DD`
+   only when the user asks for a specific run date.
+2. Return the command's stdout verbatim as the full answer. Do not paraphrase,
+   summarize, reorder, add praise, add caveats, wrap it in a code fence, or add
+   a sign-off.
+3. If the user explicitly asks for machine-readable data, run
+   `pnpm nightly:recap --json` and return that stdout verbatim instead.
 
 ## What NOT to do
 
@@ -32,6 +31,8 @@ in the ledger.
   them by hand is how three different tools ended up giving three different
   answers to the same question.
 - Do not re-grade the run. The rubric is encoded in `GRADE_RUBRIC`.
+- Do not write a custom recap style. The script's renderer is the standard
+  output contract.
 - Do not scope the run by comparing branches. Scope is the run DATE. A branch
   diff silently changes what it reports the moment the branches are synced, and
   used to misreport a healthy synced stage as STUCK.

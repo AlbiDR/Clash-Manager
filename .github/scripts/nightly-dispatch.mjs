@@ -17,6 +17,8 @@
  */
 
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { validateRegistryData } from "./nightly-stage.mjs";
 import { loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor } from "./nightly-redact.mjs";
@@ -53,6 +55,17 @@ function loadRegistry() {
   return registry;
 }
 
+export function stageDisplayNumber(stageNumber) {
+  invariant(Number.isInteger(stageNumber) && stageNumber >= 1 && stageNumber <= 13, "Stage number must be 1-13.");
+  return `S${String(stageNumber).padStart(2, "0")}`;
+}
+
+export function stageSessionTitle(stage, date) {
+  invariant(stage?.name, "Stage name is required.");
+  invariant(/^\d{4}-\d{2}-\d{2}$/.test(String(date || "")), "Session title date must be YYYY-MM-DD.");
+  return `${stageDisplayNumber(stage.number)}: ${stage.name} (${date})`;
+}
+
 // Mirrors the payload shape google-labs-code/jules-action uses to invoke
 // Jules from a GitHub Actions step (POST /v1alpha/sessions,
 // automationMode: AUTO_CREATE_PR). The stage prompt itself only points at
@@ -67,7 +80,7 @@ async function createJulesSession(stage, registry, date, redact) {
   const prompt = fs.readFileSync(stage.prompt, "utf8");
   const payload = {
     prompt,
-    title: `Stage ${stage.number}: ${stage.name} (${date})`,
+    title: stageSessionTitle(stage, date),
     sourceContext: {
       source: `sources/github/${CONFIG.owner}/${CONFIG.repo}`,
       githubRepoContext: {
@@ -109,9 +122,9 @@ async function main() {
 
   const date = dateArg || utcToday();
 
-  console.log(`[Stage ${stageNumber}] Creating Jules session for "${stage.name}" (target: ${registry.targetBranch})...`);
+  console.log(`[${stageDisplayNumber(stageNumber)}] Creating Jules session for "${stage.name}" (target: ${registry.targetBranch})...`);
   const session = await createJulesSession(stage, registry, date, redact);
-  console.log(redact(`[Stage ${stageNumber}] Session created: ${session.name}`));
+  console.log(redact(`[${stageDisplayNumber(stageNumber)}] Session created: ${session.name}`));
 
   const ledger = loadLedger();
   const priorAttempts = ledger.runs?.[date]?.[String(stageNumber)]?.attempts || 0;
@@ -122,10 +135,13 @@ async function main() {
   });
   saveLedger(ledger);
 
-  console.log(`[Stage ${stageNumber}] Ledger updated: state=${entry.state}, attempts=${entry.attempts}`);
+  console.log(`[${stageDisplayNumber(stageNumber)}] Ledger updated: state=${entry.state}, attempts=${entry.attempts}`);
 }
 
-main().catch(error => {
-  console.error(error.message || error);
-  process.exit(1);
-});
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  main().catch(error => {
+    console.error(error.message || error);
+    process.exit(1);
+  });
+}

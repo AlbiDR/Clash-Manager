@@ -135,6 +135,12 @@ Finalization must leave no `IN-PROGRESS` sentinel. It writes:
 - `/tmp/nightly/pr-body.md`
 - `/tmp/nightly/final-handoff.txt`
 
+The generated PR body must visibly explain the run in a standardized shape:
+what changed, why the stage selected that work or clean audit, the concrete
+validation result, and the changed files. `NIGHTLY_PR_METADATA` remains the
+machine-readable copy of the same facts for merge history, not the only place
+where the explanation lives.
+
 Read the handoff and return its concise status and suggested publication data
 as your final message. A published Pull Request is the required outcome of
 this session, not an optional next step someone else may or may not take.

@@ -165,16 +165,23 @@ test("metadata and native handoff are complete without pending placeholders", ()
   const body = renderPrBody(stage, "CHANGED", "Added loader boundary coverage", [
     stage.coverageLog,
     "Frontend-PWA/src/example.spec.ts",
-  ]);
+  ], {
+    why: "The loader path lacked regression coverage.",
+    result: "The focused spec passed and guards the failure boundary.",
+  });
   assert.match(body, /NIGHTLY_PR_METADATA:/);
+  assert.match(body, /\*\*What changed:\*\* Added loader boundary coverage/);
+  assert.match(body, /\*\*Why:\*\* The loader path lacked regression coverage\./);
+  assert.match(body, /\*\*Result:\*\* The focused spec passed and guards the failure boundary\./);
+  assert.match(body, /\*\*Files changed:\*\* .github\/nightly-logs\/02-verification-coverage\.log, Frontend-PWA\/src\/example\.spec\.ts/);
   assert.match(body, /Domain: verification/);
   assert.match(body, /Change: Added loader boundary coverage/);
   assert.doesNotMatch(body, /PENDING/);
   assert.deepEqual(extractMetadata({ body, title: "Verification run" }), {
     domain: "verification",
-    why: "Execute the scheduled Stage 2 verification audit.",
+    why: "The loader path lacked regression coverage.",
     change: "Added loader boundary coverage",
-    result: "Required stage validation completed.",
+    result: "The focused spec passed and guards the failure boundary.",
     files: ".github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/example.spec.ts",
   });
 
@@ -232,14 +239,30 @@ test("dry-run startup and real finalization are isolated in a disposable reposit
 
   const completedFinalize = run(
     process.execPath,
-    [scriptPath, "finalize", "--stage", "2", "--status", "CLEAN", "--summary", "No coverage gap found"],
+    [
+      scriptPath,
+      "finalize",
+      "--stage",
+      "2",
+      "--status",
+      "CLEAN",
+      "--summary",
+      "No coverage gap found",
+      "--why",
+      "The selected verification slice already covered the audited behavior.",
+      "--result",
+      "No source change was required after the focused audit.",
+    ],
     repoRoot,
     commonEnv,
   );
   assert.equal(completedFinalize.status, 0, completedFinalize.stderr);
   assert.doesNotMatch(readFileSync(logPath, "utf8"), /IN-PROGRESS/);
   assert.match(readFileSync(logPath, "utf8"), /CLEAN: Codebase -- No coverage gap found/);
-  assert.match(readFileSync(path.join(testContext, "pr-body.md"), "utf8"), /NIGHTLY_PR_METADATA:/);
+  const prBody = readFileSync(path.join(testContext, "pr-body.md"), "utf8");
+  assert.match(prBody, /NIGHTLY_PR_METADATA:/);
+  assert.match(prBody, /\*\*Why:\*\* The selected verification slice already covered the audited behavior\./);
+  assert.match(prBody, /\*\*Result:\*\* No source change was required after the focused audit\./);
   assert.match(readFileSync(path.join(testContext, "final-handoff.txt"), "utf8"), /PR base: Nightly/);
   assert.equal(run("git", ["branch", "--show-current"], repoRoot).stdout.trim(), "Nightly");
 });

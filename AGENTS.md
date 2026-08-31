@@ -30,10 +30,11 @@ tags and the coverage logs, all read from `origin/Nightly`. It therefore gives
 the same answer whether or not the branches have been synced, and can report on
 any past run.
 
-Your job is only to narrate its output. Do not re-derive, re-classify or
-re-grade anything it reports: every agent must produce the same facts and differ
-only in wording. If something looks wrong, fix the script and its tests rather
-than working around it in a prompt.
+Your job is only to relay its output. Do not re-derive, re-classify, re-grade,
+summarize, embellish, or restyle anything it reports: every agent must return
+the same human-readable recap text produced by `pnpm nightly:recap`, with no
+extra introduction, commentary, or sign-off. If something looks wrong or reads
+poorly, fix the script and its tests rather than working around it in a prompt.
 
 ## Where agent configuration lives
 
@@ -70,4 +71,3 @@ release, semver, commit-push-semver) had drifted from the tracked originals by
 Such copies are re-materialised from the account at session start, so deleting
 the files does not remove them. Run `pnpm agents:audit` to list any that are
 present.
-

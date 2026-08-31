@@ -69,7 +69,11 @@ test("a well-formed CLEAN session yields a complete plan", () => {
   assert.equal(plan.ok, true);
   assert.equal(plan.status, "CLEAN");
   assert.equal(plan.commitMessage, `chore(${stage.commitScope}): did the thing`);
-  assert.match(renderFallbackPrBody(plan), /never published/);
+  const body = renderFallbackPrBody(plan);
+  assert.match(body, /\*\*What changed:\*\* did the thing/);
+  assert.match(body, /\*\*Why:\*\* The Jules session finalized successfully/);
+  assert.match(body, /\*\*Result:\*\* The recovered patch was applied unmodified/);
+  assert.match(body, /NIGHTLY_PR_METADATA:/);
 });
 
 test("the fallback branch is recognised by the merge coordinator", () => {

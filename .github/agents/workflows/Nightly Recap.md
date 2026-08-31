@@ -32,7 +32,9 @@ you happen to do things in.
 
 ## Your job
 
-Narrate the script's output. Do not re-derive, re-classify or re-grade anything.
-Read-only: never commit, push or tag. No em-dashes and no emojis.
+Return the script's human-readable stdout verbatim. Do not re-derive,
+re-classify, re-grade, paraphrase, summarize, reorder, wrap in a code fence, or
+add commentary before or after it. Read-only: never commit, push or tag. No
+em-dashes and no emojis.
 
 If something is wrong, fix the script and its tests.

@@ -267,6 +267,21 @@ test("matchJulesSession disambiguates same-header sessions by date", () => {
   assert.equal(match.id, "today");
 });
 
+test("matchJulesSession accepts compact SNN prompt headers", () => {
+  const stage = registry.stages.find(entry => entry.number === 6);
+  const sessions = [
+    {
+      id: "compact",
+      state: "IN_PROGRESS",
+      createTime: "2026-08-11T02:00:00Z",
+      prompt: "# S06: Documentation TSDoc - Interface Contract Architect",
+    },
+  ];
+
+  const match = matchJulesSession(sessions, stage, "2026-08-11");
+  assert.equal(match.id, "compact");
+});
+
 // --------------------------------------------------------------------------
 // Recovery pass: a COMPLETED Jules session with no published PR is holding a
 // finished change set. The watchdog must nudge it rather than only log it.

@@ -247,25 +247,45 @@ function cleanSummary(summary) {
   return cleaned;
 }
 
-export function renderPrBody(stage, status, summary, changedPaths) {
+function cleanPrDetail(value, fallback, label) {
+  const cleaned = String(value || fallback || "").replace(/\s+/g, " ").trim();
+  invariant(cleaned.length > 0, `A non-empty ${label} is required.`);
+  invariant(cleaned.length <= 400, `${label} must be 400 characters or fewer.`);
+  return cleaned;
+}
+
+function defaultWhy(stage) {
+  return `Execute the scheduled Stage ${stage.number} ${stage.slug} audit.`;
+}
+
+function defaultResult(status) {
+  if (status === "CHANGED") return "Required stage validation completed.";
+  if (status === "CLEAN") return "Audit completed with no source change required.";
+  return "The run degraded safely to a log-only result.";
+}
+
+export function renderPrBody(stage, status, summary, changedPaths, details = {}) {
   const normalizedSummary = cleanSummary(summary);
   const files = changedPaths.join(", ") || stage.coverageLog;
-  const result =
-    status === "CHANGED"
-      ? "Required stage validation completed."
-      : status === "CLEAN"
-        ? "Audit completed with no source change required."
-        : "The run degraded safely to a log-only result.";
+  const why = cleanPrDetail(details.why, defaultWhy(stage), "--why");
+  const result = cleanPrDetail(details.result, defaultResult(status), "--result");
 
   return `### Nightly Stage ${stage.number}: ${stage.name}
 
 **Status:** ${status}
-**Summary:** ${normalizedSummary}
+
+**What changed:** ${normalizedSummary}
+
+**Why:** ${why}
+
+**Result:** ${result}
+
+**Files changed:** ${files}
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ${stage.domain}
-  Why: Execute the scheduled Stage ${stage.number} ${stage.slug} audit.
+  Why: ${why}
   Change: ${normalizedSummary}
   Result: ${result}
   Files: ${files}
@@ -558,7 +578,7 @@ function startCommand(repoRoot, registry, stage, dryRun) {
     `target-branch: ${registry.targetBranch}`,
     `branch-prefix: ${stage.branchPrefix}`,
     `work-deadline-epoch: ${state.workDeadlineEpoch}`,
-    `finalize: node .github/scripts/nightly-stage.mjs finalize --stage ${stage.number} --status <STATUS> --summary <SUMMARY>`,
+    `finalize: node .github/scripts/nightly-stage.mjs finalize --stage ${stage.number} --status <STATUS> --summary <WHAT_CHANGED> --why <RATIONALE> --result <VERIFICATION_RESULT>`,
   ].join("\n");
   atomicWrite(path.join(targetContextDir, "stage-manifest.txt"), `${manifest}\n`);
   console.log(`Nightly Stage ${stage.number} started. Work phase ends after ${registry.workBudgetMinutes} minutes.`);
@@ -584,9 +604,11 @@ function finalLogLine(stage, status, summary, paths, date) {
   return `* [${date}] [Stage ${stage.number}] ${status}: ${target} -- ${cleanSummary(summary)}`;
 }
 
-function finalizeCommand(repoRoot, stage, status, summary, dryRun) {
+function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {}) {
   invariant(FINAL_STATUSES.has(status), `--status must be one of ${[...FINAL_STATUSES].join(", ")}.`);
   const normalizedSummary = cleanSummary(summary);
+  const why = cleanPrDetail(details.why, defaultWhy(stage), "--why");
+  const result = cleanPrDetail(details.result, defaultResult(status), "--result");
   const date = readOptional(path.join(contextDir(), "TODAY")) || utcDate();
   const paths = changedPaths(repoRoot);
   validateChangedPaths(stage, status, paths);
@@ -600,11 +622,11 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun) {
   const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
-  const prBody = renderPrBody(stage, status, normalizedSummary, paths);
+  const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result });
   const handoff = renderHandoff(stage, status, normalizedSummary, runId);
 
   if (dryRun) {
-    console.log(JSON.stringify({ command: "finalize", dryRun: true, stage: stage.number, status, finalLine, paths }, null, 2));
+    console.log(JSON.stringify({ command: "finalize", dryRun: true, stage: stage.number, status, finalLine, why, result, paths }, null, 2));
     return;
   }
 
@@ -631,8 +653,12 @@ function validatePrompt(repoRoot, stage) {
   invariant(existsSync(promptPath), `Missing Stage ${stage.number} prompt: ${stage.prompt}`);
   const content = readFileSync(promptPath, "utf8");
   const limit = stage.number === 13 ? STAGE_13_WORD_LIMIT : WORD_LIMIT;
+  const stageLabel = `S${String(stage.number).padStart(2, "0")}`;
   invariant(wordCount(content) <= limit, `Stage ${stage.number} prompt exceeds ${limit} words.`);
-  invariant(content.includes(`# [Stage ${stage.number}]`), `Stage ${stage.number} prompt heading is incorrect.`);
+  invariant(
+    content.includes(`# ${stageLabel}: ${stage.name}`),
+    `Stage ${stage.number} prompt heading is incorrect.`,
+  );
   invariant(new RegExp(`^stage:\\s*${stage.number}$`, "m").test(content), `Stage ${stage.number} front matter is incorrect.`);
   invariant(/^target branch:\s*Nightly$/m.test(content), `Stage ${stage.number} target branch is incorrect.`);
   invariant(content.includes(stage.coverageLog), `Stage ${stage.number} prompt omits its coverage log.`);
@@ -705,7 +731,11 @@ function validateBootstrap(repoRoot, registry) {
   invariant(syntax.status === 0, `Bootstrap setup script is invalid: ${String(syntax.stderr || "").trim()}`);
 
   for (const stage of registry.stages) {
-    invariant(content.includes(`## [Stage ${stage.number}]`), `Bootstrap omits Stage ${stage.number}.`);
+    const stageLabel = `S${String(stage.number).padStart(2, "0")}`;
+    invariant(
+      content.includes(`## ${stageLabel}: ${stage.name}`),
+      `Bootstrap omits ${stageLabel}: ${stage.name}.`,
+    );
     invariant(content.includes(stage.prompt), `Bootstrap omits ${stage.prompt}.`);
     invariant(content.includes(stage.coverageLog), `Bootstrap omits ${stage.coverageLog}.`);
   }
@@ -791,10 +821,13 @@ export function runCli(argv = process.argv.slice(2), cwd = process.cwd()) {
   }
   if (command === "finalize") {
     invariant(
-      [...options.keys()].every(key => ["stage", "status", "summary", "dry-run"].includes(key)),
-      "finalize accepts only --stage, --status, --summary, and --dry-run.",
+      [...options.keys()].every(key => ["stage", "status", "summary", "why", "result", "dry-run"].includes(key)),
+      "finalize accepts only --stage, --status, --summary, --why, --result, and --dry-run.",
     );
-    finalizeCommand(repoRoot, stage, options.get("status"), options.get("summary"), dryRun);
+    finalizeCommand(repoRoot, stage, options.get("status"), options.get("summary"), dryRun, {
+      why: options.get("why"),
+      result: options.get("result"),
+    });
     return;
   }
   throw new Error("Usage: nightly-stage.mjs <start|budget|finalize|validate> [options]");

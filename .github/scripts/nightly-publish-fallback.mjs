@@ -140,21 +140,33 @@ export function buildFallbackPlan({ stage, session, date }) {
 }
 
 export function renderFallbackPrBody(plan) {
+  const files = plan.paths.join(", ") || "codebase";
+  const why = "The Jules session finalized successfully, but its native publisher never opened a pull request and watchdog nudges did not recover publication.";
+  const result = "The recovered patch was applied unmodified and validated against the stage write-boundary rules used by normal finalization.";
+
   return [
-    `Recovered Stage ${plan.stage} work that was finalized but never published.`,
+    `### Recovered Nightly Stage ${plan.stage}`,
     "",
-    `Status: ${plan.status}`,
-    `Jules session: ${plan.sessionName}`,
+    `**Status:** ${plan.status}`,
     "",
-    "The session completed and produced this change set, but its native publisher",
-    "never opened a pull request and the watchdog's nudges did not recover it. The",
-    "patch below is the session's own output, applied unmodified.",
+    `**What changed:** ${plan.summary}`,
     "",
-    "Files:",
-    ...plan.paths.map(filePath => `- ${filePath}`),
+    `**Why:** ${why}`,
     "",
-    "Validated against this stage's write boundary with the same validateChangedPaths",
-    "rules the normal path uses.",
+    `**Result:** ${result}`,
+    "",
+    `**Files changed:** ${files}`,
+    "",
+    `**Jules session:** ${plan.sessionName}`,
+    "",
+    "<!--",
+    "NIGHTLY_PR_METADATA:",
+    "  Domain: fallback-publish",
+    `  Why: ${why}`,
+    `  Change: ${plan.summary}`,
+    `  Result: ${result}`,
+    `  Files: ${files}`,
+    "-->",
   ].join("\n");
 }
 

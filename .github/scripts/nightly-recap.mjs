@@ -12,8 +12,9 @@
 //
 // So the FACTS live here, once, tested, in the repository. Narrating them
 // pleasantly is what a language model is good at and is all a per-tool skill
-// should still do. Two tools may word a recap differently; they must never
-// disagree about what happened.
+// should still do. But even that last mile is now standardized: tools should
+// relay renderRecap's human-readable output verbatim instead of inventing their
+// own recap style.
 //
 // WHY IT SCOPES BY RUN DATE AND NOT BY A BRANCH DIFF
 // The prose version defined its scope as "commits in Nightly not yet in Beta".
@@ -191,7 +192,7 @@ export function renderRecap(recap) {
     "",
   ];
   for (const s of recap.stages) {
-    const bits = [`Stage ${String(s.stage).padStart(2)}  ${s.outcome.padEnd(11)} ${s.slug}`];
+    const bits = [`S${String(s.stage).padStart(2, "0")}  ${s.outcome.padEnd(11)} ${s.slug}`];
     if (s.prNumber) bits.push(`PR #${s.prNumber}`);
     if (s.rescued) bits.push(`rescued via ${s.rescuedBy || "retry"}`);
     lines.push(bits.join("  |  "));

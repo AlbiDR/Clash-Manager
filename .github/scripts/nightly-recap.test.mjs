@@ -160,6 +160,41 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
   const text = renderRecap(recap);
   assert.match(text, /13\/13 stages merged/);
   assert.match(text, /Grade: 10\/10/);
+  assert.equal(text, [
+    "Nightly Recap for 2026-08-27",
+    "",
+    "13/13 stages merged  |  0 changed, 13 clean, 0 stuck  |  0 needed intervention",
+    "",
+    "S01  CLEAN       hardening  |  PR #2001",
+    "         nothing to do",
+    "S02  CLEAN       verification  |  PR #2002",
+    "         nothing to do",
+    "S03  CLEAN       baseline-consolidation  |  PR #2003",
+    "         nothing to do",
+    "S04  CLEAN       optimization  |  PR #2004",
+    "         nothing to do",
+    "S05  CLEAN       documentation-readme  |  PR #2005",
+    "         nothing to do",
+    "S06  CLEAN       documentation-tsdoc  |  PR #2006",
+    "         nothing to do",
+    "S07  CLEAN       version-integrity  |  PR #2007",
+    "         nothing to do",
+    "S08  CLEAN       dependency-audit  |  PR #2008",
+    "         nothing to do",
+    "S09  CLEAN       refactor  |  PR #2009",
+    "         nothing to do",
+    "S10  CLEAN       apk-integrity  |  PR #2010",
+    "         nothing to do",
+    "S11  CLEAN       apk-optimization  |  PR #2011",
+    "         nothing to do",
+    "S12  CLEAN       apk-ux  |  PR #2012",
+    "         nothing to do",
+    "S13  CLEAN       self-healing-protocol  |  PR #2013",
+    "         nothing to do",
+    "",
+    "Grade: 10/10 - Optimal run: every stage completed unaided.",
+    "",
+  ].join("\n"));
 });
 
 test("the real recorded history recaps without throwing, for a synced run", () => {

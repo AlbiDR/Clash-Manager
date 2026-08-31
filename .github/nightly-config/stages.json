@@ -124,7 +124,7 @@
     {
       "number": 10,
       "slug": "apk-integrity",
-      "name": "APK and PWA Wrapper Integrity Auditor",
+      "name": "APK Integrity - PWA Wrapper Auditor",
       "prompt": ".github/nightly-prompts/10-apk-integrity.md",
       "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
       "branchPrefix": "nightly/stage-10-apk-integrity-",
@@ -137,7 +137,7 @@
     {
       "number": 11,
       "slug": "apk-optimization",
-      "name": "APK and Native Wrapper Optimizations",
+      "name": "APK Optimization - Native Wrapper Performance Engineer",
       "prompt": ".github/nightly-prompts/11-apk-optimization.md",
       "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
       "branchPrefix": "nightly/stage-11-apk-optimization-",
@@ -150,7 +150,7 @@
     {
       "number": 12,
       "slug": "apk-ux",
-      "name": "Hybrid Shell UX and UI Auditor",
+      "name": "APK UX - Hybrid Shell Auditor",
       "prompt": ".github/nightly-prompts/12-apk-ux.md",
       "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
       "branchPrefix": "nightly/stage-12-apk-ux-",
@@ -163,7 +163,7 @@
     {
       "number": 13,
       "slug": "self-healing-protocol",
-      "name": "Self-Healing Protocol",
+      "name": "Self-Healing Protocol - Pipeline Resilience Auditor",
       "prompt": ".github/nightly-prompts/13-self-healing-protocol.md",
       "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
       "branchPrefix": "nightly/stage-13-self-healing-protocol-",

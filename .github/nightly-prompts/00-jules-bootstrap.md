@@ -145,7 +145,7 @@ echo "Placeholder context seeded in /tmp/nightly/"
 
 ---
 
-## [Stage 1] Hardening - Runtime Integrity Auditor
+## S01: Hardening - Runtime Integrity Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -162,7 +162,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 2] Verification - Logic Integrity Auditor
+## S02: Verification - Logic Integrity Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -179,7 +179,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 3] Baseline Consolidation - Declarative Schema Hardener
+## S03: Baseline Consolidation - Declarative Schema Hardener
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -196,7 +196,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 4] Optimization - Substrate Hygiene Engineer
+## S04: Optimization - Substrate Hygiene Engineer
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -213,7 +213,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 5] Documentation README - Architecture Truth Architect
+## S05: Documentation README - Architecture Truth Architect
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -230,7 +230,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 6] Documentation TSDoc - Interface Contract Architect
+## S06: Documentation TSDoc - Interface Contract Architect
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -247,7 +247,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 7] Version Integrity - Version Consistency Auditor
+## S07: Version Integrity - Version Consistency Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -264,7 +264,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 8] Dependency Audit - External Health Auditor
+## S08: Dependency Audit - External Health Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -281,7 +281,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 9] Refactor - Structural Surgery Engineer
+## S09: Refactor - Structural Surgery Engineer
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -298,7 +298,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 10] APK and PWA Wrapper Integrity Auditor
+## S10: APK Integrity - PWA Wrapper Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -315,7 +315,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 11] APK and Native Wrapper Optimizations
+## S11: APK Optimization - Native Wrapper Performance Engineer
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -332,7 +332,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 12] Hybrid Shell UX and UI Auditor
+## S12: APK UX - Hybrid Shell Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
@@ -349,7 +349,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## [Stage 13] Self-Healing Protocol
+## S13: Self-Healing Protocol - Pipeline Resilience Auditor
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`

@@ -229,9 +229,16 @@ export function hasDanglingSentinel(content, stageNumber, date) {
 
 export function matchJulesSession(sessions, stage, date) {
   const evidenceDate = expectedEvidenceDate(stage.number, date);
-  const header = `[Stage ${stage.number}]`;
+  const compactHeader = `S${String(stage.number).padStart(2, "0")}:`;
+  const legacyHeader = `[Stage ${stage.number}]`;
+  const legacyPaddedHeader = `[Stage ${String(stage.number).padStart(2, "0")}]`;
   const matches = (sessions || [])
-    .filter(session => typeof session?.prompt === "string" && session.prompt.includes(header))
+    .filter(session => {
+      if (typeof session?.prompt !== "string") return false;
+      return session.prompt.includes(compactHeader) ||
+        session.prompt.includes(legacyHeader) ||
+        session.prompt.includes(legacyPaddedHeader);
+    })
     .filter(session => String(session.createTime || "").slice(0, 10) === evidenceDate)
     .sort((a, b) => String(b.createTime || "").localeCompare(String(a.createTime || "")));
   return matches[0] || null;
