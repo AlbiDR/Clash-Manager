@@ -100,6 +100,12 @@ The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper
 4. **PWA Installation Lifecycle:** Captures browser-managed PWA installation triggers from the `beforeinstallprompt` event and exposes them reactively via the `isPwaInstallAvailable` ref. Invoking the async `installPwa()` method prompts the user directly, updating installation status and managing event teardown/garbage collection cleanly upon resolution.
 5. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, `usePwaManager.ts` unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
 
+### Single-Flight Sync & Error Thresholding (`useClashSync.ts`)
+
+`useClashSync.ts` orchestrates data synchronization, local persistence, and error tolerance in Layer 1 Core:
+- **Single-Flight Synchronization:** Enforces single-flight remote execution (`activeSyncPromise`). Concurrent sync calls join the single active in-flight request promise, eliminating redundant network traffic and avoiding race conditions during batch or automated triggers.
+- **Fault-Tolerance Visibility Thresholding:** Tracks consecutive remote synchronization failures (`consecutiveSyncFailures`). Background sync failures remain suppressed to maintain UI stability until the failure threshold (`SYNC_FAILURE_VISIBILITY_THRESHOLD = 3`) is reached, while manual user-triggered refreshes immediately expose error states (`syncError`).
+
 ### High-Performance Search and Filtering (`useListFilter.ts`)
 
 To support smooth 60FPS list interactions under heavy sorting and filtering operations, `useListFilter.ts` coordinates an optimized presentation-layer orchestration:
