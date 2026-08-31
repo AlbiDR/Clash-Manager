@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { lexSql, topLevelCommentLines } from './sql-lexer.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
+const REPO_ROOT = path.resolve(SCRIPT_DIR, "..", "..", "..");
 const POLICY_PATH = path.join(REPO_ROOT, '.github', 'nightly-config', 'migration-quality.json');
 
 function normalizedName(value) {

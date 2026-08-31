@@ -7,7 +7,7 @@
 # a plain `push` trigger here races Auto Tag's own `push` trigger on the same
 # commit - both fire independently off Sync Branches landing a merge. Every
 # meaningful push already bumps package.json in the same commit (the "bump on
-# every push" policy - see .github/scripts/bump-version.mjs), so Auto Tag fires on
+# every push" policy - see .github/scripts/project/bump-version.mjs), so Auto Tag fires on
 # essentially every push this workflow cares about; chaining off it via
 # `workflow_run` guarantees tagging always completes before the APK build starts,
 # without needing a second, independently-racing trigger.

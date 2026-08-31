@@ -108,7 +108,7 @@ describe("ping Edge Function", () => {
     expect(body.success).toBe(true);
     // [DECISION LOG] Asserted as a pattern, not a pinned literal: this string is
     // re-synced to the monorepo's ground-truth version on every release by
-    // validate_project.ts --fix (see PATHS.protocol), so pinning an exact value here
+    // validate-project.ts --fix (see PATHS.protocol), so pinning an exact value here
     // would make this test fail on every single version bump.
     expect(body.version).toMatch(/^\d+\.\d+\.\d+$/);
   });

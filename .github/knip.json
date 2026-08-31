@@ -19,8 +19,8 @@
       "project": "supabase/functions/**/*.ts"
     },
     ".": {
-      "entry": ".github/scripts/*.ts",
-      "project": ".github/scripts/*.ts",
+      "entry": ".github/scripts/**/*.ts",
+      "project": ".github/scripts/**/*.ts",
       "ignoreDependencies": ["npm"],
       "ignoreBinaries": []
     }

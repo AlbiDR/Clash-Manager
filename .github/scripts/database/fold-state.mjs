@@ -11,7 +11,7 @@ import { identifyDefinition } from './audit-migrations.mjs';
 import { lexSql } from './sql-lexer.mjs';
 
 const BASELINE_PREFIX = '20260531232406';
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 function compact(sql) {
   return sql

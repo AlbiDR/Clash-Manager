@@ -167,7 +167,7 @@ function isAdministrativePipelinePath(filePath) {
     filePath === ".github/scripts/nightly/update-nightly-context.sh" ||
     filePath.startsWith(".github/scripts/nightly/merge-nightly-") ||
     filePath === ".github/scripts/nightly/age-pr-history.py" ||
-    filePath === ".github/scripts/check-fold-state.py" ||
+    filePath === ".github/scripts/database/check-fold-state.py" ||
     filePath.startsWith(".github/workflows/")
   );
 }
@@ -767,6 +767,17 @@ function validateBootstrap(repoRoot, registry) {
 }
 
 function validateContracts(repoRoot, registry) {
+  const allowedRootEntries = new Set(["agents", "android", "database", "nightly", "project", "tsconfig.json"]);
+  const unexpectedRootEntries = readdirSync(path.join(repoRoot, ".github/scripts"), {
+    withFileTypes: true,
+  })
+    .filter(entry => !entry.name.startsWith(".") && !allowedRootEntries.has(entry.name))
+    .map(entry => entry.name);
+  invariant(
+    unexpectedRootEntries.length === 0,
+    `Scripts must live in a domain folder under .github/scripts/: ${unexpectedRootEntries.join(", ")}`,
+  );
+
   const misplacedNightlyScripts = readdirSync(path.join(repoRoot, ".github/scripts"), {
     withFileTypes: true,
   })
@@ -820,11 +831,11 @@ function validateContracts(repoRoot, registry) {
   const contextScript = readFileSync(path.join(repoRoot, ".github/scripts/nightly/update-nightly-context.sh"), "utf8");
   invariant(contextScript.includes("# BASELINE_TEST_STAGE=2"), "Context script lacks the Stage 2 policy marker.");
   invariant(contextScript.includes("# DEPENDENCY_CRUISER_STAGE=9"), "Context script lacks the Stage 9 policy marker.");
-  invariant(contextScript.includes(".github/scripts/fold-state.mjs"), "Context script must use the SQL-aware fold-state checker.");
+  invariant(contextScript.includes(".github/scripts/database/fold-state.mjs"), "Context script must use the SQL-aware fold-state checker.");
   invariant(contextScript.includes("migration-quality-status.txt"), "Context script must report migration-quality status.");
   invariant(contextScript.includes("database-verification-status.txt"), "Context script must report database-verification availability.");
   invariant(contextScript.includes("apk-ux-audit-status.txt"), "Context script must report APK UX audit status.");
-  invariant(contextScript.includes(".github/scripts/audit-apk-ux.mjs"), "Context script must use the structured Stage 12 APK UX audit.");
+  invariant(contextScript.includes(".github/scripts/android/audit-apk-ux.mjs"), "Context script must use the structured Stage 12 APK UX audit.");
   invariant(contextScript.includes(".github/scripts/nightly/nightly-clean-calibration.mjs"), "Context script must compute CLEAN calibration state.");
   invariant(contextScript.includes("clean-calibration.json"), "Context script must write CLEAN calibration JSON.");
   invariant(contextScript.includes("clean-calibration-due"), "Context script must report CLEAN calibration state in the toolchain manifest.");

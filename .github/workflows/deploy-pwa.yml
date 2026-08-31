@@ -82,8 +82,8 @@ jobs:
       - name: Project Validation
         working-directory: .
         run: |
-          if [ -f .github/scripts/validate_project.ts ]; then
-            pnpm exec tsx .github/scripts/validate_project.ts
+          if [ -f .github/scripts/project/validate-project.ts ]; then
+            pnpm exec tsx .github/scripts/project/validate-project.ts
           else
             echo "Validation script not found."
           fi

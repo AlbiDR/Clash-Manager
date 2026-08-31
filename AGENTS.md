@@ -48,7 +48,7 @@ Shared definitions are tracked once, here:
 
 Each tool's own hard-coded path (`.claude/skills/`, `.agent/workflows/`,
 `.agent/skills/`, `.agents/rules/`) is a symlink into that directory, created by
-`.github/scripts/link-agent-dirs.mjs`, which `prepare` runs on install. Run
+`.github/scripts/agents/link-agent-dirs.mjs`, which `prepare` runs on install. Run
 `pnpm agents:link` to repair them by hand.
 
 Those tool directories are gitignored on purpose: committing them would put
