@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1635 [Stage 8]: Bumped knip to ^6.33.0 and updated lockfile.
+**Domain:** dependencies | **Commit:** 25d1af4f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1635)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Execute the scheduled Stage 8 dependency-audit audit.
+**Change:** Bumped knip to ^6.33.0 and updated lockfile.
+**Result:** Required stage validation completed.
+
+
 ### [2026-08-31] PR #1634 [Stage 7]: chore(version): Audit complete: Version integrity and catalog adherence fully synchronized at 14.46.24
 **Domain:** pipeline | **Commit:** a99f9564 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1634)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
