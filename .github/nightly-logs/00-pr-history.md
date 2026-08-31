@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1639 [Stage 12]: chore(apk-ux): Integrated v-tactile directive into Toast action/close/copy buttons
+**Domain:** pipeline | **Commit:** 74dbdc9f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1639)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, Frontend-PWA/src/shared/ui/Toast.vue
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Integrated v-tactile directive into Toast action/close/copy buttons
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-31] PR #1638 [Stage 11]: chore(apk): Audit complete: native WebView settings and PWA SW cache topology are fully optimized
 **Domain:** pipeline | **Commit:** 372e9ed6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1638)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
