@@ -154,3 +154,4 @@
 * [2026-08-28] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled useShowcaseMode blueprint override and master-child synchronization in core services README
 * [2026-08-29] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled useBlueprintMode initialization priority, query params, and skeleton derivation in core services README
 * [2026-08-30] [Stage 5] CHANGED: Backend/supabase/functions/_shared/README.md -- docs(readme): Reconciled rpcSchemas validation boundaries and transform contracts in shared backend README
+* [2026-08-31] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useClashSync single-flight sync and failure thresholds in core services README
