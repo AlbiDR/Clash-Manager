@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1630 [Stage 3]: chore(database): Baseline current (0 unfolded migrations, 160 baseline objects, migration-quality PASS, fold-state CLEAN
+**Domain:** pipeline | **Commit:** 9a66dace | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1630)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): Baseline current (0 unfolded migrations, 160 baseline objects, migration-quality PASS, fold-state CLEAN
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-31] PR #1629 [Stage 2]: chore(verify): Expanded useClashSync spec coverage for single-flight promises and failure thresholds
 **Domain:** pipeline | **Commit:** ab4dc522 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1629)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSync.spec.ts
