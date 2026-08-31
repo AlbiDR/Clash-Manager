@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
+import { vTactile } from "../directives/vTactile";
 import { ref, onMounted, onUnmounted } from "vue";
 
 /**
@@ -131,6 +132,7 @@ onUnmounted(clearTimer);
     <!-- Copy Button for Error and Info notifications -->
     <button 
       v-if="type === 'error' || type === 'info'" 
+      v-tactile
       class="copy-btn" 
       title="Copy message"
       @click.stop="copyToClipboard"
@@ -143,6 +145,7 @@ onUnmounted(clearTimer);
 
     <button
       v-if="actionLabel"
+      v-tactile
       class="action-btn"
       :disabled="isHandlingAction"
       @click.stop="triggerAction"
@@ -151,6 +154,7 @@ onUnmounted(clearTimer);
     </button>
 
     <button
+      v-tactile
       class="close-btn"
       @click.stop="$emit('dismiss', id)"
     >
