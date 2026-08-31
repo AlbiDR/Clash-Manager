@@ -15,6 +15,14 @@ LAST_AGED:   2026-08-31
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-08-31] PR #1641 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** hardening | **Commit:** 75474d2a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1641)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Why:** Pre-flight PR history aging pass aged entries to 2026-08-31. Widened candidate scan across Target B (depcruise dependency graph) and Target C (Frontend-PWA Valibot validation boundaries) satisfied CLEAN calibration gate with zero security or data integrity threats found.
+**Change:** Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** Nominal validation with zero regressions across 1786 unit tests and 0 depcruise violations.
+
 ### [2026-08-31] PR #1640 [Stage 13]: chore(pipeline): Stage 13 Self-Healing Protocol Audit
 **Domain:** pipeline | **Commit:** c7bf4803 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1640)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
