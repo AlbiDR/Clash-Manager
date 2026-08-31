@@ -2,27 +2,29 @@
 // Copyright (C) 2026 AlbiDR
 
 import { computed, ref } from "vue";
-import { formatBytes } from "../utils/text";
 import { useToast } from "./useToast";
 import { useNativeBridge } from "./useNativeBridge";
 import {
   isReleaseBuildNumber,
   isReleaseVersion,
-  parseReleaseApkFilename,
   resolveLatestApkRelease,
   type ApkReleaseDownload,
 } from "./apkResolver";
+import {
+  MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD,
+  formatApkArtifactLabel,
+  formatApkFeedSourceLabel,
+  formatInstalledApkLabel,
+  getInstalledReleaseComparison as compareInstalledRelease,
+  getReleaseVersionLabel,
+  isInstalledApkCurrent as checkIsInstalledCurrent,
+  isPublishedApkOlderThanInstalled as checkIsPublishedOlder,
+} from "./apkManagerUtils";
 
 /**
  * Semantic states for native APK update checks and downloads.
  */
 export type ApkUpdateState = "idle" | "checking" | "available" | "current" | "blocked" | "mismatch" | "error";
-
-/**
- * Minimum native build number capable of receiving native download manager result callbacks.
- * Builds prior to 191 require fallback to browser or legacy external URL triggers.
- */
-const MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD = 191;
 
 /**
  * APK MANAGER SERVICE (Layer 1)
@@ -114,100 +116,29 @@ export function useApkManager() {
   }
 
   /**
-   * Compares two semantic version strings ("X.Y.Z").
-   *
-   * @param firstVersion - The primary version string to compare.
-   * @param secondVersion - The baseline version string to compare against.
-   * @returns Positive integer if firstVersion > secondVersion, negative if firstVersion < secondVersion, 0 if equal.
-   */
-  function compareReleaseVersions(firstVersion: string, secondVersion: string): number {
-    const first = firstVersion.split(".").map(Number);
-    const second = secondVersion.split(".").map(Number);
-    return (first[0] ?? 0) - (second[0] ?? 0) ||
-      (first[1] ?? 0) - (second[1] ?? 0) ||
-      (first[2] ?? 0) - (second[2] ?? 0);
-  }
-
-  /**
    * Compares installed native shell metadata against a published release target.
-   *
-   * Compares the published semantic version directly. It deliberately does NOT
-   * re-derive a numeric version code from the release filename to compare
-   * against the installed one, which is what this did previously.
-   *
-   * That comparison mixed two different kinds of value: the installed side was
-   * the APK's real versionCode, while the published side was a number this
-   * function computed itself from the filename. It was therefore only correct
-   * for as long as the app's copy of the derivation matched the one CI had used
-   * when building the APK, in a codebase where that arithmetic was written out
-   * by hand in five separate places. It also silently outranked the semantic
-   * version comparison below, so when the derivation was wrong the correct
-   * answer sitting immediately beneath it was never reached.
-   *
-   * Comparing the versions themselves needs no shared constant, cannot drift
-   * from CI, and keeps working if the versionCode scheme is ever changed again.
-   *
-   * @param release - Published APK release download target.
-   * @returns Positive integer if installed > published, negative if installed < published, 0 if equal, or undefined if indeterminable.
    */
   function getInstalledReleaseComparison(release: ApkReleaseDownload): number | undefined {
-    const nativeVersionName = getNativeVersionName();
-    if (nativeVersionName && release.version) {
-      const versionComparison = compareReleaseVersions(nativeVersionName, release.version);
-      if (versionComparison !== 0) return versionComparison;
-    }
-
-    const nativeBuildNumber = getNativeBuildNumber();
-    if (nativeBuildNumber && release.buildNumber) return nativeBuildNumber - release.buildNumber;
-
-    if (nativeVersionName && release.version && nativeVersionName === release.version) return 0;
-    return undefined;
+    return compareInstalledRelease(getNativeVersionName(), getNativeBuildNumber(), release);
   }
 
   /**
    * Checks if the currently installed native shell is up to date relative to the published release.
-   *
-   * @param release - Published APK release target.
-   * @returns True if installed version is equal to or newer than published release.
    */
   function isInstalledApkCurrent(release: ApkReleaseDownload): boolean {
-    const comparison = getInstalledReleaseComparison(release);
-    return comparison !== undefined && comparison >= 0;
+    return checkIsInstalledCurrent(getNativeVersionName(), getNativeBuildNumber(), release);
   }
 
   /**
    * Checks if the published update feed is older than the currently installed native shell.
-   *
-   * @param release - Published APK release target.
-   * @returns True if installed version is strictly newer than the published release.
    */
   function isPublishedApkOlderThanInstalled(release: ApkReleaseDownload): boolean {
-    const comparison = getInstalledReleaseComparison(release);
-    return comparison !== undefined && comparison > 0;
-  }
-
-  /**
-   * Generates a descriptive display label for a given APK release object.
-   *
-   * @param release - Target release or undefined.
-   * @returns Formatted label string (e.g. "v14.46.2 (191)").
-   */
-  function getReleaseVersionLabel(release: ApkReleaseDownload | undefined): string {
-    if (!release) return "Not checked";
-    const version = release.version || parseReleaseApkFilename(release.filename)
-      ? `v${release.version ?? release.filename.replace(/^clashmanager-v/, "").replace(/\.apk$/, "")}`
-      : release.filename;
-    return release.buildNumber ? `${version} (${release.buildNumber})` : version;
+    return checkIsPublishedOlder(getNativeVersionName(), getNativeBuildNumber(), release);
   }
 
   /** Formatted display label for the installed native shell environment. */
   const installedApkLabel = computed(() => {
-    const versionName = getNativeVersionName();
-    const versionCode = getNativeVersionCode();
-    const buildNumber = getNativeBuildNumber();
-    if (!versionName && !versionCode && !buildNumber) return "Web/PWA session";
-    const detail = buildNumber ? `build ${buildNumber}` : versionCode ? `code ${versionCode}` : "native";
-    return `${versionName ? `v${versionName}` : "Native APK"} (${detail})`;
+    return formatInstalledApkLabel(getNativeVersionName(), getNativeVersionCode(), getNativeBuildNumber());
   });
 
   /** Formatted display label for the latest published APK release. */
@@ -226,19 +157,10 @@ export function useApkManager() {
   });
 
   /** Formatted summary label detailing target file size and SHA-256 checksum preview. */
-  const apkArtifactLabel = computed(() => {
-    const release = latestApkRelease.value;
-    if (!release) return "No APK metadata loaded";
-    const checksum = release.sha256 ? `SHA-256 ${release.sha256.slice(0, 8)}...` : "checksum unavailable";
-    return `${formatBytes(release.sizeBytes)} · ${checksum}`;
-  });
+  const apkArtifactLabel = computed(() => formatApkArtifactLabel(latestApkRelease.value));
 
   /** Display label detailing the feed source and URL. */
-  const apkFeedSourceLabel = computed(() => {
-    const release = latestApkRelease.value;
-    if (!release?.sourceName) return "";
-    return release.sourceUrl ? `${release.sourceName}: ${release.sourceUrl}` : release.sourceName;
-  });
+  const apkFeedSourceLabel = computed(() => formatApkFeedSourceLabel(latestApkRelease.value));
 
   /** List of change items associated with the latest release. */
   const apkChangelog = computed(() => latestApkRelease.value?.changelog ?? []);
@@ -427,5 +349,8 @@ export function useApkManager() {
     resolveApkRelease,
     checkApkUpdate,
     downloadApk,
+    getInstalledReleaseComparison,
+    isInstalledApkCurrent,
+    isPublishedApkOlderThanInstalled,
   };
 }
