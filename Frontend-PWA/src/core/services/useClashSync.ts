@@ -88,6 +88,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
   // --- ACTIONS ---
 
+  /**
+   * Initializes a default, empty WebAppData state object.
+   *
+   * @returns An empty WebAppData DTO matching structural schema constraints.
+   */
   function createEmptyWebAppData(): WebAppData {
     return {
       lb: [],
@@ -97,10 +102,23 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     };
   }
 
+  /**
+   * Fetches remote data from Supabase bounded by an explicit request timeout.
+   *
+   * @remarks
+   * Satisfies ADR Section I (Core Services) network resilience guidelines.
+   *
+   * @param options - Transport parameters including force refresh flag.
+   * @returns Unvalidated raw payload resolved from Supabase fetch.
+   * @throws Error if network request fails or exceeds SYNC_REQUEST_TIMEOUT_MS.
+   */
   async function fetchRemoteWithTimeout(options: { force: boolean }): Promise<unknown> {
     const requestController = new AbortController();
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
+      // [THREAT:] Unbounded network requests can cause UI hanging or memory leaks.
+      // [DECISION LOG] Race network fetch against a SYNC_REQUEST_TIMEOUT_MS timeout timer
+      // and explicitly signal cancellation via AbortController on timeout trigger.
       return await Promise.race([
         fetchRemote({ ...options, signal: requestController.signal }),
         new Promise<never>((_, reject) => {
@@ -215,15 +233,30 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     await commitSyncResult(incomingDataValidation.output);
   }
 
+  /**
+   * Safely coercively normalizes unknown sync thrown errors to Error instances.
+   *
+   * @param syncFailure - Raw caught error or rejection reason.
+   * @returns Normalized Error object.
+   */
   function normalizeSyncError(syncFailure: unknown): Error {
     return syncFailure instanceof Error ? syncFailure : new Error("Sync failed");
   }
 
   /**
    * Runs or joins the single authoritative remote synchronization attempt.
+   *
+   * @remarks
+   * Satisfies ADR Section I: Core Services & Section III: Validation Boundaries.
    * Transport, validation, and persistence are intentionally centralized here.
+   *
+   * @param force - If true, requests cache bypass at the Supabase transport layer.
+   * @returns Bounded result indicating execution success or normalized error context.
    */
   function executeRemoteSync(force: boolean): Promise<SyncAttemptResult> {
+    // [DECISION LOG] Single-Flight Promise Lock: Deduplicate concurrent sync calls.
+    // Re-use active in-flight sync promise if execution is already underway to eliminate
+    // duplicate network requests and race conditions on reactive state commitment.
     if (activeSyncPromise) return activeSyncPromise;
     if (loading.value) {
       return Promise.resolve({
@@ -268,7 +301,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     return syncPromise;
   }
 
-  /** Applies caller intent to the result without duplicating sync execution. */
+  /**
+   * Applies caller intent to the sync attempt without duplicating sync execution.
+   *
+   * @param syncIntent - Intent type ("background" or "manual").
+   * @param force - If true, forces remote transport cache bypass.
+   */
   async function runSync(syncIntent: SyncIntent, force: boolean): Promise<void> {
     if (isSyntheticMode.value) {
       console.debug("[Sync] Synthetic Mode active: Refreshing mock data");
@@ -281,6 +319,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     const syncResult = await executeRemoteSync(force);
     if (syncResult.success) return;
 
+    // [DECISION LOG] Fault Visibility Thresholding: Suppress transient background sync
+    // errors until consecutive failure count meets SYNC_FAILURE_VISIBILITY_THRESHOLD (3)
+    // to avoid user notification noise, while immediately exposing manual or unhydrated errors.
     const shouldExposeFailure = syncIntent === "manual"
       || !data.value
       || syncResult.failureCount >= SYNC_FAILURE_VISIBILITY_THRESHOLD;
