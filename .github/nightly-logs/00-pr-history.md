@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-08-31] PR #1629 [Stage 2]: chore(verify): Expanded useClashSync spec coverage for single-flight promises and failure thresholds
+**Domain:** pipeline | **Commit:** ab4dc522 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1629)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSync.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Expanded useClashSync spec coverage for single-flight promises and failure thresholds
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-08-30] PR #1628 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** 52eda323 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1628)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
