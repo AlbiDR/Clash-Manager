@@ -135,4 +135,111 @@ describe("Toast.vue", () => {
     wrapper.unmount();
     expect(spy).toHaveBeenCalled();
   });
+
+  describe("copyToClipboard functionality", () => {
+    it("renders copy button only for error and info toast types", () => {
+      const types = [
+        { type: "error" as const, expected: true },
+        { type: "info" as const, expected: true },
+        { type: "success" as const, expected: false },
+        { type: "undo" as const, expected: false },
+      ];
+
+      types.forEach(({ type, expected }) => {
+        const wrapper = mount(Toast, {
+          props: { ...defaultProps, type },
+        });
+        expect(wrapper.find(".copy-btn").exists()).toBe(expected);
+      });
+    });
+
+    it("writes message to clipboard and updates icon state to check tick for 2000ms", async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      const wrapper = mount(Toast, {
+        props: { ...defaultProps, type: "error", message: "Error payload" },
+      });
+
+      const copyBtn = wrapper.find(".copy-btn");
+      expect(copyBtn.findComponent(Icon).props("name")).toBe("copy");
+
+      await copyBtn.trigger("click");
+      expect(writeTextMock).toHaveBeenCalledWith("Error payload");
+
+      await wrapper.vm.$nextTick();
+      expect(copyBtn.findComponent(Icon).props("name")).toBe("check");
+
+      vi.advanceTimersByTime(2000);
+      await wrapper.vm.$nextTick();
+      expect(copyBtn.findComponent(Icon).props("name")).toBe("copy");
+    });
+
+    it("pauses auto-dismiss timer when copy is triggered and resumes timer after tick duration", async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      const wrapper = mount(Toast, {
+        props: { ...defaultProps, type: "info", duration: 3000 },
+      });
+
+      vi.advanceTimersByTime(1000); // 1000ms elapsed out of 3000ms
+
+      const copyBtn = wrapper.find(".copy-btn");
+      await copyBtn.trigger("click"); // Clears timer and sets 2000ms tick delay
+
+      vi.advanceTimersByTime(2500); // 2500ms passed; timer was paused during tick, so 3000ms hasn't elapsed since reset
+      expect(wrapper.emitted("dismiss")).toBeFalsy();
+
+      vi.advanceTimersByTime(1000); // total 3500ms since timer reset
+      expect(wrapper.emitted("dismiss")).toBeTruthy();
+    });
+
+    it("handles clipboard failure gracefully without throwing", async () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const writeTextMock = vi.fn().mockRejectedValue(new Error("Clipboard denied"));
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      const wrapper = mount(Toast, {
+        props: { ...defaultProps, type: "error" },
+      });
+
+      const copyBtn = wrapper.find(".copy-btn");
+      await copyBtn.trigger("click");
+
+      expect(consoleSpy).toHaveBeenCalledWith("Failed to copy toast message:", expect.any(Error));
+      consoleSpy.mockRestore();
+    });
+
+    it("prevents triggering container action when copy button is clicked on an actionable toast", async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      const wrapper = mount(Toast, {
+        props: { ...defaultProps, type: "info", actionLabel: "RETRY" },
+      });
+
+      const copyBtn = wrapper.find(".copy-btn");
+      await copyBtn.trigger("click");
+
+      expect(writeTextMock).toHaveBeenCalled();
+      expect(wrapper.emitted("action")).toBeFalsy();
+    });
+  });
 });
