@@ -346,6 +346,14 @@
   - Recommended Fix: N/A.
   - Resolution Details (2026-08-31): Re-verification of the entire nightly pipeline on August 31, 2026, confirmed zero failed or missing stages. All 12 preceding stages (Stages 1 through 12) executed cleanly and logged valid coverage log entries (PRs #1628 through #1639). Stage 12 (APK-UX) successfully recovered today, integrating `v-tactile` directive into `Toast.vue` (PR #1639), and is demoted from [RECURRING] to [RESOLVED - monitor]. This marks a 100% operational run for the entire pipeline.
 
+* Missing-Run / Failed Events on 2026-09-01:
+  - Stages: None. All 12 preceding stages completed successfully during this automation cycle.
+  - State: Fully operational.
+  - Symptom: N/A.
+  - Root Cause: N/A.
+  - Recommended Fix: N/A.
+  - Resolution Details (2026-09-01): Re-verification of the entire nightly pipeline on September 1, 2026, confirmed zero failed or missing stages. All 12 preceding stages (Stages 1 through 12) executed cleanly and logged valid coverage log entries (PRs #1641 through #1652). This marks a 100% operational run for the entire pipeline.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -388,53 +396,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-08-31 via PR #1628; last active change on 2026-08-22 via PR #1528)
-  - Analysis: Audit pass completed cleanly with zero threat vectors.
+  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-09-01 via PR #1641; last active change on 2026-08-22 via PR #1528)
+  - Analysis: Audit pass completed cleanly with zero threat vectors (widened candidate scan across depcruise graph and Valibot validation boundaries).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in useClashSync.spec.ts via PR #1629)
-  - Analysis: Expanded useClashSync spec coverage for single-flight promises and failure thresholds.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-01 in Toast.spec.ts via PR #1642)
+  - Analysis: Closed partial-coverage and sad-path logic gaps in Toast component with unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-08-31 via PR #1630; last active change on 2026-08-19)
-  - Analysis: Baseline current (0 unfolded migrations, 160 baseline objects, migration-quality PASS, fold-state CLEAN).
+  - Consecutive No-Diff Days: 12 (CLEAN logged on 2026-09-01 via PR #1643; last active change on 2026-08-19)
+  - Analysis: Baseline current (0 pending migrations, 25 migrations examined, migration-quality PASS, fold-state CLEAN).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-08-31 via PR #1631; last active change on 2026-08-29 via PR #1606)
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-09-01 via PR #1644; last active change on 2026-08-29 via PR #1606)
   - Analysis: Substrate hygiene audit confirmed known unreferenced views; no source changes required.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in core services README via PR #1632)
-  - Analysis: Reconciled useClashSync single-flight sync and failure thresholds in core services README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-01 in shared UI README via PR #1645)
+  - Analysis: Reconciled Toast.vue v-tactile directive integration in shared UI README.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in useClashSync.ts via PR #1633)
-  - Analysis: Hardened useClashSync interface contracts and inline logic annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-01 in Toast.vue via PR #1646)
+  - Analysis: Hardened Toast.vue interface contracts and inline logic annotations.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 38 (CLEAN logged on 2026-08-31 via PR #1634)
+  - Consecutive No-Diff Days: 39 (CLEAN logged on 2026-09-01 via PR #1647)
   - Analysis: Monorepo package versions and catalog dependencies are fully consistent across all manifests (v14.46.24).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in package.json via PR #1635)
-  - Analysis: Bumped knip to ^6.33.0 and updated lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-01 in package.json via PR #1648)
+  - Analysis: Bumped knip to ^6.34.0 and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in apkManagerUtils.ts via PR #1636)
-  - Analysis: Decomposed useApkManager into pure helpers module apkManagerUtils to reduce module length below 400 LOC threshold.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-01 via PR #1649; last active change on 2026-08-31 via PR #1636)
+  - Analysis: Substrate architecture strictly aligned with CleanStack ADR; no source changes required.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-08-31 via PR #1637)
-  - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security settings.
+  - Consecutive No-Diff Days: 12 (CLEAN logged on 2026-09-01 via PR #1650)
+  - Analysis: Full wrapper invariant audit clean after 53 clean runs (widened calibration scan).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 12 (CLEAN logged on 2026-08-31 via PR #1638; last active change on 2026-08-15)
-  - Analysis: Audit complete: native WebView settings and PWA SW cache topology are fully optimized.
+  - Consecutive No-Diff Days: 13 (CLEAN logged on 2026-09-01 via PR #1651; last active change on 2026-08-15)
+  - Analysis: CLEAN Calibration Pass: Audited native wrapper configs, AndroidManifest app properties, and SW precache topology; 0 source changes required.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31 in Toast.vue via PR #1639)
-  - Analysis: Integrated v-tactile directive into Toast action/close/copy buttons for mobile WebView touch feedback.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-01 via PR #1652; last active change on 2026-08-31 via PR #1639)
+  - Analysis: Completed global APK UX audit sweep across 75 frontend files with 0 violations found.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-08-31)
-  - Analysis: Completed daily self-healing audit pass for 2026-08-31: mapped August 31 stage executions/recoveries (PRs #1628 - #1639) and updated Section 3 no-diff metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-01)
+  - Analysis: Completed daily self-healing audit pass for 2026-09-01: mapped September 1 stage executions (PRs #1641 - #1652) and updated Section 3 no-diff metrics.
