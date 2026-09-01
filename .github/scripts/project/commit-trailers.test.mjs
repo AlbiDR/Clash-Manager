@@ -6,6 +6,7 @@ import test from "node:test";
 
 import {
   findViolations,
+  isAllowedAuthor,
   isAllowedCoAuthor,
   loadPolicy,
   parseCoAuthor,
@@ -178,4 +179,42 @@ test("a failing git invocation raises rather than reporting a clean range", () =
   // rubber stamp exactly when it cannot see anything.
   const failing = () => ({ status: 128, stdout: "", stderr: "fatal: bad revision" });
   assert.throws(() => readMessages("bogus..range", failing), /bad revision/);
+});
+
+test("the author allowlist covers the identities the pipeline actually commits as", () => {
+  // GitHub builds the Contributors list from the commit AUTHOR as well as from
+  // trailers, so a tool that commits as itself needs no trailer to be listed.
+  // This list must include the pipeline's own bots: rewriting github-actions
+  // out of its ledger and merge commits would break the nightly run rather
+  // than improve attribution.
+  assert.ok(isAllowedAuthor({ name: "AlbiDR", email: "aalbi97@gmail.com" }, policy));
+  assert.ok(isAllowedAuthor({ name: "google-labs-jules[bot]", email: "161369871+google-labs-jules[bot]@users.noreply.github.com" }, policy));
+  assert.ok(isAllowedAuthor({ name: "github-actions[bot]", email: "github-actions[bot]@users.noreply.github.com" }, policy));
+  assert.ok(isAllowedAuthor({ name: "GitHub", email: "noreply@github.com" }, policy), "squash and merge commits are authored by web-flow");
+});
+
+test("an AI that commits as itself is not allowed to author", () => {
+  const authors = [
+    { name: "Claude", email: "noreply@anthropic.com" },
+    { name: "Copilot", email: "198982749+Copilot@users.noreply.github.com" },
+    { name: "codex", email: "codex@openai.com" },
+    { name: "gemini-code-assist[bot]", email: "gemini@users.noreply.github.com" },
+    { name: "Devin AI", email: "devin-ai-integration[bot]@users.noreply.github.com" },
+    { name: "Cursor Agent", email: "agent@cursor.com" },
+    { name: "SomeNewAgent v2", email: "bot@newvendor.example" },
+  ];
+  for (const author of authors) {
+    assert.equal(isAllowedAuthor(author, policy), false, `${author.name} must not be creditable as author`);
+  }
+});
+
+test("the policy names an identity to reattribute disallowed authors to", () => {
+  // Without this the CI repair has nothing to rewrite to and would have to
+  // fail the pull request, which is the behaviour this design rejects.
+  assert.ok(policy.reattributeTo, "policy must define reattributeTo");
+  assert.ok(policy.reattributeTo.name && policy.reattributeTo.email);
+  assert.ok(
+    isAllowedAuthor(policy.reattributeTo, policy),
+    "the reattribution target must itself be an allowed author, or the repair would loop",
+  );
 });

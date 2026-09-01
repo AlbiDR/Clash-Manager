@@ -30,7 +30,7 @@
 #
 # Jules is allowlisted deliberately in .github/commit-trailer-policy.json: it is
 # this pipeline's own agent and its authorship is wanted.
-name: Commit Trailer Guard
+name: Commit Attribution Guard
 
 on:
   pull_request:
@@ -46,7 +46,7 @@ permissions:
 
 jobs:
   repair:
-    name: "Repair co-author trailers"
+    name: "Repair attribution"
     # A fork's PR branch cannot be pushed to, so there is nothing to repair.
     # Report-only still runs for it through the push path on merge.
     if: >-
@@ -62,13 +62,19 @@ jobs:
           # real history rather than a shallow graft.
           fetch-depth: 0
 
-      - name: Repair disallowed trailers
+      - name: Repair disallowed trailers and authors
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
+          SCRIPT="${GITHUB_WORKSPACE}/.github/scripts/project/commit-trailers.mjs"
 
-          if node .github/scripts/project/commit-trailers.mjs --check-range "${BASE_SHA}..HEAD" --report-only | grep -q '^OK:'; then
+          TRAILERS_OK=0
+          AUTHORS_OK=0
+          node "$SCRIPT" --check-range "${BASE_SHA}..HEAD" --report-only | grep -q '^OK:' || TRAILERS_OK=1
+          node "$SCRIPT" --check-authors-range "${BASE_SHA}..HEAD" --report-only | grep -q '^OK:' || AUTHORS_OK=1
+
+          if [ "$TRAILERS_OK" = "0" ] && [ "$AUTHORS_OK" = "0" ]; then
             echo "Nothing to repair."
             exit 0
           fi
@@ -76,25 +82,46 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # The identity a disallowed author is rewritten to. Exported because
+          # filter-branch evaluates --env-filter in a separate shell.
+          REATTRIBUTION="$(node "$SCRIPT" --print-reattribution)"
+          REATTRIBUTE_NAME="${REATTRIBUTION%%$'\t'*}"
+          REATTRIBUTE_EMAIL="${REATTRIBUTION##*$'\t'}"
+          export REATTRIBUTE_NAME REATTRIBUTE_EMAIL SCRIPT
+
           # Only the commits the PR itself introduces are rewritten. The base is
           # never touched, so this cannot rewrite shared history.
+          #
+          # The author is reattributed rather than the commit rejected: GitHub
+          # credits the commit author in the Contributors list, so a tool that
+          # commits as itself needs no trailer at all to appear there. The
+          # committer is deliberately left alone - it records who applied the
+          # change, which after this rewrite is honestly github-actions[bot].
           FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
-            --msg-filter 'node "${GITHUB_WORKSPACE}/.github/scripts/project/commit-trailers.mjs" --filter-stdin' \
+            --msg-filter 'node "$SCRIPT" --filter-stdin' \
+            --env-filter '
+              if ! node "$SCRIPT" --author-allowed "$GIT_AUTHOR_NAME" "$GIT_AUTHOR_EMAIL" >/dev/null 2>&1; then
+                export GIT_AUTHOR_NAME="$REATTRIBUTE_NAME"
+                export GIT_AUTHOR_EMAIL="$REATTRIBUTE_EMAIL"
+              fi
+            ' \
             "${BASE_SHA}..HEAD"
 
           # --force-with-lease so a push that raced this run is not clobbered;
           # the next synchronize event repairs it instead.
           git push --force-with-lease origin "HEAD:${{ github.event.pull_request.head.ref }}"
 
-          echo "Repaired disallowed co-author trailers and pushed the corrected branch."
+          echo "Repaired disallowed co-author trailers and/or authors, and pushed the corrected branch."
 
       - name: Confirm the branch is clean
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node .github/scripts/project/commit-trailers.mjs --check-range "${BASE_SHA}..HEAD"
+        run: |
+          node .github/scripts/project/commit-trailers.mjs --check-range "${BASE_SHA}..HEAD"
+          node .github/scripts/project/commit-trailers.mjs --check-authors-range "${BASE_SHA}..HEAD"
 
   report:
-    name: "Report co-author trailers"
+    name: "Report attribution"
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -117,5 +144,7 @@ jobs:
             echo "range=${BASE}..${HEAD}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Report disallowed trailers
-        run: node .github/scripts/project/commit-trailers.mjs --check-range "${{ steps.range.outputs.range }}" --report-only
+      - name: Report disallowed trailers and authors
+        run: |
+          node .github/scripts/project/commit-trailers.mjs --check-range "${{ steps.range.outputs.range }}" --report-only
+          node .github/scripts/project/commit-trailers.mjs --check-authors-range "${{ steps.range.outputs.range }}" --report-only

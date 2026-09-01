@@ -1,5 +1,6 @@
 {
-  "comment": "Who is allowed to appear as a Co-Authored-By trailer in this repository. GitHub turns every such trailer into an entry in the repository's Contributors section, so this list decides who is publicly credited. Anyone not matched here is stripped by the commit-msg hook and rejected by Commit Trailer Guard. Matching is case-insensitive; a trailer is allowed if its email equals an `email` entry or its name matches a `namePattern` regex.",
+  "comment": "Who may appear as a contributor to this repository. GitHub builds the Contributors list from two independent things: the commit AUTHOR, and every Co-Authored-By trailer. Both are governed here. Anyone not matched is stripped (trailers) or reattributed (authors) by the commit-msg and pre-commit hooks and by Commit Trailer Guard. Matching is case-insensitive; an identity matches if its email equals an `email` entry or its name matches a `namePattern` regex.",
+
   "allowedCoAuthors": [
     {
       "label": "Repository owner",
@@ -13,5 +14,38 @@
       "label": "Jules (Google Labs) bot account",
       "namePattern": "^jules\\b"
     }
-  ]
+  ],
+
+  "allowedAuthors": [
+    {
+      "label": "Repository owner",
+      "email": "aalbi97@gmail.com"
+    },
+    {
+      "label": "Jules (Google Labs) - authors every nightly stage commit",
+      "namePattern": "^google-labs-jules"
+    },
+    {
+      "label": "Jules (Google Labs) bot account",
+      "namePattern": "^jules\\b"
+    },
+    {
+      "label": "GitHub Actions - authors the pipeline's own ledger, merge and sync commits. Removing this would break the nightly pipeline, not improve attribution.",
+      "email": "github-actions[bot]@users.noreply.github.com"
+    },
+    {
+      "label": "GitHub Actions, by name, for runners that vary the noreply address",
+      "namePattern": "^github-actions"
+    },
+    {
+      "label": "GitHub's own merge/web-flow identity for squash and merge commits",
+      "email": "noreply@github.com"
+    }
+  ],
+
+  "reattributeTo": {
+    "comment": "A disallowed author is rewritten to this identity rather than the commit being rejected. The work was done on the owner's behalf, so the owner is who it belongs to.",
+    "name": "AlbiDR",
+    "email": "aalbi97@gmail.com"
+  }
 }

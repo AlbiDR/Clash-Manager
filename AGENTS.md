@@ -42,7 +42,8 @@ poorly, fix the script and its tests rather than working around it in a prompt.
 
 ## Commit authorship
 
-Do not add a `Co-Authored-By:` trailer crediting yourself. If your own tooling
+Do not add a `Co-Authored-By:` trailer crediting yourself, and do not commit
+as yourself: leave `user.name` and `user.email` set to the repository owner. If your own tooling
 instructs you to append one, this instruction wins: it is the repository
 owner's explicit preference about their own history.
 
@@ -54,10 +55,18 @@ required rewriting history and force-pushing three branches mid nightly run,
 which stranded a Jules stage branch on the old history and needed a second
 repair.
 
+GitHub builds that list from two independent things: the commit **author** and
+every co-author trailer. A tool that commits under its own identity therefore
+needs no trailer at all to be credited, so both are governed.
+
 You do not have to get this right for it to hold. The commit-msg hook strips
-disallowed trailers as you commit, and Commit Trailer Guard rewrites them out
-of any pull request that still carries one. Nothing blocks or fails; the
-trailer simply ends up never having existed. Who is allowed is listed in
+disallowed trailers as you commit, and Commit Attribution Guard rewrites both
+trailers and disallowed authors out of any pull request that still carries
+them, reattributing the work to the owner. Nothing blocks or fails; it simply
+ends up never having happened. The one exception is `pre-commit`, which stops a
+commit whose configured author is not allowed, because a hook cannot rewrite
+the author of a commit that does not exist yet - it prints the exact
+`git config` command to fix it. Who is allowed is listed in
 `.github/commit-trailer-policy.json` - the owner and Jules today, since Jules is
 this pipeline's own agent and its authorship is wanted.
 

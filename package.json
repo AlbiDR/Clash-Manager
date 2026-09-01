@@ -58,7 +58,7 @@
     "typescript": "catalog:"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint",
+    "pre-commit": "node .github/scripts/project/commit-trailers.mjs --check-author-config && pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint",
     "commit-msg": "node .github/scripts/project/commit-trailers.mjs $1"
   },
   "engines": {

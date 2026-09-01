@@ -60,15 +60,33 @@ export function parseCoAuthor(line) {
   return { name: identity[1].trim(), email: identity[2].trim() };
 }
 
-export function isAllowedCoAuthor(coAuthor, policy) {
-  if (!coAuthor) return true;
-  const name = (coAuthor.name || "").toLowerCase();
-  const email = (coAuthor.email || "").toLowerCase();
-  return policy.allowedCoAuthors.some(allowed => {
+function matchesAny(identity, allowList) {
+  const name = (identity.name || "").toLowerCase();
+  const email = (identity.email || "").toLowerCase();
+  return (allowList || []).some(allowed => {
     if (allowed.email && email && allowed.email.toLowerCase() === email) return true;
     if (allowed.namePattern && name && new RegExp(allowed.namePattern, "i").test(name)) return true;
     return false;
   });
+}
+
+export function isAllowedCoAuthor(coAuthor, policy) {
+  if (!coAuthor) return true;
+  return matchesAny(coAuthor, policy.allowedCoAuthors);
+}
+
+/**
+ * The other route into the Contributors list, and the one a trailer policy
+ * alone misses entirely: GitHub credits the commit AUTHOR as a contributor, so
+ * a tool that commits as itself never needs a trailer to be listed.
+ *
+ * The allowlist has to include github-actions[bot] and GitHub's web-flow
+ * identity. They author this pipeline's ledger, merge and sync commits, and
+ * rewriting those would break the nightly run rather than improve attribution.
+ */
+export function isAllowedAuthor(author, policy) {
+  if (!author) return true;
+  return matchesAny(author, policy.allowedAuthors || []);
 }
 
 /**
@@ -201,9 +219,103 @@ function runStdinFilter(policy) {
   return 0;
 }
 
+/**
+ * Exit status says whether an author identity may be credited. Called once per
+ * commit from `git filter-branch --env-filter`, which is shell, so a process
+ * exit code is the only interface available to it.
+ */
+function runAuthorAllowed(argv, policy) {
+  const nameIndex = argv.indexOf("--author-allowed");
+  const name = argv[nameIndex + 1] || "";
+  const email = argv[nameIndex + 2] || "";
+  return isAllowedAuthor({ name, email }, policy) ? 0 : 1;
+}
+
+/** The identity a disallowed author is rewritten to, as NAME<TAB>EMAIL. */
+function runPrintReattribution(policy) {
+  const target = policy.reattributeTo || {};
+  if (!target.name || !target.email) {
+    console.error("Policy is missing reattributeTo.name / reattributeTo.email.");
+    return 2;
+  }
+  process.stdout.write(`${target.name}\t${target.email}`);
+  return 0;
+}
+
+function runAuthorCheck(range, policy, { reportOnly = false } = {}) {
+  const result = spawnSync("git", ["log", "--reverse", "--format=%H%x1f%an%x1f%ae%x1e", range], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    throw new Error(`git log ${range} failed: ${result.stderr || "unknown error"}`);
+  }
+
+  const offenders = String(result.stdout)
+    .split("\x1e")
+    .map(record => record.trim())
+    .filter(Boolean)
+    .map(record => {
+      const [sha, name, email] = record.split("\x1f");
+      return { sha: (sha || "").trim(), name, email };
+    })
+    .filter(commit => !isAllowedAuthor(commit, policy));
+
+  if (offenders.length === 0) {
+    console.log(`OK: every author in ${range} may be credited.`);
+    return 0;
+  }
+
+  const severity = reportOnly ? "warning" : "error";
+  for (const { sha, name, email } of offenders) {
+    console.log(`::${severity}::${sha.slice(0, 8)} is authored by ${name} <${email}>, who is not allowed to be credited.`);
+  }
+  console.log(
+    `::${severity}::GitHub lists the commit author in the Contributors section. ` +
+      `Reattribute these commits, or add the identity to ${POLICY_PATH} if the credit is intended.`,
+  );
+  return reportOnly ? 0 : 1;
+}
+
+/**
+ * Validates the identity git is about to stamp on a new commit, for pre-commit.
+ *
+ * This is the one place that refuses rather than repairs, and only because
+ * repair is impossible here: a hook cannot change the author of a commit that
+ * does not exist yet. It is also the cheapest possible moment to find out, it
+ * fires only on a genuinely misconfigured clone, and the message says exactly
+ * what to run. Everything downstream still repairs silently.
+ */
+function runAuthorConfigCheck(policy) {
+  const read = key => {
+    const result = spawnSync("git", ["config", "--get", key], { encoding: "utf8" });
+    return result.status === 0 ? String(result.stdout).trim() : "";
+  };
+  const name = read("user.name");
+  const email = read("user.email");
+  if (isAllowedAuthor({ name, email }, policy)) return 0;
+
+  const target = policy.reattributeTo || {};
+  console.error(`[commit-trailers] git is configured to author commits as ${name} <${email}>.`);
+  console.error(`[commit-trailers] GitHub lists the commit author in this repository's Contributors section, and that identity is not allowed there.`);
+  console.error(`[commit-trailers] Fix it for this repository with:`);
+  console.error(`    git config user.name  "${target.name || "AlbiDR"}"`);
+  console.error(`    git config user.email "${target.email || "aalbi97@gmail.com"}"`);
+  console.error(`[commit-trailers] Or add the identity to ${POLICY_PATH} if the credit is intended.`);
+  return 1;
+}
+
 function main(argv) {
   const policy = loadPolicy();
   if (argv.includes("--filter-stdin")) return runStdinFilter(policy);
+  if (argv.includes("--check-author-config")) return runAuthorConfigCheck(policy);
+  if (argv.includes("--author-allowed")) return runAuthorAllowed(argv, policy);
+  if (argv.includes("--print-reattribution")) return runPrintReattribution(policy);
+
+  const authorsIndex = argv.indexOf("--check-authors-range");
+  if (authorsIndex !== -1) {
+    return runAuthorCheck(argv[authorsIndex + 1], policy, { reportOnly: argv.includes("--report-only") });
+  }
   const checkIndex = argv.indexOf("--check-range");
   if (checkIndex !== -1) {
     return runCheck(argv[checkIndex + 1], policy, { reportOnly: argv.includes("--report-only") });
