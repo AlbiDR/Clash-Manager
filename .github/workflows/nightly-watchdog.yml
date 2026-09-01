@@ -131,8 +131,19 @@ jobs:
         run: |
           echo "::warning title=Nightly stages unresolved::The observer ran cleanly but some stages are unresolved or promotion has stalled. See the job summary."
 
+      # Exit 3 is the capability-loss channel: the observer ran fine and every
+      # stage may have merged, but the pipeline has lost the ability to recover
+      # or is carrying a stage every night. Both are true at every pass of the
+      # night rather than transiently, so reddening them costs no alarm fatigue
+      # and is the only thing that would tell us the streak had ended.
+      - name: Fail on Lost Pipeline Capability
+        if: steps.watchdog.outputs.exit_code == '3'
+        run: |
+          echo "::error title=Nightly capability lost::Recovery is disarmed (dead JULES_API_KEY) or a stage is chronically carried. See the job summary."
+          exit 1
+
       - name: Fail Only on Observer or Environment Failure
-        if: steps.watchdog.outputs.exit_code != '0' && steps.watchdog.outputs.exit_code != '2'
+        if: steps.watchdog.outputs.exit_code != '0' && steps.watchdog.outputs.exit_code != '2' && steps.watchdog.outputs.exit_code != '3'
         run: |
           echo "Watchdog exited ${{ steps.watchdog.outputs.exit_code }}: the observer itself failed."
           exit 1

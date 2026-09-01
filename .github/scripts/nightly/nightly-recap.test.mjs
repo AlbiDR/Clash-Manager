@@ -129,10 +129,42 @@ test("the grade rubric is applied in severity order", () => {
 });
 
 test("a perfect run grades 10 and a rescued one grades 9", () => {
-  const stage = (outcome, rescued) => ({ outcome, merged: outcome !== "STUCK", rescued });
+  const stage = (outcome, rescued) => ({ outcome, merged: outcome !== "STUCK", rescued, observed: true });
   assert.equal(gradeRun(Array.from({ length: 13 }, () => stage("CLEAN", false))).grade, 10);
   const oneRescued = Array.from({ length: 13 }, (_, i) => stage("CLEAN", i === 4));
   assert.equal(gradeRun(oneRescued).grade, 9);
+});
+
+test("grade 10 requires observation, not just merges", () => {
+  // "Optimal run: every stage completed unaided" is a claim about intervention,
+  // and intervention is knowable only from a ledger row. `merged` reads through
+  // to durable promotion tags, so a date whose ledger rows are missing or still
+  // EXPECTED used to satisfy every grade-10 condition on tags alone and print
+  // the unaided claim over a night nobody watched. Reproduced against the real
+  // 2026-09-01 inputs with an emptied ledger: grade was 10, rescued 0.
+  //
+  // The flag is deliberately fail-closed: an absent `observed` counts as
+  // unobserved, so a caller cannot reach the unaided claim by omission.
+  const merged = n => Array.from({ length: n }, () => ({ outcome: "CLEAN", merged: true, rescued: false, observed: true }));
+
+  const allSeen = gradeRun(merged(13));
+  assert.equal(allSeen.grade, 10);
+  assert.equal(allSeen.unobserved, 0);
+
+  const oneBlind = [...merged(12), { outcome: "CLEAN", merged: true, rescued: false, observed: false }];
+  const graded = gradeRun(oneBlind);
+  assert.equal(graded.grade, 9, "a single unobserved stage must forfeit the unaided claim");
+  assert.equal(graded.unobserved, 1);
+  assert.match(graded.rationale, /Unverified: every stage merged, but 1 of 13 were never observed/);
+
+  // Omission must not buy a 10 either.
+  assert.equal(gradeRun([{ outcome: "CLEAN", merged: true, rescued: false }]).grade, 9);
+
+  // A date with neither observation nor tags must not be called a dead
+  // pipeline: that asserts a failure the evidence cannot support.
+  const blind = gradeRun(Array.from({ length: 13 }, () => ({ outcome: "STUCK", merged: false, rescued: false, observed: false })));
+  assert.equal(blind.grade, 1);
+  assert.match(blind.rationale, /No evidence for this date/);
 });
 
 test("latestRunDate picks the newest date regardless of key order", () => {

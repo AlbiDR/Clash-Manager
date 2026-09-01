@@ -837,6 +837,20 @@ export function renderSummary(date, entries) {
 //   0 = every stage accountable, recovery armed, promotion healthy
 //   2 = stages unresolved, recovery disarmed, or promotion stalled
 //   1 = the observer or its environment is broken
+/**
+ * Exit-code contract. The workflow maps these to job conclusions, so the split
+ * is what decides whether a human is interrupted.
+ *
+ *   0  nothing to report.
+ *   1  the observer or its environment is broken. Go debug the watchdog.
+ *   2  stages are unresolved or promotion has stalled. NON-BLOCKING by design:
+ *      the observer runs 14 times a day and the early passes legitimately see
+ *      stages still in flight, so reddening this would restore the 100 percent
+ *      red history that made the conclusion carry no information.
+ *   3  the pipeline has lost a capability while still looking green. BLOCKING.
+ *      Distinct from 2 precisely because it is not a transient in-flight state:
+ *      it is true at every pass of the night and stays true until someone acts.
+ */
 export function resolveExitCode({ observerHealthy, promotion, entries, julesAvailable, chronicStages }) {
   if (!observerHealthy) return 1;
 
@@ -855,13 +869,16 @@ export function resolveExitCode({ observerHealthy, promotion, entries, julesAvai
   // stranded, which is precisely the night it is needed. A mechanism used only
   // in emergencies needs a heartbeat, not an emergency, so its absence is
   // reported on the quiet nights when there is time to fix it.
-  if (julesAvailable === false) return 2;
+  // Exit 3, not 2: exit 2 is non-blocking, and a disarmed recovery path that
+  // nothing reddens is exactly the silent degradation this check exists to
+  // prevent. It is also not transient, so it cannot cause in-flight noise.
+  if (julesAvailable === false) return 3;
 
   // A stage that needed rescuing on every one of its recent runs passes every
   // individual night, because each night it was rescued. Left at exit 0 that is
   // a pipeline degrading behind a green light, which is precisely the state
   // this whole consolidation exists to make impossible.
-  if ((chronicStages || []).length > 0) return 2;
+  if ((chronicStages || []).length > 0) return 3;
 
   if (promotion?.stale) return 2;
   if ((entries || []).some(entry => !PASS_STATES.has(entry.state))) return 2;

@@ -32,7 +32,7 @@
 
 import { spawnSync } from "node:child_process";
 
-import { HEALTH, evaluatePipelineHealth } from "./nightly-health.mjs";
+import { HEALTH, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
 
 export const SOURCE_REF = "origin/Nightly";
 const LEDGER = ".github/nightly-logs/nightly-run-ledger.json";
@@ -125,6 +125,11 @@ export function classifyStage({ stage, entry, tag, declared, history }) {
     outcome,
     merged,
     rescued,
+    // Whether the watchdog actually reached a verdict for this stage. `merged`
+    // reads through to durable tags, but `rescued` can only come from a ledger
+    // row, so without this flag an absent row is indistinguishable from an
+    // observed clean run and reads as "nobody intervened".
+    observed: isObserved(entry),
     rescuedBy: entry?.evidence?.fallbackPublish ? "fallback-publish"
       : entry?.evidence?.recovery ? "watchdog-nudge" : null,
     state: entry?.state ?? null,
@@ -146,11 +151,28 @@ export function classifyStage({ stage, entry, tag, declared, history }) {
 // The grade rubric, encoded declaratively so the thresholds are the published
 // specification rather than numbers invented here. Evaluated in order.
 export const GRADE_RUBRIC = [
+  // Absence of evidence is not evidence of failure. Without this first rule a
+  // date the watchdog never observed, and for which no promotion tag exists,
+  // was reported as a dead pipeline - an assertion the data cannot support.
+  {
+    grade: 1,
+    when: r => r.unobserved === r.total && r.merged === 0,
+    why: "No evidence for this date: no stage was observed and no promotion tag exists, so nothing can be concluded.",
+  },
   { grade: 1, when: r => r.merged === 0, why: "Dead pipeline: no stage produced any output." },
   { grade: 3, when: r => r.stuck > r.total / 2, why: "Critical failure: the majority of stages did not complete." },
   { grade: 5, when: r => r.stuck >= 2, why: "Multiple blocks: more than one stage failed or got stuck." },
   { grade: 7, when: r => r.stuck === 1, why: "Partial block: one stage failed or got stuck." },
   { grade: 9, when: r => r.rescued > 0, why: "Minor issues: every stage completed, but some needed intervention." },
+  // "Unaided" is a claim about intervention, and intervention is only knowable
+  // from a ledger row. Tags alone prove the merge, never that it was unaided,
+  // so a night with unobserved stages can reach 10/10 on tags while a rescue
+  // sits unrecorded. Grade it as unverified instead of perfect.
+  {
+    grade: 9,
+    when: r => r.unobserved > 0,
+    why: r => `Unverified: every stage merged, but ${r.unobserved} of ${r.total} were never observed, so intervention cannot be ruled out.`,
+  },
   { grade: 10, when: () => true, why: "Optimal run: every stage completed unaided." },
 ];
 
@@ -162,9 +184,10 @@ export function gradeRun(stages) {
     rescued: stages.filter(s => s.rescued).length,
     changed: stages.filter(s => s.outcome === "CHANGED").length,
     clean: stages.filter(s => s.outcome === "CLEAN").length,
+    unobserved: stages.filter(s => !s.observed).length,
   };
   const hit = GRADE_RUBRIC.find(rule => rule.when(totals));
-  return { ...totals, grade: hit.grade, rationale: hit.why };
+  return { ...totals, grade: hit.grade, rationale: typeof hit.why === "function" ? hit.why(totals) : hit.why };
 }
 
 export function latestRunDate(ledger) {

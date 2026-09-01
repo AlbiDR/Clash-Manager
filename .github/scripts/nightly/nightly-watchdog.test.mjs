@@ -928,7 +928,7 @@ test("a perfect night with an unreachable Jules API still fails the run", () => 
 
   assert.equal(
     resolveExitCode({ observerHealthy: true, promotion: healthyPromotion, entries: allMerged, julesAvailable: false }),
-    2,
+    3,
     "recovery being disarmed must fail the run even when every stage merged",
   );
 
@@ -942,9 +942,9 @@ test("a perfect night with an unreachable Jules API still fails the run", () => 
 test("an unreachable Jules API does not masquerade as a broken observer", () => {
   // Exit 1 means "the observer or its environment is broken" and would send you
   // debugging the watchdog. A dead credential is a pipeline capability problem,
-  // which is exit 2.
+  // which is exit 3.
   const entries = [{ stage: 1, state: "MERGED" }];
-  assert.equal(resolveExitCode({ observerHealthy: true, promotion: null, entries, julesAvailable: false }), 2);
+  assert.equal(resolveExitCode({ observerHealthy: true, promotion: null, entries, julesAvailable: false }), 3);
   assert.equal(resolveExitCode({ observerHealthy: false, promotion: null, entries, julesAvailable: false }), 1);
 });
 
@@ -1092,9 +1092,32 @@ test("a chronically carried stage fails the run even though every night passed",
   const healthy = { observerHealthy: true, promotion: { available: true, stale: false }, entries: allPassing, julesAvailable: true };
 
   assert.equal(resolveExitCode({ ...healthy, chronicStages: [] }), 0);
-  assert.equal(resolveExitCode({ ...healthy, chronicStages: [{ stage: 5 }] }), 2);
+  assert.equal(resolveExitCode({ ...healthy, chronicStages: [{ stage: 5 }] }), 3);
   // Omitted entirely must not change any existing caller's result.
   assert.equal(resolveExitCode(healthy), 0);
+});
+
+test("capability loss is exit 3 so the workflow reddens, unresolved stages stay 2", () => {
+  // The YAML keys off these numbers: exit 2 only warns, exit 3 fails the job.
+  // Before this split both faults returned 2, so a dead JULES_API_KEY on a
+  // night where all 13 stages published on their own left the run green - the
+  // credential heartbeat resolveExitCode was written to provide could not fire.
+  // Verified against real run 33469929219: exit 2 produced conclusion success.
+  const allMerged = Array.from({ length: 13 }, (_, i) => ({ stage: i + 1, state: "MERGED" }));
+  const unresolved = [{ stage: 1, state: "NO_OUTPUT" }];
+  const promotion = { available: true, stale: false, commitCount: 0 };
+  const base = { observerHealthy: true, promotion, julesAvailable: true };
+
+  // Blocking: true all night, and stays true until someone acts.
+  assert.equal(resolveExitCode({ ...base, entries: allMerged, julesAvailable: false }), 3);
+  assert.equal(resolveExitCode({ ...base, entries: allMerged, chronicStages: [{ stage: 12 }] }), 3);
+
+  // Non-blocking: legitimately transient while stages are still in flight.
+  assert.equal(resolveExitCode({ ...base, entries: unresolved }), 2);
+  assert.equal(resolveExitCode({ ...base, entries: allMerged, promotion: { available: true, stale: true } }), 2);
+
+  // A broken observer still outranks a capability loss: fix the observer first.
+  assert.equal(resolveExitCode({ ...base, observerHealthy: false, entries: allMerged, julesAvailable: false }), 1);
 });
 
 test("session telemetry is recorded for stages that merged, not only for failures", () => {
