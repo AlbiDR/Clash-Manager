@@ -196,10 +196,10 @@ describe("Toast.vue", () => {
       const copyBtn = wrapper.find(".copy-btn");
       await copyBtn.trigger("click"); // Clears timer and sets 2000ms tick delay
 
-      vi.advanceTimersByTime(2500); // 2500ms passed; timer was paused during tick, so 3000ms hasn't elapsed since reset
+      vi.advanceTimersByTime(2500); // tick ended at 2000ms and started a fresh 3000ms timer; 500ms into it
       expect(wrapper.emitted("dismiss")).toBeFalsy();
 
-      vi.advanceTimersByTime(1000); // total 3500ms since timer reset
+      vi.advanceTimersByTime(2500); // 3000ms since that restart, so dismissal fires
       expect(wrapper.emitted("dismiss")).toBeTruthy();
     });
 
