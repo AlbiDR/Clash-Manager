@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-31
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-01] PR #1645 [Stage 5]: Reconciled Toast.vue v-tactile directive integration in shared UI README
+**Domain:** documentation | **Commit:** ade2b97c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1645)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Why:** Stage 12 PR #1639 integrated v-tactile directive into Toast buttons, introducing README drift
+**Change:** Reconciled Toast.vue v-tactile directive integration in shared UI README
+**Result:** Verified diff with git diff --check and confirmed ADR alignment
+
+
 ### [2026-09-01] PR #1644 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no source changes required
 **Domain:** pipeline | **Commit:** 6d372afa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1644)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
