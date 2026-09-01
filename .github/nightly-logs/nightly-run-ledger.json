@@ -4998,7 +4998,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.975Z",
+        "lastObservedAt": "2026-09-01T09:31:19.872Z",
         "failureClass": null
       },
       "2": {
@@ -5028,7 +5028,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.976Z",
+        "lastObservedAt": "2026-09-01T09:31:19.872Z",
         "failureClass": null
       },
       "3": {
@@ -5056,7 +5056,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.976Z",
+        "lastObservedAt": "2026-09-01T09:31:19.872Z",
         "failureClass": null
       },
       "4": {
@@ -5087,7 +5087,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.976Z",
+        "lastObservedAt": "2026-09-01T09:31:19.872Z",
         "failureClass": null
       },
       "5": {
@@ -5118,7 +5118,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.976Z",
+        "lastObservedAt": "2026-09-01T09:31:19.873Z",
         "failureClass": null
       },
       "6": {
@@ -5146,7 +5146,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.977Z",
+        "lastObservedAt": "2026-09-01T09:31:19.873Z",
         "failureClass": null
       },
       "7": {
@@ -5177,7 +5177,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.977Z",
+        "lastObservedAt": "2026-09-01T09:31:19.873Z",
         "failureClass": null
       },
       "8": {
@@ -5205,7 +5205,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.977Z",
+        "lastObservedAt": "2026-09-01T09:31:19.873Z",
         "failureClass": null
       },
       "9": {
@@ -5233,7 +5233,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.977Z",
+        "lastObservedAt": "2026-09-01T09:31:19.874Z",
         "failureClass": null
       },
       "10": {
@@ -5241,42 +5241,59 @@
         "stage": 10,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1650,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1650",
           "headRef": "nightly/stage-10-apk-integrity-5e2b3a24-2000222022812296523",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-01/stage-10/pr-1650",
+          "session": {
+            "id": "2000222022812296523",
+            "name": "sessions/2000222022812296523",
+            "state": "COMPLETED",
+            "createTime": "2026-09-01T08:14:55.221986075Z",
+            "updateTime": "2026-09-01T08:31:00.908996Z",
+            "lifetimeMinutes": 16.1
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.978Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-01T09:31:19.874Z",
+        "failureClass": null
       },
       "11": {
         "date": "2026-09-01",
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-01/stage-11/pr-1651",
+          "session": {
+            "id": "10220040112614750218",
+            "name": "sessions/10220040112614750218",
+            "state": "COMPLETED",
+            "createTime": "2026-09-01T09:21:09.740125190Z",
+            "updateTime": "2026-09-01T09:30:15.138334Z",
+            "lifetimeMinutes": 9.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.978Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-01T09:31:19.874Z",
+        "failureClass": null
       },
       "12": {
         "date": "2026-09-01",
@@ -5294,7 +5311,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.978Z",
+        "lastObservedAt": "2026-09-01T09:31:19.874Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -5313,7 +5330,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T08:31:09.978Z",
+        "lastObservedAt": "2026-09-01T09:31:19.875Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
