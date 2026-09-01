@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -17,6 +18,7 @@ import {
   isWorkflowFile,
   renderActivationReport,
   renderStrandedReport,
+  strandedOnlyFiles,
 } from "./nightly-deploy-check.mjs";
 
 // ---------------------------------------------------------------------------
@@ -226,4 +228,28 @@ test("a change on both Nightly and Beta is one pending promotion, not two", () =
   });
   const total = deduped.reduce((n, entry) => n + entry.commits.length, 0);
   assert.equal(total, 3, "evaluatePendingActivation itself does not dedupe; collectPendingActivation does");
+});
+
+test("stranded-work coverage includes every stage prompt, enumerated from the registry", () => {
+  // A stage prompt is the stage's instruction set. An edit that reaches Beta
+  // but not Nightly leaves the stage running the old instructions while the
+  // change looks shipped - the exact stranded-work failure. Enumerated from
+  // stages.json so a fourteenth stage cannot be added without coverage.
+  const watched = strandedOnlyFiles();
+  const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
+
+  for (const stage of registry.stages) {
+    assert.ok(watched.includes(stage.prompt), `stage ${stage.number} prompt must be watched`);
+  }
+  assert.ok(watched.includes(".github/nightly-prompts/00-nightly-agent-contract.md"));
+  assert.ok(watched.includes(".github/scripts/nightly/nightly-clean-calibration.mjs"));
+});
+
+test("a broken registry shrinks coverage to the fixed entries, never to nothing", () => {
+  // Reporting an empty watched set would make the stranded check pass by
+  // knowing nothing, which is the failure mode this file warns about
+  // elsewhere: a guard that goes green when broken.
+  const watched = strandedOnlyFiles("/nonexistent/stages.json");
+  assert.ok(watched.length > 0);
+  assert.ok(watched.includes(".github/nightly-prompts/00-nightly-agent-contract.md"));
 });

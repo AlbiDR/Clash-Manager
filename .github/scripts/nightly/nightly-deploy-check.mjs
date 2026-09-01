@@ -239,6 +239,42 @@ export function collectPendingActivation(
   return commitsByBranch;
 }
 
+/**
+ * Files watched for stranding only, never for symmetric drift.
+ *
+ * A stage prompt is the stage's actual instruction set: if an edit reaches Beta
+ * but not Nightly, the stage keeps running the old instructions and the change
+ * looks shipped while doing nothing. That is exactly the stranded-work
+ * question, so prompts belong in this check.
+ *
+ * They deliberately stay OUT of the symmetric identical-across-branches list.
+ * Stable is routinely behind on prompts by design (it is a checkpoint branch,
+ * see the branch topology), so comparing them across all branches would report
+ * a difference that is intended, every time, and teach everyone to ignore the
+ * check.
+ *
+ * The prompt paths are enumerated from the registry rather than written out
+ * here, so a fourteenth stage cannot be added without coverage following it.
+ */
+export function strandedOnlyFiles(registryPath = ".github/nightly-config/stages.json") {
+  const extra = [
+    ".github/nightly-prompts/00-nightly-agent-contract.md",
+    // Newer scripts the original watched set predates.
+    ".github/scripts/nightly/nightly-clean-calibration.mjs",
+    ".github/scripts/nightly/update-nightly-context.sh",
+    ".github/scripts/nightly/age-pr-history.py",
+  ];
+  try {
+    const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+    const prompts = (registry.stages || []).map(stage => stage.prompt).filter(Boolean);
+    return [...prompts, ...extra];
+  } catch {
+    // A missing or malformed registry must not silently shrink the watched set
+    // to nothing. Fall back to the fixed entries rather than reporting all-clear.
+    return extra;
+  }
+}
+
 export function collectStrandedWork(
   files = CONTROL_PLANE_FILES,
   branches = CONTROL_PLANE_BRANCHES,
@@ -299,7 +335,12 @@ export function runCli(argv = process.argv.slice(2)) {
   try {
     const stranded = argv.includes("--stranded");
     const findings = stranded
-      ? { items: evaluateStrandedWork(collectStrandedWork()), render: renderStrandedReport }
+      ? {
+          items: evaluateStrandedWork(
+            collectStrandedWork([...CONTROL_PLANE_FILES, ...strandedOnlyFiles()]),
+          ),
+          render: renderStrandedReport,
+        }
       : { items: evaluateControlPlaneDrift(collectControlPlaneBlobs()), render: renderDriftReport };
     report = findings.render(findings.items);
     failed = findings.items.length > 0;

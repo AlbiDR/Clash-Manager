@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Runs the nightly control-plane test suites on a trigger that actually fires
+# for the changes they cover.
+#
+# The suites existed and passed, but nothing in CI ran them at the moment the
+# code reached production. `intel-checks.yml` is `pull_request: branches:
+# [Stable, Beta]` only, and control-plane scripts do not travel that way: they
+# reach the pipeline by direct push to Nightly and Stable, and Jules' own stage
+# pull requests target Nightly. So the one automated check over this code was
+# wired to a path the code never takes, and every regression in it was caught
+# only by whoever happened to run pnpm test:nightly-control-plane by hand.
+#
+# The recovery ladder makes that gap expensive. The watchdog nudge is what
+# converts a stuck Jules session into a merge, and it carries the current
+# success rate: ten rescues across 2026-08-25 to 08-30. It is also, by
+# definition, code that only runs when something has already gone wrong, so a
+# break in it stays invisible until the night it is needed.
+#
+# Path-filtered so ordinary frontend work does not pay for it.
+name: Control Plane Tests
+
+on:
+  push:
+    branches:
+      - Nightly
+      - Beta
+      - Stable
+    paths:
+      - ".github/scripts/nightly/**"
+      - ".github/scripts/project/**"
+      - ".github/scripts/android/audit-apk-ux*"
+      - ".github/nightly-config/**"
+      - ".github/workflows/control-plane-tests.yml"
+  pull_request:
+    paths:
+      - ".github/scripts/nightly/**"
+      - ".github/scripts/project/**"
+      - ".github/nightly-config/**"
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: "Nightly control plane"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Eleven suites plus the lifecycle validator. These are pure Node tests
+      # over fixtures with no network calls, so they are fast and deterministic.
+      - name: Run control-plane suites
+        run: pnpm test:nightly-control-plane
+
+      - name: Run attribution guard suite
+        run: pnpm test:commit-trailers
