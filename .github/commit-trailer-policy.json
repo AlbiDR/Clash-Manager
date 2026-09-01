@@ -1,5 +1,5 @@
 {
-  "comment": "Who may appear as a contributor to this repository. GitHub builds the Contributors list from two independent things: the commit AUTHOR, and every Co-Authored-By trailer. Both are governed here. Anyone not matched is stripped (trailers) or reattributed (authors) by the commit-msg and pre-commit hooks and by Commit Trailer Guard. Matching is case-insensitive; an identity matches if its email equals an `email` entry or its name matches a `namePattern` regex.",
+  "comment": "Who may appear as a contributor to this repository. GitHub builds the Contributors list from two independent things: the commit AUTHOR, and every Co-Authored-By trailer. Both are governed here. Anyone not matched is stripped (trailers) or reattributed (authors) by the commit-msg and pre-commit hooks and by Commit Attribution Guard. Matching is case-insensitive, and every condition an entry states must hold: a namePattern alone is never enough, because a display name is attacker-controlled. Entries naming a bot pin its email domain too.",
 
   "allowedCoAuthors": [
     {
@@ -7,12 +7,17 @@
       "email": "aalbi97@gmail.com"
     },
     {
-      "label": "Jules (Google Labs) - the nightly pipeline's own agent, credited deliberately",
-      "namePattern": "^google-labs-jules"
+      "label": "Repository owner, GitHub noreply identity (appears in this repo's history)",
+      "email": "97815338+albidr@users.noreply.github.com"
     },
     {
-      "label": "Jules (Google Labs) bot account",
-      "namePattern": "^jules\\b"
+      "label": "Repository owner, Replit noreply identity (appears in this repo's history)",
+      "email": "50982421-albidr@users.noreply.replit.com"
+    },
+    {
+      "label": "Jules (Google Labs) - the nightly pipeline's own agent, credited deliberately. Name AND email must both match: the name alone was a bypass.",
+      "namePattern": "^google-labs-jules",
+      "emailPattern": "google-labs-jules\\[bot\\]@users\\.noreply\\.github\\.com$"
     }
   ],
 
@@ -22,20 +27,22 @@
       "email": "aalbi97@gmail.com"
     },
     {
-      "label": "Jules (Google Labs) - authors every nightly stage commit",
-      "namePattern": "^google-labs-jules"
+      "label": "Repository owner, GitHub noreply identity",
+      "email": "97815338+albidr@users.noreply.github.com"
     },
     {
-      "label": "Jules (Google Labs) bot account",
-      "namePattern": "^jules\\b"
+      "label": "Repository owner, Replit noreply identity",
+      "email": "50982421-albidr@users.noreply.replit.com"
+    },
+    {
+      "label": "Jules (Google Labs) - authors every nightly stage commit",
+      "namePattern": "^google-labs-jules",
+      "emailPattern": "google-labs-jules\\[bot\\]@users\\.noreply\\.github\\.com$"
     },
     {
       "label": "GitHub Actions - authors the pipeline's own ledger, merge and sync commits. Removing this would break the nightly pipeline, not improve attribution.",
-      "email": "github-actions[bot]@users.noreply.github.com"
-    },
-    {
-      "label": "GitHub Actions, by name, for runners that vary the noreply address",
-      "namePattern": "^github-actions"
+      "namePattern": "^github-actions",
+      "emailPattern": "^github-actions\\[bot\\]@users\\.noreply\\.github\\.com$"
     },
     {
       "label": "GitHub's own merge/web-flow identity for squash and merge commits",

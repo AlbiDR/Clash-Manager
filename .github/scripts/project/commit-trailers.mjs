@@ -60,13 +60,30 @@ export function parseCoAuthor(line) {
   return { name: identity[1].trim(), email: identity[2].trim() };
 }
 
+/**
+ * An identity matches an allowlist entry only when EVERY condition that entry
+ * states is satisfied. Conditions are ANDed, not ORed.
+ *
+ * This started as an OR and was a real hole, found by running the impostors
+ * rather than by reading the code: with `namePattern: "^google-labs-jules"`
+ * alone, `Co-authored-by: google-labs-jules-impostor <evil@attacker.example>`
+ * and `Co-authored-by: Jules Verne <jules.verne@attacker.example>` were both
+ * kept and would have been credited. A display name is attacker-controlled and
+ * free to choose, so it can never be sufficient on its own: the entries that
+ * name a bot now pin its email domain too.
+ */
 function matchesAny(identity, allowList) {
   const name = (identity.name || "").toLowerCase();
   const email = (identity.email || "").toLowerCase();
   return (allowList || []).some(allowed => {
-    if (allowed.email && email && allowed.email.toLowerCase() === email) return true;
-    if (allowed.namePattern && name && new RegExp(allowed.namePattern, "i").test(name)) return true;
-    return false;
+    const conditions = [];
+    if (allowed.email) conditions.push(allowed.email.toLowerCase() === email);
+    if (allowed.emailPattern) conditions.push(new RegExp(allowed.emailPattern, "i").test(email));
+    if (allowed.namePattern) conditions.push(new RegExp(allowed.namePattern, "i").test(name));
+    // An entry with no conditions would match everyone. Treat it as a config
+    // error rather than a wildcard.
+    if (conditions.length === 0) return false;
+    return conditions.every(Boolean);
   });
 }
 

@@ -66,7 +66,7 @@ test("a Google AI that is not Jules is still stripped", () => {
   // extend to Google's other assistants by association.
   const gemini = parseCoAuthor("Co-authored-by: gemini-code-assist[bot] <x@users.noreply.github.com>");
   assert.equal(isAllowedCoAuthor(gemini, policy), false);
-  const jules = parseCoAuthor("Co-authored-by: google-labs-jules[bot] <x@users.noreply.github.com>");
+  const jules = parseCoAuthor("Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>");
   assert.equal(isAllowedCoAuthor(jules, policy), true);
 });
 
@@ -79,7 +79,46 @@ test("an unknown future assistant is stripped without anyone updating the list",
 
 test("matching is case-insensitive on both name and email", () => {
   assert.ok(isAllowedCoAuthor({ name: "albidr", email: "AAlbi97@Gmail.com" }, policy));
-  assert.ok(isAllowedCoAuthor({ name: "GOOGLE-LABS-JULES[BOT]", email: "x@example.com" }, policy));
+  assert.ok(isAllowedCoAuthor({ name: "GOOGLE-LABS-JULES[BOT]", email: "161369871+GOOGLE-LABS-JULES[BOT]@USERS.NOREPLY.GITHUB.COM" }, policy));
+});
+
+test("a display name alone can never earn credit", () => {
+  // Found by running impostors against the real stripper, not by reading code.
+  // The allowlist used to OR its conditions, so `namePattern: ^google-labs-jules`
+  // matched on name alone - and a display name is attacker-controlled and free
+  // to choose. Both of these were observed KEPT before the fix. Conditions are
+  // now ANDed, so an entry naming a bot pins its email domain too.
+  const impostors = [
+    "Co-authored-by: Jules Verne <jules.verne@attacker.example.com>",
+    "Co-authored-by: google-labs-jules-impostor <evil@attacker.example.com>",
+    "Co-authored-by: google-labs-jules[bot] <evil@attacker.example.com>",
+    "Co-authored-by: jules <someone@example.com>",
+  ];
+  for (const line of impostors) {
+    assert.equal(isAllowedCoAuthor(parseCoAuthor(line), policy), false, `${line} must not be credited`);
+  }
+
+  // ...and the reverse: the right email with a wrong name is not enough either.
+  assert.equal(
+    isAllowedCoAuthor({ name: "Evil", email: "161369871+google-labs-jules[bot]@users.noreply.github.com" }, policy),
+    false,
+    "a matching email with a non-matching name must not be credited",
+  );
+
+  // The genuine article still is.
+  assert.ok(isAllowedCoAuthor({ name: "google-labs-jules[bot]", email: "161369871+google-labs-jules[bot]@users.noreply.github.com" }, policy));
+});
+
+test("an allowlist entry with no conditions is a config error, not a wildcard", () => {
+  assert.equal(isAllowedCoAuthor({ name: "Anyone", email: "anyone@example.com" }, { allowedCoAuthors: [{ label: "oops" }] }), false);
+});
+
+test("every identity in this repo's own history is still allowed to author", () => {
+  // Guards against the opposite failure: a policy so strict it reattributes the
+  // owner's own commits. These addresses all appear in this repository's log.
+  for (const email of ["aalbi97@gmail.com", "97815338+AlbiDR@users.noreply.github.com", "50982421-AlbiDR@users.noreply.replit.com"]) {
+    assert.ok(isAllowedAuthor({ name: "AlbiDR", email }, policy), `${email} is the owner and must stay credited`);
+  }
 });
 
 test("a trailer is recognised in any casing git accepts", () => {
