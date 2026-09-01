@@ -4988,8 +4988,8 @@
             "name": "sessions/9235050908020813184",
             "state": "COMPLETED",
             "createTime": "2026-08-31T23:08:06.040602463Z",
-            "updateTime": "2026-08-31T23:16:15.758097Z",
-            "lifetimeMinutes": 8.2
+            "updateTime": "2026-09-01T06:46:02.405391Z",
+            "lifetimeMinutes": 457.9
           },
           "health": {
             "verdict": "HEALTHY",
@@ -4998,7 +4998,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.373Z",
+        "lastObservedAt": "2026-09-01T07:16:25.650Z",
         "failureClass": null
       },
       "2": {
@@ -5023,12 +5023,12 @@
             "name": "sessions/10822546186632198728",
             "state": "COMPLETED",
             "createTime": "2026-09-01T00:00:21.852275288Z",
-            "updateTime": "2026-09-01T00:13:35.815082Z",
-            "lifetimeMinutes": 13.2
+            "updateTime": "2026-09-01T06:47:47.891871Z",
+            "lifetimeMinutes": 407.4
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.373Z",
+        "lastObservedAt": "2026-09-01T07:16:25.650Z",
         "failureClass": null
       },
       "3": {
@@ -5051,12 +5051,12 @@
             "name": "sessions/5979478021991129963",
             "state": "COMPLETED",
             "createTime": "2026-09-01T01:18:28.736321595Z",
-            "updateTime": "2026-09-01T01:25:32.015967Z",
-            "lifetimeMinutes": 7.1
+            "updateTime": "2026-09-01T06:49:00.264911Z",
+            "lifetimeMinutes": 330.5
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.373Z",
+        "lastObservedAt": "2026-09-01T07:16:25.651Z",
         "failureClass": null
       },
       "4": {
@@ -5082,12 +5082,12 @@
             "name": "sessions/9172546227132279689",
             "state": "COMPLETED",
             "createTime": "2026-09-01T02:19:01.183085173Z",
-            "updateTime": "2026-09-01T02:33:06.403776Z",
-            "lifetimeMinutes": 14.1
+            "updateTime": "2026-09-01T06:49:24.709804Z",
+            "lifetimeMinutes": 270.4
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.373Z",
+        "lastObservedAt": "2026-09-01T07:16:25.651Z",
         "failureClass": null
       },
       "5": {
@@ -5113,12 +5113,12 @@
             "name": "sessions/4229452701580299343",
             "state": "COMPLETED",
             "createTime": "2026-09-01T03:02:37.521789843Z",
-            "updateTime": "2026-09-01T03:09:47.930575Z",
-            "lifetimeMinutes": 7.2
+            "updateTime": "2026-09-01T06:49:36.560526Z",
+            "lifetimeMinutes": 227
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.374Z",
+        "lastObservedAt": "2026-09-01T07:16:25.651Z",
         "failureClass": null
       },
       "6": {
@@ -5141,12 +5141,12 @@
             "name": "sessions/14949676610419123110",
             "state": "COMPLETED",
             "createTime": "2026-09-01T04:11:03.804725565Z",
-            "updateTime": "2026-09-01T04:28:09.028640Z",
-            "lifetimeMinutes": 17.1
+            "updateTime": "2026-09-01T06:50:33.292188Z",
+            "lifetimeMinutes": 159.5
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.374Z",
+        "lastObservedAt": "2026-09-01T07:16:25.651Z",
         "failureClass": null
       },
       "7": {
@@ -5172,12 +5172,12 @@
             "name": "sessions/5159313439599989664",
             "state": "COMPLETED",
             "createTime": "2026-09-01T05:10:14.660062547Z",
-            "updateTime": "2026-09-01T05:22:21.185659Z",
-            "lifetimeMinutes": 12.1
+            "updateTime": "2026-09-01T06:50:46.983893Z",
+            "lifetimeMinutes": 100.5
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.374Z",
+        "lastObservedAt": "2026-09-01T07:16:25.652Z",
         "failureClass": null
       },
       "8": {
@@ -5200,12 +5200,12 @@
             "name": "sessions/6017222920976046122",
             "state": "COMPLETED",
             "createTime": "2026-09-01T06:19:59.234723523Z",
-            "updateTime": "2026-09-01T06:30:04.725899Z",
-            "lifetimeMinutes": 10.1
+            "updateTime": "2026-09-01T06:51:33.073272Z",
+            "lifetimeMinutes": 31.6
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.374Z",
+        "lastObservedAt": "2026-09-01T07:16:25.652Z",
         "failureClass": null
       },
       "9": {
@@ -5213,19 +5213,28 @@
         "stage": 9,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-01/stage-9/pr-1649",
+          "session": {
+            "id": "3684365198628475921",
+            "name": "sessions/3684365198628475921",
+            "state": "COMPLETED",
+            "createTime": "2026-09-01T07:05:07.633226628Z",
+            "updateTime": "2026-09-01T07:15:13.028051Z",
+            "lifetimeMinutes": 10.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.375Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-01T07:16:25.652Z",
+        "failureClass": null
       },
       "10": {
         "date": "2026-09-01",
@@ -5243,7 +5252,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.375Z",
+        "lastObservedAt": "2026-09-01T07:16:25.653Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -5262,7 +5271,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.375Z",
+        "lastObservedAt": "2026-09-01T07:16:25.653Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -5281,7 +5290,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.375Z",
+        "lastObservedAt": "2026-09-01T07:16:25.653Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -5300,7 +5309,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T06:30:50.376Z",
+        "lastObservedAt": "2026-09-01T07:16:25.654Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
