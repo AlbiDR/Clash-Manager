@@ -358,3 +358,10 @@
 * [2026-08-29] [Stage 8] CHANGED: package.json -- Bumped vue to ^3.5.42 in catalog and updated lockfile.
 * [2026-08-30] [Stage 8] CHANGED: pnpm-lock.yaml -- Bumped tsx to ^4.23.13 and updated lockfile.
 * [2026-08-31] [Stage 8] CHANGED: package.json -- Bumped knip to ^6.33.0 and updated lockfile.
+* [2026-09-01] [Stage 8] CHANGED: package.json -- Bumped knip to ^6.34.0 and updated lockfile.
+* [2026-09-01] Target: Codebase - knip | ^6.33.0 | ^6.34.0 | | PASS |
+* [2026-09-01] Target: Codebase - vite | ^7.3.6 | 8.2.2 | 2026-07-14 | Breaking: Unified bundler (Rolldown), build.rollupOptions renamed to build.rolldownOptions, CJS interop changes. Latest advanced to 8.2.2 within the same major; no new breaking surface for this codebase.
+* [2026-09-01] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure.
+* [2026-09-01] Target: Codebase - pinia | ^3.0.4 | 4.0.3 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
+* [2026-09-01] Target: Codebase - jsdom | ^29.1.1 | 30.0.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
+* [2026-09-01] [Stage 8] CHANGED: package.json -- Bumped knip to ^6.34.0 and updated lockfile.
