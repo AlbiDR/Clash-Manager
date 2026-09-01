@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-31
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-01] PR #1642 [Stage 2]: Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Closed partial-coverage and sad-path logic gaps in Toast component with comprehensive unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation.
+**Domain:** verification | **Commit:** 4dfa4e3d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1642)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts
+**Why:** Closed partial-coverage gap in Toast component by adding unit tests for copyToClipboard functionality, icon tick toggle, timer pause/resume lifecycle, and click propagation boundaries.
+**Change:** Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Closed partial-coverage and sad-path logic gaps in Toast component with comprehensive unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation.
+**Result:** PASSED (195 test files passed, 1786 tests passed)
+
+
 ### [2026-08-31] PR #1641 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 75474d2a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1641)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
