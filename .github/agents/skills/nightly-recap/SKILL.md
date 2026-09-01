@@ -1,6 +1,6 @@
 ---
 name: nightly-recap
-description: Describe what the nightly pipeline did on a run. Reports each of the 13 Jules stages, whether it merged, whether it needed rescuing, and grades the run 1-10. Use when the user asks for a nightly recap, what Jules did last night, how the nightly run went, or about a specific past run date.
+description: Describe what the nightly pipeline did on a run. Reports each of the 13 Jules stages, whether it merged, whether it needed rescuing, any stage whose cross-run trend is chronic or degrading, and grades the run 1-10. Use when the user asks for a nightly recap, what Jules did last night, how the nightly run went, or about a specific past run date.
 ---
 
 # Nightly Recap
