@@ -6,17 +6,27 @@ import { vTactile } from "../directives/vTactile";
 import { ref, onMounted, onUnmounted } from "vue";
 
 /**
- * [SHARED] TOAST NOTIFICATION
+ * ============================================================================
+ * [SHARED UI] TOAST NOTIFICATION
  * ----------------------------------------------------------------------------
- * Rationale: Standardized transient feedback molecule for system events.
- * Features: Auto-dismissal, Action buttons, Clipboard integration.
- * ----------------------------------------------------------------------------
+ * Standardized transient feedback molecule for system events.
+ * Features auto-dismissal, single-flight action buttons, and clipboard copy.
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared UI (@shared/ui)
+ * - **Role:** Reusable transient notification molecule.
+ * - **Permitted Imports:** Directive bindings (`vTactile`), Icon molecule, Vue reactivity primitives.
+ *
+ * Satisfies ADR Section II: Presentation Orchestration & Layer Boundaries.
+ * Satisfies ADR Section IV: User Experience & Interaction Protocols.
+ * ============================================================================
  */
 
 const props = defineProps<{
   /** Unique identifier for the toast instance. */
   id: string;
-  /** The semantic type of the toast, determining its visual style. */
+  /** The semantic type of the toast, determining its visual style and icon. */
   type: "success" | "error" | "info" | "undo";
   /** The message text to display. */
   message: string;
@@ -35,9 +45,19 @@ const emit = defineEmits<{
 
 /** @internal Internal timer ID used for auto-dismissal cleanup. */
 let timer: number | undefined;
+
+/** @internal Prevents duplicate emission of action callbacks. */
 const isHandlingAction = ref(false);
+
+/** @internal Controls visual confirmation tick state after clipboard copy. */
 const showCopiedTick = ref(false);
 
+/**
+ * Initializes auto-dismissal timer when a non-zero duration prop is set.
+ *
+ * [DECISION LOG] Timer creation is bypassed while `showCopiedTick` is active
+ * to prevent auto-dismissal during user clipboard feedback interaction.
+ */
 function startTimer() {
   if (props.duration && !showCopiedTick.value) {
     timer = window.setTimeout(() => {
@@ -46,16 +66,28 @@ function startTimer() {
   }
 }
 
+/**
+ * Clears active auto-dismissal timeout handle to pause notification lifecycle.
+ */
 function clearTimer() {
   if (timer) clearTimeout(timer);
 }
 
+/**
+ * Handles clicks on the toast container when actionLabel is present.
+ */
 function handleMainClick() {
   if (props.actionLabel) {
     triggerAction();
   }
 }
 
+/**
+ * Emits the action event once per click interaction.
+ *
+ * [DECISION LOG] Employs `isHandlingAction` lock flag to prevent duplicate event broadcasts.
+ * [THREAT] Double-tap on action button triggering duplicate undo/retry operations.
+ */
 function triggerAction() {
   if (isHandlingAction.value) return;
   isHandlingAction.value = true;
@@ -64,6 +96,11 @@ function triggerAction() {
 
 /**
  * Copies the toast message to the system clipboard.
+ *
+ * [DECISION LOG] Error and Info messages are explicitly selectable and
+ * copyable to satisfy the "Error Readability Contract" in ADR Section IV.
+ * Pauses dismissal timer during copy confirmation feedback tick.
+ * [THREAT] Clipboard API rejection on unsecured context caught gracefully without crashing host UI.
  */
 async function copyToClipboard() {
   try {
