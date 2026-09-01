@@ -4998,7 +4998,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.776Z",
+        "lastObservedAt": "2026-09-01T02:33:33.558Z",
         "failureClass": null
       },
       "2": {
@@ -5028,7 +5028,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.776Z",
+        "lastObservedAt": "2026-09-01T02:33:33.558Z",
         "failureClass": null
       },
       "3": {
@@ -5056,7 +5056,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.776Z",
+        "lastObservedAt": "2026-09-01T02:33:33.559Z",
         "failureClass": null
       },
       "4": {
@@ -5064,7 +5064,7 @@
         "stage": 4,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "julesApiError": null,
@@ -5072,11 +5072,15 @@
             "verdict": "HEALTHY",
             "currentStreak": 1,
             "reason": "no adverse trend"
-          }
+          },
+          "prNumber": 1644,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1644",
+          "headRef": "nightly/stage-4-optimization-730ef414-9172546227132279689",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.777Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-01T02:33:33.559Z",
+        "failureClass": "OPEN_PR"
       },
       "5": {
         "date": "2026-09-01",
@@ -5094,7 +5098,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.777Z",
+        "lastObservedAt": "2026-09-01T02:33:33.559Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "6": {
@@ -5113,7 +5117,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.777Z",
+        "lastObservedAt": "2026-09-01T02:33:33.559Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "7": {
@@ -5132,7 +5136,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.777Z",
+        "lastObservedAt": "2026-09-01T02:33:33.559Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -5151,7 +5155,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.778Z",
+        "lastObservedAt": "2026-09-01T02:33:33.560Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -5170,7 +5174,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.778Z",
+        "lastObservedAt": "2026-09-01T02:33:33.560Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -5189,7 +5193,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.778Z",
+        "lastObservedAt": "2026-09-01T02:33:33.560Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -5208,7 +5212,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.778Z",
+        "lastObservedAt": "2026-09-01T02:33:33.560Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -5227,7 +5231,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.779Z",
+        "lastObservedAt": "2026-09-01T02:33:33.561Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -5246,7 +5250,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-01T01:26:09.779Z",
+        "lastObservedAt": "2026-09-01T02:33:33.561Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
