@@ -442,3 +442,43 @@ test("nightly ledger creates and updates one idempotent entry per date and stage
   saveLedger(ledger, ledgerPath);
   assert.deepEqual(loadLedger(ledgerPath), validateLedger(ledger));
 });
+
+test("a promotion tag protects a merged row from a later coordinator failure", () => {
+  // Real corruption, 2026-08-25 and 2026-08-26: the coordinator's failure path
+  // writes BLOCKED/MERGE_COORDINATOR keyed on `new Date()` with no check for an
+  // existing merge, and target selection has no age bound, so stale open PR
+  // #1546 was re-selected on three consecutive nights. The stage-1 rows ended
+  // up holding state BLOCKED while also carrying the tags proving they merged
+  // (nightly/2026-08-24/stage-1/pr-1547 and .../2026-08-25/stage-1/pr-1563).
+  // That self-contradiction made an eight-night clean streak read as six.
+  const ledger = createEmptyLedger();
+  upsertStageEntry(ledger, registry, "2026-08-25", 1, {
+    state: "MERGED",
+    failureClass: null,
+    evidence: { tag: "nightly/2026-08-25/stage-1/pr-1563", commitSha: "abc1234" },
+  });
+
+  upsertStageEntry(ledger, registry, "2026-08-25", 1, {
+    state: "BLOCKED",
+    failureClass: "MERGE_COORDINATOR",
+    evidence: { prNumber: 1546, reason: "non-fast-forward" },
+  });
+
+  const entry = stageEntry(ledger, "2026-08-25", 1);
+  assert.equal(entry.state, "MERGED", "a tagged merge must survive a later coordinator failure");
+  assert.equal(entry.failureClass, null, "a tagged merge must not acquire a failure class");
+  // The failure is still recorded, just not as a state change.
+  assert.equal(entry.evidence.tag, "nightly/2026-08-25/stage-1/pr-1563");
+  assert.equal(entry.evidence.reason, "non-fast-forward");
+
+  // The guard is scoped to tagged merges only: an untagged row must still be
+  // demotable, otherwise genuine coordinator failures would go unrecorded.
+  upsertStageEntry(ledger, registry, "2026-08-25", 2, { state: "MERGED", failureClass: null, evidence: {} });
+  upsertStageEntry(ledger, registry, "2026-08-25", 2, {
+    state: "BLOCKED",
+    failureClass: "MERGE_COORDINATOR",
+    evidence: { prNumber: 1599, reason: "non-fast-forward" },
+  });
+  assert.equal(stageEntry(ledger, "2026-08-25", 2).state, "BLOCKED");
+  assert.equal(stageEntry(ledger, "2026-08-25", 2).failureClass, "MERGE_COORDINATOR");
+});

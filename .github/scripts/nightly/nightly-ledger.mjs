@@ -156,20 +156,51 @@ export function resolveEvidence(currentEvidence, patchEvidence, state, failureCl
   return merged;
 }
 
+/**
+ * A promotion tag is a durable history fact: it exists only because the stage's
+ * PR actually merged and was tagged. Nothing observed later can make that
+ * untrue, so a write that would move a tagged, already-MERGED row into a
+ * failure state is refused rather than applied.
+ *
+ * Real corruption this prevents (2026-08-25 and 2026-08-26): the merge
+ * coordinator's failure path writes `state: BLOCKED, failureClass:
+ * MERGE_COORDINATOR` keyed on `new Date()`, with no check for an existing
+ * merge. Because it kept re-selecting the same stale open PR #1546 on three
+ * consecutive nights, it stamped BLOCKED onto stage-1 rows that already held
+ * `nightly/2026-08-24/stage-1/pr-1547` and `nightly/2026-08-25/stage-1/pr-1563`
+ * - both genuinely merged. The rows ended up self-contradictory, claiming a
+ * blocked stage while carrying the tag proving it merged, which is why an
+ * eight-night clean streak read as six.
+ *
+ * The failure detail is still recorded: only `state` and `failureClass` are
+ * withheld, so the reason and PR number remain visible in evidence.
+ */
+function guardTaggedRow(current, patch) {
+  const tagged = Boolean(current?.evidence?.tag) && current.state === "MERGED";
+  if (!tagged) return patch;
+  const demotesState = patch.state && patch.state !== "MERGED";
+  if (!demotesState && !patch.failureClass) return patch;
+  const guarded = { ...patch };
+  if (demotesState) delete guarded.state;
+  if (patch.failureClass) delete guarded.failureClass;
+  return guarded;
+}
+
 export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}) {
   ensureRunEntries(ledger, registry, date);
   const key = String(stageNumber);
   const current = ledger.runs[date][key];
+  const effective = guardTaggedRow(current, patch);
   const next = {
     ...current,
-    ...patch,
+    ...effective,
     date,
     stage: Number(stageNumber),
-    lastObservedAt: patch.lastObservedAt || new Date().toISOString(),
+    lastObservedAt: effective.lastObservedAt || new Date().toISOString(),
   };
   // Resolved after the spread so it sees the state and failure class this write
   // actually lands, not the ones the entry held before it.
-  next.evidence = resolveEvidence(current.evidence, patch.evidence, next.state, next.failureClass);
+  next.evidence = resolveEvidence(current.evidence, effective.evidence, next.state, next.failureClass);
   assertLedger(LEDGER_STATES.has(next.state), `Nightly ledger entry ${date}/${key} has invalid state.`);
   ledger.runs[date][key] = next;
   return next;

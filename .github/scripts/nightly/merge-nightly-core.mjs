@@ -1023,6 +1023,19 @@ export async function run(config = CONFIG) {
         for (const failure of failures) {
           const stage = failure.pr.nightlyClassification?.stage;
           if (!stage) continue;
+          // Never let a coordinator failure contradict a merge that already
+          // happened. `date` here is today, not the pipeline date the PR
+          // belongs to, and target selection has no age bound, so a stale open
+          // PR re-selected on a later night would otherwise stamp BLOCKED onto
+          // a row holding that stage's own merge tag. upsertStageEntry refuses
+          // the demotion as well; this skip keeps it out of the log too.
+          const existing = ledger.runs?.[date]?.[String(stage)];
+          if (existing?.state === "MERGED" && existing?.evidence?.tag) {
+            log(
+              `Stage ${stage} already merged on ${date} (${existing.evidence.tag}); recording PR #${failure.pr.number} failure as evidence only.`,
+              "warn",
+            );
+          }
           upsertStageEntry(ledger, registry, date, stage, {
             state: "BLOCKED",
             failureClass: "MERGE_COORDINATOR",
