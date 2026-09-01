@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-31
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-01] PR #1651 [Stage 11]: CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), AndroidManifest app properties, and SW precache topology; 0 source changes required (44 clean runs since calibration).
+**Domain:** apk | **Commit:** 06d10376 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1651)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** All APK wrapper performance settings and SW cache routes match established patterns, requiring no source modifications.
+**Change:** CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), AndroidManifest app properties, and SW precache topology; 0 source changes required (44 clean runs since calibration).
+**Result:** Source-level structural audit verified: WebView settings, hardware acceleration, security policies, and SW precache manifest are fully aligned with Stage 11 baseline.
+
+
 ### [2026-09-01] PR #1650 [Stage 10]: chore(apk): Full wrapper invariant audit clean after 53 clean runs (widened calibration scan)
 **Domain:** pipeline | **Commit:** f4791c84 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1650)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
