@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-31
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-01] PR #1650 [Stage 10]: chore(apk): Full wrapper invariant audit clean after 53 clean runs (widened calibration scan)
+**Domain:** pipeline | **Commit:** f4791c84 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1650)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Full wrapper invariant audit clean after 53 clean runs (widened calibration scan)
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-01] PR #1649 [Stage 9]: chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
 **Domain:** pipeline | **Commit:** 81f611a1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1649)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
