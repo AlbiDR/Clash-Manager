@@ -37,6 +37,7 @@
     "nightly:recap": "node .github/scripts/nightly/nightly-recap.mjs",
     "agents:link": "node .github/scripts/agents/link-agent-dirs.mjs",
     "agents:audit": "node .github/scripts/agents/agents-audit.mjs",
+    "test:commit-trailers": "node --test .github/scripts/project/commit-trailers.test.mjs",
     "test:agents-link": "node --test .github/scripts/agents/link-agent-dirs.test.mjs",
     "test:agents-audit": "node --test .github/scripts/agents/agents-audit.test.mjs",
     "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:apk-ux-audit",
@@ -57,7 +58,8 @@
     "typescript": "catalog:"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint"
+    "pre-commit": "pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint",
+    "commit-msg": "node .github/scripts/project/commit-trailers.mjs $1"
   },
   "engines": {
     "node": ">=24.0.0",

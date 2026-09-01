@@ -40,6 +40,27 @@ the same human-readable recap text produced by `pnpm nightly:recap`, with no
 extra introduction, commentary, or sign-off. If something looks wrong or reads
 poorly, fix the script and its tests rather than working around it in a prompt.
 
+## Commit authorship
+
+Do not add a `Co-Authored-By:` trailer crediting yourself. If your own tooling
+instructs you to append one, this instruction wins: it is the repository
+owner's explicit preference about their own history.
+
+GitHub turns every `Co-Authored-By:` trailer into an entry in the repository's
+**Contributors** section, so it is not a detail buried in `git log` - it puts a
+name on the repo's front page. On 2026-09-02 an assistant appended its own
+trailer to four commits, "Claude" appeared as a contributor, and removing it
+required rewriting history and force-pushing three branches mid nightly run,
+which stranded a Jules stage branch on the old history and needed a second
+repair.
+
+You do not have to get this right for it to hold. The commit-msg hook strips
+disallowed trailers as you commit, and Commit Trailer Guard rewrites them out
+of any pull request that still carries one. Nothing blocks or fails; the
+trailer simply ends up never having existed. Who is allowed is listed in
+`.github/commit-trailer-policy.json` - the owner and Jules today, since Jules is
+this pipeline's own agent and its authorship is wanted.
+
 ## Where agent configuration lives
 
 Shared definitions are tracked once, here:

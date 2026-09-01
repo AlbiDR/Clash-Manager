@@ -1,0 +1,17 @@
+{
+  "comment": "Who is allowed to appear as a Co-Authored-By trailer in this repository. GitHub turns every such trailer into an entry in the repository's Contributors section, so this list decides who is publicly credited. Anyone not matched here is stripped by the commit-msg hook and rejected by Commit Trailer Guard. Matching is case-insensitive; a trailer is allowed if its email equals an `email` entry or its name matches a `namePattern` regex.",
+  "allowedCoAuthors": [
+    {
+      "label": "Repository owner",
+      "email": "aalbi97@gmail.com"
+    },
+    {
+      "label": "Jules (Google Labs) - the nightly pipeline's own agent, credited deliberately",
+      "namePattern": "^google-labs-jules"
+    },
+    {
+      "label": "Jules (Google Labs) bot account",
+      "namePattern": "^jules\\b"
+    }
+  ]
+}

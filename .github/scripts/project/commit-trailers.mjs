@@ -1,0 +1,222 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 AlbiDR
+
+// Keeps unwanted co-authors out of this repository's public Contributors list.
+//
+// THE PROBLEM THIS SOLVES
+// GitHub parses `Co-Authored-By:` trailers and credits each one in the
+// repository's Contributors section. That is public-facing: it is not just a
+// line in `git log`. On 2026-09-02 an AI coding assistant appended its own
+// `Co-Authored-By` trailer to four commits because its tooling told it to, and
+// "Claude" appeared as a contributor to this repository. Removing it afterwards
+// meant rewriting history and force-pushing three branches during a live
+// nightly run, which is a far worse operation than preventing it.
+//
+// WHY AN ALLOWLIST RATHER THAN A DENYLIST
+// A denylist of known AI assistants would need editing every time a new one
+// appears, and the failure mode of a stale denylist is silent: the unwanted
+// name is simply credited. An allowlist fails the other way. Anyone not
+// explicitly named is stripped, so a new tool cannot credit itself by being
+// unknown. Jules is on the list deliberately: it is this pipeline's own agent
+// and its authorship is wanted.
+//
+// The list itself lives in .github/commit-trailer-policy.json, not in here, so
+// adding a collaborator is a config edit rather than a code change.
+
+import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+// Resolved from this module's own location, never from the working directory.
+// `git filter-branch` runs its --msg-filter from a scratch directory inside
+// .git-rewrite, so a path relative to the repo root resolves to nothing there:
+// the filter throws, filter-branch aborts, and the rewrite silently leaves the
+// trailer in place. Caught by running the real repair before shipping it.
+const POLICY_FILE = fileURLToPath(new URL("../../commit-trailer-policy.json", import.meta.url));
+const POLICY_PATH = ".github/commit-trailer-policy.json";
+
+// Git's own trailer syntax is case-insensitive on the key, and real tools emit
+// every casing of it, so match the key loosely and capture the identity.
+const CO_AUTHOR_LINE = /^\s*co-authored-by:\s*(.*)$/i;
+const IDENTITY = /^(.*?)\s*<([^>]*)>\s*$/;
+
+export function loadPolicy(path = POLICY_FILE) {
+  const policy = JSON.parse(readFileSync(path, "utf8"));
+  if (!Array.isArray(policy.allowedCoAuthors)) {
+    throw new Error(`${path} must define an allowedCoAuthors array.`);
+  }
+  return policy;
+}
+
+/** `Co-Authored-By: Name <email>` -> { name, email }, or null if not one. */
+export function parseCoAuthor(line) {
+  const keyed = CO_AUTHOR_LINE.exec(line);
+  if (!keyed) return null;
+  const identity = IDENTITY.exec(keyed[1].trim());
+  // A malformed trailer still counts as a co-author trailer. Treating it as
+  // ordinary prose would let `Co-Authored-By: Someone` (no angle brackets)
+  // through unchecked, and GitHub is more forgiving than this regex.
+  if (!identity) return { name: keyed[1].trim(), email: "" };
+  return { name: identity[1].trim(), email: identity[2].trim() };
+}
+
+export function isAllowedCoAuthor(coAuthor, policy) {
+  if (!coAuthor) return true;
+  const name = (coAuthor.name || "").toLowerCase();
+  const email = (coAuthor.email || "").toLowerCase();
+  return policy.allowedCoAuthors.some(allowed => {
+    if (allowed.email && email && allowed.email.toLowerCase() === email) return true;
+    if (allowed.namePattern && name && new RegExp(allowed.namePattern, "i").test(name)) return true;
+    return false;
+  });
+}
+
+/**
+ * Removes every disallowed co-author trailer from a commit message.
+ *
+ * Only those lines are touched. Other trailers, the subject and the body are
+ * returned byte for byte, because a hook that reformats a message is a hook
+ * people disable.
+ */
+export function stripDisallowedCoAuthors(message, policy) {
+  const removed = [];
+  const kept = [];
+  for (const line of String(message).split("\n")) {
+    const coAuthor = parseCoAuthor(line);
+    if (coAuthor && !isAllowedCoAuthor(coAuthor, policy)) {
+      removed.push(line.trim());
+      continue;
+    }
+    kept.push(line);
+  }
+  if (removed.length === 0) return { message: String(message), removed };
+
+  // Removing a trailer leaves the blank line that separated it. Collapse only
+  // trailing blank lines, so an intentionally blank-line-separated body is not
+  // rewritten, then restore the single trailing newline git expects.
+  while (kept.length > 0 && kept[kept.length - 1].trim() === "") kept.pop();
+  return { message: `${kept.join("\n")}\n`, removed };
+}
+
+/** Commit messages in a range, oldest first. Empty when the range is empty. */
+export function readMessages(range, runner = spawnSync) {
+  const result = runner("git", ["log", "--reverse", "--format=%H%x1f%B%x1e", range], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    throw new Error(`git log ${range} failed: ${result.stderr || "unknown error"}`);
+  }
+  return String(result.stdout)
+    .split("\x1e")
+    .map(record => record.replace(/^\n/, ""))
+    .filter(record => record.trim() !== "")
+    .map(record => {
+      const [sha, ...rest] = record.split("\x1f");
+      return { sha: sha.trim(), message: rest.join("\x1f") };
+    });
+}
+
+/** Every disallowed trailer in a range, for the CI guard to report at once. */
+export function findViolations(commits, policy) {
+  const violations = [];
+  for (const commit of commits) {
+    const { removed } = stripDisallowedCoAuthors(commit.message, policy);
+    for (const line of removed) violations.push({ sha: commit.sha, line });
+  }
+  return violations;
+}
+
+function runHook(messagePath, policy) {
+  const original = readFileSync(messagePath, "utf8");
+  const { message, removed } = stripDisallowedCoAuthors(original, policy);
+  if (removed.length === 0) return 0;
+  writeFileSync(messagePath, message, "utf8");
+  for (const line of removed) {
+    console.log(`[commit-trailers] removed disallowed co-author: ${line}`);
+  }
+  console.log(`[commit-trailers] see ${POLICY_PATH} to allow an identity deliberately.`);
+  return 0;
+}
+
+/**
+ * Reports disallowed trailers in a commit range.
+ *
+ * `reportOnly` decides whether this observes or obstructs, and the two callers
+ * want opposite things. In CI it observes: 13 Jules pull requests land every
+ * night and a guard that can block them buys a cosmetic fix at the cost of the
+ * pipeline, which is a bad trade. Locally, at pre-push, it obstructs, because
+ * that is the last moment the fix is still a cheap `git commit --amend`
+ * instead of a history rewrite across three branches.
+ */
+function runCheck(range, policy, { reportOnly = false } = {}) {
+  const violations = findViolations(readMessages(range), policy);
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+
+  if (violations.length === 0) {
+    console.log(`OK: no disallowed Co-Authored-By trailers in ${range}.`);
+    if (summaryPath) {
+      appendFileSync(summaryPath, `### Commit Trailer Guard\n\nNo disallowed co-author trailers in \`${range}\`.\n`);
+    }
+    return 0;
+  }
+
+  const severity = reportOnly ? "warning" : "error";
+  for (const { sha, line } of violations) {
+    console.log(`::${severity}::${sha.slice(0, 8)} carries a disallowed co-author trailer: ${line}`);
+  }
+  console.log(
+    `::${severity}::GitHub credits every Co-Authored-By trailer in the Contributors section. ` +
+      `Remove these trailers, or add the identity to ${POLICY_PATH} if the credit is intended.`,
+  );
+
+  if (summaryPath) {
+    const rows = violations.map(v => `| \`${v.sha.slice(0, 8)}\` | ${v.line} |`).join("\n");
+    appendFileSync(
+      summaryPath,
+      `### Commit Trailer Guard\n\n${violations.length} disallowed co-author trailer(s) in \`${range}\`. ` +
+        `These would be credited in the repository's Contributors section.\n\n` +
+        `| Commit | Trailer |\n|---|---|\n${rows}\n\n` +
+        `Allow an identity deliberately in \`${POLICY_PATH}\`.\n`,
+    );
+  }
+
+  return reportOnly ? 0 : 1;
+}
+
+/**
+ * Message filter for `git filter-branch --msg-filter`: reads one commit message
+ * on stdin, writes it back cleaned.
+ *
+ * This is what makes the gateway repair rather than refuse. A pull request that
+ * arrives carrying a disallowed trailer is rewritten in place and force-pushed
+ * back to its own branch, so by the time anything merges the trailer never
+ * existed. Refusing instead would leave the author to fix it by hand, and on
+ * this repository most authors are automated.
+ */
+function runStdinFilter(policy) {
+  const original = readFileSync(0, "utf8");
+  const { message } = stripDisallowedCoAuthors(original, policy);
+  process.stdout.write(message);
+  return 0;
+}
+
+function main(argv) {
+  const policy = loadPolicy();
+  if (argv.includes("--filter-stdin")) return runStdinFilter(policy);
+  const checkIndex = argv.indexOf("--check-range");
+  if (checkIndex !== -1) {
+    return runCheck(argv[checkIndex + 1], policy, { reportOnly: argv.includes("--report-only") });
+  }
+
+  const messagePath = argv.find(arg => !arg.startsWith("--"));
+  if (!messagePath) {
+    console.error("Usage: commit-trailers.mjs <commit-msg-file> | --check-range <base>..<head> [--report-only] | --filter-stdin");
+    return 2;
+  }
+  return runHook(messagePath, policy);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  process.exit(main(process.argv.slice(2)));
+}

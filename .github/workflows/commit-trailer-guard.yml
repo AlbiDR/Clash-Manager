@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Keeps unwanted co-authors out of the repository's public Contributors list,
+# by repairing rather than refusing.
+#
+# GitHub credits every `Co-Authored-By:` trailer in the Contributors section, so
+# a trailer is not a cosmetic detail in `git log`: it puts a name on the repo's
+# front page. On 2026-09-02 an AI assistant appended its own trailer to four
+# commits because its tooling instructed it to, and "Claude" became a listed
+# contributor. Undoing that after the fact required rewriting history and
+# force-pushing three branches while a nightly run was starting, which also
+# stranded the stage 1 branch on the pre-rewrite history and needed a second
+# repair. That cost is the entire argument for catching it at the gateway.
+#
+# WHY THIS FIXES INSTEAD OF BLOCKING
+# Thirteen automated pull requests land here every night. A guard that can fail
+# them trades a working pipeline for a cosmetic correction, and the author who
+# would have to resolve the failure is usually a bot that cannot. So on a pull
+# request this rewrites the offending commit messages on the PR's own branch and
+# force-pushes them back: by the time anything merges, the trailer never
+# existed. Nothing is ever blocked.
+#
+# Direct pushes to the long-lived branches are only reported, never rewritten.
+# Force-pushing Nightly, Beta or Stable from CI is precisely the operation that
+# caused the collateral damage described above, and it is not worth automating:
+# the commit-msg hook in package.json already strips these locally, so a push
+# that still carries one came from an environment without the repo's hooks and
+# deserves a human's attention rather than an automatic history rewrite.
+#
+# Jules is allowlisted deliberately in .github/commit-trailer-policy.json: it is
+# this pipeline's own agent and its authorship is wanted.
+name: Commit Trailer Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - Nightly
+      - Beta
+      - Stable
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    name: "Repair co-author trailers"
+    # A fork's PR branch cannot be pushed to, so there is nothing to repair.
+    # Report-only still runs for it through the push path on merge.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the pull request branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          # Both ends of the range must exist locally, and the rewrite needs
+          # real history rather than a shallow graft.
+          fetch-depth: 0
+
+      - name: Repair disallowed trailers
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          if node .github/scripts/project/commit-trailers.mjs --check-range "${BASE_SHA}..HEAD" --report-only | grep -q '^OK:'; then
+            echo "Nothing to repair."
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Only the commits the PR itself introduces are rewritten. The base is
+          # never touched, so this cannot rewrite shared history.
+          FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
+            --msg-filter 'node "${GITHUB_WORKSPACE}/.github/scripts/project/commit-trailers.mjs" --filter-stdin' \
+            "${BASE_SHA}..HEAD"
+
+          # --force-with-lease so a push that raced this run is not clobbered;
+          # the next synchronize event repairs it instead.
+          git push --force-with-lease origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
+          echo "Repaired disallowed co-author trailers and pushed the corrected branch."
+
+      - name: Confirm the branch is clean
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node .github/scripts/project/commit-trailers.mjs --check-range "${BASE_SHA}..HEAD"
+
+  report:
+    name: "Report co-author trailers"
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine range
+        id: range
+        run: |
+          BASE="${{ github.event.before }}"
+          HEAD="${{ github.sha }}"
+          # A branch's first push reports an all-zero "before", and after a force
+          # push it can name a commit that no longer exists. Neither is a usable
+          # range, so fall back to the head commit alone rather than erroring.
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            echo "range=${HEAD}~1..${HEAD}" >> "$GITHUB_OUTPUT"
+          else
+            echo "range=${BASE}..${HEAD}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report disallowed trailers
+        run: node .github/scripts/project/commit-trailers.mjs --check-range "${{ steps.range.outputs.range }}" --report-only
