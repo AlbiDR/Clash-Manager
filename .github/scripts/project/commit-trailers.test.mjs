@@ -257,3 +257,34 @@ test("the policy names an identity to reattribute disallowed authors to", () => 
     "the reattribution target must itself be an allowed author, or the repair would loop",
   );
 });
+
+test("CRLF commit messages are stripped, and keep their CRLF endings", () => {
+  // The worst bug found in this feature, and only by running it: in JavaScript
+  // regex \r is a line terminator, so `.` will not match it and `$` (no `m`
+  // flag) cannot reach past it. CO_AUTHOR_LINE therefore failed on EVERY line
+  // of a CRLF message and every trailer survived untouched - a complete bypass
+  // for anyone committing from a CRLF environment.
+  const crlf = "fix: thing\r\n\r\nBody.\r\n\r\nCo-Authored-By: Claude <noreply@anthropic.com>\r\n";
+  const { message, removed } = stripDisallowedCoAuthors(crlf, policy);
+  assert.equal(removed.length, 1, "a CRLF trailer must be stripped");
+  assert.doesNotMatch(message, /anthropic/);
+  assert.match(message, /\r\n/, "CRLF endings must be preserved, not normalised to LF");
+  assert.doesNotMatch(message, /[^\r]\n/, "no line may be left with a bare LF");
+
+  // A lone CR line ending must not smuggle one through either.
+  assert.equal(parseCoAuthor("Co-Authored-By: Claude <noreply@anthropic.com>\r")?.email, "noreply@anthropic.com");
+
+  // And an LF message must stay LF.
+  const lf = "fix: thing\n\nCo-Authored-By: Claude <noreply@anthropic.com>\n";
+  const lfResult = stripDisallowedCoAuthors(lf, policy);
+  assert.equal(lfResult.removed.length, 1);
+  assert.doesNotMatch(lfResult.message, /\r/);
+});
+
+test("GitHub's web-flow address alone does not earn credit", () => {
+  // noreply@github.com is trivially self-assignable, so a bare email condition
+  // would let anything calling itself that be credited as an author.
+  assert.equal(isAllowedAuthor({ name: "Claude", email: "noreply@github.com" }, policy), false);
+  assert.equal(isAllowedAuthor({ name: "Copilot", email: "noreply@github.com" }, policy), false);
+  assert.ok(isAllowedAuthor({ name: "GitHub", email: "noreply@github.com" }, policy), "real squash/merge commits must still pass");
+});

@@ -45,8 +45,9 @@
       "emailPattern": "^github-actions\\[bot\\]@users\\.noreply\\.github\\.com$"
     },
     {
-      "label": "GitHub's own merge/web-flow identity for squash and merge commits",
-      "email": "noreply@github.com"
+      "label": "GitHub's own merge/web-flow identity for squash and merge commits. Name is pinned too: a bare email condition would let anything calling itself noreply@github.com be credited, and that address is trivially self-assigned.",
+      "namePattern": "^github$",
+      "emailPattern": "^noreply@github\\.com$"
     }
   ],
 

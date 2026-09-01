@@ -50,7 +50,12 @@ export function loadPolicy(path = POLICY_FILE) {
 
 /** `Co-Authored-By: Name <email>` -> { name, email }, or null if not one. */
 export function parseCoAuthor(line) {
-  const keyed = CO_AUTHOR_LINE.exec(line);
+  // The trailing CR of a CRLF message must go before matching. In JavaScript
+  // regex `\r` is a line terminator, so `.` refuses to match it and the `$`
+  // anchor (no `m` flag) cannot reach past it: CO_AUTHOR_LINE simply failed on
+  // every line of a CRLF commit message and every trailer survived untouched.
+  // Verified, not theorised - a CRLF message came out of the filter unchanged.
+  const keyed = CO_AUTHOR_LINE.exec(String(line).replace(/\r+$/, ""));
   if (!keyed) return null;
   const identity = IDENTITY.exec(keyed[1].trim());
   // A malformed trailer still counts as a co-author trailer. Treating it as
@@ -116,7 +121,12 @@ export function isAllowedAuthor(author, policy) {
 export function stripDisallowedCoAuthors(message, policy) {
   const removed = [];
   const kept = [];
-  for (const line of String(message).split("\n")) {
+  const text = String(message);
+  // Preserve whatever the author used. Normalising CRLF to LF would rewrite
+  // every line of the message to strip one, and a filter that reformats is a
+  // filter people disable.
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  for (const line of text.split(/\r?\n/)) {
     const coAuthor = parseCoAuthor(line);
     if (coAuthor && !isAllowedCoAuthor(coAuthor, policy)) {
       removed.push(line.trim());
@@ -124,13 +134,13 @@ export function stripDisallowedCoAuthors(message, policy) {
     }
     kept.push(line);
   }
-  if (removed.length === 0) return { message: String(message), removed };
+  if (removed.length === 0) return { message: text, removed };
 
   // Removing a trailer leaves the blank line that separated it. Collapse only
   // trailing blank lines, so an intentionally blank-line-separated body is not
   // rewritten, then restore the single trailing newline git expects.
   while (kept.length > 0 && kept[kept.length - 1].trim() === "") kept.pop();
-  return { message: `${kept.join("\n")}\n`, removed };
+  return { message: `${kept.join(eol)}${eol}`, removed };
 }
 
 /** Commit messages in a range, oldest first. Empty when the range is empty. */
