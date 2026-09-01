@@ -699,6 +699,12 @@ function validatePrompt(repoRoot, stage) {
     content.includes(`node .github/scripts/nightly/nightly-stage.mjs finalize --stage ${stage.number}`),
     `Stage ${stage.number} prompt omits its finalize command.`,
   );
+  if ([1, 3, 4, 7, 9, 10, 11, 12].includes(stage.number)) {
+    invariant(
+      content.includes("CLEAN Evidence Floor"),
+      `Stage ${stage.number} prompt must define its CLEAN evidence floor.`,
+    );
+  }
   invariant(
     content.includes(NIGHTLY_AGENT_CONTRACT_PATH),
     `Stage ${stage.number} prompt must defer shared behavior to ${NIGHTLY_AGENT_CONTRACT_PATH}.`,

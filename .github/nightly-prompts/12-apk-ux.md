@@ -69,6 +69,7 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 
 ### Step 1: Global Frontend Sweep
 - Read `/tmp/nightly/apk-ux-audit-status.txt` and `/tmp/nightly/apk-ux-audit.json` first. This structured audit is the authoritative broad sweep for raw native selectors, unsafe external anchors, and bounded candidate discovery.
+- **CLEAN Evidence Floor:** A clean run must name the `apk-ux-audit-status.txt` result, the `apk-ux-audit.json` candidate count actually reviewed, and which of the ten UX categories were checked. Do not finalize with only "no UX issue found" or "audit complete".
 - Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and the structured APK UX audit plus bounded candidate review finds no viable UX fix, include the ordinary CLEAN-since-calibration count and `apk-ux-audit.json` candidate counts in the CLEAN summary.
 - If the audit status is `DEGRADED`, do not call the run clean. Use `/tmp/nightly/changed-files.txt`, the active T1 history, and the Stage 12 intelligence section to perform one bounded manual source audit. If that substitute evidence cannot be completed, restore non-log edits and finalize `PARTIAL-RUN`.
 - If the audit status is `FAIL`, select the first violation in `/tmp/nightly/apk-ux-audit.json`, make exactly one surgical fix, and proceed to Step 2.

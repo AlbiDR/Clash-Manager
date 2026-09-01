@@ -64,6 +64,7 @@ You act as a defensive packaging auditor. You verify the boundaries between the 
 
 ### Step 1: Scan Configuration Files
 - Use `/tmp/nightly/changed-files.txt` and the Stage 10 intelligence section to prioritize recently changed PWA and APK configuration. Stop after one mismatch. If none is found, skip source edits and finalize `CLEAN`.
+- **CLEAN Evidence Floor:** A clean run must name each wrapper invariant that was actually checked: asset links, manifest parity, version code/name sync, release metadata, and security policy. The summary or result must include the command/source check used, such as `pnpm audit:apk`, `pnpm apk:verify:source`, or the exact source-level fallback files. Do not finalize with only "integrity audit passed" or "no mismatches found".
 - Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and the recent-file scan finds no mismatch, widen the check to the full wrapper invariant set: asset links, manifest values, release metadata, version codes, and cleartext traffic policy. A calibration CLEAN summary must name those checks and the ordinary CLEAN-since-calibration count.
 - Identify mismatches in:
   1. Asset links fingerprints or domain mappings.

@@ -82,6 +82,7 @@ Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold
 
 ### Step 1: Compilation Scan
 - **Active Intelligence Check:** Before processing, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I migration folding cadence, Section II pitfalls, and Section V Stage 3 context). You must check the migration folding threshold constraint in Section I (operational debt warning if >3 migrations unfolded) and check Section II to ensure no soft-delete boolean flags or bad patterns are folded into the baseline migration.
+- **CLEAN Evidence Floor:** A clean run must name the pending migration count, migration-quality status, fold-state status, and database verification availability actually checked, plus whether the read-only RLS/search_path/formatting audit ran. Do not finalize with only "baseline current" or "no source changes required".
 - **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and no migrations are pending, treat the read-only baseline audit as a calibration pass. The CLEAN summary must include the ordinary CLEAN-since-calibration count, pending migration count, migration-quality status, fold-state status, and database verification availability.
 - **Scan execution:**
   - Require migration quality `PASS`. `FAIL` or `DEGRADED` cannot finalize `CLEAN`; do not edit incremental migrations.
