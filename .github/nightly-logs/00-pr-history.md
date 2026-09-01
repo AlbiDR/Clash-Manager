@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-31
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-01] PR #1652 [Stage 12]: chore(apk-ux): Completed global APK UX audit sweep across 75 frontend files with 0 violations found
+**Domain:** pipeline | **Commit:** ea2d680f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1652)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): Completed global APK UX audit sweep across 75 frontend files with 0 violations found
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-01] PR #1651 [Stage 11]: CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), AndroidManifest app properties, and SW precache topology; 0 source changes required (44 clean runs since calibration).
 **Domain:** apk | **Commit:** 06d10376 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1651)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
