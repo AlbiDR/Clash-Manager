@@ -16,6 +16,14 @@ LAST_AGED:   2026-08-31
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-01] PR #1643 [Stage 3]: chore(database): clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-stat
+**Domain:** pipeline | **Commit:** 8f222f00 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1643)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(database): clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-stat
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-01] PR #1642 [Stage 2]: Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Closed partial-coverage and sad-path logic gaps in Toast component with comprehensive unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation.
 **Domain:** verification | **Commit:** 4dfa4e3d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1642)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts
