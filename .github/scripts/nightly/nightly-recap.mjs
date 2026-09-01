@@ -32,6 +32,8 @@
 
 import { spawnSync } from "node:child_process";
 
+import { HEALTH, evaluatePipelineHealth } from "./nightly-health.mjs";
+
 export const SOURCE_REF = "origin/Nightly";
 const LEDGER = ".github/nightly-logs/nightly-run-ledger.json";
 const REGISTRY = ".github/nightly-config/stages.json";
@@ -182,7 +184,29 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
       history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate),
     });
   });
-  return { date, stages, ...gradeRun(stages) };
+  // Cross-run health needs more than the selected date - a stage that needs
+  // help every single night passes every individual run, so no single-date view
+  // can ever see it - but it stops AT the selected date. Judging a past run
+  // against nights that had not happened yet would both misreport that run and
+  // break the reproducibility this file promises above.
+  return {
+    date,
+    stages,
+    ...gradeRun(stages),
+    health: evaluatePipelineHealth(ledgerThrough(ledger, date), registry),
+  };
+}
+
+/**
+ * The ledger as it stood at the end of `date`. Run dates are ISO, so ordering
+ * them is a string compare.
+ */
+export function ledgerThrough(ledger, date) {
+  const runs = {};
+  for (const runDate of Object.keys(ledger?.runs || {})) {
+    if (runDate <= date) runs[runDate] = ledger.runs[runDate];
+  }
+  return { ...(ledger || {}), runs };
 }
 
 function escapeMarkdownCell(value) {
@@ -284,6 +308,50 @@ function stageDescription(stage) {
   ];
 }
 
+const JUDGED_VERDICTS = new Set([HEALTH.HEALTHY, HEALTH.DEGRADING, HEALTH.CHRONIC]);
+
+/**
+ * The cross-run health block.
+ *
+ * Says nothing at all when no stage has enough recorded history to judge:
+ * an absent verdict is not evidence of health, and printing "0 evaluated"
+ * every night would train the reader to skip the section that matters.
+ */
+function healthSection(health) {
+  const stages = health?.stages || [];
+  const judged = stages.filter(s => JUDGED_VERDICTS.has(s.verdict));
+  if (judged.length === 0) return [];
+
+  const unjudged = stages.length - judged.length;
+  const scope = unjudged > 0
+    ? `${judged.length} of ${stages.length} stages judged, ${unjudged} without enough history`
+    : `all ${stages.length} stages judged`;
+
+  const adverse = stages.filter(s => s.verdict === HEALTH.CHRONIC || s.verdict === HEALTH.DEGRADING);
+  if (adverse.length === 0) {
+    // Exactly the predicate that was tested, and no more: a rising intervention
+    // rate whose latest run happened to be clean is HEALTHY here, so this line
+    // must not be read as "nothing is getting worse".
+    return [`Pipeline health: no stage is chronic or degrading (${scope}).`, ""];
+  }
+
+  const lines = [`Pipeline health: adverse cross-run trends (${scope}).`];
+  for (const s of adverse) {
+    const label = `S${String(s.stage).padStart(2, "0")}`;
+    const streak = s.currentStreak ?? 0;
+    lines.push(
+      `- ${label} ${displayArea(s.slug)} is ${s.verdict}: ${escapeMarkdownCell(s.reason)}`
+      + ` (${streak} run${streak === 1 ? "" : "s"} in a row needing help, judged over ${s.runs} observed runs).`,
+    );
+  }
+  // Deliberately says nothing about whether those runs merged. "Needed
+  // intervention" covers both a stage rescued into a merge and a stage that
+  // never produced anything, and the two are indistinguishable from a verdict
+  // alone - claiming a rescue here inverts the truth for every stuck stage.
+  lines.push("These come from comparing each stage against its own history; one run cannot show them.", "");
+  return lines;
+}
+
 export function renderRecap(recap) {
   const lines = [
     `Nightly Recap: ${recap.date}`,
@@ -302,15 +370,14 @@ export function renderRecap(recap) {
     lines.push("");
   }
 
+  lines.push(...healthSection(recap.health));
+
   const notes = recap.stages.flatMap(s => {
     const stageNotes = [];
     const label = `S${String(s.stage).padStart(2, "0")}`;
     if (s.rescued) stageNotes.push(`${label}: rescued via ${s.rescuedBy || "retry"}.`);
     const why = usefulWhy(s);
     if (why) stageNotes.push(`${label}: why - ${why}`);
-    if (s.health && s.health.verdict && s.health.verdict !== "HEALTHY" && s.health.verdict !== "UNKNOWN") {
-      stageNotes.push(`${label}: health - ${s.health.verdict} (${s.health.reason})`);
-    }
     return stageNotes;
   });
   if (notes.length > 0) lines.push("Notes:", ...notes.map(note => `- ${note}`), "");

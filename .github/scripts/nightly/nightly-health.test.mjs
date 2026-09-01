@@ -100,8 +100,11 @@ test("renderHealthReport says plainly why a per-run check cannot see this", () =
   };
   const report = renderHealthReport(chronicHealth);
   assert.match(report, /Stage 5 \(documentation-readme\) CHRONIC/);
-  assert.match(report, /being rescued|rescues it every time/);
-  assert.match(report, /passes its individual runs/);
+  assert.match(report, /rescues it every time or it is not producing at all/);
+  assert.match(report, /comparing each stage against its own history/);
+  // A CHRONIC verdict does not establish that the runs merged: neededIntervention
+  // is true for NO_OUTPUT and ESCALATED too, which is most of the real ledger.
+  assert.doesNotMatch(report, /passes its individual runs|reaching a merged result/);
 
   const clean = renderHealthReport({ stages: [{ verdict: HEALTH.HEALTHY }], chronic: [], degrading: [] });
   assert.match(clean, /no stage is degrading/);

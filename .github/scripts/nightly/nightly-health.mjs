@@ -80,7 +80,7 @@ export function stageInterventionHistory(ledger, stageNumber) {
   return Object.keys(ledger?.runs || {})
     .sort()
     .map(date => {
-      const entry = ledger.runs[date][String(stageNumber)];
+      const entry = ledger.runs[date]?.[String(stageNumber)];
       // Unobserved days are dropped, not scored. See UNOBSERVED_STATES.
       return isObserved(entry)
         ? { date, needed: neededIntervention(entry), state: entry.state, failureClass: entry.failureClass }
@@ -175,13 +175,16 @@ export function renderHealthReport(health) {
   const lines = ["", "Stage health: adverse trends detected across runs.", ""];
   for (const s of chronic) {
     lines.push(`- Stage ${s.stage} (${s.slug}) CHRONIC: ${s.reason}.`);
-    lines.push("    It is reaching a merged result only because something rescues it every time.");
+    lines.push("    Either something rescues it every time or it is not producing at all.");
   }
   for (const s of degrading) {
     lines.push(`- Stage ${s.stage} (${s.slug}) DEGRADING: ${s.reason}.`);
   }
   lines.push("");
-  lines.push("Each of these passes its individual runs, which is why no per-run check reports them.");
+  // neededIntervention counts a stage that never merged, so this must not claim
+  // the runs passed. They are invisible per-run because the comparison is
+  // against the stage's own history, not because each night looked fine.
+  lines.push("These come from comparing each stage against its own history; one run cannot show them.");
   lines.push("");
   return lines.join("\n");
 }

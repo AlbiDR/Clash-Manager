@@ -160,6 +160,10 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
   const text = renderRecap(recap);
   assert.match(text, /Summary: 13\/13 merged/);
   assert.match(text, /Grade: 10\/10/);
+  // A one-date ledger cannot judge a cross-run trend, so the health block says
+  // nothing at all rather than printing an empty verdict. The golden literal
+  // below asserts that absence by terminating after the last stage block.
+  assert.doesNotMatch(text, /Pipeline health/);
   assert.equal(text, [
     "Nightly Recap: 2026-08-27",
     "",
@@ -298,4 +302,147 @@ test("the real recorded history recaps without throwing, for a synced run", () =
   });
   assert.equal(recap.total, 13);
   assert.ok(recap.grade >= 1 && recap.grade <= 10);
+});
+
+
+// --- Cross-run health -------------------------------------------------------
+//
+// The health block reaches past the selected date - a stage carried every night
+// passes every individual run - but never past it. These build multi-date
+// ledgers because a single date can never produce a verdict, which is exactly
+// what the first test above pins down.
+
+const MERGED_RUN = { state: "MERGED", failureClass: null, attempts: 0, evidence: {} };
+// Needed help and got it: merged, but only because something nudged it.
+const RESCUED_RUN = { state: "RECOVERABLE", failureClass: "RECOVERED_AFTER_NUDGE", attempts: 1, evidence: {} };
+// Needed help and never got there. This is the dominant real flavour: the
+// ledger holds far more NO_OUTPUT/ESCALATED rows than rescued ones, and
+// neededIntervention counts both, so no verdict may assume a merge happened.
+const STUCK_RUN = { state: "NO_OUTPUT", failureClass: "JULES_SESSION_STUCK", attempts: 0, evidence: {} };
+
+/** A ledger with `dates` observed runs per stage; `needed` decides which of them needed help. */
+function historyLedger(dates, needed = () => false, neededRun = RESCUED_RUN) {
+  const runs = {};
+  for (const date of dates) {
+    runs[date] = {};
+    for (const stage of registry.stages) {
+      runs[date][String(stage.number)] = { ...(needed(stage.number, date) ? neededRun : MERGED_RUN) };
+    }
+  }
+  return { schemaVersion: 1, runs };
+}
+
+const HISTORY_DATES = ["2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27"];
+
+test("a self-sufficient history renders the all-clear health line", () => {
+  const ledger = historyLedger(HISTORY_DATES);
+  const recap = buildRecap({
+    ledger, registry, date: "2026-08-27",
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+  assert.equal(recap.health.chronic.length, 0);
+  assert.equal(recap.health.degrading.length, 0);
+  const text = renderRecap(recap);
+  assert.match(text, /Pipeline health: no stage is chronic or degrading \(all 13 stages judged\)\./);
+});
+
+test("a stage needing help on every recent run is reported as CHRONIC with its evidence", () => {
+  // Stage 5 needs help only on the recent half, which is all CHRONIC requires.
+  // Keeping the earlier half clean makes streak (2) and observed runs (4)
+  // different numbers, so a renderer that confuses them cannot pass.
+  const ledger = historyLedger(HISTORY_DATES, (stage, date) => stage === 5 && date >= "2026-08-26");
+  const recap = buildRecap({
+    ledger, registry, date: "2026-08-27",
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+  assert.deepEqual(recap.health.chronic.map(s => s.stage), [5]);
+  const text = renderRecap(recap);
+  assert.match(text, /Pipeline health: adverse cross-run trends \(all 13 stages judged\)\./);
+  assert.match(text, /- S05 documentation README is CHRONIC: needed intervention on all 2 most recent runs/);
+  assert.match(text, /2 runs in a row needing help, judged over 4 observed runs/);
+  assert.match(text, /comparing each stage against its own history/);
+});
+
+test("a rising intervention rate on the latest run is reported as DEGRADING", () => {
+  // Needed help on the last date only: the recent half is not all-needed (so
+  // not CHRONIC), the latest run needed help, and the rate rose from 0% to 50%.
+  const ledger = historyLedger(HISTORY_DATES, (stage, date) => stage === 5 && date === "2026-08-27");
+  const recap = buildRecap({
+    ledger, registry, date: "2026-08-27",
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+  assert.deepEqual(recap.health.degrading.map(s => s.stage), [5]);
+  assert.equal(recap.health.chronic.length, 0);
+  const text = renderRecap(recap);
+  assert.match(text, /- S05 documentation README is DEGRADING: intervention rate rose from 0% to 50%/);
+  assert.match(text, /1 run in a row needing help, judged over 4 observed runs/);
+});
+
+test("an adverse verdict never claims the runs merged or were rescued", () => {
+  // The real ledger's dominant failure is a stage that produced nothing at all,
+  // not one that was nudged over the line. Both count as needing intervention,
+  // so the section must not narrate either mechanism.
+  const ledger = historyLedger(HISTORY_DATES, stage => stage === 5, STUCK_RUN);
+  const recap = buildRecap({
+    ledger, registry, date: "2026-08-27",
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+  assert.deepEqual(recap.health.chronic.map(s => s.stage), [5]);
+  const text = renderRecap(recap);
+  assert.match(text, /- S05 documentation README is CHRONIC/);
+  assert.doesNotMatch(text, /reaches a merged result|rescues it every time/);
+  assert.doesNotMatch(text, /passed its own individual runs/);
+});
+
+test("health is judged up to the recapped date and never past it", () => {
+  // Stage 5 needs help on the first four nights and recovers on the last two.
+  // As of 2026-08-27 that is CHRONIC; over the whole ledger it is HEALTHY. A
+  // recap of 2026-08-27 must report what was true that night, both when it runs
+  // that night and when it runs days later.
+  const dates = ["2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-08-29"];
+  const ledger = historyLedger(dates, (stage, date) => stage === 5 && date <= "2026-08-27");
+  const asOf = buildRecap({
+    ledger, registry, date: "2026-08-27",
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+  const stageFive = asOf.health.stages.find(s => s.stage === 5);
+  assert.equal(stageFive.verdict, "CHRONIC");
+  assert.equal(stageFive.runs, 4, "the two later nights are not evidence about this one");
+  assert.equal(stageFive.currentStreak, 4, "the streak stops at the recapped date");
+  // Still reaches past the single date: that is the whole point of the section.
+  assert.ok(stageFive.runs > 1, "earlier nights are judged alongside the recapped one");
+  assert.match(renderRecap(asOf), /- S05 documentation README is CHRONIC/);
+
+  const latest = buildRecap({
+    ledger, registry, date: "2026-08-29",
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+  assert.equal(latest.health.stages.find(s => s.stage === 5).verdict, "HEALTHY");
+  assert.match(renderRecap(latest), /no stage is chronic or degrading/);
+});
+
+test("a stage without enough history is counted, not silently called healthy", () => {
+  const ledger = historyLedger(HISTORY_DATES);
+  // Stage 7 is observed on only one date, so it cannot be judged at all.
+  for (const date of HISTORY_DATES.slice(1)) ledger.runs[date]["7"] = { state: "EXPECTED", attempts: 0, evidence: {} };
+  const recap = buildRecap({
+    ledger, registry, date: "2026-08-27",
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+  assert.equal(recap.health.stages.find(s => s.stage === 7).verdict, "UNKNOWN");
+  assert.match(renderRecap(recap), /12 of 13 stages judged, 1 without enough history/);
+});
+
+test("renderRecap still works for a hand-built recap that carries no health", () => {
+  // renderRecap is exported, so a recap object may be assembled without
+  // buildRecap. A missing health field must render a recap without the
+  // section, not throw and not print an all-clear it has no evidence for.
+  const text = renderRecap({
+    date: "2026-08-27",
+    total: 1, merged: 1, changed: 1, clean: 0, stuck: 0, rescued: 0,
+    grade: 10, rationale: "Optimal run: every stage completed unaided.",
+    stages: [{ stage: 2, slug: "verification", outcome: "CHANGED", prNumber: 2002, summary: "added a spec", merged: true }],
+  });
+  assert.match(text, /Nightly Recap: 2026-08-27/);
+  assert.doesNotMatch(text, /Pipeline health/);
 });

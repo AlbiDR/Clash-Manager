@@ -28,7 +28,11 @@ pnpm nightly:recap --date 2026-08-25
 facts. It scopes a run by DATE, using the ledger, the `nightly/<date>/stage-N/pr-*`
 tags and the coverage logs, all read from `origin/Nightly`. It therefore gives
 the same answer whether or not the branches have been synced, and can report on
-any past run.
+any past run. Its one cross-run section, `Pipeline health`, judges each stage
+against its own earlier history rather than the selected date alone, because a
+stage that needs help every night passes every individual run. That history
+stops at the selected date, so a recap of a past run reports what was true that
+night however long afterwards it is run.
 
 Your job is only to relay its output. Do not re-derive, re-classify, re-grade,
 summarize, embellish, or restyle anything it reports: every agent must return
