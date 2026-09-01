@@ -403,3 +403,4 @@
 * [2026-08-29] [Stage 3] CLEAN: Codebase -- Baseline audit clean: 0 pending migrations folded, 28 tables RLS compliant, 97 functions isolated.
 * [2026-08-30] [Stage 3] CLEAN: Codebase -- Baseline consolidated and 100% compliant; zero pending migrations unfolded
 * [2026-08-31] [Stage 3] CLEAN: Codebase -- Baseline current (0 unfolded migrations, 160 baseline objects, migration-quality PASS, fold-state CLEAN, DB-UNAVAILABLE)
+* [2026-09-01] [Stage 3] CLEAN: Codebase -- clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-state CLEAN, database-verification DB-UNAVAILABLE
