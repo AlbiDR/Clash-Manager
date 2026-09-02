@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-02] PR #1660 [Stage 7]: chore(version): Stage 7 Version Integrity Audit
+**Domain:** pipeline | **Commit:** 4c3634f8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1660)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(version): Stage 7 Version Integrity Audit
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-02] PR #1659 [Stage 6]: docs(tsdoc): harden useConnectivityManager interface contracts and inline logic annotations
 **Domain:** pipeline | **Commit:** f7b12b63 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1659)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConnectivityManager.ts
