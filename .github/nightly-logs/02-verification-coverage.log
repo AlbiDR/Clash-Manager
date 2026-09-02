@@ -43,3 +43,4 @@
 * [2026-08-30] [Stage 2] CHANGED: Backend/supabase/functions/_shared/shared-tests/rpcSchemas.spec.ts -- Added comprehensive unit tests for L1 Core RPC Schemas in rpcSchemas.spec.ts
 * [2026-08-31] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useClashSync.spec.ts -- Expanded useClashSync spec coverage for single-flight promises and failure thresholds
 * [2026-09-01] [Stage 2] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Closed partial-coverage and sad-path logic gaps in Toast component with comprehensive unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation.
+* [2026-09-02] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useConnectivityManager.spec.ts -- Expanded Frontend-PWA useConnectivityManager test suite for error priorities and staleness threshold boundary

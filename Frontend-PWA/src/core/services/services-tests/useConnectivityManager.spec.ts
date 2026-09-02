@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useConnectivityManager } from "../useConnectivityManager";
 import { useClashDataStore } from "../useClashDataStore";
 import { useConnectionStatus } from "../useConnectionStatus";
+import { useApiState } from "../../api/useApiState";
 import * as timeUtils from "../../utils/time";
 import { ref } from "vue";
 import { setActivePinia, createPinia } from "pinia";
@@ -16,6 +17,10 @@ vi.mock("../useClashDataStore", () => ({
 
 vi.mock("../useConnectionStatus", () => ({
   useConnectionStatus: vi.fn()
+}));
+
+vi.mock("../../api/useApiState", () => ({
+  useApiState: vi.fn()
 }));
 
 vi.mock("../../utils/time", () => ({
@@ -30,11 +35,13 @@ describe("useConnectivityManager", () => {
     lastFetchedTime: null as number | null,
     isStale: true,
     loading: false,
+    syncError: null as string | null,
     isHydrated: false,
     refresh: vi.fn()
   };
 
   const mockNetworkStatus = ref("online");
+  const mockApiStatus = ref("online");
 
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -47,11 +54,14 @@ describe("useConnectivityManager", () => {
     mockStore.lastFetchedTime = null;
     mockStore.isStale = true;
     mockStore.loading = false;
+    mockStore.syncError = null;
     mockStore.isHydrated = false;
 
     vi.mocked(useClashDataStore).mockReturnValue(mockStore as any);
     vi.mocked(useConnectionStatus).mockReturnValue({ status: mockNetworkStatus } as any);
+    vi.mocked(useApiState).mockReturnValue({ apiStatus: mockApiStatus } as any);
     mockNetworkStatus.value = "online";
+    mockApiStatus.value = "online";
   });
 
   describe("hubHealth", () => {
@@ -66,6 +76,61 @@ describe("useConnectivityManager", () => {
       });
     });
 
+    it("returns Sync Error state when store has a syncError (Priority 1.5)", () => {
+      mockStore.syncError = "Network request failed";
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value).toEqual({
+        type: "error",
+        label: "Sync Error",
+        confidence: 0,
+        diagnosis: "Network request failed"
+      });
+    });
+
+    it("returns Invalid API URL error state when apiStatus is unconfigured (Priority 1.7)", () => {
+      mockApiStatus.value = "unconfigured";
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value).toEqual({
+        type: "error",
+        label: "Invalid API URL",
+        confidence: 0,
+        diagnosis: "Backend Configuration Error"
+      });
+    });
+
+    it("prioritizes syncError over unconfigured API, offline, and stale states", () => {
+      mockStore.syncError = "Fatal sync failure";
+      mockApiStatus.value = "unconfigured";
+      mockNetworkStatus.value = "offline";
+      mockStore.lastSyncTime = Date.now() - (60 * 60 * 1000);
+
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value).toEqual({
+        type: "error",
+        label: "Sync Error",
+        confidence: 0,
+        diagnosis: "Fatal sync failure"
+      });
+    });
+
+    it("prioritizes unconfigured API state over offline and stale states", () => {
+      mockApiStatus.value = "unconfigured";
+      mockNetworkStatus.value = "offline";
+      mockStore.lastSyncTime = Date.now() - (60 * 60 * 1000);
+
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value).toEqual({
+        type: "error",
+        label: "Invalid API URL",
+        confidence: 0,
+        diagnosis: "Backend Configuration Error"
+      });
+    });
+
     it("returns OFFLINE state when network is disconnected", () => {
       mockNetworkStatus.value = "offline";
       const { hubHealth } = useConnectivityManager();
@@ -75,6 +140,29 @@ describe("useConnectivityManager", () => {
         label: "OFFLINE",
         confidence: 0,
         diagnosis: "No Network Connection"
+      });
+    });
+
+    it("evaluates staleness exactly at the DATA_STALENESS_MINUTES threshold", () => {
+      const now = Date.now();
+
+      // 29 minutes ago (under 30m threshold -> fresh)
+      mockStore.lastSyncTime = now - (29 * 60 * 1000);
+      mockStore.currentSource = "SUPABASE";
+      const { hubHealth: freshHealth } = useConnectivityManager();
+      expect(freshHealth.value.type).toBe("success");
+      expect(freshHealth.value.confidence).toBe(100);
+
+      // 30 minutes ago (at 30m threshold -> stale)
+      mockStore.lastSyncTime = now - (30 * 60 * 1000);
+      vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("30m ago");
+      const { hubHealth: staleHealth } = useConnectivityManager();
+
+      expect(staleHealth.value).toEqual({
+        type: "warning",
+        label: "STALE",
+        confidence: 40,
+        diagnosis: "Data is 30m ago old"
       });
     });
 

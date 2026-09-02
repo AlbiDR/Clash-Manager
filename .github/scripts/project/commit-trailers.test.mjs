@@ -156,7 +156,9 @@ test("stripping removes only the disallowed trailer and its dangling blank line"
   ].join("\n");
 
   const { message: cleaned, removed } = stripDisallowedCoAuthors(message, policy);
-  assert.deepEqual(removed, ["Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"]);
+  // The report is canonical rather than a verbatim echo: a folded trailer
+  // spans several physical lines, so there is no single original line to quote.
+  assert.deepEqual(removed, ["Co-authored-by: Claude Opus 5 <noreply@anthropic.com>"]);
   assert.equal(
     cleaned,
     "fix(nightly): stop a coordinator failure overwriting a merged stage\n\nA promotion tag is a durable history fact.\n",
@@ -287,4 +289,81 @@ test("GitHub's web-flow address alone does not earn credit", () => {
   assert.equal(isAllowedAuthor({ name: "Claude", email: "noreply@github.com" }, policy), false);
   assert.equal(isAllowedAuthor({ name: "Copilot", email: "noreply@github.com" }, policy), false);
   assert.ok(isAllowedAuthor({ name: "GitHub", email: "noreply@github.com" }, policy), "real squash/merge commits must still pass");
+});
+
+test("git's trailer syntax is matched, not a weaker approximation of it", () => {
+  // Every case here was a CONFIRMED live bypass found by red-teaming the
+  // previous parser. The governing rule: this file is a second implementation
+  // of git's trailer syntax, and any gap between the two is a free contributor
+  // credit, because git is what GitHub actually parses.
+  const bypasses = [
+    // Whitespace around the separator. git canonicalises these into real
+    // trailers; a `key:`-only pattern did not match them at all.
+    "Co-authored-by : Claude <noreply@anthropic.com>",
+    "Co-authored-by\t: Claude <noreply@anthropic.com>",
+    "Co-authored-by  :Claude <noreply@anthropic.com>",
+    // Two addresses. git resolves the FIRST, the old end-anchored pattern
+    // resolved the LAST - so appending the owner's address whitelisted the AI.
+    "Co-authored-by: Claude <noreply@anthropic.com> <aalbi97@gmail.com>",
+    "Co-authored-by: Claude <noreply@anthropic.com> <x@y.z> <aalbi97@gmail.com>",
+  ];
+  for (const line of bypasses) {
+    const parsed = parseCoAuthor(line);
+    assert.ok(parsed, `${line} must be recognised as a trailer`);
+    assert.notEqual(parsed.email, "aalbi97@gmail.com", `${line} must not resolve to the owner`);
+    assert.equal(isAllowedCoAuthor(parsed, policy), false, `${line} must not be credited`);
+    assert.equal(stripDisallowedCoAuthors(`feat: x\n\n${line}\n`, policy).removed.length, 1, `${line} must be stripped`);
+  }
+});
+
+test("a folded trailer is resolved and removed whole, never orphaned", () => {
+  // git joins an indented continuation into the trailer value. The previous
+  // line-by-line scanner could not see the identity, and removing only the key
+  // line left the AI's address sitting in the commit body forever.
+  const bareKey = "feat: x\n\nCo-authored-by:\n  Claude <noreply@anthropic.com>\n";
+  const r1 = stripDisallowedCoAuthors(bareKey, policy);
+  assert.equal(r1.removed.length, 1);
+  assert.match(r1.removed[0], /noreply@anthropic\.com/, "the report must name the identity, not the bare key");
+  assert.doesNotMatch(r1.message, /anthropic/, "the continuation line must be removed with its key");
+
+  const mixed = "feat: x\n\nCo-authored-by: AlbiDR <aalbi97@gmail.com>\n  Claude <noreply@anthropic.com>\n";
+  const r2 = stripDisallowedCoAuthors(mixed, policy);
+  assert.equal(r2.removed.length, 1, "a folded value mixing an allowed and a disallowed identity must be caught");
+  assert.doesNotMatch(r2.message, /anthropic/);
+});
+
+test("every line terminator git honours is a line boundary here too", () => {
+  // A bare CR spliced a second trailer into what looked like one allowed line;
+  // U+2028 hid one entirely. Same bug class as the earlier CRLF failure.
+  const bareCr = "feat: x\n\nCo-authored-by: AlbiDR <aalbi97@gmail.com>\rCo-authored-by: Claude <noreply@anthropic.com>\n";
+  const r1 = stripDisallowedCoAuthors(bareCr, policy);
+  assert.equal(r1.removed.length, 1, "a bare CR must separate the two trailers");
+  assert.doesNotMatch(r1.message, /anthropic/);
+  assert.match(r1.message, /aalbi97@gmail\.com/, "the owner's trailer must survive");
+
+  for (const sep of ["\u2028", "\u2029"]) {
+    const msg = `feat: x${sep}${sep}Co-authored-by: Claude <noreply@anthropic.com>${sep}`;
+    assert.equal(stripDisallowedCoAuthors(msg, policy).removed.length, 1, "U+2028/9 must be a line boundary");
+  }
+});
+
+test("stripping never empties a commit message", () => {
+  // git aborts a commit with an empty message, and the hook would have exited
+  // 0 while the commit silently failed. Leave the message alone instead.
+  const onlyTrailer = "Co-authored-by: Claude <noreply@anthropic.com>\n";
+  const { message, removed } = stripDisallowedCoAuthors(onlyTrailer, policy);
+  assert.equal(removed.length, 0, "must refuse rather than produce an empty message");
+  assert.equal(message, onlyTrailer);
+});
+
+test("a prefix cannot satisfy the Jules address pattern", () => {
+  // The emailPattern was unanchored at the start, so any prefix rode in on it.
+  assert.equal(
+    isAllowedCoAuthor(parseCoAuthor("Co-authored-by: google-labs-jules-EVIL <x.google-labs-jules[bot]@users.noreply.github.com>"), policy),
+    false,
+  );
+  assert.ok(
+    isAllowedCoAuthor(parseCoAuthor("Co-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>"), policy),
+    "the genuine bot address must still pass",
+  );
 });
