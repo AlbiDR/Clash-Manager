@@ -418,8 +418,51 @@ function runAuthorConfigCheck(policy) {
   return 1;
 }
 
+/**
+ * The range a pre-push hook should inspect, resolved defensively.
+ *
+ * `@{push}` is the correct answer and the one this hook wants, but it does not
+ * resolve on a detached HEAD, which is exactly how a git worktree is checked
+ * out - and this repository uses worktrees constantly for nightly work. The
+ * first version of this hook errored there and BLOCKED the push, which is the
+ * worst of both worlds: it stops legitimate work without inspecting anything.
+ *
+ * So it degrades: the tracking branch, then the merge-base with the default
+ * branch, and if none of those resolve it reports that it could not determine a
+ * range and lets the push proceed. A hook that blocks when it cannot see is a
+ * hook people disable, and the CI guard covers this case anyway.
+ */
+function resolvePushRange(defaultBranch = "Stable") {
+  const rev = ref => {
+    const result = spawnSync("git", ["rev-parse", "--verify", "--quiet", ref], { encoding: "utf8" });
+    return result.status === 0 ? String(result.stdout).trim() : "";
+  };
+  for (const candidate of ["@{push}", "@{upstream}"]) {
+    if (rev(candidate)) return `${candidate}..HEAD`;
+  }
+  const mergeBase = spawnSync("git", ["merge-base", `origin/${defaultBranch}`, "HEAD"], { encoding: "utf8" });
+  if (mergeBase.status === 0) {
+    const base = String(mergeBase.stdout).trim();
+    if (base && base !== rev("HEAD")) return `${base}..HEAD`;
+  }
+  return null;
+}
+
+function runPushCheck(policy) {
+  const range = resolvePushRange();
+  if (!range) {
+    console.log("[commit-trailers] no push range could be resolved (detached HEAD with no upstream); skipping the local check.");
+    console.log("[commit-trailers] Commit Attribution Guard still inspects this push in CI.");
+    return 0;
+  }
+  const trailers = runCheck(range, policy);
+  const authors = runAuthorCheck(range, policy);
+  return trailers === 0 && authors === 0 ? 0 : 1;
+}
+
 function main(argv) {
   const policy = loadPolicy();
+  if (argv[0] === "--check-push") return runPushCheck(policy);
   // Dispatch on argv[0] only. Scanning the whole argv for mode flags meant an
   // attacker-controlled VALUE was read as a flag: an author whose display name
   // is literally "--filter-stdin" made `--author-allowed "--filter-stdin" <email>`
