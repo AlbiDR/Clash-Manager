@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-02] PR #1663 [Stage 10]: chore(apk): Verified APK and PWA wrapper integrity across all target invariants without requiring source changes.
+**Domain:** pipeline | **Commit:** 86021ad3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1663)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Verified APK and PWA wrapper integrity across all target invariants without requiring source changes.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-02] PR #1662 [Stage 9]: chore(refactor): Audit completed: no structural debt found in bounded candidate set
 **Domain:** pipeline | **Commit:** 9cba952b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1662)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
