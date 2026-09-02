@@ -626,6 +626,38 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
 
 // Ledger rows are keyed by run date; expectedEvidenceDate only governs which
 // tag, log line, or PR date counts as evidence for a stage.
+/**
+ * Stages the nudge ladder can no longer help.
+ *
+ * These are the fallback publisher's whole reason to exist: the stage is stuck,
+ * a finished Jules session is sitting there with the work in it, and either the
+ * retry budget is spent or the nudge could not be delivered at all. The
+ * publisher reaches GitHub directly rather than through the Jules API, so it is
+ * an independent path - which is exactly why it still works on the night a dead
+ * JULES_API_KEY is what broke the nudge.
+ */
+export function selectFallbackCandidates(entries, ledger, date) {
+  return entries.filter(entry => {
+    if (!RECOVERABLE_FAILURE_CLASSES.has(entry.failureClass)) return false;
+    if (!entry.evidence?.julesSession) return false;
+    const recorded = stageEntry(ledger, date, entry.stage);
+    // Publishing a second time would open a duplicate pull request for work
+    // that already landed once.
+    if (recorded?.evidence?.fallbackPublish) return false;
+    return (recorded?.attempts ?? 0) >= MAX_RECOVERY_ATTEMPTS;
+  });
+}
+
+/** Drops anything already published by a previous pass on the same date. */
+function notYetPublished(entries, ledger, date) {
+  const seen = new Set();
+  return entries.filter(entry => {
+    if (seen.has(entry.stage)) return false;
+    seen.add(entry.stage);
+    return !stageEntry(ledger, date, entry.stage)?.evidence?.fallbackPublish;
+  });
+}
+
 export function selectRecoveryCandidates(entries, ledger, date) {
   return entries.filter(entry => {
     if (!RECOVERABLE_FAILURE_CLASSES.has(entry.failureClass)) return false;
@@ -650,7 +682,13 @@ export async function recoverStuckStages({
   pollIntervalMs = 60_000,
 } = {}) {
   const candidates = selectRecoveryCandidates(entries, ledger, date);
-  if (candidates.length === 0) return { attempted: [], recovered: [], failed: [] };
+  if (candidates.length === 0) {
+    // No stage is eligible for a nudge, which INCLUDES every stage that has
+    // spent its retry budget. Returning without `unrecovered` here left the
+    // caller's `recovery.unrecovered?.length` gate undefined, so the fallback
+    // publisher was unreachable on the exact path it was written for.
+    return { attempted: [], recovered: [], failed: [], unrecovered: selectFallbackCandidates(entries, ledger, date) };
+  }
 
   const attempted = [];
   const failed = [];
@@ -684,7 +722,17 @@ export async function recoverStuckStages({
     }
   }
 
-  if (attempted.length === 0) return { attempted, recovered: [], failed };
+  if (attempted.length === 0) {
+    // Not one nudge reached Jules. The stages are stuck and the ladder's first
+    // rung is unavailable, so hand every one of them to the fallback publisher:
+    // it talks to GitHub, not to Jules, so a dead JULES_API_KEY does not stop it.
+    const unrecovered = notYetPublished(
+      [...failed.map(item => item.entry), ...selectFallbackCandidates(entries, ledger, date)],
+      ledger,
+      date,
+    );
+    return { attempted, recovered: [], failed, unrecovered };
+  }
 
   const pending = new Set(attempted.map(entry => entry.stage));
   const recovered = [];
@@ -722,10 +770,14 @@ export async function recoverStuckStages({
   // Everything the nudge could not rescue. Reported so the caller can escalate
   // to the fallback publisher rather than writing the stage off for the night.
   const recoveredStages = new Set(recovered.map(item => item.stage));
-  const unrecovered = [
-    ...attempted.filter(entry => !recoveredStages.has(entry.stage)),
-    ...failed.map(item => item.entry),
-  ];
+  const unrecovered = notYetPublished(
+    [
+      ...attempted.filter(entry => !recoveredStages.has(entry.stage)),
+      ...failed.map(item => item.entry),
+    ],
+    ledger,
+    date,
+  );
 
   return { attempted, recovered, failed, unrecovered };
 }

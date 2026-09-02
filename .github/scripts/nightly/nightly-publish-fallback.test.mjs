@@ -221,3 +221,59 @@ test("dry run proves the patch applies and creates nothing", async () => {
   assert.equal(result.dryRun, true);
   assert.ok(!commands.some(c => c.startsWith("push") || c.startsWith("commit")), "a dry run must not write anything");
 });
+
+test("every exit returns to the base branch and the commit has a real identity", async () => {
+  // The watchdog commits the run ledger immediately after this function, so
+  // being left on a nightly/stage-N branch lands that commit on the wrong
+  // branch: the pipeline quietly corrupting its own evidence while repairing a
+  // stage. Only two of the four exits used to restore it.
+  const plan = {
+    stage: 3,
+    branch: "nightly/stage-3-baseline-consolidation-abc",
+    patch: "diff --git a/x b/x\n",
+    paths: ["x"],
+    commitMessage: "chore(database): recovered",
+    prTitle: "chore(database): recovered",
+    session: { id: "s1" },
+    date: "2026-08-15",
+  };
+  const config = { targetBranch: "Nightly", owner: "AlbiDR", repo: "Clash-Manager", token: "t" };
+
+  const run = async (applyPatch, githubApi) => {
+    const calls = [];
+    const runGit = args => { calls.push(args.join(" ")); return ""; };
+    let threw = null;
+    try {
+      await publishFallback(plan, { config, githubApi, runGit, applyPatch, log: () => {} });
+    } catch (error) {
+      threw = error;
+    }
+    return { calls, threw };
+  };
+
+  const ok = { status: 0, stderr: "", stdout: "" };
+  const bad = { status: 1, stderr: "does not apply", stdout: "" };
+
+  // 1. patch no longer applies
+  const stale = await run(() => bad, async () => ({ number: 1 }));
+  assert.ok(stale.threw, "a stale patch must throw");
+  assert.ok(stale.calls.some(c => c === "checkout --force Nightly"), "stale patch must restore the base branch");
+
+  // 2. the pull request cannot be opened
+  const noPr = await run(() => ok, async () => { throw new Error("no permission"); });
+  assert.ok(noPr.threw, "a failed pull request must throw");
+  assert.ok(noPr.calls.some(c => c === "checkout --force Nightly"), "a failed PR must restore the base branch");
+
+  // 3. the happy path
+  const good = await run(() => ok, async () => ({ number: 42, html_url: "u" }));
+  assert.equal(good.threw, null);
+  assert.ok(good.calls.some(c => c === "checkout --force Nightly"), "success must restore the base branch too");
+
+  // The identity is configured before any commit is made. A CI runner has none
+  // by default, so git would fail or invent one from the hostname.
+  const nameIndex = good.calls.findIndex(c => c.startsWith("config user.name"));
+  const commitIndex = good.calls.findIndex(c => c.startsWith("commit "));
+  assert.ok(nameIndex !== -1, "user.name must be configured");
+  assert.ok(good.calls.some(c => c.startsWith("config user.email")), "user.email must be configured");
+  assert.ok(nameIndex < commitIndex, "the identity must be set before the commit");
+});
