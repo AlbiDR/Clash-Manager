@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-02] PR #1661 [Stage 8]: chore(deps): Bumped @types/node catalog entry to ^26.4.1 and refreshed lockfile.
+**Domain:** pipeline | **Commit:** 1d850742 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1661)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped @types/node catalog entry to ^26.4.1 and refreshed lockfile.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-02] PR #1660 [Stage 7]: chore(version): Stage 7 Version Integrity Audit
 **Domain:** pipeline | **Commit:** 4c3634f8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1660)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
