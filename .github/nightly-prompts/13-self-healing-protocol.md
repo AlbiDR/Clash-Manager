@@ -49,7 +49,11 @@ You are the last stage in the pipeline, but repository evidence may lag or omit 
 
 Your sole deliverable is the file `.github/nightly-logs/13-self-healing-protocol.md`.
 
-This is a living document. You update it in-place on every run. You never wipe it and start over. Every run adds to it, refines it, and evolves it. The document accumulates intelligence across days and runs, becoming more precise and more actionable over time.
+This is a living document. You update it in-place WHEN THE EVIDENCE GIVES YOU SOMETHING TO ADD. You never wipe it and start over.
+
+A run in which every preceding stage completed is recorded nowhere in this document. Do not add an all-clear, fully-operational or 100%-operational block, and do not add a block whose Symptom, Root Cause and Recommended Fix are all N/A. A daily journal of good nights is not intelligence, it is volume, and it buries the findings that matter.
+
+The document accumulates intelligence across days and runs, becoming more precise and more actionable over time. Precision comes from what you leave out as much as from what you add.
 
 **The document has three sections:**
 
@@ -132,7 +136,8 @@ Do not run the project test suite. Verify only the targeted protocol edits with 
 
 ### Step 6: Finalize
 
-- Use `CHANGED` only when the verified diff contains a stage-owned file in addition to the coverage log.
+- Use `CHANGED` only when this run added a new finding to Section 1 or Section 2, or amended an existing finding on new evidence, AND the verified diff contains a stage-owned file in addition to the coverage log.
+- If the evidence produced no new or amended finding, make no edit to the protocol document and finalize `CLEAN`. Name in the summary the ledger failure classes you checked and the coverage-log dates you read and found unremarkable, plus the `consecutive-clean` value from `/tmp/nightly/clean-calibration.txt`. Reporting a quiet night as CLEAN is the correct outcome, not a failure to find work: this stage changed something on 34 of its first 35 runs, and the change was its own log file.
 - Use `CLEAN` when the audit completed and no source change is required.
 - Use `SKIPPED` or `PARTIAL-RUN` only after restoring every non-log change.
 - Do not append another summary line manually; finalization replaces the lifecycle sentinel.

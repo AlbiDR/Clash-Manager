@@ -206,25 +206,31 @@ export async function publishFallback(plan, {
   runGit(["fetch", "origin", base]);
   runGit(["checkout", "-B", plan.branch, `origin/${base}`]);
 
-  // --check first: a patch that does not apply is a stale session whose base
-  // has moved, not something to force. Failing here leaves no branch behind.
-  const check = applyPatch(plan.patch, true);
-  if (check.status !== 0) {
-    runGit(["checkout", base]);
-    throw new Error(`Stage ${plan.stage}: patch no longer applies to ${base}. ${(check.stderr || "").trim().slice(0, 300)}`);
-  }
-  if (dryRun) {
-    log(`[dry-run] Stage ${plan.stage}: patch applies cleanly to ${base}; would publish ${plan.branch}.`);
-    runGit(["checkout", base]);
-    return { published: false, dryRun: true, branch: plan.branch };
-  }
+  // A CI runner has no git identity of its own, so `git commit` below either
+  // fails outright or silently invents one from the username and hostname.
+  // Discovering that here would be the worst possible timing: this function
+  // only ever runs when the pipeline has already failed to publish normally.
+  runGit(["config", "user.name", "github-actions[bot]"]);
+  runGit(["config", "user.email", "github-actions[bot]@users.noreply.github.com"]);
 
-  const apply = applyPatch(plan.patch, false);
-  if (apply.status !== 0) throw new Error(`Stage ${plan.stage}: git apply failed after --check passed.`);
+  try {
+    // --check first: a patch that does not apply is a stale session whose base
+    // has moved, not something to force. Failing here leaves no branch behind.
+    const check = applyPatch(plan.patch, true);
+    if (check.status !== 0) {
+      throw new Error(`Stage ${plan.stage}: patch no longer applies to ${base}. ${(check.stderr || "").trim().slice(0, 300)}`);
+    }
+    if (dryRun) {
+      log(`[dry-run] Stage ${plan.stage}: patch applies cleanly to ${base}; would publish ${plan.branch}.`);
+      return { published: false, dryRun: true, branch: plan.branch };
+    }
 
-  runGit(["add", "--", ...plan.paths]);
-  runGit(["commit", "-m", plan.commitMessage]);
-  runGit(["push", "--force-with-lease", "origin", plan.branch]);
+    const apply = applyPatch(plan.patch, false);
+    if (apply.status !== 0) throw new Error(`Stage ${plan.stage}: git apply failed after --check passed.`);
+
+    runGit(["add", "--", ...plan.paths]);
+    runGit(["commit", "-m", plan.commitMessage]);
+    runGit(["push", "--force-with-lease", "origin", plan.branch]);
 
   // The branch exists on the remote from here on, so a failure to open the pull
   // request must not leave it behind. An orphaned nightly/stage-N branch with no
@@ -236,26 +242,41 @@ export async function publishFallback(plan, {
   // This is not hypothetical. Creating a pull request needs pull-requests:
   // write, and a workflow's permissions come from its YAML on the default
   // branch, so until that half is deployed this call is the one that fails.
-  let pr;
-  try {
-    pr = await githubApi(`/repos/${config.owner}/${config.repo}/pulls`, config, "POST", {
-      title: plan.prTitle,
-      head: plan.branch,
-      base,
-      body: renderFallbackPrBody(plan),
-    });
-  } catch (error) {
+    let pr;
     try {
-      runGit(["push", "origin", "--delete", plan.branch]);
-      log(`Stage ${plan.stage}: pull request could not be opened; removed the orphaned branch ${plan.branch}.`);
-    } catch (cleanupError) {
-      // Reported rather than swallowed: a branch we could neither use nor
-      // remove is something a human needs to know about by name.
-      log(`Stage ${plan.stage}: could not remove orphaned branch ${plan.branch}. ${cleanupError.message}`);
+      pr = await githubApi(`/repos/${config.owner}/${config.repo}/pulls`, config, "POST", {
+        title: plan.prTitle,
+        head: plan.branch,
+        base,
+        body: renderFallbackPrBody(plan),
+      });
+    } catch (error) {
+      try {
+        runGit(["push", "origin", "--delete", plan.branch]);
+        log(`Stage ${plan.stage}: pull request could not be opened; removed the orphaned branch ${plan.branch}.`);
+      } catch (cleanupError) {
+        // Reported rather than swallowed: a branch we could neither use nor
+        // remove is something a human needs to know about by name.
+        log(`Stage ${plan.stage}: could not remove orphaned branch ${plan.branch}. ${cleanupError.message}`);
+      }
+      throw error;
     }
-    throw error;
-  }
 
-  log(`Stage ${plan.stage}: published recovered work as PR #${pr.number}.`);
-  return { published: true, branch: plan.branch, prNumber: pr.number, prUrl: pr.html_url };
+    log(`Stage ${plan.stage}: published recovered work as PR #${pr.number}.`);
+    return { published: true, branch: plan.branch, prNumber: pr.number, prUrl: pr.html_url };
+  } finally {
+    // Every exit returns to the base branch, including the failing ones. The
+    // watchdog commits the run ledger immediately after this, so being left on
+    // a nightly/stage-N branch would land that commit on the wrong branch -
+    // a quiet corruption of the pipeline's own evidence while it was trying to
+    // repair a stage. --force because a partly-applied patch leaves the tree
+    // dirty, and everything in it came from this function.
+    try {
+      runGit(["checkout", "--force", base]);
+    } catch (restoreError) {
+      // Reported, never rethrown: masking the real failure with a cleanup error
+      // would hide why the publish failed in the first place.
+      log(`Stage ${plan.stage}: could not return to ${base} after publishing. ${restoreError.message}`);
+    }
+  }
 }

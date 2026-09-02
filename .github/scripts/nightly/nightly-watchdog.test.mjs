@@ -30,6 +30,7 @@ import {
   nudgeJulesSession,
   publishStrandedWork,
   recoverStuckStages,
+  selectFallbackCandidates,
   renderRecoveryReadiness,
   renderStaleStagePrReport,
   renderSummary,
@@ -1146,4 +1147,71 @@ test("sessionTelemetry degrades to nulls rather than inventing numbers", () => {
   const partial = sessionTelemetry({ id: "x", state: "COMPLETED", createTime: "2026-08-11T02:00:00Z" });
   assert.equal(partial.lifetimeMinutes, null, "no updateTime means no span, not zero");
   assert.equal(partial.createTime, "2026-08-11T02:00:00Z");
+});
+
+test("the fallback publisher is reachable from every exit of the nudge ladder", async () => {
+  // The whole recovery ladder ends in a publisher that had never once run,
+  // because two of the three exits returned no `unrecovered` key at all and the
+  // caller gates on `recovery.unrecovered?.length`. Each case below is one of
+  // those exits, and each is a night on which the ladder silently gave up.
+  const date = "2026-08-15";
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed: stuckObserved(date, 3),
+    previousLedger: createEmptyLedger(),
+  });
+  const config = { ...CONFIG, owner: "AlbiDR", repo: "Clash-Manager", token: "t", julesApiKey: "k" };
+
+  // Exit 1: the retry budget is spent, so no stage is eligible for a nudge.
+  const exhausted = createEmptyLedger();
+  ensureRunEntries(exhausted, registry, date);
+  upsertStageEntry(exhausted, registry, date, 3, { attempts: 2 });
+  const spent = await recoverStuckStages({
+    entries, ledger: exhausted, registry, date, config,
+    fetchImpl: async () => { throw new Error("must not nudge an exhausted stage"); },
+    sleep: async () => {}, pollAttempts: 1, pollIntervalMs: 0,
+  });
+  assert.equal(spent.attempted.length, 0);
+  assert.deepEqual(spent.unrecovered.map(e => e.stage), [3], "an exhausted stage must reach the publisher");
+
+  // Exit 2: every nudge failed to be delivered. The publisher talks to GitHub,
+  // not to Jules, so a dead JULES_API_KEY must not stop it.
+  const undelivered = createEmptyLedger();
+  ensureRunEntries(undelivered, registry, date);
+  const dead = await recoverStuckStages({
+    entries, ledger: undelivered, registry, date, config,
+    fetchImpl: async () => ({ ok: false, status: 401, statusText: "Unauthorized", text: async () => "dead key" }),
+    sleep: async () => {}, pollAttempts: 1, pollIntervalMs: 0,
+  });
+  assert.equal(dead.attempted.length, 0);
+  assert.deepEqual(dead.unrecovered.map(e => e.stage), [3], "an undeliverable nudge must reach the publisher");
+});
+
+test("a stage already published by the fallback is never published twice", async () => {
+  // A duplicate pull request for work that already landed is exactly the litter
+  // that misclassified stage 1 for three consecutive nights.
+  const date = "2026-08-15";
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed: stuckObserved(date, 3),
+    previousLedger: createEmptyLedger(),
+  });
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  upsertStageEntry(ledger, registry, date, 3, {
+    attempts: 2,
+    evidence: { fallbackPublish: { prNumber: 1500, publishedAt: "2026-08-15T04:00:00.000Z" } },
+  });
+
+  assert.deepEqual(selectFallbackCandidates(entries, ledger, date), []);
+
+  const result = await recoverStuckStages({
+    entries, ledger, registry, date,
+    config: { ...CONFIG, owner: "AlbiDR", repo: "Clash-Manager", token: "t", julesApiKey: "k" },
+    fetchImpl: async () => { throw new Error("must not nudge"); },
+    sleep: async () => {}, pollAttempts: 1, pollIntervalMs: 0,
+  });
+  assert.deepEqual(result.unrecovered, [], "an already-published stage must not be republished");
 });
