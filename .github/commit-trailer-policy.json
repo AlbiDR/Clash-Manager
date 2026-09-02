@@ -17,7 +17,7 @@
     {
       "label": "Jules (Google Labs) - the nightly pipeline's own agent, credited deliberately. Name AND email must both match: the name alone was a bypass.",
       "namePattern": "^google-labs-jules",
-      "emailPattern": "google-labs-jules\\[bot\\]@users\\.noreply\\.github\\.com$"
+      "emailPattern": "^[0-9]+\\+google-labs-jules\\[bot\\]@users\\.noreply\\.github\\.com$"
     }
   ],
 
@@ -37,7 +37,7 @@
     {
       "label": "Jules (Google Labs) - authors every nightly stage commit",
       "namePattern": "^google-labs-jules",
-      "emailPattern": "google-labs-jules\\[bot\\]@users\\.noreply\\.github\\.com$"
+      "emailPattern": "^[0-9]+\\+google-labs-jules\\[bot\\]@users\\.noreply\\.github\\.com$"
     },
     {
       "label": "GitHub Actions - authors the pipeline's own ledger, merge and sync commits. Removing this would break the nightly pipeline, not improve attribution.",
