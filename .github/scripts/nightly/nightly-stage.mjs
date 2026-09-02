@@ -240,6 +240,9 @@ export function validateChangedPaths(stage, status, changedPaths) {
   return paths;
 }
 
+// Everything after this line in a handoff is the pull request description.
+export const HANDOFF_BODY_MARKER = "--- PULL REQUEST DESCRIPTION BELOW ---";
+
 function cleanSummary(summary) {
   const cleaned = String(summary || "").replace(/\s+/g, " ").trim();
   invariant(cleaned.length > 0, "A non-empty --summary is required.");
@@ -349,18 +352,40 @@ export function composeCommitSubject(scope, summary, limit = 120) {
   return `${cut.replace(/[\s,;:.-]+$/, "")}\u2026`;
 }
 
-export function renderHandoff(stage, status, summary, runId) {
+/**
+ * The block a stage returns as its final message.
+ *
+ * Jules' scheduled-task publisher uses the session's LAST MESSAGE as the pull
+ * request description. The previous version of this function returned only
+ * operational scaffolding, so that scaffolding became the public description of
+ * real merged pull requests. PR #1657's entire body on GitHub reads "Suggested
+ * branch: ...", "PR body: /tmp/nightly/pr-body.md", and "Do not run code
+ * review, memory, reflection, git commit, or git push." Meanwhile the real body
+ * renderPrBody composes was written to /tmp and read by nobody.
+ *
+ * So the instructions now come first and the PR body comes last, separated by a
+ * marker, and the agent is told to return only what follows it. The failure
+ * mode is graceful by construction: an agent that ignores the marker and
+ * returns the whole block produces exactly what it produces today, so this can
+ * only improve the description, never break publication.
+ */
+export function renderHandoff(stage, status, summary, runId, prBody = "") {
   const normalizedSummary = cleanSummary(summary);
   const commitMessage = composeCommitSubject(stage.commitScope, normalizedSummary);
+  const body = String(prBody).trim() || `**What changed:** ${normalizedSummary}`;
   return `Nightly Stage ${stage.number} is finalized with status ${status}.
 
 Suggested branch: ${stage.branchPrefix}${runId}
 Suggested commit: ${commitMessage}
 PR base: Nightly
 PR draft: false
-PR body: /tmp/nightly/pr-body.md
 
-A published Pull Request is the required outcome of this session, not an optional next step. Return this exact result now as your absolute last message: nothing after it, no summary, no offer to do more, no question. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now, because Jules' native scheduled-task publisher only creates the pull request once the session has actually, fully ended. Do not run code review, memory, reflection, git commit, or git push.
+A published Pull Request is the required outcome of this session, not an optional next step. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now, because Jules' native scheduled-task publisher only creates the pull request once the session has actually, fully ended. Do not run code review, memory, reflection, git commit, or git push.
+
+Return everything below the marker, and nothing else, as your absolute last message: nothing after it, no summary, no offer to do more, no question. What you return becomes the pull request description, so returning these instructions publishes the instructions.
+
+${HANDOFF_BODY_MARKER}
+${body}
 `;
 }
 
@@ -679,7 +704,7 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
   const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result });
-  const handoff = renderHandoff(stage, status, normalizedSummary, runId);
+  const handoff = renderHandoff(stage, status, normalizedSummary, runId, prBody);
 
   if (dryRun) {
     console.log(JSON.stringify({ command: "finalize", dryRun: true, stage: stage.number, status, finalLine, why, result, paths }, null, 2));

@@ -21,6 +21,7 @@ import {
   validateChangedPaths,
   validateRegistryData,
   composeCommitSubject,
+  HANDOFF_BODY_MARKER,
 } from "./nightly-stage.mjs";
 import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
 
@@ -359,4 +360,34 @@ test("a commit subject never doubles its prefix or severs a word", () => {
 
   // A summary that is nothing but a prefix must not produce an empty subject.
   assert.match(composeCommitSubject("docs", "docs(tsdoc):"), /docs/);
+});
+
+test("the handoff ends with the pull request description, not with scaffolding", () => {
+  // Jules' publisher uses the session's LAST MESSAGE as the pull request
+  // description. When the handoff was scaffolding only, that scaffolding became
+  // the public body of real merged pull requests: #1657's entire description on
+  // GitHub reads "Suggested branch: ...", "PR body: /tmp/nightly/pr-body.md",
+  // and "Do not run code review, memory, reflection, git commit, or git push."
+  const stage = { number: 4, commitScope: "optimize", branchPrefix: "nightly/stage-4-optimization-", domain: "optimization" };
+  const body = "**What changed:** Substrate hygiene audit\n\n**Why:** Automated nightly audit pass.";
+  const handoff = renderHandoff(stage, "CLEAN", "Substrate hygiene audit", "abc123", body);
+
+  const [instructions, description] = handoff.split(HANDOFF_BODY_MARKER);
+  assert.ok(description, "the handoff must carry a description section");
+
+  // The operational text stays on the instruction side of the marker.
+  assert.match(instructions, /Suggested branch/);
+  assert.match(instructions, /Do not run code review/);
+  assert.doesNotMatch(description, /Suggested branch/, "scaffolding must not reach the description");
+  assert.doesNotMatch(description, /Do not run code review/, "instructions must not be published");
+  assert.doesNotMatch(description, /pr-body\.md/, "a /tmp path must never be the public body");
+
+  // The description is the real body.
+  assert.match(description, /Substrate hygiene audit/);
+  assert.match(description, /\*\*Why:\*\*/);
+
+  // Graceful failure: with no body supplied it still says something true rather
+  // than emitting an empty description.
+  const bare = renderHandoff(stage, "CLEAN", "Substrate hygiene audit", "abc123");
+  assert.match(bare.split(HANDOFF_BODY_MARKER)[1], /Substrate hygiene audit/);
 });
