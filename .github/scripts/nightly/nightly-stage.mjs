@@ -317,9 +317,41 @@ NIGHTLY_PR_METADATA:
 `;
 }
 
+/**
+ * Composes the commit subject a stage suggests.
+ *
+ * Two defects lived in the one line this replaces,
+ * `\`chore(${scope}): ${summary}\`.slice(0, 120)`, and both are visible in
+ * git log today.
+ *
+ * A summary that already carried a conventional-commit prefix got a second one
+ * bolted in front: 13 subjects on Nightly read `chore(docs): docs(tsdoc):
+ * harden ...`. Stage prompts legitimately ask for a scoped summary, so the
+ * prefix is stripped rather than the prompts being asked to stop producing it.
+ *
+ * And `.slice(120)` cut mid-word. 11 subjects sit exactly at the cap, including
+ * `... migration-quality PASS, fold-stat`, which is `fold-state` with the last
+ * two characters guillotined. Truncation now falls back to the last word
+ * boundary and marks the cut with an ellipsis, so a reader can tell the
+ * difference between a short summary and a severed one.
+ */
+export function composeCommitSubject(scope, summary, limit = 120) {
+  // Strip one leading conventional-commit prefix, e.g. "docs(tsdoc): ".
+  const withoutPrefix = String(summary).replace(/^[a-z]+(\([^)]*\))?!?:\s*/i, "").trim() || String(summary).trim();
+  const subject = `chore(${scope}): ${withoutPrefix}`;
+  if (subject.length <= limit) return subject;
+
+  const head = subject.slice(0, limit - 1);
+  const lastSpace = head.lastIndexOf(" ");
+  // Only fall back to a word boundary if one exists late enough to keep the
+  // subject meaningful; otherwise a hard cut is still better than nothing.
+  const cut = lastSpace > `chore(${scope}): `.length ? head.slice(0, lastSpace) : head;
+  return `${cut.replace(/[\s,;:.-]+$/, "")}\u2026`;
+}
+
 export function renderHandoff(stage, status, summary, runId) {
   const normalizedSummary = cleanSummary(summary);
-  const commitMessage = `chore(${stage.commitScope}): ${normalizedSummary}`.slice(0, 120);
+  const commitMessage = composeCommitSubject(stage.commitScope, normalizedSummary);
   return `Nightly Stage ${stage.number} is finalized with status ${status}.
 
 Suggested branch: ${stage.branchPrefix}${runId}
