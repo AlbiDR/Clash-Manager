@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-02] PR #1658 [Stage 5]: docs(readme): Reconciled useConnectivityManager health prioritization and metadata in core services README
+**Domain:** pipeline | **Commit:** ee5e8ac1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1658)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Automated nightly audit pass.
+**Change:** docs(readme): Reconciled useConnectivityManager health prioritization and metadata in core services README
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-02] PR #1657 [Stage 4]: chore(optimize): Codebase
 **Domain:** pipeline | **Commit:** 4fa8f499 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1657)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
