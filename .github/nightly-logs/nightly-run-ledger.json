@@ -5380,7 +5380,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.230Z",
+        "lastObservedAt": "2026-09-02T09:14:01.154Z",
         "failureClass": null
       },
       "2": {
@@ -5407,7 +5407,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.230Z",
+        "lastObservedAt": "2026-09-02T09:14:01.154Z",
         "failureClass": null
       },
       "3": {
@@ -5438,7 +5438,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.230Z",
+        "lastObservedAt": "2026-09-02T09:14:01.155Z",
         "failureClass": null
       },
       "4": {
@@ -5466,7 +5466,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.230Z",
+        "lastObservedAt": "2026-09-02T09:14:01.155Z",
         "failureClass": null
       },
       "5": {
@@ -5494,7 +5494,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.231Z",
+        "lastObservedAt": "2026-09-02T09:14:01.155Z",
         "failureClass": null
       },
       "6": {
@@ -5525,7 +5525,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.231Z",
+        "lastObservedAt": "2026-09-02T09:14:01.155Z",
         "failureClass": null
       },
       "7": {
@@ -5556,7 +5556,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.231Z",
+        "lastObservedAt": "2026-09-02T09:14:01.156Z",
         "failureClass": null
       },
       "8": {
@@ -5587,7 +5587,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.232Z",
+        "lastObservedAt": "2026-09-02T09:14:01.156Z",
         "failureClass": null
       },
       "9": {
@@ -5615,7 +5615,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.232Z",
+        "lastObservedAt": "2026-09-02T09:14:01.156Z",
         "failureClass": null
       },
       "10": {
@@ -5643,7 +5643,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.232Z",
+        "lastObservedAt": "2026-09-02T09:14:01.156Z",
         "failureClass": null
       },
       "11": {
@@ -5651,19 +5651,28 @@
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-02/stage-11/pr-1664",
+          "session": {
+            "id": "13219301273122222144",
+            "name": "sessions/13219301273122222144",
+            "state": "COMPLETED",
+            "createTime": "2026-09-02T09:06:15.021791475Z",
+            "updateTime": "2026-09-02T09:13:24.039149Z",
+            "lifetimeMinutes": 7.2
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.233Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-02T09:14:01.157Z",
+        "failureClass": null
       },
       "12": {
         "date": "2026-09-02",
@@ -5681,7 +5690,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.233Z",
+        "lastObservedAt": "2026-09-02T09:14:01.157Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -5700,7 +5709,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T08:14:12.234Z",
+        "lastObservedAt": "2026-09-02T09:14:01.157Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
