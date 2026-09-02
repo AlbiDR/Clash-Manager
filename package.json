@@ -60,7 +60,7 @@
   "simple-git-hooks": {
     "pre-commit": "node .github/scripts/project/commit-trailers.mjs --check-author-config && pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint",
     "commit-msg": "node .github/scripts/project/commit-trailers.mjs $1",
-    "pre-push": "node .github/scripts/project/commit-trailers.mjs --check-range @{push}..HEAD && node .github/scripts/project/commit-trailers.mjs --check-authors-range @{push}..HEAD"
+    "pre-push": "node .github/scripts/project/commit-trailers.mjs --check-push"
   },
   "engines": {
     "node": ">=24.0.0",

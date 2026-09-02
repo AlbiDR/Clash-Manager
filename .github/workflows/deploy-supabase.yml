@@ -16,7 +16,61 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Nothing ran Backend's tests before this workflow shipped 11,845 lines of
+  # edge functions to production. Verified 2026-09-02 by tracing all 17
+  # workflows: deploy-pwa.yml and auto-tag.yml both declare
+  # `defaults.run.working-directory: Frontend-PWA`, so their `pnpm test`
+  # resolves to the FRONTEND package script; intel-checks.yml's backend job runs
+  # migration audits and a schema diff but no tests; and the only workflow whose
+  # `pnpm test` resolves to the root `pnpm -r test` is sync-branches.yml, which
+  # is workflow_dispatch-only by design.
+  #
+  # The pre-flight below was the sole gate, and it is
+  # `Sync-Migrations.ts --help || exit 0`, which cannot fail by construction.
+  #
+  # This matters most for an unattended run: an agent can edit Backend, merge,
+  # and reach production without a single test executing.
+  verify:
+    name: "Verify Backend before deploying"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Backend test suite
+        run: pnpm --dir Backend test
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Reporting, not blocking, and deliberately so: `deno check` finds 6 real
+      # errors today (4 valibot generic-inference failures in _shared/protocol.ts
+      # that collapse `parsed.output` to `unknown`, and 2 audit-action contract
+      # violations in fetch-player-battlelog). Making it blocking now would red
+      # every Backend deploy before anyone has had a chance to fix them, which
+      # is how a gate gets deleted rather than satisfied. Flip continue-on-error
+      # to false the moment that count reaches zero.
+      - name: Deno type-check edge functions (reporting)
+        continue-on-error: true
+        working-directory: Backend
+        run: deno check supabase/functions/*/index.ts
+
   deploy:
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
