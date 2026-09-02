@@ -112,6 +112,21 @@ To support smooth 60FPS list interactions under heavy sorting and filtering oper
 - **Reactive Preference Persistence:** When configured with a `sortStorageKey`, user-selected sorting preferences are automatically persisted to and hydrated from `localStorage`, preserving layout continuity across sessions.
 - **WeakMap Search Cache & Invalidation:** To eliminate redundant string normalizations on every keystroke, a module-scope `WeakMap` caches normalized search strings per object. The caching system implements a robust validation check (`areSearchFieldsEqual`) that verifies if current searchable fields match cached fields, invalidating the cache and re-normalizing dynamically only when data shifts.
 
+### Connectivity & Health Orchestration (`useConnectivityManager.ts`)
+
+`useConnectivityManager.ts` acts as the Layer 1 hub for data provenance, sync health, and network connectivity indicators across the application:
+- **8-Tier Health Prioritization:** Resolves physical network status, backend configuration, and sync states into an authoritative single `hubHealth` signal:
+  1. *Syncing / Loading:* Active synchronization (`loading = true`, Confidence: 50).
+  2. *Sync Error:* Failed remote synchronization (`syncError` present, Confidence: 0).
+  3. *API Configuration Error:* Invalid or unconfigured backend endpoint (`apiStatus = 'unconfigured'`, Confidence: 0).
+  4. *Offline Failure:* Physical network disconnect (`networkStatus = 'offline'`, Confidence: 0).
+  5. *Stale Data Warning:* Data age exceeds `DATA_STALENESS_MINUTES` threshold (Confidence: 40).
+  6. *Nominal Remote DB:* Hydrated from remote Supabase DB (`currentSource = 'SUPABASE'`, Confidence: 100).
+  7. *Nominal Local Storage:* Hydrated from validated local store (`isHydrated = true`, Confidence: 80).
+  8. *Initializing Fallback:* Default initial status (Confidence: 10).
+- **Provenance & Age Metadata:** Normalizes store timestamps (`lastSyncTime`, `lastCompiledTime`, `lastFetchedTime`) into human-readable relative duration strings via `formatTimeAgo` and calculates minute-level age (`ageMinutes`) for staleness evaluations.
+- **Unified Sync Control:** Exposes reactive `isRefreshing` state and forwards the underlying store's manual `refresh` trigger.
+
 ### Native Android Bridge Coordination (`useNativeBridge.ts`)
 
 The Native Bridge service coordinates communication between the Web/PWA layer and the Kotlin-backed Android WebView container (`AndroidBridge`):

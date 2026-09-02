@@ -156,3 +156,4 @@
 * [2026-08-30] [Stage 5] CHANGED: Backend/supabase/functions/_shared/README.md -- docs(readme): Reconciled rpcSchemas validation boundaries and transform contracts in shared backend README
 * [2026-08-31] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useClashSync single-flight sync and failure thresholds in core services README
 * [2026-09-01] [Stage 5] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Reconciled Toast.vue v-tactile directive integration in shared UI README
+* [2026-09-02] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled useConnectivityManager health prioritization and metadata in core services README
