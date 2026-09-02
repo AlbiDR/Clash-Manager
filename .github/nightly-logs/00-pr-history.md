@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-02] PR #1655 [Stage 2]: Expanded Frontend-PWA useConnectivityManager test suite for error priorities and staleness threshold boundary
+**Domain:** verification | **Commit:** 743b7af9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1655)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useConnectivityManager.spec.ts
+**Why:** Close logic integrity coverage gap in Layer 1 Core useConnectivityManager service for syncError, unconfigured API status, and staleness boundary conditions
+**Change:** Expanded Frontend-PWA useConnectivityManager test suite for error priorities and staleness threshold boundary
+**Result:** Vitest unit tests executed and passed cleanly
+
+
 ### [2026-09-01] PR #1654 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** pipeline | **Commit:** 31548877 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1654)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
