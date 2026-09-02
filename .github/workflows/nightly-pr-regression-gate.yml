@@ -1,0 +1,123 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Runs the application test suite against every Jules stage pull request before
+# it can merge into Nightly.
+#
+# THE HOLE THIS CLOSES
+# Nothing tested a stage pull request. Verified 2026-09-03 by enumerating every
+# workflow trigger: the only ones firing on `pull_request` to Nightly are
+# cleanup-merged-branches, control-plane-guard, merge-nightly-prs and
+# nightly-watchdog, and not one runs the suite. intel-checks.yml is
+# `pull_request: branches: [Stable, Beta]`, and Jules pull requests target
+# Nightly. control-plane-tests.yml is path-filtered to .github/scripts, so it
+# never sees Frontend-PWA. The merge coordinator itself gates on
+# `details.mergeable` (merge-nightly-core.mjs:883), which means conflict-free,
+# not correct.
+#
+# The only application test gate in the repository is the Air Gap Guard inside
+# sync-branches.yml, which is workflow_dispatch only. It therefore never fires
+# while the owner is away, which is precisely when this matters.
+#
+# The cost is on the record. On 2026-09-01 a Stage 2 spec with wrong timer
+# arithmetic failed 1 test of 1791. It merged into Nightly unopposed, and the
+# failure only surfaced at the manual promotion gate, where it blocked all 13 of
+# that night's merged stages from reaching Beta and stopped every deploy. One
+# bad assertion, a full day of output stranded, and no alert.
+#
+# WHY BASE VERSUS HEAD RATHER THAN A PLAIN PASS
+# Refusing any pull request whose suite is red would also refuse a stage that
+# merely inherited a break from Nightly, and an agent cannot fix a break it did
+# not cause. So a red head is not itself a refusal: the suite is re-run at the
+# merge base, and the pull request is refused only when the base was green. That
+# predicate is the same one sync-branches.yml already computes at its Air Gap
+# Guard; this moves it from once per manual promotion to once per pull request.
+#
+# There is no threshold here and nothing to tune. A test runner computes the
+# verdict, which is the point: it is the one gate in this pipeline an agent
+# cannot narrate its way around.
+name: Nightly PR Regression Gate
+
+on:
+  pull_request:
+    branches:
+      - Nightly
+    paths:
+      - "Frontend-PWA/**"
+      - "Backend/**"
+
+concurrency:
+  group: nightly-pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: "Suite must not regress"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the pull request head
+        uses: actions/checkout@v4
+        with:
+          # Both ends of the comparison must exist locally.
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the suite at the pull request head
+        id: head
+        continue-on-error: true
+        run: pnpm -r test
+
+      - name: Decide, comparing against the merge base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_RESULT: ${{ steps.head.outcome }}
+        run: |
+          set -uo pipefail
+
+          if [ "$HEAD_RESULT" = "success" ]; then
+            echo "Suite passes at the pull request head."
+            echo "### Regression gate" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Suite passes at the head of this pull request." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "Suite is red at the head. Re-running at the merge base to find out who broke it."
+          git checkout --force "$BASE_SHA"
+          pnpm install --frozen-lockfile
+
+          if pnpm -r test; then
+            echo "::error title=Stage pull request regresses the suite::The suite passes at the merge base ${BASE_SHA} and fails at this pull request's head, so this change caused the failure."
+            {
+              echo "### Regression gate: REFUSED"
+              echo ""
+              echo "The suite passes at the merge base \`${BASE_SHA}\` and fails at this pull request's head."
+              echo "This change caused the failure, so it must not merge into Nightly."
+              echo ""
+              echo "This is the exact shape of the 2026-09-01 incident, where one wrong assertion"
+              echo "blocked all 13 merged stages from reaching Beta."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          # The base was already red. Refusing here would punish a stage for a
+          # break it inherited, and an agent cannot fix what it did not cause.
+          echo "::warning title=Suite was already red at the merge base::Nightly is broken independently of this pull request; not refusing it."
+          {
+            echo "### Regression gate: pre-existing failure"
+            echo ""
+            echo "The suite fails at the merge base \`${BASE_SHA}\` too, so this pull request did not"
+            echo "cause it and is not refused. Nightly itself needs attention."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
