@@ -806,6 +806,51 @@ async function resolveConflictsAndRebase(pr, config = CONFIG, stageOverride = nu
   } catch (_) {}
 }
 
+// The check that must not be red. Named rather than inferred so a renamed
+// workflow fails loudly at review time instead of silently disarming the gate.
+export const REGRESSION_GATE_CHECK = "Suite must not regress";
+
+/**
+ * Refuses a pull request whose regression gate concluded failure.
+ *
+ * Until this existed the coordinator gated on `details.mergeable` alone, which
+ * means conflict-free, not correct. It never read a check result, so the
+ * regression gate added in b750c1de5 ran, went red, and the pull request merged
+ * anyway - the test was detection, not prevention, and a stage that broke the
+ * suite still reached Nightly.
+ *
+ * ABSENT IS NOT FAILURE, and that asymmetry is the whole design. The gate is
+ * path-filtered to Frontend-PWA and Backend, so a log-only stage legitimately
+ * has no gate to pass; treating a missing check as a refusal would block most
+ * of the pipeline every night. A check that is still running is also not a
+ * refusal, because the coordinator has its own retry loop and a later pass will
+ * see the conclusion. Only an explicit failure stops the merge.
+ */
+export async function regressionGateBlocks(pr, config = CONFIG) {
+  let runs;
+  try {
+    const res = await githubApi(
+      `/repos/${config.owner}/${config.repo}/commits/${pr.head.sha}/check-runs?per_page=100`,
+      "GET", null, false, config,
+    );
+    runs = res?.check_runs || [];
+  } catch (error) {
+    // A failed query is not evidence of a passing gate, but neither is it
+    // evidence of a failing one, and refusing every merge because GitHub's API
+    // hiccuped would be its own outage. Report and proceed.
+    log(`Could not read check runs for PR #${pr.number}: ${error.message}`, "warn");
+    return false;
+  }
+
+  const gate = runs.find(run => run.name === REGRESSION_GATE_CHECK);
+  if (!gate) return false;
+  if (gate.conclusion === "failure" || gate.conclusion === "timed_out") {
+    log(`PR #${pr.number} regressed the test suite (${REGRESSION_GATE_CHECK}: ${gate.conclusion}). Refusing to merge.`, "error");
+    return true;
+  }
+  return false;
+}
+
 async function mergePullRequest(pr, details, config = CONFIG) {
   const expectedSha = details.head.sha;
   const mergeBody = {
@@ -884,6 +929,10 @@ async function processPullRequest(pr, options, config = CONFIG) {
     log(`${prefix}PR #${pr.number} has merge conflicts. Attempting automatic resolution...`);
     await resolveConflictsAndRebase(pr, config, classification.stage);
     details = await pollMergeable(pr.number, options.mergeablePolls, config);
+  }
+
+  if (await regressionGateBlocks(pr, config)) {
+    throw new Error(`PR #${pr.number} failed ${REGRESSION_GATE_CHECK}; a stage may not merge a change that breaks the suite.`);
   }
 
   const mergeRes = await mergePullRequest(pr, details, config);
