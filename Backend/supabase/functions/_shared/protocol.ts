@@ -369,7 +369,7 @@ export interface ProtocolOptions<T> {
     /** The unique identifier of the component triggering the protocol (e.g., 'headhunter-scanner'). */
     componentId: string;
     /** The Valibot schema used to enforce the validation boundary on the inbound payload. */
-    schema: v.BaseSchema<unknown, T, unknown>;
+    schema: v.BaseSchema<unknown, T, v.BaseIssue<unknown>>;
     /**
      * OPT-IN rate limiting configuration. Omitted entirely (the default) for
      * internal-bearer-only, cron-triggered functions (`ingest-royale-data`,

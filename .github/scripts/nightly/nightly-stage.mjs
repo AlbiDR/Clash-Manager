@@ -240,6 +240,9 @@ export function validateChangedPaths(stage, status, changedPaths) {
   return paths;
 }
 
+// Everything after this line in a handoff is the pull request description.
+export const HANDOFF_BODY_MARKER = "--- PULL REQUEST DESCRIPTION BELOW ---";
+
 function cleanSummary(summary) {
   const cleaned = String(summary || "").replace(/\s+/g, " ").trim();
   invariant(cleaned.length > 0, "A non-empty --summary is required.");
@@ -317,18 +320,72 @@ NIGHTLY_PR_METADATA:
 `;
 }
 
-export function renderHandoff(stage, status, summary, runId) {
+/**
+ * Composes the commit subject a stage suggests.
+ *
+ * Two defects lived in the one line this replaces,
+ * `\`chore(${scope}): ${summary}\`.slice(0, 120)`, and both are visible in
+ * git log today.
+ *
+ * A summary that already carried a conventional-commit prefix got a second one
+ * bolted in front: 13 subjects on Nightly read `chore(docs): docs(tsdoc):
+ * harden ...`. Stage prompts legitimately ask for a scoped summary, so the
+ * prefix is stripped rather than the prompts being asked to stop producing it.
+ *
+ * And `.slice(120)` cut mid-word. 11 subjects sit exactly at the cap, including
+ * `... migration-quality PASS, fold-stat`, which is `fold-state` with the last
+ * two characters guillotined. Truncation now falls back to the last word
+ * boundary and marks the cut with an ellipsis, so a reader can tell the
+ * difference between a short summary and a severed one.
+ */
+export function composeCommitSubject(scope, summary, limit = 120) {
+  // Strip one leading conventional-commit prefix, e.g. "docs(tsdoc): ".
+  const withoutPrefix = String(summary).replace(/^[a-z]+(\([^)]*\))?!?:\s*/i, "").trim() || String(summary).trim();
+  const subject = `chore(${scope}): ${withoutPrefix}`;
+  if (subject.length <= limit) return subject;
+
+  const head = subject.slice(0, limit - 1);
+  const lastSpace = head.lastIndexOf(" ");
+  // Only fall back to a word boundary if one exists late enough to keep the
+  // subject meaningful; otherwise a hard cut is still better than nothing.
+  const cut = lastSpace > `chore(${scope}): `.length ? head.slice(0, lastSpace) : head;
+  return `${cut.replace(/[\s,;:.-]+$/, "")}\u2026`;
+}
+
+/**
+ * The block a stage returns as its final message.
+ *
+ * Jules' scheduled-task publisher uses the session's LAST MESSAGE as the pull
+ * request description. The previous version of this function returned only
+ * operational scaffolding, so that scaffolding became the public description of
+ * real merged pull requests. PR #1657's entire body on GitHub reads "Suggested
+ * branch: ...", "PR body: /tmp/nightly/pr-body.md", and "Do not run code
+ * review, memory, reflection, git commit, or git push." Meanwhile the real body
+ * renderPrBody composes was written to /tmp and read by nobody.
+ *
+ * So the instructions now come first and the PR body comes last, separated by a
+ * marker, and the agent is told to return only what follows it. The failure
+ * mode is graceful by construction: an agent that ignores the marker and
+ * returns the whole block produces exactly what it produces today, so this can
+ * only improve the description, never break publication.
+ */
+export function renderHandoff(stage, status, summary, runId, prBody = "") {
   const normalizedSummary = cleanSummary(summary);
-  const commitMessage = `chore(${stage.commitScope}): ${normalizedSummary}`.slice(0, 120);
+  const commitMessage = composeCommitSubject(stage.commitScope, normalizedSummary);
+  const body = String(prBody).trim() || `**What changed:** ${normalizedSummary}`;
   return `Nightly Stage ${stage.number} is finalized with status ${status}.
 
 Suggested branch: ${stage.branchPrefix}${runId}
 Suggested commit: ${commitMessage}
 PR base: Nightly
 PR draft: false
-PR body: /tmp/nightly/pr-body.md
 
-A published Pull Request is the required outcome of this session, not an optional next step. Return this exact result now as your absolute last message: nothing after it, no summary, no offer to do more, no question. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now, because Jules' native scheduled-task publisher only creates the pull request once the session has actually, fully ended. Do not run code review, memory, reflection, git commit, or git push.
+A published Pull Request is the required outcome of this session, not an optional next step. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now, because Jules' native scheduled-task publisher only creates the pull request once the session has actually, fully ended. Do not run code review, memory, reflection, git commit, or git push.
+
+Return everything below the marker, and nothing else, as your absolute last message: nothing after it, no summary, no offer to do more, no question. What you return becomes the pull request description, so returning these instructions publishes the instructions.
+
+${HANDOFF_BODY_MARKER}
+${body}
 `;
 }
 
@@ -647,7 +704,7 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
   const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result });
-  const handoff = renderHandoff(stage, status, normalizedSummary, runId);
+  const handoff = renderHandoff(stage, status, normalizedSummary, runId, prBody);
 
   if (dryRun) {
     console.log(JSON.stringify({ command: "finalize", dryRun: true, stage: stage.number, status, finalLine, why, result, paths }, null, 2));

@@ -20,6 +20,8 @@ import {
   sentinelLine,
   validateChangedPaths,
   validateRegistryData,
+  composeCommitSubject,
+  HANDOFF_BODY_MARKER,
 } from "./nightly-stage.mjs";
 import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
 
@@ -319,4 +321,73 @@ test("real startup synchronizes a disposable Nightly branch and writes bounded s
   assert.equal(state.contextRefresh, "current");
   assert.equal(readFileSync(path.join(testContext, "active-lock.sha256"), "utf8").trim(), fingerprint);
   assert.match(readFileSync(path.join(testContext, "stage-manifest.txt"), "utf8"), /target-branch: Nightly/);
+});
+
+test("a commit subject never doubles its prefix or severs a word", () => {
+  // Both defects are in git log today. The old line was
+  // `chore(${scope}): ${summary}`.slice(0, 120).
+
+  // 13 subjects on Nightly read "chore(docs): docs(tsdoc): harden ...", because
+  // stage prompts legitimately produce a scoped summary and it got a second
+  // prefix bolted in front.
+  assert.equal(
+    composeCommitSubject("docs", "docs(tsdoc): harden useClashSync interface contracts"),
+    "chore(docs): harden useClashSync interface contracts",
+  );
+  assert.equal(composeCommitSubject("apk", "fix(apk)!: correct the wrapper"), "chore(apk): correct the wrapper");
+
+  // Only ONE prefix is stripped: prose that happens to contain a colon must
+  // survive intact.
+  assert.equal(
+    composeCommitSubject("database", "clean calibration pass: 0 pending migrations"),
+    "chore(database): clean calibration pass: 0 pending migrations",
+  );
+
+  // 11 subjects sit exactly at the 120 cap. One reads "... migration-quality
+  // PASS, fold-stat", which is "fold-state" with two characters guillotined.
+  const long = composeCommitSubject(
+    "database",
+    "clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-state CLEAN, database-verification DB-UNAVAILABLE",
+  );
+  assert.ok(long.length <= 120, "must respect the limit");
+  assert.ok(long.endsWith("\u2026"), "a truncated subject must say so");
+  assert.doesNotMatch(long, /fold-stat$/, "must not sever a word");
+  assert.doesNotMatch(long, /[\s,;:.-]\u2026$/, "no dangling punctuation before the ellipsis");
+
+  // A subject that fits is returned untouched, with no ellipsis.
+  const short = composeCommitSubject("verify", "Expanded useConnectivityManager test suite");
+  assert.equal(short, "chore(verify): Expanded useConnectivityManager test suite");
+
+  // A summary that is nothing but a prefix must not produce an empty subject.
+  assert.match(composeCommitSubject("docs", "docs(tsdoc):"), /docs/);
+});
+
+test("the handoff ends with the pull request description, not with scaffolding", () => {
+  // Jules' publisher uses the session's LAST MESSAGE as the pull request
+  // description. When the handoff was scaffolding only, that scaffolding became
+  // the public body of real merged pull requests: #1657's entire description on
+  // GitHub reads "Suggested branch: ...", "PR body: /tmp/nightly/pr-body.md",
+  // and "Do not run code review, memory, reflection, git commit, or git push."
+  const stage = { number: 4, commitScope: "optimize", branchPrefix: "nightly/stage-4-optimization-", domain: "optimization" };
+  const body = "**What changed:** Substrate hygiene audit\n\n**Why:** Automated nightly audit pass.";
+  const handoff = renderHandoff(stage, "CLEAN", "Substrate hygiene audit", "abc123", body);
+
+  const [instructions, description] = handoff.split(HANDOFF_BODY_MARKER);
+  assert.ok(description, "the handoff must carry a description section");
+
+  // The operational text stays on the instruction side of the marker.
+  assert.match(instructions, /Suggested branch/);
+  assert.match(instructions, /Do not run code review/);
+  assert.doesNotMatch(description, /Suggested branch/, "scaffolding must not reach the description");
+  assert.doesNotMatch(description, /Do not run code review/, "instructions must not be published");
+  assert.doesNotMatch(description, /pr-body\.md/, "a /tmp path must never be the public body");
+
+  // The description is the real body.
+  assert.match(description, /Substrate hygiene audit/);
+  assert.match(description, /\*\*Why:\*\*/);
+
+  // Graceful failure: with no body supplied it still says something true rather
+  // than emitting an empty description.
+  const bare = renderHandoff(stage, "CLEAN", "Substrate hygiene audit", "abc123");
+  assert.match(bare.split(HANDOFF_BODY_MARKER)[1], /Substrate hygiene audit/);
 });

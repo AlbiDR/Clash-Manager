@@ -29,6 +29,8 @@ import {
   sortStagePrs,
   stageNumber,
   summarizeFiles,
+  regressionGateBlocks,
+  REGRESSION_GATE_CHECK,
 } from "./merge-nightly-core.mjs";
 import {
   createEmptyLedger,
@@ -481,4 +483,51 @@ test("a promotion tag protects a merged row from a later coordinator failure", (
   });
   assert.equal(stageEntry(ledger, "2026-08-25", 2).state, "BLOCKED");
   assert.equal(stageEntry(ledger, "2026-08-25", 2).failureClass, "MERGE_COORDINATOR");
+});
+
+test("a red regression gate blocks the merge, and an absent one does not", async () => {
+  // Before this the coordinator gated on details.mergeable alone, which means
+  // conflict-free, not correct. The regression gate could run, go red, and the
+  // pull request merged anyway: the test was detection, not prevention.
+  //
+  // The asymmetry is the design. The gate is path-filtered to Frontend-PWA and
+  // Backend, so a log-only stage legitimately has no gate to pass; treating a
+  // missing check as failure would block most of the pipeline every night.
+  const config = { owner: "AlbiDR", repo: "Clash-Manager", token: "t" };
+  const pr = { number: 1700, head: { sha: "abc123" } };
+
+  const withRuns = runs => {
+    global.fetch = async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ check_runs: runs }),
+      text: async () => "",
+    });
+  };
+  const originalFetch = global.fetch;
+
+  try {
+    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: "failure" }]);
+    assert.equal(await regressionGateBlocks(pr, config), true, "a failed gate must block");
+
+    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: "timed_out" }]);
+    assert.equal(await regressionGateBlocks(pr, config), true, "a timed-out gate must block");
+
+    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: "success" }]);
+    assert.equal(await regressionGateBlocks(pr, config), false, "a passing gate must not block");
+
+    // Path-filtered away: a log-only stage has no gate and must still merge.
+    withRuns([{ name: "Commit Attribution Guard", conclusion: "success" }]);
+    assert.equal(await regressionGateBlocks(pr, config), false, "an absent gate is not a failure");
+
+    // Still running: the coordinator retries, so this is not a refusal either.
+    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: null, status: "in_progress" }]);
+    assert.equal(await regressionGateBlocks(pr, config), false, "an unfinished gate is not a failure");
+
+    // A broken API is not evidence of a failing gate.
+    global.fetch = async () => { throw new Error("network down"); };
+    assert.equal(await regressionGateBlocks(pr, config), false, "an unreadable check must not block every merge");
+  } finally {
+    global.fetch = originalFetch;
+  }
 });
