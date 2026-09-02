@@ -7,6 +7,7 @@ import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
 import { formatTimeAgo } from "../utils/time";
 import { DATA_STALENESS_MINUTES } from "../config";
+import type { HubHealth, HubMetadata } from "../types";
 
 /**
  * CONNECTIVITY MANAGER (Layer 1)
@@ -30,15 +31,17 @@ import { DATA_STALENESS_MINUTES } from "../config";
  * - Import Boundaries: Restricted to other Layer 1 services and utils.
  */
 
-import type { HubHealth, HubMetadata } from "../types";
-
 /**
  * Primary composable for managing and observing connectivity health.
  *
- * @returns {Object} Connectivity state and orchestration methods.
- * - `hubHealth`: Reactive status object for UI indicators.
- * - `metadata`: Reactive provenance and age metadata.
- * - `isRefreshing`: Boolean indicating if a sync is in progress.
+ * @remarks
+ * Provides reactive connectivity telemetry including composite health ratings,
+ * provenance metadata, and manual refresh controls for the PWA shell.
+ *
+ * @returns Object containing connectivity state and orchestration methods:
+ * - `hubHealth`: Reactive status object for UI indicators (`HubHealth`).
+ * - `metadata`: Reactive provenance and age metadata (`HubMetadata`).
+ * - `isRefreshing`: Computed boolean indicating if a sync is in progress.
  * - `refresh`: Method to trigger a manual data synchronization.
  */
 export function useConnectivityManager() {
@@ -51,11 +54,13 @@ export function useConnectivityManager() {
    *
    * @remarks
    * Centralizes the resolution of raw store timestamps into domain-friendly
-   * formatted strings and logical minutes.
+   * formatted strings and logical minutes. Evaluates relative data age against
+   * system tick timestamps to compute staleness indicators.
    */
   const metadata = computed((): HubMetadata => {
     const currentTimeMs = Date.now();
     const lastSyncTs = unref(store.lastSyncTime);
+    // [DECISION LOG] Compute age relative to current epoch time; default to 0 if unsynced.
     const dataAgeMs = lastSyncTs ? currentTimeMs - lastSyncTs : 0;
     const dataAgeMinutes = Math.floor(dataAgeMs / 60000);
 
@@ -78,7 +83,7 @@ export function useConnectivityManager() {
    */
   const hubHealth = computed((): HubHealth => {
     // 1. [PRIORITY: HIGHEST] Loading / Syncing State
-    // Rationale: Active synchronization is the most relevant state for the user,
+    // [DECISION LOG] Active synchronization is the most relevant state for the user,
     // overriding even network failures as it indicates an attempt to recover.
     if (unref(store.loading)) {
       return {
@@ -89,8 +94,8 @@ export function useConnectivityManager() {
     }
 
     // 1.5 Sync Error State
-    // Rationale: If a sync failed, we must report it immediately as confidence
-    // in the displayed data is now unknown.
+    // [THREAT: Unhandled Sync Exception] Unhandled sync failures leave store data in an unverified state;
+    // dropping confidence score to 0 prevents presenting untrusted data as authoritative.
     if (unref(store.syncError)) {
       return {
         type: "error",
@@ -101,7 +106,8 @@ export function useConnectivityManager() {
     }
 
     // 1.7 API Configuration Error
-    // Rationale: Invalid configuration prevents all remote operations.
+    // [THREAT: Invalid API Endpoint Ingress] Invalid API configuration prevents remote RPC execution;
+    // short-circuiting health evaluation prevents invalid background requests.
     if (unref(apiStatus) === "unconfigured") {
       return {
         type: "error",
@@ -112,7 +118,8 @@ export function useConnectivityManager() {
     }
 
     // 2. Offline / Hard Failure
-    // Rationale: Physical disconnection is a critical state that limits data freshness.
+    // [THREAT: Network Disconnection Blindspot] Physical disconnection prevents real-time revalidation;
+    // reporting OFFLINE with 0 confidence alerts user to stale offline state.
     if (unref(networkStatus) === "offline") {
       return {
         type: "error",
@@ -123,9 +130,8 @@ export function useConnectivityManager() {
     }
 
     // 3. Stale Data Warning
-    // Rationale: Data older than DATA_STALENESS_MINUTES is considered STALE
-    // according to the adaptive pipeline design, signaling that a refresh
-    // is recommended.
+    // [THREAT: Silent Data Stale Drift] Data older than DATA_STALENESS_MINUTES is considered STALE,
+    // signaling that a refresh is recommended before relying on cached analytics.
     if (metadata.value.ageMinutes >= DATA_STALENESS_MINUTES) {
       return {
         type: "warning",
@@ -136,7 +142,7 @@ export function useConnectivityManager() {
     }
 
     // 4. Nominal / Live (Supabase)
-    // Rationale: Data sourced from the remote DB is the gold standard (Confidence: 100).
+    // [DECISION LOG] Data sourced from the remote DB is the gold standard (Confidence: 100).
     if (unref(store.currentSource) === "SUPABASE") {
       return {
         type: "success",
@@ -146,7 +152,7 @@ export function useConnectivityManager() {
     }
 
     // 5. Nominal / Local
-    // Rationale: Validated local hydration is successful but lacks remote verification.
+    // [DECISION LOG] Validated local hydration is successful but lacks remote verification (Confidence: 80).
     if (unref(store.isHydrated)) {
       return {
         type: "success",
@@ -156,6 +162,7 @@ export function useConnectivityManager() {
     }
 
     // Fallback [PRIORITY: LOWEST]
+    // [DECISION LOG] Default state during initial store bootstrap prior to hydration.
     return {
       type: "loading",
       label: "INITIALIZING",
