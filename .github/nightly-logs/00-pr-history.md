@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-02] PR #1659 [Stage 6]: docs(tsdoc): harden useConnectivityManager interface contracts and inline logic annotations
+**Domain:** pipeline | **Commit:** f7b12b63 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1659)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConnectivityManager.ts
+**Why:** Automated nightly audit pass.
+**Change:** docs(tsdoc): harden useConnectivityManager interface contracts and inline logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-02] PR #1658 [Stage 5]: docs(readme): Reconciled useConnectivityManager health prioritization and metadata in core services README
 **Domain:** pipeline | **Commit:** ee5e8ac1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1658)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
