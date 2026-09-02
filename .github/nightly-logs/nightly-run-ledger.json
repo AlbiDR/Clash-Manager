@@ -5380,7 +5380,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.013Z",
+        "lastObservedAt": "2026-09-02T07:44:15.889Z",
         "failureClass": null
       },
       "2": {
@@ -5407,7 +5407,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.014Z",
+        "lastObservedAt": "2026-09-02T07:44:15.889Z",
         "failureClass": null
       },
       "3": {
@@ -5438,7 +5438,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.014Z",
+        "lastObservedAt": "2026-09-02T07:44:15.889Z",
         "failureClass": null
       },
       "4": {
@@ -5466,7 +5466,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.014Z",
+        "lastObservedAt": "2026-09-02T07:44:15.890Z",
         "failureClass": null
       },
       "5": {
@@ -5494,7 +5494,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.015Z",
+        "lastObservedAt": "2026-09-02T07:44:15.890Z",
         "failureClass": null
       },
       "6": {
@@ -5525,7 +5525,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.015Z",
+        "lastObservedAt": "2026-09-02T07:44:15.890Z",
         "failureClass": null
       },
       "7": {
@@ -5556,7 +5556,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.015Z",
+        "lastObservedAt": "2026-09-02T07:44:15.891Z",
         "failureClass": null
       },
       "8": {
@@ -5564,42 +5564,59 @@
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1661,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1661",
           "headRef": "nightly/stage-8-dependency-audit-94b60def-8617240713463714822",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-02/stage-8/pr-1661",
+          "session": {
+            "id": "8617240713463714822",
+            "name": "sessions/8617240713463714822",
+            "state": "COMPLETED",
+            "createTime": "2026-09-02T06:26:15.199045022Z",
+            "updateTime": "2026-09-02T06:37:26.710201Z",
+            "lifetimeMinutes": 11.2
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.016Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-02T07:44:15.891Z",
+        "failureClass": null
       },
       "9": {
         "date": "2026-09-02",
         "stage": 9,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-02/stage-9/pr-1662",
+          "session": {
+            "id": "3225669782759094897",
+            "name": "sessions/3225669782759094897",
+            "state": "COMPLETED",
+            "createTime": "2026-09-02T07:29:11.205885340Z",
+            "updateTime": "2026-09-02T07:43:16.851095Z",
+            "lifetimeMinutes": 14.1
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.016Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-02T07:44:15.891Z",
+        "failureClass": null
       },
       "10": {
         "date": "2026-09-02",
@@ -5617,7 +5634,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.016Z",
+        "lastObservedAt": "2026-09-02T07:44:15.892Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -5636,7 +5653,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.016Z",
+        "lastObservedAt": "2026-09-02T07:44:15.892Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -5655,7 +5672,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.017Z",
+        "lastObservedAt": "2026-09-02T07:44:15.893Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -5674,7 +5691,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T06:37:36.017Z",
+        "lastObservedAt": "2026-09-02T07:44:15.893Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
