@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-02] PR #1665 [Stage 12]: chore(apk-ux): No UX issues found across 75 examined files in Frontend-PWA/src
+**Domain:** pipeline | **Commit:** 801ee667 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1665)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk-ux): No UX issues found across 75 examined files in Frontend-PWA/src
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-02] PR #1664 [Stage 11]: chore(apk): Stage 11 APK and Native Wrapper Optimizations Audit
 **Domain:** pipeline | **Commit:** 7e004aab | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1664)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log
