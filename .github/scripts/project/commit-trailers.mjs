@@ -354,6 +354,12 @@ function runAuthorCheck(range, policy, { reportOnly = false } = {}) {
 
   if (offenders.length === 0) {
     console.log(`OK: every author in ${range} may be credited.`);
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(
+        process.env.GITHUB_STEP_SUMMARY,
+        `### Commit Attribution Guard - authors\n\nEvery author in \`${range}\` may be credited.\n`,
+      );
+    }
     return 0;
   }
 
@@ -365,6 +371,19 @@ function runAuthorCheck(range, policy, { reportOnly = false } = {}) {
     `::${severity}::GitHub lists the commit author in the Contributors section. ` +
       `Reattribute these commits, or add the identity to ${POLICY_PATH} if the credit is intended.`,
   );
+
+  // Without this the trailer check's "no disallowed co-author trailers" banner
+  // was the only thing in the job summary, so a push carrying an AI-AUTHORED
+  // commit rendered as an unqualified green.
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryPath) {
+    const rows = offenders.map(o => `| \`${o.sha.slice(0, 8)}\` | ${o.name} | ${o.email} |`).join("\n");
+    appendFileSync(
+      summaryPath,
+      `### Commit Attribution Guard - authors\n\n${offenders.length} commit(s) in \`${range}\` are authored by an identity ` +
+        `that may not be credited.\n\n| Commit | Name | Email |\n|---|---|---|\n${rows}\n`,
+    );
+  }
   return reportOnly ? 0 : 1;
 }
 

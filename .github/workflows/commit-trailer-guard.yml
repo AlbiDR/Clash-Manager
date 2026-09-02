@@ -139,7 +139,19 @@ jobs:
           # push it can name a commit that no longer exists. Neither is a usable
           # range, so fall back to the head commit alone rather than erroring.
           if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
-            echo "range=${HEAD}~1..${HEAD}" >> "$GITHUB_OUTPUT"
+            # `before` is unresolvable: a branch's first push, or a commit
+            # orphaned by an earlier force-push - exactly the 2026-09-02
+            # situation. Narrowing to HEAD~1..HEAD here would print a green OK
+            # while hiding every violation but the tip commit, so widen to the
+            # merge-base with the default branch and say so out loud.
+            FALLBACK="$(git merge-base origin/Stable "$HEAD" 2>/dev/null || true)"
+            if [ -n "$FALLBACK" ] && [ "$FALLBACK" != "$HEAD" ]; then
+              echo "::warning::Push range unresolvable (before=${BASE:-empty}); scanning ${FALLBACK}..${HEAD} instead."
+              echo "range=${FALLBACK}..${HEAD}" >> "$GITHUB_OUTPUT"
+            else
+              echo "::warning::Push range unresolvable and no merge-base found; scanning only ${HEAD}. Earlier commits in this push are NOT covered."
+              echo "range=${HEAD}~1..${HEAD}" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "range=${BASE}..${HEAD}" >> "$GITHUB_OUTPUT"
           fi
