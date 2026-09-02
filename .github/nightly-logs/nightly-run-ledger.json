@@ -5380,7 +5380,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.153Z",
+        "lastObservedAt": "2026-09-02T14:41:23.770Z",
         "failureClass": null
       },
       "2": {
@@ -5407,7 +5407,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.154Z",
+        "lastObservedAt": "2026-09-02T14:41:23.770Z",
         "failureClass": null
       },
       "3": {
@@ -5438,7 +5438,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.154Z",
+        "lastObservedAt": "2026-09-02T14:41:23.772Z",
         "failureClass": null
       },
       "4": {
@@ -5466,7 +5466,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.154Z",
+        "lastObservedAt": "2026-09-02T14:41:23.772Z",
         "failureClass": null
       },
       "5": {
@@ -5494,7 +5494,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.154Z",
+        "lastObservedAt": "2026-09-02T14:41:23.773Z",
         "failureClass": null
       },
       "6": {
@@ -5525,7 +5525,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.155Z",
+        "lastObservedAt": "2026-09-02T14:41:23.773Z",
         "failureClass": null
       },
       "7": {
@@ -5556,7 +5556,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.155Z",
+        "lastObservedAt": "2026-09-02T14:41:23.773Z",
         "failureClass": null
       },
       "8": {
@@ -5587,7 +5587,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.155Z",
+        "lastObservedAt": "2026-09-02T14:41:23.774Z",
         "failureClass": null
       },
       "9": {
@@ -5615,7 +5615,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.155Z",
+        "lastObservedAt": "2026-09-02T14:41:23.774Z",
         "failureClass": null
       },
       "10": {
@@ -5643,7 +5643,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.156Z",
+        "lastObservedAt": "2026-09-02T14:41:23.774Z",
         "failureClass": null
       },
       "11": {
@@ -5671,7 +5671,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.156Z",
+        "lastObservedAt": "2026-09-02T14:41:23.774Z",
         "failureClass": null
       },
       "12": {
@@ -5702,7 +5702,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.156Z",
+        "lastObservedAt": "2026-09-02T14:41:23.774Z",
         "failureClass": null
       },
       "13": {
@@ -5710,23 +5710,31 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1666,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1666",
           "headRef": "nightly/stage-13-self-healing-protocol-14c6cc0f-11083098959776201546",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-02/stage-13/pr-1666",
+          "session": {
+            "id": "11083098959776201546",
+            "name": "sessions/11083098959776201546",
+            "state": "COMPLETED",
+            "createTime": "2026-09-02T11:19:35.352358521Z",
+            "updateTime": "2026-09-02T11:25:41.771311Z",
+            "lifetimeMinutes": 6.1
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-02T11:26:13.156Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-02T14:41:23.775Z",
+        "failureClass": null
       }
     }
   }
