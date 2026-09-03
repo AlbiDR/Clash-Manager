@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1672 [Stage 6]: harden useConnectionStatus interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** c26010a3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1672)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConnectionStatus.ts
+**Why:** Document Layer 1 core connection status service interface contracts and decision logs
+**Change:** harden useConnectionStatus interface contracts and inline logic annotations
+**Result:** Vitest 1797 passed, depcruise 0 violations
+
+
 ### [2026-09-03] PR #1671 [Stage 5]: Reconciled restricted CORS preflight headers and closed payload contract guard in shared backend README
 **Domain:** documentation | **Commit:** 09bdd569 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1671)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/_shared/README.md
