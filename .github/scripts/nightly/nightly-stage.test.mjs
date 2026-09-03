@@ -22,6 +22,7 @@ import {
   validateRegistryData,
   composeCommitSubject,
   HANDOFF_BODY_MARKER,
+  formatRunWindow,
 } from "./nightly-stage.mjs";
 import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
 
@@ -390,4 +391,20 @@ test("the handoff ends with the pull request description, not with scaffolding",
   // than emitting an empty description.
   const bare = renderHandoff(stage, "CLEAN", "Substrate hygiene audit", "abc123");
   assert.match(bare.split(HANDOFF_BODY_MARKER)[1], /Substrate hygiene audit/);
+});
+
+test("the run window is rendered from the stage's own clock, and degrades safely", () => {
+  // Deliberately NOT derived from Jules' session timestamps: updateTime is
+  // bulk-bumped, with 9 stages sharing one minute on 2026-08-29, which is what
+  // produces the 1069.9-minute lifetimes in the ledger. Those measure how long a
+  // session object lived, not how long the stage worked.
+  const start = Date.UTC(2026, 8, 3, 0, 25, 0) / 1000;
+  assert.equal(formatRunWindow(start, start + 47 * 60), "[00:25Z-01:12Z 47m]");
+  assert.equal(formatRunWindow(start, start), "[00:25Z-00:25Z 0m]");
+
+  // A missing or nonsensical state file must cost the metric, never the run:
+  // finalize still has to produce a line.
+  assert.equal(formatRunWindow(undefined, start), null);
+  assert.equal(formatRunWindow(start, undefined), null);
+  assert.equal(formatRunWindow(start, start - 60), null, "a clock that ran backwards yields no window");
 });

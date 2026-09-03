@@ -40,7 +40,10 @@ const REGISTRY = ".github/nightly-config/stages.json";
 const PR_HISTORY = ".github/nightly-logs/00-pr-history.md";
 
 // Outcomes a stage declares for itself in its coverage log.
-const DECLARED = /^\* \[(\d{4}-\d{2}-\d{2})\] \[Stage (\d+)\] (CLEAN|CHANGED|SKIPPED|PARTIAL-RUN): (.*)$/;
+// The optional third bracket is the run window `[HH:MMZ-HH:MMZ NNm]`, written
+// by nightly-stage.mjs finalize. Optional because every line written before
+// that existed must keep parsing identically.
+const DECLARED = /^\* \[(\d{4}-\d{2}-\d{2})\] \[Stage (\d+)\] (?:\[([^\]]+)\] )?(CLEAN|CHANGED|SKIPPED|PARTIAL-RUN): (.*)$/;
 
 function git(args) {
   const res = spawnSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
@@ -65,12 +68,15 @@ export function parseCoverageLine(content, stageNumber, date) {
     const m = DECLARED.exec(line.trim());
     if (!m) continue;
     if (m[1] !== date || Number(m[2]) !== stageNumber) continue;
-    const rest = m[4];
+    const rest = m[5];
     const [target, ...summary] = rest.split(" -- ");
+    const durationMatch = /(\d+)m$/.exec(m[3] || "");
     return {
-      status: m[3],
+      status: m[4],
       target: target.trim(),
       summary: summary.join(" -- ").trim() || target.trim(),
+      window: m[3] || null,
+      durationMinutes: durationMatch ? Number(durationMatch[1]) : null,
     };
   }
   return null;

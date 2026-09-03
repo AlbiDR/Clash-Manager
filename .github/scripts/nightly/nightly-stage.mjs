@@ -680,9 +680,39 @@ function budgetCommand(stage) {
   }
 }
 
-function finalLogLine(stage, status, summary, paths, date) {
+/**
+ * The run window, as `[HH:MMZ-HH:MMZ NNm]`.
+ *
+ * The pipeline has always computed this and always thrown it away: `start`
+ * stamps startEpoch, and budgetPhase compares elapsed against workBudgetMinutes
+ * on every budget call, then reduces the whole thing to the word WORK or SUBMIT.
+ * Nothing durable ever recorded when a stage ran or how long it took.
+ *
+ * That left the pipeline able to see only binary outcomes. A stage degrading
+ * gets SLOWER before it fails, and a stage drifting from 20 minutes toward the
+ * 45-minute budget was invisible until the night it breached and finalized
+ * PARTIAL-RUN. This is the leading indicator that was missing.
+ *
+ * Deliberately NOT taken from Jules' own session timestamps: `updateTime` is
+ * bulk-bumped, with 9 stages sharing one minute on 2026-08-29, which is what
+ * produces the 1069.9-minute entries in the ledger. Those measure how long a
+ * session object stayed alive, not how long the stage worked.
+ */
+export function formatRunWindow(startEpochSeconds, endEpochSeconds) {
+  const start = Number(startEpochSeconds);
+  const end = Number(endEpochSeconds);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return null;
+  const hhmm = epoch => new Date(epoch * 1000).toISOString().slice(11, 16);
+  return `[${hhmm(start)}Z-${hhmm(end)}Z ${Math.round((end - start) / 60)}m]`;
+}
+
+function finalLogLine(stage, status, summary, paths, date, window) {
   const target = paths.find(filePath => filePath !== stage.coverageLog) || "Codebase";
-  return `* [${date}] [Stage ${stage.number}] ${status}: ${target} -- ${cleanSummary(summary)}`;
+  // The window sits in the bracket run, never in the ` -- ` payload, because the
+  // recap splits that payload into target and summary. Optional so every line
+  // written before this existed still parses.
+  const timing = window ? `${window} ` : "";
+  return `* [${date}] [Stage ${stage.number}] ${timing}${status}: ${target} -- ${cleanSummary(summary)}`;
 }
 
 function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {}) {
@@ -694,13 +724,16 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   const paths = changedPaths(repoRoot);
   validateChangedPaths(stage, status, paths);
 
-  const logPath = path.join(repoRoot, stage.coverageLog);
-  const sentinel = sentinelLine(date, stage.number);
-  const finalLine = finalLogLine(stage, status, normalizedSummary, paths, date);
-  const replacement = replaceSentinel(readFileSync(logPath, "utf8"), sentinel, finalLine);
-
   const statePath = path.join(contextDir(), "session-state.json");
   const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
+
+  const logPath = path.join(repoRoot, stage.coverageLog);
+  const sentinel = sentinelLine(date, stage.number);
+  // A run whose state file is missing still finalizes, just without a window.
+  // Losing the metric must never cost the stage its output.
+  const window = formatRunWindow(state.startEpoch, epochSeconds());
+  const finalLine = finalLogLine(stage, status, normalizedSummary, paths, date, window);
+  const replacement = replaceSentinel(readFileSync(logPath, "utf8"), sentinel, finalLine);
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
   const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result });

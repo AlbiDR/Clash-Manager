@@ -478,3 +478,31 @@ test("renderRecap still works for a hand-built recap that carries no health", ()
   assert.match(text, /Nightly Recap: 2026-08-27/);
   assert.doesNotMatch(text, /Pipeline health/);
 });
+
+test("a coverage line carries its run window, and lines written before it still parse", () => {
+  // The pipeline computed elapsed on every budget call and threw it away, so it
+  // could only ever see binary outcomes. A stage degrading gets SLOWER before it
+  // fails, and drift from 20 minutes toward the 45-minute workBudgetMinutes
+  // ceiling was invisible until the night it breached and finalized PARTIAL-RUN.
+  const withWindow = "* [2026-09-03] [Stage 4] [00:25Z-01:12Z 47m] CLEAN: Codebase -- audited 12 views, 0 unreferenced";
+  const parsed = parseCoverageLine(withWindow, 4, "2026-09-03");
+  assert.equal(parsed.status, "CLEAN");
+  assert.equal(parsed.target, "Codebase");
+  assert.equal(parsed.summary, "audited 12 views, 0 unreferenced");
+  assert.equal(parsed.window, "00:25Z-01:12Z 47m");
+  assert.equal(parsed.durationMinutes, 47);
+
+  // Every line written before the window existed must parse identically, or the
+  // whole recorded history becomes unreadable the day this ships.
+  const legacy = "* [2026-09-03] [Stage 4] CLEAN: Codebase -- audited 12 views, 0 unreferenced";
+  const old = parseCoverageLine(legacy, 4, "2026-09-03");
+  assert.equal(old.status, "CLEAN");
+  assert.equal(old.target, "Codebase");
+  assert.equal(old.summary, "audited 12 views, 0 unreferenced");
+  assert.equal(old.window, null);
+  assert.equal(old.durationMinutes, null);
+
+  // The window must never be absorbed into the summary, which the evidence floor
+  // depends on being clean prose.
+  assert.doesNotMatch(parsed.summary, /47m/);
+});
