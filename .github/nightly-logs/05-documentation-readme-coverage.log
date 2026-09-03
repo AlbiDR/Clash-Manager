@@ -157,3 +157,4 @@
 * [2026-08-31] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useClashSync single-flight sync and failure thresholds in core services README
 * [2026-09-01] [Stage 5] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Reconciled Toast.vue v-tactile directive integration in shared UI README
 * [2026-09-02] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled useConnectivityManager health prioritization and metadata in core services README
+* [2026-09-03] [Stage 5] [03:07Z-03:14Z 7m] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconciled restricted CORS preflight headers and closed payload contract guard in shared backend README
