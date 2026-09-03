@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1677 [Stage 11]: chore(apk): Stage 11 APK Optimization audit complete (CLEAN)
+**Domain:** pipeline | **Commit:** c0169075 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1677)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Stage 11 APK Optimization audit complete (CLEAN)
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-03] PR #1676 [Stage 10]: chore(apk): Completed APK and PWA wrapper integrity audit
 **Domain:** pipeline | **Commit:** d37c0fbe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1676)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
