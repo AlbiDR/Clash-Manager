@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1676 [Stage 10]: chore(apk): Completed APK and PWA wrapper integrity audit
+**Domain:** pipeline | **Commit:** d37c0fbe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1676)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(apk): Completed APK and PWA wrapper integrity audit
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-03] PR #1675 [Stage 9]: 43 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, profiler.ts, harvester.ts, useConnectionStatus, useConnectivityManager, useProgressiveList. Candidate protocol.ts high risk; hunt useProgressiveList clean.
 **Domain:** architecture | **Commit:** 309bf26e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1675)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
