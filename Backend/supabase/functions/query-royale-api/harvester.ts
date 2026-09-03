@@ -211,6 +211,21 @@ export async function harvestInternationalPlayers(
     queried_regions_count: countriesToQuery.length,
   });
 
+  // A batch where EVERY attempted region errored is an outage, not a result.
+  // Returning an empty list here would tell discovery it queried the world and
+  // found nobody clanless, which is the same thing it hears on a genuinely quiet
+  // day, so a sustained upstream failure would look like a shrinking recruit
+  // pool for as long as it lasted. Throwing costs nothing that was worth having:
+  // in exactly this case the empty return carried no players either, so the only
+  // thing lost is the false reassurance. clinicalServe converts it to an error
+  // response, which is how the sibling guards in this handler already report an
+  // unusable upstream.
+  if (everyRegionFailed) {
+    throw new Error(
+      `International harvest failed across all ${countriesToQuery.length} attempted regions: ${failedRegions.join(", ")}`,
+    );
+  }
+
   const regionLabel = queriedRegions.length > INITIAL_INDEX
     ? `International (${queriedRegions.join(", ")})`
     : "International";

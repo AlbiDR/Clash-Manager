@@ -133,9 +133,11 @@ describe("Harvester Utility Logic Spec", () => {
       mockFetchWithRotation.mockRejectedValue(new Error("upstream 503"));
 
       const { entries, logAudit } = makeAuditCollector();
-      const results = await harvestInternationalPlayers(logAudit);
 
-      expect(results.items).toHaveLength(0);
+      // An outage is an error, not an empty result. In this exact case the old
+      // empty return carried no players either, so surfacing it loses nothing
+      // but the false reassurance.
+      await expect(harvestInternationalPlayers(logAudit)).rejects.toThrow(/failed across all/);
 
       const failure = entries.find(e => e.stage === "CONCURRENT_BATCH_FAILED");
       expect(failure, "a total outage must not be logged as a successful batch").toBeTruthy();
