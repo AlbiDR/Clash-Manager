@@ -146,8 +146,13 @@ validation result, and the changed files. `NIGHTLY_PR_METADATA` remains the
 machine-readable copy of the same facts for merge history, not the only place
 where the explanation lives.
 
-Read the handoff and return its concise status and suggested publication data
-as your final message. A published Pull Request is the required outcome of
+Read the handoff for the suggested publication data, then return the exact
+contents of `/tmp/nightly/pr-body.md`, verbatim and alone, as your final
+message. The handoff is instructions addressed to you and the body file is the
+description: returning any part of the handoff publishes the instructions. On
+2026-09-03 five of thirteen published bodies were wrong this way, one of them
+reading only "Nightly Stage 8 finalized with status CHANGED" for a run that had
+bumped a dependency. A published Pull Request is the required outcome of
 this session, not an optional next step someone else may or may not take.
 Completing the audit, writing the log, and running finalize only exist to
 produce that Pull Request; a run that ends without one has failed regardless

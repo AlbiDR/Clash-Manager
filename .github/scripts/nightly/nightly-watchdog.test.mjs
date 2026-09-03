@@ -37,6 +37,8 @@ import {
   selectRecoveryCandidates,
   sessionTelemetry,
   parseRunWindow,
+  classifyPrBody,
+  prNumberFromPromotionTag,
 } from "./nightly-watchdog.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -1247,4 +1249,64 @@ test("a stage number is matched exactly, not by prefix", () => {
   const log = "* [2026-09-03] [Stage 10] [01:00Z-01:20Z 20m] CLEAN: Codebase -- ten";
   assert.equal(parseRunWindow(log, 1, "2026-09-03"), null);
   assert.equal(parseRunWindow(log, 10, "2026-09-03").durationMinutes, 20);
+});
+
+test("a published body is graded against the shapes that actually went wrong", () => {
+  // Fixtures are the literal bodies of the 2026-09-03 run, one per observed
+  // failure mode. All five merged, all five passed every check the pipeline
+  // had, and the run graded 9/10. Nothing could see them.
+
+  // #1674. The handoff's own opening line, published for a run that had really
+  // bumped @supabase/supabase-js. The worst case: the title carried more
+  // information than the description.
+  assert.equal(classifyPrBody("Nightly Stage 8 finalized with status CHANGED."), "HANDOFF_LEAK");
+  // The handoff writes "is finalized"; what reached GitHub dropped the "is".
+  // Both spellings must be caught or the check misses the real case.
+  assert.equal(classifyPrBody("Nightly Stage 8 is finalized with status CHANGED."), "HANDOFF_LEAK");
+
+  // #1668 and #1675. The separator line published as content.
+  assert.equal(
+    classifyPrBody("--- PULL REQUEST DESCRIPTION BELOW ---\n### Nightly Stage 1\nNIGHTLY_PR_METADATA:"),
+    "MARKER_LEAK",
+  );
+
+  // #1676 and #1677. Template discarded, one sentence invented.
+  assert.equal(classifyPrBody("Stage 11 APK Optimization audit completed cleanly."), "AD_LIBBED");
+
+  assert.equal(classifyPrBody(""), "EMPTY");
+  assert.equal(classifyPrBody(null), "EMPTY");
+
+  // The shape renderPrBody actually emits.
+  const good = [
+    "### Nightly Stage 4: Optimization",
+    "",
+    "**Status:** CLEAN",
+    "",
+    "In plain terms: nothing needed fixing.",
+    "",
+    "**What was checked:** audited 12 views",
+    "",
+    "<!--",
+    "NIGHTLY_PR_METADATA:",
+    "  Domain: optimization",
+    "-->",
+  ].join("\n");
+  assert.equal(classifyPrBody(good), "OK");
+});
+
+test("body health is recorded but never fails a run", () => {
+  // Every one of the five malformed bodies belonged to a stage whose code,
+  // tests and coverage log had landed correctly. The description was wrong, the
+  // work was not, so this must not redden a run over something already merged.
+  const source = readFileSync(new URL("./nightly-watchdog.mjs", import.meta.url), "utf8");
+  const classifier = source.slice(source.indexOf("export function classifyPrBody"));
+  assert.doesNotMatch(classifier.slice(0, 400), /exitCode|process\.exit/);
+  // It is carried as evidence on the merged row, next to session and run.
+  assert.match(source, /body: describePublishedBody\(matchingTags\[0\], observed\.prs\)/);
+});
+
+test("a promotion tag yields the pull request number it names", () => {
+  assert.equal(prNumberFromPromotionTag("nightly/2026-09-03/stage-8/pr-1674"), 1674);
+  assert.equal(prNumberFromPromotionTag("nightly/2026-09-03/stage-8"), null);
+  assert.equal(prNumberFromPromotionTag(null), null);
 });

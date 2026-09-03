@@ -152,6 +152,7 @@ export function classifyStage({ stage, entry, tag, declared, history }) {
     files: history?.files ?? [],
     health: entry?.evidence?.health ?? null,
     session: entry?.evidence?.session ?? null,
+    bodyHealth: entry?.evidence?.body ?? null,
   };
 }
 
@@ -510,6 +511,13 @@ export function renderRecap(recap) {
     const stageNotes = [];
     const label = `S${String(s.stage).padStart(2, "0")}`;
     if (s.rescued) stageNotes.push(`${label}: rescued via ${s.rescuedBy || "retry"}.`);
+    // A malformed description does not mean the work was wrong: in all five
+    // cases on 2026-09-03 the code, tests and coverage log landed correctly.
+    // Reported so the rate stays visible rather than needing a human to read
+    // pull requests one by one, which is how it was found.
+    if (s.bodyHealth && s.bodyHealth.ok === false) {
+      stageNotes.push(`${label}: published PR description was ${s.bodyHealth.verdict} (PR #${s.bodyHealth.pr}); the work landed, the description did not.`);
+    }
     const why = usefulWhy(s);
     if (why) stageNotes.push(`${label}: why - ${why}`);
     return stageNotes;

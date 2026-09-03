@@ -294,6 +294,51 @@ export function parseRunWindow(content, stageNumber, date) {
   return { started: `${date}T${m[1]}:00Z`, terminated: `${date}T${m[2]}:00Z`, durationMinutes: Number(m[3]) };
 }
 
+/**
+ * Whether a published pull request body is the description the pipeline built,
+ * or something that went wrong on the way out.
+ *
+ * The body travels from renderPrBody to GitHub through the agent's final
+ * message, which is an unreliable transport. On 2026-09-03, 5 of 13 bodies were
+ * wrong and nothing noticed: the run graded 9/10 and every stage merged. The
+ * rate was discovered by a human reading three pull requests.
+ *
+ * NIGHTLY_PR_METADATA is the reliable tell. renderPrBody always emits it,
+ * merge-nightly-core parses it to build 00-pr-history.md, and no ad-libbed
+ * sentence has ever contained it.
+ *
+ * This only observes. A malformed body means the description is wrong, not that
+ * the work is: the code, the tests and the coverage log all landed correctly in
+ * every one of those five cases, so failing a run over it would be a false
+ * alarm about something already merged.
+ */
+export function classifyPrBody(body) {
+  const text = String(body || "");
+  if (!text.trim()) return "EMPTY";
+  // Ordered before the metadata check: a body carrying the handoff is the worst
+  // case even in the unlikely event it also carried the description.
+  if (/^Nightly Stage \d+ (is )?finalized with status/m.test(text)) return "HANDOFF_LEAK";
+  if (text.includes("--- PULL REQUEST DESCRIPTION BELOW ---")) return "MARKER_LEAK";
+  if (!text.includes("NIGHTLY_PR_METADATA")) return "AD_LIBBED";
+  return "OK";
+}
+
+/** The pr-NNN suffix a promotion tag carries, or null. */
+export function prNumberFromPromotionTag(tag) {
+  const m = /\/pr-(\d+)$/.exec(String(tag || ""));
+  return m ? Number(m[1]) : null;
+}
+
+/** The published-body verdict for a merged stage, or null when unknowable. */
+function describePublishedBody(tag, prs) {
+  const number = prNumberFromPromotionTag(tag);
+  if (number === null) return null;
+  const pr = (prs || []).find(candidate => Number(candidate.number) === number);
+  if (!pr) return null;
+  const verdict = classifyPrBody(pr.body);
+  return { pr: number, verdict, ok: verdict === "OK" };
+}
+
 async function collectObservedState(registry, date, config = CONFIG) {
   runGit(["fetch", "--tags", "origin", config.targetBranch]);
   try {
@@ -549,6 +594,8 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
           session: sessionTelemetry(matchJulesSession(observed.julesSessions, stage, date)),
           // The stage's own clock, not Jules'. See parseRunWindow.
           run: observed.runWindows?.get(stage.number) || null,
+          // Observation only, never a failure. See classifyPrBody.
+          body: describePublishedBody(matchingTags[0], observed.prs),
         },
       });
       continue;

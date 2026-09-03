@@ -241,9 +241,6 @@ export function validateChangedPaths(stage, status, changedPaths) {
   return paths;
 }
 
-// Everything after this line in a handoff is the pull request description.
-export const HANDOFF_BODY_MARKER = "--- PULL REQUEST DESCRIPTION BELOW ---";
-
 function cleanSummary(summary) {
   const cleaned = String(summary || "").replace(/\s+/g, " ").trim();
   invariant(cleaned.length > 0, "A non-empty --summary is required.");
@@ -427,16 +424,33 @@ export function composeCommitSubject(scope, summary, limit = 120) {
  * review, memory, reflection, git commit, or git push." Meanwhile the real body
  * renderPrBody composes was written to /tmp and read by nobody.
  *
- * So the instructions now come first and the PR body comes last, separated by a
- * marker, and the agent is told to return only what follows it. The failure
- * mode is graceful by construction: an agent that ignores the marker and
- * returns the whole block produces exactly what it produces today, so this can
- * only improve the description, never break publication.
+ * The first fix put the instructions first and the body last, separated by a
+ * marker, and asked the agent to return only what followed it. That comment
+ * claimed the arrangement "can only improve the description, never break
+ * publication". The 2026-09-03 run falsified it: 5 of 13 published bodies were
+ * wrong, in three distinct ways. #1668 and #1675 published the marker line
+ * itself. #1676 and #1677 discarded the template and ad-libbed a sentence.
+ * #1674 published this file's own opening line, "Nightly Stage 8 finalized with
+ * status CHANGED", while the stage had really bumped a dependency. The comment
+ * had anticipated only the failure where an agent returns too MUCH, which is
+ * harmless; every observed failure returned too LITTLE.
+ *
+ * The root cause is asking an agent to extract a document from a blob that also
+ * addresses instructions to it. So this file no longer carries the body at all.
+ * finalize already writes the body alone to /tmp/nightly/pr-body.md, and has
+ * since before the marker existed; nothing pointed at it. The agent is now told
+ * to return that file's contents, which makes two of the three failure modes
+ * structurally impossible: there is no marker to leak, and the instructions
+ * cannot be mistaken for the body because they are not in the same file.
+ *
+ * A stage that ignores the instruction entirely can still ad-lib. That is why
+ * the watchdog now records whether a published body carried
+ * NIGHTLY_PR_METADATA: the rate was invisible until someone read three PRs by
+ * hand.
  */
-export function renderHandoff(stage, status, summary, runId, prBody = "") {
+export function renderHandoff(stage, status, summary, runId, bodyPath = prBodyPath()) {
   const normalizedSummary = cleanSummary(summary);
   const commitMessage = composeCommitSubject(stage.commitScope, normalizedSummary);
-  const body = String(prBody).trim() || `**What changed:** ${normalizedSummary}`;
   return `Nightly Stage ${stage.number} is finalized with status ${status}.
 
 Suggested branch: ${stage.branchPrefix}${runId}
@@ -446,10 +460,7 @@ PR draft: false
 
 A published Pull Request is the required outcome of this session, not an optional next step. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now, because Jules' native scheduled-task publisher only creates the pull request once the session has actually, fully ended. Do not run code review, memory, reflection, git commit, or git push.
 
-Return everything below the marker, and nothing else, as your absolute last message: nothing after it, no summary, no offer to do more, no question. What you return becomes the pull request description, so returning these instructions publishes the instructions.
-
-${HANDOFF_BODY_MARKER}
-${body}
+YOUR FINAL MESSAGE: return the exact contents of ${bodyPath}, and nothing else. Read that file and reproduce it verbatim. Do not summarize it, quote it, wrap it in anything, describe it, or add a single word before or after it. Do not return any part of THIS file: what you return becomes the pull request description, and this file is instructions, so returning it publishes the instructions instead of the description.
 `;
 }
 
@@ -530,6 +541,19 @@ function epochSeconds() {
 
 function contextDir() {
   return process.env.NIGHTLY_CONTEXT_DIR || "/tmp/nightly";
+}
+
+/**
+ * The published pull request description, written alone so nothing has to be
+ * extracted out of a document that also carries instructions.
+ *
+ * One helper rather than two literals: the handoff tells the agent to read this
+ * exact path, and finalize writes it. A hardcoded "/tmp/nightly/pr-body.md"
+ * would be wrong the moment NIGHTLY_CONTEXT_DIR is set, and would send the
+ * agent to a file nothing had written.
+ */
+export function prBodyPath() {
+  return path.join(contextDir(), "pr-body.md");
 }
 
 function readOptional(filePath) {
@@ -801,7 +825,8 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
   const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result });
-  const handoff = renderHandoff(stage, status, normalizedSummary, runId, prBody);
+  // The handoff no longer carries the body, only the path to it.
+  const handoff = renderHandoff(stage, status, normalizedSummary, runId);
 
   if (dryRun) {
     console.log(JSON.stringify({ command: "finalize", dryRun: true, stage: stage.number, status, finalLine, why, result, paths }, null, 2));
@@ -813,7 +838,7 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
     !readFileSync(logPath, "utf8").includes(`[${date}] [Stage ${stage.number}] IN-PROGRESS:`),
     `Finalization left a current-cycle IN-PROGRESS sentinel in ${stage.coverageLog}.`,
   );
-  atomicWrite(path.join(contextDir(), "pr-body.md"), prBody);
+  atomicWrite(prBodyPath(), prBody);
   atomicWrite(path.join(contextDir(), "final-handoff.txt"), handoff);
   atomicWrite(
     statePath,
