@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { computed, unref } from "vue";
+import { computed, getCurrentInstance, onUnmounted, ref, unref } from "vue";
 import { useClashDataStore } from "./useClashDataStore";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
@@ -57,8 +57,33 @@ export function useConnectivityManager() {
    * formatted strings and logical minutes. Evaluates relative data age against
    * system tick timestamps to compute staleness indicators.
    */
+  // [DECISION LOG] Wall-clock time is not reactive, so a computed that reads
+  // Date.now() is recomputed only when one of its STORE dependencies changes.
+  // Data age therefore froze at whatever it was during the last sync and never
+  // advanced, so the hub reported "2 minutes ago" indefinitely and the staleness
+  // tier could not be reached by the passage of time alone. Ticking a ref gives
+  // the computed a reactive clock to depend on.
+  //
+  // The cadence is the display's own granularity rather than a chosen number:
+  // ageMinutes is floored to whole minutes, so re-evaluating once per minute is
+  // exactly what it takes for the rendered value never to be stale.
+  const AGE_TICK_MS = 60_000;
+  const nowMs = ref(Date.now());
+
+  // [GUARD] Only tick inside a component. Composables used from a store or a
+  // service have no unmount hook to clear the interval on, and a timer that
+  // outlives its caller is worse than the frozen value it fixes. Matches the
+  // instance-check convention in useBroadcastChannel.
+  const componentInstance = getCurrentInstance();
+  if (componentInstance) {
+    const ageTicker = setInterval(() => {
+      nowMs.value = Date.now();
+    }, AGE_TICK_MS);
+    onUnmounted(() => clearInterval(ageTicker));
+  }
+
   const metadata = computed((): HubMetadata => {
-    const currentTimeMs = Date.now();
+    const currentTimeMs = nowMs.value;
     const lastSyncTs = unref(store.lastSyncTime);
     // [DECISION LOG] Compute age relative to current epoch time; default to 0 if unsynced.
     const dataAgeMs = lastSyncTs ? currentTimeMs - lastSyncTs : 0;

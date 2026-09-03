@@ -7,8 +7,9 @@ import { useClashDataStore } from "../useClashDataStore";
 import { useConnectionStatus } from "../useConnectionStatus";
 import { useApiState } from "../../api/useApiState";
 import * as timeUtils from "../../utils/time";
-import { ref } from "vue";
+import { defineComponent, h, ref } from "vue";
 import { setActivePinia, createPinia } from "pinia";
+import { mount } from "@vue/test-utils";
 
 // Mock Layer 1 dependencies via deep imports per ADR Section II
 vi.mock("../useClashDataStore", () => ({
@@ -276,5 +277,42 @@ describe("useConnectivityManager", () => {
       refresh();
       expect(mockStore.refresh).toHaveBeenCalled();
     });
+  });
+
+  it("data age advances with elapsed time, not only when the store changes", async () => {
+    // Wall-clock time is not reactive. metadata read Date.now() inside a computed
+    // whose only dependencies were store refs, so Vue cached it and the hub
+    // reported a data age that never moved until the next sync committed. The
+    // staleness tier was unreachable by the passage of time alone.
+    vi.useFakeTimers();
+    const start = new Date("2026-09-03T00:00:00Z").getTime();
+    vi.setSystemTime(start);
+    mockStore.lastSyncTime = start;
+
+    let seen: number[] = [];
+    const Probe = defineComponent({
+      setup() {
+        const { metadata } = useConnectivityManager();
+        return () => {
+          seen.push(metadata.value.ageMinutes);
+          return h("span", String(metadata.value.ageMinutes));
+        };
+      }
+    });
+
+    const wrapper = mount(Probe);
+    expect(seen.at(-1)).toBe(0);
+
+    // Nothing in the store changes here. Only the clock moves.
+    // advanceTimersByTimeAsync moves the mocked wall clock as well as the timer
+    // queue, so it must not be paired with a manual setSystemTime.
+    seen = [];
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    await wrapper.vm.$nextTick();
+
+    expect(seen.at(-1)).toBe(5);
+
+    wrapper.unmount();
+    vi.useRealTimers();
   });
 });
