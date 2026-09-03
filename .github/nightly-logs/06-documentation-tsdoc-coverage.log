@@ -108,3 +108,4 @@
 * [2026-08-31] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useClashSync.ts -- docs(tsdoc): harden useClashSync interface contracts and inline logic annotations
 * [2026-09-01] [Stage 6] CHANGED: Frontend-PWA/src/shared/ui/Toast.vue -- harden Toast.vue interface contracts and inline logic annotations
 * [2026-09-02] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useConnectivityManager.ts -- docs(tsdoc): harden useConnectivityManager interface contracts and inline logic annotations
+* [2026-09-03] [Stage 6] [04:18Z-04:26Z 8m] CHANGED: Frontend-PWA/src/core/services/useConnectionStatus.ts -- harden useConnectionStatus interface contracts and inline logic annotations
