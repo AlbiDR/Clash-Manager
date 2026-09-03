@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1673 [Stage 7]: Catalog and package version scans (root, Frontend-PWA, Backend) confirmed ground truth version 14.46.26 and catalog protocol adherence. pnpm audit:version passed.
+**Domain:** versioning | **Commit:** 36b68578 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1673)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** No version drift or catalog violations found across monorepo manifests.
+**Change:** Catalog and package version scans (root, Frontend-PWA, Backend) confirmed ground truth version 14.46.26 and catalog protocol adherence. pnpm audit:version passed.
+**Result:** pnpm audit:version passed with zero errors.
+
+
 ### [2026-09-03] PR #1672 [Stage 6]: harden useConnectionStatus interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** c26010a3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1672)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConnectionStatus.ts
