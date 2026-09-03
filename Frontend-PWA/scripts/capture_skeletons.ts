@@ -3,7 +3,13 @@
 
 import { createServer as createHttpServer } from "node:http";
 import type { AddressInfo } from "node:net";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer as createViteServer } from "vite";
@@ -58,9 +64,40 @@ type BoneRect = { width: number; height: number };
 type GroupBones = Partial<Record<Breakpoint, Record<string, BoneRect>>>;
 
 // Shared inputs whose changes affect every captured group's rendered layout.
+/**
+ * Global sources that feed EVERY capture group's rendered geometry.
+ *
+ * @remarks
+ * Root cause this list exists in this shape (2026-09-03 CI audit): it used to
+ * name only `tokens.ts` and `base.ts`, but `main.ts` also injects
+ * `animations`, `skeletons` and `components` stylesheets, and
+ * `components.ts` carries the `.card` padding/gap/height rules that set card
+ * geometry directly. Editing those left every group's hash unchanged, so the
+ * cache reported a hit and skeletons silently kept stale measurements. CI
+ * masked the bug by never persisting the cache and always re-capturing; local
+ * `pnpm dev`/`pnpm build` did not.
+ *
+ * The theme directory is globbed rather than hand-listed so a newly added
+ * stylesheet joins the invalidation surface automatically instead of relying
+ * on somebody remembering to add it here - the same "never hand-maintain what
+ * the build can measure" reason the bone capture exists at all.
+ */
 const SHARED_SOURCES = [
-  join(ROOT, "src/core/theme/tokens.ts"),
-  join(ROOT, "src/core/theme/base.ts"),
+  // Every global stylesheet/theme module `src/app/main.ts` injects into the
+  // page. Sorted so the concatenation order (and therefore the hash) is
+  // stable across filesystems.
+  ...readdirSync(join(ROOT, "src/core/theme"))
+    .filter((file) => file.endsWith(".ts"))
+    .sort()
+    .map((file) => join(ROOT, "src/core/theme", file)),
+  // Shared primitives the captured components render inside themselves. Their
+  // intrinsic size is part of the measured card/row height: `Icon` appears in
+  // six of the eight capture groups, `BaseCard` wraps two of them.
+  join(ROOT, "src/shared/ui/Icon.vue"),
+  join(ROOT, "src/shared/ui/BaseCard.vue"),
+  // Synthetic mode renders real components against this mock data (via
+  // `useClashSync`), so the text it supplies drives the measured geometry.
+  join(ROOT, "src/core/utils/mockData.ts"),
 ];
 
 interface CaptureGroup {
@@ -234,6 +271,23 @@ export async function ensureBonesFresh(): Promise<void> {
       // fallback, on a clean checkout with nothing captured yet) until the
       // browser is installed. The cache is deliberately left untouched so the
       // next successful run still treats these groups as stale and retries.
+      // Graceful degradation is correct for a developer's machine, where a
+      // missing browser should never block `pnpm dev`. It is NOT correct in
+      // CI: the artifact built there is the one users receive, and silently
+      // shipping fallback geometry defeats the entire point of measuring the
+      // real components. Root cause this guards (2026-09-03 CI audit): once
+      // the capture artifacts are cached, a run whose capture failed can
+      // publish its stale bones under a key that later runs treat as a hit,
+      // and because a hit skips the Chromium install those runs cannot
+      // re-measure either - the staleness would become self-sustaining and
+      // completely silent.
+      if (process.env.CI) {
+        console.error(
+          "[bones] Capture failed in CI - refusing to build with stale or fallback skeleton geometry.",
+        );
+        throw error;
+      }
+
       console.warn(
         "[bones] Capture failed - skeletons will use the last captured (or fallback) geometry.",
         "Run `pnpm exec playwright install chromium` in Frontend-PWA to enable live capture.",
@@ -423,10 +477,42 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
   return results;
 }
 
+/**
+ * Digest of every source file that can change ANY capture group's geometry.
+ *
+ * @remarks
+ * Exists so CI can key its capture cache off the script's own invalidation
+ * surface instead of a hand-copied file list in the workflow YAML. A
+ * hand-copied list is the same manual-maintenance trap the bone capture was
+ * built to remove: add a capture group, forget the copy, and CI silently
+ * serves stale geometry for it forever. Deriving the key here means the two
+ * can never drift, because there is only one list.
+ *
+ * @returns A hex-encoded SHA-256 digest over the de-duplicated, sorted union
+ * of every group's own sources and {@link SHARED_SOURCES}.
+ */
+export function computeCaptureSurfaceHash(): string {
+  const surface = new Set<string>();
+  for (const group of CAPTURE_GROUPS) {
+    for (const source of [...group.sources, ...SHARED_SOURCES]) {
+      surface.add(source);
+    }
+  }
+  // Sorted so the digest is stable regardless of declaration order.
+  return hashGroupSources([...surface].sort());
+}
+
 // Manual-trigger entry point: `pnpm run capture:skeletons` force-refreshes
 // every capture group by clearing the cache before capturing.
 const isMainModule = process.argv[1] === __filename;
 if (isMainModule) {
+  // `--print-hash` is a read-only query used by CI to build its cache key.
+  // It must not capture, clear the cache, or write any artifact.
+  if (process.argv.includes("--print-hash")) {
+    console.log(computeCaptureSurfaceHash());
+    process.exit(0);
+  }
+
   clearCache();
   ensureBonesFresh()
     .then(() => console.log("[bones] Capture complete."))
