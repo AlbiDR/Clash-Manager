@@ -12,6 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
+import { PLAIN_PREFIX, countOf, displayArea } from "./nightly-prose.mjs";
 import { fileURLToPath } from "node:url";
 
 const FINAL_STATUSES = new Set(["CHANGED", "CLEAN", "SKIPPED", "PARTIAL-RUN"]);
@@ -267,25 +268,85 @@ function defaultResult(status) {
   return "The run degraded safely to a log-only result.";
 }
 
-function sentence(value) {
-  const text = String(value || "").replace(/\s+/g, " ").trim();
-  return /[.!?]$/.test(text) ? text : `${text}.`;
+/**
+ * What kind of thing each changed path is.
+ *
+ * The stage's own log directory is derived from its registry coverageLog
+ * rather than named here, so moving the logs cannot silently reclassify every
+ * run as a code change.
+ */
+export function classifyChangedPaths(stage, changedPaths) {
+  const logDir = stage.coverageLog.slice(0, stage.coverageLog.lastIndexOf("/") + 1);
+  const kinds = { log: [], test: [], docs: [], deps: [], code: [] };
+  for (const filePath of changedPaths) {
+    if (filePath.startsWith(logDir)) kinds.log.push(filePath);
+    else if (/(^|\/)[^/]*-tests\//.test(filePath) || /\.(spec|test)\.[a-z]+$/.test(filePath)) kinds.test.push(filePath);
+    else if (filePath.endsWith(".md")) kinds.docs.push(filePath);
+    else if (/(^|\/)(pnpm-lock\.yaml|pnpm-workspace\.yaml|package\.json)$/.test(filePath)) kinds.deps.push(filePath);
+    else kinds.code.push(filePath);
+  }
+  return kinds;
 }
 
-function statusNarrative(status) {
-  if (status === "CHANGED") return "It made a small, targeted update and left the branch with verified nightly maintenance.";
-  if (status === "CLEAN") return "It found the audited area already healthy, so the PR records the completed check without unnecessary source churn.";
-  if (status === "SKIPPED") return "It found no useful work for this stage on this run, and records that decision explicitly.";
-  if (status === "PARTIAL-RUN") return "It kept the evidence from the run while avoiding source changes that were not safe to ship.";
-  return "It records the stage outcome so the nightly pipeline remains auditable.";
-}
+/**
+ * One sentence telling a non-specialist what this pull request does to the
+ * project.
+ *
+ * It is built ONLY from the status and the shape of the changed paths, never by
+ * interpolating the free-text summary into a sentence frame. That restriction
+ * is the entire point, and it fixes both defects of the paragraph it replaces:
+ *
+ * - Grammar. The old frame was `run focused on ${summary}`, and summaries are
+ *   rarely noun phrases. Six of the ten well-formed bodies on 2026-09-03 read
+ *   as broken English, including "run focused on harden useConnectionStatus"
+ *   and "run focused on 43 candidate files, 0 dep-violations".
+ * - Redundancy. The old paragraph restated the Change, Why and Result fields
+ *   that are printed verbatim directly beneath it, so every body said the same
+ *   thing twice in the rendered view.
+ *
+ * It therefore carries information found nowhere else in the body: whether
+ * anything a user could notice actually changed. A test-only or docs-only diff
+ * is the fact a reader most wants and the one the fields bury.
+ */
+export function renderPlainSummary(stage, status, changedPaths) {
+  const kinds = classifyChangedPaths(stage, changedPaths);
+  // The slug, not the domain: stages 10 and 11 share the domain "apk" and would
+  // otherwise both report "checked the apk area".
+  const area = displayArea(stage.slug);
+  const touched = kinds.code.length + kinds.test.length + kinds.docs.length + kinds.deps.length;
 
-function renderPrOverview(stage, status, summary, why, result) {
-  return [
-    `This Stage ${stage.number} ${stage.name} run focused on ${sentence(summary)}`,
-    `${sentence(why)} ${statusNarrative(status)}`,
-    sentence(result),
-  ].join(" ");
+  if (touched === 0) {
+    if (status === "CLEAN") {
+      return `${PLAIN_PREFIX}nothing needed fixing. This run checked the ${area} area and found it already correct, so the only file here is the log recording that the check happened.`;
+    }
+    return `${PLAIN_PREFIX}no change was made to the project. This run ended as ${status} and the only file here is the log recording that.`;
+  }
+
+  if (kinds.code.length === 0 && kinds.docs.length === 0 && kinds.deps.length === 0) {
+    return `${PLAIN_PREFIX}this adds ${countOf(kinds.test, "test file")} in the ${area} area. No product code changed, so the app behaves exactly as it did before.`;
+  }
+  if (kinds.code.length === 0 && kinds.test.length === 0 && kinds.deps.length === 0) {
+    return `${PLAIN_PREFIX}this is a documentation change to ${countOf(kinds.docs, "file")} in the ${area} area. Nothing about how the app runs is affected.`;
+  }
+  if (kinds.code.length === 0 && kinds.test.length === 0 && kinds.docs.length === 0) {
+    return `${PLAIN_PREFIX}this updates dependencies only. No project code was written or changed, though the app should be re-tested before release.`;
+  }
+
+  const parts = [
+    kinds.code.length ? countOf(kinds.code, "code file") : null,
+    kinds.docs.length ? countOf(kinds.docs, "documentation file") : null,
+    kinds.deps.length ? countOf(kinds.deps, "dependency file") : null,
+  ].filter(Boolean);
+  const tests = kinds.test.length
+    ? ` It also updates ${countOf(kinds.test, "test file")}.`
+    : " No tests were added or changed alongside it.";
+  // Deliberately no area clause here. Stage 6 is the TSDoc stage, so its diff is
+  // a .ts file whose change is comments; "1 code file in the documentation area"
+  // read as a contradiction. The hedge stays as "may be affected" rather than
+  // being softened by the stage's mandate: the classifier can see that a source
+  // file changed, it cannot see that the change was only comments, and trusting
+  // the mandate over the diff is how a stage gets to assert its own safety.
+  return `${PLAIN_PREFIX}this changes ${parts.join(" and ")}, so the app's behaviour may be affected.${tests}`;
 }
 
 export function renderPrBody(stage, status, summary, changedPaths, details = {}) {
@@ -293,15 +354,18 @@ export function renderPrBody(stage, status, summary, changedPaths, details = {})
   const files = changedPaths.join(", ") || stage.coverageLog;
   const why = cleanPrDetail(details.why, defaultWhy(stage), "--why");
   const result = cleanPrDetail(details.result, defaultResult(status), "--result");
-  const overview = renderPrOverview(stage, status, normalizedSummary, why, result);
+  const plain = renderPlainSummary(stage, status, changedPaths);
+  // A CLEAN run changed nothing by definition, so labelling its summary "What
+  // changed" contradicted the field's own contents on every clean night.
+  const changeLabel = status === "CHANGED" ? "What changed" : "What was checked";
 
   return `### Nightly Stage ${stage.number}: ${stage.name}
 
 **Status:** ${status}
 
-${overview}
+${plain}
 
-**What changed:** ${normalizedSummary}
+**${changeLabel}:** ${normalizedSummary}
 
 **Why:** ${why}
 

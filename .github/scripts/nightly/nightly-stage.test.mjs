@@ -15,6 +15,7 @@ import {
   getStage,
   needsDependencyRefresh,
   renderHandoff,
+  renderPlainSummary,
   renderPrBody,
   replaceSentinel,
   sentinelLine,
@@ -173,14 +174,16 @@ test("metadata and native handoff are complete without pending placeholders", ()
     result: "The focused spec passed and guards the failure boundary.",
   });
   assert.match(body, /NIGHTLY_PR_METADATA:/);
-  assert.match(
-    body,
-    /This Stage 2 Verification - Logic Integrity Auditor run focused on Added loader boundary coverage\./,
-  );
-  assert.match(
-    body,
-    /It made a small, targeted update and left the branch with verified nightly maintenance\./,
-  );
+  // The plain-language line is derived from the diff shape, never from the
+  // free-text summary, so it stays grammatical whatever the summary looks like
+  // and adds the one fact the fields below do not carry: that this diff is
+  // tests only and therefore cannot alter behaviour.
+  assert.match(body, /In plain terms: this adds 1 test file in the verification area\./);
+  assert.match(body, /No product code changed, so the app behaves exactly as it did before\./);
+  // The replaced paragraph restated the fields printed directly beneath it and
+  // broke grammatically whenever the summary was not a noun phrase.
+  assert.doesNotMatch(body, /run focused on/);
+  assert.doesNotMatch(body, /small, targeted update/);
   assert.match(body, /\*\*What changed:\*\* Added loader boundary coverage/);
   assert.match(body, /\*\*Why:\*\* The loader path lacked regression coverage\./);
   assert.match(body, /\*\*Result:\*\* The focused spec passed and guards the failure boundary\./);
@@ -407,4 +410,66 @@ test("the run window is rendered from the stage's own clock, and degrades safely
   assert.equal(formatRunWindow(undefined, start), null);
   assert.equal(formatRunWindow(start, undefined), null);
   assert.equal(formatRunWindow(start, start - 60), null, "a clock that ran backwards yields no window");
+});
+
+test("the plain-language line reports what a reader can actually notice", () => {
+  const stage = registry.stages.find(s => s.number === 6);
+  const log = stage.coverageLog;
+
+  // Tests only: the one fact a reader most wants and the fields never carry.
+  assert.match(
+    renderPlainSummary(stage, "CHANGED", [log, "Frontend-PWA/src/core/services/services-tests/x.spec.ts"]),
+    /adds 1 test file .*No product code changed/,
+  );
+  // Docs only.
+  assert.match(
+    renderPlainSummary(stage, "CHANGED", [log, "Backend/README.md"]),
+    /documentation change to 1 file .*Nothing about how the app runs is affected/,
+  );
+  // Dependencies only.
+  assert.match(
+    renderPlainSummary(stage, "CHANGED", [log, "pnpm-lock.yaml", "pnpm-workspace.yaml"]),
+    /updates dependencies only\. No project code was written or changed/,
+  );
+  // A source file: hedged, never cleared. Stage 6 only edits comments in .ts
+  // files, but the classifier can see a source file changed and cannot see that
+  // the change was comments. Trusting the stage's mandate over its diff is how
+  // a stage gets to certify its own safety.
+  const code = renderPlainSummary(stage, "CHANGED", [log, "Frontend-PWA/src/core/services/useConnectionStatus.ts"]);
+  assert.match(code, /changes 1 code file, so the app's behaviour may be affected/);
+  assert.match(code, /No tests were added or changed alongside it/);
+  assert.doesNotMatch(code, /behaves exactly as it did before|Nothing about how the app runs/);
+});
+
+test("a log-only run says nothing changed, and says it without jargon", () => {
+  const stage = registry.stages.find(s => s.number === 10);
+  const clean = renderPlainSummary(stage, "CLEAN", [stage.coverageLog]);
+  assert.match(clean, /In plain terms: nothing needed fixing\./);
+  assert.match(clean, /checked the APK integrity area and found it already correct/);
+
+  // Stages 10 and 11 share the domain "apk". Using the domain made their
+  // summaries byte-identical; the slug keeps them distinguishable, and the
+  // shared displayArea capitalises the acronym the same way the recap does.
+  const sibling = registry.stages.find(s => s.number === 11);
+  assert.notEqual(clean, renderPlainSummary(sibling, "CLEAN", [sibling.coverageLog]));
+  assert.match(renderPlainSummary(sibling, "CLEAN", [sibling.coverageLog]), /APK optimization area/);
+
+  // A non-CLEAN log-only run must not be described as an all-clear.
+  const partial = renderPlainSummary(stage, "PARTIAL-RUN", [stage.coverageLog]);
+  assert.match(partial, /no change was made to the project.*ended as PARTIAL-RUN/);
+  assert.doesNotMatch(partial, /found it already correct|nothing needed fixing/);
+});
+
+test("the CLEAN label does not claim something changed", () => {
+  const stage = registry.stages.find(s => s.number === 4);
+  const clean = renderPrBody(stage, "CLEAN", "audited 12 views, 0 unreferenced", [stage.coverageLog], {
+    why: "scheduled hygiene audit", result: "1797 tests passed",
+  });
+  assert.match(clean, /\*\*What was checked:\*\* audited 12 views/);
+  assert.doesNotMatch(clean, /\*\*What changed:\*\*/);
+
+  const changed = renderPrBody(stage, "CHANGED", "dropped an unreferenced view", [stage.coverageLog, "Backend/x.sql"], {
+    why: "it was dead", result: "1797 tests passed",
+  });
+  assert.match(changed, /\*\*What changed:\*\* dropped an unreferenced view/);
 });

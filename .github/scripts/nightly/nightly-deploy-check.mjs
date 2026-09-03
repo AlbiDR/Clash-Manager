@@ -26,6 +26,10 @@ export const CONTROL_PLANE_FILES = [
   ".github/scripts/nightly/nightly-publish-fallback.mjs",
   ".github/scripts/nightly/nightly-health.mjs",
   ".github/scripts/nightly/nightly-recap.mjs",
+  // Owns the wording both human-facing surfaces use. Drift here desynchronises
+  // the PR body from the recap, which is exactly the inconsistency it exists to
+  // prevent, so it is watched like any other control-plane file.
+  ".github/scripts/nightly/nightly-prose.mjs",
   ".github/nightly-config/stages.json",
   // The guard and the checker it runs are themselves control-plane files. A
   // drift detector that does not watch its own deployment can be silently

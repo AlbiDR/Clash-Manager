@@ -33,6 +33,7 @@
 import { spawnSync } from "node:child_process";
 
 import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
+import { PLAIN_PREFIX, displayArea, joinList, stageTag } from "./nightly-prose.mjs";
 
 export const SOURCE_REF = "origin/Nightly";
 const LEDGER = ".github/nightly-logs/nightly-run-ledger.json";
@@ -260,20 +261,6 @@ function displayStatus(outcome) {
   return `${String(outcome || "").slice(0, 1)}${String(outcome || "").slice(1).toLowerCase()}`;
 }
 
-function displayArea(slug) {
-  const acronyms = new Map([
-    ["apk", "APK"],
-    ["pwa", "PWA"],
-    ["readme", "README"],
-    ["tsdoc", "TSDoc"],
-    ["ux", "UX"],
-  ]);
-  return escapeMarkdownCell(slug)
-    .split("-")
-    .map(part => acronyms.get(part.toLowerCase()) || part)
-    .join(" ");
-}
-
 function sentencePart(value) {
   const text = escapeMarkdownCell(value);
   return /[.!?]$/.test(text) ? text : `${text}.`;
@@ -418,16 +405,8 @@ function healthSection(health) {
   return lines;
 }
 
-/** "a", "a and b", "a, b and c". */
-function joinList(items) {
-  const list = items.filter(Boolean);
-  if (list.length === 0) return "";
-  if (list.length === 1) return list[0];
-  return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
-}
-
 function stageLabel(stage) {
-  return `S${String(stage.stage).padStart(2, "0")} ${displayArea(stage.slug)}`;
+  return `${stageTag(stage.stage)} ${displayArea(stage.slug)}`;
 }
 
 /**
@@ -461,7 +440,7 @@ function overviewSection(recap) {
 
   if (recap.unobserved === recap.total) {
     // Nothing was observed, so nothing may be claimed in either direction.
-    return ["In plain terms: nothing was recorded for this date, so there is no basis to say whether the pipeline ran well or badly.", ""];
+    return [`${PLAIN_PREFIX}nothing was recorded for this date, so there is no basis to say whether the pipeline ran well or badly.`, ""];
   }
 
   sentences.push(recap.merged === recap.total
@@ -502,7 +481,7 @@ function overviewSection(recap) {
     ? "Nothing in this run needs you to do anything."
     : `The part worth your attention is ${joinList(unique)}, detailed below.`);
 
-  return ["In plain terms: " + sentences.join(" "), ""];
+  return [PLAIN_PREFIX + sentences.join(" "), ""];
 }
 
 export function renderRecap(recap) {
