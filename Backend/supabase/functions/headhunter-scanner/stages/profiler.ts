@@ -450,7 +450,10 @@ export async function runProfiler(
             stats.lowest_rpos = minRpos === Infinity ? 0 : Math.round(minRpos);
             stats.ingested_by_source = sourceCounts;
         }
-        stats.profiles_scanned = tagsToFetch.length;
+        // Accumulate, never assign: ghost-purge (S0) runs before this and rescan
+        // (S4) after, and both increment the same shared counter. Assigning here
+        // erased every profile the ghost purge had already fetched.
+        stats.profiles_scanned += tagsToFetch.length;
         logAudit('PROFILING', 'terminated', { scanned: tagsToFetch.length, ingested: validRecruits.length });
         console.log(`[PROFILING] Terminated smoothly.`);
     } catch (profilerExecutionError: unknown) {

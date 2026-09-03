@@ -708,6 +708,38 @@ describe("clinicalServe", () => {
       ]);
     });
 
+    it("rejects undeclared fields named after Object.prototype members", async () => {
+      // The guard filtered with `!(key in declaredKeys)`, and `in` walks the
+      // prototype chain, so a field called constructor, toString, valueOf or
+      // hasOwnProperty resolved on Object.prototype and read as DECLARED. The
+      // closed-payload contract was open to exactly the names an attacker would
+      // reach for first. Object.hasOwn consults only the schema's own entries.
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-proto-1" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const SCHEMA_WITH_KEYS = v.object({
+        known_field: v.string(),
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({ known_field: "valid", constructor: "hostile", toString: "hostile" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "closed-payload-prototype-spec",
+        schema: SCHEMA_WITH_KEYS,
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.code).toBe("MALFORMED_PAYLOAD");
+      const paths = body.details.map((d: { path: string[] }) => d.path[0]).sort();
+      expect(paths).toEqual(["constructor", "toString"]);
+    });
+
     it("parses empty or whitespace-only bodies as {} and validates them against schema", async () => {
       const { supabase } = makeSupabaseMock(async (fn) => {
         if (fn === "report_telemetry") return { data: { id: "tid-empty-body" }, error: null };

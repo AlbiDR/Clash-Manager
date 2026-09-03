@@ -575,7 +575,11 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         const schemaShape = v.safeParse(ObjectSchemaShapeSchema, schema);
         if (schemaShape.success && typeof rawBody === 'object' && rawBody !== null && !Array.isArray(rawBody)) {
             const declaredKeys = schemaShape.output.entries;
-            const undeclaredKeys = Object.keys(rawBody).filter((key) => !(key in declaredKeys));
+            // Object.hasOwn, not `in`: `in` walks the prototype chain, so an
+            // undeclared field named after an Object.prototype member
+            // (constructor, toString, valueOf, hasOwnProperty) read as declared
+            // and passed the closed-payload guard untouched.
+            const undeclaredKeys = Object.keys(rawBody).filter((key) => !Object.hasOwn(declaredKeys, key));
             if (undeclaredKeys.length > 0) {
                 console.warn(`[Protocol] Validation rejected for ${componentId}: ${undeclaredKeys.length} undeclared field(s).`);
                 return protocolErrorResponse(req, 'MALFORMED_PAYLOAD', {
