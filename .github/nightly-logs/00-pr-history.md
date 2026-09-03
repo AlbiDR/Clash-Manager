@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1674 [Stage 8]: chore(deps): Bumped @supabase/supabase-js to ^2.114.0 in monorepo catalog and refreshed lockfile
+**Domain:** pipeline | **Commit:** f898daed | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1674)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped @supabase/supabase-js to ^2.114.0 in monorepo catalog and refreshed lockfile
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-03] PR #1673 [Stage 7]: Catalog and package version scans (root, Frontend-PWA, Backend) confirmed ground truth version 14.46.26 and catalog protocol adherence. pnpm audit:version passed.
 **Domain:** versioning | **Commit:** 36b68578 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1673)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
