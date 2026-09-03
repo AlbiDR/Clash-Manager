@@ -38,7 +38,8 @@
     "Backend/supabase/migrations/20260817000000_expose_pwa_client_surfaces.sql": "4b629378d785efc7c597b84a756befa181ca456c50cf63a69d0f73c3547c0fce",
     "Backend/supabase/migrations/20260817010000_fix_heartbeat_success_timestamps.sql": "ad7170610b988f28d847654cc20b5fb07dce4014d9e099564cdace14e360a6c5",
     "Backend/supabase/migrations/20260819000000_fix_profiler_drivers_schema_access.sql": "87f308e4112d99cf84f48953c2f874d5c9ca382c95fffbb3c7a55d85ac815119",
-    "Backend/supabase/migrations/20260903020000_stop_voyage_crown_truncation.sql": "97ae47790cf1b5e56366c12fb6227781ba605034ca9b81b4a069c71072b2eb60"
+    "Backend/supabase/migrations/20260903020000_stop_voyage_crown_truncation.sql": "97ae47790cf1b5e56366c12fb6227781ba605034ca9b81b4a069c71072b2eb60",
+    "Backend/supabase/migrations/20260903030000_align_battle_trigger_crown_allowlist.sql": "da00fca30390d9288c2844a95f0e889f32843acff1a28bb3b3f02ed00e18cba2"
   },
   "exemptions": []
 }
