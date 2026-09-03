@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+/**
+ * @vitest-environment node
+ *
+ * No DOM in this file, so it skips jsdom entirely. Building a jsdom Window
+ * costs ~410ms per test file and dominated the suite (80.6s of ~120s CPU,
+ * against 8.1s of actual test execution). Adding anything here that touches
+ * `document`, `window`, `localStorage` or mounts a component will fail loudly
+ * and immediately - remove this docblock if that is intentional.
+ */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { generateMockData, DEFAULT_MOCK_MEMBER_COUNT, DEFAULT_MOCK_RECRUIT_COUNT } from "../mockData";
 import { WebAppDataSchema } from "../../api/AppSchemas";

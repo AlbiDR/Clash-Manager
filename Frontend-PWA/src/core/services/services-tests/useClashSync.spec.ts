@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+/**
+ * @vitest-environment node
+ *
+ * No DOM in this file, so it skips jsdom entirely. Building a jsdom Window
+ * costs ~410ms per test file and dominated the suite (80.6s of ~120s CPU,
+ * against 8.1s of actual test execution). Adding anything here that touches
+ * `document`, `window`, `localStorage` or mounts a component will fail loudly
+ * and immediately - remove this docblock if that is intentional.
+ */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
@@ -376,6 +385,48 @@ describe("useClashSync", () => {
 
       expect(data.value.lb[0].t).toBe(0);
       expect(consoleSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("remote failure state is only cleared by remote evidence", () => {
+    it("does not let a purely local edit erase proof that the backend is failing", async () => {
+      // [THREAT:] commitSyncResult is the shared commit path for remote syncs
+      // AND for local mutations. It cleared consecutiveSyncFailures and
+      // syncError unconditionally, so a local edit forged proof of backend
+      // health.
+      //
+      // The worst case is a rollback: when a mutation fails because the backend
+      // is unreachable, useHeadhunter's handler restores the old data with
+      // updateLocalData(oldData). That very handler then wiped the failure it
+      // had just proven, restarting the SYNC_FAILURE_VISIBILITY_THRESHOLD
+      // suppression window from zero and hiding the next two failures too.
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
+      const sync = useClashSync(data);
+
+      // A manual refresh exposes the error immediately and sets the count to 1.
+      await sync.refreshFromSupabase();
+      expect(sync.syncError.value).toBe("Network Error");
+
+      // Now a local-only edit, exactly as a failed mutation's rollback does.
+      // The minimal shape WebAppDataSchema accepts. A payload with extra keys
+      // is REJECTED before commitSyncResult is reached, which made the first
+      // version of this test pass without exercising the defect at all.
+      await sync.updateLocalData({ lb: [], hh: [], timestamp: 2000, blacklist: [] });
+
+      // The backend has not become reachable, so the evidence must survive.
+      expect(sync.syncError.value).toBe("Network Error");
+    });
+
+    it("clears the failure state when a remote sync actually succeeds", async () => {
+      // The other half: gating the clear must not strand syncError forever.
+      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Network Error"));
+      const sync = useClashSync(data);
+      await sync.refreshFromSupabase();
+      expect(sync.syncError.value).toBe("Network Error");
+
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 3000, blacklist: [] });
+      await sync.refreshFromSupabase();
+      expect(sync.syncError.value).toBe(null);
     });
   });
 });
