@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1670 [Stage 4]: Substrate hygiene audit confirmed known unreferenced views; no source changes required
+**Domain:** optimization | **Commit:** f35a1237 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1670)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** 4 changed files inspected and substrate view references verified; zero code mutations required
+**Change:** Substrate hygiene audit confirmed known unreferenced views; no source changes required
+**Result:** All 1797 Vitest unit and integration tests passed cleanly
+
+
 ### [2026-09-03] PR #1668 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN calibration pass (widened candidate scan across Backend/supabase/functions/_shared/ and Frontend-PWA/src/core/services/)
 **Domain:** hardening | **Commit:** 85817112 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1668)
 **Files:** .github/nightly-logs/01-hardening-coverage.log
