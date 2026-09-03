@@ -233,10 +233,20 @@ jobs:
             fi
 
             git push origin HEAD:Beta || {
-              echo "Push failed. Checking if target commit is already on remote..."
+              echo "Push failed. Checking whether this version is already published..."
               git fetch origin Beta
-              git log origin/Beta -1 --oneline | grep -q "update signed release APK to v${VERSION}+${BUILD_NUMBER}" \
-                && echo "Target binary update already pushed by another process." \
+              # Match on VERSION alone, never VERSION+BUILD_NUMBER. BUILD_NUMBER
+              # is github.run_number, so it is unique to THIS run: grepping for
+              # it can only ever match a commit this same run pushed, which is
+              # not the case this fallback exists for. A concurrent run always
+              # carries a different build number, so the old check failed 100%
+              # of the races it was written to absorb (v14.46.25: run +270 was
+              # rejected while +269 held the identical signed artifact).
+              # The artifact identity is the version; the build number is only
+              # provenance.
+              git ls-tree --name-only origin/Beta APK/release/ \
+                | grep -q "clashmanager-v${VERSION}+.*\.apk" \
+                && echo "A signed APK for v${VERSION} is already on Beta; nothing left to publish." \
                 || exit 1
             }
           fi
