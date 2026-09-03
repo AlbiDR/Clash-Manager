@@ -271,19 +271,27 @@ export async function ensureBonesFresh(): Promise<void> {
       // fallback, on a clean checkout with nothing captured yet) until the
       // browser is installed. The cache is deliberately left untouched so the
       // next successful run still treats these groups as stale and retries.
-      // Graceful degradation is correct for a developer's machine, where a
-      // missing browser should never block `pnpm dev`. It is NOT correct in
-      // CI: the artifact built there is the one users receive, and silently
-      // shipping fallback geometry defeats the entire point of measuring the
-      // real components. Root cause this guards (2026-09-03 CI audit): once
-      // the capture artifacts are cached, a run whose capture failed can
-      // publish its stale bones under a key that later runs treat as a hit,
-      // and because a hit skips the Chromium install those runs cannot
-      // re-measure either - the staleness would become self-sustaining and
-      // completely silent.
-      if (process.env.CI) {
+      // Graceful degradation is correct almost everywhere: a missing browser
+      // should never block `pnpm dev`, and it should not block a build whose
+      // output is thrown away. Auto Tag builds Frontend-PWA purely as a gate
+      // before tagging and never installs Chromium or publishes the result -
+      // stale bones there reach nobody.
+      //
+      // It is NOT correct for a build that ships. Root cause this guards
+      // (2026-09-03 CI audit): once the capture artifacts are cached, a run
+      // whose capture failed can publish stale bones under a key later runs
+      // treat as a hit, and because a hit skips the Chromium install those
+      // runs cannot re-measure either - the staleness would become
+      // self-sustaining and completely silent.
+      //
+      // Keyed on an explicit opt-in rather than inferred from CI. The first
+      // version of this guard tested `process.env.CI` and immediately broke
+      // Auto Tag, because "runs in CI" and "produces the artifact users
+      // receive" are not the same property. Only the workflow that uploads
+      // the build sets this.
+      if (process.env.BONES_REQUIRE_CAPTURE === "true") {
         console.error(
-          "[bones] Capture failed in CI - refusing to build with stale or fallback skeleton geometry.",
+          "[bones] Capture failed while BONES_REQUIRE_CAPTURE=true - refusing to publish stale or fallback skeleton geometry.",
         );
         throw error;
       }

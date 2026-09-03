@@ -135,6 +135,12 @@ jobs:
 
       - name: Build Project
         env:
+          # This is the build that gets uploaded to Pages, so its skeleton
+          # geometry is the geometry users receive. Refuse to publish stale or
+          # fallback bones rather than degrade silently. Auto Tag deliberately
+          # does NOT set this: it builds only as a pre-tag gate, installs no
+          # Chromium, and discards the output.
+          BONES_REQUIRE_CAPTURE: "true"
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
