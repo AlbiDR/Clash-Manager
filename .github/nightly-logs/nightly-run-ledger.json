@@ -5774,10 +5774,11 @@
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1668",
           "headRef": "nightly/stage-1-hardening-72b160e1-17938982469021271793",
           "tag": null,
-          "run": null
+          "run": null,
+          "body": null
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-03T16:47:50.549Z",
+        "lastObservedAt": "2026-09-03T23:10:32.497Z",
         "failureClass": null
       },
       "2": {
@@ -5802,10 +5803,15 @@
             "currentStreak": 0,
             "reason": "no adverse trend"
           },
-          "run": null
+          "run": null,
+          "body": {
+            "pr": 1667,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.549Z",
+        "lastObservedAt": "2026-09-03T23:10:32.498Z",
         "failureClass": null
       },
       "3": {
@@ -5831,10 +5837,15 @@
             "updateTime": "2026-09-03T02:04:45.934375Z",
             "lifetimeMinutes": 47.9
           },
-          "run": null
+          "run": null,
+          "body": {
+            "pr": 1669,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.549Z",
+        "lastObservedAt": "2026-09-03T23:10:32.498Z",
         "failureClass": null
       },
       "4": {
@@ -5864,10 +5875,15 @@
             "started": "2026-09-03T02:07:00Z",
             "terminated": "2026-09-03T02:13:00Z",
             "durationMinutes": 6
+          },
+          "body": {
+            "pr": 1670,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.550Z",
+        "lastObservedAt": "2026-09-03T23:10:32.498Z",
         "failureClass": null
       },
       "5": {
@@ -5890,17 +5906,22 @@
             "name": "sessions/2518724438513208121",
             "state": "COMPLETED",
             "createTime": "2026-09-03T03:06:06.439341967Z",
-            "updateTime": "2026-09-03T03:16:12.512812Z",
-            "lifetimeMinutes": 10.1
+            "updateTime": "2026-09-03T18:59:05.686197Z",
+            "lifetimeMinutes": 953
           },
           "run": {
             "started": "2026-09-03T03:07:00Z",
             "terminated": "2026-09-03T03:14:00Z",
             "durationMinutes": 7
+          },
+          "body": {
+            "pr": 1671,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.550Z",
+        "lastObservedAt": "2026-09-03T23:10:32.498Z",
         "failureClass": null
       },
       "6": {
@@ -5927,8 +5948,8 @@
             "name": "sessions/7991934859990832494",
             "state": "COMPLETED",
             "createTime": "2026-09-03T04:16:15.412642084Z",
-            "updateTime": "2026-09-03T05:01:43.409751Z",
-            "lifetimeMinutes": 45.5
+            "updateTime": "2026-09-03T18:59:11.768011Z",
+            "lifetimeMinutes": 882.9
           },
           "recovery": {
             "nudgedAt": "2026-09-03T04:59:40.507Z",
@@ -5943,10 +5964,15 @@
             "started": "2026-09-03T04:18:00Z",
             "terminated": "2026-09-03T04:26:00Z",
             "durationMinutes": 8
+          },
+          "body": {
+            "pr": 1672,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-03T16:47:50.550Z",
+        "lastObservedAt": "2026-09-03T23:10:32.499Z",
         "failureClass": null
       },
       "7": {
@@ -5972,17 +5998,22 @@
             "name": "sessions/8184920463424217081",
             "state": "COMPLETED",
             "createTime": "2026-09-03T05:15:05.421824448Z",
-            "updateTime": "2026-09-03T05:21:09.147036Z",
-            "lifetimeMinutes": 6.1
+            "updateTime": "2026-09-03T18:59:40.876699Z",
+            "lifetimeMinutes": 824.6
           },
           "run": {
             "started": "2026-09-03T05:16:00Z",
             "terminated": "2026-09-03T05:19:00Z",
             "durationMinutes": 3
+          },
+          "body": {
+            "pr": 1673,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.550Z",
+        "lastObservedAt": "2026-09-03T23:10:32.499Z",
         "failureClass": null
       },
       "8": {
@@ -6005,17 +6036,22 @@
             "name": "sessions/5496350797884851294",
             "state": "COMPLETED",
             "createTime": "2026-09-03T06:09:22.467781825Z",
-            "updateTime": "2026-09-03T06:18:28.076061Z",
-            "lifetimeMinutes": 9.1
+            "updateTime": "2026-09-03T19:00:06.797547Z",
+            "lifetimeMinutes": 770.7
           },
           "run": {
             "started": "2026-09-03T06:11:00Z",
             "terminated": "2026-09-03T06:16:00Z",
             "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1674,
+            "verdict": "HANDOFF_LEAK",
+            "ok": false
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.551Z",
+        "lastObservedAt": "2026-09-03T23:10:32.499Z",
         "failureClass": null
       },
       "9": {
@@ -6038,17 +6074,22 @@
             "name": "sessions/11352976574150179453",
             "state": "COMPLETED",
             "createTime": "2026-09-03T07:23:36.089656988Z",
-            "updateTime": "2026-09-03T07:35:49.308748Z",
-            "lifetimeMinutes": 12.2
+            "updateTime": "2026-09-03T19:00:28.429486Z",
+            "lifetimeMinutes": 696.9
           },
           "run": {
             "started": "2026-09-03T07:25:00Z",
             "terminated": "2026-09-03T07:33:00Z",
             "durationMinutes": 8
+          },
+          "body": {
+            "pr": 1675,
+            "verdict": "MARKER_LEAK",
+            "ok": false
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.551Z",
+        "lastObservedAt": "2026-09-03T23:10:32.499Z",
         "failureClass": null
       },
       "10": {
@@ -6074,17 +6115,22 @@
             "name": "sessions/9450810011396696691",
             "state": "COMPLETED",
             "createTime": "2026-09-03T08:24:54.786116604Z",
-            "updateTime": "2026-09-03T08:30:04.971423Z",
-            "lifetimeMinutes": 5.2
+            "updateTime": "2026-09-03T19:07:05.373107Z",
+            "lifetimeMinutes": 642.2
           },
           "run": {
             "started": "2026-09-03T08:26:00Z",
             "terminated": "2026-09-03T08:29:00Z",
             "durationMinutes": 2
+          },
+          "body": {
+            "pr": 1676,
+            "verdict": "AD_LIBBED",
+            "ok": false
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.551Z",
+        "lastObservedAt": "2026-09-03T23:10:32.500Z",
         "failureClass": null
       },
       "11": {
@@ -6110,17 +6156,22 @@
             "name": "sessions/8320338308127941983",
             "state": "COMPLETED",
             "createTime": "2026-09-03T09:22:57.034460706Z",
-            "updateTime": "2026-09-03T09:28:01.970491Z",
-            "lifetimeMinutes": 5.1
+            "updateTime": "2026-09-03T19:07:14.808194Z",
+            "lifetimeMinutes": 584.3
           },
           "run": {
             "started": "2026-09-03T09:24:00Z",
             "terminated": "2026-09-03T09:26:00Z",
             "durationMinutes": 2
+          },
+          "body": {
+            "pr": 1677,
+            "verdict": "AD_LIBBED",
+            "ok": false
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.551Z",
+        "lastObservedAt": "2026-09-03T23:10:32.500Z",
         "failureClass": null
       },
       "12": {
@@ -6146,17 +6197,22 @@
             "name": "sessions/12878837714646839327",
             "state": "COMPLETED",
             "createTime": "2026-09-03T10:06:06.007670666Z",
-            "updateTime": "2026-09-03T10:15:11.864699Z",
-            "lifetimeMinutes": 9.1
+            "updateTime": "2026-09-03T19:09:39.736214Z",
+            "lifetimeMinutes": 543.6
           },
           "run": {
             "started": "2026-09-03T10:07:00Z",
             "terminated": "2026-09-03T10:13:00Z",
             "durationMinutes": 6
+          },
+          "body": {
+            "pr": 1678,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.552Z",
+        "lastObservedAt": "2026-09-03T23:10:32.500Z",
         "failureClass": null
       },
       "13": {
@@ -6179,17 +6235,22 @@
             "name": "sessions/4017869591266835821",
             "state": "COMPLETED",
             "createTime": "2026-09-03T11:02:48.700215569Z",
-            "updateTime": "2026-09-03T11:10:59.691864Z",
-            "lifetimeMinutes": 8.2
+            "updateTime": "2026-09-03T19:11:54.715286Z",
+            "lifetimeMinutes": 489.1
           },
           "run": {
             "started": "2026-09-03T11:04:00Z",
             "terminated": "2026-09-03T11:08:00Z",
             "durationMinutes": 3
+          },
+          "body": {
+            "pr": 1679,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-03T16:47:50.552Z",
+        "lastObservedAt": "2026-09-03T23:10:32.500Z",
         "failureClass": null
       }
     }
