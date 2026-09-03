@@ -101,3 +101,4 @@
 * [2026-08-31] [Stage 9] CHANGED: Frontend-PWA/src/core/services/apkManagerUtils.ts -- Decomposed useApkManager into pure helpers module apkManagerUtils to reduce module length below 400 LOC threshold
 * [2026-09-01] [Stage 9] CLEAN: Codebase -- Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
 * [2026-09-02] [Stage 9] CLEAN: Codebase -- Audit completed: no structural debt found in bounded candidate set
+* [2026-09-03] [Stage 9] [07:25Z-07:33Z 8m] CLEAN: Codebase -- 43 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, profiler.ts, harvester.ts, useConnectionStatus, useConnectivityManager, useProgressiveList. Candidate protocol.ts high risk; hunt useProgressiveList clean.

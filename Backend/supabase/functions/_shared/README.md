@@ -34,8 +34,11 @@ Since public client-facing functions accept the public anon key (the PWA has no 
 To satisfy the Error Propagation and Readability Contracts (ADR Section IV), errors are never thrown as raw strings. The `errors.ts` module defines a closed union of stable `ProtocolErrorCode` types (`UNAUTHORIZED`, `METHOD_NOT_ALLOWED`, `MALFORMED_BODY`, `MALFORMED_PAYLOAD`, `RATE_LIMITED`, `TELEMETRY_UNAVAILABLE`, `INTERNAL_ERROR`), mapping each to its canonical HTTP status and a strict, client-safe message.
 Any uncaught error or unclassified exception caught at the control surface is automatically processed by `classifyThrown()` and degraded to `INTERNAL_ERROR`. This completely eliminates the threat of information disclosure (such as database schemas, table topologies, or API key pool configurations) to external callers.
 
-### 4. Opt-In Restricted CORS
-To protect player and clan data exposure from malicious third-party web pages, functions queryable from browser JS use opt-in restricted CORS. Verified origin domains are matched dynamically against the configured allow-list and reflected back (avoiding the wildcard `*`), coupled with `Vary: Origin` headers for cache safety. Internal service-to-service cron triggers fallback to default CORS headers.
+### 4. Opt-In Restricted CORS & Preflight Headers
+To protect player and clan data exposure from malicious third-party web pages, functions queryable from browser JS use opt-in restricted CORS. Verified origin domains are matched dynamically against the configured allow-list and reflected back (avoiding the wildcard `*`), coupled with `Vary: Origin` headers for cache safety. Internal service-to-service cron triggers fallback to default CORS headers. OPTIONS preflight requests explicitly allow `authorization`, `content-type`, `apikey`, `x-client-info`, `cache-control`, and `pragma` headers to ensure compatibility with client wrappers.
+
+### 5. Closed Payload Contract Guard
+To enforce strict schema boundaries at the L5 control surface (ADR Section III), `protocol.ts` evaluates inbound JSON object payloads against schema entries reflected via `ObjectSchemaShapeSchema`. Top-level undeclared fields are immediately rejected before business logic invocation with a `MALFORMED_PAYLOAD` protocol error response containing `{ kind: 'undeclared_field', path: [fieldName] }` details.
 
 ## Contents
 
