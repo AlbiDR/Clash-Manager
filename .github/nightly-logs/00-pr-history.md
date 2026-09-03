@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1667 [Stage 2]: Expanded protocol.spec.ts unit test coverage for CORS preflight, method guards, IP extraction, and closed payload contracts
+**Domain:** verification | **Commit:** c49b4145 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1667)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts
+**Why:** Close logic integrity coverage gap in L1 Core protocol handler for OPTIONS preflight, method restrictions, caller IP extraction, undeclared payload fields, and telemetry heartbeat updates
+**Change:** Expanded protocol.spec.ts unit test coverage for CORS preflight, method guards, IP extraction, and closed payload contracts
+**Result:** Vitest unit tests executed and passed cleanly (28 tests passed in protocol.spec.ts)
+
+
 ### [2026-09-02] PR #1666 [Stage 13]: chore(pipeline): Completed 2026-09-02 pipeline self-healing protocol audit pass
 **Domain:** pipeline | **Commit:** 8bd06d12 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1666)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
