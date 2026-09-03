@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1671 [Stage 5]: Reconciled restricted CORS preflight headers and closed payload contract guard in shared backend README
+**Domain:** documentation | **Commit:** 09bdd569 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1671)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/_shared/README.md
+**Why:** Documented protocol.ts CORS preflight allowed headers and closed payload contract validation guard
+**Change:** Reconciled restricted CORS preflight headers and closed payload contract guard in shared backend README
+**Result:** Verified git diff hygiene with git diff --check and full monorepo test suite (pnpm test) with 1797 passing tests
+
+
 ### [2026-09-03] PR #1670 [Stage 4]: Substrate hygiene audit confirmed known unreferenced views; no source changes required
 **Domain:** optimization | **Commit:** f35a1237 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1670)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
