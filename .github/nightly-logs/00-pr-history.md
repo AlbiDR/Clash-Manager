@@ -16,6 +16,27 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1668 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN calibration pass (widened candidate scan across Backend/supabase/functions/_shared/ and Frontend-PWA/src/core/services/)
+**Domain:** hardening | **Commit:** 85817112 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1668)
+**Files:** .github/nightly-logs/01-hardening-coverage.log
+**Why:** 0 security vulnerabilities, data integrity risks, or cross-layer boundary violations found across candidate surfaces; satisfy CLEAN calibration gate requirement
+**Change:** Stage 1 Runtime Integrity Auditor - CLEAN calibration pass (widened candidate scan across Backend/supabase/functions/_shared/ and Frontend-PWA/src/core/services/)
+**Result:** All 1796 Vitest unit and integration tests passed cleanly with 0 regressions
+
+### [2026-09-03] PR #1669 [Stage 3]: 0 pending migrations (clean-since-calibration: 1); read-only RLS, search_path, and formatting audit completed with zero source changes required
+**Domain:** database | **Commit:** 9ea5f76a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1669)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Why:** Master migration baseline is current with all 25 replayed incremental migrations fully folded
+**Change:** 0 pending migrations (clean-since-calibration: 1); read-only RLS, search_path, and formatting audit completed with zero source changes required
+**Result:** pending-migrations: 0, migration-quality: PASS, fold-state: CLEAN, database-verification: DB-UNAVAILABLE, RLS/search_path/formatting audit: CLEAN
+
+
+## [2026-09-03] MERGE FAILED: PR #1668: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN calibration pass
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR #1668 head changed from c3b748a079429ef26787847a3c7b2c1c88075212 to 9a22418e5c0b0d7dd0004437ebd240d5051aeaaf; refusing stale merge.`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/1668)
+
 ### [2026-09-03] PR #1667 [Stage 2]: Expanded protocol.spec.ts unit test coverage for CORS preflight, method guards, IP extraction, and closed payload contracts
 **Domain:** verification | **Commit:** c49b4145 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1667)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts

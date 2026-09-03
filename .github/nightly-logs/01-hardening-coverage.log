@@ -183,3 +183,4 @@
 * [2026-08-30] [Stage 1] CLEAN: .github/nightly-logs/00-pr-history.md -- chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
 * [2026-08-31] [Stage 1] CLEAN: .github/nightly-logs/00-pr-history.md -- Stage 1 Runtime Integrity Auditor - CLEAN
 * [2026-09-01] [Stage 1] CLEAN: .github/nightly-logs/00-pr-history.md -- Stage 1 Runtime Integrity Auditor - CLEAN
+* [2026-09-02] [Stage 1] CLEAN: .github/nightly-logs/00-pr-history.md -- Stage 1 Runtime Integrity Auditor - CLEAN calibration pass (widened candidate scan across Backend/supabase/functions/_shared/ and Frontend-PWA/src/core/services/)
