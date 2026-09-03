@@ -5743,7 +5743,7 @@
         "stage": 1,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "BLOCKED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
           "julesSession": {
@@ -5769,11 +5769,15 @@
             "verdict": "DEGRADING",
             "currentStreak": 1,
             "reason": "intervention rate rose from 9% to 30%"
-          }
+          },
+          "prNumber": 1668,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1668",
+          "headRef": "nightly/stage-1-hardening-72b160e1-17938982469021271793",
+          "reason": "PR #1668 head changed from c3b748a079429ef26787847a3c7b2c1c88075212 to 9a22418e5c0b0d7dd0004437ebd240d5051aeaaf; refusing stale merge."
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-03T00:43:25.458Z",
-        "failureClass": "JULES_SESSION_STUCK"
+        "lastObservedAt": "2026-09-03T01:24:26.786Z",
+        "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
         "date": "2026-09-03",
