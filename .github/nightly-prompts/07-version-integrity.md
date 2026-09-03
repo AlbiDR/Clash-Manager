@@ -46,12 +46,20 @@ The project utilizes PNPM's `catalog:` protocol to ensure monorepo-wide consiste
 - **Catalog Adherence:** Read `Frontend-PWA/package.json` and `Backend/package.json`. If any shared dependency is declared with a discrete version string (e.g., `^3.4.0`) instead of `"catalog:"`, update it to use `"catalog:"`.
 - **Catalog Alignment:** Ensure that any new dependencies added to the catalog in `pnpm-workspace.yaml` are consistently referenced across the monorepo.
 
-### B. Target B: Monorepo Package Version Consistency
+### B. Target B: Monorepo Version Consistency
+
 The monorepo enforces a single version source of truth:
 - The `version` field in the root `package.json`.
 - The `version` field in `Frontend-PWA/package.json`.
 - The `version` field in `Backend/package.json`.
-Identify the highest declared version across these three `package.json` files. That value is the ground truth. Update all other `package.json` files to match it. Do not increment or change the ground truth value itself, only synchronize the lower declarations upward.
+
+Identify the highest declared version across these three `package.json` files. That value is the ground truth. Do not increment or change the ground truth value itself, only synchronize lower declarations upward.
+
+**The three `package.json` files are the SOURCE of the ground truth, not the extent of it.** The version is also declared in derived locations that are equally capable of drifting, and a run that reconciles only the manifests while a derived location disagrees has not eliminated drift, it has moved it somewhere less visible. Those locations currently include the three README version badges, the version comment in `Frontend-PWA/src/core/services/useProgressiveList.ts`, the version in `Backend/supabase/functions/_shared/protocol.ts`, `versionName` and `versionCode` in `APK/android/apktool.yml`, and the three version fields in `APK/reference/twa-manifest.json`.
+
+**Do not treat that sentence as the list.** The authoritative, enumerable list is the `FILES` map in `.github/scripts/project/validate-project.ts`, and `pnpm audit:version` checks every entry in it. Copying the list into this prompt is what allowed the two to diverge in the first place: on 2026-09-03 this stage's mandate named three locations while the checker enforced ten, so seven of them were verified by a tool this stage was never told to reconcile. Run the tool and reconcile what it reports.
+
+`versionCode` is the one exception, and it is deliberate: `assertVersionCodeNotRegressed` refuses to auto-fix a regressing Android `versionCode`, because silently rewriting one is how an installed app stops receiving updates with nothing logged anywhere. If it raises, do not work around it. Finalize `SKIPPED` with the conflict in the summary.
 
 ### C. Exclusions and Constraints
 - **No Semantic Versioning Decisions:** Do not decide whether changes warrant a patch, minor, or major bump. Never increment any version number beyond what is required for consistency reconciliation.
@@ -64,11 +72,12 @@ Identify the highest declared version across these three `package.json` files. T
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Version Consistency Scan
-Scan the codebase for one unambiguous version inconsistency using the following priority list. Read `/tmp/nightly/clean-calibration.txt` before finalizing. If no drift is found and `calibration-due: YES`, report the run as a calibration CLEAN with the ordinary CLEAN-since-calibration count plus the `pnpm audit:version` and catalog evidence. If no drift is found, skip source edits and finalize `CLEAN`.
+Scan the codebase for one unambiguous version inconsistency using the following priority list. A run may only be called clean once the full priority list has been executed, including item 3: an unreported `[DRIFT]` line is drift, whether or not it names a manifest. Read `/tmp/nightly/clean-calibration.txt` before finalizing. If no drift is found and `calibration-due: YES`, report the run as a calibration CLEAN with the ordinary CLEAN-since-calibration count plus the `pnpm audit:version` and catalog evidence. If no drift is found, skip source edits and finalize `CLEAN`.
 - **CLEAN Evidence Floor:** A clean run must name the catalog scan and package-version scan actually performed, the exact files/manifests compared, and the `pnpm audit:version` result. Do not finalize with only "fully synchronized" or "audit complete".
 - **Priority List:**
   1. **Catalog Scan:** Read `Frontend-PWA/package.json` and `Backend/package.json`. Identify any shared dependencies that are not using the `"catalog:"` protocol and apply the adherence rule.
   2. **Package Version Scan:** Read `package.json` at the root, in `Frontend-PWA/`, and in `Backend/`. Identify any disagreement in the `version` field and synchronize all to the highest declared value.
+  3. **Derived Declaration Scan:** Run `CI=true DEBIAN_FRONTEND=noninteractive pnpm audit:version` and treat every `[DRIFT]` line it reports as in scope for this stage, not only the ones naming a `package.json`. This is the scan step, not merely the verification step: the manifests agreeing with each other says nothing about whether the badges, the APK manifests or the substrate constants agree with them. `pnpm audit:version:fix` performs the mechanical synchronization.
 
 ### Step 2: Reconciliation proof
 - State the exact discrepancy: "Module [X] declares version [Y] but manifest entry is [Z]."

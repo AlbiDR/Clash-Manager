@@ -110,3 +110,29 @@ test("every control-plane module is watched for cross-branch drift", () => {
   const unwatched = modules.filter(f => !manifest.includes(`nightly/${f}`));
   assert.deepEqual(unwatched, [], `not in the control-plane manifest: ${unwatched.join(", ")}`);
 });
+
+test("the version stage's mandate is not narrower than the checker it runs", () => {
+  // On 2026-09-03 Stage 7's Target B named three locations (the package.json
+  // files) while validate-project.ts enforced ten. The other seven were
+  // verified by a tool the stage was never told it could reconcile, so a
+  // drifted README badge or apktool.yml was detectable but not actionable.
+  //
+  // The fix is deliberately NOT a list copied into the prompt, because a copied
+  // list is what diverged. The prompt must defer to the checker.
+  const prompt = readFileSync(new URL("../../nightly-prompts/07-version-integrity.md", DIR), "utf8");
+  assert.match(prompt, /validate-project\.ts/, "S07 must name the checker as the authoritative list");
+  assert.match(prompt, /Derived Declaration Scan/, "S07's scan step must cover derived locations");
+  assert.match(prompt, /assertVersionCodeNotRegressed/, "S07 must know versionCode is never auto-fixed");
+  // The scan must run the checker, not only verify with it afterwards.
+  const scanSection = prompt.slice(prompt.indexOf("Priority List"), prompt.indexOf("Step 2"));
+  assert.match(scanSection, /pnpm audit:version/, "audit:version must appear in the SCAN step, not just verification");
+});
+
+test("the version checker still owns more locations than any prompt enumerates", () => {
+  // If validate-project.ts ever shrank to only the manifests, the deferral
+  // above would be pointless and the prompt's wording would be misleading.
+  const checker = readFileSync(new URL("../project/validate-project.ts", DIR), "utf8");
+  for (const marker of ["apktool.yml", "twa-manifest", "protocol", "readme", "useProgressiveList"]) {
+    assert.ok(checker.includes(marker), `validate-project.ts no longer checks ${marker}`);
+  }
+});

@@ -21,8 +21,8 @@
     "path": "/Users/adr/bubblewrap-project/android.keystore",
     "alias": "android"
   },
-  "appVersionName": "14.50.0",
-  "appVersionCode": 14050000,
+  "appVersionName": "14.50.1",
+  "appVersionCode": 14050001,
   "shortcuts": [
     {
       "name": "Roster",
@@ -91,5 +91,5 @@
     "minimal-ui",
     "window-controls-overlay"
   ],
-  "appVersion": "14.50.0"
+  "appVersion": "14.50.1"
 }
