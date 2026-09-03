@@ -546,4 +546,286 @@ describe("clinicalServe", () => {
       expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
     });
   });
+
+  describe("HTTP Method Guards and OPTIONS Preflight", () => {
+    it("returns 200 with required CORS headers for OPTIONS preflight requests", async () => {
+      const { supabase } = makeSupabaseMock(async () => ({ data: null, error: null }));
+      const req = new Request("https://example.test/fn", { method: "OPTIONS" });
+
+      const response = await clinicalServe({
+        req,
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "options-preflight",
+        schema: EMPTY_SCHEMA,
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST, OPTIONS");
+      expect(response.headers.get("Access-Control-Allow-Headers")).toContain("authorization");
+    });
+
+    it("rejects non-POST HTTP methods (GET, PUT, DELETE) with 405 METHOD_NOT_ALLOWED", async () => {
+      const { supabase } = makeSupabaseMock(async () => ({ data: null, error: null }));
+
+      for (const method of ["GET", "PUT", "DELETE", "PATCH"]) {
+        const req = new Request("https://example.test/fn", {
+          method,
+          headers: { Authorization: `Bearer ${BEARER_TOKEN}` },
+        });
+
+        const response = await clinicalServe({
+          req,
+          supabase: supabase as any,
+          bearerToken: BEARER_TOKEN,
+          eventType: "TEST_EVENT",
+          componentId: "method-guard",
+          schema: EMPTY_SCHEMA,
+          handler: async () => ({ ok: true }),
+        });
+
+        expect(response.status).toBe(405);
+        const body = await response.json();
+        expect(body.code).toBe("METHOD_NOT_ALLOWED");
+      }
+    });
+  });
+
+  describe("Caller IP extraction and header priority", () => {
+    it("extracts the first hop from a multi-hop x-forwarded-for header and trims whitespace", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-ip-1" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({}, BEARER_TOKEN, {
+          "x-forwarded-for": " 192.168.1.100 , 10.0.0.1, 172.16.0.1 ",
+          "cf-connecting-ip": "1.1.1.1",
+          "x-real-ip": "2.2.2.2",
+        }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "ip-extract-ff",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 1, windowMs: 60_000 },
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(response.status).toBe(200);
+
+      // Subsequent call from same first hop triggers 429
+      const secondResp = await clinicalServe({
+        req: makeRequest({}, BEARER_TOKEN, { "x-forwarded-for": "192.168.1.100, 10.0.0.2" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "ip-extract-ff",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 1, windowMs: 60_000 },
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(secondResp.status).toBe(429);
+    });
+
+    it("falls through to cf-connecting-ip then x-real-ip then unknown when headers are missing or whitespace", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-ip-2" }, error: null };
+        return { data: null, error: null };
+      });
+
+      // Test cf-connecting-ip fallback
+      const respCf = await clinicalServe({
+        req: makeRequest({}, BEARER_TOKEN, { "cf-connecting-ip": "203.0.113.5" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "ip-extract-cf",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 1, windowMs: 60_000 },
+        handler: async () => ({ ok: true }),
+      });
+      expect(respCf.status).toBe(200);
+
+      // Test x-real-ip fallback
+      const respReal = await clinicalServe({
+        req: makeRequest({}, BEARER_TOKEN, { "x-real-ip": "198.51.100.42" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "ip-extract-real",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 1, windowMs: 60_000 },
+        handler: async () => ({ ok: true }),
+      });
+      expect(respReal.status).toBe(200);
+
+      // Test unknown sentinel fallback
+      const respUnknown = await clinicalServe({
+        req: makeRequest({}, BEARER_TOKEN),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "ip-extract-unknown",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 1, windowMs: 60_000 },
+        handler: async () => ({ ok: true }),
+      });
+      expect(respUnknown.status).toBe(200);
+    });
+  });
+
+  describe("Closed Payload Contract and Body Parsing Edge Cases", () => {
+    it("rejects undeclared top-level fields with 400 MALFORMED_PAYLOAD", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-payload-1" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const SCHEMA_WITH_KEYS = v.object({
+        known_field: v.string(),
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({ known_field: "valid", smuggled_extra_key: "hostile" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "closed-payload-spec",
+        schema: SCHEMA_WITH_KEYS,
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.code).toBe("MALFORMED_PAYLOAD");
+      expect(body.details).toEqual([
+        { kind: "undeclared_field", path: ["smuggled_extra_key"] },
+      ]);
+    });
+
+    it("parses empty or whitespace-only bodies as {} and validates them against schema", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-empty-body" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const OPTIONAL_SCHEMA = v.object({
+        tag: v.optional(v.string()),
+      });
+
+      const handler = vi.fn(async (payload) => ({ received: payload }));
+
+      const response = await clinicalServe({
+        req: makeRawRequest("   \n  \t ", BEARER_TOKEN),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "empty-body-spec",
+        schema: OPTIONAL_SCHEMA,
+        handler,
+      });
+
+      expect(response.status).toBe(200);
+      expect(handler).toHaveBeenCalledWith({}, expect.any(Function), expect.any(Function));
+    });
+
+    it("returns 400 MALFORMED_BODY when the request body stream fails to read", async () => {
+      const { supabase } = makeSupabaseMock(async () => ({ data: null, error: null }));
+
+      const brokenReq = new Request("https://example.test/fn", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${BEARER_TOKEN}` },
+      });
+      // Force text() to reject
+      vi.spyOn(brokenReq, "text").mockRejectedValueOnce(new Error("Stream unreadable"));
+
+      const response = await clinicalServe({
+        req: brokenReq,
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "unreadable-stream-spec",
+        schema: EMPTY_SCHEMA,
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.code).toBe("MALFORMED_BODY");
+    });
+  });
+
+  describe("Intermediate Heartbeat and Telemetry Closure", () => {
+    it("updates telemetry with status IN_PROGRESS when handler calls heartbeat", async () => {
+      const { supabase, calls } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-heartbeat-cb" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({}),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "heartbeat-cb-spec",
+        schema: EMPTY_SCHEMA,
+        handler: async (_payload, logAudit, heartbeat) => {
+          logAudit("STAGE_1", "run", { details: "processing" });
+          await heartbeat("STAGE_1", { processed: 5 });
+          return { done: true };
+        },
+      });
+
+      expect(response.status).toBe(200);
+
+      const inProgressCalls = calls.filter(
+        (c) => c.fn === "update_telemetry" && (c.args as any).p_status === "IN_PROGRESS",
+      );
+      expect(inProgressCalls.length).toBeGreaterThan(0);
+      expect((inProgressCalls[0].args as any).p_id).toBe("tid-heartbeat-cb");
+      expect((inProgressCalls[0].args as any).p_metadata.stage).toBe("STAGE_1");
+      expect((inProgressCalls[0].args as any).p_metadata.processed).toBe(5);
+    });
+
+    it("handles telemetry persistence exception inside catch block without crashing", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      try {
+        const { supabase } = makeSupabaseMock(async (fn) => {
+          if (fn === "report_telemetry") return { data: { id: "tid-catch-err" }, error: null };
+          if (fn === "update_telemetry") throw new Error("Database cluster went away");
+          if (fn === "report_heartbeat") throw new Error("Heartbeat RPC unavailable");
+          return { data: null, error: null };
+        });
+
+        const response = await clinicalServe({
+          req: makeRequest({}),
+          supabase: supabase as any,
+          bearerToken: BEARER_TOKEN,
+          eventType: "TEST_EVENT",
+          componentId: "catch-err-resilience-spec",
+          schema: EMPTY_SCHEMA,
+          handler: async () => {
+            throw new Error("Primary handler failure");
+          },
+        });
+
+        expect(response.status).toBe(500);
+        const body = await response.json();
+        expect(body.code).toBe("INTERNAL_ERROR");
+
+        const loggedTelemetryCatchError = consoleErrorSpy.mock.calls.some((args) =>
+          args.some((arg) => typeof arg === "string" && arg.includes("Failed to persist terminal FAILED telemetry state")),
+        );
+        expect(loggedTelemetryCatchError).toBe(true);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
+  });
 });
