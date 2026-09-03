@@ -111,6 +111,39 @@ describe("Harvester Utility Logic Spec", () => {
   });
 
   describe("harvestInternationalPlayers", () => {
+    it("a total regional outage is distinguishable from a genuinely empty harvest", async () => {
+      // Every per-country failure is swallowed into an empty player list, and
+      // populated_regions only counts countries that RETURNED players. So a batch
+      // where every region errored used to emit the identical audit entry to a
+      // batch that queried perfectly and found nobody: CONCURRENT_BATCH_SUCCESS,
+      // total_harvested 0, populated_regions []. Discovery could go blind and
+      // nothing recorded that it had.
+      mockFetchWithRotation.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [
+            { id: 111, name: "Country A", isCountry: true },
+            { id: 222, name: "Country B", isCountry: true },
+          ],
+        }),
+      });
+
+      // Every country query fails outright.
+      mockFetchWithRotation.mockRejectedValue(new Error("upstream 503"));
+
+      const { entries, logAudit } = makeAuditCollector();
+      const results = await harvestInternationalPlayers(logAudit);
+
+      expect(results.items).toHaveLength(0);
+
+      const failure = entries.find(e => e.stage === "CONCURRENT_BATCH_FAILED");
+      expect(failure, "a total outage must not be logged as a successful batch").toBeTruthy();
+      expect(entries.some(e => e.stage === "CONCURRENT_BATCH_SUCCESS")).toBe(false);
+      expect(failure?.details?.failed_regions?.length).toBeGreaterThan(0);
+      expect(failure?.details?.failed_regions?.length).toBe(failure?.details?.queried_regions_count);
+    });
+
     it("fetches locations catalog, shuffles and queries selected countries, and merges unique players", async () => {
       // 1. Locations catalog mock
       mockFetchWithRotation.mockResolvedValueOnce({

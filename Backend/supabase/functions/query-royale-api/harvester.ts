@@ -164,13 +164,13 @@ export async function harvestInternationalPlayers(
     return async () => {
       try {
         const harvestResults = await harvestClanlessPlayers(String(countryCandidate.id), logAudit);
-        return { country: countryCandidate.name, players: harvestResults };
+        return { country: countryCandidate.name, players: harvestResults, failed: false };
       } catch (harvestError: unknown) {
         // [THREAT ANNOTATION] Threat Vector: Cascading concurrent timeout spikes.
         // Wrapping the parallel worker task in individual try-catch blocks isolates regional proxy down-times
         // and prevents a single bad country API endpoint from failing the entire international discovery batch.
         console.warn(`[HARVEST] Failed concurrent query for ${countryCandidate.name}:`, harvestError instanceof Error ? harvestError.message : String(harvestError));
-        return { country: countryCandidate.name, players: [] };
+        return { country: countryCandidate.name, players: [], failed: true };
       }
     };
   });
@@ -178,8 +178,20 @@ export async function harvestInternationalPlayers(
   const batchResults = await processBatch(batchTasks);
   const mergedPlayersMap = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
   const queriedRegions: string[] = [];
+  // [THREAT ANNOTATION] Threat Vector: an outage indistinguishable from an empty result.
+  // Every per-country failure above is swallowed into an empty player list, and
+  // populated_regions only counts countries that RETURNED players. So a batch in
+  // which every single region errored produced the same audit entry as a batch
+  // that queried perfectly and found nobody clanless: total_harvested 0,
+  // populated_regions []. Discovery cannot be told it has gone blind. Failures
+  // are counted separately so the two cases are distinguishable.
+  const failedRegions: string[] = [];
 
   for (const batchResult of batchResults) {
+    if (batchResult.failed) {
+      failedRegions.push(batchResult.country);
+      continue;
+    }
     if (batchResult.players.length > INITIAL_INDEX) {
       queriedRegions.push(batchResult.country);
       for (const harvestedPlayer of batchResult.players) {
@@ -189,9 +201,14 @@ export async function harvestInternationalPlayers(
   }
 
   const mergedPlayers = Array.from(mergedPlayersMap.values());
-  logAudit("CONCURRENT_BATCH_SUCCESS", "run", {
+  const everyRegionFailed = countriesToQuery.length > INITIAL_INDEX
+    && failedRegions.length === countriesToQuery.length;
+
+  logAudit(everyRegionFailed ? "CONCURRENT_BATCH_FAILED" : "CONCURRENT_BATCH_SUCCESS", "run", {
     total_harvested: mergedPlayers.length,
     populated_regions: queriedRegions,
+    failed_regions: failedRegions,
+    queried_regions_count: countriesToQuery.length,
   });
 
   const regionLabel = queriedRegions.length > INITIAL_INDEX
