@@ -36,6 +36,7 @@ import {
   renderSummary,
   selectRecoveryCandidates,
   sessionTelemetry,
+  parseRunWindow,
 } from "./nightly-watchdog.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -1214,4 +1215,36 @@ test("a stage already published by the fallback is never published twice", async
     sleep: async () => {}, pollAttempts: 1, pollIntervalMs: 0,
   });
   assert.deepEqual(result.unrecovered, [], "an already-published stage must not be republished");
+});
+
+test("parseRunWindow transcribes the stage's own recorded window", () => {
+  const log = [
+    "* [2026-09-02] [Stage 4] [23:10Z-23:41Z 31m] CLEAN: Codebase -- earlier night",
+    "* [2026-09-03] [Stage 4] [02:08Z-02:53Z 45m] CHANGED: Frontend-PWA/src/x.ts -- did a thing",
+  ].join("\n");
+  assert.deepEqual(parseRunWindow(log, 4, "2026-09-03"), {
+    started: "2026-09-03T02:08:00Z",
+    terminated: "2026-09-03T02:53:00Z",
+    durationMinutes: 45,
+  });
+  // The right date, not merely the last line.
+  assert.equal(parseRunWindow(log, 4, "2026-09-02").durationMinutes, 31);
+});
+
+test("a coverage line without a window yields null rather than a zero", () => {
+  // Every line written before the instrumentation looks like this, so null has
+  // to be the ordinary case. A zero here would enter the ledger as a run that
+  // took no time and drag every median computed from it downward.
+  const legacy = "* [2026-09-03] [Stage 4] CLEAN: Codebase -- no window recorded";
+  assert.equal(parseRunWindow(legacy, 4, "2026-09-03"), null);
+  assert.equal(parseRunWindow(legacy, 9, "2026-09-03"), null);
+  assert.equal(parseRunWindow("", 4, "2026-09-03"), null);
+  assert.equal(parseRunWindow(null, 4, "2026-09-03"), null);
+});
+
+test("a stage number is matched exactly, not by prefix", () => {
+  // Stage 1 must never absorb Stage 10's window; both start "[Stage 1".
+  const log = "* [2026-09-03] [Stage 10] [01:00Z-01:20Z 20m] CLEAN: Codebase -- ten";
+  assert.equal(parseRunWindow(log, 1, "2026-09-03"), null);
+  assert.equal(parseRunWindow(log, 10, "2026-09-03").durationMinutes, 20);
 });

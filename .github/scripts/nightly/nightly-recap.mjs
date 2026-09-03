@@ -32,7 +32,7 @@
 
 import { spawnSync } from "node:child_process";
 
-import { HEALTH, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
+import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
 
 export const SOURCE_REF = "origin/Nightly";
 const LEDGER = ".github/nightly-logs/nightly-run-ledger.json";
@@ -340,6 +340,43 @@ function stageDescription(stage) {
 const JUDGED_VERDICTS = new Set([HEALTH.HEALTHY, HEALTH.DEGRADING, HEALTH.CHRONIC]);
 
 /**
+ * The cross-run pace block.
+ *
+ * Kept separate from healthSection rather than folded into it, because the two
+ * answer different questions and each has its own judgeability: durations only
+ * exist for runs recorded after the run window was instrumented, so a stage can
+ * be fully judged for reliability and not yet judgeable for pace. Merging them
+ * would let either half's silence suppress the other's finding.
+ */
+function paceSection(health) {
+  const stages = health?.stages || [];
+  const judged = stages.filter(s => s.pace && s.pace.verdict !== PACE.UNKNOWN);
+  if (judged.length === 0) return [];
+
+  const scope = judged.length === stages.length
+    ? `all ${stages.length} stages measured`
+    : `${judged.length} of ${stages.length} stages measured`;
+
+  const adverse = judged.filter(s => s.pace.verdict === PACE.OVERRUNNING || s.pace.verdict === PACE.SLOWING);
+  if (adverse.length === 0) {
+    return [`Pipeline pace: no stage is slowing or overrunning (${scope}).`, ""];
+  }
+
+  const lines = [`Pipeline pace: adverse duration trends (${scope}).`];
+  for (const s of adverse) {
+    const label = `S${String(s.stage).padStart(2, "0")}`;
+    lines.push(
+      `- ${label} ${displayArea(s.slug)} is ${s.pace.verdict}: ${escapeMarkdownCell(s.pace.reason)}`
+      + ` (median ${s.pace.recentMedian}m over ${s.pace.recentRuns} recent runs, was ${s.pace.earlierMedian}m).`,
+    );
+  }
+  // Pace is advisory. A slow stage that still merges has not failed, and saying
+  // so here stops the block being read as a second failure list.
+  lines.push("Pace never fails a run on its own; it says where the budget is being spent.", "");
+  return lines;
+}
+
+/**
  * The cross-run health block.
  *
  * Says nothing at all when no stage has enough recorded history to judge:
@@ -400,6 +437,7 @@ export function renderRecap(recap) {
   }
 
   lines.push(...healthSection(recap.health));
+  lines.push(...paceSection(recap.health));
 
   const notes = recap.stages.flatMap(s => {
     const stageNotes = [];

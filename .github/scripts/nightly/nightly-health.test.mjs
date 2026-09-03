@@ -7,7 +7,10 @@ import test from "node:test";
 
 import {
   HEALTH,
+  PACE,
   evaluatePipelineHealth,
+  evaluateStageDuration,
+  stageDurationHistory,
   evaluateStageHealth,
   isObserved,
   neededIntervention,
@@ -144,4 +147,105 @@ test("an unobserved day is not counted as a failure", () => {
   const history = stageInterventionHistory(ledger, 4);
   assert.deepEqual(history.map(h => h.date), ["2026-08-19", "2026-08-21"], "the unobserved day is dropped entirely");
   assert.ok(history.every(h => h.needed === false));
+});
+
+// Durations, oldest first, in the shape stageDurationHistory yields.
+const paced = minutes => minutes.map((m, index) => ({ date: `2026-08-${String(index + 1).padStart(2, "0")}`, minutes: m }));
+
+test("pace needs both halves before it will judge", () => {
+  assert.equal(evaluateStageDuration(paced([]), 45).verdict, PACE.UNKNOWN);
+  assert.equal(evaluateStageDuration(paced([10, 12, 11]), 45).verdict, PACE.UNKNOWN);
+  // Reported as unknown rather than rounded down to fine.
+  assert.match(evaluateStageDuration(paced([10]), 45).reason, /not enough measured runs/);
+});
+
+test("SLOWING requires the whole recent distribution to clear the old worst", () => {
+  // Earlier max 14; recent median 30. The stage now typically runs slower than
+  // it ever previously ran at its worst.
+  const slowing = evaluateStageDuration(paced([10, 12, 14, 28, 30, 32]), 45);
+  assert.equal(slowing.verdict, PACE.SLOWING);
+  assert.equal(slowing.earlierMax, 14);
+  assert.equal(slowing.recentMedian, 30);
+
+  // A single slow night inside ordinary variance must NOT raise it: recent
+  // median 12 sits under the earlier max of 30, so the distribution has not moved.
+  assert.equal(evaluateStageDuration(paced([10, 30, 11, 12, 11, 13]), 45).verdict, PACE.STEADY);
+});
+
+test("OVERRUNNING needs every recent run past the budget, and the budget comes from config", () => {
+  const over = evaluateStageDuration(paced([20, 22, 46, 48, 50, 47]), 45);
+  assert.equal(over.verdict, PACE.OVERRUNNING);
+  assert.equal(over.overruns, 3);
+  assert.match(over.reason, /45m work budget/);
+
+  // One run under the budget is enough to disqualify it, exactly as CHRONIC
+  // requires every recent run.
+  assert.notEqual(evaluateStageDuration(paced([20, 22, 46, 44, 50, 47]), 45).verdict, PACE.OVERRUNNING);
+
+  // With no budget supplied the absolute check cannot run, and must not throw
+  // or silently invent one. The trend axis still works.
+  const noBudget = evaluateStageDuration(paced([20, 22, 46, 48, 50, 47]), undefined);
+  assert.equal(noBudget.verdict, PACE.SLOWING);
+  assert.equal(noBudget.overruns, 0);
+});
+
+test("a run with no recorded window is dropped, not treated as instant", () => {
+  const ledger = {
+    runs: {
+      "2026-08-01": { 4: { state: "MERGED", evidence: { run: { durationMinutes: 30 } } } },
+      // Predates the instrumentation: no window at all.
+      "2026-08-02": { 4: { state: "MERGED", evidence: {} } },
+      // Observed but never reached a verdict, so not evidence in either direction.
+      "2026-08-03": { 4: { state: "EXPECTED", evidence: { run: { durationMinutes: 1 } } } },
+      "2026-08-04": { 4: { state: "MERGED", evidence: { run: { durationMinutes: 34 } } } },
+    },
+  };
+  const seen = stageDurationHistory(ledger, 4);
+  assert.deepEqual(seen.map(r => r.date), ["2026-08-01", "2026-08-04"]);
+  assert.deepEqual(seen.map(r => r.minutes), [30, 34]);
+});
+
+test("pace and reliability are reported as separate verdicts", () => {
+  // A stage can merge unaided every night and still be sliding toward its
+  // budget. Collapsing the two would hide whichever was evaluated second.
+  const ledger = {
+    runs: Object.fromEntries(
+      [12, 13, 14, 40, 41, 42].map((minutes, index) => [
+        `2026-08-0${index + 1}`,
+        { 4: { state: "MERGED", attempts: 0, failureClass: null, evidence: { run: { durationMinutes: minutes } } } },
+      ]),
+    ),
+  };
+  const health = evaluatePipelineHealth(ledger, registry);
+  const stage4 = health.stages.find(s => s.stage === 4);
+  assert.equal(stage4.verdict, HEALTH.HEALTHY);
+  assert.equal(stage4.pace.verdict, PACE.SLOWING);
+  assert.equal(health.slowing.length, 1);
+  assert.equal(health.chronic.length, 0);
+});
+
+test("a pace finding is reported even when reliability is clear", () => {
+  // The old renderer returned early on an empty chronic/degrading pair. A pace
+  // finding arriving on an otherwise healthy pipeline must not be swallowed by
+  // that path.
+  const report = renderHealthReport({
+    stages: [{ stage: 4, slug: "optimization", verdict: HEALTH.HEALTHY, pace: { verdict: PACE.SLOWING, reason: "typical recent run 40m now exceeds its slowest earlier run 14m" } }],
+    chronic: [],
+    degrading: [],
+    overrunning: [],
+    slowing: [{ stage: 4, slug: "optimization", pace: { verdict: PACE.SLOWING, reason: "typical recent run 40m now exceeds its slowest earlier run 14m" } }],
+  });
+  assert.match(report, /Stage 4 \(optimization\) SLOWING/);
+  assert.match(report, /exceeds its slowest earlier run 14m/);
+});
+
+test("the real recorded history is judged on pace without alarming on everything", () => {
+  const ledger = JSON.parse(readFileSync(new URL("../../nightly-logs/nightly-run-ledger.json", import.meta.url), "utf8"));
+  const health = evaluatePipelineHealth(ledger, registry);
+  assert.equal(health.stages.length, 13);
+  assert.ok(health.stages.every(s => s.pace && typeof s.pace.verdict === "string"));
+  assert.ok(
+    health.overrunning.length + health.slowing.length < registry.stages.length,
+    "a pace analyser that flags every stage is not distinguishing anything",
+  );
 });

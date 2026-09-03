@@ -25,6 +25,13 @@
 // The one structural minimum is that a rate needs at least two observations to
 // be a rate rather than an anecdote, and a comparison needs both halves. That
 // is arithmetic, not a tuning knob.
+//
+// The duration axis obeys the same rule. Its trend verdict is purely
+// comparative, and the single absolute it uses, workBudgetMinutes, is read from
+// the registry rather than chosen here: it is the deadline the pipeline already
+// enforces on itself, measured from the same startEpoch the run window is, so
+// comparing the two is reading back a rule that already exists rather than
+// inventing a new one.
 
 const MIN_OBSERVATIONS_PER_HALF = 2;
 
@@ -150,16 +157,110 @@ export function evaluateStageHealth(history) {
   return { ...base, verdict: HEALTH.HEALTHY, reason: "no adverse trend" };
 }
 
+export const PACE = {
+  STEADY: "STEADY",
+  SLOWING: "SLOWING",
+  OVERRUNNING: "OVERRUNNING",
+  UNKNOWN: "UNKNOWN",
+};
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Ordered per-date run durations for one stage, oldest first.
+ *
+ * Sourced from evidence.run, which the watchdog transcribes off the stage's own
+ * coverage line. Rows predating that instrumentation carry no window and are
+ * dropped rather than defaulted, for the same reason UNOBSERVED_STATES are: a
+ * missing measurement is not a fast run.
+ */
+export function stageDurationHistory(ledger, stageNumber) {
+  return Object.keys(ledger?.runs || {})
+    .sort()
+    .map(date => {
+      const entry = ledger.runs[date]?.[String(stageNumber)];
+      if (!isObserved(entry)) return null;
+      const minutes = entry?.evidence?.run?.durationMinutes;
+      return Number.isFinite(minutes) ? { date, minutes } : null;
+    })
+    .filter(Boolean);
+}
+
+/**
+ * Compares a stage's recent pace against its own past.
+ *
+ * OVERRUNNING every recent run passed workBudgetMinutes. Past that point the
+ *             lifecycle tells the stage to stop and submit, so a stage always
+ *             over it is shipping its fallback every night instead of its work,
+ *             while still reporting a normal result.
+ * SLOWING     the typical recent run is now slower than the SLOWEST run this
+ *             stage had ever previously recorded. Stated that way so it cannot
+ *             fire on ordinary night-to-night variance: the whole recent
+ *             distribution has moved past the old one.
+ * STEADY      neither.
+ * UNKNOWN     not enough measured runs to compare, reported rather than
+ *             rounded down to fine.
+ *
+ * Both adverse verdicts are informational. CHRONIC remains the only verdict
+ * that fails a run; a slow stage that still delivers has not failed.
+ */
+export function evaluateStageDuration(history, workBudgetMinutes) {
+  const runs = history || [];
+  const half = Math.floor(runs.length / 2);
+  if (half < MIN_OBSERVATIONS_PER_HALF) {
+    return { verdict: PACE.UNKNOWN, measuredRuns: runs.length, reason: "not enough measured runs to compare" };
+  }
+
+  const earlier = runs.slice(0, runs.length - half).map(run => run.minutes);
+  const recent = runs.slice(runs.length - half).map(run => run.minutes);
+  const recentMedian = median(recent);
+  const earlierMax = Math.max(...earlier);
+  const budget = Number(workBudgetMinutes);
+  const overruns = Number.isFinite(budget) ? recent.filter(minutes => minutes > budget).length : 0;
+
+  const base = {
+    measuredRuns: runs.length,
+    recentRuns: recent.length,
+    recentMedian,
+    earlierMedian: median(earlier),
+    earlierMax,
+    slowest: Math.max(...recent),
+    overruns,
+  };
+
+  if (Number.isFinite(budget) && overruns === recent.length) {
+    return { ...base, verdict: PACE.OVERRUNNING, reason: `all ${recent.length} recent runs passed the ${budget}m work budget` };
+  }
+  if (recentMedian > earlierMax) {
+    return {
+      ...base,
+      verdict: PACE.SLOWING,
+      reason: `typical recent run ${recentMedian}m now exceeds its slowest earlier run ${earlierMax}m`,
+    };
+  }
+  return { ...base, verdict: PACE.STEADY, reason: "no adverse pace trend" };
+}
+
 export function evaluatePipelineHealth(ledger, registry) {
   const stages = (registry?.stages || []).map(stage => ({
     stage: stage.number,
     slug: stage.slug,
     ...evaluateStageHealth(stageInterventionHistory(ledger, stage.number)),
+    // Kept on its own key: a stage can be reliable and slow, or fast and
+    // carried, and collapsing the two verdicts would hide whichever came
+    // second.
+    pace: evaluateStageDuration(stageDurationHistory(ledger, stage.number), registry?.workBudgetMinutes),
   }));
   return {
     stages,
     chronic: stages.filter(s => s.verdict === HEALTH.CHRONIC),
     degrading: stages.filter(s => s.verdict === HEALTH.DEGRADING),
+    overrunning: stages.filter(s => s.pace?.verdict === PACE.OVERRUNNING),
+    slowing: stages.filter(s => s.pace?.verdict === PACE.SLOWING),
   };
 }
 
@@ -168,8 +269,13 @@ export function renderHealthReport(health) {
   if (!stages.length) return "\nStage health: not evaluated.\n";
 
   const unknown = stages.filter(s => s.verdict === HEALTH.UNKNOWN).length;
-  if (chronic.length === 0 && degrading.length === 0) {
-    return `\nStage health: no stage is degrading (${stages.length - unknown} evaluated, ${unknown} without enough history).\n`;
+  const overrunning = health.overrunning || [];
+  const slowing = health.slowing || [];
+  const unmeasured = stages.filter(s => s.pace?.verdict === PACE.UNKNOWN).length;
+  const paceSummary = `${stages.length - unmeasured} stage(s) have enough measured runs to judge pace`;
+
+  if (chronic.length === 0 && degrading.length === 0 && overrunning.length === 0 && slowing.length === 0) {
+    return `\nStage health: no stage is degrading or slowing (${stages.length - unknown} evaluated, ${unknown} without enough history; ${paceSummary}).\n`;
   }
 
   const lines = ["", "Stage health: adverse trends detected across runs.", ""];
@@ -179,6 +285,15 @@ export function renderHealthReport(health) {
   }
   for (const s of degrading) {
     lines.push(`- Stage ${s.stage} (${s.slug}) DEGRADING: ${s.reason}.`);
+  }
+  // Pace findings never fail a run; they are listed after the intervention
+  // verdicts so the failing signal is never buried under an advisory one.
+  for (const s of overrunning) {
+    lines.push(`- Stage ${s.stage} (${s.slug}) OVERRUNNING: ${s.pace.reason}.`);
+    lines.push("    Past the budget the lifecycle orders a submit, so this stage is shipping fallback work nightly.");
+  }
+  for (const s of slowing) {
+    lines.push(`- Stage ${s.stage} (${s.slug}) SLOWING: ${s.pace.reason}.`);
   }
   lines.push("");
   // neededIntervention counts a stage that never merged, so this must not claim

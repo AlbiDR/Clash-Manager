@@ -275,6 +275,25 @@ export function measurePromotionStaleness(targetBranch = "Nightly", promotionBra
   }
 }
 
+/**
+ * The run window a stage wrote on its own coverage line: `[HH:MMZ-HH:MMZ NNm]`.
+ *
+ * This is the only route by which timing reaches the ledger. nightly-stage.mjs
+ * cannot write the ledger, and validateChangedPaths allows a CLEAN run to touch
+ * nothing but its coverage log, so the stage records the window there and the
+ * observer carries it across. Absent on every line written before the window
+ * existed, which is why every caller treats null as ordinary.
+ */
+export function parseRunWindow(content, stageNumber, date) {
+  const line = String(content || "")
+    .split("\n")
+    .find(l => l.trim().startsWith(`* [${date}] [Stage ${stageNumber}] [`));
+  if (!line) return null;
+  const m = /\[(\d{2}:\d{2})Z-(\d{2}:\d{2})Z (\d+)m\]/.exec(line);
+  if (!m) return null;
+  return { started: `${date}T${m[1]}:00Z`, terminated: `${date}T${m[2]}:00Z`, durationMinutes: Number(m[3]) };
+}
+
 async function collectObservedState(registry, date, config = CONFIG) {
   runGit(["fetch", "--tags", "origin", config.targetBranch]);
   try {
@@ -299,6 +318,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
 
   const coverageStages = new Set();
   const danglingSentinelStages = new Set();
+  const runWindows = new Map();
   for (const stage of registry.stages) {
     try {
       const content = runGit(["show", `origin/${config.targetBranch}:${stage.coverageLog}`]);
@@ -306,6 +326,8 @@ async function collectObservedState(registry, date, config = CONFIG) {
       if (content.includes(`* [${evidenceDate}] [Stage ${stage.number}] `)) {
         coverageStages.add(stage.number);
       }
+      const window = parseRunWindow(content, stage.number, evidenceDate);
+      if (window) runWindows.set(stage.number, window);
       if (hasDanglingSentinel(content, stage.number, evidenceDate)) {
         danglingSentinelStages.add(stage.number);
       }
@@ -320,6 +342,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
     tags,
     coverageStages,
     danglingSentinelStages,
+    runWindows,
     julesSessions: jules.sessions,
     julesAvailable: jules.available,
     julesError: jules.error,
@@ -524,6 +547,8 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
           coverageLog: stage.coverageLog,
           // Recorded on success too; see sessionTelemetry for why.
           session: sessionTelemetry(matchJulesSession(observed.julesSessions, stage, date)),
+          // The stage's own clock, not Jules'. See parseRunWindow.
+          run: observed.runWindows?.get(stage.number) || null,
         },
       });
       continue;
