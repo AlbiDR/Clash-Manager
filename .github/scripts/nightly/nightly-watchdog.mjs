@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
-import { ensureRunEntries, loadLedger, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
+import { ensureRunEntries, loadLedger, prNumberFromTag, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
@@ -80,13 +80,23 @@ function invariant(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function utcDate(offsetDays = 0, now = new Date()) {
+/**
+ * A UTC date shifted by whole days.
+ *
+ * Deliberately NOT named utcDate. nightly-stage.mjs has its own utcDate with a
+ * different signature and different semantics: it takes no offset, honours the
+ * NIGHTLY_TODAY override and validates the result. Two functions sharing one
+ * name across the control plane is worse than two functions, because code moved
+ * between the files keeps compiling and silently changes meaning: utcDayOffset(-1)
+ * here means "yesterday", and there it would mean "now = -1".
+ */
+function utcDayOffset(offsetDays = 0, now = new Date()) {
   const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offsetDays));
   return date.toISOString().slice(0, 10);
 }
 
 export function expectedEvidenceDate(stageNumber, date) {
-  if (stageNumber === 1) return utcDate(-1, new Date(`${date}T00:00:00.000Z`));
+  if (stageNumber === 1) return utcDayOffset(-1, new Date(`${date}T00:00:00.000Z`));
   return date;
 }
 
@@ -323,15 +333,9 @@ export function classifyPrBody(body) {
   return "OK";
 }
 
-/** The pr-NNN suffix a promotion tag carries, or null. */
-export function prNumberFromPromotionTag(tag) {
-  const m = /\/pr-(\d+)$/.exec(String(tag || ""));
-  return m ? Number(m[1]) : null;
-}
-
 /** The published-body verdict for a merged stage, or null when unknowable. */
 function describePublishedBody(tag, prs) {
-  const number = prNumberFromPromotionTag(tag);
+  const number = prNumberFromTag(tag);
   if (number === null) return null;
   const pr = (prs || []).find(candidate => Number(candidate.number) === number);
   if (!pr) return null;
@@ -662,7 +666,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
     // today's row as EXPECTED, so consulting only `date` meant a stage that
     // failed yesterday never escalated. Check both: the same date catches a
     // second watchdog pass on the same day, the prior day catches chronic failure.
-    const priorDate = utcDate(-1, new Date(`${date}T00:00:00.000Z`));
+    const priorDate = utcDayOffset(-1, new Date(`${date}T00:00:00.000Z`));
     const hasFailed = candidate => candidate?.state === "NO_OUTPUT" || candidate?.state === "ESCALATED";
     const recurring = hasFailed(stageEntry(previousLedger, date, stage.number))
       || hasFailed(stageEntry(previousLedger, priorDate, stage.number));
@@ -1029,7 +1033,7 @@ function parseArgs(argv) {
 export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   configureRedaction(config);
   const options = parseArgs(argv);
-  const date = options.get("date") || utcDate();
+  const date = options.get("date") || utcDayOffset();
   invariant(/^\d{4}-\d{2}-\d{2}$/.test(date), `Invalid --date value: ${date}`);
 
   const registry = JSON.parse(fs.readFileSync(config.registryPath, "utf8"));

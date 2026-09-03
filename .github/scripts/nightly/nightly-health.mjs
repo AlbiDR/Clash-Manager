@@ -134,6 +134,20 @@ export function evaluateStageHealth(history) {
     earlierRate,
     currentStreak,
     latestNeededIntervention: latest.needed,
+    // WHEN the recent-half interventions happened, transcribed not summarised.
+    //
+    // A rate alone cannot distinguish a stage getting steadily worse from a
+    // stage that had one incident which is long since fixed, because the halves
+    // are halves of ALL history: a resolved cluster keeps counting as "recent"
+    // for as long as it takes the history to grow past it.
+    //
+    // Real case. On 2026-09-03 Stage 1 reported DEGRADING at "9% to 30%", which
+    // is arithmetically right and reads as a stage in decline. Every one of the
+    // three recent interventions was 2026-08-24 to 2026-08-26, one
+    // MERGE_COORDINATOR incident that has not recurred in the eight days since.
+    // The dates say that in one glance; no threshold or decay constant is
+    // needed, and none is introduced.
+    recentInterventionDates: recent.filter(run => run.needed).map(run => run.date),
   };
 
   // CHRONIC is the only verdict that fails a run, so it is deliberately the

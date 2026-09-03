@@ -249,3 +249,33 @@ test("the real recorded history is judged on pace without alarming on everything
     "a pace analyser that flags every stage is not distinguishing anything",
   );
 });
+
+test("a verdict carries the dates behind it, so a healed incident is not read as a decline", () => {
+  // The halves are halves of ALL history, so a resolved cluster keeps counting
+  // as "recent" until the history grows past it. On 2026-09-03 Stage 1 read
+  // DEGRADING at "9% to 30%" on the strength of one MERGE_COORDINATOR incident
+  // from 2026-08-24 to 2026-08-26 that had not recurred since. The rate is
+  // right; the impression it gives is not.
+  const runs = [
+    { date: "2026-08-20", needed: false }, { date: "2026-08-21", needed: false },
+    { date: "2026-08-22", needed: false }, { date: "2026-08-23", needed: false },
+    { date: "2026-08-24", needed: true }, { date: "2026-08-25", needed: true },
+    { date: "2026-08-26", needed: true }, { date: "2026-08-27", needed: false },
+    { date: "2026-08-28", needed: false }, { date: "2026-09-03", needed: true },
+  ];
+  const verdict = evaluateStageHealth(runs);
+  // Aug 24 falls in the EARLIER half with ten runs, which is why the rate rose
+  // at all. The recent half holds the tail of the incident plus today's nudge,
+  // reproducing the real Stage 1 output line for line.
+  assert.deepEqual(verdict.recentInterventionDates, ["2026-08-25", "2026-08-26", "2026-09-03"]);
+  // The streak is what separates the two readings, and it stays honest.
+  assert.equal(verdict.currentStreak, 1);
+  // No decay constant, no lookback window, no threshold was introduced to do this.
+  const source = readFileSync(new URL("./nightly-health.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /RECENT_DAYS|DECAY|LOOKBACK|MAX_AGE_DAYS/);
+});
+
+test("a stage that never needed help reports no dates rather than omitting the field", () => {
+  const clean = evaluateStageHealth(history([false, false, false, false, false, false]));
+  assert.deepEqual(clean.recentInterventionDates, []);
+});

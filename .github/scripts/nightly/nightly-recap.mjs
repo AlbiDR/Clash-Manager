@@ -33,6 +33,7 @@
 import { spawnSync } from "node:child_process";
 
 import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
+import { prNumberFromTag } from "./nightly-ledger.mjs";
 import { PLAIN_PREFIX, displayArea, joinList, stageTag } from "./nightly-prose.mjs";
 
 export const SOURCE_REF = "origin/Nightly";
@@ -101,11 +102,6 @@ export function parsePrHistoryEntry(content, stageNumber, date) {
     };
   }
   return null;
-}
-
-export function prNumberFromTag(tag) {
-  const m = /\/pr-(\d+)$/.exec(String(tag || ""));
-  return m ? Number(m[1]) : null;
 }
 
 /**
@@ -397,6 +393,10 @@ function healthSection(health) {
       `- ${label} ${displayArea(s.slug)} is ${s.verdict}: ${escapeMarkdownCell(s.reason)}`
       + ` (${streak} run${streak === 1 ? "" : "s"} in a row needing help, judged over ${s.runs} observed runs).`,
     );
+    // The dates behind the rate. Without them a healed incident and a live
+    // decline print the same sentence; see recentInterventionDates.
+    const when = s.recentInterventionDates || [];
+    if (when.length > 0) lines.push(`    Those interventions: ${when.join(", ")}.`);
   }
   // Deliberately says nothing about whether those runs merged. "Needed
   // intervention" covers both a stage rescued into a merge and a stage that

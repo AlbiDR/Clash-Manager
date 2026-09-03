@@ -11,8 +11,7 @@ import {
   ensureRunEntries,
   prNumberFromTag,
   stageEntry,
-  upsertStageEntry,
-} from "./nightly-ledger.mjs";
+  upsertStageEntry, } from "./nightly-ledger.mjs";
 import { CONFIG } from "./merge-nightly-core.mjs";
 import { redactDeep } from "./nightly-redact.mjs";
 import {
@@ -38,7 +37,6 @@ import {
   sessionTelemetry,
   parseRunWindow,
   classifyPrBody,
-  prNumberFromPromotionTag,
 } from "./nightly-watchdog.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -1305,8 +1303,13 @@ test("body health is recorded but never fails a run", () => {
   assert.match(source, /body: describePublishedBody\(matchingTags\[0\], observed\.prs\)/);
 });
 
-test("a promotion tag yields the pull request number it names", () => {
-  assert.equal(prNumberFromPromotionTag("nightly/2026-09-03/stage-8/pr-1674"), 1674);
-  assert.equal(prNumberFromPromotionTag("nightly/2026-09-03/stage-8"), null);
-  assert.equal(prNumberFromPromotionTag(null), null);
+test("promotion-tag parsing has exactly one implementation", () => {
+  // This started as a third copy of a function nightly-ledger.mjs and
+  // nightly-recap.mjs already had, byte-equivalent to both. The watchdog
+  // already imported the ledger, so the copy bought nothing at all.
+  assert.equal(prNumberFromTag("nightly/2026-09-03/stage-8/pr-1674"), 1674);
+  assert.equal(prNumberFromTag("nightly/2026-09-03/stage-8"), null);
+  assert.equal(prNumberFromTag(null), null);
+  const source = readFileSync(new URL("./nightly-watchdog.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /function prNumberFrom/, "the watchdog must import this, not define it");
 });

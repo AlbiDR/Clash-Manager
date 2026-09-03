@@ -14,9 +14,9 @@ import {
   latestRunDate,
   parseCoverageLine,
   parsePrHistoryEntry,
-  prNumberFromTag,
   renderRecap,
 } from "./nightly-recap.mjs";
+import { prNumberFromTag } from "./nightly-ledger.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 const stageOf = n => registry.stages.find(s => s.number === n);

@@ -21,6 +21,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRegistryData } from "./nightly-stage.mjs";
 import { loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
+import { stageTag } from "./nightly-prose.mjs";
 import { createRedactor } from "./nightly-redact.mjs";
 
 const REGISTRY_PATH = ".github/nightly-config/stages.json";
@@ -57,7 +58,9 @@ function loadRegistry() {
 
 export function stageDisplayNumber(stageNumber) {
   invariant(Number.isInteger(stageNumber) && stageNumber >= 1 && stageNumber <= 13, "Stage number must be 1-13.");
-  return `S${String(stageNumber).padStart(2, "0")}`;
+  // Validation is this function's contract; the format belongs to nightly-prose
+  // so a stage is labelled identically here, in a PR body and in the recap.
+  return stageTag(stageNumber);
 }
 
 export function stageSessionTitle(stage, date) {
