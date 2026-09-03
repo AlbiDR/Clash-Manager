@@ -138,9 +138,17 @@ export function useClashSync(data: Ref<WebAppData | null>) {
    * Internal helper to update reactive state and persist the result to the local cache.
    *
    * @param webAppDataSnapshot - The new WebAppData to commit, or null to clear state.
-   * @param skipSave - If true, bypasses saving to the persistent cache.
+   * @param commitOptions - Provenance of this commit.
+   * @param commitOptions.skipSave - If true, bypasses saving to the persistent cache.
+   * @param commitOptions.remoteSuccess - If true, this commit is the product of a
+   *   COMPLETED sync attempt and is therefore evidence the data source is reachable.
+   *   Defaults to false so a new call site cannot claim remote health by omission.
    */
-  async function commitSyncResult(webAppDataSnapshot: WebAppData | null, skipSave = false) {
+  async function commitSyncResult(
+    webAppDataSnapshot: WebAppData | null,
+    commitOptions: { skipSave?: boolean; remoteSuccess?: boolean } = {},
+  ) {
+    const { skipSave = false, remoteSuccess = false } = commitOptions;
     data.value = webAppDataSnapshot;
 
     if (webAppDataSnapshot) {
@@ -157,8 +165,26 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       lastFetched.value = null;
     }
 
-    consecutiveSyncFailures.value = 0;
-    syncError.value = null;
+    // [THREAT:] This is the shared commit path for remote syncs AND for purely
+    // local mutations (updateLocalData, reached from injectRecruits,
+    // applyLocalDismissal and both dismissal rollbacks). Clearing the remote
+    // failure state unconditionally meant a local edit forged proof of backend
+    // health.
+    //
+    // The worst case is a rollback. When dismissRecruits() rejects because the
+    // backend is unreachable, useHeadhunter restores the previous state with
+    // updateLocalData(oldData) - so the very handler that proved the backend
+    // was down wiped syncError and restarted the
+    // SYNC_FAILURE_VISIBILITY_THRESHOLD window from zero, suppressing the next
+    // two background failures as well.
+    //
+    // [DECISION LOG] Only a completed sync attempt is evidence about the data
+    // source. A local commit leaves consecutiveSyncFailures and syncError
+    // exactly as the last real sync left them.
+    if (remoteSuccess) {
+      consecutiveSyncFailures.value = 0;
+      syncError.value = null;
+    }
 
     if (skipSave) return;
 
@@ -185,7 +211,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     try {
       if (isSyntheticMode.value) {
         console.debug("[Sync] Synthetic Mode active: Seeding initial mock data");
-        await commitSyncResult(generateMockData());
+        await commitSyncResult(generateMockData(), { remoteSuccess: true });
         return;
       }
 
@@ -193,7 +219,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
       if (!cachedWebAppData) {
         console.debug("[Sync] No local cache found, starting fresh.");
-        await commitSyncResult(createEmptyWebAppData(), true);
+        await commitSyncResult(createEmptyWebAppData(), { skipSave: true });
         return;
       }
 
@@ -206,14 +232,14 @@ export function useClashSync(data: Ref<WebAppData | null>) {
           return;
         }
         console.debug("[Sync] Local cache hydrated successfully.");
-        await commitSyncResult(webAppDataValidation.output, true);
+        await commitSyncResult(webAppDataValidation.output, { skipSave: true });
       } else {
         console.warn("[Sync] Local cache validation failed:", webAppDataValidation.issues);
-        if (!data.value) await commitSyncResult(createEmptyWebAppData(), true);
+        if (!data.value) await commitSyncResult(createEmptyWebAppData(), { skipSave: true });
       }
     } catch (hydrationError: unknown) {
       console.error("[Sync] Cache hydration failed:", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
-      await commitSyncResult(createEmptyWebAppData(), true);
+      await commitSyncResult(createEmptyWebAppData(), { skipSave: true });
     }
   }
 
@@ -278,7 +304,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
         }
 
         await yieldToInteractionFrame();
-        await commitSyncResult(remoteDataValidation.output);
+        await commitSyncResult(remoteDataValidation.output, { remoteSuccess: true });
         return { success: true };
       } catch (syncFailure: unknown) {
         consecutiveSyncFailures.value++;
@@ -310,7 +336,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   async function runSync(syncIntent: SyncIntent, force: boolean): Promise<void> {
     if (isSyntheticMode.value) {
       console.debug("[Sync] Synthetic Mode active: Refreshing mock data");
-      await commitSyncResult(generateMockData());
+      await commitSyncResult(generateMockData(), { remoteSuccess: true });
       return;
     }
 

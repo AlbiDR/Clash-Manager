@@ -76,7 +76,45 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # --------------------------------------------------------------------
+      # Build-time skeleton capture (`scripts/capture_skeletons.ts`) boots a
+      # Vite server plus a headless Chromium to measure the real components'
+      # geometry, so skeletons never have to be hand-updated to match the UI.
+      # It already content-hashes its inputs and skips the browser when nothing
+      # changed, but both of its on-disk artifacts are gitignored, so CI
+      # started cold on every run and paid the full capture (~35s locally, more
+      # on a runner) even for a docs-only change.
+      #
+      # Both paths are required for a hit to be useful: `bones-cache.json`
+      # holds the per-group hashes and `bones.generated.json` holds the
+      # geometry itself (`readStoredBones` reads it back out of there).
+      # Restoring only the former would report a hit with no measurements.
+      #
+      # The key comes from the capture script's OWN declared surface rather
+      # than a file list copied into this YAML. A copied list is the exact
+      # manual-maintenance trap the bone capture exists to remove: add a
+      # capture group, forget to update the copy, and CI serves stale geometry
+      # for it indefinitely. With one list there is nothing to keep in step.
+      # --------------------------------------------------------------------
+      - name: Resolve Skeleton Capture Surface
+        id: bones-key
+        run: |
+          echo "hash=$(pnpm exec tsx scripts/capture_skeletons.ts --print-hash)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Skeleton Capture
+        id: bones-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            Frontend-PWA/.cache/bones-cache.json
+            Frontend-PWA/src/core/theme/bones.generated.json
+          key: bones-${{ runner.os }}-${{ steps.bones-key.outputs.hash }}
+
+      # Chromium is only ever booted by a stale capture group. On a cache hit
+      # the capture short-circuits before touching Playwright, so installing
+      # the browser is pure dead weight (~12s plus the download).
       - name: Install Playwright Chromium
+        if: steps.bones-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Project Validation
@@ -97,6 +135,12 @@ jobs:
 
       - name: Build Project
         env:
+          # This is the build that gets uploaded to Pages, so its skeleton
+          # geometry is the geometry users receive. Refuse to publish stale or
+          # fallback bones rather than degrade silently. Auto Tag deliberately
+          # does NOT set this: it builds only as a pre-tag gate, installs no
+          # Chromium, and discards the output.
+          BONES_REQUIRE_CAPTURE: "true"
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
