@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-03] PR #1675 [Stage 9]: 43 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, profiler.ts, harvester.ts, useConnectionStatus, useConnectivityManager, useProgressiveList. Candidate protocol.ts high risk; hunt useProgressiveList clean.
+**Domain:** architecture | **Commit:** 309bf26e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1675)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Substrate architecture strictly aligned with CleanStack ADR; 0 depcruise violations found and 1797 unit and integration tests passed cleanly.
+**Change:** 43 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, profiler.ts, harvester.ts, useConnectionStatus, useConnectivityManager, useProgressiveList. Candidate protocol.ts high risk; hunt useProgressiveList clean.
+**Result:** depcruise 0 violations; 1797 tests passed cleanly; CLEAN evidence floor satisfied.
+
+
 ### [2026-09-03] PR #1674 [Stage 8]: chore(deps): Bumped @supabase/supabase-js to ^2.114.0 in monorepo catalog and refreshed lockfile
 **Domain:** pipeline | **Commit:** f898daed | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1674)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, pnpm-lock.yaml, pnpm-workspace.yaml
