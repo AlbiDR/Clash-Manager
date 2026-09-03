@@ -111,12 +111,12 @@
     {
       "number": 9,
       "slug": "refactor",
-      "name": "Defect Hunter - Behaviour That Is Wrong",
+      "name": "Refactor - Structural Surgery Engineer",
       "prompt": ".github/nightly-prompts/09-refactor-proposals.md",
       "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
       "branchPrefix": "nightly/stage-9-refactor-",
       "domain": "architecture",
-      "commitScope": "fix",
+      "commitScope": "refactor",
       "baselineTests": false,
       "dependencyCruiser": true,
       "historyAging": false

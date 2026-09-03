@@ -283,7 +283,7 @@ Read and execute the instructions located at this repository path exactly as wri
 
 ---
 
-## S09: Defect Hunter - Behaviour That Is Wrong
+## S09: Refactor - Structural Surgery Engineer
 
 - **Fetch from:** `Nightly`
 - **PR Base:** `Nightly`
