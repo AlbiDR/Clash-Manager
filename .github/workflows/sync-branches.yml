@@ -137,42 +137,26 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Install dependencies
-        id: install-before
-        run: |
-          # ----------------------------------------------------------------
-          # Deliberately non-fatal. A broken Beta baseline must not block the
-          # sync, because the incoming Nightly merge is usually the thing that
-          # repairs it. On 2026-08-26 a corrupt lockfile on Beta deadlocked
-          # this pipeline exactly that way: every run died here, and the merge
-          # that carried the healthy lockfile could never land.
-          #
-          # The baseline is a measurement, not a gate. The gate that matters
-          # is the post-merge verification below, which never lets an unproven
-          # state reach Beta.
-          # ----------------------------------------------------------------
-          if pnpm install --frozen-lockfile; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Beta baseline dependencies do not install. Continuing; the merged state is verified independently before any push."
-          fi
-
-      - name: "Air Gap Guard - BEFORE (Beta baseline)"
-        id: test-before
-        run: |
-          echo "## Air Gap Guard" >> $GITHUB_STEP_SUMMARY
-          echo "### BEFORE - Beta baseline (pre-merge)" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.install-before.outputs.ok }}" != "true" ]; then
-            echo "before=blocked" >> $GITHUB_OUTPUT
-            echo "Beta baseline: BLOCKED - dependencies could not be installed" >> $GITHUB_STEP_SUMMARY
-          elif pnpm test; then
-            echo "before=pass" >> $GITHUB_OUTPUT
-            echo "Beta baseline: PASS" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "before=fail" >> $GITHUB_OUTPUT
-            echo "Beta baseline: FAIL" >> $GITHUB_STEP_SUMMARY
-          fi
+      # --------------------------------------------------------------------
+      # The Beta baseline used to be measured HERE, unconditionally: a full
+      # `pnpm install` plus a full `pnpm test` on every single sync, roughly
+      # 82s, purely to fill one cell of the regression table below.
+      #
+      # It was never a gate. The gate is the post-merge verification in the
+      # merge step, which never lets an unproven state reach Beta. The
+      # baseline's only job is attribution AFTER something breaks: it
+      # separates "Nightly introduced a regression" from "Beta was already
+      # broken". When the merged state passes, that distinction has no
+      # consumer and nobody ever reads it.
+      #
+      # So it is now deferred into `diagnose_baseline` in the merge step and
+      # runs only when the combined state actually fails. Identical
+      # diagnostic value, paid for only on the rare run that needs it. The
+      # 2026-08-26 corrupt-lockfile incident the old comment documented stays
+      # covered: `diagnose_baseline` does its own non-fatal install and still
+      # reports BLOCKED, and the merge step's `verify_lockfile` independently
+      # repairs and re-verifies the merged lockfile before any push.
+      # --------------------------------------------------------------------
 
       - name: Normalise APK release slot (pre-merge)
         run: |
@@ -308,6 +292,12 @@ jobs:
           }
 
           merge_nightly() {
+            # Captured so `diagnose_baseline` can restore the exact pre-merge
+            # Beta tip if the combined state turns out to be broken. Set here
+            # rather than once at the top so the retry-on-race path below
+            # re-baselines against the NEW remote tip it rebuilt from.
+            PRE_MERGE_SHA=$(git rev-parse HEAD)
+
             if [ "$DIVERGED" = "true" ]; then
               echo "Diverged branches detected. Merging with conflict strategy: Nightly wins (-X theirs)."
               git merge origin/Nightly -X theirs --no-edit
@@ -330,7 +320,33 @@ jobs:
           # a merge that hasn't already been verified locally - not to
           # revert one after the fact. `run_tests` below runs before every
           # push attempt, including the retry-on-race path.
+          # Deferred Beta baseline. Runs ONLY when the merged state fails, to
+          # attribute the failure: a PASSing baseline means Nightly introduced
+          # the regression, a FAILing one means Beta was already broken and
+          # this merge is not the culprit. Destructive to the working tree by
+          # design - it is only ever called on a path that exits non-zero
+          # without pushing.
+          diagnose_baseline() {
+            echo "### BEFORE - Beta baseline (deferred; measured only because AFTER failed)" >> "$GITHUB_STEP_SUMMARY"
+            git reset --hard "$PRE_MERGE_SHA"
+
+            if ! pnpm install --frozen-lockfile; then
+              echo "before=blocked" >> "$GITHUB_OUTPUT"
+              echo "Beta baseline: BLOCKED - dependencies could not be installed" >> "$GITHUB_STEP_SUMMARY"
+              return
+            fi
+
+            if pnpm test; then
+              echo "before=pass" >> "$GITHUB_OUTPUT"
+              echo "Beta baseline: PASS - Beta was healthy, so Nightly introduced the regression." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "before=fail" >> "$GITHUB_OUTPUT"
+              echo "Beta baseline: FAIL - Beta was ALREADY broken before this merge." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
           run_tests() {
+            echo "## Air Gap Guard" >> "$GITHUB_STEP_SUMMARY"
             echo "### AFTER - Beta + Nightly combined (post-merge, pre-push)" >> "$GITHUB_STEP_SUMMARY"
             if pnpm test; then
               echo "after=pass" >> "$GITHUB_OUTPUT"
@@ -356,6 +372,7 @@ jobs:
           merge_nightly
 
           if ! run_tests; then
+            diagnose_baseline
             exit 1
           fi
 
@@ -367,6 +384,7 @@ jobs:
             merge_nightly
             if ! run_tests; then
               echo "::error::Combined state failed after rebuilding against the new Beta tip. Not pushing."
+              diagnose_baseline
               exit 1
             fi
             git push origin Beta
@@ -376,12 +394,16 @@ jobs:
       - name: "Air Gap Guard - Regression Summary"
         if: always()
         run: |
-          BEFORE="${{ steps.test-before.outputs.before }}"
+          BEFORE="${{ steps.merge.outputs.before }}"
           AFTER="${{ steps.merge.outputs.after }}"
+
+          # The baseline is deliberately not measured when the merged state
+          # passes, so an empty BEFORE is the healthy case, not missing data.
+          # Say that explicitly - a blank cell reads like a broken step.
           echo "### Regression Delta" >> $GITHUB_STEP_SUMMARY
           echo "| Phase | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Beta baseline (before) | $BEFORE |" >> $GITHUB_STEP_SUMMARY
+          echo "| Beta baseline (before) | ${BEFORE:-not measured (only needed when AFTER fails)} |" >> $GITHUB_STEP_SUMMARY
           echo "| Beta + Nightly (after) | ${AFTER:-blocked} |" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================
