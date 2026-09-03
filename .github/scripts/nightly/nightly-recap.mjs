@@ -418,6 +418,93 @@ function healthSection(health) {
   return lines;
 }
 
+/** "a", "a and b", "a, b and c". */
+function joinList(items) {
+  const list = items.filter(Boolean);
+  if (list.length === 0) return "";
+  if (list.length === 1) return list[0];
+  return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+}
+
+function stageLabel(stage) {
+  return `S${String(stage.stage).padStart(2, "0")} ${displayArea(stage.slug)}`;
+}
+
+/**
+ * The whole run in one plain-language paragraph, for a reader who does not want
+ * thirteen stage entries.
+ *
+ * Every clause is derived from the same counts the rubric grades on, so this
+ * cannot drift from the stage list below it. It deliberately does NOT re-grade
+ * the run or introduce a judgement the data does not carry.
+ *
+ * Two phrasings here are load-bearing and should not be "tidied" into something
+ * shorter:
+ *
+ * 1. A CLEAN stage is described as having verified its area, never as idle or
+ *    as having done nothing. Most stages here are auditors, and an audit that
+ *    finds nothing has succeeded. Wording that implies waste is wrong about the
+ *    pipeline and has previously led to a compliance stage being repurposed.
+ * 2. A rescued stage is never folded into the merged count in prose. "13 of 13
+ *    merged" and "every stage managed on its own" are different claims, and the
+ *    second one was asserted once on the strength of the first and was false.
+ */
+function overviewSection(recap) {
+  const stages = recap.stages || [];
+  if (stages.length === 0) return [];
+
+  const changed = stages.filter(s => s.outcome === "CHANGED");
+  const clean = stages.filter(s => s.outcome === "CLEAN");
+  const stuck = stages.filter(s => s.outcome === "STUCK");
+  const rescued = stages.filter(s => s.rescued);
+  const sentences = [];
+
+  if (recap.unobserved === recap.total) {
+    // Nothing was observed, so nothing may be claimed in either direction.
+    return ["In plain terms: nothing was recorded for this date, so there is no basis to say whether the pipeline ran well or badly.", ""];
+  }
+
+  sentences.push(recap.merged === recap.total
+    ? `All ${recap.total} stages ran and every one of them landed its work.`
+    : `${recap.merged} of ${recap.total} stages landed their work.`);
+
+  if (changed.length > 0) {
+    // displayArea's casing is kept verbatim: it carries the acronyms (README,
+    // TSDoc, APK, UX), and lowercasing the area names destroys them.
+    sentences.push(`Of those, ${changed.length} actually changed the project, covering ${joinList(changed.map(s => displayArea(s.slug)))}.`);
+  } else {
+    sentences.push("No stage changed the project.");
+  }
+
+  if (clean.length > 0) {
+    sentences.push(`The remaining ${clean.length} checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run.`);
+  }
+
+  if (stuck.length > 0) {
+    sentences.push(`${joinList(stuck.map(stageLabel))} produced nothing at all.`);
+  }
+  if (rescued.length > 0) {
+    sentences.push(`${joinList(rescued.map(stageLabel))} could not finish unaided and had to be nudged first, so the clean sweep above was not entirely self-driven.`);
+  } else if (stuck.length === 0) {
+    sentences.push("Every stage got there without help.");
+  }
+
+  // Attention is the union of what is broken now and what is trending badly.
+  // Pace is excluded on purpose: a slow stage that still delivers is not a
+  // call on the reader's time.
+  const attention = [
+    ...stuck.map(stageLabel),
+    ...(recap.health?.chronic || []).map(stageLabel),
+    ...(recap.health?.degrading || []).map(stageLabel),
+  ];
+  const unique = [...new Set(attention)];
+  sentences.push(unique.length === 0
+    ? "Nothing in this run needs you to do anything."
+    : `The part worth your attention is ${joinList(unique)}, detailed below.`);
+
+  return ["In plain terms: " + sentences.join(" "), ""];
+}
+
 export function renderRecap(recap) {
   const lines = [
     `Nightly Recap: ${recap.date}`,
@@ -426,6 +513,7 @@ export function renderRecap(recap) {
     `Grade: ${recap.grade}/10 - ${recap.rationale}`,
     "",
   ];
+  lines.push(...overviewSection(recap));
   for (const s of recap.stages) {
     const label = `S${String(s.stage).padStart(2, "0")}`;
     const pr = s.prNumber ? `PR #${s.prNumber}` : "no PR";

@@ -202,6 +202,11 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     "Summary: 13/13 merged | 0 changed | 13 clean | 0 stuck | 0 intervention",
     "Grade: 10/10 - Optimal run: every stage completed unaided.",
     "",
+    // The plain-language overview, asserted verbatim: every clause of it is
+    // derived from the same counts the rubric grades on, so a change to either
+    // that silently desynchronises them fails right here.
+    "In plain terms: All 13 stages ran and every one of them landed its work. No stage changed the project. The remaining 13 checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run. Every stage got there without help. Nothing in this run needs you to do anything.",
+    "",
     "**S01** | PR #2001",
     "Clean | **HARDENING**",
     "_nothing to do_",
@@ -505,4 +510,105 @@ test("a coverage line carries its run window, and lines written before it still 
   // The window must never be absorbed into the summary, which the evidence floor
   // depends on being clean prose.
   assert.doesNotMatch(parsed.summary, /47m/);
+});
+
+// A recap object assembled by hand, so the overview's clauses can be driven
+// independently of a whole fixture ledger.
+const overviewRecap = (overrides = {}) => ({
+  date: "2026-09-03",
+  total: 3, merged: 3, changed: 1, clean: 2, stuck: 0, rescued: 0, unobserved: 0,
+  grade: 10, rationale: "Optimal run: every stage completed unaided.",
+  stages: [
+    { stage: 2, slug: "verification", outcome: "CHANGED", merged: true },
+    { stage: 5, slug: "documentation-readme", outcome: "CLEAN", merged: true },
+    { stage: 9, slug: "refactor", outcome: "CLEAN", merged: true },
+  ],
+  ...overrides,
+});
+
+test("the overview never describes a clean stage as idle or wasted", () => {
+  // Most stages here are auditors and an audit that finds nothing has
+  // succeeded. Wording that implies waste is factually wrong about the
+  // pipeline, and reading a low change rate as dead capacity is exactly what
+  // once got a compliance stage repurposed.
+  const text = renderRecap(overviewRecap());
+  assert.match(text, /In plain terms:/);
+  assert.match(text, /found nothing that needed fixing/);
+  assert.match(text, /the job being done rather than a wasted run/);
+  assert.doesNotMatch(text, /idle|did nothing|wasted capacity|nothing to show/i);
+});
+
+test("the overview keeps acronyms in area names", () => {
+  // displayArea carries README, TSDoc, APK, UX and PWA. Lowercasing the area
+  // list for prose destroyed them.
+  const text = renderRecap(overviewRecap({
+    total: 2, changed: 2, clean: 0,
+    stages: [
+      { stage: 5, slug: "documentation-readme", outcome: "CHANGED", merged: true },
+      { stage: 10, slug: "apk-integrity", outcome: "CHANGED", merged: true },
+    ],
+  }));
+  assert.match(text, /documentation README/);
+  assert.match(text, /APK integrity/);
+  assert.doesNotMatch(text, /documentation readme|apk integrity/);
+});
+
+test("a rescued run is never described as self-driven", () => {
+  // "13 of 13 merged" and "every stage managed on its own" are different
+  // claims. The second was once asserted on the strength of the first and was
+  // false: ten merged rows carried recovery evidence.
+  const rescuedText = renderRecap(overviewRecap({
+    rescued: 1,
+    stages: [
+      { stage: 2, slug: "verification", outcome: "CHANGED", merged: true },
+      { stage: 5, slug: "documentation-readme", outcome: "CLEAN", merged: true, rescued: true },
+      { stage: 9, slug: "refactor", outcome: "CLEAN", merged: true },
+    ],
+  }));
+  assert.match(rescuedText, /S05 documentation README could not finish unaided/);
+  assert.match(rescuedText, /not entirely self-driven/);
+  assert.doesNotMatch(rescuedText, /Every stage got there without help/);
+
+  // The unaided claim is only made when nothing was rescued and nothing stuck.
+  assert.match(renderRecap(overviewRecap()), /Every stage got there without help/);
+});
+
+test("the overview points at what needs attention, and says so when nothing does", () => {
+  const quiet = renderRecap(overviewRecap());
+  assert.match(quiet, /Nothing in this run needs you to do anything/);
+
+  const degrading = renderRecap(overviewRecap({
+    health: { stages: [], chronic: [], degrading: [{ stage: 1, slug: "hardening" }] },
+  }));
+  assert.match(degrading, /The part worth your attention is S01 hardening/);
+  assert.doesNotMatch(degrading, /Nothing in this run needs you/);
+
+  // A stage that is both stuck and degrading is named once, not twice.
+  const both = renderRecap(overviewRecap({
+    stuck: 1, merged: 2,
+    stages: [
+      { stage: 1, slug: "hardening", outcome: "STUCK", merged: false },
+      { stage: 5, slug: "documentation-readme", outcome: "CLEAN", merged: true },
+      { stage: 9, slug: "refactor", outcome: "CLEAN", merged: true },
+    ],
+    health: { stages: [], chronic: [], degrading: [{ stage: 1, slug: "hardening" }] },
+  }));
+  assert.equal(both.match(/S01 hardening/g).filter(m => m).length >= 1, true);
+  assert.match(both, /The part worth your attention is S01 hardening, detailed below/);
+});
+
+test("an unobserved date makes no claim about the run in either direction", () => {
+  // Absence of evidence is not evidence of failure, and it is not evidence of
+  // success either. The overview must refuse to characterise the run.
+  const text = renderRecap(overviewRecap({
+    total: 3, merged: 0, changed: 0, clean: 0, unobserved: 3,
+    grade: 1, rationale: "No evidence recorded.",
+    stages: [
+      { stage: 2, slug: "verification", outcome: "UNOBSERVED", merged: false },
+      { stage: 5, slug: "documentation-readme", outcome: "UNOBSERVED", merged: false },
+      { stage: 9, slug: "refactor", outcome: "UNOBSERVED", merged: false },
+    ],
+  }));
+  assert.match(text, /nothing was recorded for this date/);
+  assert.doesNotMatch(text, /landed its work|needs you to do anything/);
 });
