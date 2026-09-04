@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1689 [Stage 9]: 108 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useClashSync.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useClashSync clean.
+**Domain:** architecture | **Commit:** f5324cec | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1689)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Substrate architecture strictly aligned with CleanStack ADR; 0 depcruise violations found and 1803 unit and integration tests passed cleanly.
+**Change:** 108 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useClashSync.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useClashSync clean.
+**Result:** depcruise 0 violations; 1803 tests passed cleanly; CLEAN evidence floor satisfied.
+
+
 ### [2026-09-04] PR #1688 [Stage 7]: Monorepo version declarations and PNPM catalog protocol usage audited and confirmed consistent
 **Domain:** versioning | **Commit:** e718c5cb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1688)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
