@@ -6253,6 +6253,291 @@
         "lastObservedAt": "2026-09-03T23:10:32.500Z",
         "failureClass": null
       }
+    },
+    "2026-09-04": {
+      "1": {
+        "date": "2026-09-04",
+        "stage": 1,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-09-03/stage-1/pr-1668",
+          "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
+          "session": {
+            "id": "1443548357179711166",
+            "name": "sessions/1443548357179711166",
+            "state": "COMPLETED",
+            "createTime": "2026-09-03T23:03:50.754400921Z",
+            "updateTime": "2026-09-03T23:09:56.180545Z",
+            "lifetimeMinutes": 6.1
+          },
+          "run": {
+            "started": "2026-09-03T23:05:00Z",
+            "terminated": "2026-09-03T23:08:00Z",
+            "durationMinutes": 3
+          },
+          "body": {
+            "pr": 1668,
+            "verdict": "MARKER_LEAK",
+            "ok": false
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.496Z",
+        "failureClass": null
+      },
+      "2": {
+        "date": "2026-09-04",
+        "stage": 2,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-09-04/stage-2/pr-1682",
+          "coverageLog": ".github/nightly-logs/02-verification-coverage.log",
+          "session": {
+            "id": "17482237101062557161",
+            "name": "sessions/17482237101062557161",
+            "state": "COMPLETED",
+            "createTime": "2026-09-04T00:20:05.180201117Z",
+            "updateTime": "2026-09-04T00:29:10.827236Z",
+            "lifetimeMinutes": 9.1
+          },
+          "run": {
+            "started": "2026-09-04T00:21:00Z",
+            "terminated": "2026-09-04T00:27:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1682,
+            "verdict": "OK",
+            "ok": true
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.496Z",
+        "failureClass": null
+      },
+      "3": {
+        "date": "2026-09-04",
+        "stage": 3,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.497Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "4": {
+        "date": "2026-09-04",
+        "stage": 4,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.497Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "5": {
+        "date": "2026-09-04",
+        "stage": 5,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.497Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "6": {
+        "date": "2026-09-04",
+        "stage": 6,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 2,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.498Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "7": {
+        "date": "2026-09-04",
+        "stage": 7,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.498Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "8": {
+        "date": "2026-09-04",
+        "stage": 8,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.499Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "9": {
+        "date": "2026-09-04",
+        "stage": 9,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.499Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "10": {
+        "date": "2026-09-04",
+        "stage": 10,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.500Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "11": {
+        "date": "2026-09-04",
+        "stage": 11,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.500Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "12": {
+        "date": "2026-09-04",
+        "stage": 12,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "DEGRADING",
+            "currentStreak": 1,
+            "reason": "intervention rate rose from 18% to 36%"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.500Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      },
+      "13": {
+        "date": "2026-09-04",
+        "stage": 13,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "NO_OUTPUT",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
+          "julesApiError": null,
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-04T00:29:49.501Z",
+        "failureClass": "NO_PUBLISHED_OUTPUT"
+      }
     }
   }
 }
