@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1683 [Stage 3]: Folded 3 pending migrations into master migration baseline
+**Domain:** database | **Commit:** 1e2eaedd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1683)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Consolidated 20260903020000, 20260903030000, and 20260903040000 into baseline SQL
+**Change:** Folded 3 pending migrations into master migration baseline
+**Result:** migration-quality PASS, static fold-state FOLDED (0 unfolded), database verification DB-UNAVAILABLE
+
+
 ### [2026-09-04] PR #1682 [Stage 2]: Expanded useClashSync spec coverage for storage persistence failures and edge case states
 **Domain:** verification | **Commit:** 585c19e1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1682)
 **Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSync.spec.ts
