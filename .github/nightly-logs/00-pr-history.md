@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1685 [Stage 5]: docs(readme): Reconciled useClashSync commitSyncResult remoteSuccess flag and error state preservation in core services README
+**Domain:** documentation | **Commit:** ab981c39 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1685)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Documented commitSyncResult remoteSuccess gating and local mutation error state preservation in useClashSync.ts
+**Change:** docs(readme): Reconciled useClashSync commitSyncResult remoteSuccess flag and error state preservation in core services README
+**Result:** Verified git diff --check and pnpm test suite execution (1803 tests passed)
+
+
 ### [2026-09-04] PR #1684 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; 108 changed files inspected with 0 code mutations required
 **Domain:** pipeline | **Commit:** e553ab02 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1684)
 **Files:** .github/nightly-logs/04-optimization-coverage.log
