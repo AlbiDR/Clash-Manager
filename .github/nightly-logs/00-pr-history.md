@@ -16,6 +16,21 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1688 [Stage 7]: Monorepo version declarations and PNPM catalog protocol usage audited and confirmed consistent
+**Domain:** versioning | **Commit:** e718c5cb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1688)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** All manifests and derived declarations align on ground truth version 14.50.3 and catalog protocol is strictly followed
+**Change:** Monorepo version declarations and PNPM catalog protocol usage audited and confirmed consistent
+**Result:** pnpm audit:version passed with zero drift or catalog violations
+
+### [2026-09-04] PR #1687 [Stage 8]: chore(deps): Bumped @supabase/supabase-js to ^2.115.0 and updated major version watchlist
+**Domain:** pipeline | **Commit:** e2d3e5e0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1687)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Automated nightly audit pass.
+**Change:** chore(deps): Bumped @supabase/supabase-js to ^2.115.0 and updated major version watchlist
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-04] PR #1686 [Stage 6]: docs(tsdoc): harden StorageService interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 26c66c42 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1686)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/StorageService.ts
