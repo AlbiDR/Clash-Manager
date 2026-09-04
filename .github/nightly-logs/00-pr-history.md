@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1690 [Stage 10]: Verified wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, security policy
+**Domain:** apk | **Commit:** 76a50364 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1690)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** PWA configuration and native wrapper definitions are fully synchronized with no mismatches
+**Change:** Verified wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, security policy
+**Result:** Passed pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, and pnpm test:apk-ux-audit checks
+
+
 ### [2026-09-04] PR #1689 [Stage 9]: 108 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useClashSync.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useClashSync clean.
 **Domain:** architecture | **Commit:** f5324cec | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1689)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
