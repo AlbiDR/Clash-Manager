@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1682 [Stage 2]: Expanded useClashSync spec coverage for storage persistence failures and edge case states
+**Domain:** verification | **Commit:** 585c19e1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1682)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSync.spec.ts
+**Why:** Close coverage gaps in L1 Core useClashSync service without modifying application logic
+**Change:** Expanded useClashSync spec coverage for storage persistence failures and edge case states
+**Result:** All 1803 tests passing across 195 files
+
+
 ### [2026-09-03] PR #1681 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 971b2567 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1681)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
