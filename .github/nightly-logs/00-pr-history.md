@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1684 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; 108 changed files inspected with 0 code mutations required
+**Domain:** pipeline | **Commit:** e553ab02 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1684)
+**Files:** .github/nightly-logs/04-optimization-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(optimize): Substrate hygiene audit confirmed known unreferenced views; 108 changed files inspected with 0 code mutations required
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-04] PR #1683 [Stage 3]: Folded 3 pending migrations into master migration baseline
 **Domain:** database | **Commit:** 1e2eaedd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1683)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
