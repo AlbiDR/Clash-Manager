@@ -406,3 +406,4 @@
 * [2026-09-01] [Stage 3] CLEAN: Codebase -- clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-state CLEAN, database-verification DB-UNAVAILABLE
 * [2026-09-02] [Stage 3] CLEAN: Codebase -- Read-only baseline audit verified master migration schema is current
 * [2026-09-03] [Stage 3] CLEAN: Codebase -- 0 pending migrations (clean-since-calibration: 1); read-only RLS, search_path, and formatting audit completed with zero source changes required
+* [2026-09-04] [Stage 3] [01:08Z-01:12Z 4m] CHANGED: Backend/supabase/migrations/20260531232406_master_migration.sql -- Folded 3 pending migrations into master migration baseline
