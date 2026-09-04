@@ -386,6 +386,63 @@ describe("useClashSync", () => {
       expect(data.value.lb[0].t).toBe(0);
       expect(consoleSpy).toHaveBeenCalled();
     });
+
+    it("should do nothing when member tag is not found in leaderboard", async () => {
+      data.value = {
+        lb: [{ id: "TAG1", n: "Old Name", t: 0, performanceScore: 0, performanceRawScore: 0, d: { role: "member", days: 0, avg: 0, hist: "", winRate: 0 } }],
+        hh: [],
+        timestamp: 100,
+        blacklist: []
+      };
+
+      const sync = useClashSync(data);
+      await sync.updatePlayerLocally("NONEXISTENT", { n: "New Name" });
+
+      expect(data.value.lb[0].n).toBe("Old Name");
+      expect(saveCache).not.toHaveBeenCalled();
+    });
+
+    it("should do nothing when data.value is null", async () => {
+      data.value = null;
+
+      const sync = useClashSync(data);
+      await sync.updatePlayerLocally("TAG1", { n: "New Name" });
+
+      expect(data.value).toBeNull();
+      expect(saveCache).not.toHaveBeenCalled();
+    });
+
+    it("should log error gracefully if cache persistence fails", async () => {
+      data.value = {
+        lb: [{ id: "TAG1", n: "Old Name", t: 0, performanceScore: 0, performanceRawScore: 0, d: { role: "member", days: 0, avg: 0, hist: "", winRate: 0 } }],
+        hh: [],
+        timestamp: 100,
+        blacklist: []
+      };
+      vi.mocked(saveCache).mockRejectedValueOnce(new Error("Storage Full"));
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const sync = useClashSync(data);
+      await sync.updatePlayerLocally("TAG1", { n: "New Name" });
+
+      expect(data.value.lb[0].n).toBe("New Name");
+      expect(consoleSpy).toHaveBeenCalledWith("[Sync] Failed to persist player update:", expect.any(Error));
+    });
+  });
+
+  describe("commitSyncResult persistence errors", () => {
+    it("should log error gracefully and preserve memory state if cache persistence rejects during commit", async () => {
+      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", blacklist: [] };
+      vi.mocked(fetchRemote).mockResolvedValue(remotePayload);
+      vi.mocked(saveCache).mockRejectedValueOnce(new Error("IDB Error"));
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const sync = useClashSync(data);
+      await sync.refreshFromSupabase();
+
+      expect(data.value).toEqual(remotePayload);
+      expect(consoleSpy).toHaveBeenCalledWith("[Sync] Commit persistence failed:", "IDB Error");
+    });
   });
 
   describe("remote failure state is only cleared by remote evidence", () => {
