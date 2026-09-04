@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1691 [Stage 11]: CLEAN: Audited native WebView settings (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), Service Worker cache topology, Vite bundle chunking, and APK wrapper integrity; 0 source changes required.
+**Domain:** apk | **Commit:** 5635057c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1691)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Why:** All native wrapper settings, SW precache manifests, and rollup chunking rules match established baselines.
+**Change:** CLEAN: Audited native WebView settings (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), Service Worker cache topology, Vite bundle chunking, and APK wrapper integrity; 0 source changes required.
+**Result:** Source-level structural audit and pnpm apk:verify confirmed 100% wrapper and bundle compliance.
+
+
 ### [2026-09-04] PR #1690 [Stage 10]: Verified wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, security policy
 **Domain:** apk | **Commit:** 76a50364 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1690)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log
