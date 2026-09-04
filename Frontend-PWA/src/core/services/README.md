@@ -105,6 +105,7 @@ The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper
 `useClashSync.ts` orchestrates data synchronization, local persistence, and error tolerance in Layer 1 Core:
 - **Single-Flight Synchronization:** Enforces single-flight remote execution (`activeSyncPromise`). Concurrent sync calls join the single active in-flight request promise, eliminating redundant network traffic and avoiding race conditions during batch or automated triggers.
 - **Fault-Tolerance Visibility Thresholding:** Tracks consecutive remote synchronization failures (`consecutiveSyncFailures`). Background sync failures remain suppressed to maintain UI stability until the failure threshold (`SYNC_FAILURE_VISIBILITY_THRESHOLD = 3`) is reached, while manual user-triggered refreshes immediately expose error states (`syncError`).
+- **Remote Success State Preservation:** Internal `commitSyncResult` gates clearing `consecutiveSyncFailures` and `syncError` behind an explicit `remoteSuccess` flag (defaulting to `false`). Purely local commits (such as cache hydration, local edits, or optimistic rollbacks) leave remote failure indicators intact so that local mutations cannot forge proof of backend reachability or suppress pending error visibility windows.
 
 ### High-Performance Search and Filtering (`useListFilter.ts`)
 
