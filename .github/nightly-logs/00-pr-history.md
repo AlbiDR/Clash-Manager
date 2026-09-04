@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-04] PR #1686 [Stage 6]: docs(tsdoc): harden StorageService interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 26c66c42 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1686)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/StorageService.ts
+**Why:** Document Layer 1 core StorageService interface contracts, IndexedDB persistence boundaries, legacy migration bridge, and decision/threat logs
+**Change:** docs(tsdoc): harden StorageService interface contracts and inline logic annotations
+**Result:** Vitest 1803 passed across 195 test files
+
+
 ### [2026-09-04] PR #1685 [Stage 5]: docs(readme): Reconciled useClashSync commitSyncResult remoteSuccess flag and error state preservation in core services README
 **Domain:** documentation | **Commit:** ab981c39 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1685)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
