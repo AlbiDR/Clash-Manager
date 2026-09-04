@@ -6289,7 +6289,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.536Z",
+        "lastObservedAt": "2026-09-04T02:20:50.838Z",
         "failureClass": null
       },
       "2": {
@@ -6326,7 +6326,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.536Z",
+        "lastObservedAt": "2026-09-04T02:20:50.838Z",
         "failureClass": null
       },
       "3": {
@@ -6364,7 +6364,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.536Z",
+        "lastObservedAt": "2026-09-04T02:20:50.839Z",
         "failureClass": null
       },
       "4": {
@@ -6372,19 +6372,38 @@
         "stage": 4,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-04/stage-4/pr-1684",
+          "session": {
+            "id": "17026043284586658911",
+            "name": "sessions/17026043284586658911",
+            "state": "COMPLETED",
+            "createTime": "2026-09-04T02:11:12.916460549Z",
+            "updateTime": "2026-09-04T02:19:26.451375Z",
+            "lifetimeMinutes": 8.2
+          },
+          "run": {
+            "started": "2026-09-04T02:13:00Z",
+            "terminated": "2026-09-04T02:18:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1684,
+            "verdict": "AD_LIBBED",
+            "ok": false
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.537Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-04T02:20:50.839Z",
+        "failureClass": null
       },
       "5": {
         "date": "2026-09-04",
@@ -6402,7 +6421,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.537Z",
+        "lastObservedAt": "2026-09-04T02:20:50.839Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "6": {
@@ -6421,7 +6440,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.537Z",
+        "lastObservedAt": "2026-09-04T02:20:50.840Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "7": {
@@ -6440,7 +6459,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.537Z",
+        "lastObservedAt": "2026-09-04T02:20:50.840Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -6459,7 +6478,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.538Z",
+        "lastObservedAt": "2026-09-04T02:20:50.840Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -6478,7 +6497,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.538Z",
+        "lastObservedAt": "2026-09-04T02:20:50.840Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -6497,7 +6516,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.538Z",
+        "lastObservedAt": "2026-09-04T02:20:50.841Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -6516,7 +6535,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.538Z",
+        "lastObservedAt": "2026-09-04T02:20:50.841Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -6535,7 +6554,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.539Z",
+        "lastObservedAt": "2026-09-04T02:20:50.841Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -6554,7 +6573,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-04T01:14:35.539Z",
+        "lastObservedAt": "2026-09-04T02:20:50.841Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
