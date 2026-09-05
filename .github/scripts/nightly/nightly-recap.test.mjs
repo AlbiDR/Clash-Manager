@@ -216,7 +216,7 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     "",
     // Three lines per stage, because these fixture stages genuinely said
     // nothing else: no Why and no Result exist for them, so neither label is
-    // printed carrying a placeholder. The foot line below says how many.
+    // printed carrying a placeholder. The foot lines below say how many.
     "**S01 HARDENING** | Clean | PR #2001",
     "What was checked: the hardening area, and everything there was already in order.",
     "",
@@ -256,9 +256,12 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     "**S13 SELF HEALING PROTOCOL** | Clean | PR #2013",
     "What was checked: the self healing protocol area, and everything there was already in order.",
     "",
-    // Why every block above is three lines. Without this the report would
-    // simply look terse, and a reader could not tell a quiet run from a run
-    // whose record has been pruned.
+    // Both foot lines exist because their own absence would read as good
+    // news: nobody checked these descriptions, and the history holding their
+    // Why and Result is gone. Saying neither would leave a report that looks
+    // merely terse.
+    "Published descriptions: not checked on this run, so nothing here says whether any arrived damaged. The watchdog records that observation, and no stage carries one.",
+    "",
     "Detail aged out: 13 of 13 merged stages no longer have an entry in the pull request history, so no Why or Result survives for them. Stage 1's aging pass prunes older entries; the run itself is unaffected.",
     "",
   ].join("\n"));
@@ -461,7 +464,90 @@ test("a generic record with a sound description does not claim the description w
   }));
 
   assert.match(text, /^Thin evidence: 1 of 1 stages left a Why or Result to the pipeline's default \(S09\)\./m);
-  assert.doesNotMatch(text, /arrived damaged/);
+  assert.doesNotMatch(text, /the published description arrived damaged as well/);
+});
+
+test("a run nobody checked for damaged descriptions says so, rather than nothing", () => {
+  // The same failure mode this section keeps rediscovering: a measurement whose
+  // own absence looks like good news. Description health is a watchdog
+  // observation, and only 38 of the 156 stage entries in the twelve runs to
+  // 2026-09-05 carry one, so every earlier run printed no line at all and the
+  // absence read as "none were damaged".
+  const unchecked = renderRecap(singleStage({
+    stage: 2, slug: "verification", outcome: "CHANGED", prNumber: 1695, merged: true,
+    summary: "expanded coverage", why: "a real reason", result: "7/7 passed",
+  }, { changed: 1, clean: 0 }));
+  assert.match(unchecked, /^Published descriptions: not checked on this run, so nothing here says whether any arrived damaged\./m);
+
+  // A run that produced nothing has no descriptions to check, so the line would
+  // be noise rather than honesty.
+  const nothingRan = renderRecap(singleStage({
+    stage: 2, slug: "verification", outcome: "STUCK", merged: false, failureClass: "JULES_SESSION_STUCK",
+  }, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
+  assert.doesNotMatch(nothingRan, /Published descriptions/);
+});
+
+test("the damaged count is stated against the stages actually checked", () => {
+  // "1 of 13 arrived damaged" on a run where only two were checked overstates
+  // the health of the eleven nobody looked at.
+  const stage = (n, bodyHealth) => ({
+    stage: n, slug: n === 2 ? "verification" : "refactor", outcome: "CLEAN",
+    prNumber: 1690 + n, merged: true, summary: "checked things",
+    why: "a real reason", result: "all good", bodyHealth,
+  });
+  const unchecked = { ...stage(11, undefined), slug: "apk-optimization" };
+  delete unchecked.bodyHealth;
+  const text = renderRecap(singleStage(stage(2, { ok: false, verdict: "AD_LIBBED", pr: 1692 }), {
+    total: 3, merged: 3, clean: 3, changed: 0,
+    stages: [stage(2, { ok: false, verdict: "AD_LIBBED", pr: 1692 }), stage(9, { ok: true, pr: 1699 }), unchecked],
+  }));
+
+  assert.match(text, /^Published descriptions: 1 of 2 checked arrived damaged \(S02\)\./m);
+  assert.doesNotMatch(text, /1 of 3 arrived damaged/, "the stage nobody checked must not be counted as healthy");
+});
+
+test("a placeholder family this report does not know is caught structurally", () => {
+  // Thin evidence can only count what it recognises, and three families from
+  // three writers already exist, two found by hand after weeks of being printed
+  // as a stage's own words. A fourth would make Thin evidence UNDERSTATE, which
+  // is the direction that reads as success, so the count needs a way to notice
+  // its own ignorance.
+  //
+  // No threshold and no list: a genuine result describes one stage's work, so
+  // the same result on two stages of one run is generic by construction.
+  const stage = n => ({
+    stage: n, slug: n === 2 ? "verification" : "refactor", outcome: "CLEAN",
+    prNumber: 1690 + n, merged: true, summary: "checked things",
+    why: "a real reason", result: "Everything is fine.",
+  });
+  const text = renderRecap(singleStage(stage(2), {
+    total: 13, merged: 2, clean: 2, changed: 0, stages: [stage(2), stage(9)],
+  }));
+
+  assert.match(text, /^Unrecognised boilerplate: 2 stages reported the identical Result "Everything is fine\." \(S02 and S09\)\./m);
+  assert.match(text, /printed above as though a stage had written it/);
+});
+
+test("two stages describing different work are not called boilerplate", () => {
+  // The direction that would be a real loss. Distinct results must never be
+  // flagged, and a result the report already recognises as a placeholder is
+  // reported by Thin evidence rather than twice.
+  const stage = (n, result) => ({
+    stage: n, slug: n === 2 ? "verification" : "refactor", outcome: "CLEAN",
+    prNumber: 1690 + n, merged: true, summary: "checked things", why: "a real reason", result,
+  });
+  const distinct = renderRecap(singleStage(stage(2, "7/7 passed"), {
+    total: 13, merged: 2, clean: 2, changed: 0,
+    stages: [stage(2, "7/7 passed"), stage(9, "1806 tests passed")],
+  }));
+  assert.doesNotMatch(distinct, /Unrecognised boilerplate/);
+
+  const known = renderRecap(singleStage(stage(2, METADATA_PLACEHOLDERS.result), {
+    total: 13, merged: 2, clean: 2, changed: 0,
+    stages: [stage(2, METADATA_PLACEHOLDERS.result), stage(9, METADATA_PLACEHOLDERS.result)],
+  }));
+  assert.doesNotMatch(known, /Unrecognised boilerplate/);
+  assert.match(known, /^Thin evidence: 2 of 13 stages/m);
 });
 
 test("a run whose history has been pruned says so, instead of just looking terse", () => {

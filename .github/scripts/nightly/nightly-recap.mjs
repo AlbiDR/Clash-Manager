@@ -826,16 +826,75 @@ function thinEvidenceSection(recap) {
  * Kept out of the Summary counts on purpose: a damaged description is not a
  * failed stage, and a reader who meets it inside the failure tally will go and
  * fix the wrong thing.
+ *
+ * Counted against the stages that were actually CHECKED, not against the run.
+ * Description health is a watchdog observation and only 38 of the 156 stage
+ * entries in the twelve runs to 2026-09-05 carry one at all, so a run nobody
+ * checked printed no line, and an absent line reads as "none were damaged".
+ * That is the failure mode this whole section keeps rediscovering: a
+ * measurement whose own absence looks like good news. When nothing was checked
+ * it now says so instead of saying nothing.
  */
 function descriptionSection(recap) {
-  const damaged = (recap.stages || []).filter(s => s.bodyHealth && (s.bodyHealth.ok === false || s.bodyHealth.repairedFrom));
+  const stages = recap.stages || [];
+  const checked = stages.filter(s => s.bodyHealth);
+  const damaged = checked.filter(s => s.bodyHealth.ok === false || s.bodyHealth.repairedFrom);
+
+  if (checked.length === 0) {
+    // Only worth saying for a run that produced descriptions to check.
+    if (!stages.some(s => s.merged)) return [];
+    return [
+      `Published descriptions: not checked on this run, so nothing here says whether any arrived damaged.`
+      + ` The watchdog records that observation, and no stage carries one.`,
+      "",
+    ];
+  }
   if (damaged.length === 0) return [];
-  const which = joinList(damaged.map(s => stageTag(s.stage)));
+
+  const scope = checked.length === stages.length ? `${recap.total}` : `${checked.length} checked`;
   return [
-    `Published descriptions: ${damaged.length} of ${recap.total} arrived damaged (${which}).`
+    `Published descriptions: ${damaged.length} of ${scope} arrived damaged (${joinList(damaged.map(s => stageTag(s.stage)))}).`
     + ` The work landed in every one of them; only the description did not.`,
     "",
   ];
+}
+
+/**
+ * A placeholder family this report does not know about, caught structurally.
+ *
+ * Thin evidence can only count the placeholders it recognises, and there are
+ * already three families from three writers, two of which were found by hand
+ * after weeks of being printed as though a stage had written them. A fourth
+ * would make Thin evidence UNDERSTATE, which is the direction that reads as
+ * success, so the count needs a way to notice its own ignorance.
+ *
+ * The tell needs no threshold and no list. A genuine result describes one
+ * stage's work, so the same result on more than one stage of the same run is
+ * generic by construction, whoever wrote it. Verified against the twelve runs
+ * to 2026-09-05: zero unrecognised strings are shared between stages, so this
+ * is silent on every run recorded so far and speaks only when something new
+ * appears.
+ */
+function unknownBoilerplateSection(recap) {
+  const byResult = new Map();
+  for (const stage of recap.stages || []) {
+    const result = String(stage.result || "").trim();
+    if (!result || isPlaceholderField("result", result)) continue;
+    if (!byResult.has(result)) byResult.set(result, []);
+    byResult.get(result).push(stage);
+  }
+
+  const shared = [...byResult.entries()].filter(([, stages]) => stages.length > 1);
+  if (shared.length === 0) return [];
+
+  const lines = [];
+  for (const [result, stages] of shared) {
+    lines.push(
+      `Unrecognised boilerplate: ${stages.length} stages reported the identical Result "${escapeInline(result)}" (${joinList(stages.map(s => stageTag(s.stage)))}).`
+      + ` A result describes one stage's work, so an identical one across stages is a placeholder this report does not know, and it was printed above as though a stage had written it.`,
+    );
+  }
+  return [...lines, ""];
 }
 
 export function renderRecap(recap) {
@@ -862,6 +921,7 @@ export function renderRecap(recap) {
   lines.push(...paceSection(recap.health));
   lines.push(...descriptionSection(recap));
   lines.push(...thinEvidenceSection(recap));
+  lines.push(...unknownBoilerplateSection(recap));
 
   return lines.join("\n");
 }
