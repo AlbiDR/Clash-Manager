@@ -32,7 +32,9 @@ import {
   selectFallbackCandidates,
   renderRecoveryReadiness,
   renderStaleStagePrReport,
+  renderRehearsalReport,
   renderSummary,
+  rehearseFallbackPublisher,
   buildBodyRepair,
   repairPublishedBodies,
   runFrontier,
@@ -1551,4 +1553,100 @@ test("a failed rewrite is reported and does not stop the other repairs", async (
   assert.deepEqual(result.repaired.map(r => r.stage), [3]);
   assert.deepEqual(result.skipped.map(r => r.stage), [2]);
   assert.equal(stageEntry(ledger, date, 2).evidence?.body?.ok ?? null, null, "a failed repair claims nothing");
+});
+
+// A mechanism used only in emergencies needs a heartbeat, not an emergency.
+// The fallback publisher had neither, and on 2026-09-03 it stopped working for
+// two days without a single signal. These rehearse it against the sessions that
+// SUCCEEDED tonight, which are free and fully realistic fixtures.
+function sessionWithPatch(stageNumber, date, line) {
+  const stage = registry.stages.find(s => s.number === stageNumber);
+  const patch = [
+    `diff --git a/${stage.coverageLog} b/${stage.coverageLog}`,
+    `--- a/${stage.coverageLog}`,
+    `+++ b/${stage.coverageLog}`,
+    "@@ -1 +1,2 @@",
+    line,
+  ].join("\n");
+  return {
+    id: `s${stageNumber}`,
+    name: `sessions/s${stageNumber}`,
+    state: "COMPLETED",
+    createTime: `${date}T01:00:00Z`,
+    prompt: `S${String(stageNumber).padStart(2, "0")}: work`,
+    outputs: [{ changeSet: { gitPatch: { unidiffPatch: patch } } }],
+  };
+}
+
+test("the fallback publisher is rehearsed against tonight's successful sessions", () => {
+  const date = "2026-08-11";
+  const observed = {
+    julesSessions: [
+      sessionWithPatch(11, date, `+* [${date}] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited settings`),
+      sessionWithPatch(10, date, `+* [${date}] [Stage 10] CLEAN: Codebase -- Audited wrapper`),
+    ],
+  };
+
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed });
+
+  assert.equal(rehearsal.rehearsed, 2);
+  assert.equal(rehearsal.ready, 2);
+  assert.equal(rehearsal.capable, true);
+  assert.match(renderRehearsalReport(rehearsal), /rehearsed against 2 session\(s\), 2 would publish/);
+});
+
+// The exact 2026-09-03 shape: every rehearsal refuses because the parser no
+// longer understands the line the stages write. This is the signal that did not
+// exist, and it must be loud.
+test("a fallback publisher that refuses everything is reported as a lost capability", () => {
+  const date = "2026-08-11";
+  const observed = {
+    julesSessions: [
+      // A patch with no coverage line at all: nothing to validate against, so
+      // buildFallbackPlan refuses, which is what a format break looks like.
+      { id: "a", name: "sessions/a", state: "COMPLETED", createTime: `${date}T01:00:00Z`, prompt: "S11: work",
+        outputs: [{ changeSet: { gitPatch: { unidiffPatch: "diff --git a/x.ts b/x.ts\n+noise" } } }] },
+    ],
+  };
+
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed });
+
+  assert.equal(rehearsal.capable, false);
+  assert.equal(rehearsal.ready, 0);
+  const report = renderRehearsalReport(rehearsal);
+  assert.match(report, /CANNOT PUBLISH/);
+  assert.match(report, /last line of defence/);
+  // Exit 3 is the capability-loss channel, the same one the dead credential uses.
+  assert.equal(resolveExitCode({ observerHealthy: true, entries: [], fallbackCapable: false }), 3);
+});
+
+// Nothing to rehearse is an unknown, not a failure. Without this the early
+// passes of every night, before any session holds a change set, would redden
+// the job on no evidence at all.
+test("a pass with nothing to rehearse never reddens the run", () => {
+  const rehearsal = rehearseFallbackPublisher({ registry, date: "2026-08-11", observed: { julesSessions: [] } });
+
+  assert.equal(rehearsal.rehearsed, 0);
+  assert.equal(rehearsal.capable, null);
+  assert.match(renderRehearsalReport(rehearsal), /not rehearsed tonight/);
+  assert.equal(resolveExitCode({ observerHealthy: true, entries: [], fallbackCapable: null }), 0);
+});
+
+// One stage refusing can be a legitimate write-boundary rejection of that
+// stage's own patch. Only a total refusal is a claim about the publisher.
+test("one stage refusing is named but does not claim the publisher is broken", () => {
+  const date = "2026-08-11";
+  const observed = {
+    julesSessions: [
+      sessionWithPatch(11, date, `+* [${date}] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited settings`),
+      { id: "b", name: "sessions/b", state: "COMPLETED", createTime: `${date}T02:00:00Z`, prompt: "S10: work",
+        outputs: [{ changeSet: { gitPatch: { unidiffPatch: "diff --git a/x.ts b/x.ts\n+noise" } } }] },
+    ],
+  };
+
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed });
+
+  assert.equal(rehearsal.capable, true);
+  assert.deepEqual(rehearsal.failed.map(f => f.stage), [10]);
+  assert.match(renderRehearsalReport(rehearsal), /Stage 10 would NOT publish/);
 });

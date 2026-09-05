@@ -277,3 +277,53 @@ test("every exit returns to the base branch and the commit has a real identity",
   assert.ok(good.calls.some(c => c.startsWith("config user.email")), "user.email must be configured");
   assert.ok(nameIndex < commitIndex, "the identity must be set before the commit");
 });
+
+// The 2026-09-03 silent breakage. d5488b65b started writing the run window
+// `[HH:MMZ-HH:MMZ NNm]` into the coverage-log line; this parser did not know
+// about the bracket, so from that day it matched nothing, buildFallbackPlan
+// refused every stage, and the pipeline's last line of defence was dead. It was
+// found by reading the code, not by any test or any run, because rung two only
+// executes after the nudge is exhausted and that had not happened in 25 nights.
+test("the coverage-log parser accepts a line carrying a run window", () => {
+  const stage = registry.stages.find(s => s.number === 11);
+  const withWindow = "+* [2026-09-05] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited native WebView settings";
+
+  const outcome = parseCoverageOutcome(withWindow, stage, "2026-09-05");
+  assert.equal(outcome?.status, "CLEAN");
+  assert.equal(outcome?.summary, "Audited native WebView settings");
+});
+
+// Lines written before the window existed must keep parsing identically, or
+// recovering an older stranded session would break on the way to fixing a
+// newer one.
+test("the coverage-log parser still accepts a line without a run window", () => {
+  const stage = registry.stages.find(s => s.number === 11);
+  const outcome = parseCoverageOutcome(
+    "+* [2026-09-02] [Stage 11] CLEAN: Codebase -- Audit completed",
+    stage,
+    "2026-09-02",
+  );
+  assert.equal(outcome?.status, "CLEAN");
+  assert.equal(outcome?.summary, "Audit completed");
+});
+
+test("a full plan builds from a modern patch, window and all", () => {
+  const stage = registry.stages.find(s => s.number === 11);
+  const patch = [
+    `diff --git a/${stage.coverageLog} b/${stage.coverageLog}`,
+    `--- a/${stage.coverageLog}`,
+    `+++ b/${stage.coverageLog}`,
+    "@@ -1 +1,2 @@",
+    "+* [2026-09-05] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited native WebView settings",
+  ].join("\n");
+
+  const plan = buildFallbackPlan({
+    stage,
+    session: { id: "42", outputs: [{ changeSet: { gitPatch: { unidiffPatch: patch } } }] },
+    date: "2026-09-05",
+  });
+
+  assert.equal(plan.ok, true, plan.reason);
+  assert.equal(plan.status, "CLEAN");
+  assert.equal(plan.summary, "Audited native WebView settings");
+});

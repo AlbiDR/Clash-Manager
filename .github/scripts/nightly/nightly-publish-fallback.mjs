@@ -40,7 +40,20 @@ import { validateChangedPaths } from "./nightly-stage.mjs";
 // Coverage-log line the stage writes as its terminal record, as it appears in a
 // unified diff (added lines carry a leading +). Both the outcome status and the
 // human summary are recovered from it, so neither has to be guessed.
-const COVERAGE_LINE = /^\+\* \[(\d{4}-\d{2}-\d{2})\] \[Stage (\d+)\] (CLEAN|CHANGED|SKIPPED|PARTIAL-RUN): (.*)$/m;
+//
+// The bracket before the status is the optional run window `[HH:MMZ-HH:MMZ NNm]`
+// that finalize started writing in d5488b65b on 2026-09-03. Without the group
+// that skips it, this regex stopped matching every line written from that day
+// on, which meant buildFallbackPlan refused EVERY stage with "patch has no
+// coverage-log line" and the fallback publisher could not have published
+// anything at all. Nothing caught it for two days because this code only runs
+// after the nudge path is exhausted, which had not happened once in 25 nights.
+// That is the whole argument for rehearseFallbackPublisher in the watchdog:
+// an emergency mechanism nobody exercises does not stay working, it rots
+// quietly and reports nothing.
+//
+// Non-capturing on purpose: the callers destructure by position.
+const COVERAGE_LINE = /^\+\* \[(\d{4}-\d{2}-\d{2})\] \[Stage (\d+)\] (?:\[[^\]]+\] )?(CLEAN|CHANGED|SKIPPED|PARTIAL-RUN): (.*)$/m;
 
 const DIFF_HEADER = /^diff --git a\/(\S+) b\/(\S+)$/gm;
 

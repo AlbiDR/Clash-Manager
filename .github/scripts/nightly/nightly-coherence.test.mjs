@@ -136,3 +136,41 @@ test("the version checker still owns more locations than any prompt enumerates",
     assert.ok(checker.includes(marker), `validate-project.ts no longer checks ${marker}`);
   }
 });
+
+// Two parsers read the stage coverage-log line, and they must agree.
+//
+// nightly-recap.mjs reads it from the committed file; nightly-publish-fallback
+// reads it out of a unified diff, so they cannot literally share one regex. But
+// they are two definitions of one format, which is exactly the duplication this
+// file exists to police, and on 2026-09-03 they drifted: finalize started
+// writing the run window `[HH:MMZ-HH:MMZ NNm]`, the recap was taught about it
+// and the fallback publisher was not. From that day the fallback publisher
+// could not parse a single line the pipeline produced, and could therefore not
+// publish anything. Nothing noticed for two days.
+//
+// So this asserts agreement on behaviour rather than absence of duplication:
+// give both parsers the same line and require the same status and summary.
+test("both coverage-log parsers read the same line the same way", async () => {
+  const { parseCoverageLine } = await import("./nightly-recap.mjs");
+  const { parseCoverageOutcome } = await import("./nightly-publish-fallback.mjs");
+  const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", DIR), "utf8"));
+  const stage = registry.stages.find(s => s.number === 11);
+  const date = "2026-09-05";
+
+  const cases = [
+    // Every shape finalize has ever written, oldest last. A parser that only
+    // handles the current one silently abandons older stranded work.
+    `* [${date}] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited native WebView settings`,
+    `* [${date}] [Stage 11] CHANGED: Frontend-PWA/src/x.ts -- Did the thing`,
+    `* [${date}] [Stage 11] [09:03Z-09:05Z 2m] PARTIAL-RUN: Codebase -- Stopped early`,
+  ];
+
+  for (const line of cases) {
+    const fromLog = parseCoverageLine(line, stage.number, date);
+    const fromPatch = parseCoverageOutcome(`+${line}`, stage, date);
+    assert.ok(fromLog, `recap parser rejected: ${line}`);
+    assert.ok(fromPatch, `fallback parser rejected: ${line}`);
+    assert.equal(fromPatch.status, fromLog.status, `status disagreement on: ${line}`);
+    assert.equal(fromPatch.summary, fromLog.summary, `summary disagreement on: ${line}`);
+  }
+});

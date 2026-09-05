@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
 import { ensureRunEntries, loadLedger, prNumberFromTag, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
-import { buildFallbackPlan, publishFallback } from "./nightly-publish-fallback.mjs";
+import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
 // The composer the stage itself uses, and the parser the recap itself uses.
 // Imported rather than reimplemented: a second copy of either would be a second
@@ -1072,6 +1072,76 @@ async function safePullRequestFiles(number, config = CONFIG, filesImpl = fetchPu
   }
 }
 
+/**
+ * Proves the fallback publisher still works, on the nights nobody needs it.
+ *
+ * WHY THIS EXISTS
+ * The fallback publisher is rung two of the recovery ladder: it runs only after
+ * the nudge has been exhausted for a stage, which in 25 nights had not happened
+ * once. So it had never executed outside its own tests, and on 2026-09-03 it
+ * silently stopped working. d5488b65b added the run window to the coverage-log
+ * line, its parser did not know about the new bracket, and from that day
+ * buildFallbackPlan refused every stage. The pipeline's last line of defence
+ * was dead for two days and nothing could have said so, because the only thing
+ * that would have noticed was the emergency itself.
+ *
+ * This is the same reasoning that already put a heartbeat on JULES_API_KEY: a
+ * mechanism used only in emergencies needs a heartbeat, not an emergency.
+ *
+ * HOW IT REHEARSES WITHOUT SIDE EFFECTS
+ * The half that rots is the decision half, because it parses a format another
+ * file owns. The publishing half talks to git and the GitHub API, which do not
+ * drift. So this exercises buildFallbackPlan only, and it does it against the
+ * real change sets of the sessions that succeeded tonight: every stage that
+ * published normally is a free, fully realistic fixture. Nothing is written,
+ * nothing is pushed, no pull request is opened.
+ *
+ * A stage whose session holds no patch is not evidence in either direction and
+ * is reported as unrehearsable rather than counted as a pass.
+ */
+export function rehearseFallbackPublisher({ registry, date, observed }) {
+  const results = [];
+  for (const stage of registry.stages) {
+    const session = matchJulesSession(observed?.julesSessions, stage, date);
+    if (!session || !extractSessionPatch(session)) continue;
+    const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(stage.number, date) });
+    results.push({ stage: stage.number, ok: plan.ok, reason: plan.ok ? null : plan.reason });
+  }
+
+  const failed = results.filter(result => !result.ok);
+  return {
+    rehearsed: results.length,
+    ready: results.length - failed.length,
+    failed,
+    // Only a total failure is a capability claim. One stage refusing can be a
+    // legitimate write-boundary rejection for that stage's own patch; every
+    // stage refusing means the publisher itself cannot build a plan any more,
+    // which is precisely the 2026-09-03 breakage.
+    capable: results.length === 0 ? null : failed.length < results.length,
+  };
+}
+
+export function renderRehearsalReport(rehearsal) {
+  if (!rehearsal || rehearsal.rehearsed === 0) {
+    return "\nFallback publisher: not rehearsed tonight, no session held a change set to try it against.\n";
+  }
+  if (rehearsal.capable) {
+    const lines = [`\nFallback publisher: rehearsed against ${rehearsal.rehearsed} session(s), ${rehearsal.ready} would publish.`];
+    // Named individually. A stage that cannot be recovered is worth knowing
+    // about before the night it needs recovering, even while the others can.
+    for (const item of rehearsal.failed) lines.push(`- Stage ${item.stage} would NOT publish: ${item.reason}`);
+    return `${lines.join("\n")}\n`;
+  }
+  return [
+    "",
+    `Fallback publisher: CANNOT PUBLISH. All ${rehearsal.rehearsed} rehearsal(s) refused.`,
+    "The last line of defence against JULES_SESSION_STUCK is not working. Recovery now depends",
+    "entirely on the nudge, and a night where the nudge fails would lose that stage's work.",
+    ...rehearsal.failed.slice(0, 3).map(item => `- Stage ${item.stage}: ${item.reason}`),
+    "",
+  ].join("\n");
+}
+
 export async function publishStrandedWork({
   unrecovered = [],
   julesSessions = [],
@@ -1193,8 +1263,11 @@ export function renderSummary(date, entries) {
  *   3  the pipeline has lost a capability while still looking green. BLOCKING.
  *      Distinct from 2 precisely because it is not a transient in-flight state:
  *      it is true at every pass of the night and stays true until someone acts.
+ *      Three things reach it: a dead Jules credential, a stage being carried
+ *      every night, and a fallback publisher that can no longer publish. All
+ *      three are silent by nature, which is the only reason they are blocking.
  */
-export function resolveExitCode({ observerHealthy, promotion, entries, julesAvailable, chronicStages }) {
+export function resolveExitCode({ observerHealthy, promotion, entries, julesAvailable, chronicStages, fallbackCapable }) {
   if (!observerHealthy) return 1;
 
   // A dead Jules credential must fail the run even when every stage merged.
@@ -1222,6 +1295,16 @@ export function resolveExitCode({ observerHealthy, promotion, entries, julesAvai
   // a pipeline degrading behind a green light, which is precisely the state
   // this whole consolidation exists to make impossible.
   if ((chronicStages || []).length > 0) return 3;
+
+  // The fallback publisher cannot build a plan for anything. Same channel and
+  // the same reasoning as the dead credential above: recovery capability has
+  // been lost while every stage still looks green, it is true at every pass of
+  // the night rather than transiently, and it stays true until someone acts.
+  //
+  // `null` means nothing could be rehearsed, which is an unknown and not a
+  // failure, so it must not redden the run. Exactly the distinction that lets
+  // this be blocking without ever firing on a quiet, sessionless pass.
+  if (fallbackCapable === false) return 3;
 
   if (promotion?.stale) return 2;
   if ((entries || []).some(entry => !PASS_STATES.has(entry.state))) return 2;
@@ -1341,6 +1424,12 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     }
   }
 
+  // Free, fully realistic rehearsal against tonight's own successful sessions.
+  // Costs no writes and no network, so it runs on every pass. See
+  // rehearseFallbackPublisher for why an unexercised rung two does not stay
+  // working.
+  const rehearsal = observed ? rehearseFallbackPublisher({ registry, date, observed }) : null;
+
   // Evaluated after the recovery pass so tonight's rescues are already recorded
   // and counted. A stage rescued moments ago still needed rescuing.
   const health = evaluatePipelineHealth(ledger, registry);
@@ -1353,9 +1442,10 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   const promotionReport = renderPromotionSummary(promotion);
   const staleReport = renderStaleStagePrReport(staleStagePrs);
   const recoveryReport = renderRecoveryReadiness(julesAvailable, julesError);
+  const rehearsalReport = renderRehearsalReport(rehearsal);
   const healthReport = renderHealthReport(health);
   const summary = redact(
-    `${renderSummary(date, entries)}${recoveryReport}${healthReport}${promotionReport}${staleReport}`,
+    `${renderSummary(date, entries)}${recoveryReport}${rehearsalReport}${healthReport}${promotionReport}${staleReport}`,
   );
   logLine(summary);
   if (process.env.GITHUB_STEP_SUMMARY) {
@@ -1382,6 +1472,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     entries,
     julesAvailable,
     chronicStages: health.chronic,
+    fallbackCapable: rehearsal ? rehearsal.capable : null,
   });
 }
 
