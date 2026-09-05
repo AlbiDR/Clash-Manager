@@ -72,7 +72,11 @@ test("a well-formed CLEAN session yields a complete plan", () => {
   const body = renderFallbackPrBody(plan);
   assert.match(body, /This recovered Stage 4 run publishes the finalized nightly work: did the thing\./);
   assert.match(body, /The fallback publisher opened this PR so the completed run is not lost\./);
-  assert.match(body, /\*\*What changed:\*\* did the thing/);
+  // A recovered CLEAN run changed nothing, so its summary field must not claim
+  // it did. This surface said "What changed" on every CLEAN recovery because it
+  // held its own copy of the literal; changeLabel is now the only copy.
+  assert.match(body, /\*\*What was checked:\*\* did the thing/);
+  assert.doesNotMatch(body, /\*\*What changed:\*\*/);
   assert.match(body, /\*\*Why:\*\* The Jules session finalized successfully/);
   assert.match(body, /\*\*Result:\*\* The recovered patch was applied unmodified/);
   assert.match(body, /NIGHTLY_PR_METADATA:/);

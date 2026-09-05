@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
-import { PLAIN_PREFIX, countOf, displayArea } from "./nightly-prose.mjs";
+import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea } from "./nightly-prose.mjs";
 import { fileURLToPath } from "node:url";
 
 const FINAL_STATUSES = new Set(["CHANGED", "CLEAN", "SKIPPED", "PARTIAL-RUN"]);
@@ -352,9 +352,6 @@ export function renderPrBody(stage, status, summary, changedPaths, details = {})
   const why = cleanPrDetail(details.why, defaultWhy(stage), "--why");
   const result = cleanPrDetail(details.result, defaultResult(status), "--result");
   const plain = renderPlainSummary(stage, status, changedPaths);
-  // A CLEAN run changed nothing by definition, so labelling its summary "What
-  // changed" contradicted the field's own contents on every clean night.
-  const changeLabel = status === "CHANGED" ? "What changed" : "What was checked";
 
   return `### Nightly Stage ${stage.number}: ${stage.name}
 
@@ -362,11 +359,11 @@ export function renderPrBody(stage, status, summary, changedPaths, details = {})
 
 ${plain}
 
-**${changeLabel}:** ${normalizedSummary}
+**${changeLabel(status)}:** ${normalizedSummary}
 
-**Why:** ${why}
+**${WHY_LABEL}:** ${why}
 
-**Result:** ${result}
+**${RESULT_LABEL}:** ${result}
 
 **Files changed:** ${files}
 

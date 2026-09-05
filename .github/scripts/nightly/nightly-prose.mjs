@@ -58,6 +58,36 @@ export function displayArea(slug) {
     .join(" ");
 }
 
+/**
+ * The label for a stage's summary field, on every surface that prints one.
+ *
+ * A CLEAN run changed nothing by definition, so labelling its summary "What
+ * changed" contradicted the field's own contents on every clean night. A stage
+ * that published nothing did not check anything either, so it gets neither
+ * word: it gets the only claim the absence of evidence supports.
+ *
+ * Lives here because three surfaces ask this same question of a stage - the
+ * pull request body, the fallback publisher's body, and the recap - and two of
+ * them had already answered it differently: the fallback publisher said "What
+ * changed" on recovered CLEAN runs, which is the exact wording the stage runner
+ * had been fixed to stop using.
+ */
+export function changeLabel(status) {
+  if (status === "CHANGED") return "What changed";
+  if (status === "STUCK") return "What happened";
+  return "What was checked";
+}
+
+/**
+ * The other two questions a reader asks of a stage.
+ *
+ * Constants rather than literals for the same reason as changeLabel: the pull
+ * request body and the recap both label these fields, and a rewording that
+ * reaches only one surface is invisible until the two are read side by side.
+ */
+export const WHY_LABEL = "Why";
+export const RESULT_LABEL = "Result";
+
 /** "a", "a and b", "a, b and c". */
 export function joinList(items) {
   const list = (items || []).filter(Boolean);

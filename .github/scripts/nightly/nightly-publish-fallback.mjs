@@ -35,6 +35,7 @@
 // with the first; reusing the same function means it cannot.
 
 import { spawnSync } from "node:child_process";
+import { RESULT_LABEL, WHY_LABEL, changeLabel } from "./nightly-prose.mjs";
 import { validateChangedPaths } from "./nightly-stage.mjs";
 
 // Coverage-log line the stage writes as its terminal record, as it appears in a
@@ -169,11 +170,11 @@ export function renderFallbackPrBody(plan) {
     "",
     overview,
     "",
-    `**What changed:** ${plan.summary}`,
+    `**${changeLabel(plan.status)}:** ${plan.summary}`,
     "",
-    `**Why:** ${why}`,
+    `**${WHY_LABEL}:** ${why}`,
     "",
-    `**Result:** ${result}`,
+    `**${RESULT_LABEL}:** ${result}`,
     "",
     `**Files changed:** ${files}`,
     "",

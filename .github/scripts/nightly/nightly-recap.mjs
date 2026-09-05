@@ -34,7 +34,7 @@ import { spawnSync } from "node:child_process";
 
 import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
-import { PLAIN_PREFIX, displayArea, joinList, stageTag } from "./nightly-prose.mjs";
+import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, displayArea, joinList, stageTag } from "./nightly-prose.mjs";
 
 export const SOURCE_REF = "origin/Nightly";
 const LEDGER = ".github/nightly-logs/nightly-run-ledger.json";
@@ -104,10 +104,11 @@ export function parsePrHistoryEntry(content, stageNumber, date) {
   return null;
 }
 
-/**
- * Pure classification from durable evidence only. Nothing here consults branch
- * state, so the answer is identical before and after a sync.
- */
+// The ledger states that count as a stage having reached a result, and so as
+// evidence the run got that far. Named here rather than inline because the
+// asymmetry the doc block below describes is the whole point of the set.
+const REACHED_STATES = new Set(["MERGED", "RECOVERABLE", "DEGRADED", "BLOCKED"]);
+
 /**
  * How far this run has got.
  *
@@ -129,8 +130,6 @@ export function parsePrHistoryEntry(content, stageNumber, date) {
  * the next one has started, which is a fact about the pipeline rather than a
  * clock reading, so it needs no threshold and no timezone.
  */
-const REACHED_STATES = new Set(["MERGED", "RECOVERABLE", "DEGRADED", "BLOCKED"]);
-
 export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
   let frontier = 0;
   for (const stage of registry.stages || []) {
@@ -148,6 +147,10 @@ export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
   return { frontier, over };
 }
 
+/**
+ * Pure classification from durable evidence only. Nothing here consults branch
+ * state, so the answer is identical before and after a sync.
+ */
 export function classifyStage({ stage, entry, tag, declared, history, progress }) {
   const merged = Boolean(tag) || entry?.state === "MERGED";
   const rescued = Boolean(entry?.evidence?.recovery) || Boolean(entry?.evidence?.fallbackPublish)
@@ -321,12 +324,26 @@ export function ledgerThrough(ledger, date, { inProgress = false } = {}) {
   return { ...(ledger || {}), runs };
 }
 
-function escapeMarkdownCell(value) {
+/**
+ * Prose that is safe to drop into a markdown paragraph.
+ *
+ * Escapes only what markdown would actually consume there, which is narrower
+ * than it looks. `*` opens emphasis anywhere, mid-word included, so it always
+ * needs escaping. `_` does not: CommonMark refuses to open emphasis on an
+ * underscore flanked by alphanumerics, so `search_path` and
+ * `LOAD_CACHE_ELSE_NETWORK` are already literal. Escaping them anyway printed
+ * `search\_path` into a report whose entire purpose is being read, so only
+ * boundary underscores are escaped.
+ *
+ * `|` is deliberately not escaped any more. It mattered while this rendered
+ * table cells, and the last of those went away with the two-line stage header;
+ * a stage whose summary says "0 errors | 7 passed" should print it.
+ */
+function escapeInline(value) {
   return String(value || "")
     .replaceAll("\\", "\\\\")
-    .replaceAll("|", "\\|")
     .replaceAll("*", "\\*")
-    .replaceAll("_", "\\_")
+    .replace(/(?<![0-9A-Za-z])_|_(?![0-9A-Za-z])/g, "\\_")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -344,7 +361,7 @@ function displayStatus(outcome) {
 }
 
 function sentencePart(value) {
-  const text = escapeMarkdownCell(value);
+  const text = escapeInline(value);
   return /[.!?]$/.test(text) ? text : `${text}.`;
 }
 
@@ -357,25 +374,32 @@ function isCalibrationClean(stage) {
 }
 
 function semanticAction(stage) {
-  if (stage.outcome === "PENDING") return `${displayArea(stage.slug)} has not run yet on this date`;
-  const action = stripCommitPrefix(stage.summary || stage.title || stage.result || "-")
+  // A stage can be STUCK and still have declared a coverage line, so its own
+  // words are preferred whenever it left any. With nothing at all, the fallback
+  // has to be a claim the absence of evidence actually supports: the previous
+  // "-" placeholder read as a stage that ran and had nothing to say, which is
+  // the opposite of what a stuck stage means.
+  const raw = stage.summary || stage.title || stage.result;
+  if (!raw) {
+    return stage.outcome === "STUCK"
+      ? `${displayArea(stage.slug)} published nothing for this run`
+      : `${displayArea(stage.slug)} recorded no summary for this run`;
+  }
+  const action = stripCommitPrefix(raw)
     .replace(/^Audit complete:\s*/i, "")
     .replace(/^Stage \d+\s+/i, "")
     .replace(/\s+\(CLEAN\)$/i, "")
     .replace(/\s+-\s+CLEAN$/i, " completed cleanly");
+  // Reads as the continuation of the summary-field label, because that is where
+  // it lands. A standalone sentence here (The hardening check found everything
+  // already in order) restated the label instead of answering it.
   if (/^(nothing to do|no changes required)$/i.test(action.trim())) {
-    return `The ${displayArea(stage.slug)} check found everything already in order.`;
+    return `the ${displayArea(stage.slug)} area, and everything there was already in order`;
   }
   return action;
 }
 
 function semanticMiddle(stage) {
-  // Checked before usefulWhy: a pending stage can still be carrying a stale
-  // `why` from an older ledger row, and explaining why a stage that has not
-  // run "did" something is worse than saying nothing.
-  if (stage.outcome === "PENDING") {
-    return `Its slot in the run order has not come round yet, so there is nothing to report either way.`;
-  }
   const why = usefulWhy(stage);
   if (why) return why;
   const area = displayArea(stage.slug);
@@ -394,11 +418,13 @@ function semanticMiddle(stage) {
   if (stage.outcome === "PARTIAL-RUN") {
     return `It kept the ${area} notes, but avoided shipping changes that were not fully checked.`;
   }
-  return `This area needs follow-up before ${area} can be called healthy again.`;
+  // Sits under the "Why" label, so it has to answer why rather than prescribe.
+  // What needs doing about it is the overview's job: a stuck stage is already
+  // named there as the part worth the reader's attention.
+  return `Nothing was published for this stage, so there is no evidence of what it did or did not check, and ${area} cannot be called healthy from this run.`;
 }
 
 function semanticResult(stage) {
-  if (stage.outcome === "PENDING") return "Waiting for its scheduled slot.";
   const result = stage.result || (stage.merged ? "Merged successfully." : stage.state || stage.outcome);
   if (/^Nominal validation with zero regressions\.?$/i.test(result)) {
     return "Validation passed with zero regressions.";
@@ -406,11 +432,82 @@ function semanticResult(stage) {
   return result;
 }
 
-function stageDescription(stage) {
+/**
+ * A stage the run has not reached yet, in one line rather than four.
+ *
+ * The full What/Why/Result shape answered all three questions with the same
+ * fact - that nothing has happened - and saying it three times is what turned
+ * the pending half of an in-flight recap into filler.
+ *
+ * It deliberately prints no `why`, even when the stage carries one: a pending
+ * stage can still be holding a stale `why` from an older ledger row, and
+ * explaining why a stage that has not run "did" something is worse than saying
+ * nothing.
+ */
+const PENDING_LINE = "Not yet run. Its slot in the run order has not come round yet, so there is nothing to report either way.";
+
+/**
+ * The per-stage exceptions, next to the stage they are about.
+ *
+ * These used to be collected into a Notes block at the very bottom, keyed by
+ * stage tag, which meant reading a note required scrolling back up to find the
+ * stage it belonged to. The one thing that block protected - that the rate of
+ * damaged descriptions stays visible without anyone reading pull requests by
+ * hand - is now descriptionSection's job, in a single line.
+ */
+function stageNotes(stage) {
+  const notes = [];
+  if (stage.rescued) {
+    notes.push(`This stage could not finish unaided and was recovered via ${stage.rescuedBy || "retry"}.`);
+  }
+  // A malformed description does not mean the work was wrong: in all five cases
+  // on 2026-09-03 the code, tests and coverage log landed correctly.
+  if (stage.bodyHealth && stage.bodyHealth.ok === false) {
+    notes.push(`Its published PR description was ${stage.bodyHealth.verdict}; the work landed, the description did not.`);
+  }
+  // A repaired body is still a body that arrived damaged. Reporting only the
+  // ones left broken would hide the defect rate behind its own fix, which is
+  // how this went unnoticed until someone read three pull requests by hand.
+  // Why and Result cannot be recovered after the fact, hence the warning about
+  // the two lines directly above this one.
+  if (stage.bodyHealth?.repairedFrom) {
+    notes.push(`Its published PR description arrived ${stage.bodyHealth.repairedFrom} and was rebuilt from the coverage log, so the Why and Result above are the generic defaults.`);
+  }
+  return notes.map(note => `Note: ${sentencePart(note)}`);
+}
+
+/**
+ * One stage, as a reader meets it.
+ *
+ * Consolidated into a single labelled block, one line per question actually
+ * being asked: what the stage did, why, how it went. The previous layout spread
+ * those three answers across six lines and repeated two of them - an italic
+ * line carrying the raw coverage summary, immediately followed by a sentence
+ * derived from that same summary (byte-identical on 4 of the 13 stages on
+ * 2026-09-05), and then the `why` a second time in a Notes block at the foot of
+ * the report. That duplication was not merely untidy: it doubled the text a
+ * reader has to cross to reach the one stage that needs them, which is the only
+ * reason the section exists.
+ *
+ * The labels come from nightly-prose.mjs because the pull request this block
+ * describes labels the very same fields, and a reader comparing the two should
+ * not have to work out that a labelled field there and a bare sentence here are
+ * the same thing.
+ */
+function stageBlock(stage) {
+  const area = displayArea(stage.slug).toUpperCase();
+  const pr = stage.prNumber ? `PR #${stage.prNumber}` : "no PR";
+  const header = `**${stageTag(stage.stage)} ${area}** | ${displayStatus(stage.outcome)} | ${pr}`;
+
+  if (stage.outcome === "PENDING") return [header, PENDING_LINE, ""];
+
   return [
-    sentencePart(semanticAction(stage)),
-    sentencePart(semanticMiddle(stage)),
-    sentencePart(semanticResult(stage)),
+    header,
+    `${changeLabel(stage.outcome)}: ${sentencePart(semanticAction(stage))}`,
+    `${WHY_LABEL}: ${sentencePart(semanticMiddle(stage))}`,
+    `${RESULT_LABEL}: ${sentencePart(semanticResult(stage))}`,
+    ...stageNotes(stage),
+    "",
   ];
 }
 
@@ -443,7 +540,7 @@ function paceSection(health) {
   for (const s of adverse) {
     const label = `S${String(s.stage).padStart(2, "0")}`;
     lines.push(
-      `- ${label} ${displayArea(s.slug)} is ${s.pace.verdict}: ${escapeMarkdownCell(s.pace.reason)}`
+      `- ${label} ${displayArea(s.slug)} is ${s.pace.verdict}: ${escapeInline(s.pace.reason)}`
       + ` (median ${s.pace.recentMedian}m over ${s.pace.recentRuns} recent runs, was ${s.pace.earlierMedian}m).`,
     );
   }
@@ -483,7 +580,7 @@ function healthSection(health) {
     const label = `S${String(s.stage).padStart(2, "0")}`;
     const streak = s.currentStreak ?? 0;
     lines.push(
-      `- ${label} ${displayArea(s.slug)} is ${s.verdict}: ${escapeMarkdownCell(s.reason)}`
+      `- ${label} ${displayArea(s.slug)} is ${s.verdict}: ${escapeInline(s.reason)}`
       + ` (${streak} run${streak === 1 ? "" : "s"} in a row needing help, judged over ${s.runs} observed runs).`,
     );
     // The dates behind the rate. Without them a healed incident and a live
@@ -596,6 +693,28 @@ function overviewSection(recap) {
   return [PLAIN_PREFIX + sentences.join(" "), ""];
 }
 
+/**
+ * The published-description defect rate, in one line.
+ *
+ * The Note lines in each stage block say which stages were affected; this says
+ * how many, because the rate is what decides whether the publisher needs work
+ * and it was invisible until someone read three pull requests by hand.
+ *
+ * Kept out of the Summary counts on purpose: a damaged description is not a
+ * failed stage, and a reader who meets it inside the failure tally will go and
+ * fix the wrong thing.
+ */
+function descriptionSection(recap) {
+  const damaged = (recap.stages || []).filter(s => s.bodyHealth && (s.bodyHealth.ok === false || s.bodyHealth.repairedFrom));
+  if (damaged.length === 0) return [];
+  const which = joinList(damaged.map(s => stageTag(s.stage)));
+  return [
+    `Published descriptions: ${damaged.length} of ${recap.total} arrived damaged (${which}).`
+    + ` The work landed in every one of them; only the description did not.`,
+    "",
+  ];
+}
+
 export function renderRecap(recap) {
   const pending = recap.pending || 0;
   const lines = [
@@ -610,45 +729,15 @@ export function renderRecap(recap) {
     "",
   ];
   lines.push(...overviewSection(recap));
-  for (const s of recap.stages) {
-    const label = `S${String(s.stage).padStart(2, "0")}`;
-    const pr = s.prNumber ? `PR #${s.prNumber}` : "no PR";
-    lines.push(`**${label}** | ${pr}`);
-    lines.push(`${displayStatus(s.outcome)} | **${displayArea(s.slug).toUpperCase()}**`);
-    // A pending stage has no title because it has not published anything. The
-    // bare "-" placeholder reads as a stage that ran and said nothing.
-    lines.push(`_${s.outcome === "PENDING" ? "not yet run" : escapeMarkdownCell(s.title || s.summary || s.result || "-")}_`);
-    lines.push(...stageDescription(s));
-    lines.push("");
-  }
+  for (const stage of recap.stages) lines.push(...stageBlock(stage));
 
+  // Everything below here is about the run as a whole, or about the pipeline
+  // across runs. Nothing per-stage belongs down here: that was the old Notes
+  // block, and a fact separated from the stage it describes is a fact the
+  // reader has to reassemble.
   lines.push(...healthSection(recap.health));
   lines.push(...paceSection(recap.health));
-
-  const notes = recap.stages.flatMap(s => {
-    const stageNotes = [];
-    const label = `S${String(s.stage).padStart(2, "0")}`;
-    if (s.rescued) stageNotes.push(`${label}: rescued via ${s.rescuedBy || "retry"}.`);
-    // A malformed description does not mean the work was wrong: in all five
-    // cases on 2026-09-03 the code, tests and coverage log landed correctly.
-    // Reported so the rate stays visible rather than needing a human to read
-    // pull requests one by one, which is how it was found.
-    if (s.bodyHealth && s.bodyHealth.ok === false) {
-      stageNotes.push(`${label}: published PR description was ${s.bodyHealth.verdict} (PR #${s.bodyHealth.pr}); the work landed, the description did not.`);
-    }
-    // A repaired body is still a body that arrived damaged. Reporting only the
-    // ones left broken would hide the defect rate behind its own fix, which is
-    // how this went unnoticed until someone read three pull requests by hand.
-    // Why and Result cannot be recovered after the fact, so a repaired
-    // description carries the generic defaults and the reader should know.
-    if (s.bodyHealth?.repairedFrom) {
-      stageNotes.push(`${label}: published PR description arrived ${s.bodyHealth.repairedFrom} (PR #${s.bodyHealth.pr}) and was rebuilt from the coverage log; its Why and Result are the generic defaults.`);
-    }
-    const why = usefulWhy(s);
-    if (why) stageNotes.push(`${label}: why - ${why}`);
-    return stageNotes;
-  });
-  if (notes.length > 0) lines.push("Notes:", ...notes.map(note => `- ${note}`), "");
+  lines.push(...descriptionSection(recap));
 
   return lines.join("\n");
 }

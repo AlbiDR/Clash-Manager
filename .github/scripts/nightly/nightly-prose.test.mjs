@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { PLAIN_PREFIX, countOf, displayArea, joinList, stageTag } from "./nightly-prose.mjs";
+import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea, joinList, stageTag } from "./nightly-prose.mjs";
 import { renderPlainSummary } from "./nightly-stage.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -38,10 +38,26 @@ test("the plain-language opener is one constant, used by every surface", () => {
   assert.ok(renderPlainSummary(stage, "CLEAN", [stage.coverageLog]).startsWith(PLAIN_PREFIX));
 });
 
+test("a stage's summary field is labelled by what the stage actually did", () => {
+  // "What changed" on a CLEAN run contradicts the field's own contents, which
+  // is why the stage runner stopped saying it. The fallback publisher went on
+  // saying it for every recovered CLEAN run, because it had its own copy of the
+  // literal - the drift this function exists to make impossible.
+  assert.equal(changeLabel("CHANGED"), "What changed");
+  assert.equal(changeLabel("CLEAN"), "What was checked");
+  assert.equal(changeLabel("SKIPPED"), "What was checked");
+  assert.equal(changeLabel("PARTIAL-RUN"), "What was checked");
+  // A stage that published nothing checked nothing either, as far as anyone can
+  // prove from the evidence.
+  assert.equal(changeLabel("STUCK"), "What happened");
+  assert.equal(WHY_LABEL, "Why");
+  assert.equal(RESULT_LABEL, "Result");
+});
+
 test("no surface hardcodes the vocabulary instead of importing it", () => {
   // A regression here is silent: the copy keeps working while drifting. This is
   // the check that makes the shared module load-bearing rather than advisory.
-  for (const file of ["nightly-stage.mjs", "nightly-recap.mjs"]) {
+  for (const file of ["nightly-stage.mjs", "nightly-recap.mjs", "nightly-publish-fallback.mjs"]) {
     const source = readFileSync(new URL(`./${file}`, import.meta.url), "utf8");
     // Any quote style. An earlier version of this guard matched only double
     // quotes and silently passed a template-literal hardcoding, which is the
@@ -50,6 +66,10 @@ test("no surface hardcodes the vocabulary instead of importing it", () => {
     assert.doesNotMatch(source, /function displayArea\b/, `${file} has its own displayArea`);
     assert.doesNotMatch(source, /function joinList\b/, `${file} has its own joinList`);
     assert.doesNotMatch(source, /function countOf\b/, `${file} has its own countOf`);
+    // The field labels, for the same reason as the opener: two surfaces
+    // labelled the same field differently for weeks without anything failing.
+    assert.doesNotMatch(source, /["'`]What (changed|was checked|happened)/, `${file} hardcodes a summary-field label`);
+    assert.doesNotMatch(source, /["'`]\*\*(Why|Result):/, `${file} hardcodes a detail-field label`);
     assert.match(source, /from "\.\/nightly-prose\.mjs"/, `${file} does not import the shared vocabulary`);
   }
 });

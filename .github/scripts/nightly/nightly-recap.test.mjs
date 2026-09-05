@@ -208,98 +208,245 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     // that silently desynchronises them fails right here.
     "In plain terms: All 13 stages ran and every one of them landed its work. No stage changed the project. The remaining 13 checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run. Every stage got there without help. Nothing in this run needs you to do anything.",
     "",
-    "**S01** | PR #2001",
-    "Clean | **HARDENING**",
-    "_nothing to do_",
-    "The hardening check found everything already in order.",
-    "The run confirmed hardening is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    // One stage, one block: a header naming the stage, its verdict and its
+    // pull request, then exactly one line per question. Nothing is stated
+    // twice, and nothing about a stage is deferred to the foot of the report.
+    "**S01 HARDENING** | Clean | PR #2001",
+    "What was checked: the hardening area, and everything there was already in order.",
+    "Why: The run confirmed hardening is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S02** | PR #2002",
-    "Clean | **VERIFICATION**",
-    "_nothing to do_",
-    "The verification check found everything already in order.",
-    "The run confirmed verification is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S02 VERIFICATION** | Clean | PR #2002",
+    "What was checked: the verification area, and everything there was already in order.",
+    "Why: The run confirmed verification is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S03** | PR #2003",
-    "Clean | **BASELINE CONSOLIDATION**",
-    "_nothing to do_",
-    "The baseline consolidation check found everything already in order.",
-    "The run confirmed baseline consolidation is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S03 BASELINE CONSOLIDATION** | Clean | PR #2003",
+    "What was checked: the baseline consolidation area, and everything there was already in order.",
+    "Why: The run confirmed baseline consolidation is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S04** | PR #2004",
-    "Clean | **OPTIMIZATION**",
-    "_nothing to do_",
-    "The optimization check found everything already in order.",
-    "The run confirmed optimization is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S04 OPTIMIZATION** | Clean | PR #2004",
+    "What was checked: the optimization area, and everything there was already in order.",
+    "Why: The run confirmed optimization is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S05** | PR #2005",
-    "Clean | **DOCUMENTATION README**",
-    "_nothing to do_",
-    "The documentation README check found everything already in order.",
-    "The run confirmed documentation README is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S05 DOCUMENTATION README** | Clean | PR #2005",
+    "What was checked: the documentation README area, and everything there was already in order.",
+    "Why: The run confirmed documentation README is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S06** | PR #2006",
-    "Clean | **DOCUMENTATION TSDOC**",
-    "_nothing to do_",
-    "The documentation TSDoc check found everything already in order.",
-    "The run confirmed documentation TSDoc is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S06 DOCUMENTATION TSDOC** | Clean | PR #2006",
+    "What was checked: the documentation TSDoc area, and everything there was already in order.",
+    "Why: The run confirmed documentation TSDoc is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S07** | PR #2007",
-    "Clean | **VERSION INTEGRITY**",
-    "_nothing to do_",
-    "The version integrity check found everything already in order.",
-    "The run confirmed version integrity is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S07 VERSION INTEGRITY** | Clean | PR #2007",
+    "What was checked: the version integrity area, and everything there was already in order.",
+    "Why: The run confirmed version integrity is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S08** | PR #2008",
-    "Clean | **DEPENDENCY AUDIT**",
-    "_nothing to do_",
-    "The dependency audit check found everything already in order.",
-    "The run confirmed dependency audit is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S08 DEPENDENCY AUDIT** | Clean | PR #2008",
+    "What was checked: the dependency audit area, and everything there was already in order.",
+    "Why: The run confirmed dependency audit is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S09** | PR #2009",
-    "Clean | **REFACTOR**",
-    "_nothing to do_",
-    "The refactor check found everything already in order.",
-    "The run confirmed refactor is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S09 REFACTOR** | Clean | PR #2009",
+    "What was checked: the refactor area, and everything there was already in order.",
+    "Why: The run confirmed refactor is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S10** | PR #2010",
-    "Clean | **APK INTEGRITY**",
-    "_nothing to do_",
-    "The APK integrity check found everything already in order.",
-    "The run confirmed APK integrity is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S10 APK INTEGRITY** | Clean | PR #2010",
+    "What was checked: the APK integrity area, and everything there was already in order.",
+    "Why: The run confirmed APK integrity is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S11** | PR #2011",
-    "Clean | **APK OPTIMIZATION**",
-    "_nothing to do_",
-    "The APK optimization check found everything already in order.",
-    "The run confirmed APK optimization is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S11 APK OPTIMIZATION** | Clean | PR #2011",
+    "What was checked: the APK optimization area, and everything there was already in order.",
+    "Why: The run confirmed APK optimization is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S12** | PR #2012",
-    "Clean | **APK UX**",
-    "_nothing to do_",
-    "The APK UX check found everything already in order.",
-    "The run confirmed APK UX is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S12 APK UX** | Clean | PR #2012",
+    "What was checked: the APK UX area, and everything there was already in order.",
+    "Why: The run confirmed APK UX is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
-    "**S13** | PR #2013",
-    "Clean | **SELF HEALING PROTOCOL**",
-    "_nothing to do_",
-    "The self healing protocol check found everything already in order.",
-    "The run confirmed self healing protocol is still healthy, so no code or docs needed to change.",
-    "Merged successfully.",
+    "**S13 SELF HEALING PROTOCOL** | Clean | PR #2013",
+    "What was checked: the self healing protocol area, and everything there was already in order.",
+    "Why: The run confirmed self healing protocol is still healthy, so no code or docs needed to change.",
+    "Result: Merged successfully.",
     "",
   ].join("\n"));
+});
+
+// --- The stage block ---------------------------------------------------------
+//
+// The layout these pin down replaced one that answered three questions across
+// six lines and said two of the answers twice: an italic line carrying the raw
+// coverage summary, then a sentence derived from that same summary, then the
+// `why` a third time in a Notes block at the very foot of the report. On
+// 2026-09-05 four of the thirteen stages printed their summary line byte for
+// byte twice, and all thirteen printed their `why` twice.
+
+/** One stage's block, extracted from a rendered recap by its header line. */
+function blockFor(text, tag) {
+  const lines = text.split("\n");
+  const start = lines.findIndex(line => line.startsWith(`**${tag} `));
+  assert.ok(start >= 0, `${tag} has no block`);
+  const rest = lines.slice(start + 1);
+  const end = rest.indexOf("");
+  return [lines[start], ...rest.slice(0, end === -1 ? undefined : end)];
+}
+
+const singleStage = (stage, overrides = {}) => ({
+  date: "2026-09-05",
+  total: 1, merged: 1, changed: 0, clean: 1, stuck: 0, pending: 0, rescued: 0, unobserved: 0,
+  grade: 10, rationale: "Optimal run: every stage completed unaided.",
+  stages: [stage],
+  ...overrides,
+});
+
+test("a stage says everything about itself once, in one block", () => {
+  // The real S03 of 2026-09-05, whose title and summary are the same string.
+  // That is what printed it twice: the italic line took `title`, the sentence
+  // below it took `summary`.
+  const summary = "Baseline consolidation audit completed cleanly; master migration is fully up to date.";
+  const text = renderRecap(singleStage({
+    stage: 3,
+    slug: "baseline-consolidation",
+    outcome: "CLEAN",
+    prNumber: 1696,
+    title: summary,
+    summary,
+    why: "No pending migrations found in fold-state scan.",
+    result: "0 pending migrations, fold-state CLEAN.",
+    merged: true,
+  }));
+
+  assert.deepEqual(blockFor(text, "S03"), [
+    "**S03 BASELINE CONSOLIDATION** | Clean | PR #1696",
+    `What was checked: ${summary}`,
+    "Why: No pending migrations found in fold-state scan.",
+    "Result: 0 pending migrations, fold-state CLEAN.",
+  ]);
+  // The summary appears once in the whole report, and the why is not repeated
+  // in a trailing block either.
+  assert.equal(text.split(summary).length - 1, 1);
+  assert.equal(text.split("No pending migrations found in fold-state scan.").length - 1, 1);
+  assert.doesNotMatch(text, /^Notes:$/m);
+  assert.doesNotMatch(text, /: why - /);
+});
+
+test("a stage that changed something is labelled as having changed it", () => {
+  // The label is the one the pull request itself uses, so the two surfaces
+  // cannot describe the same field with different words.
+  const text = renderRecap(singleStage({
+    stage: 8,
+    slug: "dependency-audit",
+    outcome: "CHANGED",
+    prNumber: 1701,
+    summary: "Bumped @ast-grep/cli to ^0.45.3",
+    why: "Safe Tier 1 patch update for @ast-grep/cli.",
+    result: "PASS.",
+    merged: true,
+  }, { changed: 1, clean: 0 }));
+
+  assert.match(text, /^What changed: Bumped @ast-grep\/cli to \^0\.45\.3\.$/m);
+  assert.doesNotMatch(text, /What was checked/);
+});
+
+test("a stage carrying an intervention or a damaged description says so in its own block", () => {
+  const text = renderRecap(singleStage({
+    stage: 2,
+    slug: "verification",
+    outcome: "CHANGED",
+    prNumber: 1695,
+    summary: "Expanded unit test coverage",
+    result: "Validation passed with zero regressions.",
+    merged: true,
+    rescued: true,
+    rescuedBy: "fallback-publish",
+    bodyHealth: { ok: false, verdict: "AD_LIBBED", pr: 1695 },
+  }, { changed: 1, clean: 0, rescued: 1 }));
+
+  assert.deepEqual(blockFor(text, "S02").slice(-2), [
+    "Note: This stage could not finish unaided and was recovered via fallback-publish.",
+    "Note: Its published PR description was AD_LIBBED; the work landed, the description did not.",
+  ]);
+  // The stage tag is not needed to know which stage a note is about, because
+  // the note is inside that stage's block.
+  assert.doesNotMatch(text, /^- S02: /m);
+});
+
+test("the rate of damaged descriptions survives as one line, not thirteen", () => {
+  // The Notes block existed so this rate stayed visible without anyone reading
+  // pull requests by hand. Folding the per-stage detail into the stage blocks
+  // must not cost that.
+  const damaged = n => ({
+    stage: n, slug: n === 2 ? "verification" : "documentation-tsdoc",
+    outcome: "CHANGED", prNumber: 1690 + n, summary: "did the thing", merged: true,
+    bodyHealth: { ok: false, verdict: "AD_LIBBED", pr: 1690 + n },
+  });
+  const text = renderRecap(singleStage(damaged(2), {
+    total: 13, merged: 13, changed: 2, clean: 0,
+    stages: [damaged(2), damaged(6)],
+  }));
+
+  assert.match(text, /^Published descriptions: 2 of 13 arrived damaged \(S02 and S06\)\.( |$)/m);
+  assert.match(text, /The work landed in every one of them; only the description did not\./);
+  // Never counted as a failure: the stage merged, and a reader who meets this
+  // inside the failure tally goes and fixes the wrong thing.
+  assert.match(text, /\| 0 stuck \|/);
+});
+
+test("a repaired description warns about the two lines directly above it", () => {
+  const text = renderRecap(singleStage({
+    stage: 4, slug: "optimization", outcome: "CHANGED", prNumber: 1697,
+    summary: "renamed a loop counter", merged: true,
+    bodyHealth: { ok: true, pr: 1697, repairedFrom: "AD_LIBBED" },
+  }, { changed: 1, clean: 0 }));
+
+  assert.match(text, /Note: Its published PR description arrived AD_LIBBED and was rebuilt from the coverage log, so the Why and Result above are the generic defaults\./);
+  assert.match(text, /^Published descriptions: 1 of 1 arrived damaged \(S04\)\./m);
+});
+
+test("a stage that published nothing says that, instead of printing a dash", () => {
+  // With no coverage line and no PR history every field is null. The old
+  // renderer printed `_-_` and then "-.", which reads as a stage that ran and
+  // had nothing to say - the opposite of what STUCK means.
+  const text = renderRecap(singleStage({
+    stage: 11, slug: "apk-optimization", outcome: "STUCK", merged: false,
+    state: "NO_OUTPUT", failureClass: "JULES_SESSION_STUCK",
+  }, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
+
+  assert.deepEqual(blockFor(text, "S11"), [
+    "**S11 APK OPTIMIZATION** | Stuck | no PR",
+    "What happened: APK optimization published nothing for this run.",
+    "Why: Nothing was published for this stage, so there is no evidence of what it did or did not check, and APK optimization cannot be called healthy from this run.",
+    "Result: NO_OUTPUT.",
+  ]);
+  assert.doesNotMatch(text, /(^|[^-])-\.$/m);
+});
+
+test("an identifier keeps its underscores, and emphasis is still neutralised", () => {
+  // CommonMark refuses to open emphasis on an underscore flanked by
+  // alphanumerics, so escaping those was never needed and printed
+  // `search\_path` and `LOAD\_CACHE\_ELSE\_NETWORK` into a report whose whole
+  // purpose is being read.
+  const text = renderRecap(singleStage({
+    stage: 3, slug: "baseline-consolidation", outcome: "CLEAN", prNumber: 1696,
+    summary: "verified search_path isolation and LOAD_CACHE_ELSE_NETWORK",
+    why: "_emphasis_ and *stars* must not reach the reader as markup",
+    result: "0 errors | 7 passed",
+    merged: true,
+  }));
+
+  assert.match(text, /verified search_path isolation and LOAD_CACHE_ELSE_NETWORK\./);
+  assert.doesNotMatch(text, /search\\_path/);
+  assert.match(text, /\\_emphasis\\_ and \\\*stars\\\*/);
+  // No tables left to break, so a pipe in a stage's own words is printed as
+  // the stage wrote it.
+  assert.match(text, /Result: 0 errors \| 7 passed\./);
 });
 
 test("a calibration-backed CLEAN run is called out in prose", () => {
@@ -674,7 +821,12 @@ test("prose about an unfinished run never claims the whole run succeeded", () =>
   assert.match(text, /So far 11 of 13 stages have landed their work\./);
   assert.match(text, /Every stage that has run got there without help\./);
   assert.match(text, /Nothing that has run so far needs you to do anything\./);
-  assert.match(text, /^_not yet run_$/m);
+  // A stage that has not run gets one line, not a What/Why/Result trio
+  // answering all three questions with the same absence of fact.
+  assert.match(text, /^\*\*S12 APK UX\*\* \| Pending \| no PR$/m);
+  assert.match(text, /^Not yet run\. Its slot in the run order has not come round yet/m);
+  assert.doesNotMatch(text, /^What was checked: APK UX/m);
+  assert.doesNotMatch(text, /Waiting for its scheduled slot/);
 });
 
 // The phantom that made this look like a real regression: a stage that had not
