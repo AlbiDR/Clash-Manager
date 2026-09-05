@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-05] PR #1699 [Stage 6]: chore(docs): harden useAppSettings interface contracts and inline logic annotations
+**Domain:** pipeline | **Commit:** b57a6b2f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1699)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useAppSettings.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(docs): harden useAppSettings interface contracts and inline logic annotations
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-05] PR #1698 [Stage 5]: Reconciled StorageService.ts IndexedDB persistence and migration engine in core services README
 **Domain:** documentation | **Commit:** 22cf56b3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1698)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
