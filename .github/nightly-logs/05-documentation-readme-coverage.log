@@ -159,3 +159,4 @@
 * [2026-09-02] [Stage 5] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled useConnectivityManager health prioritization and metadata in core services README
 * [2026-09-03] [Stage 5] [03:07Z-03:14Z 7m] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconciled restricted CORS preflight headers and closed payload contract guard in shared backend README
 * [2026-09-04] [Stage 5] [03:04Z-03:08Z 5m] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconciled useClashSync commitSyncResult remoteSuccess flag and error state preservation in core services README
+* [2026-09-05] [Stage 5] [03:22Z-03:25Z 3m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled StorageService.ts IndexedDB persistence and migration engine in core services README
