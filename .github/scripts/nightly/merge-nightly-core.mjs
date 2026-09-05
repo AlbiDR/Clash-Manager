@@ -607,6 +607,18 @@ function registryStageFor(stageNum, config = CONFIG) {
 }
 
 /**
+ * Which of a description's fields hold something a stage actually said.
+ *
+ * Files and Domain are excluded deliberately. Both are derived by the pipeline
+ * from the diff and the registry rather than authored, so a real value in
+ * either says nothing about whether the stage described its own work, and
+ * counting them would mask the case this exists to detect.
+ */
+export function statedFields(meta, stage = null) {
+  return ["why", "change", "result"].filter(field => !isPlaceholderField(field, meta?.[field], stage));
+}
+
+/**
  * The better of two readings of the same description, field by field.
  *
  * Wholesale preference for the sidecar would be correct today, because the body
@@ -665,12 +677,25 @@ function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
   if (fileList.length > 0) meta.files = summarizeFiles(fileList);
   const recovered = fileList.length > 0 ? upgraded.filter(field => field !== "files") : upgraded;
 
+  // Three outcomes, and they are three different facts about the pipeline, so
+  // none of them is allowed to be silent. The version of this that logged only
+  // recoveries left the most serious case saying nothing at all.
   if (!sidecar) {
+    // Not a defect. Every run predating the sidecar, and any stage that fails
+    // before finalize, arrives here and correctly keeps its published wording.
     log(`No body sidecar written by ${squashSha} for stage ${stage}; using the published description.`, "info");
   } else if (recovered.length > 0) {
-    // Worth a line: this is a published description damaged in transit, caught
-    // and corrected before it became permanent.
+    // A published description damaged in transit, caught before it became
+    // permanent. This is the case the sidecar exists for.
     log(`Recovered ${recovered.join(", ")} for PR #${pr.number} from ${sidecar.path}; the published description had lost them.`, "success");
+  } else if (statedFields(sidecar.meta, registryStage).length === 0) {
+    // The serious one, and the reason this branch is separate. finalize DID run
+    // and DID commit a description, and it still contains nothing a stage said.
+    // That is not a transport failure the sidecar can fix, it is a stage
+    // finalizing without passing its own --why and --result, which is a prompt
+    // problem and needs a person. Distinguishing it from the case above matters:
+    // both leave the record generic, and only one of them is fixable here.
+    log(`Stage ${stage} committed a body sidecar with no stated Why or Result (PR #${pr.number}); the record stays generic because finalize was given nothing to record.`, "warn");
   }
 
   const tagName = `nightly/${date}/stage-${stage}/pr-${pr.number}`;

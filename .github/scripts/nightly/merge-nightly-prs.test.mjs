@@ -11,6 +11,7 @@ import {
   METADATA_PLACEHOLDERS,
   TAG_PLACEHOLDERS,
   isPlaceholderField,
+  placeholderResult,
   placeholderWhy,
 } from "./nightly-prose.mjs";
 
@@ -33,6 +34,7 @@ import {
   parseTagContent,
   preferStatedMetadata,
   readSidecarMetadata,
+  statedFields,
   renderFailureBlock,
   renderHistoryBlock,
   sortStagePrs,
@@ -694,4 +696,38 @@ test("a refused sidecar costs the record nothing", () => {
   const { meta, upgraded } = preferStatedMetadata(null, bodyMeta, { number: 2, slug: "verification" });
   assert.deepEqual(meta, bodyMeta);
   assert.deepEqual(upgraded, []);
+});
+
+test("a sidecar that exists and still says nothing is a different fact from no sidecar", () => {
+  // Both leave the record generic and only one is fixable by the sidecar, so
+  // the coordinator must not treat them alike. No sidecar means a run predating
+  // it or a stage that failed before finalize: history, and correct. A sidecar
+  // that exists and holds only placeholders means finalize RAN and committed a
+  // description containing nothing a stage said, which is a stage finalizing
+  // without its own --why and --result. That needs a person, not a retry.
+  const stage = { number: 4, slug: "optimization", coverageLog: ".github/nightly-logs/04-optimization-coverage.log" };
+
+  assert.deepEqual(statedFields({
+    why: METADATA_PLACEHOLDERS.why,
+    change: METADATA_PLACEHOLDERS.change,
+    result: TAG_PLACEHOLDERS.result,
+  }, stage), []);
+
+  assert.deepEqual(statedFields({
+    why: placeholderWhy(stage),
+    change: "Renamed a loop counter",
+    result: placeholderResult("CHANGED"),
+  }, stage), ["change"], "one stated field is enough to make it not the silent case");
+
+  // Files and Domain are derived by the pipeline from the diff and the
+  // registry, not authored, so a real value in either says nothing about
+  // whether the stage described its own work. Counting them would mask exactly
+  // the case this detects, since the diff always supplies a real Files.
+  assert.deepEqual(statedFields({
+    why: METADATA_PLACEHOLDERS.why,
+    change: METADATA_PLACEHOLDERS.change,
+    result: METADATA_PLACEHOLDERS.result,
+    domain: "optimization",
+    files: "StorageService.ts",
+  }, stage), []);
 });
