@@ -167,7 +167,7 @@ function isAdministrativePipelinePath(filePath) {
     filePath.startsWith(".github/scripts/nightly/nightly-stage") ||
     filePath === ".github/scripts/nightly/update-nightly-context.sh" ||
     filePath.startsWith(".github/scripts/nightly/merge-nightly-") ||
-    filePath === ".github/scripts/nightly/age-pr-history.py" ||
+    filePath === ".github/scripts/nightly/age-pr-history.mts" ||
     filePath === ".github/scripts/database/check-fold-state.py" ||
     filePath.startsWith(".github/workflows/")
   );

@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.8",
+  "version": "14.50.9",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -33,6 +33,7 @@
     "test:nightly-health": "node --test .github/scripts/nightly/nightly-health.test.mjs",
     "test:nightly-clean-calibration": "node --test .github/scripts/nightly/nightly-clean-calibration.test.mjs",
     "test:nightly-recap": "node --test .github/scripts/nightly/nightly-recap.test.mjs",
+    "test:nightly-history": "node --test .github/scripts/nightly/age-pr-history.test.mts",
     "nightly:deploy-check": "node .github/scripts/nightly/nightly-deploy-check.mjs",
     "nightly:recap": "node .github/scripts/nightly/nightly-recap.mjs",
     "agents:link": "node .github/scripts/agents/link-agent-dirs.mjs",
@@ -40,7 +41,7 @@
     "test:commit-trailers": "node --test .github/scripts/project/commit-trailers.test.mjs",
     "test:agents-link": "node --test .github/scripts/agents/link-agent-dirs.test.mjs",
     "test:agents-audit": "node --test .github/scripts/agents/agents-audit.test.mjs",
-    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:apk-ux-audit",
+    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:nightly-history && pnpm test:apk-ux-audit",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json",

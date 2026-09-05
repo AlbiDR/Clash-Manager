@@ -266,7 +266,7 @@ export function strandedOnlyFiles(registryPath = ".github/nightly-config/stages.
     // Newer scripts the original watched set predates.
     ".github/scripts/nightly/nightly-clean-calibration.mjs",
     ".github/scripts/nightly/update-nightly-context.sh",
-    ".github/scripts/nightly/age-pr-history.py",
+    ".github/scripts/nightly/age-pr-history.mts",
   ];
   try {
     const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));

@@ -117,7 +117,7 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
   `.github/nightly-config/stages.json`.
 - The lifecycle coordinator writes the initial sentinel and replaces it during
   finalization. Do not append a second summary record for the same run.
-- Stage 1 alone may run `age-pr-history.py age` to age, prune, and fold
+- Stage 1 alone may run `age-pr-history.mts age` to age, prune, and fold
   `.github/nightly-logs/00-pr-history.md`.
 - No stage writes successful PR history. The merge coordinator compiles finalized
   history from merge tags after the PR merges.
