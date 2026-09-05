@@ -46,3 +46,4 @@
 * [2026-09-02] [Stage 2] CHANGED: Frontend-PWA/src/core/services/services-tests/useConnectivityManager.spec.ts -- Expanded Frontend-PWA useConnectivityManager test suite for error priorities and staleness threshold boundary
 * [2026-09-03] [Stage 2] CHANGED: Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts -- Expanded protocol.spec.ts unit test coverage for CORS preflight, method guards, IP extraction, and closed payload contracts
 * [2026-09-04] [Stage 2] [00:21Z-00:27Z 5m] CHANGED: Frontend-PWA/src/core/services/services-tests/useClashSync.spec.ts -- Expanded useClashSync spec coverage for storage persistence failures and edge case states
+* [2026-09-05] [Stage 2] [00:31Z-00:44Z 14m] CHANGED: Frontend-PWA/src/core/services/services-tests/StorageService.spec.ts -- Expanded unit test coverage for StorageService nuclear reset and legacy migration boundary edge cases.
