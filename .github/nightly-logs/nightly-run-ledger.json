@@ -6824,7 +6824,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.794Z",
+        "lastObservedAt": "2026-09-05T01:36:20.434Z",
         "failureClass": null
       },
       "2": {
@@ -6861,7 +6861,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.795Z",
+        "lastObservedAt": "2026-09-05T01:36:20.435Z",
         "failureClass": null
       },
       "3": {
@@ -6869,26 +6869,45 @@
         "stage": 3,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
           "julesApiError": null,
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-05/stage-3/pr-1696",
+          "session": {
+            "id": "18172976777504107302",
+            "name": "sessions/18172976777504107302",
+            "state": "COMPLETED",
+            "createTime": "2026-09-05T01:28:11.926472552Z",
+            "updateTime": "2026-09-05T01:35:20.713976Z",
+            "lifetimeMinutes": 7.1
+          },
+          "run": {
+            "started": "2026-09-05T01:30:00Z",
+            "terminated": "2026-09-05T01:33:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1696,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.795Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-05T01:36:20.435Z",
+        "failureClass": null
       },
       "4": {
         "date": "2026-09-05",
         "stage": 4,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "julesApiError": null,
@@ -6899,7 +6918,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.795Z",
+        "lastObservedAt": "2026-09-05T01:36:20.435Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "5": {
@@ -6907,7 +6926,7 @@
         "stage": 5,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
           "julesApiError": null,
@@ -6918,7 +6937,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.796Z",
+        "lastObservedAt": "2026-09-05T01:36:20.436Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "6": {
@@ -6926,7 +6945,7 @@
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "julesApiError": null,
@@ -6937,7 +6956,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.796Z",
+        "lastObservedAt": "2026-09-05T01:36:20.436Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "7": {
@@ -6945,7 +6964,7 @@
         "stage": 7,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "julesApiError": null,
@@ -6956,7 +6975,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.796Z",
+        "lastObservedAt": "2026-09-05T01:36:20.437Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -6964,7 +6983,7 @@
         "stage": 8,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "julesApiError": null,
@@ -6975,7 +6994,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.796Z",
+        "lastObservedAt": "2026-09-05T01:36:20.437Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -6983,7 +7002,7 @@
         "stage": 9,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "julesApiError": null,
@@ -6994,7 +7013,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.797Z",
+        "lastObservedAt": "2026-09-05T01:36:20.438Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -7002,7 +7021,7 @@
         "stage": 10,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "julesApiError": null,
@@ -7013,7 +7032,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.797Z",
+        "lastObservedAt": "2026-09-05T01:36:20.438Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -7021,7 +7040,7 @@
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "julesApiError": null,
@@ -7032,7 +7051,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.797Z",
+        "lastObservedAt": "2026-09-05T01:36:20.439Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -7040,7 +7059,7 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "julesApiError": null,
@@ -7051,7 +7070,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.797Z",
+        "lastObservedAt": "2026-09-05T01:36:20.439Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -7059,7 +7078,7 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "ESCALATED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "julesApiError": null,
@@ -7070,7 +7089,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-05T00:47:15.798Z",
+        "lastObservedAt": "2026-09-05T01:36:20.440Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
