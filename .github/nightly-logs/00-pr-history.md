@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-05] PR #1698 [Stage 5]: Reconciled StorageService.ts IndexedDB persistence and migration engine in core services README
+**Domain:** documentation | **Commit:** 22cf56b3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1698)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Why:** Documented StorageService.ts idb CRUD, legacy database migration bridge, deprecated database purging, nuclear reset destroyAll recovery, and cache hydration/persistence helpers
+**Change:** Reconciled StorageService.ts IndexedDB persistence and migration engine in core services README
+**Result:** Verified git diff --check (0 errors) and pnpm test StorageService.spec.ts (7/7 passed)
+
+
 ### [2026-09-05] PR #1697 [Stage 4]: Standardized loop counter variable naming in StorageService.ts to domain-descriptive recordIndex
 **Domain:** optimization | **Commit:** 72b1ee43 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1697)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/StorageService.ts
