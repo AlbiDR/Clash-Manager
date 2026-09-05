@@ -179,5 +179,113 @@ describe("StorageService", () => {
       expect(legacyPutCalled).toBe(true);
       expect(legacyDb.close).toHaveBeenCalled();
     });
+
+    it("should handle legacy database with no legacy object store", async () => {
+      const legacyDb = {
+        objectStoreNames: { contains: () => false },
+        close: vi.fn()
+      };
+
+      const mockStore = {
+        get: () => {
+          const req = createMockRequest();
+          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          return req;
+        }
+      };
+
+      vi.stubGlobal("indexedDB", {
+        open: (name: string) => {
+          const req = createMockRequest();
+          if (name === "clash_manager_db") {
+            req.result = legacyDb;
+          } else {
+            req.result = { objectStoreNames: { contains: () => true }, transaction: () => ({ objectStore: () => mockStore }) };
+          }
+          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          return req;
+        },
+        deleteDatabase: vi.fn(() => {
+          const req = createMockRequest();
+          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          return req;
+        })
+      });
+
+      const { idb } = await import("../StorageService");
+      await new Promise(r => setTimeout(r, 20));
+
+      await idb.get("test-empty-store");
+      await new Promise(r => setTimeout(r, 50));
+
+      expect(legacyDb.close).toHaveBeenCalled();
+    });
+
+    it("should handle legacy database check error gracefully", async () => {
+      const deleteDbSpy = vi.fn(() => {
+        const req = createMockRequest();
+        setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+        return req;
+      });
+
+      const mockStore = {
+        get: () => {
+          const req = createMockRequest("fallback_val");
+          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          return req;
+        }
+      };
+
+      vi.stubGlobal("indexedDB", {
+        open: (name: string) => {
+          const req = createMockRequest();
+          if (name === "clash_manager_db") {
+            setTimeout(() => req.onerror && req.onerror({ target: { error: "LEGACY_ERR" } }), 0);
+          } else {
+            req.result = { objectStoreNames: { contains: () => true }, transaction: () => ({ objectStore: () => mockStore }) };
+            setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          }
+          return req;
+        },
+        deleteDatabase: deleteDbSpy
+      });
+
+      const { idb } = await import("../StorageService");
+      await new Promise(r => setTimeout(r, 20));
+
+      const res = await idb.get("test-check-error");
+      await new Promise(r => setTimeout(r, 50));
+
+      expect(res).toBe("fallback_val");
+      expect(deleteDbSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("Nuclear Reset & Cleanup Operations", () => {
+    it("should perform nuclear reset via destroyAll", async () => {
+      const deleteDbSpy = vi.fn(() => {
+        const req = createMockRequest();
+        setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+        return req;
+      });
+
+      vi.stubGlobal("indexedDB", {
+        open: () => {
+          const req = createMockRequest({ close: vi.fn(), objectStoreNames: { contains: () => true } });
+          setTimeout(() => req.onsuccess && req.onsuccess(), 0);
+          return req;
+        },
+        deleteDatabase: deleteDbSpy
+      });
+
+      const { idb } = await import("../StorageService");
+
+      await idb.destroyAll();
+
+      expect(deleteDbSpy).toHaveBeenCalled();
+      // Verify fallback memory mode is activated after nuclear reset
+      await idb.set("post_destroy_key", "post_destroy_value");
+      expect(await idb.get("post_destroy_key")).toBe("post_destroy_value");
+    });
   });
 });

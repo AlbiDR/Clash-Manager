@@ -63,6 +63,15 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useShowcaseMode.ts` / `useBlueprintMode.ts` / `useSyntheticMode.ts` | The Showcase (demo), Blueprint (skeleton), and Synthetic (mock-data) modes. |
 | `useToast.ts` | Global toasts with haptic pairing. |
 
+### IndexedDB Persistence & Migration Engine (`StorageService.ts`)
+
+`StorageService.ts` provides clinical isolation for application data persistence in Layer 1 Core:
+- **Resilient Key-Value Store (`idb`):** Abstracts IndexedDB CRUD operations over `idbKernel` (`openDB`, `idbCore`) with automatic memory-store fallbacks (`memoryStore`, `forceMemoryMode()`) in unsupported, private, or restricted environments.
+- **Legacy Database Migration Bridge (`migrateLegacyData`):** Automatically detects and batch-migrates key-value records from the legacy database store (`STORAGE_LEGACY_DB_NAME`) into the active store upon initialization, using domain-descriptive iteration (`recordIndex`), before purging the legacy database.
+- **Deprecated Database Purging (`purgeDeprecatedDatabases`):** Asynchronously iterates through known obsolete database names (`STORAGE_DEPRECATED_DB_NAMES`) to reclaim browser storage quota and eliminate schema leakage across application updates.
+- **Nuclear Reset Recovery (`destroyAll`):** Exposes an emergency recovery command that closes active database handles, deletes disk databases (`STORAGE_DB_NAME`, `STORAGE_LEGACY_DB_NAME`, and deprecated DBs), wipes in-memory backups, and forces memory mode for the remainder of the session to recover from severe persistent storage corruption.
+- **WebAppData Snapshot Persistence (`loadCache` / `saveCache`):** Provides standardized helpers to hydrate and persist the raw application state snapshot DTO under `CACHE_KEY_MAIN` (`CLAN_MANAGER_DATA_V8`).
+
 ### Declarative Global Dialog Confirmation (`useConfirm.ts`)
 
 The modal confirmation composable provides a robust, styled replacement for the native browser/WebView `window.confirm()` method to prevent blocking and unstyled system alerts:
@@ -105,6 +114,7 @@ The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper
 `useClashSync.ts` orchestrates data synchronization, local persistence, and error tolerance in Layer 1 Core:
 - **Single-Flight Synchronization:** Enforces single-flight remote execution (`activeSyncPromise`). Concurrent sync calls join the single active in-flight request promise, eliminating redundant network traffic and avoiding race conditions during batch or automated triggers.
 - **Fault-Tolerance Visibility Thresholding:** Tracks consecutive remote synchronization failures (`consecutiveSyncFailures`). Background sync failures remain suppressed to maintain UI stability until the failure threshold (`SYNC_FAILURE_VISIBILITY_THRESHOLD = 3`) is reached, while manual user-triggered refreshes immediately expose error states (`syncError`).
+- **Remote Success State Preservation:** Internal `commitSyncResult` gates clearing `consecutiveSyncFailures` and `syncError` behind an explicit `remoteSuccess` flag (defaulting to `false`). Purely local commits (such as cache hydration, local edits, or optimistic rollbacks) leave remote failure indicators intact so that local mutations cannot forge proof of backend reachability or suppress pending error visibility windows.
 
 ### High-Performance Search and Filtering (`useListFilter.ts`)
 

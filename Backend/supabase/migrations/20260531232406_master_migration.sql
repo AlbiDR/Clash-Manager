@@ -2120,7 +2120,11 @@ BEGIN
           AND is_active = true
         LIMIT 1;
 
-        IF v_name IS NOT NULL THEN
+        -- Same allowlist refresh_voyage_contributions and
+        -- on_contribution_manual_override_updated enforce. Without it, friendly
+        -- and challenge battles credit voyage crowns.
+        IF v_name IS NOT NULL
+           AND NEW.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail') THEN
             v_earned := NEW.team_crowns + (3 - NEW.opponent_crowns);
 
             INSERT INTO drivers.clan_voyage_contributions (
@@ -2207,30 +2211,39 @@ BEGIN
 
     v_window_end := COALESCE(v_end, now());
 
-    -- 1. Strict Pruning: Remove any contribution records for players who are not currently active clan members
     DELETE FROM drivers.clan_voyage_contributions
     WHERE voyage_id = v_id
       AND player_tag NOT IN (SELECT player_tag FROM drivers.members WHERE is_active = true);
 
-    -- 2. Calculate and update the correct live scores.
+    -- player_battles is a rolling ~100-battle window, so re-deriving a cumulative
+    -- total from it can only undercount. Overridden rows stay authoritative.
     UPDATE drivers.clan_voyage_contributions c
     SET
-        total_voyage_crowns = COALESCE(c.manual_voyage_crowns, 0) + COALESCE((
-            SELECT SUM(b.team_crowns + (3 - b.opponent_crowns))
-            FROM drivers.player_battles b
-            WHERE b.player_tag = c.player_tag
-              AND b.battle_time <= v_window_end
-              AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail')
-              AND (
-                  (c.manual_voyage_crowns IS NOT NULL AND b.battle_time > c.manual_voyage_crowns_at)
-                  OR
-                  (c.manual_voyage_crowns IS NULL AND b.battle_time >= v_start)
-              )
-        ), 0),
+        total_voyage_crowns = CASE
+            WHEN c.manual_voyage_crowns IS NOT NULL THEN
+                c.manual_voyage_crowns + COALESCE((
+                    SELECT SUM(b.team_crowns + (3 - b.opponent_crowns))
+                    FROM drivers.player_battles b
+                    WHERE b.player_tag = c.player_tag
+                      AND b.battle_time <= v_window_end
+                      AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail')
+                      AND b.battle_time > c.manual_voyage_crowns_at
+                ), 0)
+            ELSE GREATEST(
+                COALESCE(c.total_voyage_crowns, 0),
+                COALESCE((
+                    SELECT SUM(b.team_crowns + (3 - b.opponent_crowns))
+                    FROM drivers.player_battles b
+                    WHERE b.player_tag = c.player_tag
+                      AND b.battle_time <= v_window_end
+                      AND b.battle_type IN ('PvP', 'pathOfLegend', 'riverRacePvP', 'riverRaceDuel', 'trail')
+                      AND b.battle_time >= v_start
+                ), 0)
+            )
+        END,
         updated_at = now()
     WHERE c.voyage_id = v_id;
 
-    -- 3. Final pass: ensure all percentages are accurate.
     UPDATE drivers.clan_voyage_contributions
     SET percentage_voyage_crowns = LEAST(ROUND((total_voyage_crowns::numeric / NULLIF(v_target, 0)::numeric) * 100, 2), 100.0)
     WHERE voyage_id = v_id;
@@ -3462,7 +3475,8 @@ CREATE OR REPLACE FUNCTION public.report_discovery(p_player_tag text, p_type tex
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
-    INSERT INTO substrate.discovery_cache (player_tag, type, discovered_at)
+    -- substrate.discovery_cache has scanned_at, never discovered_at.
+    INSERT INTO substrate.discovery_cache (player_tag, type, scanned_at)
     VALUES (p_player_tag, p_type, NOW())
     ON CONFLICT (player_tag) DO NOTHING;
 END;
