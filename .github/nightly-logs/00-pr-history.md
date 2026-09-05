@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-05] PR #1695 [Stage 2]: chore(verify): Expanded unit test coverage for StorageService nuclear reset and legacy migration boundary edge cases.
+**Domain:** pipeline | **Commit:** 6e8ec673 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1695)
+**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/StorageService.spec.ts
+**Why:** Automated nightly audit pass.
+**Change:** chore(verify): Expanded unit test coverage for StorageService nuclear reset and legacy migration boundary edge cases.
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-04] PR #1694 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 24b03a0f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1694)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
