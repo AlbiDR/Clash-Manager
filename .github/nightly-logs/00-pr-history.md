@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-05] PR #1701 [Stage 8]: Bumped @ast-grep/cli to ^0.45.3
+**Domain:** dependencies | **Commit:** bc68b819 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1701)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch update for @ast-grep/cli
+**Change:** Bumped @ast-grep/cli to ^0.45.3
+**Result:** PASS
+
+
 ### [2026-09-05] PR #1700 [Stage 7]: Audit complete: monorepo version declarations and PNPM catalog adherence fully synchronized at 14.50.3
 **Domain:** versioning | **Commit:** 41a51fb9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1700)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
