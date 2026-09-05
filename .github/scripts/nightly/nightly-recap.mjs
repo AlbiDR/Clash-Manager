@@ -834,6 +834,16 @@ function thinEvidenceSection(recap) {
  * That is the failure mode this whole section keeps rediscovering: a
  * measurement whose own absence looks like good news. When nothing was checked
  * it now says so instead of saying nothing.
+ *
+ * ANOTHER COMPONENT DEPENDS ON THIS LINE. DO NOT DELETE IT SILENTLY.
+ * The watchdog's description repair acts only on stages carrying a bodyHealth
+ * observation, so if its pull request fetch ever degraded it would repair
+ * nothing and report nothing, which is indistinguishable from nothing needing
+ * repair. It has no reporter of its own for that, deliberately: the "N of M
+ * checked" wording here is what surfaces it, on the principle that the fix for
+ * a blind spot belongs where someone will read it rather than inside the
+ * component that is blind. Moving or dropping this line reopens that hole in a
+ * different file, so the watchdog needs its own reporter first.
  */
 function descriptionSection(recap) {
   const stages = recap.stages || [];
