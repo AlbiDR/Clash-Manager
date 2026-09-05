@@ -110,3 +110,4 @@
 * [2026-09-02] [Stage 6] CHANGED: Frontend-PWA/src/core/services/useConnectivityManager.ts -- docs(tsdoc): harden useConnectivityManager interface contracts and inline logic annotations
 * [2026-09-03] [Stage 6] [04:18Z-04:26Z 8m] CHANGED: Frontend-PWA/src/core/services/useConnectionStatus.ts -- harden useConnectionStatus interface contracts and inline logic annotations
 * [2026-09-04] [Stage 6] [04:26Z-04:31Z 6m] CHANGED: Frontend-PWA/src/core/services/StorageService.ts -- docs(tsdoc): harden StorageService interface contracts and inline logic annotations
+* [2026-09-05] [Stage 6] [04:10Z-04:14Z 4m] CHANGED: Frontend-PWA/src/core/services/useAppSettings.ts -- docs(tsdoc): harden useAppSettings interface contracts and inline logic annotations
