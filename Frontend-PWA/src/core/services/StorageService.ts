@@ -106,8 +106,8 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
           console.info(`[Storage] Migrating ${keys.length} items from legacy database...`);
           const newTx = newDb.transaction(STORAGE_STORE_NAME, "readwrite");
           const newStore = newTx.objectStore(STORAGE_STORE_NAME);
-          for (let i = 0; i < keys.length; i++) {
-            newStore.put(values[i], keys[i]);
+          for (let recordIndex = 0; recordIndex < keys.length; recordIndex++) {
+            newStore.put(values[recordIndex], keys[recordIndex]);
           }
           
           newTx.oncomplete = async () => {
