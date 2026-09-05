@@ -21,6 +21,7 @@ import { prNumberFromTag } from "./nightly-ledger.mjs";
 import {
   FAILURE_PHRASES,
   METADATA_PLACEHOLDERS,
+  isPlaceholderField,
   placeholderResult,
   placeholderWhy,
 } from "./nightly-prose.mjs";
@@ -408,6 +409,30 @@ test("every placeholder either writer can produce is recognised as one", () => {
     why: placeholderWhy({ number: 4, slug: "optimization" }),
   }));
   assert.doesNotMatch(text, /^Why:/m);
+});
+
+test("an absent field is not counted as a placeholder, unlike an empty one", () => {
+  // The two callers of isPlaceholderField disagree about absence on purpose,
+  // and the disagreement is invisible from the predicate alone. For the merge
+  // coordinator an empty value IS a placeholder, so it cannot overwrite a
+  // stated field. For the recap an absent field means no pull request history
+  // entry exists yet, which is a fact about the aging pass rather than about
+  // what the stage published, so counting it would report a defect the run did
+  // not have.
+  //
+  // A peer session probed isPlaceholderField("why", null), got true, and read
+  // it as proof that the recap counts absent fields. It does not, and this pins
+  // the caller's behaviour rather than the predicate's.
+  const absent = renderRecap(singleStage({
+    stage: 9, slug: "refactor", outcome: "CLEAN", prNumber: 1702, merged: true,
+    summary: "18 candidate files, 0 dep-violations",
+  }));
+  assert.doesNotMatch(absent, /^Thin evidence:/m, "no history entry is not a placeholder");
+  assert.match(absent, /^Detail aged out: 1 of 1 merged stages/m, "it is reported as a lost record instead");
+
+  // And the predicate itself keeps the semantics the coordinator needs.
+  assert.ok(isPlaceholderField("why", null), "empty is a placeholder for the writer's caller");
+  assert.ok(isPlaceholderField("result", ""));
 });
 
 test("a stage's own words are never mistaken for a placeholder", () => {

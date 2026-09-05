@@ -370,6 +370,10 @@ function escapeInline(value) {
  * defect rate the run did not have.
  */
 function isPlaceholderWhy(stage) {
+  // Absence is handled HERE and not in isPlaceholderField, which counts an
+  // empty value as a placeholder because that is right for the merge
+  // coordinator and wrong here. See the note on that function: reading it
+  // without this guard gives the opposite answer about what the count includes.
   if (!stage.why) return false;
   return isPlaceholderField("why", stage.why, { number: stage.stage, slug: stage.slug });
 }

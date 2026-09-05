@@ -170,9 +170,22 @@ export const PLACEHOLDER_RESULTS = new Set([
  * field, and the recap uses it to decide whether to print one.
  *
  * `stage` is optional and needed only for `why`, whose stage-runner placeholder
- * interpolates the stage number and slug. An empty value counts as a
- * placeholder: a field nobody filled in says exactly as much as one filled in
- * generically.
+ * interpolates the stage number and slug.
+ *
+ * AN EMPTY VALUE COUNTS AS A PLACEHOLDER HERE, AND THE RECAP'S CALLER DELIBERATELY
+ * DISAGREES. For the merge coordinator, which is what this exists for, a field
+ * nobody filled in says exactly as much as one filled in generically, and it
+ * must never overwrite a stated field with an empty one. For the recap an
+ * ABSENT field means no pull request history entry exists yet, which is a fact
+ * about the aging pass rather than about what the stage published, so counting
+ * it would report a defect the run did not have. nightly-recap.mjs therefore
+ * guards absence before calling this, in isPlaceholderWhy and beside the result
+ * check.
+ *
+ * So probing this function alone does not tell you what the recap counts. A
+ * peer session read `isPlaceholderField("why", null) === true` as proof that
+ * absent fields are counted, and reached the opposite of the truth. Check the
+ * caller.
  */
 export function isPlaceholderField(field, value, stage = null) {
   const text = String(value || "").trim();
