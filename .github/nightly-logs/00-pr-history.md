@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-05] PR #1697 [Stage 4]: Standardized loop counter variable naming in StorageService.ts to domain-descriptive recordIndex
+**Domain:** optimization | **Commit:** 72b1ee43 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1697)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/core/services/StorageService.ts
+**Why:** Align with CleanStack ADR Section VII naming conventions and eliminate anemic loop variable identifiers in L1 Core StorageService
+**Change:** Standardized loop counter variable naming in StorageService.ts to domain-descriptive recordIndex
+**Result:** Vitest StorageService.spec.ts passed 7/7 tests cleanly
+
+
 ### [2026-09-05] PR #1696 [Stage 3]: Baseline consolidation audit completed cleanly; master migration is fully up to date.
 **Domain:** database | **Commit:** 775d870d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1696)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
