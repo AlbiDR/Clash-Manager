@@ -8,6 +8,13 @@ import { ensureRunEntries, loadLedger, prNumberFromTag, saveLedger, stageEntry, 
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
+// The composer the stage itself uses, and the parser the recap itself uses.
+// Imported rather than reimplemented: a second copy of either would be a second
+// definition of the pull request body format, and the whole reason a published
+// body can be wrong is that one copy of it travelled through a channel that did
+// not preserve it.
+import { renderPrBody } from "./nightly-stage.mjs";
+import { parseCoverageLine } from "./nightly-recap.mjs";
 
 // This workflow deliberately holds JULES_API_KEY so it can resume stranded
 // sessions, and the repository is public. Every console line, summary block and
@@ -305,6 +312,64 @@ export function parseRunWindow(content, stageNumber, date) {
 }
 
 /**
+ * Body verdicts worth rewriting. OK is absent on purpose: a correct body must
+ * never be touched, and a verdict this set does not know is left alone rather
+ * than guessed at, so a new failure mode cannot be silently overwritten before
+ * anyone has seen what it looks like.
+ */
+export const REPAIRABLE_BODY_VERDICTS = new Set(["AD_LIBBED", "EMPTY", "MARKER_LEAK", "HANDOFF_LEAK"]);
+
+/**
+ * Rebuilds a published pull request description that arrived damaged.
+ *
+ * THE CHANNEL, AND WHY IT LEAKS
+ * renderPrBody composes the description during finalize and writes it to
+ * /tmp/nightly/pr-body.md inside the Jules VM. The only route from there to
+ * GitHub is the agent copying that file into its final message, because Jules'
+ * scheduled-task publisher uses the last message as the body. That is a pure
+ * data transfer routed through a language model, and it fails: 10 of the 36
+ * bodies recorded up to 2026-09-05 carried no NIGHTLY_PR_METADATA at all.
+ *
+ * The cost is not cosmetic. merge-nightly-core parses that block to build
+ * 00-pr-history.md, which is where the recap reads each stage's Why and Result.
+ * A body that loses the block makes the recap fall back to generic filler, so
+ * 28 percent of merged stages could not say why they did what they did.
+ *
+ * WHAT THIS CAN AND CANNOT RECOVER
+ * Status, Change and the audited target come from the coverage log line, which
+ * the stage commits and which therefore survives; Domain comes from the
+ * registry; Files come from the pull request's own diff. Why and Result exist
+ * only in that /tmp file and in the message that lost them, so they cannot be
+ * recovered after the fact and renderPrBody's own defaults stand in. That is a
+ * real limit, not an oversight: closing it means persisting them somewhere the
+ * agent cannot garble, which is a change to what a stage commits.
+ *
+ * Pure so the decision is testable without a network: the caller does the
+ * fetching and the PATCH.
+ */
+export function buildBodyRepair({ stage, verdict, declared, files }) {
+  if (!stage) return { ok: false, reason: "no stage supplied" };
+  if (!REPAIRABLE_BODY_VERDICTS.has(verdict)) {
+    return { ok: false, reason: `Stage ${stage.number}: body verdict ${verdict || "unknown"} is not repairable` };
+  }
+  if (!declared?.status || !declared?.summary) {
+    return { ok: false, reason: `Stage ${stage.number}: no coverage-log outcome to rebuild the body from` };
+  }
+
+  // Falling back to the coverage log keeps the Files field honest rather than
+  // empty when the diff cannot be listed; renderPrBody does the same.
+  const paths = (files || []).length > 0 ? files : [stage.coverageLog];
+  return {
+    ok: true,
+    stage: stage.number,
+    verdict,
+    // No `details`: renderPrBody supplies its own Why and Result defaults, and
+    // inventing richer ones here would publish a claim nothing witnessed.
+    body: renderPrBody(stage, declared.status, declared.summary, paths),
+  };
+}
+
+/**
  * Whether a published pull request body is the description the pipeline built,
  * or something that went wrong on the way out.
  *
@@ -368,6 +433,10 @@ async function collectObservedState(registry, date, config = CONFIG) {
   const coverageStages = new Set();
   const danglingSentinelStages = new Set();
   const runWindows = new Map();
+  // The outcome each stage declared for itself, kept so a damaged pull request
+  // body can be rebuilt from the one copy of it that is committed. See
+  // buildBodyRepair.
+  const declaredOutcomes = new Map();
   for (const stage of registry.stages) {
     try {
       const content = runGit(["show", `origin/${config.targetBranch}:${stage.coverageLog}`]);
@@ -375,6 +444,8 @@ async function collectObservedState(registry, date, config = CONFIG) {
       if (content.includes(`* [${evidenceDate}] [Stage ${stage.number}] `)) {
         coverageStages.add(stage.number);
       }
+      const declared = parseCoverageLine(content, stage.number, evidenceDate);
+      if (declared) declaredOutcomes.set(stage.number, declared);
       const window = parseRunWindow(content, stage.number, evidenceDate);
       if (window) runWindows.set(stage.number, window);
       if (hasDanglingSentinel(content, stage.number, evidenceDate)) {
@@ -392,6 +463,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
     coverageStages,
     danglingSentinelStages,
     runWindows,
+    declaredOutcomes,
     julesSessions: jules.sessions,
     julesAvailable: jules.available,
     julesError: jules.error,
@@ -925,6 +997,81 @@ export async function recoverStuckStages({
 //
 // Runs only over stages the nudge could not rescue, so the happy path and the
 // nudge path both behave exactly as they did before.
+/**
+ * Rewrites the descriptions of pull requests that published a damaged body.
+ *
+ * Runs against MERGED stages, which sounds late but is not: a stage pull
+ * request merges within about a minute of opening, so by any pass of the night
+ * the body is already public and already merged. GitHub allows editing a merged
+ * pull request's body, and the repair still lands in time to matter, because
+ * the consumer is Stage 1's aging pass on the FOLLOWING night, which reads
+ * these bodies to build 00-pr-history.md.
+ *
+ * Reporting the defect was the previous behaviour and it was not enough. The
+ * rate was measured, published in the recap every morning, and nothing acted on
+ * it, so 28 percent of merged stages stayed unable to explain themselves. This
+ * is the corrective half.
+ */
+export async function repairPublishedBodies({
+  entries, observed, ledger, registry, date,
+  config = CONFIG,
+  apiImpl = githubApi,
+  filesImpl = fetchPullRequestFiles,
+}) {
+  const repaired = [];
+  const skipped = [];
+
+  for (const entry of entries) {
+    const verdict = entry.evidence?.body?.verdict;
+    const number = entry.evidence?.body?.pr;
+    if (entry.evidence?.body?.ok !== false || !number) continue;
+
+    const stage = registry.stages.find(candidate => candidate.number === entry.stage);
+    const plan = buildBodyRepair({
+      stage,
+      verdict,
+      declared: observed.declaredOutcomes?.get(entry.stage) || null,
+      files: await safePullRequestFiles(number, config, filesImpl),
+    });
+    if (!plan.ok) {
+      skipped.push({ stage: entry.stage, pr: number, reason: plan.reason });
+      continue;
+    }
+
+    try {
+      await apiImpl(`/repos/${config.owner}/${config.repo}/pulls/${number}`, config, "PATCH", { body: plan.body });
+      // Recorded so the recap stops reporting a defect that no longer exists,
+      // and so the repair itself is auditable rather than invisible.
+      upsertStageEntry(ledger, registry, date, entry.stage, {
+        evidence: { body: { pr: number, verdict: "OK", ok: true, repairedFrom: verdict } },
+      });
+      repaired.push({ stage: entry.stage, pr: number, from: verdict });
+      logLine(`Stage ${entry.stage}: rebuilt PR #${number} description (was ${verdict}).`);
+    } catch (error) {
+      skipped.push({ stage: entry.stage, pr: number, reason: error.message });
+      errorLine(`Stage ${entry.stage}: could not rewrite PR #${number} description: ${error.message}`);
+    }
+  }
+
+  return { repaired, skipped };
+}
+
+/**
+ * The paths a pull request touched, or [] when the diff cannot be listed.
+ *
+ * A failure here must not abort the repair: buildBodyRepair falls back to the
+ * coverage log for the Files field, and a body with a thin file list is still
+ * enormously better than one with no metadata block at all.
+ */
+async function safePullRequestFiles(number, config = CONFIG, filesImpl = fetchPullRequestFiles) {
+  try {
+    return await filesImpl(number, config);
+  } catch (error) {
+    errorLine(`Could not list files for PR #${number}: ${error.message}`);
+    return [];
+  }
+}
+
 export async function publishStrandedWork({
   unrecovered = [],
   julesSessions = [],
@@ -1087,7 +1234,7 @@ function parseArgs(argv) {
     const token = argv[index];
     invariant(token.startsWith("--"), `Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish" || key === "final") {
+    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish" || key === "final" || key === "no-body-repair") {
       options.set(key, true);
       continue;
     }
@@ -1115,8 +1262,11 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   let julesError = null;
   let julesSessions = [];
   let observerHealthy = true;
+  // Hoisted out of the try: the body-repair pass below needs the declared
+  // outcomes this collects, and a block-scoped const would not survive to it.
+  let observed = null;
   try {
-    const observed = await collectObservedState(registry, date, config);
+    observed = await collectObservedState(registry, date, config);
     promotion = observed.promotion;
     // Captured for the readiness report and the exit code. A run where every
     // stage merged but the credential is dead is NOT a healthy run.
@@ -1176,6 +1326,18 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
       entries = Object.values(ledger.runs[date]);
     } catch (error) {
       errorLine(`Nightly watchdog recovery pass failed: ${error.message}`);
+    }
+  }
+
+  // Separate from the recovery pass above and deliberately not gated on it: a
+  // damaged description belongs to a stage that published perfectly well, so
+  // it is never in `unrecovered` and would never be reached from there.
+  if (observed && !options.get("dry-run") && !options.get("no-body-repair")) {
+    try {
+      await repairPublishedBodies({ entries, observed, ledger, registry, date, config });
+      entries = Object.values(ledger.runs[date]);
+    } catch (error) {
+      errorLine(`Nightly watchdog body-repair pass failed: ${error.message}`);
     }
   }
 

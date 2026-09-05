@@ -636,6 +636,14 @@ export function renderRecap(recap) {
     if (s.bodyHealth && s.bodyHealth.ok === false) {
       stageNotes.push(`${label}: published PR description was ${s.bodyHealth.verdict} (PR #${s.bodyHealth.pr}); the work landed, the description did not.`);
     }
+    // A repaired body is still a body that arrived damaged. Reporting only the
+    // ones left broken would hide the defect rate behind its own fix, which is
+    // how this went unnoticed until someone read three pull requests by hand.
+    // Why and Result cannot be recovered after the fact, so a repaired
+    // description carries the generic defaults and the reader should know.
+    if (s.bodyHealth?.repairedFrom) {
+      stageNotes.push(`${label}: published PR description arrived ${s.bodyHealth.repairedFrom} (PR #${s.bodyHealth.pr}) and was rebuilt from the coverage log; its Why and Result are the generic defaults.`);
+    }
     const why = usefulWhy(s);
     if (why) stageNotes.push(`${label}: why - ${why}`);
     return stageNotes;

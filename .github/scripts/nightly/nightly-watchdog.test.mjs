@@ -33,6 +33,8 @@ import {
   renderRecoveryReadiness,
   renderStaleStagePrReport,
   renderSummary,
+  buildBodyRepair,
+  repairPublishedBodies,
   runFrontier,
   selectRecoveryCandidates,
   sessionTelemetry,
@@ -1419,4 +1421,134 @@ test("an in-flight Jules session advances the frontier", () => {
   assert.equal(entries.find(entry => entry.stage === 5).state, "NO_OUTPUT");
   // Still queued behind it.
   assert.equal(entries.find(entry => entry.stage === 8).state, "EXPECTED");
+});
+
+// The PR body travels from renderPrBody, through a /tmp file inside the Jules
+// VM, into the agent's final message, and only then to GitHub. That last hop is
+// a language model performing a copy, and it loses the payload roughly a
+// quarter of the time: 10 of the 36 bodies recorded up to 2026-09-05 carried no
+// NIGHTLY_PR_METADATA. Detecting that was the old behaviour; rebuilding it is
+// the corrective half.
+const REPAIR_STAGE = registry.stages.find(stage => stage.number === 2);
+
+test("a damaged PR body is rebuilt from the coverage line the stage committed", () => {
+  const plan = buildBodyRepair({
+    stage: REPAIR_STAGE,
+    verdict: "AD_LIBBED",
+    declared: { status: "CHANGED", target: "Frontend-PWA/src/x.spec.ts", summary: "Expanded StorageService coverage" },
+    files: ["Frontend-PWA/src/x.spec.ts", REPAIR_STAGE.coverageLog],
+  });
+
+  assert.equal(plan.ok, true);
+  // The block is the whole point: merge-nightly-core parses it into
+  // 00-pr-history.md, which is where the recap reads Why and Result.
+  assert.match(plan.body, /NIGHTLY_PR_METADATA:/);
+  assert.match(plan.body, /\*\*Status:\*\* CHANGED/);
+  assert.match(plan.body, /Change: Expanded StorageService coverage/);
+  assert.match(plan.body, /Domain: verification/);
+  assert.match(plan.body, /Files: Frontend-PWA\/src\/x\.spec\.ts/);
+  assert.equal(classifyPrBody(plan.body), "OK", "a rebuilt body must itself pass the classifier");
+});
+
+test("every damaged verdict is repairable and a good body is never touched", () => {
+  const declared = { status: "CLEAN", target: "Codebase", summary: "Audited everything" };
+  for (const verdict of ["AD_LIBBED", "EMPTY", "MARKER_LEAK", "HANDOFF_LEAK"]) {
+    assert.equal(buildBodyRepair({ stage: REPAIR_STAGE, verdict, declared, files: [] }).ok, true, verdict);
+  }
+  // OK is absent from REPAIRABLE_BODY_VERDICTS on purpose, and so is anything
+  // nobody has classified yet: overwriting an unrecognised body would destroy
+  // the only evidence of a new failure mode before it had been seen.
+  assert.equal(buildBodyRepair({ stage: REPAIR_STAGE, verdict: "OK", declared, files: [] }).ok, false);
+  assert.equal(buildBodyRepair({ stage: REPAIR_STAGE, verdict: "SOMETHING_NEW", declared, files: [] }).ok, false);
+});
+
+// Why and Result live only in the /tmp file and in the message that lost them.
+// Nothing can recover them after the fact, so the repair must fall back to
+// renderPrBody's own defaults rather than inventing a claim nothing witnessed.
+test("a repair never invents a Why or a Result it cannot know", () => {
+  const plan = buildBodyRepair({
+    stage: REPAIR_STAGE,
+    verdict: "AD_LIBBED",
+    declared: { status: "CLEAN", target: "Codebase", summary: "Audited everything" },
+    files: [REPAIR_STAGE.coverageLog],
+  });
+
+  assert.match(plan.body, /Why: Execute the scheduled Stage 2 verification audit\./);
+  assert.match(plan.body, /Result: Audit completed with no source change required\./);
+});
+
+test("a stage with no committed coverage line is left alone", () => {
+  const plan = buildBodyRepair({ stage: REPAIR_STAGE, verdict: "AD_LIBBED", declared: null, files: [] });
+  assert.equal(plan.ok, false);
+  assert.match(plan.reason, /no coverage-log outcome/);
+});
+
+test("the repair pass rewrites only the damaged bodies and records what it did", async () => {
+  const date = "2026-08-11";
+  const entries = [
+    { stage: 1, state: "MERGED", evidence: { body: { pr: 100, verdict: "OK", ok: true } } },
+    { stage: 2, state: "MERGED", evidence: { body: { pr: 101, verdict: "AD_LIBBED", ok: false } } },
+    { stage: 3, state: "MERGED", evidence: { body: { pr: 102, verdict: "HANDOFF_LEAK", ok: false } } },
+    { stage: 4, state: "NO_OUTPUT", evidence: {} },
+  ];
+  const observed = { declaredOutcomes: new Map([
+    [2, { status: "CHANGED", target: "a.ts", summary: "Did a thing" }],
+    [3, { status: "CLEAN", target: "Codebase", summary: "Checked a thing" }],
+  ]) };
+
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  const patched = [];
+  const apiImpl = async (endpoint, _config, method, body) => {
+    if (method === "PATCH") patched.push({ endpoint, body });
+    return {};
+  };
+
+  const result = await repairPublishedBodies({
+    entries, observed, ledger, registry, date,
+    config: { ...CONFIG, owner: "o", repo: "r" },
+    apiImpl,
+    filesImpl: async () => ["a.ts"],
+  });
+
+  assert.deepEqual(result.repaired.map(r => r.stage), [2, 3]);
+  assert.equal(patched.length, 2, "the OK body and the unpublished stage are untouched");
+  assert.deepEqual(patched.map(p => p.endpoint), ["/repos/o/r/pulls/101", "/repos/o/r/pulls/102"]);
+  for (const call of patched) assert.equal(classifyPrBody(call.body.body), "OK");
+
+  // The ledger must stop reporting a defect that no longer exists, while still
+  // recording that it was repaired rather than never having happened.
+  const stage2 = stageEntry(ledger, date, 2);
+  assert.equal(stage2.evidence.body.ok, true);
+  assert.equal(stage2.evidence.body.repairedFrom, "AD_LIBBED");
+});
+
+// A failed PATCH must never abort the pass: one unrepairable stage cannot be
+// allowed to strand the others, and the run itself was healthy either way.
+test("a failed rewrite is reported and does not stop the other repairs", async () => {
+  const date = "2026-08-11";
+  const entries = [
+    { stage: 2, state: "MERGED", evidence: { body: { pr: 101, verdict: "AD_LIBBED", ok: false } } },
+    { stage: 3, state: "MERGED", evidence: { body: { pr: 102, verdict: "AD_LIBBED", ok: false } } },
+  ];
+  const observed = { declaredOutcomes: new Map([
+    [2, { status: "CLEAN", target: "Codebase", summary: "One" }],
+    [3, { status: "CLEAN", target: "Codebase", summary: "Two" }],
+  ]) };
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+
+  const result = await repairPublishedBodies({
+    entries, observed, ledger, registry, date,
+    config: { ...CONFIG, owner: "o", repo: "r" },
+    apiImpl: async (endpoint, _c, method) => {
+      if (method === "PATCH" && endpoint.endsWith("/101")) throw new Error("422 unprocessable");
+      return {};
+    },
+    filesImpl: async () => [],
+  });
+
+  assert.deepEqual(result.repaired.map(r => r.stage), [3]);
+  assert.deepEqual(result.skipped.map(r => r.stage), [2]);
+  assert.equal(stageEntry(ledger, date, 2).evidence?.body?.ok ?? null, null, "a failed repair claims nothing");
 });
