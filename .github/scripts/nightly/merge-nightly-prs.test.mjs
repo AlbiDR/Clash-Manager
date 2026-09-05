@@ -8,6 +8,13 @@ import path from "node:path";
 import test from "node:test";
 
 import {
+  METADATA_PLACEHOLDERS,
+  TAG_PLACEHOLDERS,
+  isPlaceholderField,
+  placeholderWhy,
+} from "./nightly-prose.mjs";
+
+import {
   classifyTagCreation,
   classifyNightlyPr,
   collectHistoryBlocksFromTags,
@@ -24,6 +31,8 @@ import {
   parseStageBranch,
   parseStageTag,
   parseTagContent,
+  preferStatedMetadata,
+  readSidecarMetadata,
   renderFailureBlock,
   renderHistoryBlock,
   sortStagePrs,
@@ -530,4 +539,159 @@ test("a red regression gate blocks the merge, and an absent one does not", async
   } finally {
     global.fetch = originalFetch;
   }
+});
+
+// --- The record stops depending on an agent copying a file ------------------
+//
+// The pull request body reaches GitHub through the agent's final message. When
+// the agent ad-libs it, extractMetadata substitutes a placeholder for every
+// field, createStageTag bakes those into the annotated tag, and parseTagContent
+// reads them back into the permanent history block. 75 of 116 Result fields in
+// the committed history hold a placeholder for words nobody ever saw.
+//
+// Nothing downstream can fix it: a tag that exists is left unchanged, and
+// insertHistoryBlocks skips a pull request number already in the file. So the
+// only place a correction can land is at tag creation, and the finalize that
+// produced the merged work also committed the description into it.
+
+const AD_LIBBED_BODY = { number: 1695, title: "chore(verify): expanded coverage", body: "I have completed the stage." };
+const REAL_SIDECAR = {
+  domain: "verification",
+  why: "StorageService nuclear reset had no coverage.",
+  change: "Expanded unit test coverage for the migration boundary.",
+  result: "7/7 tests passed.",
+  files: "Frontend-PWA/src/core/services/services-tests/StorageService.spec.ts",
+};
+
+test("a description damaged in transit is recovered from the committed sidecar", () => {
+  const bodyMeta = extractMetadata(AD_LIBBED_BODY);
+  // Precondition: this is the laundering, before the fix.
+  assert.equal(bodyMeta.why, METADATA_PLACEHOLDERS.why);
+  assert.equal(bodyMeta.result, METADATA_PLACEHOLDERS.result);
+
+  const { meta, upgraded } = preferStatedMetadata(REAL_SIDECAR, bodyMeta, { number: 2, slug: "verification" });
+  assert.equal(meta.why, REAL_SIDECAR.why);
+  assert.equal(meta.result, REAL_SIDECAR.result);
+  assert.equal(meta.change, REAL_SIDECAR.change);
+  assert.equal(meta.domain, "verification");
+
+  // `change` is replaced but is NOT reported as recovered, and the distinction
+  // is real: extractMetadata falls back to the pull request title, which is
+  // text a person wrote rather than a placeholder. That fallback is why the
+  // Change field never looked as damaged as Why and Result in the history even
+  // on nights when the metadata block was missing entirely. The sidecar's
+  // version is more precise, so it wins, but nothing was rescued from
+  // genericness.
+  assert.equal(bodyMeta.change, AD_LIBBED_BODY.title);
+  assert.deepEqual(upgraded.sort(), ["domain", "files", "result", "why"]);
+});
+
+test("a stage's own words are never replaced by a placeholder", () => {
+  // The one property worth guaranteeing about a write that cannot be revisited.
+  // Wholesale preference for the sidecar would be correct today, since the body
+  // is a copy of it; this holds even when that stops being true.
+  const goodBody = extractMetadata({
+    number: 1695,
+    body: "<!--\nNIGHTLY_PR_METADATA:\n  Domain: verification\n  Why: a real reason\n  Change: real work\n  Result: 7/7 tests passed\n  Files: a.spec.ts\n-->",
+  });
+  assert.equal(goodBody.why, "a real reason");
+
+  const degradedSidecar = {
+    ...REAL_SIDECAR,
+    why: METADATA_PLACEHOLDERS.why,
+    result: METADATA_PLACEHOLDERS.result,
+  };
+  const { meta, upgraded } = preferStatedMetadata(degradedSidecar, goodBody, { number: 2, slug: "verification" });
+  assert.equal(meta.why, "a real reason", "a placeholder must never overwrite a statement");
+  assert.equal(meta.result, "7/7 tests passed");
+  assert.deepEqual(upgraded, [], "nothing was recovered, so nothing may be reported as recovered");
+});
+
+test("the stage runner's own why placeholder is recognised, which needs the slug", () => {
+  // placeholderWhy interpolates the number and the slug, so a merge that knew
+  // only the number would take it for a statement and keep it.
+  const stage = { number: 4, slug: "optimization" };
+  const sidecar = { ...REAL_SIDECAR, why: placeholderWhy(stage) };
+  const bodyMeta = { ...REAL_SIDECAR, why: "the real reason the loop was renamed" };
+
+  const { meta } = preferStatedMetadata(sidecar, bodyMeta, stage);
+  assert.equal(meta.why, "the real reason the loop was renamed");
+});
+
+test("no sidecar leaves the published description exactly as it was", () => {
+  // Runs already in flight, runs predating the sidecar, and any stage that
+  // failed before finalize all take this path. It must lose nothing and it must
+  // not claim a recovery.
+  const bodyMeta = extractMetadata(AD_LIBBED_BODY);
+  const { meta, upgraded } = preferStatedMetadata(null, bodyMeta, { number: 2, slug: "verification" });
+  assert.deepEqual(meta, bodyMeta);
+  assert.deepEqual(upgraded, []);
+});
+
+test("the tag parser's placeholders are the same vocabulary, not a third opinion", () => {
+  // parseTagContent defaults every field before reading the payload. These have
+  // never reached the committed history, because createStageTag always writes
+  // all six lines, which is exactly why they went unnoticed while the other two
+  // families were being hunted.
+  const parsed = parseTagContent("PR: #1695");
+  assert.equal(parsed.why, TAG_PLACEHOLDERS.why);
+  assert.equal(parsed.result, TAG_PLACEHOLDERS.result);
+  assert.ok(isPlaceholderField("result", parsed.result), "the recap must not print this as a stage's own result");
+  assert.ok(isPlaceholderField("why", parsed.why));
+});
+
+test("a sidecar this run did not write is never read", () => {
+  // The hazard the gate exists for. A stage overwrites its own sidecar every
+  // night at a path fixed by the registry, so the file is present in the merged
+  // commit's TREE whether or not this run wrote it: the merge inherits the
+  // previous run's copy from the base branch. Every run predating the sidecar,
+  // and every stage that fails before finalize, would otherwise have last
+  // night's Why and Result attached to tonight's permanent record.
+  //
+  // A placeholder is merely uninformative. A specific sentence about the wrong
+  // run is a confident false claim nothing downstream could detect, so the gate
+  // is a fact about the commit (did it modify the file) rather than a guess
+  // about the contents.
+  const stage = { number: 2, slug: "verification", coverageLog: ".github/nightly-logs/02-verification-coverage.log" };
+  const sidecarPath = ".github/nightly-logs/02-verification-pr-body.md";
+  const lastNight = [
+    "<!--",
+    "NIGHTLY_PR_METADATA:",
+    "  Domain: verification",
+    "  Why: last night's reason",
+    "  Change: last night's work",
+    "  Result: last night's 4/4 tests passed",
+    "  Files: old.spec.ts",
+    "-->",
+  ].join("\n");
+
+  const reads = [];
+  const reader = (sha, filePath) => {
+    reads.push(`${sha}:${filePath}`);
+    return filePath === sidecarPath ? lastNight : "";
+  };
+
+  // Present in the tree, absent from the diff: refused, and not even read.
+  assert.equal(readSidecarMetadata("abc123", stage, [stage.coverageLog], reader), null);
+  assert.deepEqual(reads, [], "a refused sidecar must not be read at all");
+
+  // Written by this commit: read, and parsed.
+  const found = readSidecarMetadata("abc123", stage, [sidecarPath, stage.coverageLog], reader);
+  assert.equal(found.path, sidecarPath);
+  assert.equal(found.meta.why, "last night's reason");
+  assert.deepEqual(reads, [`abc123:${sidecarPath}`]);
+
+  // A stage the registry does not know, and a commit whose sidecar cannot be
+  // read, both fall back rather than throwing inside the merge coordinator.
+  assert.equal(readSidecarMetadata("abc123", null, [sidecarPath], reader), null);
+  assert.equal(readSidecarMetadata("abc123", stage, [sidecarPath], () => ""), null);
+});
+
+test("a refused sidecar costs the record nothing", () => {
+  // What makes refusing safe: the published description is used unchanged, and
+  // no recovery is claimed.
+  const bodyMeta = extractMetadata(AD_LIBBED_BODY);
+  const { meta, upgraded } = preferStatedMetadata(null, bodyMeta, { number: 2, slug: "verification" });
+  assert.deepEqual(meta, bodyMeta);
+  assert.deepEqual(upgraded, []);
 });

@@ -110,9 +110,30 @@ export const RESULT_LABEL = "Result";
 export const METADATA_PLACEHOLDERS = {
   why: "Automated nightly audit pass.",
   result: "Nominal validation with zero regressions.",
-  // Unlike the other two this is a last resort: the coordinator prefers the
-  // pull request title and reaches this only when there is not even one.
+  // Unlike the others this is a last resort: the coordinator prefers the pull
+  // request title and reaches this only when there is not even one.
   change: "Automated stage execution.",
+  domain: "pipeline",
+  files: "codebase",
+};
+
+/**
+ * A third family, written by the annotated tag's own parser.
+ *
+ * parseTagContent defaults every field before reading the tag payload, so a tag
+ * missing a Why or Result line yields these instead. They have never reached
+ * the committed history, because createStageTag always writes all six lines,
+ * which is why they went unnoticed while the other two families were being
+ * hunted. Listed here so a reader cannot be fooled by them if that ever
+ * changes: the whole point of one vocabulary is that it does not depend on
+ * which writer happened to run.
+ */
+export const TAG_PLACEHOLDERS = {
+  why: "Daily audit pass.",
+  change: "Automated stage execution.",
+  result: "Nominal validation.",
+  domain: "pipeline",
+  files: "codebase",
 };
 
 /** The stage runner's placeholder, for a stage that finalizes without its own reason. */
@@ -135,8 +156,37 @@ export function placeholderResult(status) {
  */
 export const PLACEHOLDER_RESULTS = new Set([
   METADATA_PLACEHOLDERS.result,
+  TAG_PLACEHOLDERS.result,
   ...["CHANGED", "CLEAN", "DEGRADED"].map(placeholderResult),
 ]);
+
+/**
+ * Whether a metadata field holds a placeholder rather than something a stage
+ * said, for any of the fields a nightly pull request body carries.
+ *
+ * One predicate rather than a comparison at each call site, because there are
+ * now three writers of placeholders and two readers that must agree about them.
+ * The merge coordinator uses it to decide which of two sources to trust for a
+ * field, and the recap uses it to decide whether to print one.
+ *
+ * `stage` is optional and needed only for `why`, whose stage-runner placeholder
+ * interpolates the stage number and slug. An empty value counts as a
+ * placeholder: a field nobody filled in says exactly as much as one filled in
+ * generically.
+ */
+export function isPlaceholderField(field, value, stage = null) {
+  const text = String(value || "").trim();
+  if (!text) return true;
+  if (field === "result") return PLACEHOLDER_RESULTS.has(text);
+  if (field === "why") {
+    return text === METADATA_PLACEHOLDERS.why
+      || text === TAG_PLACEHOLDERS.why
+      || (stage ? text === placeholderWhy(stage) : false);
+  }
+  if (field === "change") return text === METADATA_PLACEHOLDERS.change || text === TAG_PLACEHOLDERS.change;
+  if (field === "domain" || field === "files") return text === METADATA_PLACEHOLDERS[field];
+  return false;
+}
 
 /**
  * What actually happened to a stage, one phrase per failure class.

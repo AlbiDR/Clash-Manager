@@ -21,7 +21,8 @@ import path from "path";
 import os from "os";
 import { spawnSync } from "child_process";
 import { FAILURE_CLASSES, loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
-import { METADATA_PLACEHOLDERS } from "./nightly-prose.mjs";
+import { METADATA_PLACEHOLDERS, TAG_PLACEHOLDERS, isPlaceholderField } from "./nightly-prose.mjs";
+import { prBodySidecarPath } from "./nightly-stage.mjs";
 
 export const CONFIG = {
   owner: process.env.GITHUB_REPOSITORY?.split("/")[0] ?? "",
@@ -255,11 +256,11 @@ export function extractMetadata(pr) {
   // Placeholders, not statements. Shared with the recap, which has to be able to
   // tell one from the other before printing a field as a stage's own words.
   const meta = {
-    domain: "pipeline",
+    domain: METADATA_PLACEHOLDERS.domain,
     why: METADATA_PLACEHOLDERS.why,
     change: pr?.title || METADATA_PLACEHOLDERS.change,
     result: METADATA_PLACEHOLDERS.result,
-    files: "codebase",
+    files: METADATA_PLACEHOLDERS.files,
   };
 
   if (metaMatch) {
@@ -290,11 +291,11 @@ function sanitizeTagValue(value) {
 export function parseTagContent(tagContent) {
   const parsed = {
     prNum: "PENDING",
-    domain: "pipeline",
-    files: "codebase",
-    why: "Daily audit pass.",
-    change: "Automated stage execution.",
-    result: "Nominal validation.",
+    domain: TAG_PLACEHOLDERS.domain,
+    files: TAG_PLACEHOLDERS.files,
+    why: TAG_PLACEHOLDERS.why,
+    change: TAG_PLACEHOLDERS.change,
+    result: TAG_PLACEHOLDERS.result,
   };
 
   for (const line of String(tagContent || "").split("\n")) {
@@ -542,18 +543,134 @@ export function classifyTagCreation(existingCommit, expectedCommit) {
   return existingCommit === expectedCommit ? "exists-matching" : "exists-conflicting";
 }
 
+/** Reads one path out of one commit, or returns "" when it is not there. */
+function defaultSidecarReader(squashSha, filePath) {
+  return runCmd(["show", `${squashSha}:${filePath}`], { allowFailure: true }).stdout;
+}
+
+/**
+ * The description a stage committed for itself, read out of the merged commit.
+ *
+ * WHY THIS IS PREFERRED OVER THE PULL REQUEST BODY
+ * The body reaches GitHub through the agent's final message. When the agent
+ * ad-libs it, extractMetadata finds no NIGHTLY_PR_METADATA block and
+ * substitutes a placeholder for every field, and those placeholders are then
+ * baked into the annotated tag below and read back out by parseTagContent into
+ * the permanent history block. 75 of 116 Result fields in the committed history
+ * hold a placeholder standing in for words nobody ever saw.
+ *
+ * Repairing the body afterwards cannot reach any of that, because everything
+ * downstream is write-once: a tag that already exists is left unchanged by
+ * classifyTagCreation, and insertHistoryBlocks skips any pull request number
+ * already in the file. So the fix has to happen here, at the one moment the
+ * record is written, and it can: the sidecar is inside `squashSha` by
+ * definition, since it was committed by the same finalize that produced the
+ * work being merged. Preferring it removes the dependency on an agent copying
+ * a file rather than working around it, and nothing needs repairing later
+ * because nothing wrong is written in the first place.
+ *
+ * Returns null rather than throwing for every absence: a stage that failed
+ * before finalize, a run predating the sidecar, or a registry without the
+ * stage all have to fall back to the body rather than lose their tag.
+ */
+export function readSidecarMetadata(squashSha, registryStage, mergedPaths, readFile = defaultSidecarReader) {
+  if (!registryStage) return null;
+  const sidecar = prBodySidecarPath(registryStage);
+
+  // The gate, and the whole reason this takes the merged file list. A stage
+  // overwrites its own sidecar every night at a path fixed by the registry, so
+  // the file exists in this commit's TREE whether or not this run wrote it: any
+  // merge inherits the previous run's copy from the base branch. Reading it
+  // unconditionally would attach last night's Why and Result to tonight's
+  // record for every run predating the sidecar and every stage that failed
+  // before finalize, which is worse than a placeholder. A generic sentence is
+  // merely uninformative; a specific one about the wrong run is a confident
+  // false claim, and nothing downstream could ever tell.
+  //
+  // Requiring the merged commit to have MODIFIED the sidecar is a fact about
+  // the commit rather than a guess about its contents, so it cannot be fooled.
+  if (!mergedPaths.includes(sidecar)) return null;
+
+  const body = readFile(squashSha, sidecar);
+  if (!body) return null;
+  return { meta: extractMetadata({ body }), path: sidecar };
+}
+
+/** The registry entry for a stage number, or null if it cannot be read. */
+function registryStageFor(stageNum, config = CONFIG) {
+  try {
+    return loadStageRegistry(config).stages.find(entry => entry.number === stageNum) || null;
+  } catch (error) {
+    log(`Could not load the stage registry for stage ${stageNum}: ${error.message}`, "warn");
+    return null;
+  }
+}
+
+/**
+ * The better of two readings of the same description, field by field.
+ *
+ * Wholesale preference for the sidecar would be correct today, because the body
+ * is a copy of it and can only be equal or worse. This is deliberately
+ * narrower: a field is taken from the sidecar unless doing so would replace
+ * something a stage said with a placeholder. The record can therefore only ever
+ * improve, whatever later happens to either source, which is the one property
+ * worth guaranteeing about a write that cannot be revisited.
+ *
+ * Never throws. This runs inside the merge coordinator, and a tag lost to an
+ * assertion about its own metadata would cost more than a generic field.
+ */
+export function preferStatedMetadata(sidecarMeta, bodyMeta, stage = null) {
+  const merged = { ...bodyMeta };
+  const upgraded = [];
+  for (const field of Object.keys(merged)) {
+    const candidate = sidecarMeta?.[field];
+    if (candidate === undefined) continue;
+    const candidateIsPlaceholder = isPlaceholderField(field, candidate, stage);
+    const currentIsPlaceholder = isPlaceholderField(field, merged[field], stage);
+    if (candidateIsPlaceholder && !currentIsPlaceholder) continue;
+    if (candidate === merged[field]) continue;
+    merged[field] = candidate;
+    if (currentIsPlaceholder && !candidateIsPlaceholder) upgraded.push(field);
+  }
+  return { meta: merged, upgraded };
+}
+
 function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
   const date = new Date().toISOString().split("T")[0];
   const stage = validateStageBranch(pr.head.ref, stageOverride).stage;
-  const meta = extractMetadata(pr);
+  const bodyMeta = extractMetadata(pr);
 
+  // Fetching the commit comes FIRST. Everything below reads from it, and a
+  // `git show` against a commit this clone has not fetched fails in exactly the
+  // way an absent sidecar does, which would silently drop every recovery on a
+  // shallow runner.
+  let fileList = [];
   try {
     ensureCommitAvailable(squashSha, config);
-    const fileList = gitStdout(["diff-tree", "--no-commit-id", "--name-only", "-r", squashSha]).split("\n").filter(Boolean);
-    if (fileList.length > 0) meta.files = summarizeFiles(fileList);
+    fileList = gitStdout(["diff-tree", "--no-commit-id", "--name-only", "-r", squashSha]).split("\n").filter(Boolean);
   } catch (error) {
     log(`Failed to prepare commit ${squashSha} for tagging: ${error.message}`, "warn");
     return;
+  }
+
+  // The registry entry, not just the number: placeholderWhy interpolates the
+  // slug, so recognising the stage runner's own why placeholder needs both.
+  const registryStage = registryStageFor(stage, config);
+  const sidecar = readSidecarMetadata(squashSha, registryStage, fileList);
+  const { meta, upgraded } = preferStatedMetadata(sidecar?.meta, bodyMeta, registryStage);
+
+  // The diff is ground truth for Files and outranks both descriptions, so it is
+  // applied last and dropped from the recovery report: a field about to be
+  // overwritten was not recovered from anything.
+  if (fileList.length > 0) meta.files = summarizeFiles(fileList);
+  const recovered = fileList.length > 0 ? upgraded.filter(field => field !== "files") : upgraded;
+
+  if (!sidecar) {
+    log(`No body sidecar written by ${squashSha} for stage ${stage}; using the published description.`, "info");
+  } else if (recovered.length > 0) {
+    // Worth a line: this is a published description damaged in transit, caught
+    // and corrected before it became permanent.
+    log(`Recovered ${recovered.join(", ")} for PR #${pr.number} from ${sidecar.path}; the published description had lost them.`, "success");
   }
 
   const tagName = `nightly/${date}/stage-${stage}/pr-${pr.number}`;

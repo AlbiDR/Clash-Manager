@@ -36,15 +36,13 @@ import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-heal
 import { prNumberFromTag } from "./nightly-ledger.mjs";
 import {
   FAILURE_PHRASES,
-  METADATA_PLACEHOLDERS,
-  PLACEHOLDER_RESULTS,
   PLAIN_PREFIX,
   RESULT_LABEL,
   WHY_LABEL,
   changeLabel,
   displayArea,
+  isPlaceholderField,
   joinList,
-  placeholderWhy,
   stageTag,
 } from "./nightly-prose.mjs";
 
@@ -373,9 +371,7 @@ function escapeInline(value) {
  */
 function isPlaceholderWhy(stage) {
   if (!stage.why) return false;
-  const why = String(stage.why).trim();
-  return why === METADATA_PLACEHOLDERS.why
-    || why === placeholderWhy({ number: stage.stage, slug: stage.slug });
+  return isPlaceholderField("why", stage.why, { number: stage.stage, slug: stage.slug });
 }
 
 function usefulWhy(stage) {
@@ -396,10 +392,9 @@ function usefulWhy(stage) {
  * counted by thinEvidenceSection rather than silently dropped.
  */
 function usefulResult(stage) {
-  const result = String(stage.result || "").trim();
-  if (!result) return null;
-  if (PLACEHOLDER_RESULTS.has(result)) return null;
-  return result;
+  if (!String(stage.result || "").trim()) return null;
+  if (isPlaceholderField("result", stage.result)) return null;
+  return String(stage.result).trim();
 }
 
 function displayStatus(outcome) {
@@ -780,7 +775,7 @@ function thinEvidenceSection(recap) {
     // left is the distinct defect: a stage that published a sound body and
     // still left a field to the default.
     if (s.bodyHealth && (s.bodyHealth.ok === false || s.bodyHealth.repairedFrom)) return false;
-    return isPlaceholderWhy(s) || PLACEHOLDER_RESULTS.has(String(s.result || "").trim());
+    return isPlaceholderWhy(s) || (Boolean(s.result) && isPlaceholderField("result", s.result));
   });
   // The other reason a block is thin, and a different fact about the world:
   // 00-pr-history.md holds only recent runs, and Stage 1's aging pass prunes
