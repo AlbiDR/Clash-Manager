@@ -13,7 +13,7 @@ import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-he
 // definition of the pull request body format, and the whole reason a published
 // body can be wrong is that one copy of it travelled through a channel that did
 // not preserve it.
-import { renderPrBody } from "./nightly-stage.mjs";
+import { prBodySidecarPath, renderPrBody } from "./nightly-stage.mjs";
 import { parseCoverageLine } from "./nightly-recap.mjs";
 
 // This workflow deliberately holds JULES_API_KEY so it can resume stranded
@@ -347,13 +347,29 @@ export const REPAIRABLE_BODY_VERDICTS = new Set(["AD_LIBBED", "EMPTY", "MARKER_L
  * Pure so the decision is testable without a network: the caller does the
  * fetching and the PATCH.
  */
-export function buildBodyRepair({ stage, verdict, declared, files }) {
+export function buildBodyRepair({ stage, verdict, declared, files, sidecar }) {
   if (!stage) return { ok: false, reason: "no stage supplied" };
   if (!REPAIRABLE_BODY_VERDICTS.has(verdict)) {
     return { ok: false, reason: `Stage ${stage.number}: body verdict ${verdict || "unknown"} is not repairable` };
   }
   if (!declared?.status || !declared?.summary) {
     return { ok: false, reason: `Stage ${stage.number}: no coverage-log outcome to rebuild the body from` };
+  }
+
+  // The stage's own committed description, when it has one, is not a
+  // reconstruction: it is the original, carrying the real Why and Result that
+  // the agent's final message lost. Preferred verbatim.
+  //
+  // Guarded on the Change field matching the coverage line, because the sidecar
+  // is read from the branch tip and a stage overwrites its own each night. A
+  // mismatch means this is a different run's description, and publishing last
+  // night's words onto tonight's pull request would be worse than a generic
+  // sentence: it would be a confident, wrong, specific claim.
+  if (sidecar) {
+    const sidecarChange = /^\s*Change:\s*(.*)$/m.exec(sidecar);
+    if (sidecarChange && sidecarChange[1].trim() === declared.summary.trim()) {
+      return { ok: true, stage: stage.number, verdict, body: sidecar, source: "sidecar" };
+    }
   }
 
   // Falling back to the coverage log keeps the Files field honest rather than
@@ -363,8 +379,12 @@ export function buildBodyRepair({ stage, verdict, declared, files }) {
     ok: true,
     stage: stage.number,
     verdict,
-    // No `details`: renderPrBody supplies its own Why and Result defaults, and
-    // inventing richer ones here would publish a claim nothing witnessed.
+    source: "reconstructed",
+    // No `details`: renderPrBody supplies its own Why and Result defaults.
+    // A reconstruction cannot recover Why or Result, because they only ever
+    // existed in the lost message. That is precisely the gap the sidecar above
+    // closes, and why a reconstruction is the second-best outcome rather than
+    // an equivalent one.
     body: renderPrBody(stage, declared.status, declared.summary, paths),
   };
 }
@@ -437,6 +457,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
   // body can be rebuilt from the one copy of it that is committed. See
   // buildBodyRepair.
   const declaredOutcomes = new Map();
+  const prBodySidecars = new Map();
   for (const stage of registry.stages) {
     try {
       const content = runGit(["show", `origin/${config.targetBranch}:${stage.coverageLog}`]);
@@ -446,6 +467,13 @@ async function collectObservedState(registry, date, config = CONFIG) {
       }
       const declared = parseCoverageLine(content, stage.number, evidenceDate);
       if (declared) declaredOutcomes.set(stage.number, declared);
+      // The description the stage composed for itself, committed since
+      // 71dea9583. Absent for every run before that and for any stage that
+      // failed before finalize, which is why buildBodyRepair still reconstructs.
+      try {
+        const sidecar = runGit(["show", `origin/${config.targetBranch}:${prBodySidecarPath(stage)}`]);
+        if (sidecar) prBodySidecars.set(stage.number, sidecar);
+      } catch (_) {}
       const window = parseRunWindow(content, stage.number, evidenceDate);
       if (window) runWindows.set(stage.number, window);
       if (hasDanglingSentinel(content, stage.number, evidenceDate)) {
@@ -464,6 +492,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
     danglingSentinelStages,
     runWindows,
     declaredOutcomes,
+    prBodySidecars,
     julesSessions: jules.sessions,
     julesAvailable: jules.available,
     julesError: jules.error,
@@ -1031,6 +1060,7 @@ export async function repairPublishedBodies({
       stage,
       verdict,
       declared: observed.declaredOutcomes?.get(entry.stage) || null,
+      sidecar: observed.prBodySidecars?.get(entry.stage) || null,
       files: await safePullRequestFiles(number, config, filesImpl),
     });
     if (!plan.ok) {

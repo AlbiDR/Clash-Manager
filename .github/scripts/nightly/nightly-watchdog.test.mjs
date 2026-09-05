@@ -1771,3 +1771,73 @@ test("an observer failure marks every stage and never publishes a credential", (
 
   configureRedaction({ julesApiKey: "", token: "" });
 });
+
+// Since 71dea9583 the stage commits the description it composed, so a repair no
+// longer has to reconstruct one. That distinction is the whole point: a
+// reconstruction recovers Change, Domain and Files but CANNOT recover Why and
+// Result, because those only ever existed in the message the agent lost. Swapping
+// one placeholder family for another would have been theatre.
+const SIDECAR_BODY = [
+  "### Nightly Stage 2: Verification",
+  "",
+  "**Status:** CHANGED",
+  "",
+  "<!--",
+  "NIGHTLY_PR_METADATA:",
+  "  Domain: verification",
+  "  Why: StorageService had no coverage for the nuclear reset path",
+  "  Change: Expanded StorageService coverage",
+  "  Result: 7 of 7 specs passed",
+  "  Files: a.spec.ts",
+  "-->",
+].join("\n");
+
+test("a repair prefers the description the stage committed for itself", () => {
+  const plan = buildBodyRepair({
+    stage: REPAIR_STAGE,
+    verdict: "AD_LIBBED",
+    declared: { status: "CHANGED", target: "a.spec.ts", summary: "Expanded StorageService coverage" },
+    files: ["a.spec.ts"],
+    sidecar: SIDECAR_BODY,
+  });
+
+  assert.equal(plan.ok, true);
+  assert.equal(plan.source, "sidecar");
+  assert.equal(plan.body, SIDECAR_BODY, "published verbatim, not re-rendered");
+  // The two fields a reconstruction can never recover.
+  assert.match(plan.body, /Why: StorageService had no coverage for the nuclear reset path/);
+  assert.match(plan.body, /Result: 7 of 7 specs passed/);
+});
+
+// The sidecar is read from the branch tip and a stage overwrites its own every
+// night, so it can belong to a different run than the pull request being
+// repaired. Publishing last night's words onto tonight's PR would be a
+// confident, specific, wrong claim: worse than a generic sentence.
+test("a sidecar from a different run is refused rather than published", () => {
+  const plan = buildBodyRepair({
+    stage: REPAIR_STAGE,
+    verdict: "AD_LIBBED",
+    declared: { status: "CHANGED", target: "b.spec.ts", summary: "Something else entirely" },
+    files: ["b.spec.ts"],
+    sidecar: SIDECAR_BODY,
+  });
+
+  assert.equal(plan.ok, true);
+  assert.equal(plan.source, "reconstructed", "the mismatched sidecar must not be trusted");
+  assert.doesNotMatch(plan.body, /nuclear reset path/);
+  assert.match(plan.body, /Change: Something else entirely/);
+});
+
+test("with no sidecar the repair still reconstructs what it can", () => {
+  const plan = buildBodyRepair({
+    stage: REPAIR_STAGE,
+    verdict: "AD_LIBBED",
+    declared: { status: "CHANGED", target: "a.spec.ts", summary: "Did the thing" },
+    files: ["a.spec.ts"],
+    sidecar: null,
+  });
+
+  assert.equal(plan.source, "reconstructed");
+  assert.match(plan.body, /Change: Did the thing/);
+  assert.equal(classifyPrBody(plan.body), "OK");
+});
