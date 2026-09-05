@@ -75,7 +75,7 @@
   ],
   "catalogs": {
     "default": {
-      "@ast-grep/cli": "^0.45.1",
+      "@ast-grep/cli": "^0.45.3",
       "@formkit/auto-animate": "^0.10.0",
       "@supabase/supabase-js": "^2.115.0",
       "@types/node": "^26.4.1",
