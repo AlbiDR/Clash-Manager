@@ -20,6 +20,7 @@ import {
   renderPrBody,
   replaceSentinel,
   sentinelLine,
+  prBodySidecarPath,
   validateChangedPaths,
   validateRegistryData,
   composeCommitSubject,
@@ -483,4 +484,75 @@ test("the CLEAN label does not claim something changed", () => {
     why: "it was dead", result: "1797 tests passed",
   });
   assert.match(changed, /\*\*What changed:\*\* dropped an unreferenced view/);
+});
+
+// The pull request body sidecar.
+//
+// Why and Result existed only in /tmp inside the Jules VM and reached anything
+// durable only by an agent copying them into a chat message. When it ad-libbed,
+// merge-nightly-core substituted placeholders and committed those into
+// 00-pr-history.md as though the stage had written them: 75 of 116 Result
+// fields in the committed history are that placeholder. Committing the body
+// makes the record depend on data the pipeline wrote instead.
+test("the sidecar path is derived from the stage's own coverage log", () => {
+  for (const stage of registry.stages) {
+    const sidecar = prBodySidecarPath(stage);
+    assert.match(sidecar, /^\.github\/nightly-logs\/\d{2}-[a-z-]+-pr-body\.md$/, `stage ${stage.number}`);
+    assert.equal(sidecar, stage.coverageLog.replace("-coverage.log", "-pr-body.md"));
+  }
+  // Derived rather than declared, so no stage can be configured without one.
+  assert.equal(new Set(registry.stages.map(prBodySidecarPath)).size, registry.stages.length);
+});
+
+// The sidecar is removed before any rule sees it, so no safety rule is widened.
+// These assert the rules still mean exactly what they meant, with the sidecar
+// present in the diff.
+test("the sidecar never satisfies a write-boundary rule on its own", () => {
+  const stage2 = getStage(registry, 2);
+  const stage5 = getStage(registry, 5);
+  const stage13 = getStage(registry, 13);
+
+  // CHANGED still demands genuine work: the sidecar must not count as it.
+  assert.throws(
+    () => validateChangedPaths(stage5, "CHANGED", [stage5.coverageLog, prBodySidecarPath(stage5)]),
+    /CHANGED requires a non-coverage-log change/,
+  );
+  // Stage 2 may still only touch spec files.
+  assert.throws(
+    () => validateChangedPaths(stage2, "CHANGED", [stage2.coverageLog, prBodySidecarPath(stage2), "Frontend-PWA/src/x.ts"]),
+    /Stage 2 may only change \*\.spec\.ts files/,
+  );
+  // Stage 5 may still only touch READMEs, and Stage 13 only its protocol.
+  assert.throws(
+    () => validateChangedPaths(stage5, "CHANGED", [stage5.coverageLog, prBodySidecarPath(stage5), "Frontend-PWA/src/x.ts"]),
+    /Stage 5 may only change README\.md files/,
+  );
+  assert.throws(
+    () => validateChangedPaths(stage13, "CHANGED", [stage13.coverageLog, prBodySidecarPath(stage13), "Frontend-PWA/src/x.ts"]),
+    /Stage 13 may only update its protocol and coverage log/,
+  );
+});
+
+test("a diff carrying the sidecar still passes every status it should", () => {
+  const stage4 = getStage(registry, 4);
+  const stage2 = getStage(registry, 2);
+  const sidecar4 = prBodySidecarPath(stage4);
+
+  // CLEAN is still log-only, and the sidecar does not break that.
+  assert.doesNotThrow(() => validateChangedPaths(stage4, "CLEAN", [stage4.coverageLog, sidecar4]));
+  assert.throws(
+    () => validateChangedPaths(stage4, "CLEAN", [stage4.coverageLog, sidecar4, "Frontend-PWA/src/x.ts"]),
+    /CLEAN contains unexpected changes/,
+  );
+  // SKIPPED and PARTIAL-RUN are still log-only too.
+  for (const status of ["SKIPPED", "PARTIAL-RUN"]) {
+    assert.doesNotThrow(() => validateChangedPaths(stage4, status, [stage4.coverageLog, sidecar4]));
+  }
+  // And real work still passes with the sidecar alongside it.
+  assert.doesNotThrow(
+    () => validateChangedPaths(stage2, "CHANGED", [stage2.coverageLog, prBodySidecarPath(stage2), "Frontend-PWA/src/a.spec.ts"]),
+  );
+  // The sidecar is absent from the returned paths, so callers that report the
+  // diff do not show the pipeline's own bookkeeping as the stage's work.
+  assert.deepEqual(validateChangedPaths(stage4, "CLEAN", [stage4.coverageLog, sidecar4]), [stage4.coverageLog]);
 });

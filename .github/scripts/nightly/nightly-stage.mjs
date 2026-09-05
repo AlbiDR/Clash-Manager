@@ -173,9 +173,47 @@ function isAdministrativePipelinePath(filePath) {
   );
 }
 
+/**
+ * Where a stage commits the pull request description it composed.
+ *
+ * THE HOLE THIS FILLS
+ * renderPrBody composes Why, Change and Result during finalize and writes them
+ * only to /tmp/nightly/pr-body.md inside the Jules VM. The single route from
+ * there to anything durable is the agent copying that file into its final
+ * message, because Jules' publisher uses the last message as the body, and
+ * merge-nightly-core then parses that body into 00-pr-history.md. So a pure
+ * data transfer runs through a language model, and when it ad-libs, the real
+ * Why and Result are gone: 75 of 116 Result fields in the committed history
+ * hold a placeholder the coordinator substituted for words nobody ever saw.
+ *
+ * Committing the body makes the permanent record depend on data the pipeline
+ * wrote rather than on an agent remembering to copy it. The rendered body is
+ * both halves at once, since it embeds the NIGHTLY_PR_METADATA block, so this
+ * needs no second machine-readable format: extractMetadata parses it as is.
+ *
+ * DERIVED, NOT DECLARED
+ * Taken from stage.coverageLog rather than named in the registry, matching what
+ * classifyChangedPaths already does, so moving the logs cannot orphan the
+ * sidecars and no stage can be configured without one.
+ */
+export function prBodySidecarPath(stage) {
+  return String(stage.coverageLog).replace(/-coverage\.log$/, "-pr-body.md");
+}
+
 export function validateChangedPaths(stage, status, changedPaths) {
   invariant(FINAL_STATUSES.has(status), `Unsupported final status: ${status}`);
-  const paths = [...new Set(changedPaths.map(normalizeRepoPath).filter(Boolean))];
+  // The pull request body sidecar is removed BEFORE any rule sees it, rather
+  // than exempted in each one. It is bookkeeping this runner writes itself, not
+  // work the stage chose to do, and it is present in every diff regardless of
+  // outcome. Exempting it individually would mean punching a hole in six
+  // separate safety rules (the log-only rule, the CLEAN allow-list, the CHANGED
+  // requirement, and the Stage 2, 5 and 13 boundaries), and every one of those
+  // holes would be a place a real violation could later hide. Removing it once
+  // means no rule changes meaning at all: CHANGED still demands genuine work,
+  // Stage 2 still may only touch spec files, and CLEAN is still log-only.
+  const sidecar = prBodySidecarPath(stage);
+  const paths = [...new Set(changedPaths.map(normalizeRepoPath).filter(Boolean))]
+    .filter(filePath => filePath !== sidecar);
   invariant(paths.includes(stage.coverageLog), `Final diff must include ${stage.coverageLog}.`);
 
   const otherCoverageLogs = paths.filter(
@@ -821,6 +859,10 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   }
 
   if (replacement.changed) atomicWrite(logPath, replacement.content);
+  // Written after `paths` was computed, so the sidecar never appears in the
+  // Files field of the body it contains, and unconditionally, because the whole
+  // point is that it survives a publisher that never runs.
+  atomicWrite(path.join(repoRoot, prBodySidecarPath(stage)), prBody);
   invariant(
     !readFileSync(logPath, "utf8").includes(`[${date}] [Stage ${stage.number}] IN-PROGRESS:`),
     `Finalization left a current-cycle IN-PROGRESS sentinel in ${stage.coverageLog}.`,
