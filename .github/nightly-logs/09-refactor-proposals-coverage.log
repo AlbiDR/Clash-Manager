@@ -103,3 +103,4 @@
 * [2026-09-02] [Stage 9] CLEAN: Codebase -- Audit completed: no structural debt found in bounded candidate set
 * [2026-09-03] [Stage 9] [07:25Z-07:33Z 8m] CLEAN: Codebase -- 43 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, profiler.ts, harvester.ts, useConnectionStatus, useConnectivityManager, useProgressiveList. Candidate protocol.ts high risk; hunt useProgressiveList clean.
 * [2026-09-04] [Stage 9] [07:10Z-07:16Z 6m] CLEAN: Codebase -- 108 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useClashSync.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useClashSync clean.
+* [2026-09-05] [Stage 9] [07:14Z-07:18Z 4m] CLEAN: Codebase -- 18 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected StorageService.ts, useAppSettings.ts, useClashSync.ts. Candidate useClashSync clean; hunt useClashSync clean.
