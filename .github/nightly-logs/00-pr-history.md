@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-05] PR #1702 [Stage 9]: 18 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected StorageService.ts, useAppSettings.ts, useClashSync.ts. Candidate useClashSync clean; hunt useClashSync clean.
+**Domain:** architecture | **Commit:** 4004efa8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1702)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Why:** Substrate architecture strictly aligned with CleanStack ADR; 0 depcruise violations found and 1806 unit and integration tests passed cleanly.
+**Change:** 18 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected StorageService.ts, useAppSettings.ts, useClashSync.ts. Candidate useClashSync clean; hunt useClashSync clean.
+**Result:** depcruise 0 violations; 1806 tests passed cleanly; CLEAN evidence floor satisfied.
+
+
 ### [2026-09-05] PR #1701 [Stage 8]: Bumped @ast-grep/cli to ^0.45.3
 **Domain:** dependencies | **Commit:** bc68b819 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1701)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
