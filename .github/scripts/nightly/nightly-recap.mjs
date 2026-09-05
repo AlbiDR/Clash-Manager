@@ -108,18 +108,79 @@ export function parsePrHistoryEntry(content, stageNumber, date) {
  * Pure classification from durable evidence only. Nothing here consults branch
  * state, so the answer is identical before and after a sync.
  */
-export function classifyStage({ stage, entry, tag, declared, history }) {
+/**
+ * How far this run has got.
+ *
+ * Only POSITIVE evidence counts: a tag, a coverage line, or a ledger row
+ * recording a result the stage actually reached. Failure states are excluded on
+ * purpose, and that asymmetry is the whole point. The watchdog bug this guards
+ * against fabricates failures for stages that have not run, so letting
+ * NO_OUTPUT or ESCALATED advance the frontier would let a poisoned ledger
+ * defeat the guard built to survive it. Success is never fabricated.
+ *
+ * The ledger is consulted for that success because it is sometimes the only
+ * witness: tags need `git fetch --tags` and coverage logs need the Nightly ref,
+ * and a recap run where either is unavailable would otherwise conclude the
+ * pipeline had not started.
+ *
+ * `over` is the other half and matters more than it looks: without it, a run
+ * whose last stages genuinely never ran would be excused as "still going"
+ * forever, quietly deleting real failures from the record. A run is over once
+ * the next one has started, which is a fact about the pipeline rather than a
+ * clock reading, so it needs no threshold and no timezone.
+ */
+const REACHED_STATES = new Set(["MERGED", "RECOVERABLE", "DEGRADED", "BLOCKED"]);
+
+export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
+  let frontier = 0;
+  for (const stage of registry.stages || []) {
+    const evidenceDate = evidenceDateFor(stage.number, date);
+    const hasTag = (tags || []).some(t => t.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`));
+    const hasCoverage = Boolean(parseCoverageLine(coverageByStage?.[stage.number], stage.number, evidenceDate));
+    const hasResult = REACHED_STATES.has(ledger?.runs?.[date]?.[String(stage.number)]?.state);
+    if (hasTag || hasCoverage || hasResult) frontier = Math.max(frontier, stage.number);
+  }
+  const over = Object.keys(ledger?.runs || {}).some(runDate => runDate > date)
+    || (tags || []).some(t => {
+      const m = /^nightly\/(\d{4}-\d{2}-\d{2})\//.exec(t);
+      return m && m[1] > date;
+    });
+  return { frontier, over };
+}
+
+export function classifyStage({ stage, entry, tag, declared, history, progress }) {
   const merged = Boolean(tag) || entry?.state === "MERGED";
   const rescued = Boolean(entry?.evidence?.recovery) || Boolean(entry?.evidence?.fallbackPublish)
     || (entry?.attempts ?? 0) > 0
     || ["RECOVERED_AFTER_NUDGE", "RECOVERED_BY_FALLBACK_PUBLISH"].includes(entry?.failureClass);
 
+  // A stage the run has not reached yet is not stuck, and the difference is not
+  // cosmetic: the 13 stages fire in order across roughly twelve hours, so any
+  // recap taken before the last one runs sees stages with no evidence purely
+  // because their turn has not come. On 2026-09-05 a recap at 10:10 UTC called
+  // stages 12 and 13 stuck and graded a flawless run 5/10; stage 13 was not due
+  // for another hour. EXPECTED and RUNNING are exactly the two states
+  // nightly-health treats as unobserved, so this reads the same signal the
+  // watchdog writes rather than inventing a second opinion about lateness.
+  // Two ways to still be waiting, and the distinction is load-bearing.
+  // RUNNING is a live Jules session: the stage is working right now. Above the
+  // frontier means nothing later has published, so its turn has not come. A
+  // stage sitting at EXPECTED *below* the frontier is neither -- the pipeline
+  // went past it and it produced nothing, which is stuck, not pending.
+  //
+  // Both are void once the run is over, which is what keeps a tail stage that
+  // genuinely never ran reported as STUCK instead of excused forever.
+  const notReached = (progress?.frontier ?? Infinity) < stage.number;
+  const pending = !merged && !declared && !progress?.over
+    && (notReached || entry?.state === "RUNNING");
+
   let outcome;
   if (declared) outcome = declared.status === "CHANGED" ? "CHANGED" : declared.status;
   else if (merged) outcome = "CHANGED";
+  else if (pending) outcome = "PENDING";
   else outcome = "STUCK";
 
-  if (!merged && entry?.state && !["MERGED", "RECOVERABLE"].includes(entry.state)) outcome = "STUCK";
+  if (!merged && !pending && entry?.state && !["MERGED", "RECOVERABLE"].includes(entry.state)) outcome = "STUCK";
 
   return {
     stage: stage.number,
@@ -155,6 +216,17 @@ export function classifyStage({ stage, entry, tag, declared, history }) {
 // The grade rubric, encoded declaratively so the thresholds are the published
 // specification rather than numbers invented here. Evaluated in order.
 export const GRADE_RUBRIC = [
+  // An unfinished run has no grade. Grading one means scoring stages that have
+  // not had their turn as failures, which is how a 13 of 13 night was published
+  // as 5/10 at 10:10 UTC on 2026-09-05. Withholding the grade is the only
+  // honest answer while the pipeline is still working: the stages that HAVE run
+  // are still reported in full below, so nothing is hidden, and asking again
+  // after the run window closes gives the real number.
+  {
+    grade: null,
+    when: r => r.pending > 0,
+    why: r => `Run still in progress: ${r.pending} of ${r.total} stages have not reached their slot yet, so this run cannot be graded.`,
+  },
   // Absence of evidence is not evidence of failure. Without this first rule a
   // date the watchdog never observed, and for which no promotion tag exists,
   // was reported as a dead pipeline - an assertion the data cannot support.
@@ -185,6 +257,7 @@ export function gradeRun(stages) {
     total: stages.length,
     merged: stages.filter(s => s.merged).length,
     stuck: stages.filter(s => s.outcome === "STUCK").length,
+    pending: stages.filter(s => s.outcome === "PENDING").length,
     rescued: stages.filter(s => s.rescued).length,
     changed: stages.filter(s => s.outcome === "CHANGED").length,
     clean: stages.filter(s => s.outcome === "CLEAN").length,
@@ -200,6 +273,7 @@ export function latestRunDate(ledger) {
 }
 
 export function buildRecap({ ledger, registry, date, coverageByStage, prHistory, tags }) {
+  const progress = runProgress({ registry, ledger, date, coverageByStage, tags });
   const stages = registry.stages.map(stage => {
     const evidenceDate = evidenceDateFor(stage.number, date);
     const tag = (tags || []).find(t => t.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`)) || null;
@@ -209,6 +283,7 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
       tag,
       declared: parseCoverageLine(coverageByStage[stage.number], stage.number, evidenceDate),
       history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate),
+      progress,
     });
   });
   // Cross-run health needs more than the selected date - a stage that needs
@@ -220,17 +295,27 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
     date,
     stages,
     ...gradeRun(stages),
-    health: evaluatePipelineHealth(ledgerThrough(ledger, date), registry),
+    health: evaluatePipelineHealth(ledgerThrough(ledger, date, { inProgress: stages.some(s => s.outcome === "PENDING") }), registry),
   };
 }
 
 /**
  * The ledger as it stood at the end of `date`. Run dates are ISO, so ordering
  * them is a string compare.
+ *
+ * When `date` is a run still in flight its row is dropped rather than trimmed.
+ * A night that has not finished is not yet a data point about reliability: the
+ * stages still queued have not had the chance to need help, so counting the
+ * row invents an intervention record for work that has not happened. That is
+ * how a flawless 2026-09-05 published "S12 is DEGRADING, intervention rate rose
+ * from 17% to 36%" off a stage that had not started. Dropping the row also
+ * makes the recap immune to a ledger written by a watchdog that has not been
+ * updated yet, which is the state every deployment passes through.
  */
-export function ledgerThrough(ledger, date) {
+export function ledgerThrough(ledger, date, { inProgress = false } = {}) {
   const runs = {};
   for (const runDate of Object.keys(ledger?.runs || {})) {
+    if (inProgress && runDate === date) continue;
     if (runDate <= date) runs[runDate] = ledger.runs[runDate];
   }
   return { ...(ledger || {}), runs };
@@ -272,6 +357,7 @@ function isCalibrationClean(stage) {
 }
 
 function semanticAction(stage) {
+  if (stage.outcome === "PENDING") return `${displayArea(stage.slug)} has not run yet on this date`;
   const action = stripCommitPrefix(stage.summary || stage.title || stage.result || "-")
     .replace(/^Audit complete:\s*/i, "")
     .replace(/^Stage \d+\s+/i, "")
@@ -284,6 +370,12 @@ function semanticAction(stage) {
 }
 
 function semanticMiddle(stage) {
+  // Checked before usefulWhy: a pending stage can still be carrying a stale
+  // `why` from an older ledger row, and explaining why a stage that has not
+  // run "did" something is worse than saying nothing.
+  if (stage.outcome === "PENDING") {
+    return `Its slot in the run order has not come round yet, so there is nothing to report either way.`;
+  }
   const why = usefulWhy(stage);
   if (why) return why;
   const area = displayArea(stage.slug);
@@ -306,6 +398,7 @@ function semanticMiddle(stage) {
 }
 
 function semanticResult(stage) {
+  if (stage.outcome === "PENDING") return "Waiting for its scheduled slot.";
   const result = stage.result || (stage.merged ? "Merged successfully." : stage.state || stage.outcome);
   if (/^Nominal validation with zero regressions\.?$/i.test(result)) {
     return "Validation passed with zero regressions.";
@@ -436,6 +529,7 @@ function overviewSection(recap) {
   const changed = stages.filter(s => s.outcome === "CHANGED");
   const clean = stages.filter(s => s.outcome === "CLEAN");
   const stuck = stages.filter(s => s.outcome === "STUCK");
+  const pendingStages = stages.filter(s => s.outcome === "PENDING");
   const rescued = stages.filter(s => s.rescued);
   const sentences = [];
 
@@ -444,9 +538,18 @@ function overviewSection(recap) {
     return [`${PLAIN_PREFIX}nothing was recorded for this date, so there is no basis to say whether the pipeline ran well or badly.`, ""];
   }
 
+  // Said FIRST, before any count, because every number that follows is a
+  // partial tally and reading them as final is the whole failure mode this
+  // sentence exists to prevent.
+  if (pendingStages.length > 0) {
+    sentences.push(`This run is still going: ${joinList(pendingStages.map(stageLabel))} ${pendingStages.length === 1 ? "has" : "have"} not reached ${pendingStages.length === 1 ? "its" : "their"} slot in the run order yet, so the counts below cover only the part that has finished.`);
+  }
+
   sentences.push(recap.merged === recap.total
     ? `All ${recap.total} stages ran and every one of them landed its work.`
-    : `${recap.merged} of ${recap.total} stages landed their work.`);
+    : pendingStages.length > 0
+      ? `So far ${recap.merged} of ${recap.total} stages have landed their work.`
+      : `${recap.merged} of ${recap.total} stages landed their work.`);
 
   if (changed.length > 0) {
     // displayArea's casing is kept verbatim: it carries the acronyms (README,
@@ -466,7 +569,11 @@ function overviewSection(recap) {
   if (rescued.length > 0) {
     sentences.push(`${joinList(rescued.map(stageLabel))} could not finish unaided and had to be nudged first, so the clean sweep above was not entirely self-driven.`);
   } else if (stuck.length === 0) {
-    sentences.push("Every stage got there without help.");
+    // "So far" matters: an unfinished run cannot claim every stage managed on
+    // its own, because the stages still queued have not been tested yet.
+    sentences.push(pendingStages.length > 0
+      ? "Every stage that has run got there without help."
+      : "Every stage got there without help.");
   }
 
   // Attention is the union of what is broken now and what is trending badly.
@@ -479,18 +586,27 @@ function overviewSection(recap) {
   ];
   const unique = [...new Set(attention)];
   sentences.push(unique.length === 0
-    ? "Nothing in this run needs you to do anything."
+    ? pendingStages.length > 0
+      // Not "nothing needs you to do anything": the run is not over, so the
+      // only claim the evidence supports is about the part that has finished.
+      ? "Nothing that has run so far needs you to do anything."
+      : "Nothing in this run needs you to do anything."
     : `The part worth your attention is ${joinList(unique)}, detailed below.`);
 
   return [PLAIN_PREFIX + sentences.join(" "), ""];
 }
 
 export function renderRecap(recap) {
+  const pending = recap.pending || 0;
   const lines = [
-    `Nightly Recap: ${recap.date}`,
+    pending > 0 ? `Nightly Recap: ${recap.date} (run still in progress)` : `Nightly Recap: ${recap.date}`,
     "",
-    `Summary: ${recap.merged}/${recap.total} merged | ${recap.changed} changed | ${recap.clean} clean | ${recap.stuck} stuck | ${recap.rescued} intervention`,
-    `Grade: ${recap.grade}/10 - ${recap.rationale}`,
+    `Summary: ${recap.merged}/${recap.total} merged | ${recap.changed} changed | ${recap.clean} clean | ${recap.stuck} stuck`
+      + (pending > 0 ? ` | ${pending} still to run` : "")
+      + ` | ${recap.rescued} intervention`,
+    // Never prints "null/10". A withheld grade is a statement in its own right
+    // and has to read like one, not like a rendering bug.
+    recap.grade === null ? `Grade: withheld - ${recap.rationale}` : `Grade: ${recap.grade}/10 - ${recap.rationale}`,
     "",
   ];
   lines.push(...overviewSection(recap));
@@ -499,7 +615,9 @@ export function renderRecap(recap) {
     const pr = s.prNumber ? `PR #${s.prNumber}` : "no PR";
     lines.push(`**${label}** | ${pr}`);
     lines.push(`${displayStatus(s.outcome)} | **${displayArea(s.slug).toUpperCase()}**`);
-    lines.push(`_${escapeMarkdownCell(s.title || s.summary || s.result || "-")}_`);
+    // A pending stage has no title because it has not published anything. The
+    // bare "-" placeholder reads as a stage that ran and said nothing.
+    lines.push(`_${s.outcome === "PENDING" ? "not yet run" : escapeMarkdownCell(s.title || s.summary || s.result || "-")}_`);
     lines.push(...stageDescription(s));
     lines.push("");
   }

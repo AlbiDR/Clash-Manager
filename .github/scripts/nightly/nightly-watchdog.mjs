@@ -578,9 +578,45 @@ export function sessionTelemetry(session) {
   };
 }
 
-export function evaluateNightlyRun({ registry, date, observed, previousLedger }) {
+/**
+ * The highest stage number that has produced ANY evidence for this run date.
+ *
+ * The 13 stages fire in order across roughly twelve hours, so at every moment
+ * before the last one runs there are stages that have simply not been reached
+ * yet. Nothing in the evidence distinguishes "this stage failed to publish"
+ * from "this stage has not had its turn": both are an empty row. Reading the
+ * second as the first is what put stages 7 through 13 at ESCALATED on the
+ * 04:54 pass of 2026-09-05, a night on which all thirteen went on to merge
+ * cleanly, and what made a recap taken at 10:10 that day report two healthy
+ * stages as stuck and grade the run 5/10.
+ *
+ * The frontier is the missing signal. It is derived from the pipeline's own
+ * ordering rather than from a clock, so there is no threshold to keep in sync
+ * with the Jules-side schedule -- which this repository cannot see and which
+ * drifts by twenty minutes night to night. It is also exactly the rule the
+ * watchdog workflow already states in prose: a stage publishing is evidence
+ * about the stages before it.
+ *
+ * Returns 0 when the run has produced nothing at all.
+ */
+export function runFrontier({ registry, date, observed }) {
+  const prs = (observed.prs || []).map(normalizePr);
+  let frontier = 0;
+  for (const stage of registry.stages) {
+    const evidenceDate = expectedEvidenceDate(stage.number, date);
+    const reached = [...(observed.tags || [])].some(tag => tag.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`))
+      || observed.coverageStages.has(stage.number)
+      || prs.some(pr => prDateMatchesStage(pr, stage.number, date))
+      || Boolean(matchJulesSession(observed.julesSessions, stage, date));
+    if (reached) frontier = Math.max(frontier, stage.number);
+  }
+  return frontier;
+}
+
+export function evaluateNightlyRun({ registry, date, observed, previousLedger, final = false }) {
   const entries = [];
   const julesAvailable = observed.julesAvailable ?? true;
+  const frontier = runFrontier({ registry, date, observed });
 
   for (const stage of registry.stages) {
     const evidenceDate = expectedEvidenceDate(stage.number, date);
@@ -657,6 +693,30 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger })
           julesSession: { id: julesMatch.id, state: julesMatch.state },
           session: sessionTelemetry(julesMatch),
         },
+      });
+      continue;
+    }
+
+    // Not reached yet, so there is nothing to judge. See runFrontier: with no
+    // evidence of its own and no later stage having published, this is
+    // indistinguishable from a stage whose scheduled hour has not arrived, and
+    // guessing costs more than waiting. EXPECTED is one of the two states
+    // nightly-health treats as unobserved, so an in-flight run stops scoring
+    // phantom interventions against the stages still queued behind it -- the
+    // phantom that reported S12 as DEGRADING "17% to 36%" off a stage that had
+    // not run, and that could eventually redden the workflow through the
+    // chronic-stage rule in resolveExitCode.
+    //
+    // `final` is how the run is declared over, and it is an explicit signal
+    // rather than an inferred deadline: the post-window pass fires on its own
+    // schedule and passes the flag, so stage 13 -- which has no later stage to
+    // prove it was reached -- is still held to account every night.
+    if (!final && stage.number > frontier) {
+      entries.push({
+        stage: stage.number,
+        state: "EXPECTED",
+        failureClass: null,
+        evidence: { coverageLog: stage.coverageLog, notReached: { frontier } },
       });
       continue;
     }
@@ -933,7 +993,11 @@ export async function dispatchMergeWorkflow(config = CONFIG) {
 }
 
 export function renderSummary(date, entries) {
-  const failing = entries.filter(entry => !PASS_STATES.has(entry.state));
+  // A stage the pipeline has not reached yet is not failing, it is queued.
+  // Listing it under "Failing states" is what made the early passes of every
+  // night read like an outage; see runFrontier.
+  const notReached = entries.filter(entry => entry.state === "EXPECTED");
+  const failing = entries.filter(entry => !PASS_STATES.has(entry.state) && entry.state !== "EXPECTED");
   const lines = [
     `# Nightly Watchdog ${date}`,
     "",
@@ -943,6 +1007,7 @@ export function renderSummary(date, entries) {
     `Degraded: ${entries.filter(entry => entry.state === "DEGRADED").length}`,
     `No output: ${entries.filter(entry => entry.state === "NO_OUTPUT").length}`,
     `Escalated: ${entries.filter(entry => entry.state === "ESCALATED").length}`,
+    `Not reached yet: ${notReached.length}`,
     `Recovered by nudge: ${entries.filter(entry => entry.failureClass === "RECOVERED_AFTER_NUDGE").length}`,
     "",
   ];
@@ -954,6 +1019,9 @@ export function renderSummary(date, entries) {
 
   if (failing.length > 0) {
     lines.push("", `Failing states: ${failing.map(entry => `Stage ${entry.stage} ${entry.state}`).join(", ")}`);
+  }
+  if (notReached.length > 0) {
+    lines.push("", `Still to run: ${notReached.map(entry => `Stage ${entry.stage}`).join(", ")}. The run is in flight, not failing.`);
   }
 
   return `${lines.join("\n")}\n`;
@@ -1019,7 +1087,7 @@ function parseArgs(argv) {
     const token = argv[index];
     invariant(token.startsWith("--"), `Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish") {
+    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish" || key === "final") {
       options.set(key, true);
       continue;
     }
@@ -1061,7 +1129,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     // deliberately does not feed resolveExitCode: an abandoned PR from a
     // previous run must never turn tonight's healthy run red.
     staleStagePrs = evaluateStaleStagePrs(observed.prs);
-    entries = evaluateNightlyRun({ registry, date, observed, previousLedger: ledger });
+    entries = evaluateNightlyRun({ registry, date, observed, previousLedger: ledger, final: options.get("final") === true });
   } catch (error) {
     observerHealthy = false;
     for (const stage of registry.stages) {

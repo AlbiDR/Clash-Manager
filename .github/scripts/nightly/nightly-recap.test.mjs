@@ -15,6 +15,7 @@ import {
   parseCoverageLine,
   parsePrHistoryEntry,
   renderRecap,
+  runProgress,
 } from "./nightly-recap.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
 
@@ -611,4 +612,118 @@ test("an unobserved date makes no claim about the run in either direction", () =
   }));
   assert.match(text, /nothing was recorded for this date/);
   assert.doesNotMatch(text, /landed its work|needs you to do anything/);
+});
+
+// The 2026-09-05 regression, from the reader's side. The recap defaults to the
+// newest run in the ledger, which between roughly 23:00 and 11:30 UTC is a run
+// still in progress. Asked at 10:10 that day it reported stages 12 and 13 --
+// scheduled for 10:05 and 11:05 -- as STUCK and graded a flawless night 5/10.
+function inFlightLedger(date, throughStage) {
+  const runs = { [date]: {} };
+  for (const stage of registry.stages) {
+    runs[date][String(stage.number)] = stage.number <= throughStage
+      ? { ...MERGED_RUN }
+      : { state: "EXPECTED", failureClass: null, attempts: 0, evidence: {} };
+  }
+  return { schemaVersion: 1, runs };
+}
+
+test("a run still in progress reports its unreached stages as PENDING, not STUCK", () => {
+  const date = "2026-09-05";
+  const ledger = inFlightLedger(date, 11);
+  const tags = registry.stages
+    .filter(stage => stage.number <= 11)
+    .map(stage => `nightly/${evidenceDateFor(stage.number, date)}/stage-${stage.number}/pr-${1690 + stage.number}`);
+
+  const recap = buildRecap({ ledger, registry, date, coverageByStage: {}, prHistory: "", tags });
+
+  assert.equal(runProgress({ registry, ledger, date, coverageByStage: {}, tags }).frontier, 11);
+  assert.equal(recap.stuck, 0, "nothing is stuck: the pipeline has not reached those stages");
+  assert.equal(recap.pending, 2);
+  assert.deepEqual(recap.stages.filter(s => s.outcome === "PENDING").map(s => s.stage), [12, 13]);
+});
+
+test("an unfinished run is not graded", () => {
+  const date = "2026-09-05";
+  const recap = buildRecap({
+    ledger: inFlightLedger(date, 11), registry, date,
+    coverageByStage: {}, prHistory: "", tags: [],
+  });
+
+  assert.equal(recap.grade, null, "a partial run has no grade to give");
+  const text = renderRecap(recap);
+  assert.match(text, /^Nightly Recap: 2026-09-05 \(run still in progress\)$/m);
+  assert.match(text, /Grade: withheld - Run still in progress: 2 of 13 stages have not reached their slot yet/);
+  assert.match(text, /\| 2 still to run \|/);
+  assert.doesNotMatch(text, /\/10/, "never publishes a score for a night that is still running");
+  assert.doesNotMatch(text, /produced nothing at all/);
+});
+
+// The counts below an in-progress banner are a partial tally, and every claim
+// made about them has to say so. "All 13 stages ran" and "every stage got there
+// without help" are both false at 10:10 on a night whose last two stages have
+// not started.
+test("prose about an unfinished run never claims the whole run succeeded", () => {
+  const date = "2026-09-05";
+  const text = renderRecap(buildRecap({
+    ledger: inFlightLedger(date, 11), registry, date,
+    coverageByStage: {}, prHistory: "", tags: [],
+  }));
+
+  assert.match(text, /This run is still going: S12 APK UX and S13 self healing protocol have not reached their slot/);
+  assert.match(text, /So far 11 of 13 stages have landed their work\./);
+  assert.match(text, /Every stage that has run got there without help\./);
+  assert.match(text, /Nothing that has run so far needs you to do anything\./);
+  assert.match(text, /^_not yet run_$/m);
+});
+
+// The phantom that made this look like a real regression: a stage that had not
+// started was scored as having needed intervention, which read out as
+// "S12 DEGRADING: intervention rate rose from 17% to 36%".
+test("an unfinished run contributes no verdict to the cross-run health trend", () => {
+  const date = "2026-09-05";
+  const history = ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04"];
+  const ledger = { schemaVersion: 1, runs: {} };
+  for (const day of history) {
+    ledger.runs[day] = {};
+    for (const stage of registry.stages) ledger.runs[day][String(stage.number)] = { ...MERGED_RUN };
+  }
+  Object.assign(ledger.runs, inFlightLedger(date, 11).runs);
+
+  const recap = buildRecap({ ledger, registry, date, coverageByStage: {}, prHistory: "", tags: [] });
+
+  assert.equal(recap.health.degrading.length, 0);
+  assert.equal(recap.health.chronic.length, 0);
+  const stage12 = recap.health.stages.find(s => s.stage === 12);
+  assert.equal(stage12.runs, history.length, "the unfinished night is not yet a data point about itself");
+});
+
+// The other side of the guard. Once the next run has started, the night is over
+// and a tail stage that never published is a real failure again. Without this,
+// a genuinely dead stage 13 would be excused as "pending" forever.
+test("a finished run still reports a tail stage that never ran as STUCK", () => {
+  const date = "2026-09-05";
+  const ledger = inFlightLedger(date, 11);
+  ledger.runs["2026-09-06"] = { "1": { ...MERGED_RUN } };
+
+  const recap = buildRecap({ ledger, registry, date, coverageByStage: {}, prHistory: "", tags: [] });
+
+  assert.equal(recap.pending, 0);
+  assert.equal(recap.stuck, 2);
+  assert.equal(recap.grade, 5, "two stages down on a finished run is the real 5/10");
+});
+
+// Only positive evidence advances the frontier, so a ledger poisoned with
+// fabricated failures for stages that never ran cannot defeat the guard. This
+// is the state the ledger is actually in until the fixed watchdog next runs.
+test("fabricated failure rows do not advance the frontier", () => {
+  const date = "2026-09-05";
+  const ledger = inFlightLedger(date, 11);
+  ledger.runs[date]["12"] = { state: "ESCALATED", failureClass: "NO_PUBLISHED_OUTPUT", attempts: 0, evidence: {} };
+  ledger.runs[date]["13"] = { state: "ESCALATED", failureClass: "NO_PUBLISHED_OUTPUT", attempts: 0, evidence: {} };
+
+  assert.equal(runProgress({ registry, ledger, date, coverageByStage: {}, tags: [] }).frontier, 11);
+  const recap = buildRecap({ ledger, registry, date, coverageByStage: {}, prHistory: "", tags: [] });
+  assert.equal(recap.pending, 2);
+  assert.equal(recap.stuck, 0);
 });

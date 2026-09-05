@@ -33,11 +33,13 @@ import {
   renderRecoveryReadiness,
   renderStaleStagePrReport,
   renderSummary,
+  runFrontier,
   selectRecoveryCandidates,
   sessionTelemetry,
   parseRunWindow,
   classifyPrBody,
 } from "./nightly-watchdog.mjs";
+import { isObserved, stageInterventionHistory } from "./nightly-health.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 
@@ -123,11 +125,15 @@ test("watchdog marks missing output and escalates repeated missing output", () =
     failureClass: "NO_PUBLISHED_OUTPUT",
   });
 
+  // Terminal pass. Stages 12 and 13 are the tail, so nothing published after
+  // them can prove they were reached; only the declared end of the run window
+  // can judge them. See runFrontier and the --final flag.
   const entries = evaluateNightlyRun({
     registry,
     date: "2026-08-11",
     observed,
     previousLedger: ledger,
+    final: true,
   });
 
   assert.equal(entries.find(entry => entry.stage === 6).state, "NO_OUTPUT");
@@ -1312,4 +1318,105 @@ test("promotion-tag parsing has exactly one implementation", () => {
   assert.equal(prNumberFromTag(null), null);
   const source = readFileSync(new URL("./nightly-watchdog.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(source, /function prNumberFrom/, "the watchdog must import this, not define it");
+});
+
+// The 2026-09-05 regression. The 13 stages fire in order over roughly twelve
+// hours, so every pass before the last one sees stages that simply have not had
+// their turn. The watchdog used to call those NO_OUTPUT, then ESCALATED on the
+// next pass, which put stages 7 through 13 at ESCALATED on the 04:54 pass of a
+// night when all thirteen went on to merge cleanly, and fed phantom
+// interventions into the cross-run health trend.
+test("a stage the run has not reached yet is EXPECTED, not a failure", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  // The run has got as far as stage 5. Nothing after it has published.
+  for (const stage of registry.stages) {
+    if (stage.number > 5) observed.tags.delete(`nightly/${expectedEvidenceDate(stage.number, date)}/stage-${stage.number}/pr-${1400 + stage.number}`);
+  }
+
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed,
+    previousLedger: createEmptyLedger(),
+  });
+
+  assert.equal(runFrontier({ registry, date, observed }), 5);
+  for (const stage of registry.stages) {
+    const entry = entries.find(e => e.stage === stage.number);
+    assert.equal(entry.state, stage.number <= 5 ? "MERGED" : "EXPECTED", `stage ${stage.number}`);
+    if (stage.number > 5) assert.equal(entry.failureClass, null, `stage ${stage.number} carries no failure class`);
+  }
+
+  // The summary must not read like an outage while the run is simply in flight.
+  const summary = renderSummary(date, entries);
+  assert.match(summary, /Not reached yet: 8/);
+  assert.match(summary, /Still to run: Stage 6, Stage 7, Stage 8, Stage 9, Stage 10, Stage 11, Stage 12, Stage 13\. The run is in flight, not failing\./);
+  assert.doesNotMatch(summary, /Failing states/);
+});
+
+// EXPECTED is one of the two states nightly-health treats as unobserved, which
+// is what stops an in-flight run scoring interventions against stages that have
+// not had the chance to need help. If this ever drifts, the phantom
+// "S12 DEGRADING: intervention rate rose from 17% to 36%" comes straight back.
+test("a not-reached stage is not scored as an intervention", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  for (const stage of registry.stages) {
+    if (stage.number > 11) observed.tags.delete(`nightly/${expectedEvidenceDate(stage.number, date)}/stage-${stage.number}/pr-${1400 + stage.number}`);
+  }
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  const stage12 = entries.find(entry => entry.stage === 12);
+  assert.equal(stage12.state, "EXPECTED");
+  assert.equal(isObserved(stage12), false, "an unreached stage is not evidence in either direction");
+
+  // The protection is the isObserved gate in stageInterventionHistory, so
+  // assert through that rather than on neededIntervention alone: it is only
+  // ever consulted for rows that already passed the gate.
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  upsertStageEntry(ledger, registry, date, 12, { state: stage12.state, failureClass: stage12.failureClass });
+  assert.deepEqual(stageInterventionHistory(ledger, 12), [], "an in-flight night is not yet a data point");
+});
+
+// A stage the pipeline went PAST without publishing is a real failure and must
+// stay one: the frontier excuses what is queued behind it, never what it has
+// already overtaken.
+test("a stage below the frontier still fails when it published nothing", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${expectedEvidenceDate(4, date)}/stage-4/pr-1404`);
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+
+  assert.equal(entries.find(entry => entry.stage === 4).state, "NO_OUTPUT");
+  assert.equal(entries.find(entry => entry.stage === 4).failureClass, "NO_PUBLISHED_OUTPUT");
+});
+
+// Only positive evidence advances the frontier. A stage with a live Jules
+// session has demonstrably been reached, so the stages before it are judgeable
+// even though nothing has published yet.
+test("an in-flight Jules session advances the frontier", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  for (const stage of registry.stages) {
+    if (stage.number > 3) observed.tags.delete(`nightly/${expectedEvidenceDate(stage.number, date)}/stage-${stage.number}/pr-${1400 + stage.number}`);
+  }
+  observed.julesSessions = [{
+    name: "sessions/999",
+    id: "999",
+    state: "IN_PROGRESS",
+    prompt: "S07: version integrity",
+    createTime: `${date}T05:00:00Z`,
+  }];
+
+  assert.equal(runFrontier({ registry, date, observed }), 7);
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  assert.equal(entries.find(entry => entry.stage === 7).state, "RUNNING");
+  // Overtaken by the session at stage 7, so no longer excused.
+  assert.equal(entries.find(entry => entry.stage === 5).state, "NO_OUTPUT");
+  // Still queued behind it.
+  assert.equal(entries.find(entry => entry.stage === 8).state, "EXPECTED");
 });

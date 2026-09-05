@@ -9,7 +9,12 @@ on:
     # still running, but rescues completed Jules sessions whose native publisher
     # did not open a PR promptly.
     - cron: "35 0-12 * * *"
-    # 3:00 PM CEST (1:00 PM UTC): post-window observer after Stage 13 and merge safety-net.
+    # 3:00 PM CEST (1:00 PM UTC): post-window observer after Stage 13 and merge
+    # safety-net. This pass, and only this pass, runs with --final: it is the
+    # run's terminal judgement. Every earlier pass leaves stages the pipeline
+    # has not reached yet as EXPECTED rather than guessing they failed (see
+    # runFrontier), and stage 13 has no later stage to prove it was reached, so
+    # without an explicit end-of-run signal it could never be held to account.
     - cron: "0 13 * * *"
   pull_request:
     # Reactive pass. Every Jules stage PR landing on Nightly is itself evidence
@@ -85,11 +90,25 @@ jobs:
           if [ -n "$JULES_API_KEY" ]; then echo "::add-mask::$JULES_API_KEY"; fi
 
           DATE_INPUT="${{ github.event.inputs.date }}"
+          SCHEDULE="${{ github.event.schedule }}"
+
+          # Terminal judgement, deliberately narrow. The post-window cron is
+          # the declared end of the run window. An explicit date input is the
+          # same declaration made by hand: asking about a named date is asking
+          # about a run that is over, and without --final a re-inspection of an
+          # old date would rewrite a recorded stage-13 failure as EXPECTED.
+          # Unquoted on purpose: quoted, an empty value becomes an empty
+          # argument and parseArgs rejects it.
+          FINAL=""
+          if [ "$SCHEDULE" = "0 13 * * *" ] || [ -n "$DATE_INPUT" ]; then
+            FINAL="--final"
+          fi
+
           set +e
           if [ -n "$DATE_INPUT" ]; then
-            node .github/scripts/nightly/nightly-watchdog.mjs --date "$DATE_INPUT"
+            node .github/scripts/nightly/nightly-watchdog.mjs --date "$DATE_INPUT" $FINAL
           else
-            node .github/scripts/nightly/nightly-watchdog.mjs
+            node .github/scripts/nightly/nightly-watchdog.mjs $FINAL
           fi
           WATCHDOG_EXIT=$?
           set -e
