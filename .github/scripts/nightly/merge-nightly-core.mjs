@@ -21,6 +21,7 @@ import path from "path";
 import os from "os";
 import { spawnSync } from "child_process";
 import { loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
+import { METADATA_PLACEHOLDERS } from "./nightly-prose.mjs";
 
 export const CONFIG = {
   owner: process.env.GITHUB_REPOSITORY?.split("/")[0] ?? "",
@@ -251,11 +252,13 @@ export function extractMetadata(pr) {
   const body = pr?.body || "";
   const metaMatch = body.match(/NIGHTLY_PR_METADATA:\s*([\s\S]*?)-->/i);
 
+  // Placeholders, not statements. Shared with the recap, which has to be able to
+  // tell one from the other before printing a field as a stage's own words.
   const meta = {
     domain: "pipeline",
-    why: "Automated nightly audit pass.",
-    change: pr?.title || "Automated stage execution.",
-    result: "Nominal validation with zero regressions.",
+    why: METADATA_PLACEHOLDERS.why,
+    change: pr?.title || METADATA_PLACEHOLDERS.change,
+    result: METADATA_PLACEHOLDERS.result,
     files: "codebase",
   };
 

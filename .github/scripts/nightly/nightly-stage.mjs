@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
-import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea } from "./nightly-prose.mjs";
+import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea, placeholderResult, placeholderWhy } from "./nightly-prose.mjs";
 import { fileURLToPath } from "node:url";
 
 const FINAL_STATUSES = new Set(["CHANGED", "CLEAN", "SKIPPED", "PARTIAL-RUN"]);
@@ -255,16 +255,6 @@ function cleanPrDetail(value, fallback, label) {
   return cleaned;
 }
 
-function defaultWhy(stage) {
-  return `Execute the scheduled Stage ${stage.number} ${stage.slug} audit.`;
-}
-
-function defaultResult(status) {
-  if (status === "CHANGED") return "Required stage validation completed.";
-  if (status === "CLEAN") return "Audit completed with no source change required.";
-  return "The run degraded safely to a log-only result.";
-}
-
 /**
  * What kind of thing each changed path is.
  *
@@ -349,8 +339,8 @@ export function renderPlainSummary(stage, status, changedPaths) {
 export function renderPrBody(stage, status, summary, changedPaths, details = {}) {
   const normalizedSummary = cleanSummary(summary);
   const files = changedPaths.join(", ") || stage.coverageLog;
-  const why = cleanPrDetail(details.why, defaultWhy(stage), "--why");
-  const result = cleanPrDetail(details.result, defaultResult(status), "--result");
+  const why = cleanPrDetail(details.why, placeholderWhy(stage), "--why");
+  const result = cleanPrDetail(details.result, placeholderResult(status), "--result");
   const plain = renderPlainSummary(stage, status, changedPaths);
 
   return `### Nightly Stage ${stage.number}: ${stage.name}
@@ -803,8 +793,8 @@ function finalLogLine(stage, status, summary, paths, date, window) {
 function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {}) {
   invariant(FINAL_STATUSES.has(status), `--status must be one of ${[...FINAL_STATUSES].join(", ")}.`);
   const normalizedSummary = cleanSummary(summary);
-  const why = cleanPrDetail(details.why, defaultWhy(stage), "--why");
-  const result = cleanPrDetail(details.result, defaultResult(status), "--result");
+  const why = cleanPrDetail(details.why, placeholderWhy(stage), "--why");
+  const result = cleanPrDetail(details.result, placeholderResult(status), "--result");
   const date = readOptional(path.join(contextDir(), "TODAY")) || utcDate();
   const paths = changedPaths(repoRoot);
   validateChangedPaths(stage, status, paths);

@@ -88,6 +88,90 @@ export function changeLabel(status) {
 export const WHY_LABEL = "Why";
 export const RESULT_LABEL = "Result";
 
+/**
+ * The phrases the pipeline substitutes when a stage published nothing of its
+ * own for a field.
+ *
+ * Two surfaces write these and a third reads them back. The merge coordinator
+ * fills them in when a pull request body carries no recoverable
+ * NIGHTLY_PR_METADATA block; the stage runner fills them in when a stage
+ * finalizes without passing its own; Stage 1's aging pass then commits whichever
+ * won into 00-pr-history.md, and the recap reads that file.
+ *
+ * So the recap has to be able to tell a placeholder from a statement. 98 of the
+ * Result fields in the committed history hold the merge coordinator's
+ * placeholder, and printing that under a "Result" label tells the reader a
+ * stage said something it never said.
+ *
+ * All three surfaces share one copy because a placeholder reworded on the
+ * writing side and not on the reading side goes quietly back to being printed
+ * as though a stage had written it.
+ */
+export const METADATA_PLACEHOLDERS = {
+  why: "Automated nightly audit pass.",
+  result: "Nominal validation with zero regressions.",
+  // Unlike the other two this is a last resort: the coordinator prefers the
+  // pull request title and reaches this only when there is not even one.
+  change: "Automated stage execution.",
+};
+
+/** The stage runner's placeholder, for a stage that finalizes without its own reason. */
+export function placeholderWhy(stage) {
+  return `Execute the scheduled Stage ${stage.number} ${stage.slug} audit.`;
+}
+
+/** The stage runner's placeholder, for a stage that finalizes without its own result. */
+export function placeholderResult(status) {
+  if (status === "CHANGED") return "Required stage validation completed.";
+  if (status === "CLEAN") return "Audit completed with no source change required.";
+  return "The run degraded safely to a log-only result.";
+}
+
+/**
+ * Every result-shaped placeholder, as one set to test a field against.
+ *
+ * Derived from the two writers above rather than listed again, so a reworded
+ * placeholder cannot survive here as a stale literal.
+ */
+export const PLACEHOLDER_RESULTS = new Set([
+  METADATA_PLACEHOLDERS.result,
+  ...["CHANGED", "CLEAN", "DEGRADED"].map(placeholderResult),
+]);
+
+/**
+ * What actually happened to a stage, one phrase per failure class.
+ *
+ * Phrased from the failure CLASS and never from the ledger state. A state
+ * (NO_OUTPUT, BLOCKED, ESCALATED) says only how bad the outcome was and holds
+ * no sentence at all, which is why the recap used to print the raw token; the
+ * class corresponds to exactly one knowable condition.
+ *
+ * The counts are occurrences in the committed ledger, verified against it
+ * rather than taken on trust, and they are here so nobody reads a phrase for a
+ * class that has never fired as a description of something that happens. The
+ * two RECOVERED_ classes carry phrases for completeness but the recap does not
+ * reach them through this map: a recovered stage merged, so it is narrated by
+ * its rescue note instead.
+ */
+export const FAILURE_PHRASES = {
+  // Observed in the committed ledger, with counts as of 2026-09-05.
+  JULES_SESSION_STUCK: "Jules finished the work and ended the session, but never opened the pull request.", // 30
+  RECOVERED_AFTER_NUDGE: "It published only after the watchdog asked the session again.", // 8
+  NO_PUBLISHED_OUTPUT: "The run went past this stage and it published nothing.", // 6
+  MERGE_COORDINATOR: "Its pull request was opened, but the merge coordinator did not fold it in.", // 6
+  UNFINALIZED_SENTINEL: "It merged but left its in-progress marker behind, so it never ran its finalize step.", // 1
+  JULES_SESSION_FAILED: "The Jules session failed outright, so there is no finished work to recover.", // 1
+  // Never fired, but their triggering conditions are pinned by tests.
+  OPEN_PR: "Its pull request is open and unmerged, so the work exists and is one merge away.",
+  UNCLASSIFIED_PR: "A pull request on Nightly matched no stage branch, and no stage could be inferred from its diff.",
+  WATCHDOG_OBSERVER_FAILURE: "The watchdog itself failed before reaching a verdict, so nothing is known about this stage.",
+  // Never fired and derived from the code alone. Treat the wording as a reading
+  // of what the branch would do, not as a report of observed behaviour.
+  JULES_API_UNAVAILABLE: "Nothing published, and the Jules API could not be reached to find out why.",
+  MALFORMED_BRANCH: "Its pull request is open on a branch that does not name its stage, so it was matched by the files it changed.",
+  RECOVERED_BY_FALLBACK_PUBLISH: "Jules never published it, so the repository opened the pull request itself from the session's finished work.",
+};
+
 /** "a", "a and b", "a, b and c". */
 export function joinList(items) {
   const list = (items || []).filter(Boolean);

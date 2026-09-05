@@ -18,6 +18,12 @@ import {
   runProgress,
 } from "./nightly-recap.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
+import {
+  FAILURE_PHRASES,
+  METADATA_PLACEHOLDERS,
+  placeholderResult,
+  placeholderWhy,
+} from "./nightly-prose.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 const stageOf = n => registry.stages.find(s => s.number === n);
@@ -203,78 +209,57 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     "Summary: 13/13 merged | 0 changed | 13 clean | 0 stuck | 0 intervention",
     "Grade: 10/10 - Optimal run: every stage completed unaided.",
     "",
-    // The plain-language overview, asserted verbatim: every clause of it is
-    // derived from the same counts the rubric grades on, so a change to either
-    // that silently desynchronises them fails right here.
-    "In plain terms: All 13 stages ran and every one of them landed its work. No stage changed the project. The remaining 13 checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run. Every stage got there without help. Nothing in this run needs you to do anything.",
+    // The overview, asserted verbatim. It states nothing the Summary line
+    // four lines above already counts: what survives is the framing (an audit
+    // that finds nothing has succeeded) and the call on the reader's time.
+    "In plain terms: No stage changed the project. The rest checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run. Nothing in this run needs you to do anything.",
     "",
-    // One stage, one block: a header naming the stage, its verdict and its
-    // pull request, then exactly one line per question. Nothing is stated
-    // twice, and nothing about a stage is deferred to the foot of the report.
+    // Three lines per stage, because these fixture stages genuinely said
+    // nothing else: no Why and no Result exist for them, so neither label is
+    // printed carrying a placeholder. The foot line below says how many.
     "**S01 HARDENING** | Clean | PR #2001",
     "What was checked: the hardening area, and everything there was already in order.",
-    "Why: The run confirmed hardening is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S02 VERIFICATION** | Clean | PR #2002",
     "What was checked: the verification area, and everything there was already in order.",
-    "Why: The run confirmed verification is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S03 BASELINE CONSOLIDATION** | Clean | PR #2003",
     "What was checked: the baseline consolidation area, and everything there was already in order.",
-    "Why: The run confirmed baseline consolidation is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S04 OPTIMIZATION** | Clean | PR #2004",
     "What was checked: the optimization area, and everything there was already in order.",
-    "Why: The run confirmed optimization is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S05 DOCUMENTATION README** | Clean | PR #2005",
     "What was checked: the documentation README area, and everything there was already in order.",
-    "Why: The run confirmed documentation README is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S06 DOCUMENTATION TSDOC** | Clean | PR #2006",
     "What was checked: the documentation TSDoc area, and everything there was already in order.",
-    "Why: The run confirmed documentation TSDoc is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S07 VERSION INTEGRITY** | Clean | PR #2007",
     "What was checked: the version integrity area, and everything there was already in order.",
-    "Why: The run confirmed version integrity is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S08 DEPENDENCY AUDIT** | Clean | PR #2008",
     "What was checked: the dependency audit area, and everything there was already in order.",
-    "Why: The run confirmed dependency audit is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S09 REFACTOR** | Clean | PR #2009",
     "What was checked: the refactor area, and everything there was already in order.",
-    "Why: The run confirmed refactor is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S10 APK INTEGRITY** | Clean | PR #2010",
     "What was checked: the APK integrity area, and everything there was already in order.",
-    "Why: The run confirmed APK integrity is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S11 APK OPTIMIZATION** | Clean | PR #2011",
     "What was checked: the APK optimization area, and everything there was already in order.",
-    "Why: The run confirmed APK optimization is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S12 APK UX** | Clean | PR #2012",
     "What was checked: the APK UX area, and everything there was already in order.",
-    "Why: The run confirmed APK UX is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
     "",
     "**S13 SELF HEALING PROTOCOL** | Clean | PR #2013",
     "What was checked: the self healing protocol area, and everything there was already in order.",
-    "Why: The run confirmed self healing protocol is still healthy, so no code or docs needed to change.",
-    "Result: Merged successfully.",
+    "",
+    // Why every block above is three lines. Without this the report would
+    // simply look terse, and a reader could not tell a quiet run from a run
+    // whose record has been pruned.
+    "Detail aged out: 13 of 13 merged stages no longer have an entry in the pull request history, so no Why or Result survives for them. Stage 1's aging pass prunes older entries; the run itself is unaffected.",
     "",
   ].join("\n"));
 });
@@ -378,6 +363,148 @@ test("a stage carrying an intervention or a damaged description says so in its o
   assert.doesNotMatch(text, /^- S02: /m);
 });
 
+test("a line the stage did not write is not printed", () => {
+  // 116 of 156 entries over the twelve runs to 2026-09-05 held either nothing
+  // or a placeholder in the Result field, and every one of them was printed
+  // under a "Result" label: "Validation passed with zero regressions" on 75,
+  // "Merged successfully" on the 41 with no field at all. Both read as the
+  // stage reporting its own verification. Neither was the stage's words.
+  const text = renderRecap(singleStage({
+    stage: 9, slug: "refactor", outcome: "CLEAN", prNumber: 1702, merged: true,
+    summary: "18 candidate files, 0 dep-violations",
+    why: METADATA_PLACEHOLDERS.why,
+    result: METADATA_PLACEHOLDERS.result,
+  }));
+
+  assert.deepEqual(blockFor(text, "S09"), [
+    "**S09 REFACTOR** | Clean | PR #1702",
+    "What was checked: 18 candidate files, 0 dep-violations.",
+  ]);
+  assert.doesNotMatch(text, /^Why:/m);
+  assert.doesNotMatch(text, /^Result:/m);
+  // Not silently: the omission is counted where a reader will see it.
+  assert.match(text, /^Thin evidence: 1 of 1 stages published a sound description but left a Why or Result to the pipeline's default \(S09\)\./m);
+});
+
+test("every placeholder either writer can produce is recognised as one", () => {
+  // The detection is only as good as its coverage of the writers. Deriving the
+  // set from placeholderResult rather than listing the strings again is what
+  // stops a reworded placeholder going quietly back to being printed.
+  for (const status of ["CHANGED", "CLEAN", "DEGRADED"]) {
+    const text = renderRecap(singleStage({
+      stage: 4, slug: "optimization", outcome: "CLEAN", prNumber: 1697, merged: true,
+      summary: "checked the loop counters", result: placeholderResult(status),
+    }));
+    assert.doesNotMatch(text, /^Result:/m, `placeholderResult(${status}) reached the reader`);
+  }
+  // The stage runner's why placeholder interpolates the stage, so it has to be
+  // matched per stage rather than by a fixed string.
+  const text = renderRecap(singleStage({
+    stage: 4, slug: "optimization", outcome: "CLEAN", prNumber: 1697, merged: true,
+    summary: "checked the loop counters",
+    why: placeholderWhy({ number: 4, slug: "optimization" }),
+  }));
+  assert.doesNotMatch(text, /^Why:/m);
+});
+
+test("a stage's own words are never mistaken for a placeholder", () => {
+  // The other direction, and the one that would be a real loss. Suppression
+  // keyed on anything looser than an exact match would eat real reporting.
+  const text = renderRecap(singleStage({
+    stage: 8, slug: "dependency-audit", outcome: "CHANGED", prNumber: 1701, merged: true,
+    summary: "Bumped @ast-grep/cli",
+    why: "Safe Tier 1 patch update.",
+    result: "Nominal validation with zero regressions across 1786 unit tests and 0 depcruise violations.",
+  }, { changed: 1, clean: 0 }));
+
+  assert.match(text, /^Why: Safe Tier 1 patch update\.$/m);
+  assert.match(text, /^Result: Nominal validation with zero regressions across 1786 unit tests and 0 depcruise violations\.$/m);
+  assert.doesNotMatch(text, /^Thin evidence:/m);
+});
+
+test("a damaged description is not counted twice as its own consequence", () => {
+  // A body with no recoverable metadata block leaves the coordinator nothing to
+  // read, so every field falls back to a placeholder. Reporting that stage as
+  // damaged AND as thin named the same two stages twice on 2026-09-05, the
+  // second time as a restatement of the first.
+  const text = renderRecap(singleStage({
+    stage: 2, slug: "verification", outcome: "CHANGED", prNumber: 1695, merged: true,
+    summary: "expanded coverage",
+    why: METADATA_PLACEHOLDERS.why,
+    result: METADATA_PLACEHOLDERS.result,
+    bodyHealth: { ok: false, verdict: "AD_LIBBED", pr: 1695 },
+  }, { changed: 1, clean: 0 }));
+
+  assert.match(text, /^Published descriptions: 1 of 1 arrived damaged \(S02\)\./m);
+  assert.doesNotMatch(text, /^Thin evidence:/m);
+});
+
+test("a run whose history has been pruned says so, instead of just looking terse", () => {
+  // 00-pr-history.md held only 2026-08-28 onward when this was written, so a
+  // recap of an older date has no Why or Result for any stage. Without a line
+  // saying that, a pruned run and a quiet run render identically.
+  const text = renderRecap(singleStage({
+    stage: 1, slug: "hardening", outcome: "CLEAN", prNumber: 1500, merged: true,
+    summary: "nothing to do",
+  }));
+
+  assert.match(text, /^Detail aged out: 1 of 1 merged stages no longer have an entry in the pull request history/m);
+  assert.match(text, /the run itself is unaffected/);
+  // An absent field is not a placeholder: claiming the stage left one would
+  // report a defect this run did not have.
+  assert.doesNotMatch(text, /^Thin evidence:/m);
+});
+
+test("a stage that never merged is not reported as having lost its history", () => {
+  // Its own failure already explains the silence, and "aged out" would blame
+  // the aging pass for a pull request that never existed.
+  const text = renderRecap(singleStage({
+    stage: 1, slug: "hardening", outcome: "STUCK", merged: false,
+    failureClass: "JULES_SESSION_STUCK",
+  }, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
+
+  assert.doesNotMatch(text, /^Detail aged out:/m);
+});
+
+test("every failure class the ledger has actually recorded has a phrase", () => {
+  // Data-driven on purpose. A first version of this scanned nightly-watchdog.mjs
+  // for `failureClass: "X"` literals, and over-matched: the same file assigns
+  // Jules session states ("COMPLETED", "FAILED") through ternaries of the same
+  // shape, so the guard demanded a phrase for DEGRADED and failed on a class
+  // that does not exist. A guard that cannot be trusted about what it found is
+  // worse than none.
+  //
+  // What this asserts instead cannot be wrong: every class the committed ledger
+  // holds must render as a sentence, because those are the ones a reader will
+  // actually meet. The exhaustive source-side check belongs in
+  // nightly-coherence.test.mjs against a set exported by the watchdog itself,
+  // which is the only way to enumerate them without guessing at syntax.
+  const ledger = JSON.parse(readFileSync(new URL("../../nightly-logs/nightly-run-ledger.json", import.meta.url), "utf8"));
+  const recorded = new Set();
+  for (const day of Object.values(ledger.runs || {})) {
+    for (const entry of Object.values(day || {})) {
+      if (entry?.failureClass) recorded.add(entry.failureClass);
+    }
+  }
+
+  assert.ok(recorded.size >= 6, `only ${recorded.size} classes found in the ledger, so this test has stopped reading it`);
+  for (const failureClass of recorded) {
+    assert.ok(FAILURE_PHRASES[failureClass], `${failureClass} is in the ledger but has no phrase`);
+  }
+
+  // Every documented phrase is a sentence, and no two classes share one: a
+  // duplicated phrase would report two different conditions identically, which
+  // is the defect displayArea was taught to avoid for stage names.
+  const phrases = Object.values(FAILURE_PHRASES);
+  for (const phrase of phrases) assert.match(phrase, /^[A-Z].*\.$/);
+  assert.equal(new Set(phrases).size, phrases.length);
+
+  // The renderer deliberately never reaches these two through the map: a
+  // recovered stage merged, so it is narrated by its rescue note instead.
+  assert.ok(FAILURE_PHRASES.RECOVERED_AFTER_NUDGE);
+  assert.ok(FAILURE_PHRASES.RECOVERED_BY_FALLBACK_PUBLISH);
+});
+
 test("the rate of damaged descriptions survives as one line, not thirteen", () => {
   // The Notes block existed so this rate stayed visible without anyone reading
   // pull requests by hand. Folding the per-stage detail into the stage blocks
@@ -410,22 +537,51 @@ test("a repaired description warns about the two lines directly above it", () =>
   assert.match(text, /^Published descriptions: 1 of 1 arrived damaged \(S04\)\./m);
 });
 
-test("a stage that published nothing says that, instead of printing a dash", () => {
-  // With no coverage line and no PR history every field is null. The old
-  // renderer printed `_-_` and then "-.", which reads as a stage that ran and
-  // had nothing to say - the opposite of what STUCK means.
+test("a stuck stage says what happened to it, from its failure class", () => {
+  // With no coverage line and no PR history every field is null. This printed
+  // `_-_` then "-." before the blocks were consolidated, and then
+  // "Result: NO_OUTPUT." after: a state token dressed as a verification
+  // outcome. The state says only how bad it was; the class says what happened,
+  // and for the commonest one the difference is the whole story, because the
+  // work was finished and merely never shipped.
+  const stuck = { stage: 11, slug: "apk-optimization", outcome: "STUCK", merged: false, state: "NO_OUTPUT" };
+  const totals = { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." };
+
+  assert.deepEqual(blockFor(renderRecap(singleStage({ ...stuck, failureClass: "JULES_SESSION_STUCK" }, totals)), "S11"), [
+    "**S11 APK OPTIMIZATION** | Stuck | no PR",
+    "What happened: Jules finished the work and ended the session, but never opened the pull request.",
+  ]);
+
+  // No class either, which is a real ledger state: the watchdog can record a
+  // failure it could not classify. The fallback must still be a sentence.
+  assert.deepEqual(blockFor(renderRecap(singleStage(stuck, totals)), "S11"), [
+    "**S11 APK OPTIMIZATION** | Stuck | no PR",
+    "What happened: APK optimization published nothing for this run.",
+  ]);
+
+  // The raw state never reaches the reader, under any label.
+  const text = renderRecap(singleStage({ ...stuck, failureClass: "MERGE_COORDINATOR" }, totals));
+  assert.doesNotMatch(text, /NO_OUTPUT/);
+  assert.doesNotMatch(text, /(^|[^-])-\.$/m);
+  assert.match(text, /What happened: Its pull request was opened, but the merge coordinator did not fold it in\./);
+});
+
+test("a stuck stage that did leave words of its own keeps them, and the class becomes a note", () => {
+  // A stage can declare a coverage line and still be overridden to STUCK by its
+  // ledger row. Its own summary must not be displaced by a phrase we wrote.
   const text = renderRecap(singleStage({
     stage: 11, slug: "apk-optimization", outcome: "STUCK", merged: false,
-    state: "NO_OUTPUT", failureClass: "JULES_SESSION_STUCK",
+    summary: "audited WebView settings, 0 changes required",
+    failureClass: "JULES_SESSION_STUCK",
   }, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
 
   assert.deepEqual(blockFor(text, "S11"), [
     "**S11 APK OPTIMIZATION** | Stuck | no PR",
-    "What happened: APK optimization published nothing for this run.",
-    "Why: Nothing was published for this stage, so there is no evidence of what it did or did not check, and APK optimization cannot be called healthy from this run.",
-    "Result: NO_OUTPUT.",
+    "What happened: audited WebView settings, 0 changes required.",
+    "Note: Jules finished the work and ended the session, but never opened the pull request.",
   ]);
-  assert.doesNotMatch(text, /(^|[^-])-\.$/m);
+  // Once each, never both places.
+  assert.equal(text.split("never opened the pull request").length - 1, 1);
 });
 
 test("an identifier keeps its underscores, and emphasis is still neutralised", () => {
@@ -472,7 +628,13 @@ test("a calibration-backed CLEAN run is called out in prose", () => {
     }],
   });
   assert.match(text, /This was a wider calibration check after repeated clean runs/);
-  assert.match(text, /Audit completed with no source change required\./);
+  // The calibration sentence survives because it says something the header
+  // cannot. Its Result does not: "Audit completed with no source change
+  // required" is placeholderResult("CLEAN"), the stage runner's own stand-in
+  // for a stage that finalized without stating one, so printing it under a
+  // Result label would credit the stage with a verification it never reported.
+  assert.doesNotMatch(text, /Result: Audit completed with no source change required/);
+  assert.match(text, /^Thin evidence: 1 of 1 stages published a sound description but left a Why or Result to the pipeline's default \(S10\)\./m);
 });
 
 test("the real recorded history recaps without throwing, for a synced run", () => {
@@ -715,10 +877,15 @@ test("a rescued run is never described as self-driven", () => {
   }));
   assert.match(rescuedText, /S05 documentation README could not finish unaided/);
   assert.match(rescuedText, /not entirely self-driven/);
-  assert.doesNotMatch(rescuedText, /Every stage got there without help/);
+  assert.doesNotMatch(rescuedText, /got there without help/);
 
-  // The unaided claim is only made when nothing was rescued and nothing stuck.
-  assert.match(renderRecap(overviewRecap()), /Every stage got there without help/);
+  // A finished run makes no unaided claim in prose at all now: the grade line
+  // already carries it, and carried it more precisely, distinguishing 10 from 9
+  // on exactly this question. The prose copy could only ever agree with it or
+  // contradict it.
+  const clean = renderRecap(overviewRecap());
+  assert.doesNotMatch(clean, /got there without help/);
+  assert.match(clean, /Grade: 10\/10 - Optimal run: every stage completed unaided\./);
 });
 
 test("the overview points at what needs attention, and says so when nothing does", () => {
@@ -818,7 +985,10 @@ test("prose about an unfinished run never claims the whole run succeeded", () =>
   }));
 
   assert.match(text, /This run is still going: S12 APK UX and S13 self healing protocol have not reached their slot/);
-  assert.match(text, /So far 11 of 13 stages have landed their work\./);
+  // The count is on the Summary line and is not repeated here.
+  assert.doesNotMatch(text, /So far 11 of 13 stages/);
+  // Said only while the run is in flight, because only then is there no grade
+  // to carry the claim. "That has run" is the load-bearing half.
   assert.match(text, /Every stage that has run got there without help\./);
   assert.match(text, /Nothing that has run so far needs you to do anything\./);
   // A stage that has not run gets one line, not a What/Why/Result trio

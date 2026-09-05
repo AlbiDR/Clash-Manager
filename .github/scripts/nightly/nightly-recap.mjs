@@ -34,7 +34,19 @@ import { spawnSync } from "node:child_process";
 
 import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
-import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, displayArea, joinList, stageTag } from "./nightly-prose.mjs";
+import {
+  FAILURE_PHRASES,
+  METADATA_PLACEHOLDERS,
+  PLACEHOLDER_RESULTS,
+  PLAIN_PREFIX,
+  RESULT_LABEL,
+  WHY_LABEL,
+  changeLabel,
+  displayArea,
+  joinList,
+  placeholderWhy,
+  stageTag,
+} from "./nightly-prose.mjs";
 
 export const SOURCE_REF = "origin/Nightly";
 const LEDGER = ".github/nightly-logs/nightly-run-ledger.json";
@@ -348,12 +360,46 @@ function escapeInline(value) {
     .trim();
 }
 
+/**
+ * Whether a stage's `why` is one of the pipeline's own placeholders.
+ *
+ * Separate from usefulWhy because the two answer different questions and the
+ * thin-evidence line depends on the difference. A `why` can be unusable for
+ * three unrelated reasons: it is absent (no history entry exists yet), it
+ * duplicates the summary (nothing new to print), or a placeholder stood in
+ * because nothing was published (a fact about the pipeline). Only the third is
+ * evidence of anything, and counting the other two alongside it would report a
+ * defect rate the run did not have.
+ */
+function isPlaceholderWhy(stage) {
+  if (!stage.why) return false;
+  const why = String(stage.why).trim();
+  return why === METADATA_PLACEHOLDERS.why
+    || why === placeholderWhy({ number: stage.stage, slug: stage.slug });
+}
+
 function usefulWhy(stage) {
   if (!stage.why) return null;
   if (stage.why === stage.summary) return null;
-  if (/^Automated nightly audit pass\.?$/i.test(stage.why)) return null;
-  if (new RegExp(`^Execute the scheduled Stage ${stage.stage} ${stage.slug} audit\\.?$`, "i").test(stage.why)) return null;
+  if (isPlaceholderWhy(stage)) return null;
   return stage.why;
+}
+
+/**
+ * A stage's result, or null when it never stated one.
+ *
+ * 116 of 156 entries over the twelve runs to 2026-09-05 held either nothing or
+ * a placeholder here, and the renderer dressed every one of them in a "Result"
+ * label: "Validation passed with zero regressions" on 75, "Merged
+ * successfully" on the 41 with no field at all. Both read as the stage
+ * reporting its own verification, and neither was. A suppressed line is
+ * counted by thinEvidenceSection rather than silently dropped.
+ */
+function usefulResult(stage) {
+  const result = String(stage.result || "").trim();
+  if (!result) return null;
+  if (PLACEHOLDER_RESULTS.has(result)) return null;
+  return result;
 }
 
 function displayStatus(outcome) {
@@ -379,11 +425,16 @@ function semanticAction(stage) {
   // has to be a claim the absence of evidence actually supports: the previous
   // "-" placeholder read as a stage that ran and had nothing to say, which is
   // the opposite of what a stuck stage means.
-  const raw = stage.summary || stage.title || stage.result;
+  const raw = stage.summary || stage.title || usefulResult(stage);
   if (!raw) {
-    return stage.outcome === "STUCK"
-      ? `${displayArea(stage.slug)} published nothing for this run`
-      : `${displayArea(stage.slug)} recorded no summary for this run`;
+    // The failure class is the only field that holds a sentence. A stuck stage
+    // that left no words of its own gets that sentence, because "published
+    // nothing" says only that nothing happened, where the class says what did:
+    // JULES_SESSION_STUCK, 30 of the 52 recorded failures, means the work was
+    // finished and merely never shipped, which is the opposite of nothing.
+    const phrase = FAILURE_PHRASES[stage.failureClass];
+    if (stage.outcome === "STUCK") return phrase || `${displayArea(stage.slug)} published nothing for this run`;
+    return `${displayArea(stage.slug)} recorded no summary for this run`;
   }
   const action = stripCommitPrefix(raw)
     .replace(/^Audit complete:\s*/i, "")
@@ -403,14 +454,9 @@ function semanticMiddle(stage) {
   const why = usefulWhy(stage);
   if (why) return why;
   const area = displayArea(stage.slug);
-  if (stage.outcome === "CHANGED") {
-    return `That keeps ${area} up to date and makes the fix part of the branch.`;
-  }
-  if (stage.outcome === "CLEAN") {
-    if (isCalibrationClean(stage)) {
-      return `This was a wider calibration check after repeated clean runs, so the CLEAN result has stronger evidence.`;
-    }
-    return `The run confirmed ${area} is still healthy, so no code or docs needed to change.`;
+  // What survives here is only what a reader cannot get from the header line.
+  if (stage.outcome === "CLEAN" && isCalibrationClean(stage)) {
+    return `This was a wider calibration check after repeated clean runs, so the CLEAN result has stronger evidence.`;
   }
   if (stage.outcome === "SKIPPED") {
     return `There was no useful ${area} work to do in this run.`;
@@ -418,18 +464,13 @@ function semanticMiddle(stage) {
   if (stage.outcome === "PARTIAL-RUN") {
     return `It kept the ${area} notes, but avoided shipping changes that were not fully checked.`;
   }
-  // Sits under the "Why" label, so it has to answer why rather than prescribe.
-  // What needs doing about it is the overview's job: a stuck stage is already
-  // named there as the part worth the reader's attention.
-  return `Nothing was published for this stage, so there is no evidence of what it did or did not check, and ${area} cannot be called healthy from this run.`;
-}
-
-function semanticResult(stage) {
-  const result = stage.result || (stage.merged ? "Merged successfully." : stage.state || stage.outcome);
-  if (/^Nominal validation with zero regressions\.?$/i.test(result)) {
-    return "Validation passed with zero regressions.";
-  }
-  return result;
+  // Nothing for CHANGED, CLEAN or STUCK. The sentences that used to stand here
+  // were generated from the outcome alone ("That keeps X up to date and makes
+  // the fix part of the branch", "The run confirmed X is still healthy"), so
+  // they restated the verdict already printed two words to the left of the
+  // pull request number. A stuck stage needs none either: its What line now
+  // carries the failure class, which says more than any generated why could.
+  return null;
 }
 
 /**
@@ -457,6 +498,13 @@ const PENDING_LINE = "Not yet run. Its slot in the run order has not come round 
  */
 function stageNotes(stage) {
   const notes = [];
+  // Only when the stage's own summary already occupies the What line. Otherwise
+  // semanticAction has used this phrase there, and repeating it here would be
+  // the duplication this whole section was rebuilt to remove.
+  const phrase = FAILURE_PHRASES[stage.failureClass];
+  if (phrase && stage.outcome === "STUCK" && (stage.summary || stage.title)) {
+    notes.push(phrase);
+  }
   if (stage.rescued) {
     notes.push(`This stage could not finish unaided and was recovered via ${stage.rescuedBy || "retry"}.`);
   }
@@ -501,11 +549,17 @@ function stageBlock(stage) {
 
   if (stage.outcome === "PENDING") return [header, PENDING_LINE, ""];
 
+  // A line is printed only when it says something this stage said. The Why and
+  // Result slots are skipped rather than filled with the pipeline's own
+  // placeholder prose; thinEvidenceSection reports how often that happened, so
+  // the silence stays measurable instead of just looking tidier.
+  const why = semanticMiddle(stage);
+  const result = usefulResult(stage);
   return [
     header,
     `${changeLabel(stage.outcome)}: ${sentencePart(semanticAction(stage))}`,
-    `${WHY_LABEL}: ${sentencePart(semanticMiddle(stage))}`,
-    `${RESULT_LABEL}: ${sentencePart(semanticResult(stage))}`,
+    ...(why ? [`${WHY_LABEL}: ${sentencePart(why)}`] : []),
+    ...(result ? [`${RESULT_LABEL}: ${sentencePart(result)}`] : []),
     ...stageNotes(stage),
     "",
   ];
@@ -642,22 +696,26 @@ function overviewSection(recap) {
     sentences.push(`This run is still going: ${joinList(pendingStages.map(stageLabel))} ${pendingStages.length === 1 ? "has" : "have"} not reached ${pendingStages.length === 1 ? "its" : "their"} slot in the run order yet, so the counts below cover only the part that has finished.`);
   }
 
-  sentences.push(recap.merged === recap.total
-    ? `All ${recap.total} stages ran and every one of them landed its work.`
-    : pendingStages.length > 0
-      ? `So far ${recap.merged} of ${recap.total} stages have landed their work.`
-      : `${recap.merged} of ${recap.total} stages landed their work.`);
-
+  // No sentence restates a Summary count. "Summary: 13/13 merged | 5 changed |
+  // 8 clean" sits four lines above, and the paragraph used to spend three of
+  // its five sentences re-narrating those same five numbers before reaching the
+  // two things a count cannot say: what needs the reader, and whether the sweep
+  // was self-driven. What is kept is the part the counts do not carry.
   if (changed.length > 0) {
     // displayArea's casing is kept verbatim: it carries the acronyms (README,
-    // TSDoc, APK, UX), and lowercasing the area names destroys them.
-    sentences.push(`Of those, ${changed.length} actually changed the project, covering ${joinList(changed.map(s => displayArea(s.slug)))}.`);
+    // TSDoc, APK, UX), and lowercasing the area names destroys them. The area
+    // list is the information here; the count of them is already above.
+    sentences.push(`The project changed in ${joinList(changed.map(s => displayArea(s.slug)))}.`);
   } else {
     sentences.push("No stage changed the project.");
   }
 
   if (clean.length > 0) {
-    sentences.push(`The remaining ${clean.length} checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run.`);
+    // The framing is load-bearing and outlives the count it used to carry: an
+    // audit that finds nothing has succeeded, and wording that implies waste is
+    // wrong about the pipeline. It once led to a compliance stage being
+    // repurposed.
+    sentences.push(`The rest checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run.`);
   }
 
   if (stuck.length > 0) {
@@ -665,12 +723,13 @@ function overviewSection(recap) {
   }
   if (rescued.length > 0) {
     sentences.push(`${joinList(rescued.map(stageLabel))} could not finish unaided and had to be nudged first, so the clean sweep above was not entirely self-driven.`);
-  } else if (stuck.length === 0) {
-    // "So far" matters: an unfinished run cannot claim every stage managed on
-    // its own, because the stages still queued have not been tested yet.
-    sentences.push(pendingStages.length > 0
-      ? "Every stage that has run got there without help."
-      : "Every stage got there without help.");
+  } else if (stuck.length === 0 && pendingStages.length > 0) {
+    // Said only while the run is in flight, because only then can the grade not
+    // say it. A finished run's grade line already carries the claim exactly
+    // ("every stage completed unaided" at 10, "some needed intervention" at 9),
+    // and an unfinished run has no grade at all. "That has run" matters: the
+    // stages still queued have not been tested yet.
+    sentences.push("Every stage that has run got there without help.");
   }
 
   // Attention is the union of what is broken now and what is trending badly.
@@ -691,6 +750,61 @@ function overviewSection(recap) {
     : `The part worth your attention is ${joinList(unique)}, detailed below.`);
 
   return [PLAIN_PREFIX + sentences.join(" "), ""];
+}
+
+/**
+ * How often a stage said nothing of its own, in one line.
+ *
+ * The stage blocks above omit a Why or Result that holds only a pipeline
+ * placeholder. Without this line that omission would be invisible, and a
+ * quieter report would read as a better one: 116 of 156 entries over the twelve
+ * runs to 2026-09-05 carried a placeholder or nothing in the Result field, and
+ * the old renderer dressed every one of them in a "Result" label.
+ *
+ * It counts only PROVABLE placeholders, never an absent field. A missing Why
+ * means no history entry exists for that stage yet, which is a fact about the
+ * aging pass rather than about what the stage published, and folding the two
+ * together would report a defect rate the run did not have.
+ *
+ * Not part of the Summary counts, for the same reason as descriptionSection: a
+ * stage that reported thinly still did its work, and a reader who meets this
+ * inside the failure tally goes and fixes the wrong thing.
+ */
+function thinEvidenceSection(recap) {
+  const thin = (recap.stages || []).filter(s => {
+    // A damaged description is already reported by descriptionSection, and it
+    // is the CAUSE of the placeholders: a body with no recoverable metadata
+    // block leaves the coordinator nothing to read, so every field falls back.
+    // Naming those stages here as well printed the same two stages twice on
+    // 2026-09-05, once as damaged and once as their own consequence. What is
+    // left is the distinct defect: a stage that published a sound body and
+    // still left a field to the default.
+    if (s.bodyHealth && (s.bodyHealth.ok === false || s.bodyHealth.repairedFrom)) return false;
+    return isPlaceholderWhy(s) || PLACEHOLDER_RESULTS.has(String(s.result || "").trim());
+  });
+  // The other reason a block is thin, and a different fact about the world:
+  // 00-pr-history.md holds only recent runs, and Stage 1's aging pass prunes
+  // the rest, so a recap of an older date has no Why or Result to show for any
+  // stage. Distinguished from a placeholder because the reader's conclusion
+  // differs: a placeholder means the stage did not say, an absent entry means
+  // the record no longer exists. A stage that never merged is excluded, since
+  // its own failure already explains why it published nothing.
+  const agedOut = (recap.stages || []).filter(s => s.merged && !s.title && !s.why && !s.result);
+
+  const lines = [];
+  if (thin.length > 0) {
+    lines.push(
+      `Thin evidence: ${thin.length} of ${recap.total} stages published a sound description but left a Why or Result to the pipeline's default (${joinList(thin.map(s => stageTag(s.stage)))}).`
+      + ` Those lines are omitted above rather than printed as the stage's own words.`,
+    );
+  }
+  if (agedOut.length > 0) {
+    lines.push(
+      `Detail aged out: ${agedOut.length} of ${recap.total} merged stages no longer have an entry in the pull request history, so no Why or Result survives for them.`
+      + ` Stage 1's aging pass prunes older entries; the run itself is unaffected.`,
+    );
+  }
+  return lines.length > 0 ? [...lines, ""] : [];
 }
 
 /**
@@ -738,6 +852,7 @@ export function renderRecap(recap) {
   lines.push(...healthSection(recap.health));
   lines.push(...paceSection(recap.health));
   lines.push(...descriptionSection(recap));
+  lines.push(...thinEvidenceSection(recap));
 
   return lines.join("\n");
 }
