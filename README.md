@@ -8,8 +8,8 @@
   <p>Stop guessing who to keep and who to recruit. Clash Manager scores your whole roster, scouts elite free players across the game, plans every card upgrade, and sends clan invites straight into Clash Royale, all from one installable app.</p>
 
   [![Live App](https://img.shields.io/badge/Live-albidr.github.io%2FClash--Manager-0061A4?style=flat-square&logo=pwa&logoColor=white)](https://albidr.github.io/Clash-Manager/)
-  [![Client](https://img.shields.io/badge/Client-v14.50.16-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
-  [![Backend](https://img.shields.io/badge/Backend-v14.50.16-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
+  [![Client](https://img.shields.io/badge/Client-v14.50.17-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
+  [![Backend](https://img.shields.io/badge/Backend-v14.50.17-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
   [![Android](https://img.shields.io/badge/Android-Wrapper-3DDC84?style=flat-square&logo=android&logoColor=white)](APK/README.md)
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 

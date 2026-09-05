@@ -766,17 +766,25 @@ function overviewSection(recap) {
  * inside the failure tally goes and fixes the wrong thing.
  */
 function thinEvidenceSection(recap) {
-  const thin = (recap.stages || []).filter(s => {
-    // A damaged description is already reported by descriptionSection, and it
-    // is the CAUSE of the placeholders: a body with no recoverable metadata
-    // block leaves the coordinator nothing to read, so every field falls back.
-    // Naming those stages here as well printed the same two stages twice on
-    // 2026-09-05, once as damaged and once as their own consequence. What is
-    // left is the distinct defect: a stage that published a sound body and
-    // still left a field to the default.
-    if (s.bodyHealth && (s.bodyHealth.ok === false || s.bodyHealth.repairedFrom)) return false;
-    return isPlaceholderWhy(s) || (Boolean(s.result) && isPlaceholderField("result", s.result));
-  });
+  // Counts every stage whose record is generic, including those whose published
+  // description also arrived damaged.
+  //
+  // This deliberately USED to exclude them. While the description was the only
+  // channel, a damaged body was the CAUSE of the placeholders, so naming those
+  // stages here as well restated the same fact twice: once as damaged, once as
+  // its own consequence.
+  //
+  // The stage now commits the description it composed, and the coordinator
+  // prefers that over the published body, so a damaged body no longer implies a
+  // generic record. Which inverts the exclusion: a stage whose body was damaged
+  // AND whose record is still generic now means the committed description did
+  // not reach the record either, and that is the most serious case there is.
+  // Excluding it hid exactly that, and would have let this line FALL while the
+  // coordinator warned that a sidecar had arrived stating nothing, so the number
+  // would have read as success. Found by the peer session predicting the
+  // combination before it could happen.
+  const thin = (recap.stages || []).filter(s => isPlaceholderWhy(s)
+    || (Boolean(s.result) && isPlaceholderField("result", s.result)));
   // The other reason a block is thin, and a different fact about the world:
   // 00-pr-history.md holds only recent runs, and Stage 1's aging pass prunes
   // the rest, so a recap of an older date has no Why or Result to show for any
@@ -788,9 +796,15 @@ function thinEvidenceSection(recap) {
 
   const lines = [];
   if (thin.length > 0) {
+    // The overlap with descriptionSection is now information rather than
+    // duplication, so it is named instead of filtered.
+    const alsoDamaged = thin.filter(s => s.bodyHealth && (s.bodyHealth.ok === false || s.bodyHealth.repairedFrom));
     lines.push(
-      `Thin evidence: ${thin.length} of ${recap.total} stages published a sound description but left a Why or Result to the pipeline's default (${joinList(thin.map(s => stageTag(s.stage)))}).`
-      + ` Those lines are omitted above rather than printed as the stage's own words.`,
+      `Thin evidence: ${thin.length} of ${recap.total} stages left a Why or Result to the pipeline's default (${joinList(thin.map(s => stageTag(s.stage)))}).`
+      + ` Those lines are omitted above rather than printed as the stage's own words.`
+      + (alsoDamaged.length > 0
+        ? ` For ${joinList(alsoDamaged.map(s => stageTag(s.stage)))} the published description arrived damaged as well, so the description the stage committed did not reach the record either.`
+        : ""),
     );
   }
   if (agedOut.length > 0) {

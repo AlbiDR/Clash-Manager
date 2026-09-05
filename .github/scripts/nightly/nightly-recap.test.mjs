@@ -383,7 +383,7 @@ test("a line the stage did not write is not printed", () => {
   assert.doesNotMatch(text, /^Why:/m);
   assert.doesNotMatch(text, /^Result:/m);
   // Not silently: the omission is counted where a reader will see it.
-  assert.match(text, /^Thin evidence: 1 of 1 stages published a sound description but left a Why or Result to the pipeline's default \(S09\)\./m);
+  assert.match(text, /^Thin evidence: 1 of 1 stages left a Why or Result to the pipeline's default \(S09\)\./m);
 });
 
 test("every placeholder either writer can produce is recognised as one", () => {
@@ -422,11 +422,21 @@ test("a stage's own words are never mistaken for a placeholder", () => {
   assert.doesNotMatch(text, /^Thin evidence:/m);
 });
 
-test("a damaged description is not counted twice as its own consequence", () => {
-  // A body with no recoverable metadata block leaves the coordinator nothing to
-  // read, so every field falls back to a placeholder. Reporting that stage as
-  // damaged AND as thin named the same two stages twice on 2026-09-05, the
-  // second time as a restatement of the first.
+test("a damaged description that also lost the record is the loudest case, not a hidden one", () => {
+  // This test used to assert the opposite, and the inversion is the point.
+  //
+  // While the published description was the only channel, a body with no
+  // recoverable metadata block left the coordinator nothing to read, so every
+  // field fell back and a damaged body WAS the cause of the placeholders.
+  // Reporting the stage in both lines restated one fact twice.
+  //
+  // The stage now commits the description it composed and the coordinator
+  // prefers it, so a damaged body no longer implies a generic record. A stage
+  // that is in both lines therefore means the committed description did not
+  // reach the record either, which is the most serious outcome available. The
+  // old exclusion hid precisely that, and would have let this line FALL while
+  // the coordinator warned about a sidecar arriving stating nothing: the number
+  // would have read as success.
   const text = renderRecap(singleStage({
     stage: 2, slug: "verification", outcome: "CHANGED", prNumber: 1695, merged: true,
     summary: "expanded coverage",
@@ -436,7 +446,22 @@ test("a damaged description is not counted twice as its own consequence", () => 
   }, { changed: 1, clean: 0 }));
 
   assert.match(text, /^Published descriptions: 1 of 1 arrived damaged \(S02\)\./m);
-  assert.doesNotMatch(text, /^Thin evidence:/m);
+  assert.match(text, /^Thin evidence: 1 of 1 stages left a Why or Result to the pipeline's default \(S02\)\./m);
+  assert.match(text, /For S02 the published description arrived damaged as well, so the description the stage committed did not reach the record either\./);
+});
+
+test("a generic record with a sound description does not claim the description was damaged", () => {
+  // The ordinary case: finalize was simply given no Why or Result. It belongs in
+  // Thin evidence alone, and the extra clause must not appear.
+  const text = renderRecap(singleStage({
+    stage: 9, slug: "refactor", outcome: "CLEAN", prNumber: 1702, merged: true,
+    summary: "18 candidate files, 0 dep-violations",
+    why: METADATA_PLACEHOLDERS.why,
+    result: METADATA_PLACEHOLDERS.result,
+  }));
+
+  assert.match(text, /^Thin evidence: 1 of 1 stages left a Why or Result to the pipeline's default \(S09\)\./m);
+  assert.doesNotMatch(text, /arrived damaged/);
 });
 
 test("a run whose history has been pruned says so, instead of just looking terse", () => {
@@ -634,7 +659,7 @@ test("a calibration-backed CLEAN run is called out in prose", () => {
   // for a stage that finalized without stating one, so printing it under a
   // Result label would credit the stage with a verification it never reported.
   assert.doesNotMatch(text, /Result: Audit completed with no source change required/);
-  assert.match(text, /^Thin evidence: 1 of 1 stages published a sound description but left a Why or Result to the pipeline's default \(S10\)\./m);
+  assert.match(text, /^Thin evidence: 1 of 1 stages left a Why or Result to the pipeline's default \(S10\)\./m);
 });
 
 test("the real recorded history recaps without throwing, for a synced run", () => {
