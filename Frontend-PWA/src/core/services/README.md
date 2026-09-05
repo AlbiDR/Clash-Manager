@@ -63,6 +63,15 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useShowcaseMode.ts` / `useBlueprintMode.ts` / `useSyntheticMode.ts` | The Showcase (demo), Blueprint (skeleton), and Synthetic (mock-data) modes. |
 | `useToast.ts` | Global toasts with haptic pairing. |
 
+### IndexedDB Persistence & Migration Engine (`StorageService.ts`)
+
+`StorageService.ts` provides clinical isolation for application data persistence in Layer 1 Core:
+- **Resilient Key-Value Store (`idb`):** Abstracts IndexedDB CRUD operations over `idbKernel` (`openDB`, `idbCore`) with automatic memory-store fallbacks (`memoryStore`, `forceMemoryMode()`) in unsupported, private, or restricted environments.
+- **Legacy Database Migration Bridge (`migrateLegacyData`):** Automatically detects and batch-migrates key-value records from the legacy database store (`STORAGE_LEGACY_DB_NAME`) into the active store upon initialization, using domain-descriptive iteration (`recordIndex`), before purging the legacy database.
+- **Deprecated Database Purging (`purgeDeprecatedDatabases`):** Asynchronously iterates through known obsolete database names (`STORAGE_DEPRECATED_DB_NAMES`) to reclaim browser storage quota and eliminate schema leakage across application updates.
+- **Nuclear Reset Recovery (`destroyAll`):** Exposes an emergency recovery command that closes active database handles, deletes disk databases (`STORAGE_DB_NAME`, `STORAGE_LEGACY_DB_NAME`, and deprecated DBs), wipes in-memory backups, and forces memory mode for the remainder of the session to recover from severe persistent storage corruption.
+- **WebAppData Snapshot Persistence (`loadCache` / `saveCache`):** Provides standardized helpers to hydrate and persist the raw application state snapshot DTO under `CACHE_KEY_MAIN` (`CLAN_MANAGER_DATA_V8`).
+
 ### Declarative Global Dialog Confirmation (`useConfirm.ts`)
 
 The modal confirmation composable provides a robust, styled replacement for the native browser/WebView `window.confirm()` method to prevent blocking and unstyled system alerts:
