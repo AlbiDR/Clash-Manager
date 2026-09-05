@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-05] PR #1703 [Stage 10]: Verified asset links, manifest parity, version code/name sync, release metadata, and cleartext traffic security policy
+**Domain:** apk | **Commit:** 5c9385bb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1703)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
+**Why:** PWA and APK wrapper configurations are in sync with no mismatches found
+**Change:** Verified asset links, manifest parity, version code/name sync, release metadata, and cleartext traffic security policy
+**Result:** Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:version-code, and pnpm test:apk-ux-audit
+
+
 ### [2026-09-05] PR #1702 [Stage 9]: 18 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected StorageService.ts, useAppSettings.ts, useClashSync.ts. Candidate useClashSync clean; hunt useClashSync clean.
 **Domain:** architecture | **Commit:** 4004efa8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1702)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
