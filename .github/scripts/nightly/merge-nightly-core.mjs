@@ -20,7 +20,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { spawnSync } from "child_process";
-import { loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
+import { FAILURE_CLASSES, loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
 import { METADATA_PLACEHOLDERS } from "./nightly-prose.mjs";
 
 export const CONFIG = {
@@ -1090,7 +1090,7 @@ export async function run(config = CONFIG) {
           }
           upsertStageEntry(ledger, registry, date, stage, {
             state: "BLOCKED",
-            failureClass: "MERGE_COORDINATOR",
+            failureClass: FAILURE_CLASSES.MERGE_COORDINATOR,
             evidence: {
               prNumber: failure.pr.number,
               prUrl: failure.pr.html_url,

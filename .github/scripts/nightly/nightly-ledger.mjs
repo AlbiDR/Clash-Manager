@@ -18,6 +18,50 @@ export const LEDGER_STATES = new Set([
   "DEGRADED",
 ]);
 
+/**
+ * Every failure class a ledger row may carry, as the single vocabulary two
+ * different writers share.
+ *
+ * Lives here rather than in the watchdog because the watchdog is not the only
+ * emitter: MERGE_COORDINATOR comes from merge-nightly-core.mjs. A vocabulary
+ * defined inside one of its two writers is not a vocabulary, it is that
+ * writer's opinion, and the other one is free to disagree.
+ *
+ * Names map to themselves so emitters can reference members instead of writing
+ * string literals. That is the point: a class that is not in here cannot be
+ * emitted, so this set cannot silently fall behind the code the way a
+ * hand-maintained list would. The alternative considered was scanning the
+ * sources for `failureClass:` assignments, which was tried and abandoned: the
+ * watchdog assigns Jules session states through ternaries of identical shape,
+ * so a scan matched "COMPLETED" and "FAILED" as if they were failure classes
+ * and demanded prose for classes that do not exist.
+ *
+ * Deliberately NOT validated on write, unlike LEDGER_STATES. An unknown class
+ * should not throw inside the control plane at 3am; the constant-reference
+ * discipline above is what keeps it honest, and a test asserts the ledger's
+ * real contents stay inside it.
+ */
+export const FAILURE_CLASSES = Object.freeze({
+  // Jules-side outcomes.
+  JULES_SESSION_STUCK: "JULES_SESSION_STUCK",
+  JULES_SESSION_FAILED: "JULES_SESSION_FAILED",
+  JULES_API_UNAVAILABLE: "JULES_API_UNAVAILABLE",
+  // Nothing published, and nothing to say why.
+  NO_PUBLISHED_OUTPUT: "NO_PUBLISHED_OUTPUT",
+  // Published, but something between the pull request and Nightly went wrong.
+  OPEN_PR: "OPEN_PR",
+  MALFORMED_BRANCH: "MALFORMED_BRANCH",
+  UNCLASSIFIED_PR: "UNCLASSIFIED_PR",
+  MERGE_COORDINATOR: "MERGE_COORDINATOR",
+  UNFINALIZED_SENTINEL: "UNFINALIZED_SENTINEL",
+  // The observer itself.
+  WATCHDOG_OBSERVER_FAILURE: "WATCHDOG_OBSERVER_FAILURE",
+  // Rescued rather than failed. Recorded so a run that needed help cannot be
+  // read as one that did not.
+  RECOVERED_AFTER_NUDGE: "RECOVERED_AFTER_NUDGE",
+  RECOVERED_BY_FALLBACK_PUBLISH: "RECOVERED_BY_FALLBACK_PUBLISH",
+});
+
 export function createEmptyLedger() {
   return {
     schemaVersion: 1,

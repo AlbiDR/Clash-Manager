@@ -174,3 +174,50 @@ test("both coverage-log parsers read the same line the same way", async () => {
     assert.equal(fromPatch.summary, fromLog.summary, `summary disagreement on: ${line}`);
   }
 });
+
+// Failure classes and the sentences that describe them.
+//
+// The classes are the ledger's vocabulary, shared by two emitters (the watchdog
+// and the merge coordinator); the phrases are the recap's. Neither file can see
+// the other's list, so without this the pair drift the moment someone adds a
+// class and does not think about prose, which is exactly how the coverage-line
+// parser and the PR body labels drifted before they were guarded.
+//
+// Asserted as "every class has a phrase" and NOT the reverse. The two
+// RECOVERED_ classes carry phrases the recap reaches by a different path, so
+// requiring every phrase to be reachable would fail on correct behaviour, and a
+// guard needing an exemption list for correct behaviour has picked the wrong
+// property.
+test("every failure class the ledger can hold has a sentence describing it", async () => {
+  const { FAILURE_CLASSES } = await import("./nightly-ledger.mjs");
+  const { FAILURE_PHRASES } = await import("./nightly-prose.mjs");
+
+  const missing = Object.keys(FAILURE_CLASSES).filter(name => !FAILURE_PHRASES[name]);
+  assert.deepEqual(missing, [], `failure classes with no phrase in nightly-prose.mjs: ${missing.join(", ")}`);
+
+  // A phrase for a class that does not exist is the other half of the drift:
+  // it reads as documentation of behaviour nothing can produce.
+  const orphaned = Object.keys(FAILURE_PHRASES).filter(name => !(name in FAILURE_CLASSES));
+  assert.deepEqual(orphaned, [], `phrases naming no known failure class: ${orphaned.join(", ")}`);
+});
+
+// The vocabulary is not validated on write, deliberately, so that an unknown
+// class cannot throw inside the control plane at 3am. This is what replaces
+// that check: the real ledger must stay inside the declared set.
+test("the committed ledger holds no failure class outside the declared vocabulary", async () => {
+  const { FAILURE_CLASSES } = await import("./nightly-ledger.mjs");
+  const ledger = JSON.parse(readFileSync(new URL("../../nightly-logs/nightly-run-ledger.json", DIR), "utf8"));
+
+  const seen = new Set();
+  for (const run of Object.values(ledger.runs || {})) {
+    for (const entry of Object.values(run)) {
+      if (entry?.failureClass) seen.add(entry.failureClass);
+    }
+  }
+
+  const undeclared = [...seen].filter(name => !(name in FAILURE_CLASSES));
+  assert.deepEqual(undeclared, [], `ledger holds failure classes nothing declares: ${undeclared.join(", ")}`);
+  // Guards the guard: if the ledger stops being readable, or the shape changes
+  // under us, this test would otherwise pass by finding nothing at all.
+  assert.ok(seen.size >= 5, `expected the ledger to hold several failure classes, found ${seen.size}`);
+});

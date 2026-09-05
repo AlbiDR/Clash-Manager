@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
-import { ensureRunEntries, loadLedger, prNumberFromTag, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
+import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
@@ -68,7 +68,7 @@ const STAGE_BRANCH_PREFIX = "nightly/stage-";
 // A COMPLETED Jules session with no published PR is holding a finished change
 // set that its native publisher never shipped. Nudging asks it to hand that
 // work over; it never asks the session to redo or re-decide anything.
-const RECOVERABLE_FAILURE_CLASSES = new Set(["JULES_SESSION_STUCK"]);
+const RECOVERABLE_FAILURE_CLASSES = new Set([FAILURE_CLASSES.JULES_SESSION_STUCK]);
 const MAX_RECOVERY_ATTEMPTS = 2;
 
 // Mirrors the finalization handoff wording the stage prompts already use, so a
@@ -698,7 +698,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
       entries.push({
         stage: stage.number,
         state: danglingSentinel ? "DEGRADED" : "MERGED",
-        failureClass: danglingSentinel ? "UNFINALIZED_SENTINEL" : null,
+        failureClass: danglingSentinel ? FAILURE_CLASSES.UNFINALIZED_SENTINEL : null,
         evidence: {
           tag: matchingTags[0] || null,
           coverageLog: stage.coverageLog,
@@ -724,7 +724,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
       entries.push({
         stage: stage.number,
         state: "RECOVERABLE",
-        failureClass: openCandidate.classification.kind === "inferred" ? "MALFORMED_BRANCH" : "OPEN_PR",
+        failureClass: openCandidate.classification.kind === "inferred" ? FAILURE_CLASSES.MALFORMED_BRANCH : FAILURE_CLASSES.OPEN_PR,
         evidence: {
           prNumber: openCandidate.pr.number,
           prUrl: openCandidate.pr.html_url,
@@ -744,7 +744,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
       entries.push({
         stage: stage.number,
         state: "BLOCKED",
-        failureClass: "UNCLASSIFIED_PR",
+        failureClass: FAILURE_CLASSES.UNCLASSIFIED_PR,
         evidence: {
           prNumber: blockedCandidate.pr.number,
           prUrl: blockedCandidate.pr.html_url,
@@ -805,12 +805,12 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
     // Without session evidence we cannot tell a stuck session from a stage that
     // never ran, so say so explicitly instead of guessing NO_PUBLISHED_OUTPUT.
     const failureClass = julesAvailable === false
-      ? "JULES_API_UNAVAILABLE"
+      ? FAILURE_CLASSES.JULES_API_UNAVAILABLE
       : julesMatch?.state === "COMPLETED"
-        ? "JULES_SESSION_STUCK"
+        ? FAILURE_CLASSES.JULES_SESSION_STUCK
         : julesMatch?.state === "FAILED"
-          ? "JULES_SESSION_FAILED"
-          : "NO_PUBLISHED_OUTPUT";
+          ? FAILURE_CLASSES.JULES_SESSION_FAILED
+          : FAILURE_CLASSES.NO_PUBLISHED_OUTPUT;
     entries.push({
       stage: stage.number,
       state: recurring ? "ESCALATED" : "NO_OUTPUT",
@@ -963,7 +963,7 @@ export async function recoverStuckStages({
       logLine(`Stage ${stageNumber}: recovered as PR #${match.pr.number}.`);
       upsertStageEntry(ledger, registry, date, stageNumber, {
         state: "RECOVERABLE",
-        failureClass: "RECOVERED_AFTER_NUDGE",
+        failureClass: FAILURE_CLASSES.RECOVERED_AFTER_NUDGE,
         evidence: { prNumber: match.pr.number, prUrl: match.pr.html_url },
       });
       recovered.push({ stage: stageNumber, prNumber: match.pr.number });
@@ -1174,7 +1174,7 @@ export async function publishStrandedWork({
       if (result.published) {
         upsertStageEntry(ledger, registry, date, entry.stage, {
           state: "RECOVERABLE",
-          failureClass: "RECOVERED_BY_FALLBACK_PUBLISH",
+          failureClass: FAILURE_CLASSES.RECOVERED_BY_FALLBACK_PUBLISH,
           evidence: {
             prNumber: result.prNumber,
             prUrl: result.prUrl,
@@ -1290,7 +1290,7 @@ export function recordObserverFailure({ ledger, registry, date, error }) {
   for (const stage of registry.stages) {
     upsertStageEntry(ledger, registry, date, stage.number, {
       state: "BLOCKED",
-      failureClass: "WATCHDOG_OBSERVER_FAILURE",
+      failureClass: FAILURE_CLASSES.WATCHDOG_OBSERVER_FAILURE,
       evidence: redactDeep({ reason: error?.message ?? String(error) }, redact),
     });
   }
