@@ -1860,3 +1860,59 @@ test("a malformed sidecar is not published and then declared repaired", () => {
   assert.equal(plan.source, "reconstructed", "a sidecar that fails the classifier is not trusted");
   assert.equal(classifyPrBody(plan.body), "OK", "and what does get published is checked");
 });
+
+// The heartbeat's own failure must not look like a quiet night.
+//
+// The first version of this loop skipped a session with no extractable patch
+// using the same `continue` as a stage with no session at all. If Jules ever
+// changed its output shape, every stage would take that path, the report would
+// say "not rehearsed tonight" every night, the run would exit 0, and the
+// fallback publisher would be undetectably dead again: the exact two-day
+// outage this rehearsal was built to prevent, reproduced inside the detector.
+function finishedSessionWithoutPatch(stageNumber, date) {
+  return {
+    id: `s${stageNumber}`,
+    name: `sessions/s${stageNumber}`,
+    state: "COMPLETED",
+    createTime: `${date}T01:00:00Z`,
+    prompt: `S${String(stageNumber).padStart(2, "0")}: work`,
+    outputs: [],
+  };
+}
+
+test("finished sessions that yield no change set are a broken extraction, not a quiet night", () => {
+  const date = "2026-08-11";
+  const observed = { julesSessions: [finishedSessionWithoutPatch(11, date), finishedSessionWithoutPatch(10, date)] };
+
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed });
+
+  assert.equal(rehearsal.rehearsed, 0);
+  assert.equal(rehearsal.finishedSessions, 2);
+  assert.equal(rehearsal.extractionBroken, true);
+  assert.equal(rehearsal.capable, false, "an unusable publisher is not an absence of evidence");
+  assert.equal(resolveExitCode({ observerHealthy: true, entries: [], fallbackCapable: rehearsal.capable }), 3);
+
+  const report = renderRehearsalReport(rehearsal);
+  assert.match(report, /CANNOT BE REHEARSED/);
+  assert.doesNotMatch(report, /not rehearsed tonight/, "must not read as the benign case");
+});
+
+// In-flight sessions legitimately hold nothing yet, so the alarm above must be
+// unreachable on the early passes of a night.
+test("an in-flight session holding nothing yet is still a quiet night", () => {
+  const date = "2026-08-11";
+  const observed = {
+    julesSessions: [{
+      id: "x", name: "sessions/x", state: "IN_PROGRESS", createTime: `${date}T01:00:00Z`,
+      prompt: "S11: work", outputs: [],
+    }],
+  };
+
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed });
+
+  assert.equal(rehearsal.finishedSessions, 0);
+  assert.equal(rehearsal.extractionBroken, false);
+  assert.equal(rehearsal.capable, null, "nothing to judge is not a failure");
+  assert.equal(resolveExitCode({ observerHealthy: true, entries: [], fallbackCapable: rehearsal.capable }), 0);
+  assert.match(renderRehearsalReport(rehearsal), /not rehearsed tonight/);
+});

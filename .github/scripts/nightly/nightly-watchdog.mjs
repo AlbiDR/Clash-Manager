@@ -1137,27 +1137,58 @@ async function safePullRequestFiles(number, config = CONFIG, filesImpl = fetchPu
  */
 export function rehearseFallbackPublisher({ registry, date, observed }) {
   const results = [];
+  // Counted separately, because "nothing to rehearse" and "everything that
+  // should have been rehearsable was not" are opposite facts that the original
+  // version of this loop collapsed into one `continue`.
+  //
+  // A finished session always holds its change set; that is the whole premise
+  // the fallback publisher rests on. So if finished sessions exist and none of
+  // them yields a patch, the extraction is broken, not the night. Left
+  // collapsed, that state reported "not rehearsed tonight" every night, exited
+  // 0, and read as benign, which would have made this heartbeat rot exactly the
+  // way the thing it watches rotted for two days in September. A detector whose
+  // own failure looks like a quiet night is not a detector.
+  let finishedSessions = 0;
   for (const stage of registry.stages) {
     const session = matchJulesSession(observed?.julesSessions, stage, date);
-    if (!session || !extractSessionPatch(session)) continue;
+    if (!session) continue;
+    if (String(session.state || "").toUpperCase() === "COMPLETED") finishedSessions += 1;
+    if (!extractSessionPatch(session)) continue;
     const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(stage.number, date) });
     results.push({ stage: stage.number, ok: plan.ok, reason: plan.ok ? null : plan.reason });
   }
 
+  // In-flight sessions legitimately hold nothing yet, so this can only fire
+  // once something has finished, and never on the early passes of a night.
+  const extractionBroken = finishedSessions > 0 && results.length === 0;
   const failed = results.filter(result => !result.ok);
   return {
     rehearsed: results.length,
     ready: results.length - failed.length,
     failed,
+    finishedSessions,
+    extractionBroken,
     // Only a total failure is a capability claim. One stage refusing can be a
     // legitimate write-boundary rejection for that stage's own patch; every
     // stage refusing means the publisher itself cannot build a plan any more,
     // which is precisely the 2026-09-03 breakage.
-    capable: results.length === 0 ? null : failed.length < results.length,
+    // `null` means genuinely nothing to judge. A broken extraction is NOT that:
+    // it is the publisher being unusable, reported as such rather than as an
+    // absence of evidence.
+    capable: extractionBroken ? false : results.length === 0 ? null : failed.length < results.length,
   };
 }
 
 export function renderRehearsalReport(rehearsal) {
+  if (rehearsal?.extractionBroken) {
+    return [
+      "",
+      `Fallback publisher: CANNOT BE REHEARSED. ${rehearsal.finishedSessions} session(s) finished and not one held a change set.`,
+      "A finished session always holds its change set, so this is the extraction failing rather than a quiet",
+      "night. Until it is fixed the publisher cannot be exercised OR trusted, and nothing else is watching it.",
+      "",
+    ].join("\n");
+  }
   if (!rehearsal || rehearsal.rehearsed === 0) {
     return "\nFallback publisher: not rehearsed tonight, no session held a change set to try it against.\n";
   }
