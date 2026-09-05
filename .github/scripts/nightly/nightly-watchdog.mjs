@@ -367,7 +367,13 @@ export function buildBodyRepair({ stage, verdict, declared, files, sidecar }) {
   // sentence: it would be a confident, wrong, specific claim.
   if (sidecar) {
     const sidecarChange = /^\s*Change:\s*(.*)$/m.exec(sidecar);
-    if (sidecarChange && sidecarChange[1].trim() === declared.summary.trim()) {
+    // Checked against the same classifier the damaged body failed, because
+    // repairing a body and then recording the result as OK without ever asking
+    // is how a ledger comes to hold a claim nobody verified. renderPrBody
+    // always emits the metadata block, so this should never fire; "should never
+    // fire" is what was said about the three formats that drifted today.
+    if (sidecarChange && sidecarChange[1].trim() === declared.summary.trim()
+      && classifyPrBody(sidecar) === "OK") {
       return { ok: true, stage: stage.number, verdict, body: sidecar, source: "sidecar" };
     }
   }

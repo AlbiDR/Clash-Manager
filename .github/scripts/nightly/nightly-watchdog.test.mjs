@@ -1841,3 +1841,22 @@ test("with no sidecar the repair still reconstructs what it can", () => {
   assert.match(plan.body, /Change: Did the thing/);
   assert.equal(classifyPrBody(plan.body), "OK");
 });
+
+// Publishing a body and then recording it as OK without checking is how a
+// ledger comes to hold a claim nobody verified. The sidecar is composed by
+// renderPrBody so it should always carry the metadata block, and "should
+// always" is what was said about the three formats that drifted today.
+test("a malformed sidecar is not published and then declared repaired", () => {
+  const plan = buildBodyRepair({
+    stage: REPAIR_STAGE,
+    verdict: "AD_LIBBED",
+    declared: { status: "CHANGED", target: "a.spec.ts", summary: "Did the thing" },
+    files: ["a.spec.ts"],
+    // Right Change line, no metadata block: passes the staleness gate and would
+    // have been published verbatim, leaving the body just as damaged.
+    sidecar: "### Nightly Stage 2\n\nChange: Did the thing\n",
+  });
+
+  assert.equal(plan.source, "reconstructed", "a sidecar that fails the classifier is not trusted");
+  assert.equal(classifyPrBody(plan.body), "OK", "and what does get published is checked");
+});
