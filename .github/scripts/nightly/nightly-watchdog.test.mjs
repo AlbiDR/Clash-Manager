@@ -34,6 +34,7 @@ import {
   renderStaleStagePrReport,
   renderRehearsalReport,
   renderSummary,
+  recordObserverFailure,
   rehearseFallbackPublisher,
   buildBodyRepair,
   repairPublishedBodies,
@@ -1649,4 +1650,124 @@ test("one stage refusing is named but does not claim the publisher is broken", (
   assert.equal(rehearsal.capable, true);
   assert.deepEqual(rehearsal.failed.map(f => f.stage), [10]);
   assert.match(renderRehearsalReport(rehearsal), /Stage 10 would NOT publish/);
+});
+
+// Failure classes that have never fired in 25 nights AND had no test. Every
+// other class in the ledger has been exercised by a real run at some point;
+// these three had been exercised by nothing at all. The fallback publisher had
+// tests and still rotted, so "never observed and never tested" is the weakest
+// position in the control plane and worth closing on principle.
+function stagePr({ number, stage, date, state = "open", branch = null, files = [], login = "google-labs-jules" }) {
+  const registryStage = registry.stages.find(s => s.number === stage);
+  return {
+    number,
+    state,
+    created_at: `${date}T04:00:00Z`,
+    user: { login },
+    base: { ref: "Nightly" },
+    head: { ref: branch ?? `${registryStage.branchPrefix}abcdef12-99`, sha: "deadbeef" },
+    html_url: `https://github.com/o/r/pull/${number}`,
+    files,
+  };
+}
+
+// A stage whose pull request opened but never merged. RECOVERABLE rather than a
+// failure: the work exists and is one merge away, which is a different problem
+// from a stage that published nothing.
+test("a stage pull request left open is RECOVERABLE with failureClass OPEN_PR", () => {
+  const date = "2026-08-11";
+  const observed = {
+    ...mergedObserved(date),
+    prs: [stagePr({ number: 900, stage: 5, date })],
+  };
+  // Stage 5 published nothing, so it must fall through to the PR candidates.
+  observed.tags.delete(`nightly/${expectedEvidenceDate(5, date)}/stage-5/pr-1405`);
+
+  const entry = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() })
+    .find(e => e.stage === 5);
+
+  assert.equal(entry.state, "RECOVERABLE");
+  assert.equal(entry.failureClass, "OPEN_PR");
+  assert.equal(entry.evidence.prNumber, 900);
+  // RECOVERABLE is a pass state, so an open PR must not redden the run: it is
+  // the merge coordinator's job, not an emergency.
+  assert.equal(resolveExitCode({ observerHealthy: true, entries: [entry] }), 0);
+});
+
+// A pull request on the target branch from an allowlisted author that matches
+// no stage branch and whose diff infers no stage. Nothing can be done with it
+// automatically, so it is reported rather than guessed at.
+test("an unclassifiable pull request is BLOCKED with failureClass UNCLASSIFIED_PR", () => {
+  const date = "2026-08-11";
+  const observed = {
+    ...mergedObserved(date),
+    prs: [stagePr({ number: 901, stage: 5, date, branch: "some/random-branch", files: ["README.md"] })],
+  };
+  observed.tags.delete(`nightly/${expectedEvidenceDate(5, date)}/stage-5/pr-1405`);
+
+  const entry = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() })
+    .find(e => e.stage === 5);
+
+  assert.equal(entry.state, "BLOCKED");
+  assert.equal(entry.failureClass, "UNCLASSIFIED_PR");
+  assert.equal(entry.evidence.prNumber, 901);
+  assert.match(entry.evidence.reason, /coverage log/i);
+  // BLOCKED is not a pass state, so it surfaces as exit 2. Non-blocking on
+  // purpose: a stray pull request must not redden a night whose stages worked.
+  assert.equal(resolveExitCode({ observerHealthy: true, entries: [entry] }), 2);
+});
+
+// Documents a blast radius that is easy to miss. The blocked lookup cannot
+// filter by stage, because an unclassifiable pull request has no stage by
+// definition, so ONE stray pull request is attributed to every stage that has
+// not published and whose evidence date it matches. Stage 1 is exempt only
+// because it looks at the previous calendar day.
+//
+// Asserted rather than fixed: this is existing behaviour, it is arguably right
+// (an unclassifiable PR is a pipeline-level problem, not a stage-level one),
+// and changing it is a decision about alarm design rather than a bug fix.
+test("one unclassifiable pull request is attributed to every unpublished stage of that date", () => {
+  const date = "2026-08-11";
+  const observed = {
+    ...mergedObserved(date),
+    prs: [stagePr({ number: 902, stage: 5, date, branch: "some/random-branch", files: ["README.md"] })],
+  };
+  for (const stage of registry.stages) {
+    observed.tags.delete(`nightly/${expectedEvidenceDate(stage.number, date)}/stage-${stage.number}/pr-${1400 + stage.number}`);
+  }
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger(), final: true });
+  const blocked = entries.filter(e => e.failureClass === "UNCLASSIFIED_PR").map(e => e.stage);
+
+  assert.deepEqual(blocked, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+  assert.equal(entries.find(e => e.stage === 1).failureClass, "NO_PUBLISHED_OUTPUT",
+    "stage 1 reads the previous calendar day, so the same pull request does not reach it");
+});
+
+// The third never-fired, never-tested class. Its exit-code contract was already
+// covered (observerHealthy false is exit 1); what was not covered is what it
+// WRITES, and that is the half that matters. This job holds JULES_API_KEY, the
+// repository is public, and the ledger is committed to it.
+test("an observer failure marks every stage and never publishes a credential", () => {
+  const date = "2026-08-11";
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  configureRedaction({ julesApiKey: "sk-live-SUPERSECRET", token: "ghp_TOKENVALUE" });
+
+  // Exactly the shape that makes this dangerous: a failed fetch echoing back
+  // the URL it was called with, credential included.
+  const error = new Error("fetch failed: https://jules.googleapis.com/v1alpha/sessions?key=sk-live-SUPERSECRET");
+  const entries = recordObserverFailure({ ledger, registry, date, error });
+
+  assert.equal(entries.length, 13, "the observer reached no verdict on any stage, so all 13 are marked");
+  for (const entry of entries) {
+    assert.equal(entry.state, "BLOCKED");
+    assert.equal(entry.failureClass, "WATCHDOG_OBSERVER_FAILURE");
+  }
+
+  const written = JSON.stringify(ledger);
+  assert.ok(!written.includes("sk-live-SUPERSECRET"), "the ledger is committed to a public repository");
+  assert.match(stageEntry(ledger, date, 7).evidence.reason, /fetch failed/, "the diagnosis survives redaction");
+
+  configureRedaction({ julesApiKey: "", token: "" });
 });

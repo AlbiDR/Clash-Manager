@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.7",
+  "version": "14.50.8",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {

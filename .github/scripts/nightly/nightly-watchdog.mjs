@@ -1267,6 +1267,36 @@ export function renderSummary(date, entries) {
  *      every night, and a fallback publisher that can no longer publish. All
  *      three are silent by nature, which is the only reason they are blocking.
  */
+/**
+ * Records that the observer itself failed, against every stage.
+ *
+ * Extracted from runCli purely so it can be tested. WATCHDOG_OBSERVER_FAILURE
+ * is one of three classes that had never fired in 25 nights and had no test
+ * either, and unlike the other two it was unreachable from any unit test
+ * because it lives in runCli's catch, which takes no injectable observer.
+ *
+ * The property worth protecting is the redaction, not the state. This job
+ * deliberately holds JULES_API_KEY, the repository is PUBLIC, and the ledger it
+ * writes is committed to it. An observer failure is exactly the moment a raw
+ * error message is most likely to carry a credential, because a failed fetch
+ * can echo the URL it was called with. Writing `error.message` straight into
+ * the ledger would publish it.
+ *
+ * Every stage is marked rather than just the one being examined: the observer
+ * failed before it reached a verdict on any of them, so claiming knowledge
+ * about any single stage would be a lie about what was seen.
+ */
+export function recordObserverFailure({ ledger, registry, date, error }) {
+  for (const stage of registry.stages) {
+    upsertStageEntry(ledger, registry, date, stage.number, {
+      state: "BLOCKED",
+      failureClass: "WATCHDOG_OBSERVER_FAILURE",
+      evidence: redactDeep({ reason: error?.message ?? String(error) }, redact),
+    });
+  }
+  return Object.values(ledger.runs[date]);
+}
+
 export function resolveExitCode({ observerHealthy, promotion, entries, julesAvailable, chronicStages, fallbackCapable }) {
   if (!observerHealthy) return 1;
 
@@ -1365,14 +1395,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
     entries = evaluateNightlyRun({ registry, date, observed, previousLedger: ledger, final: options.get("final") === true });
   } catch (error) {
     observerHealthy = false;
-    for (const stage of registry.stages) {
-      upsertStageEntry(ledger, registry, date, stage.number, {
-        state: "BLOCKED",
-        failureClass: "WATCHDOG_OBSERVER_FAILURE",
-        evidence: redactDeep({ reason: error.message }, redact),
-      });
-    }
-    entries = Object.values(ledger.runs[date]);
+    entries = recordObserverFailure({ ledger, registry, date, error });
   }
 
   for (const entry of entries) {
