@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-/**
- * [LOGIC] USE BENCHMARKING
- * Statistical engine for comparing player performance against clan averages.
- *
- * Optimized to perform single-pass calculations for all metrics to ensure
- * maximum performance on large datasets.
- */
 import { useAppSettings, type ModuleState } from "./useAppSettings";
 import { useClashDataStore } from "./useClashDataStore";
 import { storeToRefs } from "pinia";
@@ -18,6 +11,10 @@ import { parseTimeAgoValue } from "../utils/time";
 
 /**
  * Result object for a benchmarking comparison.
+ *
+ * @remarks
+ * Satisfies ADR Section I: Core Services & Section IV: Performance & Analytics.
+ * Provides normalized statistical metrics comparing individual member performance against clan baselines.
  */
 export interface BenchmarkData {
   /** Human-readable name of the metric (e.g., 'Trophy Rank'). */
@@ -48,7 +45,7 @@ type MetricMetadata = {
 };
 
 // [PERF] PERFORMANCE: Singleton state for benchmarking engine.
-// Moving state and logic to module level prevents O(N) re-creation of computed properties
+// [DECISION LOG] Moving state and logic to module level prevents O(N) re-creation of computed properties
 // and extractors when useBenchmarking is called in large lists (e.g., MemberCard).
 let lbStats: ComputedRef<StatsMap | null> | null = null;
 let hhStats: ComputedRef<StatsMap | null> | null = null;
@@ -56,7 +53,10 @@ let sharedModules: ModuleState | null = null;
 
 /**
  * [PERF] LB METRIC EXTRACTORS
- * Rationale: Hoisted to module level to prevent allocation churn.
+ *
+ * @remarks
+ * Satisfies ADR Section IV: Performance.
+ * Hoisted to module level to eliminate per-render allocation churn in list view components.
  */
 const LB_EXTRACTORS: Record<string, (m: LeaderboardMember) => number> = {
   trophies: (m) => m.t || 0,
@@ -73,7 +73,10 @@ const LB_EXTRACTORS: Record<string, (m: LeaderboardMember) => number> = {
 
 /**
  * [PERF] HH METRIC EXTRACTORS
- * Rationale: Hoisted to module level to prevent allocation churn.
+ *
+ * @remarks
+ * Satisfies ADR Section IV: Performance.
+ * Hoisted to module level to eliminate per-render allocation churn in recruit list components.
  */
 const HH_EXTRACTORS: Record<string, (m: Recruit) => number> = {
   trophies: (m) => m.t || 0,
@@ -88,7 +91,10 @@ const HH_EXTRACTORS: Record<string, (m: Recruit) => number> = {
 
 /**
  * [PERF] BENCHMARK LABELS
- * Rationale: Hoisted to module level to prevent allocation churn.
+ *
+ * @remarks
+ * Satisfies ADR Section IV: Performance.
+ * Hoisted to module level to prevent string allocation churn across render cycles.
  */
 const BENCHMARK_METRICS: Record<string, MetricMetadata> = {
   trophies: { label: "Trophy Rank" },
@@ -110,18 +116,20 @@ const BENCHMARK_METRICS: Record<string, MetricMetadata> = {
  * [PERF] SINGLE-PASS STATS CALCULATOR
  *
  * @remarks
- * Reduces loop complexity from O(N*M) passes to O(N) by aggregating all
- * metrics in one traversal. This is critical for maintaining 60FPS when
- * processing large member lists.
+ * Satisfies ADR Section IV: Performance.
+ * Reduces loop complexity from O(N*M) passes to O(N) by aggregating all metrics in one traversal.
+ * Critical for maintaining 60FPS UI response when evaluating large roster datasets.
  *
+ * @template T - The type of candidate item being analyzed.
  * @param candidatePool - Readonly array of items to analyze.
  * @param metricExtractors - Dictionary of functions to pull numeric values from items.
- * @returns A map of calculated statistics (avg, max, min) per metric.
+ * @returns A map of calculated statistics (avg, max, min) per metric, or null if candidate pool is empty.
  */
 const calculateStats = <T>(
   candidatePool: readonly T[],
   metricExtractors: Record<string, (item: T) => number>,
 ): StatsMap | null => {
+  // [GUARD] GUARD: Early return on empty datasets to prevent division by zero or NaN statistics propagation.
   if (!candidatePool.length) return null;
 
   const keys = Object.keys(metricExtractors);
@@ -130,12 +138,12 @@ const calculateStats = <T>(
     { sum: number; max: number; min: number }
   > = {};
 
-  // Initialize
+  // Initialize accumulators
   for (let i = 0; i < keys.length; i++) {
     statAccumulators[keys[i]] = { sum: 0, max: -Infinity, min: Infinity };
   }
 
-  // Single Pass
+  // [PERF] Single-pass aggregation across all metrics per item
   for (let i = 0; i < candidatePool.length; i++) {
     const candidateItem = candidatePool[i];
     for (let j = 0; j < keys.length; j++) {
@@ -167,18 +175,18 @@ const calculateStats = <T>(
  * CORE: getBenchmark
  *
  * @remarks
- * Computes comparative data for a specific metric by looking up pre-calculated
- * statistics in the singleton state.
+ * Satisfies ADR Section I: Core Services.
+ * Computes comparative data for a specific metric by looking up pre-calculated statistics in singleton state.
  *
  * **Tier Resolution:**
- * - **ELITE**: Value is >= 90% of the maximum recorded value.
- * - **TOP TIER**: Value is above the clan average.
- * - **GROWING**: Value is between 50% and 100% of the clan average.
- * - **UNDER**: Value is below 50% of the clan average.
+ * - **ELITE**: Value is >= 90% of maximum recorded value (or <= 1.1x min for inverted metrics).
+ * - **TOP TIER**: Value is above clan average.
+ * - **GROWING**: Value is between 50% and 100% of clan average.
+ * - **UNDER**: Value is below 50% of clan average (or > 2x average for inverted metrics).
  *
  * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
  * @param metric - The key of the metric to compare.
- * @param value - The individual player's value for the metric.
+ * @param value - The individual player's numeric value for the metric.
  * @returns A BenchmarkData object or null if statistics are unavailable.
  */
 function getBenchmark(
@@ -186,6 +194,7 @@ function getBenchmark(
   metric: string,
   value: number,
 ): BenchmarkData | null {
+  // [DECISION LOG] Context-based lookup ensures strict separation between internal roster statistics and external recruit metrics.
   const stats = context === "lb" ? lbStats?.value : hhStats?.value;
   if (!stats) return null;
 
@@ -194,6 +203,7 @@ function getBenchmark(
 
   const metricMetadata = BENCHMARK_METRICS[metric];
   const scoreDelta = value - metricStats.avg;
+  // [DECISION LOG] Safeguard against division by zero if metricStats.avg is 0.
   const deviationPercentage = Math.abs(Math.round((scoreDelta / (metricStats.avg || 1)) * 100));
   const isAboveAverage = metricMetadata?.lowerIsBetter ? scoreDelta <= 0 : scoreDelta >= 0;
 
@@ -201,6 +211,7 @@ function getBenchmark(
   const label =
     typeof labelRaw === "function" ? labelRaw(context) : labelRaw || metric;
 
+  // [DECISION LOG] Performance tier mapping branches based on whether lower metric values represent better performance (e.g. lastSeen duration).
   const performanceTier = metricMetadata?.lowerIsBetter
     ? value <= metricStats.min * 1.1
       ? "ELITE"
@@ -234,49 +245,52 @@ function getBenchmark(
  * HELPER: getSafeBenchmark
  *
  * @remarks
- * Combines App Settings (ghostBenchmarking toggle) and value validation
- * to provide a clean, one-liner for template tooltips.
+ * Satisfies ADR Section I: Core Services.
+ * Combines App Settings (ghostBenchmarking feature flag toggle) and value validation
+ * to provide a safe evaluation boundary for UI templates and tooltips.
  *
- * @param context - The dataset context ('lb' or 'hh').
- * @param metric - The key of the metric.
- * @param value - The value to compare (handles undefined).
- * @returns A BenchmarkData object or null if benchmarking is disabled or value is missing.
+ * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
+ * @param metric - The key of the metric to compare.
+ * @param value - The value to compare (handles undefined values gracefully).
+ * @returns A BenchmarkData object or null if ghost benchmarking is disabled or value is missing.
  */
 function getSafeBenchmark(
   context: "lb" | "hh",
   metric: string,
   value: number | undefined,
 ): BenchmarkData | null {
+  // [GUARD] GUARD: Check ghostBenchmarking setting toggle and value existence before running statistical lookup.
   if (!sharedModules?.ghostBenchmarking || value === undefined) return null;
   return getBenchmark(context, metric, value);
 }
 
 /**
- * COMPOSABLE: useBenchmarking
+ * COMPOSABLE: useBenchmarking (Layer 1 - @core)
  *
  * @remarks
- * Statistical engine for comparing player performance against clan averages.
- * Optimized via a module-level singleton pattern to share results across
- * all component instances.
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Service (@core/services).
+ * - **Role:** Statistical engine for comparing player performance against clan averages.
+ * - **Satisfaction:** Satisfies ADR Section I: Core Services & Section IV: Performance.
  *
- * **Architecture:**
- * - **Structural Unitary Architecture:** Acts as a Layer 1 core service.
- * - **Clinical Isolation:** Logic is domain-agnostic, relying on extractors
- *   provided at the core level.
+ * Optimized via a module-level singleton pattern to share calculated metrics across all component instances
+ * without duplicating reactive listeners or statistical passes.
  *
- * @returns
- * - `getBenchmark`: Direct comparison function.
- * - `getSafeBenchmark`: Settings-guarded comparison function.
+ * [ARCHITECTURE] ADR LAYER: @core
+ * - Permitted Imports: Layer 1 services, Pinia stores, and Vue core.
+ * - Forbidden Imports: Any component or service from Layer 2 (Shared) or Layer 3 (Features).
+ *
+ * @returns Object contract containing `getBenchmark` and `getSafeBenchmark` comparison helper functions.
  */
 export function useBenchmarking() {
-  // [PERF] LAZY INIT: Only initialize the singleton when first requested.
-  // This avoids evaluation issues during testing and ensures state is ready.
+  // [PERF] LAZY INIT: Singleton state initialized on first composable invocation to defer calculation until needed.
   if (!lbStats) {
     const clashDataStore = useClashDataStore();
     const { data } = storeToRefs(clashDataStore);
     const { modules } = useAppSettings();
     sharedModules = modules;
 
+    // [DECISION LOG] Module-level computed properties share statistical aggregations across all component instances.
     lbStats = computed(() => {
       // Logic: Extract metrics for the Leaderboard (Internal Member) context
       const lb = data.value?.lb || [];
