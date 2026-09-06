@@ -68,7 +68,18 @@ const STAGE_BRANCH_PREFIX = "nightly/stage-";
 // A COMPLETED Jules session with no published PR is holding a finished change
 // set that its native publisher never shipped. Nudging asks it to hand that
 // work over; it never asks the session to redo or re-decide anything.
-const RECOVERABLE_FAILURE_CLASSES = new Set([FAILURE_CLASSES.JULES_SESSION_STUCK]);
+// JULES_SESSION_EMPTY is included on purpose even though a session holding
+// nothing cannot publish anything. Recovery behaviour is NOT being changed on a
+// single night's evidence: outputs[] may not be the whole story, a wasted nudge
+// costs one API call, and a recovery removed in error costs a stage its night.
+// The value of the new class is that the ledger and the recap name the
+// condition instead of calling it stuck, so its rate becomes visible. If it
+// proves common, dropping it from this set is the change to make then, with a
+// number to justify it.
+const RECOVERABLE_FAILURE_CLASSES = new Set([
+  FAILURE_CLASSES.JULES_SESSION_STUCK,
+  FAILURE_CLASSES.JULES_SESSION_EMPTY,
+]);
 const MAX_RECOVERY_ATTEMPTS = 2;
 
 // Mirrors the finalization handoff wording the stage prompts already use, so a
@@ -856,7 +867,9 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
     const failureClass = julesAvailable === false
       ? FAILURE_CLASSES.JULES_API_UNAVAILABLE
       : julesMatch?.state === "COMPLETED"
-        ? FAILURE_CLASSES.JULES_SESSION_STUCK
+        // A completed session that holds no change set has produced nothing to
+        // publish, so it is named separately rather than reported as stuck.
+        ? (extractSessionPatch(julesMatch) ? FAILURE_CLASSES.JULES_SESSION_STUCK : FAILURE_CLASSES.JULES_SESSION_EMPTY)
         : julesMatch?.state === "FAILED"
           ? FAILURE_CLASSES.JULES_SESSION_FAILED
           : FAILURE_CLASSES.NO_PUBLISHED_OUTPUT;

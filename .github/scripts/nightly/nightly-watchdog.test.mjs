@@ -188,6 +188,9 @@ test("watchdog classifies a completed-but-unmerged Jules session as stuck", () =
       state: "COMPLETED",
       createTime: `${date}T05:00:00Z`,
       prompt: "# [Stage 13] Self-Healing Protocol",
+      // Holding its finished work, which is what makes this the stuck case
+      // rather than the empty one.
+      outputs: [{ changeSet: { gitPatch: { unidiffPatch: `diff --git a/x b/x\n+* [${date}] [Stage 13] CLEAN: Codebase -- held work` } } }],
     },
   ];
 
@@ -311,6 +314,10 @@ function stuckObserved(date, stageNumber) {
       state: "COMPLETED",
       createTime: `${expectedEvidenceDate(stageNumber, date)}T02:00:00Z`,
       prompt: `# [Stage ${stageNumber}] stuck session`,
+      // STUCK means the session is HOLDING finished work its publisher never
+      // shipped, so the fixture has to carry one. Without it this is a
+      // different failure entirely: see JULES_SESSION_EMPTY.
+      outputs: [{ changeSet: { gitPatch: { unidiffPatch: `diff --git a/x b/x\n+* [${expectedEvidenceDate(stageNumber, date)}] [Stage ${stageNumber}] CLEAN: Codebase -- held work` } } }],
     },
   ];
   return observed;
@@ -2024,4 +2031,63 @@ test("a stage's own pull request still advances the frontier to it", () => {
   assert.equal(runFrontier({ registry, date, observed }), 11);
   const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
   assert.equal(entries.find(e => e.stage === 12).state, "EXPECTED", "12 is still behind the frontier");
+});
+
+// Stage 13 on 2026-09-06: session 8009187047099259726 was created at 11:23Z,
+// completed at 11:39Z, and held outputs []. The pipeline called that STUCK,
+// which sends a reader looking for finished work that was never produced, and
+// sends the fallback publisher after a change set that does not exist.
+function completedSession(stageNumber, date, { patch = null } = {}) {
+  return {
+    id: `s${stageNumber}`,
+    name: `sessions/s${stageNumber}`,
+    state: "COMPLETED",
+    createTime: `${date}T11:23:00Z`,
+    prompt: `S${String(stageNumber).padStart(2, "0")}: work`,
+    outputs: patch ? [{ changeSet: { gitPatch: { unidiffPatch: patch } } }] : [],
+  };
+}
+
+test("a completed session holding no change set is EMPTY, not STUCK", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${expectedEvidenceDate(13, date)}/stage-13/pr-1413`);
+  observed.julesSessions = [completedSession(13, date)];
+
+  const entry = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() })
+    .find(e => e.stage === 13);
+
+  assert.equal(entry.failureClass, "JULES_SESSION_EMPTY");
+  assert.notEqual(entry.failureClass, "JULES_SESSION_STUCK");
+});
+
+test("a completed session that IS holding work is still STUCK", () => {
+  const date = "2026-08-11";
+  const stage = registry.stages.find(s => s.number === 13);
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${expectedEvidenceDate(13, date)}/stage-13/pr-1413`);
+  observed.julesSessions = [completedSession(13, date, {
+    patch: `diff --git a/${stage.coverageLog} b/${stage.coverageLog}\n+* [${date}] [Stage 13] CLEAN: Codebase -- did it`,
+  })];
+
+  const entry = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() })
+    .find(e => e.stage === 13);
+
+  assert.equal(entry.failureClass, "JULES_SESSION_STUCK", "the distinction must not swallow the case the nudge exists for");
+});
+
+// Recovery behaviour is deliberately unchanged: naming the condition is the
+// point, not withdrawing the nudge on one night's evidence.
+test("an empty session is still offered to the recovery ladder", async () => {
+  const { FAILURE_CLASSES } = await import("./nightly-ledger.mjs");
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${expectedEvidenceDate(13, date)}/stage-13/pr-1413`);
+  observed.julesSessions = [completedSession(13, date)];
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  const candidates = selectRecoveryCandidates(entries, createEmptyLedger(), date);
+
+  assert.ok(candidates.some(c => c.stage === 13), "an empty session must still be nudged");
+  assert.ok(Object.keys(FAILURE_CLASSES).includes("JULES_SESSION_EMPTY"));
 });
