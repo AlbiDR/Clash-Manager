@@ -1593,7 +1593,10 @@ test("the fallback publisher is rehearsed against tonight's successful sessions"
   assert.equal(rehearsal.rehearsed, 2);
   assert.equal(rehearsal.ready, 2);
   assert.equal(rehearsal.capable, true);
-  assert.match(renderRehearsalReport(rehearsal), /rehearsed against 2 session\(s\), 2 would publish/);
+  // The denominator is now stated on the healthy path too, so a session that
+  // finished holding nothing is visible as arithmetic before anything names it.
+  assert.match(renderRehearsalReport(rehearsal), /rehearsed against 2 of 2 finished session\(s\), 2 would publish/);
+  assert.deepEqual(rehearsal.unrehearsable, []);
 });
 
 // The exact 2026-09-03 shape: every rehearsal refuses because the parser no
@@ -1915,4 +1918,58 @@ test("an in-flight session holding nothing yet is still a quiet night", () => {
   assert.equal(rehearsal.capable, null, "nothing to judge is not a failure");
   assert.equal(resolveExitCode({ observerHealthy: true, entries: [], fallbackCapable: rehearsal.capable }), 0);
   assert.match(renderRehearsalReport(rehearsal), /not rehearsed tonight/);
+});
+
+
+// The 2026-09-06 shape, and the case that was invisible to both existing
+// verdicts.
+//
+// Stage 13 finished with a complete, well-formed description and ZERO outputs
+// while every sibling held two. extractionBroken only fires when EVERY finished
+// session yields nothing, and `failed` only holds a stage whose patch existed
+// and was refused, so the one stage that actually lost its work appeared in
+// neither and the report read healthy.
+test("a session that finished holding nothing is named, not absorbed", () => {
+  const date = "2026-09-06";
+  const empty = { ...sessionWithPatch(13, date, "+irrelevant"), outputs: [] };
+  const observed = {
+    julesSessions: [
+      sessionWithPatch(11, date, `+* [${date}] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited settings`),
+      sessionWithPatch(10, date, `+* [${date}] [Stage 10] CLEAN: Codebase -- Audited wrapper`),
+      empty,
+    ],
+  };
+
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed });
+
+  // The publisher is genuinely fine, and must still say so. Blaming it for a
+  // Jules-side loss would point the reader at the wrong component.
+  assert.equal(rehearsal.capable, true, "an empty session is not the publisher failing");
+  assert.equal(rehearsal.extractionBroken, false, "one empty session is not a broken extraction");
+  assert.deepEqual(rehearsal.failed, [], "an absent patch is not a refused one");
+
+  // And the stage that lost its work is named anyway.
+  assert.deepEqual(rehearsal.unrehearsable, [13]);
+  const report = renderRehearsalReport(rehearsal);
+  assert.match(report, /rehearsed against 2 of 3 finished session\(s\)/, "the pair must be legible without the list");
+  assert.match(report, /1 finished session\(s\) held no change set at all: Stage 13\./);
+  assert.match(report, /cannot be recovered by the fallback publisher/);
+});
+
+// An in-flight session legitimately holds nothing yet, which is the same
+// distinction extractionBroken already makes. Counting it here would fire this
+// warning on every early pass of every night, and a warning that is always on
+// is one nobody reads.
+test("an in-flight session holding nothing is not called unrehearsable", () => {
+  const date = "2026-09-06";
+  const inFlight = { ...sessionWithPatch(13, date, "+irrelevant"), outputs: [], state: "IN_PROGRESS" };
+  const observed = {
+    julesSessions: [
+      sessionWithPatch(11, date, `+* [${date}] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited settings`),
+      inFlight,
+    ],
+  };
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed });
+  assert.deepEqual(rehearsal.unrehearsable, []);
+  assert.doesNotMatch(renderRehearsalReport(rehearsal), /held no change set/);
 });
