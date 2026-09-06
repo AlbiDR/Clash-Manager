@@ -1185,3 +1185,51 @@ test("fabricated failure rows do not advance the frontier", () => {
   assert.equal(recap.pending, 2);
   assert.equal(recap.stuck, 0);
 });
+
+
+// The regression this whole change exists for, pinned at the surface a person
+// actually reads.
+//
+// S08 published "PASS" alone on 2026-09-05 and again on 2026-09-06. Both times
+// the only guard that could have seen it groups identical results across a run
+// and fires at two or more, and a value used once is shared with nobody. So the
+// recap printed "Result: PASS." under the stage's own name, the first time
+// inside a run it graded 10 out of 10.
+test("a lone bare verdict is not printed as a stage's result", () => {
+  const text = renderRecap(singleStage({
+    stage: 8, slug: "dependency-audit", outcome: "CHANGED", prNumber: 1714, merged: true,
+    summary: "Bumped vue-tsc to ^3.3.11", why: "Safe patch bump for vue-tsc", result: "PASS",
+  }));
+  assert.doesNotMatch(text, /^Result:/m, "a verdict was printed as though it were evidence");
+  // Counted, not silently dropped. A quieter report must never read as a better
+  // one, which is the standing rule for every suppressed line here.
+  assert.match(text, /^Thin evidence:/m);
+  // And named as the pipeline's own default, because that is what it now is.
+  assert.match(text, /S08/);
+});
+
+// The duplicate detector keeps its job, which is narrower than it was: it
+// catches a generic phrase nobody has thought of yet. A bare verdict is now
+// recognised by name, so it must be reported as thin evidence rather than as an
+// unknown family, or the same defect gets counted twice under two labels.
+test("a recognised bare verdict is not also reported as unknown boilerplate", () => {
+  const text = renderRecap(singleStage({
+    stage: 2, slug: "verification", outcome: "CHANGED", prNumber: 1708, merged: true,
+    summary: "Expanded useAppSettings unit test coverage",
+    why: "Close L1 core settings composable testing gap", result: "PASSED",
+  }));
+  assert.doesNotMatch(text, /^Unrecognised boilerplate:/m);
+  assert.match(text, /^Thin evidence:/m);
+});
+
+// The other direction, and the one that would quietly gut the report: a stated
+// result must still reach the reader untouched.
+test("a stated result still reaches the reader", () => {
+  const text = renderRecap(singleStage({
+    stage: 8, slug: "dependency-audit", outcome: "CHANGED", prNumber: 1714, merged: true,
+    summary: "Bumped vue-tsc to ^3.3.11", why: "Safe patch bump for vue-tsc",
+    result: "pnpm -F clash-manager-pwa type-check passed with 0 errors",
+  }));
+  assert.match(text, /^Result: pnpm -F clash-manager-pwa type-check passed with 0 errors\.$/m);
+  assert.doesNotMatch(text, /^Thin evidence:/m);
+});

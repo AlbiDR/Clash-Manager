@@ -18,6 +18,8 @@ import {
   prBodyPath,
   renderPlainSummary,
   renderPrBody,
+  resolveResult,
+  workPhase,
   replaceSentinel,
   sentinelLine,
   prBodySidecarPath,
@@ -27,6 +29,7 @@ import {
   formatRunWindow,
 } from "./nightly-stage.mjs";
 import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
+import { placeholderResult } from "./nightly-prose.mjs";
 
 const scriptPath = fileURLToPath(new URL("./nightly-stage.mjs", import.meta.url));
 const contextScriptPath = fileURLToPath(new URL("./update-nightly-context.sh", import.meta.url));
@@ -555,4 +558,86 @@ test("a diff carrying the sidecar still passes every status it should", () => {
   // The sidecar is absent from the returned paths, so callers that report the
   // diff do not show the pipeline's own bookkeeping as the stage's work.
   assert.deepEqual(validateChangedPaths(stage4, "CLEAN", [stage4.coverageLog, sidecar4]), [stage4.coverageLog]);
+});
+
+
+// The budget signal the evidence guard rides on. Both callers fail toward
+// SUBMIT, because the only thing worse than a thin result is no pull request.
+test("the work phase falls back to SUBMIT whenever the budget is unreadable", () => {
+  const now = Math.floor(Date.now() / 1000);
+  assert.equal(workPhase(undefined), "SUBMIT");
+  assert.equal(workPhase({}), "SUBMIT");
+  assert.equal(workPhase({ startEpoch: now }), "SUBMIT", "a start with no deadline says nothing");
+  assert.equal(workPhase({ startEpoch: now, workDeadlineEpoch: now }), "SUBMIT", "a zero-length budget is over");
+  assert.equal(workPhase({ startEpoch: now - 60, workDeadlineEpoch: now + 1800 }), "WORK");
+  assert.equal(workPhase({ startEpoch: now - 3600, workDeadlineEpoch: now - 900 }), "SUBMIT");
+});
+
+// The prevention half. This is the only moment in the pipeline where the agent
+// that owns the evidence is still running, so it is the only place a better
+// result can still be asked for rather than merely reported as missing.
+test("a bare verdict is refused while the stage still has budget to fix it", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+
+  for (const verdict of ["PASSED", "PASS", "OK", "CLEAN"]) {
+    assert.throws(
+      () => resolveResult(verdict, "CHANGED", working),
+      error => {
+        // A guard an agent cannot satisfy is a slower way to fail, so the
+        // message has to carry the offending value and a shape that would pass.
+        assert.match(error.message, new RegExp(verdict));
+        assert.match(error.message, /--result/);
+        assert.match(error.message, /pnpm audit:version reported 0 drift lines/);
+        return true;
+      },
+      `${verdict} was accepted as a result`,
+    );
+  }
+});
+
+// The safety-valve half, and the reason this can never cost a run its pull
+// request. Past the budget the same input is downgraded rather than refused:
+// the placeholder is a string every reader already recognises, so the result
+// is reported as absent instead of printed as evidence.
+test("a bare verdict past the budget is downgraded, never blocked", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const spent = { startEpoch: now - 3600, workDeadlineEpoch: now - 900 };
+  const errors = [];
+  const originalError = console.error;
+  console.error = message => errors.push(String(message));
+  try {
+    assert.equal(resolveResult("PASSED", "CHANGED", spent), placeholderResult("CHANGED"));
+    assert.equal(resolveResult("PASS", "CLEAN", spent), placeholderResult("CLEAN"));
+  } finally {
+    console.error = originalError;
+  }
+  assert.equal(errors.length, 2, "a downgrade must say so out loud");
+  assert.match(errors[0], /verdict with no evidence/);
+});
+
+// The path that must stay completely untouched: a stage that stated real
+// evidence is handed straight through, whatever the budget says.
+test("a stated result is never touched by the evidence guard", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const stated = "Vitest StorageService.spec.ts passed 7 of 7 tests, depcruise 0 violations";
+  for (const state of [
+    { startEpoch: now - 60, workDeadlineEpoch: now + 1800 },
+    { startEpoch: now - 3600, workDeadlineEpoch: now - 900 },
+    {},
+  ]) {
+    assert.equal(resolveResult(stated, "CHANGED", state), stated);
+  }
+  // Whitespace normalisation still applies; only the evidence rule is new.
+  assert.equal(resolveResult("  0   drift   lines  ", "CLEAN", {}), "0 drift lines");
+});
+
+// Omitting --result entirely is still allowed and still yields the placeholder.
+// The guard exists to stop a verdict MASQUERADING as evidence, not to force a
+// stage that genuinely has nothing to say into inventing something.
+test("an omitted result still falls back to the placeholder", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  assert.equal(resolveResult(undefined, "CLEAN", working), placeholderResult("CLEAN"));
+  assert.equal(resolveResult("", "CHANGED", working), placeholderResult("CHANGED"));
 });

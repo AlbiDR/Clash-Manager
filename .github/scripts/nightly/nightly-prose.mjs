@@ -161,6 +161,85 @@ export const PLACEHOLDER_RESULTS = new Set([
 ]);
 
 /**
+ * The words a verdict is made of, and nothing else.
+ *
+ * WHY A VOCABULARY AND NOT A LIST OF BAD STRINGS
+ * The three placeholder families above are exact strings, which works because
+ * the pipeline wrote them and knows them letter for letter. A stage writing its
+ * own contentless result is not constrained that way: "PASSED", "PASS", "OK"
+ * and "PASSED and CLEAN" are the same defect wearing four spellings, and a
+ * denylist would have to grow a fifth entry every time an agent picked a new
+ * synonym. Listing the vocabulary instead inverts that: the set is closed
+ * because the English for "it worked" is closed, while the ways to state
+ * evidence are open.
+ *
+ * WHAT IT IS FOR
+ * Deciding whether a Result says anything a reader could go and check. Strip
+ * these words out and a real result still names something: a command, a count,
+ * a file, a tool. A verdict leaves nothing behind, which is the whole test.
+ *
+ * Includes the handful of function words that would otherwise survive on their
+ * own ("and", "with", "the"), because "PASSED and CLEAN" must reduce to nothing
+ * the same way "PASSED" does. It deliberately does NOT include words that name
+ * a thing: "tests", "audit", "migrations" and "violations" are all residue, and
+ * a result containing one of them has said more than a verdict.
+ */
+export const VERDICT_VOCABULARY = new Set([
+  "pass", "passed", "passes", "passing", "fail", "failed", "fails", "failing",
+  "ok", "okay", "success", "successful", "successfully", "clean", "cleanly",
+  "done", "verified", "verify", "complete", "completed", "nominal", "green",
+  "good", "valid", "yes", "no", "na", "zero", "none", "all", "and", "or",
+  "with", "the", "a", "an", "is", "was", "were", "are", "of", "in", "on",
+  "for", "status", "result", "results", "state",
+]);
+
+// Token shape: a word, a number, or a tool-ish token such as `audit:apk`,
+// `StorageService.spec.ts` or `--check`. Punctuation between tokens is ignored,
+// so "PASS." and "PASS" reduce identically.
+const EVIDENCE_TOKEN = /[A-Za-z0-9][A-Za-z0-9.:/_+-]*/g;
+
+/**
+ * What a value still says once every verdict word is removed.
+ *
+ * Exported for the tests and for any caller that wants to explain a rejection
+ * to an agent, which is the difference between a guard an agent can satisfy and
+ * one it can only be blocked by.
+ */
+export function evidenceResidue(value) {
+  return String(value || "")
+    .match(EVIDENCE_TOKEN)
+    ?.filter(token => !VERDICT_VOCABULARY.has(token.replace(/[.:]+$/, "").toLowerCase()))
+    ?? [];
+}
+
+/**
+ * Whether a value is a verdict with no evidence behind it.
+ *
+ * THE HOLE THIS FILLS
+ * finalize required a Result to be non-empty and under 400 characters, and
+ * nothing else, so `--result "PASSED"` satisfied it. Downstream, the only guard
+ * that could have caught it groups identical results across a run and fires at
+ * two or more, which by construction cannot see the first one: S08 published
+ * "PASS" alone on 2026-09-05 and the recap printed it under a Result label
+ * inside a run it graded 10 out of 10. The next night four stages did it and
+ * three shared a spelling, so three were caught and S08's "PASS" was printed as
+ * evidence a second time.
+ *
+ * The shape of that regression is the reason this lives in the vocabulary file
+ * rather than in either reader. Placeholder rates fell from 13 of 13 on
+ * 2026-08-29 to 0 of 11 on 2026-09-06 as the pull request body stopped being
+ * carried by an agent's memory, and over the same two nights bare verdicts went
+ * from 0 to 4. The missing evidence did not go away when the transport was
+ * fixed; it changed into a spelling no reader recognised. One predicate, shared
+ * by every reader, is what stops the next disguise needing its own detector.
+ */
+export function isBareVerdict(value) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  return evidenceResidue(text).length === 0;
+}
+
+/**
  * Whether a metadata field holds a placeholder rather than something a stage
  * said, for any of the fields a nightly pull request body carries.
  *
@@ -190,7 +269,7 @@ export const PLACEHOLDER_RESULTS = new Set([
 export function isPlaceholderField(field, value, stage = null) {
   const text = String(value || "").trim();
   if (!text) return true;
-  if (field === "result") return PLACEHOLDER_RESULTS.has(text);
+  if (field === "result") return PLACEHOLDER_RESULTS.has(text) || isBareVerdict(text);
   if (field === "why") {
     return text === METADATA_PLACEHOLDERS.why
       || text === TAG_PLACEHOLDERS.why

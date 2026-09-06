@@ -110,6 +110,16 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
   result. Avoid generic bodies such as "audit complete", "no source changes
   required", or "fully optimized" unless the surrounding sentence explains what
   was checked and what passed.
+- The same rule binds `--result`, on every status and not only `CLEAN`. A result
+  states what the verification returned, so it must survive having the verdict
+  words removed from it: `PASSED`, `PASS`, `OK`, `CLEAN` and `PASSED and CLEAN`
+  all reduce to nothing and none of them is a result. Name the command and its
+  outcome instead, for example `pnpm audit:version reported 0 drift lines across
+  3 manifests` or `Vitest StorageService.spec.ts passed 7 of 7, depcruise 0
+  violations`. `finalize` enforces this while the work budget still says `WORK`
+  and will refuse a bare verdict; re-run it with the evidence you already have.
+  Past the budget the same value is recorded as an absent result rather than
+  blocking publication, which costs the run its only account of what it proved.
 
 ## 5. Logs and History Ownership
 

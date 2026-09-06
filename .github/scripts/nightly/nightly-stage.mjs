@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
-import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea, placeholderResult, placeholderWhy } from "./nightly-prose.mjs";
+import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea, evidenceResidue, isBareVerdict, placeholderResult, placeholderWhy } from "./nightly-prose.mjs";
 import { fileURLToPath } from "node:url";
 
 const FINAL_STATUSES = new Set(["CHANGED", "CLEAN", "SKIPPED", "PARTIAL-RUN"]);
@@ -291,6 +291,53 @@ function cleanPrDetail(value, fallback, label) {
   invariant(cleaned.length > 0, `A non-empty ${label} is required.`);
   invariant(cleaned.length <= 400, `${label} must be 400 characters or fewer.`);
   return cleaned;
+}
+
+/**
+ * The Result a stage publishes, and the last moment anyone can ask it for a
+ * better one.
+ *
+ * WHY HERE AND NOWHERE ELSE
+ * Every other guard in this pipeline runs after the session has ended: the
+ * merge coordinator substitutes defaults, the recap counts what it can
+ * recognise. Neither can recover a sentence the stage never wrote. finalize is
+ * the only code that runs while the agent is still alive, still holds the
+ * evidence it just gathered, and can be told to try again. A rule enforced
+ * anywhere later is a rule that can only ever be a report.
+ *
+ * WHY IT CANNOT BLOCK PUBLICATION
+ * The dominant historical failure of this pipeline is a session that ends
+ * without a pull request, which is far worse than one that publishes a thin
+ * Result. So the demand is made only while the budget still says WORK, when
+ * re-running one command costs the stage nothing. Once the budget says SUBMIT
+ * the same input is downgraded to the placeholder and publication continues,
+ * which is strictly better than today either way: the placeholder is a string
+ * every reader already recognises, so a Result that cannot be improved is at
+ * least reported as absent instead of printed as evidence.
+ *
+ * The rejection names the offending value and shows the shape that would pass,
+ * because a guard an agent cannot satisfy is just a slower way to fail.
+ */
+export function resolveResult(rawResult, status, state) {
+  const result = cleanPrDetail(rawResult, placeholderResult(status), "--result");
+  if (!isBareVerdict(result)) return result;
+
+  if (workPhase(state) === "SUBMIT") {
+    console.error(
+      `Nightly: --result ${JSON.stringify(result)} states a verdict with no evidence behind it.`
+      + " The work budget has ended, so it is recorded as an absent result rather than blocking publication.",
+    );
+    return placeholderResult(status);
+  }
+
+  throw new Error(
+    `--result ${JSON.stringify(result)} states a verdict but no evidence, so it cannot stand as this stage's result.\n`
+    + "Removing the verdict words from it leaves nothing a reader could go and check.\n"
+    + "Re-run finalize with a --result that names the verification actually performed and what it returned, for example:\n"
+    + '  --result "pnpm audit:version reported 0 drift lines across 3 manifests"\n'
+    + '  --result "Vitest StorageService.spec.ts passed 7 of 7 tests, depcruise 0 violations"\n'
+    + "Everything else about this finalize call was accepted; only --result needs rewriting.",
+  );
 }
 
 /**
@@ -778,15 +825,33 @@ function startCommand(repoRoot, registry, stage, dryRun) {
   console.log(`Nightly Stage ${stage.number} started. Work phase ends after ${registry.workBudgetMinutes} minutes.`);
 }
 
+/**
+ * WORK or SUBMIT, from a session state file, for every caller that needs it.
+ *
+ * Extracted because there are now two: the `budget` command an agent polls, and
+ * the Result evidence guard in finalize, which must never hold a stage to a
+ * standard it no longer has the minutes to meet. Two copies of a budget rule
+ * that disagree would let finalize demand work the budget had already ended.
+ *
+ * Absent or malformed state resolves to SUBMIT, which is the safe direction for
+ * both callers: it stops an agent working past a deadline it cannot read, and
+ * it lets a stage publish rather than blocking on a guard whose input is
+ * missing. That also retires a hardcoded 45-minute fallback that duplicated
+ * registry.workBudgetMinutes and would have gone stale the day it changed.
+ */
+export function workPhase(state) {
+  const startEpoch = state?.startEpoch;
+  const deadline = state?.workDeadlineEpoch;
+  if (!Number.isFinite(startEpoch) || !Number.isFinite(deadline) || deadline <= startEpoch) return "SUBMIT";
+  return budgetPhase(startEpoch, epochSeconds(), (deadline - startEpoch) / 60);
+}
+
 function budgetCommand(stage) {
   try {
     const statePath = path.join(contextDir(), "session-state.json");
     const state = JSON.parse(readFileSync(statePath, "utf8"));
     invariant(state.stage === stage.number, `Session state belongs to Stage ${state.stage}, not Stage ${stage.number}.`);
-    const workBudgetMinutes = state.workDeadlineEpoch
-      ? (state.workDeadlineEpoch - state.startEpoch) / 60
-      : 45;
-    console.log(budgetPhase(state.startEpoch, epochSeconds(), workBudgetMinutes));
+    console.log(workPhase(state));
   } catch (error) {
     console.error(`Nightly budget state unavailable; submit now: ${error.message}`);
     console.log("SUBMIT");
@@ -832,13 +897,14 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   invariant(FINAL_STATUSES.has(status), `--status must be one of ${[...FINAL_STATUSES].join(", ")}.`);
   const normalizedSummary = cleanSummary(summary);
   const why = cleanPrDetail(details.why, placeholderWhy(stage), "--why");
-  const result = cleanPrDetail(details.result, placeholderResult(status), "--result");
+  // Read before the Result is resolved: the evidence guard needs the budget to
+  // know whether it may still ask the stage for a better one.
+  const statePath = path.join(contextDir(), "session-state.json");
+  const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
+  const result = resolveResult(details.result, status, state);
   const date = readOptional(path.join(contextDir(), "TODAY")) || utcDate();
   const paths = changedPaths(repoRoot);
   validateChangedPaths(stage, status, paths);
-
-  const statePath = path.join(contextDir(), "session-state.json");
-  const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
 
   const logPath = path.join(repoRoot, stage.coverageLog);
   const sentinel = sentinelLine(date, stage.number);

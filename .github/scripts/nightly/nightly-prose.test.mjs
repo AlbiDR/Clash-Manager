@@ -15,6 +15,8 @@ import {
   changeLabel,
   countOf,
   displayArea,
+  isBareVerdict,
+  evidenceResidue,
   isPlaceholderField,
   joinList,
   placeholderResult,
@@ -155,4 +157,63 @@ test("the result placeholder set is derived from its writers, not restated", () 
   assert.ok(PLACEHOLDER_RESULTS.has(METADATA_PLACEHOLDERS.result));
   assert.ok(PLACEHOLDER_RESULTS.has(TAG_PLACEHOLDERS.result));
   assert.equal(PLACEHOLDER_RESULTS.size, 5);
+});
+
+
+// Every spelling of "it worked" that a stage actually published, plus the
+// near-misses. The literals are deliberate: this is the regression corpus for
+// the 2026-09-05 and 2026-09-06 runs, and it must keep failing if the predicate
+// is ever loosened back into accepting a verdict as evidence.
+test("a verdict with nothing behind it is not a result", () => {
+  for (const verdict of [
+    "PASSED", "PASS", "PASS.", "Passed.", "passed", "OK", "SUCCESS",
+    "CLEAN", "DONE", "VERIFIED", "NOMINAL", "PASSED and CLEAN",
+    "All passed", "Complete", "  PASSED  ",
+  ]) {
+    assert.ok(isBareVerdict(verdict), `${JSON.stringify(verdict)} should not stand as a result`);
+    assert.deepEqual(evidenceResidue(verdict), [], `${JSON.stringify(verdict)} left residue`);
+  }
+});
+
+// The other half, and the half that matters more: a guard that rejects real
+// evidence would push stages toward the placeholder, which is the defect it
+// exists to prevent. Every string here was published by a real stage.
+test("a result naming a method or a measurement is evidence", () => {
+  for (const result of [
+    "PASSED with 7 of 7 Vitest tests green",
+    "pnpm audit:version passed clean",
+    "Vitest unit tests executed and passed cleanly",
+    "Verified diff with git diff --check and confirmed ADR alignment",
+    "Audit PASS; 75 files verified clean across raw selects, safe areas, haptics",
+    "depcruise 0 violations; 1806 tests passed cleanly; CLEAN evidence floor satisfied",
+    "Toolchain probe verified via gradle; 1813 unit tests passed cleanly.",
+    "Static audit PASS: migration quality PASS, fold-state FOLDED, 0 pending migrations, DB-UNAVAILABLE.",
+    "Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:version-code, and pnpm test:apk-ux-audit",
+  ]) {
+    assert.equal(isBareVerdict(result), false, `${JSON.stringify(result)} was rejected`);
+    assert.ok(evidenceResidue(result).length > 0);
+  }
+});
+
+// An empty value is ABSENT, not a verdict. The distinction is the same one
+// isPlaceholderField's doc block warns about: the callers disagree on purpose
+// about what absence means, and folding the two together here would move that
+// disagreement somewhere neither caller can see it.
+test("an empty result is absent rather than a bare verdict", () => {
+  for (const empty of ["", "   ", null, undefined]) {
+    assert.equal(isBareVerdict(empty), false);
+  }
+});
+
+// The wiring, which is the whole reason the predicate lives in this file: the
+// merge coordinator and the recap must reach the same verdict about a value
+// without either one carrying its own copy of the rule.
+test("every reader treats a bare verdict as a placeholder", () => {
+  assert.ok(isPlaceholderField("result", "PASSED"));
+  assert.ok(isPlaceholderField("result", "PASS"));
+  assert.ok(isPlaceholderField("result", placeholderResult("CLEAN")));
+  assert.equal(isPlaceholderField("result", "pnpm audit:version reported 0 drift lines"), false);
+  // Scoped to the result field. A Change or a Why is a different kind of
+  // sentence and a one-word one is a separate defect, judged elsewhere.
+  assert.equal(isPlaceholderField("change", "PASSED"), false);
 });
