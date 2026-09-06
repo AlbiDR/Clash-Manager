@@ -100,6 +100,18 @@ export interface ScannerStats {
 export type RecruitStatus = "ACTIVE" | "BENCHED" | "QUEUE";
 
 /**
+ * Authoritative discovery sources.
+ *
+ * @remarks
+ * Mirrors the CHECK constraint on `drivers.recruits.source` exactly. Kept as a
+ * union rather than `string` so an invalid provenance is a compile error at the
+ * assignment rather than a constraint violation at the batch insert: recruit
+ * rows are sent to `sync_recruits` in ONE batch, so a single rejected value
+ * fails every row travelling with it.
+ */
+export type RecruitSource = "TOURNAMENT" | "SHADOW" | "TOURNAMENT_AUTO" | "MANUAL";
+
+/**
  * Standardized DTO for recruit synchronization via the 'sync_recruits' RPC.
  *
  * @remarks
@@ -132,7 +144,7 @@ export interface RecruitSyncRow {
    * the original provenance survives. A caller creating a recruit must supply
    * it: the column is NOT NULL and CHECK-constrained to those four values.
    */
-  source?: string;
+  source?: RecruitSource;
   /** Ingestion status (ACTIVE, BENCHED, QUEUE). */
   status: RecruitStatus | string;
 }

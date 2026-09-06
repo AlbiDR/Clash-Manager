@@ -3,7 +3,7 @@
 
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
-import { ScannerStats, AuditEntry, RecruitSyncRow } from "../../_shared/types.ts";
+import { ScannerStats, AuditEntry, RecruitSyncRow, RecruitSource } from "../../_shared/types.ts";
 import { calculateRpos, calculateWeightedWinRate } from "../../_shared/utils.ts";
 import {
     PROFILER_BATCH_CEILING,
@@ -46,7 +46,7 @@ import { RoyalePlayerSchema, RecruitFateSchema, StaleRecruitSchema } from "../..
  * @throws {Error} Re-throws unrecoverable database RPC errors or schema validation failures during recent scans fetch.
  */
 export async function runProfiler(
-    candidates: Map<string, string>,
+    candidates: Map<string, RecruitSource>,
     exclusionSet: Set<string>,
     requiredTrophies: number,
     stats: ScannerStats,
@@ -167,22 +167,43 @@ export async function runProfiler(
                             });
                             const winRate = calculateWeightedWinRate(wins, battleCount, three_crown_wins);
 
-                            validRecruits.push({
-                                player_tag: playerProfileSnapshot.tag,
-                                player_name: playerProfileSnapshot.name,
-                                trophies,
-                                donations,
-                                cards,
-                                war_wins: warWins,
-                                raw_potential_score: potentialRawScore,
-                                win_rate: winRate,
-                                source: candidates.get(playerTag) || 'UNKNOWN',
-                                status: 'ACTIVE'
-                            });
-                            if (wins > 0) withWins++;
-                            if (battleCount > 0) withBattleCount++;
-                            console.log(`[PROFILER] Admitted ${playerProfileSnapshot.tag} | trophies=${trophies} war=${warWins} donations=${donations} wins=${wins} battles=${battleCount} winRate=${winRate} rawScore=${potentialRawScore}`);
-                            validCount++;
+                            // [THREAT:] drivers.recruits.source is NOT NULL and CHECK-constrained
+                            // to four values, and these rows reach sync_recruits as ONE batch, so a
+                            // single row carrying a rejected value fails every row travelling with
+                            // it. The fallback here was 'UNKNOWN' - precisely the one value the
+                            // constraint forbids - so the guard written to be safe was the only way
+                            // to lose the whole batch. Unreachable today only because both writers
+                            // of `candidates` set a literal; nothing enforced that.
+                            // [DECISION LOG] A candidate whose provenance cannot be read is skipped
+                            // and recorded, never relabelled. Substituting a plausible source is the
+                            // PROVENANCE_ERASURE bug fixed in v14.50.33 wearing a different hat.
+                            const discoverySource = candidates.get(playerTag);
+                            if (discoverySource) {
+                                validRecruits.push({
+                                    player_tag: playerProfileSnapshot.tag,
+                                    player_name: playerProfileSnapshot.name,
+                                    trophies,
+                                    donations,
+                                    cards,
+                                    war_wins: warWins,
+                                    raw_potential_score: potentialRawScore,
+                                    win_rate: winRate,
+                                    source: discoverySource,
+                                    status: 'ACTIVE'
+                                });
+                                if (wins > 0) withWins++;
+                                if (battleCount > 0) withBattleCount++;
+                                console.log(`[PROFILER] Admitted ${playerProfileSnapshot.tag} | trophies=${trophies} war=${warWins} donations=${donations} wins=${wins} battles=${battleCount} winRate=${winRate} rawScore=${potentialRawScore}`);
+                                validCount++;
+                            } else {
+                                stats.errors.push(`Profiler: ${playerProfileSnapshot.tag} has no discovery source; skipped rather than batched with an invalid one`);
+                                logAudit('PROFILING', 'error', {
+                                    tag: playerProfileSnapshot.tag,
+                                    message: 'Candidate has no discovery source; skipped to protect the sync_recruits batch'
+                                });
+                                console.warn(`[PROFILER] Skipped ${playerProfileSnapshot.tag}: no discovery source recorded for this candidate.`);
+                                invalidCount++;
+                            }
                         } else {
                             console.log(`[PROFILER] Rejected ${playerProfileSnapshot.tag} | hasClan=${!!playerProfileSnapshot.clan?.tag} inExclusion=${exclusionSet.has(playerProfileSnapshot.tag)} trophies=${playerProfileSnapshot.trophies || 0} required=${requiredTrophies}`);
                             invalidCount++;

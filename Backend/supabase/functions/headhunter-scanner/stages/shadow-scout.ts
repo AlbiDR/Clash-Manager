@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { supabase } from "../client.ts";
-import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
+import { ScannerStats, AuditEntry, RecruitSource } from "../../_shared/types.ts";
 import { SHADOW_DISCOVERY_LIMIT } from "../../_shared/config.ts";
 import * as v from "npm:valibot@1.4.2";
 import { ShadowTargetSchema } from "../../_shared/schemas.ts";
@@ -38,7 +38,7 @@ import { ShadowTargetSchema } from "../../_shared/schemas.ts";
  * - Invokes external Supabase RPC endpoints (`get_shadow_discovery_targets`).
  */
 export async function runShadowScout(
-    candidates: Map<string, string>,
+    candidates: Map<string, RecruitSource>,
     exclusionSet: Set<string>,
     stats: ScannerStats,
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void

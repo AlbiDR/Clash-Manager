@@ -4,7 +4,7 @@
 import * as v from "npm:valibot@1.4.2";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
-import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
+import { ScannerStats, AuditEntry, RecruitSource } from "../../_shared/types.ts";
 import { DiscoveryAnchorSchema, DiscoveryCacheItemSchema, RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
 
 const ANCHOR_LIMIT = 36;
@@ -32,7 +32,7 @@ const runtimeTypeRegistry = new Set(KNOWN_TOURNAMENT_TYPES);
  * Scans active tournaments for un-clanned players meeting the trophy threshold.
  */
 export async function runTournamentDiscovery(
-    candidates: Map<string, string>,
+    candidates: Map<string, RecruitSource>,
     exclusionSet: Set<string>,
     requiredTrophies: number,
     stats: ScannerStats,

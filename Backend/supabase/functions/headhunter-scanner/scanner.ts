@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { supabase } from "./client.ts";
-import { ScannerStats, AuditEntry } from "../_shared/types.ts";
+import { ScannerStats, AuditEntry, RecruitSource } from "../_shared/types.ts";
 import * as v from "npm:valibot@1.4.2";
 import { HeadhunterContextSchema } from "../_shared/schemas.ts";
 import { runShadowScout } from "./stages/shadow-scout.ts";
@@ -68,7 +68,7 @@ export async function executeScanner(
 
     // [DECISION LOG] Candidates map tracks potential recruits discovered across different stages.
     // EPHEMERAL: intentionally resets on cold start
-    const candidates = new Map<string, string>(); // tag -> source
+    const candidates = new Map<string, RecruitSource>(); // tag -> source
 
     // --- TIMEOUT HELPER ---
     const STAGE_TIMEOUT = 10 * 60 * 1000; // 10 minutes

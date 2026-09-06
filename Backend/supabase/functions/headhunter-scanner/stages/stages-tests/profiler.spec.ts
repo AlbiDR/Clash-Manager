@@ -2,7 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
-import type { ScannerStats } from "../../../_shared/types.ts";
+import { readFileSync } from "node:fs";
+import type { ScannerStats, RecruitSource, RecruitSyncRow } from "../../../_shared/types.ts";
 import { calculateRpos, calculateWeightedWinRate } from "../../../_shared/utils.ts";
 
 /**
@@ -173,5 +174,76 @@ describe("runProfiler recruit persistence wiring", () => {
 
         const syncCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "sync_recruits");
         expect(syncCall).toBeUndefined();
+    });
+});
+
+// [THREAT:] drivers.recruits.source is NOT NULL and CHECK-constrained to four
+// values, and profiler sends its rows to sync_recruits in batches, so a single
+// row carrying a value the constraint rejects fails every row travelling with
+// it. The fallback here used to be 'UNKNOWN', which is precisely the one value
+// the constraint forbids: the guard written to be safe was the only way to lose
+// a batch. It was unreachable only because both writers of `candidates` happened
+// to set a literal, and nothing enforced that.
+describe("runProfiler discovery-source integrity", () => {
+    // The legal values are read from the migration that declares them rather than
+    // restated here. A copy would keep passing after the constraint changed, which
+    // is the failure this whole test exists to prevent.
+    function legalSourcesFromMigration(): string[] {
+        const sql = readFileSync(
+            new URL("../../../../migrations/20260531232406_master_migration.sql", import.meta.url),
+            "utf8",
+        );
+        const column = /source text NOT NULL CHECK \(source = ANY \(ARRAY\[([^\]]+)\]\)\)/.exec(sql);
+        expect(column, "could not locate the source CHECK constraint in the master migration").not.toBeNull();
+        return [...column![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    }
+
+    it("emits only sources the database CHECK constraint accepts", async () => {
+        const legal = legalSourcesFromMigration();
+        // Guards the loop below against passing vacuously if the regex ever stops matching.
+        expect(legal.length).toBeGreaterThan(0);
+        expect(legal).toContain("TOURNAMENT");
+
+        rpcQueues.get_recent_scans = [{ data: [], error: null }];
+        rpcQueues.get_recruits_fate = [{ data: [{ player_tag: "#PLAYER1" }], error: null }];
+        mockFetchWithRotation.mockResolvedValue({ ok: true, status: 200, json: async () => eligibleProfile });
+
+        const candidates = new Map<string, RecruitSource>([["#PLAYER1", "TOURNAMENT"]]);
+        const stats = freshStats();
+        await runProfiler(candidates, new Set(), 5000, stats, vi.fn());
+
+        const rows = mockSupabase.rpc.mock.calls
+            .filter(([name]: [string]) => name === "sync_recruits")
+            .flatMap(([, args]: [string, { p_recruits: RecruitSyncRow[] }]) => args.p_recruits);
+
+        expect(rows.length).toBeGreaterThan(0);
+        for (const row of rows) {
+            expect(legal, `row for ${row.player_tag} carried an illegal source`).toContain(row.source);
+        }
+    });
+
+    // [DECISION LOG] A candidate whose provenance cannot be read is skipped and
+    // recorded, never relabelled. Substituting a plausible source is the
+    // PROVENANCE_ERASURE bug fixed in v14.50.33 wearing a different hat, and
+    // substituting an implausible one destroys the batch.
+    it("skips a candidate with no recorded source instead of batching an invalid one", async () => {
+        rpcQueues.get_recent_scans = [{ data: [], error: null }];
+        rpcQueues.get_recruits_fate = [{ data: [{ player_tag: "#PLAYER1" }], error: null }];
+        mockFetchWithRotation.mockResolvedValue({ ok: true, status: 200, json: async () => eligibleProfile });
+
+        // The invariant broken deliberately: a key present with no source behind it.
+        const candidates = new Map([["#PLAYER1", undefined]]) as unknown as Map<string, RecruitSource>;
+        const stats = freshStats();
+        await runProfiler(candidates, new Set(), 5000, stats, vi.fn());
+
+        const rows = mockSupabase.rpc.mock.calls
+            .filter(([name]: [string]) => name === "sync_recruits")
+            .flatMap(([, args]: [string, { p_recruits: RecruitSyncRow[] }]) => args.p_recruits);
+
+        // Nothing is written for it, and nothing invents a source on its behalf.
+        expect(rows).toHaveLength(0);
+        // And the skip is recorded rather than silent: a candidate vanishing without
+        // a trace is how this would go unnoticed a second time.
+        expect(stats.errors.some((e) => e.includes("no discovery source"))).toBe(true);
     });
 });
