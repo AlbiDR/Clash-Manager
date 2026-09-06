@@ -45,6 +45,14 @@ export const FAILURE_CLASSES = Object.freeze({
   // Jules-side outcomes.
   JULES_SESSION_STUCK: "JULES_SESSION_STUCK",
   JULES_SESSION_FAILED: "JULES_SESSION_FAILED",
+  // Completed, and holding nothing. Distinct from STUCK, which means a session
+  // is sitting on finished work its publisher never shipped: there the work
+  // exists and only its delivery failed, which is what the nudge and the
+  // fallback publisher are both built to rescue. Here there is nothing to
+  // deliver, so neither can help and calling it STUCK sends a reader looking
+  // for work that was never produced. Observed on Stage 13, 2026-09-06:
+  // session 8009187047099259726 created 11:23Z, completed 11:39Z, outputs [].
+  JULES_SESSION_EMPTY: "JULES_SESSION_EMPTY",
   JULES_API_UNAVAILABLE: "JULES_API_UNAVAILABLE",
   // Nothing published, and nothing to say why.
   NO_PUBLISHED_OUTPUT: "NO_PUBLISHED_OUTPUT",
