@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1710 [Stage 4]: Codebase
+**Domain:** optimization | **Commit:** c51e18c8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1710)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Substrate hygiene audit confirmed known unreferenced views; no source changes required
+**Change:** Codebase
+**Result:** Audit passed; 195 test files passed in Frontend-PWA
+
+
 ### [2026-09-06] PR #1709 [Stage 3]: Read-only baseline schema audit complete; 0 pending migrations, fold-state FOLDED, migration-quality PASS, database verification DB-UNAVAILABLE
 **Domain:** database | **Commit:** 2b8ec41c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1709)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
