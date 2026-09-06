@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.37",
+  "version": "14.50.38",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -41,13 +41,15 @@
     "test:commit-trailers": "node --test .github/scripts/project/commit-trailers.test.mjs",
     "test:agents-link": "node --test .github/scripts/agents/link-agent-dirs.test.mjs",
     "test:agents-audit": "node --test .github/scripts/agents/agents-audit.test.mjs",
-    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:nightly-history && pnpm test:apk-ux-audit",
+    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:nightly-history && pnpm test:apk-ux-audit && pnpm test:cron-schedule",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json",
     "prepare": "simple-git-hooks && node .github/scripts/agents/link-agent-dirs.mjs",
     "test:nightly-prose": "node --test .github/scripts/nightly/nightly-prose.test.mjs",
-    "test:nightly-coherence": "node --test .github/scripts/nightly/nightly-coherence.test.mjs"
+    "test:nightly-coherence": "node --test .github/scripts/nightly/nightly-coherence.test.mjs",
+    "audit:cron": "node .github/scripts/database/audit-cron-schedule.mjs",
+    "test:cron-schedule": "node --test .github/scripts/database/audit-cron-schedule.test.mjs"
   },
   "devDependencies": {
     "@ast-grep/cli": "catalog:",

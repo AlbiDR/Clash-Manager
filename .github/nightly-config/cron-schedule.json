@@ -1,0 +1,24 @@
+{
+  "$comment": [
+    "Declared SSOT for pg_cron jobs on the remote project.",
+    "These are NOT created by migrations on purpose: cron.job is data, not schema,",
+    "and a migration would make every local stack and preview branch run production",
+    "cadences (see Backend/supabase/functions/ingest-royale-data/README.md).",
+    "This manifest plus audit-cron-schedule.mjs gives SSOT without that side effect.",
+    "",
+    "dailyBudget exists because on 2026-09-06 voyage-auto-activate-cron ran every",
+    "minute, 1440 of 1873 daily executions, and starved the t4g.nano of CPU credits",
+    "until pg_cron could no longer start any job. Nothing in the repo stated a",
+    "cadence, so nothing could see it. The budget makes that visible in CI."
+  ],
+  "dailyBudget": 600,
+  "jobs": [
+    { "name": "nightly-maintenance",       "schedule": "0 3 * * *",     "command": "SELECT substrate.execute_nightly_maintenance()" },
+    { "name": "pipeline-watchdog",         "schedule": "5 * * * *",     "command": "SELECT substrate.pipeline_watchdog()" },
+    { "name": "rotate-recruits-cron",      "schedule": "55 * * * *",    "command": "SELECT substrate.rotate_recruits()" },
+    { "name": "ingest-royale-data-cron",   "schedule": "0,30 * * * *",  "command": "SELECT substrate.run_ingest_royale_data()" },
+    { "name": "headhunter-scanner-cron",   "schedule": "15,45 * * * *", "command": "SELECT substrate.run_headhunter_scanner()" },
+    { "name": "voyage-auto-activate-cron", "schedule": "*/15 * * * *",  "command": "SELECT drivers.auto_activate_pending_voyages()" },
+    { "name": "headhunter-epoch-guard",    "schedule": "*/5 * * * *",   "command": "SELECT substrate.run_headhunter_epoch_guard()" }
+  ]
+}
