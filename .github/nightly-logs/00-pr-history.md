@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1715 [Stage 9]: 48 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useAppSettings.ts, useBenchmarking.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useBenchmarking clean.
+**Domain:** architecture | **Commit:** 69dbfc53 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1715)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate architecture strictly aligned with CleanStack ADR; 0 depcruise violations found and all unit tests passed cleanly.
+**Change:** 48 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useAppSettings.ts, useBenchmarking.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useBenchmarking clean.
+**Result:** depcruise 0 violations; Vitest unit tests passed cleanly; CLEAN evidence floor satisfied.
+
+
 ### [2026-09-06] PR #1714 [Stage 8]: Bumped vue-tsc to ^3.3.11 and aligned package.json catalog entries with pnpm-workspace.yaml
 **Domain:** dependencies | **Commit:** 8f908e5c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1714)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
