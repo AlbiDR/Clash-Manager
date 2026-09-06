@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1716 [Stage 10]: Audited APK and PWA wrapper integrity across asset links, manifest parity, version codes/names, release metadata, and security policies; all invariants fully aligned.
+**Domain:** apk | **Commit:** 83b4e759 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1716)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Full audit verified that package names (com.albidr.clashmanager), SHA-256 fingerprints, manifest theme/background colors (#0b0e14), app version (14.50.21), release file (APK/release/latest.json pointing to clashmanager-v14.50.3+279.apk), and cleartext traffic policies are synchronized and valid without requiring source edits.
+**Change:** Audited APK and PWA wrapper integrity across asset links, manifest parity, version codes/names, release metadata, and security policies; all invariants fully aligned.
+**Result:** Verified via pnpm audit:apk (all 25 assertions passed) and pnpm test:version-code (11 unit tests passed).
+
+
 ### [2026-09-06] PR #1715 [Stage 9]: 48 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useAppSettings.ts, useBenchmarking.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useBenchmarking clean.
 **Domain:** architecture | **Commit:** 69dbfc53 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1715)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
