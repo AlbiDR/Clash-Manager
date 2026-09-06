@@ -124,8 +124,15 @@ export interface RecruitSyncRow {
   raw_potential_score: number;
   /** Precomputed weighted win rate persisted for display. */
   win_rate: number;
-  /** Discovery source (SHADOW, TOURNAMENT, etc.). */
-  source: string;
+  /**
+   * Discovery source (SHADOW, TOURNAMENT, TOURNAMENT_AUTO, MANUAL).
+   *
+   * Optional because a REFRESH is not a discovery. A caller that is updating an
+   * existing recruit omits it, and sync_recruits COALESCEs the stored value so
+   * the original provenance survives. A caller creating a recruit must supply
+   * it: the column is NOT NULL and CHECK-constrained to those four values.
+   */
+  source?: string;
   /** Ingestion status (ACTIVE, BENCHED, QUEUE). */
   status: RecruitStatus | string;
 }

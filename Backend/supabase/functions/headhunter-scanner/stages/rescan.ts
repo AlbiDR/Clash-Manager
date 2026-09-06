@@ -167,7 +167,13 @@ export async function runRescan(
                     war_wins: playerProfileSnapshot.warDayWins,
                     raw_potential_score: rawScore,
                     win_rate: winRate,
-                    source: 'TOURNAMENT', // Fallback
+                    // [THREAT: PROVENANCE_ERASURE] This sent 'TOURNAMENT' on every
+                    // refresh, and sync_recruits assigned it unconditionally, so a
+                    // recruit found by SHADOW or entered as MANUAL was relabelled the
+                    // first time it went stale. Omitting the key lets the COALESCE in
+                    // migration 20260906130000 keep the stored value. A rescan only
+                    // ever touches recruits that already exist, so the NOT NULL insert
+                    // arm is unreachable from here.
                     status: playerProfileSnapshot.trophies >= requiredTrophies ? 'ACTIVE' : 'QUEUE'
                 });
 

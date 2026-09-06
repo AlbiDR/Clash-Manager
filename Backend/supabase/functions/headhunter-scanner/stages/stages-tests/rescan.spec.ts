@@ -128,6 +128,38 @@ describe("runRescan recruit persistence wiring", () => {
         });
     });
 
+    // [THREAT: PROVENANCE_ERASURE] rescan sent source: 'TOURNAMENT' as a fallback on
+    // every refresh, and sync_recruits assigned it unconditionally, so a recruit found
+    // by SHADOW or entered as MANUAL was relabelled TOURNAMENT the first time it went
+    // stale and its true origin became unrecoverable. A refresh is not a discovery.
+    //
+    // The payload must OMIT the key rather than send a different value: migration
+    // 20260906130000 COALESCEs it, so an omitted source keeps whatever is stored, and
+    // any value sent here would overwrite it just as the old fallback did.
+    it("omits source entirely so a rescan cannot overwrite the original discovery provenance", async () => {
+        rpcResponses.get_stale_recruits = { data: [{ player_tag: "#STALE1" }], error: null };
+        mockFetchWithRotation.mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => staleProfile,
+        });
+
+        const stats = freshStats();
+        await runRescan(new Set(), 6000, stats, vi.fn());
+
+        const syncCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "sync_recruits");
+        const recruits = syncCall![1].p_recruits;
+        expect(recruits).toHaveLength(1);
+
+        // Absent, not merely falsy: a present key with any value is overwritten by the
+        // upsert, so "source" must not appear on the object at all.
+        expect(Object.prototype.hasOwnProperty.call(recruits[0], "source")).toBe(false);
+        expect(recruits[0].source).toBeUndefined();
+        // The rest of the payload is unchanged, so this pins the omission rather than
+        // a broken batch.
+        expect(recruits[0]).toMatchObject({ player_tag: "#STALE1", status: "ACTIVE" });
+    });
+
     it("purges recruits who have since joined a clan and never includes them in the sync_recruits batch", async () => {
         rpcResponses.get_stale_recruits = { data: [{ player_tag: "#STALE2" }], error: null };
         mockFetchWithRotation.mockResolvedValue({

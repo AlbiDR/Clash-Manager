@@ -197,10 +197,19 @@ export async function runTournamentDiscovery(
                                     }
                                 });
                                 console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag}: ${foundInTournament} candidates added, ${skippedClanned} players skipped (clanned or excluded)`);
-                                logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { 
+                                // [THREAT:] protocol.ts derives isDataPerfect by requiring EVERY
+                                // integrity_checked entry to satisfy IntegrityCheckDetailsSchema,
+                                // where `passed` is a required boolean. This was the only one of
+                                // 34 emissions that omitted it, so a single processed tournament
+                                // failed the safeParse and pinned isDataPerfect to false for the
+                                // whole run - reporting imperfect data as a bookkeeping artefact
+                                // and masking whether integrity was genuinely fine.
+                                logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
+                                    passed: true,
+                                    details: `Tournament members processed: ${tournamentTargetCandidate.tag}`,
                                     tournament: tournamentTargetCandidate.tag,
-                                    found: foundInTournament, 
-                                    skipped: skippedClanned 
+                                    found: foundInTournament,
+                                    skipped: skippedClanned
                                 });
                             } else {
                                 console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag} validation failed`);

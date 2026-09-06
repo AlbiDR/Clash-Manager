@@ -181,3 +181,43 @@ describe("runTournamentDiscovery failed-write gating (F4)", () => {
         expect(mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "upsert_discovery_cache")).toBeUndefined();
     });
 });
+
+// [THREAT:] protocol.ts computes isDataPerfect by requiring EVERY integrity_checked
+// entry to satisfy IntegrityCheckDetailsSchema, in which `passed` is a required
+// boolean. tournament-finder emitted one entry, on the success path, that carried
+// only {tournament, found, skipped}. It failed the safeParse, so a single processed
+// tournament pinned isDataPerfect to false for the entire run.
+//
+// That is the failure direction that reads as a problem rather than as success, and
+// it is worse than it looks: the flag stopped being evidence about the data at all,
+// so a genuinely imperfect run was indistinguishable from this bookkeeping artefact.
+//
+// Asserted against the real schema rather than a hand-written shape, so a change to
+// IntegrityCheckDetailsSchema cannot leave this test asserting an obsolete contract.
+describe("integrity_checked entries satisfy the schema protocol.ts validates against", () => {
+    it("every emitted integrity_checked entry parses and reports a boolean passed", async () => {
+        const v = await import("valibot");
+        const { IntegrityCheckDetailsSchema } = await import("../../../_shared/schemas.ts");
+
+        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+        mockRoyaleRoutes();
+
+        const candidates = new Map<string, string>();
+        const stats = freshStats();
+        const { entries, logAudit } = makeAuditCollector();
+
+        await runTournamentDiscovery(candidates, new Set(), 5000, stats, logAudit);
+
+        const checks = entries.filter((entry) => entry.action === "integrity_checked");
+        // Guards the loop against passing vacuously if the fixture stops emitting.
+        expect(checks.length).toBeGreaterThan(0);
+
+        for (const check of checks) {
+            const parsed = v.safeParse(IntegrityCheckDetailsSchema, check.details);
+            expect(
+                parsed.success,
+                `integrity_checked entry failed the schema: ${JSON.stringify(check.details)}`,
+            ).toBe(true);
+        }
+    });
+});
