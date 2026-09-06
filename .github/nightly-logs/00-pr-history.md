@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1718 [Stage 12]: S12 global APK UX audit complete; 75 frontend files inspected across 10 UX categories with 0 violations found
+**Domain:** ux | **Commit:** ad8e2b95 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1718)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured APK UX audit status is PASS with zero candidate violations
+**Change:** S12 global APK UX audit complete; 75 frontend files inspected across 10 UX categories with 0 violations found
+**Result:** Audit PASS; 75 files verified clean across raw selects, safe areas, haptics, overscroll, and mobile touch targets
+
+
 ### [2026-09-06] PR #1717 [Stage 11]: Audited WebView cache topology (LOAD_CACHE_ELSE_NETWORK), navigation preload, service worker routes, and Vite asset footprint; all invariants optimal.
 **Domain:** apk | **Commit:** f9125f47 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1717)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
