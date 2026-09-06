@@ -15,6 +15,7 @@ import {
   changeLabel,
   countOf,
   displayArea,
+  VERDICT_VOCABULARY,
   isBareVerdict,
   evidenceResidue,
   isPlaceholderField,
@@ -164,12 +165,45 @@ test("the result placeholder set is derived from its writers, not restated", () 
 // near-misses. The literals are deliberate: this is the regression corpus for
 // the 2026-09-05 and 2026-09-06 runs, and it must keep failing if the predicate
 // is ever loosened back into accepting a verdict as evidence.
+const BARE_VERDICTS = [
+  "PASSED", "PASS", "PASS.", "Passed.", "passed", "OK", "SUCCESS",
+  "CLEAN", "DONE", "VERIFIED", "NOMINAL", "PASSED and CLEAN",
+  "All passed", "Complete", "  PASSED  ",
+];
+
+const STATED_RESULTS = [
+  "PASSED with 7 of 7 Vitest tests green",
+  "pnpm audit:version passed clean",
+  "Vitest unit tests executed and passed cleanly",
+  "Verified diff with git diff --check and confirmed ADR alignment",
+  "Audit PASS; 75 files verified clean across raw selects, safe areas, haptics",
+  "depcruise 0 violations; 1806 tests passed cleanly; CLEAN evidence floor satisfied",
+  "Toolchain probe verified via gradle; 1813 unit tests passed cleanly.",
+  "Static audit PASS: migration quality PASS, fold-state FOLDED, 0 pending migrations, DB-UNAVAILABLE.",
+  "Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:version-code, and pnpm test:apk-ux-audit",
+];
+
+// The assertion that has to come first, because every test below it is a loop.
+//
+// A for-loop over an empty array passes every assertion inside it, in silence,
+// and a membership test against an empty vocabulary is vacuously consistent the
+// same way. So the two corpora and the vocabulary would all keep this file
+// green while measuring nothing, which is the exact failure shape the recap's
+// own detectors are audited for. Raised by a peer session, and it survives
+// someone refactoring any of the three into a loader.
+test("the corpora and the vocabulary are not empty", () => {
+  assert.ok(BARE_VERDICTS.length > 0, "the bare-verdict corpus is empty, so its loop asserts nothing");
+  assert.ok(STATED_RESULTS.length > 0, "the stated-result corpus is empty, so its loop asserts nothing");
+  assert.ok(VERDICT_VOCABULARY.size > 0, "an empty vocabulary makes every value look like evidence");
+  // And the vocabulary still holds the spellings that were actually published,
+  // so trimming it back cannot quietly restore the defect.
+  for (const word of ["pass", "passed", "ok", "clean", "nominal"]) {
+    assert.ok(VERDICT_VOCABULARY.has(word), `${word} left the vocabulary`);
+  }
+});
+
 test("a verdict with nothing behind it is not a result", () => {
-  for (const verdict of [
-    "PASSED", "PASS", "PASS.", "Passed.", "passed", "OK", "SUCCESS",
-    "CLEAN", "DONE", "VERIFIED", "NOMINAL", "PASSED and CLEAN",
-    "All passed", "Complete", "  PASSED  ",
-  ]) {
+  for (const verdict of BARE_VERDICTS) {
     assert.ok(isBareVerdict(verdict), `${JSON.stringify(verdict)} should not stand as a result`);
     assert.deepEqual(evidenceResidue(verdict), [], `${JSON.stringify(verdict)} left residue`);
   }
@@ -179,17 +213,7 @@ test("a verdict with nothing behind it is not a result", () => {
 // evidence would push stages toward the placeholder, which is the defect it
 // exists to prevent. Every string here was published by a real stage.
 test("a result naming a method or a measurement is evidence", () => {
-  for (const result of [
-    "PASSED with 7 of 7 Vitest tests green",
-    "pnpm audit:version passed clean",
-    "Vitest unit tests executed and passed cleanly",
-    "Verified diff with git diff --check and confirmed ADR alignment",
-    "Audit PASS; 75 files verified clean across raw selects, safe areas, haptics",
-    "depcruise 0 violations; 1806 tests passed cleanly; CLEAN evidence floor satisfied",
-    "Toolchain probe verified via gradle; 1813 unit tests passed cleanly.",
-    "Static audit PASS: migration quality PASS, fold-state FOLDED, 0 pending migrations, DB-UNAVAILABLE.",
-    "Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:version-code, and pnpm test:apk-ux-audit",
-  ]) {
+  for (const result of STATED_RESULTS) {
     assert.equal(isBareVerdict(result), false, `${JSON.stringify(result)} was rejected`);
     assert.ok(evidenceResidue(result).length > 0);
   }

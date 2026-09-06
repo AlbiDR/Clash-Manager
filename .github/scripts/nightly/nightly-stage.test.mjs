@@ -573,6 +573,11 @@ test("the work phase falls back to SUBMIT whenever the budget is unreadable", ()
   assert.equal(workPhase({ startEpoch: now - 3600, workDeadlineEpoch: now - 900 }), "SUBMIT");
 });
 
+// Every spelling a stage actually published, so trimming this back cannot
+// quietly restore the defect. Length-checked at the top of the test below,
+// because a loop over an empty array passes in silence.
+const REFUSABLE_VERDICTS = ["PASSED", "PASS", "OK", "CLEAN"];
+
 // The prevention half. This is the only moment in the pipeline where the agent
 // that owns the evidence is still running, so it is the only place a better
 // result can still be asked for rather than merely reported as missing.
@@ -580,7 +585,8 @@ test("a bare verdict is refused while the stage still has budget to fix it", () 
   const now = Math.floor(Date.now() / 1000);
   const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
 
-  for (const verdict of ["PASSED", "PASS", "OK", "CLEAN"]) {
+  assert.ok(REFUSABLE_VERDICTS.length > 0, "an empty corpus makes this loop assert nothing");
+  for (const verdict of REFUSABLE_VERDICTS) {
     assert.throws(
       () => resolveResult(verdict, "CHANGED", working),
       error => {
@@ -621,11 +627,13 @@ test("a bare verdict past the budget is downgraded, never blocked", () => {
 test("a stated result is never touched by the evidence guard", () => {
   const now = Math.floor(Date.now() / 1000);
   const stated = "Vitest StorageService.spec.ts passed 7 of 7 tests, depcruise 0 violations";
-  for (const state of [
+  const budgets = [
     { startEpoch: now - 60, workDeadlineEpoch: now + 1800 },
     { startEpoch: now - 3600, workDeadlineEpoch: now - 900 },
     {},
-  ]) {
+  ];
+  assert.ok(budgets.length > 0, "an empty corpus makes this loop assert nothing");
+  for (const state of budgets) {
     assert.equal(resolveResult(stated, "CHANGED", state), stated);
   }
   // Whitespace normalisation still applies; only the evidence rule is new.
