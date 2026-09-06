@@ -201,6 +201,9 @@ test("metadata and native handoff are complete without pending placeholders", ()
     change: "Added loader boundary coverage",
     result: "The focused spec passed and guards the failure boundary.",
     files: ".github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/example.spec.ts",
+    // renderPrBody was called without a nudge count here, so the field is
+    // absent rather than zero. Absence is ignorance, never innocence.
+    nudges: null,
   });
 
   const handoff = renderHandoff(stage, "CHANGED", "Added loader boundary coverage", "a1b2c3d4");
@@ -281,6 +284,10 @@ test("dry-run startup and real finalization are isolated in a disposable reposit
   assert.match(prBody, /NIGHTLY_PR_METADATA:/);
   assert.match(prBody, /\*\*Why:\*\* The selected verification slice already covered the audited behavior\./);
   assert.match(prBody, /\*\*Result:\*\* No source change was required after the focused audit\./);
+  // No session state was written by this path, so the refusal count is UNKNOWN
+  // and the field must be absent. Emitting "Nudges: 0" here would assert that
+  // the guard never had to fire, on a run that never looked.
+  assert.doesNotMatch(prBody, /Nudges:/);
   assert.match(readFileSync(path.join(testContext, "final-handoff.txt"), "utf8"), /PR base: Nightly/);
   assert.equal(run("git", ["branch", "--show-current"], repoRoot).stdout.trim(), "Nightly");
 });
@@ -688,4 +695,48 @@ test("evidence offered after a refusal is accepted in full", () => {
   const asked = { startEpoch: now - 60, workDeadlineEpoch: now + 1800, resultRefused: true };
   const stated = "pnpm audit:version reported 0 drift lines across 3 manifests";
   assert.equal(resolveResult(stated, "CLEAN", asked), stated);
+});
+
+
+// The emission contract, in isolation from finalize.
+//
+// The field is a COUNT and it is ABSENT when unmeasured, and both halves are
+// load-bearing. A boolean would make a broken emitter's "false" identical to a
+// genuine "the guard never fired", which is the happy answer, so the
+// measurement failing would read as success. A defaulted 0 does the same.
+const EMITTED_COUNTS = [0, 1, 2];
+const UNMEASURED_VALUES = [undefined, null, "1", 1.5, -1, NaN, "", "yes"];
+
+test("a measured refusal count is emitted, and only a measured one", () => {
+  const stage = getStage(registry, 2);
+  const paths = [stage.coverageLog, "Frontend-PWA/src/example.spec.ts"];
+  const details = { why: "A reason.", result: "Vitest passed 7 of 7." };
+
+  assert.ok(EMITTED_COUNTS.length > 0, "an empty corpus makes this loop assert nothing");
+  for (const nudges of EMITTED_COUNTS) {
+    const body = renderPrBody(stage, "CHANGED", "Added coverage", paths, { ...details, nudges });
+    assert.match(body, new RegExp(`^  Nudges: ${nudges}$`, "m"), `count ${nudges} was not emitted`);
+  }
+
+  // Anything that is not a plain integer count is not a measurement, and a
+  // non-measurement must leave no field rather than a defaulted one.
+  assert.ok(UNMEASURED_VALUES.length > 0, "an empty corpus makes this loop assert nothing");
+  for (const nudges of UNMEASURED_VALUES) {
+    const body = renderPrBody(stage, "CHANGED", "Added coverage", paths, { ...details, nudges });
+    assert.doesNotMatch(body, /Nudges:/, `${JSON.stringify(String(nudges))} was emitted as a count`);
+  }
+
+  // The watchdog reconstructs bodies with no details at all. It did not measure
+  // this and must not appear to have.
+  assert.doesNotMatch(renderPrBody(stage, "CLEAN", "Audited", [stage.coverageLog]), /Nudges:/);
+});
+
+// The count must not disturb anything a reader already depends on.
+test("emitting the refusal count leaves the rest of the body identical", () => {
+  const stage = getStage(registry, 2);
+  const paths = [stage.coverageLog];
+  const details = { why: "A reason.", result: "Vitest passed 7 of 7." };
+  const without = renderPrBody(stage, "CLEAN", "Audited", paths, details);
+  const with0 = renderPrBody(stage, "CLEAN", "Audited", paths, { ...details, nudges: 0 });
+  assert.equal(with0.replace(/\n  Nudges: 0/, ""), without, "the body changed beyond the added line");
 });

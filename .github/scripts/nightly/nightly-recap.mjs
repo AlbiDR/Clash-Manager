@@ -69,6 +69,7 @@ import {
   RESULT_LABEL,
   WHY_LABEL,
   changeLabel,
+  countOf,
   displayArea,
   isPlaceholderField,
   joinList,
@@ -137,6 +138,10 @@ export function parsePrHistoryEntry(content, stageNumber, date) {
       why: field("Why"),
       change: field("Change"),
       result: field("Result"),
+      // Absent on every entry written before the field existed, and absent
+      // whenever the stage could not read its own session state. Null here
+      // means unmeasured and must never be read as a count of zero.
+      nudges: /^\d+$/.test(field("Nudges") || "") ? Number(field("Nudges")) : null,
       files: (field("Files") || "").split(",").map(f => f.trim()).filter(Boolean),
     };
   }
@@ -248,6 +253,7 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
     target: declared?.target ?? null,
     why: history?.why ?? null,
     result: history?.result ?? null,
+    nudges: history?.nudges ?? null,
     files: history?.files ?? [],
     health: entry?.evidence?.health ?? null,
     session: entry?.evidence?.session ?? null,
@@ -938,6 +944,68 @@ function descriptionSection(recap) {
  * catching a generic phrase nobody has thought of yet, on the run it first
  * spreads to a second stage.
  */
+/**
+ * What the evidence guard actually did, which was previously unknowable.
+ *
+ * THE HOLE THIS FILLS
+ * finalize refuses a contentless result once per session and then accepts a
+ * second attempt whatever it says. Neither outcome left a trace: a stage that
+ * took the correction shipped real evidence and looked like a stage that never
+ * needed asking, and a stage that ignored it got the same placeholder as a
+ * stage that passed no result at all. So a run with zero contentless results
+ * could not distinguish "nobody needed correcting" from "several were corrected
+ * and complied", and only the second is evidence the guard does anything.
+ *
+ * WHY IT SPEAKS WHEN IT KNOWS NOTHING
+ * The obvious shape is to print only when a stage was nudged, and that fails
+ * the question this file asks of every counter. If the field stopped being
+ * emitted, a silent section would read exactly like a run where the guard never
+ * had to fire, which is the happy answer, so a broken measurement would look
+ * like success. Absence is therefore reported out loud, as ignorance rather
+ * than as a zero, and a measured zero is stated separately.
+ */
+function evidenceGuardSection(recap) {
+  const merged = (recap.stages || []).filter(s => s.merged);
+  if (merged.length === 0) return [];
+
+  const measured = merged.filter(s => Number.isInteger(s.nudges));
+  const unmeasured = merged.length - measured.length;
+
+  if (measured.length === 0) {
+    return [
+      `Evidence guard: not measured on any of the ${countOf(merged, "merged stage")}, so this run cannot say whether any stage was asked to restate a contentless result.`,
+      "",
+    ];
+  }
+
+  // Named only when it is a real gap, so a fully instrumented run stays quiet
+  // about it rather than carrying a permanent nil clause.
+  const coverage = unmeasured > 0
+    ? ` Measured on ${measured.length} of ${merged.length} merged stages; the rest either predate the field or could not read their own session state.`
+    : "";
+
+  const nudged = measured.filter(s => s.nudges > 0);
+  if (nudged.length === 0) {
+    return [`Evidence guard: no stage was asked to restate a result.${coverage}`, ""];
+  }
+
+  // The split that matters. A stage that was asked and then stated something is
+  // the guard working, and it is the half nothing could see before.
+  const complied = nudged.filter(s => usefulResult(s));
+  const declined = nudged.filter(s => !usefulResult(s));
+  const parts = [];
+  if (complied.length > 0) {
+    parts.push(`${joinList(complied.map(s => stageTag(s.stage)))} then stated one`);
+  }
+  if (declined.length > 0) {
+    parts.push(`${joinList(declined.map(s => stageTag(s.stage)))} did not, so the record carries the pipeline's default instead`);
+  }
+  return [
+    `Evidence guard: ${nudged.length} of ${measured.length} measured stages were asked to restate a contentless result. ${parts.join("; ")}.${coverage}`,
+    "",
+  ];
+}
+
 function unknownBoilerplateSection(recap) {
   const byResult = new Map();
   for (const stage of recap.stages || []) {
@@ -984,6 +1052,7 @@ export function renderRecap(recap) {
   lines.push(...paceSection(recap.health));
   lines.push(...descriptionSection(recap));
   lines.push(...thinEvidenceSection(recap));
+  lines.push(...evidenceGuardSection(recap));
   lines.push(...unknownBoilerplateSection(recap));
 
   return lines.join("\n");

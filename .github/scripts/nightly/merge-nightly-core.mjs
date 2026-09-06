@@ -261,6 +261,11 @@ export function extractMetadata(pr) {
     change: pr?.title || METADATA_PLACEHOLDERS.change,
     result: METADATA_PLACEHOLDERS.result,
     files: METADATA_PLACEHOLDERS.files,
+    // The one field with NO placeholder, on purpose. Every other default here
+    // stands in for something a stage failed to say; this one records whether
+    // anybody looked, so inventing a value for it would destroy the only thing
+    // it carries. Null means unmeasured and must stay distinguishable from "0".
+    nudges: null,
   };
 
   if (metaMatch) {
@@ -271,6 +276,13 @@ export function extractMetadata(pr) {
       const value = match[2].trim();
       if (key in meta) meta[key] = value;
     }
+    // Kept as a STRING rather than a number, and this is load-bearing:
+    // isPlaceholderField tests `String(value || "")`, under which the number 0
+    // is empty and therefore a placeholder, so a measured zero would be
+    // discarded by preferStatedMetadata as though nobody had recorded it. "0"
+    // survives that test. Anything not a plain count reverts to unmeasured,
+    // because a malformed value is not evidence of zero nudges.
+    meta.nudges = /^\d+$/.test(String(meta.nudges ?? "")) ? String(meta.nudges) : null;
     return meta;
   }
 
@@ -296,6 +308,8 @@ export function parseTagContent(tagContent) {
     why: TAG_PLACEHOLDERS.why,
     change: TAG_PLACEHOLDERS.change,
     result: TAG_PLACEHOLDERS.result,
+    // No placeholder: unmeasured must stay distinguishable from a measured 0.
+    nudges: null,
   };
 
   for (const line of String(tagContent || "").split("\n")) {
@@ -305,6 +319,11 @@ export function parseTagContent(tagContent) {
     if (line.startsWith("Why:")) parsed.why = line.replace("Why:", "").trim();
     if (line.startsWith("Change:")) parsed.change = line.replace("Change:", "").trim();
     if (line.startsWith("Result:")) parsed.result = line.replace("Result:", "").trim();
+    if (line.startsWith("Nudges:")) {
+      const raw = line.replace("Nudges:", "").trim();
+      // A malformed value reverts to unmeasured. It is not evidence of zero.
+      parsed.nudges = /^\d+$/.test(raw) ? raw : null;
+    }
   }
 
   return parsed;
@@ -320,7 +339,7 @@ function prSortNumber(prNum) {
   return match ? Number.parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
 }
 
-export function renderHistoryBlock({ date, stage, prNum, domain, commitSha, prUrl, files, why, change, result }) {
+export function renderHistoryBlock({ date, stage, prNum, domain, commitSha, prUrl, files, why, change, result, nudges = null }) {
   if (!prNum || prNum === "PENDING") {
     throw new Error("Cannot render finalized PR history without a PR number.");
   }
@@ -336,7 +355,11 @@ export function renderHistoryBlock({ date, stage, prNum, domain, commitSha, prUr
     `**Files:** ${files}\n` +
     `**Why:** ${why}\n` +
     `**Change:** ${change}\n` +
-    `**Result:** ${result}`;
+    `**Result:** ${result}` +
+    // Appended rather than interleaved so every entry written before this field
+    // existed still parses unchanged, and omitted when unmeasured so an old
+    // entry is never read as a measured zero.
+    (/^\d+$/.test(String(nudges ?? "")) ? `\n**Nudges:** ${nudges}` : "");
 }
 
 export function getRecentDateStrings(days, now = new Date()) {
@@ -713,6 +736,9 @@ function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
     `Why: ${sanitizeTagValue(meta.why)}`,
     `Change: ${sanitizeTagValue(meta.change)}`,
     `Result: ${sanitizeTagValue(meta.result)}`,
+    // Conditional, so a tag written for a run that never measured this carries
+    // no line at all rather than a fabricated zero.
+    ...(/^\d+$/.test(String(meta.nudges ?? "")) ? [`Nudges: ${sanitizeTagValue(meta.nudges)}`] : []),
     ...diagnostics,
   ].join("\n");
 
@@ -798,6 +824,7 @@ export function collectHistoryBlocksFromTags({ dates, config = CONFIG, git = git
           why: parsed.why,
           change: parsed.change,
           result: parsed.result,
+          nudges: parsed.nudges,
         }),
       };
 
