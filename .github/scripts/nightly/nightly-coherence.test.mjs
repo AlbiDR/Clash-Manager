@@ -221,3 +221,34 @@ test("the committed ledger holds no failure class outside the declared vocabular
   // under us, this test would otherwise pass by finding nothing at all.
   assert.ok(seen.size >= 5, `expected the ledger to hold several failure classes, found ${seen.size}`);
 });
+
+// Every test file in this directory must be reachable from the command people
+// actually run.
+//
+// `node --test .github/scripts/nightly/*.test.mjs` is the obvious ad-hoc way to
+// run these, and it silently omits age-pr-history.test.mts, because that glob
+// cannot match .mts. It reports 335 passing tests and a clean exit while never
+// loading thirteen of them. A green result from a command that skipped a file
+// is the same failure as a corpus that iterates over nothing: the measurement
+// did not run and its silence reads as a pass.
+//
+// The chain in package.json is complete today. This asserts it stays that way,
+// because the next test file added is the one nobody wires up, and nothing
+// would say so.
+test("every nightly test file is wired into the control-plane chain", () => {
+  const pkg = JSON.parse(readFileSync(new URL("../../../package.json", DIR), "utf8"));
+  const chain = pkg.scripts["test:nightly-control-plane"] || "";
+  assert.ok(chain, "the control-plane chain script must exist");
+
+  const testFiles = readdirSync(DIR).filter(f => /\.test\.(mjs|mts|js|ts)$/.test(f));
+  assert.ok(testFiles.length >= 12, `expected the suite to have many test files, found ${testFiles.length}`);
+
+  const unreachable = testFiles.filter(file => {
+    const owner = Object.entries(pkg.scripts).find(([, cmd]) => cmd.includes(file));
+    // Reachable means: a script runs it, AND the chain runs that script.
+    return !owner || !chain.includes(owner[0]);
+  });
+
+  assert.deepEqual(unreachable, [], `test files no chained script runs: ${unreachable.join(", ")}`);
+});
+
