@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1717 [Stage 11]: Audited WebView cache topology (LOAD_CACHE_ELSE_NETWORK), navigation preload, service worker routes, and Vite asset footprint; all invariants optimal.
+**Domain:** apk | **Commit:** f9125f47 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1717)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Wrapper and asset configurations fully satisfy all performance, caching, and compression standards.
+**Change:** Audited WebView cache topology (LOAD_CACHE_ELSE_NETWORK), navigation preload, service worker routes, and Vite asset footprint; all invariants optimal.
+**Result:** Toolchain probe verified via gradle; 1813 unit tests passed cleanly.
+
+
 ### [2026-09-06] PR #1716 [Stage 10]: Audited APK and PWA wrapper integrity across asset links, manifest parity, version codes/names, release metadata, and security policies; all invariants fully aligned.
 **Domain:** apk | **Commit:** 83b4e759 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1716)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
