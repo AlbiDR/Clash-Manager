@@ -57,6 +57,15 @@ jobs:
         with:
           deno-version: v2.x
 
+      # `--node-modules-dir=auto` is load-bearing: without it `deno check` aborts
+      # at dependency resolution ("Could not find a matching package for
+      # npm:@supabase/supabase-js") and never type-checks anything at all. The
+      # gate below was therefore reporting a dependency error rather than the 6
+      # errors it is counting down, so the count could never reach zero and the
+      # step could never be promoted to blocking. Passed as a flag rather than
+      # added to a Backend/deno.json, so nothing about `supabase functions
+      # deploy` bundling changes.
+      #
       # Reporting, not blocking, and deliberately so: `deno check` finds 6 real
       # errors today (4 valibot generic-inference failures in _shared/protocol.ts
       # that collapse `parsed.output` to `unknown`, and 2 audit-action contract
@@ -67,7 +76,7 @@ jobs:
       - name: Deno type-check edge functions (reporting)
         continue-on-error: true
         working-directory: Backend
-        run: deno check supabase/functions/*/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/*/index.ts
 
   deploy:
     needs: verify
@@ -145,6 +154,15 @@ jobs:
               ESCAPED_VAL=$(echo "$VAL" | sed "s/'/''/g")
               
               supabase db query --linked "
+                -- [THREAT:] The secret is interpolated into this statement's TEXT,
+                -- and pg_stat_statements records utility statements verbatim. Every
+                -- deploy was therefore writing INTERNAL_BEARER_TOKEN in clear into
+                -- the stats view, where any role that can read it could see it.
+                -- [DECISION LOG] Disable utility tracking for this session only, so
+                -- the statement is never recorded in the first place. Preferred over
+                -- resetting the stats afterwards, which would also destroy the query
+                -- performance history the 2026-09-06 investigation depended on.
+                SET pg_stat_statements.track_utility = off;
                 DO \$\$
                 DECLARE
                   v_id uuid;
