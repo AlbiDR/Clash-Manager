@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1713 [Stage 7]: No version drift or catalog violations detected across monorepo package manifests and derived declarations.
+**Domain:** versioning | **Commit:** 85ce013d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1713)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Audit confirmed 100% version alignment at 14.50.21 and complete catalog protocol usage.
+**Change:** No version drift or catalog violations detected across monorepo package manifests and derived declarations.
+**Result:** PASSED
+
+
 ### [2026-09-06] PR #1712 [Stage 6]: docs(tsdoc): harden useBenchmarking interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 4a06ec19 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1712)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBenchmarking.ts
