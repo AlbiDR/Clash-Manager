@@ -265,6 +265,12 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     "",
     "Detail aged out: 13 of 13 merged stages no longer have an entry in the pull request history, so no Why or Result survives for them. Stage 1's aging pass prunes older entries; the run itself is unaffected.",
     "",
+    // A run predating the refusal count says so out loud rather than staying
+    // silent. Silence here would read exactly like a run where the guard never
+    // had to fire, which is the happy answer, so a measurement that stopped
+    // working would look like success.
+    "Evidence guard: not measured on any of the 13 merged stages, so this run cannot say whether any stage was asked to restate a contentless result.",
+    "",
   ].join("\n"));
 });
 
@@ -1232,4 +1238,74 @@ test("a stated result still reaches the reader", () => {
   }));
   assert.match(text, /^Result: pnpm -F clash-manager-pwa type-check passed with 0 errors\.$/m);
   assert.doesNotMatch(text, /^Thin evidence:/m);
+});
+
+
+// The case the whole change exists for: a stage that WAS corrected and complied.
+// Before the refusal count existed this was indistinguishable from a stage that
+// never needed asking, because both end with a stated result and a clean count.
+test("a stage that took the correction is reported as the guard working", () => {
+  const text = renderRecap(singleStage({
+    stage: 2, slug: "verification", outcome: "CHANGED", prNumber: 1708, merged: true,
+    summary: "Expanded useAppSettings coverage", why: "Close a coverage gap",
+    result: "Vitest passed 7 of 7, depcruise 0 violations", nudges: 1,
+  }));
+  assert.match(text, /^Evidence guard: 1 of 1 measured stages were asked to restate a contentless result\. S02 then stated one\.$/m);
+  // And it is NOT thin evidence: the stage stated a real result in the end.
+  assert.doesNotMatch(text, /^Thin evidence:/m);
+});
+
+// The other outcome, which the count separates from silence for the first time.
+test("a stage that declined the correction is separated from one never asked", () => {
+  const declined = renderRecap(singleStage({
+    stage: 8, slug: "dependency-audit", outcome: "CHANGED", prNumber: 1714, merged: true,
+    summary: "Bumped vue-tsc", why: "Safe patch bump", result: "PASS", nudges: 1,
+  }));
+  assert.match(declined, /S08 did not, so the record carries the pipeline's default instead/);
+  // Still thin, and still counted as thin. The two lines answer different
+  // questions and neither replaces the other.
+  assert.match(declined, /^Thin evidence:/m);
+});
+
+// A measured zero is a fact and must read differently from an absent one.
+test("a measured zero says nobody was asked, not that nobody looked", () => {
+  const text = renderRecap(singleStage({
+    stage: 9, slug: "refactor", outcome: "CLEAN", prNumber: 1715, merged: true,
+    summary: "48 candidate files, 0 dep-violations",
+    why: "Substrate aligned with the ADR", result: "depcruise 0 violations", nudges: 0,
+  }));
+  assert.match(text, /^Evidence guard: no stage was asked to restate a result\.$/m);
+  assert.doesNotMatch(text, /not measured/);
+});
+
+// The property the design rests on, asserted at the surface a person reads.
+//
+// If the field stops being emitted every stage goes unmeasured, and a section
+// that printed nothing would read exactly like a run where the guard never had
+// to fire. That is the happy answer, so the measurement breaking would look
+// like success. It has to speak when it knows nothing.
+test("an unmeasured run says so rather than falling silent", () => {
+  const text = renderRecap(singleStage({
+    stage: 9, slug: "refactor", outcome: "CLEAN", prNumber: 1715, merged: true,
+    summary: "48 candidate files", why: "Aligned", result: "depcruise 0 violations",
+  }));
+  assert.match(text, /^Evidence guard: not measured on any of the 1 merged stage, so this run cannot say whether any stage was asked/m);
+});
+
+// Partial coverage during rollout must not be rounded to either extreme.
+test("partial coverage reports the stages it could not see", () => {
+  const stages = [
+    { stage: 2, slug: "verification", outcome: "CHANGED", prNumber: 1708, merged: true,
+      summary: "a", why: "b", result: "Vitest passed 7 of 7", nudges: 1 },
+    { stage: 9, slug: "refactor", outcome: "CLEAN", prNumber: 1715, merged: true,
+      summary: "c", why: "d", result: "depcruise 0 violations" },
+  ];
+  assert.ok(stages.length > 0, "an empty corpus makes this assert nothing");
+  const text = renderRecap({
+    date: "2026-09-08", total: 13, merged: 2, changed: 1, clean: 1, stuck: 0,
+    pending: 0, rescued: 0, unobserved: 0, stages,
+    grade: { grade: 10, why: "Optimal run: every stage completed unaided." },
+  });
+  assert.match(text, /1 of 1 measured stages were asked/);
+  assert.match(text, /Measured on 1 of 2 merged stages; the rest either predate the field or could not read their own session state\./);
 });

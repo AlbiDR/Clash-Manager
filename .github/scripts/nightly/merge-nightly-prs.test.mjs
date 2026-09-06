@@ -218,6 +218,10 @@ NIGHTLY_PR_METADATA:
     why: "Touch targets needed normalization.",
     change: "Modernized setting rows.",
     result: "Mobile touch compliance restored.",
+    // A body carrying no Nudges line is UNMEASURED, never zero. Every entry
+    // written before the field existed lands here, and reading them as a
+    // measured zero would report a guard that never had to fire.
+    nudges: null,
   });
 });
 
@@ -730,4 +734,95 @@ test("a sidecar that exists and still says nothing is a different fact from no s
     domain: "optimization",
     files: "StorageService.ts",
   }, stage), []);
+});
+
+
+// The refusal count, end to end, through every hop that can drop it.
+//
+// The chain is longer than it looks: a stage emits it into NIGHTLY_PR_METADATA,
+// extractMetadata admits it, createStageTag writes it to the annotated tag,
+// parseTagContent reads it back, and renderHistoryBlock commits it. Any hop
+// that silently ignores an unknown key breaks the whole thing, and
+// extractMetadata does exactly that by design (`if (key in meta)`), so this
+// asserts the value survives rather than asserting each hop in isolation.
+const NUDGE_BODY = count => `### Summary
+
+<!--
+NIGHTLY_PR_METADATA:
+  Domain: verification
+  Files: a.spec.ts
+  Why: Close a coverage gap.
+  Change: Added a spec.
+  Result: 7 of 7 tests passed.
+  Nudges: ${count}
+-->`;
+
+test("a measured refusal count survives body, tag and history", () => {
+  for (const count of ["0", "1", "2"]) {
+    const meta = extractMetadata({ title: "t", body: NUDGE_BODY(count) });
+    assert.equal(meta.nudges, count, `${count} was lost by extractMetadata`);
+
+    const roundTripped = parseTagContent(`PR: #1\nDomain: verification\nFiles: a.spec.ts\nWhy: w\nChange: c\nResult: r\nNudges: ${count}`);
+    assert.equal(roundTripped.nudges, count, `${count} was lost by parseTagContent`);
+
+    const block = renderHistoryBlock({
+      date: "2026-09-08", stage: 2, prNum: "#1", domain: "verification",
+      commitSha: "abc1234", prUrl: "https://example.invalid/pull/1",
+      files: "a.spec.ts", why: "w", change: "c", result: "r", nudges: count,
+    });
+    assert.match(block, new RegExp(`^\\*\\*Nudges:\\*\\* ${count}$`, "m"));
+  }
+});
+
+// The property the whole design rests on. If a broken emitter, an old entry or
+// a malformed value produced a zero, the record would say the guard never had
+// to fire, which is the happy answer, and the measurement breaking would read
+// as good news. Absence has to survive as absence at every hop.
+test("an unmeasured refusal count never becomes a measured zero", () => {
+  const noLine = extractMetadata({ title: "t", body: NUDGE_BODY("1").replace(/\n  Nudges: 1/, "") });
+  assert.equal(noLine.nudges, null, "a body with no Nudges line reported a count");
+
+  for (const junk of ["", "yes", "true", "-1", "1.5", "null", "NaN"]) {
+    const meta = extractMetadata({ title: "t", body: NUDGE_BODY(junk) });
+    assert.equal(meta.nudges, null, `${JSON.stringify(junk)} was accepted as a count`);
+    assert.equal(parseTagContent(`Nudges: ${junk}`).nudges, null, `${JSON.stringify(junk)} survived the tag parser`);
+  }
+
+  // And the committed record omits the field entirely rather than writing a
+  // zero, so an entry from before the field existed stays silent about it.
+  const block = renderHistoryBlock({
+    date: "2026-09-08", stage: 2, prNum: "#1", domain: "verification",
+    commitSha: "abc1234", prUrl: "https://example.invalid/pull/1",
+    files: "a.spec.ts", why: "w", change: "c", result: "r",
+  });
+  assert.doesNotMatch(block, /Nudges/, "an unmeasured entry claimed a count");
+});
+
+// A measured ZERO is the case a naive implementation loses, because
+// isPlaceholderField tests String(value || "") and the NUMBER 0 is empty under
+// it. Carried as a string, "0" survives; as a number it would be discarded by
+// preferStatedMetadata as though nobody had recorded it, silently turning a
+// stage that was never nudged into a stage nobody measured.
+test("a measured zero is not mistaken for an absent value", () => {
+  const meta = extractMetadata({ title: "t", body: NUDGE_BODY("0") });
+  assert.equal(meta.nudges, "0");
+  assert.notEqual(meta.nudges, null);
+  const merged = preferStatedMetadata({ ...meta }, { ...meta, nudges: null });
+  assert.equal(merged.meta.nudges, "0", "a measured zero was overwritten by an absent one");
+});
+
+// The reverse direction: an absent sidecar value must never wipe a measured one.
+test("an absent count never overwrites a measured one", () => {
+  const measured = extractMetadata({ title: "t", body: NUDGE_BODY("1") });
+  const merged = preferStatedMetadata({ ...measured, nudges: null }, measured);
+  assert.equal(merged.meta.nudges, "1");
+});
+
+// The accounting this must not disturb. statedFields is what decides whether a
+// stage described its own work, and a refusal count is a fact about the
+// pipeline rather than something the stage said, so including it would inflate
+// that measure and mask the case it exists to detect.
+test("the refusal count is not counted as something the stage said", () => {
+  const meta = extractMetadata({ title: "t", body: NUDGE_BODY("1") });
+  assert.deepEqual(statedFields(meta).sort(), ["change", "result", "why"]);
 });

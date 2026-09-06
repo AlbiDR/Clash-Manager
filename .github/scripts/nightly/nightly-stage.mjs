@@ -440,6 +440,40 @@ export function renderPlainSummary(stage, status, changedPaths) {
   return `${PLAIN_PREFIX}this changes ${parts.join(" and ")}, so the app's behaviour may be affected.${tests}`;
 }
 
+/**
+ * How many times this session was asked to restate a contentless result.
+ *
+ * A COUNT, AND ABSENT WHEN UNMEASURED, both deliberately.
+ *
+ * The obvious shape is a boolean, and it fails the question this pipeline asks
+ * of every counter: if the measurement itself breaks, does its output read as
+ * good news? A `Nudged: false` emitted because the emitter stopped working is
+ * indistinguishable from one emitted because the guard never had to fire, and
+ * the second is the happy answer. So the field is omitted entirely when the
+ * session state could not be read, and a reader that sees no field must say
+ * "not measured" rather than counting a zero. Absence is ignorance here, never
+ * innocence.
+ *
+ * A count rather than a flag for the same reason in the other direction: 0 is a
+ * measurement and has to be distinguishable from the absence of one. The value
+ * is bounded at 1 today by the one-nudge rule, which is a property of
+ * resolveResult and not of this format.
+ *
+ * WHY THIS NEEDS NO NEW PLACEHOLDER. Paired with the Result field it already
+ * separates all four states, so the placeholder vocabulary is untouched: 1 with
+ * a stated result means the stage was corrected and complied, which is the
+ * guard working and was previously invisible; 1 with a placeholder result means
+ * it was asked and declined; 0 means it was never asked; absent means nobody
+ * looked.
+ */
+function nudgeMetadataLine(nudges) {
+  // Non-negative, because a negative count is not a measurement and every
+  // reader downstream validates with /^\d+$/ anyway. Rejecting it here keeps
+  // the source of the field honest rather than relying on the parsers to clean
+  // up after it; caught by the emission test, which fed it -1.
+  return Number.isInteger(nudges) && nudges >= 0 ? `\n  Nudges: ${nudges}` : "";
+}
+
 export function renderPrBody(stage, status, summary, changedPaths, details = {}) {
   const normalizedSummary = cleanSummary(summary);
   const files = changedPaths.join(", ") || stage.coverageLog;
@@ -467,7 +501,7 @@ NIGHTLY_PR_METADATA:
   Why: ${why}
   Change: ${normalizedSummary}
   Result: ${result}
-  Files: ${files}
+  Files: ${files}${nudgeMetadataLine(details.nudges)}
 -->
 `;
 }
@@ -919,7 +953,11 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   // Read before the Result is resolved: the evidence guard needs the budget to
   // know whether it may still ask the stage for a better one.
   const statePath = path.join(contextDir(), "session-state.json");
-  const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
+  // Whether the state was READ, kept separately from what it said. A missing
+  // file means the refusal count is unknown, not zero, and the two must not
+  // collapse: see nudgeMetadataLine.
+  const stateObserved = existsSync(statePath);
+  const state = stateObserved ? JSON.parse(readFileSync(statePath, "utf8")) : {};
   const result = resolveResult(details.result, status, state, () => {
     atomicWrite(statePath, `${JSON.stringify({ ...state, resultRefused: true }, null, 2)}\n`);
   });
@@ -936,7 +974,8 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   const replacement = replaceSentinel(readFileSync(logPath, "utf8"), sentinel, finalLine);
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
-  const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result });
+  const nudges = stateObserved ? (state.resultRefused ? 1 : 0) : null;
+  const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result, nudges });
   // The handoff no longer carries the body, only the path to it.
   const handoff = renderHandoff(stage, status, normalizedSummary, runId);
 
