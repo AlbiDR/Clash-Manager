@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1708 [Stage 2]: Expanded useAppSettings unit test coverage for non-boolean toggle guards, init idempotency, storage event edge cases, and IDB/quota exceptions
+**Domain:** verification | **Commit:** 3c838a5f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1708)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useAppSettings.spec.ts
+**Why:** Close L1 core settings composable testing gap and assert boundary failure modes
+**Change:** Expanded useAppSettings unit test coverage for non-boolean toggle guards, init idempotency, storage event edge cases, and IDB/quota exceptions
+**Result:** PASSED
+
+
 ### [2026-09-05] PR #1707 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** e4cd51ba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1707)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
