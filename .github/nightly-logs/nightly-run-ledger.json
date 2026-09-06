@@ -7341,7 +7341,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.193Z",
+        "lastObservedAt": "2026-09-06T04:24:21.107Z",
         "failureClass": null
       },
       "2": {
@@ -7378,7 +7378,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.193Z",
+        "lastObservedAt": "2026-09-06T04:24:21.107Z",
         "failureClass": null
       },
       "3": {
@@ -7419,7 +7419,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.194Z",
+        "lastObservedAt": "2026-09-06T04:24:21.107Z",
         "failureClass": null
       },
       "4": {
@@ -7457,7 +7457,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.194Z",
+        "lastObservedAt": "2026-09-06T04:24:21.108Z",
         "failureClass": null
       },
       "5": {
@@ -7491,12 +7491,11 @@
           "body": {
             "pr": 1711,
             "verdict": "OK",
-            "ok": true,
-            "repairedFrom": "AD_LIBBED"
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.194Z",
+        "lastObservedAt": "2026-09-06T04:24:21.108Z",
         "failureClass": null
       },
       "6": {
@@ -7504,7 +7503,7 @@
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "ESCALATED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "julesApiError": null,
@@ -7512,11 +7511,15 @@
             "verdict": "HEALTHY",
             "currentStreak": 1,
             "reason": "no adverse trend"
-          }
+          },
+          "prNumber": 1712,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1712",
+          "headRef": "nightly/stage-6-documentation-tsdoc-d0934855-7250659203834164523",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.194Z",
-        "failureClass": "NO_PUBLISHED_OUTPUT"
+        "lastObservedAt": "2026-09-06T04:24:21.108Z",
+        "failureClass": "OPEN_PR"
       },
       "7": {
         "date": "2026-09-06",
@@ -7534,7 +7537,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.195Z",
+        "lastObservedAt": "2026-09-06T04:24:21.108Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "8": {
@@ -7553,7 +7556,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.195Z",
+        "lastObservedAt": "2026-09-06T04:24:21.108Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "9": {
@@ -7572,7 +7575,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.195Z",
+        "lastObservedAt": "2026-09-06T04:24:21.109Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "10": {
@@ -7591,7 +7594,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.196Z",
+        "lastObservedAt": "2026-09-06T04:24:21.109Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "11": {
@@ -7610,7 +7613,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.196Z",
+        "lastObservedAt": "2026-09-06T04:24:21.109Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "12": {
@@ -7629,7 +7632,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.196Z",
+        "lastObservedAt": "2026-09-06T04:24:21.109Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       },
       "13": {
@@ -7648,7 +7651,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-06T03:24:02.196Z",
+        "lastObservedAt": "2026-09-06T04:24:21.109Z",
         "failureClass": "NO_PUBLISHED_OUTPUT"
       }
     }
