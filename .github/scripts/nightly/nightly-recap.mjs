@@ -29,6 +29,35 @@
 // the ledger and logs are read from the Nightly ref directly, so none of it
 // depends on what has or has not been promoted. As a side effect the recap can
 // report on ANY past run, which a branch diff fundamentally cannot do.
+//
+// AND THE SIDE EFFECT OF THAT: THIS IS A READER, SO ITS ANSWER IS VERSIONED
+// Being able to report on any past run means a past run gets re-read, and a
+// re-read is not a lookup. The evidence for a date is fixed once the run ends,
+// but what this file makes of that evidence is not: every counter here is a
+// classification applied at read time, so improving a classifier silently
+// restates history.
+//
+// It has happened, and it is not hypothetical. On 2026-09-06 the classifier
+// learned to recognise a contentless verdict as a placeholder. The count of
+// stages reporting thinly for 2026-09-05 went from 2 to 3 the moment it landed:
+// S08 had published a one-word result that night, the reader had printed it as
+// the stage's own words, and now it does not. Nothing about that night changed.
+// A reader who had been told 2 the day before, and reads 3 today, is looking at
+// a better answer to the same question and has no way to tell that from a
+// regression.
+//
+// TWO CONSEQUENCES FOR ANYONE COMPARING RUNS.
+// Never treat a number this file printed as banked. It is a reading, not a
+// stored fact, and the only figures that survive a classifier change are the
+// ones derived from the evidence directly: the committed sidecars, the coverage
+// lines, the tags.
+//
+// And when a change to the pipeline is being MEASURED across two runs, the
+// classifier is part of the instrument. Freeze it between the two reads, or the
+// comparison silently becomes two different questions asked of two nights. Both
+// numbers will still look plausible, which is why nobody notices. See
+// isPlaceholderField and the placeholder vocabulary in nightly-prose.mjs, which
+// is where such a change would land.
 
 import { spawnSync } from "node:child_process";
 
