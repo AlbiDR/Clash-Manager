@@ -1916,3 +1916,54 @@ test("an in-flight session holding nothing yet is still a quiet night", () => {
   assert.equal(resolveExitCode({ observerHealthy: true, entries: [], fallbackCapable: rehearsal.capable }), 0);
   assert.match(renderRehearsalReport(rehearsal), /not rehearsed tonight/);
 });
+
+// The regression that made the frontier fix ineffective in production for its
+// entire first night. Every existing test used mergedObserved, whose `prs` is
+// empty, so the pull request limb of runFrontier was never exercised and the
+// suite was green while the deployed behaviour was wrong.
+test("a published pull request advances the frontier only for its own stage", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  for (const stage of registry.stages) {
+    if (stage.number > 12) observed.tags.delete(`nightly/${expectedEvidenceDate(stage.number, date)}/stage-${stage.number}/pr-${1400 + stage.number}`);
+  }
+  // Stage 12's pull request, created on the same evidence date every later
+  // stage shares. prDateMatchesStage alone cannot tell these apart.
+  observed.prs = [{
+    number: 1412,
+    state: "closed",
+    created_at: `${date}T10:18:00Z`,
+    user: { login: "google-labs-jules" },
+    base: { ref: "Nightly" },
+    head: { ref: `${registry.stages.find(s => s.number === 12).branchPrefix}abcdef12-1` },
+  }];
+
+  assert.equal(runFrontier({ registry, date, observed }), 12, "stage 12's PR must not vouch for stage 13");
+
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  assert.equal(entries.find(e => e.stage === 13).state, "EXPECTED");
+  assert.equal(entries.find(e => e.stage === 13).failureClass, null);
+});
+
+// The other direction: a stage's own pull request still counts, so a stage that
+// published without a tag or coverage line yet is not treated as unreached.
+test("a stage's own pull request still advances the frontier to it", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  for (const stage of registry.stages) {
+    if (stage.number > 10) observed.tags.delete(`nightly/${expectedEvidenceDate(stage.number, date)}/stage-${stage.number}/pr-${1400 + stage.number}`);
+  }
+  observed.coverageStages = new Set(registry.stages.filter(s => s.number <= 10).map(s => s.number));
+  observed.prs = [{
+    number: 1411,
+    state: "closed",
+    created_at: `${date}T09:00:00Z`,
+    user: { login: "google-labs-jules" },
+    base: { ref: "Nightly" },
+    head: { ref: `${registry.stages.find(s => s.number === 11).branchPrefix}abcdef12-1` },
+  }];
+
+  assert.equal(runFrontier({ registry, date, observed }), 11);
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  assert.equal(entries.find(e => e.stage === 12).state, "EXPECTED", "12 is still behind the frontier");
+});

@@ -711,9 +711,23 @@ export function runFrontier({ registry, date, observed }) {
   let frontier = 0;
   for (const stage of registry.stages) {
     const evidenceDate = expectedEvidenceDate(stage.number, date);
+    // The pull request test must ask BOTH questions. prDateMatchesStage only
+    // compares the PR's creation date against the stage's evidence date; it
+    // says nothing about which stage the PR belongs to. In evaluateNightlyRun
+    // it is a cheap pre-filter followed by classifyNightlyPr, which does the
+    // matching. Lifted out of that pairing it matches every stage, so a single
+    // published PR pushed the frontier straight to 13 and every stage was
+    // judged as though the run had reached it.
+    //
+    // That is not hypothetical: it is why Stage 13 sat at ESCALATED with
+    // NO_PUBLISHED_OUTPUT at 10:19Z on 2026-09-06, an hour before its session
+    // was due, on the first night this fix was deployed. The recap read
+    // correctly throughout, because its own frontier never consulted pull
+    // requests, which is exactly why nobody saw it.
     const reached = [...(observed.tags || [])].some(tag => tag.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`))
       || observed.coverageStages.has(stage.number)
-      || prs.some(pr => prDateMatchesStage(pr, stage.number, date))
+      || prs.some(pr => prDateMatchesStage(pr, stage.number, date)
+        && classifyNightlyPr(pr, registry, CONFIG).stage === stage.number)
       || Boolean(matchJulesSession(observed.julesSessions, stage, date));
     if (reached) frontier = Math.max(frontier, stage.number);
   }
