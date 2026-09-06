@@ -1163,11 +1163,33 @@ export function rehearseFallbackPublisher({ registry, date, observed }) {
   // way the thing it watches rotted for two days in September. A detector whose
   // own failure looks like a quiet night is not a detector.
   let finishedSessions = 0;
+  // Stages whose session FINISHED and held no change set at all. Distinct from
+  // both existing verdicts and invisible to both until 2026-09-06.
+  //
+  // extractionBroken only fires when EVERY finished session yields nothing, and
+  // `failed` only ever holds a stage whose patch existed and whose plan was
+  // refused. A single session that finished empty is counted above, dropped by
+  // the continue below, and appears in neither, so the aggregate reads healthy
+  // while one stage's work is unrecoverable. The comment on `capable` reasons
+  // about "one stage refusing", which is a patch that EXISTS being rejected;
+  // that reasoning never reached this case.
+  //
+  // It is not hypothetical. On 2026-09-06 Stage 13 finished with a complete,
+  // well-formed description and zero outputs while every sibling held two. The
+  // rehearsal that night saw 8 finished, 7 rehearsed, and reported capable with
+  // no mention of the eighth, which was the only stage that actually lost work.
+  const unrehearsable = [];
   for (const stage of registry.stages) {
     const session = matchJulesSession(observed?.julesSessions, stage, date);
     if (!session) continue;
-    if (String(session.state || "").toUpperCase() === "COMPLETED") finishedSessions += 1;
-    if (!extractSessionPatch(session)) continue;
+    const finished = String(session.state || "").toUpperCase() === "COMPLETED";
+    if (finished) finishedSessions += 1;
+    if (!extractSessionPatch(session)) {
+      // Only a FINISHED session proves an absence. An in-flight one legitimately
+      // holds nothing yet, which is the same distinction extractionBroken makes.
+      if (finished) unrehearsable.push(stage.number);
+      continue;
+    }
     const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(stage.number, date) });
     results.push({ stage: stage.number, ok: plan.ok, reason: plan.ok ? null : plan.reason });
   }
@@ -1181,6 +1203,7 @@ export function rehearseFallbackPublisher({ registry, date, observed }) {
     ready: results.length - failed.length,
     failed,
     finishedSessions,
+    unrehearsable,
     extractionBroken,
     // Only a total failure is a capability claim. One stage refusing can be a
     // legitimate write-boundary rejection for that stage's own patch; every
@@ -1189,8 +1212,33 @@ export function rehearseFallbackPublisher({ registry, date, observed }) {
     // `null` means genuinely nothing to judge. A broken extraction is NOT that:
     // it is the publisher being unusable, reported as such rather than as an
     // absence of evidence.
+    // Deliberately NOT affected by `unrehearsable`. This is a claim about the
+    // PUBLISHER, and a session that finished holding nothing is not the
+    // publisher failing; it is work that was already lost before the publisher
+    // could be asked. Folding the two together would blame the wrong component
+    // and hide a working fallback behind a Jules-side failure.
     capable: extractionBroken ? false : results.length === 0 ? null : failed.length < results.length,
   };
+}
+
+/**
+ * The stages that finished holding nothing, stated as a pair rather than a
+ * difference.
+ *
+ * "rehearsed 7 of 8 finished sessions" is legible even if the naming below is
+ * wrong, because both raw numbers are on the page and the reader can do the
+ * subtraction. Printing only the derived list would mean a bug in collecting it
+ * removes the line entirely, and a missing warning reads as no warning, which is
+ * the failure this whole file is audited against.
+ */
+function unrehearsableLines(rehearsal) {
+  const stages = rehearsal?.unrehearsable || [];
+  if (stages.length === 0) return [];
+  return [
+    `- ${stages.length} finished session(s) held no change set at all: ${stages.map(n => `Stage ${n}`).join(", ")}.`,
+    "  Their work cannot be recovered by the fallback publisher, which needs a change set to apply.",
+    "  This is a Jules-side loss rather than a publisher fault, and it is invisible in the counts above.",
+  ];
 }
 
 export function renderRehearsalReport(rehearsal) {
@@ -1207,10 +1255,15 @@ export function renderRehearsalReport(rehearsal) {
     return "\nFallback publisher: not rehearsed tonight, no session held a change set to try it against.\n";
   }
   if (rehearsal.capable) {
-    const lines = [`\nFallback publisher: rehearsed against ${rehearsal.rehearsed} session(s), ${rehearsal.ready} would publish.`];
+    // The denominator is stated on the healthy path too, so a session that
+    // finished empty is visible as arithmetic even before anything names it.
+    const lines = [
+      `\nFallback publisher: rehearsed against ${rehearsal.rehearsed} of ${rehearsal.finishedSessions} finished session(s), ${rehearsal.ready} would publish.`,
+    ];
     // Named individually. A stage that cannot be recovered is worth knowing
     // about before the night it needs recovering, even while the others can.
     for (const item of rehearsal.failed) lines.push(`- Stage ${item.stage} would NOT publish: ${item.reason}`);
+    lines.push(...unrehearsableLines(rehearsal));
     return `${lines.join("\n")}\n`;
   }
   return [
@@ -1219,6 +1272,7 @@ export function renderRehearsalReport(rehearsal) {
     "The last line of defence against JULES_SESSION_STUCK is not working. Recovery now depends",
     "entirely on the nudge, and a night where the nudge fails would lose that stage's work.",
     ...rehearsal.failed.slice(0, 3).map(item => `- Stage ${item.stage}: ${item.reason}`),
+    ...unrehearsableLines(rehearsal),
     "",
   ].join("\n");
 }
