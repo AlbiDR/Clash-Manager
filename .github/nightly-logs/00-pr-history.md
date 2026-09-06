@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1714 [Stage 8]: Bumped vue-tsc to ^3.3.11 and aligned package.json catalog entries with pnpm-workspace.yaml
+**Domain:** dependencies | **Commit:** 8f908e5c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1714)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe patch bump for vue-tsc and catalog synchronization across monorepo root
+**Change:** Bumped vue-tsc to ^3.3.11 and aligned package.json catalog entries with pnpm-workspace.yaml
+**Result:** PASS
+
+
 ### [2026-09-06] PR #1713 [Stage 7]: No version drift or catalog violations detected across monorepo package manifests and derived declarations.
 **Domain:** versioning | **Commit:** 85ce013d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1713)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
