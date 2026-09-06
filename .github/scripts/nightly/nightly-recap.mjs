@@ -394,6 +394,13 @@ function usefulWhy(stage) {
  * successfully" on the 41 with no field at all. Both read as the stage
  * reporting its own verification, and neither was. A suppressed line is
  * counted by thinEvidenceSection rather than silently dropped.
+ *
+ * A third family arrived as the first two were being fixed. As the committed
+ * sidecar drove placeholder Results from 13 of 13 on 2026-08-29 to 0 of 11 on
+ * 2026-09-06, stages writing their own contentless verdict went from 0 to 4
+ * over the last two of those nights. Fixing the transport did not remove the
+ * missing evidence, it changed its spelling, which is why the predicate this
+ * defers to tests the shape of a value rather than matching known strings.
  */
 function usefulResult(stage) {
   if (!String(stage.result || "").trim()) return null;
@@ -884,10 +891,23 @@ function descriptionSection(recap) {
  *
  * The tell needs no threshold and no list. A genuine result describes one
  * stage's work, so the same result on more than one stage of the same run is
- * generic by construction, whoever wrote it. Verified against the twelve runs
- * to 2026-09-05: zero unrecognised strings are shared between stages, so this
- * is silent on every run recorded so far and speaks only when something new
- * appears.
+ * generic by construction, whoever wrote it.
+ *
+ * WHAT IT PROVED, AND ITS ONE BLIND SPOT
+ * It fired for real on 2026-09-06, naming the three stages that published
+ * "PASSED". It could not name the fourth. S08 published "PASS" that same run
+ * and "PASS" alone the run before, and a value used once is shared with nobody,
+ * so both times it was printed under a Result label as though the stage had
+ * written evidence, the second time inside a run this tool graded 10 out of 10.
+ * A duplicate test cannot see the first occurrence of anything, which is
+ * precisely the occurrence worth catching.
+ *
+ * That family is now recognised by name: isBareVerdict in nightly-prose.mjs
+ * classifies a contentless verdict as a placeholder for every reader at once,
+ * so bare verdicts reach thinEvidenceSection rather than this line. What is
+ * left here is the job it was built for and still the only one it can do:
+ * catching a generic phrase nobody has thought of yet, on the run it first
+ * spreads to a second stage.
  */
 function unknownBoilerplateSection(recap) {
   const byResult = new Map();
