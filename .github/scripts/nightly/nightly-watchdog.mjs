@@ -467,6 +467,19 @@ async function collectObservedState(registry, date, config = CONFIG) {
       .forEach(tag => tags.add(tag));
   }
 
+  // Whether the NEXT run has started, which is how this run is known to be over.
+  //
+  // Run D's stage 1 fires at ~23:05Z on day D-1, so expectedEvidenceDate puts it
+  // under D-1. A tag at nightly/D/stage-1/pr-* is therefore run D+1's stage 1,
+  // and its existence proves run D is finished. Cannot be read from
+  // `observed.tags`: that set is collected per stage against each stage's OWN
+  // evidence date, so it never contains a stage-1 tag under `date`.
+  //
+  // Deliberately a fact about the pipeline rather than a clock reading, so it
+  // carries no threshold, no timer and no timezone. Same rule nightly-recap.mjs
+  // already applies in runProgress: a run is over once the next one has started.
+  const nextRunStarted = runGit(["tag", "-l", `nightly/${date}/stage-1/pr-*`]).split("\n").filter(Boolean).length > 0;
+
   const coverageStages = new Set();
   const danglingSentinelStages = new Set();
   const runWindows = new Map();
@@ -505,6 +518,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
   return {
     prs,
     tags,
+    nextRunStarted,
     coverageStages,
     danglingSentinelStages,
     runWindows,
@@ -843,7 +857,30 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
     // rather than an inferred deadline: the post-window pass fires on its own
     // schedule and passes the flag, so stage 13 -- which has no later stage to
     // prove it was reached -- is still held to account every night.
-    if (!final && stage.number > frontier) {
+    //
+    // EXCEPT THAT SIGNAL RODE ON THE LEAST RELIABLE TRIGGER IN THE SYSTEM.
+    // `--final` is gated on the 13:00 cron, and GitHub delivers scheduled runs
+    // here at a fraction of the declared rate: over the ten days to 2026-09-06
+    // the workflow declares 14 slots a day and between 1 and 4 fired. Stages 1
+    // to 12 do not care, because each stage's own pull request fires a reactive
+    // pass and those land 12 to 14 times a night. Stage 13 has no successor to
+    // fire one, so the only thing that could ever hold it to account was the
+    // trigger that works least often.
+    //
+    // So the declaration is now ALSO derivable from positive evidence: run D+1
+    // starting proves run D is over, and that arrives as run D+1's stage-1
+    // pull request, on the reactive path. Both routes are kept. The cron still
+    // declares it when it fires; this makes the judgement survive it not firing.
+    const runIsOver = final || observed.nextRunStarted === true;
+
+    // Absence defaults to the previous behaviour rather than to finality: an
+    // observer that could not read the tag, or a caller that predates the
+    // field, leaves the stage EXPECTED exactly as before. The failure direction
+    // matters here. Reading false when the run IS over degrades to today's
+    // cron-only behaviour; reading true when it is NOT over would judge queued
+    // stages as failures, which surfaces as alarm rather than as quiet - the
+    // direction that gets noticed rather than the one that reads as success.
+    if (!runIsOver && stage.number > frontier) {
       entries.push({
         stage: stage.number,
         state: "EXPECTED",

@@ -2091,3 +2091,71 @@ test("an empty session is still offered to the recovery ladder", async () => {
   assert.ok(candidates.some(c => c.stage === 13), "an empty session must still be nudged");
   assert.ok(Object.keys(FAILURE_CLASSES).includes("JULES_SESSION_EMPTY"));
 });
+
+// Stage 13's terminal judgement used to depend on the single least reliable
+// trigger in the system.
+//
+// `--final` is gated on the 13:00 cron. Over the ten days to 2026-09-06 the
+// workflow declared 14 scheduled slots a day and between 1 and 4 fired. Stages 1
+// to 12 are unaffected, because each stage's own pull request fires a reactive
+// pass; stage 13 has no successor to fire one, so nothing else could ever hold
+// it to account.
+//
+// Run D+1's stage 1 fires at ~23:05Z on day D, so expectedEvidenceDate tags it
+// under D. A tag at nightly/D/stage-1/pr-* is therefore proof that run D is
+// over, and it arrives on the reactive path.
+test("the next run having started declares this one over, without the cron", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  // Stage 13 unreached: no tag, so it sits above the frontier.
+  observed.tags.delete(`nightly/${expectedEvidenceDate(13, date)}/stage-13/pr-1413`);
+  observed.coverageStages.delete(13);
+
+  // Without the cron flag and without the next run, it must stay unjudged.
+  const waiting = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  assert.equal(waiting.find(e => e.stage === 13).state, "EXPECTED", "a run still in flight must not be judged");
+  assert.equal(waiting.find(e => e.stage === 13).failureClass, null);
+
+  // The next run's stage 1 is the event that ends this one.
+  const judged = evaluateNightlyRun({
+    registry, date, previousLedger: createEmptyLedger(),
+    observed: { ...observed, nextRunStarted: true },
+  });
+  const entry = judged.find(e => e.stage === 13);
+  assert.notEqual(entry.state, "EXPECTED", "the run is over, so stage 13 must be held to account");
+  assert.ok(entry.failureClass, "a judged stage that published nothing must carry a failure class");
+});
+
+// The cron route is not replaced, only backed up. Both must still work alone.
+test("the cron flag alone still declares the run over", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${expectedEvidenceDate(13, date)}/stage-13/pr-1413`);
+  observed.coverageStages.delete(13);
+
+  const entry = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger(), final: true })
+    .find(e => e.stage === 13);
+  assert.notEqual(entry.state, "EXPECTED");
+  assert.ok(entry.failureClass);
+});
+
+// The failure direction that matters. An observer that could not read the tag,
+// or a caller predating the field, must degrade to the old behaviour rather
+// than to finality: reading false costs a late judgement, reading true would
+// judge stages that are merely still queued.
+test("an unreadable or absent next-run signal leaves the run in flight", () => {
+  const date = "2026-08-11";
+  const base = mergedObserved(date);
+  base.tags.delete(`nightly/${expectedEvidenceDate(13, date)}/stage-13/pr-1413`);
+  base.coverageStages.delete(13);
+
+  const cases = [undefined, false, null, "yes", 1];
+  assert.ok(cases.length > 0, "an empty corpus would make this loop assert nothing");
+  for (const nextRunStarted of cases) {
+    const entry = evaluateNightlyRun({
+      registry, date, previousLedger: createEmptyLedger(),
+      observed: { ...base, nextRunStarted },
+    }).find(e => e.stage === 13);
+    assert.equal(entry.state, "EXPECTED", `nextRunStarted=${JSON.stringify(nextRunStarted)} must not declare the run over`);
+  }
+});
