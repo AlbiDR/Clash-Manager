@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1711 [Stage 5]: Reconciled useAppSettings.ts feature flag and settings architecture in core services README
+**Domain:** documentation | **Commit:** 0b660575 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1711)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Reconciled useAppSettings.ts Valibot schema validation boundaries, redundant LocalStorage/IndexedDB persistence, and cross-tab synchronization in Frontend-PWA/src/core/services/README.md
+**Change:** Reconciled useAppSettings.ts feature flag and settings architecture in core services README
+**Result:** PASSED
+
+
 ### [2026-09-06] PR #1710 [Stage 4]: Codebase
 **Domain:** optimization | **Commit:** c51e18c8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1710)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
