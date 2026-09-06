@@ -303,7 +303,7 @@ export const FAILURE_PHRASES = {
   MERGE_COORDINATOR: "Its pull request was opened, but the merge coordinator did not fold it in.", // 6
   UNFINALIZED_SENTINEL: "It merged but left its in-progress marker behind, so it never ran its finalize step.", // 1
   JULES_SESSION_FAILED: "The Jules session failed outright, so there is no finished work to recover.", // 1
-  JULES_SESSION_EMPTY: "Its Jules session ran to completion but produced no change set at all, so there was nothing to publish or recover.", // ledger: 0, condition: 1 (S13, 2026-09-06; the classifier naming it is not yet deployed)
+  JULES_SESSION_EMPTY: "Its Jules session ran to completion but produced no change set at all, so there was nothing to publish or recover.", // ledger: 0, condition: 1 (S13, 2026-09-06)
   // Never fired, but their triggering conditions are pinned by tests.
   OPEN_PR: "Its pull request is open and unmerged, so the work exists and is one merge away.",
   UNCLASSIFIED_PR: "A pull request on Nightly matched no stage branch, and no stage could be inferred from its diff.",
