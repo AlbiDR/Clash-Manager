@@ -43,6 +43,19 @@ describe("useAppSettings", () => {
     expect(modules.blitzMode).toBe(!initial);
   });
 
+  it("ignores toggle calls on non-boolean modules", async () => {
+    const { useAppSettings } = await import("../useAppSettings");
+    const { modules, toggle } = useAppSettings();
+    const initialSpeed = modules.blitzSpeed;
+    const initialThreshold = modules.notificationThreshold;
+
+    toggle("blitzSpeed");
+    toggle("notificationThreshold");
+
+    expect(modules.blitzSpeed).toBe(initialSpeed);
+    expect(modules.notificationThreshold).toBe(initialThreshold);
+  });
+
   describe("Validation Boundary (Target B [1])", () => {
     it("hydrates state correctly from valid localStorage data", async () => {
       const validData = {
@@ -103,6 +116,34 @@ describe("useAppSettings", () => {
     });
   });
 
+  describe("Initialization Idempotency & Edge Cases", () => {
+    it("prevents redundant initialization when init is called multiple times", async () => {
+      const { useAppSettings } = await import("../useAppSettings");
+      const { init } = useAppSettings();
+
+      const addEventListenerSpy = vi.spyOn(window, "addEventListener");
+
+      init();
+      const initialListenersCount = addEventListenerSpy.mock.calls.length;
+
+      // Second call to init should short-circuit
+      init();
+      expect(addEventListenerSpy.mock.calls.length).toBe(initialListenersCount);
+
+      addEventListenerSpy.mockRestore();
+    });
+
+    it("handles idb rejection gracefully during init", async () => {
+      const { idb } = await import("../StorageService");
+      vi.mocked(idb.set).mockRejectedValueOnce(new Error("IDB Error"));
+
+      const { useAppSettings } = await import("../useAppSettings");
+      const { init } = useAppSettings();
+
+      expect(() => init()).not.toThrow();
+    });
+  });
+
   describe("Side Effects & Synchronization", () => {
     it("performs initial synchronization to IndexedDB on init", async () => {
       const { useAppSettings } = await import("../useAppSettings");
@@ -133,6 +174,41 @@ describe("useAppSettings", () => {
       expect(idb.set).toHaveBeenCalledWith("cm_notification_threshold", 50);
     });
 
+    it("catches localStorage quota/persistence errors gracefully in watcher", async () => {
+      const setItemSpy = vi.spyOn(localStorage, "setItem").mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      });
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const { useAppSettings } = await import("../useAppSettings");
+      const { modules } = useAppSettings(); // Call composable to ensure watcher is registered
+
+      modules.blitzMode = false;
+
+      await nextTick();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[Modules] Failed to persist",
+        expect.any(Error)
+      );
+
+      setItemSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("handles idb rejection gracefully inside reactivity watcher", async () => {
+      const { idb } = await import("../StorageService");
+      vi.mocked(idb.set).mockRejectedValue(new Error("IDB Store Error"));
+
+      const { useAppSettings } = await import("../useAppSettings");
+      const { modules } = useAppSettings();
+
+      modules.experimentalNotifications = true;
+
+      // Should not cause unhandled promise rejection or throw
+      await expect(nextTick()).resolves.not.toThrow();
+    });
+
     it("updates state when storage event is triggered (cross-tab sync)", async () => {
       const { useAppSettings } = await import("../useAppSettings");
       const { modules, init } = useAppSettings();
@@ -152,6 +228,52 @@ describe("useAppSettings", () => {
 
       expect(modules.blitzMode).toBe(true);
       expect(modules.sortExplanation).toBe(false);
+    });
+
+    it("ignores storage events for other keys or empty/null newValue", async () => {
+      const { useAppSettings } = await import("../useAppSettings");
+      const { modules, init } = useAppSettings();
+      init();
+
+      const initialBlitzState = modules.blitzMode;
+
+      // Other key event
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "other_key",
+          newValue: JSON.stringify({ blitzMode: !initialBlitzState }),
+        })
+      );
+      expect(modules.blitzMode).toBe(initialBlitzState);
+
+      // Null newValue event for MODULES_KEY
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "cm_modules_v2",
+          newValue: null,
+        })
+      );
+      expect(modules.blitzMode).toBe(initialBlitzState);
+    });
+
+    it("handles malformed JSON in cross-tab storage events gracefully", async () => {
+      const { useAppSettings } = await import("../useAppSettings");
+      const { modules, init } = useAppSettings();
+      init();
+
+      const initialBlitzState = modules.blitzMode;
+
+      // Dispatch malformed JSON storage event
+      expect(() => {
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: "cm_modules_v2",
+            newValue: "invalid{json",
+          })
+        );
+      }).not.toThrow();
+
+      expect(modules.blitzMode).toBe(initialBlitzState);
     });
   });
 
