@@ -308,28 +308,47 @@ function cleanPrDetail(value, fallback, label) {
  * WHY IT CANNOT BLOCK PUBLICATION
  * The dominant historical failure of this pipeline is a session that ends
  * without a pull request, which is far worse than one that publishes a thin
- * Result. So the demand is made only while the budget still says WORK, when
- * re-running one command costs the stage nothing. Once the budget says SUBMIT
- * the same input is downgraded to the placeholder and publication continues,
- * which is strictly better than today either way: the placeholder is a string
- * every reader already recognises, so a Result that cannot be improved is at
- * least reported as absent instead of printed as evidence.
+ * Result. finalize is what writes the coverage line, the sidecar and the body,
+ * so a refusal that repeats costs the stage its entire night and leaves the
+ * watchdog nothing to recover, which would be a strictly worse defect than the
+ * one this fixes.
+ *
+ * So the refusal happens AT MOST ONCE per session, and only while the budget
+ * still says WORK. The first bare verdict is refused with instructions and the
+ * refusal is recorded in the session state; every call after that is accepted
+ * and downgraded to the placeholder, as is any call made once the budget has
+ * ended. That matches the contract's own allowance of one targeted correction
+ * and one rerun, and bounds the worst case at a single wasted finalize call
+ * instead of a lost stage.
+ *
+ * Downgrading is strictly better than today either way: the placeholder is a
+ * string every reader already recognises, so a Result that cannot be improved
+ * is reported as absent instead of printed as evidence.
  *
  * The rejection names the offending value and shows the shape that would pass,
  * because a guard an agent cannot satisfy is just a slower way to fail.
  */
-export function resolveResult(rawResult, status, state) {
+export function resolveResult(rawResult, status, state, recordRefusal = () => {}) {
   const result = cleanPrDetail(rawResult, placeholderResult(status), "--result");
   if (!isBareVerdict(result)) return result;
 
-  if (workPhase(state) === "SUBMIT") {
+  // Two independent ways out, and the stage needs only one of them. Past the
+  // budget there is no time to spend on a rewrite; after a refusal already
+  // spent, the nudge has been given and repeating it buys nothing.
+  const spent = workPhase(state) === "SUBMIT";
+  if (spent || state?.resultRefused) {
     console.error(
       `Nightly: --result ${JSON.stringify(result)} states a verdict with no evidence behind it.`
-      + " The work budget has ended, so it is recorded as an absent result rather than blocking publication.",
+      + (spent
+        ? " The work budget has ended, so it is recorded as an absent result rather than blocking publication."
+        : " This stage was already asked once, so it is recorded as an absent result rather than blocking publication."),
     );
     return placeholderResult(status);
   }
 
+  // Persisted BEFORE the throw, because the throw is the only thing that
+  // carries the request to the agent and the next call must not repeat it.
+  recordRefusal();
   throw new Error(
     `--result ${JSON.stringify(result)} states a verdict but no evidence, so it cannot stand as this stage's result.\n`
     + "Removing the verdict words from it leaves nothing a reader could go and check.\n"
@@ -901,7 +920,9 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   // know whether it may still ask the stage for a better one.
   const statePath = path.join(contextDir(), "session-state.json");
   const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
-  const result = resolveResult(details.result, status, state);
+  const result = resolveResult(details.result, status, state, () => {
+    atomicWrite(statePath, `${JSON.stringify({ ...state, resultRefused: true }, null, 2)}\n`);
+  });
   const date = readOptional(path.join(contextDir(), "TODAY")) || utcDate();
   const paths = changedPaths(repoRoot);
   validateChangedPaths(stage, status, paths);

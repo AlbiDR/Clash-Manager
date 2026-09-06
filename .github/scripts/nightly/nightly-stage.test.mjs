@@ -641,3 +641,43 @@ test("an omitted result still falls back to the placeholder", () => {
   assert.equal(resolveResult(undefined, "CLEAN", working), placeholderResult("CLEAN"));
   assert.equal(resolveResult("", "CHANGED", working), placeholderResult("CHANGED"));
 });
+
+
+// The bound that makes the refusal safe, and the reason it is one nudge and not
+// a rule. finalize writes the coverage line, the sidecar and the body, so a
+// refusal that repeats does not give the stage a weaker description, it costs
+// the stage its whole night and leaves the watchdog nothing to recover. That is
+// strictly worse than the defect being fixed. Raised by a peer session against
+// the first version of this guard, which had no bound.
+test("a stage is asked for evidence once, never twice", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  const refusals = [];
+  const record = () => refusals.push(true);
+
+  assert.throws(() => resolveResult("PASSED", "CHANGED", working, record));
+  assert.equal(refusals.length, 1, "the refusal must be recorded, or the next call repeats it");
+
+  // The state the recorded refusal produces. Every later call is accepted.
+  const asked = { ...working, resultRefused: true };
+  const errors = [];
+  const originalError = console.error;
+  console.error = message => errors.push(String(message));
+  try {
+    assert.equal(resolveResult("PASSED", "CHANGED", asked, record), placeholderResult("CHANGED"));
+    assert.equal(resolveResult("PASS", "PARTIAL-RUN", asked, record), placeholderResult("PARTIAL-RUN"));
+  } finally {
+    console.error = originalError;
+  }
+  assert.equal(refusals.length, 1, "a second refusal was recorded");
+  assert.match(errors[0], /already asked once/);
+});
+
+// A stage that took the nudge is not punished for having needed it: real
+// evidence on the second call is published as the stage's own words.
+test("evidence offered after a refusal is accepted in full", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const asked = { startEpoch: now - 60, workDeadlineEpoch: now + 1800, resultRefused: true };
+  const stated = "pnpm audit:version reported 0 drift lines across 3 manifests";
+  assert.equal(resolveResult(stated, "CLEAN", asked), stated);
+});
