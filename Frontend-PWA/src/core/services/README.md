@@ -79,6 +79,14 @@ The modal confirmation composable provides a robust, styled replacement for the 
 - **Asynchronous Flow:** Exposes a promise-driven `confirm(pendingConfirmationOptions)` method that pauses execution and resolves to `isUserActionConfirmed` (boolean) once the user interacts with the UI dialog, ensuring clean linear usage.
 - **Tone & Ergonomics:** Supports custom dialog text, customized button labels, and visual tone configuration (`danger` vs `default`) to convey destructive semantics (e.g. factory resets or API URL resets).
 
+### Application Settings & Feature Flag Management (`useAppSettings.ts`)
+
+`useAppSettings.ts` acts as the global feature flag and user preference manager in Layer 1 Core:
+- **Valibot Validation Boundary (`ModuleStateSchema`):** Enforces strict runtime schema parsing via Valibot on raw storage snapshots and cross-tab storage payload events. Malformed or invalid settings revert safely to default configurations (`DEFAULT_STATE`) to preserve UI runtime stability.
+- **Redundant Dual-Tier Persistence:** Maintains reactive singleton settings (`modules`) in `LocalStorage` (`cm_modules_v2`) for main-thread UI performance, while selectively mirroring notification preferences (`cm_notifications_enabled`, `cm_notification_threshold`) to IndexedDB (`idb`) for background Service Worker access.
+- **Cross-Tab Storage Synchronization:** Listens to global `storage` events to re-validate and synchronize settings in real time across concurrent open browser tabs.
+- **Type-Safe Toggle Guards:** Exposes `toggle(key)` for boolean flag inversions, enforcing strict property type checking without unsafe type assertions or `any` coercions.
+
 ### Showcase Mode Orchestration (`useShowcaseMode.ts`)
 
 `useShowcaseMode.ts` acts as a Layer 1 master-child state orchestrator that coordinates the simultaneous activation of Synthetic (mock data) and Blueprint (skeleton UI) display states:
