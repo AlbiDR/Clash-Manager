@@ -84,3 +84,12 @@ test('runsPerDay understands the forms this project uses, and admits what it can
   assert.equal(runsPerDay('0 3 * * 1'), null);
   assert.equal(runsPerDay('not a cron'), null);
 });
+
+test('parses both CLI JSON shapes, bare array and agent envelope', async () => {
+  const { parseRows } = await import('./audit-cron-schedule.mjs');
+  const row = { jobid: 1, jobname: 'a', schedule: '0 3 * * *', active: true, command: 'SELECT 1' };
+  assert.deepEqual(parseRows(`Initialising login role...\n${JSON.stringify([row])}`), [row]);
+  assert.deepEqual(parseRows(JSON.stringify({ boundary: 'x', rows: [row], warning: 'y' })), [row]);
+  assert.throws(() => parseRows('no payload here'), /no JSON payload/);
+  assert.throws(() => parseRows('{"boundary":"x"}'), /no rows array/);
+});

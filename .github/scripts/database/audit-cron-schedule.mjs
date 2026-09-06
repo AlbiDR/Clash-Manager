@@ -119,7 +119,14 @@ async function readLiveJobs() {
     try {
       ({ stdout } = await run(
         'supabase',
-        ['db', 'query', '--linked', 'select jobid, jobname, schedule, active, command from cron.job order by jobid'],
+        [
+          'db', 'query', '--linked',
+          // Explicit format: the CLI emits agent-wrapped JSON when it detects an
+          // agent and a human-readable table otherwise, so relying on the default
+          // worked locally and produced an unparseable table in CI.
+          '--output-format', 'json',
+          'select jobid, jobname, schedule, active, command from cron.job order by jobid',
+        ],
         { cwd, maxBuffer: 8 * 1024 * 1024 },
       ));
       break;
@@ -128,9 +135,19 @@ async function readLiveJobs() {
     }
   }
   if (stdout === null) throw lastError ?? new Error('no linked Supabase project found');
-  const match = stdout.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('no JSON payload in supabase db query output');
-  const rows = JSON.parse(match[0]).rows;
+  return parseRows(stdout);
+}
+
+/**
+ * The CLI has two JSON shapes: a bare array, and an agent envelope with the rows
+ * under `rows`. Both appear depending on whether it thinks it is talking to an
+ * agent, which is why this is a named, tested function rather than an inline regex.
+ */
+export function parseRows(stdout) {
+  const start = stdout.search(/[[{]/);
+  if (start === -1) throw new Error('no JSON payload in supabase db query output');
+  const payload = JSON.parse(stdout.slice(start));
+  const rows = Array.isArray(payload) ? payload : payload.rows;
   if (!Array.isArray(rows)) throw new Error('payload contained no rows array');
   return rows;
 }
