@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1709 [Stage 3]: Read-only baseline schema audit complete; 0 pending migrations, fold-state FOLDED, migration-quality PASS, database verification DB-UNAVAILABLE
+**Domain:** database | **Commit:** 2b8ec41c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1709)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Master migration baseline is current with all 28 replayed migrations and meets RLS, search_path, and formatting policies without requiring source edits.
+**Change:** Read-only baseline schema audit complete; 0 pending migrations, fold-state FOLDED, migration-quality PASS, database verification DB-UNAVAILABLE
+**Result:** Static audit PASS: migration quality PASS, fold-state FOLDED, 0 pending migrations, DB-UNAVAILABLE.
+
+
 ### [2026-09-06] PR #1708 [Stage 2]: Expanded useAppSettings unit test coverage for non-boolean toggle guards, init idempotency, storage event edge cases, and IDB/quota exceptions
 **Domain:** verification | **Commit:** 3c838a5f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1708)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useAppSettings.spec.ts
