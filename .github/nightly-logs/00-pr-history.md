@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-06] PR #1712 [Stage 6]: docs(tsdoc): harden useBenchmarking interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 4a06ec19 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1712)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBenchmarking.ts
+**Why:** Document Layer 1 core benchmarking service interface contracts and statistical calculation decision logs
+**Change:** docs(tsdoc): harden useBenchmarking interface contracts and inline logic annotations
+**Result:** Vitest unit tests passed and 0 depcruise violations
+
+
 ### [2026-09-06] PR #1711 [Stage 5]: Reconciled useAppSettings.ts feature flag and settings architecture in core services README
 **Domain:** documentation | **Commit:** 0b660575 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1711)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
