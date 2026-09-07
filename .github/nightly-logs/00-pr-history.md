@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1729 [Stage 10]: Verified wrapper integrity, asset links, manifest parity, version sync, release pointer metadata, and cleartext security policy
+**Domain:** apk | **Commit:** 507d5ed6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1729)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All wrapper invariants matched package.json 14.50.40 and native configurations cleanly with no drift found
+**Change:** Verified wrapper integrity, asset links, manifest parity, version sync, release pointer metadata, and cleartext security policy
+**Result:** pnpm audit:apk passed with zero mismatches
+**Nudges:** 0
+
+
 ### [2026-09-07] PR #1728 [Stage 8]: Bumped vue-router to ^5.3.1 and updated major version watchlist
 **Domain:** dependencies | **Commit:** 4ea36bcd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1728)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
