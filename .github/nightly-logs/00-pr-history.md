@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1730 [Stage 11]: Audited native WebView performance settings (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache strategy, and APK wrapper integrity; all optimal.
+**Domain:** apk | **Commit:** 984882ec | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1730)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All wrapper and caching configurations match required performance baselines.
+**Change:** Audited native WebView performance settings (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache strategy, and APK wrapper integrity; all optimal.
+**Result:** pnpm audit:apk passed cleanly.
+**Nudges:** 0
+
+
 ### [2026-09-07] PR #1729 [Stage 10]: Verified wrapper integrity, asset links, manifest parity, version sync, release pointer metadata, and cleartext security policy
 **Domain:** apk | **Commit:** 507d5ed6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1729)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
