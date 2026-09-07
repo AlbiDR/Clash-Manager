@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { useAppSettings, type ModuleState } from "./useAppSettings";
+import { useAppSettings } from "./useAppSettings";
 import { useClashDataStore } from "./useClashDataStore";
-import { storeToRefs } from "pinia";
 
-import { computed, type ComputedRef } from "vue";
+import { unref } from "vue";
 import type { LeaderboardMember, Recruit } from "../types";
 import { parseTimeAgoValue } from "../utils/time";
 
@@ -43,13 +42,6 @@ type MetricMetadata = {
   lowerIsBetter?: boolean;
   format?: BenchmarkData["format"];
 };
-
-// [PERF] PERFORMANCE: Singleton state for benchmarking engine.
-// [DECISION LOG] Moving state and logic to module level prevents O(N) re-creation of computed properties
-// and extractors when useBenchmarking is called in large lists (e.g., MemberCard).
-let lbStats: ComputedRef<StatsMap | null> | null = null;
-let hhStats: ComputedRef<StatsMap | null> | null = null;
-let sharedModules: ModuleState | null = null;
 
 /**
  * [PERF] LB METRIC EXTRACTORS
@@ -189,80 +181,13 @@ const calculateStats = <T>(
  * @param value - The individual player's numeric value for the metric.
  * @returns A BenchmarkData object or null if statistics are unavailable.
  */
-function getBenchmark(
-  context: "lb" | "hh",
-  metric: string,
-  value: number,
-): BenchmarkData | null {
-  // [DECISION LOG] Context-based lookup ensures strict separation between internal roster statistics and external recruit metrics.
-  const stats = context === "lb" ? lbStats?.value : hhStats?.value;
-  if (!stats) return null;
-
-  const metricStats = stats[metric];
-  if (!metricStats) return null;
-
-  const metricMetadata = BENCHMARK_METRICS[metric];
-  const scoreDelta = value - metricStats.avg;
-  // [DECISION LOG] Safeguard against division by zero if metricStats.avg is 0.
-  const deviationPercentage = Math.abs(Math.round((scoreDelta / (metricStats.avg || 1)) * 100));
-  const isAboveAverage = metricMetadata?.lowerIsBetter ? scoreDelta <= 0 : scoreDelta >= 0;
-
-  const labelRaw = metricMetadata?.label;
-  const label =
-    typeof labelRaw === "function" ? labelRaw(context) : labelRaw || metric;
-
-  // [DECISION LOG] Performance tier mapping branches based on whether lower metric values represent better performance (e.g. lastSeen duration).
-  const performanceTier = metricMetadata?.lowerIsBetter
-    ? value <= metricStats.min * 1.1
-      ? "ELITE"
-      : isAboveAverage
-        ? "TOP TIER"
-        : value > metricStats.avg * 2
-          ? "UNDER"
-          : "GROWING"
-    : value >= metricStats.max * 0.9
-      ? "ELITE"
-      : isAboveAverage
-        ? "TOP TIER"
-        : value < metricStats.avg * 0.5
-          ? "UNDER"
-          : "GROWING";
-
-  return {
-    label,
-    tier: performanceTier as BenchmarkData["tier"],
-    value,
-    avg: metricStats.avg,
-    min: metricStats.min,
-    max: metricStats.max,
-    percent: deviationPercentage,
-    isBetter: isAboveAverage,
-    format: metricMetadata?.format,
-  };
-}
-
-/**
- * HELPER: getSafeBenchmark
- *
- * @remarks
- * Satisfies ADR Section I: Core Services.
- * Combines App Settings (ghostBenchmarking feature flag toggle) and value validation
- * to provide a safe evaluation boundary for UI templates and tooltips.
- *
- * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
- * @param metric - The key of the metric to compare.
- * @param value - The value to compare (handles undefined values gracefully).
- * @returns A BenchmarkData object or null if ghost benchmarking is disabled or value is missing.
- */
-function getSafeBenchmark(
-  context: "lb" | "hh",
-  metric: string,
-  value: number | undefined,
-): BenchmarkData | null {
-  // [GUARD] GUARD: Check ghostBenchmarking setting toggle and value existence before running statistical lookup.
-  if (!sharedModules?.ghostBenchmarking || value === undefined) return null;
-  return getBenchmark(context, metric, value);
-}
+// [PERF] WeakMap memoization cache keyed by the reactive rawData payload object reference.
+// [DECISION LOG] Prevents O(N) recalculation across multiple component render cycles (e.g. MemberCard lists)
+// while ensuring automatic garbage collection and preventing state leaks across store resets or unit test boundaries.
+const statsCache = new WeakMap<
+  object,
+  { lb: StatsMap | null; hh: StatsMap | null }
+>();
 
 /**
  * COMPOSABLE: useBenchmarking (Layer 1 - @core)
@@ -273,8 +198,8 @@ function getSafeBenchmark(
  * - **Role:** Statistical engine for comparing player performance against clan averages.
  * - **Satisfaction:** Satisfies ADR Section I: Core Services & Section IV: Performance.
  *
- * Optimized via a module-level singleton pattern to share calculated metrics across all component instances
- * without duplicating reactive listeners or statistical passes.
+ * Optimized via WeakMap memoization to share calculated metrics across all component instances
+ * without duplicating reactive listeners, statistical passes, or store hook lookups.
  *
  * [ARCHITECTURE] ADR LAYER: @core
  * - Permitted Imports: Layer 1 services, Pinia stores, and Vue core.
@@ -283,25 +208,105 @@ function getSafeBenchmark(
  * @returns Object contract containing `getBenchmark` and `getSafeBenchmark` comparison helper functions.
  */
 export function useBenchmarking() {
-  // [PERF] LAZY INIT: Singleton state initialized on first composable invocation to defer calculation until needed.
-  if (!lbStats) {
-    const clashDataStore = useClashDataStore();
-    const { data } = storeToRefs(clashDataStore);
-    const { modules } = useAppSettings();
-    sharedModules = modules;
+  const clashDataStore = useClashDataStore();
+  const appSettings = useAppSettings();
 
-    // [DECISION LOG] Module-level computed properties share statistical aggregations across all component instances.
-    lbStats = computed(() => {
-      // Logic: Extract metrics for the Leaderboard (Internal Member) context
-      const lb = data.value?.lb || [];
-      return calculateStats(lb, LB_EXTRACTORS);
-    });
+  /**
+   * CORE: getBenchmark
+   *
+   * @remarks
+   * Satisfies ADR Section I: Core Services.
+   * Computes comparative data for a specific metric by looking up pre-calculated statistics in singleton state.
+   *
+   * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
+   * @param metric - The key of the metric to compare.
+   * @param value - The individual player's numeric value for the metric.
+   * @returns A BenchmarkData object or null if statistics are unavailable.
+   */
+  function getBenchmark(
+    context: "lb" | "hh",
+    metric: string,
+    value: number,
+  ): BenchmarkData | null {
+    const rawData = unref(clashDataStore.data);
+    if (!rawData || typeof rawData !== "object") return null;
 
-    hhStats = computed(() => {
-      // Logic: Extract metrics for the Headhunter (Prospective Recruit) context
-      const hh = data.value?.hh || [];
-      return calculateStats(hh, HH_EXTRACTORS);
-    });
+    let cached = statsCache.get(rawData);
+    if (!cached) {
+      cached = {
+        lb: calculateStats(rawData.lb || [], LB_EXTRACTORS),
+        hh: calculateStats(rawData.hh || [], HH_EXTRACTORS),
+      };
+      statsCache.set(rawData, cached);
+    }
+
+    const stats = context === "lb" ? cached.lb : cached.hh;
+    if (!stats) return null;
+
+    const metricStats = stats[metric];
+    if (!metricStats) return null;
+
+    const metricMetadata = BENCHMARK_METRICS[metric];
+    const scoreDelta = value - metricStats.avg;
+    // [DECISION LOG] Safeguard against division by zero if metricStats.avg is 0.
+    const deviationPercentage = Math.abs(Math.round((scoreDelta / (metricStats.avg || 1)) * 100));
+    const isAboveAverage = metricMetadata?.lowerIsBetter ? scoreDelta <= 0 : scoreDelta >= 0;
+
+    const labelRaw = metricMetadata?.label;
+    const label =
+      typeof labelRaw === "function" ? labelRaw(context) : labelRaw || metric;
+
+    // [DECISION LOG] Performance tier mapping branches based on whether lower metric values represent better performance (e.g. lastSeen duration).
+    const performanceTier = metricMetadata?.lowerIsBetter
+      ? value <= metricStats.min * 1.1
+        ? "ELITE"
+        : isAboveAverage
+          ? "TOP TIER"
+          : value > metricStats.avg * 2
+            ? "UNDER"
+            : "GROWING"
+      : value >= metricStats.max * 0.9
+        ? "ELITE"
+        : isAboveAverage
+          ? "TOP TIER"
+          : value < metricStats.avg * 0.5
+            ? "UNDER"
+            : "GROWING";
+
+    return {
+      label,
+      tier: performanceTier as BenchmarkData["tier"],
+      value,
+      avg: metricStats.avg,
+      min: metricStats.min,
+      max: metricStats.max,
+      percent: deviationPercentage,
+      isBetter: isAboveAverage,
+      format: metricMetadata?.format,
+    };
+  }
+
+  /**
+   * HELPER: getSafeBenchmark
+   *
+   * @remarks
+   * Satisfies ADR Section I: Core Services.
+   * Combines App Settings (ghostBenchmarking feature flag toggle) and value validation
+   * to provide a safe evaluation boundary for UI templates and tooltips.
+   *
+   * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
+   * @param metric - The key of the metric to compare.
+   * @param value - The value to compare (handles undefined values gracefully).
+   * @returns A BenchmarkData object or null if ghost benchmarking is disabled or value is missing.
+   */
+  function getSafeBenchmark(
+    context: "lb" | "hh",
+    metric: string,
+    value: number | undefined,
+  ): BenchmarkData | null {
+    // [GUARD] GUARD: Check ghostBenchmarking setting toggle and value existence before running statistical lookup.
+    if (!appSettings.modules?.ghostBenchmarking || value === undefined) return null;
+    return getBenchmark(context, metric, value);
   }
 
   return { getBenchmark, getSafeBenchmark };
