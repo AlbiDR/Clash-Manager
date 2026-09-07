@@ -63,6 +63,14 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useShowcaseMode.ts` / `useBlueprintMode.ts` / `useSyntheticMode.ts` | The Showcase (demo), Blueprint (skeleton), and Synthetic (mock-data) modes. |
 | `useToast.ts` | Global toasts with haptic pairing. |
 
+### Statistical Clan Benchmarking Engine (`useBenchmarking.ts`)
+
+`useBenchmarking.ts` provides normalized statistical comparisons between individual player metrics and clan baselines in Layer 1 Core:
+- **Single-Pass Aggregation (`calculateStats`):** Aggregates numeric metrics across candidate pools (`lb` roster members or `hh` recruits) in a single O(N) array traversal, computing mean (`avg`), `min`, and `max` boundaries while guarding against empty datasets and division by zero.
+- **Context-Aware Metric Extractors:** Isolates internal clan roster metrics (`LB_EXTRACTORS`) from prospective recruit metrics (`HH_EXTRACTORS`) via context keys (`'lb'` vs `'hh'`), computing trophy ranks, win rates, war reliability, fame averages, and activity durations.
+- **Performance Tier Evaluation:** Evaluates values against dataset statistics into four performance tiers (`ELITE`, `TOP TIER`, `GROWING`, `UNDER`). Automatically adjusts calculation thresholds for inverted metrics (`lowerIsBetter: true` for `lastSeen` and `lastScan` duration minutes), where lower values represent superior performance.
+- **Ghost Benchmarking Safety Gate (`getSafeBenchmark`):** Gates statistical lookup behind `useAppSettings` feature flags (`ghostBenchmarking`), returning `null` safely when ghost benchmarking is disabled or when metric values are undefined.
+
 ### IndexedDB Persistence & Migration Engine (`StorageService.ts`)
 
 `StorageService.ts` provides clinical isolation for application data persistence in Layer 1 Core:

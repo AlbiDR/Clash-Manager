@@ -20,16 +20,19 @@ import { useConsoleSelection } from "./useConsoleSelection";
  * CONFIGURATION: ConsoleLogicOptions
  *
  * @remarks
- * Defines the configuration contract for the useConsoleController.
+ * Defines the comprehensive configuration contract for `useConsoleController`.
+ * Serves as the primary parameter payload for driving list console orchestrators.
+ *
+ * @template T - Domain item type managed by the console controller (must contain an `id`).
  */
 interface ConsoleLogicOptions<T> {
   /** The reactive dataset to be managed by the controller. */
   data: Ref<readonly T[]> | ComputedRef<readonly T[]>;
-  /** Optional hydration status override. */
+  /** Optional hydration status override. Defaults to `clashStore.isHydrated`. */
   isHydrated?: Ref<boolean> | ComputedRef<boolean>;
-  /** Optional in-flight refresh status override. */
+  /** Optional in-flight refresh status override. Defaults to `clashStore.loading`. */
   isRefreshing?: Ref<boolean> | ComputedRef<boolean>;
-  /** Optional last-sync-error override. */
+  /** Optional last-sync-error override. Defaults to `clashStore.syncError`. */
   syncError?: Ref<string | null> | ComputedRef<string | null>;
   /** Optional data source provenance override. */
   currentSource?: Ref<"SUPABASE" | null> | ComputedRef<"SUPABASE" | null>;
@@ -45,7 +48,7 @@ interface ConsoleLogicOptions<T> {
   sortStrategies: Record<string, (a: T, b: T) => number>;
   /** UI configuration for the sorting menu. */
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
-  /** Whether to enable the global search filter. */
+  /** Whether to enable the global search filter. Defaults to `true`. */
   showSearch?: boolean;
   /** The initial sort strategy key. */
   defaultSort: string;
@@ -59,7 +62,7 @@ interface ConsoleLogicOptions<T> {
   statsLabel: string;
   /** Optional logic to extract a numeric performance score. */
   scoreGetter?: (candidateItem: T) => number;
-  /** Optional override for the refresh action. */
+  /** Optional override for the refresh action. Defaults to `clashStore.refreshFromSupabase()`. */
   refresh?: () => void | Promise<void>;
   /** Optional callback for when the management FAB is dismissed. */
   onDismiss?: () => void;
@@ -67,7 +70,7 @@ interface ConsoleLogicOptions<T> {
   fabState?: ComputedRef<ConsoleFabState> | Ref<ConsoleFabState>;
   /** Optional layout events override. */
   layoutEvents?: ComputedRef<Partial<ConsoleLayoutEvents<T>>> | Partial<ConsoleLayoutEvents<T>>;
-  /** Optional selection store override. */
+  /** Optional selection store override. Defaults to module-level `useSelectionStore()`. */
   selectionStore?: ReturnType<typeof useSelectionStore>;
 }
 
@@ -86,10 +89,16 @@ interface ConsoleLogicOptions<T> {
  *
  * Satisfies ADR Section III: Data Flow & Transactional Integrity by ensuring
  * all list-level mutations (sort/filter/select) are handled via reactive
- * controllers.
+ * controllers, and ADR Section I: Core Services Architecture.
  *
- * @param options - Configuration for the controller.
- * @returns Standardized state and actions for driving a console view.
+ * @template T - Domain item type extending `{ id: string; n?: string }`.
+ * @param options - Configuration options for driving the console controller.
+ * @returns Standardized state, computed reactive contracts, and actions for driving a console view.
+ *
+ * @sideeffects
+ * - Mutates `useUiCoordinator` global FAB visibility state via watcher.
+ * - Re-evaluates deep-link fragment routes when source dataset changes.
+ * - Registers visibility-triggered background revalidation via `useVisibilityRefresh`.
  */
 export function useConsoleController<T extends { id: string; n?: string }>(
   options: ConsoleLogicOptions<T>,
@@ -132,6 +141,9 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   );
 
   // STEP 2: Pagination/Virtualization logic
+  // [DECISION LOG] SHOWCASE MODE TRUNCATION
+  // Rationale: In Showcase Mode, list rendering is constrained to a single element
+  // to maximize visual focus during presentation recording and automated audits.
   const { visibleItems: allVisibleItems } = useProgressiveList(filteredItems, 8);
   const visibleItems = computed(() => {
     if (isShowcase.value) return allVisibleItems.value.slice(0, 1);
@@ -275,7 +287,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       "fab-dismiss": onDismissFn || clearSelection,
     };
     if (eventsOverride) {
-      // [THREAT:] Implicit 'any' and unvalidated overrides (Target C [1]).
+      // [THREAT:] Implicit 'any' and unvalidated event overrides (Target C [1]).
       // Rationale: Using toValue ensures we handle both Ref and ComputedRef overrides
       // without resorting to 'as any' assertions, maintaining strict type safety.
       const eventOverrides = toValue(eventsOverride);
