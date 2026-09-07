@@ -16,6 +16,8 @@ import {
 } from "./nightly-prose.mjs";
 
 import {
+  agedEvidenceTags,
+  archiveAgedEvidenceTags,
   classifyTagCreation,
   classifyNightlyPr,
   collectHistoryBlocksFromTags,
@@ -825,4 +827,75 @@ test("an absent count never overwrites a measured one", () => {
 test("the refusal count is not counted as something the stage said", () => {
   const meta = extractMetadata({ title: "t", body: NUDGE_BODY("1") });
   assert.deepEqual(statedFields(meta).sort(), ["change", "result", "why"]);
+});
+
+// The archiver exists to shrink a tag picker, which makes it exactly the kind of
+// cleanup that must never cost evidence. These cover the boundary it derives, the
+// tags it must leave alone, and both halves of the push-then-delete order that
+// keeps a failed pass non-destructive.
+const ARCHIVE_CONFIG = { owner: "AlbiDR", repo: "Clash-Manager", token: "t", historyLookbackDays: 7 };
+const ARCHIVE_NOW = new Date("2026-09-07T12:00:00Z");
+const AGED_TAG = "nightly/2026-08-08/stage-1/pr-1391";
+
+test("aged evidence is cut at the floor of the history window, not a restated duration", () => {
+  const aged = agedEvidenceTags([
+    "nightly/2026-08-30/stage-1/pr-1",
+    "nightly/2026-09-01/stage-2/pr-2",
+    "nightly/2026-09-07/stage-3/pr-3",
+  ], { config: ARCHIVE_CONFIG, now: ARCHIVE_NOW });
+
+  // 2026-09-01 is the floor of a 7-day window ending 2026-09-07 and is still
+  // compiled, so an off-by-one here would evict evidence a reader still wants.
+  assert.deepEqual(aged, ["nightly/2026-08-30/stage-1/pr-1"]);
+});
+
+test("release tags are not evidence and are never archive candidates", () => {
+  const aged = agedEvidenceTags([
+    "v14.50.42",
+    "v14.0.0-build7",
+    "control-plane/2026-08-27-13of13",
+    AGED_TAG,
+    "",
+  ], { config: ARCHIVE_CONFIG, now: ARCHIVE_NOW });
+
+  assert.deepEqual(aged, [AGED_TAG]);
+});
+
+test("the archive ref is pushed before the evidence tag is deleted", () => {
+  const calls = [];
+  const result = archiveAgedEvidenceTags({
+    config: ARCHIVE_CONFIG,
+    now: ARCHIVE_NOW,
+    git: () => AGED_TAG,
+    run: args => {
+      calls.push(args.join(" "));
+      return { ok: true, stdout: "", stderr: "", status: 0 };
+    },
+  });
+
+  assert.equal(result.archived, 1);
+  assert.equal(result.failed, 0);
+  const pushIdx = calls.findIndex(call => call.includes(`refs/tags/${AGED_TAG}:refs/nightly-archive/2026-08-08/stage-1/pr-1391`));
+  const dropIdx = calls.findIndex(call => call.includes(`:refs/tags/${AGED_TAG}`));
+  assert.ok(pushIdx >= 0, "the archive ref was never pushed");
+  assert.ok(dropIdx > pushIdx, "the tag was deleted before its archive existed");
+});
+
+test("a failed archive push leaves the evidence tag exactly where it was", () => {
+  const calls = [];
+  const result = archiveAgedEvidenceTags({
+    config: ARCHIVE_CONFIG,
+    now: ARCHIVE_NOW,
+    git: () => AGED_TAG,
+    run: args => {
+      calls.push(args.join(" "));
+      const isArchivePush = args.some(arg => String(arg).includes("refs/nightly-archive"));
+      return { ok: !isArchivePush, stdout: "", stderr: "denied", status: isArchivePush ? 1 : 0 };
+    },
+  });
+
+  assert.equal(result.archived, 0);
+  assert.equal(result.failed, 1);
+  assert.ok(!calls.some(call => call.includes(`:refs/tags/${AGED_TAG}`)), "the remote tag was deleted despite a failed archive push");
+  assert.ok(!calls.some(call => call.startsWith("tag -d")), "the local tag was deleted despite a failed archive push");
 });

@@ -864,12 +864,93 @@ export function insertHistoryBlocks(content, entries) {
   };
 }
 
+// Nightly evidence is one tag per merged stage per night, so refs/tags gained
+// about eleven entries every run and the branch/tag pickers on GitHub and in
+// editors filled with them, burying the v* releases those pickers exist to
+// offer. Aged evidence therefore moves to a namespace no picker enumerates, and
+// stays readable with `git ls-remote origin 'refs/nightly-archive/*'`.
+const EVIDENCE_ARCHIVE_NAMESPACE = "refs/nightly-archive";
+
+/**
+ * The evidence tags no reader can still ask for.
+ *
+ * The cut is the floor of the very window collectHistoryBlocksFromTags queries,
+ * taken from the same config.historyLookbackDays rather than restated here as a
+ * duration, so the archiver cannot drift into evicting evidence a reader is
+ * still compiling from. The watchdog reads no further back than its own run date
+ * minus one, which sits inside this floor, so covering the history window covers
+ * both readers.
+ *
+ * parseStageTag matches only the nightly evidence shape, which is what keeps v*
+ * and every other tag out of the candidate list.
+ */
+export function agedEvidenceTags(tagNames, { config = CONFIG, now = new Date() } = {}) {
+  const window = getRecentDateStrings(config.historyLookbackDays, now);
+  const floor = window.reduce((oldest, date) => (date < oldest ? date : oldest), window[0]);
+  return tagNames
+    .map(tag => parseStageTag(String(tag || "").trim()))
+    .filter(parsed => parsed && parsed.date < floor)
+    .map(parsed => parsed.tag);
+}
+
+/**
+ * Moves aged evidence out of refs/tags and into the archive namespace.
+ *
+ * The archive ref is pushed and confirmed before the tag ref is deleted, and a
+ * failure aborts that tag alone rather than the pass: tidying a picker is never
+ * a reason to drop the only structured record of what a stage did. Both halves
+ * report, because an archive that pushed and failed to delete leaves a stale
+ * picker entry, and one that failed to push leaves evidence exactly where it
+ * was; those are different facts and neither is allowed to be silent.
+ */
+export function archiveAgedEvidenceTags({ config = CONFIG, git = gitStdout, run = runCmd, now = new Date() } = {}) {
+  const candidates = agedEvidenceTags(git(["tag", "-l", "nightly/*"]).split("\n"), { config, now });
+  if (candidates.length === 0) return { archived: 0, failed: 0 };
+
+  let archived = 0;
+  let failed = 0;
+  for (const tag of candidates) {
+    const archiveRef = `${EVIDENCE_ARCHIVE_NAMESPACE}/${tag.replace(/^nightly\//, "")}`;
+    const pushed = run(["push", buildRepoUrl(config), `refs/tags/${tag}:${archiveRef}`], { allowFailure: true });
+    if (!pushed.ok) {
+      log(`Kept ${tag} in refs/tags: archiving it to ${archiveRef} failed.`, "warn");
+      failed += 1;
+      continue;
+    }
+    const dropped = run(["push", buildRepoUrl(config), `:refs/tags/${tag}`], { allowFailure: true });
+    if (!dropped.ok) {
+      log(`Archived ${tag} to ${archiveRef} but could not delete the tag, so the picker keeps one stale entry.`, "warn");
+      failed += 1;
+      continue;
+    }
+    run(["tag", "-d", tag], { allowFailure: true });
+    archived += 1;
+  }
+
+  log(
+    `Archived ${archived} aged evidence tag(s) to ${EVIDENCE_ARCHIVE_NAMESPACE}/.`
+      + (failed > 0 ? ` ${failed} kept in refs/tags after a failure.` : ""),
+    archived > 0 ? "success" : "info",
+  );
+  return { archived, failed };
+}
+
 function compileHistoryFromTags(config = CONFIG) {
   log(`Compiling 00-pr-history.md from the last ${config.historyLookbackDays} day(s) of native Git tags...`);
   try {
     runCmd(["fetch", "--tags", "origin"], { allowFailure: true });
   } catch (error) {
     log(`Failed to fetch tags: ${error.message}`, "warn");
+  }
+
+  // Runs here rather than on a schedule because this is the actual event that
+  // retires a tag: the tag view has just been refreshed and the lookback window
+  // is about to be compiled. Anything older than that window is outside every
+  // reader's reach, so archiving it cannot change what gets compiled below.
+  try {
+    archiveAgedEvidenceTags({ config });
+  } catch (error) {
+    log(`Evidence archiving pass failed: ${error.message}`, "warn");
   }
 
   if (!fs.existsSync(config.changelogPath)) {
