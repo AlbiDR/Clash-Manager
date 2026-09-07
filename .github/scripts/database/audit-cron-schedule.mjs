@@ -66,13 +66,16 @@ export function auditCronSchedule({ manifest, live }) {
       findings.push({ kind: 'MISSING', name, detail: `declared but not scheduled on the remote` });
       continue;
     }
-    if (found.schedule !== job.schedule) {
+    // An event-gated job's cadence and active flag are derived from data by
+    // drivers.sync_voyage_activation_job(), so asserting them here would flag
+    // correct behaviour as drift. Presence and command are still enforced.
+    if (!job.dormantWhenIdle && found.schedule !== job.schedule) {
       findings.push({ kind: 'SCHEDULE_DRIFT', name, detail: `manifest ${job.schedule}, live ${found.schedule}` });
     }
     if (normalizeCommand(found.command) !== normalizeCommand(job.command)) {
       findings.push({ kind: 'COMMAND_DRIFT', name, detail: `manifest "${job.command}", live "${String(found.command).trim()}"` });
     }
-    if (found.active === false) {
+    if (found.active === false && !job.dormantWhenIdle) {
       findings.push({ kind: 'INACTIVE', name, detail: 'declared but paused on the remote' });
     }
   }
@@ -86,11 +89,21 @@ export function auditCronSchedule({ manifest, live }) {
   // Budget is computed from the MANIFEST, so CI catches an over-budget change at
   // review time rather than after it has been applied to production.
   let budgetTotal = 0;
+  let burstTotal = 0;
   const unknown = [];
+  const dormant = [];
   for (const job of manifest.jobs) {
     const perDay = runsPerDay(job.schedule);
-    if (perDay === null) unknown.push(job.name);
-    else budgetTotal += perDay;
+    if (perDay === null) {
+      unknown.push(job.name);
+    } else if (job.dormantWhenIdle) {
+      // Zero at rest. Its burst cost is reported separately so an event-gated
+      // job cannot hide an extravagant cadence behind the exemption.
+      dormant.push({ name: job.name, perDay });
+      burstTotal += perDay;
+    } else {
+      budgetTotal += perDay;
+    }
   }
   if (budgetTotal > manifest.dailyBudget) {
     findings.push({
@@ -105,6 +118,8 @@ export function auditCronSchedule({ manifest, live }) {
     findings,
     budgetTotal,
     budgetUnknown: unknown,
+    budgetDormant: dormant,
+    burstTotal,
   };
 }
 
@@ -168,6 +183,10 @@ async function main() {
 
   const result = auditCronSchedule({ manifest, live });
   console.log(`[BUDGET] ${result.budgetTotal} executions/day declared, ceiling ${manifest.dailyBudget}`);
+  if (result.budgetDormant.length > 0) {
+    const detail = result.budgetDormant.map((d) => `${d.name} ${d.perDay}/day while active`).join(', ');
+    console.log(`[BUDGET] event-gated, 0 at rest: ${detail}`);
+  }
   if (result.budgetUnknown.length > 0) {
     console.log(`[BUDGET] not counted (day-of-week or day-of-month): ${result.budgetUnknown.join(', ')}`);
   }

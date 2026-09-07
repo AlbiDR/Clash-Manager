@@ -93,3 +93,36 @@ test('parses both CLI JSON shapes, bare array and agent envelope', async () => {
   assert.throws(() => parseRows('no payload here'), /no JSON payload/);
   assert.throws(() => parseRows('{"boundary":"x"}'), /no rows array/);
 });
+
+const gated = {
+  dailyBudget: 600,
+  jobs: [
+    { name: 'nightly-maintenance', schedule: '0 3 * * *', command: 'SELECT substrate.execute_nightly_maintenance()' },
+    { name: 'voyage-auto-activate-cron', schedule: '*/5 * * * *', command: 'SELECT drivers.auto_activate_pending_voyages()', dormantWhenIdle: true },
+  ],
+};
+
+test('an event-gated job resting inactive is not drift, and costs 0 at rest', () => {
+  const live = [
+    { jobid: 32, jobname: 'nightly-maintenance', schedule: '0 3 * * *', active: true, command: 'SELECT substrate.execute_nightly_maintenance()' },
+    { jobid: 38, jobname: 'voyage-auto-activate-cron', schedule: '*/15 * * * *', active: false, command: 'SELECT drivers.auto_activate_pending_voyages()' },
+  ];
+  const result = auditCronSchedule({ manifest: gated, live });
+  assert.equal(result.status, 'MATCH', JSON.stringify(result.findings));
+  assert.equal(result.budgetTotal, 1, 'dormant job must not count at rest');
+  assert.equal(result.burstTotal, 288, 'its burst cost must still be reported');
+  assert.deepEqual(result.budgetDormant, [{ name: 'voyage-auto-activate-cron', perDay: 288 }]);
+});
+
+test('the exemption does not extend to the job going missing or being re-pointed', () => {
+  const missing = auditCronSchedule({ manifest: gated, live: [
+    { jobid: 32, jobname: 'nightly-maintenance', schedule: '0 3 * * *', active: true, command: 'SELECT substrate.execute_nightly_maintenance()' },
+  ] });
+  assert.ok(missing.findings.some((f) => f.kind === 'MISSING'));
+
+  const repointed = auditCronSchedule({ manifest: gated, live: [
+    { jobid: 32, jobname: 'nightly-maintenance', schedule: '0 3 * * *', active: true, command: 'SELECT substrate.execute_nightly_maintenance()' },
+    { jobid: 38, jobname: 'voyage-auto-activate-cron', schedule: '*/5 * * * *', active: false, command: 'SELECT drivers.drop_everything()' },
+  ] });
+  assert.ok(repointed.findings.some((f) => f.kind === 'COMMAND_DRIFT'));
+});

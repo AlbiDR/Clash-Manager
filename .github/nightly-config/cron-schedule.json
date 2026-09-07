@@ -18,7 +18,9 @@
     { "name": "rotate-recruits-cron",      "schedule": "55 * * * *",    "command": "SELECT substrate.rotate_recruits()" },
     { "name": "ingest-royale-data-cron",   "schedule": "0,30 * * * *",  "command": "SELECT substrate.run_ingest_royale_data()" },
     { "name": "headhunter-scanner-cron",   "schedule": "15,45 * * * *", "command": "SELECT substrate.run_headhunter_scanner()" },
-    { "name": "voyage-auto-activate-cron", "schedule": "*/15 * * * *",  "command": "SELECT drivers.auto_activate_pending_voyages()" },
+    { "name": "voyage-auto-activate-cron", "schedule": "*/5 * * * *",   "command": "SELECT drivers.auto_activate_pending_voyages()",
+      "dormantWhenIdle": true, "scheduleFrom": "VOYAGE_ACTIVATION_SCHEDULE",
+      "$why": "Event-gated. drivers.sync_voyage_activation_job() switches this on only while a voyage is PENDING and off again once none are, so active=false is the normal resting state and its cadence comes from substrate.config rather than from here. The audit therefore does not assert schedule or active for it, and counts 0 toward dailyBudget because its steady-state cost is zero. The trigger on drivers.clan_voyage is the real control; this entry exists so the job cannot go missing unnoticed." },
     { "name": "headhunter-epoch-guard",    "schedule": "*/5 * * * *",   "command": "SELECT substrate.run_headhunter_epoch_guard()" }
   ]
 }
