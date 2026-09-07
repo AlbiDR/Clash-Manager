@@ -7866,7 +7866,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.891Z",
+        "lastObservedAt": "2026-09-07T11:35:05.524Z",
         "failureClass": null
       },
       "2": {
@@ -7903,7 +7903,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.891Z",
+        "lastObservedAt": "2026-09-07T11:35:05.524Z",
         "failureClass": null
       },
       "3": {
@@ -7943,7 +7943,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.891Z",
+        "lastObservedAt": "2026-09-07T11:35:05.525Z",
         "failureClass": null
       },
       "4": {
@@ -7983,7 +7983,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.891Z",
+        "lastObservedAt": "2026-09-07T11:35:05.525Z",
         "failureClass": null
       },
       "5": {
@@ -8026,7 +8026,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.892Z",
+        "lastObservedAt": "2026-09-07T11:35:05.525Z",
         "failureClass": null
       },
       "6": {
@@ -8069,7 +8069,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.892Z",
+        "lastObservedAt": "2026-09-07T11:35:05.526Z",
         "failureClass": null
       },
       "7": {
@@ -8109,7 +8109,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.892Z",
+        "lastObservedAt": "2026-09-07T11:35:05.526Z",
         "failureClass": null
       },
       "8": {
@@ -8162,7 +8162,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-07T10:42:18.892Z",
+        "lastObservedAt": "2026-09-07T11:35:05.526Z",
         "failureClass": null
       },
       "9": {
@@ -8202,7 +8202,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.892Z",
+        "lastObservedAt": "2026-09-07T11:35:05.527Z",
         "failureClass": null
       },
       "10": {
@@ -8242,7 +8242,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.892Z",
+        "lastObservedAt": "2026-09-07T11:35:05.527Z",
         "failureClass": null
       },
       "11": {
@@ -8282,7 +8282,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.893Z",
+        "lastObservedAt": "2026-09-07T11:35:05.528Z",
         "failureClass": null
       },
       "12": {
@@ -8321,12 +8321,11 @@
           "body": {
             "pr": 1731,
             "verdict": "OK",
-            "ok": true,
-            "repairedFrom": "AD_LIBBED"
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.893Z",
+        "lastObservedAt": "2026-09-07T11:35:05.528Z",
         "failureClass": null
       },
       "13": {
@@ -8334,7 +8333,7 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
@@ -8342,12 +8341,31 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-07/stage-13/pr-1732",
+          "session": {
+            "id": "11162655939965057549",
+            "name": "sessions/11162655939965057549",
+            "state": "COMPLETED",
+            "createTime": "2026-09-07T11:27:38.262141043Z",
+            "updateTime": "2026-09-07T11:33:49.778671Z",
+            "lifetimeMinutes": 6.2
+          },
+          "run": {
+            "started": "2026-09-07T11:29:00Z",
+            "terminated": "2026-09-07T11:32:00Z",
+            "durationMinutes": 3
+          },
+          "body": {
+            "pr": 1732,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T10:42:18.893Z",
+        "lastObservedAt": "2026-09-07T11:35:05.528Z",
         "failureClass": null
       }
     }
