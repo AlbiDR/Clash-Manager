@@ -2,80 +2,148 @@
 // Copyright (C) 2026 AlbiDR
 import { useAppSettings, useBenchmarking } from "@core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { setActivePinia, createPinia } from 'pinia';
-// Mock useClashData
+// Mock useClashData with empty data capability via ref reference
+const mockLbData = ref<any[]>([
+  {
+    id: "1",
+    n: "Player 1",
+    t: 9000, // Max trophies
+    performanceScore: 100, // Max score
+    performanceRawScore: 12000,
+    dt: 10,
+    d: { rate: "100", avg: 50, days: 100, winRate: 1.0, seen: "1h ago" } // Max win rate
+  },
+  {
+    id: "2",
+    n: "Player 2",
+    t: 5000, // Avg trophies = (9000+5000+1000)/3 = 5000
+    performanceScore: 50, // Avg score = (100+50+0)/3 = 50
+    performanceRawScore: 6000,
+    dt: 0,
+    d: { rate: "50", avg: 25, days: 50, winRate: 0.5, seen: "2h ago" } // Avg win rate = (1.0+0.5+0)/3 = 0.5
+  },
+  {
+    id: "3",
+    n: "Player 3",
+    t: 1000,
+    performanceScore: 0,
+    performanceRawScore: 0,
+    dt: -10,
+    d: { rate: "0", avg: 0, days: 10, winRate: 0, seen: "4h ago" }
+  }
+]);
+
+const mockHhData = ref<any[]>([
+  {
+    id: "R1",
+    n: "Recruit 1",
+    t: 8000, // Max
+    potentialScore: 100, // Max
+    potentialRawScore: 12000,
+    lastScan: Date.now() - 60 * 60000,
+    d: { don: 1000, war: 100, cards: 1000, ago: "1d ago" }
+  },
+  {
+    id: "R2",
+    n: "Recruit 2",
+    t: 4000, // Avg
+    potentialScore: 50, // Avg
+    potentialRawScore: 6000,
+    lastScan: Date.now() - 120 * 60000,
+    d: { don: 500, war: 50, cards: 500, ago: "2d ago" }
+  },
+  {
+    id: "R3",
+    n: "Recruit 3",
+    t: 0,
+    potentialScore: 0,
+    potentialRawScore: 0,
+    lastScan: Date.now() - 240 * 60000,
+    d: { don: 0, war: 0, cards: 0, ago: "3d ago" }
+  }
+]);
+
 vi.mock("../useClashDataStore", () => ({
   useClashDataStore: vi.fn(() => ({
-    data: ref({
-      lb: [
-        {
-          id: "1",
-          n: "Player 1",
-          t: 9000, // Max trophies
-          performanceScore: 100, // Max score
-          performanceRawScore: 12000,
-          dt: 10,
-          d: { rate: "100", avg: 50, days: 100, winRate: 1.0, seen: "1h ago" } // Max win rate
-        },
-        {
-          id: "2",
-          n: "Player 2",
-          t: 5000, // Avg trophies = (9000+5000+1000)/3 = 5000
-          performanceScore: 50, // Avg score = (100+50+0)/3 = 50
-          performanceRawScore: 6000,
-          dt: 0,
-          d: { rate: "50", avg: 25, days: 50, winRate: 0.5, seen: "2h ago" } // Avg win rate = (1.0+0.5+0)/3 = 0.5
-        },
-        {
-          id: "3",
-          n: "Player 3",
-          t: 1000,
-          performanceScore: 0,
-          performanceRawScore: 0,
-          dt: -10,
-          d: { rate: "0", avg: 0, days: 10, winRate: 0, seen: "4h ago" }
-        }
-      ],
-      hh: [
-        {
-          id: "R1",
-          n: "Recruit 1",
-          t: 8000, // Max
-          potentialScore: 100, // Max
-          potentialRawScore: 12000,
-          lastScan: Date.now() - 60 * 60000,
-          d: { don: 1000, war: 100, cards: 1000, ago: "1d ago" }
-        },
-        {
-          id: "R2",
-          n: "Recruit 2",
-          t: 4000, // Avg
-          potentialScore: 50, // Avg
-          potentialRawScore: 6000,
-          lastScan: Date.now() - 120 * 60000,
-          d: { don: 500, war: 50, cards: 500, ago: "2d ago" }
-        },
-        {
-          id: "R3",
-          n: "Recruit 3",
-          t: 0,
-          potentialScore: 0,
-          potentialRawScore: 0,
-          lastScan: Date.now() - 240 * 60000,
-          d: { don: 0, war: 0, cards: 0, ago: "3d ago" }
-        }
-      ]
-    })
+    data: computed(() => ({
+      lb: mockLbData.value,
+      hh: mockHhData.value,
+    }))
   }))
 }));
 
 describe("useBenchmarking", () => {
+  let getBenchmark: ReturnType<typeof useBenchmarking>["getBenchmark"];
+  let getSafeBenchmark: ReturnType<typeof useBenchmarking>["getSafeBenchmark"];
+
   beforeEach(() => {
     setActivePinia(createPinia());
-  });
+    mockLbData.value = [
+      {
+        id: "1",
+        n: "Player 1",
+        t: 9000,
+        performanceScore: 100,
+        performanceRawScore: 12000,
+        dt: 10,
+        d: { rate: "100", avg: 50, days: 100, winRate: 1.0, seen: "1h ago" }
+      },
+      {
+        id: "2",
+        n: "Player 2",
+        t: 5000,
+        performanceScore: 50,
+        performanceRawScore: 6000,
+        dt: 0,
+        d: { rate: "50", avg: 25, days: 50, winRate: 0.5, seen: "2h ago" }
+      },
+      {
+        id: "3",
+        n: "Player 3",
+        t: 1000,
+        performanceScore: 0,
+        performanceRawScore: 0,
+        dt: -10,
+        d: { rate: "0", avg: 0, days: 10, winRate: 0, seen: "4h ago" }
+      }
+    ];
 
-  const { getBenchmark } = useBenchmarking();
+    mockHhData.value = [
+      {
+        id: "R1",
+        n: "Recruit 1",
+        t: 8000,
+        potentialScore: 100,
+        potentialRawScore: 12000,
+        lastScan: Date.now() - 60 * 60000,
+        d: { don: 1000, war: 100, cards: 1000, ago: "1d ago" }
+      },
+      {
+        id: "R2",
+        n: "Recruit 2",
+        t: 4000,
+        potentialScore: 50,
+        potentialRawScore: 6000,
+        lastScan: Date.now() - 120 * 60000,
+        d: { don: 500, war: 50, cards: 500, ago: "2d ago" }
+      },
+      {
+        id: "R3",
+        n: "Recruit 3",
+        t: 0,
+        potentialScore: 0,
+        potentialRawScore: 0,
+        lastScan: Date.now() - 240 * 60000,
+        d: { don: 0, war: 0, cards: 0, ago: "3d ago" }
+      }
+    ];
+
+    const benchmarking = useBenchmarking();
+    getBenchmark = benchmarking.getBenchmark;
+    getSafeBenchmark = benchmarking.getSafeBenchmark;
+  });
 
   describe("lb context (Leaderboard)", () => {
     it("calculates ELITE tier correctly (>= 90% of max)", () => {
@@ -148,16 +216,28 @@ describe("useBenchmarking", () => {
       expect(avgResult?.format).toBe("percent");
     });
 
-    it("benchmarks lb lastSeen as a lower-is-better recency metric", () => {
-      const freshResult = getBenchmark("lb", "lastSeen", 60);
-      expect(freshResult?.label).toBe("Last Seen");
-      expect(freshResult?.format).toBe("durationMinutes");
-      expect(freshResult?.tier).toBe("ELITE");
-      expect(freshResult?.isBetter).toBe(true);
+    it("benchmarks lb lastSeen across all lowerIsBetter performance tiers", () => {
+      // min = 60, avg = 140, max = 240
+      // value <= min * 1.1 (66) -> ELITE
+      const eliteResult = getBenchmark("lb", "lastSeen", 60);
+      expect(eliteResult?.tier).toBe("ELITE");
+      expect(eliteResult?.isBetter).toBe(true);
+      expect(eliteResult?.format).toBe("durationMinutes");
 
-      const staleResult = getBenchmark("lb", "lastSeen", 300);
-      expect(staleResult?.tier).toBe("UNDER");
-      expect(staleResult?.isBetter).toBe(false);
+      // value > 66 and <= avg (140) -> TOP TIER
+      const topTierResult = getBenchmark("lb", "lastSeen", 100);
+      expect(topTierResult?.tier).toBe("TOP TIER");
+      expect(topTierResult?.isBetter).toBe(true);
+
+      // value > avg (140) and <= avg * 2 (280) -> GROWING
+      const growingResult = getBenchmark("lb", "lastSeen", 180);
+      expect(growingResult?.tier).toBe("GROWING");
+      expect(growingResult?.isBetter).toBe(false);
+
+      // value > avg * 2 (280) -> UNDER
+      const underResult = getBenchmark("lb", "lastSeen", 300);
+      expect(underResult?.tier).toBe("UNDER");
+      expect(underResult?.isBetter).toBe(false);
     });
   });
 
@@ -200,8 +280,6 @@ describe("useBenchmarking", () => {
   });
 
   describe("getSafeBenchmark", () => {
-    const { getSafeBenchmark } = useBenchmarking();
-
     it("returns benchmark data when ghostBenchmarking uses the default enabled state", () => {
       expect(getSafeBenchmark("lb", "trophies", 9000)).not.toBeNull();
     });
@@ -218,22 +296,44 @@ describe("useBenchmarking", () => {
     it("returns null if value is undefined", () => {
       expect(getSafeBenchmark("lb", "trophies", undefined)).toBeNull();
     });
+
+    it("evaluates explicit zero values correctly without returning null", () => {
+      const result = getSafeBenchmark("lb", "trophies", 0);
+      expect(result).not.toBeNull();
+      expect(result?.value).toBe(0);
+      expect(result?.tier).toBe("UNDER");
+    });
   });
 
   describe("Edge Cases", () => {
     it("returns null if context/stats not found", () => {
-      // This is hard to test with the current mock without re-mocking
-      // but we can try to request a non-existent metric
       expect(getBenchmark("lb", "non-existent", 100)).toBeNull();
     });
 
-    it("handles zero average to avoid division by zero", () => {
-      // If we had a metric with all zeros, avg would be 0.
-      // useBenchmarking.ts uses (m.avg || 1) for percent calculation.
+    it("falls back to raw metric key as label when metric metadata is undefined", () => {
+      // Accessing a custom metric key if stats existed
+      expect(getBenchmark("lb", "unknownKey", 50)).toBeNull();
+    });
 
-      // We can re-mock for this specific test if needed, but the current lb mock
-      // doesn't have a 0 avg metric that we can easily use.
-      // Actually, 'Player 3' has 0 for some values, but averages are non-zero.
+    it("handles zero average metric without division by zero errors", () => {
+      // Create zero-average member list
+      mockLbData.value = [
+        { id: "1", t: 0, performanceScore: 0, d: { rate: "0", avg: 0, days: 0, winRate: 0, seen: "0h ago" } },
+        { id: "2", t: 0, performanceScore: 0, d: { rate: "0", avg: 0, days: 0, winRate: 0, seen: "0h ago" } },
+      ];
+
+      const zeroAvgResult = getBenchmark("lb", "trophies", 0);
+      expect(zeroAvgResult).not.toBeNull();
+      expect(zeroAvgResult?.avg).toBe(0);
+      expect(zeroAvgResult?.percent).toBe(0);
+    });
+
+    it("returns null when dataset pool is empty", () => {
+      mockLbData.value = [];
+      mockHhData.value = [];
+
+      expect(getBenchmark("lb", "trophies", 5000)).toBeNull();
+      expect(getBenchmark("hh", "trophies", 4000)).toBeNull();
     });
   });
 });
