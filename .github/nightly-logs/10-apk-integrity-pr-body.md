@@ -4,19 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited APK and PWA wrapper integrity across asset links, manifest parity, version codes/names, release metadata, and security policies; all invariants fully aligned.
+**What was checked:** Verified wrapper integrity, asset links, manifest parity, version sync, release pointer metadata, and cleartext security policy
 
-**Why:** Full audit verified that package names (com.albidr.clashmanager), SHA-256 fingerprints, manifest theme/background colors (#0b0e14), app version (14.50.21), release file (APK/release/latest.json pointing to clashmanager-v14.50.3+279.apk), and cleartext traffic policies are synchronized and valid without requiring source edits.
+**Why:** All wrapper invariants matched package.json 14.50.40 and native configurations cleanly with no drift found
 
-**Result:** Verified via pnpm audit:apk (all 25 assertions passed) and pnpm test:version-code (11 unit tests passed).
+**Result:** pnpm audit:apk passed with zero mismatches
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: Full audit verified that package names (com.albidr.clashmanager), SHA-256 fingerprints, manifest theme/background colors (#0b0e14), app version (14.50.21), release file (APK/release/latest.json pointing to clashmanager-v14.50.3+279.apk), and cleartext traffic policies are synchronized and valid without requiring source edits.
-  Change: Audited APK and PWA wrapper integrity across asset links, manifest parity, version codes/names, release metadata, and security policies; all invariants fully aligned.
-  Result: Verified via pnpm audit:apk (all 25 assertions passed) and pnpm test:version-code (11 unit tests passed).
+  Why: All wrapper invariants matched package.json 14.50.40 and native configurations cleanly with no drift found
+  Change: Verified wrapper integrity, asset links, manifest parity, version sync, release pointer metadata, and cleartext security policy
+  Result: pnpm audit:apk passed with zero mismatches
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
+  Nudges: 0
 -->
