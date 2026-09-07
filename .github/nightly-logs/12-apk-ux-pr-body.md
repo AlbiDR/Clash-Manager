@@ -4,19 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** S12 global APK UX audit complete; 75 frontend files inspected across 10 UX categories with 0 violations found
+**What was checked:** audit completed - 75 files examined, 0 violations found
 
-**Why:** Structured APK UX audit status is PASS with zero candidate violations
+**Why:** no UX issue found across 10 categories
 
-**Result:** Audit PASS; 75 files verified clean across raw selects, safe areas, haptics, overscroll, and mobile touch targets
+**Result:** Audit completed with no source change required.
 
 **Files changed:** .github/nightly-logs/12-apk-ux-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Why: Structured APK UX audit status is PASS with zero candidate violations
-  Change: S12 global APK UX audit complete; 75 frontend files inspected across 10 UX categories with 0 violations found
-  Result: Audit PASS; 75 files verified clean across raw selects, safe areas, haptics, overscroll, and mobile touch targets
+  Why: no UX issue found across 10 categories
+  Change: audit completed - 75 files examined, 0 violations found
+  Result: Audit completed with no source change required.
   Files: .github/nightly-logs/12-apk-ux-coverage.log
+  Nudges: 1
 -->
