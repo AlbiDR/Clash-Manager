@@ -41,7 +41,10 @@
     "Backend/supabase/migrations/20260903020000_stop_voyage_crown_truncation.sql": "97ae47790cf1b5e56366c12fb6227781ba605034ca9b81b4a069c71072b2eb60",
     "Backend/supabase/migrations/20260903030000_align_battle_trigger_crown_allowlist.sql": "da00fca30390d9288c2844a95f0e889f32843acff1a28bb3b3f02ed00e18cba2",
     "Backend/supabase/migrations/20260903040000_fix_report_discovery_phantom_column.sql": "31adbfb825e9c18fd5055870ed573e076f36c88f808d2c28ce350daee7ffab1c",
-    "Backend/supabase/migrations/20260906130000_preserve_recruit_discovery_source.sql": "7b61f728319fbf794024371b96fa8d75cc1531a61295f1106e7310ea69318a93"
+    "Backend/supabase/migrations/20260906130000_preserve_recruit_discovery_source.sql": "7b61f728319fbf794024371b96fa8d75cc1531a61295f1106e7310ea69318a93",
+    "Backend/supabase/migrations/20260906160000_cron_history_smart_pruning.sql": "380e406db4b39805c876c8c9a81cf3a3164848fb866a769f1f02e7a4270e8d85",
+    "Backend/supabase/migrations/20260906170000_tune_autovacuum_churn_tables.sql": "59e10a3a22ed304293d8f919db332191e6a524fc3df50488d22021c8adfdbf90",
+    "Backend/supabase/migrations/20260907010000_voyage_activation_gate.sql": "e24b994799b980bceb4805bd805fa4abed8829c9bcea051c90faec537d22453e"
   },
   "exemptions": []
 }

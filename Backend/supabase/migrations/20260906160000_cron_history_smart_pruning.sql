@@ -1,26 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
---
--- Smart pruning for cron.job_run_details: fold daily aggregates into
--- substrate.cron_run_daily, then delete only what has been folded.
---
--- [Root Cause] pg_cron never prunes job_run_details. The table reached 33 MB
--- with n_live_tup = 0, so autovacuum is structurally blind to it and has never
--- run on it. It was the only table in the project with no retention at all.
--- [Preventive Action] substrate.cron_health_trend exposes SILENT, OVERLAPPING,
--- STARVED, SLOWING and FAILING verdicts per job. The 2026-09-06 incident was
--- 181 identical 'job startup timeout' failures across all six active jobs, and
--- nothing in the system could see it until users reported the app was broken.
-
--- SPDX-License-Identifier: GPL-3.0-only
--- Copyright (C) 2026 AlbiDR
+-- Fold cron.job_run_details into substrate.cron_run_daily daily aggregates,
+-- then delete only folded days. Rationale in the commit message.
 
 BEGIN;
 
--- 3.1 Safe tunable reader ---------------------------------------------------
--- Returns NULL rather than raising when a config value is absent or malformed,
--- so a typo in substrate.config degrades to the caller's default instead of
--- aborting the whole nightly maintenance transaction.
 CREATE OR REPLACE FUNCTION substrate.config_int(p_key text)
  RETURNS integer
  LANGUAGE plpgsql
@@ -54,7 +38,6 @@ INSERT INTO substrate.config (key, value, description) VALUES
      'A run with no end_time older than this is treated as abandoned, so a crashed job cannot block folding forever.')
 ON CONFLICT (key) DO NOTHING;
 
--- 3.2 Rollup table ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS substrate.cron_run_daily (
     jobid        bigint      NOT NULL,
     jobname      text        NOT NULL,
@@ -63,11 +46,8 @@ CREATE TABLE IF NOT EXISTS substrate.cron_run_daily (
     successes    integer     NOT NULL,
     failures     integer     NOT NULL,
     unfinished   integer     NOT NULL,
-    completed    integer     NOT NULL,   -- runs with a measurable duration; the
-                                         -- correct weight for averaging, since
-                                         -- `runs` includes unfinished ones
-    overlapping_runs integer NOT NULL,   -- runs that began while a previous
-                                         -- run of the same job was still active
+    completed    integer     NOT NULL,   -- runs with a measurable duration
+    overlapping_runs integer NOT NULL,   -- began while a previous run was live
     duration_min interval,
     duration_avg interval,
     duration_max interval,
@@ -81,9 +61,6 @@ ALTER TABLE substrate.cron_run_daily ENABLE ROW LEVEL SECURITY;
 CREATE INDEX IF NOT EXISTS idx_cron_run_daily_date
     ON substrate.cron_run_daily (run_date DESC);
 
--- 3.3 Fold ------------------------------------------------------------------
--- Folds every COMPLETE UTC day into one row per job. Idempotent: the upsert
--- recomputes each day's aggregate from scratch, so re-running is always safe.
 CREATE OR REPLACE FUNCTION substrate.fold_cron_history()
  RETURNS integer
  LANGUAGE plpgsql
@@ -200,10 +177,6 @@ BEGIN
 END;
 $function$;
 
--- 3.4 Purge -----------------------------------------------------------------
--- Deletes only raw rows whose day is already folded, and never more than one
--- batch per call. Nightly invocations converge on the target without ever
--- opening a transaction large enough to hurt a nano instance.
 CREATE OR REPLACE FUNCTION substrate.purge_cron_history()
  RETURNS integer
  LANGUAGE plpgsql
@@ -259,9 +232,6 @@ BEGIN
 END;
 $function$;
 
--- 3.5 Health ----------------------------------------------------------------
--- An empty cron_run_daily and a healthy-but-idle system look identical unless
--- staleness is stated explicitly.
 CREATE OR REPLACE VIEW substrate.cron_health AS
 SELECT
     j.jobid,
@@ -282,14 +252,9 @@ LEFT JOIN LATERAL (
     WHERE d.jobid = j.jobid
 ) f ON true;
 
--- 3.6 Trend -----------------------------------------------------------------
--- The actual preventive action. Four independent degradation signals, any one
--- of which would have flagged 2026-09-06 days before it became an outage.
 CREATE OR REPLACE VIEW substrate.cron_health_trend AS
 WITH jobs AS (
-    -- Every job seen in EITHER window. Driving off `recent` alone silently
-    -- dropped any job that stopped running altogether, which is the single
-    -- loudest signal this view exists to raise.
+    -- Both windows: driving off `recent` alone hid jobs that stopped entirely.
     SELECT jobid, max(jobname) AS jobname
     FROM substrate.cron_run_daily
     WHERE run_date >= (now() AT TIME ZONE 'UTC')::date - 35
@@ -297,9 +262,7 @@ WITH jobs AS (
 ),
 recent AS (
     SELECT jobid,
-           -- Weighted by `completed`, not `runs`: a day's duration_avg is an
-           -- average over completed runs only, so weighting by total runs
-           -- overstated days that contained unfinished ones.
+           -- Weighted by `completed`; `runs` would overstate unfinished days.
            sum(duration_avg * completed::double precision) FILTER (WHERE duration_avg IS NOT NULL)
              / NULLIF(sum(completed) FILTER (WHERE duration_avg IS NOT NULL), 0)::double precision
              AS avg_recent,
@@ -339,11 +302,7 @@ ratio AS (
     LEFT JOIN baseline b USING (jobid)
 )
 SELECT *,
-    -- Ordered most-diagnostic first. SILENT, OVERLAPPING and STARVED are the
-    -- three that describe 2026-09-06: a job that stopped running, executions
-    -- stacking, and the scheduler failing to start a job as often as its own
-    -- schedule demands. Duration alone would not have caught any of them,
-    -- because a job that never starts has no duration.
+    -- Most-diagnostic first; a job that never starts has no duration to judge.
     CASE
         WHEN runs_per_day_recent = 0
              AND COALESCE(runs_per_day_baseline, 0) > 0 THEN 'SILENT'
@@ -357,15 +316,6 @@ SELECT *,
     END AS verdict
 FROM ratio;
 
--- 3.7 Wire into the nightly orchestrator ------------------------------------
--- Reproduces the live definition of substrate.execute_nightly_maintenance()
--- verbatim, adding only the block at the end.
---
--- [THREAT:] The function's own EXCEPTION handler re-RAISEs, so anything that
--- throws inside it costs all fourteen existing purges their nightly run.
--- [DECISION LOG] The cron-history calls are placed last and wrapped in their
--- own exception block that logs and swallows. Pruning a log table must never
--- be able to abort real data maintenance.
 CREATE OR REPLACE FUNCTION substrate.execute_nightly_maintenance()
  RETURNS void
  LANGUAGE plpgsql
