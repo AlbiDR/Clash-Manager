@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1726 [Stage 7]: Audit complete: Version 14.50.40 and catalog adherence verified across all manifests and derived declarations.
+**Domain:** versioning | **Commit:** 8d358158 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1726)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** No version drift or catalog violations detected during full scan.
+**Change:** Audit complete: Version 14.50.40 and catalog adherence verified across all manifests and derived declarations.
+**Result:** pnpm audit:version passed with ground truth version 14.50.40.
+**Nudges:** 0
+
+
 ### [2026-09-07] PR #1725 [Stage 6]: docs(tsdoc): harden useConsoleController interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 0c3a263e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1725)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useConsoleController.ts
