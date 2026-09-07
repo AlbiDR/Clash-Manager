@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1722 [Stage 3]: Read-only baseline audit verified RLS, search_path isolation, and formatting on master migration (0 pending migrations, fold-state DEGRADED, migration-quality FAIL, database-verification DB-UNAVAILABLE)
+**Domain:** database | **Commit:** 5f41272c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1722)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** No pending migrations to fold and baseline master migration passed read-only audit
+**Change:** Read-only baseline audit verified RLS, search_path isolation, and formatting on master migration (0 pending migrations, fold-state DEGRADED, migration-quality FAIL, database-verification DB-UNAVAILABLE)
+**Result:** Static fold-state status DEGRADED, migration-quality FAIL, database verification DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-09-07] PR #1721 [Stage 2]: Expanded useBenchmarking spec coverage for edge cases, lowerIsBetter boundaries, zero averages, and empty data pools
 **Domain:** verification | **Commit:** 98333212 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1721)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useBenchmarking.spec.ts
