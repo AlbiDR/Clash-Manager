@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1731 [Stage 12]: audit completed - 75 files examined, 0 violations found
+**Domain:** ux | **Commit:** 269353ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1731)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** no UX issue found across 10 categories
+**Change:** audit completed - 75 files examined, 0 violations found
+**Result:** Audit completed with no source change required.
+**Nudges:** 1
+
+
 ### [2026-09-07] PR #1730 [Stage 11]: Audited native WebView performance settings (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache strategy, and APK wrapper integrity; all optimal.
 **Domain:** apk | **Commit:** 984882ec | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1730)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
