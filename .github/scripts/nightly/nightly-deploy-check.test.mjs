@@ -14,6 +14,7 @@ import {
   collectStrandedWork,
   evaluatePendingActivation,
   evaluateStrandedWork,
+  hasUnarrivedContent,
   renderDriftReport,
   isWorkflowFile,
   renderActivationReport,
@@ -252,4 +253,68 @@ test("a broken registry shrinks coverage to the fixed entries, never to nothing"
   const watched = strandedOnlyFiles("/nonexistent/stages.json");
   assert.ok(watched.length > 0);
   assert.ok(watched.includes(".github/nightly-prompts/00-nightly-agent-contract.md"));
+});
+
+// ---------------------------------------------------------------------------
+// Reachability finds the candidates, content decides which of them are real. A
+// targeted cherry-pick is the prescribed way to deploy a scripts-only fix to
+// Nightly, so the original commit stays unreachable from it for good while the
+// code it carries is already running there. These pin both directions: the
+// cherry-pick clears, and a fix that genuinely never arrived still reds. The
+// second one is the point. A filter that only ever removes findings has to be
+// held to the findings it must never remove.
+
+const CP_FILE = ".github/scripts/nightly/merge-nightly-core.mjs";
+
+test("a cherry-picked deploy stops being stranded once its content is on the execution branch", () => {
+  const unarrived = hasUnarrivedContent("2eca34c1 fix(nightly): keep evidence out of the pickers", {
+    branch: "Beta",
+    executionBranch: "Nightly",
+    files: [CP_FILE],
+    touched: () => [CP_FILE],
+    blob: () => "identical-blob",
+  });
+
+  assert.equal(unarrived, false);
+});
+
+test("a fix that never reached the execution branch is still reported", () => {
+  const unarrived = hasUnarrivedContent("deadbee1 fix(nightly): never deployed", {
+    branch: "Beta",
+    executionBranch: "Nightly",
+    files: [CP_FILE],
+    touched: () => [CP_FILE],
+    blob: branch => (branch === "Nightly" ? "stale-blob" : "fixed-blob"),
+  });
+
+  assert.equal(unarrived, true);
+});
+
+test("only the files the commit touched decide it, not unrelated control-plane drift", () => {
+  const unarrived = hasUnarrivedContent("abc1234 fix(nightly): touched one file", {
+    branch: "Beta",
+    executionBranch: "Nightly",
+    files: [CP_FILE, ".github/workflows/merge-nightly-prs.yml"],
+    touched: () => [CP_FILE],
+    blob: (branch, file) => (file === CP_FILE ? "identical-blob" : `${branch}-drifted`),
+  });
+
+  assert.equal(unarrived, false);
+});
+
+test("a commit git could not diff is kept, never quietly cleared", () => {
+  const unarrived = hasUnarrivedContent("abc1234 fix(nightly): undiffable", {
+    branch: "Beta",
+    executionBranch: "Nightly",
+    files: [CP_FILE],
+    touched: () => null,
+    blob: () => "identical-blob",
+  });
+
+  assert.equal(unarrived, true);
+});
+
+test("an unparseable log line is kept rather than treated as arrived", () => {
+  assert.equal(hasUnarrivedContent("", { branch: "Beta", touched: () => [CP_FILE], blob: () => "same" }), true);
+  assert.equal(hasUnarrivedContent("   ", { branch: "Beta", touched: () => [CP_FILE], blob: () => "same" }), true);
 });

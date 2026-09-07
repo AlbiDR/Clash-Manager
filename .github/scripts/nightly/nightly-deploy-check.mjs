@@ -279,6 +279,56 @@ export function strandedOnlyFiles(registryPath = ".github/nightly-config/stages.
   }
 }
 
+/**
+ * The control-plane files a commit actually touched.
+ *
+ * Returns null when git could not answer, which callers treat as "keep the
+ * finding". Same rule as collectStrandedWork below: this check is not allowed to
+ * fall silent on a question it failed to ask.
+ */
+function touchedControlPlaneFiles(commitish, files, spawn = spawnSync) {
+  const res = spawn(
+    "git",
+    ["diff-tree", "--no-commit-id", "--name-only", "-r", commitish, "--", ...files],
+    { encoding: "utf8" },
+  );
+  if (res.status !== 0) return null;
+  return (res.stdout || "").split("\n").map(line => line.trim()).filter(Boolean);
+}
+
+/**
+ * Whether a candidate commit still has control-plane content the execution
+ * branch is missing.
+ *
+ * `git log A..B -- <files>` answers reachability, and a targeted cherry-pick is
+ * the prescribed way to deploy a scripts-only fix to the execution branch. That
+ * produces a new SHA, so the original commit stays permanently unreachable from
+ * Nightly and gets named as stranded for as long as it exists, while the code it
+ * carries is already running there. A guard that reds on a correct state is one
+ * people learn to ignore, which costs the same as having no guard at all.
+ *
+ * A candidate therefore survives only if some control-plane file it touched
+ * still differs on the execution branch. This can only ever remove findings, and
+ * only where every file the commit touched is byte-identical on the branch that
+ * runs them, which is precisely the case where there is nothing left to deploy.
+ * Anything git could not answer is kept.
+ */
+export function hasUnarrivedContent(commitLine, {
+  branch,
+  executionBranch = EXECUTION_BRANCH,
+  files = CONTROL_PLANE_FILES,
+  blob = blobHash,
+  touched = touchedControlPlaneFiles,
+} = {}) {
+  const sha = String(commitLine || "").trim().split(/\s+/)[0];
+  if (!sha) return true;
+
+  const changed = touched(sha, files);
+  if (changed === null || changed.length === 0) return true;
+
+  return changed.some(file => blob(executionBranch, file) !== blob(branch, file));
+}
+
 export function collectStrandedWork(
   files = CONTROL_PLANE_FILES,
   branches = CONTROL_PLANE_BRANCHES,
@@ -301,7 +351,15 @@ export function collectStrandedWork(
       const detail = (res.stderr || "").trim() || `git exited ${res.status}`;
       throw new Error(`Could not compare origin/${executionBranch}..origin/${branch}: ${detail}`);
     }
-    commitsByBranch[branch] = res.stdout.split("\n").map(line => line.trim()).filter(Boolean);
+    commitsByBranch[branch] = res.stdout
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean)
+      // Reachability found the candidates; content decides. See hasUnarrivedContent:
+      // a cherry-picked deploy is a different SHA carrying identical blobs, and
+      // naming it as stranded would red the guard on a branch that is in fact
+      // running the fix.
+      .filter(line => hasUnarrivedContent(line, { branch, executionBranch, files }));
   }
   return commitsByBranch;
 }
