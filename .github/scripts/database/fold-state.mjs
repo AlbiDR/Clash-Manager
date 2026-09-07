@@ -49,8 +49,18 @@ function mutation(statement) {
   if (match) return { key: `CONSTRAINT:${unquote(match[1])}.${unquote(match[3])}`, mode: match[2].toUpperCase() === 'ADD' ? 'constraint-present' : 'constraint-absent', table: match[1], constraint: match[3], sql };
   match = sql.match(/^ALTER TABLE(?: IF EXISTS)? ([\w".]+) ALTER COLUMN ([\w"]+) (ADD GENERATED ALWAYS AS IDENTITY|DROP IDENTITY)/i);
   if (match) return { key: `IDENTITY:${unquote(match[1])}.${unquote(match[2])}`, mode: match[3].toUpperCase().startsWith('ADD') ? 'identity-present' : 'identity-absent', table: match[1], column: match[2], sql };
+  match = sql.match(/^DROP TRIGGER(?: IF EXISTS)? ([\w"]+) ON ([\w".]+)/i);
+  if (match) return { key: `TRIGGER:${unquote(match[1])}@${unquote(match[2])}`, mode: 'absent', sql };
+  // Storage parameters (autovacuum tuning and friends). Matched only when SET is
+  // followed by '(' so it cannot swallow SET SCHEMA, SET TABLESPACE, or the
+  // ALTER COLUMN ... SET forms. Uses exact mode: the statement counts as folded
+  // once the baseline carries it verbatim, and reads as unfolded until then,
+  // which is the truth rather than 'unsupported'.
+  match = sql.match(/^ALTER TABLE(?: IF EXISTS)? ([\w".]+) SET \(/i);
+  if (match) return { key: `STORAGE:${unquote(match[1])}:${compact(sql)}`, mode: 'exact', sql };
   if (/^(?:BEGIN|COMMIT);?$/i.test(sql) || /^(?:INSERT|UPDATE|DELETE|SELECT SETVAL)\b/i.test(sql)) return { mode: 'data-only' };
   if (/^SELECT CRON\.SCHEDULE\b/i.test(sql)) return { key: `SCHEDULE:${compact(sql)}`, mode: 'exact', sql };
+  if (/^SELECT\s+[\w".]+\s*\(/i.test(sql)) return { mode: 'data-only' };
   if (/^DO\b/i.test(sql)) return { key: `DO:${compact(sql).slice(0, 120)}`, mode: 'semantic-only', sql };
   return null;
 }
