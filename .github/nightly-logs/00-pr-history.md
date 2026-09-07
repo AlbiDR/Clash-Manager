@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1724 [Stage 5]: Reconciled useBenchmarking.ts single-pass statistics and tier calculation in core services README
+**Domain:** documentation | **Commit:** ae67e6a3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1724)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document L1 Core benchmarking composable single-pass aggregation, context extractors, and ghost benchmarking safety flag
+**Change:** Reconciled useBenchmarking.ts single-pass statistics and tier calculation in core services README
+**Result:** git diff --check reported 0 errors and source code remained untouched
+**Nudges:** 1
+
+
 ### [2026-09-07] PR #1723 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, profiler.ts); zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** 03e6d1b9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1723)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
