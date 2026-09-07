@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1725 [Stage 6]: docs(tsdoc): harden useConsoleController interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 0c3a263e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1725)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useConsoleController.ts
+**Why:** Document Layer 1 core useConsoleController interface contracts and decision logs
+**Change:** docs(tsdoc): harden useConsoleController interface contracts and inline logic annotations
+**Result:** Vitest unit tests passed cleanly
+**Nudges:** 0
+
+
 ### [2026-09-07] PR #1724 [Stage 5]: Reconciled useBenchmarking.ts single-pass statistics and tier calculation in core services README
 **Domain:** documentation | **Commit:** ae67e6a3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1724)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
