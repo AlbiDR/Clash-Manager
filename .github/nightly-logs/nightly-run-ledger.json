@@ -7866,7 +7866,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.375Z",
+        "lastObservedAt": "2026-09-07T10:36:00.924Z",
         "failureClass": null
       },
       "2": {
@@ -7903,7 +7903,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.375Z",
+        "lastObservedAt": "2026-09-07T10:36:00.924Z",
         "failureClass": null
       },
       "3": {
@@ -7943,7 +7943,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.376Z",
+        "lastObservedAt": "2026-09-07T10:36:00.925Z",
         "failureClass": null
       },
       "4": {
@@ -7983,7 +7983,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.376Z",
+        "lastObservedAt": "2026-09-07T10:36:00.925Z",
         "failureClass": null
       },
       "5": {
@@ -8026,7 +8026,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.376Z",
+        "lastObservedAt": "2026-09-07T10:36:00.925Z",
         "failureClass": null
       },
       "6": {
@@ -8069,7 +8069,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.376Z",
+        "lastObservedAt": "2026-09-07T10:36:00.926Z",
         "failureClass": null
       },
       "7": {
@@ -8109,7 +8109,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.377Z",
+        "lastObservedAt": "2026-09-07T10:36:00.926Z",
         "failureClass": null
       },
       "8": {
@@ -8162,7 +8162,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-07T09:27:36.377Z",
+        "lastObservedAt": "2026-09-07T10:36:00.926Z",
         "failureClass": null
       },
       "9": {
@@ -8202,7 +8202,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.377Z",
+        "lastObservedAt": "2026-09-07T10:36:00.927Z",
         "failureClass": null
       },
       "10": {
@@ -8242,7 +8242,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.378Z",
+        "lastObservedAt": "2026-09-07T10:36:00.927Z",
         "failureClass": null
       },
       "11": {
@@ -8282,7 +8282,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.378Z",
+        "lastObservedAt": "2026-09-07T10:36:00.927Z",
         "failureClass": null
       },
       "12": {
@@ -8290,21 +8290,25 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
             "frontier": 11
           },
           "health": {
-            "verdict": "HEALTHY",
-            "currentStreak": 0,
-            "reason": "no adverse trend"
-          }
+            "verdict": "DEGRADING",
+            "currentStreak": 1,
+            "reason": "intervention rate rose from 15% to 33%"
+          },
+          "prNumber": 1731,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1731",
+          "headRef": "nightly/stage-12-apk-ux-619a6c46-18265149739188848445",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.378Z",
-        "failureClass": null
+        "lastObservedAt": "2026-09-07T10:36:00.928Z",
+        "failureClass": "OPEN_PR"
       },
       "13": {
         "date": "2026-09-07",
@@ -8315,7 +8319,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 11
+            "frontier": 12
           },
           "health": {
             "verdict": "HEALTHY",
@@ -8324,7 +8328,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-07T09:27:36.378Z",
+        "lastObservedAt": "2026-09-07T10:36:00.928Z",
         "failureClass": null
       }
     }
