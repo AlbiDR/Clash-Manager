@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-07] PR #1728 [Stage 8]: Bumped vue-router to ^5.3.1 and updated major version watchlist
+**Domain:** dependencies | **Commit:** 4ea36bcd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1728)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Tier 1 minor bump to vue-router within declared range and updated Tier 2 major version watchlist in coverage log
+**Change:** Bumped vue-router to ^5.3.1 and updated major version watchlist
+**Result:** pnpm -F clash-manager-pwa run build passed cleanly with vue-tsc type-check and Vite build
+**Nudges:** 1
+
+
 ### [2026-09-07] PR #1727 [Stage 9]: refactor(core): fix stale store singleton state pollution in useBenchmarking
 **Domain:** architecture | **Commit:** 2c69c06c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1727)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/core/services/useBenchmarking.ts
