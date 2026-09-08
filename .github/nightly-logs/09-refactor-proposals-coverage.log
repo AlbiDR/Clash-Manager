@@ -106,3 +106,4 @@
 * [2026-09-05] [Stage 9] [07:14Z-07:18Z 4m] CLEAN: Codebase -- 18 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected StorageService.ts, useAppSettings.ts, useClashSync.ts. Candidate useClashSync clean; hunt useClashSync clean.
 * [2026-09-06] [Stage 9] [07:11Z-07:20Z 9m] CLEAN: Codebase -- 48 candidate files, 0 dep-violations, consecutive-clean: 2. Inspected protocol.ts, StorageService.ts, useAppSettings.ts, useBenchmarking.ts, useProgressiveList.ts. Candidate protocol.ts high risk; hunt useBenchmarking clean.
 * [2026-09-07] [Stage 9] [07:13Z-07:25Z 12m] CHANGED: Frontend-PWA/src/core/services/useBenchmarking.ts -- refactor(core): fix stale store singleton state pollution in useBenchmarking
+* [2026-09-08] [Stage 9] [07:15Z-07:20Z 5m] CLEAN: Codebase -- 36 candidates, 0 dep-violations, consecutive-clean: 2. Inspected useProgressiveList, useConsoleController, StatusPill, VoyageBanner. Candidate VoyageBanner high risk; hunt useProgressiveList clean.
