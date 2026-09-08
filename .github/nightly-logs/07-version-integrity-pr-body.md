@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audit complete: Version 14.50.40 and catalog adherence verified across all manifests and derived declarations.
+**What was checked:** Audited catalog and monorepo package versions against ground truth 14.50.45; zero drift detected.
 
-**Why:** No version drift or catalog violations detected during full scan.
+**Why:** Catalog adherence verified in Frontend-PWA and Backend package manifests. Monorepo ground truth version 14.50.45 is fully synchronized across all manifests, README badges, APK configs, and substrate files.
 
-**Result:** pnpm audit:version passed with ground truth version 14.50.40.
+**Result:** pnpm audit:version confirmed 0 drift or catalog issues for ground truth 14.50.45.
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Why: No version drift or catalog violations detected during full scan.
-  Change: Audit complete: Version 14.50.40 and catalog adherence verified across all manifests and derived declarations.
-  Result: pnpm audit:version passed with ground truth version 14.50.40.
+  Why: Catalog adherence verified in Frontend-PWA and Backend package manifests. Monorepo ground truth version 14.50.45 is fully synchronized across all manifests, README badges, APK configs, and substrate files.
+  Change: Audited catalog and monorepo package versions against ground truth 14.50.45; zero drift detected.
+  Result: pnpm audit:version confirmed 0 drift or catalog issues for ground truth 14.50.45.
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
 -->
