@@ -13,6 +13,8 @@ import { watch, type Ref, shallowRef, onScopeDispose } from "vue";
  * items at once, it breaks the list into manageable chunks and schedules their
  * injection during idle browser frames.
  *
+ * Satisfies CleanStack Architecture ADR Section IV: Performance & SWR Boundaries.
+ *
  * [PERF] Optimized for v14.50.45:
  * - Uses shallowRef to reduce reactive overhead of the visible list.
  * - Utilizes IdleDeadline to process multiple chunks per idle frame.
@@ -23,12 +25,16 @@ import { watch, type Ref, shallowRef, onScopeDispose } from "vue";
  * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
  *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  *
+ * @sideeffects
+ * - Schedules asynchronous frame timers (`requestIdleCallback` or `requestAnimationFrame`).
+ * - Mutates local shallow reactive array `visibleItems`.
+ *
  * @typeParam T - The type of elements contained in the progressive list.
  * @param sourceList - The full reactive list of items to be rendered.
- * @param initialSize - The number of items to render immediately on first load.
+ * @param initialSize - The number of items to render immediately on first load (default 12).
  *
  * @returns
- * - `visibleItems`: A reactive slice of the source list that grows over time.
+ * - `visibleItems`: A reactive slice of the source list that grows progressively over idle frames.
  */
 export function useProgressiveList<T>(
   sourceList: Ref<readonly T[]>,
@@ -47,6 +53,13 @@ export function useProgressiveList<T>(
    */
   let progressiveChunkTimer: number | null = null;
 
+  /**
+   * Clears any scheduled idle callback or animation frame timer.
+   *
+   * @remarks
+   * [DECISION LOG] Timer Idempotency: Prevents concurrent chunk injection loops
+   * or memory leaks when list source changes rapidly.
+   */
   function clearTimer() {
     if (progressiveChunkTimer !== null) {
       if (window.cancelIdleCallback) {
@@ -68,10 +81,11 @@ export function useProgressiveList<T>(
        * Logic: Churn Prevention (Bug #17)
        *
        * @remarks
-       * A "Refresh" is defined as a minor change in list size (< 5 items).
-       * We assume these are score updates or single member changes.
-       * In this case, we update existing visible items without resetting the view
-       * to prevent jarring scroll jumps or layout shifts.
+       * [THREAT: Scroll Position Disruption] Resetting the visible item window on minor
+       * list updates (e.g., score polling or single item updates) causes sudden scroll jumps.
+       *
+       * [DECISION LOG] Minor Delta Churn Prevention: A "Refresh" is defined as a minor change
+       * in list size (< 5 items). We preserve existing rendered slice length and slice updated data.
        */
       const isRefresh =
         previousListItems &&
@@ -101,15 +115,14 @@ export function useProgressiveList<T>(
   );
 
   /**
-   * Schedules the next batch of items for injection.
+   * Schedules the next batch of items for time-sliced injection.
    *
    * @remarks
    * Utilizes requestIdleCallback where available to minimize impact on
-   * user interaction threads. Falls back to requestAnimationFrame.
+   * user interaction threads, falling back to requestAnimationFrame.
    *
    * @param fullSourceList - The full source array of type T to render from.
    * @param renderedItemCount - The number of items currently rendered in the visible list.
-   * @returns Void.
    */
   function scheduleChunk(fullSourceList: T[], renderedItemCount: number) {
     const frameScheduler =
@@ -118,10 +131,10 @@ export function useProgressiveList<T>(
     progressiveChunkTimer = (frameScheduler as (cb: (deadline?: IdleDeadline | number) => void) => number)((deadline) => {
       let projectedItemCount = renderedItemCount;
 
-      // [PERF] IDLE BUDGETING: If we have an idle deadline, we attempt to
-      // process as many chunks as possible within the remaining time.
-      // [FIX] SAFETY CHECK: requestAnimationFrame passes a DOMHighResTimeStamp,
-      // not an IdleDeadline. We must verify 'timeRemaining' exists before calling.
+      // [THREAT: Runtime Interface Incompatibility] fallback requestAnimationFrame passes a
+      // DOMHighResTimeStamp numeric primitive instead of an IdleDeadline object, causing
+      // `deadline.timeRemaining()` to throw TypeError if called directly.
+      // [DECISION LOG] Deadline Feature Detection: explicitly verify 'timeRemaining' function existence.
       const hasIdleDeadline = !!(deadline && typeof (deadline as IdleDeadline).timeRemaining === "function");
 
       // [PERF] IDLE BUDGETING: Process multiple chunks within a single frame
