@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1735 [Stage 3]: Folded 4 pending migrations into baseline
+**Domain:** database | **Commit:** d933c949 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1735)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Consolidated 20260906130000, 20260906160000, 20260906170000, and 20260907010000 into master baseline
+**Change:** Folded 4 pending migrations into baseline
+**Result:** PASS (0 violations, 0 unfolded objects)
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1734 [Stage 2]: Expanded unit tests for useConsoleController composable
 **Domain:** verification | **Commit:** 4b07a7c0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1734)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
