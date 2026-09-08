@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1739 [Stage 7]: Audited catalog and monorepo package versions against ground truth 14.50.45; zero drift detected.
+**Domain:** versioning | **Commit:** 60dae2e5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1739)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Catalog adherence verified in Frontend-PWA and Backend package manifests. Monorepo ground truth version 14.50.45 is fully synchronized across all manifests, README badges, APK configs, and substrate files.
+**Change:** Audited catalog and monorepo package versions against ground truth 14.50.45; zero drift detected.
+**Result:** pnpm audit:version confirmed 0 drift or catalog issues for ground truth 14.50.45.
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1738 [Stage 6]: docs(tsdoc): harden useProgressiveList interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 1cf951da | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1738)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useProgressiveList.ts
