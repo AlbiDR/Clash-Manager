@@ -8404,7 +8404,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.368Z",
+        "lastObservedAt": "2026-09-08T14:45:52.753Z",
         "failureClass": null
       },
       "2": {
@@ -8441,7 +8441,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.368Z",
+        "lastObservedAt": "2026-09-08T14:45:52.753Z",
         "failureClass": null
       },
       "3": {
@@ -8481,7 +8481,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.369Z",
+        "lastObservedAt": "2026-09-08T14:45:52.753Z",
         "failureClass": null
       },
       "4": {
@@ -8534,7 +8534,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-08T11:11:24.369Z",
+        "lastObservedAt": "2026-09-08T14:45:52.753Z",
         "failureClass": null
       },
       "5": {
@@ -8577,7 +8577,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.369Z",
+        "lastObservedAt": "2026-09-08T14:45:52.754Z",
         "failureClass": null
       },
       "6": {
@@ -8620,7 +8620,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.370Z",
+        "lastObservedAt": "2026-09-08T14:45:52.754Z",
         "failureClass": null
       },
       "7": {
@@ -8663,7 +8663,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.370Z",
+        "lastObservedAt": "2026-09-08T14:45:52.754Z",
         "failureClass": null
       },
       "8": {
@@ -8716,7 +8716,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-08T11:11:24.370Z",
+        "lastObservedAt": "2026-09-08T14:45:52.755Z",
         "failureClass": null
       },
       "9": {
@@ -8756,7 +8756,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.371Z",
+        "lastObservedAt": "2026-09-08T14:45:52.755Z",
         "failureClass": null
       },
       "10": {
@@ -8799,7 +8799,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.371Z",
+        "lastObservedAt": "2026-09-08T14:45:52.755Z",
         "failureClass": null
       },
       "11": {
@@ -8839,7 +8839,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.371Z",
+        "lastObservedAt": "2026-09-08T14:45:52.756Z",
         "failureClass": null
       },
       "12": {
@@ -8879,7 +8879,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.372Z",
+        "lastObservedAt": "2026-09-08T14:45:52.756Z",
         "failureClass": null
       },
       "13": {
@@ -8887,25 +8887,43 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
             "frontier": 12
           },
           "health": {
-            "verdict": "DEGRADING",
-            "currentStreak": 1,
-            "reason": "intervention rate rose from 15% to 23%"
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
           },
           "prNumber": 1745,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1745",
           "headRef": "nightly/stage-13-self-healing-protocol-e76caabe-10957569482489903368",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-08/stage-13/pr-1745",
+          "session": {
+            "id": "10957569482489903368",
+            "name": "sessions/10957569482489903368",
+            "state": "COMPLETED",
+            "createTime": "2026-09-08T11:04:42.662300054Z",
+            "updateTime": "2026-09-08T11:10:47.089284Z",
+            "lifetimeMinutes": 6.1
+          },
+          "run": {
+            "started": "2026-09-08T11:06:00Z",
+            "terminated": "2026-09-08T11:09:00Z",
+            "durationMinutes": 3
+          },
+          "body": {
+            "pr": 1745,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T11:11:24.372Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-08T14:45:52.756Z",
+        "failureClass": null
       }
     }
   }
