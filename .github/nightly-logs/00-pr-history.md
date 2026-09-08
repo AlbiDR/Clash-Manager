@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1738 [Stage 6]: docs(tsdoc): harden useProgressiveList interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 1cf951da | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1738)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useProgressiveList.ts
+**Why:** Document Layer 1 core useProgressiveList interface contracts and decision logs
+**Change:** docs(tsdoc): harden useProgressiveList interface contracts and inline logic annotations
+**Result:** Vitest unit tests passed cleanly
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1737 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, profiler.ts); zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** 2264c519 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1737)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
