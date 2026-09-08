@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-08
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-08] PR #1746 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** hardening | **Commit:** 5ed2b875 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1746)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Audited Edge Function endpoints, in-memory reactive state, Valibot schema boundaries, and cross-layer constraints with zero threat vectors found.
+**Change:** Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** All 1823 Vitest unit tests passed cleanly with 0 regressions and 0 depcruise violations.
+**Nudges:** 0
+
 ### [2026-09-08] PR #1745 [Stage 13]: Audited 2026-09-08 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
 **Domain:** pipeline | **Commit:** 2988c819 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1745)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
