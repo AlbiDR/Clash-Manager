@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1734 [Stage 2]: Expanded unit tests for useConsoleController composable
+**Domain:** verification | **Commit:** 4b07a7c0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1734)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useConsoleController.spec.ts
+**Why:** Close coverage gap for L1 core service useConsoleController
+**Change:** Expanded unit tests for useConsoleController composable
+**Result:** All 1823 PWA tests passing cleanly
+**Nudges:** 0
+
+
 ### [2026-09-07] PR #1733 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 7da56fa3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1733)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
