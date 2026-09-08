@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1743 [Stage 11]: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
+**Domain:** apk | **Commit:** 5dfd8f46 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1743)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and optimized Workbox precache rules. vite.config.ts enforces optimal vendor chunk splitting.
+**Change:** Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
+**Result:** pnpm audit:apk PASSED (manifest, colors, shortcuts, digital asset links, version parity); pnpm apk:verify:source PASSED (custom native DEX layer intact); pnpm test PASSED (195 test files, 1823 tests).
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1742 [Stage 10]: Verified APK and PWA wrapper integrity across all invariants.
 **Domain:** apk | **Commit:** 3f284090 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1742)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
