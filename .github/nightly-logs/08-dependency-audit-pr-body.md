@@ -4,20 +4,20 @@
 
 In plain terms: this updates dependencies only. No project code was written or changed, though the app should be re-tested before release.
 
-**What changed:** Bumped vue-router to ^5.3.1 and updated major version watchlist
+**What changed:** Bumped @supabase/supabase-js to ^2.116.0 and updated major version watchlist
 
-**Why:** Tier 1 minor bump to vue-router within declared range and updated Tier 2 major version watchlist in coverage log
+**Why:** Safe Tier 1 minor bump and ongoing Tier 2 watchlist tracking
 
-**Result:** pnpm -F clash-manager-pwa run build passed cleanly with vue-tsc type-check and Vite build
+**Result:** pnpm test passed 195/195 test files (1823 tests passed)
 
-**Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: dependencies
-  Why: Tier 1 minor bump to vue-router within declared range and updated Tier 2 major version watchlist in coverage log
-  Change: Bumped vue-router to ^5.3.1 and updated major version watchlist
-  Result: pnpm -F clash-manager-pwa run build passed cleanly with vue-tsc type-check and Vite build
-  Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
-  Nudges: 1
+  Why: Safe Tier 1 minor bump and ongoing Tier 2 watchlist tracking
+  Change: Bumped @supabase/supabase-js to ^2.116.0 and updated major version watchlist
+  Result: pnpm test passed 195/195 test files (1823 tests passed)
+  Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml
+  Nudges: 0
 -->
