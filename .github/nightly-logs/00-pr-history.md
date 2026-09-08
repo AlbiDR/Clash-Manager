@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1737 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, profiler.ts); zero substrate or logic bottlenecks found
+**Domain:** optimization | **Commit:** 2264c519 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1737)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Bounded audit of 78 changed files and Edge Functions confirmed zero orphaned view calls or inefficient logic paths
+**Change:** Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, profiler.ts); zero substrate or logic bottlenecks found
+**Result:** Source-level grep verified 5 database views (roster_view, scoring_view, pipeline_heartbeat_view, recruit_blacklist_view, headhunter_view) and 195 PWA test suites passed cleanly (1823 tests passed)
+**Nudges:** 0
+
+### [2026-09-08] PR #1736 [Stage 5]: Reconciled useConsoleController.ts list console orchestration engine, Showcase mode truncation, skeleton display priority rules, and layout contracts in core services README
+**Domain:** documentation | **Commit:** 9c04af8b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1736)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document L1 Core useConsoleController list console orchestrator, multi-service integrations, Showcase mode list truncation, skeleton display rules, and standardized layout contracts
+**Change:** Reconciled useConsoleController.ts list console orchestration engine, Showcase mode truncation, skeleton display priority rules, and layout contracts in core services README
+**Result:** git diff --check passed with 0 errors and vitest useConsoleController.spec.ts passed 40/40 tests
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1735 [Stage 3]: Folded 4 pending migrations into baseline
 **Domain:** database | **Commit:** d933c949 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1735)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
