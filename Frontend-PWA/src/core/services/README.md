@@ -163,6 +163,15 @@ The Native Bridge service coordinates communication between the Web/PWA layer an
   - **Reconstruction & Rounding:** Hydrates raw native coordinates via `loadCoordinates()`, converting the decimal offsets back to percentage values (0 - 100) and rounding to precision limits for high UI rendering fidelity.
   - **Robust Fallback Paths:** Implements Android intents for opening deep-linked system settings (`ACCESSIBILITY_SETTINGS` and `MANAGE_OVERLAY_PERMISSION`) if running in normal web browser environments where direct bridge method invocations are unavailable.
 
+### List Console Orchestration Engine (`useConsoleController.ts`)
+
+`useConsoleController.ts` acts as the primary Layer 1 orchestrator for complex list feature views (Roster, Headhunter):
+- **Unified Service Integration:** Consolidates multiple specialized core services—`useListFilter` (search/sort), `useProgressiveList` (time-sliced rendering), `useSelectionStore` / `useConsoleSelection` (batch selection), `useConsoleMetadata` (status badges), `useDeepLinkHandler` (fragment expansion), `useVisibilityRefresh` (revalidation), and `useUiCoordinator` (FAB synchronization)—into a single standardized controller contract for Layer 3 views.
+- **Showcase Mode Truncation:** Constrains `visibleItems` list rendering to a single element (`visibleItems.value.slice(0, 1)`) when `isShowcaseMode` is active to maximize visual focus during presentation recording and automated UI audits.
+- **Skeleton Display Priority Rules:** Evaluates `showSkeletons` under three distinct condition gates: explicit Blueprint Mode requests (`isBlueprintMode`), initial unhydrated store boot without sync errors (`!isHydrated && !syncError`), and active background refreshes with empty local data (`isRefreshing && data.length === 0`). Bypasses skeletons in Synthetic and Showcase modes to guarantee deterministic high-fidelity rendering.
+- **Standardized Shell Contracts (`layoutProps` & `layoutEvents`):** Computes reactive props and event handlers tailored for `ConsoleLayout.vue`, bundling status badges, emptiness indicators, remote data provenance, and action handlers with support for feature-specific event overrides (`eventsOverride`).
+- **Card Metadata & List Memoization (`getCardMetadata` & `getMemoKeys`):** Exposes `selectedSet` (O(1) Set lookups) and helper methods (`getCardMetadata`, `getMemoKeys`) to generate stable reactive flags and key arrays for Vue list rendering and memoization.
+
 ## See also
 
 - [Frontend README](../../../README.md) | [`@core`](../README.md) | [`@core/api`](../api/README.md) | [`@core/utils`](../utils/README.md)
