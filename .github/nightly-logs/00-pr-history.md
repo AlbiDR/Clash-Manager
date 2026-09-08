@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1742 [Stage 10]: Verified APK and PWA wrapper integrity across all invariants.
+**Domain:** apk | **Commit:** 3f284090 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1742)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No configuration or wrapper mismatches detected during scan.
+**Change:** Verified APK and PWA wrapper integrity across all invariants.
+**Result:** Manifest parity, Digital Asset Links, version codes (14.50.45 / 14050045), cleartext traffic restriction, and native source layer verified clean via pnpm audit:apk and pnpm apk:verify:source.
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1741 [Stage 8]: Bumped @supabase/supabase-js to ^2.116.0 and updated major version watchlist
 **Domain:** dependencies | **Commit:** 9000fd50 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1741)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml
