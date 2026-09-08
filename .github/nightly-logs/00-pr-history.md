@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-08] PR #1741 [Stage 8]: Bumped @supabase/supabase-js to ^2.116.0 and updated major version watchlist
+**Domain:** dependencies | **Commit:** 9000fd50 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1741)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml
+**Why:** Safe Tier 1 minor bump and ongoing Tier 2 watchlist tracking
+**Change:** Bumped @supabase/supabase-js to ^2.116.0 and updated major version watchlist
+**Result:** pnpm test passed 195/195 test files (1823 tests passed)
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1740 [Stage 9]: 36 candidates, 0 dep-violations, consecutive-clean: 2. Inspected useProgressiveList, useConsoleController, StatusPill, VoyageBanner. Candidate VoyageBanner high risk; hunt useProgressiveList clean.
 **Domain:** architecture | **Commit:** 21563cce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1740)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
