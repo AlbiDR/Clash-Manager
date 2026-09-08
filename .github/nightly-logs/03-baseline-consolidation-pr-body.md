@@ -1,23 +1,23 @@
 ### Nightly Stage 3: Baseline Consolidation - Declarative Schema Hardener
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the baseline consolidation area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Read-only baseline audit verified RLS, search_path isolation, and formatting on master migration (0 pending migrations, fold-state DEGRADED, migration-quality FAIL, database-verification DB-UNAVAILABLE)
+**What changed:** Folded 4 pending migrations into baseline
 
-**Why:** No pending migrations to fold and baseline master migration passed read-only audit
+**Why:** Consolidated 20260906130000, 20260906160000, 20260906170000, and 20260907010000 into master baseline
 
-**Result:** Static fold-state status DEGRADED, migration-quality FAIL, database verification DB-UNAVAILABLE
+**Result:** PASS (0 violations, 0 unfolded objects)
 
-**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Why: No pending migrations to fold and baseline master migration passed read-only audit
-  Change: Read-only baseline audit verified RLS, search_path isolation, and formatting on master migration (0 pending migrations, fold-state DEGRADED, migration-quality FAIL, database-verification DB-UNAVAILABLE)
-  Result: Static fold-state status DEGRADED, migration-quality FAIL, database verification DB-UNAVAILABLE
-  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
+  Why: Consolidated 20260906130000, 20260906160000, 20260906170000, and 20260907010000 into master baseline
+  Change: Folded 4 pending migrations into baseline
+  Result: PASS (0 violations, 0 unfolded objects)
+  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
   Nudges: 0
 -->
