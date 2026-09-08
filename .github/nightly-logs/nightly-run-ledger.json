@@ -8404,7 +8404,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.702Z",
+        "lastObservedAt": "2026-09-08T09:10:29.639Z",
         "failureClass": null
       },
       "2": {
@@ -8441,7 +8441,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.702Z",
+        "lastObservedAt": "2026-09-08T09:10:29.639Z",
         "failureClass": null
       },
       "3": {
@@ -8481,7 +8481,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.702Z",
+        "lastObservedAt": "2026-09-08T09:10:29.639Z",
         "failureClass": null
       },
       "4": {
@@ -8534,7 +8534,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-08T08:24:08.702Z",
+        "lastObservedAt": "2026-09-08T09:10:29.640Z",
         "failureClass": null
       },
       "5": {
@@ -8577,7 +8577,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.702Z",
+        "lastObservedAt": "2026-09-08T09:10:29.640Z",
         "failureClass": null
       },
       "6": {
@@ -8620,7 +8620,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.702Z",
+        "lastObservedAt": "2026-09-08T09:10:29.640Z",
         "failureClass": null
       },
       "7": {
@@ -8663,7 +8663,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.703Z",
+        "lastObservedAt": "2026-09-08T09:10:29.641Z",
         "failureClass": null
       },
       "8": {
@@ -8716,7 +8716,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-08T08:24:08.703Z",
+        "lastObservedAt": "2026-09-08T09:10:29.641Z",
         "failureClass": null
       },
       "9": {
@@ -8756,7 +8756,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.703Z",
+        "lastObservedAt": "2026-09-08T09:10:29.641Z",
         "failureClass": null
       },
       "10": {
@@ -8764,7 +8764,7 @@
         "stage": 10,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "notReached": {
@@ -8772,24 +8772,43 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1742,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1742",
           "headRef": "nightly/stage-10-apk-integrity-d757b3ff-15749924515196263465",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-08/stage-10/pr-1742",
+          "session": {
+            "id": "15749924515196263465",
+            "name": "sessions/15749924515196263465",
+            "state": "COMPLETED",
+            "createTime": "2026-09-08T08:13:13.820636858Z",
+            "updateTime": "2026-09-08T08:24:18.529304Z",
+            "lifetimeMinutes": 11.1
+          },
+          "run": {
+            "started": "2026-09-08T08:15:00Z",
+            "terminated": "2026-09-08T08:21:00Z",
+            "durationMinutes": 7
+          },
+          "body": {
+            "pr": 1742,
+            "verdict": "OK",
+            "ok": true,
+            "repairedFrom": "AD_LIBBED"
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.703Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-08T09:10:29.642Z",
+        "failureClass": null
       },
       "11": {
         "date": "2026-09-08",
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "notReached": {
@@ -8799,10 +8818,29 @@
             "verdict": "HEALTHY",
             "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-08/stage-11/pr-1743",
+          "session": {
+            "id": "14324472885242819368",
+            "name": "sessions/14324472885242819368",
+            "state": "COMPLETED",
+            "createTime": "2026-09-08T09:01:14.442505302Z",
+            "updateTime": "2026-09-08T09:09:19.295880Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-08T09:03:00Z",
+            "terminated": "2026-09-08T09:07:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1743,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.703Z",
+        "lastObservedAt": "2026-09-08T09:10:29.642Z",
         "failureClass": null
       },
       "12": {
@@ -8814,7 +8852,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
-            "frontier": 10
+            "frontier": 11
           },
           "health": {
             "verdict": "HEALTHY",
@@ -8823,7 +8861,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.703Z",
+        "lastObservedAt": "2026-09-08T09:10:29.642Z",
         "failureClass": null
       },
       "13": {
@@ -8835,7 +8873,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 10
+            "frontier": 11
           },
           "health": {
             "verdict": "HEALTHY",
@@ -8844,7 +8882,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-08T08:24:08.703Z",
+        "lastObservedAt": "2026-09-08T09:10:29.643Z",
         "failureClass": null
       }
     }
