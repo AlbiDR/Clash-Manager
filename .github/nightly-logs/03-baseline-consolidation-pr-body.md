@@ -1,23 +1,23 @@
 ### Nightly Stage 3: Baseline Consolidation - Declarative Schema Hardener
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
+In plain terms: nothing needed fixing. This run checked the baseline consolidation area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** Folded 4 pending migrations into baseline
+**What was checked:** Baseline current (0 pending migrations, fold-state: CLEAN, migration-quality: PASS, DB: DB-UNAVAILABLE)
 
-**Why:** Consolidated 20260906130000, 20260906160000, 20260906170000, and 20260907010000 into master baseline
+**Why:** Read-only baseline audit clean; no pending migrations or schema modifications required.
 
-**Result:** PASS (0 violations, 0 unfolded objects)
+**Result:** migration audit PASS, fold-state CLEAN, DB-UNAVAILABLE
 
-**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Why: Consolidated 20260906130000, 20260906160000, 20260906170000, and 20260907010000 into master baseline
-  Change: Folded 4 pending migrations into baseline
-  Result: PASS (0 violations, 0 unfolded objects)
-  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
+  Why: Read-only baseline audit clean; no pending migrations or schema modifications required.
+  Change: Baseline current (0 pending migrations, fold-state: CLEAN, migration-quality: PASS, DB: DB-UNAVAILABLE)
+  Result: migration audit PASS, fold-state CLEAN, DB-UNAVAILABLE
+  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
 -->
