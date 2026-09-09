@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-09] PR #1749 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts); zero substrate or logic bottlenecks found
+**Domain:** optimization | **Commit:** c7eb2e1e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1749)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Source-level grep confirmed all active database view references are valid and recent changes in useProgressiveList.ts show zero performance bottlenecks
+**Change:** Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts); zero substrate or logic bottlenecks found
+**Result:** All 1826 Vitest unit tests passed cleanly
+**Nudges:** 0
+
+
 ### [2026-09-09] PR #1748 [Stage 3]: Baseline current (0 pending migrations, fold-state: CLEAN, migration-quality: PASS, DB: DB-UNAVAILABLE)
 **Domain:** database | **Commit:** c132fa83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1748)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
