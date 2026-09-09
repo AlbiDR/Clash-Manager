@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified APK and PWA wrapper integrity across all invariants.
+**What was checked:** Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
 
-**Why:** No configuration or wrapper mismatches detected during scan.
+**Why:** No wrapper mismatches or security regressions were detected during daily configuration scan.
 
-**Result:** Manifest parity, Digital Asset Links, version codes (14.50.45 / 14050045), cleartext traffic restriction, and native source layer verified clean via pnpm audit:apk and pnpm apk:verify:source.
+**Result:** PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: No configuration or wrapper mismatches detected during scan.
-  Change: Verified APK and PWA wrapper integrity across all invariants.
-  Result: Manifest parity, Digital Asset Links, version codes (14.50.45 / 14050045), cleartext traffic restriction, and native source layer verified clean via pnpm audit:apk and pnpm apk:verify:source.
+  Why: No wrapper mismatches or security regressions were detected during daily configuration scan.
+  Change: Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
+  Result: PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
 -->
