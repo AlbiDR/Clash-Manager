@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-09] PR #1747 [Stage 2]: Expanded Frontend-PWA useProgressiveList unit test coverage
+**Domain:** verification | **Commit:** 4822654f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1747)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+**Why:** Recent-Change Priority: covered useProgressiveList boundary branches including didTimeout idle loops, shrinkage during isRefresh, and cancelAnimationFrame fallback
+**Change:** Expanded Frontend-PWA useProgressiveList unit test coverage
+**Result:** Vitest pass 1826 of 1826 tests across 195 files
+**Nudges:** 0
+
+
 ### [2026-09-08] PR #1746 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 5ed2b875 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1746)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
