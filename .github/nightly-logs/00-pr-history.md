@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-09
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-09] PR #1759 [Stage 1]: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+**Domain:** hardening | **Commit:** 81a8daa4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1759)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat surface scan and depcruise verification confirmed zero security, state persistence, or cross-layer violations
+**Change:** Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+**Result:** 1826 tests passed across 195 files; 0 depcruise violations across 488 modules
+**Nudges:** 0
+
 ### [2026-09-09] PR #1758 [Stage 13]: Audited 2026-09-09 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
 **Domain:** pipeline | **Commit:** 38ac9a56 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1758)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
