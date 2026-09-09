@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** 36 candidates, 0 dep-violations, consecutive-clean: 2. Inspected useProgressiveList, useConsoleController, StatusPill, VoyageBanner. Candidate VoyageBanner high risk; hunt useProgressiveList clean.
+**What was checked:** Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
 
-**Why:** Substrate architecture strictly aligned with CleanStack ADR; 0 depcruise violations found and all 1823 PWA unit tests passed cleanly.
+**Why:** Substrate is fully compliant with CleanStack architecture standards and no defects reproduced
 
-**Result:** depcruise 0 violations; 1823 Vitest unit tests passed cleanly; CLEAN evidence floor satisfied.
+**Result:** 1826 tests passed across 195 test files; depcruise passed with 0 violations
 
 **Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Why: Substrate architecture strictly aligned with CleanStack ADR; 0 depcruise violations found and all 1823 PWA unit tests passed cleanly.
-  Change: 36 candidates, 0 dep-violations, consecutive-clean: 2. Inspected useProgressiveList, useConsoleController, StatusPill, VoyageBanner. Candidate VoyageBanner high risk; hunt useProgressiveList clean.
-  Result: depcruise 0 violations; 1823 Vitest unit tests passed cleanly; CLEAN evidence floor satisfied.
+  Why: Substrate is fully compliant with CleanStack architecture standards and no defects reproduced
+  Change: Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
+  Result: 1826 tests passed across 195 test files; depcruise passed with 0 violations
   Files: .github/nightly-logs/09-refactor-proposals-coverage.log
   Nudges: 0
 -->
