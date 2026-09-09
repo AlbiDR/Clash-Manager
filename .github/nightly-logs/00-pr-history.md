@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-09] PR #1758 [Stage 13]: Audited 2026-09-09 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
+**Domain:** pipeline | **Commit:** 38ac9a56 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1758)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
+**Why:** Audit completed with zero pipeline failure classes or cross-stage coherence issues; protocol document clean
+**Change:** Audited 2026-09-09 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
+**Result:** Audit completed with no source change required.
+**Nudges:** 1
+
+
 ### [2026-09-09] PR #1757 [Stage 12]: Global APK UX audit passed with 0 candidate violations across 75 files examined
 **Domain:** ux | **Commit:** 124ecb7c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1757)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
