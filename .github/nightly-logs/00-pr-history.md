@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-09-08
+LAST_AGED:   2026-09-09
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -15,7 +15,6 @@ LAST_AGED:   2026-09-08
 ---
 
 ## T1 -- Active (last 7 days)
-
 ### [2026-09-09] PR #1758 [Stage 13]: Audited 2026-09-09 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
 **Domain:** pipeline | **Commit:** 38ac9a56 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1758)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
@@ -23,7 +22,6 @@ LAST_AGED:   2026-09-08
 **Change:** Audited 2026-09-09 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
 **Result:** Audit completed with no source change required.
 **Nudges:** 1
-
 
 ### [2026-09-09] PR #1757 [Stage 12]: Global APK UX audit passed with 0 candidate violations across 75 files examined
 **Domain:** ux | **Commit:** 124ecb7c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1757)
@@ -33,7 +31,6 @@ LAST_AGED:   2026-09-08
 **Result:** 75 files examined, 0 violations found, all 10 UX categories clean, 195 PWA test files (1826 tests) passed
 **Nudges:** 0
 
-
 ### [2026-09-09] PR #1756 [Stage 11]: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
 **Domain:** apk | **Commit:** 14887d96 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1756)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
@@ -41,7 +38,6 @@ LAST_AGED:   2026-09-08
 **Change:** Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
 **Result:** pnpm audit:apk PASSED; pnpm apk:verify:source PASSED; pnpm test PASSED.
 **Nudges:** 0
-
 
 ### [2026-09-09] PR #1755 [Stage 10]: Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
 **Domain:** apk | **Commit:** d4d573a4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1755)
@@ -51,7 +47,6 @@ LAST_AGED:   2026-09-08
 **Result:** PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
 **Nudges:** 0
 
-
 ### [2026-09-09] PR #1754 [Stage 9]: Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
 **Domain:** architecture | **Commit:** 4fc6824b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1754)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
@@ -59,7 +54,6 @@ LAST_AGED:   2026-09-08
 **Change:** Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
 **Result:** 1826 tests passed across 195 test files; depcruise passed with 0 violations
 **Nudges:** 0
-
 
 ### [2026-09-09] PR #1753 [Stage 8]: Bumped knip from ^6.34.0 to ^6.35.0
 **Domain:** dependencies | **Commit:** d1e91e88 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1753)
@@ -69,7 +63,6 @@ LAST_AGED:   2026-09-08
 **Result:** pnpm test passed 195 test files and 1826 tests
 **Nudges:** 1
 
-
 ### [2026-09-09] PR #1752 [Stage 7]: No version drift or catalog violations detected across monorepo
 **Domain:** versioning | **Commit:** 7e275a03 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1752)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
@@ -77,7 +70,6 @@ LAST_AGED:   2026-09-08
 **Change:** No version drift or catalog violations detected across monorepo
 **Result:** package.json files at root, Frontend-PWA, Backend and pnpm-workspace.yaml catalog checked; validate-project.ts version audit section passed with 0 drift or catalog violations
 **Nudges:** 1
-
 
 ### [2026-09-09] PR #1751 [Stage 6]: Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
 **Domain:** documentation | **Commit:** e2079ad5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1751)
@@ -87,7 +79,6 @@ LAST_AGED:   2026-09-08
 **Result:** All 1826 Vitest unit tests passed cleanly
 **Nudges:** 0
 
-
 ### [2026-09-09] PR #1750 [Stage 5]: Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
 **Domain:** documentation | **Commit:** a69ac0d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1750)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
@@ -95,7 +86,6 @@ LAST_AGED:   2026-09-08
 **Change:** Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
 **Result:** git diff --check passed with 0 errors and vitest useProgressiveList.spec.ts passed 21/21 tests
 **Nudges:** 0
-
 
 ### [2026-09-09] PR #1749 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts); zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** c7eb2e1e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1749)
@@ -105,7 +95,6 @@ LAST_AGED:   2026-09-08
 **Result:** All 1826 Vitest unit tests passed cleanly
 **Nudges:** 0
 
-
 ### [2026-09-09] PR #1748 [Stage 3]: Baseline current (0 pending migrations, fold-state: CLEAN, migration-quality: PASS, DB: DB-UNAVAILABLE)
 **Domain:** database | **Commit:** c132fa83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1748)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
@@ -114,7 +103,6 @@ LAST_AGED:   2026-09-08
 **Result:** migration audit PASS, fold-state CLEAN, DB-UNAVAILABLE
 **Nudges:** 0
 
-
 ### [2026-09-09] PR #1747 [Stage 2]: Expanded Frontend-PWA useProgressiveList unit test coverage
 **Domain:** verification | **Commit:** 4822654f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1747)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
@@ -122,7 +110,6 @@ LAST_AGED:   2026-09-08
 **Change:** Expanded Frontend-PWA useProgressiveList unit test coverage
 **Result:** Vitest pass 1826 of 1826 tests across 195 files
 **Nudges:** 0
-
 
 ### [2026-09-08] PR #1746 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 5ed2b875 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1746)
@@ -794,97 +781,6 @@ LAST_AGED:   2026-09-08
 **Change:** Expanded Frontend-PWA useConnectivityManager test suite for error priorities and staleness threshold boundary
 **Result:** Vitest unit tests executed and passed cleanly
 
-### [2026-09-01] PR #1654 [Stage 1]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
-**Domain:** pipeline | **Commit:** 31548877 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1654)
-**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
-**Why:** Automated nightly audit pass.
-**Change:** chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1653 [Stage 13]: chore(pipeline): Completed 2026-09-01 pipeline self-healing protocol audit pass
-**Domain:** pipeline | **Commit:** 69be5102 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1653)
-**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
-**Why:** Automated nightly audit pass.
-**Change:** chore(pipeline): Completed 2026-09-01 pipeline self-healing protocol audit pass
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1652 [Stage 12]: chore(apk-ux): Completed global APK UX audit sweep across 75 frontend files with 0 violations found
-**Domain:** pipeline | **Commit:** ea2d680f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1652)
-**Files:** .github/nightly-logs/12-apk-ux-coverage.log
-**Why:** Automated nightly audit pass.
-**Change:** chore(apk-ux): Completed global APK UX audit sweep across 75 frontend files with 0 violations found
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1651 [Stage 11]: CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), AndroidManifest app properties, and SW precache topology; 0 source changes required (44 clean runs since calibration).
-**Domain:** apk | **Commit:** 06d10376 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1651)
-**Files:** .github/nightly-logs/11-apk-optimization-coverage.log
-**Why:** All APK wrapper performance settings and SW cache routes match established patterns, requiring no source modifications.
-**Change:** CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), AndroidManifest app properties, and SW precache topology; 0 source changes required (44 clean runs since calibration).
-**Result:** Source-level structural audit verified: WebView settings, hardware acceleration, security policies, and SW precache manifest are fully aligned with Stage 11 baseline.
-
-### [2026-09-01] PR #1650 [Stage 10]: chore(apk): Full wrapper invariant audit clean after 53 clean runs (widened calibration scan)
-**Domain:** pipeline | **Commit:** f4791c84 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1650)
-**Files:** .github/nightly-logs/10-apk-integrity-coverage.log
-**Why:** Automated nightly audit pass.
-**Change:** chore(apk): Full wrapper invariant audit clean after 53 clean runs (widened calibration scan)
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1649 [Stage 9]: chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
-**Domain:** pipeline | **Commit:** 81f611a1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1649)
-**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log
-**Why:** Automated nightly audit pass.
-**Change:** chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1648 [Stage 8]: chore(deps): Bumped knip to ^6.34.0 and updated lockfile.
-**Domain:** pipeline | **Commit:** 3999a3cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1648)
-**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
-**Why:** Automated nightly audit pass.
-**Change:** chore(deps): Bumped knip to ^6.34.0 and updated lockfile.
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1647 [Stage 7]: Nightly Stage 7: Version Consistency Auditor (CLEAN)
-**Domain:** pipeline | **Commit:** 8443016a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1647)
-**Files:** .github/nightly-logs/07-version-integrity-coverage.log
-**Why:** Automated nightly audit pass.
-**Change:** Nightly Stage 7: Version Consistency Auditor (CLEAN)
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1646 [Stage 6]: chore(docs): harden Toast.vue interface contracts and inline logic annotations
-**Domain:** pipeline | **Commit:** fe7cf7a2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1646)
-**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/Toast.vue
-**Why:** Automated nightly audit pass.
-**Change:** chore(docs): harden Toast.vue interface contracts and inline logic annotations
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1645 [Stage 5]: Reconciled Toast.vue v-tactile directive integration in shared UI README
-**Domain:** documentation | **Commit:** ade2b97c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1645)
-**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
-**Why:** Stage 12 PR #1639 integrated v-tactile directive into Toast buttons, introducing README drift
-**Change:** Reconciled Toast.vue v-tactile directive integration in shared UI README
-**Result:** Verified diff with git diff --check and confirmed ADR alignment
-
-### [2026-09-01] PR #1644 [Stage 4]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no source changes required
-**Domain:** pipeline | **Commit:** 6d372afa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1644)
-**Files:** .github/nightly-logs/04-optimization-coverage.log
-**Why:** Automated nightly audit pass.
-**Change:** chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no source changes required
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1643 [Stage 3]: chore(database): clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-stat
-**Domain:** pipeline | **Commit:** 8f222f00 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1643)
-**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log
-**Why:** Automated nightly audit pass.
-**Change:** chore(database): clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-stat
-**Result:** Nominal validation with zero regressions.
-
-### [2026-09-01] PR #1642 [Stage 2]: Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Closed partial-coverage and sad-path logic gaps in Toast component with comprehensive unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation.
-**Domain:** verification | **Commit:** 4dfa4e3d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1642)
-**Files:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts
-**Why:** Closed partial-coverage gap in Toast component by adding unit tests for copyToClipboard functionality, icon tick toggle, timer pause/resume lifecycle, and click propagation boundaries.
-**Change:** Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Closed partial-coverage and sad-path logic gaps in Toast component with comprehensive unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation.
-**Result:** PASSED (195 test files passed, 1786 tests passed)
-
 ### Description
 Completed the daily automated self-healing protocol audit pass for July 23, 2026, targeting the Nightly branch. Mapped all preceding stages' status from log evidence, identifying successful runs and documenting the root cause of the silent crashes/recurring failures for Stage 2 and Stage 11 today. Also updated consecutive no-diff days counters to reflect today's commits.
 
@@ -1514,6 +1410,19 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 ## T2 -- Recent (8-30 days)
 > Lean reference. Sufficient for deduplication and scope awareness.
 
+* [2026-09-01] PR #1654 [pipeline]: chore(harden): Stage 1 Runtime Integrity Auditor - CLEAN (``31548877``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1654)
+* [2026-09-01] PR #1653 [pipeline]: chore(pipeline): Completed 2026-09-01 pipeline self-healing protocol audit pass (``69be5102``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1653)
+* [2026-09-01] PR #1652 [pipeline]: chore(apk-ux): Completed global APK UX audit sweep across 75 frontend files with 0 violations found (``ea2d680f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1652)
+* [2026-09-01] PR #1651 [apk]: CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), AndroidManifest app properties, and SW precache topology; 0 source changes required (44 clean runs since calibration). (``06d10376``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1651)
+* [2026-09-01] PR #1650 [pipeline]: chore(apk): Full wrapper invariant audit clean after 53 clean runs (widened calibration scan) (``f4791c84``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1650)
+* [2026-09-01] PR #1649 [pipeline]: chore(refactor): Stage 9 structural audit CLEAN: Substrate architecture strictly aligned with CleanStack ADR (``81f611a1``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1649)
+* [2026-09-01] PR #1648 [pipeline]: chore(deps): Bumped knip to ^6.34.0 and updated lockfile. (``3999a3cf``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1648)
+* [2026-09-01] PR #1647 [pipeline]: Nightly Stage 7: Version Consistency Auditor (CLEAN) (``8443016a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1647)
+* [2026-09-01] PR #1646 [pipeline]: chore(docs): harden Toast.vue interface contracts and inline logic annotations (``fe7cf7a2``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1646)
+* [2026-09-01] PR #1645 [documentation]: Reconciled Toast.vue v-tactile directive integration in shared UI README (``ade2b97c``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1645)
+* [2026-09-01] PR #1644 [pipeline]: chore(optimize): Substrate hygiene audit confirmed known unreferenced views; no source changes required (``6d372afa``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1644)
+* [2026-09-01] PR #1643 [pipeline]: chore(database): clean calibration pass: 0 pending migrations, 25 migrations examined, migration-quality PASS, fold-stat (``8f222f00``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1643)
+* [2026-09-01] PR #1642 [verification]: Frontend-PWA/src/shared/ui/ui-tests/Toast.spec.ts -- Closed partial-coverage and sad-path logic gaps in Toast component with comprehensive unit tests for clipboard copy, timer lifecycle, tick indicator state, and event propagation. (``4dfa4e3d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1642)
 * [2026-08-31] PR #1641 [hardening]: Stage 1 Runtime Integrity Auditor - CLEAN (``75474d2a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1641)
 * [2026-08-31] PR #1640 [pipeline]: chore(pipeline): Stage 13 Self-Healing Protocol Audit (``c7bf4803``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1640)
 * [2026-08-31] PR #1639 [pipeline]: chore(apk-ux): Integrated v-tactile directive into Toast action/close/copy buttons (``74dbdc9f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1639)
@@ -1749,25 +1658,13 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-08-10] PR #1406 [pipeline]: Optimization - Substrate Hygiene Engineer (``cf8c9274``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1406)
 * [2026-08-10] PR #1405 [pipeline]: Baseline Consolidation Audit Completed - CLEAN (``2ad3d286``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1405)
 * [2026-08-10] PR #1404 [pipeline]: [Stage 2] Verification - Logic Integrity Auditor (``6fd17d83``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1404)
-* [2026-08-09] PR #1403 [pipeline]: chore(harden): Conducted daily security and data integrity audit, confirming 100% saturation and zero active threat vectors (``3924feaa``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1403)
-* [2026-08-09] PR #1402 [pipeline]: chore(pipeline): Completed the daily automated pipeline health audit, stability failure mapping, and self-healing protocol updates (``63f893de``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1402)
-* [2026-08-09] PR #1401 [pipeline]: chore(apk-ux): Modernized UsefulLinksSettings.vue with 48px touch target compliance and user-select text containment. (``4c6fa716``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1401)
-* [2026-08-09] PR #1400 [pipeline]: chore(apk): Completed APK & PWA wrapper integrity audit - CLEAN (``9f913afe``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1400)
-* [2026-08-09] PR #1399 [pipeline]: chore(refactor): Decomposed monolithic usePwaManager.ts by extracting APK release resolution (``615af284``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1399)
-* [2026-08-09] PR #1398 [pipeline]: chore(deps): Bumped supabase to ^2.113.0 and updated major version watchlist (``6f7b1858``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1398)
-* [2026-08-09] PR #1397 [pipeline]: chore(version): Stage 7 Version Consistency Audit - CLEAN (``074e7608``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1397)
-* [2026-08-09] PR #1396 [pipeline]: docs(tsdoc): harden SettingRow interface contracts and logic annotations (``39a12213``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1396)
-* [2026-08-09] PR #1395 [pipeline]: [Stage 5] Documentation README - Architecture Truth Architect (``eb6abc5f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1395)
-* [2026-08-09] PR #1394 [pipeline]: [Stage 4] Optimization - Substrate Hygiene Engineer (``27b576ca``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1394)
-* [2026-08-09] PR #1393 [pipeline]: chore(verify): add comprehensive unit and edge tests for VaultCard (``aab59c48``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1393)
-* [2026-08-09] PR #1392 [pipeline]: [Stage 3] Baseline Consolidation - Declarative Schema Hardener (``71561156``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1392)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
 
 #### 2026-W32
 * 1 PRs [APK UX]: #1328
-* 2 PRs [pipeline]: #1390, #1391
+* 14 PRs [pipeline]: #1390, #1391, #1392, #1393, #1394, #1395, #1396, #1397, #1398, #1399, #1400, #1401, #1402, #1403
 
 #### 2026-W31
 * 1 PRs [APK Optimization]: #1245
