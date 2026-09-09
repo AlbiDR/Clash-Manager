@@ -8961,7 +8961,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.635Z",
+        "lastObservedAt": "2026-09-09T16:58:12.307Z",
         "failureClass": null
       },
       "2": {
@@ -8998,7 +8998,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.636Z",
+        "lastObservedAt": "2026-09-09T16:58:12.307Z",
         "failureClass": null
       },
       "3": {
@@ -9041,7 +9041,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.636Z",
+        "lastObservedAt": "2026-09-09T16:58:12.308Z",
         "failureClass": null
       },
       "4": {
@@ -9081,7 +9081,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.636Z",
+        "lastObservedAt": "2026-09-09T16:58:12.308Z",
         "failureClass": null
       },
       "5": {
@@ -9124,7 +9124,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.637Z",
+        "lastObservedAt": "2026-09-09T16:58:12.308Z",
         "failureClass": null
       },
       "6": {
@@ -9167,7 +9167,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.637Z",
+        "lastObservedAt": "2026-09-09T16:58:12.308Z",
         "failureClass": null
       },
       "7": {
@@ -9214,7 +9214,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.637Z",
+        "lastObservedAt": "2026-09-09T16:58:12.309Z",
         "failureClass": null
       },
       "8": {
@@ -9254,7 +9254,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.638Z",
+        "lastObservedAt": "2026-09-09T16:58:12.309Z",
         "failureClass": null
       },
       "9": {
@@ -9294,7 +9294,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.638Z",
+        "lastObservedAt": "2026-09-09T16:58:12.309Z",
         "failureClass": null
       },
       "10": {
@@ -9334,7 +9334,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.638Z",
+        "lastObservedAt": "2026-09-09T16:58:12.309Z",
         "failureClass": null
       },
       "11": {
@@ -9374,7 +9374,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.638Z",
+        "lastObservedAt": "2026-09-09T16:58:12.310Z",
         "failureClass": null
       },
       "12": {
@@ -9414,7 +9414,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-09T14:50:11.639Z",
+        "lastObservedAt": "2026-09-09T16:58:12.310Z",
         "failureClass": null
       },
       "13": {
@@ -9422,7 +9422,7 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
@@ -9443,8 +9443,8 @@
             "name": "sessions/5851556333743390363",
             "state": "COMPLETED",
             "createTime": "2026-09-09T11:27:50.651792343Z",
-            "updateTime": "2026-09-09T11:41:57.711751Z",
-            "lifetimeMinutes": 14.1
+            "updateTime": "2026-09-09T14:49:54.615094Z",
+            "lifetimeMinutes": 202.1
           },
           "recovery": {
             "nudgedAt": "2026-09-09T14:47:53.208Z",
@@ -9453,11 +9453,22 @@
             "error": null
           },
           "prNumber": 1758,
-          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1758"
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1758",
+          "tag": "nightly/2026-09-09/stage-13/pr-1758",
+          "run": {
+            "started": "2026-09-09T11:29:00Z",
+            "terminated": "2026-09-09T11:33:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1758,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-09T14:50:11.639Z",
-        "failureClass": "RECOVERED_AFTER_NUDGE"
+        "lastObservedAt": "2026-09-09T16:58:12.310Z",
+        "failureClass": null
       }
     }
   }
