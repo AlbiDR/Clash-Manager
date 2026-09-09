@@ -138,6 +138,15 @@ To support smooth 60FPS list interactions under heavy sorting and filtering oper
 - **Reactive Preference Persistence:** When configured with a `sortStorageKey`, user-selected sorting preferences are automatically persisted to and hydrated from `localStorage`, preserving layout continuity across sessions.
 - **WeakMap Search Cache & Invalidation:** To eliminate redundant string normalizations on every keystroke, a module-scope `WeakMap` caches normalized search strings per object. The caching system implements a robust validation check (`areSearchFieldsEqual`) that verifies if current searchable fields match cached fields, invalidating the cache and re-normalizing dynamically only when data shifts.
 
+### Time-Sliced Progressive Rendering Engine (`useProgressiveList.ts`)
+
+`useProgressiveList.ts` implements a time-sliced rendering strategy in Layer 1 Core to maintain 60FPS UI performance when displaying large datasets:
+- **Time-Sliced Frame Scheduling:** Breaks large datasets into manageable chunks (10–20 items) and schedules their injection during idle browser frames via `requestIdleCallback`, with fallback to `requestAnimationFrame`.
+- **Shallow Reactive Optimization (`shallowRef`):** Stores visible list slices in a `shallowRef` to prevent deep reactivity overhead across hundreds of array elements, drastically reducing CPU cycles during list expansion.
+- **Idle Budgeting & Deadline Feature Detection:** Evaluates `IdleDeadline` time remaining (`deadline.timeRemaining() > 1`) to process multiple chunks within a single idle frame. Implements explicit feature detection (`hasIdleDeadline`) before calling `timeRemaining()` to prevent runtime `TypeError` exceptions when falling back to `requestAnimationFrame` (which passes a numeric timestamp primitive).
+- **Minor Delta Churn Prevention:** Detects minor list size updates (< 5 items difference) and preserves the current rendered slice length while refreshing item content, preventing sudden scroll jumps or layout churn during background polling.
+- **Automated Timer Cleanup:** Implements `onScopeDispose` to automatically cancel scheduled idle callbacks or animation frame timers upon composable teardown, preventing memory leaks and race conditions.
+
 ### Connectivity & Health Orchestration (`useConnectivityManager.ts`)
 
 `useConnectivityManager.ts` acts as the Layer 1 hub for data provenance, sync health, and network connectivity indicators across the application:
