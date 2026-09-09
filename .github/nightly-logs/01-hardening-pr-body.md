@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Stage 1 Runtime Integrity Auditor - CLEAN
+**What was checked:** Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
 
-**Why:** Audited Edge Function endpoints, in-memory reactive state, Valibot schema boundaries, and cross-layer constraints with zero threat vectors found.
+**Why:** Bounded threat surface scan and depcruise verification confirmed zero security, state persistence, or cross-layer violations
 
-**Result:** All 1823 Vitest unit tests passed cleanly with 0 regressions and 0 depcruise violations.
+**Result:** 1826 tests passed across 195 files; 0 depcruise violations across 488 modules
 
 **Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Why: Audited Edge Function endpoints, in-memory reactive state, Valibot schema boundaries, and cross-layer constraints with zero threat vectors found.
-  Change: Stage 1 Runtime Integrity Auditor - CLEAN
-  Result: All 1823 Vitest unit tests passed cleanly with 0 regressions and 0 depcruise violations.
+  Why: Bounded threat surface scan and depcruise verification confirmed zero security, state persistence, or cross-layer violations
+  Change: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+  Result: 1826 tests passed across 195 files; 0 depcruise violations across 488 modules
   Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
   Nudges: 0
 -->
