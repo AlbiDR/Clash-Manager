@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-09] PR #1754 [Stage 9]: Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
+**Domain:** architecture | **Commit:** 4fc6824b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1754)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate is fully compliant with CleanStack architecture standards and no defects reproduced
+**Change:** Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
+**Result:** 1826 tests passed across 195 test files; depcruise passed with 0 violations
+**Nudges:** 0
+
+
 ### [2026-09-09] PR #1753 [Stage 8]: Bumped knip from ^6.34.0 to ^6.35.0
 **Domain:** dependencies | **Commit:** d1e91e88 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1753)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
