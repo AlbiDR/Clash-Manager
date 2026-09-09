@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-09] PR #1750 [Stage 5]: Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
+**Domain:** documentation | **Commit:** a69ac0d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1750)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Reconciled recent Stage 2, Stage 4, and Stage 6 updates in useProgressiveList.ts with core services README documentation
+**Change:** Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
+**Result:** git diff --check passed with 0 errors and vitest useProgressiveList.spec.ts passed 21/21 tests
+**Nudges:** 0
+
+
 ### [2026-09-09] PR #1749 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts); zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** c7eb2e1e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1749)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
