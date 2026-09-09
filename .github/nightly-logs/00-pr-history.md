@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-09] PR #1755 [Stage 10]: Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
+**Domain:** apk | **Commit:** d4d573a4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1755)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No wrapper mismatches or security regressions were detected during daily configuration scan.
+**Change:** Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
+**Result:** PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
+**Nudges:** 0
+
+
 ### [2026-09-09] PR #1754 [Stage 9]: Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
 **Domain:** architecture | **Commit:** 4fc6824b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1754)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
