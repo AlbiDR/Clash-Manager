@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-09] PR #1751 [Stage 6]: Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
+**Domain:** documentation | **Commit:** e2079ad5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1751)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
+**Why:** Full audit of useProgressiveList.ts and core services confirmed zero documentation gaps or contract drift required
+**Change:** Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
+**Result:** All 1826 Vitest unit tests passed cleanly
+**Nudges:** 0
+
+
 ### [2026-09-09] PR #1750 [Stage 5]: Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
 **Domain:** documentation | **Commit:** a69ac0d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1750)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
