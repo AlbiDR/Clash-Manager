@@ -43,6 +43,9 @@ import {
   sessionTelemetry,
   parseRunWindow,
   classifyPrBody,
+  isSettlingHandoff,
+  sessionSilentMinutes,
+  PUBLISHER_SETTLE_MINUTES,
 } from "./nightly-watchdog.mjs";
 import { isObserved, stageInterventionHistory } from "./nightly-health.mjs";
 
@@ -2158,4 +2161,119 @@ test("an unreadable or absent next-run signal leaves the run in flight", () => {
     }).find(e => e.stage === 13);
     assert.equal(entry.state, "EXPECTED", `nextRunStarted=${JSON.stringify(nextRunStarted)} must not declare the run over`);
   }
+});
+
+// THE SETTLE WINDOW.
+//
+// Detection was never the slow part. Every nudge the pipeline has sent fired on
+// the first pass that saw the completed session, so the 34 to 205 minutes a
+// stranded stage waits is the gap between passes, not the verdict. That makes
+// the obvious cure - look more often - the thing to guard against first: a pass
+// landing inside the publisher's own 1-to-19-minute handoff window would nudge
+// a session that was already shipping, and write a rescue that caps the night
+// at 9 of 10 for a stall that never happened.
+const handoffSession = (stageNumber, date, updateTime) => ({
+  id: `sess-${stageNumber}`,
+  name: `sessions/sess-${stageNumber}`,
+  state: "COMPLETED",
+  createTime: `${date}T11:27:00Z`,
+  updateTime,
+  prompt: `# [Stage ${stageNumber}] something`,
+  outputs: [{ changeSet: { gitPatch: { unidiffPatch: "diff --git a/x b/x\n" } } }],
+});
+
+/** Stage 13 with no published evidence, holding a change set since 11:33. */
+function settlingObserved(date, now) {
+  const observed = mergedObserved(date);
+  observed.tags.delete(`nightly/${expectedEvidenceDate(13, date)}/stage-13/pr-1413`);
+  observed.julesSessions = [handoffSession(13, date, `${date}T11:33:00Z`)];
+  observed.now = Date.parse(now);
+  return observed;
+}
+
+test("a session mid-handoff gets no verdict, so no rescue is manufactured", () => {
+  const date = "2026-08-11";
+  const observed = settlingObserved(date, `${date}T11:37:00Z`);
+
+  // The frontier already counts the session itself as evidence the stage was
+  // reached, so without this guard the stage is judged stuck four minutes after
+  // finishing - well inside the window the publisher normally works in.
+  assert.equal(runFrontier({ registry, date, observed }), 13);
+
+  const entry = evaluateNightlyRun({
+    registry, date, observed, previousLedger: createEmptyLedger(),
+  }).find(e => e.stage === 13);
+
+  assert.equal(entry.state, "EXPECTED");
+  assert.equal(entry.failureClass, null);
+  assert.equal(entry.evidence.settling.silentMinutes, 4);
+  assert.equal(entry.evidence.settling.settleMinutes, PUBLISHER_SETTLE_MINUTES);
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  assert.equal(selectRecoveryCandidates([entry], ledger, date).length, 0, "nothing to nudge yet");
+  // EXPECTED is one of the two unobserved states, so a settling handoff scores
+  // neither as a failure nor as an intervention in the cross-run trend.
+  assert.equal(isObserved(entry), false);
+});
+
+test("once the settle window closes the stage is stuck and eligible for the nudge", () => {
+  const date = "2026-08-11";
+  const observed = settlingObserved(date, `${date}T12:10:00Z`);
+
+  const entry = evaluateNightlyRun({
+    registry, date, observed, previousLedger: createEmptyLedger(),
+  }).find(e => e.stage === 13);
+
+  assert.equal(entry.state, "NO_OUTPUT");
+  assert.equal(entry.failureClass, "JULES_SESSION_STUCK");
+
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+  assert.equal(selectRecoveryCandidates([entry], ledger, date).length, 1);
+});
+
+test("every stall the pipeline actually saw is still caught by the guard", () => {
+  // Real idle times from the 2026-09 ledger, measured from work end to the
+  // nudge. The guard must not delay a single one of them.
+  for (const idleMinutes of [34, 49, 69, 70, 83, 137, 195, 205]) {
+    const session = handoffSession(13, "2026-08-11", "2026-08-11T11:33:00Z");
+    const now = Date.parse(session.updateTime) + idleMinutes * 60000;
+    assert.equal(isSettlingHandoff(session, now), false, `${idleMinutes}m idle must not read as settling`);
+  }
+  // And the slowest healthy publish on record must still be left alone.
+  const session = handoffSession(13, "2026-08-11", "2026-08-11T11:33:00Z");
+  assert.equal(isSettlingHandoff(session, Date.parse(session.updateTime) + 19 * 60000), true);
+});
+
+test("an unreadable session timestamp keeps the pre-guard behaviour", () => {
+  const date = "2026-08-11";
+  const observed = settlingObserved(date, `${date}T11:37:00Z`);
+  delete observed.julesSessions[0].updateTime;
+
+  const entry = evaluateNightlyRun({
+    registry, date, observed, previousLedger: createEmptyLedger(),
+  }).find(e => e.stage === 13);
+
+  // No staleness evidence must never become a permanent "no verdict yet": that
+  // would hide a real stall in the one shape this pipeline cannot notice.
+  assert.equal(entry.state, "NO_OUTPUT");
+  assert.equal(entry.failureClass, "JULES_SESSION_STUCK");
+});
+
+test("isSettlingHandoff needs a finished session that is holding something", () => {
+  const date = "2026-08-11";
+  const base = handoffSession(13, date, `${date}T11:33:00Z`);
+  const now = Date.parse(`${date}T11:37:00Z`);
+
+  assert.equal(isSettlingHandoff(base, now), true);
+  assert.equal(isSettlingHandoff({ ...base, state: "IN_PROGRESS" }, now), false, "a working session is handled as RUNNING");
+  assert.equal(isSettlingHandoff({ ...base, outputs: [] }, now), false, "an empty session has no handoff to wait for");
+  assert.equal(isSettlingHandoff(null, now), false);
+
+  // The boundary belongs to the stuck side, so the window cannot hold a stage
+  // open indefinitely at exactly the threshold.
+  const exact = Date.parse(base.updateTime) + PUBLISHER_SETTLE_MINUTES * 60000;
+  assert.equal(isSettlingHandoff(base, exact), false);
+  assert.equal(sessionSilentMinutes(base, exact), PUBLISHER_SETTLE_MINUTES);
+  assert.equal(sessionSilentMinutes({}, exact), null);
 });

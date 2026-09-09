@@ -82,6 +82,61 @@ const RECOVERABLE_FAILURE_CLASSES = new Set([
 ]);
 const MAX_RECOVERY_ATTEMPTS = 2;
 
+/**
+ * How long a COMPLETED session may sit on an unpublished change set before it
+ * is holding the work rather than handing it over.
+ *
+ * MEASURED, NOT PICKED. Over the 88 stage-rows of 2026-09 carrying both a
+ * work-end timestamp and a published pull request, the native publisher opened
+ * the PR 1 to 3 minutes after the work ended (p50 2, p90 3, slowest ever 19).
+ * The 8 rows that needed a nudge had been silent for 34 to 205 minutes, and
+ * every one of them published within 2 minutes of the message arriving. The two
+ * populations do not overlap and there is a wide empty gap between them, so
+ * this sits above the slowest healthy publish on record with headroom either
+ * side: a session mid-handoff is never nudged, and a stranded one is caught by
+ * the first pass that looks at it.
+ *
+ * WHY A WASTED NUDGE IS NOT FREE HERE, unlike the one recoverStuckStages talks
+ * about below. A nudge is also what records the stage as rescued, and any
+ * rescue caps the run at 9 of 10 in the recap's rubric. So nudging a session
+ * that was about to publish anyway does not just spend an API call, it spends
+ * the night's grade and reports a defect that did not happen. That is the whole
+ * reason this is a settle window and not zero.
+ *
+ * A SILENCE, NOT A CLOCK TIME. It is measured from the session's own last
+ * update, so it encodes nothing about when stages are scheduled and cannot
+ * silently start meaning the wrong thing when the Jules UI is retimed. That is
+ * the distinction the ADR's ban on hardcoded times draws, and it is why
+ * STALE_STAGE_PR_HOURS is allowed to exist in this file too.
+ */
+export const PUBLISHER_SETTLE_MINUTES = 30;
+
+/** Minutes since Jules last touched this session, or null if it cannot be read. */
+export function sessionSilentMinutes(session, now = Date.now()) {
+  const stamp = Date.parse(session?.updateTime || "");
+  return Number.isFinite(stamp) ? (now - stamp) / 60000 : null;
+}
+
+/**
+ * A finished session that is still within a normal handoff: it holds its change
+ * set, and Jules touched it recently enough that the native publisher has not
+ * yet had the time it usually needs.
+ *
+ * ERRS TOWARD THE OLD BEHAVIOUR, NOT TOWARD SILENCE. An unreadable or absent
+ * timestamp is not settling, so the stage falls through to the stuck
+ * classification exactly as it did before this guard existed. The failure
+ * direction is the point: reading "settling" when it is not would hide a real
+ * stall behind a permanent "no verdict yet", which is the shape of failure this
+ * pipeline is least able to notice. Reading "not settling" when it is costs at
+ * most one wasted nudge, which is the loud direction.
+ */
+export function isSettlingHandoff(session, now = Date.now(), settleMinutes = PUBLISHER_SETTLE_MINUTES) {
+  if (String(session?.state || "").toUpperCase() !== "COMPLETED") return false;
+  if (!extractSessionPatch(session)) return false;
+  const silent = sessionSilentMinutes(session, now);
+  return silent !== null && silent < settleMinutes;
+}
+
 // Mirrors the finalization handoff wording the stage prompts already use, so a
 // nudged session resumes into its own publication step rather than restarting
 // work or opening a review loop it was explicitly told not to run.
@@ -838,6 +893,55 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
         evidence: {
           julesSession: { id: julesMatch.id, state: julesMatch.state },
           session: sessionTelemetry(julesMatch),
+        },
+      });
+      continue;
+    }
+
+    // A FINISHED SESSION IS NOT YET A STALLED ONE.
+    //
+    // Every nudge this pipeline has ever sent fired on the first watchdog pass
+    // that observed the completed session. Verified against the workflow run
+    // log for 2026-09-08 and 2026-09-09: stage 4 finished 02:10 and the 03:31
+    // pass nudged at 03:32, stage 8 finished 06:15 and the 07:21 pass nudged at
+    // 07:23, stage 13 finished 11:33 and the 14:47 pass nudged at 14:47. The
+    // classification below is therefore already immediate, and the 34 to 205
+    // minutes those stages spent stranded is not detection latency at all: it
+    // is the gap between passes. GitHub delivers a fraction of the declared
+    // schedule, and after the last stage's pull request there is no reactive
+    // trigger left to fire one.
+    //
+    // WHICH MAKES THE OBVIOUS CURE DANGEROUS, and is why this guard exists
+    // before anything denser is wired up. Nudge sooner and eventually a pass
+    // lands in the window where the native publisher was about to work on its
+    // own: 1 to 3 minutes after the work ends, 19 at the slowest ever recorded
+    // over 88 September rows. A nudge there ships nothing that was not already
+    // shipping, and it still writes a rescue into the ledger, which caps the
+    // night at 9 of 10 and reports a stall that never happened. The pipeline
+    // would score itself worse for being watched more closely.
+    //
+    // So a session holding work inside that window gets no verdict yet. Not
+    // RUNNING, which claims Jules is working and would be a second opinion
+    // about a state the API already reported as COMPLETED, but EXPECTED: the
+    // same "no verdict" this function already uses for a stage whose turn has
+    // not come, and one of the two states nightly-health treats as unobserved,
+    // so a settling handoff scores neither as a failure nor as an intervention.
+    // Injectable so the window is testable without freezing the clock, and so a
+    // single pass judges every stage against one instant rather than drifting
+    // across its own run time.
+    const now = observed.now ?? Date.now();
+    if (isSettlingHandoff(julesMatch, now)) {
+      entries.push({
+        stage: stage.number,
+        state: "EXPECTED",
+        failureClass: null,
+        evidence: {
+          coverageLog: stage.coverageLog,
+          session: sessionTelemetry(julesMatch),
+          settling: {
+            silentMinutes: sessionSilentMinutes(julesMatch, now),
+            settleMinutes: PUBLISHER_SETTLE_MINUTES,
+          },
         },
       });
       continue;
