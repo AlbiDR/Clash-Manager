@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified wrapper integrity, asset links, manifest parity, version sync, release pointer metadata, and cleartext security policy
+**What was checked:** Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
 
-**Why:** All wrapper invariants matched package.json 14.50.40 and native configurations cleanly with no drift found
+**Why:** No wrapper mismatches or security regressions were detected during daily configuration scan.
 
-**Result:** pnpm audit:apk passed with zero mismatches
+**Result:** PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: All wrapper invariants matched package.json 14.50.40 and native configurations cleanly with no drift found
-  Change: Verified wrapper integrity, asset links, manifest parity, version sync, release pointer metadata, and cleartext security policy
-  Result: pnpm audit:apk passed with zero mismatches
+  Why: No wrapper mismatches or security regressions were detected during daily configuration scan.
+  Change: Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
+  Result: PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
 -->

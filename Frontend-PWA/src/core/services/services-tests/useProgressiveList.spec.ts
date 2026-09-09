@@ -389,4 +389,69 @@ describe("useProgressiveList", () => {
     });
     scope.stop();
   });
+
+  it("stops chunk loop when deadline.didTimeout is true", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      (window as any).requestIdleCallback = vi.fn((cb) => {
+        setTimeout(() => cb({
+          timeRemaining: () => 10,
+          didTimeout: true
+        }), 1);
+      });
+
+      const source = ref(Array.from({ length: 100 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      vi.advanceTimersByTime(1);
+      // Even though timeRemaining > 1, didTimeout is true, so loop breaks after 1 chunk (10 + 10 = 20)
+      expect(visibleItems.value).toHaveLength(20);
+    });
+    scope.stop();
+  });
+
+  it("handles list shrinkage during isRefresh without scheduling extra chunks", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 20 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      // Load all 20 items
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+
+      // Shrink source slightly (difference < 5, so isRefresh is true)
+      source.value = Array.from({ length: 18 }, (_, i) => i + 1);
+      await nextTick();
+
+      // visibleItems should slice to new length (18) and scheduleChunk should not be called since visibleItems.length === sourceList.length
+      expect(visibleItems.value).toHaveLength(18);
+
+      const scheduler = window.requestIdleCallback || window.requestAnimationFrame;
+      vi.mocked(scheduler).mockClear();
+      vi.advanceTimersByTime(1);
+
+      expect(visibleItems.value).toHaveLength(18);
+      expect(scheduler).not.toHaveBeenCalled();
+    });
+    scope.stop();
+  });
+
+  it("uses cancelAnimationFrame when cancelIdleCallback is unavailable on window", () => {
+    const scope = effectScope();
+    const originalCIC = (window as any).cancelIdleCallback;
+    (window as any).cancelIdleCallback = undefined;
+
+    scope.run(() => {
+      const source = ref(Array.from({ length: 50 }, (_, i) => i + 1));
+      useProgressiveList(source, 10);
+    });
+
+    scope.stop();
+    expect(window.cancelAnimationFrame).toHaveBeenCalled();
+
+    (window as any).cancelIdleCallback = originalCIC;
+  });
 });

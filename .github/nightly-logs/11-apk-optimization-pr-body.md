@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView performance settings (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache strategy, and APK wrapper integrity; all optimal.
+**What was checked:** Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
 
-**Why:** All wrapper and caching configurations match required performance baselines.
+**Why:** Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and optimized Workbox precache rules.
 
-**Result:** pnpm audit:apk passed cleanly.
+**Result:** pnpm audit:apk PASSED; pnpm apk:verify:source PASSED; pnpm test PASSED.
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: All wrapper and caching configurations match required performance baselines.
-  Change: Audited native WebView performance settings (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache strategy, and APK wrapper integrity; all optimal.
-  Result: pnpm audit:apk passed cleanly.
+  Why: Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and optimized Workbox precache rules.
+  Change: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
+  Result: pnpm audit:apk PASSED; pnpm apk:verify:source PASSED; pnpm test PASSED.
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
 -->

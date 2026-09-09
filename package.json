@@ -80,7 +80,7 @@
     "default": {
       "@ast-grep/cli": "^0.45.3",
       "@formkit/auto-animate": "^0.10.0",
-      "@supabase/supabase-js": "^2.115.0",
+      "@supabase/supabase-js": "^2.116.0",
       "@types/node": "^26.4.1",
       "@vite-pwa/assets-generator": "^1.0.2",
       "@vitejs/plugin-vue": "^6.0.8",
@@ -88,7 +88,7 @@
       "@vue/tsconfig": "^0.9.1",
       "dependency-cruiser": "^18.2.0",
       "jsdom": "^29.1.1",
-      "knip": "^6.34.0",
+      "knip": "^6.35.0",
       "simple-git-hooks": "^2.13.1",
       "supabase": "^2.116.0",
       "pinia": "^3.0.4",

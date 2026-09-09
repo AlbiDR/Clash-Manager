@@ -116,11 +116,13 @@ vi.mock("../useSyntheticMode", async () => {
   };
 });
 
+const mockSetFabVisible = vi.fn();
+
 // useConsoleController imports useUiCoordinator from "./useUiCoordinator"
 // (src/core/services), so the mock must target that module id.
 vi.mock("@core/services/useUiCoordinator", () => ({
   useUiCoordinator: vi.fn(() => ({
-    setFabVisible: vi.fn(),
+    setFabVisible: mockSetFabVisible,
   })),
 }));
 
@@ -594,6 +596,106 @@ describe("useConsoleController", () => {
 
       options.isRefreshing.value = true;
       expect(getCardMetadata("1").appIsRefreshing).toBe(true);
+    });
+  });
+
+  describe("FAB state and UI coordinator integration", () => {
+    it("provides default fabState when fabOverride is omitted", () => {
+      const { fabState } = useConsoleController(createOptions());
+      expect(fabState.value).toEqual({
+        visible: false,
+        label: "Done",
+        isProcessing: false,
+        isBlasting: false,
+        selectionCount: 0,
+        blitzEnabled: false,
+        harvestEnabled: false,
+        dismissIcon: "close",
+      });
+    });
+
+    it("uses custom fabOverride when provided", () => {
+      const customFab = ref({
+        visible: true,
+        label: "Custom Action",
+        isProcessing: true,
+        isBlasting: false,
+        selectionCount: 5,
+        blitzEnabled: true,
+        harvestEnabled: false,
+        dismissIcon: "arrow-back",
+      });
+
+      const options = { ...createOptions(), fabState: customFab };
+      const { fabState } = useConsoleController(options);
+      expect(fabState.value).toEqual(customFab.value);
+    });
+
+    it("notifies useUiCoordinator when fabState.visible changes", async () => {
+      const customFab = ref({
+        visible: false,
+        label: "Done",
+        isProcessing: false,
+        isBlasting: false,
+        selectionCount: 0,
+        blitzEnabled: false,
+        harvestEnabled: false,
+        dismissIcon: "close",
+      });
+
+      useConsoleController({ ...createOptions(), fabState: customFab });
+      expect(mockSetFabVisible).toHaveBeenCalledWith(false);
+
+      customFab.value = { ...customFab.value, visible: true };
+      const { nextTick } = await import("vue");
+      await nextTick();
+      expect(mockSetFabVisible).toHaveBeenCalledWith(true);
+    });
+
+    it("resets FAB visibility on unmount", () => {
+      useConsoleController(createOptions());
+      expect(mockSetFabVisible).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe("custom selectionStore injection and layout event overrides", () => {
+    it("uses custom selectionStore if provided in options", () => {
+      const customSelectedIds = ref(["10", "20"]);
+      const customSelectionStore: any = {
+        selectedIds: customSelectedIds,
+        isSelectionMode: ref(true),
+        toggleSelect: vi.fn(),
+        selectAll: vi.fn(),
+        clearSelection: vi.fn(),
+        setForceSelectionMode: vi.fn(),
+      };
+
+      const options = { ...createOptions(), selectionStore: customSelectionStore };
+      const { selectedIds, isSelectionMode } = useConsoleController(options);
+
+      expect(selectedIds.value).toEqual(["10", "20"]);
+      expect(isSelectionMode.value).toBe(true);
+    });
+
+    it("merges layoutEvents overrides with base events", () => {
+      const customRefresh = vi.fn();
+      const customDismiss = vi.fn();
+      const options = {
+        ...createOptions(),
+        refresh: customRefresh,
+        onDismiss: customDismiss,
+        layoutEvents: ref({
+          "fab-dismiss": customDismiss,
+        }),
+      };
+
+      const { layoutEvents } = useConsoleController(options);
+      expect(layoutEvents.value["fab-dismiss"]).toBe(customDismiss);
+    });
+
+    it("uses clearSelection as fab-dismiss fallback when onDismiss and override are absent", () => {
+      const { layoutEvents } = useConsoleController(createOptions());
+      expect(typeof layoutEvents.value["fab-dismiss"]).toBe("function");
     });
   });
 });

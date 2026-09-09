@@ -4,20 +4,20 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Expanded useBenchmarking spec coverage for edge cases, lowerIsBetter boundaries, zero averages, and empty data pools
+**What changed:** Expanded Frontend-PWA useProgressiveList unit test coverage
 
-**Why:** Close L1 Core benchmarking composable coverage gap and assert boundary failure modes
+**Why:** Recent-Change Priority: covered useProgressiveList boundary branches including didTimeout idle loops, shrinkage during isRefresh, and cancelAnimationFrame fallback
 
-**Result:** Vitest useBenchmarking.spec.ts passed 26 of 26 tests, full monorepo suite passed 1813 tests
+**Result:** Vitest pass 1826 of 1826 tests across 195 files
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useBenchmarking.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Why: Close L1 Core benchmarking composable coverage gap and assert boundary failure modes
-  Change: Expanded useBenchmarking spec coverage for edge cases, lowerIsBetter boundaries, zero averages, and empty data pools
-  Result: Vitest useBenchmarking.spec.ts passed 26 of 26 tests, full monorepo suite passed 1813 tests
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useBenchmarking.spec.ts
-  Nudges: 1
+  Why: Recent-Change Priority: covered useProgressiveList boundary branches including didTimeout idle loops, shrinkage during isRefresh, and cancelAnimationFrame fallback
+  Change: Expanded Frontend-PWA useProgressiveList unit test coverage
+  Result: Vitest pass 1826 of 1826 tests across 195 files
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+  Nudges: 0
 -->

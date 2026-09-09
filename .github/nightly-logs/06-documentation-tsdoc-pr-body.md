@@ -1,23 +1,23 @@
 ### Nightly Stage 6: Documentation TSDoc - Interface Contract Architect
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
+In plain terms: nothing needed fixing. This run checked the documentation TSDoc area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** docs(tsdoc): harden useConsoleController interface contracts and inline logic annotations
+**What was checked:** Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
 
-**Why:** Document Layer 1 core useConsoleController interface contracts and decision logs
+**Why:** Full audit of useProgressiveList.ts and core services confirmed zero documentation gaps or contract drift required
 
-**Result:** Vitest unit tests passed cleanly
+**Result:** All 1826 Vitest unit tests passed cleanly
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConsoleController.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Why: Document Layer 1 core useConsoleController interface contracts and decision logs
-  Change: docs(tsdoc): harden useConsoleController interface contracts and inline logic annotations
-  Result: Vitest unit tests passed cleanly
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConsoleController.ts
+  Why: Full audit of useProgressiveList.ts and core services confirmed zero documentation gaps or contract drift required
+  Change: Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
+  Result: All 1826 Vitest unit tests passed cleanly
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log
   Nudges: 0
 -->

@@ -162,3 +162,5 @@
 * [2026-09-05] [Stage 5] [03:22Z-03:25Z 3m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled StorageService.ts IndexedDB persistence and migration engine in core services README
 * [2026-09-06] [Stage 5] [03:16Z-03:21Z 5m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useAppSettings.ts feature flag and settings architecture in core services README
 * [2026-09-07] [Stage 5] [03:05Z-03:09Z 4m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useBenchmarking.ts single-pass statistics and tier calculation in core services README
+* [2026-09-08] [Stage 5] [03:26Z-03:30Z 4m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useConsoleController.ts list console orchestration engine, Showcase mode truncation, skeleton display priority rules, and layout contracts in core services README
+* [2026-09-09] [Stage 5] [03:19Z-03:24Z 4m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
