@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts); zero substrate or logic bottlenecks found
+**What was checked:** Codebase
 
-**Why:** Source-level grep confirmed all active database view references are valid and recent changes in useProgressiveList.ts show zero performance bottlenecks
+**Why:** Audited Edge Function SQL view usage and L1/L0 performance composables; zero substrate or logic bottlenecks found; 75 changed files inspected with 0 code mutations required
 
-**Result:** All 1826 Vitest unit tests passed cleanly
+**Result:** All 195 test files (1826 unit tests) passed successfully
 
 **Files changed:** .github/nightly-logs/04-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: optimization
-  Why: Source-level grep confirmed all active database view references are valid and recent changes in useProgressiveList.ts show zero performance bottlenecks
-  Change: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts); zero substrate or logic bottlenecks found
-  Result: All 1826 Vitest unit tests passed cleanly
+  Why: Audited Edge Function SQL view usage and L1/L0 performance composables; zero substrate or logic bottlenecks found; 75 changed files inspected with 0 code mutations required
+  Change: Codebase
+  Result: All 195 test files (1826 unit tests) passed successfully
   Files: .github/nightly-logs/04-optimization-coverage.log
   Nudges: 0
 -->
