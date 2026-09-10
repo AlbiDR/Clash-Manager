@@ -115,3 +115,4 @@
 * [2026-09-07] [Stage 6] [04:13Z-04:23Z 10m] CHANGED: Frontend-PWA/src/core/services/useConsoleController.ts -- docs(tsdoc): harden useConsoleController interface contracts and inline logic annotations
 * [2026-09-08] [Stage 6] [04:07Z-04:12Z 5m] CHANGED: Frontend-PWA/src/core/services/useProgressiveList.ts -- docs(tsdoc): harden useProgressiveList interface contracts and inline logic annotations
 * [2026-09-09] [Stage 6] [04:13Z-04:19Z 6m] CLEAN: Codebase -- Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
+* [2026-09-10] [Stage 6] [04:26Z-04:34Z 8m] CHANGED: Frontend-PWA/src/core/services/useBenchmarking.ts -- docs(tsdoc): reconcile useBenchmarking WeakMap memoization comments with implementation
