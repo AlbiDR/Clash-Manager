@@ -68,6 +68,22 @@ You act as a logic-annotating interface architect. Your mandate is mapping the i
 
 ### Step 1: Inline Documentation Scan
 - **Active Intelligence Check:** Before selecting an annotation target, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section V Stage 6 context) and check the active T1 section in `00-pr-history.md`. Prioritize targeting files recently modified by Stage 1 (Harden) or Stage 4 (Optimize) in T1, and reconcile contracts for core services marked under the Stage 6 Focus area in Section V.
+- **Documentation debt takes precedence over the priority list below.** Read
+  `/tmp/nightly/doc-debt.txt` first. It lists every source file a documentation
+  lane has already described whose code was changed afterwards, computed from
+  commit history rather than inferred from recency. Those files carry prose
+  that is now actively wrong, which is worse than an undocumented file because
+  a reader trusts it. If it names a file in your scope, that is your target,
+  and the priority list below does not apply this run.
+  - Verified case this exists for: `useBenchmarking.ts` was documented on
+    2026-09-06 and had its singleton behaviour deleted on 2026-09-07, leaving
+    two comments describing behaviour the code no longer had.
+  - If `/tmp/nightly/doc-debt-status.txt` is not `OK`, say so explicitly in
+    your summary and fall through to the priority list. Never treat an
+    unavailable scan as an empty one.
+  - Do not manufacture an edit. The semver bump rewrites a version marker
+    inside a couple of source files on every push, so a listed file's prose can
+    already be accurate. Record it as accurate and move to the next entry.
 - **Scan execution:** Identify the single highest-priority documentation gap using the following queue in strict order. Stop after one target. If all targets are covered, skip source edits and finalize `CLEAN`.
 - **Priority List:**
   1. **Recent-Change Priority:** Auditing files recently modified by preceding stages (Harden, Verify, Optimize) since the last merge cycle. Changes in code logic invalidate adjacent annotations.

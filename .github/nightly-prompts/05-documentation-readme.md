@@ -59,6 +59,22 @@ You act as a truth-anchoring information architect. Your mandate is the absolute
 
 ### Step 1: Deterministic Coverage Scan
 - **Active Intelligence Check:** Before scanning, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section III Scope Coverage Map and Section V Stage 5 context) and check the active T1 section in `00-pr-history.md`. Focus your README drift audits on modules/files recently changed in 00-pr-history.md or flagged as undergoing active restructuring in Section III and V, ensuring API documentation reflects these exact shifts.
+- **Documentation debt takes precedence over the priority list below.** Read
+  `/tmp/nightly/doc-debt.txt` first. It lists every source file a documentation
+  lane has already described whose code was changed afterwards, computed from
+  commit history rather than inferred from recency. Those files carry prose
+  that is now actively wrong, which is worse than an undocumented file because
+  a reader trusts it. If it names a file in your scope, that is your target,
+  and the priority list below does not apply this run.
+  - Verified case this exists for: `useBenchmarking.ts` was documented on
+    2026-09-06 and had its singleton behaviour deleted on 2026-09-07, leaving
+    two comments describing behaviour the code no longer had.
+  - If `/tmp/nightly/doc-debt-status.txt` is not `OK`, say so explicitly in
+    your summary and fall through to the priority list. Never treat an
+    unavailable scan as an empty one.
+  - Do not manufacture an edit. The semver bump rewrites a version marker
+    inside a couple of source files on every push, so a listed file's prose can
+    already be accurate. Record it as accurate and move to the next entry.
 - **Scan execution:** Identify the single highest-priority README gap using the following queue in strict order. Stop after one target. If all targets are current, skip source edits and finalize `CLEAN`.
 - **Priority List:**
   1. **Drift Reconciler:** Locate any `README.md` whose examples, API shapes, or descriptions conflict with the codebase.
