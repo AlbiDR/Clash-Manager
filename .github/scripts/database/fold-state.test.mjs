@@ -119,3 +119,70 @@ test('cron.schedule is still declarative state, not swallowed as data', async ()
   assert.ok(report.objects.some((o) => o.key.startsWith('SCHEDULE:')), 'schedules must stay tracked');
   await rm(directory, { recursive: true, force: true });
 });
+
+/** Baseline and incremental both parameterised, for the trigger idempotency cases. */
+async function triggerFixture(baselineTrigger, migrationTrigger) {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'fold-state-trigger-'));
+  await writeFile(path.join(directory, '20260531232406_master_migration.sql'), `
+CREATE SCHEMA IF NOT EXISTS app;
+CREATE TABLE IF NOT EXISTS app.items (id bigint, CONSTRAINT items_pkey PRIMARY KEY (id));
+ALTER TABLE app.items ENABLE ROW LEVEL SECURITY;
+${baselineTrigger}
+`);
+  await writeFile(path.join(directory, '20260531232407_change.sql'), `${migrationTrigger}\n`);
+  return directory;
+}
+
+const triggerOf = report => report.objects.find(item => item.key === 'TRIGGER:trg_items@app.items');
+
+test('a baseline trigger differing only by OR REPLACE is folded, not divergent', async () => {
+  // Folding into the baseline REQUIRES the idempotency guard, because the
+  // release gate rejects a bare CREATE TRIGGER there. Before this, the two
+  // checkers demanded opposite things and Stage 3 was handed an object whose
+  // only resolution was to revert the gate fix. It attempted exactly that on
+  // 2026-09-10.
+  const directory = await triggerFixture(
+    'CREATE OR REPLACE TRIGGER trg_items AFTER INSERT ON app.items FOR EACH STATEMENT EXECUTE FUNCTION app.noop();',
+    'CREATE TRIGGER trg_items AFTER INSERT ON app.items FOR EACH STATEMENT EXECUTE FUNCTION app.noop();',
+  );
+  const report = await checkFoldState({ migrationsDir: directory });
+  const trigger = triggerOf(report);
+  assert.equal(trigger.status, 'reconciled');
+  assert.match(trigger.reason, /idempotency guard added for baseline replay/);
+  assert.equal(report.counts.unfolded, 0);
+  await rm(directory, { recursive: true, force: true });
+});
+
+test('OR REPLACE is the ONLY tolerated difference on a trigger', async () => {
+  // Guards the reconciliation against over-reach: a genuinely changed trigger
+  // must still be reported, or this rule would hide real drift.
+  const directory = await triggerFixture(
+    'CREATE OR REPLACE TRIGGER trg_items AFTER INSERT OR DELETE ON app.items FOR EACH STATEMENT EXECUTE FUNCTION app.noop();',
+    'CREATE TRIGGER trg_items AFTER INSERT ON app.items FOR EACH STATEMENT EXECUTE FUNCTION app.noop();',
+  );
+  const report = await checkFoldState({ migrationsDir: directory });
+  const trigger = triggerOf(report);
+  assert.equal(trigger.status, 'unfolded');
+  assert.equal(trigger.reason, 'DIVERGENT');
+  await rm(directory, { recursive: true, force: true });
+});
+
+test('a verbatim trigger match still folds without needing reconciliation', async () => {
+  const definition = 'CREATE TRIGGER trg_items AFTER INSERT ON app.items FOR EACH STATEMENT EXECUTE FUNCTION app.noop();';
+  const directory = await triggerFixture(definition, definition);
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.equal(triggerOf(report).status, 'folded');
+  await rm(directory, { recursive: true, force: true });
+});
+
+test('a bare baseline trigger against an OR REPLACE incremental is not silently accepted', async () => {
+  // The reverse direction is not reconciliation: the baseline would be the
+  // non-replayable side, which is what the release gate rejects.
+  const directory = await triggerFixture(
+    'CREATE TRIGGER trg_items AFTER INSERT ON app.items FOR EACH STATEMENT EXECUTE FUNCTION app.noop();',
+    'CREATE OR REPLACE TRIGGER trg_items AFTER INSERT ON app.items FOR EACH STATEMENT EXECUTE FUNCTION app.noop();',
+  );
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.notEqual(triggerOf(report).status, 'reconciled');
+  await rm(directory, { recursive: true, force: true });
+});
