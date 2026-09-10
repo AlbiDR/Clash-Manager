@@ -362,6 +362,13 @@
   - Recommended Fix: N/A.
   - Resolution Details (2026-09-02): Re-verification of the entire nightly pipeline on September 2, 2026, confirmed zero failed or missing stages. All 12 preceding stages (Stages 1 through 12) executed cleanly and logged valid coverage log entries (PRs #1654 through #1665). This marks a third consecutive 100% operational run for the entire pipeline.
 
+* Stage 3 (Baseline Consolidation) Session Failure on 2026-09-10:
+  - Session: sessions/16724902969966971168
+  - State: [ACTIVE - FAILED] (2026-09-10)
+  - Symptom: Stage 3 failed to produce published output and was recorded as ledger state `ESCALATED` with `failureClass: JULES_SESSION_FAILED` after a 16.6-minute session.
+  - Root Cause: Jules session terminated prematurely during baseline consolidation checks without writing terminal coverage log results or opening a PR.
+  - Recommended Fix: Audit Stage 3 session logs for potential context limit exhaustion or database connection timeouts during read-only baseline checks, and ensure resilience against DB-UNAVAILABLE states.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -404,53 +411,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-09-02 via PR #1654; last active change on 2026-08-22 via PR #1528)
-  - Analysis: Completed runtime integrity audit pass with zero threat vectors across dependency graph and schema boundaries.
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-09-09; audit duration: 6m)
+  - Analysis: Completed runtime integrity audit pass with zero threat vectors across Edge Functions and schema boundaries.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-02 in useConnectivityManager.spec.ts via PR #1655)
-  - Analysis: Expanded Frontend-PWA useConnectivityManager test suite for error priorities and staleness threshold boundary conditions.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-10 in muscle.spec.ts via PR #1760; audit duration: 7m)
+  - Analysis: Added unit tests for L1 Core Native Muscle Engine (muscle.ts).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 13 (CLEAN logged on 2026-09-02 via PR #1656; last active change on 2026-08-19)
-  - Analysis: Read-only baseline audit verified master migration schema is current.
+  - Consecutive No-Diff Days: 1 (Session FAILED on 2026-09-10; last active change on 2026-09-08 via PR #1742)
+  - Analysis: Read-only baseline audit session terminated prematurely during execution.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-09-02 via PR #1657; last active change on 2026-08-29 via PR #1606)
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-09-10 via PR #1761; audit duration: 5m)
   - Analysis: Substrate hygiene audit confirmed zero unreferenced database objects or orphaned views.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-02 in core services README via PR #1658)
-  - Analysis: Reconciled useConnectivityManager health prioritization and metadata in core services README.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-10 in README via PR #1762; audit duration: 5m)
+  - Analysis: Reconciled useBenchmarking WeakMap memoization strategy documentation.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-02 in useConnectivityManager.ts via PR #1659)
-  - Analysis: Hardened useConnectivityManager interface contracts and inline logic annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-10 in useBenchmarking.ts via PR #1763; audit duration: 8m)
+  - Analysis: Reconciled useBenchmarking WeakMap memoization inline comments with implementation.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 40 (CLEAN logged on 2026-09-02 via PR #1660)
-  - Analysis: Monorepo package versions and catalog dependencies are synchronized at ground truth version 14.46.24.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-09-10 via PR #1764; audit duration: 2m)
+  - Analysis: Monorepo package versions and catalog references verified across all targets.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-02 in package.json via PR #1661)
-  - Analysis: Bumped @types/node catalog entry to ^26.4.1 and refreshed lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-10 in package.json via PR #1765; audit duration: 5m)
+  - Analysis: Bumped knip catalog entry from ^6.35.0 to ^6.35.1 and updated lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-09-02 via PR #1662; last active change on 2026-08-31 via PR #1636)
-  - Analysis: Substrate architecture strictly aligned with CleanStack ADR; no structural debt in candidate set.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-10 via PR #1766; audit duration: 7m)
+  - Analysis: Extracted pure sync utilities from useClashSync.ts into useClashSyncUtils.ts.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 13 (CLEAN logged on 2026-09-02 via PR #1663)
-  - Analysis: Full wrapper invariant audit verified across all target invariants without requiring source changes.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-09-10 via PR #1767; audit duration: 2m)
+  - Analysis: Completed expanded calibration audit for Stage 10 (APK & PWA Wrapper Integrity).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 14 (CLEAN logged on 2026-09-02 via PR #1664; last active change on 2026-08-15)
-  - Analysis: Audited native wrapper configs, service worker precache rules, and asset bundle integrity; zero source changes required.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-09-10 via PR #1768; audit duration: 2m)
+  - Analysis: CLEAN Calibration Pass: Audited native wrapper configs, SW cache topology, Vite manualChunks, and asset footprint.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-09-02 via PR #1665; last active change on 2026-08-31 via PR #1639)
-  - Analysis: Completed global APK UX audit sweep across 75 frontend files with zero violations found.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-09-10 via PR #1769; audit duration: 5m)
+  - Analysis: Verified 75 files across 10 Hybrid Shell UX categories; zero native selector violations or viewport leaks found.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-02)
-  - Analysis: Completed daily self-healing audit pass for 2026-09-02: mapped September 2 stage executions (PRs #1654, #1655 - #1665) and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-10)
+  - Analysis: Completed daily self-healing audit pass for 2026-09-10: mapped September 10 stage executions (PRs #1760 - #1769), logged Stage 3 ESCALATED failure, and updated Section 3 metrics.
