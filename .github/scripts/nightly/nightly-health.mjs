@@ -178,7 +178,11 @@ export const PACE = {
   UNKNOWN: "UNKNOWN",
 };
 
-function median(values) {
+export function median(values) {
+  // No data is not a value. Without this the even-length branch reads two
+  // undefined entries and returns NaN, which JSON.stringify then serialises as
+  // null, so a caller cannot tell "no samples" from "a median of zero".
+  if (!values || values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;

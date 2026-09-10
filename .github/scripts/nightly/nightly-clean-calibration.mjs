@@ -3,45 +3,22 @@
 
 import { readFileSync } from "node:fs";
 
-export const CALIBRATION_CLEAN_STREAK = 7;
-// Any number of bracketed blocks may sit between the stage marker and the
-// status, and the parser must survive a new one being added.
-//
-// THE BUG THIS FIXES (found 2026-09-10)
-// On 2026-09-03 the coverage-log format gained a session timing block, so
-// lines became `* [DATE] [Stage N] [23:17Z-23:23Z 6m] CLEAN: ...`. This
-// pattern required the status immediately after `[Stage N]`, so it silently
-// stopped matching every line written from that date onward. Nothing failed:
-// the script kept returning confident numbers computed from records that
-// ended on 2026-09-02.
-//
-// The consequence was pipeline-wide, not cosmetic. `last-terminal-date` froze
-// at 2026-09-02 for every stage, `ordinary-clean-since-calibration` could
-// never advance past the calibration record that sits immediately before that
-// boundary, and `calibration-due` could therefore never become true again for
-// any stage. Calibration is the only mechanism that makes a lane widen its
-// search and re-examine its own CLEAN verdicts, so the pipeline's sole
-// self-audit net had been switched off for seven nights while reporting
-// `calibration-due: NO` as though it had decided that.
-//
-// The `(?: \[[^\]]*\])*` group is deliberately permissive for exactly that
-// reason: a parser that must be edited every time the log gains a field is a
-// parser that will be silently wrong again.
-const TERMINAL_LINE = /^\* \[(\d{4}-\d{2}-\d{2})\] \[Stage (\d+)\](?: \[[^\]]*\])* (CLEAN|CHANGED|SKIPPED|PARTIAL-RUN): (.*?) -- (.*)$/;
+import { parseCoverageLog } from "./coverage-log-line.mjs";
 
+export const CALIBRATION_CLEAN_STREAK = 7;
 export function parseTerminalCoverageLines(content, stageNumber) {
-  return String(content || "")
-    .split("\n")
-    .map(line => TERMINAL_LINE.exec(line.trim()))
-    .filter(Boolean)
-    .filter(match => Number(match[2]) === stageNumber)
-    .map(match => ({
-      date: match[1],
-      stage: Number(match[2]),
-      status: match[3],
-      target: match[4].trim(),
-      summary: match[5].trim(),
-    }));
+  // The line format is owned by coverage-log-line.mjs. It used to be parsed by
+  // a private regex here, which went silently blind on 2026-09-03 when the
+  // format gained a session timing block; see that module's header for what
+  // that cost. Field mapping is preserved exactly so this function's contract
+  // is unchanged.
+  return parseCoverageLog(content, stageNumber).map(record => ({
+    date: record.date,
+    stage: record.stage,
+    status: record.status,
+    target: record.target,
+    summary: record.summary,
+  }));
 }
 
 export function cleanStreak(records) {

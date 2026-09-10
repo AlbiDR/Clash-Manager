@@ -1,3 +1,4 @@
+import { parseCoverageLog } from "./coverage-log-line.mjs";
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
@@ -85,7 +86,6 @@ const PR_HISTORY = ".github/nightly-logs/00-pr-history.md";
 // The optional third bracket is the run window `[HH:MMZ-HH:MMZ NNm]`, written
 // by nightly-stage.mjs finalize. Optional because every line written before
 // that existed must keep parsing identically.
-const DECLARED = /^\* \[(\d{4}-\d{2}-\d{2})\] \[Stage (\d+)\] (?:\[([^\]]+)\] )?(CLEAN|CHANGED|SKIPPED|PARTIAL-RUN): (.*)$/;
 
 function git(args) {
   const res = spawnSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
@@ -105,20 +105,21 @@ export function evidenceDateFor(stageNumber, runDate) {
   return d.toISOString().slice(0, 10);
 }
 
-export function parseCoverageLine(content, stageNumber, date) {
-  for (const line of String(content || "").split("\n")) {
-    const m = DECLARED.exec(line.trim());
-    if (!m) continue;
-    if (m[1] !== date || Number(m[2]) !== stageNumber) continue;
-    const rest = m[5];
-    const [target, ...summary] = rest.split(" -- ");
-    const durationMatch = /(\d+)m$/.exec(m[3] || "");
+// Delegates to coverage-log-line.mjs. This module used to carry its own regex
+// for the same format, which is how the format drifted: this copy was updated
+// for the 2026-09-03 timing block and the calibration copy was not, so
+// calibration went silently blind for seven nights. This copy also allowed
+// exactly one optional bracket field, so a second one would have blinded it
+// too. The shared parser allows any number.
+export function declaredCoverageRecord(content, stageNumber, date) {
+  for (const record of parseCoverageLog(content, stageNumber)) {
+    if (record.date !== date) continue;
     return {
-      status: m[4],
-      target: target.trim(),
-      summary: summary.join(" -- ").trim() || target.trim(),
-      window: m[3] || null,
-      durationMinutes: durationMatch ? Number(durationMatch[1]) : null,
+      status: record.status,
+      target: record.target,
+      summary: record.summary,
+      window: record.window ? `${record.window.start}Z-${record.window.end}Z ${record.window.minutes}m` : null,
+      durationMinutes: record.window ? record.window.minutes : null,
     };
   }
   return null;
@@ -179,7 +180,7 @@ export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
   for (const stage of registry.stages || []) {
     const evidenceDate = evidenceDateFor(stage.number, date);
     const hasTag = (tags || []).some(t => t.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`));
-    const hasCoverage = Boolean(parseCoverageLine(coverageByStage?.[stage.number], stage.number, evidenceDate));
+    const hasCoverage = Boolean(declaredCoverageRecord(coverageByStage?.[stage.number], stage.number, evidenceDate));
     const hasResult = REACHED_STATES.has(ledger?.runs?.[date]?.[String(stage.number)]?.state);
     if (hasTag || hasCoverage || hasResult) frontier = Math.max(frontier, stage.number);
   }
@@ -329,7 +330,7 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
       stage,
       entry: ledger?.runs?.[date]?.[String(stage.number)] ?? null,
       tag,
-      declared: parseCoverageLine(coverageByStage[stage.number], stage.number, evidenceDate),
+      declared: declaredCoverageRecord(coverageByStage[stage.number], stage.number, evidenceDate),
       history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate),
       progress,
     });

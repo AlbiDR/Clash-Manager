@@ -38,23 +38,20 @@ import { spawnSync } from "node:child_process";
 import { RESULT_LABEL, WHY_LABEL, changeLabel } from "./nightly-prose.mjs";
 import { validateChangedPaths } from "./nightly-stage.mjs";
 
-// Coverage-log line the stage writes as its terminal record, as it appears in a
-// unified diff (added lines carry a leading +). Both the outcome status and the
-// human summary are recovered from it, so neither has to be guessed.
+import { parseCoverageLine } from "./coverage-log-line.mjs";
+
+// The coverage-log line format lives in coverage-log-line.mjs. It used to be a
+// private regex here, and the 2026-09-03 run-window field stopped it matching
+// every line written from that day on, which made buildFallbackPlan refuse
+// EVERY stage with "patch has no coverage-log line". Nothing caught it for two
+// days because this module only runs once the nudge path is exhausted, which
+// had not happened in 25 nights. That is the argument for
+// rehearseFallbackPublisher in the watchdog: an emergency mechanism nobody
+// exercises rots quietly and reports nothing.
 //
-// The bracket before the status is the optional run window `[HH:MMZ-HH:MMZ NNm]`
-// that finalize started writing in d5488b65b on 2026-09-03. Without the group
-// that skips it, this regex stopped matching every line written from that day
-// on, which meant buildFallbackPlan refused EVERY stage with "patch has no
-// coverage-log line" and the fallback publisher could not have published
-// anything at all. Nothing caught it for two days because this code only runs
-// after the nudge path is exhausted, which had not happened once in 25 nights.
-// That is the whole argument for rehearseFallbackPublisher in the watchdog:
-// an emergency mechanism nobody exercises does not stay working, it rots
-// quietly and reports nothing.
-//
-// Non-capturing on purpose: the callers destructure by position.
-const COVERAGE_LINE = /^\+\* \[(\d{4}-\d{2}-\d{2})\] \[Stage (\d+)\] (?:\[[^\]]+\] )?(CLEAN|CHANGED|SKIPPED|PARTIAL-RUN): (.*)$/m;
+// The same field blinded the calibration copy at the same moment, and that one
+// went unnoticed for seven nights because nothing compared the two. Hence one
+// parser, imported everywhere.
 
 const DIFF_HEADER = /^diff --git a\/(\S+) b\/(\S+)$/gm;
 
@@ -87,15 +84,22 @@ export function patchTouchedPaths(patch) {
  * unvalidated patch is exactly what this module must never do.
  */
 export function parseCoverageOutcome(patch, stage, date) {
-  const match = COVERAGE_LINE.exec(String(patch || ""));
-  if (!match) return null;
-  const [, loggedDate, loggedStage, status, rest] = match;
-  if (Number(loggedStage) !== stage.number) return null;
-  if (date && loggedDate !== date) return null;
-  // Coverage lines read "TARGET -- summary"; the summary is the half a human
-  // reads, and it becomes the commit subject.
-  const summary = (rest.includes(" -- ") ? rest.split(" -- ").slice(1).join(" -- ") : rest).trim();
-  return { status, summary: summary || rest.trim(), date: loggedDate };
+  // The line format is owned by coverage-log-line.mjs. This module used to
+  // carry a fourth private regex for it, allowing exactly one optional
+  // bracket field, so a second one would have blinded it the way the
+  // calibration copy went blind on 2026-09-03.
+  for (const rawLine of String(patch || "").split("\n")) {
+    if (!rawLine.startsWith("+")) continue;
+    const record = parseCoverageLine(rawLine.slice(1));
+    if (!record) continue;
+    if (record.stage !== stage.number) continue;
+    if (date && record.date !== date) continue;
+    // Coverage lines read "TARGET -- summary"; the summary is the half a human
+    // reads, and it becomes the commit subject. With no separator the shared
+    // parser repeats the payload into both, which preserves the old fallback.
+    return { status: record.status, summary: record.summary || record.target, date: record.date };
+  }
+  return null;
 }
 
 /**
