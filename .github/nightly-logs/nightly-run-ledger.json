@@ -9506,7 +9506,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.735Z",
+        "lastObservedAt": "2026-09-10T05:17:25.298Z",
         "failureClass": null
       },
       "2": {
@@ -9546,7 +9546,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.735Z",
+        "lastObservedAt": "2026-09-10T05:17:25.299Z",
         "failureClass": null
       },
       "3": {
@@ -9580,7 +9580,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.735Z",
+        "lastObservedAt": "2026-09-10T05:17:25.299Z",
         "failureClass": "JULES_SESSION_FAILED"
       },
       "4": {
@@ -9620,7 +9620,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.736Z",
+        "lastObservedAt": "2026-09-10T05:17:25.299Z",
         "failureClass": null
       },
       "5": {
@@ -9660,7 +9660,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.736Z",
+        "lastObservedAt": "2026-09-10T05:17:25.300Z",
         "failureClass": null
       },
       "6": {
@@ -9703,7 +9703,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.736Z",
+        "lastObservedAt": "2026-09-10T05:17:25.300Z",
         "failureClass": null
       },
       "7": {
@@ -9711,7 +9711,7 @@
         "stage": 7,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RUNNING",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "notReached": {
@@ -9719,7 +9719,7 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 0,
+            "currentStreak": 1,
             "reason": "no adverse trend"
           },
           "julesSession": {
@@ -9733,11 +9733,15 @@
             "createTime": "2026-09-10T05:10:24.039361802Z",
             "updateTime": "2026-09-10T05:12:11.432025Z",
             "lifetimeMinutes": 1.8
-          }
+          },
+          "prNumber": 1764,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1764",
+          "headRef": "nightly/stage-7-version-integrity-1d816d60-6963147664442903524",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.736Z",
-        "failureClass": null
+        "lastObservedAt": "2026-09-10T05:17:25.300Z",
+        "failureClass": "OPEN_PR"
       },
       "8": {
         "date": "2026-09-10",
@@ -9757,7 +9761,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.736Z",
+        "lastObservedAt": "2026-09-10T05:17:25.301Z",
         "failureClass": null
       },
       "9": {
@@ -9778,7 +9782,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.737Z",
+        "lastObservedAt": "2026-09-10T05:17:25.301Z",
         "failureClass": null
       },
       "10": {
@@ -9799,7 +9803,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.737Z",
+        "lastObservedAt": "2026-09-10T05:17:25.301Z",
         "failureClass": null
       },
       "11": {
@@ -9820,7 +9824,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.737Z",
+        "lastObservedAt": "2026-09-10T05:17:25.302Z",
         "failureClass": null
       },
       "12": {
@@ -9841,7 +9845,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.737Z",
+        "lastObservedAt": "2026-09-10T05:17:25.302Z",
         "failureClass": null
       },
       "13": {
@@ -9862,7 +9866,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T05:12:38.738Z",
+        "lastObservedAt": "2026-09-10T05:17:25.302Z",
         "failureClass": null
       }
     }
