@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1761 [Stage 4]: Codebase
+**Domain:** optimization | **Commit:** 6cfa1e23 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1761)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Audited Edge Function SQL view usage and L1/L0 performance composables; zero substrate or logic bottlenecks found; 75 changed files inspected with 0 code mutations required
+**Change:** Codebase
+**Result:** All 195 test files (1826 unit tests) passed successfully
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1760 [Stage 2]: Added unit tests for L1 Core Native Muscle Engine (muscle.ts)
 **Domain:** verification | **Commit:** 74ddaa77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1760)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/muscle.spec.ts
