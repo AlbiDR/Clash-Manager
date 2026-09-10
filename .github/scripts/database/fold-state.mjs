@@ -73,6 +73,35 @@ function reconcileDefinition(key, baselineSql, migrationSql, baselineSource) {
       return `inline FOREIGN KEY hoisted to the constraint block (${names.join(', ')})`;
     }
   }
+  if (key.startsWith('TRIGGER:')) {
+    // Folding into the baseline REQUIRES adding an idempotency guard. The
+    // baseline is the disaster-recovery path and is replayed whole, so the
+    // release gate (validate-project.ts step 5, via baseline-rules.mjs)
+    // rejects a bare CREATE TRIGGER there. A baseline definition that differs
+    // from its incremental ONLY by OR REPLACE is therefore correctly folded,
+    // not divergent.
+    //
+    // WHY THIS IS HERE (2026-09-10, and it cost a run)
+    // Without it the two checkers demanded opposite things: the gate required
+    // OR REPLACE in the baseline and this checker required verbatim equality
+    // with the incremental. Fixing the gate produced a permanently UNFOLDED
+    // object whose only available resolution was to revert the gate fix, and
+    // Stage 3 attempted precisely that on the 2026-09-10 run: "Consolidated
+    // trg_voyage_activation_gate trigger definition in master migration file
+    // to match incremental migration verbatim". It would have re-blocked every
+    // PWA release, and it would have recurred nightly.
+    //
+    // Narrow on purpose: OR REPLACE is the only tolerated difference. Anything
+    // else stays DIVERGENT.
+    const baselineIsIdempotent = /^CREATE\s+OR\s+REPLACE\s+TRIGGER\b/i.test(baselineSql);
+    const migrationIsBare = /^CREATE\s+TRIGGER\b/i.test(migrationSql);
+    if (baselineIsIdempotent && migrationIsBare) {
+      const normalize = sql => compact(sql.replace(/^CREATE\s+(?:OR\s+REPLACE\s+)?TRIGGER\b/i, 'CREATE TRIGGER'));
+      if (normalize(baselineSql) === normalize(migrationSql)) {
+        return 'idempotency guard added for baseline replay (OR REPLACE)';
+      }
+    }
+  }
   if (key.startsWith('FUNCTION:')) {
     const pattern = /SET\s+search_path\s+(?:TO|=)\s*([^\n;]+)/i;
     const base = baselineSql.match(pattern);
