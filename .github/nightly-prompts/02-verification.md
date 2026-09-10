@@ -86,6 +86,20 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 - If a gap was found: Write or update the target `*.spec.ts` file in the correct directory.
 - Run exactly the selected spec: `CI=true DEBIAN_FRONTEND=noninteractive pnpm -F clash-manager-pwa test -- <spec-path>` for PWA tests or `CI=true DEBIAN_FRONTEND=noninteractive pnpm -F clash-manager-backend test -- <spec-path>` for Backend tests.
 - Confirm the assertions exercise a meaningful failure boundary rather than implementation trivia.
+- Prove every test you add can fail. For each new test, temporarily remove or
+  invert the specific line or branch it targets, rerun the same spec, and confirm
+  the new test fails. Restore the source immediately with
+  `git checkout -- <source-path>`. Name the mutation you used and the assertion
+  that caught it in your verification result.
+- If a new test still passes under its own mutation, it is not testing what its
+  name claims. Fix the assertion or delete the test. Never keep an unproven test.
+- Never assert a shared spy with bare `toHaveBeenCalled`. Assert the arguments
+  with `toHaveBeenCalledWith`, or assert the call count. A bare call check is
+  satisfied by unrelated module-load side effects and stays green even when the
+  behaviour under test is deleted entirely.
+- If the mutation step cannot be run at all (an environment failure, not a test
+  failure), keep the test, say so explicitly in the verification result, and
+  continue. Never fail the run over this step.
 - If the first run fails, make one targeted correction and rerun the same spec once. If the second run fails, restore or delete only the spec edited by this run and finalize `PARTIAL-RUN`.
 
 ### Step 4: Finalize

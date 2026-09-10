@@ -63,6 +63,23 @@ Approaches that have been validated through execution. Follow these when applica
 
 * **Dynamic url-matching mock routing:** When writing unit/integration tests for complex Edge Functions in Vitest, use a route-matching map in `mockFetch` sorted by pattern length descending rather than sequential `.mockResolvedValueOnce()` to dynamically route concurrent requests and prevent transient 5000ms test timeouts on parallel/fallback queries. *(Established: Stage 2, 2026-07-19)*
 
+* **A new test must be proven to fail:** Every test a Stage 2 pass adds must be
+  shown to fail when the specific line or branch it targets is removed or
+  inverted, and the PR body must name the mutation used and the assertion that
+  caught it. A test written without that demonstration is unmeasured: mutation
+  testing on 2026-09-10 injected 22 realistic refactor breaks behind the specs
+  added between 2026-09-03 and 2026-09-09, and 7 escaped, including three in a
+  file already carrying 21 tests. Two of those PRs failed to cover the exact
+  behaviour their own titles claimed. *(Established: Stage 2, 2026-09-10)*
+
+* **Never assert a shared spy with bare `toHaveBeenCalled`:** On a spy more than
+  one code path can reach, assert the arguments with `toHaveBeenCalledWith`, or
+  assert the call count. An unrelated module-load side effect satisfies the bare
+  form: the `deleteDbSpy` assertion added by PR #1695 passes on the single call
+  the `idbKernel` self-probe makes at import time exactly as it does on the 16
+  calls made by the purge it claims to verify, so deleting the purge entirely
+  leaves the test green. *(Established: Stage 2, 2026-09-10)*
+
 ### Version and Dependency Management
 
 * **Catalog protocol is mandatory:** All internal package references must use
