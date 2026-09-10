@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1765 [Stage 8]: Bumped knip from ^6.35.0 to ^6.35.1 in catalogs and updated pnpm-lock.yaml
+**Domain:** dependencies | **Commit:** d61bacd6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1765)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch update for devDependency
+**Change:** Bumped knip from ^6.35.0 to ^6.35.1 in catalogs and updated pnpm-lock.yaml
+**Result:** pnpm test passed all 195 test files and 1826 tests
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1764 [Stage 7]: Calibration CLEAN: verified monorepo version consistency across all package manifests, workspace catalog references, and 10 derived locations
 **Domain:** versioning | **Commit:** cc2db8c7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1764)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
