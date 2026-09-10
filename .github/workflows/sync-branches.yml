@@ -164,6 +164,37 @@ jobs:
           git pull --ff-only origin Beta
 
           # ----------------------------------------------------------------
+          # Snapshot this branch's slot BEFORE the normalisation below
+          # overwrites it.
+          #
+          # The normalisation itself stays: a rename/rename conflict on the
+          # signed binary is not auto-resolvable, not even with -X theirs.
+          # What was wrong is that it picks the winner by BRANCH, and Nightly
+          # is structurally the stale side, because apk-release.yml only
+          # rebuilds the slot on Beta and Stable pushes that touch APK native
+          # sources. So Nightly's slot stays frozen while Beta keeps getting
+          # fresh signed builds, and on 2026-09-10 this walked Beta back from
+          # v14.50.46+330 to v14.50.33+312. deploy-pwa.yml copies latest.json
+          # to the PWA origin, so the in-app updater pointed thirteen
+          # versions back. It fired on every sync, not occasionally, which is
+          # why restoring the slot by hand never held.
+          #
+          # restore_newer_apk_slot in the merge step below puts this snapshot
+          # back if it turns out to be the newer build. RUNNER_TEMP persists
+          # across steps within a job.
+          # ----------------------------------------------------------------
+          APK_SLOT_BACKUP="$RUNNER_TEMP/apk-slot-before-merge"
+          rm -rf "$APK_SLOT_BACKUP"
+          mkdir -p "$APK_SLOT_BACKUP"
+          if [ -f APK/release/latest.json ]; then
+            cp APK/release/latest.json "$APK_SLOT_BACKUP/latest.json"
+            for APK_FILE in APK/release/clashmanager-v*.apk; do
+              if [ -f "$APK_FILE" ]; then cp "$APK_FILE" "$APK_SLOT_BACKUP/"; fi
+            done
+            echo "Captured pre-merge APK release slot for post-merge comparison."
+          fi
+
+          # ----------------------------------------------------------------
           # A rename/rename conflict arises when both branches independently
           # rename the same base APK blob to different filenames. Git cannot
           # auto-resolve this class of conflict, even with -X theirs.
@@ -291,6 +322,62 @@ jobs:
             return 0
           }
 
+          # ----------------------------------------------------------------
+          # Same shape as verify_lockfile above: let the merge do what it
+          # does, then detect the bad outcome and repair it with a follow-up
+          # commit. Nothing here touches Nightly or the merge strategy.
+          #
+          # Ordering is delegated to apk-slot.mjs, which orders by Android
+          # versionCode and then buildNumber, and refuses to order a slot it
+          # cannot parse rather than calling it the older one. A slot it
+          # cannot order is left exactly as the merge produced it, with a
+          # warning, because silently discarding a signed build is the
+          # failure this whole function exists to stop.
+          # ----------------------------------------------------------------
+          restore_newer_apk_slot() {
+            APK_SLOT_BACKUP="$RUNNER_TEMP/apk-slot-before-merge"
+            SAVED_JSON="$APK_SLOT_BACKUP/latest.json"
+
+            if [ ! -f "$SAVED_JSON" ] || [ ! -f APK/release/latest.json ]; then
+              return 0
+            fi
+
+            set +e
+            SLOT_WINNER=$(node .github/scripts/android/apk-slot.mjs "$SAVED_JSON" APK/release/latest.json 2>&1)
+            SLOT_RC=$?
+            set -e
+
+            if [ "$SLOT_RC" -ne 0 ]; then
+              echo "::warning::Could not order the APK release slots, leaving the merged slot untouched. ${SLOT_WINNER}"
+              return 0
+            fi
+
+            # "b" or "equal": the merge already holds the newer build.
+            if [ "$SLOT_WINNER" != "a" ]; then
+              return 0
+            fi
+
+            SAVED_APK=$(ls "$APK_SLOT_BACKUP" | grep 'clashmanager-v.*\.apk$' | head -1 || true)
+            if [ -z "$SAVED_APK" ]; then
+              echo "::warning::The pre-merge APK release slot was newer but its binary was not captured. Leaving the merged slot untouched."
+              return 0
+            fi
+
+            git ls-files APK/release/ | grep 'clashmanager-v.*\.apk$' | while read -r OLD; do
+              git rm --cached --force "$OLD" >/dev/null 2>&1 || true
+              rm -f "$OLD"
+            done
+
+            cp "$APK_SLOT_BACKUP/$SAVED_APK" "APK/release/$SAVED_APK"
+            cp "$SAVED_JSON" APK/release/latest.json
+            git add "APK/release/$SAVED_APK" APK/release/latest.json
+
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(sync): restore newer APK release slot after merge [skip ci]"
+              echo "> Restored ${SAVED_APK}: the pre-merge normalisation had replaced it with an older build from Nightly." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
           merge_nightly() {
             # Captured so `diagnose_baseline` can restore the exact pre-merge
             # Beta tip if the combined state turns out to be broken. Set here
@@ -304,6 +391,11 @@ jobs:
             else
               git merge origin/Nightly --no-edit
             fi
+
+            # Undoes the pre-merge slot normalisation when it cost this
+            # branch a newer signed build. Runs before the push, like every
+            # other repair in this job.
+            restore_newer_apk_slot
 
             # Verified here rather than after the caller's push, so that both
             # the first attempt and the retry-on-race path are covered, and so

@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.47",
+  "version": "14.50.48",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -22,7 +22,8 @@
     "test:migration-audit": "node --test .github/scripts/database/sql-lexer.test.mjs .github/scripts/database/baseline-rules.test.mjs .github/scripts/database/audit-migrations.test.mjs .github/scripts/database/fold-state.test.mjs",
     "test:apk-ux-audit": "node --test .github/scripts/android/audit-apk-ux.test.mjs",
     "test:database-baseline": "bash .github/scripts/database/test-database-baseline.sh",
-    "test:version-code": "node --test .github/scripts/android/android-version-code.test.mjs",
+    "test:sync-branches": "node --test .github/scripts/nightly/sync-branches-invariants.test.mjs",
+    "test:version-code": "node --test .github/scripts/android/android-version-code.test.mjs .github/scripts/android/apk-slot.test.mjs",
     "test:nightly-lifecycle": "node --test .github/scripts/nightly/nightly-stage.test.mjs && node .github/scripts/nightly/nightly-stage.mjs validate",
     "test:nightly-dispatch": "node --test .github/scripts/nightly/nightly-dispatch.test.mjs",
     "test:nightly-merge": "node --test .github/scripts/nightly/merge-nightly-prs.test.mjs",
@@ -41,7 +42,7 @@
     "test:commit-trailers": "node --test .github/scripts/project/commit-trailers.test.mjs",
     "test:agents-link": "node --test .github/scripts/agents/link-agent-dirs.test.mjs",
     "test:agents-audit": "node --test .github/scripts/agents/agents-audit.test.mjs",
-    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:nightly-history && pnpm test:apk-ux-audit && pnpm test:cron-schedule",
+    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:nightly-history && pnpm test:apk-ux-audit && pnpm test:cron-schedule && pnpm test:sync-branches",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json",
