@@ -9506,7 +9506,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.060Z",
+        "lastObservedAt": "2026-09-10T10:27:21.186Z",
         "failureClass": null
       },
       "2": {
@@ -9546,7 +9546,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.061Z",
+        "lastObservedAt": "2026-09-10T10:27:21.186Z",
         "failureClass": null
       },
       "3": {
@@ -9580,7 +9580,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.061Z",
+        "lastObservedAt": "2026-09-10T10:27:21.186Z",
         "failureClass": "JULES_SESSION_FAILED"
       },
       "4": {
@@ -9620,7 +9620,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.062Z",
+        "lastObservedAt": "2026-09-10T10:27:21.186Z",
         "failureClass": null
       },
       "5": {
@@ -9660,7 +9660,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.062Z",
+        "lastObservedAt": "2026-09-10T10:27:21.187Z",
         "failureClass": null
       },
       "6": {
@@ -9703,7 +9703,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.063Z",
+        "lastObservedAt": "2026-09-10T10:27:21.187Z",
         "failureClass": null
       },
       "7": {
@@ -9750,7 +9750,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.063Z",
+        "lastObservedAt": "2026-09-10T10:27:21.187Z",
         "failureClass": null
       },
       "8": {
@@ -9790,7 +9790,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.064Z",
+        "lastObservedAt": "2026-09-10T10:27:21.187Z",
         "failureClass": null
       },
       "9": {
@@ -9830,7 +9830,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.065Z",
+        "lastObservedAt": "2026-09-10T10:27:21.187Z",
         "failureClass": null
       },
       "10": {
@@ -9873,7 +9873,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.065Z",
+        "lastObservedAt": "2026-09-10T10:27:21.187Z",
         "failureClass": null
       },
       "11": {
@@ -9913,7 +9913,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.066Z",
+        "lastObservedAt": "2026-09-10T10:27:21.188Z",
         "failureClass": null
       },
       "12": {
@@ -9921,7 +9921,7 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
@@ -9931,10 +9931,29 @@
             "verdict": "HEALTHY",
             "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-10/stage-12/pr-1769",
+          "session": {
+            "id": "2460591888629108954",
+            "name": "sessions/2460591888629108954",
+            "state": "COMPLETED",
+            "createTime": "2026-09-10T10:16:31.917764499Z",
+            "updateTime": "2026-09-10T10:25:36.251215Z",
+            "lifetimeMinutes": 9.1
+          },
+          "run": {
+            "started": "2026-09-10T10:18:00Z",
+            "terminated": "2026-09-10T10:23:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1769,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.066Z",
+        "lastObservedAt": "2026-09-10T10:27:21.188Z",
         "failureClass": null
       },
       "13": {
@@ -9946,7 +9965,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 11
+            "frontier": 12
           },
           "health": {
             "verdict": "DEGRADING",
@@ -9955,7 +9974,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:01:20.067Z",
+        "lastObservedAt": "2026-09-10T10:27:21.188Z",
         "failureClass": null
       }
     }
