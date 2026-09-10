@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
+**What was checked:** CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache topology, Vite manualChunks, and asset footprint; 0 source changes required (8 clean runs since calibration).
 
-**Why:** Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and optimized Workbox precache rules.
+**Why:** Native WebView settings in MainActivity.java, Service Worker caching/routes in sw.ts, Vite chunk splitting, and asset precache rules in vite.config.ts remain fully optimized and satisfied.
 
-**Result:** pnpm audit:apk PASSED; pnpm apk:verify:source PASSED; pnpm test PASSED.
+**Result:** PASSED expanded calibration audit across WebView cache topology, native acceleration settings, SW routes, bundle chunking, and asset footprint; toolchain probe verified gradle / ANDROID_HOME.
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and optimized Workbox precache rules.
-  Change: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
-  Result: pnpm audit:apk PASSED; pnpm apk:verify:source PASSED; pnpm test PASSED.
+  Why: Native WebView settings in MainActivity.java, Service Worker caching/routes in sw.ts, Vite chunk splitting, and asset precache rules in vite.config.ts remain fully optimized and satisfied.
+  Change: CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache topology, Vite manualChunks, and asset footprint; 0 source changes required (8 clean runs since calibration).
+  Result: PASSED expanded calibration audit across WebView cache topology, native acceleration settings, SW routes, bundle chunking, and asset footprint; toolchain probe verified gradle / ANDROID_HOME.
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
 -->
