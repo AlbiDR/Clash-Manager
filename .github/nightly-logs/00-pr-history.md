@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-10
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-10] PR #1771 [Stage 1]: Calibration CLEAN pass: audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; widened scan across Backend/_shared/ and Frontend-PWA core services
+**Domain:** hardening | **Commit:** 38c8e2c5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1771)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat surface scan and depcruise verification confirmed zero security, state persistence, or cross-layer violations
+**Change:** Calibration CLEAN pass: audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; widened scan across Backend/_shared/ and Frontend-PWA core services
+**Result:** 1826 tests passed across 195 files; 0 depcruise violations across 489 modules
+**Nudges:** 0
+
 ### [2026-09-10] PR #1770 [Stage 13]: Mapped September 10 stage executions, recorded Stage 3 ESCALATED failure, and updated Section 3 metrics
 **Domain:** pipeline | **Commit:** a82127b5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1770)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
