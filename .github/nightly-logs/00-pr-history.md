@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1769 [Stage 12]: Verified 75 files across 10 Hybrid Shell UX categories; zero native selector violations or viewport leaks found.
+**Domain:** ux | **Commit:** 31b28795 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1769)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Calibration-due audit passed with 0 candidate violations across 75 files.
+**Change:** Verified 75 files across 10 Hybrid Shell UX categories; zero native selector violations or viewport leaks found.
+**Result:** vitest 195 test files passed (1826 tests).
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1768 [Stage 11]: CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache topology, Vite manualChunks, and asset footprint; 0 source changes required (8 clean runs since calibration).
 **Domain:** apk | **Commit:** bdcc2f49 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1768)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
