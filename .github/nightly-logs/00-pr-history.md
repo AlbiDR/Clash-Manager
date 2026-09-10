@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1762 [Stage 5]: docs(readme): reconcile useBenchmarking WeakMap memoization strategy
+**Domain:** documentation | **Commit:** 2844c24e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1762)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Reconcile documentation debt for useBenchmarking.ts after store singleton state pollution refactor
+**Change:** docs(readme): reconcile useBenchmarking WeakMap memoization strategy
+**Result:** Required stage validation completed.
+**Nudges:** 1
+
+
 ### [2026-09-10] PR #1761 [Stage 4]: Codebase
 **Domain:** optimization | **Commit:** 6cfa1e23 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1761)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
