@@ -9506,7 +9506,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.186Z",
+        "lastObservedAt": "2026-09-10T11:20:43.305Z",
         "failureClass": null
       },
       "2": {
@@ -9546,7 +9546,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.186Z",
+        "lastObservedAt": "2026-09-10T11:20:43.305Z",
         "failureClass": null
       },
       "3": {
@@ -9580,7 +9580,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.186Z",
+        "lastObservedAt": "2026-09-10T11:20:43.305Z",
         "failureClass": "JULES_SESSION_FAILED"
       },
       "4": {
@@ -9620,7 +9620,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.186Z",
+        "lastObservedAt": "2026-09-10T11:20:43.305Z",
         "failureClass": null
       },
       "5": {
@@ -9660,7 +9660,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.187Z",
+        "lastObservedAt": "2026-09-10T11:20:43.306Z",
         "failureClass": null
       },
       "6": {
@@ -9703,7 +9703,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.187Z",
+        "lastObservedAt": "2026-09-10T11:20:43.306Z",
         "failureClass": null
       },
       "7": {
@@ -9750,7 +9750,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.187Z",
+        "lastObservedAt": "2026-09-10T11:20:43.306Z",
         "failureClass": null
       },
       "8": {
@@ -9790,7 +9790,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.187Z",
+        "lastObservedAt": "2026-09-10T11:20:43.306Z",
         "failureClass": null
       },
       "9": {
@@ -9830,7 +9830,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.187Z",
+        "lastObservedAt": "2026-09-10T11:20:43.306Z",
         "failureClass": null
       },
       "10": {
@@ -9873,7 +9873,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.187Z",
+        "lastObservedAt": "2026-09-10T11:20:43.307Z",
         "failureClass": null
       },
       "11": {
@@ -9913,7 +9913,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.188Z",
+        "lastObservedAt": "2026-09-10T11:20:43.307Z",
         "failureClass": null
       },
       "12": {
@@ -9953,7 +9953,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.188Z",
+        "lastObservedAt": "2026-09-10T11:20:43.307Z",
         "failureClass": null
       },
       "13": {
@@ -9961,7 +9961,7 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
@@ -9969,13 +9969,17 @@
           },
           "health": {
             "verdict": "DEGRADING",
-            "currentStreak": 1,
-            "reason": "intervention rate rose from 14% to 23%"
-          }
+            "currentStreak": 2,
+            "reason": "intervention rate rose from 14% to 29%"
+          },
+          "prNumber": 1770,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1770",
+          "headRef": "nightly/stage-13-self-healing-protocol-705cb7ba-9475226358523041243",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-10T10:27:21.188Z",
-        "failureClass": null
+        "lastObservedAt": "2026-09-10T11:20:43.307Z",
+        "failureClass": "OPEN_PR"
       }
     }
   }
