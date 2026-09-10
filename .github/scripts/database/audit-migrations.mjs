@@ -9,6 +9,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { lexSql, topLevelCommentLines } from './sql-lexer.mjs';
+import { baselineDdlViolations } from './baseline-rules.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..", "..", "..");
@@ -208,6 +209,12 @@ function inspectBaseline(source, policy) {
     if (order[item.kind] < last) violations.push(`definition is out of dependency section order: ${item.key}`);
     last = Math.max(last, order[item.kind]);
   }
+
+  // Baseline re-runnability and safety rules, imported from the same module
+  // the deploy gate uses, so this audit can never report PASS on a baseline
+  // the gate will reject. See baseline-rules.mjs for the 2026-09-08 fold
+  // that this closes.
+  violations.push(...baselineDdlViolations(source));
 
   return { violations: [...new Set(violations)], unsupportedStatements, definitions };
 }
