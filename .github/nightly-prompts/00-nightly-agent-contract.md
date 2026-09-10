@@ -110,6 +110,41 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
   result. Avoid generic bodies such as "audit complete", "no source changes
   required", or "fully optimized" unless the surrounding sentence explains what
   was checked and what passed.
+
+### Saturation
+
+A lane that has genuinely run out of work finalizes `CLEAN`. Manufacturing a
+change to avoid an empty-handed night is a defect, not diligence.
+
+None of the following is a gap:
+
+- Adding assertions to a spec whose behaviour the existing tests already pin.
+  Mutation testing on 2026-09-10 found the recent additions to four specs
+  landed on files that all pre-existed, at three to eight tests a night, while
+  seven realistic refactor breaks still escaped -- three of them in a file
+  already carrying twenty-one tests. Depth on an uncovered branch is worth
+  more than breadth across covered ones, and neither is worth a test that
+  cannot fail.
+- Documenting a surface that the code or its own inline comments already
+  describe accurately, or restating an existing note in different words. One
+  2026-09-09 pass reworded a note that had been written by another lane the
+  night before.
+- Renaming a local variable, reformatting, or reordering a declaration with no
+  behavioural or contractual effect.
+- Re-auditing a surface that has not changed since your last pass, unless your
+  coverage log shows you never examined it. Seven consecutive audits of a
+  byte-identical surface carry one night of information.
+
+When the only remaining candidates are of that kind, finalize `CLEAN` and name
+in the summary what you examined, what you rejected, and why it needed nothing.
+That is a specific, checkable record.
+
+This is not a quota, a bar, or a gate. Nothing verifies it and nothing will
+refuse your work for failing it, deliberately so: the lifecycle took two months
+to stabilise and is not worth risking over output volume. It states what the
+run is for. An earned `CLEAN` carries no suspicion, and the calibration pass
+exists precisely to audit `CLEAN` verdicts once a lane has filed several in a
+row.
 - The same rule binds `--result`, on every status and not only `CLEAN`. A result
   states what the verification returned, so it must survive having the verdict
   words removed from it: `PASSED`, `PASS`, `OK`, `CLEAN` and `PASSED and CLEAN`
