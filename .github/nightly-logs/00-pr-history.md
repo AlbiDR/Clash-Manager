@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1768 [Stage 11]: CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache topology, Vite manualChunks, and asset footprint; 0 source changes required (8 clean runs since calibration).
+**Domain:** apk | **Commit:** bdcc2f49 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1768)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Native WebView settings in MainActivity.java, Service Worker caching/routes in sw.ts, Vite chunk splitting, and asset precache rules in vite.config.ts remain fully optimized and satisfied.
+**Change:** CLEAN Calibration Pass: Audited native wrapper configs (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, safe browsing), SW cache topology, Vite manualChunks, and asset footprint; 0 source changes required (8 clean runs since calibration).
+**Result:** PASSED expanded calibration audit across WebView cache topology, native acceleration settings, SW routes, bundle chunking, and asset footprint; toolchain probe verified gradle / ANDROID_HOME.
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1767 [Stage 10]: Completed expanded calibration audit for Stage 10 (APK & PWA Wrapper Integrity)
 **Domain:** apk | **Commit:** 5a750270 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1767)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
