@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1760 [Stage 2]: Added unit tests for L1 Core Native Muscle Engine (muscle.ts)
+**Domain:** verification | **Commit:** 74ddaa77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1760)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/muscle.spec.ts
+**Why:** Closed zero-coverage gap in L1 Core Native Muscle Engine
+**Change:** Added unit tests for L1 Core Native Muscle Engine (muscle.ts)
+**Result:** 24 test files / 267 tests passed
+**Nudges:** 0
+
+
 ### [2026-09-09] PR #1759 [Stage 1]: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
 **Domain:** hardening | **Commit:** 81a8daa4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1759)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
