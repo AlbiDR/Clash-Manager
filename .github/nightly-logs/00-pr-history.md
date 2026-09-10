@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1764 [Stage 7]: Calibration CLEAN: verified monorepo version consistency across all package manifests, workspace catalog references, and 10 derived locations
+**Domain:** versioning | **Commit:** cc2db8c7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1764)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Full priority scan completed with zero version drift or catalog violations detected across ground truth 14.50.50 and all derived files
+**Change:** Calibration CLEAN: verified monorepo version consistency across all package manifests, workspace catalog references, and 10 derived locations
+**Result:** PASSED pnpm audit:version across package.json, Frontend-PWA/package.json, Backend/package.json, pnpm-workspace.yaml, README files, manifest.json, useProgressiveList.ts, protocol.ts, apktool.yml, and twa-manifest.json
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1763 [Stage 6]: docs(tsdoc): reconcile useBenchmarking WeakMap memoization comments with implementation
 **Domain:** documentation | **Commit:** 87858f29 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1763)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBenchmarking.ts
