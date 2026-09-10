@@ -19,6 +19,7 @@ export const CONTROL_PLANE_FILES = [
   ".github/workflows/sync-branches.yml",
   ".github/scripts/nightly/nightly-watchdog.mjs",
   ".github/scripts/nightly/nightly-ledger.mjs",
+  ".github/scripts/nightly/doc-debt.mjs",
   ".github/scripts/nightly/nightly-redact.mjs",
   ".github/scripts/nightly/merge-nightly-prs.mjs",
   ".github/scripts/nightly/merge-nightly-core.mjs",

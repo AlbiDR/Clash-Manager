@@ -253,6 +253,43 @@ else
   echo "APK UX audit unavailable." > "$CONTEXT_DIR/apk-ux-audit.txt"
 fi
 
+# DOC_DEBT_STAGES=5,6
+# Documentation debt: source files a doc lane has described whose code changed
+# afterwards, so their prose is now actively wrong. Generated only for the two
+# documentation lanes, matching how the other stage-scoped signals are gated.
+#
+# This exists because changed-files.txt now filters to human-authored commits.
+# That is right for choosing what to work on, but it removed the accidental
+# mechanism by which a doc lane noticed a code lane's edit -- and that gap is
+# real: useBenchmarking.ts was documented on 2026-09-06 and had its singleton
+# behaviour deleted on 2026-09-07, leaving comments describing behaviour the
+# code no longer had.
+DOC_DEBT=".github/scripts/nightly/doc-debt.mjs"
+
+if [ "${STAGE_NUM}" != "5" ] && [ "${STAGE_NUM}" != "6" ]; then
+  echo "SKIPPED" > "$CONTEXT_DIR/doc-debt-status.txt"
+  echo "Skipped: documentation debt is computed only for Stages 5 and 6." > "$CONTEXT_DIR/doc-debt.txt"
+  DOC_DEBT_COUNT="SKIPPED"
+elif [ -f "$DOC_DEBT" ]; then
+  set +e
+  node "$DOC_DEBT" > "$CONTEXT_DIR/doc-debt.txt" 2>&1
+  DOC_DEBT_RC=$?
+  node "$DOC_DEBT" --json > "$CONTEXT_DIR/doc-debt.json" 2>/dev/null
+  set -e
+  if [ "$DOC_DEBT_RC" -eq 0 ]; then
+    echo "OK" > "$CONTEXT_DIR/doc-debt-status.txt"
+    DOC_DEBT_COUNT=$(node -e 'try{console.log(require(process.argv[1]).count)}catch(e){console.log("unknown")}' "$CONTEXT_DIR/doc-debt.json")
+  else
+    echo "DEGRADED" > "$CONTEXT_DIR/doc-debt-status.txt"
+    DOC_DEBT_COUNT="unknown"
+  fi
+else
+  echo "DEGRADED" > "$CONTEXT_DIR/doc-debt-status.txt"
+  echo "Documentation debt scan unavailable." > "$CONTEXT_DIR/doc-debt.txt"
+  DOC_DEBT_COUNT="unknown"
+fi
+echo "Documentation debt: ${DOC_DEBT_COUNT}"
+
 # BASELINE_TEST_STAGE=2
 # 5. Conditional baseline test run (Stage 2 only, or explicitly forced)
 RUN_TESTS="false"
@@ -333,6 +370,7 @@ PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e)
   echo "clean-calibration-due: ${CALIBRATION_DUE}"
   echo "clean-streak: ${CLEAN_STREAK}"
   echo "pending-migrations: ${MIGRATION_COUNT}"
+  echo "doc-debt: ${DOC_DEBT_COUNT}"
   echo "dep-violations-lines: ${DEP_LINES}"
 } > "$CONTEXT_DIR/toolchain.txt"
 
