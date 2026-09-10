@@ -98,12 +98,23 @@ Read evidence in this order. This stage is evidence-first: never pre-write or pr
 4. Inspect the active T1 history for the last seven days, then search the full file only for `MERGE FAILED`, `merge conflict`, `PENDING`, and `FAILED` contradictions.
 5. Read only active constraints from pipeline intelligence that affect the observed stages.
 6. Inspect each coverage log for `TODAY`, `YESTERDAY`, and its recent tail. Read an older range only when a recurrence must be verified.
+6b. Read the `nightly-run-ledger.json` row for each preceding stage on this
+   date and enumerate, per stage: `attempts`, `evidence.recovery` (its
+   `nudgedAt`, `ok` and `error`), `evidence.health.verdict`, and
+   `evidence.withheldFailureClasses`. These are the intervention record. A
+   nudged stage that then merged looks identical to an untouched one in every
+   other source, so skipping this step makes every rescue invisible: nine of
+   them across 2026-09-03 to 2026-09-09 went unreported for exactly this
+   reason. `withheldFailureClasses` exists because a tagged, merged row has
+   its `failureClass` withheld to stop a stale write demoting it, so that
+   field is the only surviving record of which mode was observed.
 7. Classify each preceding stage using this evidence model:
    - `COMPLETED`: a current-cycle finalized coverage record and merged/history evidence agree.
    - `LATE`: valid evidence exists within the Stage 1 UTC boundary or arrived after an earlier audit.
    - `MISSING-OUTPUT`: no publishable repository evidence exists. This does not prove the task failed to trigger.
    - `FAILED`: authenticated Jules session evidence explicitly reports `FAILED`.
    - `PUBLISHED-DEGRADED`: a current-cycle PR merged with real evidence of work, but its coverage log still contains an un-terminated `[Stage N] IN-PROGRESS: session started` sentinel for the same date -- Jules published before `nightly-stage.mjs finalize` replaced the sentinel with a terminal `CHANGED`/`CLEAN`/`SKIPPED`/`PARTIAL-RUN` line. Corroborate against `nightly-run-ledger.json`, where `nightly-watchdog.mjs` records this as ledger state `DEGRADED` with `failureClass: UNFINALIZED_SENTINEL`. Log this in Section 2, not Section 1 -- the work itself is not a stability failure, the finalization contract was.
+   - `RESCUED`: the stage merged, and its ledger row shows `attempts` above zero or an `evidence.recovery.nudgedAt`. The work landed and the night was not lost, so this is never a stability failure and must not be reported as one. It is an intervention record: the lifecycle could not complete without a nudge. Log it in Section 1 as an intervention, count it toward the intervention rate, and name the mode from `evidence.withheldFailureClasses`. A run where all thirteen stages merged but four needed nudging is not the same run as one where thirteen merged untouched, and reporting both as `COMPLETED` is what made this stage's audits contentless.
    - `UNOBSERVABLE`: the distinction between trigger failure, runtime crash, and publication failure cannot be established.
 8. Compute `YESTERDAY` only for the Stage 1 UTC-boundary check. Do not use yesterday as a general success fallback for Stages 2-12.
 9. If authenticated Jules session evidence is already available, use it to refine `MISSING-OUTPUT`; otherwise mark the cause `UNOBSERVABLE` and continue without credentials.
@@ -117,6 +128,7 @@ Take the time required. Do not rush to write. The analytical phase is the most d
 - For each `FAILED`, `MISSING-OUTPUT`, or `UNOBSERVABLE` stage: record the stage number, expected role, evidence source, and observed symptom. State `Root Cause: UNOBSERVABLE` when the evidence cannot establish one. Never convert an absent repository record into a scheduling or environment diagnosis without session evidence.
 - Compare today's failures against the existing Section 1 entries. Promote any failure that has now recurred to `[RECURRING]`. Mark any previously logged failure that has not reappeared in the available historical evidence as `[RESOLVED - monitor]`.
 - Check for correlated failures: if two or more stages from the same functional area failed on the same day, evaluate whether they share a root cause and consolidate into a single shared-environment pattern entry.
+- For each `RESCUED` stage: record the stage number, the observed mode from `evidence.withheldFailureClasses`, and whether the same stage was rescued on any of the preceding six dates. Report the run's intervention rate as rescued stages over stages that merged. A rising intervention rate on a run that still reached 13/13 is the earliest available warning that the lifecycle is degrading, and it is the one signal a green ledger hides. Cross-check `evidence.health.verdict`: a stage the health script rates `DEGRADING` while merging cleanly belongs here, including when that stage is Stage 13 itself.
 
 **For Section 2 (Cross-Stage Coherence Bugs):**
 - Review today's PR history entries and stage outputs for sequencing errors, version inversions, merge conflicts, or any other defect that only becomes visible at the pipeline level.
