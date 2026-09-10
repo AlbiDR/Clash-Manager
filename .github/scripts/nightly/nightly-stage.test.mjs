@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import {
   budgetPhase,
   computeLockFingerprint,
+  finalLogLine,
   getStage,
   needsDependencyRefresh,
   renderHandoff,
@@ -739,4 +740,27 @@ test("emitting the refusal count leaves the rest of the body identical", () => {
   const without = renderPrBody(stage, "CLEAN", "Audited", paths, details);
   const with0 = renderPrBody(stage, "CLEAN", "Audited", paths, { ...details, nudges: 0 });
   assert.equal(with0.replace(/\n  Nudges: 0/, ""), without, "the body changed beyond the added line");
+});
+
+test("the coverage-log target is never the pipeline's own bookkeeping", () => {
+  // Stage 1 recorded `.github/nightly-logs/00-pr-history.md` as its audited
+  // target on more than thirty consecutive nights. Excluding only the stage's
+  // own coverage log was not enough, because every lane appends to
+  // 00-pr-history.md, so a night with no source change named whichever
+  // bookkeeping file sorted first and it read as a claim about what was
+  // audited.
+  const stage = { number: 1, coverageLog: ".github/nightly-logs/01-hardening-coverage.log" };
+  const cleanNight = finalLogLine(stage, "CLEAN", "Audited Edge Function endpoints", [
+    ".github/nightly-logs/01-hardening-coverage.log",
+    ".github/nightly-logs/00-pr-history.md",
+  ], "2026-09-10", null);
+  assert.match(cleanNight, /CLEAN: Codebase -- /);
+  assert.ok(!cleanNight.includes("00-pr-history.md"), "bookkeeping is never the target");
+
+  const realChange = finalLogLine(stage, "CHANGED", "hardened a boundary", [
+    ".github/nightly-logs/01-hardening-coverage.log",
+    ".github/nightly-logs/00-pr-history.md",
+    "Backend/supabase/functions/_shared/protocol.ts",
+  ], "2026-09-10", null);
+  assert.match(realChange, /CHANGED: Backend\/supabase\/functions\/_shared\/protocol\.ts -- /);
 });

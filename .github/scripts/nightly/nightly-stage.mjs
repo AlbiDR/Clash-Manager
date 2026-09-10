@@ -937,8 +937,20 @@ export function formatRunWindow(startEpochSeconds, endEpochSeconds) {
   return `[${hhmm(start)}Z-${hhmm(end)}Z ${Math.round((end - start) / 60)}m]`;
 }
 
-function finalLogLine(stage, status, summary, paths, date, window) {
-  const target = paths.find(filePath => filePath !== stage.coverageLog) || "Codebase";
+// The pipeline's own bookkeeping is never the audited surface. Excluding the
+// stage's own coverage log was not enough: every lane also appends to
+// 00-pr-history.md, so on a night with no source change the target resolved to
+// whichever bookkeeping file happened to sort first. Stage 1 recorded
+// `.github/nightly-logs/00-pr-history.md` as its target on more than thirty
+// consecutive nights, which reads as a claim about what was audited and is not
+// one. Falling through to "Codebase" is honest: it says no single file was the
+// subject, and the summary carries the surface actually examined.
+const BOOKKEEPING_PATH = /^\.github\/nightly-logs\//;
+
+export function finalLogLine(stage, status, summary, paths, date, window) {
+  const target = paths.find(
+    filePath => filePath !== stage.coverageLog && !BOOKKEEPING_PATH.test(filePath),
+  ) || "Codebase";
   // The window sits in the bracket run, never in the ` -- ` payload, because the
   // recap splits that payload into target and summary. Optional so every line
   // written before this existed still parses.

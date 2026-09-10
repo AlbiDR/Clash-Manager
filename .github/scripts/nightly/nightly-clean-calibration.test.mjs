@@ -99,3 +99,57 @@ test("rendered stage guidance tells due stages to widen their scan", () => {
   assert.match(renderStageCalibration(report, 10), /widen the candidate scan/);
   assert.match(renderStageCalibration(report, 11), /calibration-due: NO/);
 });
+
+test("parses the timing block the coverage-log format gained on 2026-09-03", () => {
+  // The real line, verbatim from 01-hardening-coverage.log. Before this the
+  // pattern required the status immediately after [Stage N], so every line
+  // from 2026-09-03 onward silently failed to match and the script kept
+  // reporting confident numbers computed from records ending 2026-09-02.
+  const real = "* [2026-09-09] [Stage 1] [23:17Z-23:23Z 6m] CLEAN: .github/nightly-logs/00-pr-history.md -- Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found";
+  const records = parseTerminalCoverageLines(real, 1);
+  assert.equal(records.length, 1, "the timed line must parse");
+  assert.equal(records[0].date, "2026-09-09");
+  assert.equal(records[0].status, "CLEAN");
+  assert.match(records[0].summary, /zero threat vectors found/);
+});
+
+test("still parses the older untimed format", () => {
+  const old = "* [2026-09-02] [Stage 1] CLEAN: Codebase -- clean";
+  assert.equal(parseTerminalCoverageLines(old, 1).length, 1);
+});
+
+test("survives a further bracketed field being added to the format", () => {
+  // The failure mode was a parser that had to be edited whenever the log
+  // gained a field. A third block must not switch it off again.
+  const future = "* [2026-09-09] [Stage 1] [23:17Z-23:23Z 6m] [attempt 2] CLEAN: Codebase -- clean";
+  assert.equal(parseTerminalCoverageLines(future, 1).length, 1);
+});
+
+test("a stale parser cannot silently freeze the calibration streak", () => {
+  // The pipeline-wide consequence: last-terminal-date froze at 2026-09-02 for
+  // every stage, the ordinary-clean streak could never advance past the
+  // calibration record before that boundary, and calibration-due could never
+  // become true again. Calibration is the only mechanism that makes a lane
+  // widen its search and re-audit its own CLEAN verdicts.
+  const lines = [
+    "* [2026-09-02] [Stage 1] CLEAN: Codebase -- CLEAN calibration pass (widened candidate scan)",
+    ...Array.from({ length: 7 }, (_, index) =>
+      `* [2026-09-${String(index + 3).padStart(2, "0")}] [Stage 1] [23:05Z-23:10Z 5m] CLEAN: Codebase -- clean`),
+  ].join("\n");
+  const report = calibrationForStage({ number: 1, slug: "hardening" }, lines);
+  assert.equal(report.lastTerminalDate, "2026-09-09", "must see past the format change");
+  assert.equal(report.ordinaryCleanSinceCalibration, 7);
+  assert.equal(report.due, true, "seven ordinary cleans since calibration is overdue");
+});
+
+test("the calibration record itself still breaks the ordinary streak", () => {
+  // Guards the fix against over-reaching: a widened calibration pass must not
+  // count toward the next threshold, or the net would fire every night.
+  const lines = [
+    "* [2026-09-08] [Stage 1] [23:05Z-23:10Z 5m] CLEAN: Codebase -- clean",
+    "* [2026-09-09] [Stage 1] [23:05Z-23:10Z 5m] CLEAN: Codebase -- CLEAN calibration pass (widened candidate scan)",
+  ].join("\n");
+  const report = calibrationForStage({ number: 1, slug: "hardening" }, lines);
+  assert.equal(report.ordinaryCleanSinceCalibration, 0);
+  assert.equal(report.due, false);
+});
