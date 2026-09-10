@@ -4,7 +4,7 @@
 import { ref, type Ref } from "vue";
 import * as v from "valibot";
 import { useConnectionStatus } from "./useConnectionStatus";
-import { fetchRemote, lastSyncStatus } from "../api/SupabaseClient";
+import { lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { generateMockData } from "../utils/mockData";
@@ -12,8 +12,12 @@ import { yieldToInteractionFrame } from "../utils/scheduling";
 import { MemberSchema } from "../api/MemberSchemas";
 import { WebAppDataSchema } from "../api/AppSchemas";
 import type { WebAppData } from "../types";
+import {
+  createEmptyWebAppData,
+  fetchRemoteWithTimeout,
+  normalizeSyncError,
+} from "./useClashSyncUtils";
 
-const SYNC_REQUEST_TIMEOUT_MS = 15000;
 const SYNC_FAILURE_VISIBILITY_THRESHOLD = 3;
 
 type SyncIntent = "background" | "manual";
@@ -87,52 +91,6 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   const { isOnline } = useConnectionStatus();
 
   // --- ACTIONS ---
-
-  /**
-   * Initializes a default, empty WebAppData state object.
-   *
-   * @returns An empty WebAppData DTO matching structural schema constraints.
-   */
-  function createEmptyWebAppData(): WebAppData {
-    return {
-      lb: [],
-      hh: [],
-      timestamp: 0,
-      blacklist: [],
-    };
-  }
-
-  /**
-   * Fetches remote data from Supabase bounded by an explicit request timeout.
-   *
-   * @remarks
-   * Satisfies ADR Section I (Core Services) network resilience guidelines.
-   *
-   * @param options - Transport parameters including force refresh flag.
-   * @returns Unvalidated raw payload resolved from Supabase fetch.
-   * @throws Error if network request fails or exceeds SYNC_REQUEST_TIMEOUT_MS.
-   */
-  async function fetchRemoteWithTimeout(options: { force: boolean }): Promise<unknown> {
-    const requestController = new AbortController();
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    try {
-      // [THREAT:] Unbounded network requests can cause UI hanging or memory leaks.
-      // [DECISION LOG] Race network fetch against a SYNC_REQUEST_TIMEOUT_MS timeout timer
-      // and explicitly signal cancellation via AbortController on timeout trigger.
-      return await Promise.race([
-        fetchRemote({ ...options, signal: requestController.signal }),
-        new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(() => {
-            const timeoutError = new Error("Sync timed out");
-            reject(timeoutError);
-            requestController.abort(timeoutError);
-          }, SYNC_REQUEST_TIMEOUT_MS);
-        }),
-      ]);
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-    }
-  }
 
   /**
    * Internal helper to update reactive state and persist the result to the local cache.
@@ -257,16 +215,6 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     }
 
     await commitSyncResult(incomingDataValidation.output);
-  }
-
-  /**
-   * Safely coercively normalizes unknown sync thrown errors to Error instances.
-   *
-   * @param syncFailure - Raw caught error or rejection reason.
-   * @returns Normalized Error object.
-   */
-  function normalizeSyncError(syncFailure: unknown): Error {
-    return syncFailure instanceof Error ? syncFailure : new Error("Sync failed");
   }
 
   /**

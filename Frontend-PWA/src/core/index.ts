@@ -14,6 +14,7 @@ export * from "./services/StorageService";
 export * from "./services/useClashDataStore";
 export * from "./services/useClashLoader";
 export * from "./services/useClashSync";
+export * from "./services/useClashSyncUtils";
 export * from "./services/useStoragePersistence";
 export * from "./services/useAppSettings";
 export * from "./services/useBenchmarking";

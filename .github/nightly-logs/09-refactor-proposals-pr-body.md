@@ -1,23 +1,23 @@
 ### Nightly Stage 9: Refactor - Structural Surgery Engineer
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 3 code files, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
+**What changed:** Extracted pure sync utilities from useClashSync.ts into useClashSyncUtils.ts
 
-**Why:** Substrate is fully compliant with CleanStack architecture standards and no defects reproduced
+**Why:** Decomposed useClashSync.ts (426 lines) to improve SRP alignment and maintainability (Target B: Large Module Splitting)
 
-**Result:** 1826 tests passed across 195 test files; depcruise passed with 0 violations
+**Result:** PASSED (29/29 vitest specs passed; 0 depcruise violations)
 
-**Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/index.ts, Frontend-PWA/src/core/services/useClashSync.ts, Frontend-PWA/src/core/services/useClashSyncUtils.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Why: Substrate is fully compliant with CleanStack architecture standards and no defects reproduced
-  Change: Structural scan and defect hunt confirmed CleanStack compliance (25 candidates in changed-files.txt, 0 dep violations, consecutive-clean 2); inspected useClashSync.ts, VoyageBanner.vue, StatusPill.vue; candidate useClashSync.ts is cohesive
-  Result: 1826 tests passed across 195 test files; depcruise passed with 0 violations
-  Files: .github/nightly-logs/09-refactor-proposals-coverage.log
+  Why: Decomposed useClashSync.ts (426 lines) to improve SRP alignment and maintainability (Target B: Large Module Splitting)
+  Change: Extracted pure sync utilities from useClashSync.ts into useClashSyncUtils.ts
+  Result: PASSED (29/29 vitest specs passed; 0 depcruise violations)
+  Files: .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/core/index.ts, Frontend-PWA/src/core/services/useClashSync.ts, Frontend-PWA/src/core/services/useClashSyncUtils.ts
   Nudges: 0
 -->
