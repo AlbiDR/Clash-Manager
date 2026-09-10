@@ -30,6 +30,7 @@ on:
     paths:
       - ".github/scripts/nightly/**"
       - ".github/scripts/project/**"
+      - ".github/scripts/database/**"
       - ".github/scripts/android/audit-apk-ux*"
       - ".github/nightly-config/**"
       - ".github/workflows/control-plane-tests.yml"
@@ -37,6 +38,7 @@ on:
     paths:
       - ".github/scripts/nightly/**"
       - ".github/scripts/project/**"
+      - ".github/scripts/database/**"
       - ".github/nightly-config/**"
   workflow_dispatch:
 
@@ -64,6 +66,15 @@ jobs:
       # over fixtures with no network calls, so they are fast and deterministic.
       - name: Run control-plane suites
         run: pnpm test:nightly-control-plane
+
+      - name: Run migration and baseline suites
+        # Wired here on 2026-09-11. These 35 tests cover the migration
+        # baseline rules and the fold checker, and they ran in NO workflow on
+        # push: intel-checks.yml runs audit:migrations on pull_request only,
+        # and this repository commits straight to Beta, so that trigger never
+        # fires. Both database defects fixed on 2026-09-10 landed with tests
+        # CI would never have executed.
+        run: pnpm test:migration-audit
 
       - name: Run attribution guard suite
         run: pnpm test:commit-trailers
