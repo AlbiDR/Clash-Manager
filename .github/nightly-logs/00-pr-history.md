@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1766 [Stage 9]: Extracted pure sync utilities from useClashSync.ts into useClashSyncUtils.ts
+**Domain:** architecture | **Commit:** 8a6a8674 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1766)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/core/index.ts, Frontend-PWA/src/core/services/useClashSync.ts, Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Why:** Decomposed useClashSync.ts (426 lines) to improve SRP alignment and maintainability (Target B: Large Module Splitting)
+**Change:** Extracted pure sync utilities from useClashSync.ts into useClashSyncUtils.ts
+**Result:** PASSED (29/29 vitest specs passed; 0 depcruise violations)
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1765 [Stage 8]: Bumped knip from ^6.35.0 to ^6.35.1 in catalogs and updated pnpm-lock.yaml
 **Domain:** dependencies | **Commit:** d61bacd6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1765)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
