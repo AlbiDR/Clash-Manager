@@ -226,6 +226,18 @@ export function resolveEvidence(currentEvidence, patchEvidence, state, failureCl
  *
  * The failure detail is still recorded: only `state` and `failureClass` are
  * withheld, so the reason and PR number remain visible in evidence.
+ *
+ * Refinement (2026-09-10): the guard protects `state`, not the diagnosis, but
+ * it used to drop the classification outright. `attempts` and
+ * `evidence.recovery` still distinguished a rescued night from a clean one, so
+ * the ledger was never blind to THAT a rescue happened -- but WHICH failure
+ * mode was observed was gone the moment the stage later merged, which is the
+ * case for almost every rescue. A week dominated by JULES_SESSION_STUCK was
+ * therefore indistinguishable from one dominated by anything else, and that
+ * is the trend a self-healing lane exists to act on. The class is now kept in
+ * `evidence.withheldFailureClasses`, deduped and sorted, under a key nothing
+ * reads as current state. It is not in RESOLVED_BLOCKER_KEYS, so a clean merge
+ * does not clear it.
  */
 function guardTaggedRow(current, patch) {
   const tagged = Boolean(current?.evidence?.tag) && current.state === "MERGED";
@@ -234,7 +246,14 @@ function guardTaggedRow(current, patch) {
   if (!demotesState && !patch.failureClass) return patch;
   const guarded = { ...patch };
   if (demotesState) delete guarded.state;
-  if (patch.failureClass) delete guarded.failureClass;
+  if (patch.failureClass) {
+    const alreadySeen = current?.evidence?.withheldFailureClasses || [];
+    guarded.evidence = {
+      ...(patch.evidence || {}),
+      withheldFailureClasses: [...new Set([...alreadySeen, patch.failureClass])].sort(),
+    };
+    delete guarded.failureClass;
+  }
   return guarded;
 }
 
