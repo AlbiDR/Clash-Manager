@@ -66,6 +66,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 ### Statistical Clan Benchmarking Engine (`useBenchmarking.ts`)
 
 `useBenchmarking.ts` provides normalized statistical comparisons between individual player metrics and clan baselines in Layer 1 Core:
+- **WeakMap Memoization Cache (`statsCache`):** Caches calculated statistics (`lb` and `hh` `StatsMap`) in a module-level `WeakMap` keyed by the reactive `rawData` payload object reference. This eliminates O(N) recalculations across component render cycles while preventing stale store singleton state pollution, memory leaks, and cross-test contamination across store resets.
 - **Single-Pass Aggregation (`calculateStats`):** Aggregates numeric metrics across candidate pools (`lb` roster members or `hh` recruits) in a single O(N) array traversal, computing mean (`avg`), `min`, and `max` boundaries while guarding against empty datasets and division by zero.
 - **Context-Aware Metric Extractors:** Isolates internal clan roster metrics (`LB_EXTRACTORS`) from prospective recruit metrics (`HH_EXTRACTORS`) via context keys (`'lb'` vs `'hh'`), computing trophy ranks, win rates, war reliability, fame averages, and activity durations.
 - **Performance Tier Evaluation:** Evaluates values against dataset statistics into four performance tiers (`ELITE`, `TOP TIER`, `GROWING`, `UNDER`). Automatically adjusts calculation thresholds for inverted metrics (`lowerIsBetter: true` for `lastSeen` and `lastScan` duration minutes), where lower values represent superior performance.
