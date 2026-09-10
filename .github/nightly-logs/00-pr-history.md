@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1763 [Stage 6]: docs(tsdoc): reconcile useBenchmarking WeakMap memoization comments with implementation
+**Domain:** documentation | **Commit:** 87858f29 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1763)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBenchmarking.ts
+**Why:** Reconciled stale singleton comments in useBenchmarking.ts with WeakMap memoization caching mechanism, adding TSDoc annotations and threat/decision logs.
+**Change:** docs(tsdoc): reconcile useBenchmarking WeakMap memoization comments with implementation
+**Result:** vue-tsc build type-check clean, all 1826 Vitest unit tests pass.
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1762 [Stage 5]: docs(readme): reconcile useBenchmarking WeakMap memoization strategy
 **Domain:** documentation | **Commit:** 2844c24e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1762)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
