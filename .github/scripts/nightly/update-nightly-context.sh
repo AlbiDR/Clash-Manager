@@ -88,7 +88,60 @@ echo "Detected Stage Number: ${STAGE_NUM}"
 # 3. Git logs & diffs
 git log --format="%h %ad %s" --date=short -50 > "$CONTEXT_DIR/recent-commits.txt" \
   || : > "$CONTEXT_DIR/recent-commits.txt"
-git diff --name-only HEAD~30 HEAD 2>/dev/null | sort -u > "$CONTEXT_DIR/changed-files.txt" || touch "$CONTEXT_DIR/changed-files.txt"
+
+# changed-files.txt is the target-selection signal: the content lanes pick
+# what to work on tonight from this list. It must therefore describe what the
+# HUMAN has been changing, never what the pipeline itself wrote.
+#
+# THE BUG THIS REPLACES (measured 2026-09-10)
+# It used to be `git diff --name-only HEAD~30 HEAD`. 82% of commits on Beta
+# are bot-authored, so of the 76 files that produced, 32 were the pipeline's
+# own .github/nightly-logs/ paperwork and only 20 were product code. The
+# result was a feedback loop: Stage 6 writes a doc comment into a source file,
+# that comment-only commit makes the file the most recently changed thing in
+# the repository, and three or four lanes then nominate it as the next night's
+# target. The tidy one-file-per-night sweep visible in the PR titles was
+# partly the pipeline consuming its own exhaust, which is why six of thirteen
+# lanes produced no source change in seven nights while writing 1,234 lines
+# of evidence about having looked.
+#
+# Selecting by author fixes it at the source. On the same history this yields
+# 27 files, all of them work a person actually did.
+#
+# Window semantics: the most recent HUMAN_TARGET_COMMITS human-authored
+# commits, however much bot noise sits between them, rather than whatever
+# happens to fall inside a fixed commit count. A fixed window silently
+# degrades as bot volume grows, which is what made the old signal 58%
+# paperwork. Jules clones with --depth 100, so scanning all available history
+# is bounded.
+HUMAN_TARGET_COMMITS=30
+: > "$CONTEXT_DIR/changed-files.txt"
+
+# set +e around the pipeline on purpose, matching the idiom used for the
+# fold-state and audit blocks below. `head` closes the pipe as soon as it has
+# its quota, `git log` then dies of SIGPIPE, and under `set -eo pipefail` that
+# aborts the entire context generation with exit 141 -- every stage, every
+# night, before any context file is written. Bounding the scan inside awk
+# instead of piping to head would SIGPIPE the same way.
+set +e
+HUMAN_SHAS=$(git log --no-merges --format='%H %an' 2>/dev/null \
+  | grep -v '\[bot\]' \
+  | head -n "$HUMAN_TARGET_COMMITS" \
+  | awk '{print $1}')
+set -e
+
+if [ -n "$HUMAN_SHAS" ]; then
+  for HUMAN_SHA in $HUMAN_SHAS; do
+    git diff-tree --no-commit-id --name-only -r "$HUMAN_SHA" 2>/dev/null || true
+  done | sort -u | sed '/^$/d' > "$CONTEXT_DIR/changed-files.txt"
+  echo "Target signal: $(wc -l < "$CONTEXT_DIR/changed-files.txt" | tr -d ' ') files from $(echo "$HUMAN_SHAS" | wc -l | tr -d ' ') human-authored commits."
+else
+  # No human commits in the available history. Fall back to the old
+  # behaviour rather than handing the lanes an empty target list, and say so
+  # loudly: a silently empty signal would read as "nothing to do".
+  git diff --name-only HEAD~30 HEAD 2>/dev/null | sort -u > "$CONTEXT_DIR/changed-files.txt" || true
+  echo "WARNING: no human-authored commits found in available history; target signal fell back to raw recent history and may be mostly pipeline output."
+fi
 echo "Git logs and diffs generated dynamically."
 
 # 4. Pending migrations (Stage 3 only)
