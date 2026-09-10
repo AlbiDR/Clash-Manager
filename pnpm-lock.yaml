@@ -52,8 +52,8 @@ catalogs:
       specifier: ^29.1.1
       version: 29.1.1
     knip:
-      specifier: ^6.35.0
-      version: 6.35.0
+      specifier: ^6.35.1
+      version: 6.35.1
     pinia:
       specifier: ^3.0.4
       version: 3.0.4
@@ -118,7 +118,7 @@ importers:
         version: 18.2.0
       knip:
         specifier: 'catalog:'
-        version: 6.35.0
+        version: 6.35.1
       p-limit:
         specifier: 7.3.1
         version: 7.3.1
@@ -3313,8 +3313,8 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
-  knip@6.35.0:
-    resolution: {integrity: sha512-eER1hSyi47lJTO9MTnEoJspEscPaVuFtFkHsGbuCmhjDlphzvg2xxcweNg1NCeylo9ERSkb/NzAo7sAcT9gLmA==}
+  knip@6.35.1:
+    resolution: {integrity: sha512-22wnEnv4do2fvoeJsxpFCG/MBxReNxoCVBccaCl7suUJsG+F0UvxI9ycxZ9YgtLHSSjrZl5tOas0JZ/R1vJ93g==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -7495,7 +7495,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  knip@6.35.0:
+  knip@6.35.1:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.7)
       formatly: 0.7.0
