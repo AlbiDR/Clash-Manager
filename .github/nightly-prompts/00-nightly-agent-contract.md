@@ -105,6 +105,11 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
 - Every finalization summary names the audited target, the verification method,
   and the result. A claim such as "audit complete" without those facts is not
   sufficient evidence for later stages.
+- A `CLEAN` summary is your lane's only memory of what it has already covered,
+  so name the surface precisely enough that your next pass can tell what is
+  left. "Codebase" and "all files" identify nothing. The coverage-log target
+  field cannot carry this for you: on a night with no source change it has no
+  file to name and resolves to "Codebase" by design.
 - A `CLEAN` summary must be evidence prose, not a verdict label. Name the exact
   surface inspected, the command or source check used, and the concrete clean
   result. Avoid generic bodies such as "audit complete", "no source changes
