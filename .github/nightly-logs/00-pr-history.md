@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-10] PR #1767 [Stage 10]: Completed expanded calibration audit for Stage 10 (APK & PWA Wrapper Integrity)
+**Domain:** apk | **Commit:** 5a750270 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1767)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Clean calibration due; verified all wrapper invariants (asset links, manifest parity, version codes/names sync, release metadata, cleartext traffic policy) with zero mismatches
+**Change:** Completed expanded calibration audit for Stage 10 (APK & PWA Wrapper Integrity)
+**Result:** Passed node APK/audit-wrapper-integrity.mjs
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1766 [Stage 9]: Extracted pure sync utilities from useClashSync.ts into useClashSyncUtils.ts
 **Domain:** architecture | **Commit:** 8a6a8674 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1766)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/core/index.ts, Frontend-PWA/src/core/services/useClashSync.ts, Frontend-PWA/src/core/services/useClashSyncUtils.ts
