@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
+**What was checked:** Completed expanded calibration audit for Stage 10 (APK & PWA Wrapper Integrity)
 
-**Why:** No wrapper mismatches or security regressions were detected during daily configuration scan.
+**Why:** Clean calibration due; verified all wrapper invariants (asset links, manifest parity, version codes/names sync, release metadata, cleartext traffic policy) with zero mismatches
 
-**Result:** PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
+**Result:** Passed node APK/audit-wrapper-integrity.mjs
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: No wrapper mismatches or security regressions were detected during daily configuration scan.
-  Change: Audited PWA and APK wrapper integrity invariants across asset links, manifest parity, shortcuts, version sync, release metadata, and security cleartext policy.
-  Result: PASSED: pnpm audit:apk (manifest parity, shortcuts, asset links, version code/name, cleartext traffic forbidden), pnpm apk:verify:source (native components dex intact), pnpm test:apk-ux-audit (custom selectors pass), pnpm test:version-code (version code monotonicity verified)
+  Why: Clean calibration due; verified all wrapper invariants (asset links, manifest parity, version codes/names sync, release metadata, cleartext traffic policy) with zero mismatches
+  Change: Completed expanded calibration audit for Stage 10 (APK & PWA Wrapper Integrity)
+  Result: Passed node APK/audit-wrapper-integrity.mjs
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
 -->
