@@ -14,7 +14,7 @@ import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-he
 // body can be wrong is that one copy of it travelled through a channel that did
 // not preserve it.
 import { prBodySidecarPath, renderPrBody } from "./nightly-stage.mjs";
-import { parseCoverageLine } from "./nightly-recap.mjs";
+import { declaredCoverageRecord } from "./nightly-recap.mjs";
 
 // This workflow deliberately holds JULES_API_KEY so it can resume stranded
 // sessions, and the repository is public. Every console line, summary block and
@@ -550,7 +550,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
       if (content.includes(`* [${evidenceDate}] [Stage ${stage.number}] `)) {
         coverageStages.add(stage.number);
       }
-      const declared = parseCoverageLine(content, stage.number, evidenceDate);
+      const declared = declaredCoverageRecord(content, stage.number, evidenceDate);
       if (declared) declaredOutcomes.set(stage.number, declared);
       // The description the stage composed for itself, committed since
       // 71dea9583. Absent for every run before that and for any stage that

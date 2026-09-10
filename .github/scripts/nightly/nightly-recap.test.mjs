@@ -12,7 +12,7 @@ import {
   evidenceDateFor,
   gradeRun,
   latestRunDate,
-  parseCoverageLine,
+  declaredCoverageRecord,
   parsePrHistoryEntry,
   renderRecap,
   runProgress,
@@ -43,12 +43,12 @@ test("a coverage line yields the stage's own declared status and summary", () =>
     "* [2026-08-26] [Stage 2] CLEAN: Codebase -- old entry",
     "* [2026-08-27] [Stage 2] CHANGED: Backend/x.spec.ts -- Add tests for validation boundaries",
   ].join("\n");
-  const parsed = parseCoverageLine(log, 2, "2026-08-27");
+  const parsed = declaredCoverageRecord(log, 2, "2026-08-27");
   assert.equal(parsed.status, "CHANGED");
   assert.equal(parsed.target, "Backend/x.spec.ts");
   assert.equal(parsed.summary, "Add tests for validation boundaries");
-  assert.equal(parseCoverageLine(log, 2, "2026-08-01"), null);
-  assert.equal(parseCoverageLine(log, 7, "2026-08-27"), null, "another stage's line must not be borrowed");
+  assert.equal(declaredCoverageRecord(log, 2, "2026-08-01"), null);
+  assert.equal(declaredCoverageRecord(log, 7, "2026-08-27"), null, "another stage's line must not be borrowed");
 });
 
 test("the PR history block supplies the richer why/result detail", () => {
@@ -942,7 +942,7 @@ test("a coverage line carries its run window, and lines written before it still 
   // fails, and drift from 20 minutes toward the 45-minute workBudgetMinutes
   // ceiling was invisible until the night it breached and finalized PARTIAL-RUN.
   const withWindow = "* [2026-09-03] [Stage 4] [00:25Z-01:12Z 47m] CLEAN: Codebase -- audited 12 views, 0 unreferenced";
-  const parsed = parseCoverageLine(withWindow, 4, "2026-09-03");
+  const parsed = declaredCoverageRecord(withWindow, 4, "2026-09-03");
   assert.equal(parsed.status, "CLEAN");
   assert.equal(parsed.target, "Codebase");
   assert.equal(parsed.summary, "audited 12 views, 0 unreferenced");
@@ -952,7 +952,7 @@ test("a coverage line carries its run window, and lines written before it still 
   // Every line written before the window existed must parse identically, or the
   // whole recorded history becomes unreadable the day this ships.
   const legacy = "* [2026-09-03] [Stage 4] CLEAN: Codebase -- audited 12 views, 0 unreferenced";
-  const old = parseCoverageLine(legacy, 4, "2026-09-03");
+  const old = declaredCoverageRecord(legacy, 4, "2026-09-03");
   assert.equal(old.status, "CLEAN");
   assert.equal(old.target, "Codebase");
   assert.equal(old.summary, "audited 12 views, 0 unreferenced");

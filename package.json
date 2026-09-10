@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.49",
+  "version": "14.50.50",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -28,6 +28,8 @@
     "test:nightly-dispatch": "node --test .github/scripts/nightly/nightly-dispatch.test.mjs",
     "test:nightly-merge": "node --test .github/scripts/nightly/merge-nightly-prs.test.mjs",
     "test:nightly-watchdog": "node --test .github/scripts/nightly/nightly-watchdog.test.mjs",
+    "test:nightly-coverage-line": "node --test .github/scripts/nightly/coverage-log-line.test.mjs",
+    "test:nightly-audit-duration": "node --test .github/scripts/nightly/audit-duration.test.mjs",
     "test:nightly-doc-debt": "node --test .github/scripts/nightly/doc-debt.test.mjs",
     "test:nightly-ledger": "node --test .github/scripts/nightly/nightly-ledger.test.mjs",
     "test:nightly-redact": "node --test .github/scripts/nightly/nightly-redact.test.mjs",
@@ -44,7 +46,7 @@
     "test:commit-trailers": "node --test .github/scripts/project/commit-trailers.test.mjs",
     "test:agents-link": "node --test .github/scripts/agents/link-agent-dirs.test.mjs",
     "test:agents-audit": "node --test .github/scripts/agents/agents-audit.test.mjs",
-    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-doc-debt && pnpm test:nightly-ledger && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:nightly-history && pnpm test:apk-ux-audit && pnpm test:cron-schedule && pnpm test:sync-branches",
+    "test:nightly-control-plane": "pnpm test:nightly-lifecycle && pnpm test:nightly-dispatch && pnpm test:nightly-merge && pnpm test:nightly-watchdog && pnpm test:nightly-coverage-line && pnpm test:nightly-audit-duration && pnpm test:nightly-doc-debt && pnpm test:nightly-ledger && pnpm test:nightly-redact && pnpm test:nightly-deploy-check && pnpm test:nightly-publish-fallback && pnpm test:nightly-health && pnpm test:nightly-prose && pnpm test:nightly-coherence && pnpm test:nightly-clean-calibration && pnpm test:nightly-recap && pnpm test:nightly-history && pnpm test:apk-ux-audit && pnpm test:cron-schedule && pnpm test:sync-branches",
     "audit:apk": "node APK/audit-wrapper-integrity.mjs",
     "fix:gitignore": "git rm -r --cached . && git add .",
     "knip": "knip --config .github/knip.json",

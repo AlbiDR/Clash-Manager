@@ -253,6 +253,44 @@ else
   echo "APK UX audit unavailable." > "$CONTEXT_DIR/apk-ux-audit.txt"
 fi
 
+# AUDIT_DURATION_STAGES=13
+# How long each lane's audits actually took, from the session timing block that
+# has been written into every coverage-log line since 2026-09-03 and that
+# nothing has ever read. Generated only for Stage 13, the lane whose job is
+# auditing the pipeline.
+#
+# Over 2026-09-03 to 2026-09-09 the lanes producing real work ran 5 to 16
+# minutes, the lanes producing nothing ran 2 to 6, and two audits completed in
+# a recorded ZERO minutes, one of them claiming 75 files across 10 UX
+# categories. Nothing noticed. This sets no threshold and blocks nothing: it
+# reports the distribution so the auditing lane can judge a duration against
+# the scope the audited lane claimed.
+AUDIT_DURATION=".github/scripts/nightly/audit-duration.mjs"
+
+if [ "${STAGE_NUM}" != "13" ]; then
+  echo "SKIPPED" > "$CONTEXT_DIR/audit-duration-status.txt"
+  echo "Skipped: audit durations are computed only for Stage 13." > "$CONTEXT_DIR/audit-duration.txt"
+  ZERO_MINUTE_AUDITS="SKIPPED"
+elif [ -f "$AUDIT_DURATION" ]; then
+  set +e
+  node "$AUDIT_DURATION" > "$CONTEXT_DIR/audit-duration.txt" 2>&1
+  AUDIT_DURATION_RC=$?
+  node "$AUDIT_DURATION" --json > "$CONTEXT_DIR/audit-duration.json" 2>/dev/null
+  set -e
+  if [ "$AUDIT_DURATION_RC" -eq 0 ]; then
+    echo "OK" > "$CONTEXT_DIR/audit-duration-status.txt"
+    ZERO_MINUTE_AUDITS=$(node -e 'try{console.log(require(process.argv[1]).zeroMinuteAudits.length)}catch(e){console.log("unknown")}' "$CONTEXT_DIR/audit-duration.json")
+  else
+    echo "DEGRADED" > "$CONTEXT_DIR/audit-duration-status.txt"
+    ZERO_MINUTE_AUDITS="unknown"
+  fi
+else
+  echo "DEGRADED" > "$CONTEXT_DIR/audit-duration-status.txt"
+  echo "Audit duration scan unavailable." > "$CONTEXT_DIR/audit-duration.txt"
+  ZERO_MINUTE_AUDITS="unknown"
+fi
+echo "Zero-minute audits: ${ZERO_MINUTE_AUDITS}"
+
 # DOC_DEBT_STAGES=5,6
 # Documentation debt: source files a doc lane has described whose code changed
 # afterwards, so their prose is now actively wrong. Generated only for the two
@@ -371,6 +409,7 @@ PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e)
   echo "clean-streak: ${CLEAN_STREAK}"
   echo "pending-migrations: ${MIGRATION_COUNT}"
   echo "doc-debt: ${DOC_DEBT_COUNT}"
+  echo "zero-minute-audits: ${ZERO_MINUTE_AUDITS}"
   echo "dep-violations-lines: ${DEP_LINES}"
 } > "$CONTEXT_DIR/toolchain.txt"
 

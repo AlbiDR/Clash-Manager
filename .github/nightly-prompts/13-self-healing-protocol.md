@@ -108,6 +108,18 @@ Read evidence in this order. This stage is evidence-first: never pre-write or pr
    reason. `withheldFailureClasses` exists because a tagged, merged row has
    its `failureClass` withheld to stop a stale write demoting it, so that
    field is the only surviving record of which mode was observed.
+6c. Read `/tmp/nightly/audit-duration.txt`: how long each lane's audits took,
+   from the timing block written since 2026-09-03 that nothing has read until
+   now. Judge each duration against the scope that lane claimed, and log any
+   audit whose duration cannot support its claim in Section 3. No threshold
+   applies and nothing is blocked. For scale, across 2026-09-03 to 2026-09-09
+   the productive lanes ran 5 to 16 minutes and the empty ones 2 to 6.
+   - A zero-minute audit is categorical: the log records whole minutes, so 0m
+     means no surface was examined. Report each with its claim quoted.
+   - A pre-2026-09-03 record is untimed, never zero. A format change is not a
+     finding.
+   - If `audit-duration-status.txt` is not `OK`, say so. An unavailable
+     measurement is not a clean one.
 7. Classify each preceding stage using this evidence model:
    - `COMPLETED`: a current-cycle finalized coverage record and merged/history evidence agree.
    - `LATE`: valid evidence exists within the Stage 1 UTC boundary or arrived after an earlier audit.
@@ -135,6 +147,14 @@ Take the time required. Do not rush to write. The analytical phase is the most d
 - Compare against existing Section 2 entries. Update, promote, or resolve entries as evidence warrants.
 
 **For Section 3 (No-Diff Audit):**
+- Pair each no-diff stage with its audit duration before judging saturation. A
+  two-minute CLEAN over a surface described as dozens of files is a claim its
+  own timing contradicts, which is a different finding from a lane that looked
+  hard and found nothing. Say which, and quote the duration.
+- Check `calibration-due` too. A lane is only fairly called saturated if it was
+  asked to widen. Nine of thirteen lanes gate widening on that flag and it was
+  frozen at NO for every stage from 2026-09-03 to 2026-09-10, so saturation
+  conclusions drawn from that window are void.
 - For each stage that produced no project file changes today (CLEAN entries only, no CHANGED entries): increment its consecutive-no-diff counter. Evaluate whether this reflects saturation or a missed opportunity, using the coverage log history and the stage's prompt file as evidence.
 - For any stage that produced a meaningful CHANGED entry today: reset its consecutive-no-diff counter and mark it active.
 

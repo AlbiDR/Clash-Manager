@@ -20,6 +20,8 @@ export const CONTROL_PLANE_FILES = [
   ".github/scripts/nightly/nightly-watchdog.mjs",
   ".github/scripts/nightly/nightly-ledger.mjs",
   ".github/scripts/nightly/doc-debt.mjs",
+  ".github/scripts/nightly/coverage-log-line.mjs",
+  ".github/scripts/nightly/audit-duration.mjs",
   ".github/scripts/nightly/nightly-redact.mjs",
   ".github/scripts/nightly/merge-nightly-prs.mjs",
   ".github/scripts/nightly/merge-nightly-core.mjs",

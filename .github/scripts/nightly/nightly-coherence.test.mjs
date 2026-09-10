@@ -150,28 +150,51 @@ test("the version checker still owns more locations than any prompt enumerates",
 //
 // So this asserts agreement on behaviour rather than absence of duplication:
 // give both parsers the same line and require the same status and summary.
-test("both coverage-log parsers read the same line the same way", async () => {
-  const { parseCoverageLine } = await import("./nightly-recap.mjs");
-  const { parseCoverageOutcome } = await import("./nightly-publish-fallback.mjs");
-  const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", DIR), "utf8"));
-  const stage = registry.stages.find(s => s.number === 11);
-  const date = "2026-09-05";
+test("exactly one module defines the coverage-log line format", async () => {
+  // This replaces a pairwise comparison of the recap and fallback parsers.
+  // That guard passed throughout the incident it was meant to prevent: on
+  // 2026-09-03 finalize started writing a run window, and the format change
+  // blinded THREE private parsers. Recap and fallback were both repaired, so
+  // the pairwise test kept agreeing, while the calibration copy stayed broken
+  // for seven nights and switched off the only mechanism that makes a lane
+  // widen its scan. Comparing two of three copies cannot detect the third.
+  //
+  // A structural guard can: there is one owner of the format, and no other
+  // control-plane module may carry a regex for it.
+  const owner = ".github/scripts/nightly/coverage-log-line.mjs";
+  // Keyed on the terminal-status alternation, which only a coverage-line
+  // parser needs. Matching on the stage marker alone was over-broad: it also
+  // flagged the pr-history block parser, which reads a different format.
+  const TERMINAL_STATUS_ALTERNATION = "CLEAN|CHANGED|SKIPPED|PARTIAL-RUN";
+  const offenders = [];
+  for (const file of modules) {
+    const relative = `.github/scripts/nightly/${file}`;
+    if (relative === owner) continue;
+    const source = readFileSync(new URL(`./${file}`, DIR), "utf8");
+    for (const line of source.split("\n")) {
+      if (line.includes(TERMINAL_STATUS_ALTERNATION) && line.includes("/")) {
+        offenders.push(`${file}: ${line.trim().slice(0, 90)}`);
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `Coverage-log format parsed outside ${owner}. Import parseCoverageLine or parseCoverageLog instead:\n  ${offenders.join("\n  ")}`,
+  );
 
-  const cases = [
-    // Every shape finalize has ever written, oldest last. A parser that only
-    // handles the current one silently abandons older stranded work.
+  // And the one owner still reads every shape finalize has ever written.
+  const { parseCoverageLine } = await import("./coverage-log-line.mjs");
+  const date = "2026-09-05";
+  for (const line of [
     `* [${date}] [Stage 11] [09:03Z-09:05Z 2m] CLEAN: Codebase -- Audited native WebView settings`,
     `* [${date}] [Stage 11] CHANGED: Frontend-PWA/src/x.ts -- Did the thing`,
     `* [${date}] [Stage 11] [09:03Z-09:05Z 2m] PARTIAL-RUN: Codebase -- Stopped early`,
-  ];
-
-  for (const line of cases) {
-    const fromLog = parseCoverageLine(line, stage.number, date);
-    const fromPatch = parseCoverageOutcome(`+${line}`, stage, date);
-    assert.ok(fromLog, `recap parser rejected: ${line}`);
-    assert.ok(fromPatch, `fallback parser rejected: ${line}`);
-    assert.equal(fromPatch.status, fromLog.status, `status disagreement on: ${line}`);
-    assert.equal(fromPatch.summary, fromLog.summary, `summary disagreement on: ${line}`);
+    `* [${date}] [Stage 11] [09:03Z-09:05Z 2m] [attempt 2] CLEAN: Codebase -- A field not yet invented`,
+  ]) {
+    const record = parseCoverageLine(line);
+    assert.ok(record, `owner rejected: ${line}`);
+    assert.equal(record.stage, 11);
   }
 });
 
