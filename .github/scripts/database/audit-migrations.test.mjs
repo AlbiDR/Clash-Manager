@@ -10,7 +10,7 @@ import test from 'node:test';
 
 import { auditMigrations } from './audit-migrations.mjs';
 
-async function fixture({ migrationComment = '-- concise', expiry = '2099-01-01' } = {}) {
+async function fixture({ migrationComment = '-- concise', expiry = '2099-01-01', baselineExtra = '' } = {}) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'migration-audit-'));
   await mkdir(path.join(root, '.github/nightly-config'), { recursive: true });
   await mkdir(path.join(root, 'Backend/supabase/migrations'), { recursive: true });
@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS app.items (id bigint PRIMARY KEY);
 ALTER TABLE app.items ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION app.ping() RETURNS boolean
 LANGUAGE sql SET search_path TO app AS $$ SELECT true $$;
+${baselineExtra}
 `);
   const migrationPath = 'Backend/supabase/migrations/20260102000000_change.sql';
   const migrationSource = `${migrationComment}\nCOMMENT ON TABLE app.items IS 'items';\n`;
@@ -115,4 +116,27 @@ DROP VIEW IF EXISTS app.retired_view;
   const report = await auditMigrations({ repoRoot: root });
   assert.equal(report.status, 'FAIL');
   assert.match(report.baseline.violations.join(' '), /stale destructive residue/);
+});
+
+test('fails a baseline whose trigger cannot be replayed', async t => {
+  // Regression guard for 2026-09-08: a fold copied a bare CREATE TRIGGER into
+  // the baseline, this audit reported PASS with 0 violations, and the release
+  // gate then blocked every PWA deploy from that branch. Both now read the
+  // same rules from baseline-rules.mjs.
+  const root = await fixture({
+    baselineExtra: 'CREATE TRIGGER t_items AFTER INSERT ON app.items FOR EACH ROW EXECUTE FUNCTION app.ping();',
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'FAIL');
+  assert.ok(report.baseline.violations.includes('Trigger at line 7 missing OR REPLACE'));
+});
+
+test('passes the same baseline once the trigger is re-runnable', async t => {
+  const root = await fixture({
+    baselineExtra: 'CREATE OR REPLACE TRIGGER t_items AFTER INSERT ON app.items FOR EACH ROW EXECUTE FUNCTION app.ping();',
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'PASS');
 });

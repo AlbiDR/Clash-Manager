@@ -10,6 +10,12 @@ import { fileURLToPath } from 'url';
 // Android versionCode derivation; see its header for the regression it replaces.
 import { androidVersionCode, assertVersionCodeNotRegressed } from '../android/android-version-code.mjs';
 
+// @ts-expect-error - plain .mjs module, deliberately shared with the nightly
+// database audit so the release gate and the folding agent's own checker can
+// never enforce different baseline DDL rules; see its header for the fold
+// that this prevents.
+import { baselineDdlViolations } from '../database/baseline-rules.mjs';
+
 /**
  * ============================================================================
  * SCRIPT: VALIDATE PROJECT
@@ -574,45 +580,14 @@ function checkDatabaseBaseline() {
     }
   }
 
-  // Idempotent CREATE TABLE check
+  // Baseline re-runnability and safety rules.
   //
-  // Tracks `/* ... */` block-comment state across lines, not just `--` line
-  // comments, so prose in a docblock (e.g. "the CREATE TABLE above already
-  // declares...") is never misread as a bad DDL statement. A block comment
-  // that opens and closes on the same line is handled by stripping it before
-  // the pattern match runs.
-  const tablePattern = /CREATE\s+TABLE\s+(?!IF\s+NOT\s+EXISTS)([\w\.]+)/i;
-  let inBlockComment = false;
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
-    line = line.replace(/\/\*.*?\*\//g, '');
-
-    if (inBlockComment) {
-      const closeIdx = line.indexOf('*/');
-      if (closeIdx === -1) {
-        continue;
-      }
-      line = line.slice(closeIdx + 2);
-      inBlockComment = false;
-    }
-
-    const openIdx = line.indexOf('/*');
-    if (openIdx !== -1) {
-      line = line.slice(0, openIdx);
-      inBlockComment = true;
-    }
-
-    if (line.includes('--')) {
-      continue;
-    }
-    const m = tablePattern.exec(line);
-    if (m) {
-      if (line.includes("'") || line.includes('"')) {
-        continue;
-      }
-      dbErrors.push(`Table ${m[1]} at line ${i + 1} missing IF NOT EXISTS`);
-    }
-  }
+  // These live in .github/scripts/database/baseline-rules.mjs so the nightly
+  // Stage 3 lane's own checker (audit-migrations.mjs) enforces the identical
+  // set. Before 2026-09-10 they existed only here, and a fold this gate
+  // rejected had already been graded PASS by that lane, so the work looked
+  // finished while every PWA release from that branch was blocked.
+  dbErrors.push(...baselineDdlViolations(content));
 
   // Row Level Security check
   const tables: string[] = [];
@@ -629,15 +604,6 @@ function checkDatabaseBaseline() {
     const rlsPattern = new RegExp(`ALTER\\s+TABLE\\s+${escapeRegExp(table)}\\s+ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY`, 'i');
     if (!rlsPattern.test(content)) {
       dbErrors.push(`Table ${table} missing RLS`);
-    }
-  }
-
-  // Idempotent CREATE TRIGGER check
-  const triggerPattern = /CREATE\s+(?!OR\s+REPLACE\s+)TRIGGER/i;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (triggerPattern.test(line)) {
-      dbErrors.push(`Trigger at line ${i + 1} missing OR REPLACE`);
     }
   }
 
@@ -658,20 +624,6 @@ function checkDatabaseBaseline() {
     if (hasAboveBMP) {
       dbErrors.push(`Line ${i + 1} has emoji/non-BMP char`);
     }
-  }
-
-  // Out of line UNIQUE constraints check.
-  // Must match a single ALTER TABLE statement that adds a UNIQUE constraint,
-  // e.g.: ALTER TABLE foo ADD CONSTRAINT bar UNIQUE (col);
-  // Inline UNIQUE inside CREATE TABLE and FK-only ALTER TABLE statements are not flagged.
-  const outOfLineUniquePattern = /ALTER\s+TABLE\s+\S+\s+ADD\s+CONSTRAINT\s+\S+\s+UNIQUE\b/i;
-  if (outOfLineUniquePattern.test(content)) {
-    dbErrors.push('Found out-of-line UNIQUE constraints');
-  }
-
-  // Unqualified moddatetime trigger function check
-  if (/EXECUTE\s+FUNCTION\s+moddatetime/i.test(content)) {
-    dbErrors.push('Unqualified moddatetime call found');
   }
 
   // Phantom column check (2026-08-26 audit): every column a CREATE TABLE IF

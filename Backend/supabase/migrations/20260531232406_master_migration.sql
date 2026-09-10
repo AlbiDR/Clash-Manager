@@ -4891,8 +4891,7 @@ CREATE OR REPLACE TRIGGER handle_updated_at_config BEFORE UPDATE ON substrate.co
 
 CREATE OR REPLACE TRIGGER trg_shredder_war_log AFTER INSERT ON substrate.raw_war_log FOR EACH ROW EXECUTE FUNCTION substrate.shred_war_log();
 
-DROP TRIGGER IF EXISTS trg_voyage_activation_gate ON drivers.clan_voyage;
-CREATE TRIGGER trg_voyage_activation_gate
+CREATE OR REPLACE TRIGGER trg_voyage_activation_gate
 AFTER INSERT OR DELETE OR UPDATE OF status, start_at ON drivers.clan_voyage
 FOR EACH STATEMENT EXECUTE FUNCTION drivers.on_voyage_pending_change();
 

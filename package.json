@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.46",
+  "version": "14.50.47",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -19,7 +19,7 @@
     "audit:version:fix": "tsx .github/scripts/project/validate-project.ts --fix",
     "audit:migrations": "node .github/scripts/database/audit-migrations.mjs",
     "audit:apk-ux": "node .github/scripts/android/audit-apk-ux.mjs",
-    "test:migration-audit": "node --test .github/scripts/database/sql-lexer.test.mjs .github/scripts/database/audit-migrations.test.mjs .github/scripts/database/fold-state.test.mjs",
+    "test:migration-audit": "node --test .github/scripts/database/sql-lexer.test.mjs .github/scripts/database/baseline-rules.test.mjs .github/scripts/database/audit-migrations.test.mjs .github/scripts/database/fold-state.test.mjs",
     "test:apk-ux-audit": "node --test .github/scripts/android/audit-apk-ux.test.mjs",
     "test:database-baseline": "bash .github/scripts/database/test-database-baseline.sh",
     "test:version-code": "node --test .github/scripts/android/android-version-code.test.mjs",
