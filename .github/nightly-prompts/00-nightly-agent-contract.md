@@ -59,7 +59,18 @@ change set if the environment still permits it.
   correction and rerun once; otherwise restore unsafe edits and finalize
   `PARTIAL-RUN` with the blocker recorded.
 - Do not invoke optional Jules code review, plan review, memory, reflection, or
-  post-validation analysis.
+  post-validation analysis. "Pre-commit" in any plan step means shell validation
+  only: the commands the stage prompt names, and nothing else. It is never a
+  review gate. A stage whose plan was already approved does not seek a second
+  opinion on it.
+- A reviewer that runs anyway cannot reach a correct verdict from where it sits,
+  so do not act on one. It executes before `finalize`, and `finalize` is what
+  replaces the `IN-PROGRESS: session started` sentinel with the terminal record.
+  On a CLEAN run the only diff it can see is that sentinel, so it concludes the
+  work was never done. Stage 3 on 2026-09-11 was told its "core task was not
+  executed", as a blocking verdict, on work that was complete and correct. Never
+  redo the audit, re-run tests, restore finished edits, or skip finalize because
+  a reviewer called the run incomplete. Finalize and hand off.
 
 At each prompt checkpoint, run:
 
