@@ -10015,8 +10015,8 @@
             "name": "sessions/9597569680957915796",
             "state": "COMPLETED",
             "createTime": "2026-09-10T23:22:18.022122747Z",
-            "updateTime": "2026-09-10T23:33:24.142662Z",
-            "lifetimeMinutes": 11.1
+            "updateTime": "2026-09-11T20:04:26.457106Z",
+            "lifetimeMinutes": 1242.1
           },
           "run": {
             "started": "2026-09-10T23:24:00Z",
@@ -10035,7 +10035,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.713Z",
+        "lastObservedAt": "2026-09-11T23:22:13.854Z",
         "failureClass": null
       },
       "2": {
@@ -10052,8 +10052,8 @@
             "name": "sessions/12863654131435043925",
             "state": "COMPLETED",
             "createTime": "2026-09-11T00:07:04.325948309Z",
-            "updateTime": "2026-09-11T00:18:09.207706Z",
-            "lifetimeMinutes": 11.1
+            "updateTime": "2026-09-11T20:06:14.065133Z",
+            "lifetimeMinutes": 1199.2
           },
           "run": {
             "started": "2026-09-11T00:09:00Z",
@@ -10072,7 +10072,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.713Z",
+        "lastObservedAt": "2026-09-11T23:22:13.854Z",
         "failureClass": null
       },
       "3": {
@@ -10101,8 +10101,8 @@
             "name": "sessions/5032227199354511164",
             "state": "COMPLETED",
             "createTime": "2026-09-11T01:12:03.557126670Z",
-            "updateTime": "2026-09-11T02:19:29.188295Z",
-            "lifetimeMinutes": 67.4
+            "updateTime": "2026-09-11T20:04:36.496660Z",
+            "lifetimeMinutes": 1132.5
           },
           "recovery": {
             "nudgedAt": "2026-09-11T02:16:27.262Z",
@@ -10125,7 +10125,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-11T16:50:36.714Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "4": {
@@ -10153,8 +10153,8 @@
             "name": "sessions/13333560245513838515",
             "state": "COMPLETED",
             "createTime": "2026-09-11T02:07:49.203405731Z",
-            "updateTime": "2026-09-11T02:15:58.630981Z",
-            "lifetimeMinutes": 8.2
+            "updateTime": "2026-09-11T20:06:13.272067Z",
+            "lifetimeMinutes": 1078.4
           },
           "run": {
             "started": "2026-09-11T02:10:00Z",
@@ -10168,7 +10168,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.715Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "5": {
@@ -10188,14 +10188,7 @@
             "reason": "no adverse trend"
           },
           "tag": "nightly/2026-09-11/stage-5/pr-1775",
-          "session": {
-            "id": "13518597813205999989",
-            "name": "sessions/13518597813205999989",
-            "state": "COMPLETED",
-            "createTime": "2026-09-11T03:21:28.613651030Z",
-            "updateTime": "2026-09-11T03:29:34.139142Z",
-            "lifetimeMinutes": 8.1
-          },
+          "session": null,
           "run": {
             "started": "2026-09-11T03:23:00Z",
             "terminated": "2026-09-11T03:27:00Z",
@@ -10208,7 +10201,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.715Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "6": {
@@ -10251,7 +10244,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.716Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "7": {
@@ -10294,7 +10287,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.716Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "8": {
@@ -10337,7 +10330,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.717Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "9": {
@@ -10377,7 +10370,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.717Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "10": {
@@ -10420,7 +10413,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.718Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "11": {
@@ -10463,7 +10456,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.718Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "12": {
@@ -10503,7 +10496,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.719Z",
+        "lastObservedAt": "2026-09-11T23:22:13.857Z",
         "failureClass": null
       },
       "13": {
@@ -10543,7 +10536,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.720Z",
+        "lastObservedAt": "2026-09-11T23:22:13.857Z",
         "failureClass": null
       }
     }
