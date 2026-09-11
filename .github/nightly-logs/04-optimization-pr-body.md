@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Codebase
+**What was checked:** Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, protocol.ts); zero substrate or logic bottlenecks found
 
-**Why:** Audited Edge Function SQL view usage and L1/L0 performance composables; zero substrate or logic bottlenecks found; 75 changed files inspected with 0 code mutations required
+**Why:** Substrate hygiene audit confirmed known unreferenced views; 56 changed files inspected with zero source mutations required
 
-**Result:** All 195 test files (1826 unit tests) passed successfully
+**Result:** PASSED: Monorepo test suite (195 test files, 1826 tests) passed; zero broken views or substrate defects
 
 **Files changed:** .github/nightly-logs/04-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: optimization
-  Why: Audited Edge Function SQL view usage and L1/L0 performance composables; zero substrate or logic bottlenecks found; 75 changed files inspected with 0 code mutations required
-  Change: Codebase
-  Result: All 195 test files (1826 unit tests) passed successfully
+  Why: Substrate hygiene audit confirmed known unreferenced views; 56 changed files inspected with zero source mutations required
+  Change: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, protocol.ts); zero substrate or logic bottlenecks found
+  Result: PASSED: Monorepo test suite (195 test files, 1826 tests) passed; zero broken views or substrate defects
   Files: .github/nightly-logs/04-optimization-coverage.log
   Nudges: 0
 -->
