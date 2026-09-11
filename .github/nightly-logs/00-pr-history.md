@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1782 [Stage 12]: Audited Frontend-PWA/src (75 files examined) across 10 hybrid shell UX categories with 0 violations found in apk-ux-audit.json; calibration due with 10 consecutive clean passes.
+**Domain:** ux | **Commit:** 3c961b55 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1782)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured APK UX audit reported PASS across all 10 hybrid shell UX compliance categories (raw selectors, tactile feedback, safe-area insets, touch footprint, text selection, link route isolation, overscroll boundaries, soft keyboard viewport adjustment, prefers-color-scheme media queries, media dimensions) with 0 candidate violations.
+**Change:** Audited Frontend-PWA/src (75 files examined) across 10 hybrid shell UX categories with 0 violations found in apk-ux-audit.json; calibration due with 10 consecutive clean passes.
+**Result:** apk-ux-audit reported PASS with 0 violations across 75 source files in Frontend-PWA/src
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1781 [Stage 11]: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
 **Domain:** apk | **Commit:** 741cce89 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1781)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
