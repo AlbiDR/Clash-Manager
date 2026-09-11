@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1775 [Stage 5]: Reconciled useClashSyncUtils.ts extraction in core services README
+**Domain:** documentation | **Commit:** 46b4c595 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1775)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Doc debt from PR #1766 extracted pure sync utilities into useClashSyncUtils.ts, leaving core/services/README out of sync
+**Change:** Reconciled useClashSyncUtils.ts extraction in core services README
+**Result:** Verified README diff against source exports and ran git diff --check
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1774 [Stage 3]: Baseline current across 32 migrations with 0 pending. Read-only audit confirmed RLS compliance, search_path isolation, and formatting rules.
 **Domain:** database | **Commit:** 6e846c33 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1774)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
