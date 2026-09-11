@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1772 [Stage 2]: Added comprehensive unit tests for L1 Core Vault Secret Broker in vault.spec.ts
+**Domain:** verification | **Commit:** 295f0d91 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1772)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/vault.spec.ts
+**Why:** Closed zero-coverage gap in Backend/supabase/functions/_shared/vault.ts
+**Change:** Added comprehensive unit tests for L1 Core Vault Secret Broker in vault.spec.ts
+**Result:** Verified with 274 passing tests under Vitest and proven non-trivial via mutation proof (inverting vaultValue condition produced 5 test failures).
+**Nudges:** 0
+
+
 ### [2026-09-10] PR #1771 [Stage 1]: Calibration CLEAN pass: audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; widened scan across Backend/_shared/ and Frontend-PWA core services
 **Domain:** hardening | **Commit:** 38c8e2c5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1771)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
