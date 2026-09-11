@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1783 [Stage 13]: Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
+**Domain:** pipeline | **Commit:** 27f240d8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1783)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Document September 11 self-healing audit findings and update stage metrics in protocol document
+**Change:** Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
+**Result:** Verified protocol document changes with git diff --check; 0 whitespace or formatting errors
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1782 [Stage 12]: Audited Frontend-PWA/src (75 files examined) across 10 hybrid shell UX categories with 0 violations found in apk-ux-audit.json; calibration due with 10 consecutive clean passes.
 **Domain:** ux | **Commit:** 3c961b55 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1782)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
