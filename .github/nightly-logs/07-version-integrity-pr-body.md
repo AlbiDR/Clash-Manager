@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** No version drift or catalog violations detected across monorepo
+**What was checked:** Scanned catalog and package manifests; ground truth 14.50.52 verified across all declarations.
 
-**Why:** All package manifests, catalog protocols, and derived version targets are fully synchronized at ground truth version 14.50.45
+**Why:** All manifests and derived version locations match ground truth with zero drift.
 
-**Result:** package.json files at root, Frontend-PWA, Backend and pnpm-workspace.yaml catalog checked; validate-project.ts version audit section passed with 0 drift or catalog violations
+**Result:** PASSED: pnpm audit:version verified 10 declarations match ground truth 14.50.52 and catalog usage is 100% compliant.
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Why: All package manifests, catalog protocols, and derived version targets are fully synchronized at ground truth version 14.50.45
-  Change: No version drift or catalog violations detected across monorepo
-  Result: package.json files at root, Frontend-PWA, Backend and pnpm-workspace.yaml catalog checked; validate-project.ts version audit section passed with 0 drift or catalog violations
+  Why: All manifests and derived version locations match ground truth with zero drift.
+  Change: Scanned catalog and package manifests; ground truth 14.50.52 verified across all declarations.
+  Result: PASSED: pnpm audit:version verified 10 declarations match ground truth 14.50.52 and catalog usage is 100% compliant.
   Files: .github/nightly-logs/07-version-integrity-coverage.log
-  Nudges: 1
+  Nudges: 0
 -->

@@ -4,20 +4,20 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
+**What changed:** Reconciled useClashSyncUtils.ts extraction in core services README
 
-**Why:** Reconciled recent Stage 2, Stage 4, and Stage 6 updates in useProgressiveList.ts with core services README documentation
+**Why:** Doc debt from PR #1766 extracted pure sync utilities into useClashSyncUtils.ts, leaving core/services/README out of sync
 
-**Result:** git diff --check passed with 0 errors and vitest useProgressiveList.spec.ts passed 21/21 tests
+**Result:** Verified README diff against source exports and ran git diff --check
 
 **Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Why: Reconciled recent Stage 2, Stage 4, and Stage 6 updates in useProgressiveList.ts with core services README documentation
-  Change: Reconciled useProgressiveList.ts time-sliced rendering, idle budgeting, shallowRef optimization, and timer cleanup in core services README
-  Result: git diff --check passed with 0 errors and vitest useProgressiveList.spec.ts passed 21/21 tests
+  Why: Doc debt from PR #1766 extracted pure sync utilities into useClashSyncUtils.ts, leaving core/services/README out of sync
+  Change: Reconciled useClashSyncUtils.ts extraction in core services README
+  Result: Verified README diff against source exports and ran git diff --check
   Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
   Nudges: 0
 -->

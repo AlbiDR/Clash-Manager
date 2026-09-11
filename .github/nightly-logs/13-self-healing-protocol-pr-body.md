@@ -1,23 +1,23 @@
 ### Nightly Stage 13: Self-Healing Protocol - Pipeline Resilience Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the self healing protocol area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What was checked:** Audited 2026-09-09 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
+**What changed:** Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
 
-**Why:** Audit completed with zero pipeline failure classes or cross-stage coherence issues; protocol document clean
+**Why:** Document September 11 self-healing audit findings and update stage metrics in protocol document
 
-**Result:** Audit completed with no source change required.
+**Result:** Verified protocol document changes with git diff --check; 0 whitespace or formatting errors
 
-**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log
+**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Why: Audit completed with zero pipeline failure classes or cross-stage coherence issues; protocol document clean
-  Change: Audited 2026-09-09 nightly pipeline execution across ledger runs and coverage logs for Stages 1-12; verified 0 failure classes and 0 unfinalized sentinels across all stages
-  Result: Audit completed with no source change required.
-  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log
-  Nudges: 1
+  Why: Document September 11 self-healing audit findings and update stage metrics in protocol document
+  Change: Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
+  Result: Verified protocol document changes with git diff --check; 0 whitespace or formatting errors
+  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+  Nudges: 0
 -->

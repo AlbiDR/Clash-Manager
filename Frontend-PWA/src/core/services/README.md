@@ -16,6 +16,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `StorageService.ts` | Persistence engine over IndexedDB (via `idbKernel`), with an in-memory fallback. |
 | `useClashDataStore.ts` | The central store for clan datasets; delegates syncing to `useClashSync`. |
 | `useClashSync.ts` | Hydrates the store from cache, then refreshes from Supabase in the background. |
+| `useClashSyncUtils.ts` | Pure sync helpers: timeout-bound network fetching, empty DTO initialization, error normalization. |
 | `useClashLoader.ts` | Route-level hydration that awaits cache before firing a network refresh (stale-while-revalidate). |
 | `useStoragePersistence.ts` | Requests durable storage so data is not silently evicted. |
 | `useSelectionStore.ts` | Tracks selected item ids for batch operations. |
@@ -66,6 +67,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 ### Statistical Clan Benchmarking Engine (`useBenchmarking.ts`)
 
 `useBenchmarking.ts` provides normalized statistical comparisons between individual player metrics and clan baselines in Layer 1 Core:
+- **WeakMap Memoization Cache (`statsCache`):** Caches calculated statistics (`lb` and `hh` `StatsMap`) in a module-level `WeakMap` keyed by the reactive `rawData` payload object reference. This eliminates O(N) recalculations across component render cycles while preventing stale store singleton state pollution, memory leaks, and cross-test contamination across store resets.
 - **Single-Pass Aggregation (`calculateStats`):** Aggregates numeric metrics across candidate pools (`lb` roster members or `hh` recruits) in a single O(N) array traversal, computing mean (`avg`), `min`, and `max` boundaries while guarding against empty datasets and division by zero.
 - **Context-Aware Metric Extractors:** Isolates internal clan roster metrics (`LB_EXTRACTORS`) from prospective recruit metrics (`HH_EXTRACTORS`) via context keys (`'lb'` vs `'hh'`), computing trophy ranks, win rates, war reliability, fame averages, and activity durations.
 - **Performance Tier Evaluation:** Evaluates values against dataset statistics into four performance tiers (`ELITE`, `TOP TIER`, `GROWING`, `UNDER`). Automatically adjusts calculation thresholds for inverted metrics (`lowerIsBetter: true` for `lastSeen` and `lastScan` duration minutes), where lower values represent superior performance.
@@ -125,9 +127,10 @@ The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper
 4. **PWA Installation Lifecycle:** Captures browser-managed PWA installation triggers from the `beforeinstallprompt` event and exposes them reactively via the `isPwaInstallAvailable` ref. Invoking the async `installPwa()` method prompts the user directly, updating installation status and managing event teardown/garbage collection cleanly upon resolution.
 5. **Disaster Recovery (Factory Reset):** Houses destructive state purge routines. When a factory reset is initiated, `usePwaManager.ts` unregisters active Service Workers, purges all named browser CacheStorage buckets, wipes LocalStorage/SessionStorage, and invokes IndexedDB destruction (`idb.destroyAll()`) to ensure an absolute clean slate on reload.
 
-### Single-Flight Sync & Error Thresholding (`useClashSync.ts`)
+### Single-Flight Sync & Error Thresholding (`useClashSync.ts` & `useClashSyncUtils.ts`)
 
-`useClashSync.ts` orchestrates data synchronization, local persistence, and error tolerance in Layer 1 Core:
+`useClashSync.ts` and `useClashSyncUtils.ts` orchestrate data synchronization, local persistence, and error tolerance in Layer 1 Core:
+- **Pure Sync Utilities (`useClashSyncUtils.ts`):** Houses stateless sync helpers including bounded timeout network fetching (`fetchRemoteWithTimeout` using `SYNC_REQUEST_TIMEOUT_MS = 15000` and `AbortController`), empty dataset initialization (`createEmptyWebAppData`), and error normalization (`normalizeSyncError`).
 - **Single-Flight Synchronization:** Enforces single-flight remote execution (`activeSyncPromise`). Concurrent sync calls join the single active in-flight request promise, eliminating redundant network traffic and avoiding race conditions during batch or automated triggers.
 - **Fault-Tolerance Visibility Thresholding:** Tracks consecutive remote synchronization failures (`consecutiveSyncFailures`). Background sync failures remain suppressed to maintain UI stability until the failure threshold (`SYNC_FAILURE_VISIBILITY_THRESHOLD = 3`) is reached, while manual user-triggered refreshes immediately expose error states (`syncError`).
 - **Remote Success State Preservation:** Internal `commitSyncResult` gates clearing `consecutiveSyncFailures` and `syncError` behind an explicit `remoteSuccess` flag (defaulting to `false`). Purely local commits (such as cache hydration, local edits, or optimistic rollbacks) leave remote failure indicators intact so that local mutations cannot forge proof of backend reachability or suppress pending error visibility windows.

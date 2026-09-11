@@ -1,23 +1,23 @@
 ### Nightly Stage 6: Documentation TSDoc - Interface Contract Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation TSDoc area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
+**What changed:** Harden useClashSync and useClashSyncUtils TSDoc interface contracts and inline logic annotations
 
-**Why:** Full audit of useProgressiveList.ts and core services confirmed zero documentation gaps or contract drift required
+**Why:** Reconciles documentation debt following pure sync utility decomposition (#1766)
 
-**Result:** All 1826 Vitest unit tests passed cleanly
+**Result:** pnpm run synthesize, pnpm run type-check, and 195/195 test files passed
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSyncUtils.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Why: Full audit of useProgressiveList.ts and core services confirmed zero documentation gaps or contract drift required
-  Change: Audited useProgressiveList.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
-  Result: All 1826 Vitest unit tests passed cleanly
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log
+  Why: Reconciles documentation debt following pure sync utility decomposition (#1766)
+  Change: Harden useClashSync and useClashSyncUtils TSDoc interface contracts and inline logic annotations
+  Result: pnpm run synthesize, pnpm run type-check, and 195/195 test files passed
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSyncUtils.ts
   Nudges: 0
 -->

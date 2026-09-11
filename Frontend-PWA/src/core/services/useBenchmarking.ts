@@ -164,26 +164,13 @@ const calculateStats = <T>(
 };
 
 /**
- * CORE: getBenchmark
+ * [PERF] STATS WEAKMAP CACHE
  *
  * @remarks
- * Satisfies ADR Section I: Core Services.
- * Computes comparative data for a specific metric by looking up pre-calculated statistics in singleton state.
- *
- * **Tier Resolution:**
- * - **ELITE**: Value is >= 90% of maximum recorded value (or <= 1.1x min for inverted metrics).
- * - **TOP TIER**: Value is above clan average.
- * - **GROWING**: Value is between 50% and 100% of clan average.
- * - **UNDER**: Value is below 50% of clan average (or > 2x average for inverted metrics).
- *
- * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
- * @param metric - The key of the metric to compare.
- * @param value - The individual player's numeric value for the metric.
- * @returns A BenchmarkData object or null if statistics are unavailable.
+ * [DECISION LOG] WeakMap Memoization: WeakMap memoization cache keyed by the reactive rawData payload object reference.
+ * Prevents O(N) recalculation across multiple component render cycles (e.g. MemberCard lists)
+ * while ensuring automatic garbage collection and preventing state leaks across store resets or unit test boundaries.
  */
-// [PERF] WeakMap memoization cache keyed by the reactive rawData payload object reference.
-// [DECISION LOG] Prevents O(N) recalculation across multiple component render cycles (e.g. MemberCard lists)
-// while ensuring automatic garbage collection and preventing state leaks across store resets or unit test boundaries.
 const statsCache = new WeakMap<
   object,
   { lb: StatsMap | null; hh: StatsMap | null }
@@ -215,8 +202,14 @@ export function useBenchmarking() {
    * CORE: getBenchmark
    *
    * @remarks
-   * Satisfies ADR Section I: Core Services.
-   * Computes comparative data for a specific metric by looking up pre-calculated statistics in singleton state.
+   * Satisfies ADR Section I: Core Services & Section IV: Performance.
+   * Computes comparative data for a specific metric by looking up pre-calculated statistics cached via WeakMap memoization.
+   *
+   * **Tier Resolution:**
+   * - **ELITE**: Value is >= 90% of maximum recorded value (or <= 1.1x min for inverted metrics).
+   * - **TOP TIER**: Value is above clan average.
+   * - **GROWING**: Value is between 50% and 100% of clan average.
+   * - **UNDER**: Value is below 50% of clan average (or > 2x average for inverted metrics).
    *
    * @param context - The dataset context ('lb' for Leaderboard, 'hh' for Headhunter).
    * @param metric - The key of the metric to compare.
@@ -248,7 +241,8 @@ export function useBenchmarking() {
 
     const metricMetadata = BENCHMARK_METRICS[metric];
     const scoreDelta = value - metricStats.avg;
-    // [DECISION LOG] Safeguard against division by zero if metricStats.avg is 0.
+    // [THREAT: Division by Zero] If metricStats.avg is 0, dividing scoreDelta by avg yields Infinity/NaN.
+    // [DECISION LOG] Safeguard against division by zero if metricStats.avg is 0 by falling back to 1.
     const deviationPercentage = Math.abs(Math.round((scoreDelta / (metricStats.avg || 1)) * 100));
     const isAboveAverage = metricMetadata?.lowerIsBetter ? scoreDelta <= 0 : scoreDelta >= 0;
 
