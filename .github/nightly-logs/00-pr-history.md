@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1778 [Stage 8]: Bumped @vue/test-utils to ^2.5.0 in catalog
+**Domain:** dependencies | **Commit:** bd38be4f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1778)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml
+**Why:** Routine minor bump within v2 for test utilities
+**Change:** Bumped @vue/test-utils to ^2.5.0 in catalog
+**Result:** All workspace unit tests passed (1826 tests across 195 test files)
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1777 [Stage 7]: Scanned catalog and package manifests; ground truth 14.50.52 verified across all declarations.
 **Domain:** versioning | **Commit:** 54188568 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1777)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
