@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-11
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-11] PR #1784 [Stage 1]: Calibration CLEAN pass: audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+**Domain:** hardening | **Commit:** bb6fd936 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1784)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat surface scan and depcruise verification confirmed zero security, state persistence, or cross-layer violations
+**Change:** Calibration CLEAN pass: audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+**Result:** 1826 tests passed across 195 files; 0 depcruise violations across 489 modules
+**Nudges:** 0
+
 ### [2026-09-11] PR #1783 [Stage 13]: Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
 **Domain:** pipeline | **Commit:** 27f240d8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1783)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
