@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1776 [Stage 6]: Harden useClashSync and useClashSyncUtils TSDoc interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** f2b79388 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1776)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Why:** Reconciles documentation debt following pure sync utility decomposition (#1766)
+**Change:** Harden useClashSync and useClashSyncUtils TSDoc interface contracts and inline logic annotations
+**Result:** pnpm run synthesize, pnpm run type-check, and 195/195 test files passed
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1775 [Stage 5]: Reconciled useClashSyncUtils.ts extraction in core services README
 **Domain:** documentation | **Commit:** 46b4c595 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1775)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
