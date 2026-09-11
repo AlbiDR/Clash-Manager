@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1774 [Stage 3]: Baseline current across 32 migrations with 0 pending. Read-only audit confirmed RLS compliance, search_path isolation, and formatting rules.
+**Domain:** database | **Commit:** 6e846c33 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1774)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Fold-state and migration-quality checks passed cleanly; no pending migrations or structural baseline defects detected.
+**Change:** Baseline current across 32 migrations with 0 pending. Read-only audit confirmed RLS compliance, search_path isolation, and formatting rules.
+**Result:** migration-quality: PASS | fold-state: CLEAN | pending-migrations: 0 | database-verification: DB-UNAVAILABLE
+**Nudges:** 0
+
+### [2026-09-11] PR #1773 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, protocol.ts); zero substrate or logic bottlenecks found
+**Domain:** optimization | **Commit:** c4928c21 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1773)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Substrate hygiene audit confirmed known unreferenced views; 56 changed files inspected with zero source mutations required
+**Change:** Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, protocol.ts); zero substrate or logic bottlenecks found
+**Result:** PASSED: Monorepo test suite (195 test files, 1826 tests) passed; zero broken views or substrate defects
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1772 [Stage 2]: Added comprehensive unit tests for L1 Core Vault Secret Broker in vault.spec.ts
 **Domain:** verification | **Commit:** 295f0d91 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1772)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/vault.spec.ts
