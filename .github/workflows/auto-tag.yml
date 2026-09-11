@@ -102,11 +102,37 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-            echo "Tag ${TAG} already exists — nothing to do."
+          # Checked against the REMOTE, not the runner's local refs.
+          #
+          # The local check was a check-local, act-remote race. Beta and
+          # Nightly carry the same version and are routinely pushed seconds
+          # apart (a fix on Beta, then the same commit cherry-picked to
+          # Nightly), so the second runner could check out before the first
+          # runner's tag push landed, find nothing locally, and then fail on
+          # push with "already exists". On 2026-09-11 the two were 11 seconds
+          # apart and Nightly reported a red run for a tag Beta had just
+          # created correctly. A red run for a non-problem is how a real one
+          # stops being noticed.
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists on the remote. Nothing to do."
             exit 0
           fi
 
           git tag -a "${TAG}" -m "Release ${TAG}"
-          git push origin "${TAG}"
-          echo "Created and pushed ${TAG}."
+
+          # The race window is between that check and this push, so it cannot
+          # be closed by checking harder. A rejection here is only benign if
+          # the tag is now on the remote; anything else is a real failure and
+          # must still fail the run.
+          if git push origin "${TAG}"; then
+            echo "Created and pushed ${TAG}."
+            exit 0
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} appeared on the remote between the check and the push. Nothing to do."
+            exit 0
+          fi
+
+          echo "::error::Failed to push ${TAG} and it is not on the remote."
+          exit 1
