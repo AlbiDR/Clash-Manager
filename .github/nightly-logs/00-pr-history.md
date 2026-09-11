@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1777 [Stage 7]: Scanned catalog and package manifests; ground truth 14.50.52 verified across all declarations.
+**Domain:** versioning | **Commit:** 54188568 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1777)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All manifests and derived version locations match ground truth with zero drift.
+**Change:** Scanned catalog and package manifests; ground truth 14.50.52 verified across all declarations.
+**Result:** PASSED: pnpm audit:version verified 10 declarations match ground truth 14.50.52 and catalog usage is 100% compliant.
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1776 [Stage 6]: Harden useClashSync and useClashSyncUtils TSDoc interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** f2b79388 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1776)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSyncUtils.ts
