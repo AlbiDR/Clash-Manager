@@ -4,20 +4,20 @@
 
 In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What changed:** Mapped September 10 stage executions, recorded Stage 3 ESCALATED failure, and updated Section 3 metrics
+**What changed:** Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
 
-**Why:** Logged observed Stage 3 session failure and updated 2026-09-10 pipeline intelligence metrics
+**Why:** Document September 11 self-healing audit findings and update stage metrics in protocol document
 
-**Result:** Verified git diff check and pipeline ledger consistency
+**Result:** Verified protocol document changes with git diff --check; 0 whitespace or formatting errors
 
 **Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Why: Logged observed Stage 3 session failure and updated 2026-09-10 pipeline intelligence metrics
-  Change: Mapped September 10 stage executions, recorded Stage 3 ESCALATED failure, and updated Section 3 metrics
-  Result: Verified git diff check and pipeline ledger consistency
+  Why: Document September 11 self-healing audit findings and update stage metrics in protocol document
+  Change: Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
+  Result: Verified protocol document changes with git diff --check; 0 whitespace or formatting errors
   Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
   Nudges: 0
 -->
