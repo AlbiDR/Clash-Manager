@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-11] PR #1780 [Stage 10]: Verified PWA/APK wrapper integrity invariants: asset links, manifest parity, version codes/names sync, release metadata, and security cleartext policy.
+**Domain:** apk | **Commit:** 2bdc625d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1780)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No mismatches detected across PWA manifest, twa-manifest.json, apktool.yml, assetlinks.json, latest.json, and Android security configuration.
+**Change:** Verified PWA/APK wrapper integrity invariants: asset links, manifest parity, version codes/names sync, release metadata, and security cleartext policy.
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed; pnpm test:apk-ux-audit passed.
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1779 [Stage 9]: Structural scan (56 candidates in changed-files.txt, 0 dep violations, consecutive-clean 0); inspected protocol.ts, VoyageBanner.vue, useProgressiveList.ts; candidate protocol.ts high risk; hunt useProgressiveList clean.
 **Domain:** architecture | **Commit:** 3efb414e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1779)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
