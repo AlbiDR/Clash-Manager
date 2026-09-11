@@ -32,6 +32,7 @@ on:
       - ".github/scripts/project/**"
       - ".github/scripts/database/**"
       - ".github/scripts/android/audit-apk-ux*"
+      - ".github/nightly-prompts/**"
       - ".github/nightly-config/**"
       - ".github/workflows/control-plane-tests.yml"
   pull_request:
@@ -39,6 +40,7 @@ on:
       - ".github/scripts/nightly/**"
       - ".github/scripts/project/**"
       - ".github/scripts/database/**"
+      - ".github/nightly-prompts/**"
       - ".github/nightly-config/**"
   workflow_dispatch:
 
