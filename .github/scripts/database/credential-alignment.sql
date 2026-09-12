@@ -30,9 +30,24 @@ SELECT jsonb_pretty(jsonb_build_object(
   -- Names only. Tells us whether a credential the declared functions read is
   -- present in Vault at all, which is the difference between adding a name to
   -- the deploy's sync list being a create or an overwrite of a working value.
+  -- Names, plus which KIND of key each one holds. The kind is a category, not
+  -- a value and not a prefix of one, and it settles a question that otherwise
+  -- costs a dashboard trip: this project has both a legacy JWT anon key and a
+  -- newer sb_publishable_ key in circulation, the frontend uses the second,
+  -- and what belongs in Vault is whichever one the API gateway is given as the
+  -- apikey header. Reporting the kind means a replacement value can be matched
+  -- to what is already there instead of guessed.
   'vaultSecretNames', (
-    SELECT coalesce(jsonb_agg(s.name ORDER BY s.name), '[]'::jsonb)
-    FROM vault.secrets s
+    SELECT coalesce(jsonb_agg(jsonb_build_object(
+      'name', v.name,
+      'kind', CASE
+        WHEN v.decrypted_secret LIKE 'eyJ%'             THEN 'legacy JWT key'
+        WHEN v.decrypted_secret LIKE 'sb_publishable_%' THEN 'publishable key'
+        WHEN v.decrypted_secret LIKE 'sb_secret_%'      THEN 'secret key'
+        ELSE 'opaque'
+      END
+    ) ORDER BY v.name), '[]'::jsonb)
+    FROM vault.decrypted_secrets v
   ),
 
   -- Routines whose body contains a value that is CURRENTLY in Vault. Exact

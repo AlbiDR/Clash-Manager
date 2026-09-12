@@ -359,6 +359,10 @@ function render(report) {
     for (const item of items) lines.push(`  ${item.kind} ${item.object}\n      ${item.consequence}`);
   }
   if (report.alignment) lines.push('', 'ALIGNMENT WITH VAULT', `  ${report.alignment}`);
+  if (report.vaultContents?.length) {
+    lines.push('', 'WHAT VAULT HOLDS (names and key kinds, never values)');
+    for (const item of report.vaultContents) lines.push(`  ${item.name}: ${item.kind}`);
+  }
   return `${lines.join('\n')}\n`;
 }
 
@@ -370,6 +374,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       const probe = await captureCredentialAlignment();
       report = await auditDbDrift({ snapshotObject: await captureLiveSnapshot() });
       report.alignment = describeAlignment(probe, report.findings);
+      report.vaultContents = probe.vaultSecretNames || [];
 
       // Hand the verdict to the propagation step as shell variables, so the
       // deploy needs neither jq nor a second round trip to the database.
