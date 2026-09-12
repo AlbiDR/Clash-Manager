@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified PWA/APK wrapper integrity invariants: asset links, manifest parity, version codes/names sync, release metadata, and security cleartext policy.
+**What was checked:** Verified APK and PWA wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security policy
 
-**Why:** No mismatches detected across PWA manifest, twa-manifest.json, apktool.yml, assetlinks.json, latest.json, and Android security configuration.
+**Why:** All APK/PWA wrapper configuration invariants match strictly with no source modifications required
 
-**Result:** pnpm audit:apk and pnpm apk:verify:source passed; pnpm test:apk-ux-audit passed.
+**Result:** pnpm audit:apk (PASS), pnpm apk:verify:source (PASS), pnpm test:version-code (PASS)
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: No mismatches detected across PWA manifest, twa-manifest.json, apktool.yml, assetlinks.json, latest.json, and Android security configuration.
-  Change: Verified PWA/APK wrapper integrity invariants: asset links, manifest parity, version codes/names sync, release metadata, and security cleartext policy.
-  Result: pnpm audit:apk and pnpm apk:verify:source passed; pnpm test:apk-ux-audit passed.
+  Why: All APK/PWA wrapper configuration invariants match strictly with no source modifications required
+  Change: Verified APK and PWA wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security policy
+  Result: pnpm audit:apk (PASS), pnpm apk:verify:source (PASS), pnpm test:version-code (PASS)
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
 -->
