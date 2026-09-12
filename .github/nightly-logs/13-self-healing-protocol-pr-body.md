@@ -4,20 +4,20 @@
 
 In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What changed:** Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
+**What changed:** Mapped September 12 stage executions, recorded Stage 12 MISSING-OUTPUT event, flagged zero-minute audits for S04 and S12, and updated Section 3 metrics
 
-**Why:** Document September 11 self-healing audit findings and update stage metrics in protocol document
+**Why:** Section 1 updated with Stage 12 missing output observation; Section 3 updated with 2026-09-12 audit metrics and zero-minute audit flags
 
-**Result:** Verified protocol document changes with git diff --check; 0 whitespace or formatting errors
+**Result:** git diff --check passed with 0 errors; verified 13-self-healing-protocol.md section updates
 
 **Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Why: Document September 11 self-healing audit findings and update stage metrics in protocol document
-  Change: Recorded Stage 3 watchdog recovery nudge (intervention rate 1/12), verified zero unfinalized sentinels, and updated Section 3 metrics for 2026-09-11
-  Result: Verified protocol document changes with git diff --check; 0 whitespace or formatting errors
+  Why: Section 1 updated with Stage 12 missing output observation; Section 3 updated with 2026-09-12 audit metrics and zero-minute audit flags
+  Change: Mapped September 12 stage executions, recorded Stage 12 MISSING-OUTPUT event, flagged zero-minute audits for S04 and S12, and updated Section 3 metrics
+  Result: git diff --check passed with 0 errors; verified 13-self-healing-protocol.md section updates
   Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
   Nudges: 0
 -->
