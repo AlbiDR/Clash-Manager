@@ -10566,8 +10566,7 @@
           "body": {
             "pr": 1784,
             "verdict": "OK",
-            "ok": true,
-            "repairedFrom": "AD_LIBBED"
+            "ok": true
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10576,7 +10575,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.336Z",
+        "lastObservedAt": "2026-09-12T01:21:38.797Z",
         "failureClass": null
       },
       "2": {
@@ -10613,7 +10612,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.336Z",
+        "lastObservedAt": "2026-09-12T01:21:38.797Z",
         "failureClass": null
       },
       "3": {
@@ -10621,7 +10620,7 @@
         "stage": 3,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
           "notReached": {
@@ -10629,13 +10628,17 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 2,
+            "currentStreak": 3,
             "reason": "no adverse trend"
-          }
+          },
+          "prNumber": 1786,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1786",
+          "headRef": "nightly/stage-3-baseline-consolidation-b9c61e9f-17395777506305240410",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.337Z",
-        "failureClass": null
+        "lastObservedAt": "2026-09-12T01:21:38.798Z",
+        "failureClass": "OPEN_PR"
       },
       "4": {
         "date": "2026-09-12",
@@ -10646,7 +10649,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10655,7 +10658,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.337Z",
+        "lastObservedAt": "2026-09-12T01:21:38.798Z",
         "failureClass": null
       },
       "5": {
@@ -10667,7 +10670,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10676,7 +10679,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.337Z",
+        "lastObservedAt": "2026-09-12T01:21:38.798Z",
         "failureClass": null
       },
       "6": {
@@ -10688,7 +10691,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10697,7 +10700,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.338Z",
+        "lastObservedAt": "2026-09-12T01:21:38.799Z",
         "failureClass": null
       },
       "7": {
@@ -10709,7 +10712,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10718,7 +10721,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.338Z",
+        "lastObservedAt": "2026-09-12T01:21:38.799Z",
         "failureClass": null
       },
       "8": {
@@ -10730,7 +10733,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10739,7 +10742,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.338Z",
+        "lastObservedAt": "2026-09-12T01:21:38.799Z",
         "failureClass": null
       },
       "9": {
@@ -10751,7 +10754,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10760,7 +10763,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.339Z",
+        "lastObservedAt": "2026-09-12T01:21:38.800Z",
         "failureClass": null
       },
       "10": {
@@ -10772,7 +10775,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10781,7 +10784,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.339Z",
+        "lastObservedAt": "2026-09-12T01:21:38.800Z",
         "failureClass": null
       },
       "11": {
@@ -10793,7 +10796,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10802,7 +10805,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.339Z",
+        "lastObservedAt": "2026-09-12T01:21:38.801Z",
         "failureClass": null
       },
       "12": {
@@ -10814,7 +10817,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10823,7 +10826,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.340Z",
+        "lastObservedAt": "2026-09-12T01:21:38.801Z",
         "failureClass": null
       },
       "13": {
@@ -10835,7 +10838,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 2
+            "frontier": 3
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10844,7 +10847,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T00:37:42.340Z",
+        "lastObservedAt": "2026-09-12T01:21:38.801Z",
         "failureClass": null
       }
     }
