@@ -355,9 +355,10 @@ test('exposedSchemas reads the project config rather than assuming a list', () =
 });
 
 test('an anon-executable SECURITY DEFINER vault reader in an exposed schema is reported', () => {
-  // The live finding: public.get_vault_secret carried PostgreSQL's default
-  // EXECUTE TO PUBLIC from 2026-06-17, in a Data API exposed schema, reading
-  // vault.decrypted_secrets. Confirmed against production with HTTP 200.
+  // public.get_vault_secret is the shape this guards: SECURITY DEFINER over
+  // vault.decrypted_secrets in a Data API exposed schema. Production turned
+  // out to be restricted already, but nothing in the repository declared that
+  // and no checker could have told the difference either way.
   const live = clone();
   live.routines.push(secdef());
   const finding = compareDrift(live, declared(), EXPOSED).find(f => f.direction === 'LIVE_ANON_EXECUTABLE');

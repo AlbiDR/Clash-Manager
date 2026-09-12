@@ -3415,7 +3415,8 @@ $$;
 -- function to PUBLIC by default, anon inherits PUBLIC, and `public` is a Data
 -- API exposed schema, so without these lines a rebuild from this baseline
 -- makes every Vault secret anonymously readable over
--- /rest/v1/rpc/get_vault_secret. That was the live state until 2026-09-12.
+-- /rest/v1/rpc/get_vault_secret. Production is already restricted this way;
+-- these lines are what makes the baseline reproduce that rather than undo it.
 REVOKE EXECUTE ON FUNCTION public.get_vault_secret(text) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.get_vault_secret(text) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.get_vault_secret(text) FROM authenticated;

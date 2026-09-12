@@ -104,12 +104,13 @@ SELECT jsonb_pretty(jsonb_build_object(
       -- obvious: a NULL proacl means "default", and the default is PUBLIC.
       --
       -- This exists because public.get_vault_secret, a SECURITY DEFINER reader
-      -- of vault.decrypted_secrets, sat in a Data API exposed schema with that
-      -- default grant from 2026-06-17 to 2026-09-12, which made every Vault
-      -- secret readable by anyone holding the publishable key. Nothing could
-      -- see it: this snapshot captured columns, indexes, bodies and RLS, and
-      -- audit-migrations enforces RLS only for TABLES, so no checker had any
-      -- rule about function EXECUTE privileges at all.
+      -- of vault.decrypted_secrets, sits in a Data API exposed schema and the
+      -- repository never declared a REVOKE for it. Production turned out to be
+      -- restricted anyway, by a change made outside the migrations, and that is
+      -- the point: nothing here could tell those two cases apart. This snapshot
+      -- captured columns, indexes, bodies and RLS, and audit-migrations
+      -- enforces RLS only for TABLES, so no checker had any rule about
+      -- function EXECUTE privileges at all.
       'securityDefiner', p.prosecdef,
       'executableByAnon', (
         CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
