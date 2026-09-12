@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1794 [Stage 11]: Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations; 0 optimization defects found
+**Domain:** apk | **Commit:** db8cd618 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1794)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All APK wrapper settings, Service Worker caching strategies, and Vite bundle chunking configurations match optimal baselines
+**Change:** Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations; 0 optimization defects found
+**Result:** pnpm audit:apk PASS; pnpm apk:verify:source PASS
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1793 [Stage 10]: Verified APK and PWA wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security policy
 **Domain:** apk | **Commit:** 0f12bccf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1793)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
