@@ -217,11 +217,124 @@ export function render(report) {
     lines.push(`  ${String(entry.manualWritePoints).padStart(2)}  ${entry.name}`);
     for (const store of entry.manual) lines.push(`        MANUAL   ${store}`);
     for (const store of entry.derived) lines.push(`        derived  ${store}`);
+    // What the deploy will do about it on its own, so the count is read as a
+    // position on a path rather than as a standing defect.
+    for (const note of entry.pending || []) lines.push(`        pending  ${note}`);
   }
 
   lines.push('');
   lines.push(report.worst === 0
     ? 'Every credential derives from GitHub Secrets. Rotating one is a single edit.'
     : `Worst case: ${report.worst} manual edits. Until that is 0, a rotation can half-land with no error anywhere.`);
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * ============================================================================
+ * PROPAGATION TOP-UP
+ * ----------------------------------------------------------------------------
+ * The audit above says what a rotation costs. This says how to make it cost
+ * nothing, and it is deliberately ADDITIVE: it never replaces the explicit
+ * propagation the deploy already performs, it only names what those calls
+ * missed. A parse that goes wrong therefore emits an empty plan and the deploy
+ * behaves exactly as it does today, rather than silently propagating nothing.
+ *
+ * That direction matters more than it looks. An actuator driven by a parser
+ * has the same failure mode as a detector driven by one: if "found nothing"
+ * and "could not look" produce the same output, the quiet case wins and no
+ * error is ever raised. Here the quiet case is "change nothing".
+ * ============================================================================
+ */
+
+/**
+ * Credentials whose propagation cannot be turned on until the live database
+ * and the deploy are known to hold the SAME secret.
+ *
+ * Derived, not listed: a routine whose live body carries a literal is sending
+ * whatever that literal is, and the credentials at risk are exactly the ones
+ * the DECLARED version of that routine reads. Turning on propagation for one
+ * of those can put a different token on each side of the call.
+ */
+export function riskyCredentials({ liveLiteralRoutines = [], vaultReadsByRoutine = new Map() }) {
+  const risky = new Set();
+  for (const routine of liveLiteralRoutines) {
+    for (const name of vaultReadsByRoutine.get(routine) || []) risky.add(name);
+  }
+  return risky;
+}
+
+/**
+ * What the deploy should propagate beyond what it already does.
+ *
+ * `availableEnv` is the set of names that actually have a value in the running
+ * environment, or null to mean "not known, report the shape". A name with no
+ * source in GitHub Secrets is reported as blocked rather than skipped, because
+ * "nothing to propagate" and "nowhere to propagate it from" are different
+ * problems and only the second one needs a human.
+ */
+export function deriveTopUp({
+  edgeReads, vaultReads, edgePropagated, vaultPropagated,
+  availableEnv = null, risky = new Set(), aligned = null,
+}) {
+  const plan = { edge: [], vault: [], blocked: [], gated: [] };
+
+  // The risky set must not depend on the caller having supplied evidence.
+  //
+  // Deriving it only from `risky` was wrong and the simulation caught it: with
+  // no state file at all, because the probe never ran or the drift audit
+  // failed, the routine list arrives empty, nothing is derived as risky, and
+  // the top-up propagates freely. That is absence of evidence reading as
+  // safety, in the one place where being wrong costs an outage.
+  //
+  // So anything a declared routine reads out of Vault is treated as risky
+  // unless alignment is CONFIRMED. Those are exactly the credentials a live
+  // body could be carrying as a literal. A credential no routine reads cannot
+  // be caught by this and is propagated normally.
+  const atRisk = aligned === true ? new Set() : new Set([...vaultReads, ...risky]);
+
+  // A channel whose propagation could not be parsed is not evidence that
+  // nothing is propagated, so the top-up declines to act on that channel.
+  const unparsed = [];
+  if (edgePropagated === null) unparsed.push('edge');
+  if (vaultPropagated === null) unparsed.push('vault');
+
+  const consider = (name, channel, alreadyPropagated) => {
+    if (alreadyPropagated === null || alreadyPropagated.has(name)) return;
+    if (atRisk.has(name)) {
+      plan.gated.push({ name, channel, reason: aligned === false
+        ? 'the live database carries a different secret, so propagating this would put a different token on each side of the call'
+        : 'alignment between the live database and Vault is not known yet' });
+      return;
+    }
+    if (availableEnv !== null && !availableEnv.has(name)) {
+      plan.blocked.push({ name, channel, reason: 'no value is available to propagate. Add a GitHub secret of this name to make it derivable.' });
+      return;
+    }
+    plan[channel].push(name);
+  };
+
+  for (const name of [...edgeReads].sort()) {
+    if (PLATFORM_INJECTED.has(name)) continue;
+    consider(name, 'edge', edgePropagated);
+  }
+  for (const name of [...vaultReads].sort()) consider(name, 'vault', vaultPropagated);
+
+  plan.unparsed = unparsed;
+  return plan;
+}
+
+export function renderPlan(plan) {
+  const lines = ['Credential propagation top-up', ''];
+  if (plan.unparsed.length) {
+    lines.push(`  Declining to act on: ${plan.unparsed.join(', ')} (propagation could not be parsed, so nothing is changed there).`);
+  }
+  for (const channel of ['edge', 'vault']) {
+    if (plan[channel].length) lines.push(`  Will propagate to the ${channel}: ${plan[channel].join(', ')}`);
+  }
+  for (const item of plan.gated) lines.push(`  HELD BACK  ${item.name} -> ${item.channel}: ${item.reason}`);
+  for (const item of plan.blocked) lines.push(`  NO SOURCE  ${item.name} -> ${item.channel}: ${item.reason}`);
+  if (!plan.edge.length && !plan.vault.length && !plan.gated.length && !plan.blocked.length) {
+    lines.push('  Nothing to add: every credential a consumer reads is already propagated by the deploy.');
+  }
   return `${lines.join('\n')}\n`;
 }

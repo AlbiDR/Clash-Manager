@@ -51,7 +51,7 @@
  */
 
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -272,6 +272,18 @@ export async function captureCredentialAlignment({ repoRoot = REPO_ROOT, exec = 
  * Returns one sentence naming which of the two worlds we are in, because the
  * remediation differs completely between them.
  */
+export function alignmentVerdict(alignment, findings) {
+  const flagged = findings.filter(finding => finding.direction === 'LIVE_SECRET').map(finding => finding.object);
+  if (!flagged.length) return { verdict: 'aligned', flagged, matching: [] };
+  if (!alignment || alignment.status !== 'OK') return { verdict: 'unknown', flagged, matching: [] };
+  const aligned = new Set((alignment.routinesEmbeddingVaultValues || [])
+    .map(routine => `${routine.schema}.${routine.name}`.toLowerCase()));
+  const matching = flagged.filter(name => aligned.has(name));
+  if (matching.length === flagged.length) return { verdict: 'aligned', flagged, matching };
+  if (matching.length === 0) return { verdict: 'divergent', flagged, matching };
+  return { verdict: 'mixed', flagged, matching };
+}
+
 export function describeAlignment(alignment, findings) {
   const flagged = findings.filter(finding => finding.direction === 'LIVE_SECRET').map(finding => finding.object);
   if (!flagged.length) return null;
@@ -355,8 +367,19 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let report;
   if (process.argv.includes('--live')) {
     try {
+      const probe = await captureCredentialAlignment();
       report = await auditDbDrift({ snapshotObject: await captureLiveSnapshot() });
-      report.alignment = describeAlignment(await captureCredentialAlignment(), report.findings);
+      report.alignment = describeAlignment(probe, report.findings);
+
+      // Hand the verdict to the propagation step as shell variables, so the
+      // deploy needs neither jq nor a second round trip to the database.
+      // Only the literal string "aligned" unlocks anything downstream.
+      const emitAt = process.argv.indexOf('--emit-env');
+      if (emitAt !== -1 && process.argv[emitAt + 1]) {
+        const state = alignmentVerdict(probe, report.findings);
+        await writeFile(process.argv[emitAt + 1],
+          `ALIGNED=${state.verdict}\nLIVE_LITERAL_ROUTINES=${state.flagged.join(',')}\n`);
+      }
     } catch (error) {
       // A failed capture is NOT_COMPARED, never a pass. This is the whole point.
       report = { status: 'NOT_COMPARED', reason: `Live capture failed: ${error.message}`, findings: [] };

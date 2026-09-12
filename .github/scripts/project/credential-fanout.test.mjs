@@ -5,9 +5,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  computeFanout, parseEdgePropagation, parseEdgeReads, parseGithubSecrets,
-  parseVaultPropagation, parseVaultReads, parseVaultReadsByRoutine, render,
+  computeFanout, deriveTopUp, parseEdgePropagation, parseEdgeReads, parseGithubSecrets,
+  parseVaultPropagation, parseVaultReads, parseVaultReadsByRoutine, render, renderPlan,
+  riskyCredentials,
 } from './credential-fanout.mjs';
+import { parseAlignedFlag } from './audit-credential-fanout.mjs';
 
 const WORKFLOW = `
 name: deploy
@@ -127,4 +129,121 @@ test('the verdict states the target rather than only the number', () => {
     githubSecrets: new Set(['X']), edgePropagated: new Set(), vaultPropagated: new Set(),
     edgeReads: new Set(), vaultReads: new Set(),
   })), /Rotating one is a single edit/);
+});
+
+const planFor = (overrides = {}) => deriveTopUp({
+  edgeReads: parseEdgeReads([EDGE]),
+  vaultReads: parseVaultReads([MIGRATION]),
+  edgePropagated: parseEdgePropagation([WORKFLOW]),
+  vaultPropagated: parseVaultPropagation([WORKFLOW]),
+  availableEnv: new Set(['INTERNAL_BEARER_TOKEN', 'SUPABASE_ANON_KEY', 'ROYALE_API_KEYS']),
+  ...overrides,
+});
+
+const RISKY = riskyCredentials({
+  liveLiteralRoutines: ['substrate.run_job'],
+  vaultReadsByRoutine: parseVaultReadsByRoutine([MIGRATION]),
+});
+
+test('risky credentials are derived from what the flagged routine declares it reads', () => {
+  assert.deepEqual([...RISKY].sort(), ['INTERNAL_BEARER_TOKEN', 'SUPABASE_ANON_KEY']);
+  assert.equal(riskyCredentials({ liveLiteralRoutines: [], vaultReadsByRoutine: new Map() }).size, 0);
+});
+
+test('the top-up only names what the explicit calls missed', () => {
+  // aligned is explicit: with the gate safe by default, a plan that
+  // propagates anything vault-read is only reachable once alignment is known.
+  const plan = planFor({ aligned: true });
+  assert.ok(plan.edge.includes('INTERNAL_BEARER_TOKEN'), 'read at the edge and never set there');
+  assert.ok(!plan.edge.includes('ROYALE_API_KEYS'), 'already set by an explicit call');
+  assert.ok(!plan.edge.includes('SUPABASE_URL'), 'injected by the platform');
+  assert.ok(plan.vault.includes('SUPABASE_ANON_KEY'), 'read from Vault and never synced there');
+});
+
+test('a risky credential is held back until alignment is confirmed', () => {
+  // The safety argument in one test: propagating this before knowing the live
+  // database holds the same token puts a different secret on each side.
+  for (const aligned of [null, false]) {
+    const plan = planFor({ risky: RISKY, aligned });
+    assert.deepEqual(plan.edge, [], 'nothing risky may be propagated');
+    assert.deepEqual(plan.vault, []);
+    assert.equal(plan.gated.length, 2);
+  }
+});
+
+test('confirmed alignment releases exactly the held-back names', () => {
+  const plan = planFor({ risky: RISKY, aligned: true });
+  assert.deepEqual(plan.gated, []);
+  assert.ok(plan.edge.includes('INTERNAL_BEARER_TOKEN'));
+  assert.ok(plan.vault.includes('SUPABASE_ANON_KEY'));
+});
+
+test('a credential with no value to propagate is blocked, not skipped', () => {
+  // "Nothing to propagate" and "nowhere to propagate it from" are different
+  // problems, and only the second one needs a human to do something.
+  const plan = planFor({ availableEnv: new Set(['ROYALE_API_KEYS']), aligned: true });
+  assert.ok(plan.blocked.some(item => item.name === 'INTERNAL_BEARER_TOKEN'));
+  assert.match(renderPlan(plan), /NO SOURCE.*Add a GitHub secret/s);
+});
+
+test('an unparseable channel is declined rather than propagated blindly', () => {
+  // The actuator half of the detector rule: if the parse found nothing and a
+  // deploy that propagates nothing look the same, acting on that is a guess.
+  const plan = deriveTopUp({
+    edgeReads: new Set(['INTERNAL_BEARER_TOKEN']),
+    vaultReads: new Set(['INTERNAL_BEARER_TOKEN']),
+    edgePropagated: null,
+    vaultPropagated: null,
+    availableEnv: new Set(['INTERNAL_BEARER_TOKEN']),
+  });
+  assert.deepEqual(plan.edge, []);
+  assert.deepEqual(plan.vault, []);
+  assert.deepEqual(plan.unparsed.sort(), ['edge', 'vault']);
+  assert.match(renderPlan(plan), /Declining to act on/);
+});
+
+test('only the exact string "aligned" unlocks a risky name', () => {
+  // A flag that defaulted to permissive would put the whole safety argument
+  // behind a typo.
+  assert.equal(parseAlignedFlag('aligned'), true);
+  assert.equal(parseAlignedFlag('divergent'), false);
+  for (const raw of [null, undefined, '', 'unknown', 'mixed', 'ALIGNED', 'true', 'yes']) {
+    assert.notEqual(parseAlignedFlag(raw), true, `${raw} must not unlock anything`);
+  }
+});
+
+test('an empty plan renders as a no-op rather than as success', () => {
+  const plan = deriveTopUp({
+    edgeReads: new Set(), vaultReads: new Set(),
+    edgePropagated: new Set(), vaultPropagated: new Set(),
+  });
+  assert.match(renderPlan(plan), /Nothing to add/);
+});
+
+test('with NO evidence at all, nothing vault-read is propagated', () => {
+  // Regression. The gate first derived its risky set only from the routines
+  // the caller passed in, so the case where the probe never ran at all, which
+  // arrives as an empty list, held nothing back and propagated freely. A
+  // missing state file is the most likely failure in production, not the
+  // least, and it has to be the safest one.
+  const plan = planFor({ risky: new Set(), aligned: null });
+  assert.deepEqual(plan.edge, [], 'a token a declared routine reads from Vault must be held');
+  assert.deepEqual(plan.vault, []);
+  assert.equal(plan.gated.length, 2);
+  assert.ok(plan.gated.every(item => /not known yet/.test(item.reason)));
+});
+
+test('a credential no declared routine reads is not caught by the alignment gate', () => {
+  // The gate exists for tokens a live body could be carrying. A purely
+  // edge-side credential cannot be, so it must not be held hostage.
+  const plan = deriveTopUp({
+    edgeReads: new Set(['SOME_EDGE_ONLY_KEY']),
+    vaultReads: new Set(),
+    edgePropagated: new Set(),
+    vaultPropagated: new Set(),
+    availableEnv: new Set(['SOME_EDGE_ONLY_KEY']),
+    aligned: null,
+  });
+  assert.deepEqual(plan.edge, ['SOME_EDGE_ONLY_KEY']);
+  assert.deepEqual(plan.gated, []);
 });

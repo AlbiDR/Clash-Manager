@@ -120,6 +120,10 @@ jobs:
           # Required: the restricted CORS allow-list in protocol.ts reads this at runtime.
           # Must include the deployed PWA origin (e.g. https://albidr.github.io).
           ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
+          # Read out of Vault by four declared functions. Empty until a GitHub
+          # secret of this name exists; the propagation plan reports that as
+          # NO SOURCE rather than skipping it quietly.
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_REGION: "eu-west-1"
         run: |
           # 0. Context: We work from the Backend root
@@ -215,6 +219,7 @@ jobs:
             # blocking only after its output has been read and believed.
             echo "[AUDIT] Comparing the live database against the baseline..."
             node ../.github/scripts/database/audit-db-drift.mjs --live \
+              --emit-env "$RUNNER_TEMP/db-alignment.env" \
               | tee -a "$GITHUB_STEP_SUMMARY" || true
 
             # What it costs to rotate a credential, per credential. The goal is
@@ -224,6 +229,56 @@ jobs:
             echo "[AUDIT] Counting credential rotation cost..."
             node ../.github/scripts/project/audit-credential-fanout.mjs \
               | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+            # Close the gaps the audit found, but only the ones it is safe to
+            # close. This is ADDITIVE: it never replaces the explicit calls
+            # above, it only propagates what they missed. An unreadable state
+            # file, a failed parse or an unknown alignment all produce an empty
+            # list, and an empty list changes nothing.
+            #
+            # The gate is the alignment probe. The live bodies carry a literal
+            # token; if it is not the same token the deploy syncs to Vault,
+            # propagating would put a different secret on each side of the call
+            # and every cron caller would fail at once. Only the literal string
+            # "aligned" unlocks a held-back name.
+            ALIGNED=unknown
+            LIVE_LITERAL_ROUTINES=""
+            if [ -f "$RUNNER_TEMP/db-alignment.env" ]; then
+              # shellcheck disable=SC1090
+              . "$RUNNER_TEMP/db-alignment.env"
+            fi
+
+            node ../.github/scripts/project/audit-credential-fanout.mjs --emit plan \
+              --aligned "$ALIGNED" --live-literal-routines "$LIVE_LITERAL_ROUTINES" \
+              | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+            for KEY in $(node ../.github/scripts/project/audit-credential-fanout.mjs --emit edge \
+                          --aligned "$ALIGNED" --live-literal-routines "$LIVE_LITERAL_ROUTINES"); do
+              echo "[SYNC] Topping up $KEY in the edge runtime..."
+              supabase secrets set --project-ref "$PROJECT_ID" "$KEY=${!KEY}" \
+                || echo "[WARNING] Top-up for $KEY failed."
+            done
+
+            for KEY in $(node ../.github/scripts/project/audit-credential-fanout.mjs --emit vault \
+                          --aligned "$ALIGNED" --live-literal-routines "$LIVE_LITERAL_ROUTINES"); do
+              VAL="${!KEY}"
+              if [ -z "$VAL" ]; then continue; fi
+              echo "[SYNC] Topping up $KEY in Vault..."
+              ESCAPED_VAL=$(echo "$VAL" | sed "s/'/''/g")
+              supabase db query --linked "
+                SET pg_stat_statements.track_utility = off;
+                DO \$\$
+                DECLARE v_id uuid;
+                BEGIN
+                  SELECT id INTO v_id FROM vault.secrets WHERE name = '$KEY';
+                  IF v_id IS NOT NULL THEN
+                    PERFORM vault.update_secret(v_id, '$ESCAPED_VAL', '$KEY');
+                  ELSE
+                    PERFORM vault.create_secret('$ESCAPED_VAL', '$KEY');
+                  END IF;
+                END \$\$;
+              " || echo "[WARNING] Vault top-up for $KEY failed."
+            done
           else
             echo "[INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
             echo "   (Note: Database DNA was manually initialized by the Assistant)."

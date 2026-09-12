@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { auditDbDrift, compareDrift, declaredObjects, describeAlignment } from './audit-db-drift.mjs';
+import { alignmentVerdict, auditDbDrift, compareDrift, declaredObjects, describeAlignment } from './audit-db-drift.mjs';
 
 const BASELINE = `
 CREATE SCHEMA IF NOT EXISTS drivers;
@@ -257,4 +257,26 @@ test('an unreadable vault is undetermined, never an all-clear', () => {
 
 test('no credential findings means no alignment paragraph at all', () => {
   assert.equal(describeAlignment({ status: 'OK', routinesEmbeddingVaultValues: [] }, []), null);
+});
+
+test('the machine verdict never says aligned on absent evidence', () => {
+  // This string is what unlocks propagation in the deploy, so every way of
+  // not knowing has to come out as something other than "aligned".
+  assert.equal(alignmentVerdict({ status: 'UNDETERMINED' }, SECRET_FINDINGS).verdict, 'unknown');
+  assert.equal(alignmentVerdict(null, SECRET_FINDINGS).verdict, 'unknown');
+  assert.equal(alignmentVerdict({ status: 'OK', routinesEmbeddingVaultValues: [] }, SECRET_FINDINGS).verdict, 'divergent');
+  assert.equal(alignmentVerdict({
+    status: 'OK', routinesEmbeddingVaultValues: [{ schema: 'substrate', name: 'run_a' }],
+  }, SECRET_FINDINGS).verdict, 'mixed', 'a partial match is not an all-clear');
+});
+
+test('a database with no embedded literal at all is aligned by definition', () => {
+  const state = alignmentVerdict({ status: 'OK', routinesEmbeddingVaultValues: [] }, []);
+  assert.equal(state.verdict, 'aligned');
+  assert.deepEqual(state.flagged, [], 'nothing is at risk, so nothing is held back');
+});
+
+test('the verdict reports the routines the deploy must treat as risky', () => {
+  const state = alignmentVerdict({ status: 'UNDETERMINED' }, SECRET_FINDINGS);
+  assert.deepEqual(state.flagged, ['substrate.run_a', 'substrate.run_b']);
 });
