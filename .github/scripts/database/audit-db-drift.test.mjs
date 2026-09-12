@@ -280,3 +280,65 @@ test('the verdict reports the routines the deploy must treat as risky', () => {
   const state = alignmentVerdict({ status: 'UNDETERMINED' }, SECRET_FINDINGS);
   assert.deepEqual(state.flagged, ['substrate.run_a', 'substrate.run_b']);
 });
+
+const REQUIRED = new Map([
+  ['substrate.run_a', new Set(['INTERNAL_BEARER_TOKEN', 'SUPABASE_ANON_KEY'])],
+  ['substrate.run_b', new Set(['INTERNAL_BEARER_TOKEN'])],
+]);
+
+test('a credential missing from Vault makes the verdict incomplete, never aligned', () => {
+  // The measured case: SUPABASE_ANON_KEY is read by four declared functions
+  // and is not in Vault at all, so get_vault_secret returns NULL. A routine
+  // whose OTHER token does match Vault would otherwise have read as aligned
+  // while still being impossible to switch over.
+  const state = alignmentVerdict({
+    status: 'OK',
+    vaultSecretNames: [{ name: 'INTERNAL_BEARER_TOKEN', kind: 'opaque' }],
+    routinesEmbeddingVaultValues: [
+      { schema: 'substrate', name: 'run_a' }, { schema: 'substrate', name: 'run_b' },
+    ],
+  }, SECRET_FINDINGS, REQUIRED);
+  assert.equal(state.verdict, 'incomplete', 'a full literal match is still not switchable');
+  assert.deepEqual(state.missing, [{ routine: 'substrate.run_a', credential: 'SUPABASE_ANON_KEY' }]);
+});
+
+test('the incomplete case explains the NULL rather than only naming it', () => {
+  const text = describeAlignment({
+    status: 'OK',
+    vaultSecretNames: [{ name: 'INTERNAL_BEARER_TOKEN' }],
+    routinesEmbeddingVaultValues: [],
+  }, SECRET_FINDINGS, REQUIRED);
+  assert.match(text, /SUPABASE_ANON_KEY/);
+  assert.match(text, /returns NULL/);
+  assert.match(text, /before anything is switched over/);
+});
+
+test('once Vault holds everything, the ordinary verdicts resume', () => {
+  const full = [{ name: 'INTERNAL_BEARER_TOKEN' }, { name: 'SUPABASE_ANON_KEY' }];
+  assert.equal(alignmentVerdict({
+    status: 'OK', vaultSecretNames: full,
+    routinesEmbeddingVaultValues: [{ schema: 'substrate', name: 'run_a' }, { schema: 'substrate', name: 'run_b' }],
+  }, SECRET_FINDINGS, REQUIRED).verdict, 'aligned');
+  assert.equal(alignmentVerdict({
+    status: 'OK', vaultSecretNames: full, routinesEmbeddingVaultValues: [],
+  }, SECRET_FINDINGS, REQUIRED).verdict, 'divergent');
+});
+
+test('an older probe returning bare name strings is still understood', () => {
+  const state = alignmentVerdict({
+    status: 'OK',
+    vaultSecretNames: ['INTERNAL_BEARER_TOKEN', 'SUPABASE_ANON_KEY'],
+    routinesEmbeddingVaultValues: [{ schema: 'substrate', name: 'run_a' }, { schema: 'substrate', name: 'run_b' }],
+  }, SECRET_FINDINGS, REQUIRED);
+  assert.equal(state.verdict, 'aligned', 'the shape changed, the meaning did not');
+});
+
+test('declaredObjects exposes what each routine needs from Vault', () => {
+  const parsed = declaredObjects(`
+CREATE OR REPLACE FUNCTION substrate.run_job() RETURNS void LANGUAGE plpgsql AS $$
+BEGIN PERFORM substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
+      PERFORM substrate.get_vault_secret('SUPABASE_ANON_KEY'); END; $$;
+`);
+  assert.deepEqual([...parsed.vaultReadsByRoutine.get('substrate.run_job')].sort(),
+    ['INTERNAL_BEARER_TOKEN', 'SUPABASE_ANON_KEY']);
+});

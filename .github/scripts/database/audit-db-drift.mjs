@@ -55,6 +55,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+
+import { parseVaultReadsByRoutine } from '../project/credential-fanout.mjs';
 import { promisify } from 'node:util';
 
 import { identifyDefinition } from './audit-migrations.mjs';
@@ -110,7 +112,7 @@ export function declaredObjects(baselineSource) {
     if (match) rls.add(match[1].replaceAll('"', '').toLowerCase());
   }
 
-  return { tables, indexes, routines, rls, vaultRoutines };
+  return { tables, indexes, routines, rls, vaultRoutines, vaultReadsByRoutine: parseVaultReadsByRoutine([baselineSource]) };
 }
 
 /**
@@ -272,21 +274,50 @@ export async function captureCredentialAlignment({ repoRoot = REPO_ROOT, exec = 
  * Returns one sentence naming which of the two worlds we are in, because the
  * remediation differs completely between them.
  */
-export function alignmentVerdict(alignment, findings) {
+export function alignmentVerdict(alignment, findings, requiredByRoutine = new Map()) {
   const flagged = findings.filter(finding => finding.direction === 'LIVE_SECRET').map(finding => finding.object);
-  if (!flagged.length) return { verdict: 'aligned', flagged, matching: [] };
-  if (!alignment || alignment.status !== 'OK') return { verdict: 'unknown', flagged, matching: [] };
+  if (!flagged.length) return { verdict: 'aligned', flagged, matching: [], missing: [] };
+  if (!alignment || alignment.status !== 'OK') return { verdict: 'unknown', flagged, matching: [], missing: [] };
+
+  // Vault has to actually CONTAIN everything the declared body reads.
+  //
+  // Checking only "the body embeds some value that is in Vault" was necessary
+  // and not sufficient, and the gap was not hypothetical: SUPABASE_ANON_KEY is
+  // read by four declared functions and is not in Vault at all, so
+  // get_vault_secret returns NULL and those definitions would send a null
+  // apikey. A routine embedding a token that DOES match Vault would otherwise
+  // have been called aligned while still being impossible to switch over.
+  // That is the same mistake as before, one level up: a partial check reading
+  // as a whole answer.
+  const present = new Set((alignment.vaultSecretNames || [])
+    .map(entry => (typeof entry === 'string' ? entry : entry?.name))
+    .filter(Boolean));
+  const missing = [];
+  for (const routine of flagged) {
+    for (const credential of requiredByRoutine.get(routine) || []) {
+      if (!present.has(credential)) missing.push({ routine, credential });
+    }
+  }
+
   const aligned = new Set((alignment.routinesEmbeddingVaultValues || [])
     .map(routine => `${routine.schema}.${routine.name}`.toLowerCase()));
   const matching = flagged.filter(name => aligned.has(name));
-  if (matching.length === flagged.length) return { verdict: 'aligned', flagged, matching };
-  if (matching.length === 0) return { verdict: 'divergent', flagged, matching };
-  return { verdict: 'mixed', flagged, matching };
+
+  if (missing.length) return { verdict: 'incomplete', flagged, matching, missing };
+  if (matching.length === flagged.length) return { verdict: 'aligned', flagged, matching, missing };
+  if (matching.length === 0) return { verdict: 'divergent', flagged, matching, missing };
+  return { verdict: 'mixed', flagged, matching, missing };
 }
 
-export function describeAlignment(alignment, findings) {
+export function describeAlignment(alignment, findings, requiredByRoutine = new Map()) {
   const flagged = findings.filter(finding => finding.direction === 'LIVE_SECRET').map(finding => finding.object);
   if (!flagged.length) return null;
+
+  const state = alignmentVerdict(alignment, findings, requiredByRoutine);
+  if (state.verdict === 'incomplete') {
+    const names = [...new Set(state.missing.map(item => item.credential))].sort();
+    return `Vault does not contain ${names.join(', ')}, which the declared bodies read. get_vault_secret returns NULL for a name that is not there, so applying the declared definitions would send a null value and the callers would fail. Put the missing secret in Vault before anything is switched over.`;
+  }
   if (!alignment || alignment.status !== 'OK') {
     return `Alignment with Vault could not be determined (${alignment?.reason || 'not probed'}), so it is NOT known whether applying the declared definitions would keep the callers working.`;
   }
@@ -330,7 +361,10 @@ export async function auditDbDrift({ repoRoot = REPO_ROOT, snapshotPath, snapsho
   }
 
   const findings = compareDrift(snapshot, declared);
-  return { status: findings.length ? 'DRIFT' : 'MATCH', reason: null, findings };
+  return {
+    status: findings.length ? 'DRIFT' : 'MATCH', reason: null, findings,
+    requiredByRoutine: declared.vaultReadsByRoutine || new Map(),
+  };
 }
 
 function render(report) {
@@ -373,7 +407,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     try {
       const probe = await captureCredentialAlignment();
       report = await auditDbDrift({ snapshotObject: await captureLiveSnapshot() });
-      report.alignment = describeAlignment(probe, report.findings);
+      report.alignment = describeAlignment(probe, report.findings, report.requiredByRoutine);
       report.vaultContents = probe.vaultSecretNames || [];
 
       // Hand the verdict to the propagation step as shell variables, so the
@@ -381,7 +415,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       // Only the literal string "aligned" unlocks anything downstream.
       const emitAt = process.argv.indexOf('--emit-env');
       if (emitAt !== -1 && process.argv[emitAt + 1]) {
-        const state = alignmentVerdict(probe, report.findings);
+        const state = alignmentVerdict(probe, report.findings, report.requiredByRoutine);
         await writeFile(process.argv[emitAt + 1],
           `ALIGNED=${state.verdict}\nLIVE_LITERAL_ROUTINES=${state.flagged.join(',')}\n`);
       }
