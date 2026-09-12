@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1791 [Stage 8]: Bumped p-limit from 7.3.1 to 7.3.2 and updated major version watchlist
+**Domain:** dependencies | **Commit:** 52d06188 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1791)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, Backend/package.json, package.json, pnpm-lock.yaml
+**Why:** Patch update for p-limit dependency and updated Tier 2 watchlist
+**Change:** Bumped p-limit from 7.3.1 to 7.3.2 and updated major version watchlist
+**Result:** pnpm test passed 195 test files (1829 tests in Frontend-PWA, 25 test files in Backend), pnpm run audit:version reported 0 drift violations
+**Nudges:** 1
+
+
 ### [2026-09-12] PR #1790 [Stage 7]: Audit complete: no version drift or catalog violations detected
 **Domain:** versioning | **Commit:** 96bd6989 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1790)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
