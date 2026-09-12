@@ -10575,7 +10575,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.023Z",
+        "lastObservedAt": "2026-09-12T04:58:32.953Z",
         "failureClass": null
       },
       "2": {
@@ -10612,7 +10612,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.023Z",
+        "lastObservedAt": "2026-09-12T04:58:32.954Z",
         "failureClass": null
       },
       "3": {
@@ -10655,7 +10655,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.023Z",
+        "lastObservedAt": "2026-09-12T04:58:32.954Z",
         "failureClass": null
       },
       "4": {
@@ -10695,7 +10695,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.024Z",
+        "lastObservedAt": "2026-09-12T04:58:32.954Z",
         "failureClass": null
       },
       "5": {
@@ -10735,7 +10735,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.024Z",
+        "lastObservedAt": "2026-09-12T04:58:32.955Z",
         "failureClass": null
       },
       "6": {
@@ -10743,7 +10743,7 @@
         "stage": 6,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "notReached": {
@@ -10751,17 +10751,36 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1789,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1789",
           "headRef": "nightly/stage-6-documentation-tsdoc-bdd8f7cc-7131340631644746882",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-12/stage-6/pr-1789",
+          "session": {
+            "id": "7131340631644746882",
+            "name": "sessions/7131340631644746882",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T04:06:28.044053171Z",
+            "updateTime": "2026-09-12T04:15:39.258255Z",
+            "lifetimeMinutes": 9.2
+          },
+          "run": {
+            "started": "2026-09-12T04:08:00Z",
+            "terminated": "2026-09-12T04:12:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1789,
+            "verdict": "OK",
+            "ok": true,
+            "repairedFrom": "AD_LIBBED"
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.024Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-12T04:58:32.955Z",
+        "failureClass": null
       },
       "7": {
         "date": "2026-09-12",
@@ -10781,7 +10800,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.025Z",
+        "lastObservedAt": "2026-09-12T04:58:32.955Z",
         "failureClass": null
       },
       "8": {
@@ -10802,7 +10821,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.025Z",
+        "lastObservedAt": "2026-09-12T04:58:32.956Z",
         "failureClass": null
       },
       "9": {
@@ -10823,7 +10842,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.025Z",
+        "lastObservedAt": "2026-09-12T04:58:32.956Z",
         "failureClass": null
       },
       "10": {
@@ -10844,7 +10863,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.026Z",
+        "lastObservedAt": "2026-09-12T04:58:32.956Z",
         "failureClass": null
       },
       "11": {
@@ -10865,7 +10884,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.026Z",
+        "lastObservedAt": "2026-09-12T04:58:32.957Z",
         "failureClass": null
       },
       "12": {
@@ -10886,7 +10905,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.026Z",
+        "lastObservedAt": "2026-09-12T04:58:32.957Z",
         "failureClass": null
       },
       "13": {
@@ -10907,7 +10926,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T04:16:13.027Z",
+        "lastObservedAt": "2026-09-12T04:58:32.958Z",
         "failureClass": null
       }
     }
