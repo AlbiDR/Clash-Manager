@@ -10539,6 +10539,314 @@
         "lastObservedAt": "2026-09-11T23:22:13.857Z",
         "failureClass": null
       }
+    },
+    "2026-09-12": {
+      "1": {
+        "date": "2026-09-12",
+        "stage": 1,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-09-11/stage-1/pr-1784",
+          "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
+          "session": {
+            "id": "10450230433938406146",
+            "name": "sessions/10450230433938406146",
+            "state": "COMPLETED",
+            "createTime": "2026-09-11T23:10:03.532306952Z",
+            "updateTime": "2026-09-11T23:20:08.294517Z",
+            "lifetimeMinutes": 10.1
+          },
+          "run": {
+            "started": "2026-09-11T23:12:00Z",
+            "terminated": "2026-09-11T23:18:00Z",
+            "durationMinutes": 6
+          },
+          "body": {
+            "pr": 1784,
+            "verdict": "OK",
+            "ok": true,
+            "repairedFrom": "AD_LIBBED"
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.336Z",
+        "failureClass": null
+      },
+      "2": {
+        "date": "2026-09-12",
+        "stage": 2,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-09-12/stage-2/pr-1785",
+          "coverageLog": ".github/nightly-logs/02-verification-coverage.log",
+          "session": {
+            "id": "9656032296743783578",
+            "name": "sessions/9656032296743783578",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T00:10:56.284107360Z",
+            "updateTime": "2026-09-12T00:35:09.797459Z",
+            "lifetimeMinutes": 24.2
+          },
+          "run": {
+            "started": "2026-09-12T00:12:00Z",
+            "terminated": "2026-09-12T00:31:00Z",
+            "durationMinutes": 19
+          },
+          "body": {
+            "pr": 1785,
+            "verdict": "OK",
+            "ok": true
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.336Z",
+        "failureClass": null
+      },
+      "3": {
+        "date": "2026-09-12",
+        "stage": 3,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 2,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.337Z",
+        "failureClass": null
+      },
+      "4": {
+        "date": "2026-09-12",
+        "stage": 4,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.337Z",
+        "failureClass": null
+      },
+      "5": {
+        "date": "2026-09-12",
+        "stage": 5,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.337Z",
+        "failureClass": null
+      },
+      "6": {
+        "date": "2026-09-12",
+        "stage": 6,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.338Z",
+        "failureClass": null
+      },
+      "7": {
+        "date": "2026-09-12",
+        "stage": 7,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.338Z",
+        "failureClass": null
+      },
+      "8": {
+        "date": "2026-09-12",
+        "stage": 8,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.338Z",
+        "failureClass": null
+      },
+      "9": {
+        "date": "2026-09-12",
+        "stage": 9,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.339Z",
+        "failureClass": null
+      },
+      "10": {
+        "date": "2026-09-12",
+        "stage": 10,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.339Z",
+        "failureClass": null
+      },
+      "11": {
+        "date": "2026-09-12",
+        "stage": 11,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.339Z",
+        "failureClass": null
+      },
+      "12": {
+        "date": "2026-09-12",
+        "stage": 12,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.340Z",
+        "failureClass": null
+      },
+      "13": {
+        "date": "2026-09-12",
+        "stage": 13,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "EXPECTED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T00:37:42.340Z",
+        "failureClass": null
+      }
     }
   }
 }
