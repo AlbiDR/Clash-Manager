@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-12
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-12] PR #1797 [Stage 1]: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+**Domain:** hardening | **Commit:** 607fba65 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1797)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** All endpoint ingress controls, state persistence annotations, and Valibot validation layers are fully saturated
+**Change:** Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+**Result:** pnpm test PASS (1829 tests passed)
+**Nudges:** 0
+
 ### [2026-09-12] PR #1796 [Stage 12]: APK UX audit PASS with 0 violations across 75 files examined; 10 UX categories checked
 **Domain:** ux | **Commit:** 5d001644 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1796)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
