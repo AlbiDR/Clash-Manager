@@ -211,7 +211,16 @@ export function compareDrift(snapshot, declared) {
  * fallback because deploy-supabase.yml links from Backend/.
  */
 export async function captureLiveSnapshot({ repoRoot = REPO_ROOT, exec = run } = {}) {
-  const raw = await readFile(path.join(repoRoot, '.github/scripts/database/db-drift-snapshot.sql'), 'utf8');
+  return runQueryFile('db-drift-snapshot.sql', 'snapshot', { repoRoot, exec });
+}
+
+/**
+ * Runs one read-only query file through the Supabase CLI and returns its single
+ * JSON column. One helper for both queries, so the CLI quirks below are worked
+ * around in exactly one place.
+ */
+export async function runQueryFile(fileName, column, { repoRoot = REPO_ROOT, exec = run } = {}) {
+  const raw = await readFile(path.join(repoRoot, '.github/scripts/database', fileName), 'utf8');
   // Whole-line SQL comments are stripped before the query is handed to the CLI.
   // The file opens with its licence header, so the argument began with `--` and
   // the CLI parsed the entire query as a flag: "UnrecognizedOption:
@@ -235,11 +244,52 @@ export async function captureLiveSnapshot({ repoRoot = REPO_ROOT, exec = run } =
   if (stdout === null) throw lastError ?? new Error('no linked Supabase project found');
 
   const rows = parseRows(stdout);
-  const value = rows[0] && (rows[0].snapshot ?? rows[0].jsonb_pretty ?? Object.values(rows[0])[0]);
-  if (!value) throw new Error('snapshot query returned no snapshot column');
+  const value = rows[0] && (rows[0][column] ?? rows[0].jsonb_pretty ?? Object.values(rows[0])[0]);
+  if (!value) throw new Error(`${fileName} returned no ${column} column`);
   // jsonb_pretty yields text; a bare jsonb column yields an object. Accept both
   // rather than depending on which the CLI chose today.
   return typeof value === 'string' ? JSON.parse(value) : value;
+}
+
+/**
+ * Whether the literal in a live routine body is the value currently in Vault.
+ *
+ * Isolated from the drift audit on purpose. It reads vault.decrypted_secrets,
+ * which is the one part of this that can fail on privileges, and losing the
+ * drift findings because a follow-up question could not be answered would be a
+ * strictly worse trade. A failure here degrades to "undetermined" and says so.
+ */
+export async function captureCredentialAlignment({ repoRoot = REPO_ROOT, exec = run } = {}) {
+  try {
+    return { status: 'OK', ...(await runQueryFile('credential-alignment.sql', 'alignment', { repoRoot, exec })) };
+  } catch (error) {
+    return { status: 'UNDETERMINED', reason: error.message, vaultSecretNames: [], routinesEmbeddingVaultValues: [] };
+  }
+}
+
+/**
+ * Reads the alignment probe against the routines the drift audit flagged.
+ * Returns one sentence naming which of the two worlds we are in, because the
+ * remediation differs completely between them.
+ */
+export function describeAlignment(alignment, findings) {
+  const flagged = findings.filter(finding => finding.direction === 'LIVE_SECRET').map(finding => finding.object);
+  if (!flagged.length) return null;
+  if (!alignment || alignment.status !== 'OK') {
+    return `Alignment with Vault could not be determined (${alignment?.reason || 'not probed'}), so it is NOT known whether applying the declared definitions would keep the callers working.`;
+  }
+
+  const aligned = new Set((alignment.routinesEmbeddingVaultValues || [])
+    .map(routine => `${routine.schema}.${routine.name}`.toLowerCase()));
+  const matching = flagged.filter(name => aligned.has(name));
+
+  if (matching.length === flagged.length) {
+    return 'Every flagged body embeds the value currently in Vault. The literal and the deployed secret are the same, so applying the declared definitions changes where the token is read from and not which token is sent, and the callers keep working.';
+  }
+  if (matching.length === 0) {
+    return 'No flagged body embeds a value currently in Vault, so the live literal is a DIFFERENT secret from the one the deploy syncs. Applying the declared definitions would make the database start sending the Vault token, and every caller would fail at once unless the edge runtime is updated in the same change.';
+  }
+  return `${matching.length} of ${flagged.length} flagged bodies embed the current Vault value, so the live database is running a mix. Each routine has to be handled on its own evidence.`;
 }
 
 export async function auditDbDrift({ repoRoot = REPO_ROOT, snapshotPath, snapshotObject = null, readFileImpl = readFile } = {}) {
@@ -296,6 +346,7 @@ function render(report) {
     lines.push('', titles[direction] || direction);
     for (const item of items) lines.push(`  ${item.kind} ${item.object}\n      ${item.consequence}`);
   }
+  if (report.alignment) lines.push('', 'ALIGNMENT WITH VAULT', `  ${report.alignment}`);
   return `${lines.join('\n')}\n`;
 }
 
@@ -305,6 +356,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (process.argv.includes('--live')) {
     try {
       report = await auditDbDrift({ snapshotObject: await captureLiveSnapshot() });
+      report.alignment = describeAlignment(await captureCredentialAlignment(), report.findings);
     } catch (error) {
       // A failed capture is NOT_COMPARED, never a pass. This is the whole point.
       report = { status: 'NOT_COMPARED', reason: `Live capture failed: ${error.message}`, findings: [] };

@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { auditDbDrift, compareDrift, declaredObjects } from './audit-db-drift.mjs';
+import { auditDbDrift, compareDrift, declaredObjects, describeAlignment } from './audit-db-drift.mjs';
 
 const BASELINE = `
 CREATE SCHEMA IF NOT EXISTS drivers;
@@ -209,4 +209,52 @@ test('a secret finding never carries the body, only the rule that fired', () => 
   });
   const finding = compareDrift(live, declared()).find(f => f.object === 'drivers.leaky');
   assert.doesNotMatch(JSON.stringify(finding), /eyJ/);
+});
+
+const SECRET_FINDINGS = [
+  { direction: 'LIVE_SECRET', object: 'substrate.run_a' },
+  { direction: 'LIVE_SECRET', object: 'substrate.run_b' },
+  { direction: 'LIVE_NOT_DECLARED', object: 'drivers.idx_x' },
+];
+
+test('alignment says the callers survive when the literal IS the Vault value', () => {
+  const text = describeAlignment({
+    status: 'OK',
+    routinesEmbeddingVaultValues: [
+      { schema: 'substrate', name: 'run_a' }, { schema: 'substrate', name: 'run_b' },
+    ],
+  }, SECRET_FINDINGS);
+  assert.match(text, /same, so applying the declared definitions/);
+  assert.match(text, /callers keep working/);
+});
+
+test('alignment warns when the live literal is a DIFFERENT secret', () => {
+  // The case that decides whether this is a one-step or a coordinated change:
+  // switching to Vault would make the database send a token the edge runtime
+  // has never been given.
+  const text = describeAlignment({ status: 'OK', routinesEmbeddingVaultValues: [] }, SECRET_FINDINGS);
+  assert.match(text, /DIFFERENT secret/);
+  assert.match(text, /every caller would fail at once/);
+});
+
+test('a mixed live database is reported as mixed, not rounded to either side', () => {
+  const text = describeAlignment({
+    status: 'OK', routinesEmbeddingVaultValues: [{ schema: 'substrate', name: 'run_a' }],
+  }, SECRET_FINDINGS);
+  assert.match(text, /1 of 2/);
+  assert.match(text, /on its own evidence/);
+});
+
+test('an unreadable vault is undetermined, never an all-clear', () => {
+  // Same discipline as NOT_COMPARED: the probe reads vault.decrypted_secrets,
+  // which is the one privileged read here, and "it threw" must not render as
+  // "the values agree".
+  const text = describeAlignment({ status: 'UNDETERMINED', reason: 'permission denied' }, SECRET_FINDINGS);
+  assert.match(text, /could not be determined/);
+  assert.match(text, /permission denied/);
+  assert.doesNotMatch(text, /keep working/);
+});
+
+test('no credential findings means no alignment paragraph at all', () => {
+  assert.equal(describeAlignment({ status: 'OK', routinesEmbeddingVaultValues: [] }, []), null);
 });

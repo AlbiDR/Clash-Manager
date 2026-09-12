@@ -216,6 +216,14 @@ jobs:
             echo "[AUDIT] Comparing the live database against the baseline..."
             node ../.github/scripts/database/audit-db-drift.mjs --live \
               | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+            # What it costs to rotate a credential, per credential. The goal is
+            # that GitHub Secrets is the only place a human edits and every
+            # other copy is derived, and nothing measured whether that held.
+            # Reads NAMES out of tracked source only; it cannot read a value.
+            echo "[AUDIT] Counting credential rotation cost..."
+            node ../.github/scripts/project/audit-credential-fanout.mjs \
+              | tee -a "$GITHUB_STEP_SUMMARY" || true
           else
             echo "[INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
             echo "   (Note: Database DNA was manually initialized by the Assistant)."
