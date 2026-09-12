@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1785 [Stage 2]: Expanded useProgressiveList unit test coverage
+**Domain:** verification | **Commit:** f66f6315 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1785)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+**Why:** Recent-Change Priority: covered useProgressiveList idle deadline fallback, timer state reset upon completion, and mid-progressive render refresh scheduling
+**Change:** Expanded useProgressiveList unit test coverage
+**Result:** Added 3 edge-case tests in useProgressiveList.spec.ts. Verified test suite pass (1829 tests passed across 195 files). Proven all 3 tests fail under mutation (hasIdleDeadline inversion, timer reset removal, and mid-render schedule bypass).
+**Nudges:** 0
+
+
 ### [2026-09-11] PR #1784 [Stage 1]: Calibration CLEAN pass: audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
 **Domain:** hardening | **Commit:** bb6fd936 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1784)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
