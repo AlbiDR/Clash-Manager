@@ -87,13 +87,20 @@ export function declaredObjects(baselineSource) {
   const indexes = new Set();
   const routines = new Set();
   const rls = new Set();
+  // Routines the baseline declares as resolving their credential at runtime.
+  // Used to tell "the live body is behind the repository" apart from "the
+  // repository never had a safe version", which call for opposite actions.
+  const vaultRoutines = new Set();
 
   for (const statement of parsed.statements) {
     const definition = identifyDefinition(statement);
     if (!definition) continue;
     if (definition.kind === 'TABLE') tables.add(definition.name);
     else if (definition.kind === 'INDEX') indexes.add(definition.name.replace(/^.*\./, ''));
-    else if (definition.kind === 'FUNCTION') routines.add(definition.name);
+    else if (definition.kind === 'FUNCTION') {
+      routines.add(definition.name);
+      if (VAULT_LOOKUP.test(statement.executable)) vaultRoutines.add(definition.name.replace(/\(.*$/, ''));
+    }
   }
 
   // RLS is an ALTER, not a CREATE, so identifyDefinition does not model it.
@@ -103,8 +110,14 @@ export function declaredObjects(baselineSource) {
     if (match) rls.add(match[1].replaceAll('"', '').toLowerCase());
   }
 
-  return { tables, indexes, routines, rls };
+  return { tables, indexes, routines, rls, vaultRoutines };
 }
+
+/**
+ * A credential resolved at runtime rather than carried as a literal. Both
+ * sides test for the call, never for the value, so nothing here can leak one.
+ */
+const VAULT_LOOKUP = /get_vault_secret\s*\(/i;
 
 const qualify = (schema, name) => `${schema}.${name}`.toLowerCase();
 
@@ -161,12 +174,31 @@ export function compareDrift(snapshot, declared) {
     }
   }
 
-  // Secrets in routine bodies, which no repository-side audit can ever see
-  // because the body is not in a tracked file.
+  // Secrets in routine bodies. The live body is what runs, and it is not
+  // necessarily what the repository declares, so this reports the live fact
+  // and then says which of the two remediations applies.
+  //
+  // The first production run wrote "it is in no tracked file, so no
+  // repository audit can detect it" for three substrate.run_* functions that
+  // are in fact declared in master_migration.sql, reading from Vault. The
+  // claim was wrong and it pointed at the wrong fix: the safe version already
+  // existed in the repository and had simply never reached the database.
   for (const routine of snapshot.routines || []) {
-    if (routine.hasEmbeddedSecret) {
-      note('LIVE_SECRET', 'FUNCTION', qualify(routine.schema, routine.name), 'This function body contains a credential-shaped literal. It is in the database and in no tracked file, so no repository audit can detect it. Rotate the credential and move it to a secret.');
+    if (!routine.hasEmbeddedSecret) continue;
+    const name = qualify(routine.schema, routine.name);
+    const rules = Array.isArray(routine.secretRules) && routine.secretRules.length
+      ? ` Matched by: ${routine.secretRules.join(', ')}.`
+      : '';
+
+    // The live body carries a literal while the baseline declares the same
+    // function resolving its credential at runtime. The database is running
+    // an older definition than the repository believes is deployed.
+    if (declared.vaultRoutines?.has(name) && routine.usesVaultLookup === false) {
+      note('LIVE_SECRET', 'FUNCTION', name, `The live body carries a credential-shaped literal, but the baseline declares this function resolving its credential at runtime. The database is running an older definition than the repository declares. Rotate the credential, then apply the declared definition.${rules}`);
+      continue;
     }
+
+    note('LIVE_SECRET', 'FUNCTION', name, `This function body contains a credential-shaped literal. Rotate the credential and resolve it at runtime instead of embedding it.${rules}`);
   }
 
   return findings;
@@ -256,7 +288,7 @@ function render(report) {
   const titles = {
     DECLARED_NOT_LIVE: 'DECLARED IN THE BASELINE, ABSENT LIVE (a rebuild produces a database that does not work)',
     LIVE_NOT_DECLARED: 'LIVE, NEVER DECLARED (a rebuild from the baseline silently loses these)',
-    LIVE_SECRET: 'CREDENTIAL IN A ROUTINE BODY (invisible to every repository-side audit)',
+    LIVE_SECRET: 'CREDENTIAL IN A LIVE ROUTINE BODY',
   };
 
   const lines = [`Database drift audit: DRIFT (${report.findings.length} findings)`];

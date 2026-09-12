@@ -146,3 +146,67 @@ test('an older snapshot without the field degrades to the name heuristic', () =>
   live.indexes.push({ schema: 'drivers', table: 'members', name: 'members_new_pkey1' });
   assert.deepEqual(compareDrift(live, declared()), []);
 });
+
+test('a live body behind a vault-reading baseline names the right remediation', () => {
+  // The first production run said "it is in no tracked file, so no repository
+  // audit can detect it" about three functions that master_migration.sql
+  // declares reading from Vault. Both halves were wrong, and the sentence
+  // pointed at writing a fix that already existed.
+  const baseline = `${BASELINE}
+CREATE OR REPLACE FUNCTION drivers.run_job() RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM net.http_post(url := 'https://x', headers := jsonb_build_object(
+    'Authorization', 'Bearer ' || drivers.get_vault_secret('TOKEN')));
+END;
+$$;
+`;
+  const live = clone();
+  live.routines.push({
+    schema: 'drivers', name: 'run_job',
+    hasEmbeddedSecret: true, usesVaultLookup: false, secretRules: ['bearer'],
+  });
+  const finding = compareDrift(live, declaredObjects(baseline)).find(f => f.direction === 'LIVE_SECRET');
+  assert.ok(finding, 'the credential must still be reported');
+  assert.match(finding.consequence, /older definition than the repository declares/);
+  assert.match(finding.consequence, /apply the declared definition/);
+  assert.doesNotMatch(finding.consequence, /no tracked file/);
+  assert.match(finding.consequence, /Matched by: bearer/, 'the report must say which rule fired');
+});
+
+test('a routine the baseline never declared safely gets the rotate-and-move wording', () => {
+  const live = clone();
+  live.routines.push({
+    schema: 'drivers', name: 'legacy_job',
+    hasEmbeddedSecret: true, usesVaultLookup: false, secretRules: ['jwt'],
+  });
+  const finding = compareDrift(live, declared()).find(f => f.object === 'drivers.legacy_job');
+  assert.match(finding.consequence, /resolve it at runtime instead of embedding it/);
+  assert.doesNotMatch(finding.consequence, /older definition/, 'nothing declared, so there is nothing to apply');
+});
+
+test('declaredObjects records which routines the baseline resolves at runtime', () => {
+  const baseline = `
+CREATE OR REPLACE FUNCTION drivers.safe() RETURNS void LANGUAGE plpgsql AS $$
+BEGIN PERFORM drivers.get_vault_secret('TOKEN'); END; $$;
+CREATE OR REPLACE FUNCTION drivers.plain() RETURNS void LANGUAGE plpgsql AS $$
+BEGIN PERFORM 1; END; $$;
+`;
+  const parsed = declaredObjects(baseline);
+  assert.ok(parsed.vaultRoutines.has('drivers.safe'));
+  assert.ok(!parsed.vaultRoutines.has('drivers.plain'));
+});
+
+test('a secret finding never carries the body, only the rule that fired', () => {
+  // The whole point of flagging rather than extracting: the report travels to
+  // a step summary in a PUBLIC repository.
+  const live = clone();
+  live.routines.push({
+    schema: 'drivers', name: 'leaky',
+    hasEmbeddedSecret: true, usesVaultLookup: false,
+    secretRules: ['jwt'],
+    // A snapshot must never carry this, but if one ever did, the finding
+    // still must not repeat it.
+  });
+  const finding = compareDrift(live, declared()).find(f => f.object === 'drivers.leaky');
+  assert.doesNotMatch(JSON.stringify(finding), /eyJ/);
+});

@@ -65,8 +65,19 @@ SELECT jsonb_pretty(jsonb_build_object(
 
   -- Routines, with a flag for a credential-shaped literal in the body. A
   -- hardcoded API credential was reported inside a function body on
-  -- 2026-09-06; it is in no tracked file, so no repository-side audit can
-  -- ever see it. The body itself is never emitted, only the finding.
+  -- 2026-09-06. The body itself is NEVER emitted, only the finding.
+  --
+  -- secretRules names which rule fired, and usesVaultLookup is a positive
+  -- control. Without them a finding cannot be told apart from a false
+  -- positive without a round trip: the first production run flagged three
+  -- substrate.run_* functions whose TRACKED definitions read from Vault and
+  -- match none of these rules, and answering "is the detector wrong, or is
+  -- the live body behind the repository?" needed a throwaway Postgres. The
+  -- two extra fields answer it in the report itself.
+  --
+  -- usesVaultLookup is deliberately a call-site test, not another secret
+  -- rule: a body that resolves its credential at runtime cannot also be
+  -- carrying it as a literal, so the two fields disagreeing is the signal.
   'routines', (
     SELECT coalesce(jsonb_agg(jsonb_build_object(
       'schema', n.nspname,
@@ -75,7 +86,17 @@ SELECT jsonb_pretty(jsonb_build_object(
         p.prosrc ~ '(?i)(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})'
         OR p.prosrc ~ '(?i)(bearer\s+[A-Za-z0-9._-]{20,})'
         OR p.prosrc ~ '(?i)(service_role|anon)_?key\s*(:=|=)\s*''[^'']{20,}'''
-      )
+      ),
+      'secretRules', (
+        SELECT coalesce(jsonb_agg(rule ORDER BY rule), '[]'::jsonb)
+        FROM (VALUES
+          ('jwt',     p.prosrc ~ '(?i)(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})'),
+          ('bearer',  p.prosrc ~ '(?i)(bearer\s+[A-Za-z0-9._-]{20,})'),
+          ('rolekey', p.prosrc ~ '(?i)(service_role|anon)_?key\s*(:=|=)\s*''[^'']{20,}''')
+        ) AS r(rule, fired)
+        WHERE r.fired
+      ),
+      'usesVaultLookup', (p.prosrc ~ '(?i)get_vault_secret\s*\(')
     ) ORDER BY n.nspname, p.proname), '[]'::jsonb)
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
