@@ -31,7 +31,7 @@ on:
       - ".github/scripts/nightly/**"
       - ".github/scripts/project/**"
       - ".github/scripts/database/**"
-      - ".github/scripts/android/audit-apk-ux*"
+      - ".github/scripts/android/**"
       - ".github/nightly-prompts/**"
       - ".github/nightly-config/**"
       - ".github/workflows/control-plane-tests.yml"

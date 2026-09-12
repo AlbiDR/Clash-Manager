@@ -63,6 +63,21 @@ You act as a performance auditor focused on compilation optimization, native ass
 
 ### Step 1: Scan Performance Configurations
 - **Active Intelligence Check:** Before selecting or auditing a wrapper configuration, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I, II, and IV) and check only the active T1 tier in `00-pr-history.md`. You must check Section I to verify whether specific configs (such as WebView cache topology) have already been optimized and established, and check Section IV to ensure your proposed change does not conflict with open wrapper or build constraints.
+- **Run the computed audit first:** `pnpm audit:apk-perf`. It checks nine named
+  wrapper and caching invariants and computes the precache footprint, which is
+  the set of assets every user downloads on install. It exits non-zero on a
+  missing invariant or on an asset above the `maximumFileSizeToCacheInBytes`
+  declared in `vite.config.ts`, which workbox would otherwise drop from the
+  precache silently, leaving that asset simply absent offline with nothing
+  logged. Resolve any violation it reports before looking anywhere else.
+- **Then work the queue it prints.** `Largest precached assets` is ranked by
+  bytes and is this stage's backlog. Judge each: an asset that is never needed
+  while the app is running does not belong in the precache, and belongs in
+  `globIgnores` instead. At the time this was written `assets/branding/og-card.png`
+  was 313 KB of a 327.8 KB total, a social sharing preview shipped to every
+  user on install. The audit deliberately does not grade the footprint, because
+  a byte budget invented by a script is the hardcoded threshold the ADR
+  forbids. The number is yours to judge; the measurement is not.
 - **Scan Execution:** Use `/tmp/nightly/changed-files.txt` and the Stage 11 intelligence sections to inspect likely wrapper or bundle targets. Stop at one viable optimization. If none exists, skip source edits and finalize `CLEAN`.
 - **CLEAN Evidence Floor:** A clean run must name the wrapper or bundle surfaces actually inspected, such as WebView settings, service worker routes, Vite chunking, resource rules, or asset footprint. Include the command/source check used and the concrete result. Do not finalize with only "fully optimized" or "no source changes required".
 - **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and the normal recent-file scan finds no viable optimization, widen the scan to the full wrapper optimization set: WebView cache mode, acceleration settings, service worker routes, bundle chunking, and asset footprint. A calibration CLEAN summary must name those checks and the ordinary CLEAN-since-calibration count.
