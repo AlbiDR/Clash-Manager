@@ -454,4 +454,67 @@ describe("useProgressiveList", () => {
 
     (window as any).cancelIdleCallback = originalCIC;
   });
+
+  it("executes safely when deadline parameter is null or undefined", async () => {
+    const scope = effectScope();
+    const originalRIC = (window as any).requestIdleCallback;
+    await scope.run(async () => {
+      (window as any).requestIdleCallback = vi.fn((cb) => setTimeout(() => cb(undefined), 1));
+
+      const source = ref(Array.from({ length: 25 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+      expect(visibleItems.value[19]).toBe(20);
+    });
+    scope.stop();
+    (window as any).requestIdleCallback = originalRIC;
+  });
+
+  it("resets progressiveChunkTimer to null when all items are fully rendered", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 25 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      vi.advanceTimersByTime(1); // 20
+      vi.advanceTimersByTime(1); // 25 (fully rendered)
+
+      expect(visibleItems.value).toHaveLength(25);
+
+      const canceller = window.cancelIdleCallback || window.cancelAnimationFrame;
+      vi.mocked(canceller).mockClear();
+
+      source.value = Array.from({ length: 25 }, (_, i) => i + 100);
+      await nextTick();
+
+      expect(canceller).not.toHaveBeenCalled();
+    });
+    scope.stop();
+  });
+
+  it("reschedules remaining chunks when a minor refresh occurs mid-progressive render", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 40 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+
+      source.value = Array.from({ length: 42 }, (_, i) => i + 100);
+      await nextTick();
+
+      expect(visibleItems.value).toHaveLength(20);
+      expect(visibleItems.value[0]).toBe(100);
+
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(30);
+      expect(visibleItems.value[29]).toBe(129);
+    });
+    scope.stop();
+  });
 });
