@@ -10575,7 +10575,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.515Z",
+        "lastObservedAt": "2026-09-12T13:08:33.236Z",
         "failureClass": null
       },
       "2": {
@@ -10612,7 +10612,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.515Z",
+        "lastObservedAt": "2026-09-12T13:08:33.236Z",
         "failureClass": null
       },
       "3": {
@@ -10655,7 +10655,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.516Z",
+        "lastObservedAt": "2026-09-12T13:08:33.236Z",
         "failureClass": null
       },
       "4": {
@@ -10695,7 +10695,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.516Z",
+        "lastObservedAt": "2026-09-12T13:08:33.237Z",
         "failureClass": null
       },
       "5": {
@@ -10735,7 +10735,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.516Z",
+        "lastObservedAt": "2026-09-12T13:08:33.237Z",
         "failureClass": null
       },
       "6": {
@@ -10778,7 +10778,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.517Z",
+        "lastObservedAt": "2026-09-12T13:08:33.237Z",
         "failureClass": null
       },
       "7": {
@@ -10818,7 +10818,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.517Z",
+        "lastObservedAt": "2026-09-12T13:08:33.238Z",
         "failureClass": null
       },
       "8": {
@@ -10861,7 +10861,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.517Z",
+        "lastObservedAt": "2026-09-12T13:08:33.238Z",
         "failureClass": null
       },
       "9": {
@@ -10901,7 +10901,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.518Z",
+        "lastObservedAt": "2026-09-12T13:08:33.238Z",
         "failureClass": null
       },
       "10": {
@@ -10941,7 +10941,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.518Z",
+        "lastObservedAt": "2026-09-12T13:08:33.239Z",
         "failureClass": null
       },
       "11": {
@@ -10984,7 +10984,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.518Z",
+        "lastObservedAt": "2026-09-12T13:08:33.239Z",
         "failureClass": null
       },
       "12": {
@@ -10992,7 +10992,7 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
@@ -11013,8 +11013,8 @@
             "name": "sessions/2664693242287308293",
             "state": "COMPLETED",
             "createTime": "2026-09-12T10:16:27.998716506Z",
-            "updateTime": "2026-09-12T10:28:40.934761Z",
-            "lifetimeMinutes": 12.2
+            "updateTime": "2026-09-12T11:20:24.973158Z",
+            "lifetimeMinutes": 63.9
           },
           "recovery": {
             "nudgedAt": "2026-09-12T11:18:21.939Z",
@@ -11023,36 +11023,65 @@
             "error": null
           },
           "prNumber": 1796,
-          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1796"
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1796",
+          "tag": "nightly/2026-09-12/stage-12/pr-1796",
+          "run": {
+            "started": "2026-09-12T10:18:00Z",
+            "terminated": "2026-09-12T10:20:00Z",
+            "durationMinutes": 2
+          },
+          "body": {
+            "pr": 1796,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-12T11:20:37.519Z",
-        "failureClass": "RECOVERED_AFTER_NUDGE"
+        "lastObservedAt": "2026-09-12T13:08:33.239Z",
+        "failureClass": null
       },
       "13": {
         "date": "2026-09-12",
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
             "frontier": 11
           },
           "health": {
-            "verdict": "DEGRADING",
-            "currentStreak": 1,
-            "reason": "intervention rate rose from 13% to 27%"
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
           },
           "prNumber": 1795,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1795",
           "headRef": "nightly/stage-13-self-healing-protocol-151b0ae5-8982341662655950519",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-12/stage-13/pr-1795",
+          "session": {
+            "id": "8982341662655950519",
+            "name": "sessions/8982341662655950519",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T11:09:51.610863367Z",
+            "updateTime": "2026-09-12T11:17:57.060700Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-12T11:11:00Z",
+            "terminated": "2026-09-12T11:16:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1795,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T11:20:37.519Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-12T13:08:33.240Z",
+        "failureClass": null
       }
     }
   }
