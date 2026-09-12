@@ -122,6 +122,27 @@ export function declaredObjects(baselineSource) {
 const VAULT_LOOKUP = /get_vault_secret\s*\(/i;
 
 /**
+ * The role a Supabase JWT carries, decoded from its claims segment.
+ *
+ * "anon" is a publishable key: it ships inside the PWA and is meant to be
+ * public, so finding one in a routine body is not a leak. "service_role"
+ * bypasses RLS and is the opposite. Reporting both as "a credential" is what
+ * made this audit flag three functions that were behaving correctly.
+ *
+ * Returns null on anything it cannot read, and null never downgrades a
+ * finding: an undecodable literal stays a full finding.
+ */
+export function jwtRole(claimsSegment) {
+  if (!claimsSegment || typeof claimsSegment !== 'string') return null;
+  try {
+    const padded = claimsSegment.replace(/-/g, '+').replace(/_/g, '/');
+    const json = Buffer.from(padded + '='.repeat((4 - (padded.length % 4)) % 4), 'base64').toString('utf8');
+    const role = JSON.parse(json).role;
+    return typeof role === 'string' ? role : null;
+  } catch { return null; }
+}
+
+/**
  * Schemas the Data API exposes, read from the project's own config rather than
  * listed here. A function is only anon-reachable over PostgREST if its schema
  * is in this set, so getting it from anywhere else would make the check either
@@ -139,7 +160,7 @@ const qualify = (schema, name) => `${schema}.${name}`.toLowerCase();
  * Compares one snapshot against one baseline. Pure, so the whole audit is
  * testable without a database.
  */
-export function compareDrift(snapshot, declared, exposed = null) {
+export function compareDrift(snapshot, declared, exposed = null, inventory = {}) {
   const findings = [];
   const note = (direction, kind, object, consequence) =>
     findings.push({ direction, kind, object, consequence });
@@ -197,14 +218,24 @@ export function compareDrift(snapshot, declared, exposed = null) {
   // function EXECUTE privileges until public.get_vault_secret turned out to be
   // handing out every Vault secret for three months.
   if (exposed) {
-    for (const routine of snapshot.routines || []) {
-      if (!routine.securityDefiner) continue;
-      if (routine.executableByAnon !== true) continue;
-      if (!exposed.has(routine.schema)) continue;
-      const reach = routine.usesVaultLookup ? ' It reads Vault, so this exposes secrets directly.' : '';
+    const anonExecutable = (snapshot.routines || []).filter(routine =>
+      routine.securityDefiner && routine.executableByAnon === true && exposed.has(routine.schema));
+
+    // Only a function that reaches Vault is a finding. The rest ARE the app's
+    // RPC surface and are supposed to be anon-callable.
+    //
+    // The first live run reported all 18 of them, each with "anyone with the
+    // publishable key can call it over /rest/v1/rpc", about voyage management
+    // and push registration. That is the app working. An audit that reports 18
+    // intended behaviours as findings teaches its reader to skip the section,
+    // and then the one that matters is skipped with it.
+    for (const routine of anonExecutable) {
+      if (!routine.usesVaultLookup) continue;
       note('LIVE_ANON_EXECUTABLE', 'FUNCTION', qualify(routine.schema, routine.name),
-        `SECURITY DEFINER and executable by anon in the Data API exposed schema "${routine.schema}". Anyone with the publishable key, which ships inside the PWA, can call it over /rest/v1/rpc.${reach} REVOKE EXECUTE FROM PUBLIC, anon, authenticated and GRANT only to the role that needs it.`);
+        `SECURITY DEFINER, reads Vault, and executable by anon in the Data API exposed schema "${routine.schema}". Anyone with the publishable key, which ships inside the PWA, can call it over /rest/v1/rpc and read secrets. REVOKE EXECUTE FROM PUBLIC, anon, authenticated and GRANT only to the role that needs it.`);
     }
+    inventory.anonExecutable = anonExecutable.length;
+    inventory.anonExecutableVaultReaders = anonExecutable.filter(routine => routine.usesVaultLookup).length;
   }
 
   // Secrets in routine bodies. The live body is what runs, and it is not
@@ -222,6 +253,22 @@ export function compareDrift(snapshot, declared, exposed = null) {
     const rules = Array.isArray(routine.secretRules) && routine.secretRules.length
       ? ` Matched by: ${routine.secretRules.join(', ')}.`
       : '';
+
+    // An embedded anon key is a publishable key. It ships inside the PWA by
+    // design, so it is not a leak, and calling it one cost this audit its
+    // credibility the first time it ran. Only the jwt rule can be explained
+    // away this way: a bearer or role-key match is still a finding.
+    const role = jwtRole(routine.embeddedJwtClaims);
+    const onlyJwtRule = Array.isArray(routine.secretRules)
+      && routine.secretRules.length === 1 && routine.secretRules[0] === 'jwt';
+    if (role === 'anon' && onlyJwtRule) {
+      inventory.publishableKeyInBody = (inventory.publishableKeyInBody || 0) + 1;
+      continue;
+    }
+    if (role === 'service_role') {
+      note('LIVE_SECRET', 'FUNCTION', name, `The body embeds a service_role JWT, which bypasses row level security. This is the most privileged key the project has. Rotate it and read it from Vault at runtime.${rules}`);
+      continue;
+    }
 
     // The live body carries a literal while the baseline declares the same
     // function resolving its credential at runtime. The database is running
@@ -406,8 +453,10 @@ export async function auditDbDrift({ repoRoot = REPO_ROOT, snapshotPath, snapsho
     exposed = exposedSchemas(await readFileImpl(path.join(repoRoot, 'Backend/supabase/config.toml'), 'utf8'));
   } catch { exposed = null; }
 
-  const findings = compareDrift(snapshot, declared, exposed);
+  const inventory = {};
+  const findings = compareDrift(snapshot, declared, exposed, inventory);
   return {
+    inventory,
     exposedSchemasKnown: exposed !== null,
     status: findings.length ? 'DRIFT' : 'MATCH', reason: null, findings,
     requiredByRoutine: declared.vaultReadsByRoutine || new Map(),
@@ -439,6 +488,18 @@ function render(report) {
   for (const [direction, items] of byDirection) {
     lines.push('', titles[direction] || direction);
     for (const item of items) lines.push(`  ${item.kind} ${item.object}\n      ${item.consequence}`);
+  }
+  // What was checked and found fine. A findings list with no denominator reads
+  // as "everything else was not looked at".
+  const inv = report.inventory || {};
+  if (inv.anonExecutable !== undefined || inv.publishableKeyInBody) {
+    lines.push('', 'CHECKED AND NOT A FINDING');
+    if (inv.anonExecutable !== undefined) {
+      lines.push(`  ${inv.anonExecutable} SECURITY DEFINER functions are anon-executable in exposed schemas. That is the app's RPC surface and is intended. ${inv.anonExecutableVaultReaders} of them read Vault.`);
+    }
+    if (inv.publishableKeyInBody) {
+      lines.push(`  ${inv.publishableKeyInBody} routine bodies embed an anon JWT. That is a publishable key, it ships inside the PWA by design, and it is not a leaked credential.`);
+    }
   }
   if (report.exposedSchemasKnown === false) {
     lines.push('', 'NOT CHECKED', '  Backend/supabase/config.toml could not be read, so no function was checked for anon-executability. This is a gap in this run, not a clean result.');
