@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1796 [Stage 12]: APK UX audit PASS with 0 violations across 75 files examined; 10 UX categories checked
+**Domain:** ux | **Commit:** 5d001644 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1796)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured audit status PASS and 0 candidate files in Frontend-PWA/src
+**Change:** APK UX audit PASS with 0 violations across 75 files examined; 10 UX categories checked
+**Result:** apk-ux-audit-status.txt: PASS, apk-ux-audit.json candidate count: 0 across 75 files examined, 10 categories audited
+**Nudges:** 0
+
+### [2026-09-12] PR #1795 [Stage 13]: Mapped September 12 stage executions, recorded Stage 12 MISSING-OUTPUT event, flagged zero-minute audits for S04 and S12, and updated Section 3 metrics
+**Domain:** pipeline | **Commit:** a8aaea52 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1795)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Section 1 updated with Stage 12 missing output observation; Section 3 updated with 2026-09-12 audit metrics and zero-minute audit flags
+**Change:** Mapped September 12 stage executions, recorded Stage 12 MISSING-OUTPUT event, flagged zero-minute audits for S04 and S12, and updated Section 3 metrics
+**Result:** git diff --check passed with 0 errors; verified 13-self-healing-protocol.md section updates
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1794 [Stage 11]: Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations; 0 optimization defects found
 **Domain:** apk | **Commit:** db8cd618 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1794)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
