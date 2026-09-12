@@ -123,3 +123,26 @@ test('a real comparison against a matching baseline reports MATCH', async () => 
   assert.equal(report.status, 'MATCH');
   assert.deepEqual(report.findings, []);
 });
+
+test('a constraint-backed index is identified by the database, not by its name', () => {
+  // The first production run guessed from the suffix and reported
+  // members_new_pkey1 and several *_unique indexes as drift. Those are created
+  // by their PRIMARY KEY or UNIQUE constraint and cannot be declared
+  // separately, and that false positive rate is how an audit stops being read.
+  const live = clone();
+  live.indexes.push({ schema: 'drivers', table: 'members', name: 'members_new_pkey1', constraintBacked: true });
+  live.indexes.push({ schema: 'drivers', table: 'members', name: 'members_tag_unique', constraintBacked: true });
+  live.indexes.push({ schema: 'drivers', table: 'members', name: 'idx_real_drift', constraintBacked: false });
+  const findings = compareDrift(live, declared());
+  assert.deepEqual(findings.map(f => f.object), ['drivers.idx_real_drift'],
+    'only the genuinely undeclared index is drift');
+});
+
+test('an older snapshot without the field degrades to the name heuristic', () => {
+  // A snapshot captured before constraintBacked existed must not suddenly
+  // report every constraint index as drift.
+  const live = clone();
+  live.indexes.push({ schema: 'drivers', table: 'members', name: 'members_pkey' });
+  live.indexes.push({ schema: 'drivers', table: 'members', name: 'members_new_pkey1' });
+  assert.deepEqual(compareDrift(live, declared()), []);
+});

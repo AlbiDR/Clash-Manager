@@ -41,14 +41,26 @@ SELECT jsonb_pretty(jsonb_build_object(
   ),
 
   -- Indexes, the documented case of objects existing only in the database.
+  --
+  -- constraintBacked is asked of the database rather than guessed from the
+  -- name. The first production run reported members_new_pkey1 and several
+  -- *_unique indexes as drift; they are created by their PRIMARY KEY or UNIQUE
+  -- constraint and are not separately declarable. A suffix heuristic missed
+  -- them because it matched _pkey and _key, and a false positive rate like
+  -- that is how an audit stops being read.
   'indexes', (
     SELECT coalesce(jsonb_agg(jsonb_build_object(
-      'schema', schemaname,
-      'table', tablename,
-      'name', indexname
-    ) ORDER BY schemaname, tablename, indexname), '[]'::jsonb)
-    FROM pg_indexes
-    WHERE schemaname IN ('public', 'drivers', 'substrate', 'features')
+      'schema', n.nspname,
+      'table', t.relname,
+      'name', i.relname,
+      'constraintBacked', (con.oid IS NOT NULL)
+    ) ORDER BY n.nspname, t.relname, i.relname), '[]'::jsonb)
+    FROM pg_index x
+    JOIN pg_class i ON i.oid = x.indexrelid
+    JOIN pg_class t ON t.oid = x.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    LEFT JOIN pg_constraint con ON con.conindid = i.oid
+    WHERE n.nspname IN ('public', 'drivers', 'substrate', 'features')
   ),
 
   -- Routines, with a flag for a credential-shaped literal in the body. A

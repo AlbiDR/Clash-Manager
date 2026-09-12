@@ -785,7 +785,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         return new Response(JSON.stringify({
             success: true,
-            version: '14.50.57',
+            version: '14.50.58',
             data: results,
             duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
             timestamp: Temporal.Now.instant().toString()

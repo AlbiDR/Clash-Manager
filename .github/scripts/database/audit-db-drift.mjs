@@ -146,9 +146,16 @@ export function compareDrift(snapshot, declared) {
   // in the database, so a rebuild from the baseline silently loses it. This is
   // the direction that caused the 2026-09-06 near miss.
   for (const [name, index] of liveIndexes) {
-    // Constraint-backed indexes are created by their constraint, not declared
-    // separately, so they are not drift.
-    if (/_pkey$/.test(name) || /_key$/.test(name)) continue;
+    // Constraint-backed indexes are created by their PRIMARY KEY or UNIQUE
+    // constraint and cannot be declared separately, so they are not drift.
+    //
+    // The database is asked directly. The first production run guessed from
+    // the name and reported members_new_pkey1 and several *_unique indexes as
+    // drift, because the suffix test matched only _pkey and _key. The name
+    // heuristic remains as a fallback for a snapshot taken before the field
+    // existed, so an old snapshot degrades rather than lying.
+    if (index.constraintBacked === true) continue;
+    if (index.constraintBacked === undefined && (/_pkey\d*$/.test(name) || /_key$/.test(name))) continue;
     if (!declared.indexes.has(name)) {
       note('LIVE_NOT_DECLARED', 'INDEX', qualify(index.schema, name), 'This index exists only in the live database. A rebuild from the baseline would not create it, and its performance would not be reproduced.');
     }
