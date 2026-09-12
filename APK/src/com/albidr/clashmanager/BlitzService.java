@@ -9,7 +9,13 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -27,6 +33,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
@@ -42,7 +49,46 @@ public class BlitzService extends Service {
      * Blitz Speed setting (see BLITZ_SPEED_DELAYS in the PWA) somehow isn't
      * forwarded via the "delayMs" intent extra.
      */
-    static final long DEFAULT_PROFILE_LOAD_DELAY_MS = 850L;
+    /**
+     * Profile dwell domain.
+     *
+     * These mirror BLITZ_DWELL_MIN / _MAX / _STEP / _DETENTS and
+     * BLITZ_BATCH_SHIFT_DELAY in Frontend-PWA/src/core/config/index.ts, which is
+     * the source of truth for this domain: the PWA publishes the chosen dwell
+     * through the "delayMs" intent extra, and the slider here has to offer the
+     * same range and the same stops or the two controls would disagree about
+     * what a setting means. Neither side can import the other, so
+     * .github/scripts/android/blitz-dwell-parity.mjs reads both files and fails
+     * the build if they ever drift apart.
+     */
+    static final long DWELL_MIN_MS = 850L;
+    static final long DWELL_MAX_MS = 6000L;
+    static final long DWELL_STEP_MS = 10L;
+    static final long[] DWELL_DETENTS_MS = { 850L, 1500L, 2100L, 3000L, 4200L, 5100L, 6000L };
+
+    /** Dwell applied when the PWA sends no explicit value. Java forbids a forward
+     *  reference in an initialiser, so this sits after the domain it derives from. */
+    static final long DEFAULT_PROFILE_LOAD_DELAY_MS = DWELL_MIN_MS;
+
+    /**
+     * Per-player allowance added to the dwell when estimating a run's length.
+     * Covers the invite and close taps. Mirrors BLITZ_BATCH_SHIFT_DELAY so the
+     * figure quoted here and the one beside the Settings slider agree.
+     */
+    static final long DWELL_ESTIMATE_OVERHEAD_MS = 150L;
+
+    /** Resolution of the dwell SeekBar. Finer than the step, so the step governs. */
+    private static final int DWELL_SEEK_RESOLUTION = 1000;
+    /** Distance within which a drag is pulled onto a detent. Matches SLIDER_SNAP_RADIUS_PX. */
+    private static final float DWELL_SNAP_RADIUS_DP = 6.0f;
+    private static final float DWELL_TRACK_HEIGHT_DP = 4.0f;
+    private static final float DWELL_THUMB_SIZE_DP = 14.0f;
+    private static final float DWELL_TICK_WIDTH_DP = 1.0f;
+    private static final float TEXT_SIZE_DWELL_VALUE_SP = 13.0f;
+    private static final float TEXT_SIZE_DWELL_FOOT_SP = 9.0f;
+    private static final float PADDING_DWELL_TOP_DP = 10.0f;
+    private static final float MARGIN_DWELL_B_DP = 12.0f;
+    private static final String COLOR_DWELL_TRACK = "#44474f";
     private static final String CHANNEL_ID = "BlitzServiceChannel";
 
     // Constants for modify button styling
@@ -137,6 +183,10 @@ public class BlitzService extends Service {
     private long mProfileLoadDelayMs = DEFAULT_PROFILE_LOAD_DELAY_MS;
 
     private boolean mIsCalibrationUnlocked = false;
+
+    private View mDwellRow;
+    private TextView mDwellValueText;
+    private TextView mDwellFootText;
 
     // Set the instant Stop is pressed / the service is destroyed. Guards the
     // accessibility service's tap-sequence completion callback (onSequenceComplete,
@@ -268,10 +318,14 @@ public class BlitzService extends Service {
     private void updateWaitingOverlayTexts(TextView titleView, TextView subtitleView) {
         if (mIsCalibrationUnlocked) {
             titleView.setText("Blitz Calibration");
-            subtitleView.setText("Drag markers, then press Start");
+            subtitleView.setText("Drag markers, set speed, then Start");
         } else {
             titleView.setText("Blitz in Progress");
-            subtitleView.setText(mTagsList.size() + " players found");
+            // The count alone says nothing about what pressing Start costs. This is
+            // the one figure worth having before committing to an automated run,
+            // and it hints that the gear is worth a tap.
+            subtitleView.setText(mTagsList.size() + " players \u00b7 "
+                + formatDwell(mProfileLoadDelayMs) + " each \u00b7 about " + formatRunEstimate());
         }
     }
 
@@ -409,6 +463,10 @@ public class BlitzService extends Service {
 
         updateWaitingOverlayTexts(titleView, subtitleView);
 
+        // -- Profile dwell, revealed by the gear alongside the markers --
+        mDwellRow = createDwellRow(dp);
+        container.addView(mDwellRow);
+        updateDwellRowVisibility();
 
         // -- Button row --
         LinearLayout btnRow = new LinearLayout(this);
@@ -498,6 +556,7 @@ public class BlitzService extends Service {
                 }
                 updateWaitingOverlayTexts(titleView, subtitleView);
                 updateMarkerDraggability();
+                updateDwellRowVisibility();
             }
         });
 
@@ -1179,6 +1238,344 @@ public class BlitzService extends Service {
     // -------------------------------------------------------------------------
     // Notification channel
     // -------------------------------------------------------------------------
+
+    /**
+     * Builds the dwell row revealed by the gear.
+     *
+     * Sits between the header and the buttons, and is GONE unless calibration is
+     * unlocked, so the overlay keeps the two-line footprint it has today on the
+     * common path. The gear already means "adjust things"; it now reveals the
+     * speed as well as the markers, which is the whole of the addition.
+     */
+    private View createDwellRow(final float dp) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        rowParams.bottomMargin = (int) (MARGIN_DWELL_B_DP * dp);
+        row.setLayoutParams(rowParams);
+        row.setPadding(0, (int) (PADDING_DWELL_TOP_DP * dp), 0, 0);
+
+        // -- Head: label on the left, value hard against the right --
+        LinearLayout head = new LinearLayout(this);
+        head.setOrientation(LinearLayout.HORIZONTAL);
+        head.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
+        TextView label = new TextView(this);
+        label.setText("Profile dwell");
+        label.setTextSize(TEXT_SIZE_SUBTITLE_SP);
+        label.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        label.setLayoutParams(new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
+        head.addView(label);
+
+        // Monospace at a fixed four characters: 850 and 6000 occupy the same width,
+        // so dragging never nudges the label beside it.
+        TextView value = new TextView(this);
+        mDwellValueText = value;
+        value.setTextSize(TEXT_SIZE_DWELL_VALUE_SP);
+        value.setTextColor(Color.WHITE);
+        value.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+        value.setMinEms(4);
+        value.setGravity(android.view.Gravity.END);
+        head.addView(value);
+
+        TextView unit = new TextView(this);
+        unit.setText("MS");
+        unit.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
+        unit.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        unit.setPadding((int) (3.0f * dp), 0, 0, 0);
+        head.addView(unit);
+
+        row.addView(head);
+
+        // -- Track --
+        List<Float> interiorTicks = new ArrayList<>();
+        for (long detent : DWELL_DETENTS_MS) {
+            if (detent <= DWELL_MIN_MS || detent >= DWELL_MAX_MS) {
+                continue;
+            }
+            interiorTicks.add((float) getRatioForDwell(detent));
+        }
+        float[] tickRatios = new float[interiorTicks.size()];
+        for (int i = 0; i < interiorTicks.size(); i++) {
+            tickRatios[i] = interiorTicks.get(i);
+        }
+
+        final SeekBar seek = new SeekBar(this);
+        seek.setMax(DWELL_SEEK_RESOLUTION);
+        seek.setProgressDrawable(new DwellTrackDrawable(tickRatios, dp));
+
+        GradientDrawable thumb = new GradientDrawable();
+        thumb.setShape(GradientDrawable.OVAL);
+        thumb.setColor(Color.parseColor(COLOR_BUTTON_START));
+        int thumbPx = (int) (DWELL_THUMB_SIZE_DP * dp);
+        thumb.setSize(thumbPx, thumbPx);
+        seek.setThumb(thumb);
+        seek.setThumbOffset(0);
+        if (Build.VERSION.SDK_INT >= 21) {
+            // Without this the platform punches a gap in the track under the thumb,
+            // which reads as a break in the scale rather than a handle on it.
+            seek.setSplitTrack(false);
+        }
+        // Half a thumb at each end, so the handle centre travels the width the
+        // ratio maths assumes and never overhangs the track.
+        seek.setPadding(thumbPx / 2, (int) (8.0f * dp), thumbPx / 2, (int) (8.0f * dp));
+
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                if (!fromUser) {
+                    return;
+                }
+                float travelPx = bar.getWidth() - bar.getPaddingLeft() - bar.getPaddingRight();
+                if (travelPx <= 0.0f) {
+                    return;
+                }
+                double ratio = progress / (double) DWELL_SEEK_RESOLUTION;
+                long snapped = getSnappedDwell(ratio, travelPx, DWELL_SNAP_RADIUS_DP * dp);
+
+                // The field the sequencer reads on every advance. Writing it here is
+                // the whole override: nothing is persisted, so the next Blitz starts
+                // from the saved default again.
+                mProfileLoadDelayMs = snapped;
+                updateDwellTexts();
+
+                int settled = (int) Math.round(getRatioForDwell(snapped) * DWELL_SEEK_RESOLUTION);
+                if (settled != progress) {
+                    bar.setProgress(settled);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar bar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar bar) {
+            }
+        });
+        seek.setProgress((int) Math.round(getRatioForDwell(mProfileLoadDelayMs) * DWELL_SEEK_RESOLUTION));
+        row.addView(seek);
+
+        // -- Foot: the bounds, and what this run will cost --
+        LinearLayout foot = new LinearLayout(this);
+        foot.setOrientation(LinearLayout.HORIZONTAL);
+        foot.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
+        TextView minText = new TextView(this);
+        minText.setText(String.valueOf(DWELL_MIN_MS));
+        minText.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
+        minText.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        minText.setTypeface(android.graphics.Typeface.MONOSPACE);
+        foot.addView(minText);
+
+        TextView note = new TextView(this);
+        mDwellFootText = note;
+        note.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
+        note.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        note.setGravity(android.view.Gravity.CENTER);
+        note.setLayoutParams(new LinearLayout.LayoutParams(
+            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
+        foot.addView(note);
+
+        TextView maxText = new TextView(this);
+        maxText.setText(String.valueOf(DWELL_MAX_MS));
+        maxText.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
+        maxText.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        maxText.setTypeface(android.graphics.Typeface.MONOSPACE);
+        foot.addView(maxText);
+
+        row.addView(foot);
+
+        updateDwellTexts();
+        return row;
+    }
+
+    private void updateDwellRowVisibility() {
+        if (mDwellRow != null) {
+            mDwellRow.setVisibility(mIsCalibrationUnlocked ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Profile dwell: mapping, formatting and the drawn track
+    // -------------------------------------------------------------------------
+
+    /**
+     * Maps a dwell time onto its 0..1 position along the track.
+     *
+     * Logarithmic, because tolerance for latency is felt multiplicatively: 850ms
+     * to 1700ms is the same subjective step as 3000ms to 6000ms. A linear track
+     * would compress everything below 2100ms into its first quarter, which is
+     * exactly where the fine control is wanted.
+     */
+    private static double getRatioForDwell(long dwellMs) {
+        double lower = Math.log((double) DWELL_MIN_MS);
+        double upper = Math.log((double) DWELL_MAX_MS);
+        double clamped = Math.max((double) DWELL_MIN_MS, Math.min((double) DWELL_MAX_MS, (double) dwellMs));
+        return (Math.log(clamped) - lower) / (upper - lower);
+    }
+
+    /** Maps a 0..1 track position back onto a dwell time. */
+    private static long getDwellForRatio(double ratio) {
+        double lower = Math.log((double) DWELL_MIN_MS);
+        double upper = Math.log((double) DWELL_MAX_MS);
+        return Math.round(Math.exp(lower + ratio * (upper - lower)));
+    }
+
+    /** Rounds onto the step grid, anchored to the minimum rather than to zero. */
+    private static long getSteppedDwell(long dwellMs) {
+        long stepped = DWELL_MIN_MS
+            + Math.round((dwellMs - DWELL_MIN_MS) / (double) DWELL_STEP_MS) * DWELL_STEP_MS;
+        return Math.max(DWELL_MIN_MS, Math.min(DWELL_MAX_MS, stepped));
+    }
+
+    /**
+     * Resolves a drag position to a dwell time, pulling onto a detent when one is
+     * within the snap radius. Proximity is measured in rendered pixels, so the
+     * pull feels the same at both ends of a logarithmic track. Every value the
+     * step allows stays reachable; the detents only assist aim.
+     */
+    private static long getSnappedDwell(double ratio, float travelPx, float snapRadiusPx) {
+        long closest = -1L;
+        double closestPx = Double.MAX_VALUE;
+        for (long detent : DWELL_DETENTS_MS) {
+            double distance = Math.abs(getRatioForDwell(detent) - ratio) * travelPx;
+            if (distance < closestPx) {
+                closestPx = distance;
+                closest = detent;
+            }
+        }
+        if (closest >= 0L && closestPx <= snapRadiusPx) {
+            return closest;
+        }
+        return getSteppedDwell(getDwellForRatio(ratio));
+    }
+
+    /**
+     * Shortest label that still reads precisely. Mirrors formatCompactDuration in
+     * Frontend-PWA/src/core/utils/time.ts so both estimates are worded alike.
+     */
+    private static String formatCompactDuration(long ms) {
+        long totalSeconds = Math.round(ms / 1000.0);
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        if (minutes > 0L) {
+            return seconds > 0L ? minutes + "m " + seconds + "s" : minutes + "m";
+        }
+        return seconds + "s";
+    }
+
+    /** Per-player dwell, as a reader would say it. */
+    private static String formatDwell(long ms) {
+        if (ms < 1000L) {
+            return ms + "ms";
+        }
+        long tenths = Math.round(ms / 100.0);
+        long whole = tenths / 10L;
+        long fraction = tenths % 10L;
+        return fraction == 0L ? whole + "s" : whole + "." + fraction + "s";
+    }
+
+    /** How long the whole selection will take at the current dwell. */
+    private String formatRunEstimate() {
+        long perPlayer = mProfileLoadDelayMs + DWELL_ESTIMATE_OVERHEAD_MS;
+        return formatCompactDuration(perPlayer * (long) mTagsList.size());
+    }
+
+    private void updateDwellTexts() {
+        if (mDwellValueText != null) {
+            mDwellValueText.setText(String.valueOf(mProfileLoadDelayMs));
+        }
+        if (mDwellFootText != null) {
+            mDwellFootText.setText("this run only \u00b7 about " + formatRunEstimate());
+        }
+    }
+
+    /**
+     * The dwell track, painted rather than assembled.
+     *
+     * A stock SeekBar draws its progress from a LayerDrawable and has no notion of
+     * tick marks at arbitrary positions. The detents here sit at logarithmic
+     * intervals, so no repeating or evenly divided drawable can place them. This
+     * paints the track, the fill and the ticks in one pass, taking the fill extent
+     * from the level ProgressBar sets on it.
+     */
+    private static final class DwellTrackDrawable extends Drawable {
+        private final Paint mTrackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint mFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint mTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final float[] mTickRatios;
+        private final float mTrackHeightPx;
+        private final float mRadiusPx;
+        private final float mTickHalfWidthPx;
+
+        DwellTrackDrawable(float[] tickRatios, float density) {
+            mTickRatios = tickRatios;
+            mTrackHeightPx = DWELL_TRACK_HEIGHT_DP * density;
+            mRadiusPx = mTrackHeightPx / 2.0f;
+            mTickHalfWidthPx = Math.max(1.0f, DWELL_TICK_WIDTH_DP * density) / 2.0f;
+            mTrackPaint.setColor(Color.parseColor(COLOR_DWELL_TRACK));
+            mFillPaint.setColor(Color.parseColor(COLOR_BUTTON_START));
+            // The ticks are cut in the container's own colour, so they read as
+            // notches through the fill rather than as marks tinted over it.
+            mTickPaint.setColor(Color.parseColor(COLOR_BG_CONTAINER));
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            Rect bounds = getBounds();
+            float centreY = bounds.exactCenterY();
+            float top = centreY - mTrackHeightPx / 2.0f;
+            float bottom = centreY + mTrackHeightPx / 2.0f;
+
+            canvas.drawRoundRect(bounds.left, top, bounds.right, bottom, mRadiusPx, mRadiusPx, mTrackPaint);
+
+            float ratio = getLevel() / 10000.0f;
+            float fillRight = bounds.left + ratio * bounds.width();
+            if (fillRight > bounds.left) {
+                canvas.drawRoundRect(bounds.left, top, fillRight, bottom, mRadiusPx, mRadiusPx, mFillPaint);
+            }
+
+            for (float tickRatio : mTickRatios) {
+                float x = bounds.left + tickRatio * bounds.width();
+                canvas.drawRect(x - mTickHalfWidthPx, top, x + mTickHalfWidthPx, bottom, mTickPaint);
+            }
+        }
+
+        @Override
+        protected boolean onLevelChange(int level) {
+            invalidateSelf();
+            return true;
+        }
+
+        @Override
+        public int getIntrinsicHeight() {
+            return (int) Math.ceil(mTrackHeightPx);
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+            mTrackPaint.setAlpha(alpha);
+            mFillPaint.setAlpha(alpha);
+            mTickPaint.setAlpha(alpha);
+        }
+
+        @Override
+        public void setColorFilter(ColorFilter colorFilter) {
+            mTrackPaint.setColorFilter(colorFilter);
+            mFillPaint.setColorFilter(colorFilter);
+            mTickPaint.setColorFilter(colorFilter);
+        }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+    }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
