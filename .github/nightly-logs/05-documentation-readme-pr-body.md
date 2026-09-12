@@ -1,23 +1,23 @@
 ### Nightly Stage 5: Documentation README - Architecture Truth Architect
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
+In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** Reconciled useClashSyncUtils.ts extraction in core services README
+**What was checked:** Audited useConsoleController.ts against core services README; verified accurate and no drift present
 
-**Why:** Doc debt from PR #1766 extracted pure sync utilities into useClashSyncUtils.ts, leaving core/services/README out of sync
+**Why:** doc-debt target useConsoleController.ts prose in core services README matches actual implementation
 
-**Result:** Verified README diff against source exports and ran git diff --check
+**Result:** git diff --check passed with 0 errors and vitest useConsoleController.spec.ts passed 40/40 tests
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Why: Doc debt from PR #1766 extracted pure sync utilities into useClashSyncUtils.ts, leaving core/services/README out of sync
-  Change: Reconciled useClashSyncUtils.ts extraction in core services README
-  Result: Verified README diff against source exports and ran git diff --check
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+  Why: doc-debt target useConsoleController.ts prose in core services README matches actual implementation
+  Change: Audited useConsoleController.ts against core services README; verified accurate and no drift present
+  Result: git diff --check passed with 0 errors and vitest useConsoleController.spec.ts passed 40/40 tests
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log
   Nudges: 0
 -->
