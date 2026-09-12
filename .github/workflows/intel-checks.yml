@@ -44,6 +44,21 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 
+      # A pull request into Beta or Stable reached this job with neither the
+      # unit suites nor a type-check behind it. Both ran only in Deploy PWA and
+      # Deploy Supabase, which fire on push, so the first thing to prove the
+      # code compiled and passed was a workflow that runs after the merge has
+      # already landed. Roughly 13s for 2156 tests.
+      - name: Type Check
+        run: pnpm --dir Frontend-PWA type-check
+
+      - name: Unit Suites (Frontend and Backend)
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_PLAYER_TAG: ${{ vars.PLAYER_TAG }}
+        run: pnpm -r test
+
       - name: Version & Monorepo Integrity (audit:version)
         run: pnpm audit:version
 

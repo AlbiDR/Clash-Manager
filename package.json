@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.68",
+  "version": "14.50.69",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -58,7 +58,8 @@
     "test:nightly-coherence": "node --test .github/scripts/nightly/nightly-coherence.test.mjs",
     "audit:cron": "node .github/scripts/database/audit-cron-schedule.mjs",
     "test:cron-schedule": "node --test .github/scripts/database/audit-cron-schedule.test.mjs",
-    "test:credential-fanout": "node --test .github/scripts/project/credential-fanout.test.mjs"
+    "test:credential-fanout": "node --test .github/scripts/project/credential-fanout.test.mjs",
+    "verify:push": "pnpm --dir Frontend-PWA type-check && pnpm -r test"
   },
   "devDependencies": {
     "@ast-grep/cli": "catalog:",
@@ -74,7 +75,7 @@
   "simple-git-hooks": {
     "pre-commit": "node .github/scripts/project/commit-trailers.mjs --check-author-config && pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint",
     "commit-msg": "node .github/scripts/project/commit-trailers.mjs $1",
-    "pre-push": "node .github/scripts/project/commit-trailers.mjs --check-push"
+    "pre-push": "node .github/scripts/project/commit-trailers.mjs --check-push && pnpm verify:push"
   },
   "engines": {
     "node": ">=24.0.0",
