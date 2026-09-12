@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1786 [Stage 3]: Baseline current (0 pending migrations, migration-quality PASS, fold-state CLEAN, db DB-UNAVAILABLE). Read-only baseline audit verified RLS compliance, search_path isolation, and zero formatting deviations.
+**Domain:** database | **Commit:** 31f1eea2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1786)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** No unfolded migrations found and baseline audit passed clean without requiring source changes.
+**Change:** Baseline current (0 pending migrations, migration-quality PASS, fold-state CLEAN, db DB-UNAVAILABLE). Read-only baseline audit verified RLS compliance, search_path isolation, and zero formatting deviations.
+**Result:** Static audit PASS (32 migrations examined, 170 baseline objects, 0 violations); Fold-state CLEAN (76 folded verbatim, 6 reconciled, 0 unfolded); DB verification DB-UNAVAILABLE.
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1785 [Stage 2]: Expanded useProgressiveList unit test coverage
 **Domain:** verification | **Commit:** f66f6315 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1785)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
