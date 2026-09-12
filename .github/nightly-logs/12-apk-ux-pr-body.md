@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited Frontend-PWA/src (75 files examined) across 10 hybrid shell UX categories with 0 violations found in apk-ux-audit.json; calibration due with 10 consecutive clean passes.
+**What was checked:** APK UX audit PASS with 0 violations across 75 files examined; 10 UX categories checked
 
-**Why:** Structured APK UX audit reported PASS across all 10 hybrid shell UX compliance categories (raw selectors, tactile feedback, safe-area insets, touch footprint, text selection, link route isolation, overscroll boundaries, soft keyboard viewport adjustment, prefers-color-scheme media queries, media dimensions) with 0 candidate violations.
+**Why:** Structured audit status PASS and 0 candidate files in Frontend-PWA/src
 
-**Result:** apk-ux-audit reported PASS with 0 violations across 75 source files in Frontend-PWA/src
+**Result:** apk-ux-audit-status.txt: PASS, apk-ux-audit.json candidate count: 0 across 75 files examined, 10 categories audited
 
 **Files changed:** .github/nightly-logs/12-apk-ux-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Why: Structured APK UX audit reported PASS across all 10 hybrid shell UX compliance categories (raw selectors, tactile feedback, safe-area insets, touch footprint, text selection, link route isolation, overscroll boundaries, soft keyboard viewport adjustment, prefers-color-scheme media queries, media dimensions) with 0 candidate violations.
-  Change: Audited Frontend-PWA/src (75 files examined) across 10 hybrid shell UX categories with 0 violations found in apk-ux-audit.json; calibration due with 10 consecutive clean passes.
-  Result: apk-ux-audit reported PASS with 0 violations across 75 source files in Frontend-PWA/src
+  Why: Structured audit status PASS and 0 candidate files in Frontend-PWA/src
+  Change: APK UX audit PASS with 0 violations across 75 files examined; 10 UX categories checked
+  Result: apk-ux-audit-status.txt: PASS, apk-ux-audit.json candidate count: 0 across 75 files examined, 10 categories audited
   Files: .github/nightly-logs/12-apk-ux-coverage.log
   Nudges: 0
 -->
