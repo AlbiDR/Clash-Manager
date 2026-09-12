@@ -10575,7 +10575,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.797Z",
+        "lastObservedAt": "2026-09-12T02:19:01.157Z",
         "failureClass": null
       },
       "2": {
@@ -10612,7 +10612,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.797Z",
+        "lastObservedAt": "2026-09-12T02:19:01.158Z",
         "failureClass": null
       },
       "3": {
@@ -10620,7 +10620,7 @@
         "stage": 3,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
           "notReached": {
@@ -10628,24 +10628,42 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 3,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1786,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1786",
           "headRef": "nightly/stage-3-baseline-consolidation-b9c61e9f-17395777506305240410",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-12/stage-3/pr-1786",
+          "session": {
+            "id": "17395777506305240410",
+            "name": "sessions/17395777506305240410",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T01:13:44.300086775Z",
+            "updateTime": "2026-09-12T01:21:49.709927Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-12T01:15:00Z",
+            "terminated": "2026-09-12T01:19:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1786,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.798Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-12T02:19:01.158Z",
+        "failureClass": null
       },
       "4": {
         "date": "2026-09-12",
         "stage": 4,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "notReached": {
@@ -10655,10 +10673,29 @@
             "verdict": "HEALTHY",
             "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-12/stage-4/pr-1787",
+          "session": {
+            "id": "6799315708654542240",
+            "name": "sessions/6799315708654542240",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T02:08:33.507511713Z",
+            "updateTime": "2026-09-12T02:16:37.270824Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-12T02:10:00Z",
+            "terminated": "2026-09-12T02:15:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1787,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.798Z",
+        "lastObservedAt": "2026-09-12T02:19:01.158Z",
         "failureClass": null
       },
       "5": {
@@ -10670,7 +10707,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10679,7 +10716,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.798Z",
+        "lastObservedAt": "2026-09-12T02:19:01.159Z",
         "failureClass": null
       },
       "6": {
@@ -10691,7 +10728,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10700,7 +10737,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.799Z",
+        "lastObservedAt": "2026-09-12T02:19:01.159Z",
         "failureClass": null
       },
       "7": {
@@ -10712,7 +10749,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10721,7 +10758,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.799Z",
+        "lastObservedAt": "2026-09-12T02:19:01.160Z",
         "failureClass": null
       },
       "8": {
@@ -10733,7 +10770,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10742,7 +10779,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.799Z",
+        "lastObservedAt": "2026-09-12T02:19:01.160Z",
         "failureClass": null
       },
       "9": {
@@ -10754,7 +10791,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10763,7 +10800,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.800Z",
+        "lastObservedAt": "2026-09-12T02:19:01.160Z",
         "failureClass": null
       },
       "10": {
@@ -10775,7 +10812,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10784,7 +10821,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.800Z",
+        "lastObservedAt": "2026-09-12T02:19:01.161Z",
         "failureClass": null
       },
       "11": {
@@ -10796,7 +10833,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10805,7 +10842,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.801Z",
+        "lastObservedAt": "2026-09-12T02:19:01.161Z",
         "failureClass": null
       },
       "12": {
@@ -10817,7 +10854,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10826,7 +10863,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.801Z",
+        "lastObservedAt": "2026-09-12T02:19:01.161Z",
         "failureClass": null
       },
       "13": {
@@ -10838,7 +10875,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 3
+            "frontier": 4
           },
           "health": {
             "verdict": "HEALTHY",
@@ -10847,7 +10884,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-12T01:21:38.801Z",
+        "lastObservedAt": "2026-09-12T02:19:01.162Z",
         "failureClass": null
       }
     }
