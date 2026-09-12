@@ -129,6 +129,23 @@ export const BADGE_UPDATE_DEBOUNCE = 1500;
  */
 export const BADGE_RETRY_BASE_DELAY = 800;
 
+/**
+ * Canonical public repository URL.
+ *
+ * @remarks
+ * [DECISION LOG] SINGLE SOURCE OF TRUTH:
+ * The repository address previously appeared as a bare literal in both
+ * AboutSettings.vue and UsefulLinksSettings.vue, leaving nothing to stop the
+ * two from drifting apart. Provenance destinations resolve from here so the
+ * address is stated once.
+ */
+export const REPOSITORY_URL = "https://github.com/AlbiDR/Clash-Manager";
+
+/**
+ * Issue tracker entry point, derived from {@link REPOSITORY_URL}.
+ */
+export const REPOSITORY_ISSUES_URL = `${REPOSITORY_URL}/issues/new`;
+
 export type BlitzSpeed = "fast" | "medium" | "slow";
 
 export const BLITZ_SPEED_DELAYS: Record<BlitzSpeed, number> = {

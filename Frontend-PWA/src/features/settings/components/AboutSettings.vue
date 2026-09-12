@@ -32,7 +32,12 @@
  * sibling card - which is precisely why it read as foreign inside the Settings stack.
  */
 import { LinkRow, SettingsCard } from "@shared";
-import { appVersion, useExternalLink } from "@core";
+import {
+  appVersion,
+  REPOSITORY_ISSUES_URL,
+  REPOSITORY_URL,
+  useExternalLink,
+} from "@core";
 
 defineProps<{
   /**
@@ -59,13 +64,13 @@ const aboutLinks = [
   {
     label: "Report an Issue",
     desc: "Open a bug report or request a feature",
-    url: "https://github.com/AlbiDR/Clash-Manager/issues/new",
+    url: REPOSITORY_ISSUES_URL,
     icon: "warning",
   },
   {
     label: "Source Code",
     desc: "Read, audit, or fork the project",
-    url: "https://github.com/AlbiDR/Clash-Manager",
+    url: REPOSITORY_URL,
     icon: "github",
   },
   {

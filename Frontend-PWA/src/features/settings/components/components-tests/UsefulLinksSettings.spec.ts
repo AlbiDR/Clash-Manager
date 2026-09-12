@@ -115,8 +115,32 @@ describe("UsefulLinksSettings.vue", () => {
     expect(labels).toContain("RoyaleAPI Giveaway");
     expect(labels).toContain("Supercell ID Rewards");
     expect(labels).toContain("Clash Royale Store");
-    expect(labels).toContain("Clash Manager on GitHub");
     expect(labels).toContain("Download Android App");
+  });
+
+  it("leaves the repository link to the About card", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        buildNumber: 179,
+        filename: "clashmanager-v14.43.4+179.apk",
+        version: "14.43.4"
+      })
+    });
+
+    const wrapper = mountComponent();
+    await new Promise(resolve => setTimeout(resolve, 1));
+
+    const links = wrapper.findAll("button");
+    const labels = links.map(link => link.find(".link-label").text());
+    const renderedLinkCount = links.length;
+
+    // Useful Links carries outbound third-party destinations; the repository is
+    // this application's own provenance and belongs to About, which already
+    // surfaces it as "Source Code". Listing it in both places duplicated a single
+    // URL across two components with nothing keeping them in step.
+    expect(labels).not.toContain("Clash Manager on GitHub");
+    expect(renderedLinkCount).toBeGreaterThan(0);
   });
 
   it("omits the Download Android App link when running in native wrapper", () => {
