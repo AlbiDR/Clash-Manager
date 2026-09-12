@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
+**What was checked:** Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations; 0 optimization defects found
 
-**Why:** Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and optimized Workbox precache rules. vite.config.ts enforces optimal vendor chunk splitting.
+**Why:** All APK wrapper settings, Service Worker caching strategies, and Vite bundle chunking configurations match optimal baselines
 
-**Result:** PASSED: pnpm audit:apk (manifest, colors, shortcuts, digital asset links, version parity); pnpm apk:verify:source (custom native DEX layer intact); toolchain probe verified gradle / ANDROID_HOME.
+**Result:** pnpm audit:apk PASS; pnpm apk:verify:source PASS
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and optimized Workbox precache rules. vite.config.ts enforces optimal vendor chunk splitting.
-  Change: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
-  Result: PASSED: pnpm audit:apk (manifest, colors, shortcuts, digital asset links, version parity); pnpm apk:verify:source (custom native DEX layer intact); toolchain probe verified gradle / ANDROID_HOME.
+  Why: All APK wrapper settings, Service Worker caching strategies, and Vite bundle chunking configurations match optimal baselines
+  Change: Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations; 0 optimization defects found
+  Result: pnpm audit:apk PASS; pnpm apk:verify:source PASS
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
 -->
