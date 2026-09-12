@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1790 [Stage 7]: Audit complete: no version drift or catalog violations detected
+**Domain:** versioning | **Commit:** 96bd6989 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1790)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All monorepo package manifests and derived declarations are synchronized at ground truth version 14.50.54
+**Change:** Audit complete: no version drift or catalog violations detected
+**Result:** Passed catalog scan across Frontend-PWA and Backend package.json, verified package versions across package.json, Frontend-PWA/package.json, and Backend/package.json, and verified pnpm audit:version zero-drift result.
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1789 [Stage 6]: Audited useConsoleController.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates (audit CLEAN)
 **Domain:** documentation | **Commit:** b35a7ccd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1789)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
