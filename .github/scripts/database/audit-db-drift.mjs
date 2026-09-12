@@ -121,13 +121,25 @@ export function declaredObjects(baselineSource) {
  */
 const VAULT_LOOKUP = /get_vault_secret\s*\(/i;
 
+/**
+ * Schemas the Data API exposes, read from the project's own config rather than
+ * listed here. A function is only anon-reachable over PostgREST if its schema
+ * is in this set, so getting it from anywhere else would make the check either
+ * wrong or a second source of truth for something config.toml already states.
+ */
+export function exposedSchemas(configToml) {
+  const match = /^\s*schemas\s*=\s*\[([^\]]*)\]/m.exec(configToml || '');
+  if (!match) return null;
+  return new Set([...match[1].matchAll(/["']([^"']+)["']/g)].map(entry => entry[1]));
+}
+
 const qualify = (schema, name) => `${schema}.${name}`.toLowerCase();
 
 /**
  * Compares one snapshot against one baseline. Pure, so the whole audit is
  * testable without a database.
  */
-export function compareDrift(snapshot, declared) {
+export function compareDrift(snapshot, declared, exposed = null) {
   const findings = [];
   const note = (direction, kind, object, consequence) =>
     findings.push({ direction, kind, object, consequence });
@@ -173,6 +185,25 @@ export function compareDrift(snapshot, declared) {
     if (index.constraintBacked === undefined && (/_pkey\d*$/.test(name) || /_key$/.test(name))) continue;
     if (!declared.indexes.has(name)) {
       note('LIVE_NOT_DECLARED', 'INDEX', qualify(index.schema, name), 'This index exists only in the live database. A rebuild from the baseline would not create it, and its performance would not be reproduced.');
+    }
+  }
+
+  // A SECURITY DEFINER function that anon may execute, in a schema PostgREST
+  // exposes, is reachable by anyone holding the publishable key. That key is
+  // baked into the shipped PWA, so "anon" means "the internet".
+  //
+  // Reported as its own direction because the remediation is a GRANT change,
+  // not a schema change, and because no checker here had ANY rule about
+  // function EXECUTE privileges until public.get_vault_secret turned out to be
+  // handing out every Vault secret for three months.
+  if (exposed) {
+    for (const routine of snapshot.routines || []) {
+      if (!routine.securityDefiner) continue;
+      if (routine.executableByAnon !== true) continue;
+      if (!exposed.has(routine.schema)) continue;
+      const reach = routine.usesVaultLookup ? ' It reads Vault, so this exposes secrets directly.' : '';
+      note('LIVE_ANON_EXECUTABLE', 'FUNCTION', qualify(routine.schema, routine.name),
+        `SECURITY DEFINER and executable by anon in the Data API exposed schema "${routine.schema}". Anyone with the publishable key, which ships inside the PWA, can call it over /rest/v1/rpc.${reach} REVOKE EXECUTE FROM PUBLIC, anon, authenticated and GRANT only to the role that needs it.`);
     }
   }
 
@@ -365,8 +396,19 @@ export async function auditDbDrift({ repoRoot = REPO_ROOT, snapshotPath, snapsho
     return { status: 'NOT_COMPARED', reason: `Baseline could not be parsed: ${declared.error}`, findings: [] };
   }
 
-  const findings = compareDrift(snapshot, declared);
+  // The exposed-schema list comes from the project's config. If it cannot be
+  // read the anon-executable check is SKIPPED rather than guessed at, because
+  // guessing wrong in either direction is worse than not checking: a wrong
+  // list either invents findings or, far worse, quietly clears a function that
+  // really is reachable.
+  let exposed = null;
+  try {
+    exposed = exposedSchemas(await readFileImpl(path.join(repoRoot, 'Backend/supabase/config.toml'), 'utf8'));
+  } catch { exposed = null; }
+
+  const findings = compareDrift(snapshot, declared, exposed);
   return {
+    exposedSchemasKnown: exposed !== null,
     status: findings.length ? 'DRIFT' : 'MATCH', reason: null, findings,
     requiredByRoutine: declared.vaultReadsByRoutine || new Map(),
   };
@@ -390,12 +432,16 @@ function render(report) {
     DECLARED_NOT_LIVE: 'DECLARED IN THE BASELINE, ABSENT LIVE (a rebuild produces a database that does not work)',
     LIVE_NOT_DECLARED: 'LIVE, NEVER DECLARED (a rebuild from the baseline silently loses these)',
     LIVE_SECRET: 'CREDENTIAL IN A LIVE ROUTINE BODY',
+    LIVE_ANON_EXECUTABLE: 'ANON-EXECUTABLE SECURITY DEFINER FUNCTION IN AN EXPOSED SCHEMA',
   };
 
   const lines = [`Database drift audit: DRIFT (${report.findings.length} findings)`];
   for (const [direction, items] of byDirection) {
     lines.push('', titles[direction] || direction);
     for (const item of items) lines.push(`  ${item.kind} ${item.object}\n      ${item.consequence}`);
+  }
+  if (report.exposedSchemasKnown === false) {
+    lines.push('', 'NOT CHECKED', '  Backend/supabase/config.toml could not be read, so no function was checked for anon-executability. This is a gap in this run, not a clean result.');
   }
   if (report.alignment) lines.push('', 'ALIGNMENT WITH VAULT', `  ${report.alignment}`);
   if (report.vaultContents?.length) {

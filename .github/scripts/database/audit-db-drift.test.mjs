@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { alignmentVerdict, auditDbDrift, compareDrift, declaredObjects, describeAlignment } from './audit-db-drift.mjs';
+import { alignmentVerdict, auditDbDrift, compareDrift, declaredObjects, describeAlignment, exposedSchemas } from './audit-db-drift.mjs';
 
 const BASELINE = `
 CREATE SCHEMA IF NOT EXISTS drivers;
@@ -341,4 +341,62 @@ BEGIN PERFORM substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
 `);
   assert.deepEqual([...parsed.vaultReadsByRoutine.get('substrate.run_job')].sort(),
     ['INTERNAL_BEARER_TOKEN', 'SUPABASE_ANON_KEY']);
+});
+
+const EXPOSED = exposedSchemas('[api]\nschemas = ["public", "storage", "graphql_public", "features"]\n');
+const secdef = (over = {}) => ({
+  schema: 'public', name: 'get_vault_secret', hasEmbeddedSecret: false,
+  securityDefiner: true, executableByAnon: true, usesVaultLookup: true, ...over,
+});
+
+test('exposedSchemas reads the project config rather than assuming a list', () => {
+  assert.deepEqual([...EXPOSED].sort(), ['features', 'graphql_public', 'public', 'storage']);
+  assert.equal(exposedSchemas('nothing here'), null, 'an unreadable config must be null, not an empty set');
+});
+
+test('an anon-executable SECURITY DEFINER vault reader in an exposed schema is reported', () => {
+  // The live finding: public.get_vault_secret carried PostgreSQL's default
+  // EXECUTE TO PUBLIC from 2026-06-17, in a Data API exposed schema, reading
+  // vault.decrypted_secrets. Confirmed against production with HTTP 200.
+  const live = clone();
+  live.routines.push(secdef());
+  const finding = compareDrift(live, declared(), EXPOSED).find(f => f.direction === 'LIVE_ANON_EXECUTABLE');
+  assert.ok(finding, 'this must be reported');
+  assert.match(finding.consequence, /publishable key/);
+  assert.match(finding.consequence, /reads Vault, so this exposes secrets directly/);
+  assert.match(finding.consequence, /REVOKE EXECUTE/);
+});
+
+test('the same function is not reported once anon can no longer execute it', () => {
+  const live = clone();
+  live.routines.push(secdef({ executableByAnon: false }));
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+});
+
+test('an unexposed schema is not reachable over PostgREST and is not reported', () => {
+  const live = clone();
+  live.routines.push(secdef({ schema: 'substrate' }));
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+});
+
+test('a SECURITY INVOKER function is not reported however widely granted', () => {
+  // Without SECURITY DEFINER the caller's own privileges apply, so a PUBLIC
+  // grant does not escalate anything.
+  const live = clone();
+  live.routines.push(secdef({ securityDefiner: false }));
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+});
+
+test('an unknown exposed-schema list SKIPS the check rather than clearing it', () => {
+  // Guessing wrong here clears a function that really is reachable, which is
+  // strictly worse than not checking. The report says the check did not run.
+  const live = clone();
+  live.routines.push(secdef());
+  assert.deepEqual(compareDrift(live, declared(), null).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+});
+
+test('an older snapshot without the privilege fields reports nothing rather than guessing', () => {
+  const live = clone();
+  live.routines.push({ schema: 'public', name: 'legacy', hasEmbeddedSecret: false });
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
 });

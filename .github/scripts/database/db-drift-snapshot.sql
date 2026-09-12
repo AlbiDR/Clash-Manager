@@ -96,7 +96,29 @@ SELECT jsonb_pretty(jsonb_build_object(
         ) AS r(rule, fired)
         WHERE r.fired
       ),
-      'usesVaultLookup', (p.prosrc ~ '(?i)get_vault_secret\s*\(')
+      'usesVaultLookup', (p.prosrc ~ '(?i)get_vault_secret\s*\('),
+
+      -- Who may actually EXECUTE this, asked of Postgres rather than parsed
+      -- out of proacl. has_function_privilege accounts for the default PUBLIC
+      -- grant and for role inheritance, which a proacl string does not make
+      -- obvious: a NULL proacl means "default", and the default is PUBLIC.
+      --
+      -- This exists because public.get_vault_secret, a SECURITY DEFINER reader
+      -- of vault.decrypted_secrets, sat in a Data API exposed schema with that
+      -- default grant from 2026-06-17 to 2026-09-12, which made every Vault
+      -- secret readable by anyone holding the publishable key. Nothing could
+      -- see it: this snapshot captured columns, indexes, bodies and RLS, and
+      -- audit-migrations enforces RLS only for TABLES, so no checker had any
+      -- rule about function EXECUTE privileges at all.
+      'securityDefiner', p.prosecdef,
+      'executableByAnon', (
+        CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
+             THEN has_function_privilege('anon', p.oid, 'EXECUTE') END
+      ),
+      'executableByAuthenticated', (
+        CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated')
+             THEN has_function_privilege('authenticated', p.oid, 'EXECUTE') END
+      )
     ) ORDER BY n.nspname, p.proname), '[]'::jsonb)
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace

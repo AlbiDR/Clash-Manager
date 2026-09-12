@@ -3411,6 +3411,16 @@ BEGIN
 END;
 $$;
 
+-- EXECUTE is restricted immediately. PostgreSQL grants EXECUTE on a new
+-- function to PUBLIC by default, anon inherits PUBLIC, and `public` is a Data
+-- API exposed schema, so without these lines a rebuild from this baseline
+-- makes every Vault secret anonymously readable over
+-- /rest/v1/rpc/get_vault_secret. That was the live state until 2026-09-12.
+REVOKE EXECUTE ON FUNCTION public.get_vault_secret(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_vault_secret(text) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.get_vault_secret(text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.get_vault_secret(text) TO service_role;
+
 COMMENT ON FUNCTION public.get_vault_secret(text) IS
     'Public RPC bridge for substrate.get_vault_secret. '
     'Required by Edge Function vault.ts which calls supabase.rpc() '
