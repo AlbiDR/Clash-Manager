@@ -421,3 +421,10 @@
 * [2026-09-11] Target: Codebase - pinia | ^3.0.4 | 4.0.3 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
 * [2026-09-11] Target: Codebase - jsdom | ^29.1.1 | 30.0.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
 * [2026-09-11] [Stage 8] [06:23Z-06:31Z 8m] CHANGED: package.json -- Bumped @vue/test-utils to ^2.5.0 in catalog
+* [2026-09-12] Target: Codebase - p-limit | 7.3.1 | 7.3.2 | | PASS
+* [2026-09-12] Target: Codebase - vite | ^7.3.6 | 8.3.0 | 2026-07-14 | Breaking: Unified bundler (Rolldown), build.rollupOptions renamed to build.rolldownOptions, CJS interop changes. Latest advanced to 8.3.0 within the same major; no new breaking surface for this codebase.
+* [2026-09-12] Target: Codebase - vitest | ^4.1.11 | 5.0.0 | 2026-09-04 | Breaking: Dropped Node 18/20 support, browser runner refactored, native ESM strict config enforcement.
+* [2026-09-12] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure.
+* [2026-09-12] Target: Codebase - pinia | ^3.0.4 | 4.0.3 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
+* [2026-09-12] Target: Codebase - jsdom | ^29.1.1 | 30.0.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
+* [2026-09-12] [Stage 8] [06:26Z-06:33Z 7m] CHANGED: Backend/package.json -- Bumped p-limit from 7.3.1 to 7.3.2 and updated major version watchlist

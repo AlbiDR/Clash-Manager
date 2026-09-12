@@ -10015,8 +10015,8 @@
             "name": "sessions/9597569680957915796",
             "state": "COMPLETED",
             "createTime": "2026-09-10T23:22:18.022122747Z",
-            "updateTime": "2026-09-10T23:33:24.142662Z",
-            "lifetimeMinutes": 11.1
+            "updateTime": "2026-09-11T20:04:26.457106Z",
+            "lifetimeMinutes": 1242.1
           },
           "run": {
             "started": "2026-09-10T23:24:00Z",
@@ -10035,7 +10035,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.713Z",
+        "lastObservedAt": "2026-09-11T23:22:13.854Z",
         "failureClass": null
       },
       "2": {
@@ -10052,8 +10052,8 @@
             "name": "sessions/12863654131435043925",
             "state": "COMPLETED",
             "createTime": "2026-09-11T00:07:04.325948309Z",
-            "updateTime": "2026-09-11T00:18:09.207706Z",
-            "lifetimeMinutes": 11.1
+            "updateTime": "2026-09-11T20:06:14.065133Z",
+            "lifetimeMinutes": 1199.2
           },
           "run": {
             "started": "2026-09-11T00:09:00Z",
@@ -10072,7 +10072,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.713Z",
+        "lastObservedAt": "2026-09-11T23:22:13.854Z",
         "failureClass": null
       },
       "3": {
@@ -10101,8 +10101,8 @@
             "name": "sessions/5032227199354511164",
             "state": "COMPLETED",
             "createTime": "2026-09-11T01:12:03.557126670Z",
-            "updateTime": "2026-09-11T02:19:29.188295Z",
-            "lifetimeMinutes": 67.4
+            "updateTime": "2026-09-11T20:04:36.496660Z",
+            "lifetimeMinutes": 1132.5
           },
           "recovery": {
             "nudgedAt": "2026-09-11T02:16:27.262Z",
@@ -10125,7 +10125,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-11T16:50:36.714Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "4": {
@@ -10153,8 +10153,8 @@
             "name": "sessions/13333560245513838515",
             "state": "COMPLETED",
             "createTime": "2026-09-11T02:07:49.203405731Z",
-            "updateTime": "2026-09-11T02:15:58.630981Z",
-            "lifetimeMinutes": 8.2
+            "updateTime": "2026-09-11T20:06:13.272067Z",
+            "lifetimeMinutes": 1078.4
           },
           "run": {
             "started": "2026-09-11T02:10:00Z",
@@ -10168,7 +10168,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.715Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "5": {
@@ -10188,14 +10188,7 @@
             "reason": "no adverse trend"
           },
           "tag": "nightly/2026-09-11/stage-5/pr-1775",
-          "session": {
-            "id": "13518597813205999989",
-            "name": "sessions/13518597813205999989",
-            "state": "COMPLETED",
-            "createTime": "2026-09-11T03:21:28.613651030Z",
-            "updateTime": "2026-09-11T03:29:34.139142Z",
-            "lifetimeMinutes": 8.1
-          },
+          "session": null,
           "run": {
             "started": "2026-09-11T03:23:00Z",
             "terminated": "2026-09-11T03:27:00Z",
@@ -10208,7 +10201,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.715Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "6": {
@@ -10251,7 +10244,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.716Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "7": {
@@ -10294,7 +10287,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.716Z",
+        "lastObservedAt": "2026-09-11T23:22:13.855Z",
         "failureClass": null
       },
       "8": {
@@ -10337,7 +10330,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.717Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "9": {
@@ -10377,7 +10370,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.717Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "10": {
@@ -10420,7 +10413,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.718Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "11": {
@@ -10463,7 +10456,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.718Z",
+        "lastObservedAt": "2026-09-11T23:22:13.856Z",
         "failureClass": null
       },
       "12": {
@@ -10503,7 +10496,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.719Z",
+        "lastObservedAt": "2026-09-11T23:22:13.857Z",
         "failureClass": null
       },
       "13": {
@@ -10543,7 +10536,551 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-11T16:50:36.720Z",
+        "lastObservedAt": "2026-09-11T23:22:13.857Z",
+        "failureClass": null
+      }
+    },
+    "2026-09-12": {
+      "1": {
+        "date": "2026-09-12",
+        "stage": 1,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-09-11/stage-1/pr-1784",
+          "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
+          "session": {
+            "id": "10450230433938406146",
+            "name": "sessions/10450230433938406146",
+            "state": "COMPLETED",
+            "createTime": "2026-09-11T23:10:03.532306952Z",
+            "updateTime": "2026-09-11T23:20:08.294517Z",
+            "lifetimeMinutes": 10.1
+          },
+          "run": {
+            "started": "2026-09-11T23:12:00Z",
+            "terminated": "2026-09-11T23:18:00Z",
+            "durationMinutes": 6
+          },
+          "body": {
+            "pr": 1784,
+            "verdict": "OK",
+            "ok": true
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.521Z",
+        "failureClass": null
+      },
+      "2": {
+        "date": "2026-09-12",
+        "stage": 2,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "tag": "nightly/2026-09-12/stage-2/pr-1785",
+          "coverageLog": ".github/nightly-logs/02-verification-coverage.log",
+          "session": {
+            "id": "9656032296743783578",
+            "name": "sessions/9656032296743783578",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T00:10:56.284107360Z",
+            "updateTime": "2026-09-12T00:35:09.797459Z",
+            "lifetimeMinutes": 24.2
+          },
+          "run": {
+            "started": "2026-09-12T00:12:00Z",
+            "terminated": "2026-09-12T00:31:00Z",
+            "durationMinutes": 19
+          },
+          "body": {
+            "pr": 1785,
+            "verdict": "OK",
+            "ok": true
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.521Z",
+        "failureClass": null
+      },
+      "3": {
+        "date": "2026-09-12",
+        "stage": 3,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/03-baseline-consolidation-coverage.log",
+          "notReached": {
+            "frontier": 2
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "prNumber": 1786,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1786",
+          "headRef": "nightly/stage-3-baseline-consolidation-b9c61e9f-17395777506305240410",
+          "tag": "nightly/2026-09-12/stage-3/pr-1786",
+          "session": {
+            "id": "17395777506305240410",
+            "name": "sessions/17395777506305240410",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T01:13:44.300086775Z",
+            "updateTime": "2026-09-12T01:21:49.709927Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-12T01:15:00Z",
+            "terminated": "2026-09-12T01:19:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1786,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.522Z",
+        "failureClass": null
+      },
+      "4": {
+        "date": "2026-09-12",
+        "stage": 4,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
+          "notReached": {
+            "frontier": 3
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-12/stage-4/pr-1787",
+          "session": {
+            "id": "6799315708654542240",
+            "name": "sessions/6799315708654542240",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T02:08:33.507511713Z",
+            "updateTime": "2026-09-12T02:16:37.270824Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-12T02:10:00Z",
+            "terminated": "2026-09-12T02:15:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1787,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.522Z",
+        "failureClass": null
+      },
+      "5": {
+        "date": "2026-09-12",
+        "stage": 5,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
+          "notReached": {
+            "frontier": 4
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-12/stage-5/pr-1788",
+          "session": {
+            "id": "18033148586102026074",
+            "name": "sessions/18033148586102026074",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T03:10:37.553057453Z",
+            "updateTime": "2026-09-12T03:18:47.030034Z",
+            "lifetimeMinutes": 8.2
+          },
+          "run": {
+            "started": "2026-09-12T03:12:00Z",
+            "terminated": "2026-09-12T03:16:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1788,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.523Z",
+        "failureClass": null
+      },
+      "6": {
+        "date": "2026-09-12",
+        "stage": 6,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
+          "notReached": {
+            "frontier": 5
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "prNumber": 1789,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1789",
+          "headRef": "nightly/stage-6-documentation-tsdoc-bdd8f7cc-7131340631644746882",
+          "tag": "nightly/2026-09-12/stage-6/pr-1789",
+          "session": {
+            "id": "7131340631644746882",
+            "name": "sessions/7131340631644746882",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T04:06:28.044053171Z",
+            "updateTime": "2026-09-12T04:15:39.258255Z",
+            "lifetimeMinutes": 9.2
+          },
+          "run": {
+            "started": "2026-09-12T04:08:00Z",
+            "terminated": "2026-09-12T04:12:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1789,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.524Z",
+        "failureClass": null
+      },
+      "7": {
+        "date": "2026-09-12",
+        "stage": 7,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
+          "notReached": {
+            "frontier": 6
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-12/stage-7/pr-1790",
+          "session": {
+            "id": "11798429215279673453",
+            "name": "sessions/11798429215279673453",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T05:27:53.190489219Z",
+            "updateTime": "2026-09-12T05:34:58.239618Z",
+            "lifetimeMinutes": 7.1
+          },
+          "run": {
+            "started": "2026-09-12T05:29:00Z",
+            "terminated": "2026-09-12T05:33:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1790,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.524Z",
+        "failureClass": null
+      },
+      "8": {
+        "date": "2026-09-12",
+        "stage": 8,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
+          "notReached": {
+            "frontier": 7
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "prNumber": 1791,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1791",
+          "headRef": "nightly/stage-8-dependency-audit-1fcb01d5-3221122348493398986",
+          "tag": "nightly/2026-09-12/stage-8/pr-1791",
+          "session": {
+            "id": "3221122348493398986",
+            "name": "sessions/3221122348493398986",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T06:24:54.526012697Z",
+            "updateTime": "2026-09-12T06:36:01.760076Z",
+            "lifetimeMinutes": 11.1
+          },
+          "run": {
+            "started": "2026-09-12T06:26:00Z",
+            "terminated": "2026-09-12T06:33:00Z",
+            "durationMinutes": 7
+          },
+          "body": {
+            "pr": 1791,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.525Z",
+        "failureClass": null
+      },
+      "9": {
+        "date": "2026-09-12",
+        "stage": 9,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
+          "notReached": {
+            "frontier": 8
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-12/stage-9/pr-1792",
+          "session": {
+            "id": "10839798256562112335",
+            "name": "sessions/10839798256562112335",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T07:27:17.421548353Z",
+            "updateTime": "2026-09-12T07:37:23.036972Z",
+            "lifetimeMinutes": 10.1
+          },
+          "run": {
+            "started": "2026-09-12T07:29:00Z",
+            "terminated": "2026-09-12T07:35:00Z",
+            "durationMinutes": 6
+          },
+          "body": {
+            "pr": 1792,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.525Z",
+        "failureClass": null
+      },
+      "10": {
+        "date": "2026-09-12",
+        "stage": 10,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
+          "notReached": {
+            "frontier": 9
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-12/stage-10/pr-1793",
+          "session": {
+            "id": "4080237348003954458",
+            "name": "sessions/4080237348003954458",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T08:11:58.708983470Z",
+            "updateTime": "2026-09-12T08:22:02.743004Z",
+            "lifetimeMinutes": 10.1
+          },
+          "run": {
+            "started": "2026-09-12T08:15:00Z",
+            "terminated": "2026-09-12T08:20:00Z",
+            "durationMinutes": 6
+          },
+          "body": {
+            "pr": 1793,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.526Z",
+        "failureClass": null
+      },
+      "11": {
+        "date": "2026-09-12",
+        "stage": 11,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
+          "notReached": {
+            "frontier": 10
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "prNumber": 1794,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1794",
+          "headRef": "nightly/stage-11-apk-optimization-3708f8e4-6085614474581384188",
+          "tag": "nightly/2026-09-12/stage-11/pr-1794",
+          "session": {
+            "id": "6085614474581384188",
+            "name": "sessions/6085614474581384188",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T09:21:45.280752786Z",
+            "updateTime": "2026-09-12T09:28:57.618719Z",
+            "lifetimeMinutes": 7.2
+          },
+          "run": {
+            "started": "2026-09-12T09:23:00Z",
+            "terminated": "2026-09-12T09:27:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1794,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.526Z",
+        "failureClass": null
+      },
+      "12": {
+        "date": "2026-09-12",
+        "stage": 12,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
+          "notReached": {
+            "frontier": 11
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 1,
+            "reason": "no adverse trend"
+          },
+          "julesSession": {
+            "id": "2664693242287308293",
+            "name": "sessions/2664693242287308293",
+            "state": "COMPLETED"
+          },
+          "session": {
+            "id": "2664693242287308293",
+            "name": "sessions/2664693242287308293",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T10:16:27.998716506Z",
+            "updateTime": "2026-09-12T11:20:24.973158Z",
+            "lifetimeMinutes": 63.9
+          },
+          "recovery": {
+            "nudgedAt": "2026-09-12T11:18:21.939Z",
+            "sessionName": "sessions/2664693242287308293",
+            "ok": true,
+            "error": null
+          },
+          "prNumber": 1796,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1796",
+          "tag": "nightly/2026-09-12/stage-12/pr-1796",
+          "run": {
+            "started": "2026-09-12T10:18:00Z",
+            "terminated": "2026-09-12T10:20:00Z",
+            "durationMinutes": 2
+          },
+          "body": {
+            "pr": 1796,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 1,
+        "lastObservedAt": "2026-09-12T15:57:07.527Z",
+        "failureClass": null
+      },
+      "13": {
+        "date": "2026-09-12",
+        "stage": 13,
+        "expectedAfterUtc": null,
+        "deadlineUtc": null,
+        "state": "MERGED",
+        "evidence": {
+          "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
+          "notReached": {
+            "frontier": 11
+          },
+          "health": {
+            "verdict": "HEALTHY",
+            "currentStreak": 0,
+            "reason": "no adverse trend"
+          },
+          "prNumber": 1795,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1795",
+          "headRef": "nightly/stage-13-self-healing-protocol-151b0ae5-8982341662655950519",
+          "tag": "nightly/2026-09-12/stage-13/pr-1795",
+          "session": {
+            "id": "8982341662655950519",
+            "name": "sessions/8982341662655950519",
+            "state": "COMPLETED",
+            "createTime": "2026-09-12T11:09:51.610863367Z",
+            "updateTime": "2026-09-12T11:17:57.060700Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-12T11:11:00Z",
+            "terminated": "2026-09-12T11:16:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1795,
+            "verdict": "OK",
+            "ok": true
+          }
+        },
+        "attempts": 0,
+        "lastObservedAt": "2026-09-12T15:57:07.528Z",
         "failureClass": null
       }
     }

@@ -378,6 +378,13 @@
   - Root Cause: Post-commit processing or baseline audit execution exceeded standard runtime reserve limits without emitting terminal finalization events.
   - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 3 completed and published a CLEAN coverage log entry for 2026-09-11. Pipeline intervention rate for 2026-09-11: 1/12 (8.3%).
 
+* Missing-Run / Unobservable Events on 2026-09-12:
+  - Stages: Stage 12 (APK-UX) [MISSING-OUTPUT] (2026-09-12).
+  - State: [MISSING-OUTPUT]
+  - Symptom: No published coverage log entry for 2026-09-12 in 12-apk-ux-coverage.log at audit time.
+  - Root Cause: UNOBSERVABLE without authenticated session evidence. Ledger shows state EXPECTED for 2026-09-12.
+  - Recommended Fix: Monitor subsequent run for automatic recovery or session completion. Pipeline intervention rate for 2026-09-12: 0/11 (0.0%).
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -420,53 +427,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 18 (CLEAN logged on 2026-09-10; audit duration: 7m)
+  - Consecutive No-Diff Days: 19 (CLEAN logged on 2026-09-11 [merged via PR #1784 at 23:18Z]; audit duration: 6m)
   - Analysis: Completed runtime integrity audit pass with zero threat vectors across Edge Functions and schema boundaries.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-11 in vault.spec.ts; audit duration: 6m)
-  - Analysis: Added comprehensive unit tests for L1 Core Vault Secret Broker in vault.spec.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-12 in useProgressiveList.spec.ts; audit duration: 19m)
+  - Analysis: Expanded unit test coverage for useProgressiveList composable.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-09-11; audit duration: 3m)
-  - Analysis: Baseline current across 32 migrations with 0 pending. Read-only audit confirmed RLS compliance, search_path isolation, and formatting rules. Recovered from 2026-09-10 session failure via watchdog nudge intervention.
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-09-12; audit duration: 4m)
+  - Analysis: Baseline current across 32 migrations with 0 pending. Read-only audit confirmed RLS compliance, search_path isolation, and zero formatting deviations.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-09-11; audit duration: 4m)
-  - Analysis: Audited Edge Function SQL view usage and L1/L0 performance composables; zero substrate or logic bottlenecks found.
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-09-12; audit duration: 5m)
+  - Analysis: Audited Edge Function SQL view usage and L1 performance composables (useProgressiveList.ts, protocol.ts); confirmed 56 changed files inspected with 0 code mutations required. Note: Flagged historical 0m zero-minute audit on 2026-09-07 ("Audited Edge Function SQL view usage...").
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-11 in core/services README; audit duration: 4m)
-  - Analysis: Reconciled useClashSyncUtils.ts extraction in core services README.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-12; audit duration: 4m)
+  - Analysis: Audited useConsoleController.ts against core services README; verified accurate and no drift present.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-11 in useClashSyncUtils.ts; audit duration: 6m)
-  - Analysis: Hardened useClashSync and useClashSyncUtils TSDoc interface contracts and inline logic annotations.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-12; audit duration: 5m)
+  - Analysis: Audited useConsoleController.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 131 (CLEAN logged on 2026-09-11; audit duration: 2m)
-  - Analysis: Monorepo package versions and catalog references verified across all targets (ground truth 14.50.52).
+  - Consecutive No-Diff Days: 132 (CLEAN logged on 2026-09-12; audit duration: 4m)
+  - Analysis: Monorepo package versions and catalog references verified across all targets (ground truth ground-truth compliant, 0 drift).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-11 in package.json; audit duration: 8m)
-  - Analysis: Bumped @vue/test-utils to ^2.5.0 in catalog and lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-12 in Backend/package.json; audit duration: 7m)
+  - Analysis: Bumped p-limit from 7.3.1 to 7.3.2 and updated major version watchlist.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-11; audit duration: 4m)
-  - Analysis: Structural scan confirmed CleanStack compliance; inspected protocol.ts, VoyageBanner.vue, useProgressiveList.ts.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-09-12; audit duration: 6m)
+  - Analysis: Target A/B/C structural scan and defect hunt verified 0 depcruise violations across 64 candidate files.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 64 (CLEAN logged on 2026-09-11; audit duration: 2m)
-  - Analysis: Verified PWA/APK wrapper integrity invariants across asset links, manifest parity, version codes/names sync, release metadata, and cleartext policy.
+  - Consecutive No-Diff Days: 65 (CLEAN logged on 2026-09-12; audit duration: 6m)
+  - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security policy.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 54 (CLEAN logged on 2026-09-11; audit duration: 3m)
-  - Analysis: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
+  - Consecutive No-Diff Days: 55 (CLEAN logged on 2026-09-12; audit duration: 4m)
+  - Analysis: Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-09-11; audit duration: 2m)
-  - Analysis: Audited Frontend-PWA/src (75 files examined) across 10 hybrid shell UX categories with 0 violations found; calibration due with 10 consecutive clean passes.
+  - Consecutive No-Diff Days: 12 (MISSING-OUTPUT on 2026-09-12; previous CLEAN on 2026-09-11; audit duration: 2m)
+  - Analysis: No published coverage log entry for 2026-09-12 at audit time. Note: Flagged historical 0m zero-minute audit on 2026-09-08 ("No UX issues found across 75 examined files in 10 UX categories"). Calibration due flag set to NO.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-11; audit duration: 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-09-11: recorded Stage 3 watchdog nudge recovery (intervention rate 1/12 = 8.3%), verified zero unfinalized sentinels or failure classes across preceding merged stages, and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-12; audit duration: 4m)
+  - Analysis: Completed daily self-healing audit pass for 2026-09-12: recorded Stage 12 MISSING-OUTPUT event, verified 0 watchdog nudges (intervention rate 0/11 = 0.0%), flagged two historical 0m zero-minute audits (S04 on 2026-09-07 and S12 on 2026-09-08), verified zero unfinalized sentinels or failure classes across preceding merged stages, and updated Section 3 metrics.
