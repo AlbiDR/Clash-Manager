@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1793 [Stage 10]: Verified APK and PWA wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security policy
+**Domain:** apk | **Commit:** 0f12bccf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1793)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All APK/PWA wrapper configuration invariants match strictly with no source modifications required
+**Change:** Verified APK and PWA wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security policy
+**Result:** pnpm audit:apk (PASS), pnpm apk:verify:source (PASS), pnpm test:version-code (PASS)
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1792 [Stage 9]: Target A/B/C structural scan and defect hunt verified 0 depcruise violations, 64 candidate files, and 0 defect hunt failures across core services (apkResolverUtils.ts, useProgressiveList.ts, protocol.ts); consecutive-clean: 1.
 **Domain:** architecture | **Commit:** b92b1cc1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1792)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
