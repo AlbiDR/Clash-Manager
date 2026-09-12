@@ -172,7 +172,19 @@ export function compareDrift(snapshot, declared) {
  * fallback because deploy-supabase.yml links from Backend/.
  */
 export async function captureLiveSnapshot({ repoRoot = REPO_ROOT, exec = run } = {}) {
-  const sql = await readFile(path.join(repoRoot, '.github/scripts/database/db-drift-snapshot.sql'), 'utf8');
+  const raw = await readFile(path.join(repoRoot, '.github/scripts/database/db-drift-snapshot.sql'), 'utf8');
+  // Whole-line SQL comments are stripped before the query is handed to the CLI.
+  // The file opens with its licence header, so the argument began with `--` and
+  // the CLI parsed the entire query as a flag: "UnrecognizedOption:
+  // Unrecognized flag: -- SPDX-License-Identifier". audit-cron-schedule.mjs
+  // never hit this because its query is a bare select with no comments. The
+  // comments exist for the human reading the file, not for Postgres, and every
+  // one of them is on its own line, so removing those lines changes no SQL.
+  const sql = raw
+    .split('\n')
+    .filter(line => !line.trim().startsWith('--'))
+    .join('\n')
+    .trim();
   let stdout = null;
   let lastError = null;
   for (const cwd of [path.join(repoRoot, 'Backend'), repoRoot]) {
