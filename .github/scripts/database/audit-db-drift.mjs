@@ -51,10 +51,12 @@
  */
 
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+
+import { parseVaultReadsByRoutine } from '../project/credential-fanout.mjs';
 import { promisify } from 'node:util';
 
 import { identifyDefinition } from './audit-migrations.mjs';
@@ -87,13 +89,20 @@ export function declaredObjects(baselineSource) {
   const indexes = new Set();
   const routines = new Set();
   const rls = new Set();
+  // Routines the baseline declares as resolving their credential at runtime.
+  // Used to tell "the live body is behind the repository" apart from "the
+  // repository never had a safe version", which call for opposite actions.
+  const vaultRoutines = new Set();
 
   for (const statement of parsed.statements) {
     const definition = identifyDefinition(statement);
     if (!definition) continue;
     if (definition.kind === 'TABLE') tables.add(definition.name);
     else if (definition.kind === 'INDEX') indexes.add(definition.name.replace(/^.*\./, ''));
-    else if (definition.kind === 'FUNCTION') routines.add(definition.name);
+    else if (definition.kind === 'FUNCTION') {
+      routines.add(definition.name);
+      if (VAULT_LOOKUP.test(statement.executable)) vaultRoutines.add(definition.name.replace(/\(.*$/, ''));
+    }
   }
 
   // RLS is an ALTER, not a CREATE, so identifyDefinition does not model it.
@@ -103,7 +112,25 @@ export function declaredObjects(baselineSource) {
     if (match) rls.add(match[1].replaceAll('"', '').toLowerCase());
   }
 
-  return { tables, indexes, routines, rls };
+  return { tables, indexes, routines, rls, vaultRoutines, vaultReadsByRoutine: parseVaultReadsByRoutine([baselineSource]) };
+}
+
+/**
+ * A credential resolved at runtime rather than carried as a literal. Both
+ * sides test for the call, never for the value, so nothing here can leak one.
+ */
+const VAULT_LOOKUP = /get_vault_secret\s*\(/i;
+
+/**
+ * Schemas the Data API exposes, read from the project's own config rather than
+ * listed here. A function is only anon-reachable over PostgREST if its schema
+ * is in this set, so getting it from anywhere else would make the check either
+ * wrong or a second source of truth for something config.toml already states.
+ */
+export function exposedSchemas(configToml) {
+  const match = /^\s*schemas\s*=\s*\[([^\]]*)\]/m.exec(configToml || '');
+  if (!match) return null;
+  return new Set([...match[1].matchAll(/["']([^"']+)["']/g)].map(entry => entry[1]));
 }
 
 const qualify = (schema, name) => `${schema}.${name}`.toLowerCase();
@@ -112,7 +139,7 @@ const qualify = (schema, name) => `${schema}.${name}`.toLowerCase();
  * Compares one snapshot against one baseline. Pure, so the whole audit is
  * testable without a database.
  */
-export function compareDrift(snapshot, declared) {
+export function compareDrift(snapshot, declared, exposed = null) {
   const findings = [];
   const note = (direction, kind, object, consequence) =>
     findings.push({ direction, kind, object, consequence });
@@ -146,20 +173,65 @@ export function compareDrift(snapshot, declared) {
   // in the database, so a rebuild from the baseline silently loses it. This is
   // the direction that caused the 2026-09-06 near miss.
   for (const [name, index] of liveIndexes) {
-    // Constraint-backed indexes are created by their constraint, not declared
-    // separately, so they are not drift.
-    if (/_pkey$/.test(name) || /_key$/.test(name)) continue;
+    // Constraint-backed indexes are created by their PRIMARY KEY or UNIQUE
+    // constraint and cannot be declared separately, so they are not drift.
+    //
+    // The database is asked directly. The first production run guessed from
+    // the name and reported members_new_pkey1 and several *_unique indexes as
+    // drift, because the suffix test matched only _pkey and _key. The name
+    // heuristic remains as a fallback for a snapshot taken before the field
+    // existed, so an old snapshot degrades rather than lying.
+    if (index.constraintBacked === true) continue;
+    if (index.constraintBacked === undefined && (/_pkey\d*$/.test(name) || /_key$/.test(name))) continue;
     if (!declared.indexes.has(name)) {
       note('LIVE_NOT_DECLARED', 'INDEX', qualify(index.schema, name), 'This index exists only in the live database. A rebuild from the baseline would not create it, and its performance would not be reproduced.');
     }
   }
 
-  // Secrets in routine bodies, which no repository-side audit can ever see
-  // because the body is not in a tracked file.
-  for (const routine of snapshot.routines || []) {
-    if (routine.hasEmbeddedSecret) {
-      note('LIVE_SECRET', 'FUNCTION', qualify(routine.schema, routine.name), 'This function body contains a credential-shaped literal. It is in the database and in no tracked file, so no repository audit can detect it. Rotate the credential and move it to a secret.');
+  // A SECURITY DEFINER function that anon may execute, in a schema PostgREST
+  // exposes, is reachable by anyone holding the publishable key. That key is
+  // baked into the shipped PWA, so "anon" means "the internet".
+  //
+  // Reported as its own direction because the remediation is a GRANT change,
+  // not a schema change, and because no checker here had ANY rule about
+  // function EXECUTE privileges until public.get_vault_secret turned out to be
+  // handing out every Vault secret for three months.
+  if (exposed) {
+    for (const routine of snapshot.routines || []) {
+      if (!routine.securityDefiner) continue;
+      if (routine.executableByAnon !== true) continue;
+      if (!exposed.has(routine.schema)) continue;
+      const reach = routine.usesVaultLookup ? ' It reads Vault, so this exposes secrets directly.' : '';
+      note('LIVE_ANON_EXECUTABLE', 'FUNCTION', qualify(routine.schema, routine.name),
+        `SECURITY DEFINER and executable by anon in the Data API exposed schema "${routine.schema}". Anyone with the publishable key, which ships inside the PWA, can call it over /rest/v1/rpc.${reach} REVOKE EXECUTE FROM PUBLIC, anon, authenticated and GRANT only to the role that needs it.`);
     }
+  }
+
+  // Secrets in routine bodies. The live body is what runs, and it is not
+  // necessarily what the repository declares, so this reports the live fact
+  // and then says which of the two remediations applies.
+  //
+  // The first production run wrote "it is in no tracked file, so no
+  // repository audit can detect it" for three substrate.run_* functions that
+  // are in fact declared in master_migration.sql, reading from Vault. The
+  // claim was wrong and it pointed at the wrong fix: the safe version already
+  // existed in the repository and had simply never reached the database.
+  for (const routine of snapshot.routines || []) {
+    if (!routine.hasEmbeddedSecret) continue;
+    const name = qualify(routine.schema, routine.name);
+    const rules = Array.isArray(routine.secretRules) && routine.secretRules.length
+      ? ` Matched by: ${routine.secretRules.join(', ')}.`
+      : '';
+
+    // The live body carries a literal while the baseline declares the same
+    // function resolving its credential at runtime. The database is running
+    // an older definition than the repository believes is deployed.
+    if (declared.vaultRoutines?.has(name) && routine.usesVaultLookup === false) {
+      note('LIVE_SECRET', 'FUNCTION', name, `The live body carries a credential-shaped literal, but the baseline declares this function resolving its credential at runtime. The database is running an older definition than the repository declares. Rotate the credential, then apply the declared definition.${rules}`);
+      continue;
+    }
+
+    note('LIVE_SECRET', 'FUNCTION', name, `This function body contains a credential-shaped literal. Rotate the credential and resolve it at runtime instead of embedding it.${rules}`);
   }
 
   return findings;
@@ -172,7 +244,16 @@ export function compareDrift(snapshot, declared) {
  * fallback because deploy-supabase.yml links from Backend/.
  */
 export async function captureLiveSnapshot({ repoRoot = REPO_ROOT, exec = run } = {}) {
-  const raw = await readFile(path.join(repoRoot, '.github/scripts/database/db-drift-snapshot.sql'), 'utf8');
+  return runQueryFile('db-drift-snapshot.sql', 'snapshot', { repoRoot, exec });
+}
+
+/**
+ * Runs one read-only query file through the Supabase CLI and returns its single
+ * JSON column. One helper for both queries, so the CLI quirks below are worked
+ * around in exactly one place.
+ */
+export async function runQueryFile(fileName, column, { repoRoot = REPO_ROOT, exec = run } = {}) {
+  const raw = await readFile(path.join(repoRoot, '.github/scripts/database', fileName), 'utf8');
   // Whole-line SQL comments are stripped before the query is handed to the CLI.
   // The file opens with its licence header, so the argument began with `--` and
   // the CLI parsed the entire query as a flag: "UnrecognizedOption:
@@ -196,11 +277,98 @@ export async function captureLiveSnapshot({ repoRoot = REPO_ROOT, exec = run } =
   if (stdout === null) throw lastError ?? new Error('no linked Supabase project found');
 
   const rows = parseRows(stdout);
-  const value = rows[0] && (rows[0].snapshot ?? rows[0].jsonb_pretty ?? Object.values(rows[0])[0]);
-  if (!value) throw new Error('snapshot query returned no snapshot column');
+  const value = rows[0] && (rows[0][column] ?? rows[0].jsonb_pretty ?? Object.values(rows[0])[0]);
+  if (!value) throw new Error(`${fileName} returned no ${column} column`);
   // jsonb_pretty yields text; a bare jsonb column yields an object. Accept both
   // rather than depending on which the CLI chose today.
   return typeof value === 'string' ? JSON.parse(value) : value;
+}
+
+/**
+ * Whether the literal in a live routine body is the value currently in Vault.
+ *
+ * Isolated from the drift audit on purpose. It reads vault.decrypted_secrets,
+ * which is the one part of this that can fail on privileges, and losing the
+ * drift findings because a follow-up question could not be answered would be a
+ * strictly worse trade. A failure here degrades to "undetermined" and says so.
+ */
+export async function captureCredentialAlignment({ repoRoot = REPO_ROOT, exec = run } = {}) {
+  try {
+    return { status: 'OK', ...(await runQueryFile('credential-alignment.sql', 'alignment', { repoRoot, exec })) };
+  } catch (error) {
+    return { status: 'UNDETERMINED', reason: error.message, vaultSecretNames: [], routinesEmbeddingVaultValues: [] };
+  }
+}
+
+/**
+ * Reads the alignment probe against the routines the drift audit flagged.
+ * Returns one sentence naming which of the two worlds we are in, because the
+ * remediation differs completely between them.
+ */
+export function alignmentVerdict(alignment, findings, requiredByRoutine = new Map()) {
+  const flagged = findings.filter(finding => finding.direction === 'LIVE_SECRET').map(finding => finding.object);
+  if (!flagged.length) return { verdict: 'aligned', flagged, matching: [], missing: [] };
+  if (!alignment || alignment.status !== 'OK') return { verdict: 'unknown', flagged, matching: [], missing: [] };
+
+  // Vault has to actually CONTAIN everything the declared body reads.
+  //
+  // Checking only "the body embeds some value that is in Vault" was necessary
+  // and not sufficient, and the gap was not hypothetical: SUPABASE_ANON_KEY is
+  // read by four declared functions and is not in Vault at all, so
+  // get_vault_secret returns NULL and those definitions would send a null
+  // apikey. A routine embedding a token that DOES match Vault would otherwise
+  // have been called aligned while still being unsafe to switch over. That is
+  // the same mistake as before, one level up: a partial check reading as a
+  // whole answer.
+  //
+  // Deliberately not softened by the fact that the null is probably harmless.
+  // Nothing here reads the apikey header and the functions deploy with
+  // --no-verify-jwt, so the gateway likely tolerates it, but "likely" is a
+  // reason to fill Vault first, not a reason to let the gate pass.
+  const present = new Set((alignment.vaultSecretNames || [])
+    .map(entry => (typeof entry === 'string' ? entry : entry?.name))
+    .filter(Boolean));
+  const missing = [];
+  for (const routine of flagged) {
+    for (const credential of requiredByRoutine.get(routine) || []) {
+      if (!present.has(credential)) missing.push({ routine, credential });
+    }
+  }
+
+  const aligned = new Set((alignment.routinesEmbeddingVaultValues || [])
+    .map(routine => `${routine.schema}.${routine.name}`.toLowerCase()));
+  const matching = flagged.filter(name => aligned.has(name));
+
+  if (missing.length) return { verdict: 'incomplete', flagged, matching, missing };
+  if (matching.length === flagged.length) return { verdict: 'aligned', flagged, matching, missing };
+  if (matching.length === 0) return { verdict: 'divergent', flagged, matching, missing };
+  return { verdict: 'mixed', flagged, matching, missing };
+}
+
+export function describeAlignment(alignment, findings, requiredByRoutine = new Map()) {
+  const flagged = findings.filter(finding => finding.direction === 'LIVE_SECRET').map(finding => finding.object);
+  if (!flagged.length) return null;
+
+  const state = alignmentVerdict(alignment, findings, requiredByRoutine);
+  if (state.verdict === 'incomplete') {
+    const names = [...new Set(state.missing.map(item => item.credential))].sort();
+    return `Vault does not contain ${names.join(', ')}, which the declared bodies read. get_vault_secret returns NULL for a name that is not there, so applying the declared definitions would send a null value. Whether that is tolerated is not established: nothing in this repository reads the apikey header and the functions deploy with --no-verify-jwt, so it may well be, which is exactly the kind of thing not to find out in production. Put the missing secret in Vault before anything is switched over.`;
+  }
+  if (!alignment || alignment.status !== 'OK') {
+    return `Alignment with Vault could not be determined (${alignment?.reason || 'not probed'}), so it is NOT known whether applying the declared definitions would keep the callers working.`;
+  }
+
+  const aligned = new Set((alignment.routinesEmbeddingVaultValues || [])
+    .map(routine => `${routine.schema}.${routine.name}`.toLowerCase()));
+  const matching = flagged.filter(name => aligned.has(name));
+
+  if (matching.length === flagged.length) {
+    return 'Every flagged body embeds the value currently in Vault. The literal and the deployed secret are the same, so applying the declared definitions changes where the token is read from and not which token is sent, and the callers keep working.';
+  }
+  if (matching.length === 0) {
+    return 'No flagged body embeds a value currently in Vault, so the live literal is a DIFFERENT secret from the one the deploy syncs. Applying the declared definitions would make the database start sending the Vault token, and every caller would fail at once unless the edge runtime is updated in the same change.';
+  }
+  return `${matching.length} of ${flagged.length} flagged bodies embed the current Vault value, so the live database is running a mix. Each routine has to be handled on its own evidence.`;
 }
 
 export async function auditDbDrift({ repoRoot = REPO_ROOT, snapshotPath, snapshotObject = null, readFileImpl = readFile } = {}) {
@@ -228,8 +396,22 @@ export async function auditDbDrift({ repoRoot = REPO_ROOT, snapshotPath, snapsho
     return { status: 'NOT_COMPARED', reason: `Baseline could not be parsed: ${declared.error}`, findings: [] };
   }
 
-  const findings = compareDrift(snapshot, declared);
-  return { status: findings.length ? 'DRIFT' : 'MATCH', reason: null, findings };
+  // The exposed-schema list comes from the project's config. If it cannot be
+  // read the anon-executable check is SKIPPED rather than guessed at, because
+  // guessing wrong in either direction is worse than not checking: a wrong
+  // list either invents findings or, far worse, quietly clears a function that
+  // really is reachable.
+  let exposed = null;
+  try {
+    exposed = exposedSchemas(await readFileImpl(path.join(repoRoot, 'Backend/supabase/config.toml'), 'utf8'));
+  } catch { exposed = null; }
+
+  const findings = compareDrift(snapshot, declared, exposed);
+  return {
+    exposedSchemasKnown: exposed !== null,
+    status: findings.length ? 'DRIFT' : 'MATCH', reason: null, findings,
+    requiredByRoutine: declared.vaultReadsByRoutine || new Map(),
+  };
 }
 
 function render(report) {
@@ -249,13 +431,22 @@ function render(report) {
   const titles = {
     DECLARED_NOT_LIVE: 'DECLARED IN THE BASELINE, ABSENT LIVE (a rebuild produces a database that does not work)',
     LIVE_NOT_DECLARED: 'LIVE, NEVER DECLARED (a rebuild from the baseline silently loses these)',
-    LIVE_SECRET: 'CREDENTIAL IN A ROUTINE BODY (invisible to every repository-side audit)',
+    LIVE_SECRET: 'CREDENTIAL IN A LIVE ROUTINE BODY',
+    LIVE_ANON_EXECUTABLE: 'ANON-EXECUTABLE SECURITY DEFINER FUNCTION IN AN EXPOSED SCHEMA',
   };
 
   const lines = [`Database drift audit: DRIFT (${report.findings.length} findings)`];
   for (const [direction, items] of byDirection) {
     lines.push('', titles[direction] || direction);
     for (const item of items) lines.push(`  ${item.kind} ${item.object}\n      ${item.consequence}`);
+  }
+  if (report.exposedSchemasKnown === false) {
+    lines.push('', 'NOT CHECKED', '  Backend/supabase/config.toml could not be read, so no function was checked for anon-executability. This is a gap in this run, not a clean result.');
+  }
+  if (report.alignment) lines.push('', 'ALIGNMENT WITH VAULT', `  ${report.alignment}`);
+  if (report.vaultContents?.length) {
+    lines.push('', 'WHAT VAULT HOLDS (names and key kinds, never values)');
+    for (const item of report.vaultContents) lines.push(`  ${item.name}: ${item.kind}`);
   }
   return `${lines.join('\n')}\n`;
 }
@@ -265,7 +456,20 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   let report;
   if (process.argv.includes('--live')) {
     try {
+      const probe = await captureCredentialAlignment();
       report = await auditDbDrift({ snapshotObject: await captureLiveSnapshot() });
+      report.alignment = describeAlignment(probe, report.findings, report.requiredByRoutine);
+      report.vaultContents = probe.vaultSecretNames || [];
+
+      // Hand the verdict to the propagation step as shell variables, so the
+      // deploy needs neither jq nor a second round trip to the database.
+      // Only the literal string "aligned" unlocks anything downstream.
+      const emitAt = process.argv.indexOf('--emit-env');
+      if (emitAt !== -1 && process.argv[emitAt + 1]) {
+        const state = alignmentVerdict(probe, report.findings, report.requiredByRoutine);
+        await writeFile(process.argv[emitAt + 1],
+          `ALIGNED=${state.verdict}\nLIVE_LITERAL_ROUTINES=${state.flagged.join(',')}\n`);
+      }
     } catch (error) {
       // A failed capture is NOT_COMPARED, never a pass. This is the whole point.
       report = { status: 'NOT_COMPARED', reason: `Live capture failed: ${error.message}`, findings: [] };

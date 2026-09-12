@@ -41,20 +41,43 @@ SELECT jsonb_pretty(jsonb_build_object(
   ),
 
   -- Indexes, the documented case of objects existing only in the database.
+  --
+  -- constraintBacked is asked of the database rather than guessed from the
+  -- name. The first production run reported members_new_pkey1 and several
+  -- *_unique indexes as drift; they are created by their PRIMARY KEY or UNIQUE
+  -- constraint and are not separately declarable. A suffix heuristic missed
+  -- them because it matched _pkey and _key, and a false positive rate like
+  -- that is how an audit stops being read.
   'indexes', (
     SELECT coalesce(jsonb_agg(jsonb_build_object(
-      'schema', schemaname,
-      'table', tablename,
-      'name', indexname
-    ) ORDER BY schemaname, tablename, indexname), '[]'::jsonb)
-    FROM pg_indexes
-    WHERE schemaname IN ('public', 'drivers', 'substrate', 'features')
+      'schema', n.nspname,
+      'table', t.relname,
+      'name', i.relname,
+      'constraintBacked', (con.oid IS NOT NULL)
+    ) ORDER BY n.nspname, t.relname, i.relname), '[]'::jsonb)
+    FROM pg_index x
+    JOIN pg_class i ON i.oid = x.indexrelid
+    JOIN pg_class t ON t.oid = x.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    LEFT JOIN pg_constraint con ON con.conindid = i.oid
+    WHERE n.nspname IN ('public', 'drivers', 'substrate', 'features')
   ),
 
   -- Routines, with a flag for a credential-shaped literal in the body. A
   -- hardcoded API credential was reported inside a function body on
-  -- 2026-09-06; it is in no tracked file, so no repository-side audit can
-  -- ever see it. The body itself is never emitted, only the finding.
+  -- 2026-09-06. The body itself is NEVER emitted, only the finding.
+  --
+  -- secretRules names which rule fired, and usesVaultLookup is a positive
+  -- control. Without them a finding cannot be told apart from a false
+  -- positive without a round trip: the first production run flagged three
+  -- substrate.run_* functions whose TRACKED definitions read from Vault and
+  -- match none of these rules, and answering "is the detector wrong, or is
+  -- the live body behind the repository?" needed a throwaway Postgres. The
+  -- two extra fields answer it in the report itself.
+  --
+  -- usesVaultLookup is deliberately a call-site test, not another secret
+  -- rule: a body that resolves its credential at runtime cannot also be
+  -- carrying it as a literal, so the two fields disagreeing is the signal.
   'routines', (
     SELECT coalesce(jsonb_agg(jsonb_build_object(
       'schema', n.nspname,
@@ -63,6 +86,39 @@ SELECT jsonb_pretty(jsonb_build_object(
         p.prosrc ~ '(?i)(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})'
         OR p.prosrc ~ '(?i)(bearer\s+[A-Za-z0-9._-]{20,})'
         OR p.prosrc ~ '(?i)(service_role|anon)_?key\s*(:=|=)\s*''[^'']{20,}'''
+      ),
+      'secretRules', (
+        SELECT coalesce(jsonb_agg(rule ORDER BY rule), '[]'::jsonb)
+        FROM (VALUES
+          ('jwt',     p.prosrc ~ '(?i)(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})'),
+          ('bearer',  p.prosrc ~ '(?i)(bearer\s+[A-Za-z0-9._-]{20,})'),
+          ('rolekey', p.prosrc ~ '(?i)(service_role|anon)_?key\s*(:=|=)\s*''[^'']{20,}''')
+        ) AS r(rule, fired)
+        WHERE r.fired
+      ),
+      'usesVaultLookup', (p.prosrc ~ '(?i)get_vault_secret\s*\('),
+
+      -- Who may actually EXECUTE this, asked of Postgres rather than parsed
+      -- out of proacl. has_function_privilege accounts for the default PUBLIC
+      -- grant and for role inheritance, which a proacl string does not make
+      -- obvious: a NULL proacl means "default", and the default is PUBLIC.
+      --
+      -- This exists because public.get_vault_secret, a SECURITY DEFINER reader
+      -- of vault.decrypted_secrets, sits in a Data API exposed schema and the
+      -- repository never declared a REVOKE for it. Production turned out to be
+      -- restricted anyway, by a change made outside the migrations, and that is
+      -- the point: nothing here could tell those two cases apart. This snapshot
+      -- captured columns, indexes, bodies and RLS, and audit-migrations
+      -- enforces RLS only for TABLES, so no checker had any rule about
+      -- function EXECUTE privileges at all.
+      'securityDefiner', p.prosecdef,
+      'executableByAnon', (
+        CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
+             THEN has_function_privilege('anon', p.oid, 'EXECUTE') END
+      ),
+      'executableByAuthenticated', (
+        CASE WHEN EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated')
+             THEN has_function_privilege('authenticated', p.oid, 'EXECUTE') END
       )
     ) ORDER BY n.nspname, p.proname), '[]'::jsonb)
     FROM pg_proc p

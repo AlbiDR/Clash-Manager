@@ -44,7 +44,8 @@
     "Backend/supabase/migrations/20260906130000_preserve_recruit_discovery_source.sql": "7b61f728319fbf794024371b96fa8d75cc1531a61295f1106e7310ea69318a93",
     "Backend/supabase/migrations/20260906160000_cron_history_smart_pruning.sql": "380e406db4b39805c876c8c9a81cf3a3164848fb866a769f1f02e7a4270e8d85",
     "Backend/supabase/migrations/20260906170000_tune_autovacuum_churn_tables.sql": "59e10a3a22ed304293d8f919db332191e6a524fc3df50488d22021c8adfdbf90",
-    "Backend/supabase/migrations/20260907010000_voyage_activation_gate.sql": "e24b994799b980bceb4805bd805fa4abed8829c9bcea051c90faec537d22453e"
+    "Backend/supabase/migrations/20260907010000_voyage_activation_gate.sql": "e24b994799b980bceb4805bd805fa4abed8829c9bcea051c90faec537d22453e",
+    "Backend/supabase/migrations/20260912190000_restrict_public_vault_secret.sql": "df229efb94c1f9f6f7a06b28f58db63c83cbcbf07fe483e994b1c6a4c4eeccc2"
   },
   "exemptions": []
 }
