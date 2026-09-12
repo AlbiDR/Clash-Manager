@@ -286,9 +286,14 @@ export function alignmentVerdict(alignment, findings, requiredByRoutine = new Ma
   // read by four declared functions and is not in Vault at all, so
   // get_vault_secret returns NULL and those definitions would send a null
   // apikey. A routine embedding a token that DOES match Vault would otherwise
-  // have been called aligned while still being impossible to switch over.
-  // That is the same mistake as before, one level up: a partial check reading
-  // as a whole answer.
+  // have been called aligned while still being unsafe to switch over. That is
+  // the same mistake as before, one level up: a partial check reading as a
+  // whole answer.
+  //
+  // Deliberately not softened by the fact that the null is probably harmless.
+  // Nothing here reads the apikey header and the functions deploy with
+  // --no-verify-jwt, so the gateway likely tolerates it, but "likely" is a
+  // reason to fill Vault first, not a reason to let the gate pass.
   const present = new Set((alignment.vaultSecretNames || [])
     .map(entry => (typeof entry === 'string' ? entry : entry?.name))
     .filter(Boolean));
@@ -316,7 +321,7 @@ export function describeAlignment(alignment, findings, requiredByRoutine = new M
   const state = alignmentVerdict(alignment, findings, requiredByRoutine);
   if (state.verdict === 'incomplete') {
     const names = [...new Set(state.missing.map(item => item.credential))].sort();
-    return `Vault does not contain ${names.join(', ')}, which the declared bodies read. get_vault_secret returns NULL for a name that is not there, so applying the declared definitions would send a null value and the callers would fail. Put the missing secret in Vault before anything is switched over.`;
+    return `Vault does not contain ${names.join(', ')}, which the declared bodies read. get_vault_secret returns NULL for a name that is not there, so applying the declared definitions would send a null value. Whether that is tolerated is not established: nothing in this repository reads the apikey header and the functions deploy with --no-verify-jwt, so it may well be, which is exactly the kind of thing not to find out in production. Put the missing secret in Vault before anything is switched over.`;
   }
   if (!alignment || alignment.status !== 'OK') {
     return `Alignment with Vault could not be determined (${alignment?.reason || 'not probed'}), so it is NOT known whether applying the declared definitions would keep the callers working.`;
