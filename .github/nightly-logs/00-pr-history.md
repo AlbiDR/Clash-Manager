@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1792 [Stage 9]: Target A/B/C structural scan and defect hunt verified 0 depcruise violations, 64 candidate files, and 0 defect hunt failures across core services (apkResolverUtils.ts, useProgressiveList.ts, protocol.ts); consecutive-clean: 1.
+**Domain:** architecture | **Commit:** b92b1cc1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1792)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate is fully compliant with CleanStack Architecture ADR; candidate modules were evaluated and found structurally sound or requiring blast radius widening for further split; defect hunt yielded 0 failing specs.
+**Change:** Target A/B/C structural scan and defect hunt verified 0 depcruise violations, 64 candidate files, and 0 defect hunt failures across core services (apkResolverUtils.ts, useProgressiveList.ts, protocol.ts); consecutive-clean: 1.
+**Result:** depcruise PASS (0 violations, 489 modules); pnpm -F clash-manager-pwa test PASS (195 test files, 1829 tests); clean-calibration threshold 7 with consecutive-clean 1.
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1791 [Stage 8]: Bumped p-limit from 7.3.1 to 7.3.2 and updated major version watchlist
 **Domain:** dependencies | **Commit:** 52d06188 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1791)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, Backend/package.json, package.json, pnpm-lock.yaml
