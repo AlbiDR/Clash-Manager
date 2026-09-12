@@ -200,6 +200,22 @@ jobs:
             # on drift or on breaching the declared daily execution budget.
             echo "[AUDIT] Verifying cron schedule against the manifest..."
             node ../.github/scripts/database/audit-cron-schedule.mjs
+
+            # 3c. Live drift, both directions. Stage 3 audits the migrations
+            # statically and has reported DB-UNAVAILABLE on every night it has
+            # ever run, because the Jules sandbox has no Supabase and no docker,
+            # so nothing has ever compared the two sides. They are known to
+            # disagree both ways: report_heartbeat raised 42703 for 3.5 days on
+            # a column the baseline declared and the database lacked, and five
+            # indexes on drivers.player_battles exist only in the database.
+            #
+            # REPORT ONLY, deliberately. This is its first time running against
+            # production and a new auditor that can fail a deploy on its first
+            # night is how a stable pipeline stops being stable. Promote it to
+            # blocking only after its output has been read and believed.
+            echo "[AUDIT] Comparing the live database against the baseline..."
+            node ../.github/scripts/database/audit-db-drift.mjs --live \
+              | tee -a "$GITHUB_STEP_SUMMARY" || true
           else
             echo "[INFO] SUPABASE_DB_PASSWORD not found. Skipping SQL migrations."
             echo "   (Note: Database DNA was manually initialized by the Assistant)."
