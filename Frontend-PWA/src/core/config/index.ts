@@ -68,11 +68,58 @@ export const FOREGROUND_POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
  */
 export const DEFAULT_SCORE_THRESHOLD = 75;
 
+/** Lowest selectable score threshold. Admits the whole roster. */
+export const SCORE_THRESHOLD_MIN = 0;
+
+/** Highest selectable score threshold. Performance and Potential are both percentages. */
+export const SCORE_THRESHOLD_MAX = 100;
+
 /**
- * Standardized score increments for the UI Selection Bar.
- * Used by the ScoreThresholdSelector molecule to ensure consistent filtering.
+ * Granularity of the score threshold selector.
+ *
+ * @remarks
+ * [DECISION LOG] SELECTION GRANULARITY:
+ * The selector previously offered seven fixed stops 15 points apart, which is
+ * coarse enough that the wanted threshold routinely fell between two of them.
+ * A 5-point step yields 21 reachable values. That is unusable as a row of
+ * buttons, which is precisely why the control is now a slider.
  */
-export const SCORE_SELECTION_STEPS = [15, 30, 45, 60, 75, 90, 100];
+export const SCORE_THRESHOLD_STEP = 5;
+
+/**
+ * Every reachable score threshold, derived from the domain and its step.
+ *
+ * @remarks
+ * Drives magnetic snapping and arrow-key walking. Which of these are drawn as
+ * ticks is a presentation decision owned by the consuming component, since a
+ * 48px pill cannot legibly carry 21 of them.
+ */
+export const SCORE_THRESHOLD_DETENTS: readonly number[] = Array.from(
+  { length: (SCORE_THRESHOLD_MAX - SCORE_THRESHOLD_MIN) / SCORE_THRESHOLD_STEP + 1 },
+  (_unused, stepIndex) => SCORE_THRESHOLD_MIN + stepIndex * SCORE_THRESHOLD_STEP,
+);
+
+/**
+ * Interval between drawn tick marks on the score track.
+ *
+ * @remarks
+ * [DECISION LOG] TICK DENSITY IS NOT DETENT DENSITY:
+ * Drawing all 21 detents on a 48px pill produces a solid band that reads as
+ * texture rather than as a scale. Quartile ticks orient the eye; the detents
+ * underneath stay at 5.
+ */
+export const SCORE_TICK_INTERVAL = 25;
+
+/**
+ * Radius, in rendered pixels, within which a drag is pulled onto a detent.
+ *
+ * @remarks
+ * [DECISION LOG] MAGNETIC PULL:
+ * 6px is close to half a fingertip's positional error and comfortably below the
+ * spacing of the densest detent set in the stack, so the pull assists aim
+ * without ever making an intermediate value unreachable.
+ */
+export const SLIDER_SNAP_RADIUS_PX = 6;
 
 /**
  * Default crown target for new Clan Voyage events.
@@ -146,25 +193,82 @@ export const REPOSITORY_URL = "https://github.com/AlbiDR/Clash-Manager";
  */
 export const REPOSITORY_ISSUES_URL = `${REPOSITORY_URL}/issues/new`;
 
-export type BlitzSpeed = "fast" | "medium" | "slow";
+/**
+ * Shortest permitted profile dwell time, in milliseconds.
+ *
+ * @remarks
+ * [DECISION LOG] HUMAN EMULATION FLOOR:
+ * 850ms mimics a fast human interaction speed while staying within OS-level
+ * deep-link polling limits. It is a floor rather than merely a default: below
+ * it the deep link has not resolved when the tap fires, so the tap lands on
+ * nothing and a run reports far more invites than it actually sent. The failure
+ * is silent, which is why the bound is enforced and drawn rather than implied.
+ */
+export const BLITZ_DWELL_MIN = 850;
 
-export const BLITZ_SPEED_DELAYS: Record<BlitzSpeed, number> = {
+/**
+ * Longest permitted profile dwell time, in milliseconds.
+ *
+ * @remarks
+ * [DECISION LOG] TOLERANCE CEILING:
+ * No Clash Royale profile takes longer than this to render, so time beyond it
+ * is not latency tolerance, only waiting. The previous ladder topped out at
+ * 12000ms, which made a 40-player run take eight minutes and left that rung
+ * with no practical use.
+ */
+export const BLITZ_DWELL_MAX = 6000;
+
+/** Fine adjustment granularity for dwell time, in milliseconds. */
+export const BLITZ_DWELL_STEP = 10;
+
+/** Dwell time applied until the operator chooses one. */
+export const BLITZ_DWELL_DEFAULT = BLITZ_DWELL_MIN;
+
+/**
+ * Suggested dwell times the handle is magnetically pulled onto.
+ *
+ * @remarks
+ * [DECISION LOG] GEOMETRIC SPACING:
+ * Spaced at a roughly constant ratio rather than a constant difference, because
+ * latency tolerance is perceived multiplicatively: 850ms to 1500ms is the same
+ * felt step as 3000ms to 5100ms. The track itself is logarithmic for the same
+ * reason, so these land at even visual intervals.
+ */
+export const BLITZ_DWELL_DETENTS: readonly number[] = [
+  850, 1500, 2100, 3000, 4200, 5100, 6000,
+];
+
+/** The three-tier speed names this control replaced. */
+export type LegacyBlitzSpeed = "fast" | "medium" | "slow";
+
+/**
+ * Dwell time each retired speed name maps onto.
+ *
+ * @remarks
+ * [DECISION LOG] MIGRATION ONLY:
+ * Retained solely so a setting persisted before the slider shipped resolves to
+ * the equivalent dwell time instead of silently reverting to the default. Not
+ * for use by new code, and removable once no stored payload can still carry a
+ * string. `medium` and `slow` map to the rebalanced ladder rather than to their
+ * original 6000ms and 12000ms, both of which sat outside the domain the control
+ * now exposes.
+ */
+export const BLITZ_LEGACY_SPEED_DWELL: Record<LegacyBlitzSpeed, number> = {
   fast: 850,
-  medium: 6000,
-  slow: 12000,
+  medium: 2100,
+  slow: 5100,
 };
-
-export const BLITZ_SPEED_DEFAULT: BlitzSpeed = "fast";
 
 /**
  * Default throttle for manual deep-link clicks.
  *
  * @remarks
- * [DECISION LOG] HUMAN EMULATION:
- * 850ms mimics a fast human interaction speed, staying within acceptable
- * OS-level deep-link polling limits while remaining responsive.
+ * [DECISION LOG] DERIVED, NOT REPEATED:
+ * This is the same human-emulation baseline as {@link BLITZ_DWELL_MIN} and was
+ * previously written out as a second literal 850, leaving two copies of one
+ * decision free to drift apart. Retuning the floor now moves both.
  */
-export const BLITZ_THROTTLE_DEFAULT = 850;
+export const BLITZ_THROTTLE_DEFAULT = BLITZ_DWELL_MIN;
 
 
 /**

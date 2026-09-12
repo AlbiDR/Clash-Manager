@@ -54,8 +54,9 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | :--- | :--- |
 | `BaseSelect.vue` / `BaseSegmentedControl.vue` | Accessible replacements for native select and segmented controls, hardened for Android WebViews. |
 | `DurationInput.vue` | Days/hours/minutes input with clamping. |
+| `PrecisionSlider.vue` | Full-width slider over a continuous domain. Linear or logarithmic, with magnetic detents, a reserved-width readout, a 48px touch footprint and a plain-language consequence line. Interaction is delegated to `usePrecisionSlider`. |
 | `CardActions.vue` | Card-level action bar. |
-| `SelectionBar.vue` / `ScoreThresholdSelector.vue` | Bulk-operation bar and its score-threshold picker. |
+| `SelectionBar.vue` / `ScoreThresholdSelector.vue` | Bulk-operation bar and its score-threshold picker. The picker is a compact slider whose whole 48px footprint is the drag surface, sharing `usePrecisionSlider` with `PrecisionSlider.vue`. |
 | `FloatingDock.vue` / `NavigationDock.vue` / `SelectionFab.vue` | The bottom dock that morphs into contextual selection actions. Configured with a declarative `v-tactile` haptic feedback brokering model and 48px touch targets for WebView mobile ergonomics. |
 | `HeaderInfoOverlay.vue` | Explains a view's metrics. |
 

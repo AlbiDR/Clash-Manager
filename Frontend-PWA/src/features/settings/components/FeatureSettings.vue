@@ -18,7 +18,16 @@
  *
  * @remarks Satisfies CleanStack ADR Section II: Unitary Architecture & Section IV: Hardware/Browser Brokering.
  */
-import { SettingRow, SettingsCard, vTactile } from "@shared";
+import { computed } from "vue";
+import { PrecisionSlider, SettingRow, SettingsCard } from "@shared";
+import {
+  BLITZ_BATCH_SHIFT_DELAY,
+  BLITZ_DWELL_DETENTS,
+  BLITZ_DWELL_MAX,
+  BLITZ_DWELL_MIN,
+  BLITZ_DWELL_STEP,
+  formatCompactDuration,
+} from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 import { useSettings } from "../composables/useSettings";
 import AndroidCalibrationSettings from "./AndroidCalibrationSettings.vue";
@@ -28,8 +37,34 @@ defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
-const { modules, toggle, isRefreshing, setBlitzSpeed } = useSettings();
+const { modules, toggle, isRefreshing, rosterSize, setBlitzDwell } = useSettings();
 const { isNativeWrapper, openAccessibilitySettings } = useNativeBridge();
+
+/**
+ * Qualifier naming the population the run estimate is calculated over.
+ *
+ * @remarks
+ * Empty until the roster has hydrated, which also suppresses the estimate.
+ */
+const blitzRunChip = computed(() =>
+  rosterSize.value > 0 ? `${rosterSize.value} members` : "",
+);
+
+/**
+ * Plain-language cost of the selected dwell time.
+ *
+ * @remarks
+ * [DECISION LOG] A dwell time in milliseconds is a number few operators have
+ * intuition for; the length of a full run is the decision actually being made.
+ * Both the per-profile dwell and the inter-item shift are real pipeline
+ * constants, and the population is the live roster, so the estimate carries no
+ * invented figures.
+ */
+const blitzRunEstimate = computed(() => {
+  if (rosterSize.value === 0) return "";
+  const runMs = (modules.blitzDwellMs + BLITZ_BATCH_SHIFT_DELAY) * rosterSize.value;
+  return `a full run takes about ${formatCompactDuration(runMs)}`;
+});
 
 /**
  * Handles the Blitz Mode toggle in non-native-wrapper (PWA) mode.
@@ -85,34 +120,22 @@ function handleBlitzToggle() {
         @click="handleBlitzToggle()"
       />
 
-      <!-- Blitz Speed Selector -->
-      <div
+      <!-- Blitz Dwell Time -->
+      <PrecisionSlider
         v-if="modules.blitzMode"
-        class="blitz-speed-section"
-      >
-        <div class="speed-label">
-          Blitz Speed
-        </div>
-
-        <div
-          class="speed-selector"
-          role="group"
-          aria-label="Blitz Interaction Speed"
-        >
-          <button
-            v-for="speedValue in (['fast', 'medium', 'slow'] as const)"
-            :key="speedValue"
-            v-tactile
-            :class="{ active: modules.blitzSpeed === speedValue }"
-            class="speed-btn"
-            :aria-label="`Set blitz speed to ${speedValue}`"
-            :aria-pressed="modules.blitzSpeed === speedValue"
-            @click="setBlitzSpeed(speedValue)"
-          >
-            {{ speedValue }}
-          </button>
-        </div>
-      </div>
+        :model-value="modules.blitzDwellMs"
+        label="Profile dwell time"
+        unit="MS"
+        :min="BLITZ_DWELL_MIN"
+        :max="BLITZ_DWELL_MAX"
+        :step="BLITZ_DWELL_STEP"
+        scale="log"
+        :detents="BLITZ_DWELL_DETENTS"
+        show-bounds
+        :consequence="blitzRunEstimate"
+        :consequence-chip="blitzRunChip"
+        @update:model-value="setBlitzDwell"
+      />
     </div>
 
     <!-- Delegate Android Permissions and Calibration to AndroidCalibrationSettings -->
@@ -127,72 +150,4 @@ function handleBlitzToggle() {
   gap: var(--sys-space-8);
 }
 
-/* ── Blitz Speed Section ── */
-.blitz-speed-section {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-space-10);
-  padding: 2px 0 4px;
-}
-
-.speed-label {
-  flex: 0 0 auto;
-  font-size: var(--sys-typescale-body-sm);
-  font-weight: 700;
-  color: var(--sys-color-on-surface);
-  white-space: nowrap;
-}
-
-.speed-selector {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  background: var(--sys-color-surface-container-high);
-  padding: 4px;
-  border-radius: 8px;
-  gap: 4px;
-  width: 100%;
-}
-
-.speed-btn {
-  flex: 1;
-  min-width: 0;
-  height: 48px; /* 48px touch target compliance */
-  padding: 0 8px;
-  border: none;
-  background: transparent;
-  color: var(--sys-color-outline);
-  border-radius: 6px;
-  font-weight: 800;
-  font-size: 13px;
-  text-transform: capitalize;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s var(--sys-motion-spring);
-}
-
-.speed-btn.active {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
-  transform: scale(1.02);
-}
-
-.speed-btn:hover:not(.active) {
-  background: rgba(var(--sys-color-primary-rgb), 0.08);
-  color: var(--sys-color-on-surface);
-}
-
-.speed-btn:active {
-  transform: scale(0.96);
-}
-
-@media (max-width: 380px) {
-  .blitz-speed-section {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
 </style>

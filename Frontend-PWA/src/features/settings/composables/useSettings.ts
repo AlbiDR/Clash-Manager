@@ -270,16 +270,23 @@ export function useSettings() {
   }
 
   /**
-   * Adjusts the simulation speed multiplier for the Blitz scanning engine.
+   * Adjusts how long the Blitz sequencer waits for each profile to render.
    *
    * @remarks
-   * Emits tactile tap feedback and registers the speed setting in reactive modules store.
+   * Registers the duration in the reactive modules store. The value arrives
+   * already constrained to the published domain by the control that produced it.
    *
-   * @param blitzSpeedSetting - Standardized speed enum/type imported from core config.
+   * [DECISION LOG] NO TACTILE FEEDBACK HERE:
+   * The three-button selector this replaced tapped once per press. A slider
+   * commits on every pointer move, so the same call would fire continuously for
+   * the length of a drag and leave the device buzzing. Feedback on crossing a
+   * detent is the correct shape for a continuous control and belongs in the
+   * slider itself, not in a setter that cannot tell a drag from a commit.
+   *
+   * @param blitzDwellSetting - Profile dwell time in milliseconds.
    */
-  function setBlitzSpeed(blitzSpeedSetting: import("@core/config").BlitzSpeed) {
-    haptics.tap();
-    modules.blitzSpeed = blitzSpeedSetting;
+  function setBlitzDwell(blitzDwellSetting: number) {
+    modules.blitzDwellMs = blitzDwellSetting;
   }
 
   const layoutProps = computed(() => ({
@@ -295,9 +302,20 @@ export function useSettings() {
     refresh: () => refresh(),
   }));
 
+  /**
+   * Number of members currently on the roster.
+   *
+   * @remarks
+   * [DECISION LOG] Derived from the live corpus rather than assumed, so the run
+   * estimate beside the Blitz dwell control describes this clan rather than a
+   * hardcoded roster size. Satisfies ADR Section I (No Magic Numbers).
+   */
+  const rosterSize = computed(() => clashDataStore.members.length);
+
   return {
     // State
     modules,
+    rosterSize,
     theme,
     wakeLock,
     isSyntheticMode,
@@ -352,6 +370,6 @@ export function useSettings() {
     subscribePush,
     sendTestNotification,
     setNotificationThreshold,
-    setBlitzSpeed,
+    setBlitzDwell,
   };
 }

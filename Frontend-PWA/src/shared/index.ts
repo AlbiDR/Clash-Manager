@@ -31,6 +31,7 @@ export { default as GhostBenchmarkHost } from "./ui/GhostBenchmarkHost.vue";
 export { default as BenchmarkContent } from "./ui/BenchmarkContent.vue";
 export { default as SelectionBar } from "./ui/SelectionBar.vue";
 export { default as ScoreThresholdSelector } from "./ui/ScoreThresholdSelector.vue";
+export { default as PrecisionSlider } from "./ui/PrecisionSlider.vue";
 export { default as SettingRow } from "./ui/SettingRow.vue";
 export { default as LinkRow } from "./ui/LinkRow.vue";
 export { default as ConsoleHeader } from "./ui/ConsoleHeader.vue";
@@ -54,6 +55,13 @@ export { vTooltip } from "./directives/vTooltip";
 
 // Composables (Shared Atoms)
 
+export { usePrecisionSlider } from "./composables/usePrecisionSlider";
+export type {
+  PrecisionSliderApi,
+  PrecisionSliderConfig,
+  SliderScale,
+  SliderTickMark,
+} from "./composables/usePrecisionSlider";
 export { useTheme } from "./composables/useTheme";
 export { useLongPress } from "./composables/useLongPress";
 export { useCountdown } from "./composables/useCountdown";
@@ -63,7 +71,6 @@ export { usePointerCapability } from "./composables/usePointerCapability";
 export { useHeaderScroll } from "./composables/useHeaderScroll";
 export { usePullToRefresh } from "./composables/usePullToRefresh";
 export { useSelectionBar } from "./composables/useSelectionBar";
-export { useScoreSelector } from "./composables/useScoreSelector";
 export { useHistoryChart } from "./composables/useHistoryChart";
 export { useBaseHistoryChart } from "./composables/useBaseHistoryChart";
 export { useStatusPill } from "./composables/useStatusPill";

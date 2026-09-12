@@ -46,13 +46,13 @@ describe("useAppSettings", () => {
   it("ignores toggle calls on non-boolean modules", async () => {
     const { useAppSettings } = await import("../useAppSettings");
     const { modules, toggle } = useAppSettings();
-    const initialSpeed = modules.blitzSpeed;
+    const initialDwell = modules.blitzDwellMs;
     const initialThreshold = modules.notificationThreshold;
 
-    toggle("blitzSpeed");
+    toggle("blitzDwellMs");
     toggle("notificationThreshold");
 
-    expect(modules.blitzSpeed).toBe(initialSpeed);
+    expect(modules.blitzDwellMs).toBe(initialDwell);
     expect(modules.notificationThreshold).toBe(initialThreshold);
   });
 
@@ -60,7 +60,7 @@ describe("useAppSettings", () => {
     it("hydrates state correctly from valid localStorage data", async () => {
       const validData = {
         blitzMode: true,
-        blitzSpeed: "slow",
+        blitzDwellMs: 3000,
         notificationThreshold: 50,
       };
       localStorage.setItem("cm_modules_v2", JSON.stringify(validData));
@@ -70,7 +70,7 @@ describe("useAppSettings", () => {
       init();
 
       expect(modules.blitzMode).toBe(true);
-      expect(modules.blitzSpeed).toBe("slow");
+      expect(modules.blitzDwellMs).toBe(3000);
       expect(modules.notificationThreshold).toBe(50);
       expect(modules.sortExplanation).toBe(true); // Default preserved
     });
@@ -78,7 +78,7 @@ describe("useAppSettings", () => {
     it("falls back to defaults when localStorage contains malformed data", async () => {
       const malformedData = {
         blitzMode: "not a boolean",
-        blitzSpeed: "ultra-fast", // Invalid speed value
+        blitzDwellMs: "not a number", // Invalid dwell value
         notificationThreshold: 999, // Invalid picklist value
       };
       localStorage.setItem("cm_modules_v2", JSON.stringify(malformedData));
@@ -89,7 +89,7 @@ describe("useAppSettings", () => {
       init();
 
       expect(modules.blitzMode).toBe(true); // Default
-      expect(modules.blitzSpeed).toBe("fast"); // Default
+      expect(modules.blitzDwellMs).toBe(850); // Default
       expect(modules.ghostBenchmarking).toBe(true); // Default
       expect(modules.notificationThreshold).toBe(75); // Default
       expect(consoleSpy).toHaveBeenCalledWith(

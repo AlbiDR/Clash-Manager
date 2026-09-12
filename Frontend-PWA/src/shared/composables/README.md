@@ -41,7 +41,7 @@
 | `useCountdown.ts` | Interval timer for live expiry (e.g. Voyage). |
 | `useStatusPill.ts` | Expansion and label logic for the status pill. |
 | `useSelectionBar.ts` | Lifecycle for bulk-operation surfaces. |
-| `useScoreSelector.ts` | Score-threshold picking and comparison toggle. |
+| `usePrecisionSlider.ts` | Value/position mapping, magnetic detents, pointer capture and the keyboard contract for every slider surface. |
 
 ## Clan Voyage
 

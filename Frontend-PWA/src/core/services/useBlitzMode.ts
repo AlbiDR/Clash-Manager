@@ -12,8 +12,7 @@ import {
   BLITZ_SAFETY_DELAY,
   BLITZ_RECOVERY_DELAY,
   BLITZ_COMPLETION_DELAY,
-  BLITZ_BATCH_SHIFT_DELAY,
-  BLITZ_SPEED_DELAYS
+  BLITZ_BATCH_SHIFT_DELAY
 } from "@core/config";
 
 interface BlitzOptions {
@@ -65,8 +64,10 @@ export function useBlitzMode(
 
   const throttleMs = computed(() => {
     if (options.throttleMs !== undefined) return options.throttleMs;
-    const speed = modules.blitzSpeed || "fast";
-    return BLITZ_SPEED_DELAYS[speed] || BLITZ_THROTTLE_DEFAULT;
+    // [DECISION LOG] The persisted dwell time is already clamped to the domain at
+    // the validation boundary, so the fallback covers only a store read that has
+    // not hydrated yet.
+    return modules.blitzDwellMs || BLITZ_THROTTLE_DEFAULT;
   });
 
   /** Indicates if a manual batch queue is currently being processed. */

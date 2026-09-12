@@ -36,18 +36,19 @@ describe("FeatureSettings.vue", () => {
     ghostBenchmarking: false,
     sortExplanation: true,
     blitzMode: false,
-    blitzSpeed: "fast",
+    blitzDwellMs: 850,
   });
   const mockIsRefreshing = ref(false);
   const mockToggle = vi.fn();
-  const mockSetBlitzSpeed = vi.fn();
+  const mockSetBlitzDwell = vi.fn();
+  const mockRosterSize = ref(43);
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockModules.ghostBenchmarking = false;
     mockModules.sortExplanation = true;
     mockModules.blitzMode = false;
-    mockModules.blitzSpeed = "fast";
+    mockModules.blitzDwellMs = 850;
     mockIsRefreshing.value = false;
 
     // Ensure clean window state
@@ -58,7 +59,8 @@ describe("FeatureSettings.vue", () => {
       modules: mockModules,
       toggle: mockToggle,
       isRefreshing: mockIsRefreshing,
-      setBlitzSpeed: mockSetBlitzSpeed,
+      rosterSize: mockRosterSize,
+      setBlitzDwell: mockSetBlitzDwell,
     } as any);
   });
 
