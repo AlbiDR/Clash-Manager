@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-12] PR #1788 [Stage 5]: Audited useConsoleController.ts against core services README; verified accurate and no drift present
+**Domain:** documentation | **Commit:** 052cb20e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1788)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** doc-debt target useConsoleController.ts prose in core services README matches actual implementation
+**Change:** Audited useConsoleController.ts against core services README; verified accurate and no drift present
+**Result:** git diff --check passed with 0 errors and vitest useConsoleController.spec.ts passed 40/40 tests
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1787 [Stage 4]: Audited Edge Function SQL view usage and L1 performance composables (useProgressiveList.ts, protocol.ts); confirmed 56 changed files inspected with 0 code mutations required and all 6 known database views remain unreferenced
 **Domain:** optimization | **Commit:** dca64141 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1787)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
