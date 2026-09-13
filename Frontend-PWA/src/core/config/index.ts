@@ -221,7 +221,22 @@ export const BLITZ_DWELL_MAX = 6000;
 /** Fine adjustment granularity for dwell time, in milliseconds. */
 export const BLITZ_DWELL_STEP = 10;
 
-/** Dwell time applied until the operator chooses one. */
+/**
+ * Dwell time applied until the operator chooses one.
+ *
+ * @remarks
+ * [DECISION LOG] EQUAL TODAY, NOT THE SAME THING:
+ * This holds the same value as {@link BLITZ_DWELL_MIN}, and a static analyser
+ * reads the pair as a duplicate export to collapse. It is not one. The floor is
+ * a safety bound - below it the deep link has not resolved when the tap fires -
+ * while this is a starting position the operator is free to raise. Collapsing
+ * them would make retuning the floor silently relocate every operator who had
+ * never moved the slider. Deriving from the floor is deliberate: the default
+ * must never start below it.
+ *
+ * This was previously also exported a third time as BLITZ_THROTTLE_DEFAULT, a
+ * second name for this same fallback, which is the duplication that was real.
+ */
 export const BLITZ_DWELL_DEFAULT = BLITZ_DWELL_MIN;
 
 /**
@@ -258,17 +273,6 @@ export const BLITZ_LEGACY_SPEED_DWELL: Record<LegacyBlitzSpeed, number> = {
   medium: 2100,
   slow: 5100,
 };
-
-/**
- * Default throttle for manual deep-link clicks.
- *
- * @remarks
- * [DECISION LOG] DERIVED, NOT REPEATED:
- * This is the same human-emulation baseline as {@link BLITZ_DWELL_MIN} and was
- * previously written out as a second literal 850, leaving two copies of one
- * decision free to drift apart. Retuning the floor now moves both.
- */
-export const BLITZ_THROTTLE_DEFAULT = BLITZ_DWELL_MIN;
 
 
 /**

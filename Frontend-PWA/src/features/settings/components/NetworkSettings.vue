@@ -193,6 +193,7 @@ function saveApiUrl() {
           <button
             v-tactile
             class="save-btn"
+            aria-label="Save API endpoint"
             @click="saveApiUrl"
           >
             <Icon
@@ -203,9 +204,13 @@ function saveApiUrl() {
           <button
             v-tactile
             class="cancel-btn"
+            aria-label="Cancel editing"
             @click="isEditing = false"
           >
-            X
+            <Icon
+              name="close"
+              size="20"
+            />
           </button>
         </template>
       </div>

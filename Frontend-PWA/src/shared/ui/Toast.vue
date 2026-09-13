@@ -193,6 +193,7 @@ onUnmounted(clearTimer);
     <button
       v-tactile
       class="close-btn"
+      aria-label="Dismiss notification"
       @click.stop="$emit('dismiss', id)"
     >
       <Icon
@@ -329,7 +330,10 @@ onUnmounted(clearTimer);
   color: inherit;
   opacity: 0.5;
   cursor: pointer;
-  padding: 4px;
+  /* A 16px glyph at 4px padding is a 24px target. The pseudo-element widens
+     the hit area to 48px without moving the glyph or reflowing the toast. */
+  position: relative;
+  padding: var(--sys-space-4);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -338,6 +342,14 @@ onUnmounted(clearTimer);
   margin-left: -4px;
   margin-top: 1px; /* Align with first line */
 }
+/* Widens a 24px glyph button to the 48px touch minimum without moving the
+   glyph or reflowing the toast. Same technique as ErrorBoundary's hit target. */
+.close-btn::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-12));
+}
+
 .close-btn:hover {
   opacity: 1;
   background: rgba(255, 255, 255, 0.1);

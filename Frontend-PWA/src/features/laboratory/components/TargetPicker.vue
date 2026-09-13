@@ -95,9 +95,10 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
         @keydown="handleKeydown"
       >
       
-      <button 
-        v-tactile 
+      <button
+        v-tactile
         class="lock-btn"
+        :aria-label="props.isFetching ? 'Looking up player' : 'Lock in target player'"
         :disabled="props.isFetching"
         @click="handleLockIn"
       >
@@ -170,8 +171,11 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 }
 
 .lock-btn {
-  width: 40px;
-  height: 40px;
+  /* Drawn at 40px because it sits inside the 48px input box and has no room to
+     grow; the hit area below reaches the 48px minimum instead. */
+  position: relative;
+  width: var(--sys-space-40);
+  height: var(--sys-space-40);
   border-radius: var(--sys-shape-corner-stat);
   background: var(--sys-color-primary);
   border: none;
@@ -182,6 +186,12 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
   cursor: pointer;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   flex-shrink: 0;
+}
+
+.lock-btn::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-4));
 }
 
 .lock-btn:hover:not(:disabled) {

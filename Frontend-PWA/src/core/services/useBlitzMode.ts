@@ -8,7 +8,7 @@ import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 import {
-  BLITZ_THROTTLE_DEFAULT,
+  BLITZ_DWELL_DEFAULT,
   BLITZ_SAFETY_DELAY,
   BLITZ_RECOVERY_DELAY,
   BLITZ_COMPLETION_DELAY,
@@ -67,7 +67,7 @@ export function useBlitzMode(
     // [DECISION LOG] The persisted dwell time is already clamped to the domain at
     // the validation boundary, so the fallback covers only a store read that has
     // not hydrated yet.
-    return modules.blitzDwellMs || BLITZ_THROTTLE_DEFAULT;
+    return modules.blitzDwellMs || BLITZ_DWELL_DEFAULT;
   });
 
   /** Indicates if a manual batch queue is currently being processed. */
