@@ -22,8 +22,6 @@ const NIGHTLY_AGENT_CONTRACT_PATH = ".github/nightly-prompts/00-nightly-agent-co
 const HISTORY_PATH = ".github/nightly-logs/00-pr-history.md";
 const PIPELINE_INTELLIGENCE_PATH = ".github/nightly-logs/00-pipeline-intelligence.md";
 const SELF_HEALING_PATH = ".github/nightly-logs/13-self-healing-protocol.md";
-const WORD_LIMIT = 2_000;
-const STAGE_13_WORD_LIMIT = 2_600;
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -56,6 +54,10 @@ export function validateRegistryData(registry) {
     Number.isInteger(registry.sessionBudgetMinutes) &&
       registry.sessionBudgetMinutes > registry.workBudgetMinutes,
     "sessionBudgetMinutes must exceed workBudgetMinutes.",
+  );
+  invariant(
+    Number.isInteger(registry.promptWordBudget) && registry.promptWordBudget > 0,
+    "promptWordBudget must be a positive integer.",
   );
   invariant(Array.isArray(registry.stages) && registry.stages.length === 13, "Registry must define 13 stages.");
 
@@ -94,6 +96,15 @@ export function validateRegistryData(registry) {
       `Stage ${expectedNumber} dependencyCruiser must be boolean.`,
     );
     invariant(typeof stage.historyAging === "boolean", `Stage ${expectedNumber} historyAging must be boolean.`);
+    // Optional. A stage only declares one when its mandate genuinely needs more
+    // room than the default, and it may only ever raise the floor: a stage that
+    // could quietly lower its own budget would pass validation by shrinking the
+    // ruler rather than the prompt.
+    invariant(
+      stage.promptWordBudget === undefined ||
+        (Number.isInteger(stage.promptWordBudget) && stage.promptWordBudget >= registry.promptWordBudget),
+      `Stage ${expectedNumber} promptWordBudget must be an integer of at least ${registry.promptWordBudget}.`,
+    );
     invariant(!prompts.has(stage.prompt), `Duplicate prompt path: ${stage.prompt}`);
     invariant(!logs.has(stage.coverageLog), `Duplicate coverage log: ${stage.coverageLog}`);
     invariant(!slugs.has(stage.slug), `Duplicate stage slug: ${stage.slug}`);
@@ -1018,11 +1029,11 @@ function wordCount(content) {
   return content.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function validatePrompt(repoRoot, stage) {
+function validatePrompt(repoRoot, stage, defaultWordBudget) {
   const promptPath = path.join(repoRoot, stage.prompt);
   invariant(existsSync(promptPath), `Missing Stage ${stage.number} prompt: ${stage.prompt}`);
   const content = readFileSync(promptPath, "utf8");
-  const limit = stage.number === 13 ? STAGE_13_WORD_LIMIT : WORD_LIMIT;
+  const limit = stage.promptWordBudget ?? defaultWordBudget;
   const stageLabel = `S${String(stage.number).padStart(2, "0")}`;
   invariant(wordCount(content) <= limit, `Stage ${stage.number} prompt exceeds ${limit} words.`);
   invariant(
@@ -1146,7 +1157,7 @@ function validateContracts(repoRoot, registry) {
     `Nightly-owned scripts must live in .github/scripts/nightly/: ${misplacedNightlyScripts.join(", ")}`,
   );
 
-  for (const stage of registry.stages) validatePrompt(repoRoot, stage);
+  for (const stage of registry.stages) validatePrompt(repoRoot, stage, registry.promptWordBudget);
   validateBootstrap(repoRoot, registry);
 
   const loader = readFileSync(path.join(repoRoot, AGENT_LOADER_PATH), "utf8");

@@ -3,6 +3,7 @@
   "targetBranch": "Nightly",
   "workBudgetMinutes": 45,
   "sessionBudgetMinutes": 60,
+  "promptWordBudget": 2000,
   "stages": [
     {
       "number": 1,
@@ -114,6 +115,7 @@
       "name": "Refactor - Structural Surgery Engineer",
       "prompt": ".github/nightly-prompts/09-refactor-proposals.md",
       "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
+      "promptWordBudget": 2200,
       "branchPrefix": "nightly/stage-9-refactor-",
       "domain": "architecture",
       "commitScope": "refactor",
@@ -166,6 +168,7 @@
       "name": "Self-Healing Protocol - Pipeline Resilience Auditor",
       "prompt": ".github/nightly-prompts/13-self-healing-protocol.md",
       "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
+      "promptWordBudget": 2600,
       "branchPrefix": "nightly/stage-13-self-healing-protocol-",
       "domain": "pipeline",
       "commitScope": "pipeline",
