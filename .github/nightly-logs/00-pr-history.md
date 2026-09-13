@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1809 [Stage 13]: Mapped September 13 stage executions, recorded Stage 6 and Stage 11 watchdog recovery nudges, and updated Section 3 metrics
+**Domain:** pipeline | **Commit:** 83cb8ea4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1809)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Pipeline surgeon self-healing protocol update for 2026-09-13
+**Change:** Mapped September 13 stage executions, recorded Stage 6 and Stage 11 watchdog recovery nudges, and updated Section 3 metrics
+**Result:** Required stage validation completed.
+**Nudges:** 1
+
+
 ### [2026-09-13] PR #1808 [Stage 11]: Excluded social sharing card asset from PWA precache footprint
 **Domain:** apk | **Commit:** 6733ebd9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1808)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md, Frontend-PWA/vite.config.ts
