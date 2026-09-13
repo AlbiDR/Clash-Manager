@@ -254,10 +254,27 @@ input, textarea, [contenteditable], .selectable {
   user-select: text;
 }
 
-* { -webkit-touch-callout: none; }
+/* [DECISION LOG] THE TAP HIGHLIGHT IS OFF EVERYWHERE, NOT ON THE TAG LIST:
+   Android's WebView paints its tap highlight as a filled rectangle of the
+   element's border box and ignores border-radius entirely, so a rounded control
+   flashes a hard-cornered box around itself the moment it is touched. The reset
+   below used to be scoped to the interactive TAGS, which quietly excluded every
+   clickable div - nine components mount one, StatusPill among them - and those
+   are exactly the rounded pills where a square flash is most visible. It was
+   reported from a phone against the status pill and the Select button.
+
+   Scoping a reset to tags is the wrong shape for the rule: whether a square
+   flashes is a property of being touchable, and this app decides that with a
+   click handler, not with an element name. Every press already has a designed
+   response through v-tactile and the :active rules, so the platform highlight
+   has nothing left to contribute on any element. touch-action stays on the tag
+   list, where it belongs: it governs gesture handling, not painting. */
+*, *::before, *::after {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
 
 button, a, [role="button"], [role="link"], input, select, textarea {
-  -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 

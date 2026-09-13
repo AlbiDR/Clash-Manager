@@ -188,11 +188,28 @@ const handleOpenDashboard = () => {
   margin-top: var(--sys-space-12);
 }
 
+/* [DECISION LOG] THE VIEW'S NAME IS NEVER WHAT GETS CUT:
+   Every element in this row declared flex-shrink: 0 except the title, so the
+   title absorbed one hundred percent of any overflow and did it silently.
+   Measured at 375px: expanding the status pill grows .action-group from 82px
+   to 233px, and all 151 of those pixels came out of the title, which reached
+   clientWidth: 0 - the view's own name erased, with no ellipsis left to show
+   it had happened. "Roster" needs 72px and survived; "Headhunter" needs about
+   130px and read "Headhu...".
+
+   Wrapping fixes it without a breakpoint or a hidden word. The row now grows a
+   second line when the first cannot hold everything, so the name and the count
+   keep their full width and the status pill moves below them, still right
+   aligned. Nothing is hidden and nothing is truncated: a narrow viewport costs
+   one line of height instead of the title. Roster still fits on one line and is
+   unchanged, and an expanded pill takes its own line, which is the right answer
+   for a deliberate reveal. */
 .title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--sys-space-12);
+  flex-wrap: wrap;
 }
 
 .title-group {
@@ -200,14 +217,23 @@ const handleOpenDashboard = () => {
   align-items: center;
   gap: var(--sys-space-12);
   flex: 1;
-  min-width: 0;
+  /* Refusing to shrink below the name plus the count is what actually makes the
+     row wrap. Without it the row has nothing to wrap - the shortfall is inside
+     this group, not between it and the status pill - so the group stayed one
+     line and its contents spilled over the pill instead. Measured at 375px:
+     "Headhunter" plus "48 Members" needs 218px against the 168px this group was
+     being handed, and the count chip overlapped the pill by 38px. */
+  min-width: max-content;
 }
 
 .title-main {
   display: flex;
   align-items: baseline;
   gap: var(--sys-space-8);
-  flex-wrap: nowrap;
+  /* Last resort for a viewport too narrow to hold the name and the count on one
+     line at all, narrower than any phone this ships to. The count drops below
+     the name rather than either being cut. */
+  flex-wrap: wrap;
   min-width: 0;
   flex: 1;
 }
@@ -224,7 +250,12 @@ const handleOpenDashboard = () => {
   text-overflow: ellipsis;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   min-width: 0;
-  flex-shrink: 1;
+  /* The name takes the width it needs and the row wraps around it. The ellipsis
+     above stays as a last resort for a title longer than a whole line, which no
+     current view has; max-width keeps that case inside the header rather than
+     widening the page. */
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 .view-title.is-link {
@@ -266,6 +297,9 @@ const handleOpenDashboard = () => {
   align-items: center;
   gap: var(--sys-space-8);
   flex-shrink: 0;
+  /* Holds it against the right edge on the line it lands on, whether that is
+     beside the title or wrapped beneath it. */
+  margin-left: auto;
 }
 
 .search-sort-row {
