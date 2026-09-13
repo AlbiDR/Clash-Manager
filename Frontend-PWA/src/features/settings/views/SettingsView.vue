@@ -86,7 +86,7 @@ const { isBlueprintMode } = useBlueprintMode();
       </section>
 
       <section class="settings-group">
-        <h2 class="group-label">
+        <h2 class="group-label label-section">
           Preferences
         </h2>
 
@@ -120,7 +120,7 @@ const { isBlueprintMode } = useBlueprintMode();
       </section>
 
       <section class="settings-group">
-        <h2 class="group-label">
+        <h2 class="group-label label-section">
           System
         </h2>
 
@@ -202,16 +202,11 @@ const { isBlueprintMode } = useBlueprintMode();
    preference from what belongs to the machine. */
 .group-label {
   margin: var(--sys-space-4) 0 var(--sys-space-2) var(--sys-space-4);
-  font-size: var(--sys-typescale-label-md);
   /* Pinned so the heading occupies exactly one typescale step. The inherited
      1.5 reset made it 15px against the 10px its placeholder reserved, which is
      a 5px shift per heading at hydration. Both sides now resolve through the
      same two tokens. */
   line-height: var(--sys-leading-none);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: var(--sys-tracking-wider);
   color: var(--sys-color-on-surface-variant);
-  opacity: 0.7;
 }
 </style>

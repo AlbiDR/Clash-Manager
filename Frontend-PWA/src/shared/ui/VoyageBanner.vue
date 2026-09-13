@@ -75,19 +75,19 @@ const shouldShowBanner = computed(() => {
             <span class="banner-title">Clan Voyage</span>
             <span
               v-if="store.isVictory"
-              class="victory-label"
+              class="victory-label label-badge"
             >Goal Achieved</span>
             <span
               v-else-if="store.isPending"
-              class="pre-event-label"
+              class="pre-event-label label-badge"
             >Pre-Event Scheduled</span>
             <span
               v-else-if="store.isAwaitingEnd"
-              class="awaiting-label"
+              class="awaiting-label label-badge"
             >Awaiting Promotion</span>
             <span
               v-else
-              class="banner-subtitle"
+              class="banner-subtitle label-section"
             >Active Event</span>
           </div>
         </div>
@@ -255,36 +255,19 @@ const shouldShowBanner = computed(() => {
 }
 
 .banner-subtitle {
-  font-size: 10px;
-  font-weight: 700;
   color: var(--sys-color-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.8;
 }
 
 .victory-label {
-  font-size: 10px;
-  font-weight: 900;
   color: #fbbf24;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .pre-event-label {
-  font-size: 10px;
-  font-weight: 900;
   color: #f59e0b;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 .awaiting-label {
-  font-size: 10px;
-  font-weight: 900;
   color: #f97316;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 /* --- Meta (Crowns + Countdown) --- */

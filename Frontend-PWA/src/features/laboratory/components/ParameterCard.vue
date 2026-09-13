@@ -96,7 +96,7 @@ const levelOptions = computed(() => {
       <!-- Strategy Selector -->
       <div class="parameter-item">
         <label
-          class="parameter-label"
+          class="parameter-label label-caption"
           data-bone="ParameterCard.label"
         >Optimization Strategy</label>
         <BaseSegmentedControl
@@ -124,7 +124,7 @@ const levelOptions = computed(() => {
         v-if="settings.strategy === 'Level Projection'"
         class="parameter-item"
       >
-        <label class="parameter-label">Target King Level</label>
+        <label class="parameter-label label-caption">Target King Level</label>
         <BaseSelect
           :model-value="settings.targetLevel || KING_LEVEL_MAX"
           :options="levelOptions"
@@ -174,14 +174,6 @@ const levelOptions = computed(() => {
   opacity: 0.4;
   filter: grayscale(0.5);
   pointer-events: none;
-}
-
-.parameter-label {
-  font-size: 12px;
-  font-weight: 700;
-  opacity: 0.6;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
 }
 
 .strategy-desc {

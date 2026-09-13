@@ -97,7 +97,7 @@ function saveApiUrl() {
 
     <div class="network-stats">
       <div class="stat-item">
-        <span class="label">Ping</span>
+        <span class="label label-caption">Ping</span>
         <template v-if="isChecking">
           <div
             class="sk-stat-value"
@@ -110,7 +110,7 @@ function saveApiUrl() {
       </div>
       <span class="v-sep" />
       <div class="stat-item">
-        <span class="label">Backend</span>
+        <span class="label label-caption">Backend</span>
         <template v-if="isChecking">
           <div
             class="sk-stat-value"
@@ -123,7 +123,7 @@ function saveApiUrl() {
       </div>
       <span class="v-sep" />
       <div class="stat-item">
-        <span class="label">Link</span>
+        <span class="label label-caption">Link</span>
         <template v-if="isChecking">
           <div
             class="sk-stat-value"
@@ -246,13 +246,7 @@ function saveApiUrl() {
   align-items: baseline;
   gap: 8px;
 }
-.stat-item .label {
-  font-size: 9px;
-  font-weight: 900;
-  opacity: 0.4;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+
 .stat-item .value {
   font-size: 13px;
   font-weight: 700;

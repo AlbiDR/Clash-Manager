@@ -92,7 +92,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
       <div class="wildcards-section">
         <div class="section-meta">
           <span class="res-label">Wild Cards owned</span>
-          <span class="res-hint">Input current Wild Cards inventory</span>
+          <span class="res-hint label-caption">Input current Wild Cards inventory</span>
         </div>
         <div class="wildcards-row">
           <div 
@@ -192,14 +192,6 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.res-hint {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.4;
 }
 
 .wildcards-row {

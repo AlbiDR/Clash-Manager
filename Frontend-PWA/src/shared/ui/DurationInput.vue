@@ -90,7 +90,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
           class="glass-input t2t-input"
           @input="onInput($event, 'days')"
         >
-        <span class="t2t-label">D</span>
+        <span class="t2t-label label-caption">D</span>
       </div>
       <span class="t2t-sep">:</span>
 
@@ -104,7 +104,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
           class="glass-input t2t-input"
           @input="onInput($event, 'hours')"
         >
-        <span class="t2t-label">H</span>
+        <span class="t2t-label label-caption">H</span>
       </div>
       <span class="t2t-sep">:</span>
 
@@ -118,7 +118,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
           class="glass-input t2t-input"
           @input="onInput($event, 'minutes')"
         >
-        <span class="t2t-label">M</span>
+        <span class="t2t-label label-caption">M</span>
       </div>
     </div>
   </div>
@@ -154,14 +154,6 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
   font-size: var(--sys-typescale-title-md);
   text-align: center;
   padding: 0;
-}
-
-.t2t-label {
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.35;
 }
 
 .t2t-sep {

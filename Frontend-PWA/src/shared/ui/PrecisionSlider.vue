@@ -270,7 +270,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
     >
       <span
         v-if="props.consequenceChip"
-        class="ps-chip"
+        class="ps-chip label-badge"
       >{{ props.consequenceChip }}</span>
       <span>{{ props.consequence }}</span>
     </p>
@@ -523,10 +523,6 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   border-radius: var(--sys-shape-corner-badge);
   background: var(--sys-color-surface-container-highest);
   font-family: var(--sys-font-family-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
   color: var(--sys-color-on-surface-variant);
 }
 

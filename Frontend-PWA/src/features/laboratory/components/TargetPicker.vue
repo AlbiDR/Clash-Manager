@@ -113,7 +113,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
       v-if="props.playerName"
       class="player-label"
     >
-      <span class="label-text">{{ props.playerName }}</span>
+      <span class="label-text label-badge">{{ props.playerName }}</span>
     </div>
   </div>
 </template>
@@ -224,10 +224,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 }
 
 .label-text {
-  font-size: var(--sys-typescale-meta);
-  font-weight: 800;
   color: var(--sys-color-primary);
-  text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
   user-select: none; /* Text Selection Containment (Target A.3) */

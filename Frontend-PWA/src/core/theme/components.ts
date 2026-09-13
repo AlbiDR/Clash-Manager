@@ -249,6 +249,46 @@ a { text-decoration: underline; color: inherit; }
   box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.12);
 }
 
+/* =========================================
+   SMALL UPPERCASE LABEL TIERS
+   -----------------------------------------
+   One visual object was drawn by 35 separate rules across six sizes, six
+   weights and six letter-spacings, which is what made the app read as though
+   several people had built it. These three are the whole vocabulary now, and
+   between them they use two sizes and two weights.
+
+   The tiers are separated by ROLE, not by how big they happened to be:
+   caption names a value sitting beside it, section names a group of content,
+   badge is a token on a ground that already carries a tint - which is why it
+   alone is full opacity, since the chip supplies the contrast.
+
+   Controls are deliberately not in here. A button, a text input, a segmented
+   control and the StatusPill readout are all uppercase and none of them is a
+   label; giving them a label recipe would make a button read as a caption.
+   ========================================= */
+.label-caption {
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  opacity: 0.55;
+}
+
+.label-section {
+  font-size: var(--sys-typescale-label-md);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  opacity: 0.7;
+}
+
+.label-badge {
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+}
+
 /* The label half of the same trio the .glass-input block above consolidated.
    It was left behind, so .field-label stayed declared three times: identical in
    VoyageSetupForm and DurationInput, and divergent in NetworkSettings at

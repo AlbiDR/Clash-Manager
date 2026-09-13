@@ -59,10 +59,10 @@ defineProps<{
           />
           <span class="next">{{ upgrade.targetLevel }}</span>
         </div>
-        <span class="logic-type">{{ upgrade.upgradeType }}</span>
+        <span class="logic-type label-badge">{{ upgrade.upgradeType }}</span>
         <span
           v-if="upgrade.isTowerTroop"
-          class="tower-badge"
+          class="tower-badge label-badge"
         >Tower</span>
       </div>
 
@@ -206,23 +206,11 @@ defineProps<{
 .level-pill .next { color: var(--sys-color-primary); }
 .level-pill .divider { opacity: 0.2; }
 
-.logic-type {
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.4;
-}
-
 .tower-badge {
-  font-size: 8px;
-  font-weight: 900;
-  text-transform: uppercase;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-primary);
   padding: 1px 4px;
   border-radius: 4px;
-  letter-spacing: 0.05em;
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
 }
 

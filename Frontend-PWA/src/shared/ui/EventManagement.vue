@@ -57,7 +57,7 @@ const pillClass = computed(() => {
     <!-- Active Event Status -->
     <template #header-extra>
       <div
-        class="status-pill"
+        class="status-pill label-badge"
         :class="pillClass"
       >
         {{ pillLabel }}
@@ -70,7 +70,7 @@ const pillClass = computed(() => {
       class="active-summary pre-event-summary"
     >
       <div class="summary-row">
-        <span class="summary-label">Crown Target</span>
+        <span class="summary-label label-section">Crown Target</span>
         <span class="summary-value primary">
           {{ formatNumber(store.targetCrowns) }} <Icon
             name="crown"
@@ -83,7 +83,7 @@ const pillClass = computed(() => {
         v-if="startsInCountdown"
         class="summary-row"
       >
-        <span class="summary-label">Starts In</span>
+        <span class="summary-label label-section">Starts In</span>
         <span class="summary-value timer pending-timer">
           {{ startsInCountdown }}
         </span>
@@ -97,7 +97,7 @@ const pillClass = computed(() => {
       class="active-summary"
     >
       <div class="summary-row">
-        <span class="summary-label">Progress</span>
+        <span class="summary-label label-section">Progress</span>
         <span class="summary-value primary">
           {{ formatNumber(store.totalCrowns) }} / {{ formatNumber(store.targetCrowns) }} <Icon
             name="crown"
@@ -107,13 +107,13 @@ const pillClass = computed(() => {
         </span>
       </div>
       <div class="summary-row">
-        <span class="summary-label">Completion</span>
+        <span class="summary-label label-section">Completion</span>
         <span class="summary-value primary">
           {{ Math.round(store.progressRatio * 100) }}%
         </span>
       </div>
       <div class="summary-row">
-        <span class="summary-label">Status</span>
+        <span class="summary-label label-section">Status</span>
         <span
           class="summary-value"
           :class="{ 'victory': store.isVictory }"
@@ -125,7 +125,7 @@ const pillClass = computed(() => {
         v-if="timeRemaining"
         class="summary-row"
       >
-        <span class="summary-label">Ends In</span>
+        <span class="summary-label label-section">Ends In</span>
         <span
           class="summary-value timer"
           :class="{ 'ended': timeRemaining === 'Ended' }"
@@ -138,7 +138,7 @@ const pillClass = computed(() => {
         v-if="!store.endsAt"
         class="summary-row"
       >
-        <span class="summary-label">Ends In</span>
+        <span class="summary-label label-section">Ends In</span>
         <span class="summary-value awaiting-text">Not yet set</span>
       </div>
       <div class="section-divider" />
@@ -169,14 +169,6 @@ const pillClass = computed(() => {
   padding: 4px 0;
 }
 
-.summary-label {
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.45;
-}
-
 .summary-value {
   font-size: 13px;
   font-weight: 700;
@@ -198,10 +190,6 @@ const pillClass = computed(() => {
 
 /* --- Status Pill (Header Slot) --- */
 .status-pill {
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   padding: 3px 8px;
   border-radius: 99px;
   border: 1px solid currentColor;

@@ -54,14 +54,14 @@ const engineStatus = computed(() => {
           data-bone="SummaryCard.statusBadge"
           :class="engineStatus.class"
         >
-          <span class="label">Status</span>
+          <span class="label label-badge">Status</span>
           <span class="value"><Icon
             :name="engineStatus.icon"
             size="12"
           /> {{ engineStatus.text }}</span>
         </div>
         <div class="projection-badge">
-          <span class="label">Trajectory</span>
+          <span class="label label-badge">Trajectory</span>
           <span class="value">{{ result.actions.length }} {{ result.actions.length === 1 ? 'Upgrade' : 'Upgrades' }}</span>
         </div>
       </div>
@@ -69,7 +69,7 @@ const engineStatus = computed(() => {
 
     <!-- 1. Progression Row (Always full width) -->
     <div class="progression-row">
-      <label class="section-label">Target Progress</label>
+      <label class="section-label label-section">Target Progress</label>
       <div class="king-level-display">
         <div
           class="level-badge current"
@@ -101,7 +101,7 @@ const engineStatus = computed(() => {
 
     <!-- 2. Resources Grid (Unified & Symmetrical) -->
     <div class="metrics-section">
-      <label class="section-label">Required for Projection</label>
+      <label class="section-label label-section">Required for Projection</label>
       <div
         class="resources-grid"
         :class="{ 'triple': result.totalGemsSpent > 0 }"
@@ -114,7 +114,7 @@ const engineStatus = computed(() => {
           >
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalXpGained) }}</span>
-            <span class="label">Experience</span>
+            <span class="label label-caption">Experience</span>
           </div>
         </div>
         
@@ -126,7 +126,7 @@ const engineStatus = computed(() => {
           >
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGoldSpent) }}</span>
-            <span class="label">Gold</span>
+            <span class="label label-caption">Gold</span>
           </div>
         </div>
 
@@ -141,7 +141,7 @@ const engineStatus = computed(() => {
           >
           <div class="res-meta">
             <span class="val">{{ formatNumber(result.totalGemsSpent) }}</span>
-            <span class="label">Gems</span>
+            <span class="label label-caption">Gems</span>
           </div>
         </div>
       </div>
@@ -213,14 +213,6 @@ const engineStatus = computed(() => {
   gap: 4px;
 }
 
-.projection-badge .label {
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.6;
-}
-
 .projection-badge .value {
   font-family: var(--sys-font-family-mono);
   font-size: 13px;
@@ -236,11 +228,6 @@ const engineStatus = computed(() => {
 }
 
 .section-label {
-  font-size: 10px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.4;
   margin-bottom: 2px;
 }
 
@@ -353,14 +340,6 @@ const engineStatus = computed(() => {
   color: var(--sys-color-on-surface);
 }
 
-.res-meta .label {
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.5;
-}
-
 /* Color Coding for Slabs */
 .res-slab.xp {
   border-left: 3px solid #00d2ff;
@@ -374,7 +353,5 @@ const engineStatus = computed(() => {
   border-left: 3px solid #00ff88;
   background: rgba(0, 255, 136, 0.02);
 }
-
-
 
 </style>

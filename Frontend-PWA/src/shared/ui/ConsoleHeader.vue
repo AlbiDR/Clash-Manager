@@ -81,7 +81,7 @@ const handleOpenDashboard = () => {
               class="title-label"
             >
               <span class="count-value">{{ props.stats.value }}</span>
-              <span class="count-label">{{ props.stats.label }}</span>
+              <span class="count-label label-caption">{{ props.stats.label }}</span>
             </div>
           </div>
         </div>
@@ -258,10 +258,7 @@ const handleOpenDashboard = () => {
 }
 
 .count-label {
-  font-size: var(--sys-typescale-label-md);
-  text-transform: uppercase;
   color: var(--sys-color-on-surface-variant);
-  font-weight: 600;
 }
 
 .action-group {

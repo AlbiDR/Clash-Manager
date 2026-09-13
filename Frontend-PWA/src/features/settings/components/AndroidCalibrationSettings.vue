@@ -176,7 +176,7 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
 
     <div class="input-grid">
       <div class="input-group">
-        <label>Invite X (%)</label>
+        <label class="label-caption">Invite X (%)</label>
         <input
           v-model="inviteX"
           type="number"
@@ -185,7 +185,7 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
         >
       </div>
       <div class="input-group">
-        <label>Invite Y (%)</label>
+        <label class="label-caption">Invite Y (%)</label>
         <input
           v-model="inviteY"
           type="number"
@@ -194,7 +194,7 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
         >
       </div>
       <div class="input-group">
-        <label>Close X (%)</label>
+        <label class="label-caption">Close X (%)</label>
         <input
           v-model="closeX"
           type="number"
@@ -203,7 +203,7 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
         >
       </div>
       <div class="input-group">
-        <label>Close Y (%)</label>
+        <label class="label-caption">Close Y (%)</label>
         <input
           v-model="closeY"
           type="number"
@@ -350,11 +350,7 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
 }
 
 .input-group label {
-  font-size: var(--sys-typescale-label-md);
-  font-weight: 700;
   color: var(--sys-color-on-surface-variant);
-  text-transform: uppercase;
-  letter-spacing: var(--sys-tracking-wide);
 }
 
 .coord-input {

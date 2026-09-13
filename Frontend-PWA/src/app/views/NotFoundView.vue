@@ -67,7 +67,7 @@ const attemptedPath = computed(() => {
       role="alert"
       aria-labelledby="nf-title"
     >
-      <span class="nf-badge">
+      <span class="nf-badge label-badge">
         <Icon
           name="warning"
           size="12"
@@ -88,7 +88,7 @@ const attemptedPath = computed(() => {
       </p>
 
       <div class="nf-route">
-        <span class="nf-route-label">Requested Route</span>
+        <span class="nf-route-label label-caption">Requested Route</span>
         <code class="nf-route-value">{{ attemptedPath }}</code>
       </div>
 
@@ -134,10 +134,6 @@ const attemptedPath = computed(() => {
   background: color-mix(in srgb, var(--sys-color-primary) 12%, transparent);
   color: var(--sys-color-primary);
   font-family: var(--sys-font-family-mono);
-  font-size: var(--sys-typescale-label-sm);
-  font-weight: 700;
-  letter-spacing: var(--sys-tracking-wide);
-  text-transform: uppercase;
 }
 
 .nf-title {
@@ -167,9 +163,6 @@ const attemptedPath = computed(() => {
 }
 
 .nf-route-label {
-  font-size: var(--sys-typescale-label-sm);
-  font-weight: 900;
-  text-transform: uppercase;
   line-height: 1;
   color: var(--sys-color-on-surface-variant);
 }

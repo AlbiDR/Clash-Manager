@@ -25,7 +25,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
     v-if="props.loading"
     class="stat-item skeleton-anim"
   >
-    <div class="label">
+    <div class="label label-caption">
       <div class="sk-label-box" />
     </div>
     <div class="value">
@@ -39,7 +39,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
     :aria-label="benchmarkTooltipContent ? `${props.label}: ${props.value}. ${benchmarkTooltipContent}` : `${props.label}: ${props.value}`"
   >
     <span
-      class="label"
+      class="label label-caption"
       :aria-hidden="'true'"
     >{{ props.label }}</span>
     <span
@@ -73,12 +73,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 }
 
 .label {
-  font-size: var(--sys-typescale-label-sm);
-  text-transform: uppercase;
-  font-weight: 850;
   color: var(--sys-color-secondary);
-  letter-spacing: var(--sys-tracking-wider);
-  opacity: 1;
   text-align: center;
   line-height: var(--sys-leading-tight);
   min-height: 20px;
