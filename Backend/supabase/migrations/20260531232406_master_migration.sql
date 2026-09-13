@@ -4215,7 +4215,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
           end_at,
           voyage_id,
           row_number() OVER (
-              PARTITION BY player_tag ORDER BY end_at DESC
+              PARTITION BY player_tag ORDER BY end_at DESC, voyage_id DESC, crowns DESC
           ) AS recency_rank
         FROM voyage_history
   ),
@@ -4228,13 +4228,13 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              ( SELECT string_agg(
                            sub.crowns::text || ' ' || TO_CHAR(sub.end_at, 'YYYY-MM-DD'),
                            ' | '
-                           ORDER BY sub.end_at DESC
+                           ORDER BY sub.end_at DESC, sub.voyage_id DESC, sub.crowns DESC
                        )
                FROM (
-                   SELECT crowns, end_at
+                   SELECT crowns, end_at, voyage_id
                      FROM voyage_ranked vh_sub
                     WHERE vh_sub.player_tag = vh.player_tag
-                    ORDER BY end_at DESC
+                    ORDER BY end_at DESC, voyage_id DESC, crowns DESC
                     LIMIT 52
                ) sub
              ) AS v_hist
@@ -4262,7 +4262,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              decks_pct,
              max_recorded,
              row_number() OVER (
-                 PARTITION BY player_tag ORDER BY max_recorded DESC
+                 PARTITION BY player_tag ORDER BY max_recorded DESC, week_id DESC
              ) AS recency_rank
         FROM war_weekly
   ),
@@ -4272,7 +4272,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              count(*)                                                                          AS recorded_weeks,
              substrate.weighted_avg(ARRAY_AGG(fame::numeric      ORDER BY recency_rank))               AS avg_fame,
              substrate.weighted_avg(ARRAY_AGG(decks_pct           ORDER BY recency_rank))               AS avg_war_rate,
-             string_agg(fame::text || ' ' || week_id, ' | ' ORDER BY max_recorded DESC)       AS hist
+             string_agg(fame::text || ' ' || week_id, ' | ' ORDER BY max_recorded DESC, week_id DESC) AS hist
         FROM war_ranked
        GROUP BY player_tag
   ),
