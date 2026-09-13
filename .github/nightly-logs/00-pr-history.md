@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1808 [Stage 11]: Excluded social sharing card asset from PWA precache footprint
+**Domain:** apk | **Commit:** 6733ebd9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1808)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md, Frontend-PWA/vite.config.ts
+**Why:** og-card.png (313 KB) is a social sharing preview image not required by the PWA runtime app shell; excluding it reduces precache footprint from 327.8 KB to 11.1 KB
+**Change:** Excluded social sharing card asset from PWA precache footprint
+**Result:** audit:apk-perf PASS, 6 files 11.1 KB precached
+**Nudges:** 0
+
+### [2026-09-13] PR #1807 [Stage 12]: Automated hybrid shell UX sweep completed across 75 files with 0 candidate violations
+**Domain:** ux | **Commit:** 5b22165c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1807)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured audit PASS with zero pending candidate files across all 10 hybrid shell UX categories
+**Change:** Automated hybrid shell UX sweep completed across 75 files with 0 candidate violations
+**Result:** 75 files examined, status PASS, 0 violations found
+**Nudges:** 0
+
+
 ### [2026-09-13] PR #1806 [Stage 10]: PWA & APK wrapper audit completed with no source modifications required. Verified asset links, manifest parity, version code/name sync, release metadata, and cleartext security policy.
 **Domain:** apk | **Commit:** 9193f902 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1806)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
