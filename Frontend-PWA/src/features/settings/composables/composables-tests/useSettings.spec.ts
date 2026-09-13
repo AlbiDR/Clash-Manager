@@ -217,6 +217,14 @@ describe("useSettings", () => {
       keys: vi.fn().mockResolvedValue([]),
       delete: vi.fn().mockResolvedValue(true),
     });
+    // forceUpdate falls through to usePwaManager -> useApkManager -> apkResolver
+    // whenever the registration has no waiting worker, and apkResolver fires
+    // three live fetches guarded by a 10s AbortController. Vitest kills a test
+    // at 5s, so an unstubbed fetch here can only ever pass by being faster than
+    // the network, and CI is where it is not: it timed out both no-waiting-worker
+    // cases on 2026-09-13. The resolver shares one in-flight promise to avoid a
+    // cache stampede, which is why the second test fails with the first.
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network is stubbed in tests")));
     // @ts-expect-error -- test mock/state does not satisfy the full type
     global.__APP_VERSION__ = "1.2.3";
 
