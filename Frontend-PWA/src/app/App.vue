@@ -203,6 +203,12 @@ onMounted(() => {
   width: 100%;
   max-width: var(--sys-layout-max-width);
   padding: 0 var(--sys-space-12);
+  /* Matches #app-shell in core/theme/AppShell.ts, the static pre-paint shell
+     this element replaces at mount. The shell reserved the notch inset and the
+     live container did not, so the entire page jumped upward by 12px plus the
+     safe-area the moment Vue hydrated - the single largest layout shift in the
+     app, and the first thing a reader sees. */
+  padding-top: calc(var(--sys-space-12) + env(safe-area-inset-top));
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   display: flex;
   flex-direction: column;

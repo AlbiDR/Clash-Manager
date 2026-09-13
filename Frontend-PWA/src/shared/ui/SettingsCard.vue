@@ -72,7 +72,9 @@ const toggleCollapse = () => {
 <style scoped>
 .settings-card {
   background: var(--sys-color-surface-container);
-  border-radius: 8px;
+  /* Bound to the same token as SkeletonSettingsCard's, so the pair cannot
+     drift apart again without both moving. */
+  border-radius: var(--sys-shape-corner-small);
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
   margin: 0;
@@ -89,7 +91,7 @@ const toggleCollapse = () => {
 }
 
 .card-header {
-  min-height: 56px;
+  min-height: var(--sys-space-56);
   padding: var(--sys-space-12) var(--sys-space-16);
   display: flex;
   align-items: center;

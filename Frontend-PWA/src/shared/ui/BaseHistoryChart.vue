@@ -4,6 +4,21 @@
 
 import { useBaseHistoryChart } from "../composables/useBaseHistoryChart";
 
+/**
+ * Bar heights, as a percentage of the plot area, for the loading placeholder.
+ *
+ * @remarks
+ * [DECISION LOG] A FIXED RAMP, NOT A RANDOM ONE:
+ * These heights were `Math.random() * 50 + 30`, evaluated during render, so the
+ * placeholder redrew to a different shape on every re-render and never settled
+ * while the chart was loading. A skeleton exists to hold the space the real
+ * content will occupy; one that reshapes under the reader is doing the opposite
+ * of its job. This is the same decision already taken for `BaseCardSkeleton`
+ * and `SkeletonSettingsCard`, which take their geometry from a build-time
+ * capture rather than inventing it per render.
+ */
+const SKELETON_BAR_HEIGHTS = [42, 58, 47, 66, 55, 74, 61, 80, 69, 88] as const;
+
 const props = defineProps<{
   /** Format: array of { value, tooltipLabel } (Oldest to Newest) */
   historySeries: { id: string; value: number; tooltipLabel: string }[];
@@ -89,10 +104,10 @@ const { chartData } = useBaseHistoryChart({
     >
       <template v-if="loading">
         <div
-          v-for="i in 10"
+          v-for="(barHeight, i) in SKELETON_BAR_HEIGHTS"
           :key="i"
           class="sk-chart-bar"
-          :style="{ height: `${Math.random() * 50 + 30}%` }"
+          :style="{ height: `${barHeight}%` }"
         />
       </template>
       <template v-else>

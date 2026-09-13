@@ -28,6 +28,7 @@ export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: tr
  * Setup block for the Settings feature view.
  * Integrates global useSettings composition logic and manages settings sections.
  */
+import { computed } from "vue";
 import { ConsoleLayout, SkeletonSettingsCard, EventManagement } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
@@ -56,6 +57,18 @@ const {
 
 const { isShowcaseMode } = useShowcaseMode();
 const { isBlueprintMode } = useBlueprintMode();
+
+/**
+ * How many cards the hydrated list will contain.
+ *
+ * @remarks
+ * [DECISION LOG] The loading branch has to reserve the same number of rows the
+ * real list resolves to, or the page grows or shrinks by whole cards as it
+ * hydrates. Kept beside the card list below, which is the only place that
+ * knows the answer, and counted the same way: eight cards always render and
+ * the Backend Refresher card is gated on its own module flag.
+ */
+const settingsCardCount = computed(() => (modules.backendRefresher ? 9 : 8));
 </script>
 
 <template>
@@ -67,6 +80,8 @@ const { isBlueprintMode } = useBlueprintMode();
   <ConsoleLayout
     v-bind="layoutProps"
     :skeleton-component="SkeletonSettingsCard"
+    :skeleton-count="settingsCardCount"
+    class="settings-console"
     ignore-blueprint-mode
     v-on="layoutEvents"
   >
@@ -153,10 +168,19 @@ const { isBlueprintMode } = useBlueprintMode();
 </template>
 
 <style scoped>
+/* ConsoleLayout renders the loading skeletons in its own container, which
+   cannot see `.settings-content` below. Declaring this view's geometry as two
+   inherited custom properties gives both lists one source, so the column no
+   longer slides sideways and re-spaces itself as it hydrates. */
+.settings-console {
+  --console-gutter: var(--sys-space-16);
+  --console-gap: var(--sys-space-10);
+}
+
 .settings-content {
-  padding: 0 var(--sys-space-16);
+  padding: 0 var(--console-gutter);
   display: flex;
   flex-direction: column;
-  gap: var(--sys-space-10);
+  gap: var(--console-gap);
 }
 </style>

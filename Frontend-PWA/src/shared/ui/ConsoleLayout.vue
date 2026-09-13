@@ -44,6 +44,11 @@ const props = defineProps<{
   fabState?: ConsoleFabState;
   skeletonComponent?: Component;
   skeletonCount?: number;
+  /**
+   * Capture group the default skeleton measures itself against, e.g.
+   * `"RecruitCard"`. Omit on consoles whose rows are `MemberCard`-sized.
+   */
+  skeletonBoneGroup?: string;
   totalCount?: number;
   /** Consolidated info about the remote data source. */
   remoteInfo?: ConsoleRemoteInfo;
@@ -209,13 +214,14 @@ onUnmounted(() => {
       <!-- Loading State (Skeletons) -->
       <div
         v-else-if="displayLoading"
-        class="list-container gpu-contain"
+        class="list-container gpu-contain skeleton-list"
       >
         <component
           :is="props.skeletonComponent || BaseCardSkeleton"
           v-for="i in (props.skeletonCount || 8)"
           :key="i"
           :index="i"
+          :bone-group="props.skeletonBoneGroup"
           :style="{ '--i': i }"
         />
       </div>
@@ -262,6 +268,23 @@ onUnmounted(() => {
 .list-container {
   padding-bottom: var(--sys-space-48);
   position: relative;
+}
+
+/* [DECISION LOG] THE LOADING BRANCH BORROWS THE VIEW'S GEOMETRY:
+   Skeletons render into this container, while the real content renders into
+   whatever wrapper the view supplies in the default slot. When those two
+   disagree the list visibly shifts as it hydrates - Settings insets its cards
+   by 16px and spaces them by 10px, so its skeletons were arriving full-bleed
+   and 10px tighter, and the whole column slid sideways on load.
+
+   A view states its own geometry by setting these two custom properties on
+   ConsoleLayout; both default to zero, so consoles whose rows are full-bleed
+   are untouched and need say nothing. */
+.skeleton-list {
+  padding-inline: var(--console-gutter, 0);
+  display: flex;
+  flex-direction: column;
+  gap: var(--console-gap, 0);
 }
 .gpu-contain {
   contain: layout;

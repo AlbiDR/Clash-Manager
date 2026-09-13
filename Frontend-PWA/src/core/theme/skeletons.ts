@@ -11,7 +11,9 @@ export const skeletonStyles = `
 }
 
 .sk-card {
-  height: var(--sys-space-76);
+  /* Height is bound inline by BaseCardSkeleton.vue from the build-time capture,
+     because it differs per capture group and a flat value here resized every
+     row of both lists at hydration. */
   background: var(--sk-surf);
   border-radius: var(--sys-shape-corner-m);
   padding: var(--sys-space-12) var(--sys-space-16);
@@ -33,21 +35,24 @@ export const skeletonStyles = `
 .sk-badge-s { height: var(--sys-space-18); width: 100%; background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-badge); }
 .sk-badge-m { height: 24px; width: 80px; background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-small); }
 .sk-pill { height: 32px; width: 100px; background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-full); opacity: 0.8; }
-.sk-label-box { width: 60px; height: 10px; background: var(--sk-fill); border-radius: 3px; opacity: 0.5; }
+.sk-label-box { width: 60px; height: 10px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); opacity: 0.5; }
 .sk-value-box { width: 40px; height: 14px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); }
 .sk-trophy-meta { display: flex; align-items: center; gap: var(--sys-space-4); margin-top: var(--sys-space-2); }
 .sk-icon-dot { width: 10px; height: 10px; background: var(--sk-fill-secondary); border-radius: 50%; opacity: 0.5; }
 .sk-player-name { height: 16px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); }
 .sk-input { width: 100%; height: 46px; border-radius: var(--sys-shape-corner-input); background: var(--sk-fill-secondary); }
 .sk-select { width: 100%; height: 46px; border-radius: var(--sys-shape-corner-input); background: var(--sk-fill-secondary); }
-.sk-button-m { width: 100%; height: var(--sys-space-44); background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-medium); }
+/* Matches .btn-action's 48px (components.ts) - this stood at 44px, so every
+   expanded card shrank 4px the moment a sync started and grew back when it
+   finished. */
+.sk-button-m { width: 100%; height: var(--sys-space-48); background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-medium); }
 .sk-button-s { width: 60px; height: 28px; background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-small); }
 .sk-chart-area {
   width: 100%; height: var(--sys-space-48); background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-small);
   display: flex; justify-content: center; align-items: flex-end; gap: var(--sys-space-2); padding: var(--sys-space-4); box-sizing: border-box;
 }
 .sk-chart-bar { flex: 1; background: var(--sk-fill); border-radius: 2px; opacity: 0.6; }
-.sk-text-line-s { width: 80px; height: 10px; background: var(--sk-fill); border-radius: 3px; opacity: 0.6; }
+.sk-text-line-s { width: 80px; height: 10px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); opacity: 0.6; }
 .sk-stat-value { width: 40px; height: 14px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); }
 .sk-icon-btn-s { width: 36px; height: 36px; background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-medium); opacity: 0.6; }
 .sk-text-line-m { width: 120px; height: 14px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); }

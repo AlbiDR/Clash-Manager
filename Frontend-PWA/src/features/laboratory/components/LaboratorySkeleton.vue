@@ -278,11 +278,14 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
   }
 }
 
-.surface-panel {
-  background: var(--sys-color-surface-container);
-  border-radius: var(--sys-shape-corner-l);
-  border: 1px solid var(--sys-surface-glass-border);
-  padding: 18px;
+/* [THREAT:] This block used to restate the global `.surface-panel` primitive
+   (core/theme/components.ts) with `padding: 18px` in place of its
+   `var(--sys-space-20)` and no elevation at all. Vue's scoped attribute beats
+   the global rule, so every Laboratory panel sat 2px tighter on each edge and
+   flat until the real panels replaced it, then grew and lifted. The elements
+   already carry `surface-panel`, so the primitive supplies all of that; only
+   the skeleton's own column layout belongs here. */
+.sk-panel {
   display: flex;
   flex-direction: column;
 }
